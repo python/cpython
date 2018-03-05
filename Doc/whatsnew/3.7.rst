@@ -835,7 +835,7 @@ archive.  (Contributed by Irmen de Jong in :issue:`31072`.)
 Function :func:`~zipapp.create_archive` now accepts an optional *compressed*
 argument to generate a compressed archive.  A command line option
 ``--compress`` has also been added to support compression.
-(Contributed by Xiang Zhang in :issue:`31638`.)
+(Contributed by Zhiming Wang in :issue:`31638`.)
 
 
 Optimizations
