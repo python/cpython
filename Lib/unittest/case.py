@@ -612,7 +612,7 @@ class TestCase(object):
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
+                    self._runTestMethod(testMethod)
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
                     self.tearDown()
@@ -1329,6 +1329,13 @@ class TestCase(object):
             msg = self._formatMessage(msg, standardMsg)
             raise self.failureException(msg)
 
+    def _runTestMethod(self, method):
+        """Execute the test method.
+
+        This method can be overridden in subclasses to (e.g.) run coroutines
+        in an event loop.
+        """
+        return method()
 
     def _deprecate(original_func):
         def deprecated_func(*args, **kwargs):

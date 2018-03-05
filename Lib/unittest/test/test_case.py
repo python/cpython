@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import difflib
 import pprint
@@ -1827,6 +1828,28 @@ test case
             testcase = TestCase(method_name)
             testcase.run()
             self.assertEqual(MyException.ninstance, 0)
+
+    def test_runTestMethod(self):
+        # Test that _runTestMethod runs the test method and can be overridden.
+        class AsyncTestCase(unittest.TestCase):
+            def __init__(self, method_name):
+                super().__init__(method_name)
+                self.test1_called = False
+
+            def _runTestMethod(self, method):
+                result = method()
+                if asyncio.iscoroutine(result):
+                    return asyncio.run(result)
+                else:
+                    return result
+
+            async def test1(self):
+                await asyncio.sleep(0.0)
+                self.test1_called = True
+
+        testcase = AsyncTestCase('test1')
+        testcase.run()
+        self.assertTrue(testcase.test1_called)
 
 
 if __name__ == "__main__":

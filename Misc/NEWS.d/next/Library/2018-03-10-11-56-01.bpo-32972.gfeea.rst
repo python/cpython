@@ -1,0 +1,2 @@
+``unittest.TestCase`` now has a private method that can be overridden in
+subclasses to run coroutine test cases. Patch by Petter Strandmark.
