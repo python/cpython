@@ -1,0 +1,4 @@
+Junctions are sometimes used as links (e.g. mklink /j) and sometimes as
+volume mount points (e.g. mountvol.exe). islink, readlink, and lstat now
+treat junction links as links, while retaining their old behavior for volume
+mount points.
