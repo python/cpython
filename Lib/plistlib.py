@@ -175,6 +175,21 @@ class Data:
 #
 
 
+class UID:
+    def __init__(self, data):
+        if not isinstance(data, int):
+            raise TypeError("data must be an int")
+        self.data = data
+
+    def __index__(self):
+        return self.data
+
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__, repr(self.data))
+
+    def __reduce__(self):
+        return (self.__class__, (self.data, ))
+
 #
 # XML support
 #
