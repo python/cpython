@@ -578,7 +578,19 @@ _io_BufferedRWPair___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *writer;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
+<<<<<<< HEAD
     if ((Py_TYPE(self) == &PyBufferedRWPair_Type) &&
+=======
+    PyTypeObject *cls;
+
+    cls = PyType_DefiningTypeFromSlotFunc(Py_TYPE(self),
+                                          Py_tp_init,
+                                          &_io_BufferedRWPair___init__);
+    if (cls == NULL) {
+        goto exit;
+    }
+    if ((Py_TYPE(self) == ((_PyIO_State *)PyModule_GetState(PyType_GetModule(cls)))->PyBufferedRWPair_Type) &&
+>>>>>>> clinic support for METH_METHOD and heaptype state access
         !_PyArg_NoKeywords("BufferedRWPair", kwargs)) {
         goto exit;
     }
@@ -672,4 +684,12 @@ skip_optional_pos:
 exit:
     return return_value;
 }
+<<<<<<< HEAD
 /*[clinic end generated code: output=7246104f6c7d3167 input=a9049054013a1b77]*/
+=======
+<<<<<<< HEAD
+/*[clinic end generated code: output=b22b4aedd53c340a input=a9049054013a1b77]*/
+=======
+/*[clinic end generated code: output=f8aefa47b0a783b6 input=a9049054013a1b77]*/
+>>>>>>> clinic support for METH_METHOD and heaptype state access
+>>>>>>> clinic support for METH_METHOD and heaptype state access

@@ -81,19 +81,18 @@ static void _clear_joined_ptr(PyObject **p)
 }
 
 /* Types defined by this extension */
-static PyTypeObject Element_Type;
-static PyTypeObject ElementIter_Type;
-static PyTypeObject TreeBuilder_Type;
-static PyTypeObject XMLParser_Type;
+static PyObject *parseerror_obj;
 
 
 /* Per-module state; PEP 3121 */
 typedef struct {
-    PyObject *parseerror_obj;
     PyObject *deepcopy_obj;
     PyObject *elementpath_obj;
     PyObject *comment_factory;
     PyObject *pi_factory;
+    PyTypeObject *Element_Type;
+    PyTypeObject *treebuilder_type;
+    PyTypeObject *elementiter_type;
 } elementtreestate;
 
 static struct PyModuleDef elementtreemodule;
@@ -106,18 +105,20 @@ static struct PyModuleDef elementtreemodule;
 /* Find the module instance imported in the currently running sub-interpreter
  * and get its state.
  */
-#define ET_STATE_GLOBAL \
-    ((elementtreestate *) PyModule_GetState(PyState_FindModule(&elementtreemodule)))
 
 static int
 elementtree_clear(PyObject *m)
 {
     elementtreestate *st = ET_STATE(m);
-    Py_CLEAR(st->parseerror_obj);
-    Py_CLEAR(st->deepcopy_obj);
-    Py_CLEAR(st->elementpath_obj);
-    Py_CLEAR(st->comment_factory);
-    Py_CLEAR(st->pi_factory);
+    if (st) {
+        Py_CLEAR(st->deepcopy_obj);
+        Py_CLEAR(st->parseerror_obj);
+        Py_CLEAR(st->deepcopy_obj);
+        Py_CLEAR(st->elementpath_obj);
+        Py_CLEAR(st->comment_factory);
+        Py_CLEAR(st->pi_factory);
+        Py_CLEAR(st->elementpath_obj);
+    }
     return 0;
 }
 
@@ -125,11 +126,15 @@ static int
 elementtree_traverse(PyObject *m, visitproc visit, void *arg)
 {
     elementtreestate *st = ET_STATE(m);
-    Py_VISIT(st->parseerror_obj);
-    Py_VISIT(st->deepcopy_obj);
-    Py_VISIT(st->elementpath_obj);
-    Py_VISIT(st->comment_factory);
-    Py_VISIT(st->pi_factory);
+    if (st) {
+        Py_VISIT(st->deepcopy_obj);
+        Py_VISIT(st->elementpath_obj);
+        Py_VISIT(st->parseerror_obj);
+        Py_VISIT(st->deepcopy_obj);
+        Py_VISIT(st->elementpath_obj);
+        Py_VISIT(st->comment_factory);
+        Py_VISIT(st->pi_factory);
+    }
     return 0;
 }
 
@@ -209,9 +214,8 @@ typedef struct {
 } ElementObject;
 
 
-#define Element_CheckExact(op) (Py_TYPE(op) == &Element_Type)
+#define Element_CheckExact(op) (Py_TYPE(op) == m_state->Element_Type)
 #define Element_Check(op) PyObject_TypeCheck(op, &Element_Type)
-
 
 /* -------------------------------------------------------------------- */
 /* Element constructors and destructor */
@@ -277,11 +281,11 @@ clear_extra(ElementObject* self)
  * tag and attributes.
 */
 LOCAL(PyObject*)
-create_new_element(PyObject* tag, PyObject* attrib)
+create_new_element(elementtreestate *m_state, PyObject* tag, PyObject* attrib)
 {
     ElementObject* self;
 
-    self = PyObject_GC_New(ElementObject, &Element_Type);
+    self = PyObject_GC_New(ElementObject, m_state->Element_Type);
     if (self == NULL)
         return NULL;
     self->extra = NULL;
@@ -378,11 +382,11 @@ get_attrib_from_keywords(PyObject *kwds)
 
 /*[clinic input]
 module _elementtree
-class _elementtree.Element "ElementObject *" "&Element_Type"
-class _elementtree.TreeBuilder "TreeBuilderObject *" "&TreeBuilder_Type"
-class _elementtree.XMLParser "XMLParserObject *" "&XMLParser_Type"
+class _elementtree.Element "ElementObject *" "elementtreestate!Element_Type"
+class _elementtree.TreeBuilder "TreeBuilderObject *" "elementtreestate!TreeBuilder_Type"
+class _elementtree.XMLParser "XMLParserObject *" "elementtreestate!XMLParser_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=159aa50a54061c22]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5399160b7a42a713]*/
 
 static int
 element_init(PyObject *self, PyObject *args, PyObject *kwds)
@@ -502,7 +506,8 @@ raise_type_error(PyObject *element)
 }
 
 LOCAL(int)
-element_add_subelement(ElementObject* self, PyObject* element)
+element_add_subelement(ElementObject* self, elementtreestate *m_state,
+                       PyObject* element)
 {
     /* add a child element to a parent */
 
@@ -587,15 +592,22 @@ element_get_tail(ElementObject* self)
 }
 
 static PyObject*
-subelement(PyObject *self, PyObject *args, PyObject *kwds)
+subelement(PyObject *self,
+           PyObject *args, PyObject *kwds)
 {
     PyObject* elem;
+    elementtreestate *m_state;
+
+    m_state = PyModule_GetState(self);
+    if (m_state == NULL) {
+        return NULL;
+    }
 
     ElementObject* parent;
     PyObject* tag;
     PyObject* attrib = NULL;
     if (!PyArg_ParseTuple(args, "O!O|O!:SubElement",
-                          &Element_Type, &parent, &tag,
+                          m_state->Element_Type, &parent, &tag,
                           &PyDict_Type, &attrib)) {
         return NULL;
     }
@@ -620,12 +632,12 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
         attrib = Py_None;
     }
 
-    elem = create_new_element(tag, attrib);
+    elem = create_new_element(m_state, tag, attrib);
     Py_DECREF(attrib);
     if (elem == NULL)
         return NULL;
 
-    if (element_add_subelement(parent, elem) < 0) {
+    if (element_add_subelement(parent, m_state, elem) < 0) {
         Py_DECREF(elem);
         return NULL;
     }
@@ -688,16 +700,31 @@ element_dealloc(ElementObject* self)
 /*[clinic input]
 _elementtree.Element.append
 
-    subelement: object(subclass_of='&Element_Type')
+    cls: defining_class
+    subelement: object(subclass_of='elementtreestate!Element_Type')
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_append_impl(ElementObject *self, PyObject *subelement)
-/*[clinic end generated code: output=54a884b7cf2295f4 input=3ed648beb5bfa22a]*/
+_elementtree_Element_append_impl(ElementObject *self, PyTypeObject *cls,
+                                 PyObject *subelement)
+/*[clinic end generated code: output=d00923711ea317fc input=d8fe3608225c7704]*/
 {
-    if (element_add_subelement(self, subelement) < 0)
+    PyObject *m;
+    elementtreestate *m_state;
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = ET_STATE(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
+
+    if (element_add_subelement(self, m_state, subelement) < 0)
         return NULL;
 
     Py_RETURN_NONE;
@@ -726,16 +753,30 @@ _elementtree_Element_clear_impl(ElementObject *self)
 /*[clinic input]
 _elementtree.Element.__copy__
 
+    cls: defining_class
+
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element___copy___impl(ElementObject *self)
-/*[clinic end generated code: output=2c701ebff7247781 input=ad87aaebe95675bf]*/
+_elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=da22894421ff2b36 input=116b684418dd9887]*/
 {
     Py_ssize_t i;
     ElementObject* element;
+    PyObject *m;
+    elementtreestate *m_state;
 
-    element = (ElementObject*) create_new_element(
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = ET_STATE(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
+
+    element = (ElementObject*) create_new_element(m_state,
         self->tag, (self->extra) ? self->extra->attrib : Py_None);
     if (!element)
         return NULL;
@@ -766,19 +807,21 @@ _elementtree_Element___copy___impl(ElementObject *self)
 }
 
 /* Helper for a deep copy. */
-LOCAL(PyObject *) deepcopy(PyObject *, PyObject *);
+LOCAL(PyObject *) deepcopy(PyTypeObject *, PyObject *, PyObject *);
 
 /*[clinic input]
 _elementtree.Element.__deepcopy__
 
+    cls: defining_class
     memo: object(subclass_of="&PyDict_Type")
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
-/*[clinic end generated code: output=eefc3df50465b642 input=a2d40348c0aade10]*/
+_elementtree_Element___deepcopy___impl(ElementObject *self,
+                                       PyTypeObject *cls, PyObject *memo)
+/*[clinic end generated code: output=e298b5dee2dd7346 input=15f0075312d4ae01]*/
 {
     Py_ssize_t i;
     ElementObject* element;
@@ -787,13 +830,25 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     PyObject* text;
     PyObject* tail;
     PyObject* id;
+    PyObject *m;
+    elementtreestate *m_state;
 
-    tag = deepcopy(self->tag, memo);
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = ET_STATE(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
+
+    tag = deepcopy(cls, self->tag, memo);
     if (!tag)
         return NULL;
 
     if (self->extra) {
-        attrib = deepcopy(self->extra->attrib, memo);
+        attrib = deepcopy(cls, self->extra->attrib, memo);
         if (!attrib) {
             Py_DECREF(tag);
             return NULL;
@@ -803,7 +858,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         attrib = Py_None;
     }
 
-    element = (ElementObject*) create_new_element(tag, attrib);
+    element = (ElementObject*) create_new_element(m_state, tag, attrib);
 
     Py_DECREF(tag);
     Py_DECREF(attrib);
@@ -811,12 +866,12 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     if (!element)
         return NULL;
 
-    text = deepcopy(JOIN_OBJ(self->text), memo);
+    text = deepcopy(cls, JOIN_OBJ(self->text), memo);
     if (!text)
         goto error;
     _set_joined_ptr(&element->text, JOIN_SET(text, JOIN_GET(self->text)));
 
-    tail = deepcopy(JOIN_OBJ(self->tail), memo);
+    tail = deepcopy(cls, JOIN_OBJ(self->tail), memo);
     if (!tail)
         goto error;
     _set_joined_ptr(&element->tail, JOIN_SET(tail, JOIN_GET(self->tail)));
@@ -827,7 +882,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
             goto error;
 
         for (i = 0; i < self->extra->length; i++) {
-            PyObject* child = deepcopy(self->extra->children[i], memo);
+            PyObject* child = deepcopy(cls, self->extra->children[i], memo);
             if (!child || !Element_Check(child)) {
                 if (child) {
                     raise_type_error(child);
@@ -863,10 +918,22 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 }
 
 LOCAL(PyObject *)
-deepcopy(PyObject *object, PyObject *memo)
+deepcopy(PyTypeObject *cls, PyObject *object, PyObject *memo)
 {
+    PyObject *m;
+    elementtreestate *m_state;
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = PyModule_GetState(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
+
     /* do a deep copy of the given object */
-    elementtreestate *st;
     PyObject *stack[2];
 
     /* Fast paths */
@@ -892,13 +959,12 @@ deepcopy(PyObject *object, PyObject *memo)
         }
         else if (Element_CheckExact(object)) {
             return _elementtree_Element___deepcopy___impl(
-                (ElementObject *)object, memo);
+                (ElementObject *)object, cls, memo);
         }
     }
 
     /* General case */
-    st = ET_STATE_GLOBAL;
-    if (!st->deepcopy_obj) {
+    if (!m_state->deepcopy_obj) {
         PyErr_SetString(PyExc_RuntimeError,
                         "deepcopy helper not found");
         return NULL;
@@ -906,7 +972,7 @@ deepcopy(PyObject *object, PyObject *memo)
 
     stack[0] = object;
     stack[1] = memo;
-    return _PyObject_FastCall(st->deepcopy_obj, stack, 2);
+    return _PyObject_FastCall(m_state->deepcopy_obj, stack, 2);
 }
 
 
@@ -1192,17 +1258,31 @@ checkpath(PyObject* tag)
 /*[clinic input]
 _elementtree.Element.extend
 
+    cls: defining_class
     elements: object
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_extend(ElementObject *self, PyObject *elements)
-/*[clinic end generated code: output=f6e67fc2ff529191 input=807bc4f31c69f7c0]*/
+_elementtree_Element_extend_impl(ElementObject *self, PyTypeObject *cls,
+                                 PyObject *elements)
+/*[clinic end generated code: output=3e86d37fac542216 input=6479b1b5379d09ae]*/
 {
     PyObject* seq;
     Py_ssize_t i;
+    PyObject *m;
+    elementtreestate *m_state;
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = ET_STATE(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
 
     seq = PySequence_Fast(elements, "");
     if (!seq) {
@@ -1216,7 +1296,17 @@ _elementtree_Element_extend(ElementObject *self, PyObject *elements)
     for (i = 0; i < PySequence_Fast_GET_SIZE(seq); i++) {
         PyObject* element = PySequence_Fast_GET_ITEM(seq, i);
         Py_INCREF(element);
-        if (element_add_subelement(self, element) < 0) {
+        if (!PyObject_TypeCheck(element, (PyTypeObject *)cls)) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "expected an Element, not \"%.200s\"",
+                Py_TYPE(element)->tp_name);
+            Py_DECREF(seq);
+            Py_DECREF(element);
+            return NULL;
+        }
+
+        if (element_add_subelement(self, m_state, element) < 0) {
             Py_DECREF(seq);
             Py_DECREF(element);
             return NULL;
@@ -1232,23 +1322,35 @@ _elementtree_Element_extend(ElementObject *self, PyObject *elements)
 /*[clinic input]
 _elementtree.Element.find
 
+    cls: defining_class
     path: object
     namespaces: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_find_impl(ElementObject *self, PyObject *path,
-                               PyObject *namespaces)
-/*[clinic end generated code: output=41b43f0f0becafae input=359b6985f6489d2e]*/
+_elementtree_Element_find_impl(ElementObject *self, PyTypeObject *cls,
+                               PyObject *path, PyObject *namespaces)
+/*[clinic end generated code: output=18f77d393c9fef1b input=c21855fecb6f76eb]*/
 {
     Py_ssize_t i;
-    elementtreestate *st = ET_STATE_GLOBAL;
+    PyObject *m;
+    elementtreestate *m_state;
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = ET_STATE(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
 
     if (checkpath(path) || namespaces != Py_None) {
         _Py_IDENTIFIER(find);
         return _PyObject_CallMethodIdObjArgs(
-            st->elementpath_obj, &PyId_find, self, path, namespaces, NULL
+            m_state->elementpath_obj, &PyId_find, self, path, namespaces, NULL
             );
     }
 
@@ -1274,6 +1376,7 @@ _elementtree_Element_find_impl(ElementObject *self, PyObject *path,
 /*[clinic input]
 _elementtree.Element.findtext
 
+    cls: defining_class
     path: object
     default: object = None
     namespaces: object = None
@@ -1281,18 +1384,29 @@ _elementtree.Element.findtext
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
-                                   PyObject *default_value,
+_elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
+                                   PyObject *path, PyObject *default_value,
                                    PyObject *namespaces)
-/*[clinic end generated code: output=83b3ba4535d308d2 input=b53a85aa5aa2a916]*/
+/*[clinic end generated code: output=6af7a2d96aac32cb input=979681d83ff17132]*/
 {
     Py_ssize_t i;
     _Py_IDENTIFIER(findtext);
-    elementtreestate *st = ET_STATE_GLOBAL;
+    PyObject *m;
+    elementtreestate *m_state;
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = ET_STATE(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
 
     if (checkpath(path) || namespaces != Py_None)
         return _PyObject_CallMethodIdObjArgs(
-            st->elementpath_obj, &PyId_findtext,
+            m_state->elementpath_obj, &PyId_findtext,
             self, path, default_value, namespaces, NULL
             );
 
@@ -1329,24 +1443,37 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
 /*[clinic input]
 _elementtree.Element.findall
 
+    cls: defining_class
     path: object
     namespaces: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
-                                  PyObject *namespaces)
-/*[clinic end generated code: output=1a0bd9f5541b711d input=4d9e6505a638550c]*/
+_elementtree_Element_findall_impl(ElementObject *self, PyTypeObject *cls,
+                                  PyObject *path, PyObject *namespaces)
+/*[clinic end generated code: output=65e39a1208f3b59e input=39b1b9dde072e05a]*/
 {
     Py_ssize_t i;
     PyObject* out;
-    elementtreestate *st = ET_STATE_GLOBAL;
+    PyObject* tag = path;
+    PyObject *m;
+    elementtreestate *m_state;
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = ET_STATE(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
 
     if (checkpath(path) || namespaces != Py_None) {
         _Py_IDENTIFIER(findall);
         return _PyObject_CallMethodIdObjArgs(
-            st->elementpath_obj, &PyId_findall, self, path, namespaces, NULL
+            m_state->elementpath_obj, &PyId_findall, self, path, namespaces, NULL
             );
     }
 
@@ -1377,19 +1504,31 @@ _elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
 /*[clinic input]
 _elementtree.Element.iterfind
 
+    cls: defining_class
     path: object
     namespaces: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_iterfind_impl(ElementObject *self, PyObject *path,
-                                   PyObject *namespaces)
-/*[clinic end generated code: output=ecdd56d63b19d40f input=abb974e350fb65c7]*/
+_elementtree_Element_iterfind_impl(ElementObject *self, PyTypeObject *cls,
+                                   PyObject *path, PyObject *namespaces)
+/*[clinic end generated code: output=be5c3f697a14e676 input=f844650050dae412]*/
 {
     PyObject* tag = path;
     _Py_IDENTIFIER(iterfind);
-    elementtreestate *st = ET_STATE_GLOBAL;
+    PyObject *m;
+    elementtreestate *st;
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    st = ET_STATE(m);
+    if (st == NULL) {
+        return NULL;
+    }
 
     return _PyObject_CallMethodIdObjArgs(
         st->elementpath_obj, &PyId_iterfind, self, tag, namespaces, NULL);
@@ -1427,19 +1566,21 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
 }
 
 static PyObject *
-create_elementiter(ElementObject *self, PyObject *tag, int gettext);
+create_elementiter(ElementObject *self, PyTypeObject *cls, PyObject *tag, int gettext);
 
 
 /*[clinic input]
 _elementtree.Element.iter
 
+    cls: defining_class
     tag: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_iter_impl(ElementObject *self, PyObject *tag)
-/*[clinic end generated code: output=3f49f9a862941cc5 input=774d5b12e573aedd]*/
+_elementtree_Element_iter_impl(ElementObject *self, PyTypeObject *cls,
+                               PyObject *tag)
+/*[clinic end generated code: output=bff29dc5d4566c68 input=8b83eb5b257c5f64]*/
 {
     if (PyUnicode_Check(tag)) {
         if (PyUnicode_READY(tag) < 0)
@@ -1452,20 +1593,21 @@ _elementtree_Element_iter_impl(ElementObject *self, PyObject *tag)
             tag = Py_None;
     }
 
-    return create_elementiter(self, tag, 0);
+    return create_elementiter(self, cls, tag, 0);
 }
 
 
 /*[clinic input]
 _elementtree.Element.itertext
+    cls: defining_class
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_itertext_impl(ElementObject *self)
-/*[clinic end generated code: output=5fa34b2fbcb65df6 input=af8f0e42cb239c89]*/
+_elementtree_Element_itertext_impl(ElementObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=fdeb2a3bca0ae063 input=8b1d8a6f44e1e9f2]*/
 {
-    return create_elementiter(self, Py_None, 1);
+    return create_elementiter(self, cls, Py_None, 1);
 }
 
 
@@ -1490,7 +1632,7 @@ element_getitem(PyObject* self_, Py_ssize_t index)
 _elementtree.Element.insert
 
     index: Py_ssize_t
-    subelement: object(subclass_of='&Element_Type')
+    subelement: object(subclass_of='elementtreestate!Element_Type')
     /
 
 [clinic start generated code]*/
@@ -1498,7 +1640,7 @@ _elementtree.Element.insert
 static PyObject *
 _elementtree_Element_insert_impl(ElementObject *self, Py_ssize_t index,
                                  PyObject *subelement)
-/*[clinic end generated code: output=990adfef4d424c0b input=cd6fbfcdab52d7a8]*/
+/*[clinic end generated code: output=990adfef4d424c0b input=85e584e59188ab6b]*/
 {
     Py_ssize_t i;
 
@@ -1571,6 +1713,7 @@ element_length(ElementObject* self)
 /*[clinic input]
 _elementtree.Element.makeelement
 
+    cls: defining_class
     tag: object
     attrib: object
     /
@@ -1578,17 +1721,29 @@ _elementtree.Element.makeelement
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element_makeelement_impl(ElementObject *self, PyObject *tag,
-                                      PyObject *attrib)
-/*[clinic end generated code: output=4109832d5bb789ef input=9480d1d2e3e68235]*/
+_elementtree_Element_makeelement_impl(ElementObject *self, PyTypeObject *cls,
+                                      PyObject *tag, PyObject *attrib)
+/*[clinic end generated code: output=d50bb17a47077d47 input=26a69eb2d6dcdabb]*/
 {
     PyObject* elem;
+    PyObject *m;
+    elementtreestate *m_state;
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = ET_STATE(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
 
     attrib = PyDict_Copy(attrib);
     if (!attrib)
         return NULL;
 
-    elem = create_new_element(tag, attrib);
+    elem = create_new_element(m_state, tag, attrib);
 
     Py_DECREF(attrib);
 
@@ -1598,14 +1753,14 @@ _elementtree_Element_makeelement_impl(ElementObject *self, PyObject *tag,
 /*[clinic input]
 _elementtree.Element.remove
 
-    subelement: object(subclass_of='&Element_Type')
+    subelement: object(subclass_of='elementtreestate!Element_Type')
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
-/*[clinic end generated code: output=38fe6c07d6d87d1f input=d52fc28ededc0bd8]*/
+/*[clinic end generated code: output=38fe6c07d6d87d1f input=942281735a8af092]*/
 {
     Py_ssize_t i;
     int rc;
@@ -2061,16 +2216,6 @@ element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
     return 0;
 }
 
-static PySequenceMethods element_as_sequence = {
-    (lenfunc) element_length,
-    0, /* sq_concat */
-    0, /* sq_repeat */
-    element_getitem,
-    0,
-    element_setitem,
-    0,
-};
-
 /******************************* Element iterator ****************************/
 
 /* ElementIterObject represents the iteration state over an XML element in
@@ -2166,6 +2311,26 @@ elementiter_next(ElementIterObject *it)
     int rc;
     ElementObject *elem;
     PyObject *text;
+    PyTypeObject *cls;
+    PyObject *m;
+    elementtreestate *m_state;
+
+    cls = PyType_DefiningTypeFromSlotFunc(Py_TYPE(it),
+                                          Py_tp_iternext,
+                                          &elementiter_next);
+    if (cls == NULL) {
+        return NULL;
+    }
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = PyModule_GetState(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
 
     while (1) {
         /* Handle the case reached in the beginning and end of iteration, where
@@ -2205,6 +2370,12 @@ elementiter_next(ElementIterObject *it)
             }
 
             assert(Element_Check(extra->children[child_index]));
+            if (!PyObject_TypeCheck(extra->children[child_index], m_state->Element_Type)) {
+                PyErr_Format(PyExc_AttributeError,
+                             "'%.100s' object has no attribute 'iter'",
+                             Py_TYPE(extra->children[child_index])->tp_name);
+                return NULL;
+            }
             elem = (ElementObject *)extra->children[child_index];
             item->child_index++;
             Py_INCREF(elem);
@@ -2255,59 +2426,46 @@ gettext:
     return NULL;
 }
 
+static PyType_Slot ElementIter_Type_slots[] = {
+    {Py_tp_dealloc, (destructor)elementiter_dealloc},
+    {Py_tp_traverse, (traverseproc)elementiter_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, (iternextfunc)elementiter_next},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {0, 0},
+};
 
-static PyTypeObject ElementIter_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+static PyType_Spec ElementIter_Type_spec = {
     /* Using the module's name since the pure-Python implementation does not
        have such a type. */
-    "_elementtree._element_iterator",           /* tp_name */
-    sizeof(ElementIterObject),                  /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    (destructor)elementiter_dealloc,            /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    (traverseproc)elementiter_traverse,         /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)elementiter_next,             /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
+    "_elementtree._element_iterator",
+    sizeof(ElementIterObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    ElementIter_Type_slots
 };
+
 
 #define INIT_PARENT_STACK_SIZE 8
 
 static PyObject *
-create_elementiter(ElementObject *self, PyObject *tag, int gettext)
+create_elementiter(ElementObject *self, PyTypeObject *cls, PyObject *tag, int gettext)
 {
     ElementIterObject *it;
+    elementtreestate *m_state;
+    PyObject *m;
 
-    it = PyObject_GC_New(ElementIterObject, &ElementIter_Type);
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = PyModule_GetState(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
+
+    it = PyObject_GC_New(ElementIterObject, m_state->elementiter_type);
     if (!it)
         return NULL;
 
@@ -2366,7 +2524,7 @@ typedef struct {
     char insert_pis;
 } TreeBuilderObject;
 
-#define TreeBuilder_CheckExact(op) (Py_TYPE(op) == &TreeBuilder_Type)
+#define TreeBuilder_CheckExact(op) (Py_TYPE(op) == self->m_state->treebuilder_type)
 
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
@@ -2568,8 +2726,9 @@ _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
 }
 
 static int
-treebuilder_extend_element_text_or_tail(PyObject *element, PyObject **data,
-                                        PyObject **dest, _Py_Identifier *name)
+treebuilder_extend_element_text_or_tail(elementtreestate *m_state, PyObject *element,
+                                     PyObject **data, PyObject **dest,
+                                     _Py_Identifier *name)
 {
     /* Fast paths for the "almost always" cases. */
     if (Element_CheckExact(element)) {
@@ -2622,7 +2781,7 @@ treebuilder_extend_element_text_or_tail(PyObject *element, PyObject **data,
 }
 
 LOCAL(int)
-treebuilder_flush_data(TreeBuilderObject* self)
+treebuilder_flush_data(TreeBuilderObject* self, elementtreestate *m_state)
 {
     if (!self->data) {
         return 0;
@@ -2632,25 +2791,25 @@ treebuilder_flush_data(TreeBuilderObject* self)
         PyObject *element = self->last;
         _Py_IDENTIFIER(text);
         return treebuilder_extend_element_text_or_tail(
-                element, &self->data,
+                m_state, element, &self->data,
                 &((ElementObject *) element)->text, &PyId_text);
     }
     else {
         PyObject *element = self->last_for_tail;
         _Py_IDENTIFIER(tail);
         return treebuilder_extend_element_text_or_tail(
-                element, &self->data,
+                m_state, element, &self->data,
                 &((ElementObject *) element)->tail, &PyId_tail);
     }
 }
 
 static int
-treebuilder_add_subelement(PyObject *element, PyObject *child)
+treebuilder_add_subelement(PyObject *element, elementtreestate *m_state, PyObject *child)
 {
     _Py_IDENTIFIER(append);
     if (Element_CheckExact(element)) {
         ElementObject *elem = (ElementObject *) element;
-        return element_add_subelement(elem, child);
+        return element_add_subelement(elem, m_state, child);
     }
     else {
         PyObject *res;
@@ -2684,19 +2843,18 @@ treebuilder_append_event(TreeBuilderObject *self, PyObject *action,
 /* handlers */
 
 LOCAL(PyObject*)
-treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
+treebuilder_handle_start(elementtreestate *m_state, TreeBuilderObject* self, PyObject* tag,
                          PyObject* attrib)
 {
     PyObject* node;
     PyObject* this;
-    elementtreestate *st = ET_STATE_GLOBAL;
 
-    if (treebuilder_flush_data(self) < 0) {
+    if (treebuilder_flush_data(self, m_state) < 0) {
         return NULL;
     }
 
     if (!self->element_factory) {
-        node = create_new_element(tag, attrib);
+        node = create_new_element(m_state, tag, attrib);
     } else if (attrib == Py_None) {
         attrib = PyDict_New();
         if (!attrib)
@@ -2717,12 +2875,12 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     Py_CLEAR(self->last_for_tail);
 
     if (this != Py_None) {
-        if (treebuilder_add_subelement(this, node) < 0)
+        if (treebuilder_add_subelement(this, m_state, node) < 0)
             goto error;
     } else {
         if (self->root) {
             PyErr_SetString(
-                st->parseerror_obj,
+                parseerror_obj,
                 "multiple elements on top level"
                 );
             goto error;
@@ -2794,11 +2952,11 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
 }
 
 LOCAL(PyObject*)
-treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
+treebuilder_handle_end(TreeBuilderObject* self, elementtreestate *m_state, PyObject* tag)
 {
     PyObject* item;
 
-    if (treebuilder_flush_data(self) < 0) {
+    if (treebuilder_flush_data(self, m_state) < 0) {
         return NULL;
     }
 
@@ -2962,16 +3120,31 @@ _elementtree_TreeBuilder_data(TreeBuilderObject *self, PyObject *data)
 /*[clinic input]
 _elementtree.TreeBuilder.end
 
+    cls: defining_class
     tag: object
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_TreeBuilder_end(TreeBuilderObject *self, PyObject *tag)
-/*[clinic end generated code: output=9a98727cc691cd9d input=22dc3674236f5745]*/
+_elementtree_TreeBuilder_end_impl(TreeBuilderObject *self, PyTypeObject *cls,
+                                  PyObject *tag)
+/*[clinic end generated code: output=d9f746ba4c2238ba input=0a4f64f6679c187c]*/
 {
-    return treebuilder_handle_end(self, tag);
+    PyObject *m;
+    elementtreestate *m_state;
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = PyModule_GetState(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
+
+    return treebuilder_handle_end(self, m_state, tag);
 }
 
 /*[clinic input]
@@ -3037,6 +3210,7 @@ _elementtree_TreeBuilder_close_impl(TreeBuilderObject *self)
 /*[clinic input]
 _elementtree.TreeBuilder.start
 
+    cls: defining_class
     tag: object
     attrs: object = None
     /
@@ -3044,11 +3218,24 @@ _elementtree.TreeBuilder.start
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_TreeBuilder_start_impl(TreeBuilderObject *self, PyObject *tag,
+_elementtree_TreeBuilder_start_impl(TreeBuilderObject *self,
+                                    PyTypeObject *cls, PyObject *tag,
                                     PyObject *attrs)
-/*[clinic end generated code: output=e7e9dc2861349411 input=95fc1758dd042c65]*/
+/*[clinic end generated code: output=0b19edb4afc1ed13 input=84848de4e0d7df61]*/
 {
-    return treebuilder_handle_start(self, tag, attrs);
+    PyObject *m;
+    elementtreestate *m_state;
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return NULL;
+    }
+
+    m_state = ET_STATE(m);
+    if (m_state == NULL) {
+        return NULL;
+    }
+    return treebuilder_handle_start(m_state, self, tag, attrs);
 }
 
 /* ==================================================================== */
@@ -3088,7 +3275,15 @@ typedef struct {
 
     PyObject *handle_close;
 
+    elementtreestate *m_state;
+
 } XMLParserObject;
+
+static PyObject*
+_elementtree_XMLParser_doctype(XMLParserObject *self, PyTypeObject *cls, PyObject *args, PyObject *kwargs);
+static PyObject *
+_elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
+                                    PyObject *pubid, PyObject *system);
 
 /* helpers */
 
@@ -3167,11 +3362,10 @@ makeuniversal(XMLParserObject* self, const char* string)
  * message string is the default for the given error_code.
 */
 static void
-expat_set_error(enum XML_Error error_code, Py_ssize_t line, Py_ssize_t column,
-                const char *message)
+expat_set_error(enum XML_Error error_code, Py_ssize_t line,
+                Py_ssize_t column, const char *message)
 {
     PyObject *errmsg, *error, *position, *code;
-    elementtreestate *st = ET_STATE_GLOBAL;
 
     errmsg = PyUnicode_FromFormat("%s: line %zd, column %zd",
                 message ? message : EXPAT(ErrorString)(error_code),
@@ -3209,7 +3403,7 @@ expat_set_error(enum XML_Error error_code, Py_ssize_t line, Py_ssize_t column,
     }
     Py_DECREF(position);
 
-    PyErr_SetObject(st->parseerror_obj, error);
+    PyErr_SetObject(parseerror_obj, error);
     Py_DECREF(error);
 }
 
@@ -3217,7 +3411,7 @@ expat_set_error(enum XML_Error error_code, Py_ssize_t line, Py_ssize_t column,
 /* handlers */
 
 static void
-expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
+expat_default_handler(PyTypeObject *cls, XMLParserObject* self, const XML_Char* data_in,
                       int data_len)
 {
     PyObject* key;
@@ -3312,7 +3506,7 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
 
     if (TreeBuilder_CheckExact(self->target)) {
         /* shortcut */
-        res = treebuilder_handle_start((TreeBuilderObject*) self->target,
+        res = treebuilder_handle_start(self->m_state, (TreeBuilderObject*) self->target,
                                        tag, attrib);
     }
     else if (self->handle_start) {
@@ -3375,7 +3569,7 @@ expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
         /* shortcut */
         /* the standard tree builder doesn't look at the end tag */
         res = treebuilder_handle_end(
-            (TreeBuilderObject*) self->target, Py_None
+            (TreeBuilderObject*) self->target, self->m_state, Py_None
             );
     else if (self->handle_end) {
         tag = makeuniversal(self, tag_in);
@@ -3650,16 +3844,41 @@ ignore_attribute_error(PyObject *value)
 _elementtree.XMLParser.__init__
 
     *
+    cls: defining_class
+    html: object = NULL
     target: object = NULL
     encoding: str(accept={str, NoneType}) = None
 
 [clinic start generated code]*/
 
 static int
-_elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
-                                     const char *encoding)
-/*[clinic end generated code: output=3ae45ec6cdf344e4 input=53e35a829ae043e8]*/
+_elementtree_XMLParser___init___impl(XMLParserObject *self,
+                                     PyTypeObject *cls, PyObject *html,
+                                     PyObject *target, const char *encoding)
+/*[clinic end generated code: output=64068c7a85146f67 input=2706558c7241f2a1]*/
 {
+    PyObject *m;
+    elementtreestate *m_state;
+
+    m = PyType_GetModule(cls);
+    if (m == NULL) {
+        return -1;
+    }
+
+    m_state = PyModule_GetState(m);
+    if (m_state == NULL) {
+        return -1;
+    }
+    self->m_state = m_state;
+
+    if (html != NULL) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "The html argument of XMLParser() is deprecated",
+                         1) < 0) {
+            return -1;
+        }
+    }
+
     self->entity = PyDict_New();
     if (!self->entity)
         return -1;
@@ -3686,7 +3905,7 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
     if (target) {
         Py_INCREF(target);
     } else {
-        target = treebuilder_new(&TreeBuilder_Type, NULL, NULL);
+        target = treebuilder_new(m_state->treebuilder_type, NULL, NULL);
         if (!target) {
             Py_CLEAR(self->entity);
             Py_CLEAR(self->names);
@@ -4177,12 +4396,6 @@ static PyMethodDef element_methods[] = {
     {NULL, NULL}
 };
 
-static PyMappingMethods element_as_mapping = {
-    (lenfunc) element_length,
-    (binaryfunc) element_subscr,
-    (objobjargproc) element_ass_subscr,
-};
-
 static PyGetSetDef element_getsetlist[] = {
     {"tag",
         (getter)element_tag_getter,
@@ -4203,47 +4416,41 @@ static PyGetSetDef element_getsetlist[] = {
     {NULL},
 };
 
-static PyTypeObject Element_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "xml.etree.ElementTree.Element", sizeof(ElementObject), 0,
-    /* methods */
-    (destructor)element_dealloc,                    /* tp_dealloc */
-    0,                                              /* tp_vectorcall_offset */
-    0,                                              /* tp_getattr */
-    0,                                              /* tp_setattr */
-    0,                                              /* tp_as_async */
-    (reprfunc)element_repr,                         /* tp_repr */
-    0,                                              /* tp_as_number */
-    &element_as_sequence,                           /* tp_as_sequence */
-    &element_as_mapping,                            /* tp_as_mapping */
-    0,                                              /* tp_hash */
-    0,                                              /* tp_call */
-    0,                                              /* tp_str */
-    PyObject_GenericGetAttr,                        /* tp_getattro */
-    0,                                              /* tp_setattro */
-    0,                                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-                                                    /* tp_flags */
-    0,                                              /* tp_doc */
-    (traverseproc)element_gc_traverse,              /* tp_traverse */
-    (inquiry)element_gc_clear,                      /* tp_clear */
-    0,                                              /* tp_richcompare */
-    offsetof(ElementObject, weakreflist),           /* tp_weaklistoffset */
-    0,                                              /* tp_iter */
-    0,                                              /* tp_iternext */
-    element_methods,                                /* tp_methods */
-    0,                                              /* tp_members */
-    element_getsetlist,                             /* tp_getset */
-    0,                                              /* tp_base */
-    0,                                              /* tp_dict */
-    0,                                              /* tp_descr_get */
-    0,                                              /* tp_descr_set */
-    0,                                              /* tp_dictoffset */
-    (initproc)element_init,                         /* tp_init */
-    PyType_GenericAlloc,                            /* tp_alloc */
-    element_new,                                    /* tp_new */
-    0,                                              /* tp_free */
+static PyType_offsets element_offsets = {
+    .weaklist = offsetof(ElementObject, weakreflist),
+    .dict = 0
 };
+
+static PyType_Slot Element_Type_slots[] = {
+    {Py_tp_dealloc, (destructor)element_dealloc},
+    {Py_tp_repr, (reprfunc)element_repr},
+    {Py_sq_length, (lenfunc) element_length},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, (traverseproc)element_gc_traverse},
+    {Py_tp_clear, (inquiry)element_gc_clear},
+    {Py_tp_methods, element_methods},
+    {Py_tp_getset, element_getsetlist},
+    {Py_tp_init, (initproc)element_init},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, element_new},
+    {Py_mp_length, element_length},
+    {Py_mp_subscript, element_subscr},
+    {Py_mp_ass_subscript, element_ass_subscr},
+    {Py_sq_length, element_length},
+    {Py_sq_item, element_getitem},
+    {Py_sq_ass_item, element_setitem},
+    {Py_no_offsets, &element_offsets},
+    {0, 0},
+};
+
+static PyType_Spec Element_Type_spec = {
+    "xml.etree.ElementTree.Element",
+    sizeof(ElementObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    Element_Type_slots
+};
+
 
 static PyMethodDef treebuilder_methods[] = {
     _ELEMENTTREE_TREEBUILDER_DATA_METHODDEF
@@ -4255,47 +4462,25 @@ static PyMethodDef treebuilder_methods[] = {
     {NULL, NULL}
 };
 
-static PyTypeObject TreeBuilder_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "xml.etree.ElementTree.TreeBuilder", sizeof(TreeBuilderObject), 0,
-    /* methods */
-    (destructor)treebuilder_dealloc,                /* tp_dealloc */
-    0,                                              /* tp_vectorcall_offset */
-    0,                                              /* tp_getattr */
-    0,                                              /* tp_setattr */
-    0,                                              /* tp_as_async */
-    0,                                              /* tp_repr */
-    0,                                              /* tp_as_number */
-    0,                                              /* tp_as_sequence */
-    0,                                              /* tp_as_mapping */
-    0,                                              /* tp_hash */
-    0,                                              /* tp_call */
-    0,                                              /* tp_str */
-    0,                                              /* tp_getattro */
-    0,                                              /* tp_setattro */
-    0,                                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-                                                    /* tp_flags */
-    0,                                              /* tp_doc */
-    (traverseproc)treebuilder_gc_traverse,          /* tp_traverse */
-    (inquiry)treebuilder_gc_clear,                  /* tp_clear */
-    0,                                              /* tp_richcompare */
-    0,                                              /* tp_weaklistoffset */
-    0,                                              /* tp_iter */
-    0,                                              /* tp_iternext */
-    treebuilder_methods,                            /* tp_methods */
-    0,                                              /* tp_members */
-    0,                                              /* tp_getset */
-    0,                                              /* tp_base */
-    0,                                              /* tp_dict */
-    0,                                              /* tp_descr_get */
-    0,                                              /* tp_descr_set */
-    0,                                              /* tp_dictoffset */
-    _elementtree_TreeBuilder___init__,              /* tp_init */
-    PyType_GenericAlloc,                            /* tp_alloc */
-    treebuilder_new,                                /* tp_new */
-    0,                                              /* tp_free */
+static PyType_Slot TreeBuilder_Type_slots[] = {
+    {Py_tp_dealloc, (destructor)treebuilder_dealloc},
+    {Py_tp_traverse, (traverseproc)treebuilder_gc_traverse},
+    {Py_tp_clear, (inquiry)treebuilder_gc_clear},
+    {Py_tp_methods, treebuilder_methods},
+    {Py_tp_init, (initproc)_elementtree_TreeBuilder___init__},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, treebuilder_new},
+    {0, 0},
 };
+
+static PyType_Spec TreeBuilder_Type_spec = {
+    "xml.etree.ElementTree.TreeBuilder",
+    sizeof(TreeBuilderObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    TreeBuilder_Type_slots
+};
+
 
 static PyMethodDef xmlparser_methods[] = {
     _ELEMENTTREE_XMLPARSER_FEED_METHODDEF
@@ -4305,46 +4490,24 @@ static PyMethodDef xmlparser_methods[] = {
     {NULL, NULL}
 };
 
-static PyTypeObject XMLParser_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "xml.etree.ElementTree.XMLParser", sizeof(XMLParserObject), 0,
-    /* methods */
-    (destructor)xmlparser_dealloc,                  /* tp_dealloc */
-    0,                                              /* tp_vectorcall_offset */
-    0,                                              /* tp_getattr */
-    0,                                              /* tp_setattr */
-    0,                                              /* tp_as_async */
-    0,                                              /* tp_repr */
-    0,                                              /* tp_as_number */
-    0,                                              /* tp_as_sequence */
-    0,                                              /* tp_as_mapping */
-    0,                                              /* tp_hash */
-    0,                                              /* tp_call */
-    0,                                              /* tp_str */
-    0,                                              /* tp_getattro */
-    0,                                              /* tp_setattro */
-    0,                                              /* tp_as_buffer */
+static PyType_Slot XMLParser_Type_slots[] = {
+    {Py_tp_dealloc, (destructor)xmlparser_dealloc},
+    {Py_tp_getattro, (getattrofunc)xmlparser_getattro},
+    {Py_tp_traverse, (traverseproc)xmlparser_gc_traverse},
+    {Py_tp_clear, (inquiry)xmlparser_gc_clear},
+    {Py_tp_methods, xmlparser_methods},
+    {Py_tp_init, (initproc)_elementtree_XMLParser___init__},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, xmlparser_new},
+    {0, 0},
+};
+
+static PyType_Spec XMLParser_Type_spec = {
+    "xml.etree.ElementTree.XMLParser",
+    sizeof(XMLParserObject),
+    0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-                                                    /* tp_flags */
-    0,                                              /* tp_doc */
-    (traverseproc)xmlparser_gc_traverse,            /* tp_traverse */
-    (inquiry)xmlparser_gc_clear,                    /* tp_clear */
-    0,                                              /* tp_richcompare */
-    0,                                              /* tp_weaklistoffset */
-    0,                                              /* tp_iter */
-    0,                                              /* tp_iternext */
-    xmlparser_methods,                              /* tp_methods */
-    xmlparser_members,                              /* tp_members */
-    xmlparser_getsetlist,                           /* tp_getset */
-    0,                                              /* tp_base */
-    0,                                              /* tp_dict */
-    0,                                              /* tp_descr_get */
-    0,                                              /* tp_descr_set */
-    0,                                              /* tp_dictoffset */
-    _elementtree_XMLParser___init__,                /* tp_init */
-    PyType_GenericAlloc,                            /* tp_alloc */
-    xmlparser_new,                                  /* tp_new */
-    0,                                              /* tp_free */
+    XMLParser_Type_slots
 };
 
 /* ==================================================================== */
@@ -4356,58 +4519,62 @@ static PyMethodDef _functions[] = {
     {NULL, NULL}
 };
 
-
-static struct PyModuleDef elementtreemodule = {
-    PyModuleDef_HEAD_INIT,
-    "_elementtree",
-    NULL,
-    sizeof(elementtreestate),
-    _functions,
-    NULL,
-    elementtree_traverse,
-    elementtree_clear,
-    elementtree_free
-};
-
-PyMODINIT_FUNC
-PyInit__elementtree(void)
-{
-    PyObject *m, *temp;
+static int
+elementtree_exec(PyObject *m) {
+    PyObject *temp;
+    PyTypeObject *type;
     elementtreestate *st;
 
-    m = PyState_FindModule(&elementtreemodule);
-    if (m) {
-        Py_INCREF(m);
-        return m;
-    }
-
-    /* Initialize object types */
-    if (PyType_Ready(&ElementIter_Type) < 0)
-        return NULL;
-    if (PyType_Ready(&TreeBuilder_Type) < 0)
-        return NULL;
-    if (PyType_Ready(&Element_Type) < 0)
-        return NULL;
-    if (PyType_Ready(&XMLParser_Type) < 0)
-        return NULL;
-
-    m = PyModule_Create(&elementtreemodule);
-    if (!m)
-        return NULL;
     st = ET_STATE(m);
 
+    /* Initialize object types */
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &Element_Type_spec, NULL);
+    if (type == NULL) {
+        return -1;
+    }
+
+    st->Element_Type = type;
+
+    PyModule_AddObject(m, "Element", (PyObject *)type);
+
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &TreeBuilder_Type_spec, NULL);
+    if (type == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "TreeBuilder", (PyObject *)type);
+
+    st->treebuilder_type = type;
+
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &XMLParser_Type_spec, NULL);
+    if (type == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "XMLParser", (PyObject *)type);
+
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &ElementIter_Type_spec, NULL);
+    if (type == NULL) {
+        return -1;
+    }
+    st->elementiter_type = type;
+
+    PyErr_PrepareStaticException((PyTypeObject **)&parseerror_obj,
+                                 "xml.etree.ElementTree.ParseError",
+                                 "Elementtree static error", PyExc_SyntaxError
+                                );
+    PyModule_AddObject(m, "ParseError", parseerror_obj);
+
     if (!(temp = PyImport_ImportModule("copy")))
-        return NULL;
+        return -1;
     st->deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
     Py_XDECREF(temp);
 
     if (st->deepcopy_obj == NULL) {
-        return NULL;
+        return -1;
     }
 
     assert(!PyErr_Occurred());
     if (!(st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
-        return NULL;
+        return -1;
 
     /* link against pyexpat */
     expat_capi = PyCapsule_Import(PyExpat_CAPSULE_NAME, 0);
@@ -4420,26 +4587,34 @@ PyInit__elementtree(void)
             expat_capi->MICRO_VERSION != XML_MICRO_VERSION) {
             PyErr_SetString(PyExc_ImportError,
                             "pyexpat version is incompatible");
-            return NULL;
+            return -1;
         }
     } else {
-        return NULL;
+        return -1;
     }
 
-    st->parseerror_obj = PyErr_NewException(
-        "xml.etree.ElementTree.ParseError", PyExc_SyntaxError, NULL
-        );
-    Py_INCREF(st->parseerror_obj);
-    PyModule_AddObject(m, "ParseError", st->parseerror_obj);
+    return 0;
+}
 
-    Py_INCREF((PyObject *)&Element_Type);
-    PyModule_AddObject(m, "Element", (PyObject *)&Element_Type);
+static PyModuleDef_Slot elementtree_slots[] = {
+    {Py_mod_exec, elementtree_exec},
+    {0, NULL}
+};
 
-    Py_INCREF((PyObject *)&TreeBuilder_Type);
-    PyModule_AddObject(m, "TreeBuilder", (PyObject *)&TreeBuilder_Type);
+static struct PyModuleDef elementtreemodule = {
+    PyModuleDef_HEAD_INIT,
+    "_elementtree",
+    NULL,
+    sizeof(elementtreestate),
+    _functions,
+    elementtree_slots,
+    elementtree_traverse,
+    elementtree_clear,
+    elementtree_free
+};
 
-    Py_INCREF((PyObject *)&XMLParser_Type);
-    PyModule_AddObject(m, "XMLParser", (PyObject *)&XMLParser_Type);
-
-    return m;
+PyMODINIT_FUNC
+PyInit__elementtree(void)
+{
+    return PyModuleDef_Init(&elementtreemodule);
 }

@@ -19,9 +19,9 @@ static PyObject *staterr = NULL;
 static PyObject *staterr_multiple_inheritance = NULL;
 
 /*[clinic input]
-class _testmultiphase.Example "ExampleObject *" "&Example"
+class _testmultiphase.Example "ExampleObject *" "!Example"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e3fddc55ef4b8273]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c23a06dc20bc1f6f]*/
 
 /* Example objects */
 typedef struct {
@@ -34,9 +34,9 @@ typedef struct {
 } testmultiphase_state;
 
 /*[clinic input]
-class _testmultiphase.StateAccessType "StateAccessTypeObject *" "&StateAccessType"
+class _testmultiphase.StateAccessType "StateAccessTypeObject *" "!StateAccessType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=feb57884f17888af]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5279c64c0c9ef77f]*/
 
 typedef struct {
     PyObject_HEAD
@@ -136,21 +136,15 @@ static PyType_Spec Example_Type_spec = {
 
 /*[clinic input]
 _testmultiphase.StateAccessType.__init__
+    cls: defining_class
 [clinic start generated code]*/
 
 static int
-_testmultiphase_StateAccessType___init___impl(StateAccessTypeObject *self)
-/*[clinic end generated code: output=284123c69bc4bf66 input=777765834358c48c]*/
+_testmultiphase_StateAccessType___init___impl(StateAccessTypeObject *self,
+                                              PyTypeObject *cls)
+/*[clinic end generated code: output=9765645eb57ff25d input=056b456e5f5b243e]*/
 {
-    PyTypeObject *cls;
     PyObject *m;
-
-    cls = PyType_DefiningTypeFromSlotFunc(Py_TYPE(self),
-                                          Py_tp_init,
-                                          &_testmultiphase_StateAccessType___init__);
-    if (cls == NULL) {
-        return -1;
-    }
 
     m = PyType_GetModule(cls);
     if (m == NULL) {
@@ -167,7 +161,9 @@ _testmultiphase_StateAccessType___init___impl(StateAccessTypeObject *self)
 
 static int
 StateAccessType_finalize(StateAccessTypeObject *self) {
-    self->m_state->instance_counter--;
+    if (self->m_state) {
+        self->m_state->instance_counter--;
+    }
     return 0;
 }
 

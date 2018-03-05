@@ -3,15 +3,25 @@ preserve
 [clinic start generated code]*/
 
 static int
-_testmultiphase_StateAccessType___init___impl(StateAccessTypeObject *self);
+_testmultiphase_StateAccessType___init___impl(StateAccessTypeObject *self,
+                                              PyTypeObject *cls);
 
 static int
 _testmultiphase_StateAccessType___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
 
-    return_value = _testmultiphase_StateAccessType___init___impl((StateAccessTypeObject *)self);
+    PyTypeObject *cls;
 
+    cls = PyType_DefiningTypeFromSlotFunc(Py_TYPE(self),
+                                          Py_tp_init,
+                                          &_testmultiphase_StateAccessType___init__);
+    if (cls == NULL) {
+        goto exit;
+    }
+    return_value = _testmultiphase_StateAccessType___init___impl((StateAccessTypeObject *)self, cls);
+
+exit:
     return return_value;
 }
 
@@ -55,4 +65,4 @@ _testmultiphase_StateAccessType_get_instance_count(StateAccessTypeObject *self, 
 {
     return _testmultiphase_StateAccessType_get_instance_count_impl(self);
 }
-/*[clinic end generated code: output=85899d26fe08d238 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=455ce989b3cd9429 input=a9049054013a1b77]*/

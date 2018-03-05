@@ -5,9 +5,9 @@
 
 /*[clinic input]
 module _io
-class _io.BytesIO "bytesio *" "&PyBytesIO_Type"
+class _io.BytesIO "bytesio *" "_PyIO_State!PyBytesIO_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7f50ec034f5c0b26]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9bfa182509307e8d]*/
 
 typedef struct {
     PyObject_HEAD
