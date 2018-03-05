@@ -7591,7 +7591,7 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
     flags |= target_is_directory | _check_dirW(src->wide, dst->wide);
 
     result = CreateSymbolicLinkW(dst->wide, src->wide, flags);
-	_Py_END_SUPPRESS_IPH
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
     if (windows_has_symlink_unprivileged_flag && !result &&
@@ -7611,7 +7611,7 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
         */
         flags &= ~(SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE);
         result = CreateSymbolicLinkW(dst->wide, src->wide, flags);
-	    _Py_END_SUPPRESS_IPH
+        _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
 
         if (result || ERROR_INVALID_PARAMETER != GetLastError()) {
