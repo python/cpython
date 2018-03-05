@@ -71,7 +71,8 @@ class PyParseTest(unittest.TestCase):
                 )
 
         # No value sent for is_char_in_string().
-        self.assertIsNone(start())
+        with self.assertRaises(TypeError):
+            start(None)
 
         # False sent for is_char_in_string() (see issue 32989)
         with self.assertRaises(TypeError):
