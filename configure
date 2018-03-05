@@ -16866,7 +16866,11 @@ $as_echo "yes" >&6; }
             elif test -f "$ssldir/public/openssl/ssl.h"; then
                 OPENSSL_INCLUDES="-I$ssldir/public"
                 OPENSSL_LDFLAGS="-L$ssldir/../lib"
-                OPENSSL_LIBS="-lOPENSSL"
+                if "$ac_sys_system" == VxWorks; then
+                    OPENSSL_LIBS="-lOPENSSL -lHASH"
+                else
+                    OPENSSL_LIBS="-lOPENSSL"
+                fi
                 found=true
                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
