@@ -2219,8 +2219,11 @@ class Win32JunctionTests(unittest.TestCase):
         self.assertTrue(os.path.exists(self.junction))
         self.assertTrue(os.path.isdir(self.junction))
 
-        # Junctions are not recognized as links.
-        self.assertFalse(os.path.islink(self.junction))
+        # Junctions that are not volume mount points are recognized as links.
+        self.assertTrue(os.path.islink(self.junction))
+        self.assertFalse(stat.S_ISDIR(os.lstat(self.junction).st_mode))
+        target = os.readlink(self.junction)
+        self.assertTrue(os.path.samefile(target, self.junction_target))
 
     def test_unlink_removes_junction(self):
         _winapi.CreateJunction(self.junction_target, self.junction)

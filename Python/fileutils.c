@@ -743,7 +743,7 @@ attributes_to_mode(DWORD attr)
 }
 
 void
-_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
+_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, BOOL is_link,
                            struct _Py_stat_struct *result)
 {
     memset(result, 0, sizeof(*result));
@@ -756,7 +756,7 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
     FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
     result->st_nlink = info->nNumberOfLinks;
     result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
-    if (reparse_tag == IO_REPARSE_TAG_SYMLINK) {
+    if (is_link) {
         /* first clear the S_IFMT bits */
         result->st_mode ^= (result->st_mode & S_IFMT);
         /* now set the bits that make this a symlink */
@@ -1847,3 +1847,50 @@ error:
     PyMem_Free(oldloc);
     return res;
 }
+
+
+#ifdef MS_WINDOWS
+
+/* Determine whether a reparse point is a link type. */
+int
+_Py_is_reparse_link(const wchar_t *path, ULONG reparse_tag)
+{
+    BOOL ret;
+    BOOL result = FALSE;
+    wchar_t *mountpath = NULL;
+    size_t buflen;
+    if (reparse_tag == IO_REPARSE_TAG_SYMLINK)
+        return TRUE;
+    else if (reparse_tag == IO_REPARSE_TAG_MOUNT_POINT)
+    {
+        /* Junction point. Either a link (e.g. mklink /j) or a volume mount
+           points (e.g. mountvol.exe). Compare GetVolumePathNameW to path
+           to determine which case. If they are equal, it is a mount.
+        */
+
+        /* Volume path should be shorter than entire path */
+        buflen = Py_MAX(wcslen(path), MAX_PATH);
+
+        if (buflen > PY_DWORD_MAX)
+        {
+            PyErr_SetString(PyExc_OverflowError, "path too long");
+            return FALSE;
+        }
+
+        mountpath = PyMem_RawCalloc(buflen, sizeof(wchar_t));
+        if (mountpath == NULL) {
+            PyErr_NoMemory();
+            return FALSE;
+        }
+
+        ret = GetVolumePathNameW(path, mountpath,
+                                 Py_SAFE_DOWNCAST(buflen, size_t, DWORD));
+
+        if (ret)
+            result = wcsncmp(path, mountpath, buflen);
+    }
+    PyMem_RawFree(mountpath);
+    return result;
+}
+
+#endif

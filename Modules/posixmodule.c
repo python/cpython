@@ -492,7 +492,8 @@ PyOS_AfterFork(void)
 /* defined in fileutils.c */
 PyAPI_FUNC(void) _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
 PyAPI_FUNC(void) _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
-                                            ULONG, struct _Py_stat_struct *);
+                                            BOOL, struct _Py_stat_struct *);
+PyAPI_FUNC(int) _Py_is_reparse_link(const wchar_t*, ULONG);
 #endif
 
 #ifdef MS_WINDOWS
@@ -1629,6 +1630,7 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
     HANDLE hFile, hFile2;
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
+    BOOL is_link;
     wchar_t *target_path;
     const wchar_t *dot;
 
@@ -1701,7 +1703,8 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         } else
             CloseHandle(hFile);
     }
-    _Py_attribute_data_to_stat(&info, reparse_tag, result);
+    is_link = _Py_is_reparse_link(path, reparse_tag);
+    _Py_attribute_data_to_stat(&info, is_link, result);
 
     /* Set S_IEXEC if it is an .exe, .bat, ... */
     dot = wcsrchr(path, '.');
@@ -7400,6 +7403,7 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *po, *result;
     int dir_fd;
     HANDLE reparse_point_handle;
+    USHORT pname_len;
 
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
@@ -7448,17 +7452,26 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     if (io_result==0)
         return win32_error_object("readlink", po);
 
-    if (rdb->ReparseTag != IO_REPARSE_TAG_SYMLINK)
+    if (!_Py_is_reparse_link(path, rdb->ReparseTag))
     {
         PyErr_SetString(PyExc_ValueError,
                 "not a symbolic link");
         return NULL;
     }
-    print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
+    if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK)
+    {
+        print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
+            rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
+        pname_len = rdb->SymbolicLinkReparseBuffer.PrintNameLength;
+    }
+    else
+    {
+        print_name = (wchar_t *)((char*)rdb->MountPointReparseBuffer.PathBuffer +
+            rdb->MountPointReparseBuffer.PrintNameOffset);
+        pname_len = rdb->MountPointReparseBuffer.PrintNameLength;
+    }
 
-    result = PyUnicode_FromWideChar(print_name,
-                    rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
+    result = PyUnicode_FromWideChar(print_name, pname_len / sizeof(wchar_t));
     return result;
 }
 
@@ -12172,7 +12185,8 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
     DirEntry *entry;
     BY_HANDLE_FILE_INFORMATION file_info;
     ULONG reparse_tag;
-    wchar_t *joined_path;
+    BOOL is_link;
+    wchar_t *joined_path=NULL;
 
     entry = PyObject_New(DirEntry, &DirEntryType);
     if (!entry)
@@ -12197,7 +12211,6 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
         goto error;
 
     entry->path = PyUnicode_FromWideChar(joined_path, -1);
-    PyMem_Free(joined_path);
     if (!entry->path)
         goto error;
     if (path->narrow) {
@@ -12207,11 +12220,14 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
     }
 
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
-    _Py_attribute_data_to_stat(&file_info, reparse_tag, &entry->win32_lstat);
+    is_link = _Py_is_reparse_link(joined_path, reparse_tag);
+    _Py_attribute_data_to_stat(&file_info, is_link, &entry->win32_lstat);
 
+    PyMem_Free(joined_path);
     return (PyObject *)entry;
 
 error:
+    PyMem_Free(joined_path);
     Py_DECREF(entry);
     return NULL;
 }
