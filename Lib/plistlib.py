@@ -442,6 +442,9 @@ class _PlistWriter(_DumbXMLWriter):
         elif isinstance(value, Data):
             self.write_data(value)
 
+        elif isinstance(value, UID):
+            self.write_dict({"CF$UID": value.data})
+
         elif isinstance(value, (bytes, bytearray)):
             self.write_bytes(value)
 
@@ -889,6 +892,9 @@ class _BinaryPlistWriter (object):
                 self._write_size(0x60, len(t) // 2)
 
             self._fp.write(t)
+
+        elif isinstance(value, UID):
+            self._fp.write(struct.pack('>BB', 0x80, value))
 
         elif isinstance(value, (list, tuple)):
             refs = [self._getrefnum(o) for o in value]
