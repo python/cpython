@@ -97,7 +97,7 @@ The available exception and functions in this module are:
    Higher values use more memory, but are faster and produce smaller output.
 
    *strategy* is used to tune the compression algorithm. Possible values are
-   ``Z_DEFAULT_STRATEGY``, ``Z_FILTERED``, and ``Z_HUFFMAN_ONLY``.
+   ``Z_DEFAULT_STRATEGY``, ``Z_FILTERED``, ``Z_RLE``, and ``Z_HUFFMAN_ONLY``.
 
    *zdict* is a predefined compression dictionary. This is a sequence of bytes
    (such as a :class:`bytes` object) containing subsequences that are expected
