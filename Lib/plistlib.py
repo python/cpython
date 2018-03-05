@@ -48,7 +48,7 @@ Parse Plist example:
 __all__ = [
     "readPlist", "writePlist", "readPlistFromBytes", "writePlistToBytes",
     "Data", "InvalidFileException", "FMT_XML", "FMT_BINARY",
-    "load", "dump", "loads", "dumps"
+    "load", "dump", "loads", "dumps", "UID"
 ]
 
 import binascii
@@ -666,7 +666,7 @@ class _BinaryPlistParser:
 
         elif tokenH == 0x80:  # UID
             # used by Key-Archiver plist files
-            result = int.from_bytes(self._fp.read(1 + tokenL), 'big')
+            result = UID(int.from_bytes(self._fp.read(1 + tokenL), 'big'))
 
         elif tokenH == 0xA0:  # array
             s = self._get_size(tokenL)
