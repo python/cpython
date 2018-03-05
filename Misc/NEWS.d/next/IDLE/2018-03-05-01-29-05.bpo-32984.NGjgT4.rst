@@ -1,0 +1,7 @@
+Set ``__file__`` while running a startup file.  Like Python, IDLE optionally
+runs one startup file in the Shell window before presenting the first interactive
+input prompt.  For IDLE, ``-s`` runs a file named in environmental variable
+ :envvar:`IDLESTARTUP` or  :envvar:`PYTHONSTARTUP`; ``-r file`` runs
+``file``.  Python sets ``__file__`` to the startup file name before running the
+file and unsets it before the first prompt.  IDLE now does the same when run
+normally, without the ``-n`` option.
