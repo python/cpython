@@ -1,0 +1,1 @@
+Issue 28955 - Clarified numeric comparisons with NaN. Patch by Tony Flury
