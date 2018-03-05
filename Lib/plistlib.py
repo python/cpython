@@ -202,6 +202,10 @@ PLISTHEADER = b"""\
 """
 
 
+# XML key for reading UID data
+_PLISTUIDKEY = 'CF$UID'
+
+
 # Regex to find any control chars, except for \t \n and \r
 _controlCharPat = re.compile(
     r"[\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f"
@@ -324,8 +328,8 @@ class _PlistParser:
             raise ValueError("missing value for key '%s' at line %d" %
                              (self.current_key,self.parser.CurrentLineNumber))
         last_dict = self.stack.pop()
-        if len(last_dict.keys()) == 1 and list(last_dict.keys())[0] == 'CF$UID':
-            uid = UID(last_dict['CF$UID'])
+        if len(last_dict.keys()) == 1 and list(last_dict.keys())[0] == _PLISTUIDKEY:
+            uid = UID(last_dict[_PLISTUIDKEY])
             if isinstance(self.stack[-1], type([])):
                 self.stack[-1][-1] = uid
             elif isinstance(self.stack[-1], type({})):
@@ -452,7 +456,7 @@ class _PlistWriter(_DumbXMLWriter):
             self.write_data(value)
 
         elif isinstance(value, UID):
-            self.write_dict({"CF$UID": value.data})
+            self.write_dict({_PLISTUIDKEY: value.data})
 
         elif isinstance(value, (bytes, bytearray)):
             self.write_bytes(value)
