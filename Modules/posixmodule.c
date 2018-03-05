@@ -7200,39 +7200,50 @@ check_CreateSymbolicLink(void)
     return (Py_CreateSymbolicLinkW && Py_CreateSymbolicLinkA);
 }
 
-/* Remove the last portion of the path */
-static void
+/* Remove the last portion of the path - return 0 on success */
+static int
 _dirnameW(WCHAR *path)
 {
     WCHAR *ptr;
+    size_t length = wcsnlen_s(path, MAX_PATH);
+    if (length == MAX_PATH) {
+        return -1;
+    }
 
     /* walk the path from the end until a backslash is encountered */
-    for(ptr = path + wcslen(path); ptr != path; ptr--) {
+    for(ptr = path + length; ptr != path; ptr--) {
         if (*ptr == L'\\' || *ptr == L'/')
             break;
     }
     *ptr = 0;
+    return 0;
 }
 
-/* Remove the last portion of the path */
-static void
+/* Remove the last portion of the path - return 0 on success */
+static int
 _dirnameA(char *path)
 {
     char *ptr;
+    size_t length = strnlen_s(path, MAX_PATH);
+    if (length == MAX_PATH) {
+        return -1;
+    }
 
     /* walk the path from the end until a backslash is encountered */
-    for(ptr = path + strlen(path); ptr != path; ptr--) {
+    for(ptr = path + length; ptr != path; ptr--) {
         if (*ptr == '\\' || *ptr == '/')
             break;
     }
     *ptr = 0;
+    return 0;
 }
 
 /* Is this path absolute? */
 static int
 _is_absW(const WCHAR *path)
 {
-    return path[0] == L'\\' || path[0] == L'/' || path[1] == L':';
+    return path[0] == L'\\' || path[0] == L'/' ||
+        (path[0] && path[1] == L':');
 
 }
 
@@ -7240,50 +7251,47 @@ _is_absW(const WCHAR *path)
 static int
 _is_absA(const char *path)
 {
-    return path[0] == '\\' || path[0] == '/' || path[1] == ':';
+    return path[0] == '\\' || path[0] == '/' ||
+        (path[0] && path[1] == ':');
 
 }
 
-/* join root and rest with a backslash */
-static void
+/* join root and rest with a backslash - return 0 on success */
+static int
 _joinW(WCHAR *dest_path, const WCHAR *root, const WCHAR *rest)
 {
-    size_t root_len;
-
     if (_is_absW(rest)) {
-        wcscpy(dest_path, rest);
-        return;
+        return wcscpy_s(dest_path, MAX_PATH, rest);
     }
 
-    root_len = wcslen(root);
-
-    wcscpy(dest_path, root);
-    if(root_len) {
-        dest_path[root_len] = L'\\';
-        root_len++;
+    if (wcscpy_s(dest_path, MAX_PATH, root)) {
+        return -1;
     }
-    wcscpy(dest_path+root_len, rest);
+
+    if (dest_path[0] && wcscat_s(dest_path, MAX_PATH, L"\\")) {
+        return -1;
+    }
+
+    return wcscat_s(dest_path, MAX_PATH, rest);
 }
 
-/* join root and rest with a backslash */
-static void
+/* join root and rest with a backslash - return 0 on success */
+static int
 _joinA(char *dest_path, const char *root, const char *rest)
 {
-    size_t root_len;
-
     if (_is_absA(rest)) {
-        strcpy(dest_path, rest);
-        return;
+        return strcpy_s(dest_path, MAX_PATH, rest);
     }
 
-    root_len = strlen(root);
-
-    strcpy(dest_path, root);
-    if(root_len) {
-        dest_path[root_len] = '\\';
-        root_len++;
+    if (strcpy_s(dest_path, MAX_PATH, root)) {
+        return -1;
     }
-    strcpy(dest_path+root_len, rest);
+
+    if (dest_path[0] && strcat_s(dest_path, MAX_PATH, "\\")) {
+        return -1;
+    }
+
+    return strcat_s(dest_path, MAX_PATH, rest);
 }
 
 /* Return True if the path at src relative to dest is a directory */
@@ -7295,10 +7303,14 @@ _check_dirW(WCHAR *src, WCHAR *dest)
     WCHAR src_resolved[MAX_PATH] = L"";
 
     /* dest_parent = os.path.dirname(dest) */
-    wcscpy(dest_parent, dest);
-    _dirnameW(dest_parent);
+    if (wcscpy_s(dest_parent, MAX_PATH, dest) ||
+        _dirnameW(dest_parent)) {
+        return 0;
+    }
     /* src_resolved = os.path.join(dest_parent, src) */
-    _joinW(src_resolved, dest_parent, src);
+    if (_joinW(src_resolved, dest_parent, src)) {
+        return 0;
+    }
     return (
         GetFileAttributesExW(src_resolved, GetFileExInfoStandard, &src_info)
         && src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
@@ -7314,10 +7326,14 @@ _check_dirA(char *src, char *dest)
     char src_resolved[MAX_PATH] = "";
 
     /* dest_parent = os.path.dirname(dest) */
-    strcpy(dest_parent, dest);
-    _dirnameA(dest_parent);
+    if (strcpy_s(dest_parent, MAX_PATH, dest) ||
+        _dirnameA(dest_parent)) {
+        return 0;
+    }
     /* src_resolved = os.path.join(dest_parent, src) */
-    _joinA(src_resolved, dest_parent, src);
+    if (_joinA(src_resolved, dest_parent, src)) {
+        return 0;
+    }
     return (
         GetFileAttributesExA(src_resolved, GetFileExInfoStandard, &src_info)
         && src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
