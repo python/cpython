@@ -7,6 +7,8 @@ import doctest
 import functools
 import os
 import sys
+import importlib
+import unittest
 
 
 # NOTE: There are some additional tests relating to interaction with
@@ -435,7 +437,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:19 (1 example)>]
+    [<DocTest sample_func from ...:21 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -680,6 +682,17 @@ Note here that 'bin', 'oct', and 'hex' are functions; 'float.as_integer_ratio',
 'float.hex', and 'int.bit_length' are methods; 'float.fromhex' is a classmethod,
 and 'int' is a type.
 """
+
+
+class TestDocTestFinder(unittest.TestCase):
+
+    def test_empty_namespace_package(self):
+        pkg_name = 'doctest_empty_pkg'
+        os.mkdir(pkg_name)
+        mod = importlib.import_module(pkg_name)
+        assert doctest.DocTestFinder().find(mod) == []
+        os.rmdir(pkg_name)
+
 
 def test_DocTestParser(): r"""
 Unit tests for the `DocTestParser` class.
@@ -2944,6 +2957,10 @@ def test_main():
     # Check the doctest cases defined here:
     from test import test_doctest
     support.run_doctest(test_doctest, verbosity=True)
+
+    # Run unittests
+    support.run_unittest(__name__)
+
 
 def test_coverage(coverdir):
     trace = support.import_module('trace')
