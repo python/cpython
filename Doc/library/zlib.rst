@@ -61,7 +61,7 @@ The available exception and functions in this module are:
       *level* can now be used as a keyword parameter.
 
 
-.. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memLevel=DEF_MEM_LEVEL, strategy=Z_DEFAULT_STRATEGY[, zdict])
+.. function:: compressobj(level=-1, method=DEFLATED, wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=Z_DEFAULT_STRATEGY[, zdict])
 
    Returns a compression object, to be used for compressing data streams that won't
    fit into memory at once.
@@ -78,7 +78,8 @@ The available exception and functions in this module are:
 
    The *wbits* argument controls the size of the history buffer (or the
    "window size") used when compressing data, and whether a header and
-   trailer is included in the output.  It can take several ranges of values:
+   trailer is included in the output.  It can take several ranges of values,
+   defaulting to ``15`` (MAX_WBITS):
 
    * +9 to +15: The base-two logarithm of the window size, which
      therefore ranges between 512 and 32768.  Larger values produce
@@ -177,7 +178,7 @@ The available exception and functions in this module are:
    .. versionchanged:: 3.6
       *wbits* and *bufsize* can be used as keyword arguments.
 
-.. function:: decompressobj(wbits=15[, zdict])
+.. function:: decompressobj(wbits=MAX_WBITS[, zdict])
 
    Returns a decompression object, to be used for decompressing data streams that
    won't fit into memory at once.
