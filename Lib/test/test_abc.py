@@ -392,6 +392,13 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertIsInstance(42, A)
             self.assertIsInstance(42, (A,))
 
+        def test_issubclass(self):
+            class A(metaclass=abc_ABCMeta):
+                pass
+            with self.assertRaises(TypeError):
+                issubclass(42, A)
+
+
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):
                 pass
