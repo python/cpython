@@ -306,6 +306,9 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     function that supports the same signature (like copy()) can be used.
 
     """
+    src = os.fspath(src)
+    dst = os.fspath(dst)
+
     names = os.listdir(src)
     if ignore is not None:
         ignored_names = ignore(src, names)
