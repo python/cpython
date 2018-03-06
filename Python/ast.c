@@ -814,7 +814,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                     }
                 }
             }
-            if (docstring_from_stmts(stmts, arena) < 0) {
+            if (!docstring_from_stmts(stmts, arena)) {
                 goto out;
             }
             res = Module(stmts, arena);
@@ -3536,12 +3536,12 @@ docstring_from_stmts(asdl_seq *stmts, PyArena *arena)
                                     s->v.Expr.value->lineno,
                                     s->v.Expr.value->col_offset, arena);
             if (doc == NULL) {
-                return -1;
+                return 0;
             }
             asdl_seq_SET(stmts, 0, doc);
         }
     }
-    return 0;
+    return 1;
 }
 
 static asdl_seq *
@@ -3551,7 +3551,7 @@ ast_for_body(struct compiling *c, const node *n)
     if (stmts == NULL) {
         return NULL;
     }
-    if (docstring_from_stmts(stmts, c->c_arena) < 0) {
+    if (!docstring_from_stmts(stmts, c->c_arena)) {
         return NULL;
     }
     return stmts;

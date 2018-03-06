@@ -1579,7 +1579,6 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
     }
     if (!asdl_seq_LEN(stmts))
         return 1;
-
     st = (stmt_ty)asdl_seq_GET(stmts, 0);
     /* if not -OO mode, set docstring */
     if (st->kind == DocString_kind && c->c_optimize < 2) {

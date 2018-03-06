@@ -80,8 +80,7 @@ class Unparser:
         self.dispatch(tree.value)
 
     def _DocString(self, t):
-        self.fill()
-        self.write(repr(t.s))
+        self.fill(repr(t.s))
 
     def _Import(self, t):
         self.fill("import ")
