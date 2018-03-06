@@ -19,7 +19,7 @@ import re
 __all__ = ["fix","sci","NotANumber"]
 
 # Compiled regular expression to "decode" a number
-decoder = re.compile(r'^([-+]?)0*(\d*)((?:\.\d*)?)(([eE][-+]?\d+)?)$')
+decoder = re.compile(r'^([-+]?)(\d*)((?:\.\d*)?)(([eE][-+]?\d+)?)$')
 # \0 the whole thing
 # \1 leading sign or empty
 # \2 digits left of decimal point
@@ -41,6 +41,7 @@ def extract(s):
     res = decoder.match(s)
     if res is None: raise NotANumber, s
     sign, intpart, fraction, exppart = res.group(1,2,3,4)
+    intpart = intpart.lstrip('0');
     if sign == '+': sign = ''
     if fraction: fraction = fraction[1:]
     if exppart: expo = int(exppart[1:])
