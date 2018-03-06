@@ -2251,7 +2251,8 @@ def _signature_from_callable(obj, *,
                 return sig
             else:
                 sig_params = tuple(sig.parameters.values())
-                assert first_wrapped_param is not sig_params[0]
+                assert (not sig_params or
+                        first_wrapped_param is not sig_params[0])
                 new_params = (first_wrapped_param,) + sig_params
                 return sig.replace(parameters=new_params)
 
