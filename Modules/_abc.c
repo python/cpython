@@ -12,13 +12,7 @@ module _abc
 PyDoc_STRVAR(_abc__doc__,
 "Module contains faster C implementation of abc.ABCMeta");
 
-_Py_IDENTIFIER(__abstractmethods__);
-_Py_IDENTIFIER(__class__);
-_Py_IDENTIFIER(__dict__);
-_Py_IDENTIFIER(__bases__);
 _Py_IDENTIFIER(_abc_impl);
-_Py_IDENTIFIER(__subclasscheck__);
-_Py_IDENTIFIER(__subclasshook__);
 
 /* A global counter that is incremented each time a class is
    registered as a virtual subclass of anything.  It forces the
@@ -258,6 +252,7 @@ _abc__get_dump(PyObject *module, PyObject *self)
 static int
 compute_abstract_methods(PyObject *self)
 {
+    _Py_IDENTIFIER(__abstractmethods__);
     int ret = -1;
     PyObject *abstracts = PyFrozenSet_New(NULL);
     if (abstracts == NULL) {
@@ -267,6 +262,7 @@ compute_abstract_methods(PyObject *self)
     PyObject *ns = NULL, *items = NULL, *bases = NULL;  // Py_XDECREF()ed on error.
 
     /* Stage 1: direct abstract methods. */
+    _Py_IDENTIFIER(__dict__);
     ns = _PyObject_GetAttrId(self, &PyId___dict__);
     if (!ns) {
         goto error;
@@ -311,6 +307,7 @@ compute_abstract_methods(PyObject *self)
     }
 
     /* Stage 2: inherited abstract methods. */
+    _Py_IDENTIFIER(__bases__);
     bases = _PyObject_GetAttrId(self, &PyId___bases__);
     if (!bases) {
         goto error;
@@ -479,12 +476,14 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
                              PyObject *instance)
 /*[clinic end generated code: output=b8b5148f63b6b56f input=a4f4525679261084]*/
 {
+    _Py_IDENTIFIER(__subclasscheck__);
     PyObject *subtype, *result = NULL, *subclass = NULL;
     _abc_data *impl = _get_impl(self);
     if (impl == NULL) {
         return NULL;
     }
 
+    _Py_IDENTIFIER(__class__);
     subclass = _PyObject_GetAttrId(instance, &PyId___class__);
     if (subclass == NULL) {
         Py_DECREF(impl);
@@ -608,6 +607,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     /* 3. Check the subclass hook. */
+    _Py_IDENTIFIER(__subclasshook__);
     ok = _PyObject_CallMethodIdObjArgs((PyObject *)self, &PyId___subclasshook__,
                                        subclass, NULL);
     if (ok == NULL) {
