@@ -395,9 +395,20 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
         def test_issubclass(self):
             class A(metaclass=abc_ABCMeta):
                 pass
-            with self.assertRaises(TypeError):
-                issubclass(42, A)
 
+            with self.assertRaises(TypeError):
+                issubclass({}, A)  # unhashable
+
+            with self.assertRaises(TypeError):
+                issubclass(42, A)  # No __mro__
+
+            # Python version supports any iterable as __mro__.
+            # But it's implementation detail and don't emulate it in C version.
+            class C:
+                __mro__ = 42  # __mro__ is not tuple
+
+            with self.assertRaises(TypeError):
+                self.assertTrue(issubclass(C(), A))
 
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):

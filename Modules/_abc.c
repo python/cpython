@@ -647,7 +647,13 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     if (_PyObject_LookupAttrId(subclass, &PyId___mro__, &mro) < 0) {
         goto end;
     }
-    if (mro != NULL && PyTuple_Check(mro)) {
+    if (mro != NULL) {
+        if (!PyTuple_Check(mro)) {
+            // Python version supports non-tuple iterable.  Keep it as
+            // implementation detail.
+            PyErr_SetString(PyExc_TypeError, "__mro__ is not a tuple");
+            goto end;
+        }
         for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
             PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);
             if (mro_item == NULL) {
