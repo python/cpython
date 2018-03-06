@@ -231,6 +231,9 @@ Directory and files operations
    as arguments. By default, :func:`shutil.copy2` is used, but any function
    that supports the same signature (like :func:`shutil.copy`) can be used.
 
+   .. versionchanged:: 3.8
+      Accepts a :term:`path-like object` for *src* and *dst*.
+
    .. versionchanged:: 3.3
       Copy metadata when *symlinks* is false.
       Now returns *dst*.
