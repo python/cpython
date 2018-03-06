@@ -16,6 +16,7 @@ _Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__class__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__bases__);
+_Py_IDENTIFIER(__mro__);
 _Py_IDENTIFIER(_abc_impl);
 _Py_IDENTIFIER(__subclasscheck__);
 _Py_IDENTIFIER(__subclasshook__);
@@ -643,7 +644,6 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
      *     cls._abc_cache.add(subclass)
      *     return True
      */
-    _Py_IDENTIFIER(__mro__);
     if (_PyObject_LookupAttrId(subclass, &PyId___mro__, &mro) < 0) {
         goto end;
     }
