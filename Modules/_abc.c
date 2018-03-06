@@ -637,20 +637,29 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
     Py_DECREF(ok);
 
-    /* 4. Check if it's a direct subclass. */
-    mro = ((PyTypeObject *)subclass)->tp_mro;
-    assert(PyTuple_Check(mro));
-    for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
-        PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);
-        if (mro_item == NULL) {
-            goto end;
-        }
-        if ((PyObject *)self == mro_item) {
-            if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
+    /* 4. Check if it's a direct subclass.
+     *
+     * if cls in getattr(subclass, '__mro__', ()):
+     *     cls._abc_cache.add(subclass)
+     *     return True
+     */
+    _Py_IDENTIFIER(__mro__);
+    if (_PyObject_LookupAttrId(subclass, &PyId___mro__, &mro) < 0) {
+        return NULL;
+    }
+    if (mro != NULL && PyTuple_Check(mro)) {
+        for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
+            PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);
+            if (mro_item == NULL) {
                 goto end;
             }
-            result = Py_True;
-            goto end;
+            if ((PyObject *)self == mro_item) {
+                if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
+                    goto end;
+                }
+                result = Py_True;
+                goto end;
+            }
         }
     }
 
