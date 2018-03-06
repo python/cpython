@@ -693,6 +693,11 @@ Test cases
    and report failures, and some inquiry methods allowing information about the
    test itself to be gathered.
 
+   .. versionchanged:: 3.8
+         Any test method, along with :meth:`setUp` and :meth:`tearDown` can
+         optionally be coroutine functions. In this case, they will be executed
+         on the default loop when running the test.
+
    Methods in the first group (running the test) are:
 
    .. method:: setUp()
@@ -701,6 +706,9 @@ Test cases
       before calling the test method; other than :exc:`AssertionError` or :exc:`SkipTest`,
       any exception raised by this method will be considered an error rather than
       a test failure. The default implementation does nothing.
+
+      .. versionchanged:: 3.8
+         This method can optionally be a coroutine function.
 
 
    .. method:: tearDown()
@@ -714,6 +722,9 @@ Test cases
       the total number of reported errors). This method will only be called if
       the :meth:`setUp` succeeds, regardless of the outcome of the test method.
       The default implementation does nothing.
+
+      .. versionchanged:: 3.8
+         This method can optionally be a coroutine function.
 
 
    .. method:: setUpClass()
