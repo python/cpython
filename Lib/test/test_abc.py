@@ -408,7 +408,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 __mro__ = 42  # __mro__ is not tuple
 
             with self.assertRaises(TypeError):
-                self.assertTrue(issubclass(C(), A))
+                issubclass(C(), A)
 
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):
