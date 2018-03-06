@@ -3096,10 +3096,29 @@ PyType_GetModule(PyTypeObject *type) {
 PyTypeObject *
 PyType_DefiningTypeFromSlotFunc(PyTypeObject *type, int slot, void *func) {
     void *base_func;
+    int found = 0;
+
+    assert(PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE));
+
+    while(1) {
+        base_func = PyType_GetSlot(type, slot);
+        if (base_func == func) {
+            found = 1;
+            break;
+        }
+        if (!PyType_HasFeature(type->tp_base, Py_TPFLAGS_HEAPTYPE)) {
+            break;
+        }
+        type = type->tp_base;
+    }
+
+    if (!found) {
+        goto error;
+    }
 
     while(1) {
         base_func = PyType_GetSlot(type->tp_base, slot);
-        if (base_func != func) {
+        if (base_func != func && found) {
             /* PyType_GetSlot might set an exception in case of
              * walking through bases got through to an
              * extension/builtin type (i.e. object) */
@@ -3108,12 +3127,14 @@ PyType_DefiningTypeFromSlotFunc(PyTypeObject *type, int slot, void *func) {
         }
 
         type = type->tp_base;
-        if (type == NULL) {
-            PyErr_SetString(PyExc_Exception,
-                            "Defining type has not been found.");
-            return NULL;
+        if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+            goto error;
         }
     }
+error:
+    PyErr_SetString(PyExc_Exception,
+                    "Defining type has not been found.");
+    return NULL;
 }
 
 /* Internal API to look for a name through the MRO, bypassing the method cache.

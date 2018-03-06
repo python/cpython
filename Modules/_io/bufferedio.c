@@ -17,14 +17,14 @@
 
 /*[clinic input]
 module _io
-class _io._BufferedIOBase "PyObject *" "_PyIO_State!PyBufferedIOBase_Type"
-class _io._Buffered "buffered *" "_PyIO_State!PyBufferedIOBase_Type"
-class _io.BufferedReader "buffered *" "_PyIO_State!PyBufferedReader_Type"
-class _io.BufferedWriter "buffered *" "_PyIO_State!PyBufferedWriter_Type"
-class _io.BufferedRWPair "rwpair *" "_PyIO_State!PyBufferedRWPair_Type"
-class _io.BufferedRandom "buffered *" "_PyIO_State!PyBufferedRandom_Type"
+class _io._BufferedIOBase "PyObject *" "&PyBufferedIOBase_Type"
+class _io._Buffered "buffered *" "&PyBufferedIOBase_Type"
+class _io.BufferedReader "buffered *" "&PyBufferedReader_Type"
+class _io.BufferedWriter "buffered *" "&PyBufferedWriter_Type"
+class _io.BufferedRWPair "rwpair *" "&PyBufferedRWPair_Type"
+class _io.BufferedRandom "buffered *" "&PyBufferedRandom_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d7c3132cce6a24d1]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=59460b9c5639984d]*/
 
 _Py_IDENTIFIER(close);
 _Py_IDENTIFIER(_dealloc_warn);
