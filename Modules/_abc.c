@@ -567,7 +567,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
                              PyObject *subclass)
 /*[clinic end generated code: output=b56c9e4a530e3894 input=1d947243409d10b8]*/
 {
-    PyObject *ok, *mro, *subclasses = NULL, *result = NULL;
+    PyObject *ok, *mro = NULL, *subclasses = NULL, *result = NULL;
     Py_ssize_t pos;
     int incache;
     _abc_data *impl = _get_impl(self);
@@ -645,7 +645,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
      */
     _Py_IDENTIFIER(__mro__);
     if (_PyObject_LookupAttrId(subclass, &PyId___mro__, &mro) < 0) {
-        return NULL;
+        goto end;
     }
     if (mro != NULL && PyTuple_Check(mro)) {
         for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
@@ -699,6 +699,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     result = Py_False;
 
 end:
+    Py_XDECREF(mro);
     Py_XDECREF(impl);
     Py_XDECREF(subclasses);
     Py_XINCREF(result);
