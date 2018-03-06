@@ -454,7 +454,6 @@ the user intermix options and positional arguments on the command line,
 as is possible in many unix commands.  It supports most but not all
 argparse features.  (Contributed by paul.j3 in :issue:`14191`.)
 
-
 binascii
 --------
 
@@ -462,21 +461,12 @@ The :func:`~binascii.b2a_uu` function now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
-
 calendar
 --------
 
 The class :class:`~calendar.HTMLCalendar` has new class attributes which ease
 the customisation of the CSS classes in the produced HTML calendar.
 (Contributed by Oz Tiram in :issue:`30095`.)
-
-cgi
----
-
-:func:`~cgi.parse_multipart` returns the same results as
-:class:`~FieldStorage` for non-file fields, the value associated to a key
-is a list of strings, not bytes.
-(Contributed by Pierre Quentel in :issue:`29979`.)
 
 contextlib
 ----------
@@ -621,7 +611,6 @@ This allows for guaranteeing
 files when they are created eagerly. (Contributed by Bernhard M. Wiedemann
 in :issue:`29708`.)
 
-
 re
 --
 
@@ -759,7 +748,6 @@ Unix shell-like pattern.  For example, ``python -m unittest -k foo`` runs the
 tests ``foo_tests.SomeTest.test_something``, ``bar_tests.SomeTest.test_foo``,
 but not ``bar_tests.FooTest.test_something``.
 (Contributed by Jonas Haag in :issue:`32071`.)
-
 
 unittest.mock
 -------------
@@ -1176,6 +1164,11 @@ Changes in the Python API
 
 * The :attr:`struct.Struct.format` type is now :class:`str` instead of
   :class:`bytes`. (Contributed by Victor Stinner in :issue:`21071`.)
+
+* :func:`~cgi.parse_multipart` returns now the same results as
+  :class:`~FieldStorage`: for non-file fields, the value associated to a key
+  is a list of strings, not bytes.
+  (Contributed by Pierre Quentel in :issue:`29979`.)
 
 * Due to internal changes in :mod:`socket` you won't be able to
   :func:`socket.fromshare` a socket :func:`~socket.socket.share`-ed in older
