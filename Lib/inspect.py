@@ -642,13 +642,13 @@ def cleandoc(doc):
 def getfile(object):
     """Work out which source or compiled file an object was defined in."""
     if ismodule(object):
-        if hasattr(object, '__file__'):
+        if getattr(object, '__file__', None):
             return object.__file__
         raise TypeError('{!r} is a built-in module'.format(object))
     if isclass(object):
         if hasattr(object, '__module__'):
             object = sys.modules.get(object.__module__)
-            if hasattr(object, '__file__'):
+            if getattr(object, '__file__', None):
                 return object.__file__
         raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
@@ -2254,7 +2254,8 @@ def _signature_from_callable(obj, *,
                 return sig
             else:
                 sig_params = tuple(sig.parameters.values())
-                assert first_wrapped_param is not sig_params[0]
+                assert (not sig_params or
+                        first_wrapped_param is not sig_params[0])
                 new_params = (first_wrapped_param,) + sig_params
                 return sig.replace(parameters=new_params)
 

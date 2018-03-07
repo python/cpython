@@ -1293,6 +1293,13 @@ The :mod:`test.support` module defines the following classes:
    Class for logging support.
 
 
+.. class:: FakePath(path)
+
+   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
+   method which just returns the *path* argument.  If *path* is an exception,
+   it will be raised in :meth:`!__fspath__`.
+
+
 :mod:`test.support.script_helper` --- Utilities for the Python execution tests
 ==============================================================================
 

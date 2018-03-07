@@ -153,6 +153,8 @@ class DummyPOP3Handler(asynchat.async_chat):
             if self.tls_active is False:
                 self.push('+OK Begin TLS negotiation')
                 context = ssl.SSLContext()
+                # TODO: fix TLSv1.3 support
+                context.options |= ssl.OP_NO_TLSv1_3
                 context.load_cert_chain(CERTFILE)
                 tls_sock = context.wrap_socket(self.socket,
                                                server_side=True,
@@ -306,8 +308,18 @@ class TestPOP3Class(TestCase):
     def test_rpop(self):
         self.assertOK(self.client.rpop('foo'))
 
-    def test_apop(self):
+    def test_apop_normal(self):
         self.assertOK(self.client.apop('foo', 'dummypassword'))
+
+    def test_apop_REDOS(self):
+        # Replace welcome with very long evil welcome.
+        # NB The upper bound on welcome length is currently 2048.
+        # At this length, evil input makes each apop call take
+        # on the order of milliseconds instead of microseconds.
+        evil_welcome = b'+OK' + (b'<' * 1000000)
+        with test_support.swap_attr(self.client, 'welcome', evil_welcome):
+            # The evil welcome is invalid, so apop should throw.
+            self.assertRaises(poplib.error_proto, self.client.apop, 'a', 'kb')
 
     def test_top(self):
         expected =  (b'+OK 116 bytes',
@@ -356,6 +368,8 @@ class TestPOP3Class(TestCase):
     def test_stls_context(self):
         expected = b'+OK Begin TLS negotiation'
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        # TODO: fix TLSv1.3 support
+        ctx.options |= ssl.OP_NO_TLSv1_3
         ctx.load_verify_locations(CAFILE)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self.assertEqual(ctx.check_hostname, True)
@@ -396,6 +410,8 @@ class TestPOP3_SSLClass(TestPOP3Class):
 
     def test_context(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        # TODO: fix TLSv1.3 support
+        ctx.options |= ssl.OP_NO_TLSv1_3
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
         self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
