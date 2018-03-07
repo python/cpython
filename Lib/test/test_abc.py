@@ -392,7 +392,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertIsInstance(42, A)
             self.assertIsInstance(42, (A,))
 
-        def test_issubclass(self):
+        def test_issubclass_bad_arguments(self):
             class A(metaclass=abc_ABCMeta):
                 pass
 
