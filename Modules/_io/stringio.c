@@ -435,16 +435,17 @@ _io.StringIO.truncate
     pos as size: Py_ssize_t(accept={int, NoneType}, c_default="self->pos") = None
     /
 
-Truncate size to pos.
+Resize stream to at most 'pos' characters.
 
-The pos argument defaults to the current file position, as
-returned by tell().  The current file position is unchanged.
-Returns the new absolute position.
+The position in the stream is left unchanged.  The size defaults to
+the current IO position as reported by tell().  If the stream's size
+is increased, the contents of the new file area are undetermined.
+Returns the new size.
 [clinic start generated code]*/
 
 static PyObject *
 _io_StringIO_truncate_impl(stringio *self, Py_ssize_t size)
-/*[clinic end generated code: output=eb3aef8e06701365 input=5505cff90ca48b96]*/
+/*[clinic end generated code: output=eb3aef8e06701365 input=f2b6a674a34b14a5]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);

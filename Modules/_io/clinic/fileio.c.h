@@ -322,10 +322,12 @@ PyDoc_STRVAR(_io_FileIO_truncate__doc__,
 "truncate($self, size=None, /)\n"
 "--\n"
 "\n"
-"Truncate the file to at most size bytes and return the truncated size.\n"
+"Resize stream to at most size bytes.\n"
 "\n"
-"Size defaults to the current file position, as returned by tell().\n"
-"The current file position is changed to the value of size.");
+"Position in the stream is left unchanged.  Size defaults to\n"
+"the current IO position as reported by tell().  If the stream\'s\n"
+"size is increased, the contents of the new file area are\n"
+"undetermined.  Returns the new size.");
 
 #define _IO_FILEIO_TRUNCATE_METHODDEF    \
     {"truncate", (PyCFunction)_io_FileIO_truncate, METH_FASTCALL, _io_FileIO_truncate__doc__},
@@ -373,4 +375,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=a8796438c8b7c49a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0e670a6d39d67fb input=a9049054013a1b77]*/

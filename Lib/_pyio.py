@@ -342,10 +342,12 @@ class IOBase(metaclass=abc.ABCMeta):
         return self.seek(0, 1)
 
     def truncate(self, pos=None):
-        """Truncate file to size bytes.
+        """Resize stream to at most 'pos' bytes.
 
-        Size defaults to the current IO position as reported by tell().  Return
-        the new size.
+        The position in the stream is left unchanged.  The size
+        defaults to the current IO position as reported by tell().  If
+        the stream's size is increased, the contents of the new file
+        area are undetermined.  Returns the new size.
         """
         self._unsupported("truncate")
 
@@ -1670,10 +1672,12 @@ class FileIO(RawIOBase):
         return os.lseek(self._fd, 0, SEEK_CUR)
 
     def truncate(self, size=None):
-        """Truncate the file to at most size bytes.
+        """Resize stream to at most 'pos' bytes.
 
-        Size defaults to the current file position, as returned by tell().
-        The current file position is changed to the value of size.
+        The position in the stream is left unchanged.  The size
+        defaults to the current IO position as reported by tell().  If
+        the stream's size is increased, the contents of the new file
+        area are undetermined.  Returns the new size.
         """
         self._checkClosed()
         self._checkWritable()
@@ -1778,7 +1782,13 @@ class TextIOBase(IOBase):
         self._unsupported("write")
 
     def truncate(self, pos=None):
-        """Truncate size to pos, where pos is an int."""
+        """Resize stream to at most 'pos' characters.
+
+        The position in the stream is left unchanged.  The size
+        defaults to the current IO position as reported by tell().  If
+        the stream's size is increased, the contents of the new file
+        area are undetermined.  Returns the new size.
+        """
         self._unsupported("truncate")
 
     def readline(self):

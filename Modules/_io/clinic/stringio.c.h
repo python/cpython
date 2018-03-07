@@ -103,11 +103,12 @@ PyDoc_STRVAR(_io_StringIO_truncate__doc__,
 "truncate($self, pos=None, /)\n"
 "--\n"
 "\n"
-"Truncate size to pos.\n"
+"Resize stream to at most \'pos\' characters.\n"
 "\n"
-"The pos argument defaults to the current file position, as\n"
-"returned by tell().  The current file position is unchanged.\n"
-"Returns the new absolute position.");
+"The position in the stream is left unchanged.  The size defaults to\n"
+"the current IO position as reported by tell().  If the stream\'s size\n"
+"is increased, the contents of the new file area are undetermined.\n"
+"Returns the new size.");
 
 #define _IO_STRINGIO_TRUNCATE_METHODDEF    \
     {"truncate", (PyCFunction)_io_StringIO_truncate, METH_FASTCALL, _io_StringIO_truncate__doc__},
@@ -286,4 +287,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=73c4d6e5cc3b1a58 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=64a903b7c3c45564 input=a9049054013a1b77]*/

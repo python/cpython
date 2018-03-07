@@ -118,10 +118,12 @@ _io__IOBase_tell_impl(PyObject *self)
 }
 
 PyDoc_STRVAR(iobase_truncate_doc,
-    "Truncate file to size bytes.\n"
+    "Resize stream to at most size bytes.\n"
     "\n"
-    "File pointer is left unchanged.  Size defaults to the current IO\n"
-    "position as reported by tell().  Returns the new size.");
+    "Position in the stream is left unchanged.  Size defaults to\n"
+    "the current IO position as reported by tell().  If the stream's\n"
+    "size is increased, the contents of the new file area are undetermined.\n"
+    "Returns the new size.");
 
 static PyObject *
 iobase_truncate(PyObject *self, PyObject *args)

@@ -979,15 +979,17 @@ _io.FileIO.truncate
     size as posobj: object = NULL
     /
 
-Truncate the file to at most size bytes and return the truncated size.
+Resize stream to at most size bytes.
 
-Size defaults to the current file position, as returned by tell().
-The current file position is changed to the value of size.
+Position in the stream is left unchanged.  Size defaults to
+the current IO position as reported by tell().  If the stream's
+size is increased, the contents of the new file area are
+undetermined.  Returns the new size.
 [clinic start generated code]*/
 
 static PyObject *
 _io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
-/*[clinic end generated code: output=e49ca7a916c176fa input=9026af44686b7318]*/
+/*[clinic end generated code: output=e49ca7a916c176fa input=1957520f803e9c07]*/
 {
     Py_off_t pos;
     int ret;
