@@ -1632,6 +1632,7 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                     CloseHandle(hFile);
                     return -1;
                 }
+                is_link = FALSE;
             }
         }
         // Populate `info` if not populated above.
