@@ -2966,13 +2966,13 @@ main_loop:
             assert(PyExceptionClass_Check(exc));
             PyObject *val = SECOND();
             PyObject *tb = THIRD();
-            PyObject *tp2 = FOURTH();
-            PyObject *exc2 = PEEK(5);
+            PyObject *exc2 = FOURTH();
+            PyObject *val2 = PEEK(5);
             PyObject *tb2 = PEEK(6);
             PyObject *exit_func = PEEK(7);
             SET_VALUE(7, tb2);
-            SET_VALUE(6, exc2);
-            SET_VALUE(5, tp2);
+            SET_VALUE(6, val2);
+            SET_VALUE(5, exc2);
             SET_FOURTH(tb);
             SET_THIRD(val);
             SET_SECOND(exc);

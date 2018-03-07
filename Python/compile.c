@@ -4335,26 +4335,24 @@ expr_constant(expr_ty e)
    try:
        VAR = value  # if VAR present in the syntax
        BLOCK
-   finally:
-       if an exception was raised:
-           exc = copy of (exception, instance, traceback)
-       else:
-           exc = (None, None, None)
-       if not (await exit(*exc)):
+   except:
+       if not await exit(exception, instance, traceback):
            raise
+   else:
+       await exit(None, None, None)
  */
 static int
 compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *finally, *end;
+    basicblock *block, *except, *end;
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
 
     block = compiler_new_block(c);
-    finally = compiler_new_block(c);
+    except = compiler_new_block(c);
     end = compiler_new_block(c);
-    if (!block || !finally || !end)
+    if (!block || !except || !end)
         return 0;
 
     /* Evaluate EXPR */
@@ -4365,9 +4363,9 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
 
-    ADDOP_JREL(c, SETUP_ASYNC_WITH, finally);
+    ADDOP_JREL(c, SETUP_ASYNC_WITH, except);
 
-    /* SETUP_ASYNC_WITH pushes a finally block. */
+    /* SETUP_ASYNC_WITH pushes an except block. */
     compiler_use_next_block(c, block);
     if (!compiler_push_fblock(c, ASYNC_WITH, block, NULL)) {
         return 0;
@@ -4405,13 +4403,12 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, POP_TOP);
     ADDOP_JREL(c, JUMP_FORWARD, end);
 
-    compiler_use_next_block(c, finally);
-    if (!compiler_push_fblock(c, FINALLY_END, finally, NULL))
+    compiler_use_next_block(c, except);
+    if (!compiler_push_fblock(c, FINALLY_END, except, NULL))
         return 0;
 
-    /* Finally block starts; context.__exit__ is on the stack under
-       the exception or return information. Just issue our magic
-       opcode. */
+    /* Except block starts; context.__aexit__ is on the stack under
+       the exception. Just issue our magic opcode. */
     ADDOP(c, WITH_CLEANUP_START);
 
     ADDOP(c, GET_AWAITABLE);
@@ -4420,8 +4417,8 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     ADDOP(c, WITH_CLEANUP_FINISH);
 
-    /* Finally block ends. */
-    compiler_pop_fblock(c, FINALLY_END, finally);
+    /* Except block ends. */
+    compiler_pop_fblock(c, FINALLY_END, except);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -4443,32 +4440,31 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
    try:
        VAR = value  # if VAR present in the syntax
        BLOCK
-   finally:
-       if an exception was raised:
-           exc = copy of (exception, instance, traceback)
-       else:
-           exc = (None, None, None)
-       exit(*exc)
+   except:
+       if not exit(exception, instance, traceback):
+           raise
+   else:
+       exit(None, None, None)
  */
 static int
 compiler_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *finally, *end;
+    basicblock *block, *except, *end;
     withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
     assert(s->kind == With_kind);
 
     block = compiler_new_block(c);
-    finally = compiler_new_block(c);
+    except = compiler_new_block(c);
     end = compiler_new_block(c);
-    if (!block || !finally || !end)
+    if (!block || !except || !end)
         return 0;
 
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
-    ADDOP_JREL(c, SETUP_WITH, finally);
+    ADDOP_JREL(c, SETUP_WITH, except);
 
-    /* SETUP_WITH pushes a finally block. */
+    /* SETUP_WITH pushes an except block. */
     compiler_use_next_block(c, block);
     if (!compiler_push_fblock(c, WITH, block, NULL)) {
         return 0;
@@ -4501,18 +4497,17 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, POP_TOP);
     ADDOP_JREL(c, JUMP_FORWARD, end);
 
-    compiler_use_next_block(c, finally);
-    if (!compiler_push_fblock(c, FINALLY_END, finally, NULL))
+    compiler_use_next_block(c, except);
+    if (!compiler_push_fblock(c, FINALLY_END, except, NULL))
         return 0;
 
-    /* Finally block starts; context.__exit__ is on the stack under
-       the exception or return information. Just issue our magic
-       opcode. */
+    /* Except block starts; context.__exit__ is on the stack under
+       the exception. Just issue our magic opcode. */
     ADDOP(c, WITH_CLEANUP_START);
     ADDOP(c, WITH_CLEANUP_FINISH);
 
-    /* Finally block ends. */
-    compiler_pop_fblock(c, FINALLY_END, finally);
+    /* Except block ends. */
+    compiler_pop_fblock(c, FINALLY_END, except);
     compiler_use_next_block(c, end);
     return 1;
 }
