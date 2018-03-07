@@ -1855,10 +1855,11 @@ error:
 int
 _Py_is_reparse_link(const wchar_t *path, ULONG reparse_tag)
 {
-    BOOL ret;
+    BOOL ret = 0;
     BOOL result = FALSE;
+    wchar_t *normpath = NULL;
     wchar_t *mountpath = NULL;
-    size_t buflen;
+    DWORD buflen;
     if (reparse_tag == IO_REPARSE_TAG_SYMLINK)
         return TRUE;
     else if (reparse_tag == IO_REPARSE_TAG_MOUNT_POINT)
@@ -1868,28 +1869,32 @@ _Py_is_reparse_link(const wchar_t *path, ULONG reparse_tag)
            to determine which case. If they are equal, it is a mount.
         */
 
+        buflen = GetFullPathNameW(path, 0, NULL, NULL);
+        normpath = PyMem_RawCalloc(buflen, sizeof(wchar_t));
         /* Volume path should be shorter than entire path */
-        buflen = Py_MAX(wcslen(path), MAX_PATH);
-
-        if (buflen > PY_DWORD_MAX)
-        {
-            PyErr_SetString(PyExc_OverflowError, "path too long");
-            return FALSE;
-        }
-
         mountpath = PyMem_RawCalloc(buflen, sizeof(wchar_t));
-        if (mountpath == NULL) {
+        if (mountpath == NULL || normpath == NULL)
+        {
             PyErr_NoMemory();
-            return FALSE;
+            goto cleanup;
         }
 
-        ret = GetVolumePathNameW(path, mountpath,
+        // Normalize separators (slashes)
+        if (!GetFullPathNameW(path, buflen, normpath, NULL))
+            goto cleanup;
+
+        ret = GetVolumePathNameW(normpath, mountpath,
                                  Py_SAFE_DOWNCAST(buflen, size_t, DWORD));
 
         if (ret)
-            result = wcsncmp(path, mountpath, buflen);
+            result = wcsncmp(normpath, mountpath, buflen);
     }
+
+cleanup:
+
+    PyMem_RawFree(normpath);
     PyMem_RawFree(mountpath);
+
     return result;
 }
 
