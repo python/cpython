@@ -1274,32 +1274,6 @@ PyLong_FromPy_off_t(Py_off_t offset)
 #endif
 }
 
-#ifdef MS_WINDOWS
-
-static int
-win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
-{
-    char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
-    _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    DWORD n_bytes_returned;
-
-    if (0 == DeviceIoControl(
-        reparse_point_handle,
-        FSCTL_GET_REPARSE_POINT,
-        NULL, 0, /* in buffer */
-        target_buffer, sizeof(target_buffer),
-        &n_bytes_returned,
-        NULL)) /* we're not using OVERLAPPED_IO */
-        return FALSE;
-
-    if (reparse_tag)
-        *reparse_tag = rdb->ReparseTag;
-
-    return TRUE;
-}
-
-#endif /* MS_WINDOWS */
-
 /* Return a dictionary corresponding to the POSIX environment table */
 #if defined(WITH_NEXT_FRAMEWORK) || (defined(__APPLE__) && defined(Py_ENABLE_SHARED))
 /* On Darwin/MacOSX a shared library or framework has no access to
@@ -1584,54 +1558,16 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
     return TRUE;
 }
 
-static BOOL
-get_target_path(HANDLE hdl, wchar_t **target_path)
-{
-    int buf_size, result_length;
-    wchar_t *buf;
-
-    /* We have a good handle to the target, use it to determine
-       the target path name (then we'll call lstat on it). */
-    buf_size = GetFinalPathNameByHandleW(hdl, 0, 0,
-                                         VOLUME_NAME_DOS);
-    if(!buf_size)
-        return FALSE;
-
-    buf = (wchar_t *)PyMem_RawMalloc((buf_size + 1) * sizeof(wchar_t));
-    if (!buf) {
-        SetLastError(ERROR_OUTOFMEMORY);
-        return FALSE;
-    }
-
-    result_length = GetFinalPathNameByHandleW(hdl,
-                       buf, buf_size, VOLUME_NAME_DOS);
-
-    if(!result_length) {
-        PyMem_RawFree(buf);
-        return FALSE;
-    }
-
-    if(!CloseHandle(hdl)) {
-        PyMem_RawFree(buf);
-        return FALSE;
-    }
-
-    buf[result_length] = 0;
-
-    *target_path = buf;
-    return TRUE;
-}
-
 static int
 win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                  BOOL traverse)
 {
-    int code;
-    HANDLE hFile, hFile2;
+    HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
+    FILE_ATTRIBUTE_TAG_INFO taginfo;
+    BOOL ret = TRUE;
     BOOL is_link = FALSE;
-    wchar_t *target_path;
     const wchar_t *dot;
 
     hFile = CreateFileW(
@@ -1641,9 +1577,8 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         NULL, /* security attributes */
         OPEN_EXISTING,
         /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-        /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
-           Because of this, calls like GetFinalPathNameByHandle will return
-           the symlink path again and not the actual final path. */
+        /* FILE_FLAG_OPEN_REPARSE_POINT prevents processing of reparse
+           points. */
         FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|
             FILE_FLAG_OPEN_REPARSE_POINT,
         NULL);
@@ -1654,7 +1589,8 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
            If the latter, we can use attributes_from_dir. */
         DWORD lastError = GetLastError();
         if (lastError != ERROR_ACCESS_DENIED &&
-            lastError != ERROR_SHARING_VIOLATION)
+            lastError != ERROR_SHARING_VIOLATION &&
+            lastError != ERROR_INVALID_PARAMETER)
             return -1;
         /* Could not get attributes on open file. Fall back to
            reading the directory. */
@@ -1670,40 +1606,39 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             }
         }
     } else {
-        if (!GetFileInformationByHandle(hFile, &info)) {
+        // Get file attributes + reparse tag first
+        if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
+                                          &taginfo, sizeof(taginfo))) {
             CloseHandle(hFile);
             return -1;
         }
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (!win32_get_reparse_tag(hFile, &reparse_tag))
-                return -1;
-            is_link = _Py_is_reparse_link(path, reparse_tag);
-
-            /* Close the outer open file handle now that we're about to
-               reopen it with different flags. */
-            if (!CloseHandle(hFile))
-                return -1;
+        if (taginfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            is_link = _Py_is_reparse_link(path, taginfo.ReparseTag);
 
             if (!is_link || traverse) {
-                /* In order to call GetFinalPathNameByHandle we need to open
-                   the file without the reparse handling flag set. */
-                hFile2 = CreateFileW(
-                           path, FILE_READ_ATTRIBUTES, FILE_SHARE_READ,
-                           NULL, OPEN_EXISTING,
-                           FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
-                           NULL);
-                if (hFile2 == INVALID_HANDLE_VALUE)
+                /* Close the outer open file handle now that we're about to
+                   reopen it with different flags. */
+                if (!CloseHandle(hFile))
                     return -1;
-
-                if (!get_target_path(hFile2, &target_path))
+                // FILE_FLAG_OPEN_REPARSE_POINT to follow reparses:
+                hFile = CreateFileW(
+                    path, FILE_READ_ATTRIBUTES, 0,
+                    NULL, OPEN_EXISTING,
+                    FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
+                    NULL);
+                if (hFile == INVALID_HANDLE_VALUE)
                     return -1;
-
-                code = win32_xstat_impl(target_path, result, FALSE);
-                PyMem_RawFree(target_path);
-                return code;
+                if (!GetFileInformationByHandle(hFile, &info)) {
+                    CloseHandle(hFile);
+                    return -1;
+                }
             }
-        } else
-            CloseHandle(hFile);
+        }
+        // Populate `info` if not populated above.
+        if (taginfo.FileAttributes != info.dwFileAttributes)
+            ret = GetFileInformationByHandle(hFile, &info);
+        if (!CloseHandle(hFile) || !ret)
+            return -1;
     }
     _Py_attribute_data_to_stat(&info, is_link, result);
 
