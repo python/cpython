@@ -1566,8 +1566,9 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
     FILE_ATTRIBUTE_TAG_INFO taginfo;
-    BOOL ret = TRUE;
+    BOOL ret;
     BOOL is_link = FALSE;
+    DWORD lastError;
     const wchar_t *dot;
 
     hFile = CreateFileW(
@@ -1587,7 +1588,7 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         /* Either the target doesn't exist, or we don't have access to
            get a handle to it. If the former, we need to return an error.
            If the latter, we can use attributes_from_dir. */
-        DWORD lastError = GetLastError();
+        lastError = GetLastError();
         if (lastError != ERROR_ACCESS_DENIED &&
             lastError != ERROR_SHARING_VIOLATION &&
             lastError != ERROR_INVALID_PARAMETER)
@@ -1609,10 +1610,13 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         // Get file attributes + reparse tag first
         if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
                                           &taginfo, sizeof(taginfo))) {
-            CloseHandle(hFile);
-            return -1;
-        }
-        if (taginfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            lastError = GetLastError();
+            if (lastError != ERROR_INVALID_FUNCTION &&
+                lastError != ERROR_INVALID_PARAMETER) {
+                CloseHandle(hFile);
+                return -1;
+            }
+        } else if (taginfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
             is_link = _Py_is_reparse_link(path, taginfo.ReparseTag);
 
             if (!is_link || traverse) {
@@ -1628,16 +1632,10 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                     NULL);
                 if (hFile == INVALID_HANDLE_VALUE)
                     return -1;
-                if (!GetFileInformationByHandle(hFile, &info)) {
-                    CloseHandle(hFile);
-                    return -1;
-                }
                 is_link = FALSE;
             }
         }
-        // Populate `info` if not populated above.
-        if (taginfo.FileAttributes != info.dwFileAttributes)
-            ret = GetFileInformationByHandle(hFile, &info);
+        ret = GetFileInformationByHandle(hFile, &info);
         if (!CloseHandle(hFile) || !ret)
             return -1;
     }
