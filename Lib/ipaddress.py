@@ -1520,7 +1520,6 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         elif isinstance(address, tuple):
             addr = address[0]
             mask = address[1] if len(address) > 1 else self._max_prefixlen
-
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP prefix string.
         else:
@@ -1537,6 +1536,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             else:
                 self.network_address = IPv4Address(packed &
                                                    int(self.netmask))
+
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
 
