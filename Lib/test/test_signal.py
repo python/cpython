@@ -43,6 +43,8 @@ class PosixTests(unittest.TestCase):
         self.assertRaises(ValueError, signal.signal, 4242,
                           self.trivial_signal_handler)
 
+        self.assertRaises(ValueError, signal.strsignal, 4242)
+
     def test_setting_signal_handler_to_none_raises_error(self):
         self.assertRaises(TypeError, signal.signal,
                           signal.SIGUSR1, None)
@@ -54,6 +56,10 @@ class PosixTests(unittest.TestCase):
                          self.trivial_signal_handler)
         signal.signal(signal.SIGHUP, hup)
         self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
+
+    def test_strsignal(self):
+        self.assertEqual(signal.strsignal(signal.SIGINT), "Interrupt")
+        self.assertEqual(signal.strsignal(signal.SIGTERM), "Terminated")
 
     # Issue 3864, unknown if this affects earlier versions of freebsd also
     def test_interprocess_signal(self):
