@@ -1054,6 +1054,7 @@ static PyObject *
 load_source_module(char *name, char *pathname, FILE *fp)
 {
     struct stat st;
+    int fstat_result;
     FILE *fpc;
     char *buf;
     char *cpathname;
@@ -1061,7 +1062,11 @@ load_source_module(char *name, char *pathname, FILE *fp)
     PyObject *m;
     time_t mtime;
 
-    if (fstat(fileno(fp), &st) != 0) {
+    Py_BEGIN_ALLOW_THREADS
+    fstat_result = fstat(fileno(fp), &st);
+    Py_END_ALLOW_THREADS
+
+    if (fstat_result != 0) {
         PyErr_Format(PyExc_RuntimeError,
                      "unable to get file status from '%s'",
                      pathname);

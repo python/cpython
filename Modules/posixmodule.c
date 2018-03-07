@@ -6920,7 +6920,13 @@ posix_fdopen(PyObject *self, PyObject *args)
         struct stat buf;
         const char *msg;
         PyObject *exc;
-        if (fstat(fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
+        int res;
+
+        Py_BEGIN_ALLOW_THREADS
+        res = fstat(fd, &buf);
+        Py_END_ALLOW_THREADS
+
+        if (res == 0 && S_ISDIR(buf.st_mode)) {
             PyMem_FREE(mode);
             msg = strerror(EISDIR);
             exc = PyObject_CallFunction(PyExc_IOError, "(iss)",
