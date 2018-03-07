@@ -1630,7 +1630,7 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
     HANDLE hFile, hFile2;
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
-    BOOL is_link;
+    BOOL is_link = FALSE;
     wchar_t *target_path;
     const wchar_t *dot;
 
@@ -1661,8 +1661,9 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         if (!attributes_from_dir(path, &info, &reparse_tag))
             /* Very strange. This should not fail now */
             return -1;
+        is_link = _Py_is_reparse_link(path, reparse_tag);
         if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (traverse) {
+            if (!is_link || traverse) {
                 /* Should traverse, but could not open reparse point handle */
                 SetLastError(lastError);
                 return -1;
@@ -1676,13 +1677,14 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
             if (!win32_get_reparse_tag(hFile, &reparse_tag))
                 return -1;
+            is_link = _Py_is_reparse_link(path, reparse_tag);
 
             /* Close the outer open file handle now that we're about to
                reopen it with different flags. */
             if (!CloseHandle(hFile))
                 return -1;
 
-            if (traverse) {
+            if (!is_link || traverse) {
                 /* In order to call GetFinalPathNameByHandle we need to open
                    the file without the reparse handling flag set. */
                 hFile2 = CreateFileW(
@@ -1703,7 +1705,6 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         } else
             CloseHandle(hFile);
     }
-    is_link = _Py_is_reparse_link(path, reparse_tag);
     _Py_attribute_data_to_stat(&info, is_link, result);
 
     /* Set S_IEXEC if it is an .exe, .bat, ... */
