@@ -1620,7 +1620,8 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                 return -1;
             }
         } else if (taginfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (!_Py_is_reparse_link(path, taginfo.ReparseTag, &is_link, FALSE)) {
+            if (!_Py_is_reparse_link(path, taginfo.ReparseTag, &is_link,
+                                     FALSE)) {
                 CloseHandle(hFile);
                 return -1;
             }
@@ -7406,11 +7407,13 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK) {
-        print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
+        print_name = (wchar_t *)(
+            (char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
             rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
         pname_len = rdb->SymbolicLinkReparseBuffer.PrintNameLength;
     } else {
-        print_name = (wchar_t *)((char*)rdb->MountPointReparseBuffer.PathBuffer +
+        print_name = (wchar_t *)(
+            (char*)rdb->MountPointReparseBuffer.PathBuffer +
             rdb->MountPointReparseBuffer.PrintNameOffset);
         pname_len = rdb->MountPointReparseBuffer.PrintNameLength;
     }

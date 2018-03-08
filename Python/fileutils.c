@@ -1853,7 +1853,8 @@ error:
 
 /* Determine whether a reparse point is a link type. */
 int
-_Py_is_reparse_link(IN const wchar_t *path, IN ULONG reparse_tag, OUT BOOL* is_link, IN BOOL gil_held)
+_Py_is_reparse_link(IN const wchar_t *path, IN ULONG reparse_tag,
+                    OUT BOOL* is_link, IN BOOL gil_held)
 {
     BOOL ret;
     DWORD buflen;
