@@ -36,6 +36,11 @@ def interpreter_requires_environment():
     """
     global __cached_interp_requires_environment
     if __cached_interp_requires_environment is None:
+        # If PYTHONHOME is set, assume that we need it
+        if 'PYTHONHOME' in os.environ:
+            __cached_interp_requires_environment = True
+            return True
+
         # Try running an interpreter with -E to see if it works or not.
         try:
             subprocess.check_call([sys.executable, '-E',
@@ -166,7 +171,9 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
     object.
     """
-    cmd_line = [sys.executable, '-E']
+    cmd_line = [sys.executable]
+    if not interpreter_requires_environment():
+        cmd_line.append('-E')
     cmd_line.extend(args)
     # Under Fedora (?), GNU readline can output junk on stderr when initialized,
     # depending on the TERM setting.  Setting TERM=vt100 is supposed to disable

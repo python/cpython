@@ -2294,6 +2294,29 @@ make_timezones_capi(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
+get_timezones_offset_zero(PyObject *self, PyObject *args) {
+    PyObject *offset = PyDelta_FromDSU(0, 0, 0);
+    PyObject *name = PyUnicode_FromString("");
+
+    // These two should return the UTC singleton
+    PyObject *utc_singleton_0 = PyTimeZone_FromOffset(offset);
+    PyObject *utc_singleton_1 = PyTimeZone_FromOffsetAndName(offset, NULL);
+
+    // This one will return +00:00 zone, but not the UTC singleton
+    PyObject *non_utc_zone = PyTimeZone_FromOffsetAndName(offset, name);
+
+    Py_DecRef(offset);
+    Py_DecRef(name);
+
+    PyObject *rv = PyTuple_New(3);
+    PyTuple_SET_ITEM(rv, 0, utc_singleton_0);
+    PyTuple_SET_ITEM(rv, 1, utc_singleton_1);
+    PyTuple_SET_ITEM(rv, 2, non_utc_zone);
+
+    return rv;
+}
+
+static PyObject *
 get_timezone_utc_capi(PyObject* self, PyObject *args) {
     int macro = 0;
     if (!PyArg_ParseTuple(args, "|p", &macro)) {
@@ -4540,6 +4563,7 @@ static PyMethodDef TestMethods[] = {
     {"datetime_check_delta",     datetime_check_delta,           METH_VARARGS},
     {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
+    {"get_timezones_offset_zero",   get_timezones_offset_zero,   METH_NOARGS},
     {"get_timezone_utc_capi",    get_timezone_utc_capi,            METH_VARARGS},
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
