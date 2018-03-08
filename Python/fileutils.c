@@ -1853,7 +1853,7 @@ error:
 
 /* Determine whether a reparse point is a link type. */
 int
-_Py_is_reparse_link(IN const wchar_t *path, IN ULONG reparse_tag, OUT BOOL* is_link)
+_Py_is_reparse_link(IN const wchar_t *path, IN ULONG reparse_tag, OUT BOOL* is_link, IN BOOL gil_held)
 {
     BOOL ret;
     DWORD buflen;
@@ -1888,8 +1888,16 @@ _Py_is_reparse_link(IN const wchar_t *path, IN ULONG reparse_tag, OUT BOOL* is_l
         if (!GetFullPathNameW(path, buflen, normpath, NULL))
             goto cleanup;
 
-        ret = GetVolumePathNameW(normpath, mountpath,
-                                 Py_SAFE_DOWNCAST(buflen, size_t, DWORD));
+        if (gil_held)
+        {
+            Py_BEGIN_ALLOW_THREADS
+            ret = GetVolumePathNameW(normpath, mountpath,
+                                     Py_SAFE_DOWNCAST(buflen, size_t, DWORD));
+            Py_END_ALLOW_THREADS
+        }
+        else
+            ret = GetVolumePathNameW(normpath, mountpath,
+                                     Py_SAFE_DOWNCAST(buflen, size_t, DWORD));
         if (!ret)
             goto cleanup;
 
