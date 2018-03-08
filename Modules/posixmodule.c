@@ -1598,8 +1598,9 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         if (!attributes_from_dir(path, &info, &reparse_tag))
             /* Very strange. This should not fail now */
             return -1;
-        if (!_Py_is_reparse_link(path, reparse_tag, &is_link, FALSE))
+        if (!_Py_is_reparse_link(path, reparse_tag, &is_link, FALSE)) {
             return -1;
+        }
         if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
             if (!is_link || traverse) {
                 /* Should traverse, but could not open reparse point handle */
@@ -1627,22 +1628,25 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             if (!is_link || traverse) {
                 /* Close the outer open file handle now that we're about to
                    reopen it with different flags. */
-                if (!CloseHandle(hFile))
+                if (!CloseHandle(hFile)) {
                     return -1;
+                }
                 // FILE_FLAG_OPEN_REPARSE_POINT to follow reparses:
                 hFile = CreateFileW(
                     path, FILE_READ_ATTRIBUTES, 0,
                     NULL, OPEN_EXISTING,
                     FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
                     NULL);
-                if (hFile == INVALID_HANDLE_VALUE)
+                if (hFile == INVALID_HANDLE_VALUE) {
                     return -1;
+                }
                 is_link = FALSE;
             }
         }
         ret = GetFileInformationByHandle(hFile, &info);
-        if (!CloseHandle(hFile) || !ret)
+        if (!CloseHandle(hFile) || !ret) {
             return -1;
+        }
     }
     _Py_attribute_data_to_stat(&info, is_link, result);
 
@@ -7393,22 +7397,19 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     if (io_result==0)
         return win32_error_object("readlink", po);
 
-    if (!_Py_is_reparse_link(path, rdb->ReparseTag, &is_link, TRUE))
+    if (!_Py_is_reparse_link(path, rdb->ReparseTag, &is_link, TRUE)) {
         return PyErr_SetFromWindowsErr(GetLastError());
-    if (!is_link)
-    {
+    }
+    if (!is_link) {
         PyErr_SetString(PyExc_ValueError,
                 "not a symbolic link");
         return NULL;
     }
-    if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK)
-    {
+    if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK) {
         print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
             rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
         pname_len = rdb->SymbolicLinkReparseBuffer.PrintNameLength;
-    }
-    else
-    {
+    } else {
         print_name = (wchar_t *)((char*)rdb->MountPointReparseBuffer.PathBuffer +
             rdb->MountPointReparseBuffer.PrintNameOffset);
         pname_len = rdb->MountPointReparseBuffer.PrintNameLength;
