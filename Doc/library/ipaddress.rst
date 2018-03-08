@@ -443,7 +443,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. attribute:: hostmask
 
       The host mask, as an :class:`IPv4Address` object.
-      
+
    .. attribute:: netmask
 
       The net mask, as an :class:`IPv4Address` object.
