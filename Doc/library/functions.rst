@@ -713,7 +713,7 @@ are always available.  They are listed here in alphabetical order.
    ``0`` if no arguments are given.  If *x* is a number, return
    :meth:`x.__int__() <object.__int__>`. If *x* defines
    :meth:`x.__trunc__() <object.__trunc__>` but not
-   :meth:`x.__int__() <object.__int__>`, then return 
+   :meth:`x.__int__() <object.__int__>`, then return
    if :meth:`x.__trunc__() <object.__trunc__>`.  For floating point numbers,
    this truncates towards zero.
 
