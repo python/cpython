@@ -1510,6 +1510,9 @@ hamt_node_collision_without(PyHamtNode_Collision *self,
             PyHamtNode_Collision *new = (PyHamtNode_Collision *)
                 hamt_node_collision_new(
                     self->c_hash, Py_SIZE(self) - 2);
+            if (new == NULL) {
+                return W_ERROR;
+            }
 
             /* Copy all other keys from `self` to `new` */
             Py_ssize_t i;
@@ -1742,7 +1745,10 @@ hamt_node_array_assoc(PyHamtNode_Array *self,
            Set the key to it./ */
         child_node = hamt_node_assoc(
             node, shift + 5, hash, key, val, added_leaf);
-        if (child_node == (PyHamtNode *)self) {
+        if (child_node == NULL) {
+            return NULL;
+        }
+        else if (child_node == (PyHamtNode *)self) {
             Py_DECREF(child_node);
             return (PyHamtNode *)self;
         }
