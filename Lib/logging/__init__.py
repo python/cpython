@@ -1536,6 +1536,7 @@ def basicConfig(**kwargs):
     stream    Use the specified stream to initialize the StreamHandler. Note
               that this argument is incompatible with 'filename' - if both
               are present, 'stream' is ignored.
+    force     make sure these changes take effect
 
     Note that you could specify a stream created using open(filename, mode)
     rather than passing the filename and mode in. However, it should be
@@ -1563,6 +1564,14 @@ def basicConfig(**kwargs):
             level = kwargs.get("level")
             if level is not None:
                 root.setLevel(level)
+        else:
+            root.error("basicConfig will NOT take effect since it's been configured before")
+            if kwargs.get("force"):
+                root.error("removing root handlers and trying again")
+                for handler in root.handlers:
+                    root.removeHandler(handler)
+                    # calling it self again
+                    basicConfig(**kwargs)
     finally:
         _releaseLock()
 
