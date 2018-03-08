@@ -234,7 +234,7 @@ write code that handles both IP versions correctly.
    groups consisting entirely of zeroes included.
 
 
-   For the following attributes, see the corresponding documention of the
+   For the following attributes, see the corresponding documentation of the
    :class:`IPv4Address` class:
 
    .. attribute:: packed
@@ -440,7 +440,11 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
    .. attribute:: hostmask
 
-      The host mask, as a string.
+      The host mask, as an :class:`IPv4Address` object.
+
+   .. attribute:: netmask
+
+      The net mask, as an :class:`IPv4Address` object.
 
    .. attribute:: with_prefixlen
    .. attribute:: compressed
@@ -561,13 +565,12 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
    1. A string consisting of an IP address and an optional mask, separated by
       a slash (``/``).  The IP address is the network address, and the mask
-      can be either a single number, which means it's a *prefix*, or a string
-      representation of an IPv6 address.  If it's the latter, the mask is
-      interpreted as a *net mask*.  If no mask is provided, it's considered to
-      be ``/128``.
+      is a single number, which represents a *prefix*.  If no mask is provided,
+      it's considered to be ``/128``.
 
-      For example, the following *address* specifications are equivalent:
-      ``2001:db00::0/24`` and ``2001:db00::0/ffff:ff00::``.
+      Note that currently expanded netmasks are not supported.  That means
+      ``2001:db00::0/24`` is a valid argument while ``2001:db00::0/ffff:ff00::``
+      not.
 
    2. An integer that fits into 128 bits.  This is equivalent to a
       single-address network, with the network address being *address* and
@@ -604,6 +607,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. attribute:: network_address
    .. attribute:: broadcast_address
    .. attribute:: hostmask
+   .. attribute:: netmask
    .. attribute:: with_prefixlen
    .. attribute:: compressed
    .. attribute:: exploded
