@@ -276,6 +276,48 @@ Content-Disposition: form-data; name="submit"
                 got = getattr(fs.list[x], k)
                 self.assertEqual(got, exp)
 
+    def test_fieldstorage_multipart_utf8_filename(self):
+        #Test with filename that contains utf-8 characters
+        # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
+        # https://tools.ietf.org/html/rfc5987
+        env = {
+            'REQUEST_METHOD':'POST',
+            'CONTENT_TYPE':'multipart/form-data; boundary=---------------------------721837373350705526688164684',
+            'CONTENT_LENGTH':'601'
+        }
+        postdata = """-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="id"
+
+1234
+-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="title"
+
+
+-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="file"; filename*=utf-8''upload_test_file_%C5%82%C3%B3%C4%85%C3%A4.txt
+Content-Type: text/plain
+
+Testing 123.
+
+-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="submit"
+
+ Add\x20
+-----------------------------721837373350705526688164684--
+"""
+        fs = cgi.FieldStorage(fp=StringIO(postdata), environ=env)
+        self.assertEqual(len(fs.list), 4)
+        expect = [{'name':'id', 'filename':None, 'value':'1234'},
+                  {'name':'title', 'filename':None, 'value':''},
+                  {'name':'file',
+                   'filename':u'upload_test_file_\u0142\xf3\u0105\xe4.txt',
+                   'value':'Testing 123.\n'},
+                  {'name':'submit', 'filename':None, 'value':' Add '}]
+        for x in range(len(fs.list)):
+            for k, exp in expect[x].items():
+                got = getattr(fs.list[x], k)
+                self.assertEqual(got, exp)
+
     def test_fieldstorage_multipart_maxline(self):
         # Issue #18167
         maxline = 1 << 16

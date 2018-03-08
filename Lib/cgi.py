@@ -465,6 +465,9 @@ class FieldStorage:
         self.filename = None
         if 'filename' in pdict:
             self.filename = pdict['filename']
+        elif 'filename*' in pdict:
+            fname_encoding, fname_lang, fname = pdict['filename*'].split("'")
+            self.filename = urlparse.unquote(fname).decode(fname_encoding)
 
         # Process content-type header
         #
