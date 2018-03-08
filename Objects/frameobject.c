@@ -89,7 +89,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     long l_new_lineno;
     int overflow;
     int new_lasti = 0;                  /* The new value of f_lasti */
-    int new_iblock = 0;                 /* The new value of f_iblock */
     unsigned char *code = NULL;         /* The bytecode for the frame... */
     Py_ssize_t code_len = 0;            /* ...and its length */
     unsigned char *lnotab = NULL;       /* Iterating over co_lnotab */
@@ -99,6 +98,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     int addr = 0;                       /* (ditto) */
     int delta_iblock = 0;               /* Scanning the SETUPs and POPs */
     int for_loop_delta = 0;             /* (ditto) */
+    int delta;
     int blockstack[CO_MAXBLOCKS];       /* Walking the 'finally' blocks */
     int blockstack_top = 0;             /* (ditto) */
 
@@ -258,19 +258,25 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     assert(blockstack_top == 0);
 
     /* Pop any blocks that we're jumping out of. */
-    new_iblock = f->f_iblock - delta_iblock;
-    while (f->f_iblock > new_iblock) {
-        PyTryBlock *b = &f->f_blockstack[--f->f_iblock];
-        while ((f->f_stacktop - f->f_valuestack) > b->b_level) {
-            PyObject *v = (*--f->f_stacktop);
-            Py_DECREF(v);
+    delta = 0;
+    if (delta_iblock > 0) {
+        f->f_iblock -= delta_iblock;
+        PyTryBlock *b = &f->f_blockstack[f->f_iblock];
+        delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
+        if (b->b_type == SETUP_FINALLY &&
+            code[b->b_handler] == WITH_CLEANUP_START)
+        {
+            /* Pop the exit function. */
+            delta++;
         }
     }
     /* Pop the iterators of any 'for' loop we're jumping out of. */
-    while (for_loop_delta > 0) {
+    delta += for_loop_delta;
+
+    while (delta > 0) {
         PyObject *v = (*--f->f_stacktop);
         Py_DECREF(v);
-        for_loop_delta--;
+        delta--;
     }
 
     /* Finally set the new f_lineno and f_lasti and return OK. */
