@@ -493,7 +493,7 @@ PyOS_AfterFork(void)
 PyAPI_FUNC(void) _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
 PyAPI_FUNC(void) _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
                                             BOOL, struct _Py_stat_struct *);
-PyAPI_FUNC(int) _Py_is_reparse_link(const wchar_t*, ULONG);
+PyAPI_FUNC(int) _Py_is_reparse_link(const wchar_t*, ULONG, BOOL*);
 #endif
 
 #ifdef MS_WINDOWS
@@ -1598,7 +1598,8 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         if (!attributes_from_dir(path, &info, &reparse_tag))
             /* Very strange. This should not fail now */
             return -1;
-        is_link = _Py_is_reparse_link(path, reparse_tag);
+        if (!_Py_is_reparse_link(path, reparse_tag, &is_link))
+            return -1;
         if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
             if (!is_link || traverse) {
                 /* Should traverse, but could not open reparse point handle */
@@ -1614,10 +1615,14 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             if (lastError != ERROR_INVALID_FUNCTION &&
                 lastError != ERROR_INVALID_PARAMETER) {
                 CloseHandle(hFile);
+                SetLastError(lastError);
                 return -1;
             }
         } else if (taginfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            is_link = _Py_is_reparse_link(path, taginfo.ReparseTag);
+            if (!_Py_is_reparse_link(path, taginfo.ReparseTag, &is_link)) {
+                CloseHandle(hFile);
+                return -1;
+            }
 
             if (!is_link || traverse) {
                 /* Close the outer open file handle now that we're about to
@@ -7335,6 +7340,8 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     const wchar_t *path;
     DWORD n_bytes_returned;
     DWORD io_result;
+    BOOL is_link;
+    int is_link_ret;
     PyObject *po, *result;
     int dir_fd;
     HANDLE reparse_point_handle;
@@ -7387,7 +7394,12 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     if (io_result==0)
         return win32_error_object("readlink", po);
 
-    if (!_Py_is_reparse_link(path, rdb->ReparseTag))
+    Py_BEGIN_ALLOW_THREADS
+    is_link_ret = _Py_is_reparse_link(path, rdb->ReparseTag, &is_link);
+    if (!is_link_ret)
+        return PyErr_SetFromWindowsErr(GetLastError());
+    Py_END_ALLOW_THREADS
+    if (!is_link)
     {
         PyErr_SetString(PyExc_ValueError,
                 "not a symbolic link");
@@ -12121,6 +12133,7 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
     BY_HANDLE_FILE_INFORMATION file_info;
     ULONG reparse_tag;
     BOOL is_link;
+    int ret;
     wchar_t *joined_path=NULL;
 
     entry = PyObject_New(DirEntry, &DirEntryType);
@@ -12155,7 +12168,13 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
     }
 
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
-    is_link = _Py_is_reparse_link(joined_path, reparse_tag);
+    Py_BEGIN_ALLOW_THREADS
+    ret = _Py_is_reparse_link(joined_path, reparse_tag, &is_link);
+    Py_END_ALLOW_THREADS
+    if (!ret) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        goto error;
+    }
     _Py_attribute_data_to_stat(&file_info, is_link, &entry->win32_lstat);
 
     PyMem_Free(joined_path);

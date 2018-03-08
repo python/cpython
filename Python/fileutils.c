@@ -1853,29 +1853,34 @@ error:
 
 /* Determine whether a reparse point is a link type. */
 int
-_Py_is_reparse_link(const wchar_t *path, ULONG reparse_tag)
+_Py_is_reparse_link(IN const wchar_t *path, IN ULONG reparse_tag, OUT BOOL* is_link)
 {
-    BOOL ret = 0;
-    BOOL result = FALSE;
+    BOOL ret;
+    DWORD buflen;
+    BOOL success = TRUE;
     wchar_t *normpath = NULL;
     wchar_t *mountpath = NULL;
-    DWORD buflen;
+
+    // Default:
+    *is_link = FALSE;
+
     if (reparse_tag == IO_REPARSE_TAG_SYMLINK)
-        return TRUE;
+        *is_link = TRUE;
     else if (reparse_tag == IO_REPARSE_TAG_MOUNT_POINT)
     {
         /* Junction point. Either a link (e.g. mklink /j) or a volume mount
            points (e.g. mountvol.exe). Compare GetVolumePathNameW to path
            to determine which case. If they are equal, it is a mount.
         */
+        success = FALSE;
 
         buflen = GetFullPathNameW(path, 0, NULL, NULL);
-        normpath = PyMem_RawCalloc(buflen, sizeof(wchar_t));
+        normpath = PyMem_RawMalloc(buflen * sizeof(wchar_t));
         /* Volume path should be shorter than entire path */
-        mountpath = PyMem_RawCalloc(buflen, sizeof(wchar_t));
+        mountpath = PyMem_RawMalloc(buflen * sizeof(wchar_t));
         if (mountpath == NULL || normpath == NULL)
         {
-            PyErr_NoMemory();
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
             goto cleanup;
         }
 
@@ -1885,9 +1890,11 @@ _Py_is_reparse_link(const wchar_t *path, ULONG reparse_tag)
 
         ret = GetVolumePathNameW(normpath, mountpath,
                                  Py_SAFE_DOWNCAST(buflen, size_t, DWORD));
+        if (!ret)
+            goto cleanup;
 
-        if (ret)
-            result = wcsncmp(normpath, mountpath, buflen);
+        *is_link = wcsncmp(normpath, mountpath, buflen);
+        success = TRUE;
     }
 
 cleanup:
@@ -1895,7 +1902,7 @@ cleanup:
     PyMem_RawFree(normpath);
     PyMem_RawFree(mountpath);
 
-    return result;
+    return success;
 }
 
 #endif
