@@ -1747,7 +1747,8 @@ hamt_node_array_assoc(PyHamtNode_Array *self,
             node, shift + 5, hash, key, val, added_leaf);
         if (child_node == NULL) {
             return NULL;
-        } else if (child_node == (PyHamtNode *)self) {
+        }
+        else if (child_node == (PyHamtNode *)self) {
             Py_DECREF(child_node);
             return (PyHamtNode *)self;
         }
