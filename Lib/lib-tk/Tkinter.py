@@ -146,7 +146,7 @@ def _splitdict(tk, v, cut_minus=True, conv=None):
         dict[key] = value
     return dict
 
-class Event:
+class Event(object):
     """Container for the properties of an event.
 
     Instances of this type are generated if one of the following events occurs:
@@ -218,7 +218,7 @@ def _exit(code=0):
     raise SystemExit, code
 
 _varnum = 0
-class Variable:
+class Variable(object):
     """Class to define value holders for e.g. buttons.
 
     Subclasses StringVar, IntVar, DoubleVar, BooleanVar are specializations
@@ -427,7 +427,7 @@ def getboolean(s):
     return _default_root.tk.getboolean(s)
 
 # Methods defined on both toplevel and interior widgets
-class Misc:
+class Misc(object):
     """Internal class.
 
     Base class which defines methods common for interior widgets."""
@@ -1525,7 +1525,7 @@ class Misc:
         return self.tk.splitlist(self.tk.call('image', 'types'))
 
 
-class CallWrapper:
+class CallWrapper(object):
     """Internal class. Stores function to call when some user
     defined Tcl function is called e.g. after an event occurred."""
     def __init__(self, func, subst, widget):
@@ -1545,7 +1545,7 @@ class CallWrapper:
             self.widget._report_exception()
 
 
-class XView:
+class XView(object):
     """Mix-in class for querying and changing the horizontal position
     of a widget's window."""
 
@@ -1566,7 +1566,7 @@ class XView:
         self.tk.call(self._w, 'xview', 'scroll', number, what)
 
 
-class YView:
+class YView(object):
     """Mix-in class for querying and changing the vertical position
     of a widget's window."""
 
@@ -1587,7 +1587,7 @@ class YView:
         self.tk.call(self._w, 'yview', 'scroll', number, what)
 
 
-class Wm:
+class Wm(object):
     """Provides functions for the communication with the window manager."""
 
     def wm_aspect(self,
@@ -1959,7 +1959,7 @@ class Pack:
     propagate = pack_propagate = Misc.pack_propagate
     slaves = pack_slaves = Misc.pack_slaves
 
-class Place:
+class Place(object):
     """Geometry manager Place.
 
     Base class to use the methods place_* in every widget."""
@@ -2003,7 +2003,7 @@ class Place:
     info = place_info
     slaves = place_slaves = Misc.place_slaves
 
-class Grid:
+class Grid(object):
     """Geometry manager Grid.
 
     Base class to use the methods grid_* in every widget."""
@@ -3297,7 +3297,7 @@ class OptionMenu(Menubutton):
         Menubutton.destroy(self)
         self.__menu = None
 
-class Image:
+class Image(object):
     """Base class for images."""
     _last_id = 0
     def __init__(self, imgtype, name=None, cnf={}, master=None, **kw):
