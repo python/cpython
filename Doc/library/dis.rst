@@ -588,6 +588,17 @@ the original TOS1.
    .. versionadded:: 3.5
 
 
+.. opcode:: END_ASYNC_FOR
+
+   Terminates an :keyword:`async for` loop.  Handles an exception raised
+   when awaiting a next item.  If TOS is :exc:`StopAsyncIteration` pop 7
+   values from the stack and restore the exception state using the second
+   three of them.  Otherwise re-raise the exception using the three values
+   from the stack.  An exception handler block is removed from the block stack.
+
+   .. versionadded:: 3.8
+
+
 .. opcode:: BEFORE_ASYNC_WITH
 
    Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the

@@ -100,8 +100,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     int line = 0;                       /* (ditto) */
     int addr = 0;                       /* (ditto) */
     int delta_iblock = 0;               /* Scanning the SETUPs and POPs */
-    int for_loop_delta = 0;             /* (ditto) */
-    int delta;
+    int delta = 0;
     int blockstack[CO_MAXBLOCKS];       /* Walking the 'finally' blocks */
     int blockstack_top = 0;             /* (ditto) */
 
@@ -256,14 +255,16 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
                 return -1;
             }
             if (first_in && !second_in) {
-                if (op == FOR_ITER && !delta_iblock) {
-                    for_loop_delta++;
-                }
-                if (op != FOR_ITER) {
+                if (op != FOR_ITER && code[target_addr] != END_ASYNC_FOR) {
                     delta_iblock++;
                 }
+                else if (!delta_iblock) {
+                    /* Pop the iterators of any 'for' and 'async for' loop
+                     * we're jumping out of. */
+                    delta++;
+                }
             }
-            if (op != FOR_ITER) {
+            if (op != FOR_ITER && code[target_addr] != END_ASYNC_FOR) {
                 blockstack[blockstack_top++] = target_addr;
             }
             break;
@@ -289,11 +290,10 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     assert(blockstack_top == 0);
 
     /* Pop any blocks that we're jumping out of. */
-    delta = 0;
     if (delta_iblock > 0) {
         f->f_iblock -= delta_iblock;
         PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-        delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
+        delta += (f->f_stacktop - f->f_valuestack) - b->b_level;
         if (b->b_type == SETUP_FINALLY &&
             code[b->b_handler] == WITH_CLEANUP_START)
         {
@@ -301,9 +301,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             delta++;
         }
     }
-    /* Pop the iterators of any 'for' loop we're jumping out of. */
-    delta += for_loop_delta;
-
     while (delta > 0) {
         PyObject *v = (*--f->f_stacktop);
         Py_DECREF(v);

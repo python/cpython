@@ -157,3 +157,7 @@ CPython bytecode changes
 
   (Contributed by Mark Shannon, Antoine Pitrou and Serhiy Storchaka in
   :issue:`17611`.)
+
+* Added new opcode :opcode:`END_ASYNC_FOR` for handling exceptions raised
+  when awaiting a next item in an :keyword:`async for` loop.
+  (Contributed by Serhiy Storchaka in :issue:`33041`.)
