@@ -105,7 +105,7 @@ is possible to let the range start at another number, or to specify a different
 increment (even negative; sometimes this is called the 'step')::
 
     range(5, 10)
-       5 through 9
+       5, 6, 7, 8, 9
 
     range(0, 10, 3)
        0, 3, 6, 9
