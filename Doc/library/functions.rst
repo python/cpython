@@ -274,6 +274,12 @@ are always available.  They are listed here in alphabetical order.
       character.  This is to facilitate detection of incomplete and complete
       statements in the :mod:`code` module.
 
+   .. warning::
+
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string when compiling to an AST
+      object due to stack depth limitations in Python's AST compiler.
+
    .. versionchanged:: 3.2
       Allowed use of Windows and Mac newlines.  Also input in ``'exec'`` mode
       does not have to end in a newline anymore.  Added the *optimize* parameter.
