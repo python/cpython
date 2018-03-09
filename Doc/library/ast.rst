@@ -129,6 +129,11 @@ and classes for traversing abstract syntax trees:
    Parse the source into an AST node.  Equivalent to ``compile(source,
    filename, mode, ast.PyCF_ONLY_AST)``.
 
+   .. warning::
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string due to stack depth limitations
+      in Python's AST compiler.
+
 
 .. function:: literal_eval(node_or_string)
 
@@ -141,6 +146,11 @@ and classes for traversing abstract syntax trees:
    untrusted sources without the need to parse the values oneself.  It is not
    capable of evaluating arbitrarily complex expressions, for example involving
    operators or indexing.
+
+   .. warning::
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string due to stack depth limitations
+      in Python's AST compiler.
 
 
 .. function:: get_docstring(node, clean=True)
