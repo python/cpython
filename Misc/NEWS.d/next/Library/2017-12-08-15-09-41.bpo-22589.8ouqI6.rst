@@ -1,1 +1,0 @@
-Changed MIME type of .bmp from 'image/x-ms-bmp' to 'image/bmp'

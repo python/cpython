@@ -907,4 +907,38 @@ _winapi_GetACP(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _winapi_GetACP_impl(module);
 }
-/*[clinic end generated code: output=b9c00c323c9f4944 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_GetFileType__doc__,
+"GetFileType($module, /, handle)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_GETFILETYPE_METHODDEF    \
+    {"GetFileType", (PyCFunction)_winapi_GetFileType, METH_FASTCALL|METH_KEYWORDS, _winapi_GetFileType__doc__},
+
+static DWORD
+_winapi_GetFileType_impl(PyObject *module, HANDLE handle);
+
+static PyObject *
+_winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"handle", NULL};
+    static _PyArg_Parser _parser = {"" F_HANDLE ":GetFileType", _keywords, 0};
+    HANDLE handle;
+    DWORD _return_value;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &handle)) {
+        goto exit;
+    }
+    _return_value = _winapi_GetFileType_impl(module, handle);
+    if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = Py_BuildValue("k", _return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=ec7f36eb7efc9d00 input=a9049054013a1b77]*/

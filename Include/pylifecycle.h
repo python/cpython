@@ -54,14 +54,15 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 PyAPI_FUNC(_PyInitError) _Py_InitializeCore(const _PyCoreConfig *);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadEnv(_PyCoreConfig *);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(int) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
 
-PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *, _PyCoreConfig *);
+PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(
+    _PyMainInterpreterConfig *config,
+    const _PyCoreConfig *core_config);
 PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
 PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
     _PyMainInterpreterConfig *config,
@@ -90,7 +91,7 @@ PyAPI_FUNC(void) Py_EndInterpreter(PyThreadState *);
  * exit functions.
  */
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(void));
+PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(PyObject *), PyObject *);
 #endif
 PyAPI_FUNC(int) Py_AtExit(void (*func)(void));
 
@@ -117,6 +118,11 @@ PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 #ifdef Py_BUILD_CORE
 PyAPI_FUNC(_PyInitError) _PyPathConfig_Init(const _PyCoreConfig *core_config);
 PyAPI_FUNC(PyObject*) _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv);
+PyAPI_FUNC(int) _Py_FindEnvConfigValue(
+    FILE *env_file,
+    const wchar_t *key,
+    wchar_t *value,
+    size_t value_size);
 #endif
 PyAPI_FUNC(void)      Py_SetPath(const wchar_t *);
 #ifdef MS_WINDOWS
@@ -142,7 +148,6 @@ PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *conf
 PyAPI_FUNC(_PyInitError) _PyImport_Init(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyExc_Init(PyObject * bltinmod);
 PyAPI_FUNC(_PyInitError) _PyImportHooks_Init(void);
-PyAPI_FUNC(int) _PyFrame_Init(void);
 PyAPI_FUNC(int) _PyFloat_Init(void);
 PyAPI_FUNC(int) PyByteArray_Init(void);
 PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(const _PyCoreConfig *);

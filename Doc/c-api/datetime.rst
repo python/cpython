@@ -13,6 +13,16 @@ the module initialisation function.  The macro puts a pointer to a C structure
 into a static variable, :c:data:`PyDateTimeAPI`, that is used by the following
 macros.
 
+Macro for access to the UTC singleton:
+
+.. c:var:: PyObject* PyDateTime_TimeZone_UTC
+
+   Returns the time zone singleton representing UTC, the same object as
+   :attr:`datetime.timezone.utc`.
+
+   .. versionadded:: 3.7
+
+
 Type-check macros:
 
 .. c:function:: int PyDate_Check(PyObject *ob)
@@ -79,27 +89,41 @@ Macros to create objects:
 
 .. c:function:: PyObject* PyDate_FromDate(int year, int month, int day)
 
-   Return a ``datetime.date`` object with the specified year, month and day.
+   Return a :class:`datetime.date` object with the specified year, month and day.
 
 
 .. c:function:: PyObject* PyDateTime_FromDateAndTime(int year, int month, int day, int hour, int minute, int second, int usecond)
 
-   Return a ``datetime.datetime`` object with the specified year, month, day, hour,
+   Return a :class:`datetime.datetime` object with the specified year, month, day, hour,
    minute, second and microsecond.
 
 
 .. c:function:: PyObject* PyTime_FromTime(int hour, int minute, int second, int usecond)
 
-   Return a ``datetime.time`` object with the specified hour, minute, second and
+   Return a :class:`datetime.time` object with the specified hour, minute, second and
    microsecond.
 
 
 .. c:function:: PyObject* PyDelta_FromDSU(int days, int seconds, int useconds)
 
-   Return a ``datetime.timedelta`` object representing the given number of days,
-   seconds and microseconds.  Normalization is performed so that the resulting
-   number of microseconds and seconds lie in the ranges documented for
-   ``datetime.timedelta`` objects.
+   Return a :class:`datetime.timedelta` object representing the given number
+   of days, seconds and microseconds.  Normalization is performed so that the
+   resulting number of microseconds and seconds lie in the ranges documented for
+   :class:`datetime.timedelta` objects.
+
+.. c:function:: PyObject* PyTimeZone_FromOffset(PyDateTime_DeltaType* offset)
+
+   Return a :class:`datetime.timezone` object with an unnamed fixed offset
+   represented by the *offset* argument.
+
+   .. versionadded:: 3.7
+
+.. c:function:: PyObject* PyTimeZone_FromOffsetAndName(PyDateTime_DeltaType* offset, PyUnicode* name)
+
+   Return a :class:`datetime.timezone` object with a fixed offset represented
+   by the *offset* argument and with tzname *name*.
+
+   .. versionadded:: 3.7
 
 
 Macros to extract fields from date objects.  The argument must be an instance of
@@ -199,11 +223,11 @@ Macros for the convenience of modules implementing the DB API:
 
 .. c:function:: PyObject* PyDateTime_FromTimestamp(PyObject *args)
 
-   Create and return a new ``datetime.datetime`` object given an argument tuple
-   suitable for passing to ``datetime.datetime.fromtimestamp()``.
+   Create and return a new :class:`datetime.datetime` object given an argument
+   tuple suitable for passing to :meth:`datetime.datetime.fromtimestamp()`.
 
 
 .. c:function:: PyObject* PyDate_FromTimestamp(PyObject *args)
 
-   Create and return a new ``datetime.date`` object given an argument tuple
-   suitable for passing to ``datetime.date.fromtimestamp()``.
+   Create and return a new :class:`datetime.date` object given an argument
+   tuple suitable for passing to :meth:`datetime.date.fromtimestamp()`.

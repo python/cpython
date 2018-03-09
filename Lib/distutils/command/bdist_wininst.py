@@ -337,11 +337,10 @@ class bdist_wininst(Command):
                 # cross-building, so assume the latest version
                 bv = '14.0'
             else:
-                bv = '.'.join(CRT_ASSEMBLY_VERSION.split('.', 2)[:2])
-                if bv in ('14.11', '14.12'):
-                    # v142, v141 and v140 are binary compatible,
-                    # so keep using the 14.0 stub.
-                    bv = '14.0'
+                # as far as we know, CRT is binary compatible based on
+                # the first field, so assume 'x.0' until proven otherwise
+                major = CRT_ASSEMBLY_VERSION.partition('.')[0]
+                bv = major + '.0'
 
 
         # wininst-x.y.exe is in the same directory as this file

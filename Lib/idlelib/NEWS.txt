@@ -1,7 +1,26 @@
-What's New in IDLE 3.7.0
+What's New in IDLE 3.7.0 (since 3.6.0)
 Released on 2018-06-18?
-========================
+======================================
 
+
+bpo-32916: Change 'str' to 'code' in idlelib.pyparse and users.
+
+bpo-32905: Remove unused code in pyparse module.
+
+bpo-32874: IDLE - add pyparse tests with 97% coverage.
+
+bpo-32837: IDLE - require encoding argument for textview.view_file.
+Using the system and place-dependent default encoding for open()
+is a bad idea for IDLE's system and location-independent files.
+
+bpo-32826: Add "encoding=utf-8" to open() in IDLE's test_help_about.
+GUI test test_file_buttons() only looks at initial ascii-only lines,
+but failed on systems where open() defaults to 'ascii' because
+readline() internally reads and decodes far enough ahead to encounter
+a non-ascii character in CREDITS.txt.
+
+bpo-32765: Update configdialog General tab create page docstring.
+Add new widgets to the widget list.
 
 bpo-32207: Improve tk event exception tracebacks in IDLE.
 When tk event handling is driven by IDLE's run loop, a confusing
@@ -294,9 +313,9 @@ Issue #28572: Add 10% to coverage of IDLE's test_configdialog.
 Update and augment description of the configuration system.
 
 
-What's New in IDLE 3.6.0
+What's New in IDLE 3.6.0 (since 3.5.0)
 Released on 2016-12-23
-========================
+======================================
 
 - Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
   Patch by Roger Serwy, updated by Bayard Randel.

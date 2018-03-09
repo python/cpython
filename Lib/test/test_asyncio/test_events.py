@@ -15,6 +15,7 @@ except ImportError:
     ssl = None
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import errno
@@ -26,26 +27,14 @@ if sys.platform != 'win32':
     import tty
 
 import asyncio
+from asyncio import base_events
+from asyncio import constants
 from asyncio import coroutines
 from asyncio import events
 from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
-try:
-    from test import support
-except ImportError:
-    from asyncio import test_support as support
-
-
-def data_file(filename):
-    if hasattr(support, 'TEST_HOME_DIR'):
-        fullname = os.path.join(support.TEST_HOME_DIR, filename)
-        if os.path.isfile(fullname):
-            return fullname
-    fullname = os.path.join(os.path.dirname(__file__), filename)
-    if os.path.isfile(fullname):
-        return fullname
-    raise FileNotFoundError(filename)
+from test import support
 
 
 def osx_tiger():
@@ -66,21 +55,18 @@ def _test_get_event_loop_new_process__sub_proc():
     return loop.run_until_complete(doit())
 
 
-ONLYCERT = data_file('ssl_cert.pem')
-ONLYKEY = data_file('ssl_key.pem')
-SIGNED_CERTFILE = data_file('keycert3.pem')
-SIGNING_CA = data_file('pycacert.pem')
-PEERCERT = {'serialNumber': 'B09264B1F2DA21D1',
-            'version': 1,
-            'subject': ((('countryName', 'XY'),),
-                    (('localityName', 'Castle Anthrax'),),
-                    (('organizationName', 'Python Software Foundation'),),
-                    (('commonName', 'localhost'),)),
-            'issuer': ((('countryName', 'XY'),),
-                    (('organizationName', 'Python Software Foundation CA'),),
-                    (('commonName', 'our-ca-server'),)),
-            'notAfter': 'Nov 13 19:47:07 2022 GMT',
-            'notBefore': 'Jan  4 19:47:07 2013 GMT'}
+class CoroLike:
+    def send(self, v):
+        pass
+
+    def throw(self, *exc):
+        pass
+
+    def close(self):
+        pass
+
+    def __await__(self):
+        pass
 
 
 class MyBaseProto(asyncio.Protocol):
@@ -839,18 +825,20 @@ class EventLoopTestsMixin:
                 'SSL not supported with proactor event loops before Python 3.5'
                 )
 
-        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        server_context.load_cert_chain(ONLYCERT, ONLYKEY)
-        if hasattr(server_context, 'check_hostname'):
-            server_context.check_hostname = False
-        server_context.verify_mode = ssl.CERT_NONE
-
-        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        if hasattr(server_context, 'check_hostname'):
-            client_context.check_hostname = False
-        client_context.verify_mode = ssl.CERT_NONE
+        server_context = test_utils.simple_server_sslcontext()
+        client_context = test_utils.simple_client_sslcontext()
 
         self.test_connect_accepted_socket(server_context, client_context)
+
+    def test_connect_accepted_socket_ssl_timeout_for_plain_socket(self):
+        sock = socket.socket()
+        self.addCleanup(sock.close)
+        coro = self.loop.connect_accepted_socket(
+            MyProto, sock, ssl_handshake_timeout=1)
+        with self.assertRaisesRegex(
+                ValueError,
+                'ssl_handshake_timeout is only meaningful with ssl'):
+            self.loop.run_until_complete(coro)
 
     @mock.patch('asyncio.base_events.socket')
     def create_server_multiple_hosts(self, family, hosts, mock_sock):
@@ -1024,7 +1012,7 @@ class EventLoopTestsMixin:
     def test_create_server_ssl(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
-            lambda: proto, ONLYCERT, ONLYKEY)
+            lambda: proto, test_utils.ONLYCERT, test_utils.ONLYKEY)
 
         f_c = self.loop.create_connection(MyBaseProto, host, port,
                                           ssl=test_utils.dummy_ssl_context())
@@ -1057,7 +1045,7 @@ class EventLoopTestsMixin:
     def test_create_unix_server_ssl(self):
         proto = MyProto(loop=self.loop)
         server, path = self._make_ssl_unix_server(
-            lambda: proto, ONLYCERT, ONLYKEY)
+            lambda: proto, test_utils.ONLYCERT, test_utils.ONLYKEY)
 
         f_c = self.loop.create_unix_connection(
             MyBaseProto, path, ssl=test_utils.dummy_ssl_context(),
@@ -1087,7 +1075,7 @@ class EventLoopTestsMixin:
     def test_create_server_ssl_verify_failed(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
-            lambda: proto, SIGNED_CERTFILE)
+            lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         sslcontext_client.options |= ssl.OP_NO_SSLv2
@@ -1117,7 +1105,7 @@ class EventLoopTestsMixin:
     def test_create_unix_server_ssl_verify_failed(self):
         proto = MyProto(loop=self.loop)
         server, path = self._make_ssl_unix_server(
-            lambda: proto, SIGNED_CERTFILE)
+            lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         sslcontext_client.options |= ssl.OP_NO_SSLv2
@@ -1146,13 +1134,13 @@ class EventLoopTestsMixin:
     def test_create_server_ssl_match_failed(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
-            lambda: proto, SIGNED_CERTFILE)
+            lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         sslcontext_client.options |= ssl.OP_NO_SSLv2
         sslcontext_client.verify_mode = ssl.CERT_REQUIRED
         sslcontext_client.load_verify_locations(
-            cafile=SIGNING_CA)
+            cafile=test_utils.SIGNING_CA)
         if hasattr(sslcontext_client, 'check_hostname'):
             sslcontext_client.check_hostname = True
 
@@ -1163,11 +1151,13 @@ class EventLoopTestsMixin:
             with test_utils.disable_logger():
                 with self.assertRaisesRegex(
                         ssl.CertificateError,
-                        "hostname '127.0.0.1' doesn't match 'localhost'"):
+                        "IP address mismatch, certificate is not valid for "
+                        "'127.0.0.1'"):
                     self.loop.run_until_complete(f_c)
 
         # close connection
-        proto.transport.close()
+        # transport is None because TLS ALERT aborted the handshake
+        self.assertIsNone(proto.transport)
         server.close()
 
     @support.skip_unless_bind_unix_socket
@@ -1175,12 +1165,12 @@ class EventLoopTestsMixin:
     def test_create_unix_server_ssl_verified(self):
         proto = MyProto(loop=self.loop)
         server, path = self._make_ssl_unix_server(
-            lambda: proto, SIGNED_CERTFILE)
+            lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         sslcontext_client.options |= ssl.OP_NO_SSLv2
         sslcontext_client.verify_mode = ssl.CERT_REQUIRED
-        sslcontext_client.load_verify_locations(cafile=SIGNING_CA)
+        sslcontext_client.load_verify_locations(cafile=test_utils.SIGNING_CA)
         if hasattr(sslcontext_client, 'check_hostname'):
             sslcontext_client.check_hostname = True
 
@@ -1200,12 +1190,12 @@ class EventLoopTestsMixin:
     def test_create_server_ssl_verified(self):
         proto = MyProto(loop=self.loop)
         server, host, port = self._make_ssl_server(
-            lambda: proto, SIGNED_CERTFILE)
+            lambda: proto, test_utils.SIGNED_CERTFILE)
 
         sslcontext_client = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         sslcontext_client.options |= ssl.OP_NO_SSLv2
         sslcontext_client.verify_mode = ssl.CERT_REQUIRED
-        sslcontext_client.load_verify_locations(cafile=SIGNING_CA)
+        sslcontext_client.load_verify_locations(cafile=test_utils.SIGNING_CA)
         if hasattr(sslcontext_client, 'check_hostname'):
             sslcontext_client.check_hostname = True
 
@@ -1217,7 +1207,7 @@ class EventLoopTestsMixin:
 
         # extra info is available
         self.check_ssl_extra_info(client,peername=(host, port),
-                                  peercert=PEERCERT)
+                                  peercert=test_utils.PEERCERT)
 
         # close connection
         proto.transport.close()
@@ -1486,8 +1476,6 @@ class EventLoopTestsMixin:
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
     @unittest.skipIf(sys.platform == 'darwin', 'test hangs on MacOS')
-    # Issue #20495: The test hangs on FreeBSD 7.2 but pass on FreeBSD 9
-    @support.requires_freebsd_version(8)
     def test_read_pty_output(self):
         proto = MyReadPipeProto(loop=self.loop)
 
@@ -1819,12 +1807,16 @@ class EventLoopTestsMixin:
         with self.assertRaises(RuntimeError):
             self.loop.call_at(self.loop.time() + .0, func)
         with self.assertRaises(RuntimeError):
-            self.loop.run_until_complete(
-                self.loop.run_in_executor(None, func))
-        with self.assertRaises(RuntimeError):
             self.loop.create_task(coro)
         with self.assertRaises(RuntimeError):
             self.loop.add_signal_handler(signal.SIGTERM, func)
+
+        # run_in_executor test is tricky: the method is a coroutine,
+        # but run_until_complete cannot be called on closed loop.
+        # Thus iterate once explicitly.
+        with self.assertRaises(RuntimeError):
+            it = self.loop.run_in_executor(None, func).__await__()
+            next(it)
 
 
 class SubprocessTestsMixin:
@@ -2101,14 +2093,432 @@ class SubprocessTestsMixin:
             self.loop.run_until_complete(connect(shell=False))
 
 
+class SendfileBase:
+
+    DATA = b"12345abcde" * 160 * 1024  # 160 KiB
+
+    @classmethod
+    def setUpClass(cls):
+        with open(support.TESTFN, 'wb') as fp:
+            fp.write(cls.DATA)
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(support.TESTFN)
+        super().tearDownClass()
+
+    def setUp(self):
+        self.file = open(support.TESTFN, 'rb')
+        self.addCleanup(self.file.close)
+        super().setUp()
+
+    def run_loop(self, coro):
+        return self.loop.run_until_complete(coro)
+
+
+class SockSendfileMixin(SendfileBase):
+
+    class MyProto(asyncio.Protocol):
+
+        def __init__(self, loop):
+            self.started = False
+            self.closed = False
+            self.data = bytearray()
+            self.fut = loop.create_future()
+            self.transport = None
+
+        def connection_made(self, transport):
+            self.started = True
+            self.transport = transport
+
+        def data_received(self, data):
+            self.data.extend(data)
+
+        def connection_lost(self, exc):
+            self.closed = True
+            self.fut.set_result(None)
+
+        async def wait_closed(self):
+            await self.fut
+
+    def make_socket(self, cleanup=True):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setblocking(False)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024)
+        if cleanup:
+            self.addCleanup(sock.close)
+        return sock
+
+    def prepare_socksendfile(self):
+        sock = self.make_socket()
+        proto = self.MyProto(self.loop)
+        port = support.find_unused_port()
+        srv_sock = self.make_socket(cleanup=False)
+        srv_sock.bind((support.HOST, port))
+        server = self.run_loop(self.loop.create_server(
+            lambda: proto, sock=srv_sock))
+        self.run_loop(self.loop.sock_connect(sock, ('127.0.0.1', port)))
+
+        def cleanup():
+            if proto.transport is not None:
+                # can be None if the task was cancelled before
+                # connection_made callback
+                proto.transport.close()
+                self.run_loop(proto.wait_closed())
+
+            server.close()
+            self.run_loop(server.wait_closed())
+
+        self.addCleanup(cleanup)
+
+        return sock, proto
+
+    def test_sock_sendfile_success(self):
+        sock, proto = self.prepare_socksendfile()
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(proto.data, self.DATA)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sock_sendfile_with_offset_and_count(self):
+        sock, proto = self.prepare_socksendfile()
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file,
+                                                    1000, 2000))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(proto.data, self.DATA[1000:3000])
+        self.assertEqual(self.file.tell(), 3000)
+        self.assertEqual(ret, 2000)
+
+    def test_sock_sendfile_zero_size(self):
+        sock, proto = self.prepare_socksendfile()
+        with tempfile.TemporaryFile() as f:
+            ret = self.run_loop(self.loop.sock_sendfile(sock, f,
+                                                        0, None))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, 0)
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sock_sendfile_mix_with_regular_send(self):
+        buf = b'1234567890' * 1024 * 1024  # 10 MB
+        sock, proto = self.prepare_socksendfile()
+        self.run_loop(self.loop.sock_sendall(sock, buf))
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
+        self.run_loop(self.loop.sock_sendall(sock, buf))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, len(self.DATA))
+        expected = buf + self.DATA + buf
+        self.assertEqual(proto.data, expected)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+
+class SendfileMixin(SendfileBase):
+
+    class MySendfileProto(MyBaseProto):
+
+        def __init__(self, loop=None, close_after=0):
+            super().__init__(loop)
+            self.data = bytearray()
+            self.close_after = close_after
+
+        def data_received(self, data):
+            self.data.extend(data)
+            super().data_received(data)
+            if self.close_after and self.nbytes >= self.close_after:
+                self.transport.close()
+
+
+    # Note: sendfile via SSL transport is equal to sendfile fallback
+
+    def prepare_sendfile(self, *, is_ssl=False, close_after=0):
+        port = support.find_unused_port()
+        srv_proto = self.MySendfileProto(loop=self.loop,
+                                         close_after=close_after)
+        if is_ssl:
+            if not ssl:
+                self.skipTest("No ssl module")
+            srv_ctx = test_utils.simple_server_sslcontext()
+            cli_ctx = test_utils.simple_client_sslcontext()
+        else:
+            srv_ctx = None
+            cli_ctx = None
+        srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # reduce recv socket buffer size to test on relative small data sets
+        srv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024)
+        srv_sock.bind((support.HOST, port))
+        server = self.run_loop(self.loop.create_server(
+            lambda: srv_proto, sock=srv_sock, ssl=srv_ctx))
+
+        if is_ssl:
+            server_hostname = support.HOST
+        else:
+            server_hostname = None
+        cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # reduce send socket buffer size to test on relative small data sets
+        cli_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
+        cli_sock.connect((support.HOST, port))
+        cli_proto = self.MySendfileProto(loop=self.loop)
+        tr, pr = self.run_loop(self.loop.create_connection(
+            lambda: cli_proto, sock=cli_sock,
+            ssl=cli_ctx, server_hostname=server_hostname))
+
+        def cleanup():
+            srv_proto.transport.close()
+            cli_proto.transport.close()
+            self.run_loop(srv_proto.done)
+            self.run_loop(cli_proto.done)
+
+            server.close()
+            self.run_loop(server.wait_closed())
+
+        self.addCleanup(cleanup)
+        return srv_proto, cli_proto
+
+    @unittest.skipIf(sys.platform == 'win32', "UDP sockets are not supported")
+    def test_sendfile_not_supported(self):
+        tr, pr = self.run_loop(
+            self.loop.create_datagram_endpoint(
+                lambda: MyDatagramProto(loop=self.loop),
+                family=socket.AF_INET))
+        try:
+            with self.assertRaisesRegex(RuntimeError, "not supported"):
+                self.run_loop(
+                    self.loop.sendfile(tr, self.file))
+            self.assertEqual(0, self.file.tell())
+        finally:
+            # don't use self.addCleanup because it produces resource warning
+            tr.close()
+
+    def test_sendfile(self):
+        srv_proto, cli_proto = self.prepare_sendfile()
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.file))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.nbytes, len(self.DATA))
+        self.assertEqual(srv_proto.data, self.DATA)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sendfile_force_fallback(self):
+        srv_proto, cli_proto = self.prepare_sendfile()
+
+        def sendfile_native(transp, file, offset, count):
+            # to raise SendfileNotAvailableError
+            return base_events.BaseEventLoop._sendfile_native(
+                self.loop, transp, file, offset, count)
+
+        self.loop._sendfile_native = sendfile_native
+
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.file))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.nbytes, len(self.DATA))
+        self.assertEqual(srv_proto.data, self.DATA)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sendfile_force_unsupported_native(self):
+        if sys.platform == 'win32':
+            if isinstance(self.loop, asyncio.ProactorEventLoop):
+                self.skipTest("Fails on proactor event loop")
+        srv_proto, cli_proto = self.prepare_sendfile()
+
+        def sendfile_native(transp, file, offset, count):
+            # to raise SendfileNotAvailableError
+            return base_events.BaseEventLoop._sendfile_native(
+                self.loop, transp, file, offset, count)
+
+        self.loop._sendfile_native = sendfile_native
+
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+                                    "not supported"):
+            self.run_loop(
+                self.loop.sendfile(cli_proto.transport, self.file,
+                                   fallback=False))
+
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(srv_proto.nbytes, 0)
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sendfile_ssl(self):
+        srv_proto, cli_proto = self.prepare_sendfile(is_ssl=True)
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.file))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.nbytes, len(self.DATA))
+        self.assertEqual(srv_proto.data, self.DATA)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sendfile_for_closing_transp(self):
+        srv_proto, cli_proto = self.prepare_sendfile()
+        cli_proto.transport.close()
+        with self.assertRaisesRegex(RuntimeError, "is closing"):
+            self.run_loop(self.loop.sendfile(cli_proto.transport, self.file))
+        self.run_loop(srv_proto.done)
+        self.assertEqual(srv_proto.nbytes, 0)
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sendfile_pre_and_post_data(self):
+        srv_proto, cli_proto = self.prepare_sendfile()
+        PREFIX = b'zxcvbnm' * 1024
+        SUFFIX = b'0987654321' * 1024
+        cli_proto.transport.write(PREFIX)
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.file))
+        cli_proto.transport.write(SUFFIX)
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.data, PREFIX + self.DATA + SUFFIX)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sendfile_ssl_pre_and_post_data(self):
+        srv_proto, cli_proto = self.prepare_sendfile(is_ssl=True)
+        PREFIX = b'zxcvbnm' * 1024
+        SUFFIX = b'0987654321' * 1024
+        cli_proto.transport.write(PREFIX)
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.file))
+        cli_proto.transport.write(SUFFIX)
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.data, PREFIX + self.DATA + SUFFIX)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sendfile_partial(self):
+        srv_proto, cli_proto = self.prepare_sendfile()
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.file, 1000, 100))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, 100)
+        self.assertEqual(srv_proto.nbytes, 100)
+        self.assertEqual(srv_proto.data, self.DATA[1000:1100])
+        self.assertEqual(self.file.tell(), 1100)
+
+    def test_sendfile_ssl_partial(self):
+        srv_proto, cli_proto = self.prepare_sendfile(is_ssl=True)
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.file, 1000, 100))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, 100)
+        self.assertEqual(srv_proto.nbytes, 100)
+        self.assertEqual(srv_proto.data, self.DATA[1000:1100])
+        self.assertEqual(self.file.tell(), 1100)
+
+    def test_sendfile_close_peer_after_receiving(self):
+        srv_proto, cli_proto = self.prepare_sendfile(
+            close_after=len(self.DATA))
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.file))
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.nbytes, len(self.DATA))
+        self.assertEqual(srv_proto.data, self.DATA)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sendfile_ssl_close_peer_after_receiving(self):
+        srv_proto, cli_proto = self.prepare_sendfile(
+            is_ssl=True, close_after=len(self.DATA))
+        ret = self.run_loop(
+            self.loop.sendfile(cli_proto.transport, self.file))
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(srv_proto.nbytes, len(self.DATA))
+        self.assertEqual(srv_proto.data, self.DATA)
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sendfile_close_peer_in_middle_of_receiving(self):
+        srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
+        with self.assertRaises(ConnectionError):
+            self.run_loop(
+                self.loop.sendfile(cli_proto.transport, self.file))
+        self.run_loop(srv_proto.done)
+
+        self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
+                        srv_proto.nbytes)
+        self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
+                        self.file.tell())
+        self.assertTrue(cli_proto.transport.is_closing())
+
+    def test_sendfile_fallback_close_peer_in_middle_of_receiving(self):
+
+        def sendfile_native(transp, file, offset, count):
+            # to raise SendfileNotAvailableError
+            return base_events.BaseEventLoop._sendfile_native(
+                self.loop, transp, file, offset, count)
+
+        self.loop._sendfile_native = sendfile_native
+
+        srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
+        with self.assertRaises(ConnectionError):
+            self.run_loop(
+                self.loop.sendfile(cli_proto.transport, self.file))
+        self.run_loop(srv_proto.done)
+
+        self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
+                        srv_proto.nbytes)
+        self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
+                        self.file.tell())
+
+    @unittest.skipIf(not hasattr(os, 'sendfile'),
+                     "Don't have native sendfile support")
+    def test_sendfile_prevents_bare_write(self):
+        srv_proto, cli_proto = self.prepare_sendfile()
+        fut = self.loop.create_future()
+
+        async def coro():
+            fut.set_result(None)
+            return await self.loop.sendfile(cli_proto.transport, self.file)
+
+        t = self.loop.create_task(coro())
+        self.run_loop(fut)
+        with self.assertRaisesRegex(RuntimeError,
+                                    "sendfile is in progress"):
+            cli_proto.transport.write(b'data')
+        ret = self.run_loop(t)
+        self.assertEqual(ret, len(self.DATA))
+
+    def test_sendfile_no_fallback_for_fallback_transport(self):
+        transport = mock.Mock()
+        transport.is_closing.side_effect = lambda: False
+        transport._sendfile_compatible = constants._SendfileMode.FALLBACK
+        with self.assertRaisesRegex(RuntimeError, 'fallback is disabled'):
+            self.loop.run_until_complete(
+                self.loop.sendfile(transport, None, fallback=False))
+
+
 if sys.platform == 'win32':
 
-    class SelectEventLoopTests(EventLoopTestsMixin, test_utils.TestCase):
+    class SelectEventLoopTests(EventLoopTestsMixin,
+                               SendfileMixin,
+                               SockSendfileMixin,
+                               test_utils.TestCase):
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop()
 
     class ProactorEventLoopTests(EventLoopTestsMixin,
+                                 SendfileMixin,
+                                 SockSendfileMixin,
                                  SubprocessTestsMixin,
                                  test_utils.TestCase):
 
@@ -2136,7 +2546,9 @@ if sys.platform == 'win32':
 else:
     import selectors
 
-    class UnixEventLoopTestsMixin(EventLoopTestsMixin):
+    class UnixEventLoopTestsMixin(EventLoopTestsMixin,
+                                  SendfileMixin,
+                                  SockSendfileMixin):
         def setUp(self):
             super().setUp()
             watcher = asyncio.SafeChildWatcher()
@@ -2355,20 +2767,7 @@ class HandleTests(test_utils.TestCase):
         # collections.abc.Coroutine, but lack cr_core or gi_code attributes
         # (such as ones compiled with Cython).
 
-        class Coro:
-            def send(self, v):
-                pass
-
-            def throw(self, *exc):
-                pass
-
-            def close(self):
-                pass
-
-            def __await__(self):
-                pass
-
-        coro = Coro()
+        coro = CoroLike()
         coro.__name__ = 'AAA'
         self.assertTrue(asyncio.iscoroutine(coro))
         self.assertEqual(coroutines._format_coroutine(coro), 'AAA()')
@@ -2379,10 +2778,10 @@ class HandleTests(test_utils.TestCase):
         coro.cr_running = True
         self.assertEqual(coroutines._format_coroutine(coro), 'BBB() running')
 
-        coro = Coro()
+        coro = CoroLike()
         # Some coroutines might not have '__name__', such as
         # built-in async_gen.asend().
-        self.assertEqual(coroutines._format_coroutine(coro), 'Coro()')
+        self.assertEqual(coroutines._format_coroutine(coro), 'CoroLike()')
 
 
 class TimerTests(unittest.TestCase):
@@ -2396,6 +2795,12 @@ class TimerTests(unittest.TestCase):
         h = asyncio.TimerHandle(when, lambda: False, (),
                                 mock.Mock())
         self.assertEqual(hash(h), hash(when))
+
+    def test_when(self):
+        when = time.monotonic()
+        h = asyncio.TimerHandle(when, lambda: False, (),
+                                mock.Mock())
+        self.assertEqual(when, h.when())
 
     def test_timer(self):
         def callback(*args):
@@ -2579,6 +2984,10 @@ class AbstractEventLoopTests(unittest.TestCase):
                 await loop.sock_connect(f, f)
             with self.assertRaises(NotImplementedError):
                 await loop.sock_accept(f)
+            with self.assertRaises(NotImplementedError):
+                await loop.sock_sendfile(f, f)
+            with self.assertRaises(NotImplementedError):
+                await loop.sendfile(f, f)
             with self.assertRaises(NotImplementedError):
                 await loop.connect_read_pipe(f, mock.sentinel.pipe)
             with self.assertRaises(NotImplementedError):
@@ -2849,6 +3258,36 @@ else:
         _set_running_loop_impl = events._c__set_running_loop
         get_running_loop_impl = events._c_get_running_loop
         get_event_loop_impl = events._c_get_event_loop
+
+
+class TestServer(unittest.TestCase):
+
+    def test_get_loop(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+        proto = MyProto(loop)
+        server = loop.run_until_complete(loop.create_server(lambda: proto, '0.0.0.0', 0))
+        self.assertEqual(server.get_loop(), loop)
+        server.close()
+        loop.run_until_complete(server.wait_closed())
+
+
+class TestAbstractServer(unittest.TestCase):
+
+    def test_close(self):
+        with self.assertRaises(NotImplementedError):
+            events.AbstractServer().close()
+
+    def test_wait_closed(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        with self.assertRaises(NotImplementedError):
+            loop.run_until_complete(events.AbstractServer().wait_closed())
+
+    def test_get_loop(self):
+        with self.assertRaises(NotImplementedError):
+            events.AbstractServer().get_loop()
 
 
 if __name__ == '__main__':
