@@ -141,7 +141,10 @@ class BackupTests(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError) as cm:
             with sqlite.connect(':memory:') as bck:
                 self.cx.backup(bck, name='non-existing')
-        self.assertEqual(str(cm.exception), 'SQL logic error or missing database')
+        self.assertIn(
+            str(cm.exception),
+            ['SQL logic error', 'SQL logic error or missing database']
+        )
 
         self.cx.execute("ATTACH DATABASE ':memory:' AS attached_db")
         self.cx.execute('CREATE TABLE attached_db.foo (key INTEGER)')
