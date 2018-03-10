@@ -1553,7 +1553,8 @@ Return a tuple containing unpacked values.
 
 Values are unpacked according to the format string Struct.format.
 
-The buffer's size in bytes, starting from offset, must be at least Struct.size.
+The buffer's size in bytes, starting at position offset, must be
+at least Struct.size.
 
 See help(struct) for more on format strings.
 [clinic start generated code]*/
@@ -1561,14 +1562,14 @@ See help(struct) for more on format strings.
 static PyObject *
 Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset)
-/*[clinic end generated code: output=57fac875e0977316 input=ebace204f134dfe0]*/
+/*[clinic end generated code: output=57fac875e0977316 input=cafd4851d473c894]*/
 {
     assert(self->s_codes != NULL);
 
     if (offset < 0) {
         if (offset + self->s_size > 0) {
             PyErr_Format(StructError,
-                         "no space to unpack %zd bytes at offset %zd",
+                         "not enough data to unpack %zd bytes at offset %zd",
                          self->s_size,
                          offset);
             return NULL;

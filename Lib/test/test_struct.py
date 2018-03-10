@@ -609,7 +609,7 @@ class StructTest(unittest.TestCase):
 
         with self.assertRaisesRegex(
                 struct.error,
-                r'no space to unpack 4 bytes at offset -2'):
+                r'not enough data to unpack 4 bytes at offset -2'):
             struct.unpack_from('<I', byte_list, -2)
 
         with self.assertRaisesRegex(
