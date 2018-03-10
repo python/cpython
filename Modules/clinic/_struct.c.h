@@ -79,7 +79,7 @@ PyDoc_STRVAR(Struct_unpack_from__doc__,
 "\n"
 "Values are unpacked according to the format string Struct.format.\n"
 "\n"
-"The buffer\'s size in bytes, minus offset, must be at least Struct.size.\n"
+"The buffer\'s size in bytes, starting from offset, must be at least Struct.size.\n"
 "\n"
 "See help(struct) for more on format strings.");
 
@@ -302,4 +302,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9119f213a951e4cc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b94a80454cba2c6b input=a9049054013a1b77]*/
