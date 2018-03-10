@@ -2377,6 +2377,15 @@ left undefined.
    of the appropriate type.
 
 
+.. method:: object.__trunc__(self)
+
+   Called to implement :meth:`math.trunc`.  Should return the value of the
+   object truncated to a :class:`numbers.Integral` (typically an
+   :class:`int`).  If a class defines :meth:`__trunc__` but not
+   :meth:`__int__`, then :meth:`__trunc__` is called to implement the
+   built-in function :func:`int`.
+
+
 .. method:: object.__index__(self)
 
    Called to implement :func:`operator.index`, and whenever Python needs to
