@@ -532,6 +532,56 @@ Connection Objects
                  f.write('%s\n' % line)
 
 
+   .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
+
+      This method makes a backup of a SQLite database even while it's being accessed
+      by other clients, or concurrently by the same connection.  The copy will be
+      written into the mandatory argument *target*, that must be another
+      :class:`Connection` instance.
+
+      By default, or when *pages* is either ``0`` or a negative integer, the entire
+      database is copied in a single step; otherwise the method performs a loop
+      copying up to *pages* pages at a time.
+
+      If *progress* is specified, it must either be ``None`` or a callable object that
+      will be executed at each iteration with three integer arguments, respectively
+      the *status* of the last iteration, the *remaining* number of pages still to be
+      copied and the *total* number of pages.
+
+      The *name* argument specifies the database name that will be copied: it must be
+      a string containing either ``"main"``, the default, to indicate the main
+      database, ``"temp"`` to indicate the temporary database or the name specified
+      after the ``AS`` keyword in an ``ATTACH DATABASE`` statement for an attached
+      database.
+
+      The *sleep* argument specifies the number of seconds to sleep by between
+      successive attempts to backup remaining pages, can be specified either as an
+      integer or a floating point value.
+
+      Example 1, copy an existing database into another::
+
+         import sqlite3
+
+         def progress(status, remaining, total):
+             print(f'Copied {total-remaining} of {total} pages...')
+
+         con = sqlite3.connect('existing_db.db')
+         with sqlite3.connect('backup.db') as bck:
+             con.backup(bck, pages=1, progress=progress)
+
+      Example 2, copy an existing database into a transient copy::
+
+         import sqlite3
+
+         source = sqlite3.connect('existing_db.db')
+         dest = sqlite3.connect(':memory:')
+         source.backup(dest)
+
+      Availability: SQLite 3.6.11 or higher
+
+      .. versionadded:: 3.7
+
+
 .. _sqlite3-cursor-objects:
 
 Cursor Objects
