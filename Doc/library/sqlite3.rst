@@ -579,7 +579,7 @@ Connection Objects
 
       Availability: SQLite 3.6.11 or higher
 
-      .. versionadded:: 3.8
+      .. versionadded:: 3.7
 
 
 .. _sqlite3-cursor-objects:
