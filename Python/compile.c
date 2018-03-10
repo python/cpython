@@ -2473,8 +2473,8 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP(c, GET_ANEXT);
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
-    VISIT(c, expr, s->v.AsyncFor.target);
     ADDOP(c, POP_BLOCK);  /* for SETUP_FINALLY */
+    VISIT(c, expr, s->v.AsyncFor.target);
     compiler_pop_fblock(c, EXCEPT, try);
     ADDOP_JREL(c, JUMP_FORWARD, after_try);
 
@@ -4060,8 +4060,8 @@ compiler_async_comprehension_generator(struct compiler *c,
     ADDOP(c, GET_ANEXT);
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
-    VISIT(c, expr, gen->target);
     ADDOP(c, POP_BLOCK);
+    VISIT(c, expr, gen->target);
     compiler_pop_fblock(c, EXCEPT, try);
     ADDOP_JREL(c, JUMP_FORWARD, after_try);
 
