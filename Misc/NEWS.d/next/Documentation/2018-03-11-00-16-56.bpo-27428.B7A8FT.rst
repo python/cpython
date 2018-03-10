@@ -1,0 +1,2 @@
+Update documentation to clarify that ``WindowsRegistryFinder`` implement
+``MetaPathFinder``. Patch by Himanshu Lakhara
