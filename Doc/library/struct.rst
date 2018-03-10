@@ -74,8 +74,8 @@ The module defines the following exception and functions:
 
    Unpack from *buffer* starting at position *offset*, according to the format
    string *format*.  The result is a tuple even if it contains exactly one
-   item.  The buffer's size in bytes, minus *offset*, must be at least
-   the size required by the format, as reflected by :func:`calcsize`.
+   item.  The buffer's size in bytes, starting at position *offset*, must be at
+   least the size required by the format, as reflected by :func:`calcsize`.
 
 
 .. function:: iter_unpack(format, buffer)
@@ -428,7 +428,7 @@ The :mod:`struct` module also defines the following type:
    .. method:: unpack_from(buffer, offset=0)
 
       Identical to the :func:`unpack_from` function, using the compiled format.
-      The buffer's size in bytes, minus *offset*, must be at least
+      The buffer's size in bytes, starting at position *offset*, must be at least
       :attr:`size`.
 
 
