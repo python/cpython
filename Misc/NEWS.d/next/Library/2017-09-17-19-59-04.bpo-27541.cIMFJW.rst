@@ -1,4 +1,0 @@
-Reprs of subclasses of some collection and iterator classes (`bytearray`,
-`array.array`, `collections.deque`, `collections.defaultdict`,
-`itertools.count`, `itertools.repeat`) now contain actual type name insteads
-of hardcoded name of the base class.

@@ -31,7 +31,8 @@ HTTPS protocols.  It is normally not used directly --- the module
 The module provides the following classes:
 
 
-.. class:: HTTPConnection(host, port=None[, timeout], source_address=None)
+.. class:: HTTPConnection(host, port=None[, timeout], source_address=None, \
+                          blocksize=8192)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
    server.  It should be instantiated passing it a host and optional port
@@ -42,6 +43,8 @@ The module provides the following classes:
    (if it is not given, the global default timeout setting is used).
    The optional *source_address* parameter may be a tuple of a (host, port)
    to use as the source address the HTTP connection is made from.
+   The optional *blocksize* parameter sets the buffer size in bytes for
+   sending a file-like message body.
 
    For example, the following calls all create instances that connect to the server
    at the same host and port::
@@ -58,11 +61,14 @@ The module provides the following classes:
       The  *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
       not longer supported.
 
+   .. versionchanged:: 3.7
+      *blocksize* parameter was added.
+
 
 .. class:: HTTPSConnection(host, port=None, key_file=None, \
                            cert_file=None[, timeout], \
                            source_address=None, *, context=None, \
-                           check_hostname=None)
+                           check_hostname=None, blocksize=8192)
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it
@@ -337,6 +343,14 @@ HTTPConnection Objects
 .. method:: HTTPConnection.close()
 
    Close the connection to the server.
+
+
+.. attribute:: HTTPConnection.blocksize
+
+   Buffer size in bytes for sending a file-like message body.
+
+   .. versionadded:: 3.7
+
 
 As an alternative to using the :meth:`request` method described above, you can
 also send your request step by step, by using the four functions below.

@@ -61,6 +61,12 @@ useful than quitting the debugger upon program's exit.
    :file:`pdb.py` now accepts a ``-c`` option that executes commands as if given
    in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
 
+.. versionadded:: 3.7
+   :file:`pdb.py` now accepts a ``-m`` option that execute modules similar to the way
+   ``python3 -m`` does. As with a script, the debugger will pause execution just
+   before the first line of the module.
+
+
 The typical usage to break into the debugger from a running program is to
 insert ::
 
@@ -123,10 +129,10 @@ slightly different way:
    Enter the debugger at the calling stack frame.  This is useful to hard-code
    a breakpoint at a given point in a program, even if the code is not
    otherwise being debugged (e.g. when an assertion fails).  If given,
-   ``header`` is printed to the console just before debugging begins.
+   *header* is printed to the console just before debugging begins.
 
-   .. versionadded:: 3.7
-      The keyword-only argument ``header``.
+   .. versionchanged:: 3.7
+      The keyword-only argument *header*.
 
 
 .. function:: post_mortem(traceback=None)
@@ -326,16 +332,19 @@ by the local file.
       (com) end
       (Pdb)
 
-   To remove all commands from a breakpoint, type commands and follow it
+   To remove all commands from a breakpoint, type ``commands`` and follow it
    immediately with ``end``; that is, give no commands.
 
-   With no *bpnumber* argument, commands refers to the last breakpoint set.
+   With no *bpnumber* argument, ``commands`` refers to the last breakpoint set.
 
    You can use breakpoint commands to start your program up again.  Simply use
-   the continue command, or step, or any other command that resumes execution.
+   the :pdbcmd:`continue` command, or :pdbcmd:`step`,
+   or any other command that resumes execution.
 
-   Specifying any command resuming execution (currently continue, step, next,
-   return, jump, quit and their abbreviations) terminates the command list (as if
+   Specifying any command resuming execution
+   (currently :pdbcmd:`continue`, :pdbcmd:`step`, :pdbcmd:`next`,
+   :pdbcmd:`return`, :pdbcmd:`jump`, :pdbcmd:`quit` and their abbreviations)
+   terminates the command :pdbcmd:`list` (as if
    that command was immediately followed by end). This is because any time you
    resume execution (even with a simple next or step), you may encounter another
    breakpoint—which could have its own command list, leading to ambiguities about

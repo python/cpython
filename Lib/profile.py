@@ -195,7 +195,7 @@ class Profile:
             self.t = r[0] + r[1] - t # put back unrecorded delta
 
     # Dispatch routine for best timer program (return = scalar, fastest if
-    # an integer but float works too -- and time.clock() relies on that).
+    # an integer but float works too -- and time.process_time() relies on that).
 
     def trace_dispatch_i(self, frame, event, arg):
         timer = self.timer

@@ -58,7 +58,7 @@ class ModuleBrowser:
     """Browse module classes and functions in IDLE.
     """
     # This class is also the base class for pathbrowser.PathBrowser.
-    # Init and close are inherited, other methods are overriden.
+    # Init and close are inherited, other methods are overridden.
     # PathBrowser.__init__ does not call __init__ below.
 
     def __init__(self, master, path, *, _htest=False, _utest=False):
@@ -79,9 +79,6 @@ class ModuleBrowser:
                 creating ModuleBrowserTreeItem as the rootnode for
                 the tree and subsequently in the children.
         """
-        global file_open
-        if not (_htest or _utest):
-            file_open = pyshell.flist.open
         self.master = master
         self.path = path
         self._htest = _htest
@@ -95,9 +92,13 @@ class ModuleBrowser:
 
     def init(self):
         "Create browser tkinter widgets, including the tree."
+        global file_open
         root = self.master
-        # reset pyclbr
+        flist = (pyshell.flist if not (self._htest or self._utest)
+                 else pyshell.PyShellFileList(root))
+        file_open = flist.open
         pyclbr._modules.clear()
+
         # create top
         self.top = top = ListedToplevel(root)
         top.protocol("WM_DELETE_WINDOW", self.close)
@@ -107,6 +108,7 @@ class ModuleBrowser:
                 (root.winfo_rootx(), root.winfo_rooty() + 200))
         self.settitle()
         top.focus_set()
+
         # create scrolled canvas
         theme = idleConf.CurrentTheme()
         background = idleConf.GetHighlight(theme, 'normal')['background']
@@ -236,8 +238,6 @@ def _module_browser(parent): # htest #
             def nested_in_class(): pass
         def closure():
             class Nested_in_closure: pass
-    global file_open
-    file_open = pyshell.PyShellFileList(parent).open
     ModuleBrowser(parent, file, _htest=True)
 
 if __name__ == "__main__":

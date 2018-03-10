@@ -291,9 +291,9 @@ for detailed information about platforms with pre-compiled installers.
       by Mark Pilgrim, 2004,
       ISBN 1-59059-356-1
 
-   `For Windows users <http://python.swaroopch.com/installation.html#installation-on-windows>`_
+   `For Windows users <https://python.swaroopch.com/installation.html#installation-on-windows>`_
       in "Installing Python"
-      in "`A Byte of Python <http://python.swaroopch.com/>`_"
+      in "`A Byte of Python <https://python.swaroopch.com/>`_"
       by Swaroop C H, 2003
 
 
@@ -307,11 +307,11 @@ key features:
 `ActivePython <https://www.activestate.com/activepython/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
-`Anaconda <https://www.continuum.io/downloads/>`_
+`Anaconda <https://www.anaconda.com/download/>`_
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
-`Canopy <https://www.enthought.com/products/canopy/>`_
+`Canopy <https://www.enthought.com/product/canopy/>`_
     A "comprehensive Python analysis environment" with editors and other
     development tools.
 
@@ -377,7 +377,7 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    https://support.microsoft.com/kb/100843
+    https://support.microsoft.com/en-us/help/100843/environment-variables-in-windows-nt
       Environment variables in Windows NT
 
     https://technet.microsoft.com/en-us/library/cc754250.aspx
@@ -386,7 +386,7 @@ System variables, you need non-restricted access to your machine
     https://technet.microsoft.com/en-us/library/cc755104.aspx
       The SETX command, for permanently modifying environment variables
 
-    https://support.microsoft.com/kb/310519
+    https://support.microsoft.com/en-us/help/310519/how-to-manage-environment-variables-in-windows-xp
       How To Manage Environment Variables in Windows XP
 
     https://www.chem.gla.ac.uk/~louis/software/faq/q1.html
@@ -721,7 +721,7 @@ installation directory.  So, if you had installed Python to
 :file:`C:\\Python\\Lib\\site-packages\\`.
 
 To completely override :data:`sys.path`, create a ``._pth`` file with the same
-name as the DLL (``python36._pth``) or the executable (``python._pth``) and
+name as the DLL (``python37._pth``) or the executable (``python._pth``) and
 specify one line for each path to add to :data:`sys.path`. The file based on the
 DLL name overrides the one based on the executable, which allows paths to be
 restricted for any program loading the runtime if desired.
@@ -734,7 +734,7 @@ Import statements other than to ``site`` are not permitted, and arbitrary code
 cannot be specified.
 
 Note that ``.pth`` files (without leading underscore) will be processed normally
-by the :mod:`site` module.
+by the :mod:`site` module when ``import site`` has been specified.
 
 When no ``._pth`` file is found, this is how :data:`sys.path` is populated on
 Windows:
@@ -796,7 +796,7 @@ following advice will prevent conflicts with other installations:
   environment variables, and also ignore :mod:`site` unless ``import site`` is
   listed.
 
-* If you are loading :file:`python3.dll` or :file:`python36.dll` in your own
+* If you are loading :file:`python3.dll` or :file:`python37.dll` in your own
   executable, explicitly call :c:func:`Py_SetPath` or (at least)
   :c:func:`Py_SetProgramName` before :c:func:`Py_Initialize`.
 
@@ -871,7 +871,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <http://cx-freeze.sourceforge.net/>`_ is a :mod:`distutils`
+`cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_ is a :mod:`distutils`
 extension (see :ref:`extending-distutils`) which wraps Python scripts into
 executable Windows programs (:file:`{*}.exe` files).  When you have done this,
 you can distribute your application without requiring your users to install
@@ -930,7 +930,7 @@ directly accessed by end-users.
 When extracted, the embedded distribution is (almost) fully isolated from the
 user's system, including environment variables, system registry settings, and
 installed packages. The standard library is included as pre-compiled and
-optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python36.dll``,
+optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python37.dll``,
 ``python.exe`` and ``pythonw.exe`` are all provided. Tcl/tk (including all
 dependants, such as Idle), pip and the Python documentation are not included.
 

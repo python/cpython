@@ -2194,7 +2194,7 @@ class TPen(object):
 
         If turtleshape is a polygon, outline and interior of that polygon
         is drawn with the newly set colors.
-        For mor info see: pencolor, fillcolor
+        For more info see: pencolor, fillcolor
 
         Example (for a Turtle instance named turtle):
         >>> turtle.color('red', 'green')
@@ -3839,7 +3839,7 @@ def write_docstringdict(filename="turtle_docstringdict"):
         docsdict[key] = eval(key).__doc__
 
     with open("%s.py" % filename,"w") as f:
-        keys = sorted(x for x in docsdict.keys()
+        keys = sorted(x for x in docsdict
                       if x.split('.')[1] not in _alias_list)
         f.write('docsdict = {\n\n')
         for key in keys[:-1]:

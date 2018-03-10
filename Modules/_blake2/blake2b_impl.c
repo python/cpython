@@ -26,7 +26,9 @@
 #include "impl/blake2.h"
 #include "impl/blake2-impl.h" /* for secure_zero_memory() and store48() */
 
-#ifdef BLAKE2_USE_SSE
+/* pure SSE2 implementation is very slow, so only use the more optimized SSSE3+
+ * https://bugs.python.org/issue31834 */
+#if defined(__SSSE3__) || defined(__SSE4_1__) || defined(__AVX__) || defined(__XOP__)
 #include "impl/blake2b.c"
 #else
 #include "impl/blake2b-ref.c"
@@ -160,7 +162,8 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
             goto error;
         }
     }
-    self->param.leaf_length = (unsigned int)leaf_size;
+    // NB: Simple assignment here would be incorrect on big endian platforms.
+    store32(&(self->param.leaf_length), leaf_size);
 
     if (node_offset_obj != NULL) {
         node_offset = PyLong_AsUnsignedLongLong(node_offset_obj);
@@ -176,7 +179,8 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
      }
     store48(&(self->param.node_offset), node_offset);
 #else
-    self->param.node_offset = node_offset;
+    // NB: Simple assignment here would be incorrect on big endian platforms.
+    store64(&(self->param.node_offset), node_offset);
 #endif
 
     if (node_depth < 0 || node_depth > 255) {

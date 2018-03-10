@@ -1733,7 +1733,7 @@ PREFIX(nameMatchesAscii)(const ENCODING *UNUSED_P(enc), const char *ptr1,
   for (; *ptr2; ptr1 += MINBPC(enc), ptr2++) {
     if (end1 - ptr1 < MINBPC(enc)) {
       /* This line cannot be executed.  THe incoming data has already
-       * been tokenized once, so imcomplete characters like this have
+       * been tokenized once, so incomplete characters like this have
        * already been eliminated from the input.  Retaining the
        * paranoia check is still valuable, however.
        */

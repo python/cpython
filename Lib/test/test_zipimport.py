@@ -40,7 +40,7 @@ def make_pyc(co, mtime, size):
         else:
             mtime = int(-0x100000000 + int(mtime))
     pyc = (importlib.util.MAGIC_NUMBER +
-        struct.pack("<ii", int(mtime), size & 0xFFFFFFFF) + data)
+        struct.pack("<iii", 0, int(mtime), size & 0xFFFFFFFF) + data)
     return pyc
 
 def module_path_to_dotted_name(path):
@@ -187,6 +187,20 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  TESTMOD + pyc_ext: (NOW, test_pyc)}
         self.doTest(pyc_ext, files, TESTMOD)
 
+    def testUncheckedHashBasedPyc(self):
+        source = b"state = 'old'"
+        source_hash = importlib.util.source_hash(source)
+        bytecode = importlib._bootstrap_external._code_to_hash_pyc(
+            compile(source, "???", "exec"),
+            source_hash,
+            False, # unchecked
+        )
+        files = {TESTMOD + ".py": (NOW, "state = 'new'"),
+                 TESTMOD + ".pyc": (NOW - 20, bytecode)}
+        def check(mod):
+            self.assertEqual(mod.state, 'old')
+        self.doTest(None, files, TESTMOD, call=check)
+
     def testEmptyPy(self):
         files = {TESTMOD + ".py": (NOW, "")}
         self.doTest(None, files, TESTMOD)
@@ -215,7 +229,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         badtime_pyc = bytearray(test_pyc)
         # flip the second bit -- not the first as that one isn't stored in the
         # .py's mtime in the zip archive.
-        badtime_pyc[7] ^= 0x02
+        badtime_pyc[11] ^= 0x02
         files = {TESTMOD + ".py": (NOW, test_src),
                  TESTMOD + pyc_ext: (NOW, badtime_pyc)}
         self.doTest(".py", files, TESTMOD)
@@ -667,6 +681,20 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             zipimport.zipimporter(bytearray(os.fsencode(filename)))
         with self.assertWarns(DeprecationWarning):
             zipimport.zipimporter(memoryview(os.fsencode(filename)))
+
+    @support.cpython_only
+    def testUninitializedZipimporter(self):
+        # The interpreter shouldn't crash in case of calling methods of an
+        # uninitialized zipimport.zipimporter object.
+        zi = zipimport.zipimporter.__new__(zipimport.zipimporter)
+        self.assertRaises(ValueError, zi.find_module, 'foo')
+        self.assertRaises(ValueError, zi.find_loader, 'foo')
+        self.assertRaises(ValueError, zi.load_module, 'foo')
+        self.assertRaises(ValueError, zi.get_filename, 'foo')
+        self.assertRaises(ValueError, zi.is_package, 'foo')
+        self.assertRaises(ValueError, zi.get_data, 'foo')
+        self.assertRaises(ValueError, zi.get_code, 'foo')
+        self.assertRaises(ValueError, zi.get_source, 'foo')
 
 
 @support.requires_zlib

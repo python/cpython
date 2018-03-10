@@ -251,8 +251,9 @@ def template(pattern, flags=0):
 # SPECIAL_CHARS
 # closing ')', '}' and ']'
 # '-' (a range in character set)
+# '&', '~', (extended character set operations)
 # '#' (comment) and WHITESPACE (ignored) in verbose mode
-_special_chars_map = {i: '\\' + chr(i) for i in b'()[]{}?*+-|^$\\.# \t\n\r\v\f'}
+_special_chars_map = {i: '\\' + chr(i) for i in b'()[]{}?*+-|^$\\.&~# \t\n\r\v\f'}
 
 def escape(pattern):
     """
@@ -275,6 +276,8 @@ _cache = OrderedDict()
 _MAXCACHE = 512
 def _compile(pattern, flags):
     # internal: compile pattern
+    if isinstance(flags, RegexFlag):
+        flags = flags.value
     try:
         return _cache[type(pattern), pattern, flags]
     except KeyError:
@@ -331,6 +334,8 @@ copyreg.pickle(Pattern, _pickle, _compile)
 class Scanner:
     def __init__(self, lexicon, flags=0):
         from sre_constants import BRANCH, SUBPATTERN
+        if isinstance(flags, RegexFlag):
+            flags = flags.value
         self.lexicon = lexicon
         # combine phrases into a compound pattern
         p = []

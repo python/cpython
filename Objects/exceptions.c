@@ -117,7 +117,11 @@ static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
     const char *name = _PyType_Name(Py_TYPE(self));
-    return PyUnicode_FromFormat("%s%R", name, self->args);
+    if (PyTuple_GET_SIZE(self->args) == 1)
+        return PyUnicode_FromFormat("%s(%R)", name,
+                                    PyTuple_GET_ITEM(self->args, 0));
+    else
+        return PyUnicode_FromFormat("%s%R", name, self->args);
 }
 
 /* Pickling support */
@@ -2409,12 +2413,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 
 
 
-/* Pre-computed RecursionError instance for when recursion depth is reached.
-   Meant to be used when normalizing the exception for exceeding the recursion
-   depth will cause its own infinite recursion.
-*/
-PyObject *PyExc_RecursionErrorInst = NULL;
-
 #define PRE_INIT(TYPE) \
     if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
         if (PyType_Ready(&_PyExc_ ## TYPE) < 0) \
@@ -2674,37 +2672,11 @@ _PyExc_Init(PyObject *bltinmod)
     ADD_ERRNO(TimeoutError, ETIMEDOUT)
 
     preallocate_memerrors();
-
-    if (!PyExc_RecursionErrorInst) {
-        PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RecursionError, NULL, NULL);
-        if (!PyExc_RecursionErrorInst)
-            Py_FatalError("Cannot pre-allocate RecursionError instance for "
-                            "recursion errors");
-        else {
-            PyBaseExceptionObject *err_inst =
-                (PyBaseExceptionObject *)PyExc_RecursionErrorInst;
-            PyObject *args_tuple;
-            PyObject *exc_message;
-            exc_message = PyUnicode_FromString("maximum recursion depth exceeded");
-            if (!exc_message)
-                Py_FatalError("cannot allocate argument for RecursionError "
-                                "pre-allocation");
-            args_tuple = PyTuple_Pack(1, exc_message);
-            if (!args_tuple)
-                Py_FatalError("cannot allocate tuple for RecursionError "
-                                "pre-allocation");
-            Py_DECREF(exc_message);
-            if (BaseException_init(err_inst, args_tuple, NULL))
-                Py_FatalError("init of pre-allocated RecursionError failed");
-            Py_DECREF(args_tuple);
-        }
-    }
 }
 
 void
 _PyExc_Fini(void)
 {
-    Py_CLEAR(PyExc_RecursionErrorInst);
     free_preallocated_memerrors();
     Py_CLEAR(errnomap);
 }
@@ -2868,23 +2840,34 @@ _PyErr_TrySetFromCause(const char *format, ...)
 static int
 _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
 {
-    PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
-    if (strip_sep_obj == NULL)
-        return -1;
-
-    // PRINT_OFFSET is to remove `print ` word from the data.
+    // PRINT_OFFSET is to remove the `print ` prefix from the data.
     const int PRINT_OFFSET = 6;
+    const int STRIP_BOTH = 2;
+    Py_ssize_t start_pos = start + PRINT_OFFSET;
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
-    PyObject *data = PyUnicode_Substring(self->text, PRINT_OFFSET, text_len);
+    Py_UCS4 semicolon = ';';
+    Py_ssize_t end_pos = PyUnicode_FindChar(self->text, semicolon,
+                                            start_pos, text_len, 1);
+    if (end_pos < -1) {
+      return -1;
+    } else if (end_pos == -1) {
+      end_pos = text_len;
+    }
 
+    PyObject *data = PyUnicode_Substring(self->text, start_pos, end_pos);
     if (data == NULL) {
-        Py_DECREF(strip_sep_obj);
         return -1;
     }
-    PyObject *new_data = _PyUnicode_XStrip(data, 2, strip_sep_obj);
+
+    PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
+    if (strip_sep_obj == NULL) {
+        Py_DECREF(data);
+        return -1;
+    }
+
+    PyObject *new_data = _PyUnicode_XStrip(data, STRIP_BOTH, strip_sep_obj);
     Py_DECREF(data);
     Py_DECREF(strip_sep_obj);
-
     if (new_data == NULL) {
         return -1;
     }
