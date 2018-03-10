@@ -359,7 +359,7 @@ def check_output(*popenargs, timeout=None, **kwargs):
     b'when in the course of barman events\n'
 
     By default, all communication is in bytes, and therefore any "input"
-    should be bytes, and the return value wil be bytes.  If in text mode,
+    should be bytes, and the return value will be bytes.  If in text mode,
     any "input" should be a string, and the return value will be a string
     decoded according to locale encoding, or by "encoding" if set. Text mode
     is triggered by setting any of text, encoding, errors or universal_newlines.
@@ -1720,7 +1720,10 @@ class Popen(object):
             """Send a signal to the process."""
             # Skip signalling a process that we know has already died.
             if self.returncode is None:
-                os.kill(self.pid, sig)
+                # Issue32795
+                # Send signal to the whole process group to prevent
+                # making the subprocess a zombie due to its subprocesses
+                os.killpg(self.pid, sig)
 
         def terminate(self):
             """Terminate the process with SIGTERM

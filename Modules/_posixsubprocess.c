@@ -688,6 +688,9 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             PyOS_AfterFork_Child();
         }
 
+        /* Make child process a process group leader */
+        setpgid(0, 0);
+
         child_exec(exec_array, argv, envp, cwd,
                    p2cread, p2cwrite, c2pread, c2pwrite,
                    errread, errwrite, errpipe_read, errpipe_write,
