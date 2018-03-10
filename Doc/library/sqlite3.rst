@@ -535,7 +535,7 @@ Connection Objects
    .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
 
       This method makes a backup of a SQLite database even while it's being accessed
-      by other clients, or concurrently by the same connection. The copy will be
+      by other clients, or concurrently by the same connection.  The copy will be
       written into the mandatory argument *target*, that must be another
       :class:`Connection` instance.
 
@@ -551,7 +551,8 @@ Connection Objects
       The *name* argument specifies the database name that will be copied: it must be
       a string containing either ``"main"``, the default, to indicate the main
       database, ``"temp"`` to indicate the temporary database or the name specified
-      after the ``AS`` keyword in an ``ATTACH`` statement for an attached database.
+      after the ``AS`` keyword in an ``ATTACH DATABASE`` statement for an attached
+      database.
 
       The *sleep* argument specifies the number of seconds to sleep by between
       successive attempts to backup remaining pages, can be specified either as an
@@ -562,7 +563,7 @@ Connection Objects
          import sqlite3
 
          def progress(status, remaining, total):
-             print(f"Copied {total-remaining} of {total} pages...")
+             print(f'Copied {total-remaining} of {total} pages...')
 
          con = sqlite3.connect('existing_db.db')
          with sqlite3.connect('backup.db') as bck:
@@ -576,10 +577,9 @@ Connection Objects
          dest = sqlite3.connect(':memory:')
          source.backup(dest)
 
-      .. note:: This is available only when the underlying SQLite library is at
-                version 3.6.11 or higher.
+      Availability: SQLite 3.6.11 or higher
 
-      .. versionadded:: 3.7
+      .. versionadded:: 3.8
 
 
 .. _sqlite3-cursor-objects:

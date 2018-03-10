@@ -1,8 +1,6 @@
 import sqlite3 as sqlite
 import unittest
 
-from test import support
-
 
 @unittest.skipIf(sqlite.sqlite_version_info < (3, 6, 11), "Backup API not supported")
 class BackupTests(unittest.TestCase):
@@ -42,8 +40,10 @@ class BackupTests(unittest.TestCase):
         bck = sqlite.connect(':memory:')
         bck.execute('CREATE TABLE bar (key INTEGER)')
         bck.executemany('INSERT INTO bar (key) VALUES (?)', [(3,), (4,)])
-        with self.assertRaises(sqlite.OperationalError):
+        with self.assertRaises(sqlite.OperationalError) as cm:
             self.cx.backup(bck)
+        if sqlite.sqlite_version_info < (3, 8, 7):
+            self.assertEqual(str(cm.exception), 'target is in transaction')
 
     def test_keyword_only_args(self):
         with self.assertRaises(TypeError):
@@ -96,10 +96,10 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(journal[0], 0)
 
     def test_non_callable_progress(self):
-        with self.assertRaises(TypeError) as err:
+        with self.assertRaises(TypeError) as cm:
             with sqlite.connect(':memory:') as bck:
                 self.cx.backup(bck, pages=1, progress='bar')
-        self.assertEqual(str(err.exception), 'progress argument must be a callable')
+        self.assertEqual(str(cm.exception), 'progress argument must be a callable')
 
     def test_modifying_progress(self):
         journal = []
@@ -138,9 +138,10 @@ class BackupTests(unittest.TestCase):
             self.cx.backup(bck, name='main')
         with sqlite.connect(':memory:') as bck:
             self.cx.backup(bck, name='temp')
-        with self.assertRaises(sqlite.OperationalError):
+        with self.assertRaises(sqlite.OperationalError) as cm:
             with sqlite.connect(':memory:') as bck:
                 self.cx.backup(bck, name='non-existing')
+        self.assertEqual(str(cm.exception), 'SQL logic error or missing database')
 
         self.cx.execute("ATTACH DATABASE ':memory:' AS attached_db")
         self.cx.execute('CREATE TABLE attached_db.foo (key INTEGER)')
@@ -150,7 +151,7 @@ class BackupTests(unittest.TestCase):
             self.cx.backup(bck, name='attached_db')
             self.verify_backup(bck)
 
-# Used by the Lib/test/test_sqlite.py
+
 def suite():
     return unittest.makeSuite(BackupTests)
 
