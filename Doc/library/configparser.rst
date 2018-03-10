@@ -1132,13 +1132,24 @@ ConfigParser Objects
       strings; if not, :exc:`TypeError` is raised.
 
 
-   .. method:: write(fileobject, space_around_delimiters=True)
+   .. method:: write(fileobject, space_around_delimiters=True, trim_final_blankline=False, blankline_around_sections=True)
 
       Write a representation of the configuration to the specified :term:`file
       object`, which must be opened in text mode (accepting strings).  This
       representation can be parsed by a future :meth:`read` call.  If
       *space_around_delimiters* is true, delimiters between
       keys and values are surrounded by spaces.
+      If *blankline_around_sections* is true, a blank line
+      will be inserted after each section. Set it to false for
+      some rudimentary programs which do not allow blank lines in INI file.
+      If *trim_final_blankline* is true, the final blank line
+      after the last section will not be inserted.
+
+      .. note::
+
+          *trim_final_blankline* does *not* trim the final
+          newline character (EOL) that makes the final line
+          has no EOL, which is common on Windows.
 
 
    .. method:: remove_option(section, option)

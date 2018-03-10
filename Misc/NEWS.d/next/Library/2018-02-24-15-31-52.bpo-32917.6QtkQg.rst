@@ -1,0 +1,2 @@
+New arguments *trim_final_blankline* and *blankline_around_sections* for
+``configparser.ConfigParser.write``
