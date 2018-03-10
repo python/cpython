@@ -1472,6 +1472,10 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
         return NULL;
     }
 
+    if (!pysqlite_check_connection((pysqlite_Connection *)target)) {
+        return NULL;
+    }
+
     if ((pysqlite_Connection *)target == self) {
         PyErr_SetString(PyExc_ValueError, "target cannot be the same connection instance");
         return NULL;
@@ -1485,10 +1489,6 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
         return NULL;
     }
 #endif
-
-    if (!pysqlite_check_connection((pysqlite_Connection *)target)) {
-        return NULL;
-    }
 
     if (progress != Py_None && !PyCallable_Check(progress)) {
         PyErr_SetString(PyExc_TypeError, "progress argument must be a callable");
