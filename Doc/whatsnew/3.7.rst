@@ -630,6 +630,15 @@ can be set within the scope of a group.
 ``'^$'`` or ``(?=-)`` that matches an empty string.
 (Contributed by Serhiy Storchaka in :issue:`25054`.)
 
+
+sqlite3
+-------
+
+:class:`sqlite3.Connection` now exposes a :class:`~sqlite3.Connection.backup`
+method, if the underlying SQLite library is at version 3.6.11 or higher.
+(Contributed by Lele Gaifax in :issue:`27645`.)
+
+
 ssl
 ---
 
