@@ -2437,7 +2437,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     _Py_IDENTIFIER(StopAsyncIteration);
 
     basicblock *try, *except, *end, *after_try, *try_cleanup,
-               *after_loop, *after_loop_else;
+               *after_loop_else;
 
     PyObject *stop_aiter_error = _PyUnicode_FromId(&PyId_StopAsyncIteration);
     if (stop_aiter_error == NULL) {
@@ -2449,14 +2449,14 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     end = compiler_new_block(c);
     after_try = compiler_new_block(c);
     try_cleanup = compiler_new_block(c);
-    after_loop = compiler_new_block(c);
     after_loop_else = compiler_new_block(c);
 
     if (try == NULL || except == NULL || end == NULL
-            || after_try == NULL || try_cleanup == NULL)
+            || after_try == NULL || try_cleanup == NULL
+            || after_loop_else == NULL)
         return 0;
 
-    if (!compiler_push_fblock(c, FOR_LOOP, try, after_loop))
+    if (!compiler_push_fblock(c, FOR_LOOP, try, end))
         return 0;
 
     VISIT(c, expr, s->v.AsyncFor.iter);
@@ -2503,10 +2503,6 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP_JABS(c, JUMP_ABSOLUTE, try);
 
     compiler_pop_fblock(c, FOR_LOOP, try);
-
-    /* Block reached after `break`ing from loop */
-    compiler_use_next_block(c, after_loop);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, end);
 
     /* `else` block */
     compiler_use_next_block(c, after_loop_else);
@@ -4014,7 +4010,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     _Py_IDENTIFIER(StopAsyncIteration);
 
     comprehension_ty gen;
-    basicblock *anchor, *skip, *if_cleanup, *try,
+    basicblock *anchor, *if_cleanup, *try,
                *after_try, *except, *try_cleanup;
     Py_ssize_t i, n;
 
@@ -4027,13 +4023,12 @@ compiler_async_comprehension_generator(struct compiler *c,
     after_try = compiler_new_block(c);
     try_cleanup = compiler_new_block(c);
     except = compiler_new_block(c);
-    skip = compiler_new_block(c);
     if_cleanup = compiler_new_block(c);
     anchor = compiler_new_block(c);
 
-    if (skip == NULL || if_cleanup == NULL || anchor == NULL ||
+    if (if_cleanup == NULL || anchor == NULL ||
             try == NULL || after_try == NULL ||
-            except == NULL || after_try == NULL) {
+            except == NULL || try_cleanup == NULL) {
         return 0;
     }
 
@@ -4125,8 +4120,6 @@ compiler_async_comprehension_generator(struct compiler *c,
         default:
             return 0;
         }
-
-        compiler_use_next_block(c, skip);
     }
     compiler_use_next_block(c, if_cleanup);
     ADDOP_JABS(c, JUMP_ABSOLUTE, try);
