@@ -1134,7 +1134,8 @@ ConfigParser Objects
 
    .. method:: write(fileobject, space_around_delimiters=True)
 
-      Write a representation of the configuration to the specified :term:`file
+      Write a representation of the configuration to the specified *file*.
+      That could be either file name or :term:`file
       object`, which must be opened in text mode (accepting strings).  This
       representation can be parsed by a future :meth:`read` call.  If
       *space_around_delimiters* is true, delimiters between

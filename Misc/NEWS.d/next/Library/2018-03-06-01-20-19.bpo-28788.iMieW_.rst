@@ -1,0 +1,3 @@
+``Configparser.write()`` can now accept filename as its parameters instead
+of just file handler. If the file with such name already exists its  content
+will be removed first.

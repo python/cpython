@@ -3,6 +3,7 @@ import configparser
 import io
 import os
 import pathlib
+import tempfile
 import textwrap
 import unittest
 import warnings
@@ -639,7 +640,7 @@ boolean {0[0]} NO
                                      "'opt' in section 'Bar' already exists")
             self.assertEqual(e.args, ("Bar", "opt", "<dict>", None))
 
-    def test_write(self):
+    def test_write(self, testfile=None):
         config_string = (
             "[Long Line]\n"
             "foo{0[0]} this line is much, much longer than my editor\n"
@@ -657,14 +658,18 @@ boolean {0[0]} NO
             )
         if self.allow_no_value:
             config_string += (
-            "[Valueless]\n"
-            "option-without-value\n"
+                "[Valueless]\n"
+                "option-without-value\n"
             )
 
         cf = self.fromstring(config_string)
         for space_around_delimiters in (True, False):
-            output = io.StringIO()
-            cf.write(output, space_around_delimiters=space_around_delimiters)
+            if testfile is None:
+                output = io.StringIO()
+            else:
+                output = testfile
+            cf.write(output,
+                     space_around_delimiters=space_around_delimiters)
             delimiter = self.delimiters[0]
             if space_around_delimiters:
                 delimiter = " {} ".format(delimiter)
@@ -691,7 +696,19 @@ boolean {0[0]} NO
                     "option-without-value\n"
                     "\n"
                     )
-            self.assertEqual(output.getvalue(), expect_string)
+            if testfile is None:
+                observed = output.getvalue()
+            else:
+                with open(testfile, 'r') as testf:
+                    observed = testf.read()
+            self.assertEqual(observed, expect_string)
+
+    def test_write_filename(self):
+        f = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            self.test_write(testfile=f.name)
+        finally:
+            support.unlink(f.name)
 
     def test_set_string_types(self):
         cf = self.fromstring("[sect]\n"
