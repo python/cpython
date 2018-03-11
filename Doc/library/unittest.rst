@@ -790,6 +790,14 @@ Test cases
       by the test to be propagated to the caller, and can be used to support
       running tests under a debugger.
 
+   .. method:: runTestMethod(method)
+
+      Calls *method* and returns its result. This function is used to execute
+      all test methods and exists so that subclasses may override it to e.g.
+      await any possible coroutine returned by the test method.
+
+      .. versionadded:: 3.8
+
    .. _assert-methods:
 
    The :class:`TestCase` class provides several assert methods to check for and
