@@ -612,7 +612,7 @@ class TestCase(object):
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    self._runTestMethod(testMethod)
+                    self.runTestMethod(testMethod)
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
                     self.tearDown()
@@ -1329,7 +1329,7 @@ class TestCase(object):
             msg = self._formatMessage(msg, standardMsg)
             raise self.failureException(msg)
 
-    def _runTestMethod(self, method):
+    def runTestMethod(self, method):
         """Execute the test method.
 
         This method can be overridden in subclasses to (e.g.) run coroutines

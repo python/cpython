@@ -1836,7 +1836,7 @@ test case
                 super().__init__(method_name)
                 self.test1_called = False
 
-            def _runTestMethod(self, method):
+            def runTestMethod(self, method):
                 result = method()
                 if asyncio.iscoroutine(result):
                     return asyncio.run(result)
