@@ -476,6 +476,12 @@ class InterfaceTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
 class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
     factory = ipaddress.IPv4Network
 
+    def test_no_mask(self):
+        self.assertEqual(
+            ipaddress.ip_network('1.2.3.4'),
+            ipaddress.IPv4Network('1.2.3.4/32')
+        )
+
     def test_subnet_of(self):
         # containee left of container
         self.assertFalse(
