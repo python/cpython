@@ -37,6 +37,8 @@ class BackupTests(unittest.TestCase):
             self.cx.backup(bck)
 
     def test_bad_target_in_transaction(self):
+        if sqlite.sqlite_version_info == (3, 8, 7, 1):
+            self.skipTest('skip until we debug https://bugs.python.org/issue27645#msg313562')
         bck = sqlite.connect(':memory:')
         bck.execute('CREATE TABLE bar (key INTEGER)')
         bck.executemany('INSERT INTO bar (key) VALUES (?)', [(3,), (4,)])
