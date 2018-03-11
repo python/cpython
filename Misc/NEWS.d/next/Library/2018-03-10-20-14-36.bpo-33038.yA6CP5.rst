@@ -1,0 +1,2 @@
+Using a tempfile.SpooledTemporaryFile object with gzip.GzipFile no longer
+produces an AttributeError exception.

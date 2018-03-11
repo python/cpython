@@ -6,6 +6,7 @@ from test import test_support
 import os
 import io
 import struct
+import tempfile
 gzip = test_support.import_module('gzip')
 
 data1 = """  int length=DEFAULTALLOC, err = Z_OK;
@@ -358,6 +359,11 @@ class TestGzip(unittest.TestCase):
                   b'\x0bI-.\x01\x002\xd1Mx\x04\x00\x00\x00')
         with gzip.GzipFile(fileobj=io.BytesIO(gzdata)) as f:
             self.assertEqual(f.read(), b'Test')
+
+    def test_fileobj_without_name(self):
+        with tempfile.SpooledTemporaryFile() as f:
+            with gzip.GzipFile(fileobj=f, mode='wb') as archive:
+                archive.write(b'data')
 
 def test_main(verbose=None):
     test_support.run_unittest(TestGzip)
