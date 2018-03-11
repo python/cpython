@@ -827,6 +827,34 @@ class JumpTestCase(unittest.TestCase):
         with tracecontext(output, 4):
             output.append(5)
 
+    @jump_test(4, 5, [1, 3, 5, 6])
+    def test_jump_out_of_with_block_within_for_block(output):
+        output.append(1)
+        for i in [1]:
+            with tracecontext(output, 3):
+                output.append(4)
+            output.append(5)
+        output.append(6)
+
+    @jump_test(4, 5, [1, 2, 3, 5, -2, 6])
+    def test_jump_out_of_with_block_within_with_block(output):
+        output.append(1)
+        with tracecontext(output, 2):
+            with tracecontext(output, 3):
+                output.append(4)
+            output.append(5)
+        output.append(6)
+
+    @jump_test(5, 6, [2, 4, 6, 7])
+    def test_jump_out_of_with_block_within_finally_block(output):
+        try:
+            output.append(2)
+        finally:
+            with tracecontext(output, 4):
+                output.append(5)
+            output.append(6)
+        output.append(7)
+
     @jump_test(8, 11, [1, 3, 5, 11, 12])
     def test_jump_out_of_complex_nested_blocks(output):
         output.append(1)
