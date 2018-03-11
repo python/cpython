@@ -900,12 +900,12 @@ class RawConfigParser(MutableMapping):
                 raise NoSectionError(section) from None
         sectdict[self.optionxform(option)] = value
 
-    def write(self, file, space_around_delimiters=True):
-        if isinstance(file, str):
-            with io.open(filename, 'w') as f:
+    def write(self, fp, space_around_delimiters=True):
+        if isinstance(fp, str):
+            with io.open(fp, 'w') as f:
                 self._write(f, space_around_delimiters)
         else:
-            self._write(file, space_around_delimiters)
+            self._write(fp, space_around_delimiters)
 
     def _write(self, fp, space_around_delimiters=True):
         """Write an .ini-format representation of the configuration state.

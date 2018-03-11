@@ -658,8 +658,8 @@ boolean {0[0]} NO
             )
         if self.allow_no_value:
             config_string += (
-            "[Valueless]\n"
-            "option-without-value\n"
+                "[Valueless]\n"
+                "option-without-value\n"
             )
 
         cf = self.fromstring(config_string)
@@ -667,13 +667,9 @@ boolean {0[0]} NO
             if testfile is None:
                 output = io.StringIO()
             else:
-                output = open(testfile, 'w')
-            try:
-                cf.write(output,
-                         space_around_delimiters=space_around_delimiters)
-            finally:
-                if testfile is not None:
-                    output.close()
+                output = testfile
+            cf.write(output,
+                     space_around_delimiters=space_around_delimiters)
             delimiter = self.delimiters[0]
             if space_around_delimiters:
                 delimiter = " {} ".format(delimiter)
@@ -711,10 +707,8 @@ boolean {0[0]} NO
         f = tempfile.NamedTemporaryFile(delete=False)
         try:
             self.test_write(testfile=f.name)
-        except:
-            raise
         finally:
-            os.unlink(f.name)
+            support.unlink(f.name)
 
     def test_set_string_types(self):
         cf = self.fromstring("[sect]\n"
