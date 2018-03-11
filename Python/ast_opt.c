@@ -383,7 +383,8 @@ fold_iter(expr_ty arg, PyArena *arena, int optimize)
         asdl_seq *elts = arg->v.List.elts;
         Py_ssize_t n = asdl_seq_LEN(elts);
         for (Py_ssize_t i = 0; i < n; i++) {
-            if (asdl_seq_GET(elts, i)->kind == Starred_kind) {
+            expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
+            if (e->kind == Starred_kind) {
                 return 1;
             }
         }
