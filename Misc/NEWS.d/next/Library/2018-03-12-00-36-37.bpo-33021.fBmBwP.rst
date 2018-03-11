@@ -1,0 +1,4 @@
+Release the GIL during fstat() calls, avoiding hang of all threads when
+calling imp.load_dynamic(), imp.load_source(), mmap.mmap(),
+mmapobject.size(), os.fdopen(), os.urandom(), and random.seed().  Patch by
+Nir Soffer.
