@@ -314,8 +314,14 @@ class BaseProcess(object):
         finally:
             threading._shutdown()
             util.info('process exiting with exitcode %d' % exitcode)
-            sys.stdout.flush()
-            sys.stderr.flush()
+            try:
+                sys.stdout.flush()
+            except (AttributeError, ValueError):
+                pass
+            try:
+                sys.stderr.flush()
+            except (AttributeError, ValueError):
+                pass
 
         return exitcode
 
