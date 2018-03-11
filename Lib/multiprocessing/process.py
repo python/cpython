@@ -274,8 +274,7 @@ class BaseProcess(object):
             traceback.print_exc()
         finally:
             util.info('process exiting with exitcode %d' % exitcode)
-            sys.stdout.flush()
-            sys.stderr.flush()
+            util._flush_std_streams()
 
         return exitcode
 
