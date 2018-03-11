@@ -166,9 +166,12 @@ class _NetlocResultMixinBase(object):
     def port(self):
         port = self._hostinfo[1]
         if port is not None:
-            port = int(port, 10)
-            if not ( 0 <= port <= 65535):
-                raise ValueError("Port out of range 0-65535")
+            try:
+                port = int(port, 10)
+                if not ( 0 <= port <= 65535):
+                    raise ValueError("Port out of range 0-65535")
+            except ValueError:
+                print("Port could not be cast to integer value")
         return port
 
 
