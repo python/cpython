@@ -1922,7 +1922,6 @@ main_loop:
             FAST_DISPATCH();
         }
 
-        PREDICTED(END_FINALLY);
         TARGET(END_FINALLY) {
             /* At the top of the stack are 1 or 6 values:
                Either:

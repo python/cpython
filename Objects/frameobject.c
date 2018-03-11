@@ -232,7 +232,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
                     delta_iblock++;
                 }
             }
-            if (op != FOR_ITER) {
+            if (op == SETUP_FINALLY) {
                 blockstack[blockstack_top++] = target_addr;
             }
             break;
