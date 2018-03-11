@@ -1203,6 +1203,54 @@ class KeysPageTest(unittest.TestCase):
         del d.askyesno
 
 
+class EditPageTest(unittest.TestCase):
+    """Test that edtior tab widgets enable users to make changes.
+
+    Test that widget actions set vars, that var changes add
+    options to changes and that helplist works correctly.
+    """
+    @classmethod
+    def setUpClass(cls):
+        page = cls.page = dialog.editpage
+        dialog.note.select(page)
+
+    @classmethod
+    def tearDownClass(cls):
+        page = cls.page
+
+    def setUp(self):
+        changes.clear()
+
+    def test_load_editor_cfg(self):
+        # Set to wrong values, load, check right values.
+        eq = self.assertEqual
+        d = self.page
+        d.autosave.set(1)
+        d.format_width.set(1)
+        d.context_lines.set(1)
+        d.load_editor_cfg()
+        eq(d.autosave.get(), 0)
+        eq(d.format_width.get(), '72')
+        eq(d.context_lines.get(), '15')
+
+    def test_autosave(self):
+        d = self.page
+        d.save_auto_on.invoke()
+        self.assertEqual(mainpage, {'General': {'autosave': '1'}})
+        d.save_ask_on.invoke()
+        self.assertEqual(mainpage, {'General': {'autosave': '0'}})
+
+    def test_paragraph(self):
+        self.page.format_width_int.delete(0, 'end')
+        self.page.format_width_int.insert(0, '11')
+        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
+
+    def test_context(self):
+        self.page.context_int.delete(0, 'end')
+        self.page.context_int.insert(0, '1')
+        self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
+
+
 class GenPageTest(unittest.TestCase):
     """Test that general tab widgets enable users to make changes.
 
@@ -1233,7 +1281,6 @@ class GenPageTest(unittest.TestCase):
         eq = self.assertEqual
         d = self.page
         d.startup_edit.set(1)
-        d.autosave.set(1)
         d.win_width.set(1)
         d.win_height.set(1)
         d.helplist.insert('end', 'bad')
@@ -1241,7 +1288,6 @@ class GenPageTest(unittest.TestCase):
         idleConf.SetOption('main', 'HelpFiles', '1', 'name;file')
         d.load_general_cfg()
         eq(d.startup_edit.get(), 0)
-        eq(d.autosave.get(), 0)
         eq(d.win_width.get(), '80')
         eq(d.win_height.get(), '40')
         eq(d.helplist.get(0, 'end'), ('name',))
@@ -1288,23 +1334,6 @@ class GenPageTest(unittest.TestCase):
         changes.clear()
         d.bell_on.invoke()
         eq(extpage, {'ParenMatch': {'bell': 'False'}})
-
-    def test_autosave(self):
-        d = self.page
-        d.save_auto_on.invoke()
-        self.assertEqual(mainpage, {'General': {'autosave': '1'}})
-        d.save_ask_on.invoke()
-        self.assertEqual(mainpage, {'General': {'autosave': '0'}})
-
-    def test_paragraph(self):
-        self.page.format_width_int.delete(0, 'end')
-        self.page.format_width_int.insert(0, '11')
-        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
-
-    def test_context(self):
-        self.page.context_int.delete(0, 'end')
-        self.page.context_int.insert(0, '1')
-        self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
 
     def test_source_selected(self):
         d = self.page
