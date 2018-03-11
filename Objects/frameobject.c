@@ -101,8 +101,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
      * f->f_trace is NULL, check first on the first condition.
      * Forbidding jumps from the 'call' event of a new frame is a side effect
      * of allowing to set f_lineno only from trace functions. */
-    if (f->f_lasti == -1)
-    {
+    if (f->f_lasti == -1) {
         PyErr_Format(PyExc_ValueError,
                      "can't jump from the 'call' trace event of a new frame");
         return -1;
@@ -110,8 +109,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 
     /* You can only do this from within a trace function, not via
      * _getframe or similar hackery. */
-    if (!f->f_trace)
-    {
+    if (!f->f_trace) {
         PyErr_Format(PyExc_ValueError,
                      "f_lineno can only be set by a trace function");
         return -1;
