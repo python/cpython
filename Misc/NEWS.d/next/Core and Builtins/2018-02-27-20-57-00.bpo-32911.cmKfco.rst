@@ -1,0 +1,3 @@
+Added new ``DocString`` AST node as statement. ``docstring`` field is
+removed from Module, ClassDef, FunctionDef, and AsyncFunctionDef ast nodes
+which is added in 3.7a1.
