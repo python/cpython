@@ -161,7 +161,7 @@ def getTargetCompilers():
         '10.5': ('gcc', 'g++'),
         '10.6': ('gcc', 'g++'),
     }
-    return target_cc_map.get(DEPTARGET, ('gcc', 'gcc++') )
+    return target_cc_map.get(DEPTARGET, ('gcc', 'g++') )
 
 CC, CXX = getTargetCompilers()
 
@@ -225,9 +225,9 @@ def library_recipes():
     if internalTk():
         result.extend([
           dict(
-              name="Tcl 8.6.7",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.7-src.tar.gz",
-              checksum='5673aaf45b5de5d8dd80bb3daaeb8838',
+              name="Tcl 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.8-src.tar.gz",
+              checksum='81656d3367af032e0ae6157eff134f89',
               buildDir="unix",
               configure_pre=[
                     '--enable-shared',
@@ -241,9 +241,12 @@ def library_recipes():
                   },
               ),
           dict(
-              name="Tk 8.6.7",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.7-src.tar.gz",
-              checksum='46ea9c0165c515d87393700f4891ab6f',
+              name="Tk 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
+              checksum='5e0faecba458ee1386078fb228d008ba',
+              patches=[
+                  "tk868_on_10_8_10_9.patch",
+                   ],
               buildDir="unix",
               configure_pre=[
                     '--enable-aqua',

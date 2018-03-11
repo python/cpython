@@ -17,6 +17,7 @@ import shutil
 import threading
 import gc
 import textwrap
+from test.support import FakePath
 
 try:
     import ctypes
@@ -359,12 +360,7 @@ class ProcessTestCase(BaseTestCase):
     def test_cwd_with_pathlike(self):
         temp_dir = tempfile.gettempdir()
         temp_dir = self._normalize_cwd(temp_dir)
-
-        class _PathLikeObj:
-            def __fspath__(self):
-                return temp_dir
-
-        self._assert_cwd(temp_dir, sys.executable, cwd=_PathLikeObj())
+        self._assert_cwd(temp_dir, sys.executable, cwd=FakePath(temp_dir))
 
     @unittest.skipIf(mswindows, "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
@@ -1474,37 +1470,6 @@ class RunFuncTestCase(BaseTestCase):
                       'sys.exit(33 if os.getenv("FRUIT")=="banana" else 31)'),
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
-
-    def test_run_with_pathlike_path(self):
-        # bpo-31961: test run(pathlike_object)
-        class Path:
-            def __fspath__(self):
-                # the name of a command that can be run without
-                # any argumenets that exit fast
-                return 'dir' if mswindows else 'ls'
-
-        path = Path()
-        if mswindows:
-            res = subprocess.run(path, stdout=subprocess.DEVNULL, shell=True)
-        else:
-            res = subprocess.run(path, stdout=subprocess.DEVNULL)
-
-        self.assertEqual(res.returncode, 0)
-
-    def test_run_with_pathlike_path_and_arguments(self):
-        # bpo-31961: test run([pathlike_object, 'additional arguments'])
-        class Path:
-            def __fspath__(self):
-                # the name of a command that can be run without
-                # any argumenets that exits fast
-                return sys.executable
-
-        path = Path()
-
-        args = [path, '-c', 'import sys; sys.exit(57)']
-        res = subprocess.run(args)
-
-        self.assertEqual(res.returncode, 57)
 
     def test_capture_output(self):
         cp = self.run_python(("import sys;"

@@ -5945,6 +5945,27 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             with self.assertRaises(TypeError):
                 sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=-1)
 
+@unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
+class TestMSWindowsTCPFlags(unittest.TestCase):
+    knownTCPFlags = {
+                       # avaliable since long time ago
+                       'TCP_MAXSEG',
+                       'TCP_NODELAY',
+                       # available starting with Windows 10 1607
+                       'TCP_FASTOPEN',
+                       # available starting with Windows 10 1703
+                       'TCP_KEEPCNT',
+                       # available starting with Windows 10 1709
+                       'TCP_KEEPIDLE',
+                       'TCP_KEEPINTVL'
+                       }
+
+    def test_new_tcp_flags(self):
+        provided = [s for s in dir(socket) if s.startswith('TCP')]
+        unknown = [s for s in provided if s not in self.knownTCPFlags]
+
+        self.assertEqual([], unknown,
+            "New TCP flags were discovered. See bpo-32394 for more information")
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
@@ -6005,6 +6026,7 @@ def test_main():
         SendfileUsingSendTest,
         SendfileUsingSendfileTest,
     ])
+    tests.append(TestMSWindowsTCPFlags)
 
     thread_info = support.threading_setup()
     support.run_unittest(*tests)

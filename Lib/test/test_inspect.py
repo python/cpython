@@ -2580,6 +2580,16 @@ class TestSignatureObject(unittest.TestCase):
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 
+        class Spam:
+            def test(self: 'anno', x):
+                pass
+
+            g = partialmethod(test, 1)
+
+        self.assertEqual(self.signature(Spam.g),
+                         ((('self', ..., 'anno', 'positional_or_keyword'),),
+                          ...))
+
     def test_signature_on_fake_partialmethod(self):
         def foo(a): pass
         foo._partialmethod = 'spam'
