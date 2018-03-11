@@ -340,9 +340,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             PyObject *v = (*--f->f_stacktop);
             Py_DECREF(v);
         }
-        if (b->b_type == SETUP_FINALLY &&
-            code[b->b_handler] == WITH_CLEANUP_START)
-        {
+        if (b->b_type == SETUP_WITH) {
             /* Pop the exit function. */
             PyObject *v = (*--f->f_stacktop);
             Py_DECREF(v);
