@@ -1800,10 +1800,21 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
-        final_mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
-                                                  &PyId__handle_fromlist, mod,
-                                                  fromlist, interp->import_func,
-                                                  NULL);
+        _Py_IDENTIFIER(__path__);
+        PyObject *path;
+        if (_PyObject_LookupAttrId(mod, &PyId___path__, &path) < 0) {
+            goto error;
+        }
+        if (path) {
+            Py_DECREF(path);
+            final_mod = _PyObject_CallMethodIdObjArgs(
+                        interp->importlib, &PyId__handle_fromlist,
+                        mod, fromlist, interp->import_func, NULL);
+        }
+        else {
+            final_mod = mod;
+            Py_INCREF(mod);
+        }
     }
 
   error:
