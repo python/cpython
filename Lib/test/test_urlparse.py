@@ -936,6 +936,16 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p2.scheme, 'tel')
         self.assertEqual(p2.path, '+31641044153')
 
+    def test_issue33034(self):
+        # Test case to asset a valid port as an integer
+        p1 = urllib.parse.urlparse('https://www.python.org:80')
+        self.assertEqual(p1.port, 80)
+
+        # Test case to assert ValueError when a string is parsed as a port
+        p2 = urllib.parse.urlparse('http://Server=sde; Service=sde:oracle')
+        with self.assertRaises(ValueError):
+            p2.port
+
     def test_telurl_params(self):
         p1 = urllib.parse.urlparse('tel:123-4;phone-context=+1-650-516')
         self.assertEqual(p1.scheme, 'tel')

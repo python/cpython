@@ -168,10 +168,10 @@ class _NetlocResultMixinBase(object):
         if port is not None:
             try:
                 port = int(port, 10)
-                if not ( 0 <= port <= 65535):
-                    raise ValueError("Port out of range 0-65535")
             except ValueError:
-                print("Port could not be cast to integer value")
+                raise ValueError("Port could not be cast to integer value") from None
+            if not ( 0 <= port <= 65535):
+                raise ValueError("Port out of range 0-65535")
         return port
 
 
