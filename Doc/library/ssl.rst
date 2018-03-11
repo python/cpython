@@ -1688,7 +1688,7 @@ to speed up repeated connections from the same clients.
 
 .. method:: SSLContext.load_dh_params(dhfile)
 
-   Load the key generation parameters for Diffie-Helman (DH) key exchange.
+   Load the key generation parameters for Diffie-Hellman (DH) key exchange.
    Using DH key exchange improves forward secrecy at the expense of
    computational resources (both on the server and on the client).
    The *dhfile* parameter should be the path to a file containing DH
@@ -2603,7 +2603,7 @@ with LibreSSL.
        Documentation of underlying :mod:`socket` class
 
    `SSL/TLS Strong Encryption: An Introduction <https://httpd.apache.org/docs/trunk/en/ssl/ssl_intro.html>`_
-       Intro from the Apache webserver documentation
+       Intro from the Apache HTTP Server documentation
 
    `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <https://www.ietf.org/rfc/rfc1422>`_
        Steve Kent
