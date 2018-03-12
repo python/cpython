@@ -92,7 +92,7 @@ The :class:`IPv4Address` and :class:`IPv6Address` objects share a lot of common
 attributes.  Some attributes that are only meaningful for IPv6 addresses are
 also implemented by :class:`IPv4Address` objects, in order to make it easier to
 write code that handles both IP versions correctly.  Address objects are
-hashable, so they can be used as keys in dictionaries.
+:term:`hashable`, so they can be used as keys in dictionaries.
 
 .. class:: IPv4Address(address)
 
@@ -369,7 +369,8 @@ All attributes implemented by address objects are implemented by network
 objects as well.  In addition, network objects implement additional attributes.
 All of these are common between :class:`IPv4Network` and :class:`IPv6Network`,
 so to avoid duplication they are only documented for :class:`IPv4Network`.
-Network objects are hashable, so they can be used as keys in dictionaries.
+Network objects are :term:`hashable`, so they can be used as keys in
+dictionaries.
 
 .. class:: IPv4Network(address, strict=True)
 
@@ -379,8 +380,9 @@ Network objects are hashable, so they can be used as keys in dictionaries.
       a slash (``/``).  The IP address is the network address, and the mask
       can be either a single number, which means it's a *prefix*, or a string
       representation of an IPv4 address.  If it's the latter, the mask is
-      interpreted as a *net mask* if possible, or as a *host mask* otherwise.
-      If no mask is provided, it's considered to be ``/32``.
+      interpreted as a *net mask* if it starts with a non-zero field, or as a
+      *host mask* if it starts with a zero field.  If no mask is provided,
+      it's considered to be ``/32``.
 
       For example, the following *address* specifications are equivalent:
       ``192.168.1.0/24``, ``192.168.1.0/255.255.255.0`` and
@@ -727,7 +729,8 @@ Network objects can act as containers of addresses.  Some examples::
 Interface objects
 -----------------
 
-Interface objects are hashable, so they can be used as keys in dictionaries.
+Interface objects are :term:`hashable`, so they can be used as keys in
+dictionaries.
 
 .. class:: IPv4Interface(address)
 
@@ -820,21 +823,13 @@ equal to any address or network object.
 For ordering (``<``, ``>``, etc) the rules are different.  Interface and
 address objects with the same IP version can be compared, and the address
 objects will always sort before the interface objects.  Two interface objects
-are compared by comparing their networks, using the same rules as
-:class:`IPv4Network` or :class:`IPv6Network`.  The IP address plays no part in
-the comparison.  Note that you will get strange results when comparing two
-interface objects with the same network but different IP addresses::
+are compared by comparing their networks and IP addresses, using the same
+rules as :class:`IPv4Network` or :class:`IPv6Network`.
 
-   >>> a = ipaddress.IPv4Interface('128.0.0.3/8')
-   >>> b = ipaddress.IPv4Interface('128.0.0.5/8')
-   >>> a < b
-   False
-   >>> b < a
-   False
-   >>> a > b
-   True
-   >>> b > a
-   True
+.. versionchanged:: 3.7
+
+   Interface object ordering uses both the network address and IP address,
+   instead of just the network address.
 
 
 Other Module Level Functions
