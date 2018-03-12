@@ -92,34 +92,34 @@ extern Py_ssize_t null_strings, one_strings;
 
 PyTypeObjectExt *
 PyTypeObjectExt_New(PyTypeObject* tp_orig) {
-  PyTypeObjectExt *tp;
-  tp = PyMem_MALLOC(sizeof(*tp));
-  tp->tp_name = strdup(tp_orig->tp_name);
-  tp->tp_allocs = 0;
-  tp->tp_frees = 0;
-  tp->tp_maxalloc = 0;
-  tp->tp_next = NULL;
-  return tp;
+    PyTypeObjectExt *tp;
+    tp = PyMem_MALLOC(sizeof(*tp));
+    tp->tp_name = strdup(tp_orig->tp_name);
+    tp->tp_allocs = 0;
+    tp->tp_frees = 0;
+    tp->tp_maxalloc = 0;
+    tp->tp_next = NULL;
+    return tp;
 }
 
 PyTypeObjectExt *
 find_ext(PyTypeObject *tp_orig) {
-  // Base case
-  if (type_list == NULL) {
-    type_list = PyTypeObjectExt_New(tp_orig);
-  }
+    // Base case
+    if (type_list == NULL) {
+        type_list = PyTypeObjectExt_New(tp_orig);
+    }
 
-  PyTypeObjectExt *tp = type_list;
-  while (strcmp(tp->tp_name, tp_orig->tp_name) != 0 && tp->tp_next) {
-    tp = tp->tp_next;
-  }
+    PyTypeObjectExt *tp = type_list;
+    while (strcmp(tp->tp_name, tp_orig->tp_name) != 0 && tp->tp_next) {
+        tp = tp->tp_next;
+    }
 
-  if (strcmp(tp->tp_name, tp_orig->tp_name) == 0) {
-    return tp; // Type Found
-  }
-  tp->tp_next = PyTypeObjectExt_New(tp_orig);
-
-  return tp->tp_next;
+    // Type not found
+    if (strcmp(tp->tp_name, tp_orig->tp_name) != 0) {
+        tp->tp_next = PyTypeObjectExt_New(tp_orig);
+        tp = tp->tp_next;
+    }
+    return tp;
 }
 
 void
