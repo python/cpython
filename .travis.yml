@@ -60,9 +60,11 @@ matrix:
       env: OPTIONAL=true
       before_install:
         - brew update
+        # Update python to python3 ref: https://docs.brew.sh/Homebrew-and-Python
         # Python 3 is needed for Argument Clinic and multissl
         # When using brew, be specific if python2 or python3 as python now defaults to python3
-        - brew install xz python3
+        - brew upgrade python 
+        - brew install xz
         - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
       before_script:
         - ./configure
