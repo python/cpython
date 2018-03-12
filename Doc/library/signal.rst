@@ -207,6 +207,15 @@ The :mod:`signal` module defines the following functions:
    installed from Python.
 
 
+.. function:: strsignal(signalnum)
+
+   Return the system description of the signal *signalnum*, such as
+   "Interrupt", "Segmentation fault", etc. Returns :const:`None` if the signal
+   is not recognized.
+
+   .. versionadded:: 3.8
+
+
 .. function:: pause()
 
    Cause the process to sleep until a signal is received; the appropriate handler
