@@ -1432,8 +1432,13 @@ class Logger(Filterer):
         A factory method which can be overridden in subclasses to create
         specialized LogRecords.
         """
-        rv = _logRecordFactory(name, level, fn, lno, msg, args, exc_info, func,
-                             sinfo)
+        try:  # See issue #33057.
+            logRecordFactory = self.manager.logRecordFactory or _logRecordFactory
+        except AttributeError:
+            logRecordFactory = _logRecordFactory
+
+        rv = logRecordFactory(name, level, fn, lno, msg, args, exc_info, func,
+                              sinfo)
         if extra is not None:
             for key in extra:
                 if (key in ["message", "asctime"]) or (key in rv.__dict__):
