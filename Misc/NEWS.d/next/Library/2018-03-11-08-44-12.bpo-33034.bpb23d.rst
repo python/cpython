@@ -1,1 +1,3 @@
-Providing an explicit message when casting a port that is a string instead of an integer.  Port could not be cast to integer value.
+Providing an explicit message when casting a port that is a string instead of 
+an integer using ``urlparse()``.  Port could not be cast to integer value. 
+Patch by Matt Eaton.

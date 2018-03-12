@@ -940,9 +940,9 @@ class UrlParseTestCase(unittest.TestCase):
         # Assert ValueError when int(string) is parsed as a port value
         # Asset that the error message is port could not be cast to integer value
         p1 = urllib.parse.urlparse('http://Server=sde; Service=sde:oracle')
-        with self.assertRaises(ValueError) as valueError:
+        with self.assertRaises(ValueError) as cm:
             p1.port
-        self.assertEqual(str(valueError.exception), 'Port could not be cast to integer value')
+        self.assertEqual(str(cm.exception), 'Port could not be cast to integer value')
 
     def test_telurl_params(self):
         p1 = urllib.parse.urlparse('tel:123-4;phone-context=+1-650-516')
