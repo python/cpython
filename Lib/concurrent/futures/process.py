@@ -78,10 +78,12 @@ _global_shutdown = False
 
 
 class _ThreadWakeup:
-    __slot__ = ["_state"]
-
     def __init__(self):
         self._reader, self._writer = mp.Pipe(duplex=False)
+
+    def close(self):
+        self._writer.close()
+        self._reader.close()
 
     def wakeup(self):
         self._writer.send_bytes(b"")
@@ -654,6 +656,11 @@ class ProcessPoolExecutor(_base.Executor):
             self._call_queue = None
         self._result_queue = None
         self._processes = None
+
+        if self._queue_management_thread_wakeup:
+            self._queue_management_thread_wakeup.close()
+            self._queue_management_thread_wakeup = None
+
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
 
 atexit.register(_python_exit)
