@@ -1,0 +1,3 @@
+Fix `Logger.makeRecord()` when a manager is assigned to the logger. It will
+use the manager's `logRecordFactory` when exist, instead of the global
+`_logRecordFactory`.
