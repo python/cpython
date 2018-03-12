@@ -3222,14 +3222,7 @@ slot_tp_del(PyObject *self)
     _Py_DEC_REFTOTAL;
     /* If Py_TRACE_REFS, _Py_NewReference re-added self to the object
      * chain, so no more to do there.
-     * If COUNT_ALLOCS, the original decref bumped tp_frees, and
-     * _Py_NewReference bumped tp_allocs:  both of those need to be
-     * undone.
      */
-#ifdef COUNT_ALLOCS
-    --Py_TYPE(self)->tp_frees;
-    --Py_TYPE(self)->tp_allocs;
-#endif
 }
 
 static PyObject *
@@ -4563,7 +4556,6 @@ static PyMethodDef TestMethods[] = {
     {"datetime_check_delta",     datetime_check_delta,           METH_VARARGS},
     {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
-    {"get_timezones_offset_zero",   get_timezones_offset_zero,   METH_NOARGS},
     {"get_timezone_utc_capi",    get_timezone_utc_capi,            METH_VARARGS},
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},

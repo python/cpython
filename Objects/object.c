@@ -82,17 +82,46 @@ _Py_AddToAllObjects(PyObject *op, int force)
 #endif  /* Py_TRACE_REFS */
 
 #ifdef COUNT_ALLOCS
-static PyTypeObject *type_list;
-/* All types are added to type_list, at least when
-   they get one object created. That makes them
-   immortal, which unfortunately contributes to
-   garbage itself. If unlist_types_without_objects
-   is set, they will be removed from the type_list
-   once the last object is deallocated. */
-static int unlist_types_without_objects;
+/* COUNT_ALLOCS will maintain a static list of 'PyTypeObjectExt'.
+ * One per every type allocated throughout the entire execution.
+ */
+static PyTypeObjectExt *type_list;
 extern Py_ssize_t tuple_zero_allocs, fast_tuple_allocs;
 extern Py_ssize_t quick_int_allocs, quick_neg_int_allocs;
 extern Py_ssize_t null_strings, one_strings;
+
+PyTypeObjectExt *
+PyTypeObjectExt_New(PyTypeObject* tp_orig) {
+  PyTypeObjectExt *tp;
+  tp = PyMem_MALLOC(sizeof(*tp));
+  tp->tp_name = strdup(tp_orig->tp_name);
+  tp->tp_allocs = 0;
+  tp->tp_frees = 0;
+  tp->tp_maxalloc = 0;
+  tp->tp_next = NULL;
+  return tp;
+}
+
+PyTypeObjectExt *
+find_ext(PyTypeObject *tp_orig) {
+  // Base case
+  if (type_list == NULL) {
+    type_list = PyTypeObjectExt_New(tp_orig);
+  }
+
+  PyTypeObjectExt *tp = type_list;
+  while (strcmp(tp->tp_name, tp_orig->tp_name) != 0 && tp->tp_next) {
+    tp = tp->tp_next;
+  }
+
+  if (strcmp(tp->tp_name, tp_orig->tp_name) == 0) {
+    return tp; // Type Found
+  }
+  tp->tp_next = PyTypeObjectExt_New(tp_orig);
+
+  return tp->tp_next;
+}
+
 void
 dump_counts(FILE* f)
 {
@@ -101,7 +130,7 @@ dump_counts(FILE* f)
         return;
     }
 
-    PyTypeObject *tp;
+    PyTypeObjectExt *tp;
     for (tp = type_list; tp; tp = tp->tp_next)
         fprintf(f, "%s alloc'd: %" PY_FORMAT_SIZE_T "d, "
             "freed: %" PY_FORMAT_SIZE_T "d, "
@@ -122,7 +151,7 @@ dump_counts(FILE* f)
 PyObject *
 get_counts(void)
 {
-    PyTypeObject *tp;
+    PyTypeObjectExt *tp;
     PyObject *result;
     PyObject *v;
 
@@ -147,52 +176,18 @@ get_counts(void)
 }
 
 void
-inc_count(PyTypeObject *tp)
+inc_count(PyTypeObject *tp_orig)
 {
-    if (tp->tp_next == NULL && tp->tp_prev == NULL) {
-        /* first time; insert in linked list */
-        if (tp->tp_next != NULL) /* sanity check */
-            Py_FatalError("XXX inc_count sanity check");
-        if (type_list)
-            type_list->tp_prev = tp;
-        tp->tp_next = type_list;
-        /* Note that as of Python 2.2, heap-allocated type objects
-         * can go away, but this code requires that they stay alive
-         * until program exit.  That's why we're careful with
-         * refcounts here.  type_list gets a new reference to tp,
-         * while ownership of the reference type_list used to hold
-         * (if any) was transferred to tp->tp_next in the line above.
-         * tp is thus effectively immortal after this.
-         */
-        Py_INCREF(tp);
-        type_list = tp;
-#ifdef Py_TRACE_REFS
-        /* Also insert in the doubly-linked list of all objects,
-         * if not already there.
-         */
-        _Py_AddToAllObjects((PyObject *)tp, 0);
-#endif
-    }
+    PyTypeObjectExt *tp = find_ext(tp_orig);
     tp->tp_allocs++;
     if (tp->tp_allocs - tp->tp_frees > tp->tp_maxalloc)
         tp->tp_maxalloc = tp->tp_allocs - tp->tp_frees;
 }
 
-void dec_count(PyTypeObject *tp)
+void dec_count(PyTypeObject *tp_orig)
 {
+    PyTypeObjectExt *tp = find_ext(tp_orig);
     tp->tp_frees++;
-    if (unlist_types_without_objects &&
-        tp->tp_allocs == tp->tp_frees) {
-        /* unlink the type from type_list */
-        if (tp->tp_prev)
-            tp->tp_prev->tp_next = tp->tp_next;
-        else
-            type_list = tp->tp_next;
-        if (tp->tp_next)
-            tp->tp_next->tp_prev = tp->tp_prev;
-        tp->tp_next = tp->tp_prev = NULL;
-        Py_DECREF(tp);
-    }
 }
 
 #endif
@@ -324,14 +319,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     _Py_DEC_REFTOTAL;
     /* If Py_TRACE_REFS, _Py_NewReference re-added self to the object
      * chain, so no more to do there.
-     * If COUNT_ALLOCS, the original decref bumped tp_frees, and
-     * _Py_NewReference bumped tp_allocs:  both of those need to be
-     * undone.
      */
-#ifdef COUNT_ALLOCS
-    --Py_TYPE(self)->tp_frees;
-    --Py_TYPE(self)->tp_allocs;
-#endif
     return -1;
 }
 

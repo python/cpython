@@ -423,16 +423,16 @@ typedef struct _typeobject {
     unsigned int tp_version_tag;
 
     destructor tp_finalize;
-
+} PyTypeObject;
 #ifdef COUNT_ALLOCS
-    /* these must be last and never explicitly initialized */
+typedef struct _typeobject_ext {
+    const char *tp_name; /* To match with PyTypeObject */
     Py_ssize_t tp_allocs;
     Py_ssize_t tp_frees;
     Py_ssize_t tp_maxalloc;
-    struct _typeobject *tp_prev;
-    struct _typeobject *tp_next;
+    struct _typeobject_ext *tp_next;
+} PyTypeObjectExt;
 #endif
-} PyTypeObject;
 #endif
 
 typedef struct{
@@ -752,12 +752,10 @@ PyAPI_FUNC(void) inc_count(PyTypeObject *);
 PyAPI_FUNC(void) dec_count(PyTypeObject *);
 #define _Py_INC_TPALLOCS(OP)    inc_count(Py_TYPE(OP))
 #define _Py_INC_TPFREES(OP)     dec_count(Py_TYPE(OP))
-#define _Py_DEC_TPFREES(OP)     Py_TYPE(OP)->tp_frees--
 #define _Py_COUNT_ALLOCS_COMMA  ,
 #else
 #define _Py_INC_TPALLOCS(OP)
 #define _Py_INC_TPFREES(OP)
-#define _Py_DEC_TPFREES(OP)
 #define _Py_COUNT_ALLOCS_COMMA
 #endif /* COUNT_ALLOCS */
 
