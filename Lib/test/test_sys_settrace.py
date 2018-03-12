@@ -562,43 +562,23 @@ class JumpTracer:
         self.jumpFrom = jumpFrom
         self.jumpTo = jumpTo
         self.event = event
-        self.decorated = decorated
-        self.function_firstLine = None
+        self.firstLine = None if decorated else self.code.co_firstlineno
         self.done = False
 
     def trace(self, frame, event, arg):
-        # frame.f_code.co_firstlineno is the first line of the decorator when
-        # 'function' is decorated and the decorator may be written using
-        # multiple physical lines when it is too long. Use the first line
-        # trace event in 'function' to find the first line of 'function'.
-        if (self.decorated and frame.f_code == self.code and
-                event == 'line' and self.function_firstLine is None):
-            self.function_firstLine = frame.f_lineno - 1
-
-        # Jumps can also be traced in one level nested functions (e.g
-        # test_no_jump_from_call()).
-        if (not self.done and (frame.f_code == self.code or
-                (frame.f_back and frame.f_back.f_code == self.code))):
-            firstLine = frame.f_code.co_firstlineno
-            if self.decorated and frame.f_code == self.code:
-                if self.function_firstLine is not None:
-                    firstLine = self.function_firstLine
-                else:
-                    assert event == 'call'
-                    assert frame.f_lineno == firstLine
-                    # The jump is done on a call event and it is not possible
-                    # to know how many physical lines are used by the
-                    # decorator, so just prevent the jump from the decorator.
-                    # The jump has to be made from a nested function, see
-                    # test_no_jump_from_call().
-                    if event == self.event and self.jumpFrom == 0:
-                        firstLine += 1
-            if (event == self.event and
-                    frame.f_lineno == firstLine + self.jumpFrom):
-                # Cope with non-integer self.jumpTo (because of
-                # no_jump_to_non_integers below).
+        if self.done:
+            return
+        if (self.firstLine is None and frame.f_code == self.code and
+                event == 'line'):
+            self.firstLine = frame.f_lineno - 1
+        if (event == self.event and self.firstLine and
+                frame.f_lineno == self.firstLine + self.jumpFrom):
+            f = frame
+            while f is not None and f.f_code != self.code:
+                f = f.f_back
+            if f is not None:
                 try:
-                    frame.f_lineno = firstLine + self.jumpTo
+                    frame.f_lineno = self.firstLine + self.jumpTo
                 except TypeError:
                     frame.f_lineno = self.jumpTo
                 self.done = True
@@ -752,12 +732,11 @@ class JumpTestCase(unittest.TestCase):
             output.append(3)
         output.append(4)
 
-    @jump_test(3, 4, [1, 2, 4])
+    @jump_test(2, 3, [1, 3])
     def test_jump_forwards_out_of_with_block(output):
-        output.append(1)
-        with tracecontext(output, 2):
-            output.append(3)
-        output.append(4)
+        with tracecontext(output, 1):
+            output.append(2)
+        output.append(3)
 
     @jump_test(3, 1, [1, 2, 1, 2, 3, -2])
     def test_jump_backwards_out_of_with_block(output):
@@ -1107,13 +1086,14 @@ output.append(4)
         sys.settrace(None)
         self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
 
-    @jump_test(0, 1, [1], event='call', error=(ValueError, "can't jump from"
+    @jump_test(2, 3, [1], event='call', error=(ValueError, "can't jump from"
                " the 'call' trace event of a new frame"))
     def test_no_jump_from_call(output):
         output.append(1)
         def nested():
-            output.append(2)
+            output.append(3)
         nested()
+        output.append(5)
 
     @jump_test(2, 1, [1], event='return', error=(ValueError,
                "can only jump from a 'line' trace event"))
@@ -1127,13 +1107,14 @@ output.append(4)
         output.append(1)
         1 / 0
 
-    @jump_test(2, 1, [1], event='return', error=(ValueError,
+    @jump_test(3, 2, [2], event='return', error=(ValueError,
                "can't jump from a yield statement"))
     def test_no_jump_from_yield(output):
         def gen():
-            output.append(1)
-            yield 1
+            output.append(2)
+            yield 3
         next(gen())
+        output.append(5)
 
 
 if __name__ == "__main__":
