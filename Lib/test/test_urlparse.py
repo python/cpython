@@ -943,7 +943,7 @@ class UrlParseTestCase(unittest.TestCase):
         with self.assertRaises(ValueError) as valueError:
             p1.port
         self.assertEqual(str(valueError.exception), 
-            'Port could not be cast to integer value')
+                        'Port could not be cast to integer value')
 
     def test_telurl_params(self):
         p1 = urllib.parse.urlparse('tel:123-4;phone-context=+1-650-516')
