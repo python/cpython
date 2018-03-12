@@ -58,8 +58,8 @@ class PosixTests(unittest.TestCase):
         self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
 
     def test_strsignal(self):
-        self.assertEqual(signal.strsignal(signal.SIGINT), "Interrupt")
-        self.assertEqual(signal.strsignal(signal.SIGTERM), "Terminated")
+        self.assertIn("Interrupt", signal.strsignal(signal.SIGINT))
+        self.assertIn("Terminated", signal.strsignal(signal.SIGTERM))
 
     # Issue 3864, unknown if this affects earlier versions of freebsd also
     def test_interprocess_signal(self):
