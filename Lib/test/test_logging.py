@@ -3006,6 +3006,22 @@ class ConfigDictTest(BaseTest):
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[2]')
 
 class ManagerTest(BaseTest):
+    def setUp(self):
+        class CheckingFilter(logging.Filter):
+            def __init__(self, cls):
+                self.cls = cls
+
+            def filter(self, record):
+                t = type(record)
+                if t is not self.cls:
+                    msg = 'Unexpected LogRecord type %s, expected %s' % (t,
+                            self.cls)
+                    raise TypeError(msg)
+                return True
+
+        BaseTest.setUp(self)
+        self.filter = CheckingFilter(DerivedLogRecord)
+
     def test_manager_loggerclass(self):
         logged = []
 
@@ -3082,6 +3098,16 @@ class LogRecordFactoryTest(BaseTest):
            ('root', 'ERROR', '2'),
         ])
 
+    def test_manager_log_record_factory(self):
+        # See issue #33057.
+        man = logging.Manager(None)
+        logger = man.getLogger('test')
+        logger.addFilter(self.filter)
+        # before setting man.logRecordFactory
+        self.assertRaises(TypeError, logger.warning, 'should raise TypeError')
+        # after setting man.logRecordFactory
+        man.setLogRecordFactory(DerivedLogRecord)
+        logger.warning('should not raise TypeError')
 
 class QueueHandlerTest(BaseTest):
     # Do not bother with a logger name group.
