@@ -314,6 +314,27 @@ class TestFunctionAnnotations(GrammarTest):
             call(c=c, **kwargs,)"""
         self.validate(s)
 
+    def test_10(self):
+        s = """def f(
+          a: str,
+        ) -> None:
+            call(a,)"""
+        self.validate(s)
+
+    def test_11(self):
+        s = """def f(
+          a: str = '',
+        ) -> None:
+            call(a=a,)"""
+        self.validate(s)
+
+    def test_12(self):
+        s = """def f(
+          *args: str,
+        ) -> None:
+            call(*args,)"""
+        self.validate(s)
+
 
 # Adapted from Python 3's Lib/test/test_grammar.py:GrammarTests.test_var_annot
 class TestVarAnnotations(GrammarTest):
