@@ -274,6 +274,78 @@ class TestUnpackingGeneralizations(GrammarTest):
     def test_argument_unpacking_3(self):
         self.validate("""f(2, *a, *b, **b, **c, **d)""")
 
+    def test_trailing_commas_1(self):
+        self.validate("def f(a, b): call(a, b)")
+        self.validate("def f(a, b,): call(a, b,)")
+
+    def test_trailing_commas_2(self):
+        self.validate("def f(a, *b): call(a, *b)")
+        self.validate("def f(a, *b,): call(a, *b,)")
+
+    def test_trailing_commas_3(self):
+        self.validate("def f(a, b=1): call(a, b=1)")
+        self.validate("def f(a, b=1,): call(a, b=1,)")
+
+    def test_trailing_commas_4(self):
+        self.validate("def f(a, **b): call(a, **b)")
+        self.validate("def f(a, **b,): call(a, **b,)")
+
+    def test_trailing_commas_5(self):
+        self.validate("def f(*a, b=1): call(*a, b=1)")
+        self.validate("def f(*a, b=1,): call(*a, b=1,)")
+
+    def test_trailing_commas_6(self):
+        self.validate("def f(*a, **b): call(*a, **b)")
+        self.validate("def f(*a, **b,): call(*a, **b,)")
+
+    def test_trailing_commas_7(self):
+        self.validate("def f(*, b=1): call(*b)")
+        self.validate("def f(*, b=1,): call(*b,)")
+
+    def test_trailing_commas_8(self):
+        self.validate("def f(a=1, b=2): call(a=1, b=2)")
+        self.validate("def f(a=1, b=2,): call(a=1, b=2,)")
+
+    def test_trailing_commas_9(self):
+        self.validate("def f(a=1, **b): call(a=1, **b)")
+        self.validate("def f(a=1, **b,): call(a=1, **b,)")
+
+    def test_trailing_commas_lambda_1(self):
+        self.validate("f = lambda a, b: call(a, b)")
+        self.validate("f = lambda a, b,: call(a, b,)")
+
+    def test_trailing_commas_lambda_2(self):
+        self.validate("f = lambda a, *b: call(a, *b)")
+        self.validate("f = lambda a, *b,: call(a, *b,)")
+
+    def test_trailing_commas_lambda_3(self):
+        self.validate("f = lambda a, b=1: call(a, b=1)")
+        self.validate("f = lambda a, b=1,: call(a, b=1,)")
+
+    def test_trailing_commas_lambda_4(self):
+        self.validate("f = lambda a, **b: call(a, **b)")
+        self.validate("f = lambda a, **b,: call(a, **b,)")
+
+    def test_trailing_commas_lambda_5(self):
+        self.validate("f = lambda *a, b=1: call(*a, b=1)")
+        self.validate("f = lambda *a, b=1,: call(*a, b=1,)")
+
+    def test_trailing_commas_lambda_6(self):
+        self.validate("f = lambda *a, **b: call(*a, **b)")
+        self.validate("f = lambda *a, **b,: call(*a, **b,)")
+
+    def test_trailing_commas_lambda_7(self):
+        self.validate("f = lambda *, b=1: call(*b)")
+        self.validate("f = lambda *, b=1,: call(*b,)")
+
+    def test_trailing_commas_lambda_8(self):
+        self.validate("f = lambda a=1, b=2: call(a=1, b=2)")
+        self.validate("f = lambda a=1, b=2,: call(a=1, b=2,)")
+
+    def test_trailing_commas_lambda_9(self):
+        self.validate("f = lambda a=1, **b: call(a=1, **b)")
+        self.validate("f = lambda a=1, **b,: call(a=1, **b,)")
+
 
 # Adapted from Python 3's Lib/test/test_grammar.py:GrammarTests.testFuncdef
 class TestFunctionAnnotations(GrammarTest):
@@ -334,6 +406,42 @@ class TestFunctionAnnotations(GrammarTest):
         ) -> None:
             call(*args,)"""
         self.validate(s)
+
+    def test_13(self):
+        self.validate("def f(a: str, b: int) -> None: call(a, b)")
+        self.validate("def f(a: str, b: int,) -> None: call(a, b,)")
+
+    def test_14(self):
+        self.validate("def f(a: str, *b: int) -> None: call(a, *b)")
+        self.validate("def f(a: str, *b: int,) -> None: call(a, *b,)")
+
+    def test_15(self):
+        self.validate("def f(a: str, b: int=1) -> None: call(a, b=1)")
+        self.validate("def f(a: str, b: int=1,) -> None: call(a, b=1,)")
+
+    def test_16(self):
+        self.validate("def f(a: str, **b: int) -> None: call(a, **b)")
+        self.validate("def f(a: str, **b: int,) -> None: call(a, **b,)")
+
+    def test_17(self):
+        self.validate("def f(*a: str, b: int=1) -> None: call(*a, b=1)")
+        self.validate("def f(*a: str, b: int=1,) -> None: call(*a, b=1,)")
+
+    def test_18(self):
+        self.validate("def f(*a: str, **b: int) -> None: call(*a, **b)")
+        self.validate("def f(*a: str, **b: int,) -> None: call(*a, **b,)")
+
+    def test_19(self):
+        self.validate("def f(*, b: int=1) -> None: call(*b)")
+        self.validate("def f(*, b: int=1,) -> None: call(*b,)")
+
+    def test_20(self):
+        self.validate("def f(a: str='', b: int=2) -> None: call(a=a, b=2)")
+        self.validate("def f(a: str='', b: int=2,) -> None: call(a=a, b=2,)")
+
+    def test_21(self):
+        self.validate("def f(a: str='', **b: int) -> None: call(a=a, **b)")
+        self.validate("def f(a: str='', **b: int,) -> None: call(a=a, **b,)")
 
 
 # Adapted from Python 3's Lib/test/test_grammar.py:GrammarTests.test_var_annot
