@@ -401,4 +401,8 @@ class Integral(Rational):
         """Integers have a denominator of 1."""
         return 1
 
+    def is_integer(self):
+        """Return True; all Integrals represent an integral value."""
+        return True
+
 Integral.register(int)

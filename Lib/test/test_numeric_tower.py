@@ -222,6 +222,12 @@ class IsIntegerTest(unittest.TestCase):
         self.assertFalse(Rational.is_integer(F(1, 3)))
         self.assertFalse(Rational.is_integer(F(2, 3)))
 
+    def test_integral_is_integer(self):
+        self.assertTrue(Integral.is_integer(-1))
+        self.assertTrue(Integral.is_integer(0))
+        self.assertTrue(Integral.is_integer(1))
+        self.assertTrue(Integral.is_integer(1729))
+
 
 if __name__ == '__main__':
     unittest.main()
