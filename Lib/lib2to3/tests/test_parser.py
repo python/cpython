@@ -9,7 +9,6 @@ test_grammar.py files from both Python 2 and Python 3.
 # Testing imports
 from . import support
 from .support import driver, driver_no_print_statement
-from test.support import verbose
 
 # Python imports
 import difflib
@@ -22,7 +21,6 @@ import subprocess
 import sys
 import tempfile
 import unittest
-import warnings
 
 # Local imports
 from lib2to3.pgen2 import driver as pgen2_driver
@@ -305,6 +303,38 @@ class TestFunctionAnnotations(GrammarTest):
                         *g:6, h:7, i=8, j:9=10, **k:11) -> 12: pass"""
         self.validate(s)
 
+    def test_9(self):
+        s = """def f(
+          a: str,
+          b: int,
+          *,
+          c: bool = False,
+          **kwargs,
+        ) -> None:
+            call(c=c, **kwargs,)"""
+        self.validate(s)
+
+    def test_10(self):
+        s = """def f(
+          a: str,
+        ) -> None:
+            call(a,)"""
+        self.validate(s)
+
+    def test_11(self):
+        s = """def f(
+          a: str = '',
+        ) -> None:
+            call(a=a,)"""
+        self.validate(s)
+
+    def test_12(self):
+        s = """def f(
+          *args: str,
+        ) -> None:
+            call(*args,)"""
+        self.validate(s)
+
 
 # Adapted from Python 3's Lib/test/test_grammar.py:GrammarTests.test_var_annot
 class TestVarAnnotations(GrammarTest):
@@ -407,7 +437,7 @@ class TestClassDef(GrammarTest):
         self.validate("class B(t, *args): pass")
         self.validate("class B(t, **kwargs): pass")
         self.validate("class B(t, *args, **kwargs): pass")
-        self.validate("class B(t, y=9, *args, **kwargs): pass")
+        self.validate("class B(t, y=9, *args, **kwargs,): pass")
 
 
 class TestParserIdempotency(support.TestCase):
