@@ -361,6 +361,8 @@ class TestGzip(unittest.TestCase):
             self.assertEqual(f.read(), b'Test')
 
     def test_fileobj_without_name(self):
+        # Issue #33038: GzipFile should not assume that file objects that have
+        # a .name attribute use a non-None value.
         with tempfile.SpooledTemporaryFile() as f:
             with gzip.GzipFile(fileobj=f, mode='wb') as archive:
                 archive.write(b'data')
