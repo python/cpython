@@ -949,11 +949,11 @@ stack_effect(int opcode, int oparg, int jump)
              * the handler if an exception be raised. */
             return jump ? 6 : 1;
         case WITH_CLEANUP_START:
-            return 0;
+            return 1;
         case WITH_CLEANUP_FINISH:
-            /* Pop a result of __exit__ or __aexit__ and 6 values
-             * pushed when an exception was raised. */
-            return -7;
+            /* Pop a result of __exit__ or __aexit__ , 6 values
+             * pushed when an exception was raised, and NULL. */
+            return -8;
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:

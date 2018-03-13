@@ -2959,39 +2959,22 @@ main_loop:
                SEVENTH = EXIT, the context.__exit__ or context.__aexit__
                   bound method.
 
-               We shift the top 6 values of the stack down and push the result
+               Replace the seventh value with NULL and push the result
                of the call EXIT(TOP, SECOND, THIRD).
             */
             PyObject *exc = TOP();
             assert(PyExceptionClass_Check(exc));
             PyObject *val = SECOND();
             PyObject *tb = THIRD();
-            PyObject *exc2 = FOURTH();
-            PyObject *val2 = PEEK(5);
-            PyObject *tb2 = PEEK(6);
             PyObject *exit_func = PEEK(7);
-            SET_VALUE(7, tb2);
-            SET_VALUE(6, val2);
-            SET_VALUE(5, exc2);
-            SET_FOURTH(tb);
-            SET_THIRD(val);
-            SET_SECOND(exc);
-            /* We just shifted the stack down, so we have
-               to tell the except handler block that the
-               values are lower than it expects. */
-            assert(f->f_iblock > 0);
-            PyTryBlock *block = &f->f_blockstack[f->f_iblock - 1];
-            assert(block->b_type == EXCEPT_HANDLER);
-            assert(block->b_level > 0);
-            block->b_level--;
-
             PyObject *stack[3] = {exc, val, tb};
             PyObject *res = _PyObject_FastCall(exit_func, stack, 3);
-            SET_TOP(res);
+            SET_VALUE(7, NULL);
             Py_DECREF(exit_func);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
-
+            }
+            PUSH(res);
             PREDICT(WITH_CLEANUP_FINISH);
             DISPATCH();
         }
@@ -3001,6 +2984,7 @@ main_loop:
             /* TOP = the result of calling the context.__exit__ bound method.
                (SECOND, THIRD, FOURTH) = exc_info()
                (FIFTH, SIXTH, SEVENTH) = previous exception for EXCEPT_HANDLER
+               EIGHT = NULL
              */
             PyObject *res = POP();
             int err = (res == Py_None) ? 0 : PyObject_IsTrue(res);
@@ -3017,6 +3001,8 @@ main_loop:
                 PyTryBlock *b = PyFrame_BlockPop(f);
                 assert(b->b_type == EXCEPT_HANDLER);
                 UNWIND_EXCEPT_HANDLER(b);
+                assert(TOP() == NULL);
+                STACKADJ(-1);
                 DISPATCH();
             }
             else {
