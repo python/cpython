@@ -6,6 +6,7 @@ import math
 import sys
 import operator
 
+from numbers import Real
 from decimal import Decimal as D
 from fractions import Fraction as F
 
@@ -197,6 +198,16 @@ class ComparisonTest(unittest.TestCase):
                 self.assertRaises(TypeError, op, z, v)
                 self.assertRaises(TypeError, op, v, z)
 
+class IsIntegerTest(unittest.TestCase):
+
+    def test_real_is_integer(self):
+        self.assertTrue(Real.is_integer(-1.0))
+        self.assertTrue(Real.is_integer(0.0))
+        self.assertTrue(Real.is_integer(1.0))
+        self.assertTrue(Real.is_integer(42.0))
+
+        self.assertFalse(Real.is_integer(-0.5))
+        self.assertFalse(Real.is_integer(4.2))
 
 if __name__ == '__main__':
     unittest.main()
