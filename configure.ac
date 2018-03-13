@@ -823,6 +823,12 @@ cat >> conftest.c <<EOF
         sparc64-linux-gnu
 # elif defined(__sparc__)
         sparc-linux-gnu
+# elif defined(__riscv)
+#  if __riscv_xlen == 64
+        riscv64-linux-gnu
+#  else
+        riscv32-linux-gnu
+#  endif
 # else
 #   error unknown platform triplet
 # endif
