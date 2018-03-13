@@ -823,13 +823,8 @@ equal to any address or network object.
 For ordering (``<``, ``>``, etc) the rules are different.  Interface and
 address objects with the same IP version can be compared, and the address
 objects will always sort before the interface objects.  Two interface objects
-are compared by comparing their networks and IP addresses, using the same
-rules as :class:`IPv4Network` or :class:`IPv6Network`.
-
-.. versionchanged:: 3.7
-
-   Interface object ordering uses both the network address and IP address,
-   instead of just the network address.
+are first compared by their networks and, if those are the same, then by their
+IP addresses.
 
 
 Other Module Level Functions
