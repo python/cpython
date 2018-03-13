@@ -87,7 +87,11 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
     if (fp != NULL) {
         int i;
         struct stat statb;
+
+        Py_BEGIN_ALLOW_THREADS
         fstat(fileno(fp), &statb);
+        Py_END_ALLOW_THREADS
+
         for (i = 0; i < nhandles; i++) {
             if (statb.st_dev == handles[i].dev &&
                 statb.st_ino == handles[i].ino) {

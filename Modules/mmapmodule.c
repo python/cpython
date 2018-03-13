@@ -415,7 +415,13 @@ mmap_size_method(mmap_object *self,
 #ifdef UNIX
     {
         struct stat buf;
-        if (-1 == fstat(self->fd, &buf)) {
+        int res;
+
+        Py_BEGIN_ALLOW_THREADS
+        res = fstat(self->fd, &buf);
+        Py_END_ALLOW_THREADS
+
+        if (-1 == res) {
             PyErr_SetFromErrno(mmap_module_error);
             return NULL;
         }
@@ -1097,6 +1103,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 {
 #ifdef HAVE_FSTAT
     struct stat st;
+    int fstat_result;
 #endif
     mmap_object *m_obj;
     Py_ssize_t map_size;
@@ -1170,7 +1177,14 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         fsync(fd);
     }
 #  endif
-    if (fd != -1 && fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
+
+    if (fd != -1) {
+        Py_BEGIN_ALLOW_THREADS
+        fstat_result = fstat(fd, &st);
+        Py_END_ALLOW_THREADS
+    }
+
+    if (fd != -1 && fstat_result == 0 && S_ISREG(st.st_mode)) {
         if (map_size == 0) {
             if (st.st_size == 0) {
                 PyErr_SetString(PyExc_ValueError,
