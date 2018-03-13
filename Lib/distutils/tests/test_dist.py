@@ -518,6 +518,68 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
         self.assertEqual(metadata.obsoletes, None)
         self.assertEqual(metadata.requires, ['foo'])
 
+    def test_author_maintainer(self):
+        attrs = {"name": "package",
+                 "version": "1.0",
+                 "description": "xxx"}
+
+        def roundtrip_tofile(attr_dict):
+            dist = Distribution(attr_dict)
+
+            PKG_INFO = io.StringIO()
+            dist.metadata.write_pkg_file(PKG_INFO)
+            PKG_INFO.seek(0)
+
+            metadata_out = DistributionMetadata()
+            metadata_out.read_pkg_file(PKG_INFO)
+
+            return metadata_out
+
+        def merge_dicts(d1, d2):
+            d1 = d1.copy()
+            d1.update(d2)
+
+            return d1
+
+        test_cases = [
+            ('No author, no maintainer', attrs.copy()),
+            ('Author (no e-mail), no maintainer', merge_dicts(attrs,
+                {'author': 'Author Name'})),
+            ('Author (e-mail), no maintainer', merge_dicts(attrs,
+                {'author': 'Author Name',
+                 'author_email': 'author@name.com'})),
+            ('No author, maintainer (no e-mail)', merge_dicts(attrs,
+                {'maintainer': 'Maintainer Name'})),
+            ('No author, maintainer (e-mail)', merge_dicts(attrs,
+                {'maintainer': 'Maintainer Name',
+                 'maintainer_email': 'maintainer@name.com'})),
+            ('Author (no e-mail), Maintainer (no-email)', merge_dicts(attrs,
+                {'author': 'Author Name',
+                 'maintainer': 'Maintainer Name'})),
+            ('Author (e-mail), Maintainer (e-mail)', merge_dicts(attrs,
+                {'author': 'Author Name',
+                 'author_email': 'author@name.com',
+                 'maintainer': 'Maintainer Name',
+                 'maintainer_email': 'maintainer@name.com'})),
+            ('No author (e-mail), no maintainer (e-mail)', merge_dicts(attrs,
+                {'author_email': 'author@name.com',
+                 'maintainer_email': 'maintainer@name.com'})),
+            ('Author unicode', merge_dicts(attrs,
+                {'author': '鉄沢寛'})),
+            ('Maintainer unicode', merge_dicts(attrs,
+                {'maintainer': 'Jan Łukasiewicz'})),
+        ]
+
+        tested_keys = ['author', 'author_email',
+                       'maintainer', 'maintainer_email']
+        for case_name, cattrs in test_cases:
+            with self.subTest(case_name):
+                metadata = roundtrip_tofile(cattrs)
+
+                for key in tested_keys:
+                    val = getattr(metadata, key)
+                    self.assertEqual(val, cattrs.get(key, None))
+
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(DistributionTestCase))

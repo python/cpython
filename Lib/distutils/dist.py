@@ -1079,9 +1079,9 @@ class DistributionMetadata:
         self.description = _read_field('summary')
         # we are filling author only.
         self.author = _read_field('author')
-        self.maintainer = None
+        self.maintainer = _read_field('maintainer')
         self.author_email = _read_field('author-email')
-        self.maintainer_email = None
+        self.maintainer_email = _read_field('maintainer-email')
         self.url = _read_field('home-page')
         self.license = _read_field('license')
 
@@ -1129,8 +1129,19 @@ class DistributionMetadata:
         file.write('Version: %s\n' % self.get_version())
         file.write('Summary: %s\n' % self.get_description())
         file.write('Home-page: %s\n' % self.get_url())
-        file.write('Author: %s\n' % self.get_contact())
-        file.write('Author-email: %s\n' % self.get_contact_email())
+
+        optional_fields = (
+            ('Author', 'author'),
+            ('Author-Email', 'author_email'),
+            ('Maintainer', 'maintainer'),
+            ('Maintainer-Email', 'maintainer_email'),
+        )
+
+        for field, attr in optional_fields:
+            attr_val = getattr(self, attr)
+            if attr_val is not None:
+                file.write('%s: %s\n' % (field, attr_val))
+
         file.write('License: %s\n' % self.get_license())
         if self.download_url:
             file.write('Download-URL: %s\n' % self.download_url)
