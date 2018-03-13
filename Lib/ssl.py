@@ -388,6 +388,10 @@ class SSLContext(_SSLContext):
         self = _SSLContext.__new__(cls, protocol)
         return self
 
+    def __getstate__(self):
+        raise TypeError("cannot serialize {} object".format(
+            self.__class__.__name__))
+
     def _encode_hostname(self, hostname):
         if hostname is None:
             return None
@@ -695,6 +699,10 @@ class SSLObject:
         server hostame is set."""
         return self._sslobj.server_hostname
 
+    def __getstate__(self):
+        raise TypeError("cannot serialize {} object".format(
+            self.__class__.__name__))
+
     def read(self, len=1024, buffer=None):
         """Read up to 'len' bytes from the SSL object and return them.
 
@@ -880,9 +888,13 @@ class SSLSocket(socket):
         if self._sslobj is not None:
             return self._sslobj.session_reused
 
+    def __getstate__(self):
+        raise TypeError("cannot serialize {} object".format(
+            self.__class__.__name__))
+
     def dup(self):
-        raise NotImplemented("Can't dup() %s instances" %
-                             self.__class__.__name__)
+        raise NotImplementedError("Can't dup() {} instances".format(
+            self.__class__.__name__))
 
     def _checkClosed(self, msg=None):
         # raise an exception here if you wish to check for spurious closes

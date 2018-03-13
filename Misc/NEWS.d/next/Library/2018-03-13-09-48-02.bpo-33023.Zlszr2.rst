@@ -1,0 +1,3 @@
+Improve error message when trying to serialize SSLContext, SSLObject, and
+SSLSocket objects. The classes can't be pickled or copied by the copy
+module.

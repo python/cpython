@@ -19,6 +19,8 @@ import weakref
 import platform
 import functools
 import sysconfig
+import copy
+import pickle
 try:
     import ctypes
 except ImportError:
@@ -972,6 +974,17 @@ class BasicSocketTests(unittest.TestCase):
         )
         self.assertIn(rc, errors)
 
+    def test_copy_pickle(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        with ctx.wrap_socket(socket.socket(),
+                             server_hostname='localhost') as s:
+            with self.assertRaises(TypeError):
+                copy.copy(s)
+            with self.assertRaises(TypeError):
+                copy.deepcopy(s)
+            with self.assertRaises(TypeError):
+                pickle.dumps(s)
+
 
 class ContextTests(unittest.TestCase):
 
@@ -1607,6 +1620,15 @@ class ContextTests(unittest.TestCase):
             self.assertIsInstance(sock, MySSLSocket)
         obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
         self.assertIsInstance(obj, MySSLObject)
+
+    def test_copy_pickle(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        with self.assertRaises(TypeError):
+            copy.copy(ctx)
+        with self.assertRaises(TypeError):
+            copy.deepcopy(ctx)
+        with self.assertRaises(TypeError):
+            pickle.dumps(ctx)
 
 
 class SSLErrorTests(unittest.TestCase):
