@@ -301,6 +301,10 @@ class Rational(Real):
         """
         return self.numerator / self.denominator
 
+    def is_integer(self):
+        """Return True if the Rational is integral; otherwise return False."""
+        return self.denominator == 1
+
 
 class Integral(Rational):
     """Integral adds a conversion to int and the bit-string operations."""
