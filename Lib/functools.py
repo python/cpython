@@ -769,6 +769,9 @@ def singledispatch(func):
 
         """
         nonlocal cache_token
+        if not isinstance(cls, type):
+            raise TypeError("dispatch() argument must be a type: {!r}"
+                            .format(cls))
         if cache_token is not None:
             current_token = get_cache_token()
             if cache_token != current_token:
@@ -791,6 +794,9 @@ def singledispatch(func):
 
         """
         nonlocal cache_token
+        if not isinstance(cls, type):
+            raise TypeError("register() argument must be a type: {!r}"
+                            .format(cls))
         if func is None:
             return lambda f: register(cls, f)
         registry[cls] = func
