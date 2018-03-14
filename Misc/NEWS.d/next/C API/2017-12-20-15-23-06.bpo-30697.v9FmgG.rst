@@ -1,0 +1,1 @@
+Restore PyExc_RecursionErrorInst in 3.6
