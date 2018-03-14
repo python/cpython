@@ -2530,7 +2530,7 @@ Close the channel for all interpreters.  Once the channel's ID has\n\
 no more ref counts the channel will be destroyed.");
 
 static PyObject *
-channel_drop_interpreter(PyObject *self, PyObject *args, PyObject *kwds)
+channel_release(PyObject *self, PyObject *args, PyObject *kwds)
 {
     // Note that only the current interpreter is affected.
     static char *kwlist[] = {"id", "send", "recv", NULL};
@@ -2538,7 +2538,7 @@ channel_drop_interpreter(PyObject *self, PyObject *args, PyObject *kwds)
     int send = -1;
     int recv = -1;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$pp:channel_drop_interpreter", kwlist,
+                                     "O|$pp:channel_release", kwlist,
                                      &id, &send, &recv))
         return NULL;
 
@@ -2564,8 +2564,8 @@ channel_drop_interpreter(PyObject *self, PyObject *args, PyObject *kwds)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(channel_drop_interpreter_doc,
-"channel_drop_interpreter(ID, *, send=None, recv=None)\n\
+PyDoc_STRVAR(channel_release_doc,
+"channel_release(ID, *, send=None, recv=None)\n\
 \n\
 Close the channel for the current interpreter.  'send' and 'recv'\n\
 (bool) may be used to indicate the ends to close.  By default both\n\
@@ -2608,8 +2608,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS, channel_recv_doc},
     {"channel_close",             channel_close,
      METH_O, channel_close_doc},
-    {"channel_drop_interpreter",  (PyCFunction)channel_drop_interpreter,
-     METH_VARARGS | METH_KEYWORDS, channel_drop_interpreter_doc},
+    {"channel_release",           (PyCFunction)channel_release,
+     METH_VARARGS | METH_KEYWORDS, channel_release_doc},
     {"_channel_id",               (PyCFunction)channel__channel_id,
      METH_VARARGS | METH_KEYWORDS, NULL},
 
