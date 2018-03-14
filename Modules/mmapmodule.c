@@ -1050,7 +1050,7 @@ static PyObject *
 new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 {
     struct _Py_stat_struct status;
-    int fstat_result;
+    int fstat_result = -1;
     mmap_object *m_obj;
     Py_ssize_t map_size;
     off_t offset = 0;
