@@ -1,1 +1,0 @@
-Fix ctypes pass-by-value for structs on 64-bit Cygwin/MinGW.
