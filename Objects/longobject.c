@@ -5241,7 +5241,7 @@ Returns True for all integers.
 
 static PyObject *
 int_is_integer_impl(PyObject *self)
-/*[clinic end generated code: output=90f8e794ce5430ef input=903121d57b734c35]*/
+/*[clinic end generated code: output=90f8e794ce5430ef input=1c1a86957301d26d]*/
 {
     Py_RETURN_TRUE;
 }

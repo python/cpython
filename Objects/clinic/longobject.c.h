@@ -125,7 +125,7 @@ PyDoc_STRVAR(int_is_integer__doc__,
 "is_integer($self, /)\n"
 "--\n"
 "\n"
-"Return True for all integers.");
+"Returns True for all integers.");
 
 #define INT_IS_INTEGER_METHODDEF    \
     {"is_integer", (PyCFunction)int_is_integer, METH_NOARGS, int_is_integer__doc__},
@@ -385,4 +385,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a68b8ed2c7b6e28f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=022614978e2fcdf3 input=a9049054013a1b77]*/
