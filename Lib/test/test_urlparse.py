@@ -941,8 +941,8 @@ class UrlParseTestCase(unittest.TestCase):
         # Asset that the error message is:
         # port oracle could not be cast to integer value
         p1 = urllib.parse.urlparse('http://Server=sde; Service=sde:oracle')
-        with self.assertRaisesRegex(ValueError, 
-                                    "Port oracle could not be cast to integer value"):
+        with self.assertRaisesRegex(ValueError, "Port oracle could not be " \
+                                                "cast to integer value"):
             p1.port
 
     def test_telurl_params(self):
