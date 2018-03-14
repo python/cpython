@@ -2187,6 +2187,14 @@ class TestSingleDispatch(unittest.TestCase):
         ))
         self.assertTrue(str(exc.exception).endswith(msg_suffix))
 
+    def test_invalid_dispatch_argument(self):
+        @functools.singledispatch
+        def g(obj):
+            return "base"
+        msg = r"dispatch\(\) argument must be a type: 'not a type'"
+        with self.assertRaisesRegex(TypeError, msg):
+            g.dispatch("not a type")
+
 
 if __name__ == '__main__':
     unittest.main()

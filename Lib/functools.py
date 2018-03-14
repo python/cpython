@@ -770,6 +770,8 @@ def singledispatch(func):
 
         """
         nonlocal cache_token
+        if not isinstance(cls, type):
+            raise TypeError(f"dispatch() argument must be a type: {cls!r}")
         if cache_token is not None:
             current_token = get_cache_token()
             if cache_token != current_token:
