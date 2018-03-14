@@ -2078,6 +2078,18 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(len(td), 0)
         functools.WeakKeyDictionary = _orig_wkd
 
+    def test_invalid_arguments(self):
+        # issue27984
+        from enum import Enum
+        IS = Enum("IS", "a, b")
+        @functools.singledispatch
+        def g(obj):
+            return "base"
+        with self.assertRaisesRegex(TypeError, "argument must be a type"):
+            g.register(IS.a)
+        with self.assertRaisesRegex(TypeError, "argument must be a type"):
+            g.dispatch(IS.b)
+
 
 if __name__ == '__main__':
     unittest.main()

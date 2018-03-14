@@ -1,0 +1,2 @@
+Non-type cls argument to singledispatch.register and singledispatch.dispatch
+will raise a TypeError.
