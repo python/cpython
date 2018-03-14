@@ -2747,7 +2747,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         return NULL;
     }
     self->ctx = ctx;
-#ifdef HAVE_NPN
+#if HAVE_NPN
     self->npn_protocols = NULL;
 #endif
 #if HAVE_ALPN
