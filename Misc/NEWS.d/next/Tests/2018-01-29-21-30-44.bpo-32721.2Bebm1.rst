@@ -1,1 +1,0 @@
-Fix test_hashlib to not fail if the _md5 module is not built.

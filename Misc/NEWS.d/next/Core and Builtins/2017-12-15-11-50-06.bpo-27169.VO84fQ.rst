@@ -1,2 +1,0 @@
-The ``__debug__`` constant is now optimized out at compile time. This fixes also
-bpo-22091.
