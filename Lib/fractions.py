@@ -388,7 +388,7 @@ class Fraction(numbers.Rational):
                 # Includes ints.
                 return monomorphic_operator(a, b)
             elif isinstance(a, numbers.Real):
-                return fallback_operator(float(a), float(b))
+                return float(fallback_operator(Fraction(a), b))
             elif isinstance(a, numbers.Complex):
                 return fallback_operator(complex(a), complex(b))
             else:
@@ -431,23 +431,14 @@ class Fraction(numbers.Rational):
         """a // b"""
         return math.floor(a / b)
 
-    def __rfloordiv__(b, a):
-        """a // b"""
-        return math.floor(a / b)
-
-    __floordiv__, _ = _operator_fallbacks(_floordiv, operator.floordiv)
+    __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv)
 
     def _mod(a, b):
         """a % b"""
         div = a // b
         return a - b * div
 
-    def __rmod__(b, a):
-        """a % b"""
-        div = a // b
-        return a - b * div
-
-    __mod__, _ = _operator_fallbacks(_mod, operator.mod)
+    __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod)
 
     def __pow__(a, b):
         """a ** b
