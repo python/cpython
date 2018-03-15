@@ -2478,7 +2478,7 @@ class TestFrozen(unittest.TestCase):
             d.i = 5
         self.assertEqual(d.i, 0)
 
-    def test_inherit_from_nonfrozen_from_frozen(self):
+    def test_inherit_nonfrozen_from_frozen(self):
         @dataclass(frozen=True)
         class C:
             i: int
@@ -2489,7 +2489,7 @@ class TestFrozen(unittest.TestCase):
             class D(C):
                 pass
 
-    def test_inherit_from_frozen_from_nonfrozen(self):
+    def test_inherit_frozen_from_nonfrozen(self):
         @dataclass
         class C:
             i: int
@@ -2511,6 +2511,12 @@ class TestFrozen(unittest.TestCase):
         d = D(10)
         with self.assertRaises(FrozenInstanceError):
             d.i = 5
+
+    # Check the behavior of the intermediate classes, too.
+    # Check for inheriting: frozen -> non-dataclass -> frozen -> non-dataclass
+    # Check for inheriting: frozen -> non-dataclass -> non-frozen (error)
+    # Check for inheriting: non-frozen -> non-dataclass -> frozen -> non-dataclass
+    # Check for inheriting: non-frozen -> non-dataclass -> non-frozen-> non-dataclass
 
 
 if __name__ == '__main__':
