@@ -268,6 +268,14 @@ For example::
    def f(x):
        return x*x
 
+   def random_sleep():
+       duration = random() * 5.0
+       time.sleep(duration)
+       return duration
+
+   def report_slept_duration(duration):
+       print("Slept for %0.2f seconds." % duration)
+
    if __name__ == '__main__':
        pool = Pool(processes=4)              # start 4 worker processes
 
@@ -296,6 +304,13 @@ For example::
            print res.get(timeout=1)
        except TimeoutError:
            print "We lacked patience and got a multiprocessing.TimeoutError"
+           
+       for i in range(10):
+           pool.apply_async(random_sleep, callback=report_slept_duration)
+       print "Finished adding to pool. Waiting for jobs to finish."
+       pool.close()
+       pool.join()
+  
 
 Note that the methods of a pool should only ever be used by the
 process which created it.
@@ -1825,9 +1840,10 @@ with the :class:`Pool` class.
       A variant of the :meth:`apply` method which returns a result object.
 
       If *callback* is specified then it should be a callable which accepts a
-      single argument.  When the result becomes ready *callback* is applied to
-      it (unless the call failed).  *callback* should complete immediately since
-      otherwise the thread which handles the results will get blocked.
+      single argument, the return value of *func*.  When the result becomes ready
+      *callback* is applied to it (unless the call failed) back in the main thread.
+      *callback* should complete immediately since otherwise the thread which
+      handles the results will get blocked.
 
    .. method:: map(func, iterable[, chunksize])
 
@@ -1843,9 +1859,10 @@ with the :class:`Pool` class.
       A variant of the :meth:`.map` method which returns a result object.
 
       If *callback* is specified then it should be a callable which accepts a
-      single argument.  When the result becomes ready *callback* is applied to
-      it (unless the call failed).  *callback* should complete immediately since
-      otherwise the thread which handles the results will get blocked.
+      single argument, the return value of *func*.  When the result becomes ready
+      *callback* is applied to it (unless the call failed) back in the main thread.
+      *callback* should complete immediately since otherwise the thread which
+      handles the results will get blocked.
 
    .. method:: imap(func, iterable[, chunksize])
 
@@ -1880,8 +1897,8 @@ with the :class:`Pool` class.
 
    .. method:: join()
 
-      Wait for the worker processes to exit.  One must call :meth:`close` or
-      :meth:`terminate` before using :meth:`join`.
+      Wait for the worker processes to exit and any callback functions to return.
+      One must call :meth:`close` or :meth:`terminate` before using :meth:`join`.
 
 
 .. class:: AsyncResult
