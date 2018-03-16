@@ -24,7 +24,7 @@
 
 #include <stdio.h>
 #ifndef NULL
-#   error "Python.h requires that stdio.h define NULL."
+#error "Python.h requires that stdio.h define NULL."
 #endif
 
 #include <string.h>
