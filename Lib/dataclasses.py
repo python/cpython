@@ -173,6 +173,10 @@ _FIELD_INITVAR = object()         # Not a field, but an InitVar.
 #  objects. Also used to check if a class is a Data Class.
 _FIELDS = '__dataclass_fields__'
 
+# The name of an attribute on the class that stores the parameters to
+# @dataclass.
+_PARAMS = '__dataclass_params__'
+
 # The name of the function, that if it exists, is called at the end of
 # __init__.
 _POST_INIT_NAME = '__post_init__'
@@ -235,6 +239,32 @@ class Field:
                 f'metadata={self.metadata}'
                 ')')
 
+
+class _DataclassParams:
+    __slots__ = ('init',
+                 'repr',
+                 'eq',
+                 'order',
+                 'unsafe_hash',
+                 'frozen',
+                 )
+    def __init__(self, init, repr, eq, order, unsafe_hash, frozen):
+        self.init = init
+        self.repr = repr
+        self.eq = eq
+        self.order = order
+        self.unsafe_hash = unsafe_hash
+        self.frozen = frozen
+
+    def __repr__(self):
+        return ('_DataclassParams('
+                f'init={self.init},'
+                f'repr={self.repr},'
+                f'eq={self.eq},'
+                f'order={self.order},'
+                f'unsafe_hash={self.unsafe_hash},'
+                f'frozen={self.frozen}'
+                ')')
 
 # This function is used instead of exposing Field creation directly,
 #  so that a type checker can be told (via overloads) that this is a
@@ -601,12 +631,15 @@ _hash_action = {(False, False, False, False): (''),
 #  version of this table.
 
 
-def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
+def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     # Now that dicts retain insertion order, there's no reason to use
     #  an ordered dict.  I am leveraging that ordering here, because
     #  derived class fields overwrite base class fields, but the order
     #  is defined by the base class, which is found first.
     fields = {}
+
+    setattr(cls, _PARAMS, _DataclassParams(init, repr, eq, order,
+                                           unsafe_hash, frozen))
 
     # Find our base classes in reverse MRO order, and exclude
     #  ourselves.  In reversed order so that more derived classes
@@ -778,7 +811,7 @@ def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
     """
 
     def wrap(cls):
-        return _process_class(cls, repr, eq, order, unsafe_hash, init, frozen)
+        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen)
 
     # See if we're being called as @dataclass or @dataclass().
     if _cls is None:
