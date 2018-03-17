@@ -129,6 +129,36 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(signal_strsignal__doc__,
+"strsignal($module, signalnum, /)\n"
+"--\n"
+"\n"
+"Return the system description of the given signal.\n"
+"\n"
+"The return values can be such as \"Interrupt\", \"Segmentation fault\", etc.\n"
+"Returns None if the signal is not recognized.");
+
+#define SIGNAL_STRSIGNAL_METHODDEF    \
+    {"strsignal", (PyCFunction)signal_strsignal, METH_O, signal_strsignal__doc__},
+
+static PyObject *
+signal_strsignal_impl(PyObject *module, int signalnum);
+
+static PyObject *
+signal_strsignal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int signalnum;
+
+    if (!PyArg_Parse(arg, "i:strsignal", &signalnum)) {
+        goto exit;
+    }
+    return_value = signal_strsignal_impl(module, signalnum);
+
+exit:
+    return return_value;
+}
+
 #if defined(HAVE_SIGINTERRUPT)
 
 PyDoc_STRVAR(signal_siginterrupt__doc__,
@@ -440,4 +470,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=36132f4189381fe0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7b41486acf93aa8e input=a9049054013a1b77]*/

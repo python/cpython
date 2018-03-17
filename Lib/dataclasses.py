@@ -745,7 +745,7 @@ def _process_class(cls, repr, eq, order, unsafe_hash, init, frozen):
 #  underscore. The presence of _cls is used to detect if this
 #  decorator is being called with parameters or not.
 def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
-              unsafe_hash=None, frozen=False):
+              unsafe_hash=False, frozen=False):
     """Returns the same class as was passed in, with dunder methods
     added based on the fields defined in the class.
 
@@ -880,7 +880,7 @@ def _astuple_inner(obj, tuple_factory):
 
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
-                   repr=True, eq=True, order=False, unsafe_hash=None,
+                   repr=True, eq=True, order=False, unsafe_hash=False,
                    frozen=False):
     """Return a new dynamically created dataclass.
 

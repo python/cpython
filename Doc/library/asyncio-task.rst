@@ -535,7 +535,7 @@ Task functions
    not provided, the default event loop is used.
 
 
-.. function:: current_task(loop=None):
+.. function:: current_task(loop=None)
 
    Return the current running :class:`Task` instance or ``None``, if
    no task is running.
@@ -546,7 +546,7 @@ Task functions
    .. versionadded:: 3.7
 
 
-.. function:: all_tasks(loop=None):
+.. function:: all_tasks(loop=None)
 
    Return a set of :class:`Task` objects created for the loop.
 
@@ -682,7 +682,7 @@ Task functions
 
    This function is a :ref:`coroutine <coroutine>`.
 
-.. function:: shield(arg, \*, loop=None)
+.. coroutinefunction:: shield(arg, \*, loop=None)
 
    Wait for a future, shielding it from cancellation.
 
