@@ -37,14 +37,12 @@ class BackupTests(unittest.TestCase):
             self.cx.backup(bck)
 
     def test_bad_target_in_transaction(self):
-        if sqlite.sqlite_version_info == (3, 8, 7, 1):
-            self.skipTest('skip until we debug https://bugs.python.org/issue27645#msg313562')
         bck = sqlite.connect(':memory:')
         bck.execute('CREATE TABLE bar (key INTEGER)')
         bck.executemany('INSERT INTO bar (key) VALUES (?)', [(3,), (4,)])
         with self.assertRaises(sqlite.OperationalError) as cm:
             self.cx.backup(bck)
-        if sqlite.sqlite_version_info < (3, 8, 7):
+        if sqlite.sqlite_version_info < (3, 8, 8):
             self.assertEqual(str(cm.exception), 'target is in transaction')
 
     def test_keyword_only_args(self):
