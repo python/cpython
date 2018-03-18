@@ -1,3 +1,5 @@
+__lazy_module__ = True
+
 import datetime
 import faulthandler
 import locale

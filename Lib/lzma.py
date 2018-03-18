@@ -8,6 +8,8 @@ These classes and functions support both the XZ and legacy LZMA
 container formats, as well as raw compressed data streams.
 """
 
+__lazy_module__ = True
+
 __all__ = [
     "CHECK_NONE", "CHECK_CRC32", "CHECK_CRC64", "CHECK_SHA256",
     "CHECK_ID_MAX", "CHECK_UNKNOWN",

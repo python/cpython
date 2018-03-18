@@ -7,6 +7,8 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+__lazy_module__ = True
+
 from abc import ABCMeta
 import copyreg
 import functools

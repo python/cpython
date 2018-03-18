@@ -2,6 +2,8 @@
 # Python 3 for the pickle module.  This needed to make pickle streams
 # generated with Python 2 loadable by Python 3.
 
+__lazy_module__ = True
+
 # This is a copy of lib2to3.fixes.fix_imports.MAPPING.  We cannot import
 # lib2to3 and use the mapping defined there, because lib2to3 uses pickle.
 # Thus, this could cause the module to be imported recursively.

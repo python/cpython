@@ -4,6 +4,8 @@ This is only useful to add pickle support for extension types defined in
 C, not for instances of user-defined classes.
 """
 
+__lazy_module__ = True
+
 __all__ = ["pickle", "constructor",
            "add_extension", "remove_extension", "clear_extension_cache"]
 

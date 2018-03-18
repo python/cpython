@@ -3,6 +3,8 @@
 Suggested usage: from stat import *
 """
 
+__lazy_module__ = True
+
 # Indices for stat struct members in the tuple returned by os.stat()
 
 ST_MODE  = 0

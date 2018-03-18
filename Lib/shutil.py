@@ -4,6 +4,8 @@ XXX The functions here don't copy the resource fork or other metadata on Mac.
 
 """
 
+__lazy_module__ = True
+
 import os
 import sys
 import stat

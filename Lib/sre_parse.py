@@ -10,6 +10,8 @@
 
 """Internal support module for sre"""
 
+__lazy_module__ = True
+
 # XXX: show string offset and offending character for all errors
 
 from sre_constants import *

@@ -1,3 +1,6 @@
+
+__lazy_module__ = True
+
 __all__ = [
     # Functions
     'calcsize', 'pack', 'pack_into', 'unpack', 'unpack_from',

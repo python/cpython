@@ -6,6 +6,7 @@
 Unit tests are in test_collections.
 """
 
+__lazy_module__ = True
 from abc import ABCMeta, abstractmethod
 import sys
 

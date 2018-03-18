@@ -2,6 +2,8 @@
 # Author: Ben Gertzfield, Barry Warsaw
 # Contact: email-sig@python.org
 
+__lazy_module__ = True
+
 __all__ = [
     'Charset',
     'add_alias',

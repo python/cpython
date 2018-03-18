@@ -4,6 +4,7 @@
 Don't import directly from third-party code; use the `locale` module instead!
 """
 
+__lazy_module__ = True
 import sys
 import _locale
 

@@ -34,6 +34,8 @@ saferepr()
 
 """
 
+__lazy_module__ = True
+
 import collections as _collections
 import re
 import sys as _sys

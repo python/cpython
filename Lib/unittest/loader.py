@@ -1,5 +1,6 @@
 """Loading unittests."""
 
+__lazy_module__ = True
 import os
 import re
 import sys

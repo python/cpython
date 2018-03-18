@@ -10,6 +10,8 @@ the python source tree after building the interpreter and run:
     ./python Lib/keyword.py
 """
 
+__lazy_module__ = True
+
 __all__ = ["iskeyword", "kwlist"]
 
 kwlist = [

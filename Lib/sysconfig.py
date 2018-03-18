@@ -1,5 +1,7 @@
 """Access to Python's configuration information."""
 
+__lazy_module__ = True
+
 import os
 import sys
 from os.path import pardir, realpath

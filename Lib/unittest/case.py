@@ -1,5 +1,6 @@
 """Test case implementation"""
 
+__lazy_module__ = True
 import sys
 import functools
 import difflib

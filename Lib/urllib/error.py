@@ -11,6 +11,7 @@ an application may want to handle an exception like a regular
 response.
 """
 
+__lazy_module__ = True
 import urllib.response
 
 __all__ = ['URLError', 'HTTPError', 'ContentTooShortError']

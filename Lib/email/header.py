@@ -4,6 +4,8 @@
 
 """Header encoding and decoding functionality."""
 
+__lazy_module__ = True
+
 __all__ = [
     'Header',
     'decode_header',

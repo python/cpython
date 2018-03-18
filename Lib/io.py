@@ -34,6 +34,8 @@ DEFAULT_BUFFER_SIZE
 """
 # New I/O library conforming to PEP 3116.
 
+__lazy_module__ = True
+
 __author__ = ("Guido van Rossum <guido@python.org>, "
               "Mike Verdone <mike.verdone@gmail.com>, "
               "Mark Russell <mark.russell@zen.co.uk>, "

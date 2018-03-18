@@ -26,6 +26,8 @@ Class HtmlDiff:
     For producing HTML side by side comparison with change highlights.
 """
 
+__lazy_module__ = True
+
 __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']

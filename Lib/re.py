@@ -119,6 +119,8 @@ This module also defines an exception 'error'.
 
 """
 
+__lazy_module__ = True
+
 import enum
 import sre_compile
 import sre_parse

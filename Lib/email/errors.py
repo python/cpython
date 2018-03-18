@@ -4,6 +4,7 @@
 
 """email package exception classes."""
 
+__lazy_module__ = True
 
 class MessageError(Exception):
     """Base class for errors in the email package."""

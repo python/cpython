@@ -7,6 +7,8 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """
 
+__lazy_module__ = True
+
 import builtins
 import sys
 

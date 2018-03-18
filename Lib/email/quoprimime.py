@@ -26,6 +26,8 @@ does dumb encoding and decoding.  To deal with the various line
 wrapping issues, use the email.header module.
 """
 
+__lazy_module__ = True
+
 __all__ = [
     'body_decode',
     'body_encode',

@@ -3,6 +3,7 @@
 
 """Abstract Base Classes (ABCs) according to PEP 3119."""
 
+__lazy_module__ = True
 
 def abstractmethod(funcobj):
     """A decorator indicating abstract methods.

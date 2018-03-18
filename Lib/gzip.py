@@ -5,6 +5,8 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
+__lazy_module__ = True
+
 import struct, sys, time, os
 import zlib
 import builtins

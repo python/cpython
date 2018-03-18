@@ -1,5 +1,7 @@
 """Extract, format and print information about Python stack traces."""
 
+__lazy_module__ = True
+
 import collections
 import itertools
 import linecache

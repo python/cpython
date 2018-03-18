@@ -1,5 +1,7 @@
 """Redo the builtin repr() (representation) but with limits on most sizes."""
 
+__lazy_module__ = True
+
 __all__ = ["Repr", "repr", "recursive_repr"]
 
 import builtins

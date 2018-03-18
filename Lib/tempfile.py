@@ -23,6 +23,8 @@ This module also provides some data items to the user:
              another candidate location to store temporary files.
 """
 
+__lazy_module__ = True
+
 __all__ = [
     "NamedTemporaryFile", "TemporaryFile", # high level safe interfaces
     "SpooledTemporaryFile", "TemporaryDirectory",

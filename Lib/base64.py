@@ -6,6 +6,8 @@
 # Modified 30-Dec-2003 by Barry Warsaw to add full RFC 3548 support
 # Modified 22-May-2007 by Guido van Rossum to use bytes everywhere
 
+__lazy_module__ = True
+
 import re
 import struct
 import binascii

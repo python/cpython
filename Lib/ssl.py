@@ -90,6 +90,8 @@ ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE
 ALERT_DESCRIPTION_UNKNOWN_PSK_IDENTITY
 """
 
+__lazy_module__ = True
+
 import ipaddress
 import re
 import sys

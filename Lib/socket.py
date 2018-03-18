@@ -46,6 +46,8 @@ Many other constants may be defined; these may be used in calls to
 the setsockopt() and getsockopt() methods.
 """
 
+__lazy_module__ = True
+
 import _socket
 from _socket import *
 

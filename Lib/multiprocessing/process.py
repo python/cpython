@@ -7,6 +7,8 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+__lazy_module__ = True
+
 __all__ = ['BaseProcess', 'current_process', 'active_children']
 
 #

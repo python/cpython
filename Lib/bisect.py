@@ -1,5 +1,7 @@
 """Bisection algorithms."""
 
+__lazy_module__ = True
+
 def insort_right(a, x, lo=0, hi=None):
     """Insert item x in list a, and keep it sorted assuming a is sorted.
 

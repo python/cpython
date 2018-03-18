@@ -1,3 +1,5 @@
+__lazy_module__ = True
+
 import errno
 import os
 import re

@@ -21,6 +21,8 @@ and opendir), and leave all pathname manipulation to os.path
 (e.g., split and join).
 """
 
+__lazy_module__ = True
+
 #'
 import abc
 import sys

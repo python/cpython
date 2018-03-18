@@ -10,6 +10,8 @@ also includes default encodings for all supported locale names.
 
 """
 
+__lazy_module__ = True
+
 import sys
 import encodings
 import encodings.aliases

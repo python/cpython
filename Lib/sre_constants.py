@@ -11,6 +11,8 @@
 
 """Internal support module for sre"""
 
+__lazy_module__ = True
+
 # update when constants are added or removed
 
 MAGIC = 20171005

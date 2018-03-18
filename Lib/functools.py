@@ -9,6 +9,8 @@
 #   Copyright (C) 2006-2013 Python Software Foundation.
 # See C source code for _functools credits/copyright
 
+__lazy_module__ = True
+
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
            'partialmethod', 'singledispatch']

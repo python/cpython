@@ -69,6 +69,8 @@ site-specific customizations.  If this import fails with an
 ImportError exception, it is silently ignored.
 """
 
+__lazy_module__ = True
+
 import sys
 import os
 import builtins

@@ -1,4 +1,5 @@
 """Utilities for with-statement contexts.  See PEP 343."""
+__lazy_module__ = True
 import abc
 import sys
 import _collections_abc

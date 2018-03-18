@@ -14,6 +14,8 @@ printable -- a string containing all ASCII characters considered printable
 
 """
 
+__lazy_module__ = True
+
 __all__ = ["ascii_letters", "ascii_lowercase", "ascii_uppercase", "capwords",
            "digits", "hexdigits", "octdigits", "printable", "punctuation",
            "whitespace", "Formatter", "Template"]

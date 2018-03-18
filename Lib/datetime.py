@@ -4,6 +4,8 @@ See http://www.iana.org/time-zones/repository/tz-link.html for
 time zone and DST data sources.
 """
 
+__lazy_module__ = True
+
 import time as _time
 import math as _math
 
@@ -2414,15 +2416,16 @@ except ImportError:
     pass
 else:
     # Clean up unused names
-    del (_DAYNAMES, _DAYS_BEFORE_MONTH, _DAYS_IN_MONTH, _DI100Y, _DI400Y,
-         _DI4Y, _EPOCH, _MAXORDINAL, _MONTHNAMES, _build_struct_time,
-         _check_date_fields, _check_int_field, _check_time_fields,
-         _check_tzinfo_arg, _check_tzname, _check_utc_offset, _cmp, _cmperror,
-         _date_class, _days_before_month, _days_before_year, _days_in_month,
-         _format_time, _format_offset, _is_leap, _isoweek1monday, _math,
-         _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
-         _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
-         _parse_hh_mm_ss_ff)
+    if 0:
+        del (_DAYNAMES, _DAYS_BEFORE_MONTH, _DAYS_IN_MONTH, _DI100Y, _DI400Y,
+             _DI4Y, _EPOCH, _MAXORDINAL, _MONTHNAMES, _build_struct_time,
+             _check_date_fields, _check_int_field, _check_time_fields,
+             _check_tzinfo_arg, _check_tzname, _check_utc_offset, _cmp, _cmperror,
+             _date_class, _days_before_month, _days_before_year, _days_in_month,
+             _format_time, _format_offset, _is_leap, _isoweek1monday, _math,
+             _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
+             _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
+             _parse_hh_mm_ss_ff)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and

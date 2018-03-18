@@ -10,6 +10,8 @@ Some of this can actually be useful on non-Posix systems too, e.g.
 for manipulation of the pathname component of URLs.
 """
 
+__lazy_module__ = True
+
 # Strings representing various path-related bits and pieces.
 # These are primarily for export; internally, they are hardcoded.
 # Should be set before imports for resolving cyclic dependency.

@@ -1,5 +1,7 @@
 """Thread module emulating a subset of Java's threading model."""
 
+#__lazy_module__ = True
+
 import os as _os
 import sys as _sys
 import _thread

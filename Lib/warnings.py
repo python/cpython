@@ -1,5 +1,6 @@
 """Python part of the warnings subsystem."""
 
+__lazy_module__ = True
 import sys
 
 

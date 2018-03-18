@@ -4,6 +4,8 @@
 
 # (Dec 1991 version).
 
+__lazy_module__ = True
+
 __all__ = ["encode", "decode", "encodestring", "decodestring"]
 
 ESCAPE = b'='

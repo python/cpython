@@ -8,6 +8,8 @@ The objects used by the site module to add custom builtins.
 # Note this means this module should also avoid keep things alive in its
 # globals.
 
+__lazy_module__ = True
+
 import sys
 
 class Quitter(object):

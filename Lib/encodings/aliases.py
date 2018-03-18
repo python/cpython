@@ -15,6 +15,9 @@
         aliases have also been added.
 
 """
+
+__lazy_module__ = True
+
 aliases = {
 
     # Please keep this list sorted alphabetically by value !

@@ -1,5 +1,6 @@
 """Unittest main program"""
 
+__lazy_module__ = True
 import sys
 import argparse
 import os

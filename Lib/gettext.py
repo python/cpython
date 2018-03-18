@@ -45,6 +45,7 @@ internationalized, to the local language and cultural habits.
 # - Support Solaris .mo file formats.  Unfortunately, we've been unable to
 #   find this format documented anywhere.
 
+__lazy_module__ = True
 
 import locale
 import os

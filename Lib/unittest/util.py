@@ -1,5 +1,6 @@
 """Various utility functions."""
 
+__lazy_module__ = True
 from collections import namedtuple, Counter
 from os.path import commonprefix
 

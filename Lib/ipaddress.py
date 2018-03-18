@@ -10,6 +10,7 @@ and networks.
 
 __version__ = '1.0'
 
+__lazy_module__ = True
 
 import functools
 

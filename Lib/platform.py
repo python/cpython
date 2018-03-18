@@ -112,6 +112,8 @@ __copyright__ = """
 
 __version__ = '1.0.8'
 
+__lazy_module__ = True
+
 import collections
 import sys, os, re, subprocess
 

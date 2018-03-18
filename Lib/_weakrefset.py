@@ -2,6 +2,8 @@
 # This code is separated-out because it is needed
 # by abc.py to load everything else at startup.
 
+__lazy_module__ = True
+
 from _weakref import ref
 
 __all__ = ['WeakSet']

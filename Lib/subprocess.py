@@ -41,6 +41,8 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
     then returns a (exitcode, output) tuple
 """
 
+__lazy_module__ = True
+
 import sys
 _mswindows = (sys.platform == "win32")
 

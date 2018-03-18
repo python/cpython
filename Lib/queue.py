@@ -1,5 +1,7 @@
 '''A multi-producer, multi-consumer queue.'''
 
+__lazy_module__ = True
+
 import threading
 from collections import deque
 from heapq import heappush, heappop

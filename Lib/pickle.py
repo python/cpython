@@ -23,6 +23,8 @@ Misc variables:
 
 """
 
+__lazy_module__ = True
+
 from types import FunctionType
 from copyreg import dispatch_table
 from copyreg import _extension_registry, _inverted_registry, _extension_cache

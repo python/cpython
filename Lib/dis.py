@@ -1,5 +1,7 @@
 """Disassembler of Python byte code into mnemonics."""
 
+__lazy_module__ = True
+
 import sys
 import types
 import collections

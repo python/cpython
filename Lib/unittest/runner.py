@@ -1,5 +1,6 @@
 """Running tests"""
 
+__lazy_module__ = True
 import sys
 import time
 import warnings

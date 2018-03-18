@@ -1,3 +1,5 @@
+__lazy_module__ = True
+
 import argparse
 import os
 import sys

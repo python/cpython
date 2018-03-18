@@ -5,6 +5,8 @@ This module is an implementation of PEP 205:
 http://www.python.org/dev/peps/pep-0205/
 """
 
+__lazy_module__ = True
+
 # Naming convention: Variables named "wr" are weak reference objects;
 # they are called this instead of "ref" to avoid name collisions with
 # the module-global ref() function imported from _weakref.

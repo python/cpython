@@ -1,5 +1,7 @@
 """Internal classes used by the gzip, lzma and bz2 modules"""
 
+__lazy_module__ = True
+
 import io
 
 

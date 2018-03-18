@@ -37,6 +37,8 @@ General notes on the underlying Mersenne Twister core generator:
 
 """
 
+__lazy_module__ = True
+
 from warnings import warn as _warn
 from types import MethodType as _MethodType, BuiltinMethodType as _BuiltinMethodType
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil

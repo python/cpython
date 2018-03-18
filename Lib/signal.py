@@ -1,3 +1,4 @@
+__lazy_module__ = True
 import _signal
 from _signal import *
 from functools import wraps as _wraps

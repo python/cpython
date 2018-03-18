@@ -1,11 +1,10 @@
+
+#__lazy_module__ = True
+
 import sys
 from types import MappingProxyType, DynamicClassAttribute
 
-# try _collections first to reduce startup cost
-try:
-    from _collections import OrderedDict
-except ImportError:
-    from collections import OrderedDict
+from collections import OrderedDict
 
 
 __all__ = [

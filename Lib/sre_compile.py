@@ -10,6 +10,8 @@
 
 """Internal support module for sre"""
 
+__lazy_module__ = True
+
 import _sre
 import sre_parse
 from sre_constants import *

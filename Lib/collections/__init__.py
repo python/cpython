@@ -14,6 +14,8 @@ list, set, and tuple.
 
 '''
 
+__lazy_module__ = True
+
 __all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict', 'UserList',
             'UserString', 'Counter', 'OrderedDict', 'ChainMap']
 

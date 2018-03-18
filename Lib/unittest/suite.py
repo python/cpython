@@ -1,5 +1,6 @@
 """TestSuite"""
 
+__lazy_module__ = True
 import sys
 
 from . import case

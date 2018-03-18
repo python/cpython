@@ -1,3 +1,4 @@
+__lazy_module__ = True
 import signal
 import weakref
 

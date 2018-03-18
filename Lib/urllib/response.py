@@ -6,6 +6,7 @@ addinfourl instance, which defines an info() method that returns
 headers and a geturl() method that returns the url.
 """
 
+__lazy_module__ = True
 import tempfile
 
 __all__ = ['addbase', 'addclosehook', 'addinfo', 'addinfourl']

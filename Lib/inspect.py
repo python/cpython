@@ -28,6 +28,8 @@ Here are some of the useful functions provided by this module:
 
 # This module is in the public domain.  No warranties.
 
+__lazy_module__ = True
+
 __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 

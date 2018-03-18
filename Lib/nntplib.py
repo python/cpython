@@ -62,6 +62,8 @@ are strings, not numbers, since they are rarely used for calculations.
 # - return structured data (GroupInfo etc.) everywhere
 # - support HDR
 
+__lazy_module__ = True
+
 # Imports
 import re
 import socket

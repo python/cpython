@@ -2,6 +2,8 @@
 #  Licensed to PSF under a Contributor Agreement.
 #
 
+__lazy_module__ = True
+
 __doc__ = """hashlib module - A common interface to many hash functions.
 
 new(name, data=b'', **kwargs) - returns a new hash object implementing the

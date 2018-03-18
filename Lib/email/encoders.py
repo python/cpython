@@ -2,7 +2,10 @@
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
+
 """Encodings and related functions."""
+
+__lazy_module__ = True
 
 __all__ = [
     'encode_7or8bit',

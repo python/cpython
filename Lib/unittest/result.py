@@ -1,5 +1,6 @@
 """Test result object"""
 
+__lazy_module__ = True
 import io
 import sys
 import traceback

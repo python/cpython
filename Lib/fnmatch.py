@@ -9,6 +9,9 @@ expression.  They cache the compiled regular expressions for speed.
 The function translate(PATTERN) returns a regular expression
 corresponding to PATTERN.  (It does not compile it.)
 """
+
+__lazy_module__ = True
+
 import os
 import posixpath
 import re

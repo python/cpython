@@ -1,3 +1,5 @@
+__lazy_module__ = True
+
 import atexit
 import faulthandler
 import os

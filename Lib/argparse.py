@@ -61,6 +61,8 @@ considered public as object names -- the API of the formatter objects is
 still considered an implementation detail.)
 """
 
+__lazy_module__ = True
+
 __version__ = '1.1'
 __all__ = [
     'ArgumentParser',
