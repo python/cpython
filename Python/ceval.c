@@ -514,6 +514,8 @@ enum why_code {
 static int do_raise(PyObject *, PyObject *);
 static int unpack_iterable(PyObject *, int, int, PyObject **);
 
+PyObject* _PyModule_LazyCodeEval(PyObject *globals, PyObject *name);
+
 static PyObject *
 globals_getitem(PyFrameObject *f, PyObject *name)
 {
@@ -521,19 +523,24 @@ globals_getitem(PyFrameObject *f, PyObject *name)
     if (PyDict_CheckExact(f->f_globals)
         && PyDict_CheckExact(f->f_builtins))
     {
-        v = _PyDict_LoadGlobal((PyDictObject *)f->f_globals,
+        PyDictObject *globals = (PyDictObject *)f->f_globals;
+        v = _PyDict_LoadGlobal(globals,
                                (PyDictObject *)f->f_builtins,
                                name);
-        if (v == NULL) {
-            if (!_PyErr_OCCURRED()) {
-                /* _PyDict_LoadGlobal() returns NULL without raising
-                 * an exception if the key doesn't exist */
-                format_exc_check_arg(PyExc_NameError,
-                                     NAME_ERROR_MSG, name);
-            }
+        if (v != NULL) {
+            Py_INCREF(v);
+            return v;
+        }
+        if (_PyErr_OCCURRED()) {
             return NULL;
         }
-        Py_INCREF(v);
+        v = _PyModule_LazyCodeEval(f->f_globals, name);
+        if (v != NULL || PyErr_Occurred()) {
+            return v;
+        }
+        format_exc_check_arg(PyExc_NameError,
+                             NAME_ERROR_MSG, name);
+        return NULL;
     }
     else {
         /* Slow-path if globals or builtins is not a dict */

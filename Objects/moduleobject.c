@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "internal/pystate.h"
 #include "structmember.h"
+#include "marshal.h"
 
 static Py_ssize_t max_module_number;
 
@@ -676,6 +677,38 @@ module_repr(PyModuleObject *m)
     return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
 }
 
+/* Check if __lazy_code__[<name>] exists in 'globals'.  If it does,
+ * unmarshal it, eval it in 'global' and then return globals[<name>]. */
+PyObject*
+_PyModule_LazyCodeEval(PyObject *globals, PyObject *name)
+{
+    PyObject *lazy_code;
+    _Py_IDENTIFIER(__lazy_code__);
+    lazy_code = _PyDict_GetItemId(globals, &PyId___lazy_code__);
+    if (lazy_code != NULL && PyDict_CheckExact(lazy_code)) {
+        PyObject *b = PyDict_GetItem(lazy_code, name);
+        if (b != NULL && PyBytes_Check(b)) {
+            PyObject *co = PyMarshal_ReadObjectFromString(PyBytes_AsString(b),
+                                                          PyBytes_Size(b));
+            if (co == NULL) {
+                return NULL;
+            }
+            PyObject *v = PyEval_EvalCode(co, globals, NULL);
+            Py_DECREF(co);
+            if (v == NULL) {
+                return NULL;
+            }
+            Py_DECREF(v);
+            v = PyDict_GetItem(globals, name);
+            if (v != NULL) {
+                Py_INCREF(v);
+                return v;
+            }
+        }
+    }
+    return NULL;
+}
+
 static PyObject*
 module_getattro(PyModuleObject *m, PyObject *name)
 {
@@ -686,7 +719,12 @@ module_getattro(PyModuleObject *m, PyObject *name)
     }
     PyErr_Clear();
     if (m->md_dict) {
+        PyObject *v;
         _Py_IDENTIFIER(__getattr__);
+        v = _PyModule_LazyCodeEval(m->md_dict, name);
+        if (v != NULL || PyErr_Occurred()) {
+            return v;
+        }
         getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
         if (getattr) {
             PyObject* stack[1] = {name};
