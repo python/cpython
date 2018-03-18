@@ -3968,12 +3968,13 @@ compiler_async_comprehension_generator(struct compiler *c,
                                       expr_ty elt, expr_ty val, int type)
 {
     comprehension_ty gen;
-    basicblock *start, *except;
+    basicblock *start, *if_cleanup, *except;
     Py_ssize_t i, n;
     start = compiler_new_block(c);
     except = compiler_new_block(c);
+    if_cleanup = compiler_new_block(c);
 
-    if (start == NULL || except == NULL) {
+    if (start == NULL || if_cleanup == NULL || except == NULL) {
         return 0;
     }
 
@@ -4002,7 +4003,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     n = asdl_seq_LEN(gen->ifs);
     for (i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        if (!compiler_jump_if(c, e, start, 0))
+        if (!compiler_jump_if(c, e, if_cleanup, 0))
             return 0;
         NEXT_BLOCK(c);
     }
@@ -4041,6 +4042,7 @@ compiler_async_comprehension_generator(struct compiler *c,
             return 0;
         }
     }
+    compiler_use_next_block(c, if_cleanup);
     ADDOP_JABS(c, JUMP_ABSOLUTE, start);
 
     compiler_use_next_block(c, except);
