@@ -644,13 +644,19 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     # Find our base classes in reverse MRO order, and exclude
     #  ourselves.  In reversed order so that more derived classes
     #  override earlier field definitions in base classes.
+    # As long as we're iterating over them, see if any are frozen.
+    any_frozen_base = False
+    has_dataclass_bases = False
     for b in cls.__mro__[-1:0:-1]:
         # Only process classes that have been processed by our
         #  decorator.  That is, they have a _FIELDS attribute.
         base_fields = getattr(b, _FIELDS, None)
         if base_fields:
+            has_dataclass_bases = True
             for f in base_fields.values():
                 fields[f.name] = f
+            if getattr(b, _PARAMS).frozen:
+                any_frozen_base = True
 
     # Now find fields in our class.  While doing so, validate some
     #  things, and set the default values (as class attributes)
@@ -674,19 +680,19 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
             else:
                 setattr(cls, f.name, f.default)
 
-    # We're inheriting from a frozen dataclass, but we're not frozen.
-    #  Make us frozen.
-    ## if cls.__setattr__ is _frozen_setattr and not frozen:
-    ##     raise TypeError('cannot inherit non-frozen dataclass from a '
-    ##                     'frozen one')
+    # Check rules that apply if we are derived from any dataclasses.
+    if has_dataclass_bases:
+        # Raise an exception if any of our bases are frozen, but we're not.
+        if any_frozen_base and not frozen:
+            raise TypeError('cannot inherit non-frozen dataclass from a '
+                            'frozen one')
 
-    ## # We're inheriting from a non-frozen dataclass, but we're frozen.
-    ## if (hasattr(cls, _FIELDS) and cls.__setattr__ is not _frozen_setattr
-    ##     and frozen):
-    ##     raise TypeError('cannot inherit frozen dataclass from a '
-    ##                     'non-frozen one')
+        # Raise an exception if we're frozen, but none of our bases are.
+        if not any_frozen_base and frozen:
+            raise TypeError('cannot inherit frozen dataclass from a '
+                            'non-frozen one')
 
-    # Remember all of the fields on our class (including bases).  This
+    # Remember all of the fields on our class (including bases).  This also
     #  marks this class as being a dataclass.
     setattr(cls, _FIELDS, fields)
 
