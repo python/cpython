@@ -69,6 +69,10 @@ class PycInvalidationMode(enum.Enum):
     UNCHECKED_HASH = 3
 
 
+def get_loader(file):
+    return importlib.machinery.SourceFileLoader('<py_compile>', file)
+
+
 def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
             invalidation_mode=PycInvalidationMode.TIMESTAMP):
     """Byte-compile one Python source file to Python bytecode.
@@ -129,7 +133,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
         msg = ('{} is a non-regular file and will be changed into a regular '
                'one if import writes a byte-compiled file to it')
         raise FileExistsError(msg.format(cfile))
-    loader = importlib.machinery.SourceFileLoader('<py_compile>', file)
+    loader = get_loader(file)
     source_bytes = loader.get_data(file)
     try:
         code = loader.source_to_code(source_bytes, dfile or file,
