@@ -72,6 +72,11 @@ New Features
 Other Language Changes
 ======================
 
+* A :keyword:`continue` statement was illegal in the :keyword:`finally` clause
+  due to a problem with the implementation.  In Python 3.8 this restriction
+  was lifted.
+  (Contributed by Serhiy Storchaka in :issue:`32489`.)
+
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
