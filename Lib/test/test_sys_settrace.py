@@ -33,18 +33,10 @@ class asynctracecontext:
     async def __aexit__(self, *exc_info):
         self.output.append(-self.value)
 
-class asynciter:
-    def __init__(self, iterable):
-        self.iter = iter(iterable)
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        try:
-            return next(self.iter)
-        except StopIteration:
-            raise StopAsyncIteration
+async def asynciter(iterable):
+    """Convert an iterable to an asynchronous iterator."""
+    for x in iterable:
+        yield x
 
 
 # A very basic example.  If this fails, we're in deep trouble.
