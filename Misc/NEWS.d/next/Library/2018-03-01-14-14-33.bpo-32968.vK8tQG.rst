@@ -1,1 +1,0 @@
-Fraction modulo infinity should behave consistently with other numbers
