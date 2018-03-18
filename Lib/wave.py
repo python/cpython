@@ -259,6 +259,8 @@ class Wave_read:
             self._sampwidth = (sampwidth + 7) // 8
         else:
             raise Error('unknown format: %r' % (wFormatTag,))
+        if self._channels == 0:
+            raise ValueError("The audio file in wav format should have at least one channel!")
         self._framesize = self._nchannels * self._sampwidth
         self._comptype = 'NONE'
         self._compname = 'not compressed'
