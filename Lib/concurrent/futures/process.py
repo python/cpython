@@ -591,7 +591,7 @@ class ProcessPoolExecutor(_base.Executor):
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenProcessPool(self._broken)
-            if self._shutdown_thread:
+            if _global_shutdown or self._shutdown_thread:
                 raise RuntimeError('cannot schedule new futures after shutdown')
 
             f = _base.Future()
