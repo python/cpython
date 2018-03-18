@@ -698,8 +698,8 @@ iterations of the loop.
      removed from the block stack.
 
    It is similar to :opcode:`END_FINALLY`, but doesn't change the bytecode
-   counter nor raise an exception.  Used for implementing :keyword:`break`
-   and :keyword:`return` in the :keyword:`finally` block.
+   counter nor raise an exception.  Used for implementing :keyword:`break`,
+   :keyword:`continue` and :keyword:`return` in the :keyword:`finally` block.
 
    .. versionadded:: 3.8
 
