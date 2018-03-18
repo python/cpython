@@ -6,7 +6,6 @@ import sys
 import difflib
 import gc
 from functools import wraps
-import asyncio
 
 
 class tracecontext:
@@ -33,6 +32,22 @@ class asynctracecontext:
     async def __aexit__(self, *exc_info):
         self.output.append(-self.value)
 
+def asyncio_run(main):
+    import asyncio
+    import asyncio.events
+    import asyncio.coroutines
+    assert asyncio.events._get_running_loop() is None
+    assert asyncio.coroutines.iscoroutine(main)
+    loop = asyncio.events.new_event_loop()
+    try:
+        asyncio.events.set_event_loop(loop)
+        return loop.run_until_complete(main)
+    finally:
+        try:
+            loop.run_until_complete(loop.shutdown_asyncgens())
+        finally:
+            asyncio.events.set_event_loop(None)
+            loop.close()
 
 
 # A very basic example.  If this fails, we're in deep trouble.
@@ -613,10 +628,10 @@ class JumpTestCase(unittest.TestCase):
         sys.settrace(tracer.trace)
         output = []
         if error is None:
-            asyncio.run(func(output))
+            asyncio_run(func(output))
         else:
             with self.assertRaisesRegex(*error):
-                asyncio.run(func(output))
+                asyncio_run(func(output))
         sys.settrace(None)
         self.compare_jump_output(expected, output)
 
