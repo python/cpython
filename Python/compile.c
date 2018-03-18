@@ -2625,10 +2625,6 @@ compiler_continue(struct compiler *c)
             ADDOP_JABS(c, JUMP_ABSOLUTE, info->fb_block);
             return 1;
         }
-        if (info->fb_type == FINALLY_END) {
-            return compiler_error(c,
-                    "'continue' not supported inside 'finally' clause");
-        }
         if (!compiler_unwind_fblock(c, info, 0))
             return 0;
     }

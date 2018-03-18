@@ -138,15 +138,6 @@ class ExceptionTests(unittest.TestCase):
             else:
                 self.fail("failed to get expected SyntaxError")
 
-        s = '''while 1:
-            try:
-                pass
-            finally:
-                continue'''
-
-        if not sys.platform.startswith('java'):
-            ckmsg(s, "'continue' not supported inside 'finally' clause")
-
         s = '''if 1:
         try:
             continue
