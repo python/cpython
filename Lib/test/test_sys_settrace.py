@@ -1185,16 +1185,6 @@ class JumpTestCase(unittest.TestCase):
         async with asynctracecontext(output, 4):
             output.append(5)
 
-    @jump_test(5, 7, [2, 4], (ValueError, 'finally'))
-    def test_no_jump_over_return_out_of_finally_block(output):
-        try:
-            output.append(2)
-        finally:
-            output.append(4)
-            output.append(5)
-            return
-        output.append(7)
-
     @jump_test(7, 4, [1, 6], (ValueError, 'into'))
     def test_no_jump_into_for_block_before_else(output):
         output.append(1)
