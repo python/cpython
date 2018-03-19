@@ -2476,41 +2476,92 @@ class TestFrozen(unittest.TestCase):
         d = D(0, 10)
         with self.assertRaises(FrozenInstanceError):
             d.i = 5
+        with self.assertRaises(FrozenInstanceError):
+            d.j = 6
         self.assertEqual(d.i, 0)
+        self.assertEqual(d.j, 10)
 
-    def test_inherit_from_nonfrozen_from_frozen(self):
-        @dataclass(frozen=True)
-        class C:
-            i: int
+    # Test both ways: with an intermediate normal (non-dataclass)
+    #  class and without an intermediate class.
+    def test_inherit_nonfrozen_from_frozen(self):
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                @dataclass(frozen=True)
+                class C:
+                    i: int
 
-        with self.assertRaisesRegex(TypeError,
-                                    'cannot inherit non-frozen dataclass from a frozen one'):
-            @dataclass
-            class D(C):
-                pass
+                if intermediate_class:
+                    class I(C): pass
+                else:
+                    I = C
 
-    def test_inherit_from_frozen_from_nonfrozen(self):
-        @dataclass
-        class C:
-            i: int
+                with self.assertRaisesRegex(TypeError,
+                                            'cannot inherit non-frozen dataclass from a frozen one'):
+                    @dataclass
+                    class D(I):
+                        pass
 
-        with self.assertRaisesRegex(TypeError,
-                                    'cannot inherit frozen dataclass from a non-frozen one'):
-            @dataclass(frozen=True)
-            class D(C):
-                pass
+    def test_inherit_frozen_from_nonfrozen(self):
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                @dataclass
+                class C:
+                    i: int
+
+                if intermediate_class:
+                    class I(C): pass
+                else:
+                    I = C
+
+                with self.assertRaisesRegex(TypeError,
+                                            'cannot inherit frozen dataclass from a non-frozen one'):
+                    @dataclass(frozen=True)
+                    class D(I):
+                        pass
 
     def test_inherit_from_normal_class(self):
-        class C:
-            pass
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                class C:
+                    pass
+
+                if intermediate_class:
+                    class I(C): pass
+                else:
+                    I = C
+
+                @dataclass(frozen=True)
+                class D(I):
+                    i: int
+
+            d = D(10)
+            with self.assertRaises(FrozenInstanceError):
+                d.i = 5
+
+    def test_non_frozen_normal_derived(self):
+        # See bpo-32953.
 
         @dataclass(frozen=True)
-        class D(C):
-            i: int
+        class D:
+            x: int
+            y: int = 10
 
-        d = D(10)
+        class S(D):
+            pass
+
+        s = S(3)
+        self.assertEqual(s.x, 3)
+        self.assertEqual(s.y, 10)
+        s.cached = True
+
+        # But can't change the frozen attributes.
         with self.assertRaises(FrozenInstanceError):
-            d.i = 5
+            s.x = 5
+        with self.assertRaises(FrozenInstanceError):
+            s.y = 5
+        self.assertEqual(s.x, 3)
+        self.assertEqual(s.y, 10)
+        self.assertEqual(s.cached, True)
 
 
 if __name__ == '__main__':
