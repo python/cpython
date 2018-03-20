@@ -31,7 +31,7 @@ import marshal
 import importlib.util
 import py_compile
 from importlib.machinery import SourceFileLoader
-import lazy_module.analyze
+import lazy_analyze
 
 PY_EXT = ".py"
 
@@ -76,7 +76,7 @@ class Transformer(ast.NodeTransformer):
             elif stmt_name in {'FunctionDef', 'Assign'}:
                 if stmt_name == 'Assign' and not self._is_lazy_assign(stmt):
                     continue
-                if lazy_module.analyze.is_lazy_safe(stmt):
+                if lazy_analyze.is_lazy_safe(stmt):
                     self.lazy_defs.add(stmt)
         self.is_lazy = self.is_lazy and self.lazy_defs
         if not self.is_lazy:
