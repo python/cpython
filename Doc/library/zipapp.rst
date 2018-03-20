@@ -271,7 +271,9 @@ The steps to create a standalone archive are as follows:
    code.
 
 2. Install all of your application's dependencies into the ``myapp`` directory,
-   using pip::
+   using pip:
+
+   .. code-block:: sh
 
       $ python -m pip install -r requirements.txt --target myapp
 
@@ -284,7 +286,9 @@ The steps to create a standalone archive are as follows:
    as you won't be making any further use of pip they aren't required -
    although it won't do any harm if you leave them.
 
-4. Package the application using::
+4. Package the application using:
+
+   .. code-block:: sh
 
       $ python -m zipapp -p "interpreter" myapp
 
