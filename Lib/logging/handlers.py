@@ -410,6 +410,68 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 newRolloverAt += addend
         self.rolloverAt = newRolloverAt
 
+class DatetimeFormatRotatingFileHandler(BaseRotatingHandler):
+    """
+    Handler for logging to a file, rotating by emit datetime format.
+
+    Kept the latest ones that no more than `backupCount`.
+
+    Thread safe, Process unsafe!!!
+    """
+    __author__ = 'Mianjune Hong'
+
+    def __init__(self, filename, when='h', backupCount=0, encoding=None, delay=False, utc=False):
+        BaseRotatingHandler.__init__(self, filename, 'a', encoding, delay)
+        self.when = when.upper()
+        self.backupCount = backupCount
+        self.utc = utc
+
+        self.dir_name, base_name = os.path.split(self.baseFilename)
+
+        # Current 'when' events supported:
+        # S - Seconds
+        # M - Minutes
+        # H - Hours
+        # D - Days
+        # W - Week number of the year (Monday as the first day of the week[00,53])
+        # MONTH - Month
+        #
+        # Case of the 'when' specifier is not important; lower or upper case
+        # will work.
+        WHEN_CONFIG = {
+            'S': ("%Y-%m-%d_%H-%M-%S", r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}"),
+            'M': ("%Y-%m-%d_%H-%M", r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}"),
+            'H': ("%Y-%m-%d_%H", r"\d{4}-\d{2}-\d{2}_\d{2}"),
+            'D': ("%Y-%m-%d", r"\d{4}-\d{2}-\d{2}"),
+            'W': ("%Y-w%W", r"\d{4}-w\d{2}"),
+            'MONTH': ("%Y-%m", r"\d{4}-\d{2}"),
+        }
+        if self.when not in WHEN_CONFIG: raise ValueError("Invalid rollover interval specified: %s" % self.when)
+
+        self.suffix_fmt, self.suffix_match = WHEN_CONFIG[self.when]
+        self.suffix_match = re.compile(r'^{}\.{}$'.format(base_name, self.suffix_match))
+
+        t = os.stat(filename)[ST_MTIME] if os.path.exists(self.baseFilename) else time.time()
+        self.now_time_last = self.now_time = time.strftime(self.suffix_fmt,
+                                                           time.gmtime(t) if self.utc else time.localtime(t))
+
+    def shouldRollover(self, record):
+        now_time = time.strftime(self.suffix_fmt, time.gmtime() if self.utc else time.localtime())
+        if now_time != self.now_time:
+            self.now_time, self.now_time_last = now_time, self.now_time
+            return True
+
+    def doRollover(self):
+        if self.stream:
+            self.stream.close()
+            self.stream = None
+
+        os.rename(self.baseFilename, self.baseFilename + '.' + self.now_time_last)
+        backup_files = sorted(filter(lambda x: self.suffix_match.match(x), os.listdir(self.dir_name)))
+        for f in backup_files[self.backupCount:]: os.remove(os.path.join(self.dir_name, f))
+
+        if not self.delay: self.stream = self._open()
+
 class WatchedFileHandler(logging.FileHandler):
     """
     A handler for logging to a file, which watches the file
