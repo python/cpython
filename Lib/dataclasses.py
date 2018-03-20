@@ -519,6 +519,9 @@ def _get_field(cls, a_name, a_type):
     if isinstance(default, Field):
         f = default
     else:
+        if isinstance(default, types.MemberDescriptorType):
+            # This is a field in __slots__, so it has no default value.
+            default = MISSING
         f = field(default=default)
 
     # Assume it's a normal field until proven otherwise.
