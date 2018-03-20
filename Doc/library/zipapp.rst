@@ -229,6 +229,12 @@ fits in memory::
    >>> with open('myapp.pyz', 'wb') as f:
    >>>     f.write(temp.getvalue())
 
+
+.. _zipapp-specifying-the-interpreter:
+
+Specifying the Interpreter
+--------------------------
+
 Note that if you specify an interpreter and then distribute your application
 archive, you need to ensure that the interpreter used is portable.  The Python
 launcher for Windows supports most common forms of POSIX ``#!`` line, but there
@@ -244,6 +250,169 @@ are other issues to consider:
 * There is no way to say "python X.Y or later", so be careful of using an
   exact version like "/usr/bin/env python3.4" as you will need to change your
   shebang line for users of Python 3.5, for example.
+
+Typically, you should use an "/usr/bin/env python2" or "/usr/bin/env python3",
+depending on whether your code is written for Python 2 or 3.
+
+
+Creating Standalone Applications with zipapp
+--------------------------------------------
+
+Using the :mod:`zipapp` module, it is possible to create self-contained Python
+programs, which can be distributed to end users who only need to have a
+suitable version of Python installed on their system.  The key to doing this
+is to bundle all of the application's dependencies into the archive, along
+with the application code.
+
+The steps to create a standalone archive are as follows:
+
+1. Create your application in a directory as normal, so you have a ``myapp``
+   directory containing a ``__main__.py`` file, and any supporting application
+   code.
+
+2. Install all of your application's dependencies into the ``myapp`` directory,
+   using pip:
+
+   .. code-block:: sh
+
+      $ python -m pip install -r requirements.txt --target myapp
+
+   (this assumes you have your project requirements in a ``requirements.txt``
+   file - if not, you can just list the dependencies manually on the pip command
+   line).
+
+3. Optionally, delete the ``.dist-info`` directories created by pip in the
+   ``myapp`` directory. These hold metadata for pip to manage the packages, and
+   as you won't be making any further use of pip they aren't required -
+   although it won't do any harm if you leave them.
+
+4. Package the application using:
+
+   .. code-block:: sh
+
+      $ python -m zipapp -p "interpreter" myapp
+
+This will produce a standalone executable, which can be run on any machine with
+the appropriate interpreter available. See :ref:`zipapp-specifying-the-interpreter`
+for details. It can be shipped to users as a single file.
+
+On Unix, the ``myapp.pyz`` file is executable as it stands.  You can rename the
+file to remove the ``.pyz`` extension if you prefer a "plain" command name.  On
+Windows, the ``myapp.pyz[w]`` file is executable by virtue of the fact that
+the Python interpreter registers the ``.pyz`` and ``.pyzw`` file extensions
+when installed.
+
+
+Making a Windows executable
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On Windows, registration of the ``.pyz`` extension is optional, and
+furthermore, there are certain places that don't recognise registered
+extensions "transparently" (the simplest example is that
+``subprocess.run(['myapp'])`` won't find your application - you need to
+explicitly specify the extension).
+
+On Windows, therefore, it is often preferable to create an executable from the
+zipapp.  This is relatively easy, although it does require a C compiler.  The
+basic approach relies on the fact that zipfiles can have arbitrary data
+prepended, and Windows exe files can have arbitrary data appended.  So by
+creating a suitable launcher and tacking the ``.pyz`` file onto the end of it,
+you end up with a single-file executable that runs your application.
+
+A suitable launcher can be as simple as the following::
+
+   #define Py_LIMITED_API 1
+   #include "Python.h"
+
+   #define WIN32_LEAN_AND_MEAN
+   #include <windows.h>
+
+   #ifdef WINDOWS
+   int WINAPI wWinMain(
+       HINSTANCE hInstance,      /* handle to current instance */
+       HINSTANCE hPrevInstance,  /* handle to previous instance */
+       LPWSTR lpCmdLine,         /* pointer to command line */
+       int nCmdShow              /* show state of window */
+   )
+   #else
+   int wmain()
+   #endif
+   {
+       wchar_t **myargv = _alloca((__argc + 1) * sizeof(wchar_t*));
+       myargv[0] = __wargv[0];
+       memcpy(myargv + 1, __wargv, __argc * sizeof(wchar_t *));
+       return Py_Main(__argc+1, myargv);
+   }
+
+If you define the ``WINDOWS`` preprocessor symbol, this will generate a
+GUI executable, and without it, a console executable.
+
+To compile the executable, you can either just use the standard MSVC
+command line tools, or you can take advantage of the fact that distutils
+knows how to compile Python source::
+
+   >>> from distutils.ccompiler import new_compiler
+   >>> import distutils.sysconfig
+   >>> import sys
+   >>> import os
+   >>> from pathlib import Path
+
+   >>> def compile(src):
+   >>>     src = Path(src)
+   >>>     cc = new_compiler()
+   >>>     exe = src.stem
+   >>>     cc.add_include_dir(distutils.sysconfig.get_python_inc())
+   >>>     cc.add_library_dir(os.path.join(sys.base_exec_prefix, 'libs'))
+   >>>     # First the CLI executable
+   >>>     objs = cc.compile([str(src)])
+   >>>     cc.link_executable(objs, exe)
+   >>>     # Now the GUI executable
+   >>>     cc.define_macro('WINDOWS')
+   >>>     objs = cc.compile([str(src)])
+   >>>     cc.link_executable(objs, exe + 'w')
+
+   >>> if __name__ == "__main__":
+   >>>     compile("zastub.c")
+
+The resulting launcher uses the "Limited ABI", so it will run unchanged with
+any version of Python 3.x.  All it needs is for Python (``python3.dll``) to be
+on the user's ``PATH``.
+
+For a fully standalone distribution, you can distribute the launcher with your
+application appended, bundled with the Python "embedded" distribution.  This
+will run on any PC with the appropriate architecture (32 bit or 64 bit).
+
+
+Caveats
+~~~~~~~
+
+There are some limitations to the process of bundling your application into
+a single file.  In most, if not all, cases they can be addressed without
+needing major changes to your application.
+
+1. If your application depends on a package that includes a C extension, that
+   package cannot be run from a zip file (this is an OS limitation, as executable
+   code must be present in the filesystem for the OS loader to load it). In this
+   case, you can exclude that dependency from the zipfile, and either require
+   your users to have it installed, or ship it alongside your zipfile and add code
+   to your ``__main__.py`` to include the directory containing the unzipped
+   module in ``sys.path``. In this case, you will need to make sure to ship
+   appropriate binaries for your target architecture(s) (and potentially pick the
+   correct version to add to ``sys.path`` at runtime, based on the user's machine).
+
+2. If you are shipping a Windows executable as described above, you either need to
+   ensure that your users have ``python3.dll`` on their PATH (which is not the
+   default behaviour of the installer) or you should bundle your application with
+   the embedded distribution.
+
+3. The suggested launcher above uses the Python embedding API.  This means that in
+   your application, ``sys.executable`` will be your application, and *not* a
+   conventional Python interpreter.  Your code and its dependencies need to be
+   prepared for this possibility.  For example, if your application uses the
+   :mod:`multiprocessing` module, it will need to call
+   :func:`multiprocessing.set_executable` to let the module know where to find the
+   standard Python interpreter.
+
 
 The Python Zip Application Archive Format
 -----------------------------------------

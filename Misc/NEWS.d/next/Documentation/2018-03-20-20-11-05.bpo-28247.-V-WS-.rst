@@ -1,0 +1,2 @@
+Update :mod:`zipapp` documentation to describe how to make standalone
+applications.
