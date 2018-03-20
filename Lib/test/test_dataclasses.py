@@ -1147,6 +1147,24 @@ class TestCase(unittest.TestCase):
         C().x
         self.assertEqual(factory.call_count, 2)
 
+    def test_default_factory_derived(self):
+        # See bpo-32896.
+        @dataclass
+        class Foo:
+            x: dict = field(default_factory=dict)
+
+        @dataclass
+        class Bar(Foo):
+            y: int = 1
+
+        self.assertEqual(Foo().x, {})
+        self.assertEqual(Bar().x, {})
+
+        @dataclass
+        class Baz(Foo):
+            pass
+        Baz()
+
     def x_test_classvar_default_factory(self):
         # XXX: it's an error for a ClassVar to have a factory function
         @dataclass
