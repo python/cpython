@@ -318,6 +318,11 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     # Compute the text of the entire function.
     txt = f'def {name}({args}){return_annotation}:\n{body}'
 
+    if name == '__init__':
+        print(txt)
+        print(globals)
+        print(locals)
+        print()
     exec(txt, globals, locals)
     return locals[name]
 
@@ -661,10 +666,14 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
             if getattr(b, _PARAMS).frozen:
                 any_frozen_base = True
 
+    print(f'found fields in {cls.__name__}: {fields}')
+    print('annotations', cls.__annotations__)
+    print('dict', cls.__dict__.keys())
     # Now find fields in our class.  While doing so, validate some
     #  things, and set the default values (as class attributes)
     #  where we can.
     for f in _find_fields(cls):
+        print('adding field', f)
         fields[f.name] = f
 
         # If the class attribute (which is the default value for
