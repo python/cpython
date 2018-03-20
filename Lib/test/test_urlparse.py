@@ -946,7 +946,6 @@ class UrlParseTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, message):
             p2.port
 
-
     def test_telurl_params(self):
         p1 = urllib.parse.urlparse('tel:123-4;phone-context=+1-650-516')
         self.assertEqual(p1.scheme, 'tel')
