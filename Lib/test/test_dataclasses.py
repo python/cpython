@@ -2564,5 +2564,47 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(s.cached, True)
 
 
+class TestSlots(unittest.TestCase):
+    def test_simple(self):
+        @dataclass
+        class C:
+            __slots__ = ('x',)
+            x: Any
+
+        # There was a bug where a variable in a slot was assumed
+        #  to also have a default value (of type types.MemberDescriptorType).
+        with self.assertRaisesRegex(TypeError,
+                                    "__init__\(\) missing 1 required positional argument: 'x'"):
+            C()
+
+        # We can create an instance, and assign to x.
+        c = C(10)
+        self.assertEqual(c.x, 10)
+        c.x = 5
+        self.assertEqual(c.x, 5)
+
+        # We can't assign to anything else.
+        with self.assertRaisesRegex(AttributeError, "'C' object has no attribute 'y'"):
+            c.y = 5
+
+    def test_derived_added_field(self):
+        # See bpo-33100.
+        @dataclass
+        class Base:
+            __slots__ = ('x',)
+            x: Any
+
+        @dataclass
+        class Derived(Base):
+            x: int
+            y: int
+
+        d = Derived(1, 2)
+        self.assertEqual((d.x, d.y), (1, 2))
+
+        # We can add a new field to the derived instance.
+        d.z = 10
+
+
 if __name__ == '__main__':
     unittest.main()
