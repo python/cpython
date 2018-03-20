@@ -381,16 +381,13 @@ dictionaries.
       can be either a single number, which means it's a *prefix*, or a string
       representation of an IPv4 address.  If it's the latter, the mask is
       interpreted as a *net mask* if it starts with a non-zero field, or as a
-      *host mask* if it starts with a zero field.  If no mask is provided,
+      *host mask* if it starts with a zero field, with the single exception of
+      an all-zero mask which is treated as a *net mask*.  If no mask is provided,
       it's considered to be ``/32``.
 
       For example, the following *address* specifications are equivalent:
       ``192.168.1.0/24``, ``192.168.1.0/255.255.255.0`` and
       ``192.168.1.0/0.0.0.255``.
-
-      Note that the two ambiguous cases are both treated as net masks:
-      ``0.0.0.0/0.0.0.0`` is ``0.0.0.0/0``, and
-      ``1.2.3.4/255.255.255.255`` is ``1.2.3.4/32``.
 
    2. An integer that fits into 32 bits.  This is equivalent to a
       single-address network, with the network address being *address* and
