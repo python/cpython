@@ -1078,6 +1078,7 @@ static PyObject *
 new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 {
     struct _Py_stat_struct status;
+    int fstat_result = -1;
     mmap_object *m_obj;
     Py_ssize_t map_size;
     off_t offset = 0;
@@ -1143,8 +1144,14 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     if (fd != -1)
         (void)fcntl(fd, F_FULLFSYNC);
 #endif
-    if (fd != -1 && _Py_fstat_noraise(fd, &status) == 0
-        && S_ISREG(status.st_mode)) {
+
+    if (fd != -1) {
+        Py_BEGIN_ALLOW_THREADS
+        fstat_result = _Py_fstat_noraise(fd, &status);
+        Py_END_ALLOW_THREADS
+    }
+
+    if (fd != -1 && fstat_result == 0 && S_ISREG(status.st_mode)) {
         if (map_size == 0) {
             if (status.st_size == 0) {
                 PyErr_SetString(PyExc_ValueError,
