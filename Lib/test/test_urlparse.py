@@ -936,6 +936,16 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p2.scheme, 'tel')
         self.assertEqual(p2.path, '+31641044153')
 
+    def test_port_casting_failure_message(self):
+        message = "Port could not be cast to integer value as 'oracle'"
+        p1 = urllib.parse.urlparse('http://Server=sde; Service=sde:oracle')
+        with self.assertRaisesRegex(ValueError, message):
+            p1.port
+
+        p2 = urllib.parse.urlsplit('http://Server=sde; Service=sde:oracle')
+        with self.assertRaisesRegex(ValueError, message):
+            p2.port
+
     def test_telurl_params(self):
         p1 = urllib.parse.urlparse('tel:123-4;phone-context=+1-650-516')
         self.assertEqual(p1.scheme, 'tel')
