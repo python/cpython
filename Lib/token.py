@@ -1,6 +1,6 @@
 """Token constants (from "token.h")."""
 
-__lazy_module__ = True
+#__lazy_module__ = True
 
 __all__ = ['tok_name', 'ISTERMINAL', 'ISNONTERMINAL', 'ISEOF']
 

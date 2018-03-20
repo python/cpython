@@ -11,7 +11,7 @@
 
 """Internal support module for sre"""
 
-__lazy_module__ = True
+#__lazy_module__ = True
 
 # update when constants are added or removed
 

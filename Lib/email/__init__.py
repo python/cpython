@@ -25,6 +25,8 @@ __all__ = [
     ]
 
 
+from . import quoprimime
+
 
 # Some convenience routines.  Don't import Parser and Message as side-effects
 # of importing email since those cascadingly import most of the rest of the

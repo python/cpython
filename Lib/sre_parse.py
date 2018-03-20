@@ -10,7 +10,7 @@
 
 """Internal support module for sre"""
 
-__lazy_module__ = True
+#__lazy_module__ = True
 
 # XXX: show string offset and offending character for all errors
 
