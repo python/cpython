@@ -485,12 +485,16 @@ dictionaries.
 
       Returns an iterator over the usable hosts in the network.  The usable
       hosts are all the IP addresses that belong to the network, except the
-      network address itself and the network broadcast address.
+      network address itself and the network broadcast address.  For networks
+      with a mask length of 31, the network address and network broadcast
+      address are also included in the result.
 
          >>> list(ip_network('192.0.2.0/29').hosts())  #doctest: +NORMALIZE_WHITESPACE
          [IPv4Address('192.0.2.1'), IPv4Address('192.0.2.2'),
           IPv4Address('192.0.2.3'), IPv4Address('192.0.2.4'),
           IPv4Address('192.0.2.5'), IPv4Address('192.0.2.6')]
+         >>> list(ip_network('192.0.2.0/31').hosts())
+         [IPv4Address('192.0.2.0'), IPv4Address('192.0.2.1')]
 
    .. method:: overlaps(other)
 
@@ -647,6 +651,12 @@ dictionaries.
    .. attribute:: num_addresses
    .. attribute:: prefixlen
    .. method:: hosts()
+
+      Returns an iterator over the usable hosts in the network.  The usable
+      hosts are all the IP addresses that belong to the network, except the
+      Subnet-Router anycast address.  For networks with a mask length of 127,
+      the Subnet-Router anycast address is also included in the result.
+
    .. method:: overlaps(other)
    .. method:: address_exclude(network)
    .. method:: subnets(prefixlen_diff=1, new_prefix=None)
