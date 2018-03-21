@@ -1609,6 +1609,25 @@ list_builtin_module_names(void)
     return list;
 }
 
+/* Pre-initialization support for sys.warnoptions and sys._xoptions
+ *
+ * Modern internal code paths:
+ *   These APIs get called after _Py_InitializeCore and get to use the
+ *   regular CPython list, dict, and unicode APIs.
+ *
+ * Legacy embedding code paths:
+ *   The multi-phase initialization API isn't public yet, so embedding
+ *   apps still need to be able configure sys.warnoptions and sys._xoptions
+ *   before they call Py_Initialize. To support this, we stash copies of
+ *   the supplied wchar * sequences in linked lists, and then migrate the
+ *   contents of those lists to the sys module in _PyInitializeCore.
+ *
+ *   TODO: Actually save and later migrate the settings to the sys module,
+ *         rather than silently ignoring them.
+ *
+ */
+
+
 static PyObject *
 get_warnoptions(void)
 {
@@ -1630,6 +1649,12 @@ get_warnoptions(void)
 void
 PySys_ResetWarnOptions(void)
 {
+    PyThreadState *tstate = PyThreadState_GET();
+    if (tstate == NULL) {
+        /* TODO: Clear the pre-init linked list*/
+        return;
+    }
+
     PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
     if (warnoptions == NULL || !PyList_Check(warnoptions))
         return;
@@ -1658,6 +1683,11 @@ PySys_AddWarnOptionUnicode(PyObject *option)
 void
 PySys_AddWarnOption(const wchar_t *s)
 {
+    PyThreadState *tstate = PyThreadState_GET();
+    if (tstate == NULL) {
+        /* TODO: Add option to the pre-init linked list*/
+        return;
+    }
     PyObject *unicode;
     unicode = PyUnicode_FromWideChar(s, -1);
     if (unicode == NULL)
@@ -1730,6 +1760,11 @@ error:
 void
 PySys_AddXOption(const wchar_t *s)
 {
+    PyThreadState *tstate = PyThreadState_GET();
+    if (tstate == NULL) {
+        /* TODO: Add option to the pre-init linked list*/
+        return;
+    }
     if (_PySys_AddXOptionWithError(s) < 0) {
         /* No return value, therefore clear error state if possible */
         if (_PyThreadState_UncheckedGet()) {
