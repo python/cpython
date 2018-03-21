@@ -1159,11 +1159,12 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(Foo().x, {})
         self.assertEqual(Bar().x, {})
+        self.assertEqual(Bar().y, 1)
 
         @dataclass
         class Baz(Foo):
             pass
-        Baz()
+        self.assertEqual(Baz().x, {})
 
     def test_intermediate_non_dataclass(self):
         # Test that an intermediate class that defines
