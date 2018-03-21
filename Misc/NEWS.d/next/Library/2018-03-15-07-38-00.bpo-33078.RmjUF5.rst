@@ -1,0 +1,2 @@
+Fix the size handling in multiprocessing.Queue when a pickling error
+occurs.
