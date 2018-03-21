@@ -734,6 +734,24 @@ class MmapTests(unittest.TestCase):
         self.assertRaises(ValueError, m.write_byte, 42)
         self.assertRaises(ValueError, m.write, b'abc')
 
+    @unittest.skipUnless(hasattr(mmap.mmap, 'madvise'), 'needs madvise')
+    def test_madvise(self):
+        size = 8192
+        m = mmap.mmap(-1, size)
+
+        with self.assertRaisesRegex(ValueError, "madvise start invalid"):
+            m.madvise(mmap.MADV_NORMAL, size + 1)
+        with self.assertRaisesRegex(ValueError, "madvise start invalid"):
+            m.madvise(mmap.MADV_NORMAL, -1)
+        with self.assertRaisesRegex(ValueError, "madvise length invalid"):
+            m.madvise(mmap.MADV_NORMAL, 0, 0)
+        with self.assertRaisesRegex(ValueError, "madvise length invalid"):
+            m.madvise(mmap.MADV_NORMAL, 0, size + 1)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
+
 
 class LargeMmapTests(unittest.TestCase):
 

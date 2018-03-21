@@ -198,6 +198,18 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       exception is raised when the call failed.
 
 
+   .. method:: madvise(option[, start[, length]])
+
+      Send advice *option* to the kernel about the memory region beginning at
+      *start* and extending *length* bytes.  *option* must be one of the MADV_*
+      constants available on the system.  If omitted, *start* and *length* span
+      the entire mapping.
+
+      Availability: Systems with the madvise() system call.
+
+      .. versionadded:: 3.8
+
+
    .. method:: move(dest, src, count)
 
       Copy the *count* bytes starting at offset *src* to the destination index
