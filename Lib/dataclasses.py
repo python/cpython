@@ -585,7 +585,7 @@ def _find_fields(cls):
     try:
         annotations = cls.__dict__['__annotations__']
     except KeyError:
-        # This class defines no annotations.
+        # This class defines no additional annotations.
         annotations = {}
     return [_get_field(cls, name, type) for name, type in annotations.items()]
 
