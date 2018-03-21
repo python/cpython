@@ -91,7 +91,8 @@ Address objects
 The :class:`IPv4Address` and :class:`IPv6Address` objects share a lot of common
 attributes.  Some attributes that are only meaningful for IPv6 addresses are
 also implemented by :class:`IPv4Address` objects, in order to make it easier to
-write code that handles both IP versions correctly.
+write code that handles both IP versions correctly.  Address objects are
+:term:`hashable`, so they can be used as keys in dictionaries.
 
 .. class:: IPv4Address(address)
 
@@ -368,6 +369,8 @@ All attributes implemented by address objects are implemented by network
 objects as well.  In addition, network objects implement additional attributes.
 All of these are common between :class:`IPv4Network` and :class:`IPv6Network`,
 so to avoid duplication they are only documented for :class:`IPv4Network`.
+Network objects are :term:`hashable`, so they can be used as keys in
+dictionaries.
 
 .. class:: IPv4Network(address, strict=True)
 
@@ -377,8 +380,9 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
       a slash (``/``).  The IP address is the network address, and the mask
       can be either a single number, which means it's a *prefix*, or a string
       representation of an IPv4 address.  If it's the latter, the mask is
-      interpreted as a *net mask* if it starts with a non-zero field, or as
-      a *host mask* if it starts with a zero field.  If no mask is provided,
+      interpreted as a *net mask* if it starts with a non-zero field, or as a
+      *host mask* if it starts with a zero field, with the single exception of
+      an all-zero mask which is treated as a *net mask*.  If no mask is provided,
       it's considered to be ``/32``.
 
       For example, the following *address* specifications are equivalent:
@@ -408,7 +412,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
    Unless stated otherwise, all network methods accepting other network/address
    objects will raise :exc:`TypeError` if the argument's IP version is
-   incompatible to ``self``
+   incompatible to ``self``.
 
    .. versionchanged:: 3.5
 
@@ -418,7 +422,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. attribute:: max_prefixlen
 
       Refer to the corresponding attribute documentation in
-      :class:`IPv4Address`
+      :class:`IPv4Address`.
 
    .. attribute:: is_multicast
    .. attribute:: is_private
@@ -428,7 +432,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. attribute:: is_link_local
 
       These attributes are true for the network as a whole if they are true
-      for both the network address and the broadcast address
+      for both the network address and the broadcast address.
 
    .. attribute:: network_address
 
@@ -590,10 +594,10 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
    Construct an IPv6 network definition.  *address* can be one of the following:
 
-   1. A string consisting of an IP address and an optional mask, separated by
-      a slash (``/``).  The IP address is the network address, and the mask
-      is a single number, which represents a *prefix*.  If no mask is provided,
-      it's considered to be ``/128``.
+   1. A string consisting of an IP address and an optional prefix length,
+      separated by a slash (``/``).  The IP address is the network address,
+      and the prefix length must be a single number, the *prefix*.  If no
+      prefix length is provided, it's considered to be ``/128``.
 
       Note that currently expanded netmasks are not supported.  That means
       ``2001:db00::0/24`` is a valid argument while ``2001:db00::0/ffff:ff00::``
@@ -652,12 +656,12 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. method:: compare_networks(other)
 
       Refer to the corresponding attribute documentation in
-      :class:`IPv4Network`
+      :class:`IPv4Network`.
 
    .. attribute:: is_site_local
 
       These attribute is true for the network as a whole if it is true
-      for both the network address and the broadcast address
+      for both the network address and the broadcast address.
 
 
 Operators
@@ -671,8 +675,8 @@ IPv6).
 Logical operators
 """""""""""""""""
 
-Network objects can be compared with the usual set of logical operators,
-similarly to address objects.
+Network objects can be compared with the usual set of logical operators.
+Network objects are ordered first by network address, then by net mask.
 
 
 Iteration
@@ -721,6 +725,9 @@ Network objects can act as containers of addresses.  Some examples::
 
 Interface objects
 -----------------
+
+Interface objects are :term:`hashable`, so they can be used as keys in
+dictionaries.
 
 .. class:: IPv4Interface(address)
 
@@ -793,6 +800,30 @@ Interface objects
       :class:`IPv4Interface`.
 
 
+Operators
+^^^^^^^^^
+
+Interface objects support some operators.  Unless stated otherwise, operators
+can only be applied between compatible objects (i.e. IPv4 with IPv4, IPv6 with
+IPv6).
+
+
+Logical operators
+"""""""""""""""""
+
+Interface objects can be compared with the usual set of logical operators.
+
+For equality comparison (``==`` and ``!=``), both the IP address and network
+must be the same for the objects to be equal.  An interface will not compare
+equal to any address or network object.
+
+For ordering (``<``, ``>``, etc) the rules are different.  Interface and
+address objects with the same IP version can be compared, and the address
+objects will always sort before the interface objects.  Two interface objects
+are first compared by their networks and, if those are the same, then by their
+IP addresses.
+
+
 Other Module Level Functions
 ----------------------------
 
@@ -858,7 +889,7 @@ The module also provides the following module level functions:
 
    doesn't make sense.  There are some times however, where you may wish to
    have :mod:`ipaddress` sort these anyway.  If you need to do this, you can use
-   this function as the ``key`` argument to :func:`sorted()`.
+   this function as the *key* argument to :func:`sorted()`.
 
    *obj* is either a network or address object.
 
@@ -876,4 +907,4 @@ module defines the following exceptions:
 
 .. exception:: NetmaskValueError(ValueError)
 
-   Any value error related to the netmask.
+   Any value error related to the net mask.
