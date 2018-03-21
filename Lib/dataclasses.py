@@ -318,11 +318,6 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     # Compute the text of the entire function.
     txt = f'def {name}({args}){return_annotation}:\n{body}'
 
-    if name == '__init__':
-        print(txt)
-        print(globals)
-        print(locals)
-        print()
     exec(txt, globals, locals)
     return locals[name]
 
@@ -579,17 +574,20 @@ def _get_field(cls, a_name, a_type):
 
 def _find_fields(cls):
     # Return a list of Field objects, in order, for this class (and no
-    #  base classes).  Fields are found from __annotations__ (which is
-    #  guaranteed to be ordered).  Default values are from class
-    #  attributes, if a field has a default.  If the default value is
-    #  a Field(), then it contains additional info beyond (and
-    #  possibly including) the actual default value.  Pseudo-fields
-    #  ClassVars and InitVars are included, despite the fact that
-    #  they're not real fields.  That's dealt with later.
+    #  base classes).  Fields are found from the class dict's
+    #  __annotations__ (which is guaranteed to be ordered).  Default
+    #  values are from class attributes, if a field has a default.  If
+    #  the default value is a Field(), then it contains additional
+    #  info beyond (and possibly including) the actual default value.
+    #  Pseudo-fields ClassVars and InitVars are included, despite the
+    #  fact that they're not real fields.  That's dealt with later.
 
-    annotations = getattr(cls, '__annotations__', {})
-    return [_get_field(cls, a_name, a_type)
-            for a_name, a_type in annotations.items()]
+    try:
+        annotations = cls.__dict__['__annotations__']
+    except KeyError:
+        # This class defines no annotations.
+        annotations = {}
+    return [_get_field(cls, name, type) for name, type in annotations.items()]
 
 
 def _set_new_attribute(cls, name, value):
@@ -666,14 +664,10 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
             if getattr(b, _PARAMS).frozen:
                 any_frozen_base = True
 
-    print(f'found fields in {cls.__name__}: {fields}')
-    print('annotations', cls.__annotations__)
-    print('dict', cls.__dict__.keys())
     # Now find fields in our class.  While doing so, validate some
     #  things, and set the default values (as class attributes)
     #  where we can.
     for f in _find_fields(cls):
-        print('adding field', f)
         fields[f.name] = f
 
         # If the class attribute (which is the default value for
