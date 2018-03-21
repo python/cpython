@@ -255,6 +255,11 @@ class Queue(object):
                     info('error in queue thread: %s', e)
                     return
                 else:
+                    # Since the object has not been sent in the queue, we need
+                    # to decrease the size of the queue. The error acts as
+                    # if the object had been silently removed from the queue
+                    # and this step is necessary to have a properly working
+                    # queue.
                     queue_sem.release()
                     onerror(e, obj)
 
