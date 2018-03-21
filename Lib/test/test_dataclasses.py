@@ -1,7 +1,8 @@
-from dataclasses import (
-    dataclass, field, FrozenInstanceError, fields, asdict, astuple,
-    make_dataclass, replace, InitVar, Field, MISSING, is_dataclass,
-)
+# Deliberately use "from dataclasses import *".  Every name in __all__
+# is tested, so they all must be present.  This is a way to catch
+# missing ones.
+
+from dataclasses import *
 
 import pickle
 import inspect
