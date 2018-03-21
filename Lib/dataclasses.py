@@ -574,17 +574,18 @@ def _get_field(cls, a_name, a_type):
 
 def _find_fields(cls):
     # Return a list of Field objects, in order, for this class (and no
-    #  base classes).  Fields are found from __annotations__ (which is
-    #  guaranteed to be ordered).  Default values are from class
-    #  attributes, if a field has a default.  If the default value is
-    #  a Field(), then it contains additional info beyond (and
-    #  possibly including) the actual default value.  Pseudo-fields
-    #  ClassVars and InitVars are included, despite the fact that
-    #  they're not real fields.  That's dealt with later.
+    #  base classes).  Fields are found from the class dict's
+    #  __annotations__ (which is guaranteed to be ordered).  Default
+    #  values are from class attributes, if a field has a default.  If
+    #  the default value is a Field(), then it contains additional
+    #  info beyond (and possibly including) the actual default value.
+    #  Pseudo-fields ClassVars and InitVars are included, despite the
+    #  fact that they're not real fields.  That's dealt with later.
 
-    annotations = getattr(cls, '__annotations__', {})
-    return [_get_field(cls, a_name, a_type)
-            for a_name, a_type in annotations.items()]
+    # If __annotations__ isn't present, then this class adds no new
+    #  annotations.
+    annotations = cls.__dict__.get('__annotations__', {})
+    return [_get_field(cls, name, type) for name, type in annotations.items()]
 
 
 def _set_new_attribute(cls, name, value):
