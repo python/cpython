@@ -582,11 +582,9 @@ def _find_fields(cls):
     #  Pseudo-fields ClassVars and InitVars are included, despite the
     #  fact that they're not real fields.  That's dealt with later.
 
-    try:
-        annotations = cls.__dict__['__annotations__']
-    except KeyError:
-        # This class defines no additional annotations.
-        annotations = {}
+    # If __annotations__ isn't present, then this class adds no new
+    #  annotations.
+    annotations = cls.__dict__.get('__annotations__', {})
     return [_get_field(cls, name, type) for name, type in annotations.items()]
 
 
