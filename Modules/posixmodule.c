@@ -3934,9 +3934,9 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
         result = mkdirat(dir_fd, path->narrow, mode);
     else
 #endif
-#if defined(__WATCOMC__) && !defined(__QNX__)
+#if defined(__WATCOMC__) && !defined(__QNX__) && !defined(__VXWORKS__)
         result = mkdir(path->narrow);
-#else
+#else                                                               
         result = mkdir(path->narrow, mode);
 #endif
     Py_END_ALLOW_THREADS

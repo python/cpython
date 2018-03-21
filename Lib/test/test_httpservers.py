@@ -443,7 +443,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 
         # chmod() doesn't work as expected on Windows, and filesystem
         # permissions are ignored by root on Unix.
-        if os.name == 'posix' and os.geteuid() != 0:
+        if os.name == 'posix' and 'vxworks' not in sys.platform and os.geteuid() != 0:
             os.chmod(self.tempdir, 0)
             try:
                 response = self.request(self.base_url + '/')

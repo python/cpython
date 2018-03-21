@@ -1491,7 +1491,7 @@ PyDoc_STRVAR(get_clock_info_doc,
 \n\
 Get information of the specified clock.");
 
-#if !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__)
+#if defined(__VXWORKS__) || !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__)
 static void
 get_zone(char *zone, int n, struct tm *p)
 {
@@ -1532,10 +1532,9 @@ PyInit_timezone(PyObject *m) {
 
     And I'm lazy and hate C so nyer.
      */
-#if defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
+#if !defined(__VXWORKS__) && defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
     PyObject *otz0, *otz1;
     tzset();
-#ifndef __VXWORKS__
     PyModule_AddIntConstant(m, "timezone", timezone);
 #ifdef HAVE_ALTZONE
     PyModule_AddIntConstant(m, "altzone", altzone);
@@ -1543,7 +1542,6 @@ PyInit_timezone(PyObject *m) {
     PyModule_AddIntConstant(m, "altzone", timezone-3600);
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
-#endif    
     otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
     otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
     PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));

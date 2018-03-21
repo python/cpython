@@ -18,6 +18,8 @@ if support.PGO:
 
 TIMEOUT = 3
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
+if "vxworks" in sys.platform:
+    HAS_UNIX_SOCKETS = False
 
 class dummysocket:
     def __init__(self):

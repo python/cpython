@@ -70,8 +70,12 @@ def isabs(s):
     if _vxworks: #VxWorks paths dont always start with / and there is no good
                  # way to find if a path is absolute. V7COR-3074, F7233
         try:
-            if s.index(":") < s.index(sep):
-                return True;
+            if isinstance(s, bytes):
+                if s.index(b":") < s.index(sep):
+                    return True;
+            else:
+                if s.index(":") < s.index(sep):
+                    return True;
         except ValueError:
             pass
     return s.startswith(sep)
@@ -410,8 +414,9 @@ def _joinrealpath(path, rest, seen):
         pardir = '..'
 
     if isabs(rest):
-        rest = rest[1:]
-        path = sep
+        if 'vxworks' not in sys.platform:
+            rest = rest[1:]
+            path = sep
 
     while rest:
         name, _, rest = rest.partition(sep)

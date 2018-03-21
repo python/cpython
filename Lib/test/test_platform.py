@@ -296,6 +296,7 @@ class PlatformTest(unittest.TestCase):
             ):
             self.assertEqual(platform._parse_release_file(input), output)
 
+    @unittest.skipIf('vxworks' in sys.platform, 'legacy os.popen not supported by vxworks, use subprocess')
     def test_popen(self):
         mswindows = (sys.platform == "win32")
 

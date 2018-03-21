@@ -691,7 +691,7 @@ class _Test4dYear:
         self.assertEqual(func(99),   fmt % 99)
         self.assertEqual(func(999),  fmt % 999)
         self.assertEqual(func(9999), fmt % 9999)
-
+    @unittest.skipIf('vxworks' in sys.platform, 'VxWorks strftime assumes 4 digit year always')
     def test_large_year(self):
         self.assertEqual(self.yearstr(12345), '12345')
         self.assertEqual(self.yearstr(123456789), '123456789')

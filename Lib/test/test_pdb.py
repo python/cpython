@@ -1300,7 +1300,7 @@ class PdbTestCase(unittest.TestCase):
             'Fail to handle a syntax error in the debuggee.'
             .format(expected, stdout))
 
-
+    @unittest.skipIf("vxworks" in sys.platform, "vxworks segfaults without home")
     def test_readrc_kwarg(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb(readrc=False).set_trace()

@@ -39,6 +39,11 @@ typedef int socklen_t;
 # endif /* IPPROTO_IPV6 */
 #endif /* MS_WINDOWS */
 
+#ifdef __VXWORKS__
+# include <ioLib.h>
+#endif /* VXWORKS */
+
+
 #ifdef HAVE_SYS_UN_H
 # include <sys/un.h>
 #else

@@ -597,12 +597,13 @@ internal_setblocking(PySocketSockObject *s, int block)
 
     Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
-#if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
+#if TRUE || (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
     block = !block;
     if (ioctl(s->sock_fd, FIONBIO, (unsigned int *)&block) == -1)
         goto done;
 #else
     delay_flag = fcntl(s->sock_fd, F_GETFL, 0);
+    printf("ERRNO: %i" , errno);
     if (delay_flag == -1)
         goto done;
     if (block)
@@ -2526,7 +2527,6 @@ For IP sockets, the address info is a pair (hostaddr, port).");
 static PyObject *
 sock_setblocking(PySocketSockObject *s, PyObject *arg)
 {
-#ifndef __VXWORKS__
     long block;
 
     block = PyLong_AsLong(arg);
@@ -2537,10 +2537,7 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
     if (internal_setblocking(s, block) == -1) {
         return NULL;
     }
-#else
-    PyErr_SetString(PyExc_RuntimeError, "Timeout");
-    return NULL;
-#endif
+
     Py_RETURN_NONE;
 }
 
@@ -2628,9 +2625,6 @@ sock_settimeout(PySocketSockObject *s, PyObject *arg)
         return NULL;
 
     s->sock_timeout = timeout;
-#ifndef __VXWORKS__
-    if (internal_setblocking(s, timeout < 0) == -1) {
-
     int block = timeout < 0;
     /* Blocking mode for a Python socket object means that operations
        like :meth:`recv` or :meth:`sendall` will block the execution of
@@ -2656,7 +2650,6 @@ sock_settimeout(PySocketSockObject *s, PyObject *arg)
     if (internal_setblocking(s, block) == -1) {
         return NULL;
     }
-#endif
     Py_RETURN_NONE;
 }
 

@@ -449,7 +449,7 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
                    int current_locale, int surrogateescape)
 {
     if (current_locale) {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__VXWORKS__)
         return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                                 surrogateescape);
 #else
@@ -457,7 +457,7 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
 #endif
     }
 
-#if defined(__APPLE__) || defined(__ANDROID__)
+#if defined(__APPLE__) || defined(__ANDROID__) || defined(__VXWORKS__)
     return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                             surrogateescape);
 #else
@@ -478,7 +478,7 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
 #endif
 
     return decode_current_locale(arg, wstr, wlen, reason, surrogateescape);
-#endif   /* __APPLE__ or __ANDROID__ */
+#endif   /* __APPLE__ or __ANDROID__ or __VXWORKS__ */
 }
 
 

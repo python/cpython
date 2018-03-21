@@ -448,6 +448,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         self.assertEqual(mode, expected)
 
     @unittest.skipUnless(has_spawnl, 'os.spawnl not available')
+    @unittest.skipIf('vxworks' in sys.platform, 'file handles are inherited since no cloexec on vxworks')
     def test_noinherit(self):
         # _mkstemp_inner file handles are not inherited by child processes
 
