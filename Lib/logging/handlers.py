@@ -451,7 +451,7 @@ class DatetimeFormatRotatingFileHandler(BaseRotatingHandler):
         self.suffix_fmt, self.suffix_match = WHEN_CONFIG[self.when]
         self.suffix_match = re.compile(r'^{}\.{}$'.format(base_name, self.suffix_match))
 
-        t = os.stat(filename)[ST_MTIME] if os.path.exists(self.baseFilename) else time.time()
+        t = os.stat(self.baseFilename)[ST_MTIME] if os.path.exists(self.baseFilename) else time.time()
         self.now_time_last = self.now_time = time.strftime(self.suffix_fmt,
                                                            time.gmtime(t) if self.utc else time.localtime(t))
 
@@ -467,7 +467,7 @@ class DatetimeFormatRotatingFileHandler(BaseRotatingHandler):
             self.stream = None
 
         os.rename(self.baseFilename, self.baseFilename + '.' + self.now_time_last)
-        backup_files = sorted(filter(lambda x: self.suffix_match.match(x), os.listdir(self.dir_name)))
+        backup_files = sorted(filter(lambda x: self.suffix_match.match(x), os.listdir(self.dir_name)), reverse=True)
         for f in backup_files[self.backupCount:]: os.remove(os.path.join(self.dir_name, f))
 
         if not self.delay: self.stream = self._open()
