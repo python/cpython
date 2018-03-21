@@ -5,6 +5,7 @@ import inspect
 
 __all__ = ['dataclass',
            'field',
+           'Field',
            'FrozenInstanceError',
            'InitVar',
            'MISSING',
@@ -513,7 +514,7 @@ def _get_field(cls, a_name, a_type):
     #  and InitVars are also returned, but marked as such (see
     #  f._field_type).
 
-    # If the default value isn't derived from field, then it's
+    # If the default value isn't derived from Field, then it's
     #  only a normal default value.  Convert it to a Field().
     default = getattr(cls, a_name, MISSING)
     if isinstance(default, Field):
