@@ -24,6 +24,14 @@ class TestCase(unittest.TestCase):
         o = C()
         self.assertEqual(len(fields(C)), 0)
 
+    def test_no_fields_but_member_variable(self):
+        @dataclass
+        class C:
+            i = 0
+
+        o = C()
+        self.assertEqual(len(fields(C)), 0)
+
     def test_one_field_no_default(self):
         @dataclass
         class C:
@@ -1904,6 +1912,41 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C.__annotations__, {'x': 'typing.Any',
                                              'y': int,
                                              'z': 'typing.Any'})
+
+
+class TestFieldNoAnnotation(unittest.TestCase):
+    def test_field_without_annotation(self):
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            @dataclass
+            class C:
+                f = field()
+
+    def test_field_without_annotation_but_annotation_in_base(self):
+        @dataclass
+        class B:
+            f: int
+
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            # This is still an error: make sure we don't pick up the
+            # type annotation in the base class.
+            @dataclass
+            class C(B):
+                f = field()
+
+    def test_field_without_annotation_but_annotation_in_base_not_dataclass(self):
+        # Same test, but with the base class not a dataclass.
+        class B:
+            f: int
+
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            # This is still an error: make sure we don't pick up the
+            # type annotation in the base class.
+            @dataclass
+            class C(B):
+                f = field()
 
 
 class TestDocString(unittest.TestCase):
