@@ -684,6 +684,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
             else:
                 setattr(cls, f.name, f.default)
 
+    # Do we have any Field members that are not annotations?
+    for name, value in cls.__dict__.items():
+        if isinstance(value, Field) and not name in cls.__dict__.get('__annotations__', {}):
+            print(f'{name} is a field with no annotation')
+
     # Check rules that apply if we are derived from any dataclasses.
     if has_dataclass_bases:
         # Raise an exception if any of our bases are frozen, but we're not.
