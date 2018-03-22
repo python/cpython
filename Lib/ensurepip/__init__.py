@@ -8,9 +8,9 @@ import tempfile
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "38.6.1"
+_SETUPTOOLS_VERSION = "39.0.1"
 
-_PIP_VERSION = "9.0.2"
+_PIP_VERSION = "9.0.3"
 
 _PROJECTS = [
     ("setuptools", _SETUPTOOLS_VERSION),
