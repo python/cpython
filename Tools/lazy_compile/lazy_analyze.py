@@ -186,6 +186,12 @@ def parse(buf, filename='<string>'):
     return node
 
 
+def is_lazy_assign(node):
+    return (len(node.targets) == 1 and
+            isinstance(node.targets[0], ast.Name))
+
+
+
 def analyze(node, fn):
     t = Analyzer(fn)
     t.analyze(node)
@@ -196,6 +202,17 @@ def is_lazy_safe(node):
     t = Analyzer(fn)
     t.analyze(node)
     return t.safe
+
+
+def def_name(node):
+    if isinstance(node, ast.ClassDef):
+        return node.name
+    elif isinstance(node, ast.FunctionDef):
+        return node.name
+    elif isinstance(node, ast.Assign):
+        return node.targets[0].id
+    else:
+        raise TypeError('unknown node %r' % node)
 
 
 USAGE = "Usage: %prog [-v] file [...]"
@@ -227,22 +244,27 @@ def main():
             node = parse(buf)
         except SyntaxError:
             continue
-        a = analyze(node, fn)
-        if not a.safe:
-            eager.add(fn)
-        else:
-            lazy.add(fn)
-    total = len(lazy) + len(eager)
-    if not total:
-        print('warning: no Python modules parsed.')
-        return
-    print('Eager modules:')
-    for fn in sorted(eager):
-        print(f'    {fn}')
-    print('Lazy modules:')
-    for fn in sorted(lazy):
-        print(f'    {fn}')
-    print(f'{len(lazy) / total * 100:.1f}% - total: {total}')
+        assert isinstance(node, ast.Module), repr(node)
+        defs = set()
+        lazy_defs = set()
+        for stmt in node.body:
+            stmt_name = stmt.__class__.__name__
+            if stmt_name == 'ClassDef':
+                lazy_defs.add(stmt)
+            elif stmt_name in {'FunctionDef', 'Assign'}:
+                if stmt_name == 'Assign' and not is_lazy_assign(stmt):
+                    defs.add(stmt)
+                    continue
+                if is_lazy_safe(stmt):
+                    lazy_defs.add(stmt)
+                else:
+                    defs.add(stmt)
+        print('lazy:')
+        for stmt in lazy_defs:
+            print(' ', def_name(stmt))
+        print('eager:')
+        for stmt in defs:
+            print(' ', def_name(stmt))
 
 
 if __name__ == '__main__':

@@ -50,11 +50,6 @@ class Transformer(ast.NodeTransformer):
         self.lazy_defs = set()
         self.is_lazy = False
 
-    def _is_lazy_assign(self, node):
-        return (len(node.targets) == 1 and
-                isinstance(node.targets[0], ast.Name))
-
-
     def _make_init_dict(self):
         name = ast.Name(id='__lazy_code__', ctx=ast.Store(),
                         lineno=1)
@@ -74,7 +69,8 @@ class Transformer(ast.NodeTransformer):
             if stmt_name == 'ClassDef':
                 self.lazy_defs.add(stmt)
             elif stmt_name in {'FunctionDef', 'Assign'}:
-                if stmt_name == 'Assign' and not self._is_lazy_assign(stmt):
+                if (stmt_name == 'Assign' and
+                        not lazy_analyze.is_lazy_assign(stmt)):
                     continue
                 if lazy_analyze.is_lazy_safe(stmt):
                     self.lazy_defs.add(stmt)
