@@ -16,7 +16,6 @@ _Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__class__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__bases__);
-_Py_IDENTIFIER(__mro__);
 _Py_IDENTIFIER(_abc_impl);
 _Py_IDENTIFIER(__subclasscheck__);
 _Py_IDENTIFIER(__subclasshook__);
@@ -574,7 +573,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         return NULL;
     }
 
-    PyObject *ok, *mro = NULL, *subclasses = NULL, *result = NULL;
+    PyObject *ok, *subclasses = NULL, *result = NULL;
     Py_ssize_t pos;
     int incache;
     _abc_data *impl = _get_impl(self);
@@ -643,31 +642,20 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
     Py_DECREF(ok);
 
-    /* 4. Check if it's a direct subclass.
-     *
-     * if cls in getattr(subclass, '__mro__', ()):
-     *     cls._abc_cache.add(subclass)
-     *     return True
-     */
-    if (_PyObject_LookupAttrId(subclass, &PyId___mro__, &mro) < 0) {
-        goto end;
-    }
-    if (mro != NULL) {
-        if (!PyTuple_Check(mro)) {
-            // Python version supports non-tuple iterable.  Keep it as
-            // implementation detail.
-            PyErr_SetString(PyExc_TypeError, "__mro__ is not a tuple");
+    /* 4. Check if it's a direct subclass. */
+    PyObject *mro = ((PyTypeObject *)subclass)->tp_mro;
+    assert(PyTuple_Check(mro));
+    for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
+        PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);
+        if (mro_item == NULL) {
             goto end;
         }
-        for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
-            PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);
-            if ((PyObject *)self == mro_item) {
-                if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
-                    goto end;
-                }
-                result = Py_True;
+        if ((PyObject *)self == mro_item) {
+            if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
                 goto end;
             }
+            result = Py_True;
+            goto end;
         }
     }
 
@@ -708,7 +696,6 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
 end:
     Py_DECREF(impl);
-    Py_XDECREF(mro);
     Py_XDECREF(subclasses);
     Py_XINCREF(result);
     return result;
