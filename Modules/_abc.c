@@ -695,7 +695,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     result = Py_False;
 
 end:
-    Py_XDECREF(impl);
+    Py_DECREF(impl);
     Py_XDECREF(subclasses);
     Py_XINCREF(result);
     return result;
