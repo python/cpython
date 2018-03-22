@@ -569,6 +569,11 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
                              PyObject *subclass)
 /*[clinic end generated code: output=b56c9e4a530e3894 input=1d947243409d10b8]*/
 {
+    if (!PyType_Check(subclass)) {
+        PyErr_SetString(PyExc_TypeError, "issubclass() arg 1 must be a class");
+        return NULL;
+    }
+
     PyObject *ok, *mro = NULL, *subclasses = NULL, *result = NULL;
     Py_ssize_t pos;
     int incache;
