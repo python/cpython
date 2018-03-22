@@ -383,7 +383,7 @@ class Request:
             raise ValueError("unknown url type: %r" % self.full_url)
         self.host, self.selector = splithost(rest)
         if self.host:
-            if 'vxworks' in sys.platform and self.host.beginswith(sys.executable.split(':')[0]):
+            if 'vxworks' in sys.platform and self.host.startswith(sys.executable.split(':')[0]):
                 self.host = None
                 return
             self.host = unquote(self.host)
