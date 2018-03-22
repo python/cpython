@@ -2,6 +2,7 @@ import unittest.mock
 from test import support
 import builtins
 import contextlib
+import sys
 import io
 import os
 import shutil
@@ -481,6 +482,7 @@ class BaseTestUUID:
             equal(str(u), v)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipIf('vxworks' in sys.platform, 'no os fork in VxWorks')
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
         # the same sequence of UUIDs in the parent and any
