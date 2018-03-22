@@ -762,7 +762,7 @@ class HandlerTests(unittest.TestCase):
             headers = r.info()
             self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
-
+    @unittest.skipIf('vxworks' in sys.platform, 'VxWorks has weird file pats with colons')
     def test_file(self):
         import email.utils
         h = urllib.request.FileHandler()

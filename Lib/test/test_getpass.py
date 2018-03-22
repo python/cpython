@@ -5,7 +5,6 @@ import unittest
 from io import BytesIO, StringIO, TextIOWrapper
 from unittest import mock
 from test import support
-@unittest.skipIf('vxworks' in sys.platform, "Not Supported on VxWorks")
 try:
     import termios
 except ImportError:

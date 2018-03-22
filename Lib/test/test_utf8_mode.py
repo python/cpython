@@ -205,6 +205,7 @@ class UTF8ModeTests(unittest.TestCase):
         self.assertEqual(out, 'UTF-8 UTF-8')
 
     @unittest.skipIf(MS_WINDOWS, 'test specific to Unix')
+    @unittest.skipIf('vxworks' in sys.platform, 'VxWorks doesnt support unicode rtpSpawn')
     def test_cmd_line(self):
         arg = 'h\xe9\u20ac'.encode('utf-8')
         arg_utf8 = arg.decode('utf-8')
