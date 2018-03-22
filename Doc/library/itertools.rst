@@ -435,8 +435,13 @@ loops that truncate the stream.
           # islice('ABCDEFG', 2, 4) --> C D
           # islice('ABCDEFG', 2, None) --> C D E F G
           # islice('ABCDEFG', 0, None, 2) --> A C E G
+          # it = iter('abcdefghi')
+          # list(islice(it, 4, 4)) --> []
+          # list(it) --> ['e', 'f', 'g', 'h', 'i']
           s = slice(*args)
-          it = iter(range(s.start or 0, s.stop or sys.maxsize, s.step or 1))
+          it = iter(range(0, s.stop or sys.maxsize, s.step or 1))
+          for i in zip(range(0, s.start or 0), iterable):
+              nexti = next(it)
           try:
               nexti = next(it)
           except StopIteration:
