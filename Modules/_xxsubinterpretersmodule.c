@@ -1653,27 +1653,6 @@ interp_exceptions_init(PyObject *ns)
     return 0;
 }
 
-static PyInterpreterState *
-_look_up(PyObject *requested_id)
-{
-    long long id = PyLong_AsLongLong(requested_id);
-    if (id == -1 && PyErr_Occurred() != NULL) {
-        return NULL;
-    }
-    assert(id <= INT64_MAX);
-    return _PyInterpreterState_LookUpID(id);
-}
-
-static PyObject *
-_get_id(PyInterpreterState *interp)
-{
-    PY_INT64_T id = PyInterpreterState_GetID(interp);
-    if (id < 0) {
-        return NULL;
-    }
-    return PyLong_FromLongLong(id);
-}
-
 static int
 _is_running(PyInterpreterState *interp)
 {
@@ -1780,8 +1759,13 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     }
 
     // Switch to interpreter.
-    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
+    PyThreadState *save_tstate = NULL;
+    if (interp != PyThreadState_Get()->interp) {
+        // XXX Using the "head" thread isn't strictly correct.
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        // XXX Possible GILState issues?
+        save_tstate = PyThreadState_Swap(tstate);
+    }
 
     // Run the script.
     _sharedexception *exc = NULL;
@@ -1807,6 +1791,265 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     }
 
     return result;
+}
+
+/* InterpreterID class */
+
+static PyTypeObject InterpreterIDtype;
+
+typedef struct interpid {
+    PyObject_HEAD
+    int64_t id;
+} interpid;
+
+static interpid *
+newinterpid(PyTypeObject *cls, int64_t id, int force)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(id);
+    if (interp == NULL) {
+        if (force) {
+            PyErr_Clear();
+        }
+        else {
+            return NULL;
+        }
+    }
+
+    interpid *self = PyObject_New(interpid, cls);
+    if (self == NULL) {
+        return NULL;
+    }
+    self->id = id;
+
+    if (interp != NULL) {
+        _PyInterpreterState_IDIncref(interp);
+    }
+    return self;
+}
+
+static PyObject *
+interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", "force", NULL};
+    PyObject *idobj;
+    int force = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O|$p:InterpreterID.__init__", kwlist,
+                                     &idobj, &force)) {
+        return NULL;
+    }
+
+    // Coerce and check the ID.
+    int64_t id;
+    if (PyObject_TypeCheck(idobj, &InterpreterIDtype)) {
+        id = ((interpid *)idobj)->id;
+    }
+    else {
+        id = _coerce_id(idobj);
+        if (id < 0) {
+            return NULL;
+        }
+    }
+
+    return (PyObject *)newinterpid(cls, id, force);
+}
+
+static void
+interpid_dealloc(PyObject *v)
+{
+    int64_t id = ((interpid *)v)->id;
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(id);
+    if (interp != NULL) {
+        _PyInterpreterState_IDDecref(interp);
+    }
+    else {
+        // already deleted
+        PyErr_Clear();
+    }
+    Py_TYPE(v)->tp_free(v);
+}
+
+static PyObject *
+interpid_repr(PyObject *self)
+{
+    PyTypeObject *type = Py_TYPE(self);
+    const char *name = _PyType_Name(type);
+    interpid *id = (interpid *)self;
+    return PyUnicode_FromFormat("%s(%d)", name, id->id);
+}
+
+PyObject *
+interpid_int(PyObject *self)
+{
+    interpid *id = (interpid *)self;
+    return PyLong_FromLongLong(id->id);
+}
+
+static PyNumberMethods interpid_as_number = {
+     0,                       /* nb_add */
+     0,                       /* nb_subtract */
+     0,                       /* nb_multiply */
+     0,                       /* nb_remainder */
+     0,                       /* nb_divmod */
+     0,                       /* nb_power */
+     0,                       /* nb_negative */
+     0,                       /* nb_positive */
+     0,                       /* nb_absolute */
+     0,                       /* nb_bool */
+     0,                       /* nb_invert */
+     0,                       /* nb_lshift */
+     0,                       /* nb_rshift */
+     0,                       /* nb_and */
+     0,                       /* nb_xor */
+     0,                       /* nb_or */
+     (unaryfunc)interpid_int, /* nb_int */
+     0,                       /* nb_reserved */
+     0,                       /* nb_float */
+
+     0,                       /* nb_inplace_add */
+     0,                       /* nb_inplace_subtract */
+     0,                       /* nb_inplace_multiply */
+     0,                       /* nb_inplace_remainder */
+     0,                       /* nb_inplace_power */
+     0,                       /* nb_inplace_lshift */
+     0,                       /* nb_inplace_rshift */
+     0,                       /* nb_inplace_and */
+     0,                       /* nb_inplace_xor */
+     0,                       /* nb_inplace_or */
+
+     0,                       /* nb_floor_divide */
+     0,                       /* nb_true_divide */
+     0,                       /* nb_inplace_floor_divide */
+     0,                       /* nb_inplace_true_divide */
+
+     (unaryfunc)interpid_int, /* nb_index */
+};
+
+static Py_hash_t
+interpid_hash(PyObject *self)
+{
+    interpid *id = (interpid *)self;
+    PyObject *obj = PyLong_FromLongLong(id->id);
+    if (obj == NULL) {
+        return -1;
+    }
+    Py_hash_t hash = PyObject_Hash(obj);
+    Py_DECREF(obj);
+    return hash;
+}
+
+static PyObject *
+interpid_richcompare(PyObject *self, PyObject *other, int op)
+{
+    if (op != Py_EQ && op != Py_NE) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (!PyObject_TypeCheck(self, &InterpreterIDtype)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    interpid *id = (interpid *)self;
+    int equal;
+    if (PyObject_TypeCheck(other, &InterpreterIDtype)) {
+        interpid *otherid = (interpid *)other;
+        equal = (id->id == otherid->id);
+    }
+    else {
+        other = PyNumber_Long(other);
+        if (other == NULL) {
+            PyErr_Clear();
+            Py_RETURN_NOTIMPLEMENTED;
+        }
+        int64_t otherid = PyLong_AsLongLong(other);
+        Py_DECREF(other);
+        if (otherid == -1 && PyErr_Occurred() != NULL) {
+            return NULL;
+        }
+        if (otherid < 0) {
+            equal = 0;
+        }
+        else {
+            equal = (id->id == otherid);
+        }
+    }
+
+    if ((op == Py_EQ && equal) || (op == Py_NE && !equal)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+PyDoc_STRVAR(interpid_doc,
+"A interpreter ID identifies a interpreter and may be used as an int.");
+
+static PyTypeObject InterpreterIDtype = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "interpreters.InterpreterID",   /* tp_name */
+    sizeof(interpid),               /* tp_size */
+    0,                              /* tp_itemsize */
+    (destructor)interpid_dealloc,   /* tp_dealloc */
+    0,                              /* tp_print */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_as_async */
+    (reprfunc)interpid_repr,        /* tp_repr */
+    &interpid_as_number,            /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    interpid_hash,                  /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    0,                              /* tp_getattro */
+    0,                              /* tp_setattro */
+    0,                              /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+        Py_TPFLAGS_LONG_SUBCLASS,   /* tp_flags */
+    interpid_doc,                   /* tp_doc */
+    0,                              /* tp_traverse */
+    0,                              /* tp_clear */
+    interpid_richcompare,           /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    0,                              /* tp_iter */
+    0,                              /* tp_iternext */
+    0,                              /* tp_methods */
+    0,                              /* tp_members */
+    0,                              /* tp_getset */
+    0,                              /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    0,                              /* tp_init */
+    0,                              /* tp_alloc */
+    interpid_new,                   /* tp_new */
+};
+
+static PyObject *
+_get_id(PyInterpreterState *interp)
+{
+    PY_INT64_T id = PyInterpreterState_GetID(interp);
+    if (id < 0) {
+        return NULL;
+    }
+    return (PyObject *)newinterpid(&InterpreterIDtype, id, 0);
+}
+
+static PyInterpreterState *
+_look_up(PyObject *requested_id)
+{
+    int64_t id;
+    if (PyObject_TypeCheck(requested_id, &InterpreterIDtype)) {
+        id = ((interpid *)requested_id)->id;
+    }
+    else {
+        id = PyLong_AsLongLong(requested_id);
+        if (id == -1 && PyErr_Occurred() != NULL) {
+            return NULL;
+        }
+        assert(id <= INT64_MAX);
+    }
+    return _PyInterpreterState_LookUpID(id);
 }
 
 
@@ -1841,9 +2084,9 @@ interp_create(PyObject *self, PyObject *args)
     }
 
     // Create and initialize the new interpreter.
-    PyThreadState *tstate, *save_tstate;
-    save_tstate = PyThreadState_Swap(NULL);
-    tstate = Py_NewInterpreter();
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    // XXX Possible GILState issues?
+    PyThreadState *tstate = Py_NewInterpreter();
     PyThreadState_Swap(save_tstate);
     if (tstate == NULL) {
         /* Since no new thread state was created, there is no exception to
@@ -1852,7 +2095,17 @@ interp_create(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
         return NULL;
     }
+    if (_PyInterpreterState_IDInitref(tstate->interp) != 0) {
+        goto error;
+    };
     return _get_id(tstate->interp);
+
+error:
+    // XXX Possible GILState issues?
+    save_tstate = PyThreadState_Swap(tstate);
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(save_tstate);
+    return NULL;
 }
 
 PyDoc_STRVAR(create_doc,
@@ -1899,9 +2152,9 @@ interp_destroy(PyObject *self, PyObject *args)
 
     // Destroy the interpreter.
     //PyInterpreterState_Delete(interp);
-    PyThreadState *tstate, *save_tstate;
-    tstate = PyInterpreterState_ThreadHead(interp);
-    save_tstate = PyThreadState_Swap(tstate);
+    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+    // XXX Possible GILState issues?
+    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
     Py_EndInterpreter(tstate);
     PyThreadState_Swap(save_tstate);
 
@@ -2359,6 +2612,10 @@ PyInit__xxsubinterpreters(void)
     if (PyType_Ready(&ChannelIDtype) != 0) {
         return NULL;
     }
+    InterpreterIDtype.tp_base = &PyLong_Type;
+    if (PyType_Ready(&InterpreterIDtype) != 0) {
+        return NULL;
+    }
 
     /* Create the module */
     PyObject *module = PyModule_Create(&interpretersmodule);
@@ -2378,6 +2635,10 @@ PyInit__xxsubinterpreters(void)
     /* Add other types */
     Py_INCREF(&ChannelIDtype);
     if (PyDict_SetItemString(ns, "ChannelID", (PyObject *)&ChannelIDtype) != 0) {
+        return NULL;
+    }
+    Py_INCREF(&InterpreterIDtype);
+    if (PyDict_SetItemString(ns, "InterpreterID", (PyObject *)&InterpreterIDtype) != 0) {
         return NULL;
     }
 

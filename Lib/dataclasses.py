@@ -5,6 +5,7 @@ import inspect
 
 __all__ = ['dataclass',
            'field',
+           'Field',
            'FrozenInstanceError',
            'InitVar',
            'MISSING',
@@ -20,11 +21,11 @@ __all__ = ['dataclass',
 
 # Conditions for adding methods.  The boxes indicate what action the
 #  dataclass decorator takes.  For all of these tables, when I talk
-#  about init=, repr=, eq=, order=, hash=, or frozen=, I'm referring
-#  to the arguments to the @dataclass decorator.  When checking if a
-#  dunder method already exists, I mean check for an entry in the
-#  class's __dict__.  I never check to see if an attribute is defined
-#  in a base class.
+#  about init=, repr=, eq=, order=, unsafe_hash=, or frozen=, I'm
+#  referring to the arguments to the @dataclass decorator.  When
+#  checking if a dunder method already exists, I mean check for an
+#  entry in the class's __dict__.  I never check to see if an
+#  attribute is defined in a base class.
 
 # Key:
 # +=========+=========================================+
@@ -33,11 +34,6 @@ __all__ = ['dataclass',
 # | <blank> | No action: no method is added.          |
 # +---------+-----------------------------------------+
 # | add     | Generated method is added.              |
-# +---------+-----------------------------------------+
-# | add*    | Generated method is added only if the   |
-# |         |  existing attribute is None and if the  |
-# |         |  user supplied a __eq__ method in the   |
-# |         |  class definition.                      |
 # +---------+-----------------------------------------+
 # | raise   | TypeError is raised.                    |
 # +---------+-----------------------------------------+
@@ -115,43 +111,36 @@ __all__ = ['dataclass',
 
 # __hash__
 
-#      +------------------- hash= parameter
-#      |       +----------- eq= parameter
-#      |       |       +--- frozen= parameter
-#      |       |       |
-#      v       v       v    |        |        |
-#                           |   no   |  yes   |  <--- class has __hash__ in __dict__?
-# +=========+=======+=======+========+========+
-# | 1 None  | False | False |        |        | No __eq__, use the base class __hash__
-# +---------+-------+-------+--------+--------+
-# | 2 None  | False | True  |        |        | No __eq__, use the base class __hash__
-# +---------+-------+-------+--------+--------+
-# | 3 None  | True  | False | None   |        | <-- the default, not hashable
-# +---------+-------+-------+--------+--------+
-# | 4 None  | True  | True  | add    | add*   | Frozen, so hashable
-# +---------+-------+-------+--------+--------+
-# | 5 False | False | False |        |        |
-# +---------+-------+-------+--------+--------+
-# | 6 False | False | True  |        |        |
-# +---------+-------+-------+--------+--------+
-# | 7 False | True  | False |        |        |
-# +---------+-------+-------+--------+--------+
-# | 8 False | True  | True  |        |        |
-# +---------+-------+-------+--------+--------+
-# | 9 True  | False | False | add    | add*   | Has no __eq__, but hashable
-# +---------+-------+-------+--------+--------+
-# |10 True  | False | True  | add    | add*   | Has no __eq__, but hashable
-# +---------+-------+-------+--------+--------+
-# |11 True  | True  | False | add    | add*   | Not frozen, but hashable
-# +---------+-------+-------+--------+--------+
-# |12 True  | True  | True  | add    | add*   | Frozen, so hashable
-# +=========+=======+=======+========+========+
+#    +------------------- unsafe_hash= parameter
+#    |       +----------- eq= parameter
+#    |       |       +--- frozen= parameter
+#    |       |       |
+#    v       v       v    |        |        |
+#                         |   no   |  yes   |  <--- class has explicitly defined __hash__
+# +=======+=======+=======+========+========+
+# | False | False | False |        |        | No __eq__, use the base class __hash__
+# +-------+-------+-------+--------+--------+
+# | False | False | True  |        |        | No __eq__, use the base class __hash__
+# +-------+-------+-------+--------+--------+
+# | False | True  | False | None   |        | <-- the default, not hashable
+# +-------+-------+-------+--------+--------+
+# | False | True  | True  | add    |        | Frozen, so hashable, allows override
+# +-------+-------+-------+--------+--------+
+# | True  | False | False | add    | raise  | Has no __eq__, but hashable
+# +-------+-------+-------+--------+--------+
+# | True  | False | True  | add    | raise  | Has no __eq__, but hashable
+# +-------+-------+-------+--------+--------+
+# | True  | True  | False | add    | raise  | Not frozen, but hashable
+# +-------+-------+-------+--------+--------+
+# | True  | True  | True  | add    | raise  | Frozen, so hashable
+# +=======+=======+=======+========+========+
 # For boxes that are blank, __hash__ is untouched and therefore
 #  inherited from the base class.  If the base is object, then
 #  id-based hashing is used.
 # Note that a class may have already __hash__=None if it specified an
 #  __eq__ method in the class body (not one that was created by
 #  @dataclass).
+# See _hash_action (below) for a coded version of this table.
 
 
 # Raised when an attempt is made to modify a frozen class.
@@ -183,7 +172,11 @@ _FIELD_INITVAR = object()         # Not a field, but an InitVar.
 
 # The name of an attribute on the class where we store the Field
 #  objects. Also used to check if a class is a Data Class.
-_MARKER = '__dataclass_fields__'
+_FIELDS = '__dataclass_fields__'
+
+# The name of an attribute on the class that stores the parameters to
+# @dataclass.
+_PARAMS = '__dataclass_params__'
 
 # The name of the function, that if it exists, is called at the end of
 # __init__.
@@ -204,7 +197,7 @@ class InitVar(metaclass=_InitVarMeta):
 # name and type are filled in after the fact, not in __init__. They're
 #  not known at the time this class is instantiated, but it's
 #  convenient if they're available later.
-# When cls._MARKER is filled in with a list of Field objects, the name
+# When cls._FIELDS is filled in with a list of Field objects, the name
 #  and type fields will have been populated.
 class Field:
     __slots__ = ('name',
@@ -247,6 +240,32 @@ class Field:
                 f'metadata={self.metadata}'
                 ')')
 
+
+class _DataclassParams:
+    __slots__ = ('init',
+                 'repr',
+                 'eq',
+                 'order',
+                 'unsafe_hash',
+                 'frozen',
+                 )
+    def __init__(self, init, repr, eq, order, unsafe_hash, frozen):
+        self.init = init
+        self.repr = repr
+        self.eq = eq
+        self.order = order
+        self.unsafe_hash = unsafe_hash
+        self.frozen = frozen
+
+    def __repr__(self):
+        return ('_DataclassParams('
+                f'init={self.init},'
+                f'repr={self.repr},'
+                f'eq={self.eq},'
+                f'order={self.order},'
+                f'unsafe_hash={self.unsafe_hash},'
+                f'frozen={self.frozen}'
+                ')')
 
 # This function is used instead of exposing Field creation directly,
 #  so that a type checker can be told (via overloads) that this is a
@@ -297,6 +316,7 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     args = ','.join(args)
     body = '\n'.join(f' {b}' for b in body)
 
+    # Compute the text of the entire function.
     txt = f'def {name}({args}){return_annotation}:\n{body}'
 
     exec(txt, globals, locals)
@@ -444,12 +464,29 @@ def _repr_fn(fields):
                        ')"'])
 
 
-def _frozen_setattr(self, name, value):
-    raise FrozenInstanceError(f'cannot assign to field {name!r}')
-
-
-def _frozen_delattr(self, name):
-    raise FrozenInstanceError(f'cannot delete field {name!r}')
+def _frozen_get_del_attr(cls, fields):
+    # XXX: globals is modified on the first call to _create_fn, then the
+    #  modified version is used in the second call.  Is this okay?
+    globals = {'cls': cls,
+              'FrozenInstanceError': FrozenInstanceError}
+    if fields:
+        fields_str = '(' + ','.join(repr(f.name) for f in fields) + ',)'
+    else:
+        # Special case for the zero-length tuple.
+        fields_str = '()'
+    return (_create_fn('__setattr__',
+                      ('self', 'name', 'value'),
+                      (f'if type(self) is cls or name in {fields_str}:',
+                        ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
+                       f'super(cls, self).__setattr__(name, value)'),
+                       globals=globals),
+            _create_fn('__delattr__',
+                      ('self', 'name'),
+                      (f'if type(self) is cls or name in {fields_str}:',
+                        ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
+                       f'super(cls, self).__delattr__(name)'),
+                       globals=globals),
+            )
 
 
 def _cmp_fn(name, op, self_tuple, other_tuple):
@@ -477,12 +514,15 @@ def _get_field(cls, a_name, a_type):
     #  and InitVars are also returned, but marked as such (see
     #  f._field_type).
 
-    # If the default value isn't derived from field, then it's
+    # If the default value isn't derived from Field, then it's
     #  only a normal default value.  Convert it to a Field().
     default = getattr(cls, a_name, MISSING)
     if isinstance(default, Field):
         f = default
     else:
+        if isinstance(default, types.MemberDescriptorType):
+            # This is a field in __slots__, so it has no default value.
+            default = MISSING
         f = field(default=default)
 
     # Assume it's a normal field until proven otherwise.
@@ -533,21 +573,6 @@ def _get_field(cls, a_name, a_type):
     return f
 
 
-def _find_fields(cls):
-    # Return a list of Field objects, in order, for this class (and no
-    #  base classes).  Fields are found from __annotations__ (which is
-    #  guaranteed to be ordered).  Default values are from class
-    #  attributes, if a field has a default.  If the default value is
-    #  a Field(), then it contains additional info beyond (and
-    #  possibly including) the actual default value.  Pseudo-fields
-    #  ClassVars and InitVars are included, despite the fact that
-    #  they're not real fields.  That's dealt with later.
-
-    annotations = getattr(cls, '__annotations__', {})
-    return [_get_field(cls, a_name, a_type)
-            for a_name, a_type in annotations.items()]
-
-
 def _set_new_attribute(cls, name, value):
     # Never overwrites an existing attribute.  Returns True if the
     #  attribute already exists.
@@ -557,28 +582,90 @@ def _set_new_attribute(cls, name, value):
     return False
 
 
-def _process_class(cls, repr, eq, order, hash, init, frozen):
+# Decide if/how we're going to create a hash function.  Key is
+#  (unsafe_hash, eq, frozen, does-hash-exist).  Value is the action to
+#  take.
+# Actions:
+#  '':          Do nothing.
+#  'none':      Set __hash__ to None.
+#  'add':       Always add a generated __hash__function.
+#  'exception': Raise an exception.
+#
+#                +-------------------------------------- unsafe_hash?
+#                |      +------------------------------- eq?
+#                |      |      +------------------------ frozen?
+#                |      |      |      +----------------  has-explicit-hash?
+#                |      |      |      |
+#                |      |      |      |        +-------  action
+#                |      |      |      |        |
+#                v      v      v      v        v
+_hash_action = {(False, False, False, False): (''),
+                (False, False, False, True ): (''),
+                (False, False, True,  False): (''),
+                (False, False, True,  True ): (''),
+                (False, True,  False, False): ('none'),
+                (False, True,  False, True ): (''),
+                (False, True,  True,  False): ('add'),
+                (False, True,  True,  True ): (''),
+                (True,  False, False, False): ('add'),
+                (True,  False, False, True ): ('exception'),
+                (True,  False, True,  False): ('add'),
+                (True,  False, True,  True ): ('exception'),
+                (True,  True,  False, False): ('add'),
+                (True,  True,  False, True ): ('exception'),
+                (True,  True,  True,  False): ('add'),
+                (True,  True,  True,  True ): ('exception'),
+                }
+# See https://bugs.python.org/issue32929#msg312829 for an if-statement
+#  version of this table.
+
+
+def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     # Now that dicts retain insertion order, there's no reason to use
     #  an ordered dict.  I am leveraging that ordering here, because
     #  derived class fields overwrite base class fields, but the order
     #  is defined by the base class, which is found first.
     fields = {}
 
+    setattr(cls, _PARAMS, _DataclassParams(init, repr, eq, order,
+                                           unsafe_hash, frozen))
+
     # Find our base classes in reverse MRO order, and exclude
     #  ourselves.  In reversed order so that more derived classes
     #  override earlier field definitions in base classes.
+    # As long as we're iterating over them, see if any are frozen.
+    any_frozen_base = False
+    has_dataclass_bases = False
     for b in cls.__mro__[-1:0:-1]:
         # Only process classes that have been processed by our
-        #  decorator.  That is, they have a _MARKER attribute.
-        base_fields = getattr(b, _MARKER, None)
+        #  decorator.  That is, they have a _FIELDS attribute.
+        base_fields = getattr(b, _FIELDS, None)
         if base_fields:
+            has_dataclass_bases = True
             for f in base_fields.values():
                 fields[f.name] = f
+            if getattr(b, _PARAMS).frozen:
+                any_frozen_base = True
+
+    # Annotations that are defined in this class (not in base
+    #  classes).  If __annotations__ isn't present, then this class
+    #  adds no new annotations.  We use this to compute fields that
+    #  are added by this class.
+    # Fields are found from cls_annotations, which is guaranteed to be
+    #  ordered.  Default values are from class attributes, if a field
+    #  has a default.  If the default value is a Field(), then it
+    #  contains additional info beyond (and possibly including) the
+    #  actual default value.  Pseudo-fields ClassVars and InitVars are
+    #  included, despite the fact that they're not real fields.
+    #  That's dealt with later.
+    cls_annotations = cls.__dict__.get('__annotations__', {})
 
     # Now find fields in our class.  While doing so, validate some
     #  things, and set the default values (as class attributes)
     #  where we can.
-    for f in _find_fields(cls):
+    cls_fields = [_get_field(cls, name, type)
+                  for name, type in cls_annotations.items()]
+    for f in cls_fields:
         fields[f.name] = f
 
         # If the class attribute (which is the default value for
@@ -597,16 +684,35 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
             else:
                 setattr(cls, f.name, f.default)
 
-    # Remember all of the fields on our class (including bases).  This
+    # Do we have any Field members that don't also have annotations?
+    for name, value in cls.__dict__.items():
+        if isinstance(value, Field) and not name in cls_annotations:
+            raise TypeError(f'{name!r} is a field but has no type annotation')
+
+    # Check rules that apply if we are derived from any dataclasses.
+    if has_dataclass_bases:
+        # Raise an exception if any of our bases are frozen, but we're not.
+        if any_frozen_base and not frozen:
+            raise TypeError('cannot inherit non-frozen dataclass from a '
+                            'frozen one')
+
+        # Raise an exception if we're frozen, but none of our bases are.
+        if not any_frozen_base and frozen:
+            raise TypeError('cannot inherit frozen dataclass from a '
+                            'non-frozen one')
+
+    # Remember all of the fields on our class (including bases).  This also
     #  marks this class as being a dataclass.
-    setattr(cls, _MARKER, fields)
+    setattr(cls, _FIELDS, fields)
 
-    # We also need to check if a parent class is frozen: frozen has to
-    #  be inherited down.
-    is_frozen = frozen or cls.__setattr__ is _frozen_setattr
-
-    # Was this class defined with an __eq__?  Used in __hash__ logic.
-    auto_hash_test= '__eq__' in cls.__dict__ and getattr(cls.__dict__, '__hash__', MISSING) is None
+    # Was this class defined with an explicit __hash__?  Note that if
+    #  __eq__ is defined in this class, then python will automatically
+    #  set __hash__ to None.  This is a heuristic, as it's possible
+    #  that such a __hash__ == None was not auto-generated, but it
+    #  close enough.
+    class_hash = cls.__dict__.get('__hash__', MISSING)
+    has_explicit_hash = not (class_hash is MISSING or
+                             (class_hash is None and '__eq__' in cls.__dict__))
 
     # If we're generating ordering methods, we must be generating
     #  the eq methods.
@@ -622,7 +728,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
                 if f._field_type in (_FIELD, _FIELD_INITVAR)]
         _set_new_attribute(cls, '__init__',
                            _init_fn(flds,
-                                    is_frozen,
+                                    frozen,
                                     has_post_init,
                                     # The name to use for the "self" param
                                     #  in __init__.  Use "self" if possible.
@@ -661,48 +767,38 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
             if _set_new_attribute(cls, name,
                                   _cmp_fn(name, op, self_tuple, other_tuple)):
                 raise TypeError(f'Cannot overwrite attribute {name} '
-                                f'in {cls.__name__}. Consider using '
+                                f'in class {cls.__name__}. Consider using '
                                 'functools.total_ordering')
 
-    if is_frozen:
-        for name, fn in [('__setattr__', _frozen_setattr),
-                         ('__delattr__', _frozen_delattr)]:
-            if _set_new_attribute(cls, name, fn):
-                raise TypeError(f'Cannot overwrite attribute {name} '
-                                f'in {cls.__name__}')
+    if frozen:
+        # XXX: Which fields are frozen? InitVar? ClassVar? hashed-only?
+        for fn in _frozen_get_del_attr(cls, field_list):
+            if _set_new_attribute(cls, fn.__name__, fn):
+                raise TypeError(f'Cannot overwrite attribute {fn.__name__} '
+                                f'in class {cls.__name__}')
 
     # Decide if/how we're going to create a hash function.
-    # TODO: Move this table to module scope, so it's not recreated
-    #  all the time.
-    generate_hash = {(None,  False, False): ('',     ''),
-                     (None,  False, True):  ('',     ''),
-                     (None,  True,  False): ('none', ''),
-                     (None,  True,  True):  ('fn',   'fn-x'),
-                     (False, False, False): ('',     ''),
-                     (False, False, True):  ('',     ''),
-                     (False, True,  False): ('',     ''),
-                     (False, True,  True):  ('',     ''),
-                     (True,  False, False): ('fn',   'fn-x'),
-                     (True,  False, True):  ('fn',   'fn-x'),
-                     (True,  True,  False): ('fn',   'fn-x'),
-                     (True,  True,  True):  ('fn',   'fn-x'),
-                     }[None if hash is None else bool(hash),   # Force bool() if not None.
-                       bool(eq),
-                       bool(frozen)]['__hash__' in cls.__dict__]
+    hash_action = _hash_action[bool(unsafe_hash),
+                               bool(eq),
+                               bool(frozen),
+                               has_explicit_hash]
+
     # No need to call _set_new_attribute here, since we already know if
     #  we're overwriting a __hash__ or not.
-    if generate_hash == '':
+    if hash_action == '':
         # Do nothing.
         pass
-    elif generate_hash == 'none':
+    elif hash_action == 'none':
         cls.__hash__ = None
-    elif generate_hash in ('fn', 'fn-x'):
-        if generate_hash == 'fn' or auto_hash_test:
-            flds = [f for f in field_list
-                    if (f.compare if f.hash is None else f.hash)]
-            cls.__hash__ = _hash_fn(flds)
+    elif hash_action == 'add':
+        flds = [f for f in field_list if (f.compare if f.hash is None else f.hash)]
+        cls.__hash__ = _hash_fn(flds)
+    elif hash_action == 'exception':
+        # Raise an exception.
+        raise TypeError(f'Cannot overwrite attribute __hash__ '
+                        f'in class {cls.__name__}')
     else:
-        assert False, f"can't get here: {generate_hash}"
+        assert False, f"can't get here: {hash_action}"
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
@@ -716,7 +812,7 @@ def _process_class(cls, repr, eq, order, hash, init, frozen):
 #  underscore. The presence of _cls is used to detect if this
 #  decorator is being called with parameters or not.
 def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
-              hash=None, frozen=False):
+              unsafe_hash=False, frozen=False):
     """Returns the same class as was passed in, with dunder methods
     added based on the fields defined in the class.
 
@@ -724,13 +820,13 @@ def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
 
     If init is true, an __init__() method is added to the class. If
     repr is true, a __repr__() method is added. If order is true, rich
-    comparison dunder methods are added. If hash is true, a __hash__()
-    method function is added. If frozen is true, fields may not be
-    assigned to after instance creation.
+    comparison dunder methods are added. If unsafe_hash is true, a
+    __hash__() method function is added. If frozen is true, fields may
+    not be assigned to after instance creation.
     """
 
     def wrap(cls):
-        return _process_class(cls, repr, eq, order, hash, init, frozen)
+        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen)
 
     # See if we're being called as @dataclass or @dataclass().
     if _cls is None:
@@ -750,7 +846,7 @@ def fields(class_or_instance):
 
     # Might it be worth caching this, per class?
     try:
-        fields =  getattr(class_or_instance, _MARKER)
+        fields =  getattr(class_or_instance, _FIELDS)
     except AttributeError:
         raise TypeError('must be called with a dataclass type or instance')
 
@@ -761,13 +857,13 @@ def fields(class_or_instance):
 
 def _is_dataclass_instance(obj):
     """Returns True if obj is an instance of a dataclass."""
-    return not isinstance(obj, type) and hasattr(obj, _MARKER)
+    return not isinstance(obj, type) and hasattr(obj, _FIELDS)
 
 
 def is_dataclass(obj):
     """Returns True if obj is a dataclass or an instance of a
     dataclass."""
-    return hasattr(obj, _MARKER)
+    return hasattr(obj, _FIELDS)
 
 
 def asdict(obj, *, dict_factory=dict):
@@ -792,6 +888,7 @@ def asdict(obj, *, dict_factory=dict):
     if not _is_dataclass_instance(obj):
         raise TypeError("asdict() should be called on dataclass instances")
     return _asdict_inner(obj, dict_factory)
+
 
 def _asdict_inner(obj, dict_factory):
     if _is_dataclass_instance(obj):
@@ -832,6 +929,7 @@ def astuple(obj, *, tuple_factory=tuple):
         raise TypeError("astuple() should be called on dataclass instances")
     return _astuple_inner(obj, tuple_factory)
 
+
 def _astuple_inner(obj, tuple_factory):
     if _is_dataclass_instance(obj):
         result = []
@@ -849,7 +947,8 @@ def _astuple_inner(obj, tuple_factory):
 
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
-                   repr=True, eq=True, order=False, hash=None, frozen=False):
+                   repr=True, eq=True, order=False, unsafe_hash=False,
+                   frozen=False):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -869,7 +968,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
     For the bases and namespace parameters, see the builtin type() function.
 
-    The parameters init, repr, eq, order, hash, and frozen are passed to
+    The parameters init, repr, eq, order, unsafe_hash, and frozen are passed to
     dataclass().
     """
 
@@ -894,7 +993,8 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     namespace['__annotations__'] = anns
     cls = type(cls_name, bases, namespace)
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
-                     hash=hash, frozen=frozen)
+                     unsafe_hash=unsafe_hash, frozen=frozen)
+
 
 def replace(obj, **changes):
     """Return a new object replacing specified fields with new values.
@@ -920,7 +1020,7 @@ def replace(obj, **changes):
     # It's an error to have init=False fields in 'changes'.
     # If a field is not in 'changes', read its value from the provided obj.
 
-    for f in getattr(obj, _MARKER).values():
+    for f in getattr(obj, _FIELDS).values():
         if not f.init:
             # Error if this field is specified in changes.
             if f.name in changes:

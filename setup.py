@@ -712,6 +712,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_opcode', ['_opcode.c']) )
         # asyncio speedups
         exts.append( Extension("_asyncio", ["_asynciomodule.c"]) )
+        # _abc speedups
+        exts.append( Extension("_abc", ["_abc.c"]) )
         # _queue module
         exts.append( Extension("_queue", ["_queuemodule.c"]) )
 
@@ -2002,6 +2004,10 @@ class PyBuildExt(build_ext):
             ext.include_dirs.extend(ffi_inc)
             ext.libraries.append(ffi_lib)
             self.use_system_libffi = True
+
+        if sysconfig.get_config_var('HAVE_LIBDL'):
+            # for dlopen, see bpo-32647
+            ext.libraries.append('dl')
 
     def _decimal_ext(self):
         extra_compile_args = []

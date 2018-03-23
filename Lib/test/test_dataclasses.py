@@ -1,7 +1,8 @@
-from dataclasses import (
-    dataclass, field, FrozenInstanceError, fields, asdict, astuple,
-    make_dataclass, replace, InitVar, Field, MISSING, is_dataclass,
-)
+# Deliberately use "from dataclasses import *".  Every name in __all__
+# is tested, so they all must be present.  This is a way to catch
+# missing ones.
+
+from dataclasses import *
 
 import pickle
 import inspect
@@ -19,6 +20,14 @@ class TestCase(unittest.TestCase):
         @dataclass
         class C:
             pass
+
+        o = C()
+        self.assertEqual(len(fields(C)), 0)
+
+    def test_no_fields_but_member_variable(self):
+        @dataclass
+        class C:
+            i = 0
 
         o = C()
         self.assertEqual(len(fields(C)), 0)
@@ -83,32 +92,59 @@ class TestCase(unittest.TestCase):
             class C(B):
                 x: int = 0
 
-    def test_overwriting_hash(self):
+    def test_overwrite_hash(self):
+        # Test that declaring this class isn't an error.  It should
+        #  use the user-provided __hash__.
         @dataclass(frozen=True)
         class C:
             x: int
             def __hash__(self):
-                pass
+                return 301
+        self.assertEqual(hash(C(100)), 301)
 
-        @dataclass(frozen=True,hash=False)
-        class C:
-            x: int
-            def __hash__(self):
-                return 600
-        self.assertEqual(hash(C(0)), 600)
-
+        # Test that declaring this class isn't an error.  It should
+        #  use the generated __hash__.
         @dataclass(frozen=True)
         class C:
             x: int
-            def __hash__(self):
-                pass
+            def __eq__(self, other):
+                return False
+        self.assertEqual(hash(C(100)), hash((100,)))
 
-        @dataclass(frozen=True, hash=False)
+        # But this one should generate an exception, because with
+        #  unsafe_hash=True, it's an error to have a __hash__ defined.
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __hash__'):
+            @dataclass(unsafe_hash=True)
+            class C:
+                def __hash__(self):
+                    pass
+
+        # Creating this class should not generate an exception,
+        #  because even though __hash__ exists before @dataclass is
+        #  called, (due to __eq__ being defined), since it's None
+        #  that's okay.
+        @dataclass(unsafe_hash=True)
         class C:
             x: int
-            def __hash__(self):
-                return 600
-        self.assertEqual(hash(C(0)), 600)
+            def __eq__(self):
+                pass
+        # The generated hash function works as we'd expect.
+        self.assertEqual(hash(C(10)), hash((10,)))
+
+        # Creating this class should generate an exception, because
+        # __hash__ exists and is not None, which it would be if it had
+        # been auto-generated do due __eq__ being defined.
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __hash__'):
+            @dataclass(unsafe_hash=True)
+            class C:
+                x: int
+                def __eq__(self):
+                    pass
+                def __hash__(self):
+                    pass
+
 
     def test_overwrite_fields_in_derived_class(self):
         # Note that x from C1 replaces x in Base, but the order remains
@@ -294,19 +330,6 @@ class TestCase(unittest.TestCase):
                                             "not supported between instances of 'B' and 'C'"):
                     fn(B(0), C(0))
 
-    def test_0_field_hash(self):
-        @dataclass(hash=True)
-        class C:
-            pass
-        self.assertEqual(hash(C()), hash(()))
-
-    def test_1_field_hash(self):
-        @dataclass(hash=True)
-        class C:
-            x: int
-        self.assertEqual(hash(C(4)), hash((4,)))
-        self.assertEqual(hash(C(42)), hash((42,)))
-
     def test_eq_order(self):
         # Test combining eq and order.
         for (eq,    order, result   ) in [
@@ -407,25 +430,25 @@ class TestCase(unittest.TestCase):
         # Test all 6 cases of:
         #  hash=True/False/None
         #  compare=True/False
-        for (hash_val, compare, result  ) in [
+        for (hash_,    compare, result  ) in [
             (True,     False,   'field' ),
             (True,     True,    'field' ),
             (False,    False,   'absent'),
             (False,    True,    'absent'),
             (None,     False,   'absent'),
             (None,     True,    'field' ),
-        ]:
-            with self.subTest(hash_val=hash_val, compare=compare):
-                @dataclass(hash=True)
+            ]:
+            with self.subTest(hash=hash_, compare=compare):
+                @dataclass(unsafe_hash=True)
                 class C:
-                    x: int = field(compare=compare, hash=hash_val, default=5)
+                    x: int = field(compare=compare, hash=hash_, default=5)
 
                 if result == 'field':
                     # __hash__ contains the field.
-                    self.assertEqual(C(5).__hash__(), hash((5,)))
+                    self.assertEqual(hash(C(5)), hash((5,)))
                 elif result == 'absent':
                     # The field is not present in the hash.
-                    self.assertEqual(C(5).__hash__(), hash(()))
+                    self.assertEqual(hash(C(5)), hash(()))
                 else:
                     assert False, f'unknown result {result!r}'
 
@@ -623,29 +646,6 @@ class TestCase(unittest.TestCase):
             y: int
         self.assertNotEqual(Point(1, 3), C(1, 3))
 
-    def test_frozen(self):
-        @dataclass(frozen=True)
-        class C:
-            i: int
-
-        c = C(10)
-        self.assertEqual(c.i, 10)
-        with self.assertRaises(FrozenInstanceError):
-            c.i = 5
-        self.assertEqual(c.i, 10)
-
-        # Check that a derived class is still frozen, even if not
-        #  marked so.
-        @dataclass
-        class D(C):
-            pass
-
-        d = D(20)
-        self.assertEqual(d.i, 20)
-        with self.assertRaises(FrozenInstanceError):
-            d.i = 5
-        self.assertEqual(d.i, 20)
-
     def test_not_tuple(self):
         # Test that some of the problems with namedtuple don't happen
         #  here.
@@ -737,7 +737,7 @@ class TestCase(unittest.TestCase):
         validate_class(C)
 
         # Now repeat with __hash__.
-        @dataclass(frozen=True, hash=True)
+        @dataclass(frozen=True, unsafe_hash=True)
         class C:
             i: int
             j: str
@@ -1107,7 +1107,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C().x, [])
 
         # hash
-        @dataclass(hash=True)
+        @dataclass(unsafe_hash=True)
         class C:
             x: list = field(default_factory=list, hash=False)
         self.assertEqual(astuple(C()), ([],))
@@ -1155,6 +1155,55 @@ class TestCase(unittest.TestCase):
         self.assertEqual(factory.call_count, 1)
         C().x
         self.assertEqual(factory.call_count, 2)
+
+    def test_default_factory_derived(self):
+        # See bpo-32896.
+        @dataclass
+        class Foo:
+            x: dict = field(default_factory=dict)
+
+        @dataclass
+        class Bar(Foo):
+            y: int = 1
+
+        self.assertEqual(Foo().x, {})
+        self.assertEqual(Bar().x, {})
+        self.assertEqual(Bar().y, 1)
+
+        @dataclass
+        class Baz(Foo):
+            pass
+        self.assertEqual(Baz().x, {})
+
+    def test_intermediate_non_dataclass(self):
+        # Test that an intermediate class that defines
+        #  annotations does not define fields.
+
+        @dataclass
+        class A:
+            x: int
+
+        class B(A):
+            y: int
+
+        @dataclass
+        class C(B):
+            z: int
+
+        c = C(1, 3)
+        self.assertEqual((c.x, c.z), (1, 3))
+
+        # .y was not initialized.
+        with self.assertRaisesRegex(AttributeError,
+                                    'object has no attribute'):
+            c.y
+
+        # And if we again derive a non-dataclass, no fields are added.
+        class D(C):
+            t: int
+        d = D(4, 5)
+        self.assertEqual((d.x, d.z), (4, 5))
+
 
     def x_test_classvar_default_factory(self):
         # XXX: it's an error for a ClassVar to have a factory function
@@ -1865,6 +1914,41 @@ class TestCase(unittest.TestCase):
                                              'z': 'typing.Any'})
 
 
+class TestFieldNoAnnotation(unittest.TestCase):
+    def test_field_without_annotation(self):
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            @dataclass
+            class C:
+                f = field()
+
+    def test_field_without_annotation_but_annotation_in_base(self):
+        @dataclass
+        class B:
+            f: int
+
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            # This is still an error: make sure we don't pick up the
+            # type annotation in the base class.
+            @dataclass
+            class C(B):
+                f = field()
+
+    def test_field_without_annotation_but_annotation_in_base_not_dataclass(self):
+        # Same test, but with the base class not a dataclass.
+        class B:
+            f: int
+
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            # This is still an error: make sure we don't pick up the
+            # type annotation in the base class.
+            @dataclass
+            class C(B):
+                f = field()
+
+
 class TestDocString(unittest.TestCase):
     def assertDocStrEqual(self, a, b):
         # Because 3.6 and 3.7 differ in how inspect.signature work
@@ -2242,27 +2326,12 @@ class TestOrdering(unittest.TestCase):
                     pass
 
 class TestHash(unittest.TestCase):
-    def test_hash(self):
-        @dataclass(hash=True)
+    def test_unsafe_hash(self):
+        @dataclass(unsafe_hash=True)
         class C:
             x: int
             y: str
         self.assertEqual(hash(C(1, 'foo')), hash((1, 'foo')))
-
-    def test_hash_false(self):
-        @dataclass(hash=False)
-        class C:
-            x: int
-            y: str
-        self.assertNotEqual(hash(C(1, 'foo')), hash((1, 'foo')))
-
-    def test_hash_none(self):
-        @dataclass(hash=None)
-        class C:
-            x: int
-        with self.assertRaisesRegex(TypeError,
-                                    "unhashable type: 'C'"):
-            hash(C(1))
 
     def test_hash_rules(self):
         def non_bool(value):
@@ -2273,89 +2342,73 @@ class TestHash(unittest.TestCase):
                 return (3,)
             return 0
 
-        def test(case, hash, eq, frozen, with_hash, result):
-            with self.subTest(case=case, hash=hash, eq=eq, frozen=frozen):
-                if with_hash:
-                    @dataclass(hash=hash, eq=eq, frozen=frozen)
-                    class C:
-                        def __hash__(self):
-                            return 0
-                else:
-                    @dataclass(hash=hash, eq=eq, frozen=frozen)
-                    class C:
-                        pass
+        def test(case, unsafe_hash, eq, frozen, with_hash, result):
+            with self.subTest(case=case, unsafe_hash=unsafe_hash, eq=eq,
+                              frozen=frozen):
+                if result != 'exception':
+                    if with_hash:
+                        @dataclass(unsafe_hash=unsafe_hash, eq=eq, frozen=frozen)
+                        class C:
+                            def __hash__(self):
+                                return 0
+                    else:
+                        @dataclass(unsafe_hash=unsafe_hash, eq=eq, frozen=frozen)
+                        class C:
+                            pass
 
                 # See if the result matches what's expected.
-                if result in ('fn', 'fn-x'):
+                if result == 'fn':
                     # __hash__ contains the function we generated.
                     self.assertIn('__hash__', C.__dict__)
                     self.assertIsNotNone(C.__dict__['__hash__'])
-
-                    if result == 'fn-x':
-                        # This is the "auto-hash test" case.  We
-                        #  should overwrite __hash__ iff there's an
-                        #  __eq__ and if __hash__=None.
-
-                        # There are two ways of getting __hash__=None:
-                        #  explicitely, and by defining __eq__.  If
-                        #  __eq__ is defined, python will add __hash__
-                        #  when the class is created.
-                        @dataclass(hash=hash, eq=eq, frozen=frozen)
-                        class C:
-                            def __eq__(self, other): pass
-                            __hash__ = None
-
-                        # Hash should be overwritten (non-None).
-                        self.assertIsNotNone(C.__dict__['__hash__'])
-
-                        # Same test as above, but we don't provide
-                        #  __hash__, it will implicitely set to None.
-                        @dataclass(hash=hash, eq=eq, frozen=frozen)
-                        class C:
-                            def __eq__(self, other): pass
-
-                        # Hash should be overwritten (non-None).
-                        self.assertIsNotNone(C.__dict__['__hash__'])
 
                 elif result == '':
                     # __hash__ is not present in our class.
                     if not with_hash:
                         self.assertNotIn('__hash__', C.__dict__)
+
                 elif result == 'none':
                     # __hash__ is set to None.
                     self.assertIn('__hash__', C.__dict__)
                     self.assertIsNone(C.__dict__['__hash__'])
+
+                elif result == 'exception':
+                    # Creating the class should cause an exception.
+                    #  This only happens with with_hash==True.
+                    assert(with_hash)
+                    with self.assertRaisesRegex(TypeError, 'Cannot overwrite attribute __hash__'):
+                        @dataclass(unsafe_hash=unsafe_hash, eq=eq, frozen=frozen)
+                        class C:
+                            def __hash__(self):
+                                return 0
+
                 else:
                     assert False, f'unknown result {result!r}'
 
-        # There are 12 cases of:
-        #  hash=True/False/None
+        # There are 8 cases of:
+        #  unsafe_hash=True/False
         #  eq=True/False
         #  frozen=True/False
         # And for each of these, a different result if
         #  __hash__ is defined or not.
-        for case, (hash,  eq,    frozen, result_no, result_yes) in enumerate([
-                  (None,  False, False,  '',        ''),
-                  (None,  False, True,   '',        ''),
-                  (None,  True,  False,  'none',    ''),
-                  (None,  True,  True,   'fn',      'fn-x'),
-                  (False, False, False,  '',        ''),
-                  (False, False, True,   '',        ''),
-                  (False, True,  False,  '',        ''),
-                  (False, True,  True,   '',        ''),
-                  (True,  False, False,  'fn',      'fn-x'),
-                  (True,  False, True,   'fn',      'fn-x'),
-                  (True,  True,  False,  'fn',      'fn-x'),
-                  (True,  True,  True,   'fn',      'fn-x'),
-        ], 1):
-            test(case, hash, eq, frozen, False, result_no)
-            test(case, hash, eq, frozen, True,  result_yes)
+        for case, (unsafe_hash,  eq,    frozen, res_no_defined_hash, res_defined_hash) in enumerate([
+                  (False,        False, False,  '',                  ''),
+                  (False,        False, True,   '',                  ''),
+                  (False,        True,  False,  'none',              ''),
+                  (False,        True,  True,   'fn',                ''),
+                  (True,         False, False,  'fn',                'exception'),
+                  (True,         False, True,   'fn',                'exception'),
+                  (True,         True,  False,  'fn',                'exception'),
+                  (True,         True,  True,   'fn',                'exception'),
+                  ], 1):
+            test(case, unsafe_hash, eq, frozen, False, res_no_defined_hash)
+            test(case, unsafe_hash, eq, frozen, True,  res_defined_hash)
 
             # Test non-bool truth values, too.  This is just to
             #  make sure the data-driven table in the decorator
             #  handles non-bool values.
-            test(case, non_bool(hash), non_bool(eq), non_bool(frozen), False, result_no)
-            test(case, non_bool(hash), non_bool(eq), non_bool(frozen), True,  result_yes)
+            test(case, non_bool(unsafe_hash), non_bool(eq), non_bool(frozen), False, res_no_defined_hash)
+            test(case, non_bool(unsafe_hash), non_bool(eq), non_bool(frozen), True,  res_defined_hash)
 
 
     def test_eq_only(self):
@@ -2373,8 +2426,8 @@ class TestHash(unittest.TestCase):
         self.assertNotEqual(C(1), C(4))
 
         # And make sure things work in this case if we specify
-        #  hash=True.
-        @dataclass(hash=True)
+        #  unsafe_hash=True.
+        @dataclass(unsafe_hash=True)
         class C:
             i: int
             def __eq__(self, other):
@@ -2384,7 +2437,7 @@ class TestHash(unittest.TestCase):
 
         # And check that the classes __eq__ is being used, despite
         #  specifying eq=True.
-        @dataclass(hash=True, eq=True)
+        @dataclass(unsafe_hash=True, eq=True)
         class C:
             i: int
             def __eq__(self, other):
@@ -2392,6 +2445,258 @@ class TestHash(unittest.TestCase):
         self.assertEqual(C(3), C(3))
         self.assertNotEqual(C(1), C(1))
         self.assertEqual(hash(C(1)), hash(C(1.0)))
+
+    def test_0_field_hash(self):
+        @dataclass(frozen=True)
+        class C:
+            pass
+        self.assertEqual(hash(C()), hash(()))
+
+        @dataclass(unsafe_hash=True)
+        class C:
+            pass
+        self.assertEqual(hash(C()), hash(()))
+
+    def test_1_field_hash(self):
+        @dataclass(frozen=True)
+        class C:
+            x: int
+        self.assertEqual(hash(C(4)), hash((4,)))
+        self.assertEqual(hash(C(42)), hash((42,)))
+
+        @dataclass(unsafe_hash=True)
+        class C:
+            x: int
+        self.assertEqual(hash(C(4)), hash((4,)))
+        self.assertEqual(hash(C(42)), hash((42,)))
+
+    def test_hash_no_args(self):
+        # Test dataclasses with no hash= argument.  This exists to
+        # make sure that if the @dataclass parameter name is changed
+        # or the non-default hashing behavior changes, the default
+        # hashability keeps working the same way.
+
+        class Base:
+            def __hash__(self):
+                return 301
+
+        # If frozen or eq is None, then use the default value (do not
+        # specify any value in the decorator).
+        for frozen, eq,    base,   expected       in [
+            (None,  None,  object, 'unhashable'),
+            (None,  None,  Base,   'unhashable'),
+            (None,  False, object, 'object'),
+            (None,  False, Base,   'base'),
+            (None,  True,  object, 'unhashable'),
+            (None,  True,  Base,   'unhashable'),
+            (False, None,  object, 'unhashable'),
+            (False, None,  Base,   'unhashable'),
+            (False, False, object, 'object'),
+            (False, False, Base,   'base'),
+            (False, True,  object, 'unhashable'),
+            (False, True,  Base,   'unhashable'),
+            (True,  None,  object, 'tuple'),
+            (True,  None,  Base,   'tuple'),
+            (True,  False, object, 'object'),
+            (True,  False, Base,   'base'),
+            (True,  True,  object, 'tuple'),
+            (True,  True,  Base,   'tuple'),
+            ]:
+
+            with self.subTest(frozen=frozen, eq=eq, base=base, expected=expected):
+                # First, create the class.
+                if frozen is None and eq is None:
+                    @dataclass
+                    class C(base):
+                        i: int
+                elif frozen is None:
+                    @dataclass(eq=eq)
+                    class C(base):
+                        i: int
+                elif eq is None:
+                    @dataclass(frozen=frozen)
+                    class C(base):
+                        i: int
+                else:
+                    @dataclass(frozen=frozen, eq=eq)
+                    class C(base):
+                        i: int
+
+                # Now, make sure it hashes as expected.
+                if expected == 'unhashable':
+                    c = C(10)
+                    with self.assertRaisesRegex(TypeError, 'unhashable type'):
+                        hash(c)
+
+                elif expected == 'base':
+                    self.assertEqual(hash(C(10)), 301)
+
+                elif expected == 'object':
+                    # I'm not sure what test to use here.  object's
+                    # hash isn't based on id(), so calling hash()
+                    # won't tell us much.  So, just check the function
+                    # used is object's.
+                    self.assertIs(C.__hash__, object.__hash__)
+
+                elif expected == 'tuple':
+                    self.assertEqual(hash(C(42)), hash((42,)))
+
+                else:
+                    assert False, f'unknown value for expected={expected!r}'
+
+
+class TestFrozen(unittest.TestCase):
+    def test_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            i: int
+
+        c = C(10)
+        self.assertEqual(c.i, 10)
+        with self.assertRaises(FrozenInstanceError):
+            c.i = 5
+        self.assertEqual(c.i, 10)
+
+    def test_inherit(self):
+        @dataclass(frozen=True)
+        class C:
+            i: int
+
+        @dataclass(frozen=True)
+        class D(C):
+            j: int
+
+        d = D(0, 10)
+        with self.assertRaises(FrozenInstanceError):
+            d.i = 5
+        with self.assertRaises(FrozenInstanceError):
+            d.j = 6
+        self.assertEqual(d.i, 0)
+        self.assertEqual(d.j, 10)
+
+    # Test both ways: with an intermediate normal (non-dataclass)
+    #  class and without an intermediate class.
+    def test_inherit_nonfrozen_from_frozen(self):
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                @dataclass(frozen=True)
+                class C:
+                    i: int
+
+                if intermediate_class:
+                    class I(C): pass
+                else:
+                    I = C
+
+                with self.assertRaisesRegex(TypeError,
+                                            'cannot inherit non-frozen dataclass from a frozen one'):
+                    @dataclass
+                    class D(I):
+                        pass
+
+    def test_inherit_frozen_from_nonfrozen(self):
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                @dataclass
+                class C:
+                    i: int
+
+                if intermediate_class:
+                    class I(C): pass
+                else:
+                    I = C
+
+                with self.assertRaisesRegex(TypeError,
+                                            'cannot inherit frozen dataclass from a non-frozen one'):
+                    @dataclass(frozen=True)
+                    class D(I):
+                        pass
+
+    def test_inherit_from_normal_class(self):
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                class C:
+                    pass
+
+                if intermediate_class:
+                    class I(C): pass
+                else:
+                    I = C
+
+                @dataclass(frozen=True)
+                class D(I):
+                    i: int
+
+            d = D(10)
+            with self.assertRaises(FrozenInstanceError):
+                d.i = 5
+
+    def test_non_frozen_normal_derived(self):
+        # See bpo-32953.
+
+        @dataclass(frozen=True)
+        class D:
+            x: int
+            y: int = 10
+
+        class S(D):
+            pass
+
+        s = S(3)
+        self.assertEqual(s.x, 3)
+        self.assertEqual(s.y, 10)
+        s.cached = True
+
+        # But can't change the frozen attributes.
+        with self.assertRaises(FrozenInstanceError):
+            s.x = 5
+        with self.assertRaises(FrozenInstanceError):
+            s.y = 5
+        self.assertEqual(s.x, 3)
+        self.assertEqual(s.y, 10)
+        self.assertEqual(s.cached, True)
+
+
+class TestSlots(unittest.TestCase):
+    def test_simple(self):
+        @dataclass
+        class C:
+            __slots__ = ('x',)
+            x: Any
+
+        # There was a bug where a variable in a slot was assumed
+        #  to also have a default value (of type types.MemberDescriptorType).
+        with self.assertRaisesRegex(TypeError,
+                                    "__init__\(\) missing 1 required positional argument: 'x'"):
+            C()
+
+        # We can create an instance, and assign to x.
+        c = C(10)
+        self.assertEqual(c.x, 10)
+        c.x = 5
+        self.assertEqual(c.x, 5)
+
+        # We can't assign to anything else.
+        with self.assertRaisesRegex(AttributeError, "'C' object has no attribute 'y'"):
+            c.y = 5
+
+    def test_derived_added_field(self):
+        # See bpo-33100.
+        @dataclass
+        class Base:
+            __slots__ = ('x',)
+            x: Any
+
+        @dataclass
+        class Derived(Base):
+            x: int
+            y: int
+
+        d = Derived(1, 2)
+        self.assertEqual((d.x, d.y), (1, 2))
+
+        # We can add a new field to the derived instance.
+        d.z = 10
 
 
 if __name__ == '__main__':

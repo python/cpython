@@ -1,0 +1,2 @@
+Importing names from already imported module with "from ... import ..." is
+now 30% faster if the module is not a package.

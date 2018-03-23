@@ -51,8 +51,8 @@ set libraries=
 set libraries=%libraries%                                       bzip2-1.0.6
 if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-1.1.0f
 set libraries=%libraries%                                       sqlite-3.21.0.0
-if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.6.0
-if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-8.6.6.0
+if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.8.0
+if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-8.6.8.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tix-8.4.3.6
 set libraries=%libraries%                                       xz-5.2.2
 set libraries=%libraries%                                       zlib-1.2.11
@@ -65,7 +65,7 @@ for %%e in (%libraries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-source-deps --branch %%e "%EXTERNALS_DIR%\%%e"
     ) else (
         echo.Fetching %%e...
-        %PYTHON% "%PCBUILD%\get_external.py" -O %ORG% %%e
+        %PYTHON% -E "%PCBUILD%\get_external.py" -O %ORG% -e "%EXTERNALS_DIR%" %%e
     )
 )
 
@@ -73,7 +73,7 @@ echo.Fetching external binaries...
 
 set binaries=
 if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.1.0f
-if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.6.0
+if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.8.0
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
 
 for %%b in (%binaries%) do (
@@ -84,7 +84,7 @@ for %%b in (%binaries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-bin-deps --branch %%b "%EXTERNALS_DIR%\%%b"
     ) else (
         echo.Fetching %%b...
-        %PYTHON% "%PCBUILD%\get_external.py" -b -O %ORG% %%b
+        %PYTHON% -E "%PCBUILD%\get_external.py" -b -O %ORG% -e "%EXTERNALS_DIR%" %%b
     )
 )
 

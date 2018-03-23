@@ -103,15 +103,24 @@ _PyInitError
 _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 {
     runtime->interpreters.next_id = 0;
-    /* Since we only call _PyRuntimeState_Init() once per process
-       (see _PyRuntime_Initialize()), we make sure the mutex is
-       initialized here. */
+
+    /* Py_Finalize() calls _PyRuntimeState_Fini() which clears the mutex.
+       Create a new mutex if needed. */
     if (runtime->interpreters.mutex == NULL) {
+        /* Force default allocator, since _PyRuntimeState_Fini() must
+           use the same allocator than this function. */
+        PyMemAllocatorEx old_alloc;
+        _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
         runtime->interpreters.mutex = PyThread_allocate_lock();
+
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
         if (runtime->interpreters.mutex == NULL) {
             return _Py_INIT_ERR("Can't initialize threads for interpreter");
         }
     }
+
     return _Py_INIT_OK();
 }
 
@@ -125,7 +134,8 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
-
+    interp->id_refcount = -1;
+    interp->id_mutex = NULL;
     interp->modules = NULL;
     interp->modules_by_index = NULL;
     interp->sysdict = NULL;
@@ -247,6 +257,9 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
             Py_FatalError("PyInterpreterState_Delete: remaining subinterpreters");
     }
     HEAD_UNLOCK();
+    if (interp->id_mutex != NULL) {
+        PyThread_free_lock(interp->id_mutex);
+    }
     PyMem_RawFree(interp);
 }
 
@@ -283,6 +296,59 @@ error:
                  "unrecognized interpreter ID %lld", requested_id);
     return NULL;
 }
+
+
+int
+_PyInterpreterState_IDInitref(PyInterpreterState *interp)
+{
+    if (interp->id_mutex != NULL) {
+        return 0;
+    }
+    interp->id_mutex = PyThread_allocate_lock();
+    if (interp->id_mutex == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to create init interpreter ID mutex");
+        return -1;
+    }
+    interp->id_refcount = 0;
+    return 0;
+}
+
+
+void
+_PyInterpreterState_IDIncref(PyInterpreterState *interp)
+{
+    if (interp->id_mutex == NULL) {
+        return;
+    }
+    PyThread_acquire_lock(interp->id_mutex, WAIT_LOCK);
+    interp->id_refcount += 1;
+    PyThread_release_lock(interp->id_mutex);
+}
+
+
+void
+_PyInterpreterState_IDDecref(PyInterpreterState *interp)
+{
+    if (interp->id_mutex == NULL) {
+        return;
+    }
+    PyThread_acquire_lock(interp->id_mutex, WAIT_LOCK);
+    assert(interp->id_refcount != 0);
+    interp->id_refcount -= 1;
+    int64_t refcount = interp->id_refcount;
+    PyThread_release_lock(interp->id_mutex);
+
+    if (refcount == 0) {
+        // XXX Using the "head" thread isn't strictly correct.
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        // XXX Possible GILState issues?
+        PyThreadState *save_tstate = PyThreadState_Swap(tstate);
+        Py_EndInterpreter(tstate);
+        PyThreadState_Swap(save_tstate);
+    }
+}
+
 
 /* Default implementation for _PyThreadState_GetFrame */
 static struct _frame *
@@ -876,9 +942,19 @@ _PyGILState_Fini(void)
 void
 _PyGILState_Reinit(void)
 {
+    /* Force default allocator, since _PyRuntimeState_Fini() must
+       use the same allocator than this function. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     _PyRuntime.interpreters.mutex = PyThread_allocate_lock();
-    if (_PyRuntime.interpreters.mutex == NULL)
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (_PyRuntime.interpreters.mutex == NULL) {
         Py_FatalError("Can't initialize threads for interpreter");
+    }
+
     PyThreadState *tstate = PyGILState_GetThisThreadState();
     PyThread_tss_delete(&_PyRuntime.gilstate.autoTSSkey);
     if (PyThread_tss_create(&_PyRuntime.gilstate.autoTSSkey) != 0) {
@@ -1157,8 +1233,14 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         }
         return;
     }
-    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
+
+    PyThreadState *save_tstate = NULL;
+    if (interp != PyThreadState_Get()->interp) {
+        // XXX Using the "head" thread isn't strictly correct.
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        // XXX Possible GILState issues?
+        save_tstate = PyThreadState_Swap(tstate);
+    }
 
     // "Release" the data and/or the object.
     if (data->free != NULL) {
@@ -1167,8 +1249,9 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
     Py_XDECREF(data->obj);
 
     // Switch back.
-    if (save_tstate != NULL)
+    if (save_tstate != NULL) {
         PyThreadState_Swap(save_tstate);
+    }
 }
 
 PyObject *
