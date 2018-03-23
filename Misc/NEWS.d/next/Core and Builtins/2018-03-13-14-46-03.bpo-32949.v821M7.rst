@@ -1,0 +1,4 @@
+Removes overly complex WITH_CLEANUP_START and WITH_CLEANUP_FINISH byteocodes.
+Adds much simpler RERAISE and WITH_EXCEPT_START bytecodes.
+Differentiates between exceptional and non-exceptional flow in the compiler.
+

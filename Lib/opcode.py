@@ -84,10 +84,13 @@ def_op('BINARY_TRUE_DIVIDE', 27)
 def_op('INPLACE_FLOOR_DIVIDE', 28)
 def_op('INPLACE_TRUE_DIVIDE', 29)
 
+def_op('RERAISE', 48)
+
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
 def_op('BEFORE_ASYNC_WITH', 52)
 def_op('BEGIN_FINALLY', 53)
+def_op('WITH_EXCEPT_START', 54)
 
 def_op('INPLACE_ADD', 55)
 def_op('INPLACE_SUBTRACT', 56)
@@ -115,8 +118,7 @@ def_op('INPLACE_RSHIFT', 76)
 def_op('INPLACE_AND', 77)
 def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
-def_op('WITH_CLEANUP_START', 81)
-def_op('WITH_CLEANUP_FINISH', 82)
+
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)

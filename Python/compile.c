@@ -950,12 +950,6 @@ stack_effect(int opcode, int oparg, int jump)
              * Restore the stack position and push 6 values before jumping to
              * the handler if an exception be raised. */
             return jump ? 6 : 1;
-        case WITH_CLEANUP_START:
-            return 2; /* or 1, depending on TOS */
-        case WITH_CLEANUP_FINISH:
-            /* Pop a variable number of values pushed by WITH_CLEANUP_START
-             * + __exit__ or __aexit__. */
-            return -3;
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:
@@ -1052,8 +1046,13 @@ stack_effect(int opcode, int oparg, int jump)
              * This is the main reason of using this opcode instead of
              * "LOAD_CONST None". */
             return 6;
+        case RERAISE:
+            return -3;
         case CALL_FINALLY:
             return jump ? 1 : 0;
+
+        case WITH_EXCEPT_START:
+            return 1;
 
         case LOAD_FAST:
             return 1;
@@ -1490,6 +1489,15 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
     assert(u->u_fblock[u->u_nfblocks].fb_block == b);
 }
 
+static int
+compiler_call_exit_with_nones(struct compiler *c) {
+    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP(c, DUP_TOP);
+    ADDOP(c, DUP_TOP);
+    ADDOP_I(c, CALL_FUNCTION, 3);
+    return 1;
+}
+
 /* Unwind a frame block.  If preserve_tos is true, the TOS before
  * popping the blocks will be restored afterwards.
  */
@@ -1528,15 +1536,15 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             if (preserve_tos) {
                 ADDOP(c, ROT_TWO);
             }
-            ADDOP(c, BEGIN_FINALLY);
-            ADDOP(c, WITH_CLEANUP_START);
+            if(!compiler_call_exit_with_nones(c)) {
+                return 0;
+            }
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP(c, GET_AWAITABLE);
                 ADDOP_O(c, LOAD_CONST, Py_None, consts);
                 ADDOP(c, YIELD_FROM);
             }
-            ADDOP(c, WITH_CLEANUP_FINISH);
-            ADDOP_I(c, POP_FINALLY, 0);
+            ADDOP(c, POP_TOP);
             return 1;
 
         case HANDLER_CLEANUP:
@@ -4306,6 +4314,22 @@ expr_constant(expr_ty e)
     return -1;
 }
 
+static int
+compiler_with_except_finish(struct compiler *c) {
+    basicblock *exit;
+    exit = compiler_new_block(c);
+    if (exit == NULL)
+        return 0;
+    ADDOP_JABS(c, POP_JUMP_IF_TRUE, exit);
+    ADDOP(c, RERAISE);
+    compiler_use_next_block(c, exit);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_EXCEPT);
+    ADDOP(c, POP_TOP);
+    return 1;
+}
 
 /*
    Implements the async with statement.
@@ -4334,14 +4358,16 @@ expr_constant(expr_ty e)
 static int
 compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *finally;
+    basicblock *block, *final1, *final2, *exit;
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
 
     block = compiler_new_block(c);
-    finally = compiler_new_block(c);
-    if (!block || !finally)
+    final1 = compiler_new_block(c);
+    final2 = compiler_new_block(c);
+    exit = compiler_new_block(c);
+    if (!block || !final1 || !final2 || !exit)
         return 0;
 
     /* Evaluate EXPR */
@@ -4352,11 +4378,11 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
 
-    ADDOP_JREL(c, SETUP_ASYNC_WITH, finally);
+    ADDOP_JREL(c, SETUP_ASYNC_WITH, final2);
 
     /* SETUP_ASYNC_WITH pushes a finally block. */
     compiler_use_next_block(c, block);
-    if (!compiler_push_fblock(c, ASYNC_WITH, block, finally)) {
+    if (!compiler_push_fblock(c, ASYNC_WITH, block, final2)) {
         return 0;
     }
 
@@ -4377,74 +4403,88 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, ASYNC_WITH, block);
 
-    compiler_use_next_block(c, finally);
-    if (!compiler_push_fblock(c, FINALLY_END, finally, NULL))
+    compiler_use_next_block(c, final1);
+    if (!compiler_push_fblock(c, FINALLY_END, final1, NULL))
         return 0;
 
-    /* Finally block starts; context.__exit__ is on the stack under
-       the exception or return information. Just issue our magic
-       opcode. */
-    ADDOP(c, WITH_CLEANUP_START);
-
+    /* `finally` block for successful outcome:
+     * call __exit__(None, None, None)
+     */
+    if(!compiler_call_exit_with_nones(c))
+        return 0;
     ADDOP(c, GET_AWAITABLE);
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
 
-    ADDOP(c, WITH_CLEANUP_FINISH);
+    ADDOP(c, POP_TOP);
 
-    /* Finally block ends. */
-    ADDOP(c, END_FINALLY);
-    compiler_pop_fblock(c, FINALLY_END, finally);
+    compiler_pop_fblock(c, FINALLY_END, final1);
+    ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
+
+    /* `finally` block for exceptional outcome */
+    compiler_use_next_block(c, final2);
+    if (!compiler_push_fblock(c, FINALLY_END, final2, NULL))
+        return 0;
+
+    ADDOP(c, WITH_EXCEPT_START);
+    ADDOP(c, GET_AWAITABLE);
+    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP(c, YIELD_FROM);
+    compiler_with_except_finish(c);
+
+    compiler_pop_fblock(c, FINALLY_END, final2);
+
+compiler_use_next_block(c, exit);
     return 1;
 }
 
 
 /*
    Implements the with statement from PEP 343.
-
-   The semantics outlined in that PEP are as follows:
-
    with EXPR as VAR:
        BLOCK
-
-   It is implemented roughly as:
-
-   context = EXPR
-   exit = context.__exit__  # not calling it
-   value = context.__enter__()
-   try:
-       VAR = value  # if VAR present in the syntax
-       BLOCK
-   finally:
-       if an exception was raised:
-           exc = copy of (exception, instance, traceback)
-       else:
-           exc = (None, None, None)
-       exit(*exc)
+   is implemented as:
+        <code for EXPR>
+        SETUP_WITH  E
+        <code to store to VAR> or POP_TOP
+        <code for BLOCK>
+        LOAD_CONST (None, None, None)
+        CALL_FUNCTION_EX 0
+        JUMP_FORWARD  EXIT
+    E:  WITH_EXCEPT_START (calls EXPR.__exit__)
+        POP_JUMP_IF_TRUE T:
+        RERAISE
+    T:  POP_TOP * 3 (remove exception from stack)
+        POP_EXCEPT
+        POP_TOP
+    EXIT:
  */
+
 static int
 compiler_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *finally;
+    basicblock *block, *final1, *final2, *exit;
     withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
     assert(s->kind == With_kind);
 
     block = compiler_new_block(c);
-    finally = compiler_new_block(c);
-    if (!block || !finally)
+    final1 = compiler_new_block(c);
+    final2 = compiler_new_block(c);
+    exit = compiler_new_block(c);
+    if (!block || !final1 || !final2 || !exit)
         return 0;
 
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
-    ADDOP_JREL(c, SETUP_WITH, finally);
+    /* Will push bound __exit__ */
+    ADDOP_JREL(c, SETUP_WITH, final2);
 
-    /* SETUP_WITH pushes a finally block. */
+    /* SETUP_ASYNC_WITH pushes a finally block. */
     compiler_use_next_block(c, block);
-    if (!compiler_push_fblock(c, WITH, block, finally)) {
+    if (!compiler_push_fblock(c, WITH, block, final2)) {
         return 0;
     }
 
@@ -4463,24 +4503,33 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     else if (!compiler_with(c, s, pos))
             return 0;
 
-    /* End of try block; start the finally block */
+    /* End of try block; start the finally blocks */
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, BEGIN_FINALLY);
     compiler_pop_fblock(c, WITH, block);
 
-    compiler_use_next_block(c, finally);
-    if (!compiler_push_fblock(c, FINALLY_END, finally, NULL))
+    /* `finally` block for successful outcome:
+     * call __exit__(None, None, None)
+     */
+    compiler_use_next_block(c, final1);
+    if (!compiler_push_fblock(c, FINALLY_END, final1, NULL))
         return 0;
 
-    /* Finally block starts; context.__exit__ is on the stack under
-       the exception or return information. Just issue our magic
-       opcode. */
-    ADDOP(c, WITH_CLEANUP_START);
-    ADDOP(c, WITH_CLEANUP_FINISH);
+    if(!compiler_call_exit_with_nones(c))
+        return 0;
+    ADDOP(c, POP_TOP);
+    compiler_pop_fblock(c, FINALLY_END, final1);
+    ADDOP_JREL(c, JUMP_FORWARD, exit);
 
-    /* Finally block ends. */
-    ADDOP(c, END_FINALLY);
-    compiler_pop_fblock(c, FINALLY_END, finally);
+    /* `finally` block for exceptional outcome */
+    compiler_use_next_block(c, final2);
+    if (!compiler_push_fblock(c, FINALLY_END, final2, NULL))
+        return 0;
+
+    ADDOP(c, WITH_EXCEPT_START);
+    compiler_with_except_finish(c);
+    compiler_pop_fblock(c, FINALLY_END, final2);
+
+    compiler_use_next_block(c, exit);
     return 1;
 }
 

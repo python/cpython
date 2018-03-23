@@ -263,7 +263,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
                     delta_iblock++;
                 }
             }
-            if (op != FOR_ITER) {
+            if (op == SETUP_FINALLY) {
                 blockstack[blockstack_top++] = target_addr;
             }
             break;
@@ -295,7 +295,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         PyTryBlock *b = &f->f_blockstack[f->f_iblock];
         delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
         if (b->b_type == SETUP_FINALLY &&
-            code[b->b_handler] == WITH_CLEANUP_START)
+            code[b->b_handler] == WITH_EXCEPT_START)
         {
             /* Pop the exit function. */
             delta++;

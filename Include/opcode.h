@@ -30,10 +30,12 @@ extern "C" {
 #define BINARY_TRUE_DIVIDE       27
 #define INPLACE_FLOOR_DIVIDE     28
 #define INPLACE_TRUE_DIVIDE      29
+#define RERAISE                  48
 #define GET_AITER                50
 #define GET_ANEXT                51
 #define BEFORE_ASYNC_WITH        52
 #define BEGIN_FINALLY            53
+#define WITH_EXCEPT_START        54
 #define INPLACE_ADD              55
 #define INPLACE_SUBTRACT         56
 #define INPLACE_MULTIPLY         57
@@ -57,8 +59,6 @@ extern "C" {
 #define INPLACE_AND              77
 #define INPLACE_XOR              78
 #define INPLACE_OR               79
-#define WITH_CLEANUP_START       81
-#define WITH_CLEANUP_FINISH      82
 #define RETURN_VALUE             83
 #define IMPORT_STAR              84
 #define SETUP_ANNOTATIONS        85
