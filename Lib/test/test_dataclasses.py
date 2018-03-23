@@ -1,7 +1,8 @@
-from dataclasses import (
-    dataclass, field, FrozenInstanceError, fields, asdict, astuple,
-    make_dataclass, replace, InitVar, Field, MISSING, is_dataclass,
-)
+# Deliberately use "from dataclasses import *".  Every name in __all__
+# is tested, so they all must be present.  This is a way to catch
+# missing ones.
+
+from dataclasses import *
 
 import pickle
 import inspect
@@ -19,6 +20,14 @@ class TestCase(unittest.TestCase):
         @dataclass
         class C:
             pass
+
+        o = C()
+        self.assertEqual(len(fields(C)), 0)
+
+    def test_no_fields_but_member_variable(self):
+        @dataclass
+        class C:
+            i = 0
 
         o = C()
         self.assertEqual(len(fields(C)), 0)
@@ -1147,6 +1156,55 @@ class TestCase(unittest.TestCase):
         C().x
         self.assertEqual(factory.call_count, 2)
 
+    def test_default_factory_derived(self):
+        # See bpo-32896.
+        @dataclass
+        class Foo:
+            x: dict = field(default_factory=dict)
+
+        @dataclass
+        class Bar(Foo):
+            y: int = 1
+
+        self.assertEqual(Foo().x, {})
+        self.assertEqual(Bar().x, {})
+        self.assertEqual(Bar().y, 1)
+
+        @dataclass
+        class Baz(Foo):
+            pass
+        self.assertEqual(Baz().x, {})
+
+    def test_intermediate_non_dataclass(self):
+        # Test that an intermediate class that defines
+        #  annotations does not define fields.
+
+        @dataclass
+        class A:
+            x: int
+
+        class B(A):
+            y: int
+
+        @dataclass
+        class C(B):
+            z: int
+
+        c = C(1, 3)
+        self.assertEqual((c.x, c.z), (1, 3))
+
+        # .y was not initialized.
+        with self.assertRaisesRegex(AttributeError,
+                                    'object has no attribute'):
+            c.y
+
+        # And if we again derive a non-dataclass, no fields are added.
+        class D(C):
+            t: int
+        d = D(4, 5)
+        self.assertEqual((d.x, d.z), (4, 5))
+
+
     def x_test_classvar_default_factory(self):
         # XXX: it's an error for a ClassVar to have a factory function
         @dataclass
@@ -1856,6 +1914,41 @@ class TestCase(unittest.TestCase):
                                              'z': 'typing.Any'})
 
 
+class TestFieldNoAnnotation(unittest.TestCase):
+    def test_field_without_annotation(self):
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            @dataclass
+            class C:
+                f = field()
+
+    def test_field_without_annotation_but_annotation_in_base(self):
+        @dataclass
+        class B:
+            f: int
+
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            # This is still an error: make sure we don't pick up the
+            # type annotation in the base class.
+            @dataclass
+            class C(B):
+                f = field()
+
+    def test_field_without_annotation_but_annotation_in_base_not_dataclass(self):
+        # Same test, but with the base class not a dataclass.
+        class B:
+            f: int
+
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            # This is still an error: make sure we don't pick up the
+            # type annotation in the base class.
+            @dataclass
+            class C(B):
+                f = field()
+
+
 class TestDocString(unittest.TestCase):
     def assertDocStrEqual(self, a, b):
         # Because 3.6 and 3.7 differ in how inspect.signature work
@@ -2476,41 +2569,134 @@ class TestFrozen(unittest.TestCase):
         d = D(0, 10)
         with self.assertRaises(FrozenInstanceError):
             d.i = 5
+        with self.assertRaises(FrozenInstanceError):
+            d.j = 6
         self.assertEqual(d.i, 0)
+        self.assertEqual(d.j, 10)
 
-    def test_inherit_from_nonfrozen_from_frozen(self):
-        @dataclass(frozen=True)
-        class C:
-            i: int
+    # Test both ways: with an intermediate normal (non-dataclass)
+    #  class and without an intermediate class.
+    def test_inherit_nonfrozen_from_frozen(self):
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                @dataclass(frozen=True)
+                class C:
+                    i: int
 
-        with self.assertRaisesRegex(TypeError,
-                                    'cannot inherit non-frozen dataclass from a frozen one'):
-            @dataclass
-            class D(C):
-                pass
+                if intermediate_class:
+                    class I(C): pass
+                else:
+                    I = C
 
-    def test_inherit_from_frozen_from_nonfrozen(self):
-        @dataclass
-        class C:
-            i: int
+                with self.assertRaisesRegex(TypeError,
+                                            'cannot inherit non-frozen dataclass from a frozen one'):
+                    @dataclass
+                    class D(I):
+                        pass
 
-        with self.assertRaisesRegex(TypeError,
-                                    'cannot inherit frozen dataclass from a non-frozen one'):
-            @dataclass(frozen=True)
-            class D(C):
-                pass
+    def test_inherit_frozen_from_nonfrozen(self):
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                @dataclass
+                class C:
+                    i: int
+
+                if intermediate_class:
+                    class I(C): pass
+                else:
+                    I = C
+
+                with self.assertRaisesRegex(TypeError,
+                                            'cannot inherit frozen dataclass from a non-frozen one'):
+                    @dataclass(frozen=True)
+                    class D(I):
+                        pass
 
     def test_inherit_from_normal_class(self):
-        class C:
-            pass
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                class C:
+                    pass
+
+                if intermediate_class:
+                    class I(C): pass
+                else:
+                    I = C
+
+                @dataclass(frozen=True)
+                class D(I):
+                    i: int
+
+            d = D(10)
+            with self.assertRaises(FrozenInstanceError):
+                d.i = 5
+
+    def test_non_frozen_normal_derived(self):
+        # See bpo-32953.
 
         @dataclass(frozen=True)
-        class D(C):
-            i: int
+        class D:
+            x: int
+            y: int = 10
 
-        d = D(10)
+        class S(D):
+            pass
+
+        s = S(3)
+        self.assertEqual(s.x, 3)
+        self.assertEqual(s.y, 10)
+        s.cached = True
+
+        # But can't change the frozen attributes.
         with self.assertRaises(FrozenInstanceError):
-            d.i = 5
+            s.x = 5
+        with self.assertRaises(FrozenInstanceError):
+            s.y = 5
+        self.assertEqual(s.x, 3)
+        self.assertEqual(s.y, 10)
+        self.assertEqual(s.cached, True)
+
+
+class TestSlots(unittest.TestCase):
+    def test_simple(self):
+        @dataclass
+        class C:
+            __slots__ = ('x',)
+            x: Any
+
+        # There was a bug where a variable in a slot was assumed
+        #  to also have a default value (of type types.MemberDescriptorType).
+        with self.assertRaisesRegex(TypeError,
+                                    "__init__\(\) missing 1 required positional argument: 'x'"):
+            C()
+
+        # We can create an instance, and assign to x.
+        c = C(10)
+        self.assertEqual(c.x, 10)
+        c.x = 5
+        self.assertEqual(c.x, 5)
+
+        # We can't assign to anything else.
+        with self.assertRaisesRegex(AttributeError, "'C' object has no attribute 'y'"):
+            c.y = 5
+
+    def test_derived_added_field(self):
+        # See bpo-33100.
+        @dataclass
+        class Base:
+            __slots__ = ('x',)
+            x: Any
+
+        @dataclass
+        class Derived(Base):
+            x: int
+            y: int
+
+        d = Derived(1, 2)
+        self.assertEqual((d.x, d.y), (1, 2))
+
+        # We can add a new field to the derived instance.
+        d.z = 10
 
 
 if __name__ == '__main__':

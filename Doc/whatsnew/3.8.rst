@@ -72,6 +72,11 @@ New Features
 Other Language Changes
 ======================
 
+* A :keyword:`continue` statement was illegal in the :keyword:`finally` clause
+  due to a problem with the implementation.  In Python 3.8 this restriction
+  was lifted.
+  (Contributed by Serhiy Storchaka in :issue:`32489`.)
+
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
@@ -152,3 +157,7 @@ CPython bytecode changes
 
   (Contributed by Mark Shannon, Antoine Pitrou and Serhiy Storchaka in
   :issue:`17611`.)
+
+* Added new opcode :opcode:`END_ASYNC_FOR` for handling exceptions raised
+  when awaiting a next item in an :keyword:`async for` loop.
+  (Contributed by Serhiy Storchaka in :issue:`33041`.)

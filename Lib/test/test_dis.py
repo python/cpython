@@ -748,8 +748,7 @@ Constants:
    2: \\(None, None, None\\)
 Names:
    0: b
-   1: StopAsyncIteration
-   2: c
+   1: c
 Variable names:
    0: a
    1: d"""
