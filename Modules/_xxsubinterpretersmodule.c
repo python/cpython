@@ -2155,10 +2155,13 @@ Create a new interpreter and return a unique generated ID.");
 
 
 static PyObject *
-interp_destroy(PyObject *self, PyObject *args)
+interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"id", NULL};
     PyObject *id;
-    if (!PyArg_UnpackTuple(args, "destroy", 1, 1, &id)) {
+    // XXX Use "L" for id?
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:destroy", kwlist, &id)) {
         return NULL;
     }
     if (!PyLong_Check(id)) {
@@ -2202,7 +2205,7 @@ interp_destroy(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(destroy_doc,
-"destroy(ID)\n\
+"destroy(id)\n\
 \n\
 Destroy the identified interpreter.\n\
 \n\
@@ -2278,20 +2281,18 @@ Return the ID of main interpreter.");
 
 
 static PyObject *
-interp_run_string(PyObject *self, PyObject *args)
+interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"id", "script", "shared", NULL};
     PyObject *id, *code;
     PyObject *shared = NULL;
-    if (!PyArg_UnpackTuple(args, "run_string", 2, 3, &id, &code, &shared)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "OU|O:run_string", kwlist,
+                                     &id, &code, &shared)) {
         return NULL;
     }
     if (!PyLong_Check(id)) {
         PyErr_SetString(PyExc_TypeError, "first arg (ID) must be an int");
-        return NULL;
-    }
-    if (!PyUnicode_Check(code)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "second arg (code) must be a string");
         return NULL;
     }
 
@@ -2321,7 +2322,7 @@ interp_run_string(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(run_string_doc,
-"run_string(ID, sourcetext)\n\
+"run_string(id, script, shared)\n\
 \n\
 Execute the provided string in the identified interpreter.\n\
 \n\
@@ -2329,12 +2330,15 @@ See PyRun_SimpleStrings.");
 
 
 static PyObject *
-object_is_shareable(PyObject *self, PyObject *args)
+object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"obj", NULL};
     PyObject *obj;
-    if (!PyArg_UnpackTuple(args, "is_shareable", 1, 1, &obj)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:is_shareable", kwlist, &obj)) {
         return NULL;
     }
+
     if (_PyObject_CheckCrossInterpreterData(obj) == 0) {
         Py_RETURN_TRUE;
     }
@@ -2350,10 +2354,12 @@ False otherwise.");
 
 
 static PyObject *
-interp_is_running(PyObject *self, PyObject *args)
+interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"id", NULL};
     PyObject *id;
-    if (!PyArg_UnpackTuple(args, "is_running", 1, 1, &id)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:is_running", kwlist, &id)) {
         return NULL;
     }
     if (!PyLong_Check(id)) {
@@ -2400,15 +2406,17 @@ channel_create(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(channel_create_doc,
-"channel_create() -> ID\n\
+"channel_create() -> cid\n\
 \n\
 Create a new cross-interpreter channel and return a unique generated ID.");
 
 static PyObject *
-channel_destroy(PyObject *self, PyObject *args)
+channel_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"cid", NULL};
     PyObject *id;
-    if (!PyArg_UnpackTuple(args, "channel_destroy", 1, 1, &id)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:channel_destroy", kwlist, &id)) {
         return NULL;
     }
     int64_t cid = _coerce_id(id);
@@ -2423,7 +2431,7 @@ channel_destroy(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(channel_destroy_doc,
-"channel_destroy(ID)\n\
+"channel_destroy(cid)\n\
 \n\
 Close and finalize the channel.  Afterward attempts to use the channel\n\
 will behave as though it never existed.");
@@ -2461,16 +2469,18 @@ finally:
 }
 
 PyDoc_STRVAR(channel_list_all_doc,
-"channel_list_all() -> [ID]\n\
+"channel_list_all() -> [cid]\n\
 \n\
 Return the list of all IDs for active channels.");
 
 static PyObject *
-channel_send(PyObject *self, PyObject *args)
+channel_send(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"cid", "obj", NULL};
     PyObject *id;
     PyObject *obj;
-    if (!PyArg_UnpackTuple(args, "channel_send", 2, 2, &id, &obj)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "OO:channel_send", kwlist, &id, &obj)) {
         return NULL;
     }
     int64_t cid = _coerce_id(id);
@@ -2485,15 +2495,17 @@ channel_send(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(channel_send_doc,
-"channel_send(ID, obj)\n\
+"channel_send(cid, obj)\n\
 \n\
 Add the object's data to the channel's queue.");
 
 static PyObject *
-channel_recv(PyObject *self, PyObject *args)
+channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"cid", NULL};
     PyObject *id;
-    if (!PyArg_UnpackTuple(args, "channel_recv", 1, 1, &id)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:channel_recv", kwlist, &id)) {
         return NULL;
     }
     int64_t cid = _coerce_id(id);
@@ -2505,17 +2517,34 @@ channel_recv(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(channel_recv_doc,
-"channel_recv(ID) -> obj\n\
+"channel_recv(cid) -> obj\n\
 \n\
 Return a new object from the data at the from of the channel's queue.");
 
 static PyObject *
-channel_close(PyObject *self, PyObject *id)
+channel_close(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
+    PyObject *id;
+    int send = 0;
+    int recv = 0;
+    int force = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O|$ppp:channel_release", kwlist,
+                                     &id, &send, &recv, &force)) {
+        return NULL;
+    }
     int64_t cid = _coerce_id(id);
     if (cid < 0) {
         return NULL;
     }
+    if (send == 0 && recv == 0) {
+        send = 1;
+        recv = 1;
+    }
+
+    // XXX Handle the ends.
+    // XXX Handle force is True.
 
     if (_channel_close(&_globals.channels, cid) != 0) {
         return NULL;
@@ -2524,40 +2553,58 @@ channel_close(PyObject *self, PyObject *id)
 }
 
 PyDoc_STRVAR(channel_close_doc,
-"channel_close(ID)\n\
+"channel_close(cid, *, send=None, recv=None, force=False)\n\
 \n\
-Close the channel for all interpreters.  Once the channel's ID has\n\
-no more ref counts the channel will be destroyed.");
+Close the channel for all interpreters.\n\
+\n\
+If the channel is empty then the keyword args are ignored and both\n\
+ends are immediately closed.  Otherwise, if 'force' is True then\n\
+all queued items are released and both ends are immediately\n\
+closed.\n\
+\n\
+If the channel is not empty *and* 'force' is False then following\n\
+happens:\n\
+\n\
+ * recv is True (regardless of send):\n\
+   - raise ChannelNotEmptyError\n\
+ * recv is None and send is None:\n\
+   - raise ChannelNotEmptyError\n\
+ * send is True and recv is not True:\n\
+   - fully close the 'send' end\n\
+   - close the 'recv' end to interpreters not already receiving\n\
+   - fully close it once empty\n\
+\n\
+Closing an already closed channel results in a ChannelClosedError.\n\
+\n\
+Once the channel's ID has no more ref counts in any interpreter\n\
+the channel will be destroyed.");
 
 static PyObject *
 channel_release(PyObject *self, PyObject *args, PyObject *kwds)
 {
     // Note that only the current interpreter is affected.
-    static char *kwlist[] = {"id", "send", "recv", NULL};
+    static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
     PyObject *id;
-    int send = -1;
-    int recv = -1;
+    int send = 0;
+    int recv = 0;
+    int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$pp:channel_release", kwlist,
-                                     &id, &send, &recv))
+                                     "O|$ppp:channel_release", kwlist,
+                                     &id, &send, &recv, &force)) {
         return NULL;
-
+    }
     int64_t cid = _coerce_id(id);
     if (cid < 0) {
         return NULL;
     }
-    if (send < 0 && recv < 0) {
+    if (send == 0 && recv == 0) {
         send = 1;
         recv = 1;
     }
-    else {
-        if (send < 0) {
-            send = 0;
-        }
-        if (recv < 0) {
-            recv = 0;
-        }
-    }
+
+    // XXX Handle force is True.
+    // XXX Fix implicit release.
+
     if (_channel_drop(&_globals.channels, cid, send, recv) != 0) {
         return NULL;
     }
@@ -2565,7 +2612,7 @@ channel_release(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(channel_release_doc,
-"channel_release(ID, *, send=None, recv=None)\n\
+"channel_release(cid, *, send=None, recv=None, force=True)\n\
 \n\
 Close the channel for the current interpreter.  'send' and 'recv'\n\
 (bool) may be used to indicate the ends to close.  By default both\n\
@@ -2581,7 +2628,7 @@ static PyMethodDef module_functions[] = {
     {"create",                    (PyCFunction)interp_create,
      METH_VARARGS, create_doc},
     {"destroy",                   (PyCFunction)interp_destroy,
-     METH_VARARGS, destroy_doc},
+     METH_VARARGS | METH_KEYWORDS, destroy_doc},
     {"list_all",                  interp_list_all,
      METH_NOARGS, list_all_doc},
     {"get_current",               interp_get_current,
@@ -2589,25 +2636,25 @@ static PyMethodDef module_functions[] = {
     {"get_main",                  interp_get_main,
      METH_NOARGS, get_main_doc},
     {"is_running",                (PyCFunction)interp_is_running,
-     METH_VARARGS, is_running_doc},
+     METH_VARARGS | METH_KEYWORDS, is_running_doc},
     {"run_string",                (PyCFunction)interp_run_string,
-     METH_VARARGS, run_string_doc},
+     METH_VARARGS | METH_KEYWORDS, run_string_doc},
 
     {"is_shareable",              (PyCFunction)object_is_shareable,
-     METH_VARARGS, is_shareable_doc},
+     METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
 
     {"channel_create",            channel_create,
      METH_NOARGS, channel_create_doc},
     {"channel_destroy",           (PyCFunction)channel_destroy,
-     METH_VARARGS, channel_destroy_doc},
+     METH_VARARGS | METH_KEYWORDS, channel_destroy_doc},
     {"channel_list_all",          channel_list_all,
      METH_NOARGS, channel_list_all_doc},
     {"channel_send",              (PyCFunction)channel_send,
-     METH_VARARGS, channel_send_doc},
+     METH_VARARGS | METH_KEYWORDS, channel_send_doc},
     {"channel_recv",              (PyCFunction)channel_recv,
-     METH_VARARGS, channel_recv_doc},
-    {"channel_close",             channel_close,
-     METH_O, channel_close_doc},
+     METH_VARARGS | METH_KEYWORDS, channel_recv_doc},
+    {"channel_close",             (PyCFunction)channel_close,
+     METH_VARARGS | METH_KEYWORDS, channel_close_doc},
     {"channel_release",           (PyCFunction)channel_release,
      METH_VARARGS | METH_KEYWORDS, channel_release_doc},
     {"_channel_id",               (PyCFunction)channel__channel_id,
