@@ -33,6 +33,10 @@ class asynctracecontext:
     async def __aexit__(self, *exc_info):
         self.output.append(-self.value)
 
+async def asynciter(iterable):
+    """Convert an iterable to an asynchronous iterator."""
+    for x in iterable:
+        yield x
 
 
 # A very basic example.  If this fails, we're in deep trouble.
@@ -720,6 +724,23 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
+    @async_jump_test(4, 5, [3, 5])
+    async def test_jump_out_of_async_for_block_forwards(output):
+        for i in [1]:
+            async for i in asynciter([1, 2]):
+                output.append(3)
+                output.append(4)
+            output.append(5)
+
+    @async_jump_test(5, 2, [2, 4, 2, 4, 5, 6])
+    async def test_jump_out_of_async_for_block_backwards(output):
+        for i in [1]:
+            output.append(2)
+            async for i in asynciter([1]):
+                output.append(4)
+                output.append(5)
+            output.append(6)
+
     @jump_test(1, 2, [3])
     def test_jump_to_codeless_line(output):
         output.append(1)
@@ -1030,6 +1051,17 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
+    @async_jump_test(1, 7, [7, 8])
+    async def test_jump_over_async_for_block_before_else(output):
+        output.append(1)
+        if not output:  # always false
+            async for i in asynciter([3]):
+                output.append(4)
+        else:
+            output.append(6)
+            output.append(7)
+        output.append(8)
+
     # The second set of 'jump' tests are for things that are not allowed:
 
     @jump_test(2, 3, [1], (ValueError, 'after'))
@@ -1081,9 +1113,21 @@ class JumpTestCase(unittest.TestCase):
         for i in 1, 2:
             output.append(3)
 
+    @async_jump_test(1, 3, [], (ValueError, 'into'))
+    async def test_no_jump_forwards_into_async_for_block(output):
+        output.append(1)
+        async for i in asynciter([1, 2]):
+            output.append(3)
+
     @jump_test(3, 2, [2, 2], (ValueError, 'into'))
     def test_no_jump_backwards_into_for_block(output):
         for i in 1, 2:
+            output.append(2)
+        output.append(3)
+
+    @async_jump_test(3, 2, [2, 2], (ValueError, 'into'))
+    async def test_no_jump_backwards_into_async_for_block(output):
+        async for i in asynciter([1, 2]):
             output.append(2)
         output.append(3)
 
@@ -1214,6 +1258,17 @@ class JumpTestCase(unittest.TestCase):
         output.append(1)
         if not output:  # always false
             for i in [3]:
+                output.append(4)
+        else:
+            output.append(6)
+            output.append(7)
+        output.append(8)
+
+    @async_jump_test(7, 4, [1, 6], (ValueError, 'into'))
+    async def test_no_jump_into_async_for_block_before_else(output):
+        output.append(1)
+        if not output:  # always false
+            async for i in asynciter([3]):
                 output.append(4)
         else:
             output.append(6)
