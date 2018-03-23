@@ -199,8 +199,9 @@ fact, this simply returns a SmartCookie.
    SmartCookie
 
 
-Finis.
-"""  #"
+Finish.
+"""
+#
 #     ^
 #     |----helps out font-lock
 
@@ -214,18 +215,21 @@ try:
 except ImportError:
     from pickle import dumps, loads
 
-import re, warnings
+import re
+import warnings
 
-__all__ = ["CookieError","BaseCookie","SimpleCookie","SerialCookie",
-           "SmartCookie","Cookie"]
+__all__ = ["CookieError", "BaseCookie", "SimpleCookie", "SerialCookie",
+           "SmartCookie", "Cookie"]
 
 _nulljoin = ''.join
 _semispacejoin = '; '.join
 _spacejoin = ' '.join
 
-#
-# Define an exception visible to External modules
-#
+"""
+Define an exception visible to External modules.
+"""
+
+
 class CookieError(Exception):
     pass
 
@@ -241,73 +245,74 @@ class CookieError(Exception):
 #       _LegalChars       is the list of chars which don't require "'s
 #       _Translator       hash-table for fast quoting
 #
-_LegalChars       = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~"
-_Translator       = {
-    '\000' : '\\000',  '\001' : '\\001',  '\002' : '\\002',
-    '\003' : '\\003',  '\004' : '\\004',  '\005' : '\\005',
-    '\006' : '\\006',  '\007' : '\\007',  '\010' : '\\010',
-    '\011' : '\\011',  '\012' : '\\012',  '\013' : '\\013',
-    '\014' : '\\014',  '\015' : '\\015',  '\016' : '\\016',
-    '\017' : '\\017',  '\020' : '\\020',  '\021' : '\\021',
-    '\022' : '\\022',  '\023' : '\\023',  '\024' : '\\024',
-    '\025' : '\\025',  '\026' : '\\026',  '\027' : '\\027',
-    '\030' : '\\030',  '\031' : '\\031',  '\032' : '\\032',
-    '\033' : '\\033',  '\034' : '\\034',  '\035' : '\\035',
-    '\036' : '\\036',  '\037' : '\\037',
+_LegalChars = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~"
+_Translator = {
+    '\000': '\\000', '\001': '\\001', '\002': '\\002',
+    '\003': '\\003', '\004': '\\004', '\005': '\\005',
+    '\006': '\\006', '\007': '\\007', '\010': '\\010',
+    '\011': '\\011', '\012': '\\012', '\013': '\\013',
+    '\014': '\\014', '\015': '\\015', '\016': '\\016',
+    '\017': '\\017', '\020': '\\020', '\021': '\\021',
+    '\022': '\\022', '\023': '\\023', '\024': '\\024',
+    '\025': '\\025', '\026': '\\026', '\027': '\\027',
+    '\030': '\\030', '\031': '\\031', '\032': '\\032',
+    '\033': '\\033', '\034': '\\034', '\035': '\\035',
+    '\036': '\\036', '\037': '\\037',
 
     # Because of the way browsers really handle cookies (as opposed
     # to what the RFC says) we also encode , and ;
 
-    ',' : '\\054', ';' : '\\073',
+    ',': '\\054', ';': '\\073',
 
-    '"' : '\\"',       '\\' : '\\\\',
+    '"': '\\"', '\\': '\\\\',
 
-    '\177' : '\\177',  '\200' : '\\200',  '\201' : '\\201',
-    '\202' : '\\202',  '\203' : '\\203',  '\204' : '\\204',
-    '\205' : '\\205',  '\206' : '\\206',  '\207' : '\\207',
-    '\210' : '\\210',  '\211' : '\\211',  '\212' : '\\212',
-    '\213' : '\\213',  '\214' : '\\214',  '\215' : '\\215',
-    '\216' : '\\216',  '\217' : '\\217',  '\220' : '\\220',
-    '\221' : '\\221',  '\222' : '\\222',  '\223' : '\\223',
-    '\224' : '\\224',  '\225' : '\\225',  '\226' : '\\226',
-    '\227' : '\\227',  '\230' : '\\230',  '\231' : '\\231',
-    '\232' : '\\232',  '\233' : '\\233',  '\234' : '\\234',
-    '\235' : '\\235',  '\236' : '\\236',  '\237' : '\\237',
-    '\240' : '\\240',  '\241' : '\\241',  '\242' : '\\242',
-    '\243' : '\\243',  '\244' : '\\244',  '\245' : '\\245',
-    '\246' : '\\246',  '\247' : '\\247',  '\250' : '\\250',
-    '\251' : '\\251',  '\252' : '\\252',  '\253' : '\\253',
-    '\254' : '\\254',  '\255' : '\\255',  '\256' : '\\256',
-    '\257' : '\\257',  '\260' : '\\260',  '\261' : '\\261',
-    '\262' : '\\262',  '\263' : '\\263',  '\264' : '\\264',
-    '\265' : '\\265',  '\266' : '\\266',  '\267' : '\\267',
-    '\270' : '\\270',  '\271' : '\\271',  '\272' : '\\272',
-    '\273' : '\\273',  '\274' : '\\274',  '\275' : '\\275',
-    '\276' : '\\276',  '\277' : '\\277',  '\300' : '\\300',
-    '\301' : '\\301',  '\302' : '\\302',  '\303' : '\\303',
-    '\304' : '\\304',  '\305' : '\\305',  '\306' : '\\306',
-    '\307' : '\\307',  '\310' : '\\310',  '\311' : '\\311',
-    '\312' : '\\312',  '\313' : '\\313',  '\314' : '\\314',
-    '\315' : '\\315',  '\316' : '\\316',  '\317' : '\\317',
-    '\320' : '\\320',  '\321' : '\\321',  '\322' : '\\322',
-    '\323' : '\\323',  '\324' : '\\324',  '\325' : '\\325',
-    '\326' : '\\326',  '\327' : '\\327',  '\330' : '\\330',
-    '\331' : '\\331',  '\332' : '\\332',  '\333' : '\\333',
-    '\334' : '\\334',  '\335' : '\\335',  '\336' : '\\336',
-    '\337' : '\\337',  '\340' : '\\340',  '\341' : '\\341',
-    '\342' : '\\342',  '\343' : '\\343',  '\344' : '\\344',
-    '\345' : '\\345',  '\346' : '\\346',  '\347' : '\\347',
-    '\350' : '\\350',  '\351' : '\\351',  '\352' : '\\352',
-    '\353' : '\\353',  '\354' : '\\354',  '\355' : '\\355',
-    '\356' : '\\356',  '\357' : '\\357',  '\360' : '\\360',
-    '\361' : '\\361',  '\362' : '\\362',  '\363' : '\\363',
-    '\364' : '\\364',  '\365' : '\\365',  '\366' : '\\366',
-    '\367' : '\\367',  '\370' : '\\370',  '\371' : '\\371',
-    '\372' : '\\372',  '\373' : '\\373',  '\374' : '\\374',
-    '\375' : '\\375',  '\376' : '\\376',  '\377' : '\\377'
-    }
+    '\177': '\\177', '\200': '\\200', '\201': '\\201',
+    '\202': '\\202', '\203': '\\203', '\204': '\\204',
+    '\205': '\\205', '\206': '\\206', '\207': '\\207',
+    '\210': '\\210', '\211': '\\211', '\212': '\\212',
+    '\213': '\\213', '\214': '\\214', '\215': '\\215',
+    '\216': '\\216', '\217': '\\217', '\220': '\\220',
+    '\221': '\\221', '\222': '\\222', '\223': '\\223',
+    '\224': '\\224', '\225': '\\225', '\226': '\\226',
+    '\227': '\\227', '\230': '\\230', '\231': '\\231',
+    '\232': '\\232', '\233': '\\233', '\234': '\\234',
+    '\235': '\\235', '\236': '\\236', '\237': '\\237',
+    '\240': '\\240', '\241': '\\241', '\242': '\\242',
+    '\243': '\\243', '\244': '\\244', '\245': '\\245',
+    '\246': '\\246', '\247': '\\247', '\250': '\\250',
+    '\251': '\\251', '\252': '\\252', '\253': '\\253',
+    '\254': '\\254', '\255': '\\255', '\256': '\\256',
+    '\257': '\\257', '\260': '\\260', '\261': '\\261',
+    '\262': '\\262', '\263': '\\263', '\264': '\\264',
+    '\265': '\\265', '\266': '\\266', '\267': '\\267',
+    '\270': '\\270', '\271': '\\271', '\272': '\\272',
+    '\273': '\\273', '\274': '\\274', '\275': '\\275',
+    '\276': '\\276', '\277': '\\277', '\300': '\\300',
+    '\301': '\\301', '\302': '\\302', '\303': '\\303',
+    '\304': '\\304', '\305': '\\305', '\306': '\\306',
+    '\307': '\\307', '\310': '\\310', '\311': '\\311',
+    '\312': '\\312', '\313': '\\313', '\314': '\\314',
+    '\315': '\\315', '\316': '\\316', '\317': '\\317',
+    '\320': '\\320', '\321': '\\321', '\322': '\\322',
+    '\323': '\\323', '\324': '\\324', '\325': '\\325',
+    '\326': '\\326', '\327': '\\327', '\330': '\\330',
+    '\331': '\\331', '\332': '\\332', '\333': '\\333',
+    '\334': '\\334', '\335': '\\335', '\336': '\\336',
+    '\337': '\\337', '\340': '\\340', '\341': '\\341',
+    '\342': '\\342', '\343': '\\343', '\344': '\\344',
+    '\345': '\\345', '\346': '\\346', '\347': '\\347',
+    '\350': '\\350', '\351': '\\351', '\352': '\\352',
+    '\353': '\\353', '\354': '\\354', '\355': '\\355',
+    '\356': '\\356', '\357': '\\357', '\360': '\\360',
+    '\361': '\\361', '\362': '\\362', '\363': '\\363',
+    '\364': '\\364', '\365': '\\365', '\366': '\\366',
+    '\367': '\\367', '\370': '\\370', '\371': '\\371',
+    '\372': '\\372', '\373': '\\373', '\374': '\\374',
+    '\375': '\\375', '\376': '\\376', '\377': '\\377'
+}
 
 _idmap = ''.join(chr(x) for x in xrange(256))
+
 
 def _quote(str, LegalChars=_LegalChars,
            idmap=_idmap, translate=string.translate):
@@ -320,17 +325,18 @@ def _quote(str, LegalChars=_LegalChars,
     if "" == translate(str, idmap, LegalChars):
         return str
     else:
-        return '"' + _nulljoin( map(_Translator.get, str, str) ) + '"'
+        return '"' + _nulljoin(map(_Translator.get, str, str)) + '"'
 # end _quote
 
 
 _OctalPatt = re.compile(r"\\[0-3][0-7][0-7]")
 _QuotePatt = re.compile(r"[\\].")
 
+
 def _unquote(str):
     # If there aren't any doublequotes,
     # then there can't be any special characters.  See RFC 2109.
-    if  len(str) < 2:
+    if len(str) < 2:
         return str
     if str[0] != '"' or str[-1] != '"':
         return str
@@ -356,16 +362,18 @@ def _unquote(str):
             break
         # else:
         j = k = -1
-        if Omatch: j = Omatch.start(0)
-        if Qmatch: k = Qmatch.start(0)
-        if Qmatch and ( not Omatch or k < j ):     # QuotePatt matched
+        if Omatch:
+            j = Omatch.start(0)
+        if Qmatch:
+            k = Qmatch.start(0)
+        if Qmatch and (not Omatch or k < j):     # QuotePatt matched
             res.append(str[i:k])
-            res.append(str[k+1])
-            i = k+2
+            res.append(str[k + 1])
+            i = k + 2
         else:                                      # OctalPatt matched
             res.append(str[i:j])
-            res.append( chr( int(str[j+1:j+4], 8) ) )
-            i = j+4
+            res.append(chr(int(str[j + 1:j + 4], 8)))
+            i = j + 4
     return _nulljoin(res)
 # end _unquote
 
@@ -377,11 +385,13 @@ def _unquote(str):
 # The offset may be a floating point number.
 #
 
+
 _weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 _monthname = [None,
               'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 
 def _getdate(future=0, weekdayname=_weekdayname, monthname=_monthname):
     from time import gmtime, time
@@ -416,15 +426,16 @@ class Morsel(dict):
     # This dictionary provides a mapping from the lowercase
     # variant on the left to the appropriate traditional
     # formatting on the right.
-    _reserved = { "expires" : "expires",
-                   "path"        : "Path",
-                   "comment" : "Comment",
-                   "domain"      : "Domain",
-                   "max-age" : "Max-Age",
-                   "secure"      : "secure",
-                   "httponly"  : "httponly",
-                   "version" : "Version",
-                   }
+    _reserved = {
+        "expires": "expires",
+        "path": "Path",
+        "comment": "Comment",
+        "domain": "Domain",
+        "max-age": "Max-Age",
+        "secure": "secure",
+        "httponly": "httponly",
+        "version": "Version",
+    }
 
     _flags = {'secure', 'httponly'}
 
@@ -439,7 +450,7 @@ class Morsel(dict):
 
     def __setitem__(self, K, V):
         K = K.lower()
-        if not K in self._reserved:
+        if K not in self._reserved:
             raise CookieError("Invalid Attribute %s" % K)
         dict.__setitem__(self, K, V)
     # end __setitem__
@@ -459,19 +470,19 @@ class Morsel(dict):
             raise CookieError("Illegal key value: %s" % key)
 
         # It's a good key, so save it.
-        self.key                 = key
-        self.value               = val
-        self.coded_value         = coded_val
+        self.key = key
+        self.value = val
+        self.coded_value = coded_val
     # end set
 
-    def output(self, attrs=None, header = "Set-Cookie:"):
-        return "%s %s" % ( header, self.OutputString(attrs) )
+    def output(self, attrs=None, header="Set-Cookie:"):
+        return "%s %s" % (header, self.OutputString(attrs))
 
     __str__ = output
 
     def __repr__(self):
         return '<%s: %s=%s>' % (self.__class__.__name__,
-                                self.key, repr(self.value) )
+                                self.key, repr(self.value))
 
     def js_output(self, attrs=None):
         # Print javascript
@@ -481,7 +492,7 @@ class Morsel(dict):
         document.cookie = \"%s\";
         // end hiding -->
         </script>
-        """ % ( self.OutputString(attrs).replace('"',r'\"'), )
+        """ % (self.OutputString(attrs).replace('"', r'\"'), )
     # end js_output()
 
     def OutputString(self, attrs=None):
@@ -498,12 +509,14 @@ class Morsel(dict):
             attrs = self._reserved
         items = self.items()
         items.sort()
-        for K,V in items:
-            if V == "": continue
-            if K not in attrs: continue
-            if K == "expires" and type(V) == type(1):
+        for K, V in items:
+            if V == "":
+                continue
+            if K not in attrs:
+                continue
+            if K == "expires" and isinstance(V, int):
                 RA("%s=%s" % (self._reserved[K], _getdate(V)))
-            elif K == "max-age" and type(V) == type(1):
+            elif K == "max-age" and isinstance(V, int):
                 RA("%s=%d" % (self._reserved[K], V))
             elif K == "secure":
                 RA(str(self._reserved[K]))
@@ -518,7 +531,6 @@ class Morsel(dict):
 # end Morsel class
 
 
-
 #
 # Pattern for finding cookie
 #
@@ -528,27 +540,27 @@ class Morsel(dict):
 # result, the parsing rules here are less strict.
 #
 
-_LegalKeyChars  = r"\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\="
+_LegalKeyChars = r"\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\="
 _LegalValueChars = _LegalKeyChars + r"\[\]"
 _CookiePattern = re.compile(
     r"(?x)"                       # This is a Verbose pattern
     r"\s*"                        # Optional whitespace at start of cookie
     r"(?P<key>"                   # Start of group 'key'
-    "["+ _LegalKeyChars +"]+?"     # Any word of at least one letter, nongreedy
+    "[" + _LegalKeyChars + "]+?"  # Any word of at least one letter, nongreedy
     r")"                          # End of group 'key'
     r"("                          # Optional group: there may not be a value.
     r"\s*=\s*"                    # Equal Sign
     r"(?P<val>"                   # Start of group 'val'
     r'"(?:[^\\"]|\\.)*"'            # Any doublequoted string
     r"|"                            # or
-    r"\w{3},\s[\s\w\d-]{9,11}\s[\d:]{8}\sGMT" # Special case for "expires" attr
+    r"\w{3},\s[\s\w\d-]{9,11}\s[\d:]{8}\sGMT"  # Special case for "expires" attr
     r"|"                            # or
-    "["+ _LegalValueChars +"]*"        # Any word or empty string
+    "[" + _LegalValueChars + "]*"  # Any word or empty string
     r")"                          # End of group 'val'
     r")?"                         # End of optional value group
     r"\s*"                        # Any number of spaces.
     r"(\s+|;|$)"                  # Ending either at space, semicolon, or EOS.
-    )
+)
 
 
 # At long last, here is the cookie class.
@@ -580,7 +592,8 @@ class BaseCookie(dict):
     # end value_encode
 
     def __init__(self, input=None):
-        if input: self.load(input)
+        if input:
+            self.load(input)
     # end __init__
 
     def __set(self, key, real_value, coded_value):
@@ -605,8 +618,8 @@ class BaseCookie(dict):
         result = []
         items = self.items()
         items.sort()
-        for K,V in items:
-            result.append( V.output(attrs, header) )
+        for K, V in items:
+            result.append(V.output(attrs, header))
         return sep.join(result)
     # end output
 
@@ -616,8 +629,8 @@ class BaseCookie(dict):
         L = []
         items = self.items()
         items.sort()
-        for K,V in items:
-            L.append( '%s=%s' % (K,repr(V.value) ) )
+        for K, V in items:
+            L.append('%s=%s' % (K, repr(V.value)))
         return '<%s: %s>' % (self.__class__.__name__, _spacejoin(L))
 
     def js_output(self, attrs=None):
@@ -625,8 +638,8 @@ class BaseCookie(dict):
         result = []
         items = self.items()
         items.sort()
-        for K,V in items:
-            result.append( V.js_output(attrs) )
+        for K, V in items:
+            result.append(V.js_output(attrs))
         return _nulljoin(result)
     # end js_output
 
@@ -636,7 +649,7 @@ class BaseCookie(dict):
         is equivalent to calling:
             map(Cookie.__setitem__, d.keys(), d.values())
         """
-        if type(rawdata) == type(""):
+        if isinstance(rawdata, str):
             self.__ParseString(rawdata)
         else:
             # self.update() wouldn't call our custom __setitem__
@@ -653,9 +666,10 @@ class BaseCookie(dict):
         while 0 <= i < n:
             # Start looking for a cookie
             match = patt.match(str, i)
-            if not match: break          # No more cookies
+            if not match:
+                break  # No more cookies
 
-            K,V = match.group("key"), match.group("val")
+            K, V = match.group("key"), match.group("val")
             i = match.end(0)
 
             # Parse the key, value in case it's metainfo
@@ -664,7 +678,7 @@ class BaseCookie(dict):
                 # mechanism as a whole.  See RFC 2109.
                 # (Does anyone care?)
                 if M:
-                    M[ K[1:] ] = V
+                    M[K[1:]] = V
             elif K.lower() in Morsel._reserved:
                 if M:
                     if V is None:
@@ -679,6 +693,7 @@ class BaseCookie(dict):
     # end __ParseString
 # end BaseCookie class
 
+
 class SimpleCookie(BaseCookie):
     """SimpleCookie
     SimpleCookie supports strings as cookie values.  When setting
@@ -687,11 +702,13 @@ class SimpleCookie(BaseCookie):
     received from HTTP are kept as strings.
     """
     def value_decode(self, val):
-        return _unquote( val ), val
+        return _unquote(val), val
+
     def value_encode(self, val):
         strval = str(val)
-        return strval, _quote( strval )
+        return strval, _quote(strval)
 # end SimpleCookie
+
 
 class SerialCookie(BaseCookie):
     """SerialCookie
@@ -712,12 +729,15 @@ class SerialCookie(BaseCookie):
                       DeprecationWarning)
         BaseCookie.__init__(self, input)
     # end __init__
+
     def value_decode(self, val):
         # This could raise an exception!
-        return loads( _unquote(val) ), val
+        return loads(_unquote(val)), val
+
     def value_encode(self, val):
-        return val, _quote( dumps(val) )
+        return val, _quote(dumps(val))
 # end SerialCookie
+
 
 class SmartCookie(BaseCookie):
     """SmartCookie
@@ -737,17 +757,19 @@ class SmartCookie(BaseCookie):
                       DeprecationWarning)
         BaseCookie.__init__(self, input)
     # end __init__
+
     def value_decode(self, val):
         strval = _unquote(val)
         try:
             return loads(strval), val
         except:
             return strval, val
+
     def value_encode(self, val):
-        if type(val) == type(""):
+        if isinstance(val, str):
             return val, _quote(val)
         else:
-            return val, _quote( dumps(val) )
+            return val, _quote(dumps(val))
 # end SmartCookie
 
 
@@ -760,14 +782,17 @@ Cookie = SmartCookie
 #
 ###########################################################
 
+
 def _test():
-    import doctest, Cookie
+    import doctest
+    import Cookie
     return doctest.testmod(Cookie)
+
 
 if __name__ == "__main__":
     _test()
 
 
-#Local Variables:
-#tab-width: 4
-#end:
+# Local Variables:
+# tab-width: 4
+# end:
