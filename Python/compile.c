@@ -2237,23 +2237,19 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP(c, DUP_TOP);
     ADDOP_O(c, LOAD_GLOBAL, stop_aiter_error, names);
     ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, try_cleanup);
-
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
-    ADDOP(c, POP_BLOCK); /* for SETUP_LOOP */
-    ADDOP_JABS(c, JUMP_ABSOLUTE, after_loop_else);
-
-
-    compiler_use_next_block(c, try_cleanup);
+    ADDOP_JABS(c, POP_JUMP_IF_TRUE, try_cleanup);
     ADDOP(c, END_FINALLY);
 
     compiler_use_next_block(c, after_try);
     VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
     ADDOP_JABS(c, JUMP_ABSOLUTE, try);
 
+    compiler_use_next_block(c, try_cleanup);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
+    ADDOP(c, POP_TOP); /* for correct calculation of stack effect */
     ADDOP(c, POP_BLOCK); /* for SETUP_LOOP */
     compiler_pop_fblock(c, LOOP, try);
 
@@ -3750,7 +3746,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     _Py_IDENTIFIER(StopAsyncIteration);
 
     comprehension_ty gen;
-    basicblock *anchor, *if_cleanup, *try,
+    basicblock *if_cleanup, *try,
                *after_try, *except, *try_cleanup;
     Py_ssize_t i, n;
 
@@ -3761,12 +3757,11 @@ compiler_async_comprehension_generator(struct compiler *c,
 
     try = compiler_new_block(c);
     after_try = compiler_new_block(c);
-    try_cleanup = compiler_new_block(c);
     except = compiler_new_block(c);
     if_cleanup = compiler_new_block(c);
-    anchor = compiler_new_block(c);
+    try_cleanup = compiler_new_block(c);
 
-    if (if_cleanup == NULL || anchor == NULL ||
+    if (if_cleanup == NULL ||
             try == NULL || after_try == NULL ||
             except == NULL || try_cleanup == NULL) {
         return 0;
@@ -3807,16 +3802,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     ADDOP(c, DUP_TOP);
     ADDOP_O(c, LOAD_GLOBAL, stop_aiter_error, names);
     ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, try_cleanup);
-
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
-    ADDOP_JABS(c, JUMP_ABSOLUTE, anchor);
-
-
-    compiler_use_next_block(c, try_cleanup);
+    ADDOP_JABS(c, POP_JUMP_IF_TRUE, try_cleanup);
     ADDOP(c, END_FINALLY);
 
     compiler_use_next_block(c, after_try);
@@ -3865,7 +3851,12 @@ compiler_async_comprehension_generator(struct compiler *c,
     }
     compiler_use_next_block(c, if_cleanup);
     ADDOP_JABS(c, JUMP_ABSOLUTE, try);
-    compiler_use_next_block(c, anchor);
+
+    compiler_use_next_block(c, try_cleanup);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_EXCEPT); /* for SETUP_EXCEPT */
     ADDOP(c, POP_TOP);
 
     return 1;
