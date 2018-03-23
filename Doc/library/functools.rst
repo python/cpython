@@ -240,7 +240,7 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: reduce(function, iterable[, initializer])
+.. function:: reduce(function, sequence[, initializer])
 
    Apply *function* of two arguments cumulatively to the items of *sequence*, from
    left to right, so as to reduce the sequence to a single value.  For example,
