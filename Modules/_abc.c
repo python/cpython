@@ -647,9 +647,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     assert(PyTuple_Check(mro));
     for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
         PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);
-        if (mro_item == NULL) {
-            goto end;
-        }
+        assert(mro_item != NULL);
         if ((PyObject *)self == mro_item) {
             if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
                 goto end;
