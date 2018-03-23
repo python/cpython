@@ -1111,6 +1111,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case GET_YIELD_FROM_ITER:
             return 0;
+        case END_ASYNC_FOR:
+            return -7;
         case FORMAT_VALUE:
             /* If there's a fmt_spec on the stack, we go from 2->1,
                else 1->1. */
@@ -2434,78 +2436,40 @@ compiler_for(struct compiler *c, stmt_ty s)
 static int
 compiler_async_for(struct compiler *c, stmt_ty s)
 {
-    _Py_IDENTIFIER(StopAsyncIteration);
-
-    basicblock *try, *except, *end, *after_try, *try_cleanup,
-               *after_loop_else;
-
-    PyObject *stop_aiter_error = _PyUnicode_FromId(&PyId_StopAsyncIteration);
-    if (stop_aiter_error == NULL) {
-        return 0;
-    }
-
-    try = compiler_new_block(c);
+    basicblock *start, *except, *end;
+    start = compiler_new_block(c);
     except = compiler_new_block(c);
     end = compiler_new_block(c);
-    after_try = compiler_new_block(c);
-    try_cleanup = compiler_new_block(c);
-    after_loop_else = compiler_new_block(c);
 
-    if (try == NULL || except == NULL || end == NULL
-            || after_try == NULL || try_cleanup == NULL
-            || after_loop_else == NULL)
-        return 0;
-
-    if (!compiler_push_fblock(c, FOR_LOOP, try, end))
+    if (start == NULL || except == NULL || end == NULL)
         return 0;
 
     VISIT(c, expr, s->v.AsyncFor.iter);
     ADDOP(c, GET_AITER);
 
-    compiler_use_next_block(c, try);
-
+    compiler_use_next_block(c, start);
+    if (!compiler_push_fblock(c, FOR_LOOP, start, end))
+        return 0;
 
     /* SETUP_FINALLY to guard the __anext__ call */
     ADDOP_JREL(c, SETUP_FINALLY, except);
-    if (!compiler_push_fblock(c, EXCEPT, try, NULL))
-        return 0;
-
     ADDOP(c, GET_ANEXT);
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
     ADDOP(c, POP_BLOCK);  /* for SETUP_FINALLY */
-    VISIT(c, expr, s->v.AsyncFor.target);
-    compiler_pop_fblock(c, EXCEPT, try);
-    ADDOP_JREL(c, JUMP_FORWARD, after_try);
 
+    /* Success block for __anext__ */
+    VISIT(c, expr, s->v.AsyncFor.target);
+    VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
+    ADDOP_JABS(c, JUMP_ABSOLUTE, start);
+
+    compiler_pop_fblock(c, FOR_LOOP, start);
 
     /* Except block for __anext__ */
     compiler_use_next_block(c, except);
-    ADDOP(c, DUP_TOP);
-    ADDOP_O(c, LOAD_GLOBAL, stop_aiter_error, names);
-    ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, try_cleanup);
-
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_EXCEPT); /* for SETUP_FINALLY */
-    ADDOP(c, POP_TOP);  /* pop iterator from stack */
-    ADDOP_JABS(c, JUMP_ABSOLUTE, after_loop_else);
-
-
-    compiler_use_next_block(c, try_cleanup);
-    ADDOP(c, END_FINALLY);
-
-    /* Success block for __anext__ */
-    compiler_use_next_block(c, after_try);
-    VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, try);
-
-    compiler_pop_fblock(c, FOR_LOOP, try);
+    ADDOP(c, END_ASYNC_FOR);
 
     /* `else` block */
-    compiler_use_next_block(c, after_loop_else);
     VISIT_SEQ(c, stmt, s->v.For.orelse);
 
     compiler_use_next_block(c, end);
@@ -4003,28 +3967,14 @@ compiler_async_comprehension_generator(struct compiler *c,
                                       asdl_seq *generators, int gen_index,
                                       expr_ty elt, expr_ty val, int type)
 {
-    _Py_IDENTIFIER(StopAsyncIteration);
-
     comprehension_ty gen;
-    basicblock *anchor, *if_cleanup, *try,
-               *after_try, *except, *try_cleanup;
+    basicblock *start, *if_cleanup, *except;
     Py_ssize_t i, n;
-
-    PyObject *stop_aiter_error = _PyUnicode_FromId(&PyId_StopAsyncIteration);
-    if (stop_aiter_error == NULL) {
-        return 0;
-    }
-
-    try = compiler_new_block(c);
-    after_try = compiler_new_block(c);
-    try_cleanup = compiler_new_block(c);
+    start = compiler_new_block(c);
     except = compiler_new_block(c);
     if_cleanup = compiler_new_block(c);
-    anchor = compiler_new_block(c);
 
-    if (if_cleanup == NULL || anchor == NULL ||
-            try == NULL || after_try == NULL ||
-            except == NULL || try_cleanup == NULL) {
+    if (start == NULL || if_cleanup == NULL || except == NULL) {
         return 0;
     }
 
@@ -4041,39 +3991,14 @@ compiler_async_comprehension_generator(struct compiler *c,
         ADDOP(c, GET_AITER);
     }
 
-    compiler_use_next_block(c, try);
-
+    compiler_use_next_block(c, start);
 
     ADDOP_JREL(c, SETUP_FINALLY, except);
-    if (!compiler_push_fblock(c, EXCEPT, try, NULL))
-        return 0;
-
     ADDOP(c, GET_ANEXT);
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     ADDOP(c, YIELD_FROM);
     ADDOP(c, POP_BLOCK);
     VISIT(c, expr, gen->target);
-    compiler_pop_fblock(c, EXCEPT, try);
-    ADDOP_JREL(c, JUMP_FORWARD, after_try);
-
-
-    compiler_use_next_block(c, except);
-    ADDOP(c, DUP_TOP);
-    ADDOP_O(c, LOAD_GLOBAL, stop_aiter_error, names);
-    ADDOP_I(c, COMPARE_OP, PyCmp_EXC_MATCH);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, try_cleanup);
-
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_EXCEPT); /* for SETUP_FINALLY */
-    ADDOP_JABS(c, JUMP_ABSOLUTE, anchor);
-
-
-    compiler_use_next_block(c, try_cleanup);
-    ADDOP(c, END_FINALLY);
-
-    compiler_use_next_block(c, after_try);
 
     n = asdl_seq_LEN(gen->ifs);
     for (i = 0; i < n; i++) {
@@ -4118,9 +4043,10 @@ compiler_async_comprehension_generator(struct compiler *c,
         }
     }
     compiler_use_next_block(c, if_cleanup);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, try);
-    compiler_use_next_block(c, anchor);
-    ADDOP(c, POP_TOP);
+    ADDOP_JABS(c, JUMP_ABSOLUTE, start);
+
+    compiler_use_next_block(c, except);
+    ADDOP(c, END_ASYNC_FOR);
 
     return 1;
 }
