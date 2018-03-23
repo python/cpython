@@ -67,7 +67,7 @@ string *pq* will match AB.  This holds unless *A* or *B* contain low precedence
 operations; boundary conditions between *A* and *B*; or have numbered group
 references.  Thus, complex expressions can easily be constructed from simpler
 primitive expressions like the ones described here.  For details of the theory
-and implementation of regular expressions, consult the Friedl book [Fried09]_,
+and implementation of regular expressions, consult the Friedl book [Frie09]_,
 or almost any textbook about compiler construction.
 
 A brief explanation of the format of regular expressions follows.  For further
@@ -1579,7 +1579,7 @@ The tokenizer produces the following output::
     Token(typ='END', value=';', line=5, column=9)
 
 
-.. [Fried09] Friedl, Jeffrey. Mastering Regular Expressions. 3rd ed., O'Reilly
+.. [Frie09] Friedl, Jeffrey. Mastering Regular Expressions. 3rd ed., O'Reilly
    Media, 2009. The third edition of the book no longer covers Python at all,
    but the first edition covered writing good regular expression patterns in
    great detail.
