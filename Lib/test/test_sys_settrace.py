@@ -1201,8 +1201,16 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
-    @jump_test(3, 6, [2, 5, 6], (ValueError, 'finally'))
+    @jump_test(1, 5, [], (ValueError, "into a 'finally'"))
     def test_no_jump_into_finally_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+        finally:
+            output.append(5)
+
+    @jump_test(3, 6, [2, 5, 6], (ValueError, "into a 'finally'"))
+    def test_no_jump_into_finally_block_from_try_block(output):
         try:
             output.append(2)
             output.append(3)
@@ -1211,21 +1219,71 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
-    @jump_test(1, 5, [], (ValueError, 'finally'))
-    def test_no_jump_into_finally_block_2(output):
-        output.append(1)
-        try:
-            output.append(3)
-        finally:
-            output.append(5)
-
-    @jump_test(5, 1, [1, 3], (ValueError, 'finally'))
+    @jump_test(5, 1, [1, 3], (ValueError, "out of a 'finally'"))
     def test_no_jump_out_of_finally_block(output):
         output.append(1)
         try:
             output.append(3)
         finally:
             output.append(5)
+
+    @jump_test(1, 5, [], (ValueError, "into an 'except'"))
+    def test_no_jump_into_bare_except_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+        except:
+            output.append(5)
+
+    @jump_test(1, 5, [], (ValueError, "into an 'except'"))
+    def test_no_jump_into_qualified_except_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+        except Exception:
+            output.append(5)
+
+    @jump_test(3, 6, [2, 5, 6], (ValueError, "into an 'except'"))
+    def test_no_jump_into_bare_except_block_from_try_block(output):
+        try:
+            output.append(2)
+            output.append(3)
+        except:  # executed if the jump is failed
+            output.append(5)
+            output.append(6)
+            raise
+        output.append(8)
+
+    @jump_test(3, 6, [2], (ValueError, "into an 'except'"))
+    def test_no_jump_into_qualified_except_block_from_try_block(output):
+        try:
+            output.append(2)
+            output.append(3)
+        except ZeroDivisionError:
+            output.append(5)
+            output.append(6)
+            raise
+        output.append(8)
+
+    @jump_test(7, 1, [1, 3, 6], (ValueError, "out of an 'except'"))
+    def test_no_jump_out_of_bare_except_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+            1/0
+        except:
+            output.append(6)
+            output.append(7)
+
+    @jump_test(7, 1, [1, 3, 6], (ValueError, "out of an 'except'"))
+    def test_no_jump_out_of_qualified_except_block(output):
+        output.append(1)
+        try:
+            output.append(3)
+            1/0
+        except Exception:
+            output.append(6)
+            output.append(7)
 
     @jump_test(3, 5, [1, 2, -2], (ValueError, 'into'))
     def test_no_jump_between_with_blocks(output):
