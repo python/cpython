@@ -277,8 +277,12 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             int first_in = target_addr <= f->f_lasti && f->f_lasti <= addr;
             int second_in = target_addr <= new_lasti && new_lasti <= addr;
             if (first_in != second_in) {
-                PyErr_SetString(PyExc_ValueError,
-                                "can't jump into or out of a 'finally' block");
+                op = code[target_addr];
+                PyErr_Format(PyExc_ValueError,
+                             "can't jump %s %s block",
+                             second_in ? "into" : "out of",
+                             (op == DUP_TOP || op == POP_TOP) ?
+                                "an 'except'" : "a 'finally'");
                 return -1;
             }
             break;
