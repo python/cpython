@@ -262,15 +262,16 @@ class _DataclassParams:
                  'order',
                  'unsafe_hash',
                  'frozen',
+                 'kwarg_only',
                  )
-
-    def __init__(self, init, repr, eq, order, unsafe_hash, frozen):
+    def __init__(self, init, repr, eq, order, unsafe_hash, frozen, kwarg_only):
         self.init = init
         self.repr = repr
         self.eq = eq
         self.order = order
         self.unsafe_hash = unsafe_hash
         self.frozen = frozen
+        self.kwarg_only = kwarg_only
 
     def __repr__(self):
         return ('_DataclassParams('
@@ -279,7 +280,8 @@ class _DataclassParams:
                 f'eq={self.eq},'
                 f'order={self.order},'
                 f'unsafe_hash={self.unsafe_hash},'
-                f'frozen={self.frozen}'
+                f'frozen={self.frozen},'
+                f'kwarg_only={self.kwarg_only}'
                 ')')
 
 
@@ -424,7 +426,7 @@ def _init_param(f):
     return f'{f.name}:_type_{f.name}{default}'
 
 
-def _init_fn(fields, frozen, has_post_init, self_name):
+def _init_fn(fields, frozen, kwarg_only, has_post_init, self_name):
     # fields contains both real fields and InitVar pseudo-fields.
 
     # Make sure we don't have fields without defaults following fields
@@ -432,15 +434,16 @@ def _init_fn(fields, frozen, has_post_init, self_name):
     #  function source code, but catching it here gives a better error
     #  message, and future-proofs us in case we build up the function
     #  using ast.
-    seen_default = False
-    for f in fields:
-        # Only consider fields in the __init__ call.
-        if f.init:
-            if not (f.default is MISSING and f.default_factory is MISSING):
-                seen_default = True
-            elif seen_default:
-                raise TypeError(f'non-default argument {f.name!r} '
-                                'follows default argument')
+    if not kwarg_only:
+        seen_default = False
+        for f in fields:
+            # Only consider fields in the __init__ call.
+            if f.init:
+                if not (f.default is MISSING and f.default_factory is MISSING):
+                    seen_default = True
+                elif seen_default:
+                    raise TypeError(f'non-default argument {f.name!r} '
+                                    'follows default argument')
 
     globals = {'MISSING': MISSING,
                '_HAS_DEFAULT_FACTORY': _HAS_DEFAULT_FACTORY}
@@ -464,8 +467,12 @@ def _init_fn(fields, frozen, has_post_init, self_name):
         body_lines = ['pass']
 
     locals = {f'_type_{f.name}': f.type for f in fields}
+
+    args = [self_name] + [_init_param(f) for f in fields if f.init]
+    if kwarg_only and len(args) > 1:
+        args.insert(1, "*")
     return _create_fn('__init__',
-                      [self_name] + [_init_param(f) for f in fields if f.init],
+                      args,
                       body_lines,
                       locals=locals,
                       globals=globals,
@@ -647,7 +654,7 @@ _hash_action = {(False, False, False, False): None,
 #  version of this table.
 
 
-def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
+def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, kwarg_only):
     # Now that dicts retain insertion order, there's no reason to use
     #  an ordered dict.  I am leveraging that ordering here, because
     #  derived class fields overwrite base class fields, but the order
@@ -655,7 +662,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     fields = {}
 
     setattr(cls, _PARAMS, _DataclassParams(init, repr, eq, order,
-                                           unsafe_hash, frozen))
+                                           unsafe_hash, frozen, kwarg_only))
 
     # Find our base classes in reverse MRO order, and exclude
     #  ourselves.  In reversed order so that more derived classes
@@ -756,6 +763,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         _set_new_attribute(cls, '__init__',
                            _init_fn(flds,
                                     frozen,
+                                    kwarg_only,
                                     has_post_init,
                                     # The name to use for the "self" param
                                     #  in __init__.  Use "self" if possible.
@@ -825,7 +833,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
 #  underscore. The presence of _cls is used to detect if this
 #  decorator is being called with parameters or not.
 def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
-              unsafe_hash=False, frozen=False):
+              unsafe_hash=False, frozen=False, kwarg_only=False):
     """Returns the same class as was passed in, with dunder methods
     added based on the fields defined in the class.
 
@@ -839,7 +847,8 @@ def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
     """
 
     def wrap(cls):
-        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen)
+        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
+                              kwarg_only)
 
     # See if we're being called as @dataclass or @dataclass().
     if _cls is None:
@@ -961,7 +970,7 @@ def _astuple_inner(obj, tuple_factory):
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
-                   frozen=False):
+                   frozen=False, kwarg_only=False):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -981,8 +990,8 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
     For the bases and namespace parameters, see the builtin type() function.
 
-    The parameters init, repr, eq, order, unsafe_hash, and frozen are passed to
-    dataclass().
+    The parameters init, repr, eq, order, unsafe_hash, frozen, and kwarg_only
+    are passed to dataclass().
     """
 
     if namespace is None:
@@ -1008,7 +1017,8 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     # of generic dataclassses.
     cls = types.new_class(cls_name, bases, {}, lambda ns: ns.update(namespace))
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
-                     unsafe_hash=unsafe_hash, frozen=frozen)
+                     unsafe_hash=unsafe_hash, frozen=frozen,
+                     kwarg_only=kwarg_only)
 
 
 def replace(obj, **changes):
