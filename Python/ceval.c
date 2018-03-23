@@ -2976,11 +2976,10 @@ main_loop:
         TARGET(WITH_CLEANUP_START) {
             /* (TOP, SECOND, THIRD) = exc_info()
                (FOURTH, FIFTH, SIXTH) = previous exception for EXCEPT_HANDLER
-               SEVENTH = EXIT, the context.__exit__ or context.__aexit__
+               SEVENTH = the context.__exit__ or context.__aexit__
                   bound method.
 
-               Replace the seventh value with NULL and push the result
-               of the call EXIT(TOP, SECOND, THIRD).
+               Push the result of the call SEVENTH(TOP, SECOND, THIRD).
             */
             PyObject *exc = TOP();
             assert(PyExceptionClass_Check(exc));
@@ -2989,8 +2988,6 @@ main_loop:
             PyObject *exit_func = PEEK(7);
             PyObject *stack[3] = {exc, val, tb};
             PyObject *res = _PyObject_FastCall(exit_func, stack, 3);
-            SET_VALUE(7, NULL);
-            Py_DECREF(exit_func);
             if (res == NULL) {
                 goto error;
             }
@@ -3004,7 +3001,7 @@ main_loop:
             /* TOP = the result of calling the context.__exit__ bound method.
                (SECOND, THIRD, FOURTH) = exc_info()
                (FIFTH, SIXTH, SEVENTH) = previous exception for EXCEPT_HANDLER
-               EIGHT = NULL
+               EIGHT = the exit function
              */
             PyObject *res = POP();
             int err = (res == Py_None) ? 0 : PyObject_IsTrue(res);
@@ -3021,8 +3018,8 @@ main_loop:
                 PyTryBlock *b = PyFrame_BlockPop(f);
                 assert(b->b_type == EXCEPT_HANDLER);
                 UNWIND_EXCEPT_HANDLER(b);
-                assert(TOP() == NULL);
-                STACKADJ(-1);
+                /* Pop the exit function. */
+                Py_DECREF(POP());
                 DISPATCH();
             }
             else {

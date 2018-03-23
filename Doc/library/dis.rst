@@ -765,11 +765,10 @@ iterations of the loop.
    Starts cleaning up the stack when a :keyword:`with` statement block exits.
 
    At the top of the stack are 6 values pushed when an exception has been
-   raised in the with block.  Below is EXIT, the context manager's
+   raised in the with block.  Below is the context manager's
    :meth:`~object.__exit__` or :meth:`~object.__aexit__` bound method.
 
-   Replaces the seventh value with *NULL* and pushes the result of
-   ``EXIT(TOP, SECOND, THIRD)``.
+   Pushes the result of ``TOS6(TOS, TOS1, TOS2)``.
 
    .. versionchanged:: 3.8
 
@@ -780,14 +779,14 @@ iterations of the loop.
 
    TOS is result of ``__exit__()`` or ``__aexit__()`` function call pushed
    by :opcode:`WITH_CLEANUP_START`. Below are 6 values pushed when an exception
-   has been raised in the with block and *NULL*.
+   has been raised in the with block and the exit function.
 
    Pops TOS from the stack.  If it is true unwinds the EXCEPT_HANDLER block
    which was created when the exception was caught.  Otherwise the next three
    values will be used to re-raise the exception, the other three
-   values will be used to restore the exception state, and *NULL* will
-   be popped from the stack.  An exception handler block will be removed from
-   the block stack.
+   values will be used to restore the exception state, and the exit function
+   will be popped from the stack.  An exception handler block will be removed
+   from the block stack.
 
    .. versionchanged:: 3.8
 
