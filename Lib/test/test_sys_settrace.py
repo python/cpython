@@ -1204,7 +1204,7 @@ class JumpTestCase(unittest.TestCase):
         try:
             output.append(2)
             output.append(3)
-        except:  # still executed if the jump is failed
+        except:  # executed if the jump is failed
             output.append(5)
             output.append(6)
             raise
