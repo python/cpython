@@ -1622,11 +1622,106 @@ list_builtin_module_names(void)
  *   the supplied wchar * sequences in linked lists, and then migrate the
  *   contents of those lists to the sys module in _PyInitializeCore.
  *
- *   TODO: Actually save and later migrate the settings to the sys module,
- *         rather than silently ignoring them.
- *
  */
 
+struct _preinit_entry {
+    wchar_t *value;
+    struct _preinit_entry *next;
+};
+
+typedef struct _preinit_entry *_Py_PreInitEntry;
+
+static _Py_PreInitEntry _preinit_warnoptions = NULL;
+static _Py_PreInitEntry _preinit_xoptions = NULL;
+
+static _Py_PreInitEntry
+_alloc_preinit_entry(const wchar_t *value)
+{
+    /* To get this to work, we have to initialize the runtime implicitly */
+    _PyRuntime_Initialize();
+
+    /* Force default allocator, so we can ensure that it also gets used to
+     * destroy the linked list in _clear_preinit_entries.
+     */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    _Py_PreInitEntry node = PyMem_RawCalloc(1, sizeof(*node));
+    if (node != NULL) {
+        node->value = _PyMem_RawWcsdup(value);
+        if (node->value == NULL) {
+            PyMem_RawFree(node);
+            node = NULL;
+        };
+    };
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return node;
+};
+
+static int
+_append_preinit_entry(_Py_PreInitEntry *optionlist, const wchar_t *value)
+{
+    _Py_PreInitEntry new_entry = _alloc_preinit_entry(value);
+    if (new_entry == NULL) {
+        return -1;
+    }
+    /* We maintain the linked list in this order so it's easy to play back
+     * the add commands in the same order later on in _Py_InitializeCore
+     */
+    _Py_PreInitEntry last_entry = *optionlist;
+    if (last_entry == NULL) {
+        *optionlist = new_entry;
+    } else {
+        while (last_entry->next != NULL) {
+            last_entry = last_entry->next;
+        }
+        last_entry->next = new_entry;
+    }
+    return 0;
+};
+
+static void
+_clear_preinit_entries(_Py_PreInitEntry *optionlist)
+{
+    _Py_PreInitEntry current = *optionlist;
+    *optionlist = NULL;
+    /* Deallocate the nodes and their contents using the default allocator */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    while (current != NULL) {
+        _Py_PreInitEntry next = current->next;
+        PyMem_RawFree(current->value);
+        PyMem_RawFree(current);
+        current = next;
+    }
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+};
+
+static int
+_PySys_ReadPreInitOptions(void)
+{
+    /* Rerun the add commands with the actual sys module available */
+    PyThreadState *tstate = PyThreadState_GET();
+    if (tstate == NULL) {
+        /* Still don't have a thread state, so something is wrong! */
+        return -1;
+    }
+    _Py_PreInitEntry entry = _preinit_warnoptions;
+    while (entry != NULL) {
+        PySys_AddWarnOption(entry->value);
+        entry = entry->next;
+    }
+    entry = _preinit_xoptions;
+    while (entry != NULL) {
+        PySys_AddXOption(entry->value);
+        entry = entry->next;
+    }
+
+    _clear_preinit_entries(&_preinit_warnoptions);
+    _clear_preinit_entries(&_preinit_xoptions);
+    return 0;
+};
 
 static PyObject *
 get_warnoptions(void)
@@ -1651,7 +1746,7 @@ PySys_ResetWarnOptions(void)
 {
     PyThreadState *tstate = PyThreadState_GET();
     if (tstate == NULL) {
-        /* TODO: Clear the pre-init linked list*/
+        _clear_preinit_entries(&_preinit_warnoptions);
         return;
     }
 
@@ -1685,7 +1780,7 @@ PySys_AddWarnOption(const wchar_t *s)
 {
     PyThreadState *tstate = PyThreadState_GET();
     if (tstate == NULL) {
-        /* TODO: Add option to the pre-init linked list*/
+        _append_preinit_entry(&_preinit_warnoptions, s);
         return;
     }
     PyObject *unicode;
@@ -1762,7 +1857,7 @@ PySys_AddXOption(const wchar_t *s)
 {
     PyThreadState *tstate = PyThreadState_GET();
     if (tstate == NULL) {
-        /* TODO: Add option to the pre-init linked list*/
+        _append_preinit_entry(&_preinit_xoptions, s);
         return;
     }
     if (_PySys_AddXOptionWithError(s) < 0) {
@@ -2292,6 +2387,7 @@ _PySys_BeginInit(PyObject **sysmod)
     }
 
     *sysmod = m;
+
     return _Py_INIT_OK();
 
 type_init_failed:
@@ -2366,6 +2462,11 @@ _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
         return -1;
 
     if (get_xoptions() == NULL)
+        return -1;
+
+    /* Transfer any sys.warnoptions and sys._xoptions set directly
+     * by an embedding application from the linked list to the module. */
+    if (_PySys_ReadPreInitOptions() != 0)
         return -1;
 
     if (PyErr_Occurred())

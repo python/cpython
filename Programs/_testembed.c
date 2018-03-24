@@ -176,6 +176,10 @@ static int test_pre_initialization_sys_options(void)
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddXOption\n");
     PySys_AddXOption(L"not_an_option=1");
     PySys_AddXOption(L"also_not_an_option=2");
+    /* TODO: Dynamically allocate an option and delete it before Py_Initialize
+     *       to ensure we're copying the strings, rather than trusting the
+     *       caller to keep them alive until we need them.
+     */
 
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
     _testembed_Py_Initialize();
