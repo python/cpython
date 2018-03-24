@@ -5,6 +5,7 @@ import inspect
 
 __all__ = ['dataclass',
            'field',
+           'Field',
            'FrozenInstanceError',
            'InitVar',
            'MISSING',
@@ -513,7 +514,7 @@ def _get_field(cls, a_name, a_type):
     #  and InitVars are also returned, but marked as such (see
     #  f._field_type).
 
-    # If the default value isn't derived from field, then it's
+    # If the default value isn't derived from Field, then it's
     #  only a normal default value.  Convert it to a Field().
     default = getattr(cls, a_name, MISSING)
     if isinstance(default, Field):
@@ -570,21 +571,6 @@ def _get_field(cls, a_name, a_type):
                          f'{f.name} is not allowed: use default_factory')
 
     return f
-
-
-def _find_fields(cls):
-    # Return a list of Field objects, in order, for this class (and no
-    #  base classes).  Fields are found from __annotations__ (which is
-    #  guaranteed to be ordered).  Default values are from class
-    #  attributes, if a field has a default.  If the default value is
-    #  a Field(), then it contains additional info beyond (and
-    #  possibly including) the actual default value.  Pseudo-fields
-    #  ClassVars and InitVars are included, despite the fact that
-    #  they're not real fields.  That's dealt with later.
-
-    annotations = getattr(cls, '__annotations__', {})
-    return [_get_field(cls, a_name, a_type)
-            for a_name, a_type in annotations.items()]
 
 
 def _set_new_attribute(cls, name, value):
@@ -661,10 +647,25 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
             if getattr(b, _PARAMS).frozen:
                 any_frozen_base = True
 
+    # Annotations that are defined in this class (not in base
+    #  classes).  If __annotations__ isn't present, then this class
+    #  adds no new annotations.  We use this to compute fields that
+    #  are added by this class.
+    # Fields are found from cls_annotations, which is guaranteed to be
+    #  ordered.  Default values are from class attributes, if a field
+    #  has a default.  If the default value is a Field(), then it
+    #  contains additional info beyond (and possibly including) the
+    #  actual default value.  Pseudo-fields ClassVars and InitVars are
+    #  included, despite the fact that they're not real fields.
+    #  That's dealt with later.
+    cls_annotations = cls.__dict__.get('__annotations__', {})
+
     # Now find fields in our class.  While doing so, validate some
     #  things, and set the default values (as class attributes)
     #  where we can.
-    for f in _find_fields(cls):
+    cls_fields = [_get_field(cls, name, type)
+                  for name, type in cls_annotations.items()]
+    for f in cls_fields:
         fields[f.name] = f
 
         # If the class attribute (which is the default value for
@@ -682,6 +683,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                 delattr(cls, f.name)
             else:
                 setattr(cls, f.name, f.default)
+
+    # Do we have any Field members that don't also have annotations?
+    for name, value in cls.__dict__.items():
+        if isinstance(value, Field) and not name in cls_annotations:
+            raise TypeError(f'{name!r} is a field but has no type annotation')
 
     # Check rules that apply if we are derived from any dataclasses.
     if has_dataclass_bases:

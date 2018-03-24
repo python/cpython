@@ -1,7 +1,8 @@
-from dataclasses import (
-    dataclass, field, FrozenInstanceError, fields, asdict, astuple,
-    make_dataclass, replace, InitVar, Field, MISSING, is_dataclass,
-)
+# Deliberately use "from dataclasses import *".  Every name in __all__
+# is tested, so they all must be present.  This is a way to catch
+# missing ones.
+
+from dataclasses import *
 
 import pickle
 import inspect
@@ -19,6 +20,14 @@ class TestCase(unittest.TestCase):
         @dataclass
         class C:
             pass
+
+        o = C()
+        self.assertEqual(len(fields(C)), 0)
+
+    def test_no_fields_but_member_variable(self):
+        @dataclass
+        class C:
+            i = 0
 
         o = C()
         self.assertEqual(len(fields(C)), 0)
@@ -1147,6 +1156,55 @@ class TestCase(unittest.TestCase):
         C().x
         self.assertEqual(factory.call_count, 2)
 
+    def test_default_factory_derived(self):
+        # See bpo-32896.
+        @dataclass
+        class Foo:
+            x: dict = field(default_factory=dict)
+
+        @dataclass
+        class Bar(Foo):
+            y: int = 1
+
+        self.assertEqual(Foo().x, {})
+        self.assertEqual(Bar().x, {})
+        self.assertEqual(Bar().y, 1)
+
+        @dataclass
+        class Baz(Foo):
+            pass
+        self.assertEqual(Baz().x, {})
+
+    def test_intermediate_non_dataclass(self):
+        # Test that an intermediate class that defines
+        #  annotations does not define fields.
+
+        @dataclass
+        class A:
+            x: int
+
+        class B(A):
+            y: int
+
+        @dataclass
+        class C(B):
+            z: int
+
+        c = C(1, 3)
+        self.assertEqual((c.x, c.z), (1, 3))
+
+        # .y was not initialized.
+        with self.assertRaisesRegex(AttributeError,
+                                    'object has no attribute'):
+            c.y
+
+        # And if we again derive a non-dataclass, no fields are added.
+        class D(C):
+            t: int
+        d = D(4, 5)
+        self.assertEqual((d.x, d.z), (4, 5))
+
+
     def x_test_classvar_default_factory(self):
         # XXX: it's an error for a ClassVar to have a factory function
         @dataclass
@@ -1854,6 +1912,41 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C.__annotations__, {'x': 'typing.Any',
                                              'y': int,
                                              'z': 'typing.Any'})
+
+
+class TestFieldNoAnnotation(unittest.TestCase):
+    def test_field_without_annotation(self):
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            @dataclass
+            class C:
+                f = field()
+
+    def test_field_without_annotation_but_annotation_in_base(self):
+        @dataclass
+        class B:
+            f: int
+
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            # This is still an error: make sure we don't pick up the
+            # type annotation in the base class.
+            @dataclass
+            class C(B):
+                f = field()
+
+    def test_field_without_annotation_but_annotation_in_base_not_dataclass(self):
+        # Same test, but with the base class not a dataclass.
+        class B:
+            f: int
+
+        with self.assertRaisesRegex(TypeError,
+                                    "'f' is a field but has no type annotation"):
+            # This is still an error: make sure we don't pick up the
+            # type annotation in the base class.
+            @dataclass
+            class C(B):
+                f = field()
 
 
 class TestDocString(unittest.TestCase):
