@@ -815,11 +815,13 @@ class MutableMapping(Mapping):
 
     def clear(self):
         'D.clear() -> None.  Remove all items from D.'
-        try:
-            while True:
-                self.popitem()
-        except KeyError:
-            pass
+        while True:
+            try:
+                key = next(iter(self))
+            except StopIteration:
+                break
+            else:
+                del self[key]
 
     def update(*args, **kwds):
         ''' D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
