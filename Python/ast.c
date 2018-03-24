@@ -2841,7 +2841,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
                 }
                 else if (e->kind != Name_kind) {
                     ast_error(c, chch,
-                            "keyword can't be an expression");
+                            "keyword argument can't be an expression");
                     return NULL;
                 }
                 else if (forbidden_name(c, e->v.Name.id, ch, 1)) {
