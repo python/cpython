@@ -809,8 +809,7 @@ class MutableMapping(Mapping):
             key = next(iter(self))
         except StopIteration:
             raise KeyError from None
-        value = self[key]
-        del self[key]
+        value = self.pop(key)
         return key, value
 
     def clear(self):
