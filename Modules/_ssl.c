@@ -101,6 +101,12 @@ struct py_ssl_library_code {
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
 #  define OPENSSL_VERSION_1_1 1
+#  define PY_OPENSSL_1_1_API 1
+#endif
+
+/* LibreSSL 2.7.0 provides necessary OpenSSL 1.1.0 APIs */
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x2070000fL
+#  define PY_OPENSSL_1_1_API 1
 #endif
 
 /* Openssl comes with TLSv1.1 and TLSv1.2 between 1.0.0h and 1.0.1
@@ -129,15 +135,21 @@ struct py_ssl_library_code {
 #define INVALID_SOCKET (-1)
 #endif
 
-#ifdef OPENSSL_VERSION_1_1
-/* OpenSSL 1.1.0+ */
-#ifndef OPENSSL_NO_SSL2
+/* OpenSSL 1.0.2 and LibreSSL needs extra code for locking */
+#ifndef OPENSSL_VERSION_1_1
+#define HAVE_OPENSSL_CRYPTO_LOCK
+#endif
+
+#if defined(OPENSSL_VERSION_1_1) && !defined(OPENSSL_NO_SSL2)
 #define OPENSSL_NO_SSL2
 #endif
 #else /* OpenSSL < 1.1.0 */
 #if defined(WITH_THREAD)
 #define HAVE_OPENSSL_CRYPTO_LOCK
 #endif
+
+#ifndef PY_OPENSSL_1_1_API
+/* OpenSSL 1.1 API shims for OpenSSL < 1.1.0 and LibreSSL < 2.7.0 */
 
 #define TLS_method SSLv23_method
 
@@ -187,7 +199,7 @@ static X509_VERIFY_PARAM *X509_STORE_get0_param(X509_STORE *store)
 {
     return store->param;
 }
-#endif /* OpenSSL < 1.1.0 or LibreSSL */
+#endif /* OpenSSL < 1.1.0 or LibreSSL < 2.7.0 */
 
 
 enum py_ssl_error {
