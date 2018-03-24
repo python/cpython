@@ -8,30 +8,21 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 import codecs
 
-def _check_str(input):
-    if not isinstance(input, str):
-        raise TypeError(
-            "a str object is required, not {}".format(type(input).__name__))
-
 ### Codec APIs
 
 class Codec(codecs.Codec):
     def encode(self, input, errors='strict'):
-        _check_str(input)
         return (input.translate(rot13_map), len(input))
 
     def decode(self, input, errors='strict'):
-        _check_str(input)
         return (input.translate(rot13_map), len(input))
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
-        _check_str(input)
         return input.translate(rot13_map)
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
-        _check_str(input)
         return input.translate(rot13_map)
 
 class StreamWriter(Codec,codecs.StreamWriter):
