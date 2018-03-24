@@ -4859,7 +4859,7 @@ import_all_from(PyObject *locals, PyObject *v)
             }
             if (!PyUnicode_Check(modname)) {
                 PyErr_Format(PyExc_TypeError,
-                             "module.__name__ must be a string, not %.100s",
+                             "module __name__ must be a string, not %.100s",
                              Py_TYPE(modname)->tp_name);
             }
             else {
