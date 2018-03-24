@@ -186,6 +186,11 @@ class TestBisect:
                         self.assertTrue(data[ip-1] <= elem)
                     self.assertEqual(ip, max(lo, min(hi, expected)))
 
+    def test_hi_backcompatbility(self):
+        for func, data, elem, expected in self.precomputedCases:
+            self.assertEqual(func(data, elem, 0, -1),
+                             func(data, elem, 0, None))
+
     def test_backcompatibility(self):
         self.assertEqual(self.module.bisect, self.module.bisect_right)
 

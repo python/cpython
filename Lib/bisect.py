@@ -11,7 +11,7 @@ def insort_right(a, x, lo=0, hi=None):
 
     if lo < 0:
         raise ValueError('lo must be non-negative')
-    if hi is None:
+    if hi is None or hi == -1:
         hi = len(a)
     while lo < hi:
         mid = (lo+hi)//2
@@ -32,7 +32,7 @@ def bisect_right(a, x, lo=0, hi=None):
 
     if lo < 0:
         raise ValueError('lo must be non-negative')
-    if hi is None:
+    if hi is None or hi == -1:
         hi = len(a)
     while lo < hi:
         mid = (lo+hi)//2
@@ -51,7 +51,7 @@ def insort_left(a, x, lo=0, hi=None):
 
     if lo < 0:
         raise ValueError('lo must be non-negative')
-    if hi is None:
+    if hi is None or hi == -1:
         hi = len(a)
     while lo < hi:
         mid = (lo+hi)//2
@@ -73,7 +73,7 @@ def bisect_left(a, x, lo=0, hi=None):
 
     if lo < 0:
         raise ValueError('lo must be non-negative')
-    if hi is None:
+    if hi is None or hi == -1:
         hi = len(a)
     while lo < hi:
         mid = (lo+hi)//2
