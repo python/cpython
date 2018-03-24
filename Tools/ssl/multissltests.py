@@ -54,7 +54,7 @@ LIBRESSL_OLD_VERSIONS = [
 ]
 
 LIBRESSL_RECENT_VERSIONS = [
-    # "2.6.5",
+    "2.7.1",
 ]
 
 # store files in ../multissl
