@@ -4859,12 +4859,12 @@ import_all_from(PyObject *locals, PyObject *v)
             }
             if (!PyUnicode_Check(modname)) {
                 PyErr_Format(PyExc_TypeError,
-                             "__name__ must be a string, not %.100s",
+                             "module.__name__ must be a string, not %.100s",
                              Py_TYPE(modname)->tp_name);
             }
             else {
                 PyErr_Format(PyExc_TypeError,
-                             "%s in %S.%s must be str, not %.100s",
+                             "%s in %U.%s must be str, not %.100s",
                              skip_leading_underscores ? "Key" : "Item",
                              modname,
                              skip_leading_underscores ? "__dict__" : "__all__",
