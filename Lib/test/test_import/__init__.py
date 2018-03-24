@@ -112,12 +112,13 @@ class ImportTests(unittest.TestCase):
         self.assertIsNotNone(cm.exception)
 
     def test_from_import_star_invalid_type(self):
+        import re
         with _ready_to_import() as (name, path):
             with open(path, 'w') as f:
                 f.write("__all__ = [b'invalid_type']")
             globals = {}
             with self.assertRaisesRegex(
-                TypeError, f"{name}.__all__ must be str"
+                TypeError, f"{re.escape(name)}\.__all__ must be str"
             ):
                 exec(f"from {name} import *", globals)
             self.assertNotIn(b"invalid_type", globals)
@@ -126,7 +127,7 @@ class ImportTests(unittest.TestCase):
                 f.write("globals()[b'invalid_type'] = object()")
             globals = {}
             with self.assertRaisesRegex(
-                TypeError, f"{name}.__dict__ must be str"
+                TypeError, f"{re.escape(name)}\.__dict__ must be str"
             ):
                 exec(f"from {name} import *", globals)
             self.assertNotIn(b"invalid_type", globals)
