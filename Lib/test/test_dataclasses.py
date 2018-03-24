@@ -2683,6 +2683,41 @@ class TestFrozen(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'unhashable type'):
             hash(C({}))
 
+class TestKwargOnly(unittest.TestCase):
+    def test_no_fields(self):
+        @dataclass(kwarg_only=True)
+        class C:
+            pass
+
+        o = C()
+        self.assertEqual(len(fields(C)), 0)
+
+    def test_no_fields_but_member_variable(self):
+        @dataclass(kwarg_only=True)
+        class C:
+            i = 0
+
+        o = C()
+        self.assertEqual(len(fields(C)), 0)
+
+    def test_one_field_no_default(self):
+        @dataclass(kwarg_only=True)
+        class C:
+            x: int
+        with self.assertRaises(TypeError):
+            o = C(42)
+        o = C(x=32)
+        self.assertEqual(o.x, 32)
+
+    def test_two_fields_one_default(self):
+        @dataclass(kwarg_only=True)
+        class C:
+            x: int = 0
+            y: int
+
+        o = C(y=3)
+        self.assertEqual((o.x, o.y), (0, 3))
+
 
 class TestSlots(unittest.TestCase):
     def test_simple(self):
