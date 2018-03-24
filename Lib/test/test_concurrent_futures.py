@@ -323,6 +323,7 @@ class ExecutorShutdownTest:
                     from multiprocessing import get_context
                     context = get_context(context)
                     t = {executor_type}(5, mp_context=context)
+                    t.submit(id, 42).result()
             """.format(executor_type=self.executor_type.__name__,
                        context=getattr(self, "ctx", "")))
         # Errors in atexit hooks don't change the process exit code, check
