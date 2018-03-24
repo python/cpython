@@ -2,6 +2,7 @@
 #include "pythread.h"
 #include <inttypes.h>
 #include <stdio.h>
+#include <wchar.h>
 
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
@@ -165,21 +166,36 @@ static int test_pre_initialization_api(void)
 /* bpo-33042: Ensure embedding apps can predefine sys module options */
 static int test_pre_initialization_sys_options(void)
 {
+    /* We allocate a couple of the option dynamically, and then delete
+     * them before calling Py_Initialize. This ensures the interpreter isn't
+     * relying on the caller to keep the passed in strings alive.
+     */
+    wchar_t *static_warnoption = L"once";
+    wchar_t *static_xoption = L"also_not_an_option=2";
+    size_t warnoption_len = wcslen(static_warnoption);
+    size_t xoption_len = wcslen(static_xoption);
+    wchar_t *dynamic_once_warnoption = calloc(warnoption_len, sizeof(wchar_t));
+    wchar_t *dynamic_xoption = calloc(xoption_len, sizeof(wchar_t));
+    wcsncpy(dynamic_once_warnoption, static_warnoption, warnoption_len);
+    wcsncpy(dynamic_xoption, static_xoption, xoption_len);
+
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddWarnOption\n");
     PySys_AddWarnOption(L"default");
     _Py_EMBED_PREINIT_CHECK("Checking PySys_ResetWarnOptions\n");
     PySys_ResetWarnOptions();
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddWarnOption linked list\n");
-    PySys_AddWarnOption(L"once");
+    PySys_AddWarnOption(dynamic_once_warnoption);
     PySys_AddWarnOption(L"module");
     PySys_AddWarnOption(L"default");
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddXOption\n");
     PySys_AddXOption(L"not_an_option=1");
-    PySys_AddXOption(L"also_not_an_option=2");
-    /* TODO: Dynamically allocate an option and delete it before Py_Initialize
-     *       to ensure we're copying the strings, rather than trusting the
-     *       caller to keep them alive until we need them.
-     */
+    PySys_AddXOption(dynamic_xoption);
+
+    /* Delete the dynamic options early */
+    free(dynamic_once_warnoption);
+    dynamic_once_warnoption = NULL;
+    free(dynamic_xoption);
+    dynamic_xoption = NULL;
 
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
     _testembed_Py_Initialize();
