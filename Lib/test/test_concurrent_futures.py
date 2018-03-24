@@ -310,7 +310,7 @@ class ExecutorShutdownTest:
             @atexit.register
             def run_last():
                 try:
-                    t.submit(lambda: None)
+                    t.submit(id, None)
                 except RuntimeError:
                     print("runtime-error")
                     raise
