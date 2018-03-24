@@ -2718,6 +2718,79 @@ class TestKwargOnly(unittest.TestCase):
         o = C(y=3)
         self.assertEqual((o.x, o.y), (0, 3))
 
+    def test_inherit(self):
+        @dataclass(kwarg_only=True)
+        class C:
+            i: int
+
+        @dataclass(kwarg_only=True)
+        class D(C):
+            j: int
+
+        with self.assertRaises(TypeError):
+            d = D(0, 10)
+        with self.assertRaises(TypeError):
+            d = D(0, j=10)
+
+        d = D(i=0, j=10)
+        self.assertEqual((d.i, d.j), (0, 10))
+
+    def test_inherit_non_kwargonly_from_kwargonly(self):
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                @dataclass(kwarg_only=True)
+                class C:
+                    i: int
+                if intermediate_class:
+                    class I(C):
+                        pass
+                else:
+                    I = C
+
+                msg = 'cannot inherit non-kwarg-only dataclass from a kwarg-only one'
+                with self.assertRaisesRegex(TypeError, msg):
+                    @dataclass
+                    class D(I):
+                        pass
+
+    def test_inherit_kwargonly_from_nonkwargonly(self):
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                @dataclass
+                class C:
+                    i: int
+                if intermediate_class:
+                    class I(C):
+                        pass
+                else:
+                    I = C
+
+                msg = 'cannot inherit kwarg-only dataclass from a non-kwarg-only one'
+                with self.assertRaisesRegex(TypeError, msg):
+                    @dataclass(kwarg_only=True)
+                    class D(I):
+                        pass
+
+    def test_inherit_from_normal_class(self):
+        for intermediate_class in [True, False]:
+            with self.subTest(intermediate_class=intermediate_class):
+                class C:
+                    pass
+
+                if intermediate_class:
+                    class I(C): pass
+                else:
+                    I = C
+
+                @dataclass(kwarg_only=True)
+                class D(I):
+                    i: int
+
+                with self.assertRaises(TypeError):
+                    d = D(0)
+                d = D(i=5)
+                self.assertEqual(d.i, 5)
+
 
 class TestSlots(unittest.TestCase):
     def test_simple(self):

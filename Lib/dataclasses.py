@@ -668,6 +668,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, kwarg_only):
     #  ourselves.  In reversed order so that more derived classes
     #  override earlier field definitions in base classes.
     # As long as we're iterating over them, see if any are frozen.
+    any_kwarg_only = False
     any_frozen_base = False
     has_dataclass_bases = False
     for b in cls.__mro__[-1:0:-1]:
@@ -680,6 +681,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, kwarg_only):
                 fields[f.name] = f
             if getattr(b, _PARAMS).frozen:
                 any_frozen_base = True
+            if getattr(b, _PARAMS).kwarg_only:
+                any_kwarg_only = True
 
     # Annotations that are defined in this class (not in base
     #  classes).  If __annotations__ isn't present, then this class
@@ -729,11 +732,17 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, kwarg_only):
         if any_frozen_base and not frozen:
             raise TypeError('cannot inherit non-frozen dataclass from a '
                             'frozen one')
+        if any_kwarg_only and not kwarg_only:
+            raise TypeError('cannot inherit non-kwarg-only dataclass from a '
+                            'kwarg-only one')
 
         # Raise an exception if we're frozen, but none of our bases are.
         if not any_frozen_base and frozen:
             raise TypeError('cannot inherit frozen dataclass from a '
                             'non-frozen one')
+        if not any_kwarg_only and kwarg_only:
+            raise TypeError('cannot inherit kwarg-only dataclass from a '
+                            'non-kwarg-only one')
 
     # Remember all of the fields on our class (including bases).  This also
     #  marks this class as being a dataclass.
