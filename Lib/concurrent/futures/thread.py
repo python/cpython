@@ -143,8 +143,11 @@ class ThreadPoolExecutor(_base.Executor):
             if self._broken:
                 raise BrokenThreadPool(self._broken)
 
-            if _shutdown or self._shutdown:
+            if self._shutdown:
                 raise RuntimeError('cannot schedule new futures after shutdown')
+            if _shutdown:
+                raise RuntimeError('cannot schedule new futures after'
+                                   'interpreter shutdown')
 
             f = _base.Future()
             w = _WorkItem(f, fn, args, kwargs)
