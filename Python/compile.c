@@ -2909,9 +2909,7 @@ static int
 compiler_from_import(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t i, n = asdl_seq_LEN(s->v.ImportFrom.names);
-
-    PyObject *names = PyTuple_New(n);
-    PyObject *level;
+    PyObject *level, *names;
     static PyObject *empty_string;
 
     if (!empty_string) {
@@ -2920,14 +2918,15 @@ compiler_from_import(struct compiler *c, stmt_ty s)
             return 0;
     }
 
-    if (!names)
-        return 0;
-
     level = PyLong_FromLong(s->v.ImportFrom.level);
     if (!level) {
-        Py_DECREF(names);
         return 0;
     }
+    ADDOP_N(c, LOAD_CONST, level, consts);
+
+    names = PyTuple_New(n);
+    if (!names)
+        return 0;
 
     /* build up the names */
     for (i = 0; i < n; i++) {
@@ -2938,16 +2937,12 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
     if (s->lineno > c->c_future->ff_lineno && s->v.ImportFrom.module &&
         _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__")) {
-        Py_DECREF(level);
         Py_DECREF(names);
         return compiler_error(c, "from __future__ imports must occur "
                               "at the beginning of the file");
     }
+    ADDOP_N(c, LOAD_CONST, names, consts);
 
-    ADDOP_O(c, LOAD_CONST, level, consts);
-    Py_DECREF(level);
-    ADDOP_O(c, LOAD_CONST, names, consts);
-    Py_DECREF(names);
     if (s->v.ImportFrom.module) {
         ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
     }
@@ -2970,7 +2965,6 @@ compiler_from_import(struct compiler *c, stmt_ty s)
             store_name = alias->asname;
 
         if (!compiler_nameop(c, store_name, Store)) {
-            Py_DECREF(names);
             return 0;
         }
     }
@@ -4739,10 +4733,6 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
-            mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
-            if (!mangled) {
-                return 0;
-            }
             if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
                 VISIT(c, annexpr, s->v.AnnAssign.annotation)
             }
@@ -4750,8 +4740,11 @@ compiler_annassign(struct compiler *c, stmt_ty s)
                 VISIT(c, expr, s->v.AnnAssign.annotation);
             }
             ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
-            ADDOP_O(c, LOAD_CONST, mangled, consts);
-            Py_DECREF(mangled);
+            mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
+            if (!mangled) {
+                return 0;
+            }
+            ADDOP_N(c, LOAD_CONST, mangled, consts);
             ADDOP(c, STORE_SUBSCR);
         }
         break;
