@@ -1687,6 +1687,7 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.assertEqual(len(ctx.get_ca_certs()), 1)
 
     @needs_sni
+    @unittest.skipUnless(hasattr(ssl, "PROTOCOL_TLSv1_2"), "needs TLS 1.2")
     def test_context_setget(self):
         # Check that the context of a connected socket can be replaced.
         ctx1 = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
