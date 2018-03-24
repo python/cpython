@@ -388,7 +388,7 @@ class Fraction(numbers.Rational):
                 # Includes ints.
                 return monomorphic_operator(a, b)
             elif isinstance(a, numbers.Real):
-                return float(fallback_operator(Fraction(a), b))
+                return fallback_operator(float(a), float(b))
             elif isinstance(a, numbers.Complex):
                 return fallback_operator(complex(a), complex(b))
             else:
