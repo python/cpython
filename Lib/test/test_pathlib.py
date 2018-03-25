@@ -22,9 +22,9 @@ except ImportError:
 class _BaseFlavourTest(object):
 
     def _check_parse_parts(self, arg, expected):
-        f = self.flavour.parse_parts
-        sep = self.flavour.sep
-        altsep = self.flavour.altsep
+        f = self._parse_parts
+        sep = self.sep
+        altsep = self.altsep
         actual = f([x.replace('/', sep) for x in arg])
         self.assertEqual(actual, expected)
         if altsep:
@@ -33,7 +33,7 @@ class _BaseFlavourTest(object):
 
     def test_parse_parts_common(self):
         check = self._check_parse_parts
-        sep = self.flavour.sep
+        sep = self.sep
         # Unanchored parts
         check([],                   ('', '', []))
         check(['a'],                ('', '', ['a']))
@@ -60,8 +60,7 @@ class _BaseFlavourTest(object):
         check(['a', '/b', '/c'],    ('', sep, [sep, 'c']))
 
 
-class PosixFlavourTest(_BaseFlavourTest, unittest.TestCase):
-    flavour = pathlib._posix_flavour
+class PosixFlavourTest(_BaseFlavourTest, unittest.TestCase, pathlib.PurePosixPath):
 
     def test_parse_parts(self):
         check = self._check_parse_parts
@@ -76,7 +75,7 @@ class PosixFlavourTest(_BaseFlavourTest, unittest.TestCase):
         check(['\\a'],                  ('', '', ['\\a']))
 
     def test_splitroot(self):
-        f = self.flavour.splitroot
+        f = self._splitroot
         self.assertEqual(f(''), ('', '', ''))
         self.assertEqual(f('a'), ('', '', 'a'))
         self.assertEqual(f('a/b'), ('', '', 'a/b'))
@@ -96,8 +95,7 @@ class PosixFlavourTest(_BaseFlavourTest, unittest.TestCase):
         self.assertEqual(f('\\a\\b'), ('', '', '\\a\\b'))
 
 
-class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
-    flavour = pathlib._windows_flavour
+class NTFlavourTest(_BaseFlavourTest, unittest.TestCase, pathlib.PureWindowsPath):
 
     def test_parse_parts(self):
         check = self._check_parse_parts
@@ -134,7 +132,7 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         check(['//?/Z:/a', '/b', 'c'],  ('\\\\?\\Z:', '\\', ['\\\\?\\Z:\\', 'b', 'c']))
 
     def test_splitroot(self):
-        f = self.flavour.splitroot
+        f = self._splitroot
         self.assertEqual(f(''), ('', '', ''))
         self.assertEqual(f('a'), ('', '', 'a'))
         self.assertEqual(f('a\\b'), ('', '', 'a\\b'))
@@ -182,10 +180,8 @@ class _BasePurePathTest(object):
     }
 
     def setUp(self):
-        p = self.cls('a')
-        self.flavour = p._flavour
-        self.sep = self.flavour.sep
-        self.altsep = self.flavour.altsep
+        self.sep = self.cls.sep
+        self.altsep = self.cls.altsep
 
     def test_constructor_common(self):
         P = self.cls
