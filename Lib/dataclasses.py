@@ -585,14 +585,24 @@ def _set_new_attribute(cls, name, value):
     return False
 
 
+
 # Decide if/how we're going to create a hash function.  Key is
 #  (unsafe_hash, eq, frozen, does-hash-exist).  Value is the action to
-#  take.
-# Actions:
-#  '':          Do nothing.
-#  'none':      Set __hash__ to None.
-#  'add':       Always add a generated __hash__function.
-#  'exception': Raise an exception.
+#  take.  The common case is to do nothing, so instead of providing a
+#  function that is a no-op, use None to signify that.
+
+def _hash_set_none(cls, fields):
+    return None
+
+def _hash_add(cls, fields):
+    flds = [f for f in fields if (f.compare if f.hash is None else f.hash)]
+    return _hash_fn(flds)
+
+def _hash_exception(cls, fields):
+    # Raise an exception.
+    raise TypeError(f'Cannot overwrite attribute __hash__ '
+                    f'in class {cls.__name__}')
+
 #
 #                +-------------------------------------- unsafe_hash?
 #                |      +------------------------------- eq?
@@ -602,22 +612,22 @@ def _set_new_attribute(cls, name, value):
 #                |      |      |      |        +-------  action
 #                |      |      |      |        |
 #                v      v      v      v        v
-_hash_action = {(False, False, False, False): (''),
-                (False, False, False, True ): (''),
-                (False, False, True,  False): (''),
-                (False, False, True,  True ): (''),
-                (False, True,  False, False): ('none'),
-                (False, True,  False, True ): (''),
-                (False, True,  True,  False): ('add'),
-                (False, True,  True,  True ): (''),
-                (True,  False, False, False): ('add'),
-                (True,  False, False, True ): ('exception'),
-                (True,  False, True,  False): ('add'),
-                (True,  False, True,  True ): ('exception'),
-                (True,  True,  False, False): ('add'),
-                (True,  True,  False, True ): ('exception'),
-                (True,  True,  True,  False): ('add'),
-                (True,  True,  True,  True ): ('exception'),
+_hash_action = {(False, False, False, False): None,
+                (False, False, False, True ): None,
+                (False, False, True,  False): None,
+                (False, False, True,  True ): None,
+                (False, True,  False, False): _hash_set_none,
+                (False, True,  False, True ): None,
+                (False, True,  True,  False): _hash_add,
+                (False, True,  True,  True ): None,
+                (True,  False, False, False): _hash_add,
+                (True,  False, False, True ): _hash_exception,
+                (True,  False, True,  False): _hash_add,
+                (True,  False, True,  True ): _hash_exception,
+                (True,  True,  False, False): _hash_add,
+                (True,  True,  False, True ): _hash_exception,
+                (True,  True,  True,  False): _hash_add,
+                (True,  True,  True,  True ): _hash_exception,
                 }
 # See https://bugs.python.org/issue32929#msg312829 for an if-statement
 #  version of this table.
@@ -774,7 +784,6 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                                 'functools.total_ordering')
 
     if frozen:
-        # XXX: Which fields are frozen? InitVar? ClassVar? hashed-only?
         for fn in _frozen_get_del_attr(cls, field_list):
             if _set_new_attribute(cls, fn.__name__, fn):
                 raise TypeError(f'Cannot overwrite attribute {fn.__name__} '
@@ -785,23 +794,10 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                                bool(eq),
                                bool(frozen),
                                has_explicit_hash]
-
-    # No need to call _set_new_attribute here, since we already know if
-    #  we're overwriting a __hash__ or not.
-    if hash_action == '':
-        # Do nothing.
-        pass
-    elif hash_action == 'none':
-        cls.__hash__ = None
-    elif hash_action == 'add':
-        flds = [f for f in field_list if (f.compare if f.hash is None else f.hash)]
-        cls.__hash__ = _hash_fn(flds)
-    elif hash_action == 'exception':
-        # Raise an exception.
-        raise TypeError(f'Cannot overwrite attribute __hash__ '
-                        f'in class {cls.__name__}')
-    else:
-        assert False, f"can't get here: {hash_action}"
+    if hash_action:
+        # No need to call _set_new_attribute here, since by the time
+        #  we're here the overwriting is unconditional.
+        cls.__hash__ = hash_action(cls, field_list)
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
