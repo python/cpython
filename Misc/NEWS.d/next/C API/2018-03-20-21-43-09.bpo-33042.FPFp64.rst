@@ -1,5 +1,2 @@
 Embedding applications may once again call PySys_ResetWarnOptions,
 PySys_AddWarnOption, and PySys_AddXOption prior to calling Py_Initialize.
-
-PySys_AddWarnOptionUnicode will display an error message on stderr rather
-than segfaulting.
