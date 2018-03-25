@@ -118,7 +118,7 @@ class ImportTests(unittest.TestCase):
                 f.write("__all__ = [b'invalid_type']")
             globals = {}
             with self.assertRaisesRegex(
-                TypeError, f"{re.escape(name)}\.__all__ must be str"
+                TypeError, f"{re.escape(name)}\\.__all__ must be str"
             ):
                 exec(f"from {name} import *", globals)
             self.assertNotIn(b"invalid_type", globals)
@@ -127,7 +127,7 @@ class ImportTests(unittest.TestCase):
                 f.write("globals()[b'invalid_type'] = object()")
             globals = {}
             with self.assertRaisesRegex(
-                TypeError, f"{re.escape(name)}\.__dict__ must be str"
+                TypeError, f"{re.escape(name)}\\.__dict__ must be str"
             ):
                 exec(f"from {name} import *", globals)
             self.assertNotIn(b"invalid_type", globals)
@@ -847,8 +847,11 @@ class PycacheTests(unittest.TestCase):
         unload(TESTFN)
         importlib.invalidate_caches()
         m = __import__(TESTFN)
-        self.assertEqual(m.__file__,
-                         os.path.join(os.curdir, os.path.relpath(pyc_file)))
+        try:
+            self.assertEqual(m.__file__,
+                             os.path.join(os.curdir, os.path.relpath(pyc_file)))
+        finally:
+            os.remove(pyc_file)
 
     def test___cached__(self):
         # Modules now also have an __cached__ that points to the pyc file.
