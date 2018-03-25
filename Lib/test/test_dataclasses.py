@@ -805,6 +805,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(list(C.__annotations__), ['i'])
         self.assertEqual(C(10).foo(), 4)
         self.assertEqual(C(10).bar, 5)
+        self.assertEqual(C(10).i, 10)
 
     def test_post_init(self):
         # Just make sure it gets called
@@ -1488,7 +1489,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(t), NT)
 
     def test_dynamic_class_creation(self):
-        cls_dict = {'__annotations__': OrderedDict(x=int, y=int),
+        cls_dict = {'__annotations__': {'x':int, 'y':int},
                     }
 
         # Create the class.
@@ -1501,7 +1502,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(asdict(cls(1, 2)), {'x': 1, 'y': 2})
 
     def test_dynamic_class_creation_using_field(self):
-        cls_dict = {'__annotations__': OrderedDict(x=int, y=int),
+        cls_dict = {'__annotations__': {'x':int, 'y':int},
                     'y': field(default=5),
                     }
 
