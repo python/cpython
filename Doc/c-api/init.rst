@@ -31,6 +31,9 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
   * :c:func:`Py_SetStandardStreamEncoding`
+  * :c:func:`PySys_AddWarnOption`
+  * :c:func:`PySys_AddXOption`
+  * :c:func:`PySys_ResetWarnOptions`
 
 * Informative functions:
 
