@@ -1,0 +1,2 @@
+Fix multiprocessing doc references to
+``multiprocessing.connection.Connection``.
