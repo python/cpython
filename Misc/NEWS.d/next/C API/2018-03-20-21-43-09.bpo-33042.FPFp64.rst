@@ -1,0 +1,2 @@
+Embedding applications may once again call PySys_ResetWarnOptions,
+PySys_AddWarnOption, and PySys_AddXOption prior to calling Py_Initialize.

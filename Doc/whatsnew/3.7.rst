@@ -951,6 +951,14 @@ Build and C API Changes
   second argument is *NULL* and the :c:type:`wchar_t*` string contains null
   characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
 
+- Changes to the startup sequence and the management of dynamic memory
+  allocators mean that the long documented requirement to call
+  :c:func:`Py_Initialize` before calling most C API functions is now
+  relied on more heavily, and failing to abide by it may lead to segfaults in
+  embedding applications. See the :ref:`porting-to-python-37` section in this
+  document and the :ref:`pre-init-safe` section in the C API documentation
+  for more details.
+
 
 Other CPython Implementation Changes
 ====================================
@@ -1098,6 +1106,7 @@ API and Feature Removals
   ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
   ``import selectors`` for example.
 
+.. _porting-to-python-37:
 
 Porting to Python 3.7
 =====================
@@ -1282,14 +1291,24 @@ Other CPython implementation changes
 ------------------------------------
 
 * In preparation for potential future changes to the public CPython runtime
-  initialization API (see :pep:`432` for details), CPython's internal startup
+  initialization API (see :pep:`432` for an initial, but somewhat outdated,
+  draft), CPython's internal startup
   and configuration management logic has been significantly refactored. While
   these updates are intended to be entirely transparent to both embedding
   applications and users of the regular CPython CLI, they're being mentioned
   here as the refactoring changes the internal order of various operations
   during interpreter startup, and hence may uncover previously latent defects,
   either in embedding applications, or in CPython itself.
-  (Contributed by Nick Coghlan and Eric Snow as part of :issue:`22257`.)
+  (Initially contributed by Nick Coghlan and Eric Snow as part of
+  :issue:`22257`, and further updated by Nick, Eric, and Victor Stinner in a
+  number of other issues). Some known details affected:
+
+    * :c:func:`PySys_AddWarnOptionUnicode` is not currently usable by embedding
+      applications due to the requirement to create a Unicode object prior to
+      calling `Py_Initialize`. Use :c:func:`PySys_AddWarnOption` instead.
+    * warnings filters added by an embedding application with
+      :c:func:`PySys_AddWarnOption` should now more consistently take precedence
+      over the default filters set by the interpreter
 
 * Due to changes in the way the default warnings filters are configured,
   setting :c:data:`Py_BytesWarningFlag` to a value greater than one is no longer
