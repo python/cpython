@@ -524,13 +524,13 @@ def run_test(modules, set_list, skip=None):
     test.id = lambda : None
     test.expect_set = list(gen(repeat(()), iter(sl)))
     with create_modules(modules):
-        sys.path.append(os.getcwd())
         with TracerRun(test, skip=skip) as tracer:
             tracer.runcall(tfunc_import)
 
 @contextmanager
 def create_modules(modules):
     with test.support.temp_cwd():
+        sys.path.append(os.getcwd())
         try:
             for m in modules:
                 fname = m + '.py'
@@ -542,6 +542,7 @@ def create_modules(modules):
         finally:
             for m in modules:
                 test.support.forget(m)
+            sys.path.pop()
 
 def break_in_func(funcname, fname=__file__, temporary=False, cond=None):
     return 'break', (fname, None, temporary, cond, funcname)
