@@ -2177,10 +2177,8 @@ class POSIXProcessTestCase(BaseTestCase):
                 with tempfile.TemporaryFile() as f:
                     os.dup2(f.fileno(), from_fd)
 
-            for fd in range(3):
-                if fd not in from_fds:
-                    os.close(fd)
-                    break
+            fd_to_close = (set(range(3)) - set(from_fds)).pop()
+            os.close(fd_to_close)
 
             arg_names = ['stdin', 'stdout', 'stderr']
             kwargs = {}
@@ -2195,7 +2193,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         os.write(fd, str(fd).encode('ascii'))
             ''')
 
-            skipped_fd = next(fd for fd in range(3) if fd not in to_fds)
+            skipped_fd = (set(range(3)) - set(to_fds)).pop()
 
             rc = subprocess.call([sys.executable, '-c', code, str(skipped_fd)],
                                  **kwargs)
