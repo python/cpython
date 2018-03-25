@@ -1698,6 +1698,13 @@ _clear_preinit_entries(_Py_PreInitEntry *optionlist)
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 };
 
+static void
+_clear_all_preinit_options(void)
+{
+    _clear_preinit_entries(&_preinit_warnoptions);
+    _clear_preinit_entries(&_preinit_xoptions);
+}
+
 static int
 _PySys_ReadPreInitOptions(void)
 {
@@ -1718,8 +1725,7 @@ _PySys_ReadPreInitOptions(void)
         entry = entry->next;
     }
 
-    _clear_preinit_entries(&_preinit_warnoptions);
-    _clear_preinit_entries(&_preinit_xoptions);
+    _clear_all_preinit_options();
     return 0;
 };
 
@@ -1728,6 +1734,16 @@ get_warnoptions(void)
 {
     PyObject *warnoptions = _PySys_GetObjectId(&PyId_warnoptions);
     if (warnoptions == NULL || !PyList_Check(warnoptions)) {
+        /* PEP432 TODO: we can reach this if warnoptions is NULL in the main
+        *  interpreter config. When that happens, we need to properly set
+         * the `warnoptions` reference in the main interpreter config as well.
+         *
+         * For Python 3.7, we shouldn't be able to get here due to the
+         * combination of how _PyMainInterpreter_ReadConfig and _PySys_EndInit
+         * work, but we expect 3.8+ to make the _PyMainInterpreter_ReadConfig
+         * call optional for embedding applications, thus making this
+         * reachable again.
+         */
         Py_XDECREF(warnoptions);
         warnoptions = PyList_New(0);
         if (warnoptions == NULL)
@@ -1803,6 +1819,16 @@ get_xoptions(void)
 {
     PyObject *xoptions = _PySys_GetObjectId(&PyId__xoptions);
     if (xoptions == NULL || !PyDict_Check(xoptions)) {
+        /* PEP432 TODO: we can reach this if xoptions is NULL in the main
+        *  interpreter config. When that happens, we need to properly set
+         * the `xoptions` reference in the main interpreter config as well.
+         *
+         * For Python 3.7, we shouldn't be able to get here due to the
+         * combination of how _PyMainInterpreter_ReadConfig and _PySys_EndInit
+         * work, but we expect 3.8+ to make the _PyMainInterpreter_ReadConfig
+         * call optional for embedding applications, thus making this
+         * reachable again.
+         */
         Py_XDECREF(xoptions);
         xoptions = PyDict_New();
         if (xoptions == NULL)
