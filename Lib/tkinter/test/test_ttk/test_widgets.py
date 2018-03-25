@@ -1662,6 +1662,17 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
             self.tv.insert('', 'end', text=value), text=None),
             value)
 
+        # test for values which are not None
+        itemid = self.tv.insert('', 'end', 0)
+        self.assertEqual(itemid, '0')
+        itemid = self.tv.insert('', 'end', 0.0)
+        self.assertEqual(itemid, '0.0')
+        # this is because False is resolveds to 0 and element with 0 id is already present
+        self.assertRaises(tkinter.TclError, self.tv.insert, '', '',
+            False)
+        self.assertRaises(tkinter.TclError, self.tv.insert, '', '',
+            '')
+
 
     def test_selection(self):
         self.assertRaises(TypeError, self.tv.selection, 'spam')
