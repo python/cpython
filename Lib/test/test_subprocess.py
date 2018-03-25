@@ -2201,9 +2201,14 @@ class POSIXProcessTestCase(BaseTestCase):
 
             for from_fd, to_fd in zip(from_fds, to_fds):
                 os.lseek(from_fd, 0, os.SEEK_SET)
-                exp_bytes = str(to_fd).encode('ascii')
                 read_bytes = os.read(from_fd, 1024)
-                self.assertEqual(read_bytes, exp_bytes)
+                read_fds = list(map(int, read_bytes.decode('ascii')))
+                msg = textwrap.dedent(f"""
+                    When testing {from_fds} to {to_fds} redirection,
+                    parent descriptor {from_fd} got redirected
+                    to descriptor(s) {read_fds} instead of descriptor {to_fd}.
+                """)
+                self.assertEqual([to_fd], read_fds, msg)
         finally:
             self._restore_fds(saved_fds)
 
