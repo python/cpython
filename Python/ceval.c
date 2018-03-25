@@ -5094,7 +5094,7 @@ static void
 maybe_dtrace_line(PyFrameObject *frame,
                   int *instr_lb, int *instr_ub, int *instr_prev)
 {
-    int line;
+    int line = -1;
     const char *co_filename, *co_name;
 
     /* If the last instruction executed isn't in the current
@@ -5106,14 +5106,14 @@ maybe_dtrace_line(PyFrameObject *frame,
                                        &bounds);
         *instr_lb = bounds.ap_lower;
         *instr_ub = bounds.ap_upper;
-    } else {
-        line = PyFrame_GetLineNumber(frame);
     }
-
     /* If the last instruction falls at the start of a line or if
        it represents a jump backwards, update the frame's line
        number and call the trace function. */
     if (frame->f_lasti == *instr_lb || frame->f_lasti < *instr_prev) {
+        if (line == -1) {
+            line = PyFrame_GetLineNumber(frame);
+        }
         co_filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
         if (!co_filename)
             co_filename = "?";
