@@ -288,7 +288,8 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
             argv0 = fullpath;
             n = wcslen(argv0);
         #else
-            argv0 = L"./placeholder";
+            argv0 = L".";
+            n = 1;
         #endif
     }
 
