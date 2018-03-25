@@ -125,8 +125,6 @@ class CmdLineTest(unittest.TestCase):
             script_exec_args = [script_exec_args]
         run_args = [*support.optim_args_from_interpreter_flags(),
                     *cmd_line_switches, *script_exec_args, *example_args]
-        if env_vars:
-            print(env_vars)
         rc, out, err = assert_python_ok(
             *run_args, __isolated=False, __cwd=cwd, **env_vars
         )
