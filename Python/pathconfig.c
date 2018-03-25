@@ -283,7 +283,7 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
     }
 
     if (have_module_arg) {
-        #ifdef HAVE_REALPATH || MS_WINDOWS
+        #if defined(HAVE_REALPATH) || defined(MS_WINDOWS)
             _Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath));
             argv0 = fullpath;
             n = wcslen(argv0);
