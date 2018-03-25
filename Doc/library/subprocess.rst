@@ -459,7 +459,10 @@ functions.
       common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed.
+   :const:`2` will be closed before the child process is executed.  Otherwise
+   when *close_fds* is false, file descriptors obey their inheritable flag
+   as described in :ref:`fd_inheritance`.
+
    On Windows, if *close_fds* is true then no handles will be inherited by the
    child process unless explicitly passed in the ``handle_list`` element of
    :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.
