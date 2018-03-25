@@ -341,10 +341,6 @@ class Bdb:
         if not self.breaks:
             # no breakpoints; run without debugger overhead
             sys.settrace(None)
-            frame = sys._getframe().f_back
-            while frame and frame is not self.botframe:
-                del frame.f_trace
-                frame = frame.f_back
 
     def set_quit(self):
         """Set quitting attribute to True.

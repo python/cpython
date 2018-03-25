@@ -1,0 +1,4 @@
+`f->f_lineno` is now `-1` when tracing is not set. When tracing is
+set, `f->f_lineno` is valid for all the frames on the stack except
+upon starting or resuming a frame where it is -1 until the first
+call to :c:func:`maybe_call_line_trace()`.

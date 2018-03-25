@@ -1139,6 +1139,41 @@ class IssuesTestCase(BaseTestCase):
             with TracerRun(self) as tracer:
                 tracer.runcall(tfunc_import)
 
+    def test_botframe_lineno(self):
+        # Issue #17697.
+        # This test failed when the condition f->f_trace != NULL was used to
+        # mean that tracing is active and therefore f->f_lineno are valid. The
+        # implementation of Bdb.set_continue() did not delete the f_trace of
+        # self.botframe and in that case all the f.f_lineno in the func()
+        # frame after returning from subf() have the same value, i.e. the line
+        # number of the call to subf().
+        def subf():
+            lno = 2
+
+        def func(tracer):
+            tracer.set_trace()
+            f = sys._getframe()
+            tracer.botframe = f     # assume func() is a module
+            subf()
+            if f.f_lineno - f.f_code.co_firstlineno + 1 == 6:
+                tracer.set_trace()
+            lno = 8
+
+        self.expect_set = [
+            ('line', 3, 'func'),            ('step',),
+            ('line', 4, 'func'),            ('step',),
+            ('line', 5, 'func'),            ('step',),
+            ('call', 1, 'subf'),            ('step',),
+            ('line', 2, 'subf'),            ('continue',),
+            ('line', 8, 'func'),            ('step',),
+            ('return', 8, 'func'),          ('quit',),
+        ]
+        with TracerRun(self) as tracer:
+            try:
+                func(tracer)
+            except _bdb.BdbQuit:
+                pass
+
 def test_main():
     test.support.run_unittest(
         StateTestCase,

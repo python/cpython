@@ -7,7 +7,15 @@ import difflib
 import gc
 from functools import wraps
 import asyncio
+from itertools import islice
 
+
+def get_frame_lineno(caller_level=0):
+    f = sys._getframe().f_back
+    while caller_level and f:
+        caller_level -= 1
+        f = f.f_back
+    return (f.f_lineno - f.f_code.co_firstlineno) if f else None
 
 class tracecontext:
     """Context manager that traces its enter and exit."""
@@ -442,6 +450,100 @@ class TraceTestCase(unittest.TestCase):
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line')])
+
+    def test_18_generator(self):
+        # Issue 17277: the f_lineno attribute of a generator frame is correct
+        # after the tracer has been removed while the generator was suspended.
+        def func():
+            def gen():
+                yield 1
+                self.assertEqual(get_frame_lineno(), 2)
+                yield 3
+
+            it = gen()
+            next(it)
+            sys.settrace(None)
+            next(it)
+
+        func.events = [
+            (0, 'call'),
+            (1, 'line'),
+            (6, 'line'),
+            (7, 'line'),
+            (1, 'call'),
+            (2, 'line'),
+            (2, 'return'),
+            (8, 'line'),
+        ]
+        self.run_test(func)
+
+    def test_19_stack_frame(self):
+        # Issues 16482 and 17277: the f_lineno of a frame on the call stack is
+        # correct after the tracer has been removed.
+        def func():
+            def remove_tracer():
+                sys.settrace(None)
+
+            def f():
+                remove_tracer()
+                self.assertEqual(get_frame_lineno(), 2)
+
+            f()
+
+        func.events = [
+            (0, 'call'),
+            (1, 'line'),
+            (4, 'line'),
+            (8, 'line'),
+            (4, 'call'),
+            (5, 'line'),
+            (1, 'call'),
+            (2, 'line'),
+        ]
+        self.run_test(func)
+
+    def test_20_return_in_caller(self):
+        # Issue 24565: upon returning in the caller and when the next opcode
+        # in the caller is RETURN_VALUE, f_lineno is the line of the previous
+        # line trace event, which is not necessarily the line obtained from
+        # co_lnotab and f_lasti. See the discussion at the end of
+        # Objects/lnotab_notes.txt.
+        def func(tracer):
+            def set_trace():
+                sys._getframe().f_back.f_trace = tracer
+                sys.settrace(tracer)
+
+            def f(a):
+                while a:
+                    lineno = 7
+                    set_trace(); break
+                else:
+                    lineno = 10
+
+            f(True)
+
+        func.events = [(8, 'return')]
+        self.run_test2(func)
+
+    def test_21_tracer_removed_after_call(self):
+        # Issue 7238: remove the tracer after a call event.
+        def func():
+            def f():
+                sys.settrace(None)
+                self.assertEqual(get_frame_lineno(), 2)
+                self.assertEqual(get_frame_lineno(), 3)
+
+            f()
+            f()
+
+        func.events = [
+            (0, 'call'),
+            (1, 'line'),
+            (6, 'line'),
+            (1, 'call'),
+            (2, 'line'),
+        ]
+        self.run_test(func)
 
 
 class SkipLineEventsTraceTestCase(TraceTestCase):

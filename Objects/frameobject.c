@@ -33,7 +33,7 @@ frame_getlocals(PyFrameObject *f, void *closure)
 int
 PyFrame_GetLineNumber(PyFrameObject *f)
 {
-    if (f->f_trace)
+    if (f->f_lineno != -1)
         return f->f_lineno;
     else
         return PyCode_Addr2Line(f->f_code, f->f_lasti);
@@ -112,21 +112,19 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         return -1;
     }
 
-    /* Upon the 'call' trace event of a new frame, f->f_lasti is -1 and
-     * f->f_trace is NULL, check first on the first condition.
-     * Forbidding jumps from the 'call' event of a new frame is a side effect
-     * of allowing to set f_lineno only from trace functions. */
+    /* Upon the 'call' trace event of a new frame, f->f_lasti is -1 */
     if (f->f_lasti == -1) {
         PyErr_Format(PyExc_ValueError,
                      "can't jump from the 'call' trace event of a new frame");
         return -1;
     }
 
-    /* You can only do this from within a trace function, not via
-     * _getframe or similar hackery. */
-    if (!f->f_trace) {
+    /* You can only do this from within a line trace function, not via
+     * _getframe or similar hackery or from the call trace function
+     * of a resumed generator. */
+    if (f->f_lineno == -1) {
         PyErr_Format(PyExc_ValueError,
-                     "f_lineno can only be set by a trace function");
+                     "f_lineno can only be set by a line trace function");
         return -1;
     }
 
@@ -332,9 +330,6 @@ frame_gettrace(PyFrameObject *f, void *closure)
 static int
 frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 {
-    /* We rely on f_lineno being accurate when f_trace is set. */
-    f->f_lineno = PyFrame_GetLineNumber(f);
-
     if (v == Py_None)
         v = NULL;
     Py_XINCREF(v);
@@ -705,7 +700,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     }
 
     f->f_lasti = -1;
-    f->f_lineno = code->co_firstlineno;
+    f->f_lineno = -1;
     f->f_iblock = 0;
     f->f_executing = 0;
     f->f_gen = NULL;

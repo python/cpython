@@ -3458,6 +3458,7 @@ return_or_yield:
                                      tstate, f, PyTrace_RETURN, retval)) {
                 Py_CLEAR(retval);
             }
+            f->f_lineno = -1;
         }
         if (tstate->c_profilefunc) {
             if (call_trace_protected(tstate->c_profilefunc, tstate->c_profileobj,
@@ -4308,8 +4309,10 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 {
+    PyFrameObject *f;
     PyThreadState *tstate = PyThreadState_GET();
     PyObject *temp = tstate->c_traceobj;
+
     _Py_TracingPossible += (func != NULL) - (tstate->c_tracefunc != NULL);
     Py_XINCREF(arg);
     tstate->c_tracefunc = NULL;
@@ -4322,6 +4325,14 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
     /* Flag that tracing or profiling is turned on */
     tstate->use_tracing = ((func != NULL)
                            || (tstate->c_profilefunc != NULL));
+
+    /* When tracing is not set, ensure that f_lineno is -1 for all the frames
+     * on the stack.
+     * When tracing is set, we rely on f_lineno being valid for all the frames
+     * on the stack for the case where the next opcode would be RETURN_VALUE,
+     * see the last paragraph of Objects/lnotab_notes.txt. */
+    for (f = tstate->frame; f != NULL; f = f->f_back)
+        f->f_lineno = func ? PyCode_Addr2Line(f->f_code, f->f_lasti) : -1;
 }
 
 void
@@ -5083,7 +5094,7 @@ static void
 maybe_dtrace_line(PyFrameObject *frame,
                   int *instr_lb, int *instr_ub, int *instr_prev)
 {
-    int line = frame->f_lineno;
+    int line;
     const char *co_filename, *co_name;
 
     /* If the last instruction executed isn't in the current
@@ -5095,12 +5106,14 @@ maybe_dtrace_line(PyFrameObject *frame,
                                        &bounds);
         *instr_lb = bounds.ap_lower;
         *instr_ub = bounds.ap_upper;
+    } else {
+        line = PyFrame_GetLineNumber(frame);
     }
+
     /* If the last instruction falls at the start of a line or if
        it represents a jump backwards, update the frame's line
        number and call the trace function. */
     if (frame->f_lasti == *instr_lb || frame->f_lasti < *instr_prev) {
-        frame->f_lineno = line;
         co_filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
         if (!co_filename)
             co_filename = "?";

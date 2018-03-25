@@ -35,10 +35,9 @@ typedef struct _frame {
 
     int f_lasti;                /* Last instruction if called */
     /* Call PyFrame_GetLineNumber() instead of reading this field
-       directly.  As of 2.3 f_lineno is only valid when tracing is
-       active (i.e. when f_trace is set).  At other times we use
-       PyCode_Addr2Line to calculate the line from the current
-       bytecode index. */
+       directly.  As of 2.3 f_lineno is valid when tracing is active.  At
+       other times we use PyCode_Addr2Line to calculate the line from the
+       current bytecode index and f->f_lineno is -1. */
     int f_lineno;               /* Current line number */
     int f_iblock;               /* index in f_blockstack */
     char f_executing;           /* whether the frame is still executing */
