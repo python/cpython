@@ -2667,7 +2667,7 @@ class TestSlots(unittest.TestCase):
         # There was a bug where a variable in a slot was assumed
         #  to also have a default value (of type types.MemberDescriptorType).
         with self.assertRaisesRegex(TypeError,
-                                    "__init__\(\) missing 1 required positional argument: 'x'"):
+                                    r"__init__\(\) missing 1 required positional argument: 'x'"):
             C()
 
         # We can create an instance, and assign to x.
