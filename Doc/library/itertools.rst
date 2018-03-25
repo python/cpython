@@ -445,16 +445,16 @@ loops that truncate the stream.
               for i, element in zip(range(start), iterable):
                   pass
               return
-          for i, element in enumerate(iterable):
-              if i == nexti:
-                  yield element
-                  try:
+          try:
+              for i, element in enumerate(iterable):
+                  if i == nexti:
+                      yield element
                       nexti = next(it)
-                  except StopIteration:
-                      # Consume to *stop*.
-                      for i, element in zip(range(i + 1, stop), iterable):
-                          pass
-                      return
+          except StopIteration:
+              # Consume to *stop*.
+              for i, element in zip(range(i + 1, stop), iterable):
+                  pass
+              return
 
    If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
    then the step defaults to one.
