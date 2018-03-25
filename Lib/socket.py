@@ -189,7 +189,7 @@ class socket(_socket.socket):
         return s
 
     def __getstate__(self):
-        raise TypeError("Cannot serialize socket object")
+        raise TypeError(f"cannot serialize '{self.__class__.__name__}' object")
 
     def dup(self):
         """dup() -> socket object
