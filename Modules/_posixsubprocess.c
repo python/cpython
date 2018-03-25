@@ -453,11 +453,13 @@ child_exec(char *const exec_array[],
 
     /* Close pipe fds.  Make sure we don't close the same fd more than */
     /* once, or standard fds. */
-    if (p2cread > 2)
+    if (p2cread > 2 && !_is_fd_in_sorted_fd_sequence(p2cread, py_fds_to_keep))
         POSIX_CALL(close(p2cread));
-    if (c2pwrite > 2 && c2pwrite != p2cread)
+    if (c2pwrite > 2 && c2pwrite != p2cread &&
+        !_is_fd_in_sorted_fd_sequence(c2pwrite, py_fds_to_keep))
         POSIX_CALL(close(c2pwrite));
-    if (errwrite != c2pwrite && errwrite != p2cread && errwrite > 2)
+    if (errwrite != c2pwrite && errwrite != p2cread && errwrite > 2 &&
+        !_is_fd_in_sorted_fd_sequence(errwrite, py_fds_to_keep))
         POSIX_CALL(close(errwrite));
 
     if (cwd)
