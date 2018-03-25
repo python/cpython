@@ -1668,10 +1668,8 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         itemid = self.tv.insert('', 'end', 0.0)
         self.assertEqual(itemid, '0.0')
         # this is because False resolves to 0 and element with 0 iid is already present
-        self.assertRaises(tkinter.TclError, self.tv.insert, '', 'end',
-            False)
-        self.assertRaises(tkinter.TclError, self.tv.insert, '', 'end',
-            '')
+        self.assertRaises(tkinter.TclError, self.tv.insert, '', 'end', False)
+        self.assertRaises(tkinter.TclError, self.tv.insert, '', 'end', '')
 
 
     def test_selection(self):
