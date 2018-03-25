@@ -199,11 +199,7 @@ class Timer:
         interested in.  After that, you should look at the entire
         vector and apply common sense rather than statistics.
         """
-        r = []
-        for i in range(repeat):
-            t = self.timeit(number)
-            r.append(t)
-        return r
+        return [self.time(number) for i in range(repeat)]
 
     def autorange(self, callback=None):
         """Return the number of loops and time taken so that total time >= 0.2.
