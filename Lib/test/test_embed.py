@@ -195,7 +195,10 @@ class EmbeddingTests(unittest.TestCase):
         """
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
         out, err = self.run_embedded_interpreter("pre_initialization_api", env=env)
-        expected_path = os.path.join(os.getcwd(), "spam")
+        if sys.platform == "win32":
+            expected_path = sys.executable
+        else:
+            expected_path = os.path.join(os.getcwd(), "spam")
         expected_output = f"sys.executable: {expected_path}\n"
         self.assertIn(expected_output, out)
         self.assertEqual(err, '')

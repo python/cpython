@@ -174,10 +174,10 @@ static int test_pre_initialization_sys_options(void)
     wchar_t *static_xoption = L"also_not_an_option=2";
     size_t warnoption_len = wcslen(static_warnoption);
     size_t xoption_len = wcslen(static_xoption);
-    wchar_t *dynamic_once_warnoption = calloc(warnoption_len, sizeof(wchar_t));
-    wchar_t *dynamic_xoption = calloc(xoption_len, sizeof(wchar_t));
-    wcsncpy(dynamic_once_warnoption, static_warnoption, warnoption_len);
-    wcsncpy(dynamic_xoption, static_xoption, xoption_len);
+    wchar_t *dynamic_once_warnoption = calloc(warnoption_len+1, sizeof(wchar_t));
+    wchar_t *dynamic_xoption = calloc(xoption_len+1, sizeof(wchar_t));
+    wcsncpy(dynamic_once_warnoption, static_warnoption, warnoption_len+1);
+    wcsncpy(dynamic_xoption, static_xoption, xoption_len+1);
 
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddWarnOption\n");
     PySys_AddWarnOption(L"default");
