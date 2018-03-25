@@ -421,6 +421,12 @@ Other Language Changes
   writable.
   (Contributed by Nathaniel J. Smith in :issue:`30579`.)
 
+* When using the :option:`-m` switch, ``sys.path[0]`` is now eagerly expanded
+  to the full starting directory path, rather than being left as the empty
+  directory (which allows imports from the *current* working directory at the
+  time when an import occurs)
+  (Contributed by Nick Coghlan in :issue:`33053`.)
+
 
 New Modules
 ===========
@@ -1137,6 +1143,11 @@ Changes in Python behavior
   and cannot have a comma on either side, and the duplication of the
   parentheses can be omitted only on calls.
   (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
+
+* When using the ``-m`` switch, the starting directory is now added to sys.path,
+  rather than the current working directory. Any programs that are found to be
+  relying on the previous behaviour will need to be updated to manipulate
+  :data:`sys.path` appropriately.
 
 
 Changes in the Python API

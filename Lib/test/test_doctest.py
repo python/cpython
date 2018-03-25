@@ -9,7 +9,7 @@ import os
 import sys
 import importlib
 import unittest
-
+import tempfile
 
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
@@ -688,10 +688,16 @@ class TestDocTestFinder(unittest.TestCase):
 
     def test_empty_namespace_package(self):
         pkg_name = 'doctest_empty_pkg'
-        os.mkdir(pkg_name)
-        mod = importlib.import_module(pkg_name)
-        assert doctest.DocTestFinder().find(mod) == []
-        os.rmdir(pkg_name)
+        with tempfile.TemporaryDirectory() as parent_dir:
+            pkg_dir = os.path.join(parent_dir, pkg_name)
+            os.mkdir(pkg_dir)
+            sys.path.append(parent_dir)
+            try:
+                mod = importlib.import_module(pkg_name)
+            finally:
+                support.forget(pkg_name)
+                sys.path.pop()
+            assert doctest.DocTestFinder().find(mod) == []
 
 
 def test_DocTestParser(): r"""
