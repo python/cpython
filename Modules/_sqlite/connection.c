@@ -1103,8 +1103,8 @@ int pysqlite_check_thread(pysqlite_Connection* self)
     if (self->check_same_thread) {
         if (PyThread_get_thread_ident() != self->thread_ident) {
             PyErr_Format(pysqlite_ProgrammingError,
-                        "SQLite objects created in a thread can only be used in that same thread."
-                        "The object was created in thread id %lu and this is thread id %lu",
+                        "SQLite objects created in a thread can only be used in that same thread. "
+                        "The object was created in thread id %lu and this is thread id %lu.",
                         self->thread_ident, PyThread_get_thread_ident());
             return 0;
         }
