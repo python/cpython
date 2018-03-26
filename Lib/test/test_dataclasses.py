@@ -2727,6 +2727,19 @@ class TestDescriptors(unittest.TestCase):
         self.assertEqual(C.c.name, 'c')
         self.assertEqual(C().c, 1)
 
+    def test_non_descriptor(self):
+        # PEP 487 says __set_name__ should work on non-descriptors.
+        # Create a descriptor.
+
+        class D:
+            def __set_name__(self, owner, name):
+                self.name = name
+
+        @dataclass
+        class C:
+            c: int=field(default=D(), init=False)
+        self.assertEqual(C.c.name, 'c')
+
 
 if __name__ == '__main__':
     unittest.main()

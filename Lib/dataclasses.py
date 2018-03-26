@@ -248,12 +248,11 @@ class Field:
     #  the default value, so the end result is a descriptor that had
     #  __set_name__ called on it at the right time.
     def __set_name__(self, owner, name):
-        if inspect.ismethoddescriptor(self.default):
-            func = getattr(self.default, '__set_name__', None)
-            if func:
-                # There is a __set_name__ method on the descriptor,
-                #  call it.
-                func(owner, name)
+        func = getattr(self.default, '__set_name__', None)
+        if func:
+            # There is a __set_name__ method on the descriptor,
+            #  call it.
+            func(owner, name)
 
 
 class _DataclassParams:
