@@ -695,6 +695,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                 #  all in the post-processed class.
                 delattr(cls, f.name)
             else:
+                if inspect.ismethoddescriptor(f.default):
+                    print('setting method descriptor')
                 setattr(cls, f.name, f.default)
 
     # Do we have any Field members that don't also have annotations?
