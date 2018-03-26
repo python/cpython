@@ -1,2 +1,0 @@
-locale.format_string now supports the 'monetary' keyword argument, and
-locale.format is deprecated.

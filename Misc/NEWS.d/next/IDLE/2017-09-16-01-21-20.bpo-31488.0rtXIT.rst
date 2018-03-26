@@ -1,4 +1,0 @@
-IDLE - Update non-key options in former extension classes. When applying
-configdialog changes, call .reload for each feature class. Change ParenMatch
-so updated options affect existing instances attached to existing editor
-windows.

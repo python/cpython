@@ -1,2 +1,0 @@
-Added a ``setStream`` method to ``logging.StreamHandler`` to allow the
-stream to be set after creation.

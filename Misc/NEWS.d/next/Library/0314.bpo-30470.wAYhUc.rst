@@ -1,2 +1,0 @@
-Deprecate invalid ctypes call protection on Windows.  Patch by Mariatta
-Wijaya.

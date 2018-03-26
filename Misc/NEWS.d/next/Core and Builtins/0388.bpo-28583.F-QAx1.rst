@@ -1,2 +1,0 @@
-PyDict_SetDefault didn't combine split table when needed. Patch by Xiang
-Zhang.

@@ -1175,13 +1175,7 @@ class GzipUtilTestCase(unittest.TestCase):
 class ServerProxyTestCase(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
-        if threading:
-            self.url = URL
-        else:
-            # Without threading, http_server() and http_multi_server() will not
-            # be executed and URL is still equal to None. 'http://' is a just
-            # enough to choose the scheme (HTTP)
-            self.url = 'http://'
+        self.url = URL
 
     def test_close(self):
         p = xmlrpclib.ServerProxy(self.url)

@@ -1,2 +1,0 @@
-Fixed ``Task.cancel()`` can be ignored when the task is running coroutine
-and the coroutine returned without any more ``await``.

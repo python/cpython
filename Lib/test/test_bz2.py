@@ -13,6 +13,7 @@ import subprocess
 import threading
 from test.support import unlink
 import _compression
+import sys
 
 
 # Skip tests if the bz2 module doesn't exist.
@@ -62,7 +63,7 @@ class BaseTest(unittest.TestCase):
     BAD_DATA = b'this is not a valid bzip2 file'
 
     # Some tests need more than one block of uncompressed data. Since one block
-    # is at least 100 kB, we gather some data dynamically and compress it.
+    # is at least 100,000 bytes, we gather some data dynamically and compress it.
     # Note that this assumes that compression works correctly, so we cannot
     # simply use the bigger test data for all tests.
     test_size = 0
@@ -815,6 +816,16 @@ class BZ2DecompressorTest(BaseTest):
         self.assertRaises(Exception, bzd.decompress, self.BAD_DATA * 30)
         # Previously, a second call could crash due to internal inconsistency
         self.assertRaises(Exception, bzd.decompress, self.BAD_DATA * 30)
+
+    @support.refcount_test
+    def test_refleaks_in___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        bzd = BZ2Decompressor()
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            bzd.__init__()
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
 
 class CompressDecompressTest(BaseTest):
     def testCompress(self):

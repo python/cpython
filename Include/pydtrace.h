@@ -34,6 +34,8 @@ static inline void PyDTrace_INSTANCE_NEW_START(int arg0) {}
 static inline void PyDTrace_INSTANCE_NEW_DONE(int arg0) {}
 static inline void PyDTrace_INSTANCE_DELETE_START(int arg0) {}
 static inline void PyDTrace_INSTANCE_DELETE_DONE(int arg0) {}
+static inline void PyDTrace_IMPORT_FIND_LOAD_START(const char *arg0) {}
+static inline void PyDTrace_IMPORT_FIND_LOAD_DONE(const char *arg0, int arg1) {}
 
 static inline int PyDTrace_LINE_ENABLED(void) { return 0; }
 static inline int PyDTrace_FUNCTION_ENTRY_ENABLED(void) { return 0; }
@@ -44,6 +46,8 @@ static inline int PyDTrace_INSTANCE_NEW_START_ENABLED(void) { return 0; }
 static inline int PyDTrace_INSTANCE_NEW_DONE_ENABLED(void) { return 0; }
 static inline int PyDTrace_INSTANCE_DELETE_START_ENABLED(void) { return 0; }
 static inline int PyDTrace_INSTANCE_DELETE_DONE_ENABLED(void) { return 0; }
+static inline int PyDTrace_IMPORT_FIND_LOAD_START_ENABLED(void) { return 0; }
+static inline int PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED(void) { return 0; }
 
 #endif /* !WITH_DTRACE */
 

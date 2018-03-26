@@ -34,8 +34,6 @@ static PyObject *
 crypt_crypt_impl(PyObject *module, const char *word, const char *salt)
 /*[clinic end generated code: output=0512284a03d2803c input=0e8edec9c364352b]*/
 {
-    /* On some platforms (AtheOS) crypt returns NULL for an invalid
-       salt. Return None in that case. XXX Maybe raise an exception?  */
     return Py_BuildValue("s", crypt(word, salt));
 }
 

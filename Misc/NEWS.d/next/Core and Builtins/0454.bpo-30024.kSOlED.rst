@@ -1,2 +1,0 @@
-Circular imports involving absolute imports with binding a submodule to a
-name are now supported.

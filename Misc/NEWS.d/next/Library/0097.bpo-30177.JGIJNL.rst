@@ -1,2 +1,0 @@
-path.resolve(strict=False) no longer cuts the path after the first element
-not present in the filesystem.  Patch by Antoine Pietri.

@@ -1,2 +1,0 @@
-`dis` now works with asynchronous generator and coroutine objects. Patch by
-George Collins based on diagnosis by Luciano Ramalho.

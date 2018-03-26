@@ -187,7 +187,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                 goto restart;
             mask = so->mask;                 /* help avoid a register spill */
         }
-        else if (entry->hash == -1 && freeslot == NULL)
+        else if (entry->hash == -1)
             freeslot = entry;
 
         if (i + LINEAR_PROBES <= mask) {
@@ -216,7 +216,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                         goto restart;
                     mask = so->mask;
                 }
-                else if (entry->hash == -1 && freeslot == NULL)
+                else if (entry->hash == -1)
                     freeslot = entry;
             }
         }
@@ -795,6 +795,7 @@ frozenset_hash(PyObject *self)
     hash ^= ((Py_uhash_t)PySet_GET_SIZE(self) + 1) * 1927868237UL;
 
     /* Disperse patterns arising in nested frozensets */
+    hash ^= (hash >> 11) ^ (hash >> 25);
     hash = hash * 69069U + 907133923UL;
 
     /* -1 is reserved as an error code */

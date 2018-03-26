@@ -87,6 +87,7 @@ import struct
 import sys
 from chunk import Chunk
 from collections import namedtuple
+import warnings
 
 _wave_params = namedtuple('_wave_params',
                      'nchannels sampwidth framerate nframes comptype compname')
@@ -252,12 +253,22 @@ class Wave_read:
     #
 
     def _read_fmt_chunk(self, chunk):
-        wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
+        try:
+            wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
+        except struct.error:
+            raise EOFError from None
         if wFormatTag == WAVE_FORMAT_PCM:
-            sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
+            try:
+                sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
+            except struct.error:
+                raise EOFError from None
             self._sampwidth = (sampwidth + 7) // 8
+            if not self._sampwidth:
+                raise Error('bad sample width')
         else:
             raise Error('unknown format: %r' % (wFormatTag,))
+        if not self._nchannels:
+            raise Error('bad # of channels')
         self._framesize = self._nchannels * self._sampwidth
         self._comptype = 'NONE'
         self._compname = 'not compressed'
@@ -502,4 +513,7 @@ def open(f, mode=None):
     else:
         raise Error("mode must be 'r', 'rb', 'w', or 'wb'")
 
-openfp = open # B/W compatibility
+def openfp(f, mode=None):
+    warnings.warn("wave.openfp is deprecated since Python 3.7. "
+                  "Use wave.open instead.", DeprecationWarning, stacklevel=2)
+    return open(f, mode=mode)

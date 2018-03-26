@@ -1034,7 +1034,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
       Send an object to the other end of the connection which should be read
       using :meth:`recv`.
 
-      The object must be picklable.  Very large pickles (approximately 32 MB+,
+      The object must be picklable.  Very large pickles (approximately 32 MiB+,
       though it depends on the OS) may raise a :exc:`ValueError` exception.
 
    .. method:: recv()
@@ -1071,7 +1071,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
 
       If *offset* is given then data is read from that position in *buffer*.  If
       *size* is given then that many bytes will be read from buffer.  Very large
-      buffers (approximately 32 MB+, though it depends on the OS) may raise a
+      buffers (approximately 32 MiB+, though it depends on the OS) may raise a
       :exc:`ValueError` exception
 
    .. method:: recv_bytes([maxlength])
@@ -1837,8 +1837,8 @@ Running the following commands creates a server for a single shared queue which
 remote clients can access::
 
    >>> from multiprocessing.managers import BaseManager
-   >>> import queue
-   >>> queue = queue.Queue()
+   >>> from queue import Queue
+   >>> queue = Queue()
    >>> class QueueManager(BaseManager): pass
    >>> QueueManager.register('get_queue', callable=lambda:queue)
    >>> m = QueueManager(address=('', 50000), authkey=b'abracadabra')
@@ -2181,7 +2181,7 @@ with the :class:`Pool` class.
 
       .. versionadded:: 3.3
 
-   .. method:: starmap_async(func, iterable[, chunksize[, callback[, error_back]]])
+   .. method:: starmap_async(func, iterable[, chunksize[, callback[, error_callback]]])
 
       A combination of :meth:`starmap` and :meth:`map_async` that iterates over
       *iterable* of iterables and calls *func* with the iterables unpacked.
@@ -2296,7 +2296,7 @@ multiple connections at the same time.
    If a welcome message is not received, then
    :exc:`~multiprocessing.AuthenticationError` is raised.
 
-.. function:: Client(address[, family[, authenticate[, authkey]]])
+.. function:: Client(address[, family[, authkey]])
 
    Attempt to set up a connection to the listener which is using address
    *address*, returning a :class:`~multiprocessing.Connection`.
@@ -2305,14 +2305,13 @@ multiple connections at the same time.
    generally be omitted since it can usually be inferred from the format of
    *address*. (See :ref:`multiprocessing-address-formats`)
 
-   If *authenticate* is ``True`` or *authkey* is a byte string then digest
-   authentication is used.  The key used for authentication will be either
-   *authkey* or ``current_process().authkey`` if *authkey* is ``None``.
-   If authentication fails then
-   :exc:`~multiprocessing.AuthenticationError` is raised.  See
-   :ref:`multiprocessing-auth-keys`.
+   If *authkey* is given and not None, it should be a byte string and will be
+   used as the secret key for an HMAC-based authentication challenge. No
+   authentication is done if *authkey* is None.
+   :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
+   See :ref:`multiprocessing-auth-keys`.
 
-.. class:: Listener([address[, family[, backlog[, authenticate[, authkey]]]]])
+.. class:: Listener([address[, family[, backlog[, authkey]]]])
 
    A wrapper for a bound socket or Windows named pipe which is 'listening' for
    connections.
@@ -2341,17 +2340,10 @@ multiple connections at the same time.
    to the :meth:`~socket.socket.listen` method of the socket once it has been
    bound.
 
-   If *authenticate* is ``True`` (``False`` by default) or *authkey* is not
-   ``None`` then digest authentication is used.
-
-   If *authkey* is a byte string then it will be used as the
-   authentication key; otherwise it must be ``None``.
-
-   If *authkey* is ``None`` and *authenticate* is ``True`` then
-   ``current_process().authkey`` is used as the authentication key.  If
-   *authkey* is ``None`` and *authenticate* is ``False`` then no
-   authentication is done.  If authentication fails then
-   :exc:`~multiprocessing.AuthenticationError` is raised.
+   If *authkey* is given and not None, it should be a byte string and will be
+   used as the secret key for an HMAC-based authentication challenge. No
+   authentication is done if *authkey* is None.
+   :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
    See :ref:`multiprocessing-auth-keys`.
 
    .. method:: accept()

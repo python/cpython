@@ -9,6 +9,7 @@
 import array
 from binascii import unhexlify
 import hashlib
+import importlib
 import itertools
 import os
 import sys
@@ -83,11 +84,11 @@ class HashLibTestCase(unittest.TestCase):
     def _conditional_import_module(self, module_name):
         """Import a module and return a reference to it or None on failure."""
         try:
-            exec('import '+module_name)
-        except ImportError as error:
+            return importlib.import_module(module_name)
+        except ModuleNotFoundError as error:
             if self._warn_on_extension_import:
                 warnings.warn('Did a C extension fail to compile? %s' % error)
-        return locals().get(module_name)
+        return None
 
     def __init__(self, *args, **kwargs):
         algorithms = set()
@@ -161,6 +162,16 @@ class HashLibTestCase(unittest.TestCase):
         constructors = self.constructors_to_test.values()
         return itertools.chain.from_iterable(constructors)
 
+    @support.refcount_test
+    @unittest.skipIf(c_hashlib is None, 'Require _hashlib module')
+    def test_refleaks_in_hash___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        sha1_hash = c_hashlib.new('sha1')
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            sha1_hash.__init__('sha1')
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
     def test_hash_array(self):
         a = array.array("b", range(10))
         for cons in self.hash_constructors:
@@ -192,7 +203,7 @@ class HashLibTestCase(unittest.TestCase):
         try:
             import _md5
         except ImportError:
-            pass
+            self.skipTest("_md5 module not available")
         # This forces an ImportError for "import _md5" statements
         sys.modules['_md5'] = None
         # clear the cache
@@ -616,6 +627,24 @@ class HashLibTestCase(unittest.TestCase):
           "7d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923")
 
     @requires_blake2
+    def test_case_blake2b_all_parameters(self):
+        # This checks that all the parameters work in general, and also that
+        # parameter byte order doesn't get confused on big endian platforms.
+        self.check('blake2b', b"foo",
+          "920568b0c5873b2f0ab67bedb6cf1b2b",
+          digest_size=16,
+          key=b"bar",
+          salt=b"baz",
+          person=b"bing",
+          fanout=2,
+          depth=3,
+          leaf_size=4,
+          node_offset=5,
+          node_depth=6,
+          inner_size=7,
+          last_node=True)
+
+    @requires_blake2
     def test_blake2b_vectors(self):
         for msg, key, md in read_vectors('blake2b'):
             key = bytes.fromhex(key)
@@ -639,6 +668,24 @@ class HashLibTestCase(unittest.TestCase):
     def test_case_blake2s_1(self):
         self.check('blake2s', b"abc",
           "508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982")
+
+    @requires_blake2
+    def test_case_blake2s_all_parameters(self):
+        # This checks that all the parameters work in general, and also that
+        # parameter byte order doesn't get confused on big endian platforms.
+        self.check('blake2s', b"foo",
+          "bf2a8f7fe3c555012a6f8046e646bc75",
+          digest_size=16,
+          key=b"bar",
+          salt=b"baz",
+          person=b"bing",
+          fanout=2,
+          depth=3,
+          leaf_size=4,
+          node_offset=5,
+          node_depth=6,
+          inner_size=7,
+          last_node=True)
 
     @requires_blake2
     def test_blake2s_vectors(self):

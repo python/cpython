@@ -1,2 +1,0 @@
-Deprecate PyOS_AfterFork() and add PyOS_BeforeFork(),
-PyOS_AfterFork_Parent() and PyOS_AfterFork_Child().

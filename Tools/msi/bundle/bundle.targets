@@ -71,6 +71,7 @@
         <Package Include="..\tcltk\tcltk*.wixproj" />
         <Package Include="..\test\test*.wixproj" />
         <Package Include="..\tools\tools*.wixproj" />
+        <Package Include="..\ucrt\ucrt*.wixproj" />
     </ItemGroup>
     
     <PropertyGroup>

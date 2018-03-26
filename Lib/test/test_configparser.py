@@ -740,6 +740,23 @@ boolean {0[0]} NO
         parsed_files = cf.read([])
         self.assertEqual(parsed_files, [])
 
+    def test_read_returns_file_list_with_bytestring_path(self):
+        if self.delimiters[0] != '=':
+            self.skipTest('incompatible format')
+        file1_bytestring = support.findfile("cfgparser.1").encode()
+        # check when passing an existing bytestring path
+        cf = self.newconfig()
+        parsed_files = cf.read(file1_bytestring)
+        self.assertEqual(parsed_files, [file1_bytestring])
+        # check when passing an non-existing bytestring path
+        cf = self.newconfig()
+        parsed_files = cf.read(b'nonexistent-file')
+        self.assertEqual(parsed_files, [])
+        # check when passing both an existing and non-existing bytestring path
+        cf = self.newconfig()
+        parsed_files = cf.read([file1_bytestring, b'nonexistent-file'])
+        self.assertEqual(parsed_files, [file1_bytestring])
+
     # shared by subclasses
     def get_interpolation_config(self):
         return self.fromstring(

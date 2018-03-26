@@ -1,2 +1,0 @@
-Support the *disabled* marker in Setup files. Extension modules listed after
-this marker are not built at all, neither by the Makefile nor by setup.py.

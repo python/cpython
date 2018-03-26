@@ -16,7 +16,7 @@ audioop_getsample_impl(PyObject *module, Py_buffer *fragment, int width,
                        Py_ssize_t index);
 
 static PyObject *
-audioop_getsample(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_getsample(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -51,7 +51,7 @@ static PyObject *
 audioop_max_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_max(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -85,7 +85,7 @@ static PyObject *
 audioop_minmax_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_minmax(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_minmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -119,7 +119,7 @@ static PyObject *
 audioop_avg_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_avg(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_avg(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -153,7 +153,7 @@ static PyObject *
 audioop_rms_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_rms(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_rms(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -188,7 +188,7 @@ audioop_findfit_impl(PyObject *module, Py_buffer *fragment,
                      Py_buffer *reference);
 
 static PyObject *
-audioop_findfit(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_findfit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -227,7 +227,7 @@ audioop_findfactor_impl(PyObject *module, Py_buffer *fragment,
                         Py_buffer *reference);
 
 static PyObject *
-audioop_findfactor(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_findfactor(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -266,7 +266,7 @@ audioop_findmax_impl(PyObject *module, Py_buffer *fragment,
                      Py_ssize_t length);
 
 static PyObject *
-audioop_findmax(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_findmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -300,7 +300,7 @@ static PyObject *
 audioop_avgpp_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_avgpp(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_avgpp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -334,7 +334,7 @@ static PyObject *
 audioop_maxpp_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_maxpp(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_maxpp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -368,7 +368,7 @@ static PyObject *
 audioop_cross_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_cross(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_cross(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -403,7 +403,7 @@ audioop_mul_impl(PyObject *module, Py_buffer *fragment, int width,
                  double factor);
 
 static PyObject *
-audioop_mul(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_mul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -439,7 +439,7 @@ audioop_tomono_impl(PyObject *module, Py_buffer *fragment, int width,
                     double lfactor, double rfactor);
 
 static PyObject *
-audioop_tomono(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_tomono(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -476,7 +476,7 @@ audioop_tostereo_impl(PyObject *module, Py_buffer *fragment, int width,
                       double lfactor, double rfactor);
 
 static PyObject *
-audioop_tostereo(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_tostereo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -513,7 +513,7 @@ audioop_add_impl(PyObject *module, Py_buffer *fragment1,
                  Py_buffer *fragment2, int width);
 
 static PyObject *
-audioop_add(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment1 = {NULL, NULL};
@@ -552,7 +552,7 @@ static PyObject *
 audioop_bias_impl(PyObject *module, Py_buffer *fragment, int width, int bias);
 
 static PyObject *
-audioop_bias(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_bias(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -587,7 +587,7 @@ static PyObject *
 audioop_reverse_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_reverse(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_reverse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -621,7 +621,7 @@ static PyObject *
 audioop_byteswap_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_byteswap(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_byteswap(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -656,7 +656,7 @@ audioop_lin2lin_impl(PyObject *module, Py_buffer *fragment, int width,
                      int newwidth);
 
 static PyObject *
-audioop_lin2lin(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_lin2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -694,7 +694,7 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
                     int weightA, int weightB);
 
 static PyObject *
-audioop_ratecv(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_ratecv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -734,7 +734,7 @@ static PyObject *
 audioop_lin2ulaw_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_lin2ulaw(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_lin2ulaw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -768,7 +768,7 @@ static PyObject *
 audioop_ulaw2lin_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_ulaw2lin(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_ulaw2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -802,7 +802,7 @@ static PyObject *
 audioop_lin2alaw_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_lin2alaw(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_lin2alaw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -836,7 +836,7 @@ static PyObject *
 audioop_alaw2lin_impl(PyObject *module, Py_buffer *fragment, int width);
 
 static PyObject *
-audioop_alaw2lin(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_alaw2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -871,7 +871,7 @@ audioop_lin2adpcm_impl(PyObject *module, Py_buffer *fragment, int width,
                        PyObject *state);
 
 static PyObject *
-audioop_lin2adpcm(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_lin2adpcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -907,7 +907,7 @@ audioop_adpcm2lin_impl(PyObject *module, Py_buffer *fragment, int width,
                        PyObject *state);
 
 static PyObject *
-audioop_adpcm2lin(PyObject *module, PyObject **args, Py_ssize_t nargs)
+audioop_adpcm2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer fragment = {NULL, NULL};
@@ -928,4 +928,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e2076026235d7f0f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2f88b8827ee0aa9b input=a9049054013a1b77]*/

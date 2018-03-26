@@ -1,4 +1,0 @@
-Switch to the abstract API when dealing with ``PyInterpreterState.modules``.
-This allows later support for all dict subclasses and other Mapping
-implementations.  Also add a ``PyImport_GetModule()`` function to reduce
-a bunch of duplicated code.

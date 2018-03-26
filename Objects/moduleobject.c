@@ -21,6 +21,17 @@ static PyMemberDef module_members[] = {
     {0}
 };
 
+
+/* Helper for sanity check for traverse not handling m_state == NULL
+ * Issue #32374 */
+#ifdef Py_DEBUG
+static int
+bad_traverse_test(PyObject *self, void *arg) {
+    assert(self != NULL);
+    return 0;
+}
+#endif
+
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
@@ -345,6 +356,16 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
         }
     }
 
+    /* Sanity check for traverse not handling m_state == NULL
+     * This doesn't catch all possible cases, but in many cases it should
+     * make many cases of invalid code crash or raise Valgrind issues
+     * sooner than they would otherwise.
+     * Issue #32374 */
+#ifdef Py_DEBUG
+    if (def->m_traverse != NULL) {
+        def->m_traverse(m, bad_traverse_test, NULL);
+    }
+#endif
     Py_DECREF(nameobj);
     return m;
 
@@ -679,21 +700,25 @@ module_repr(PyModuleObject *m)
 static PyObject*
 module_getattro(PyModuleObject *m, PyObject *name)
 {
-    PyObject *attr, *mod_name;
+    PyObject *attr, *mod_name, *getattr;
     attr = PyObject_GenericGetAttr((PyObject *)m, name);
-    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError))
+    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
         return attr;
+    }
     PyErr_Clear();
     if (m->md_dict) {
+        _Py_IDENTIFIER(__getattr__);
+        getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
+        if (getattr) {
+            PyObject* stack[1] = {name};
+            return _PyObject_FastCall(getattr, stack, 1);
+        }
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
-        if (mod_name) {
+        if (mod_name && PyUnicode_Check(mod_name)) {
             PyErr_Format(PyExc_AttributeError,
                         "module '%U' has no attribute '%U'", mod_name, name);
             return NULL;
-        }
-        else if (PyErr_Occurred()) {
-            PyErr_Clear();
         }
     }
     PyErr_Format(PyExc_AttributeError,
@@ -733,8 +758,15 @@ module_dir(PyObject *self, PyObject *args)
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 
     if (dict != NULL) {
-        if (PyDict_Check(dict))
-            result = PyDict_Keys(dict);
+        if (PyDict_Check(dict)) {
+            PyObject *dirfunc = PyDict_GetItemString(dict, "__dir__");
+            if (dirfunc) {
+                result = _PyObject_CallNoArg(dirfunc);
+            }
+            else {
+                result = PyDict_Keys(dict);
+            }
+        }
         else {
             const char *name = PyModule_GetName(self);
             if (name)

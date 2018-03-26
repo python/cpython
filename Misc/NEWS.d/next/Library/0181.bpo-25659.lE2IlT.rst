@@ -1,2 +1,0 @@
-In ctypes, prevent a crash calling the from_buffer() and from_buffer_copy()
-methods on abstract classes like Array.

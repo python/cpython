@@ -1,2 +1,0 @@
-ftplib.FTP.putline() now throws ValueError on commands that contains CR or
-LF. Patch by Dong-hee Na.

@@ -169,11 +169,11 @@ static size_t num_installed_pythons = 0;
 
 static wchar_t * location_checks[] = {
     L"\\",
-    L"\\PCBuild\\win32\\",
-    L"\\PCBuild\\amd64\\",
+    L"\\PCbuild\\win32\\",
+    L"\\PCbuild\\amd64\\",
     /* To support early 32bit versions of Python that stuck the build binaries
-    * directly in PCBuild... */
-    L"\\PCBuild\\",
+    * directly in PCbuild... */
+    L"\\PCbuild\\",
     NULL
 };
 
@@ -1116,6 +1116,7 @@ static PYC_MAGIC magic_values[] = {
     { 3320, 3351, L"3.5" },
     { 3360, 3379, L"3.6" },
     { 3390, 3399, L"3.7" },
+    { 3400, 3409, L"3.8" },
     { 0 }
 };
 

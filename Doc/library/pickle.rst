@@ -370,7 +370,7 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
    Python 2 names to the new names used in Python 3.  The *encoding* and
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
    2; these default to 'ASCII' and 'strict', respectively.  The *encoding* can
-   be 'bytes' to read these ß8-bit string instances as bytes objects.
+   be 'bytes' to read these 8-bit string instances as bytes objects.
 
    .. method:: load()
 
