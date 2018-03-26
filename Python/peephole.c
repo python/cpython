@@ -423,6 +423,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         }
     }
 
+    /* Bail out if an exception is set */
+    if (PyErr_Occurred())
+        goto exitError;
+
     /* Fixup lnotab */
     for (i = 0, nops = 0; i < codelen; i++) {
         assert(i - nops <= INT_MAX);
