@@ -240,6 +240,21 @@ class Field:
                 f'metadata={self.metadata}'
                 ')')
 
+    # This is used to support the PEP 487 __set_name__ protocol in the
+    #  case where we're using a field that contains a descriptor as a
+    #  defaul value.  For details on __set_name__, see
+    #  https://www.python.org/dev/peps/pep-0487/#implementation-details.
+    # Note that in _process_class, this Field object is overwritten with
+    #  the default value, so the end result is a descriptor that had
+    #  __set_name__ called on it at the right time.
+    def __set_name__(self, owner, name):
+        if inspect.ismethoddescriptor(self.default):
+            func = getattr(self.default, '__set_name__', None)
+            if func:
+                # There is a __set_name__ method on the descriptor,
+                #  call it.
+                func(owner, name)
+
 
 class _DataclassParams:
     __slots__ = ('init',
@@ -695,8 +710,18 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                 #  all in the post-processed class.
                 delattr(cls, f.name)
             else:
-                if inspect.ismethoddescriptor(f.default):
-                    print('setting method descriptor')
+                # Because this class was initially initialized with a
+                #  Field object, if we're overwriting that with a
+                #  method descriptor then the descriptor's
+                #  .__set_name__ method will not have been called at
+                #  class creation time.  Manually call __set_name__
+                #  here, if it exists.
+                ## if inspect.ismethoddescriptor(f.default):
+                ##     func = getattr(f.default, '__set_name__', None)
+                ##     if func:
+                ##         # There is a __set_name__ method on the
+                ##         #  descriptor, call it.
+                ##         func(cls, f.name)
                 setattr(cls, f.name, f.default)
 
     # Do we have any Field members that don't also have annotations?
