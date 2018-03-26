@@ -1,0 +1,3 @@
+Treat type variables and special typing forms as immutable by copy and
+pickle.  This fixes several minor issues and inconsistencies, and improves
+backwards compatibility with Python 3.6.
