@@ -710,18 +710,6 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                 #  all in the post-processed class.
                 delattr(cls, f.name)
             else:
-                # Because this class was initially initialized with a
-                #  Field object, if we're overwriting that with a
-                #  method descriptor then the descriptor's
-                #  .__set_name__ method will not have been called at
-                #  class creation time.  Manually call __set_name__
-                #  here, if it exists.
-                ## if inspect.ismethoddescriptor(f.default):
-                ##     func = getattr(f.default, '__set_name__', None)
-                ##     if func:
-                ##         # There is a __set_name__ method on the
-                ##         #  descriptor, call it.
-                ##         func(cls, f.name)
                 setattr(cls, f.name, f.default)
 
     # Do we have any Field members that don't also have annotations?
