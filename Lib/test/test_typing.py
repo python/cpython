@@ -1100,7 +1100,7 @@ class GenericTests(BaseTestCase):
         TL = TypeVar('TL')
         TLB = TypeVar('TLB', bound=int)
         TLV = TypeVar('TLV', bytes, str)
-        for X in [TP, TPB, TPV]:
+        for X in [TL, TLB, TLV]:
             self.assertIs(copy(X), X)
             self.assertIs(deepcopy(X), X)
 
