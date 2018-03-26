@@ -1091,11 +1091,18 @@ class GenericTests(BaseTestCase):
         TP = TypeVar('TP')
         TPB = TypeVar('TPB', bound=int)
         TPV = TypeVar('TPV', bytes, str)
-        for X in [TP, List, typing.Mapping, ClassVar, typing.Iterable,
+        for X in [TP, TPB, TPV, List, typing.Mapping, ClassVar, typing.Iterable,
                   Union, Any, Tuple, Callable]:
             self.assertIs(copy(X), X)
             self.assertIs(deepcopy(X), X)
             self.assertIs(pickle.loads(pickle.dumps(X)), X)
+        # Check that local type variables are copyable.
+        TL = TypeVar('TL')
+        TLB = TypeVar('TLB', bound=int)
+        TLV = TypeVar('TLV', bytes, str)
+        for X in [TP, TPB, TPV]:
+            self.assertIs(copy(X), X)
+            self.assertIs(deepcopy(X), X)
 
     def test_copy_generic_instances(self):
         T = TypeVar('T')

@@ -285,8 +285,17 @@ class _Final:
         if '_root' not in kwds:
             raise TypeError("Cannot subclass special typing classes")
 
+class _Immutable:
+    """Mixin to indicate that object should not be copied."""
 
-class _SpecialForm(_Final, _root=True):
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
+
+
+class _SpecialForm(_Final, _Immutable, _root=True):
     """Internal indicator of special typing constructs.
     See _doc instance attribute for specific docs.
     """
@@ -330,9 +339,6 @@ class _SpecialForm(_Final, _root=True):
 
     def __reduce__(self):
         return self._name
-
-    def __deepcopy__(self, memo):
-        return self  # Special forms are immutable.
 
     def __call__(self, *args, **kwds):
         raise TypeError(f"Cannot instantiate {self!r}")
@@ -503,7 +509,7 @@ def _find_name(mod, name):
     return getattr(sys.modules[mod], name)
 
 
-class TypeVar(_Final, _root=True):
+class TypeVar(_Final, _Immutable, _root=True):
     """Type variable.
 
     Usage::
@@ -543,6 +549,8 @@ class TypeVar(_Final, _root=True):
       T.__covariant__ == False
       T.__contravariant__ = False
       A.__constraints__ == (str, bytes)
+
+    Note that only type variables defined in global scope can be pickled.
     """
 
     __slots__ = ('__name__', '__bound__', '__constraints__',
@@ -592,9 +600,6 @@ class TypeVar(_Final, _root=True):
 
     def __reduce__(self):
         return (_find_name, (self._def_mod, self.__name__))
-
-    def __deepcopy__(self, memo):
-        return self
 
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
