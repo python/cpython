@@ -1583,6 +1583,12 @@ expression support in the :mod:`re` module).
          >>> 'Py' in 'Python'
          True
 
+      If the substring *sub* is ``''``, then `:meth:~str.find` method will return 
+      a value that is equal to ``len(str)``.
+
+         >>> 'abc'.find('')
+         3
+
 
 .. method:: str.format(*args, **kwargs)
 
