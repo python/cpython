@@ -377,11 +377,11 @@ def median(data):
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    if n%2 == 1:
-        return data[n//2]
+    mid, remainder = divmod(n, 2)
+    if remainder:
+        return data[mid]
     else:
-        i = n//2
-        return (data[i - 1] + data[i])/2
+        return (data[mid - 1] + data[mid])/2
 
 
 def median_low(data):
