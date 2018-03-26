@@ -424,7 +424,7 @@ child_exec(char *const exec_array[],
        either 0, 1 or 2, it is possible that it is overwritten (#12607). */
     if (c2pwrite == 0)
         POSIX_CALL(c2pwrite = dup(c2pwrite));
-    if (errwrite == 0 || errwrite == 1)
+    while (errwrite == 0 || errwrite == 1)
         POSIX_CALL(errwrite = dup(errwrite));
 
     /* Dup fds for child.
