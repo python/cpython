@@ -19,17 +19,17 @@ __author__ = "Guilherme Polo <ggpolo@gmail.com>"
 __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "Labelframe", "LabelFrame", "Menubutton", "Notebook", "Panedwindow",
            "PanedWindow", "Progressbar", "Radiobutton", "Scale", "Scrollbar",
-           "Separator", "Sizegrip", "Style", "Treeview",
+           "Separator", "Sizegrip", "Spinbox", "Style", "Treeview",
            # Extensions
            "LabeledScale", "OptionMenu",
            # functions
            "tclobjs_to_py", "setup_master"]
 
-import Tkinter
-from Tkinter import _flatten, _join, _stringify, _splitdict
+import tkinter
+from tkinter import _flatten, _join, _stringify, _splitdict
 
 # Verify if Tk is new enough to not need the Tile package
-_REQUIRE_TILE = True if Tkinter.TkVersion < 8.5 else False
+_REQUIRE_TILE = True if tkinter.TkVersion < 8.5 else False
 
 def _load_tile(master):
     if _REQUIRE_TILE:
@@ -64,7 +64,7 @@ def _format_optdict(optdict, script=False, ignore=None):
       ('-foreground', 'blue', '-padding', '1 2 3 4')"""
 
     opts = []
-    for opt, value in optdict.iteritems():
+    for opt, value in optdict.items():
         if not ignore or opt not in ignore:
             opts.append("-%s" % opt)
             if value is not None:
@@ -80,10 +80,8 @@ def _mapdict_values(items):
     #   returns:
     #   ['active selected', 'grey', 'focus', [1, 2, 3, 4]]
     opt_val = []
-    for item in items:
-        state = item[:-1]
-        val = item[-1]
-        # hacks for bakward compatibility
+    for *state, val in items:
+        # hacks for backward compatibility
         state[0] # raise IndexError if empty
         if len(state) == 1:
             # if it is empty (something that evaluates to False), then
@@ -108,7 +106,7 @@ def _format_mapdict(mapdict, script=False):
       ('-expand', '{active selected} grey focus {1, 2, 3, 4}')"""
 
     opts = []
-    for opt, value in mapdict.iteritems():
+    for opt, value in mapdict.items():
         opts.extend(("-%s" % opt,
                      _format_optvalue(_mapdict_values(value), script)))
 
@@ -207,7 +205,7 @@ def _script_from_settings(settings):
     script = []
     # a script will be generated according to settings passed, which
     # will then be evaluated by Tcl
-    for name, opts in settings.iteritems():
+    for name, opts in settings.items():
         # will format specific keys according to Tcl code
         if opts.get('configure'): # format 'configure'
             s = ' '.join(_format_optdict(opts['configure'], True))
@@ -230,7 +228,7 @@ def _script_from_settings(settings):
 
             # find where args end, and where kwargs start
             argc = 1 # etype was the first one
-            while argc < len(eopts) and not hasattr(eopts[argc], 'iteritems'):
+            while argc < len(eopts) and not hasattr(eopts[argc], 'items'):
                 argc += 1
 
             elemargs = eopts[1:argc]
@@ -305,7 +303,7 @@ def _val_or_dict(tk, options, *args):
 
 def _convert_stringval(value):
     """Converts a value to, hopefully, a more appropriate Python object."""
-    value = unicode(value)
+    value = str(value)
     try:
         value = int(value)
     except (ValueError, TypeError):
@@ -323,11 +321,11 @@ def _to_number(x):
 
 def _tclobj_to_py(val):
     """Return value converted from Tcl object to Python object."""
-    if val and hasattr(val, '__len__') and not isinstance(val, basestring):
+    if val and hasattr(val, '__len__') and not isinstance(val, str):
         if getattr(val[0], 'typename', None) == 'StateSpec':
             val = _list_from_statespec(val)
         else:
-            val = map(_convert_stringval, val)
+            val = list(map(_convert_stringval, val))
 
     elif hasattr(val, 'typename'): # some other (single) Tcl object
         val = _convert_stringval(val)
@@ -350,11 +348,11 @@ def setup_master(master=None):
     If it is not allowed to use the default root and master is None,
     RuntimeError is raised."""
     if master is None:
-        if Tkinter._support_default_root:
-            master = Tkinter._default_root or Tkinter.Tk()
+        if tkinter._support_default_root:
+            master = tkinter._default_root or tkinter.Tk()
         else:
             raise RuntimeError(
-                    "No master specified and Tkinter is "
+                    "No master specified and tkinter is "
                     "configured to not support default root")
     return master
 
@@ -383,7 +381,9 @@ class Style(object):
         a sequence identifying the value for that option."""
         if query_opt is not None:
             kw[query_opt] = None
-        return _val_or_dict(self.tk, kw, self._name, "configure", style)
+        result = _val_or_dict(self.tk, kw, self._name, "configure", style)
+        if result or query_opt:
+            return result
 
 
     def map(self, style, query_opt=None, **kw):
@@ -468,12 +468,14 @@ class Style(object):
 
     def element_names(self):
         """Returns the list of elements defined in the current theme."""
-        return self.tk.splitlist(self.tk.call(self._name, "element", "names"))
+        return tuple(n.lstrip('-') for n in self.tk.splitlist(
+            self.tk.call(self._name, "element", "names")))
 
 
     def element_options(self, elementname):
         """Return the list of elementname's options."""
-        return self.tk.splitlist(self.tk.call(self._name, "element", "options", elementname))
+        return tuple(o.lstrip('-') for o in self.tk.splitlist(
+            self.tk.call(self._name, "element", "options", elementname)))
 
 
     def theme_create(self, themename, parent=None, settings=None):
@@ -525,7 +527,7 @@ class Style(object):
         self.tk.call("ttk::setTheme", themename)
 
 
-class Widget(Tkinter.Widget):
+class Widget(tkinter.Widget):
     """Base class for Tk themed widgets."""
 
     def __init__(self, master, widgetname, kw=None):
@@ -552,7 +554,7 @@ class Widget(Tkinter.Widget):
         if not getattr(master, '_tile_loaded', False):
             # Load tile now, if needed
             _load_tile(master)
-        Tkinter.Widget.__init__(self, master, widgetname, kw=kw)
+        tkinter.Widget.__init__(self, master, widgetname, kw=kw)
 
 
     def identify(self, x, y):
@@ -644,7 +646,7 @@ class Checkbutton(Widget):
         return self.tk.call(self._w, "invoke")
 
 
-class Entry(Widget, Tkinter.Entry):
+class Entry(Widget, tkinter.Entry):
     """Ttk Entry widget displays a one-line text string and allows that
     string to be edited by the user."""
 
@@ -775,7 +777,7 @@ class Labelframe(Widget):
         """
         Widget.__init__(self, master, "ttk::labelframe", kw)
 
-LabelFrame = Labelframe # Tkinter name compatibility
+LabelFrame = Labelframe # tkinter name compatibility
 
 
 class Menubutton(Widget):
@@ -930,7 +932,7 @@ class Notebook(Widget):
         self.tk.call("ttk::notebook::enableTraversal", self._w)
 
 
-class Panedwindow(Widget, Tkinter.PanedWindow):
+class Panedwindow(Widget, tkinter.PanedWindow):
     """Ttk Panedwindow widget displays a number of subwindows, stacked
     either vertically or horizontally."""
 
@@ -952,7 +954,7 @@ class Panedwindow(Widget, Tkinter.PanedWindow):
         Widget.__init__(self, master, "ttk::panedwindow", kw)
 
 
-    forget = Tkinter.PanedWindow.forget # overrides Pack.forget
+    forget = tkinter.PanedWindow.forget # overrides Pack.forget
 
 
     def insert(self, pos, child, **kw):
@@ -986,7 +988,7 @@ class Panedwindow(Widget, Tkinter.PanedWindow):
         Returns the new position of sash number index."""
         return self.tk.getint(self.tk.call(self._w, "sashpos", index, newpos))
 
-PanedWindow = Panedwindow # Tkinter name compatibility
+PanedWindow = Panedwindow # tkinter name compatibility
 
 
 class Progressbar(Widget):
@@ -1059,7 +1061,7 @@ class Radiobutton(Widget):
         return self.tk.call(self._w, "invoke")
 
 
-class Scale(Widget, Tkinter.Scale):
+class Scale(Widget, tkinter.Scale):
     """Ttk Scale widget is typically used to control the numeric value of
     a linked variable that varies uniformly over some range."""
 
@@ -1098,7 +1100,7 @@ class Scale(Widget, Tkinter.Scale):
         return self.tk.call(self._w, 'get', x, y)
 
 
-class Scrollbar(Widget, Tkinter.Scrollbar):
+class Scrollbar(Widget, tkinter.Scrollbar):
     """Ttk Scrollbar controls the viewport of a scrollable widget."""
 
     def __init__(self, master=None, **kw):
@@ -1147,7 +1149,34 @@ class Sizegrip(Widget):
         Widget.__init__(self, master, "ttk::sizegrip", kw)
 
 
-class Treeview(Widget, Tkinter.XView, Tkinter.YView):
+class Spinbox(Entry):
+    """Ttk Spinbox is an Entry with increment and decrement arrows
+
+    It is commonly used for number entry or to select from a list of
+    string values.
+    """
+
+    def __init__(self, master=None, **kw):
+        """Construct a Ttk Spinbox widget with the parent master.
+
+        STANDARD OPTIONS
+
+            class, cursor, style, takefocus, validate,
+            validatecommand, xscrollcommand, invalidcommand
+
+        WIDGET-SPECIFIC OPTIONS
+
+            to, from_, increment, values, wrap, format, command
+        """
+        Entry.__init__(self, master, "ttk::spinbox", **kw)
+
+
+    def set(self, value):
+        """Sets the value of the Spinbox to value."""
+        self.tk.call(self._w, "set", value)
+
+
+class Treeview(Widget, tkinter.XView, tkinter.YView):
     """Ttk Treeview widget displays a hierarchical collection of items.
 
     Each item has a textual label, an optional image, and an optional list
@@ -1264,7 +1293,7 @@ class Treeview(Widget, Tkinter.XView, Tkinter.YView):
 
         To configure the tree column heading, call this with column = "#0" """
         cmd = kw.get('command')
-        if cmd and not isinstance(cmd, basestring):
+        if cmd and not isinstance(cmd, str):
             # callback not registered yet, do it now
             kw['command'] = self.master.register(cmd, self._substitute)
 
@@ -1392,31 +1421,36 @@ class Treeview(Widget, Tkinter.XView, Tkinter.YView):
         self.tk.call(self._w, "see", item)
 
 
-    def selection(self, selop=None, items=None):
-        """If selop is not specified, returns selected items."""
-        if isinstance(items, basestring):
-            items = (items,)
-        return self.tk.splitlist(self.tk.call(self._w, "selection", selop, items))
+    def selection(self):
+        """Returns the tuple of selected items."""
+        return self.tk.splitlist(self.tk.call(self._w, "selection"))
 
 
-    def selection_set(self, items):
-        """items becomes the new selection."""
-        self.selection("set", items)
+    def _selection(self, selop, items):
+        if len(items) == 1 and isinstance(items[0], (tuple, list)):
+            items = items[0]
+
+        self.tk.call(self._w, "selection", selop, items)
 
 
-    def selection_add(self, items):
-        """Add items to the selection."""
-        self.selection("add", items)
+    def selection_set(self, *items):
+        """The specified items becomes the new selection."""
+        self._selection("set", items)
 
 
-    def selection_remove(self, items):
-        """Remove items from the selection."""
-        self.selection("remove", items)
+    def selection_add(self, *items):
+        """Add all of the specified items to the selection."""
+        self._selection("add", items)
 
 
-    def selection_toggle(self, items):
-        """Toggle the selection state of each item in items."""
-        self.selection("toggle", items)
+    def selection_remove(self, *items):
+        """Remove all of the specified items from the selection."""
+        self._selection("remove", items)
+
+
+    def selection_toggle(self, *items):
+        """Toggle the selection state of each specified item."""
+        self._selection("toggle", items)
 
 
     def set(self, item, column=None, value=None):
@@ -1470,7 +1504,7 @@ class Treeview(Widget, Tkinter.XView, Tkinter.YView):
 
 # Extensions
 
-class LabeledScale(Frame, object):
+class LabeledScale(Frame):
     """A Ttk Scale widget with a Ttk Label widget indicating its
     current value.
 
@@ -1480,7 +1514,7 @@ class LabeledScale(Frame, object):
     def __init__(self, master=None, variable=None, from_=0, to=10, **kw):
         """Construct a horizontal LabeledScale with parent master, a
         variable to be associated with the Ttk Scale widget and its range.
-        If variable is not specified, a Tkinter.IntVar is created.
+        If variable is not specified, a tkinter.IntVar is created.
 
         WIDGET-SPECIFIC OPTIONS
 
@@ -1491,7 +1525,7 @@ class LabeledScale(Frame, object):
         self._label_top = kw.pop('compound', 'top') == 'top'
 
         Frame.__init__(self, master, **kw)
-        self._variable = variable or Tkinter.IntVar(master)
+        self._variable = variable or tkinter.IntVar(master)
         self._variable.set(from_)
         self._last_valid = from_
 
@@ -1517,11 +1551,10 @@ class LabeledScale(Frame, object):
         try:
             self._variable.trace_vdelete('w', self.__tracecb)
         except AttributeError:
-            # widget has been destroyed already
             pass
         else:
             del self._variable
-        Frame.destroy(self)
+        super().destroy()
         self.label = None
         self.scale = None
 
@@ -1553,22 +1586,19 @@ class LabeledScale(Frame, object):
         self.label['text'] = newval
         self.after_idle(adjust_label)
 
-
-    def _get_value(self):
+    @property
+    def value(self):
         """Return current scale value."""
         return self._variable.get()
 
-
-    def _set_value(self, val):
+    @value.setter
+    def value(self, val):
         """Set new scale value."""
         self._variable.set(val)
 
 
-    value = property(_get_value, _set_value)
-
-
 class OptionMenu(Menubutton):
-    """Themed OptionMenu, based after Tkinter's OptionMenu, which allows
+    """Themed OptionMenu, based after tkinter's OptionMenu, which allows
     the user to select a value from a menu."""
 
     def __init__(self, master, variable, default=None, *values, **kwargs):
@@ -1589,13 +1619,13 @@ class OptionMenu(Menubutton):
         kw = {'textvariable': variable, 'style': kwargs.pop('style', None),
               'direction': kwargs.pop('direction', None)}
         Menubutton.__init__(self, master, **kw)
-        self['menu'] = Tkinter.Menu(self, tearoff=False)
+        self['menu'] = tkinter.Menu(self, tearoff=False)
 
         self._variable = variable
         self._callback = kwargs.pop('command', None)
         if kwargs:
-            raise Tkinter.TclError('unknown option -%s' % (
-                kwargs.iterkeys().next()))
+            raise tkinter.TclError('unknown option -%s' % (
+                next(iter(kwargs.keys()))))
 
         self.set_menu(default, *values)
 
@@ -1614,7 +1644,7 @@ class OptionMenu(Menubutton):
         menu.delete(0, 'end')
         for val in values:
             menu.add_radiobutton(label=val,
-                command=Tkinter._setit(self._variable, val, self._callback),
+                command=tkinter._setit(self._variable, val, self._callback),
                 variable=self._variable)
 
         if default:
@@ -1627,4 +1657,4 @@ class OptionMenu(Menubutton):
             del self._variable
         except AttributeError:
             pass
-        Menubutton.destroy(self)
+        super().destroy()
