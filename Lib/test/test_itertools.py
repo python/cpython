@@ -1632,7 +1632,6 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
             # Consume to *stop*.
             for i, element in zip(range(i + 1, stop), iterable):
                 pass
-            return
 
     def test_islice_recipe(self):
         self.assertEqual(list(self.islice('ABCDEFG', 2)), list('AB'))

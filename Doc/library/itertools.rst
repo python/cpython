@@ -454,7 +454,6 @@ loops that truncate the stream.
               # Consume to *stop*.
               for i, element in zip(range(i + 1, stop), iterable):
                   pass
-              return
 
    If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
    then the step defaults to one.
