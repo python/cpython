@@ -391,8 +391,8 @@ Creating connections
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
    .. versionchanged:: 3.4.4
-
-      The *family*, *proto*, *flags*, *reuse_address*, *reuse_port, *allow_broadcast*, and *sock* parameters were added
+      The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
+      *allow_broadcast*, and *sock* parameters were added.
 
 .. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path=None, \*, ssl=None, sock=None, server_hostname=None)
 
