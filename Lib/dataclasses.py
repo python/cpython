@@ -240,6 +240,20 @@ class Field:
                 f'metadata={self.metadata}'
                 ')')
 
+    # This is used to support the PEP 487 __set_name__ protocol in the
+    #  case where we're using a field that contains a descriptor as a
+    #  defaul value.  For details on __set_name__, see
+    #  https://www.python.org/dev/peps/pep-0487/#implementation-details.
+    # Note that in _process_class, this Field object is overwritten with
+    #  the default value, so the end result is a descriptor that had
+    #  __set_name__ called on it at the right time.
+    def __set_name__(self, owner, name):
+        func = getattr(self.default, '__set_name__', None)
+        if func:
+            # There is a __set_name__ method on the descriptor,
+            #  call it.
+            func(owner, name)
+
 
 class _DataclassParams:
     __slots__ = ('init',

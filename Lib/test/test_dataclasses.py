@@ -2698,6 +2698,48 @@ class TestSlots(unittest.TestCase):
         # We can add a new field to the derived instance.
         d.z = 10
 
+class TestDescriptors(unittest.TestCase):
+    def test_set_name(self):
+        # See bpo-33141.
+
+        # Create a descriptor.
+        class D:
+            def __set_name__(self, owner, name):
+                self.name = name
+            def __get__(self, instance, owner):
+                if instance is not None:
+                    return 1
+                return self
+
+        # This is the case of just normal descriptor behavior, no
+        #  dataclass code is involved in initializing the descriptor.
+        @dataclass
+        class C:
+            c: int=D()
+        self.assertEqual(C.c.name, 'c')
+
+        # Now test with a default value and init=False, which is the
+        #  only time this is really meaningful.  If not using
+        #  init=False, then the descriptor will be overwritten, anyway.
+        @dataclass
+        class C:
+            c: int=field(default=D(), init=False)
+        self.assertEqual(C.c.name, 'c')
+        self.assertEqual(C().c, 1)
+
+    def test_non_descriptor(self):
+        # PEP 487 says __set_name__ should work on non-descriptors.
+        # Create a descriptor.
+
+        class D:
+            def __set_name__(self, owner, name):
+                self.name = name
+
+        @dataclass
+        class C:
+            c: int=field(default=D(), init=False)
+        self.assertEqual(C.c.name, 'c')
+
 
 if __name__ == '__main__':
     unittest.main()
