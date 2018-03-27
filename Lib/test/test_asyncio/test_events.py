@@ -1475,7 +1475,6 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
-    @unittest.skipIf(sys.platform == 'darwin', 'test hangs on MacOS')
     def test_read_pty_output(self):
         proto = MyReadPipeProto(loop=self.loop)
 
@@ -1502,6 +1501,7 @@ class EventLoopTestsMixin:
         self.assertEqual(5, proto.nbytes)
 
         os.close(slave)
+        proto.transport.close()
         self.loop.run_until_complete(proto.done)
         self.assertEqual(
             ['INITIAL', 'CONNECTED', 'EOF', 'CLOSED'], proto.state)
