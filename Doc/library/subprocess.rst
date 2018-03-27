@@ -340,11 +340,12 @@ functions.
    :class:`Popen` are as follows.
 
    *args* should be a sequence of program arguments or else a single string or
-   :term:`path-like object`. By default, the program to execute is the first
-   item in *args* if *args* is a sequence. If *args* is a string, the
-   interpretation is platform-dependent and described below.  See the *shell*
-   and *executable* arguments for additional differences from the default
-   behavior.  Unless otherwise stated, it is recommended to pass *args* as a sequence.
+   :term:`path-like object`.
+   By default, the program to execute is the first item in *args* if *args* is
+   a sequence.  If *args* is a string, the interpretation is
+   platform-dependent and described below.  See the *shell* and *executable*
+   arguments for additional differences from the default behavior.  Unless
+   otherwise stated, it is recommended to pass *args* as a sequence.
 
    On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
