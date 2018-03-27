@@ -530,6 +530,14 @@ class TestGzip(BaseTest):
         with gzip.open(self.filename, "rb") as f:
             f._buffer.raw._fp.prepend()
 
+    def test_seekable(self):
+        seekable = gzip.GzipFile(fileobj=io.BytesIO())
+        not_seekable = gzip.GzipFile(fileobj=UnseekableIO())
+
+        self.assertTrue(seekable.seekable())
+        self.assertFalse(not_seekable.seekable())
+
+
 class TestOpen(BaseTest):
     def test_binary_modes(self):
         uncompressed = data1 * 50

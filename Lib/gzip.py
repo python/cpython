@@ -347,7 +347,7 @@ class GzipFile(_compression.BaseStream):
         return self.mode == WRITE
 
     def seekable(self):
-        return True
+        return self.fileobj.seekable()
 
     def seek(self, offset, whence=io.SEEK_SET):
         if self.mode == WRITE:

@@ -1,0 +1,2 @@
+gzip.GzipFile's seekable() method returns the seek-ability of its underlying
+file object
