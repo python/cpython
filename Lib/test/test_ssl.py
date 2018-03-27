@@ -505,14 +505,17 @@ class BasicSocketTests(unittest.TestCase):
             test_wrap_socket(sock,
                              certfile=certfile)
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_empty_cert(self):
         """Wrapping with an empty cert file"""
         self.bad_cert_test("nullcert.pem")
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_malformed_cert(self):
         """Wrapping with a badly formatted certificate (syntax error)"""
         self.bad_cert_test("badcert.pem")
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_malformed_key(self):
         """Wrapping with a badly formatted key (syntax error)"""
         self.bad_cert_test("badkey.pem")
@@ -1038,6 +1041,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             ctx.verify_flags = None
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_load_cert_chain(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         # Combined key and cert in a single file
@@ -1121,6 +1125,7 @@ class ContextTests(unittest.TestCase):
         # Make sure the password function isn't called if it isn't needed
         ctx.load_cert_chain(CERTFILE, password=getpass_exception)
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_load_verify_locations(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_verify_locations(CERTFILE)
@@ -1198,6 +1203,7 @@ class ContextTests(unittest.TestCase):
             ctx.load_verify_locations(cadata=b"broken")
 
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_load_dh_params(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_dh_params(DHFILE)
@@ -1498,7 +1504,7 @@ class SSLErrorTests(unittest.TestCase):
         e = ssl.SSLZeroReturnError(1, "foo")
         self.assertEqual(str(e), "foo")
         self.assertEqual(e.errno, 1)
-
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_lib_reason(self):
         # Test the library and reason attributes
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1755,6 +1761,7 @@ class SimpleBackgroundTests(unittest.TestCase):
             self.assertTrue(cert)
 
     @unittest.skipIf(os.name == "nt", "Can't use a socket as a file under Windows")
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_makefile_close(self):
         # Issue #5238: creating a file-like object with makefile() shouldn't
         # delay closing the underlying "real socket" (here tested with its

@@ -124,6 +124,7 @@ class TestFcntl(unittest.TestCase):
         finally:
             os.close(fd)
 
+    @unittest.skipIf('vxworks' in sys.platform, 'vxWorks (vxSim) doesnt support flock')
     def test_flock(self):
         # Solaris needs readable file for shared lock
         self.f = open(TESTFN, 'wb+')
