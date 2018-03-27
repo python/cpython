@@ -1022,8 +1022,7 @@ Miscellaneous
 Connection Objects
 ~~~~~~~~~~~~~~~~~~
 
-.. module:: multiprocessing.connection
-   :noindex:
+.. currentmodule:: multiprocessing.connection
 
 Connection objects allow the sending and receiving of picklable objects or
 strings.  They can be thought of as message oriented connected sockets.
@@ -1162,6 +1161,8 @@ For example:
 
 Synchronization primitives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: multiprocessing
 
 Generally synchronization primitives are not as necessary in a multiprocess
 program as they are in a multithreaded program.  See the documentation for
