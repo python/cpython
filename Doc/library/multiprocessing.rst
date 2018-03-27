@@ -307,6 +307,7 @@ For example::
            
        for i in range(10):
            pool.apply_async(random_sleep, callback=report_slept_duration)
+
        print "Finished adding to pool. Waiting for jobs to finish."
        pool.close()
        pool.join()
@@ -1839,11 +1840,10 @@ with the :class:`Pool` class.
 
       A variant of the :meth:`apply` method which returns a result object.
 
-      If *callback* is specified then it should be a callable which accepts a
-      single argument, the return value of *func*.  When the result becomes ready
-      *callback* is applied to it (unless the call failed) back in the main thread.
-      *callback* should complete immediately since otherwise the thread which
-      handles the results will get blocked.
+      The *callback*, if specified, must be a callable taking a single argument.
+      When *func* successfully finishes, *callback* is applied to its return value,
+      back in the main process. During the time callbacks run, they impede further
+      pool maintenance, so they should be designed to complete immediately.
 
    .. method:: map(func, iterable[, chunksize])
 
@@ -1858,11 +1858,10 @@ with the :class:`Pool` class.
 
       A variant of the :meth:`.map` method which returns a result object.
 
-      If *callback* is specified then it should be a callable which accepts a
-      single argument, the return value of *func*.  When the result becomes ready
-      *callback* is applied to it (unless the call failed) back in the main thread.
-      *callback* should complete immediately since otherwise the thread which
-      handles the results will get blocked.
+      The *callback*, if specified, must be a callable taking a single argument.
+      When *func* successfully finishes, *callback* is applied to its return value,
+      back in the main process. During the time callbacks run, they impede further
+      pool maintenance, so they should be designed to complete immediately.
 
    .. method:: imap(func, iterable[, chunksize])
 
@@ -1897,7 +1896,7 @@ with the :class:`Pool` class.
 
    .. method:: join()
 
-      Wait for the worker processes to exit and any callback functions to return.
+      Wait for the worker processes to exit and for callback functions to finish.
       One must call :meth:`close` or :meth:`terminate` before using :meth:`join`.
 
 
