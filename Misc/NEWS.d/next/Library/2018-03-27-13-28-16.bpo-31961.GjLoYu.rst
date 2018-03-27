@@ -1,0 +1,3 @@
+The *args* argument of :func:`subprocess.Popen`, or the first element of
+*args* if *args* is a sequence, can now be a :term:`path-like object`. Based
+on patch by Anders Lorentsen.

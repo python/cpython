@@ -562,7 +562,7 @@ functions.
       Popen destructor now emits a :exc:`ResourceWarning` warning if the child
       process is still running.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       *args*, or the first element of *args* if *args* is a sequence, can now
       be a :term:`path-like object`.
 
