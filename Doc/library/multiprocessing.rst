@@ -304,14 +304,14 @@ For example::
            print res.get(timeout=1)
        except TimeoutError:
            print "We lacked patience and got a multiprocessing.TimeoutError"
-           
+
        for i in range(10):
            pool.apply_async(random_sleep, callback=report_slept_duration)
 
        print "Finished adding to pool. Waiting for jobs to finish."
        pool.close()
        pool.join()
-  
+
 
 Note that the methods of a pool should only ever be used by the
 process which created it.
