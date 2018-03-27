@@ -1338,5 +1338,65 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.path, orig.path)
 
 
+class NameErrorTests(unittest.TestCase):
+
+    def test_attributes(self):
+        # Setting 'name' should not be a problem.
+        exc = NameError('test')
+        self.assertIsNone(exc.name)
+
+        exc = NameError('test', name='somemodule')
+        self.assertEqual(exc.name, 'somemodule')
+
+        msg = "'invalid' is an invalid keyword argument for NameError"
+        with self.assertRaisesRegex(TypeError, msg):
+            NameError('test', invalid='keyword')
+
+        with self.assertRaisesRegex(TypeError, msg):
+            NameError(invalid='keyword')
+
+    def test_reset_attributes(self):
+        exc = NameError('test', name='name')
+        self.assertEqual(exc.args, ('test',))
+        self.assertEqual(exc.msg, 'test')
+        self.assertEqual(exc.name, 'name')
+
+        # Reset not specified attributes
+        exc.__init__()
+        self.assertEqual(exc.args, ())
+        self.assertEqual(exc.msg, None)
+        self.assertEqual(exc.name, None)
+
+    def test_non_str_argument(self):
+        # Issue #15778
+        with check_warnings(('', BytesWarning), quiet=True):
+            arg = b'abc'
+            exc = NameError(arg)
+            self.assertEqual(str(arg), str(exc))
+
+    def test_copy_pickle(self):
+        for kwargs in (dict(), dict(name='somename')):
+            orig = NameError('test', **kwargs)
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                exc = pickle.loads(pickle.dumps(orig, proto))
+                self.assertEqual(exc.args, ('test',))
+                self.assertEqual(exc.msg, 'test')
+                self.assertEqual(exc.name, orig.name)
+            for c in copy.copy, copy.deepcopy:
+                exc = c(orig)
+                self.assertEqual(exc.args, ('test',))
+                self.assertEqual(exc.msg, 'test')
+                self.assertEqual(exc.name, orig.name)
+
+    def test_name_is_set(self):
+        with self.assertRaises(NameError) as cm:
+            x = unbound_variable
+        self.assertEqual(cm.exception.name, 'unbound_variable')
+
+        with self.assertRaises(NameError) as cm:
+            del unbound_variable
+        self.assertEqual(cm.exception.name, 'unbound_variable')
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -1289,14 +1289,142 @@ SimpleExtendsException(PyExc_RuntimeError, NotImplementedError,
 /*
  *    NameError extends Exception
  */
-SimpleExtendsException(PyExc_Exception, NameError,
-                       "Name not found globally.");
+static int
+NameError_init(PyNameErrorObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"name", 0};
+    PyObject *empty_tuple;
+    PyObject *msg = NULL;
+    PyObject *name = NULL;
+
+    if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1)
+        return -1;
+
+    empty_tuple = PyTuple_New(0);
+    if (!empty_tuple)
+        return -1;
+    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$O:NameError", kwlist,
+                                     &name)) {
+        Py_DECREF(empty_tuple);
+        return -1;
+    }
+    Py_DECREF(empty_tuple);
+
+    Py_XINCREF(name);
+    Py_XSETREF(self->name, name);
+
+    if (PyTuple_GET_SIZE(args) == 1) {
+        msg = PyTuple_GET_ITEM(args, 0);
+        Py_INCREF(msg);
+    }
+    Py_XSETREF(self->msg, msg);
+
+    return 0;
+}
+
+static int
+NameError_clear(PyNameErrorObject *self)
+{
+    Py_CLEAR(self->msg);
+    Py_CLEAR(self->name);
+    return BaseException_clear((PyBaseExceptionObject *)self);
+}
+
+static void
+NameError_dealloc(PyNameErrorObject *self)
+{
+    _PyObject_GC_UNTRACK(self);
+    NameError_clear(self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static int
+NameError_traverse(PyNameErrorObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->msg);
+    Py_VISIT(self->name);
+    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+}
+
+static PyObject *
+NameError_str(PyNameErrorObject *self)
+{
+    if (self->msg && PyUnicode_CheckExact(self->msg)) {
+        Py_INCREF(self->msg);
+        return self->msg;
+    }
+    else {
+        return BaseException_str((PyBaseExceptionObject *)self);
+    }
+}
+
+static PyObject *
+NameError_getstate(PyNameErrorObject *self)
+{
+    PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
+    if (self->name) {
+        _Py_IDENTIFIER(name);
+        _Py_IDENTIFIER(path);
+        dict = dict ? PyDict_Copy(dict) : PyDict_New();
+        if (dict == NULL)
+            return NULL;
+        if (self->name && _PyDict_SetItemId(dict, &PyId_name, self->name) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        return dict;
+    }
+    else if (dict) {
+        Py_INCREF(dict);
+        return dict;
+    }
+    else {
+        Py_RETURN_NONE;
+    }
+}
+
+/* Pickling support */
+static PyObject *
+NameError_reduce(PyNameErrorObject *self)
+{
+    PyObject *res;
+    PyObject *args;
+    PyObject *state = NameError_getstate(self);
+    if (state == NULL)
+        return NULL;
+    args = ((PyBaseExceptionObject *)self)->args;
+    if (state == Py_None)
+        res = PyTuple_Pack(2, Py_TYPE(self), args);
+    else
+        res = PyTuple_Pack(3, Py_TYPE(self), args, state);
+    Py_DECREF(state);
+    return res;
+}
+
+static PyMemberDef NameError_members[] = {
+    {"msg", T_OBJECT, offsetof(PyNameErrorObject, msg), 0,
+        PyDoc_STR("exception message")},
+    {"name", T_OBJECT, offsetof(PyNameErrorObject, name), 0,
+        PyDoc_STR("variable name")},
+    {NULL}  /* Sentinel */
+};
+
+static PyMethodDef NameError_methods[] = {
+    {"__reduce__", (PyCFunction)NameError_reduce, METH_NOARGS},
+    {NULL}
+};
+
+ComplexExtendsException(PyExc_Exception, NameError,
+                        NameError, 0 /* new */,
+                        NameError_methods, NameError_members,
+                        0 /* getset */, NameError_str,
+                        "Name not found globally.");
 
 /*
  *    UnboundLocalError extends NameError
  */
-SimpleExtendsException(PyExc_NameError, UnboundLocalError,
-                       "Local name referenced but not bound to a value.");
+MiddlingExtendsException(PyExc_NameError, UnboundLocalError, NameError,
+                         "Local name referenced but not bound to a value.");
 
 /*
  *    AttributeError extends Exception

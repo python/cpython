@@ -63,6 +63,7 @@ static PyObject * import_name(PyFrameObject *, PyObject *, PyObject *,
 static PyObject * import_from(PyObject *, PyObject *);
 static int import_all_from(PyObject *, PyObject *);
 static void format_exc_check_arg(PyObject *, const char *, PyObject *);
+static void format_exc_name_error(PyObject *, const char *format_str, PyObject *name);
 static void format_exc_unbound(PyCodeObject *co, int oparg);
 static PyObject * unicode_concatenate(PyObject *, PyObject *,
                                       PyFrameObject *, const _Py_CODEUNIT *);
@@ -71,11 +72,11 @@ static int check_args_iterable(PyObject *func, PyObject *vararg);
 static void format_kwargs_mapping_error(PyObject *func, PyObject *kwargs);
 
 #define NAME_ERROR_MSG \
-    "name '%.200s' is not defined"
+    "name '%.200S' is not defined"
 #define UNBOUNDLOCAL_ERROR_MSG \
-    "local variable '%.200s' referenced before assignment"
+    "local variable '%.200S' referenced before assignment"
 #define UNBOUNDFREE_ERROR_MSG \
-    "free variable '%.200s' referenced before assignment" \
+    "free variable '%.200S' referenced before assignment" \
     " in enclosing scope"
 
 /* Dynamic execution profile */
@@ -1052,9 +1053,9 @@ main_loop:
         TARGET(LOAD_FAST) {
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
-                format_exc_check_arg(PyExc_UnboundLocalError,
-                                     UNBOUNDLOCAL_ERROR_MSG,
-                                     PyTuple_GetItem(co->co_varnames, oparg));
+                format_exc_name_error(PyExc_UnboundLocalError,
+                                      UNBOUNDLOCAL_ERROR_MSG,
+                                      PyTuple_GetItem(co->co_varnames, oparg));
                 goto error;
             }
             Py_INCREF(value);
@@ -2025,9 +2026,9 @@ main_loop:
             }
             err = PyObject_DelItem(ns, name);
             if (err != 0) {
-                format_exc_check_arg(PyExc_NameError,
-                                     NAME_ERROR_MSG,
-                                     name);
+                format_exc_name_error(PyExc_NameError,
+                                      NAME_ERROR_MSG,
+                                      name);
                 goto error;
             }
             DISPATCH();
@@ -2120,7 +2121,7 @@ main_loop:
             int err;
             err = PyDict_DelItem(f->f_globals, name);
             if (err != 0) {
-                format_exc_check_arg(
+                format_exc_name_error(
                     PyExc_NameError, NAME_ERROR_MSG, name);
                 goto error;
             }
@@ -2155,7 +2156,7 @@ main_loop:
                     if (PyDict_CheckExact(f->f_builtins)) {
                         v = PyDict_GetItem(f->f_builtins, name);
                         if (v == NULL) {
-                            format_exc_check_arg(
+                            format_exc_name_error(
                                         PyExc_NameError,
                                         NAME_ERROR_MSG, name);
                             goto error;
@@ -2166,7 +2167,7 @@ main_loop:
                         v = PyObject_GetItem(f->f_builtins, name);
                         if (v == NULL) {
                             if (PyErr_ExceptionMatches(PyExc_KeyError))
-                                format_exc_check_arg(
+                                format_exc_name_error(
                                             PyExc_NameError,
                                             NAME_ERROR_MSG, name);
                             goto error;
@@ -2191,8 +2192,8 @@ main_loop:
                     if (!_PyErr_OCCURRED()) {
                         /* _PyDict_LoadGlobal() returns NULL without raising
                          * an exception if the key doesn't exist */
-                        format_exc_check_arg(PyExc_NameError,
-                                             NAME_ERROR_MSG, name);
+                        format_exc_name_error(PyExc_NameError,
+                                              NAME_ERROR_MSG, name);
                     }
                     goto error;
                 }
@@ -2212,7 +2213,7 @@ main_loop:
                     v = PyObject_GetItem(f->f_builtins, name);
                     if (v == NULL) {
                         if (PyErr_ExceptionMatches(PyExc_KeyError))
-                            format_exc_check_arg(
+                            format_exc_name_error(
                                         PyExc_NameError,
                                         NAME_ERROR_MSG, name);
                         goto error;
@@ -2229,7 +2230,7 @@ main_loop:
                 SETLOCAL(oparg, NULL);
                 DISPATCH();
             }
-            format_exc_check_arg(
+            format_exc_name_error(
                 PyExc_UnboundLocalError,
                 UNBOUNDLOCAL_ERROR_MSG,
                 PyTuple_GetItem(co->co_varnames, oparg)
@@ -4964,6 +4965,14 @@ format_exc_check_arg(PyObject *exc, const char *format_str, PyObject *obj)
 }
 
 static void
+format_exc_name_error(PyObject *exc, const char *format_str, PyObject *name)
+{
+    PyObject* errmsg = PyUnicode_FromFormat(format_str, name);
+    PyErr_SetNameErrorSubclass(exc, errmsg, name);
+    Py_XDECREF(errmsg);
+}
+
+static void
 format_exc_unbound(PyCodeObject *co, int oparg)
 {
     PyObject *name;
@@ -4973,15 +4982,15 @@ format_exc_unbound(PyCodeObject *co, int oparg)
     if (oparg < PyTuple_GET_SIZE(co->co_cellvars)) {
         name = PyTuple_GET_ITEM(co->co_cellvars,
                                 oparg);
-        format_exc_check_arg(
+        format_exc_name_error(
             PyExc_UnboundLocalError,
             UNBOUNDLOCAL_ERROR_MSG,
             name);
     } else {
         name = PyTuple_GET_ITEM(co->co_freevars, oparg -
                                 PyTuple_GET_SIZE(co->co_cellvars));
-        format_exc_check_arg(PyExc_NameError,
-                             UNBOUNDFREE_ERROR_MSG, name);
+        format_exc_name_error(PyExc_NameError,
+                              UNBOUNDFREE_ERROR_MSG, name);
     }
 }
 

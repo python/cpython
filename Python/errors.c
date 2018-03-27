@@ -801,6 +801,56 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
     return PyErr_SetImportErrorSubclass(PyExc_ImportError, msg, name, path);
 }
 
+PyObject *
+PyErr_SetNameErrorSubclass(PyObject *exception, PyObject *msg,
+    PyObject *name)
+{
+    int issubclass;
+    PyObject *kwargs, *error;
+
+    issubclass = PyObject_IsSubclass(exception, PyExc_NameError);
+    if (issubclass < 0) {
+        return NULL;
+    }
+    else if (!issubclass) {
+        PyErr_SetString(PyExc_TypeError, "expected a subclass of NameError");
+        return NULL;
+    }
+
+    if (msg == NULL) {
+        PyErr_SetString(PyExc_TypeError, "expected a message argument");
+        return NULL;
+    }
+
+    if (name == NULL) {
+        name = Py_None;
+    }
+
+    kwargs = PyDict_New();
+    if (kwargs == NULL) {
+        return NULL;
+    }
+    if (PyDict_SetItemString(kwargs, "name", name) < 0) {
+        goto done;
+    }
+
+    error = _PyObject_FastCallDict(exception, &msg, 1, kwargs);
+    if (error != NULL) {
+        PyErr_SetObject((PyObject *)Py_TYPE(error), error);
+        Py_DECREF(error);
+    }
+
+done:
+    Py_DECREF(kwargs);
+    return NULL;
+}
+
+PyObject *
+PyErr_SetNameError(PyObject *msg, PyObject *name)
+{
+    return PyErr_SetNameErrorSubclass(PyExc_NameError, msg, name);
+}
+
 void
 _PyErr_BadInternalCall(const char *filename, int lineno)
 {

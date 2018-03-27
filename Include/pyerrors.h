@@ -65,6 +65,12 @@ typedef struct {
     PyObject *value;
 } PyStopIterationObject;
 
+typedef struct {
+    PyException_HEAD
+    PyObject *msg;
+    PyObject *name;
+} PyNameErrorObject;
+
 /* Compatibility typedefs */
 typedef PyOSErrorObject PyEnvironmentErrorObject;
 #ifdef MS_WINDOWS
@@ -313,6 +319,14 @@ PyAPI_FUNC(PyObject *) PyErr_SetImportErrorSubclass(PyObject *, PyObject *,
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject *) PyErr_SetImportError(PyObject *, PyObject *,
     PyObject *);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
+PyAPI_FUNC(PyObject *) PyErr_SetNameErrorSubclass(PyObject *, PyObject *,
+    PyObject *);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+PyAPI_FUNC(PyObject *) PyErr_SetNameError(PyObject *, PyObject *);
 #endif
 
 /* Export the old function so that the existing API remains available: */
