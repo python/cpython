@@ -267,11 +267,12 @@ class _ZipImportResourceReader(resources_abc.ResourceReader):
         self.fullname = fullname
 
     def open_resource(self, resource):
-        path = f'{self.fullname}/{resource}'
+        fullname_as_path = self.fullname.replace('.', '/')
+        path = f'{fullname_as_path}/{resource}'
         try:
             return BytesIO(self.zipimporter.get_data(path))
         except OSError:
-            raise FileNotFoundError
+            raise FileNotFoundError(path)
 
     def resource_path(self, resource):
         # All resources are in the zip file, so there is no path to the file.
@@ -282,7 +283,8 @@ class _ZipImportResourceReader(resources_abc.ResourceReader):
     def is_resource(self, name):
         # Maybe we could do better, but if we can get the data, it's a
         # resource.  Otherwise it isn't.
-        path = f'{self.fullname}/{name}'
+        fullname_as_path = self.fullname.replace('.', '/')
+        path = f'{fullname_as_path}/{name}'
         try:
             self.zipimporter.get_data(path)
         except OSError:
