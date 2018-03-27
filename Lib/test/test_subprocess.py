@@ -3170,6 +3170,7 @@ class ContextManagerTests(BaseTestCase):
             proc.communicate(b"context")
             self.assertEqual(proc.returncode, 1)
 
+    @unittest.skipIf('vxworks' in sys.platform, 'VxWorks rtpSpawn requires clean arguments')
     def test_invalid_args(self):
         with self.assertRaises(NONEXISTING_ERRORS):
             with subprocess.Popen(NONEXISTING_CMD,
