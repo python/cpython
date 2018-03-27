@@ -1332,8 +1332,8 @@ script execution tests.
 .. function:: run_python_until_end(*args, **env_vars)
 
    Set up the environment based on *env_vars* for running the interpreter
-   in a subprocess.  The values can include ``__isolated``, ``__cleavenv``,
-   and ``TERM``.
+   in a subprocess.  The values can include ``__isolated``, ``__cleanenv``,
+   ``__cwd``, and ``TERM``.
 
 
 .. function:: assert_python_ok(*args, **env_vars)

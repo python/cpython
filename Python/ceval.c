@@ -1944,6 +1944,26 @@ main_loop:
             }
         }
 
+        TARGET(END_ASYNC_FOR) {
+            PyObject *exc = POP();
+            assert(PyExceptionClass_Check(exc));
+            if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
+                PyTryBlock *b = PyFrame_BlockPop(f);
+                assert(b->b_type == EXCEPT_HANDLER);
+                Py_DECREF(exc);
+                UNWIND_EXCEPT_HANDLER(b);
+                Py_DECREF(POP());
+                JUMPBY(oparg);
+                FAST_DISPATCH();
+            }
+            else {
+                PyObject *val = POP();
+                PyObject *tb = POP();
+                PyErr_Restore(exc, val, tb);
+                goto exception_unwind;
+            }
+        }
+
         TARGET(LOAD_BUILD_CLASS) {
             _Py_IDENTIFIER(__build_class__);
 
@@ -4817,6 +4837,7 @@ import_all_from(PyObject *locals, PyObject *v)
 {
     _Py_IDENTIFIER(__all__);
     _Py_IDENTIFIER(__dict__);
+    _Py_IDENTIFIER(__name__);
     PyObject *all, *dict, *name, *value;
     int skip_leading_underscores = 0;
     int pos, err;
@@ -4849,7 +4870,32 @@ import_all_from(PyObject *locals, PyObject *v)
                 PyErr_Clear();
             break;
         }
-        if (skip_leading_underscores && PyUnicode_Check(name)) {
+        if (!PyUnicode_Check(name)) {
+            PyObject *modname = _PyObject_GetAttrId(v, &PyId___name__);
+            if (modname == NULL) {
+                Py_DECREF(name);
+                err = -1;
+                break;
+            }
+            if (!PyUnicode_Check(modname)) {
+                PyErr_Format(PyExc_TypeError,
+                             "module __name__ must be a string, not %.100s",
+                             Py_TYPE(modname)->tp_name);
+            }
+            else {
+                PyErr_Format(PyExc_TypeError,
+                             "%s in %U.%s must be str, not %.100s",
+                             skip_leading_underscores ? "Key" : "Item",
+                             modname,
+                             skip_leading_underscores ? "__dict__" : "__all__",
+                             Py_TYPE(name)->tp_name);
+            }
+            Py_DECREF(modname);
+            Py_DECREF(name);
+            err = -1;
+            break;
+        }
+        if (skip_leading_underscores) {
             if (PyUnicode_READY(name) == -1) {
                 Py_DECREF(name);
                 err = -1;

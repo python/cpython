@@ -41,6 +41,10 @@
 #endif
 #endif
 
+#if SQLITE_VERSION_NUMBER >= 3006011
+#define HAVE_BACKUP_API
+#endif
+
 _Py_IDENTIFIER(cursor);
 
 static const char * const begin_statements[] = {
@@ -1099,8 +1103,8 @@ int pysqlite_check_thread(pysqlite_Connection* self)
     if (self->check_same_thread) {
         if (PyThread_get_thread_ident() != self->thread_ident) {
             PyErr_Format(pysqlite_ProgrammingError,
-                        "SQLite objects created in a thread can only be used in that same thread."
-                        "The object was created in thread id %lu and this is thread id %lu",
+                        "SQLite objects created in a thread can only be used in that same thread. "
+                        "The object was created in thread id %lu and this is thread id %lu.",
                         self->thread_ident, PyThread_get_thread_ident());
             return 0;
         }
@@ -1447,6 +1451,137 @@ finally:
     return retval;
 }
 
+#ifdef HAVE_BACKUP_API
+static PyObject *
+pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *target = NULL;
+    int pages = -1;
+    PyObject *progress = Py_None;
+    const char *name = "main";
+    int rc;
+    int callback_error = 0;
+    double sleep_secs = 0.250;
+    sqlite3 *bck_conn;
+    sqlite3_backup *bck_handle;
+    static char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|$iOsd:backup", keywords,
+                                     &pysqlite_ConnectionType, &target,
+                                     &pages, &progress, &name, &sleep_secs)) {
+        return NULL;
+    }
+
+    if (!pysqlite_check_connection((pysqlite_Connection *)target)) {
+        return NULL;
+    }
+
+    if ((pysqlite_Connection *)target == self) {
+        PyErr_SetString(PyExc_ValueError, "target cannot be the same connection instance");
+        return NULL;
+    }
+
+#if SQLITE_VERSION_NUMBER < 3008008
+    /* Since 3.8.8 this is already done, per commit
+       https://www.sqlite.org/src/info/169b5505498c0a7e */
+    if (!sqlite3_get_autocommit(((pysqlite_Connection *)target)->db)) {
+        PyErr_SetString(pysqlite_OperationalError, "target is in transaction");
+        return NULL;
+    }
+#endif
+
+    if (progress != Py_None && !PyCallable_Check(progress)) {
+        PyErr_SetString(PyExc_TypeError, "progress argument must be a callable");
+        return NULL;
+    }
+
+    if (pages == 0) {
+        pages = -1;
+    }
+
+    bck_conn = ((pysqlite_Connection *)target)->db;
+
+    Py_BEGIN_ALLOW_THREADS
+    bck_handle = sqlite3_backup_init(bck_conn, "main", self->db, name);
+    Py_END_ALLOW_THREADS
+
+    if (bck_handle) {
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            rc = sqlite3_backup_step(bck_handle, pages);
+            Py_END_ALLOW_THREADS
+
+            if (progress != Py_None) {
+                PyObject *res;
+
+                res = PyObject_CallFunction(progress, "iii", rc,
+                                            sqlite3_backup_remaining(bck_handle),
+                                            sqlite3_backup_pagecount(bck_handle));
+                if (res == NULL) {
+                    /* User's callback raised an error: interrupt the loop and
+                       propagate it. */
+                    callback_error = 1;
+                    rc = -1;
+                } else {
+                    Py_DECREF(res);
+                }
+            }
+
+            /* Sleep for a while if there are still further pages to copy and
+               the engine could not make any progress */
+            if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
+                Py_BEGIN_ALLOW_THREADS
+                sqlite3_sleep(sleep_secs * 1000.0);
+                Py_END_ALLOW_THREADS
+            }
+        } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);
+
+        Py_BEGIN_ALLOW_THREADS
+        rc = sqlite3_backup_finish(bck_handle);
+        Py_END_ALLOW_THREADS
+    } else {
+        rc = _pysqlite_seterror(bck_conn, NULL);
+    }
+
+    if (!callback_error && rc != SQLITE_OK) {
+        /* We cannot use _pysqlite_seterror() here because the backup APIs do
+           not set the error status on the connection object, but rather on
+           the backup handle. */
+        if (rc == SQLITE_NOMEM) {
+            (void)PyErr_NoMemory();
+        } else {
+#if SQLITE_VERSION_NUMBER > 3007015
+            PyErr_SetString(pysqlite_OperationalError, sqlite3_errstr(rc));
+#else
+            switch (rc) {
+                case SQLITE_READONLY:
+                    PyErr_SetString(pysqlite_OperationalError,
+                                    "attempt to write a readonly database");
+                    break;
+                case SQLITE_BUSY:
+                    PyErr_SetString(pysqlite_OperationalError, "database is locked");
+                    break;
+                case SQLITE_LOCKED:
+                    PyErr_SetString(pysqlite_OperationalError,
+                                    "database table is locked");
+                    break;
+                default:
+                    PyErr_Format(pysqlite_OperationalError,
+                                 "unrecognized error code: %d", rc);
+                    break;
+            }
+#endif
+        }
+    }
+
+    if (!callback_error && rc == SQLITE_OK) {
+        Py_RETURN_NONE;
+    } else {
+        return NULL;
+    }
+}
+#endif
+
 static PyObject *
 pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
 {
@@ -1619,6 +1754,10 @@ static PyMethodDef connection_methods[] = {
         PyDoc_STR("Abort any pending database operation. Non-standard.")},
     {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS,
         PyDoc_STR("Returns iterator to the dump of the database in an SQL text format. Non-standard.")},
+    #ifdef HAVE_BACKUP_API
+    {"backup", (PyCFunction)pysqlite_connection_backup, METH_VARARGS | METH_KEYWORDS,
+        PyDoc_STR("Makes a backup of the database. Non-standard.")},
+    #endif
     {"__enter__", (PyCFunction)pysqlite_connection_enter, METH_NOARGS,
         PyDoc_STR("For context manager. Non-standard.")},
     {"__exit__", (PyCFunction)pysqlite_connection_exit, METH_VARARGS,
