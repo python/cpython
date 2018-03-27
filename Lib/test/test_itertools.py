@@ -1192,6 +1192,7 @@ class TestBasicOps(unittest.TestCase):
                 (10, 20, 3),
                 (10, 3, 20),
                 (10, 20),
+                (10, 10),
                 (10, 3),
                 (20,)
                 ]:
@@ -1216,6 +1217,10 @@ class TestBasicOps(unittest.TestCase):
         # Test number of items consumed     SF #1171417
         it = iter(range(10))
         self.assertEqual(list(islice(it, 3)), list(range(3)))
+        self.assertEqual(list(it), list(range(3, 10)))
+
+        it = iter(range(10))
+        self.assertEqual(list(islice(it, 3, 3)), [])
         self.assertEqual(list(it), list(range(3, 10)))
 
         # Test invalid arguments
@@ -1602,6 +1607,48 @@ class TestExamples(unittest.TestCase):
 
     def test_takewhile(self):
         self.assertEqual(list(takewhile(lambda x: x<5, [1,4,6,4,1])), [1,4])
+
+
+class TestPurePythonRoughEquivalents(unittest.TestCase):
+
+    @staticmethod
+    def islice(iterable, *args):
+        s = slice(*args)
+        start, stop, step = s.start or 0, s.stop or sys.maxsize, s.step or 1
+        it = iter(range(start, stop, step))
+        try:
+            nexti = next(it)
+        except StopIteration:
+            # Consume *iterable* up to the *start* position.
+            for i, element in zip(range(start), iterable):
+                pass
+            return
+        try:
+            for i, element in enumerate(iterable):
+                if i == nexti:
+                    yield element
+                    nexti = next(it)
+        except StopIteration:
+            # Consume to *stop*.
+            for i, element in zip(range(i + 1, stop), iterable):
+                pass
+
+    def test_islice_recipe(self):
+        self.assertEqual(list(self.islice('ABCDEFG', 2)), list('AB'))
+        self.assertEqual(list(self.islice('ABCDEFG', 2, 4)), list('CD'))
+        self.assertEqual(list(self.islice('ABCDEFG', 2, None)), list('CDEFG'))
+        self.assertEqual(list(self.islice('ABCDEFG', 0, None, 2)), list('ACEG'))
+        # Test items consumed.
+        it = iter(range(10))
+        self.assertEqual(list(self.islice(it, 3)), list(range(3)))
+        self.assertEqual(list(it), list(range(3, 10)))
+        it = iter(range(10))
+        self.assertEqual(list(self.islice(it, 3, 3)), [])
+        self.assertEqual(list(it), list(range(3, 10)))
+        # Test that slice finishes in predictable state.
+        c = count()
+        self.assertEqual(list(self.islice(c, 1, 3, 50)), [1])
+        self.assertEqual(next(c), 3)
 
 
 class TestGC(unittest.TestCase):
@@ -2158,6 +2205,17 @@ Samuele
 ...     "Return function(0), function(1), ..."
 ...     return map(function, count(start))
 
+>>> import collections
+>>> def consume(iterator, n=None):
+...     "Advance the iterator n-steps ahead. If n is None, consume entirely."
+...     # Use functions that consume iterators at C speed.
+...     if n is None:
+...         # feed the entire iterator into a zero-length deque
+...         collections.deque(iterator, maxlen=0)
+...     else:
+...         # advance to the empty slice starting at position n
+...         next(islice(iterator, n, n), None)
+
 >>> def nth(iterable, n, default=None):
 ...     "Returns the nth item or a default value"
 ...     return next(islice(iterable, n, None), default)
@@ -2298,6 +2356,14 @@ perform as purported.
 >>> list(islice(tabulate(lambda x: 2*x), 4))
 [0, 2, 4, 6]
 
+>>> it = iter(range(10))
+>>> consume(it, 3)
+>>> next(it)
+3
+>>> consume(it)
+>>> next(it, 'Done')
+'Done'
+
 >>> nth('abcde', 3)
 'd'
 
@@ -2386,6 +2452,7 @@ def test_main(verbose=None):
     test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
                     RegressionTests, LengthTransparency,
                     SubclassWithKwargsTest, TestExamples,
+                    TestPurePythonRoughEquivalents,
                     SizeofTest)
     support.run_unittest(*test_classes)
 
