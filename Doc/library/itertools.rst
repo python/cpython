@@ -436,15 +436,24 @@ loops that truncate the stream.
           # islice('ABCDEFG', 2, None) --> C D E F G
           # islice('ABCDEFG', 0, None, 2) --> A C E G
           s = slice(*args)
-          it = iter(range(s.start or 0, s.stop or sys.maxsize, s.step or 1))
+          start, stop, step = s.start or 0, s.stop or sys.maxsize, s.step or 1
+          it = iter(range(start, stop, step))
           try:
               nexti = next(it)
           except StopIteration:
+              # Consume *iterable* up to the *start* position.
+              for i, element in zip(range(start), iterable):
+                  pass
               return
-          for i, element in enumerate(iterable):
-              if i == nexti:
-                  yield element
-                  nexti = next(it)
+          try:
+              for i, element in enumerate(iterable):
+                  if i == nexti:
+                      yield element
+                      nexti = next(it)
+          except StopIteration:
+              # Consume to *stop*.
+              for i, element in zip(range(i + 1, stop), iterable):
+                  pass
 
    If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
    then the step defaults to one.
@@ -688,8 +697,8 @@ which incur interpreter overhead.
        # tail(3, 'ABCDEFG') --> E F G
        return iter(collections.deque(iterable, maxlen=n))
 
-   def consume(iterator, n):
-       "Advance the iterator n-steps ahead. If n is none, consume entirely."
+   def consume(iterator, n=None):
+       "Advance the iterator n-steps ahead. If n is None, consume entirely."
        # Use functions that consume iterators at C speed.
        if n is None:
            # feed the entire iterator into a zero-length deque
