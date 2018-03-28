@@ -1,0 +1,2 @@
+pathlib's _WindowsBehavior.gethomedir method is refactored to use dict's get
+method rather than using KeyError handling.
