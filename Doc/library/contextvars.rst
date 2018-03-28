@@ -253,7 +253,7 @@ client::
         addr = writer.transport.get_extra_info('socket').getpeername()
         client_addr_var.set(addr)
 
-        # In any code that we call is is now possible to get
+        # In any code that we call is now possible to get
         # client's address by calling 'client_addr_var.get()'.
 
         while True:
