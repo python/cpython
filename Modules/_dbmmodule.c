@@ -36,6 +36,7 @@ class _dbm.dbm "dbmobject *" "&Dbmtype"
 
 typedef struct {
     PyObject_HEAD
+    int flags;
     int di_size;        /* -1 means recompute */
     DBM *di_dbm;
 } dbmobject;
@@ -60,6 +61,7 @@ newdbmobject(const char *file, int flags, int mode)
     if (dp == NULL)
         return NULL;
     dp->di_size = -1;
+    dp->flags = flags;
     /* See issue #19296 */
     if ( (dp->di_dbm = dbm_open((char *)file, flags, mode)) == 0 ) {
         PyErr_SetFromErrnoWithFilename(DbmError, file);
@@ -143,7 +145,14 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
     if (w == NULL) {
         if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
             dbm_clearerr(dp->di_dbm);
-            PyErr_SetObject(PyExc_KeyError, v);
+            /* we might get a failure for reasons like file corrupted,
+               but we are not able to distinguish it */
+            if (dp->flags & O_RDWR) {
+                PyErr_SetObject(PyExc_KeyError, v);
+            }
+            else {
+                PyErr_SetString(DbmError, "cannot delete item from database");
+            }
             return -1;
         }
     } else {
