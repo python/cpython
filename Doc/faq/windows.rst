@@ -60,7 +60,7 @@ program. So, how do you arrange for the interpreter to handle your Python?
 First, you need to make sure that your command window recognises the word
 "python" as an instruction to start the interpreter.  If you have opened a
 command window, you should try entering the command ``python`` and hitting
-return.::
+return::
 
    C:\Users\YourName> python
 
