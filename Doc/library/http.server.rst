@@ -37,8 +37,11 @@ handler.  Code to create and run the server looks like this::
 
    This class is identical to HTTPServer but uses threads to handle
    requests by using the :class:`~socketserver.ThreadingMixin`. This
-   is usefull to handle web browsers pre-opening sockets, on which
-   :class:`HTTPServer` would wait indefinitly.
+   is useful to handle web browsers pre-opening sockets, on which
+   :class:`HTTPServer` would wait indefinitely.
+
+   .. versionadded:: 3.7
+
 
 The :class:`HTTPServer` and :class:`ThreadedHTTPServer` must be given
 a *RequestHandlerClass* on instantiation, of which this module
