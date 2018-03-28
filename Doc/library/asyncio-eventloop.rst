@@ -1114,7 +1114,7 @@ SendfileNotAvailableError
 
    Sendfile syscall is not available, subclass of :exc:`RuntimeError`.
 
-   Raised if the OS does not support senfile syscall for
+   Raised if the OS does not support sendfile syscall for
    given socket or file type.
 
 
