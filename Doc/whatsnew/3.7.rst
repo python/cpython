@@ -684,7 +684,7 @@ feature. Instances must be created with :class:`~ssl.SSLContext` methods
 (Contributed by Christian Heimes in :issue:`32951`)
 
 OpenSSL 1.1 APIs for setting the minimum and maximum TLS protocol version are
-available as as :attr:`~ssl.SSLContext.minimum_version` and
+available as :attr:`~ssl.SSLContext.minimum_version` and
 :attr:`~ssl.SSLContext.maximum_version`. Supported protocols are indicated
 by new flags like :data:`~ssl.HAS_TLSv1_1`.
 (Contributed by Christian Heimes in :issue:`32609`.)

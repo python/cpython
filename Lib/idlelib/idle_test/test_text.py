@@ -9,7 +9,7 @@ from _tkinter import TclError
 class TextTest(object):
     "Define items common to both sets of tests."
 
-    hw = 'hello\nworld'  # Several tests insert this after after initialization.
+    hw = 'hello\nworld'  # Several tests insert this after initialization.
     hwn = hw+'\n'  # \n present at initialization, before insert
 
     # setUpClass defines cls.Text and maybe cls.root.

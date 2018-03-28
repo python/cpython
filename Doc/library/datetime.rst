@@ -2209,8 +2209,8 @@ Notes:
       :meth:`utcoffset` is transformed into a string of the form
       ±HHMM[SS[.uuuuuu]], where HH is a 2-digit string giving the number of UTC
       offset hours, and MM is a 2-digit string giving the number of UTC offset
-      minutes, SS is a 2-digit string string giving the number of UTC offset
-      seconds and uuuuuu is a 2-digit string string giving the number of UTC
+      minutes, SS is a 2-digit string giving the number of UTC offset
+      seconds and uuuuuu is a 2-digit string giving the number of UTC
       offset microseconds.  The uuuuuu part is omitted when the offset is a
       whole number of minutes and both the uuuuuu and the SS parts are omitted
       when the offset is a whole number of minutes.  For example, if
