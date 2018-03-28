@@ -24,7 +24,7 @@ from . import format_helpers
 class SendfileNotAvailableError(RuntimeError):
     """Sendfile syscall is not available.
 
-    Raised if OS does not support senfile syscall for given socket or
+    Raised if OS does not support sendfile syscall for given socket or
     file type.
     """
 
