@@ -1,1 +1,1 @@
-Add Ttk spinbox widget to to tkinter.ttk.  Patch by Alan D Moore.
+Add Ttk spinbox widget to :mod:`tkinter.ttk`.  Patch by Alan D Moore.
