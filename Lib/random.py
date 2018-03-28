@@ -38,7 +38,7 @@ General notes on the underlying Mersenne Twister core generator:
 """
 
 from warnings import warn as _warn
-from types import MethodType as _MethodType, BuiltinMethodType as _BuiltinMethodType
+from types import FunctionType as _FunctionType
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from os import urandom as _urandom
@@ -93,6 +93,18 @@ class Random(_random.Random):
 
         self.seed(x)
         self.gauss_next = None
+
+    def __init_subclass__(cls, **kwargs):
+        # Only call self.getrandbits if the original random() builtin method
+        # has not been overridden or if a new getrandbits() was supplied.
+        if type(cls.__dict__.get('getrandbits')) is _FunctionType:
+            cls._randbelow = cls._randbelow_with_getrandbits
+        elif 'random' in cls.__dict__:
+            # There's an overridden random() method but no new getrandbits() method,
+            # so we can only use random() from here.
+            cls._randbelow = cls._randbelow_without_getrandbits
+        else:
+            cls._randbelow = getattr(cls, cls._randbelow.__name__)
 
     def seed(self, a=None, version=2):
         """Initialize internal state from hashable object.
@@ -221,22 +233,26 @@ class Random(_random.Random):
 
         return self.randrange(a, b+1)
 
-    def _randbelow(self, n, int=int, maxsize=1<<BPF, type=type,
-                   Method=_MethodType, BuiltinMethod=_BuiltinMethodType):
+    def _randbelow_with_getrandbits(self, n):
         "Return a random int in the range [0,n).  Raises ValueError if n==0."
 
-        random = self.random
         getrandbits = self.getrandbits
-        # Only call self.getrandbits if the original random() builtin method
-        # has not been overridden or if a new getrandbits() was supplied.
-        if type(random) is BuiltinMethod or type(getrandbits) is Method:
-            k = n.bit_length()  # don't use (n-1) here because n can be 1
-            r = getrandbits(k)          # 0 <= r < 2**k
-            while r >= n:
-                r = getrandbits(k)
-            return r
-        # There's an overridden random() method but no new getrandbits() method,
-        # so we can only use random() from here.
+        k = n.bit_length()  # don't use (n-1) here because n can be 1
+        r = getrandbits(k)          # 0 <= r < 2**k
+        while r >= n:
+            r = getrandbits(k)
+        return r
+
+    def _randbelow_without_getrandbits(self, n, int=int, maxsize=1<<BPF):
+        """Return a random int in the range [0,n).  Raises ValueError if n==0.
+
+        The implementation does not use getrandbits, but only random.
+        """
+
+        if n == 0:
+            raise ValueError("Upper boundary cannot be zero")
+
+        random = self.random
         if n >= maxsize:
             _warn("Underlying random() generator does not supply \n"
                 "enough bits to choose from a population range this large.\n"
@@ -250,6 +266,8 @@ class Random(_random.Random):
         while r >= limit:
             r = random()
         return int(r*maxsize) % n
+
+    _randbelow = _randbelow_with_getrandbits
 
 ## -------------------- sequence methods  -------------------
 
