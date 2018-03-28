@@ -1,0 +1,1 @@
+Document PyBuffer_ToContiguous().
