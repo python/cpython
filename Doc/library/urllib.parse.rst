@@ -597,14 +597,15 @@ task isn't already covered by the URL parsing functions above.
       parsing requirements as commonly observed in major browsers.
 
    :rfc:`2732` - Format for Literal IPv6 Addresses in URL's.
-      This specifies the parsing requirements of IPv6 URLs.
+      Standard that specifies the format and syntax to be used for IPv6 addresses.
 
    :rfc:`2396` - Uniform Resource Identifiers (URI): Generic Syntax
       Document describing the generic syntactic requirements for both Uniform Resource
       Names (URNs) and Uniform Resource Locators (URLs).
 
    :rfc:`2368` - The mailto URL scheme.
-      Parsing requirements for mailto URL schemes.
+      Standard that specifies the format, syntax, and URL scheme to be used for 
+      a mailto URL.
 
    :rfc:`1808` - Relative Uniform Resource Locators
       This Request For Comments includes the rules for joining an absolute and a
