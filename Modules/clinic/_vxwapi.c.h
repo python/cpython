@@ -4,6 +4,37 @@ preserve
 
 #if defined(__VXWORKS__)
 
+PyDoc_STRVAR(_vxwapi_isAbs__doc__,
+"isAbs($module, path, /)\n"
+"--\n"
+"\n"
+"Check if path is an absolute path on VxWorks (since not all VxWorks absolute paths start with /)");
+
+#define _VXWAPI_ISABS_METHODDEF    \
+    {"isAbs", (PyCFunction)_vxwapi_isAbs, METH_O, _vxwapi_isAbs__doc__},
+
+static PyObject *
+_vxwapi_isAbs_impl(PyObject *module, const char *path);
+
+static PyObject *
+_vxwapi_isAbs(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *path;
+
+    if (!PyArg_Parse(arg, "s:isAbs", &path)) {
+        goto exit;
+    }
+    return_value = _vxwapi_isAbs_impl(module, path);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(__VXWORKS__) */
+
+#if defined(__VXWORKS__)
+
 PyDoc_STRVAR(_vxwapi_rtpSpawn__doc__,
 "rtpSpawn($module, rtpFileName, argv, envp, priority, uStackSize,\n"
 "         options, taskOptions, /)\n"
@@ -43,7 +74,11 @@ exit:
 
 #endif /* defined(__VXWORKS__) */
 
+#ifndef _VXWAPI_ISABS_METHODDEF
+    #define _VXWAPI_ISABS_METHODDEF
+#endif /* !defined(_VXWAPI_ISABS_METHODDEF) */
+
 #ifndef _VXWAPI_RTPSPAWN_METHODDEF
     #define _VXWAPI_RTPSPAWN_METHODDEF
 #endif /* !defined(_VXWAPI_RTPSPAWN_METHODDEF) */
-/*[clinic end generated code: output=b00bd9a882c5b91c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a2f3f7db33c7f47 input=a9049054013a1b77]*/

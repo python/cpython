@@ -60,6 +60,8 @@ def format_test_result(test_name, result):
 
 def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     """Return a list of all applicable test modules."""
+    print(testdir)
+    print(findtestdir(testdir))
     testdir = findtestdir(testdir)
     names = os.listdir(testdir)
     tests = []
@@ -254,4 +256,4 @@ def cleanup_test_droppings(testname, verbose):
 
 
 def findtestdir(path=None):
-    return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
+    return path or os.path.dirname(os.path.dirname(os.path.realpath(__file__))) or os.curdir

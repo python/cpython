@@ -7,6 +7,7 @@
  *
  * modification history
  * --------------------
+ *  28mar18     added pathisabsolute wrapper
  *  12jan18     created
  *
  ************************************************/
@@ -14,6 +15,7 @@
 #if defined(__VXWORKS__)
 #include <Python.h>
 #include <rtpLib.h>
+#include <pathLib.h>
 #include "clinic/_vxwapi.c.h"
 
 
@@ -123,6 +125,38 @@ error:
 // end of copied section
 //****************************************************************************/
 
+/*[clinic input]
+module _vxwapi
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6efcf3b26a262ef1]*/
+ 
+/*
+ * BOOL pathIsAbsolute
+ *    (
+ *      const char  *filepath,       Filepath to test
+ *      const char  **pNametail      Where to put ptr to tail of dev name
+ *    )
+ */
+
+/*[clinic input]
+_vxwapi.isAbs
+  
+     path: str
+     /
+
+Check if path is an absolute path on VxWorks (since not all VxWorks absolute paths start with /)
+[clinic start generated code]*/
+
+static PyObject *
+_vxwapi_isAbs_impl(PyObject *module, const char *path)
+/*[clinic end generated code: output=c6929732e0e3b56e input=9814f3ed8f171bcd]*/
+{                                                                  
+    long ret = (long)_pathIsAbsolute (path,NULL);
+
+    return PyLong_FromLong(ret);
+}
+
+
 /*
  * RTP_ID rtpSpawn
  *    (
@@ -138,10 +172,6 @@ error:
  */
 
 
-/*[clinic input]
-module _vxwapi
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6efcf3b26a262ef1]*/
 
 /*[clinic input]
 _vxwapi.rtpSpawn
@@ -189,7 +219,8 @@ error:
 
 
 static PyMethodDef _vxwapiMethods[] = {
-    _VXWAPI_RTPSPAWN_METHODDEF  
+    _VXWAPI_RTPSPAWN_METHODDEF
+    _VXWAPI_ISABS_METHODDEF
     { NULL, NULL }
 };
 
