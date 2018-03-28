@@ -463,7 +463,7 @@ Glossary
 
 
    hash-based pyc
-      A bytecode cache file that uses the the hash rather than the last-modified
+      A bytecode cache file that uses the hash rather than the last-modified
       time of the corresponding source file to determine its validity. See
       :ref:`pyc-invalidation`.
 
