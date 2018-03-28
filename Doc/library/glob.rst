@@ -12,13 +12,13 @@
 
 The :mod:`glob` module finds all the pathnames matching a specified pattern
 according to the rules used by the Unix shell, although results are returned in
-arbitrary order.  No tilde expansion is done, but ``*``, ``?``, and character
-ranges expressed with ``[]`` will be correctly matched.  This is done by using
-the :func:`os.scandir` and :func:`fnmatch.fnmatch` functions in concert, and
-not by actually invoking a subshell.  Note that unlike :func:`fnmatch.fnmatch`,
-:mod:`glob` treats filenames beginning with a dot (``.``) as special cases.
-(For tilde and shell variable expansion, use :func:`os.path.expanduser` and
-:func:`os.path.expandvars`.)
+arbitrary order.  No tilde expansion is done, but ``*``, ``?``, character
+ranges expressed with ``[]`` and brace expression ``{}`` will be correctly matched.
+This is done by using the :func:`os.scandir` and :func:`fnmatch.fnmatch` functions
+in concert, and not by actually invoking a subshell.  Note that unlike
+:func:`fnmatch.fnmatch`, :mod:`glob` treats filenames beginning with a dot (``.``)
+as special cases. (For tilde and shell variable expansion, use
+:func:`os.path.expanduser` and :func:`os.path.expandvars`.)
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``'[?]'`` matches the character ``'?'``.
@@ -74,6 +74,8 @@ preserved. ::
    >>> import glob
    >>> glob.glob('./[0-9].*')
    ['./1.gif', './2.txt']
+   >>> glob.glob('./{2,card}.*')
+   ['./card.gif', './2.txt']
    >>> glob.glob('*.gif')
    ['1.gif', 'card.gif']
    >>> glob.glob('?.gif')

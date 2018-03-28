@@ -1,0 +1,2 @@
+Added brace expressions of the form {a,b} to the modules glob and fnmatch.
+Patch by Matus Valo.

@@ -29,6 +29,9 @@ class FnmatchTestCase(unittest.TestCase):
         check('abc', 'ab[cd]')
         check('abc', 'ab[!de]')
         check('abc', 'ab[de]', False)
+        check('abc', 'ab{c,d}')
+        check('abc', 'ab{c,}')
+        check('abc', 'ab{d,e}', False)
         check('a', '??', False)
         check('a', 'b', False)
 
@@ -37,6 +40,22 @@ class FnmatchTestCase(unittest.TestCase):
         check('\\', r'[\]')
         check('a', r'[!\]')
         check('\\', r'[!\]', False)
+
+        # test that brace expressions supports comma character.
+        check('a,a', r'{a\,a,b\,b,c}')
+        check('b,b', r'{a\,a,b\,b,c}')
+        check('c', r'{a\,a,b\,b,c}')
+
+        # test that brace expressions recursively evaluates inner expression
+        check('ab', 'a{[bc],d}')
+        check('ac', 'a{[bc],d}')
+        check('ad', 'a{[bc],d}')
+        check('ae', 'a{[bc],d}', False)
+        check('ae', 'a{[!bc],d}')
+        check('ab', 'a{[!bc],d}', False)
+        check('ac', 'a{[!bc],d}', False)
+        check('aee', 'a{*,d}')
+        check('ad', 'a{*,d}')
 
         # test that filenames with newlines in them are handled correctly.
         # http://bugs.python.org/issue6665
@@ -103,6 +122,8 @@ class TranslateTestCase(unittest.TestCase):
         self.assertEqual(translate('?'), r'(?s:.)\Z')
         self.assertEqual(translate('a?b*'), r'(?s:a.b.*)\Z')
         self.assertEqual(translate('[abc]'), r'(?s:[abc])\Z')
+        self.assertEqual(translate('{a,b,c}'), r'(?s:(a|b|c))\Z')
+        self.assertEqual(translate(r'{a\,b,c}'), r'(?s:(a,b|c))\Z')
         self.assertEqual(translate('[]]'), r'(?s:[]])\Z')
         self.assertEqual(translate('[!x]'), r'(?s:[^x])\Z')
         self.assertEqual(translate('[^x]'), r'(?s:[\^x])\Z')

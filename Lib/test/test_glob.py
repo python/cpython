@@ -86,6 +86,7 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('?aa'), map(self.norm, ['aaa']))
         eq(self.glob('aa?'), map(self.norm, ['aaa', 'aab']))
         eq(self.glob('aa[ab]'), map(self.norm, ['aaa', 'aab']))
+        eq(self.glob('{aaa,aab}'), map(self.norm, ['aaa', 'aab']))
         eq(self.glob('*q'), [])
 
     def test_glob_nested_directory(self):
@@ -181,6 +182,7 @@ class GlobTests(unittest.TestCase):
         check = self.check_escape
         check('abc', 'abc')
         check('[', '[[]')
+        check('{', '[{]')
         check('?', '[?]')
         check('*', '[*]')
         check('[[_/*?*/_]]', '[[][[]_/[*][?][*]/_]]')

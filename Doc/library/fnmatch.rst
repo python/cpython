@@ -16,17 +16,19 @@ This module provides support for Unix shell-style wildcards, which are *not* the
 same as regular expressions (which are documented in the :mod:`re` module).  The
 special characters used in shell-style wildcards are:
 
-+------------+------------------------------------+
-| Pattern    | Meaning                            |
-+============+====================================+
-| ``*``      | matches everything                 |
-+------------+------------------------------------+
-| ``?``      | matches any single character       |
-+------------+------------------------------------+
-| ``[seq]``  | matches any character in *seq*     |
-+------------+------------------------------------+
-| ``[!seq]`` | matches any character not in *seq* |
-+------------+------------------------------------+
++----------------------+------------------------------------+
+| Pattern              | Meaning                            |
++======================+====================================+
+| ``*``                | matches everything                 |
++----------------------+------------------------------------+
+| ``?``                | matches any single character       |
++----------------------+------------------------------------+
+| ``[seq]``            | matches any character in *seq*     |
++----------------------+------------------------------------+
+| ``[!seq]``           | matches any character not in *seq* |
++----------------------+------------------------------------+
+| ``{pat1,pat2,...}``  | matches *pat1* or *pat2* or ...    |
++----------------------+------------------------------------+
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``'[?]'`` matches the character ``'?'``.
@@ -57,6 +59,9 @@ patterns.
       for file in os.listdir('.'):
           if fnmatch.fnmatch(file, '*.txt'):
               print(file)
+
+   .. versionchanged:: 3.8
+      Support for brace globs "{pat1,pat2,...}".
 
 
 .. function:: fnmatchcase(filename, pattern)

@@ -21,10 +21,11 @@ def fnmatch(name, pat):
 
     Patterns are Unix shell style:
 
-    *       matches everything
-    ?       matches any single character
-    [seq]   matches any character in seq
-    [!seq]  matches any char not in seq
+    *                 matches everything
+    ?                 matches any single character
+    [seq]             matches any character in seq
+    [!seq]            matches any char not in seq
+    {pat1,pat2,...}   matches pat1 or pat2 or ...
 
     An initial period in FILENAME is not special.
     Both FILENAME and PATTERN are first case-normalized
@@ -71,7 +72,7 @@ def fnmatchcase(name, pat):
     return match(name) is not None
 
 
-def translate(pat):
+def _translate(pat):
     """Translate a shell PATTERN to a regular expression.
 
     There is no way to quote meta-characters.
@@ -123,6 +124,44 @@ def translate(pat):
                 elif stuff[0] in ('^', '['):
                     stuff = '\\' + stuff
                 res = '%s[%s]' % (res, stuff)
+        elif c == '{':
+            # Handling of brace expression: '{PATTERN,PATTERN,...}'
+            j = 1
+            while j < n and pat[j] != '}':
+                j = j + 1
+            if j >= n:
+                res = res + '\\{'
+            else:
+                stuff = pat[i:j]
+                i = j + 1
+
+                # Find indices of ',' in pattern excluding r'\,'.
+                # E.g. for r'a\,a,b\b,c' it will be [4, 8]
+                indices = [m.end() for m in re.finditer(r'[^\\],', stuff)]
+
+                # Splitting pattern string based on ',' character.
+                # Also '\,' is translated to ','. E.g. for r'a\,a,b\b,c':
+                # * first_part = 'a,a'
+                # * last_part = 'c'
+                # * middle_part = ['b,b']
+                first_part = stuff[:indices[0] - 1].replace(r'\,', ',')
+                last_part = stuff[indices[-1]:].replace(r'\,', ',')
+                middle_parts = [
+                        stuff[st:en - 1].replace(r'\,', ',')
+                        for st, en in zip(indices, indices[1:])
+                ]
+
+                # creating the regex from splitted pattern. Each part is
+                # recursivelly evaluated.
+                expanded = functools.reduce(
+                        lambda a,b: '|'.join((a, b)),
+                        (_translate(elem) for elem in [first_part] + middle_parts + [last_part])
+                )
+                res = '%s(%s)' % (res, expanded)
         else:
             res = res + re.escape(c)
+    return res
+
+def translate(pat):
+    res = _translate(pat)
     return r'(?s:%s)\Z' % res
