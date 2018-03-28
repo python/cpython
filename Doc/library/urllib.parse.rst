@@ -604,7 +604,7 @@ task isn't already covered by the URL parsing functions above.
       Names (URNs) and Uniform Resource Locators (URLs).
 
    :rfc:`2368` - The mailto URL scheme.
-      Standard that specifies the format, syntax, and URL scheme to be used for 
+      Standard that specifies the format, syntax, and URL scheme to be used for
       a mailto URL.
 
    :rfc:`1808` - Relative Uniform Resource Locators
