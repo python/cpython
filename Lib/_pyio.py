@@ -1672,7 +1672,7 @@ class FileIO(RawIOBase):
         return os.lseek(self._fd, 0, SEEK_CUR)
 
     def truncate(self, size=None):
-        """Resize stream to at most 'pos' bytes.
+        """Resize stream to at most 'size' bytes.
 
         The position in the stream is left unchanged.  The size
         defaults to the current IO position as reported by tell().  If
