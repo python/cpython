@@ -198,7 +198,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
     else {
         if (!PyArg_Parse(w, "s#", &drec.dptr, &drec.dsize)) {
             PyErr_SetString(PyExc_TypeError,
-                            "gdbm mappings have byte or string elements only");
+                            "gdbm mappings have bytes or string elements only");
             return -1;
         }
         errno = 0;

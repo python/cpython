@@ -158,7 +158,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
     } else {
         if ( !PyArg_Parse(w, "s#", &drec.dptr, &tmp_size) ) {
             PyErr_SetString(PyExc_TypeError,
-                 "dbm mappings have byte or string elements only");
+                 "dbm mappings have bytes or string elements only");
             return -1;
         }
         drec.dsize = tmp_size;
@@ -344,7 +344,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, const char *key,
     else {
         if ( !PyArg_Parse(default_value, "s#", &val.dptr, &tmp_size) ) {
             PyErr_SetString(PyExc_TypeError,
-                "dbm mappings have byte string elements only");
+                "dbm mappings have bytes or string elements only");
             return NULL;
         }
         val.dsize = tmp_size;
