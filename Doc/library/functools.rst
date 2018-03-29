@@ -386,7 +386,7 @@ The :mod:`functools` module defines the following functions:
 .. class:: singledispatchmethod(func)
 
    Return a new :class:`singledispatchmethod` descriptor which behaves
-   like :decorator:`singledispatch` except that it is designed to be used as a
+   like :func:`singledispatch` except that it is designed to be used as a
    method definition rather than being directly callable.
 
    :class:`singledispatchmethod` can be used as follows:
