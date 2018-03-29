@@ -2147,6 +2147,73 @@ class TestSingleDispatch(unittest.TestCase):
                 return self.arg == other
         self.assertEqual(i("str"), "str")
 
+    def test_method_register(self):
+        class A:
+            @functools.singledispatchmethod
+            def t(self, arg):
+                return "base"
+            @t.register(int)
+            def _(self, arg):
+                return "int"
+            @t.register(str)
+            def _(self, arg):
+                return "str"
+        a = A()
+
+        self.assertEqual(a.t(0), "int")
+        self.assertEqual(a.t(''), "str")
+        self.assertEqual(a.t(0.0), "base")
+
+    def test_staticmethod_register(self):
+        class A:
+            @functools.singledispatchmethod
+            @staticmethod
+            def t(arg):
+                return "base"
+            @t.register(int)
+            @staticmethod
+            def _(arg):
+                return "int"
+            @t.register(str)
+            @staticmethod
+            def _(arg):
+                return "str"
+        a = A()
+
+        self.assertEqual(A.t(0), "int")
+        self.assertEqual(A.t(''), "str")
+        self.assertEqual(A.t(0.0), "base")
+
+    def test_classmethod_register(self):
+        class A:
+            @functools.singledispatchmethod
+            @classmethod
+            def t(cls, arg):
+                return "base"
+            @t.register(int)
+            @classmethod
+            def _(cls, arg):
+                return "int"
+            @t.register(str)
+            @classmethod
+            def _(cls, arg):
+                return "str"
+        a = A()
+
+        self.assertEqual(A.t(0), "int")
+        self.assertEqual(A.t(''), "str")
+        self.assertEqual(A.t(0.0), "base")
+
+    def test_abstractmethod_register(self):
+        class Abstract(abc.ABCMeta):
+
+            @functools.singledispatchmethod
+            @abc.abstractmethod
+            def add(self, x, y):
+                pass
+
+        self.assertTrue(Abstract.add.__isabstractmethod__)
+
     def test_invalid_registrations(self):
         msg_prefix = "Invalid first argument to `register()`: "
         msg_suffix = (

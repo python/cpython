@@ -383,6 +383,28 @@ The :mod:`functools` module defines the following functions:
       The :func:`register` attribute supports using type annotations.
 
 
+.. class:: singledispatchmethod(func)
+
+   Return a new :class:`singledispatchmethod` descriptor which behaves
+   like :decorator:`singledispatch` except that it is designed to be used as a
+   method definition rather than being directly callable.
+
+   :class:`singledispatchmethod` can be used as follows:
+
+    class Negator:
+        @singledispatchmethod
+        def neg(self, arg):
+            raise NotImplementedError("Cannot negate a")
+
+        @neg.register(int):
+        def _(self, arg):
+            return -arg
+
+        @neg.register(bool)
+        def _(self, arg):
+            return not arg
+
+
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 
    Update a *wrapper* function to look like the *wrapped* function. The optional
