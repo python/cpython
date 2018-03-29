@@ -90,7 +90,7 @@ class DbmTestCase(unittest.TestCase):
             self.assertEqual(db['Unicode key \U0001f40d'],
                              'Unicode value \U0001f40d'.encode())
 
-    def test_readonly(self):
+    def test_write_readonly_file(self):
         with dbm.ndbm.open(self.filename, 'c') as db:
             db[b'bytes key'] = b'bytes value'
         with dbm.ndbm.open(self.filename, 'r') as db:

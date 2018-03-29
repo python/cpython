@@ -131,7 +131,7 @@ class TestGdbm(unittest.TestCase):
             self.assertEqual(db['Unicode key \U0001f40d'],
                              'Unicode value \U0001f40d'.encode())
 
-    def test_readonly(self):
+    def test_write_readonly_file(self):
         with gdbm.open(filename, 'c') as db:
             db[b'bytes key'] = b'bytes value'
         with gdbm.open(filename, 'r') as db:

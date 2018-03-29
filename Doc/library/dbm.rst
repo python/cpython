@@ -148,6 +148,10 @@ supported.
    Raised on :mod:`dbm.gnu`-specific errors, such as I/O errors. :exc:`KeyError` is
    raised for general mapping errors like specifying an incorrect key.
 
+   .. versionchanged:: 3.8
+      Deleting a key from a read-only database raises :exc:`dbm.gnu.error` instead of
+      :exc:`KeyError`.
+
 
 .. function:: open(filename[, flag[, mode]])
 
@@ -258,6 +262,10 @@ to locate the appropriate header file to simplify building this module.
    Raised on :mod:`dbm.ndbm`-specific errors, such as I/O errors. :exc:`KeyError` is raised
    for general mapping errors like specifying an incorrect key.
 
+   .. versionchanged:: 3.8
+      Deleting a key from a read-only database raises :exc:`dbm.ndbm.error` instead of
+      :exc:`KeyError`.
+
 
 .. data:: library
 
@@ -330,6 +338,10 @@ The module defines the following:
 
    Raised on :mod:`dbm.dumb`-specific errors, such as I/O errors.  :exc:`KeyError` is
    raised for general mapping errors like specifying an incorrect key.
+
+   .. versionchanged:: 3.8
+      Deleting a key from a read-only database raises :exc:`dbm.dumb.error` instead of
+      :exc:`KeyError`.
 
 
 .. function:: open(filename[, flag[, mode]])
