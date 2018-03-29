@@ -2705,7 +2705,7 @@ class TestDescriptors(unittest.TestCase):
         # Create a descriptor.
         class D:
             def __set_name__(self, owner, name):
-                self.name = name
+                self.name = name + 'x'
             def __get__(self, instance, owner):
                 if instance is not None:
                     return 1
@@ -2716,7 +2716,7 @@ class TestDescriptors(unittest.TestCase):
         @dataclass
         class C:
             c: int=D()
-        self.assertEqual(C.c.name, 'c')
+        self.assertEqual(C.c.name, 'cx')
 
         # Now test with a default value and init=False, which is the
         #  only time this is really meaningful.  If not using
@@ -2724,7 +2724,7 @@ class TestDescriptors(unittest.TestCase):
         @dataclass
         class C:
             c: int=field(default=D(), init=False)
-        self.assertEqual(C.c.name, 'c')
+        self.assertEqual(C.c.name, 'cx')
         self.assertEqual(C().c, 1)
 
     def test_non_descriptor(self):
@@ -2733,12 +2733,41 @@ class TestDescriptors(unittest.TestCase):
 
         class D:
             def __set_name__(self, owner, name):
-                self.name = name
+                self.name = name + 'x'
 
         @dataclass
         class C:
             c: int=field(default=D(), init=False)
-        self.assertEqual(C.c.name, 'c')
+        self.assertEqual(C.c.name, 'cx')
+
+    def test_lookup_on_instance(self):
+        # See bpo-33175.
+        class D:
+            pass
+
+        d = D()
+        # Create an attribute on the instance, not type.
+        d.__set_name__ = Mock()
+
+        # Make sure d.__set_name__ is not called.
+        @dataclass
+        class C:
+            i: int=field(default=d, init=False)
+
+        self.assertEqual(d.__set_name__.call_count, 0)
+
+    def test_lookup_on_class(self):
+        # See bpo-33175.
+        class D:
+            pass
+        D.__set_name__ = Mock()
+
+        # Make sure D.__set_name__ is called.
+        @dataclass
+        class C:
+            i: int=field(default=D(), init=False)
+
+        self.assertEqual(D.__set_name__.call_count, 1)
 
 
 if __name__ == '__main__':
