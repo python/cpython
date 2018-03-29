@@ -118,7 +118,7 @@ _io__IOBase_tell_impl(PyObject *self)
 }
 
 PyDoc_STRVAR(iobase_truncate_doc,
-    "Resize stream to at most size bytes.\n"
+    "Resize stream to at most 'size' bytes.\n"
     "\n"
     "Position in the stream is left unchanged.  Size defaults to\n"
     "the current IO position as reported by tell().  If the stream's\n"

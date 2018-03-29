@@ -322,7 +322,7 @@ PyDoc_STRVAR(_io_FileIO_truncate__doc__,
 "truncate($self, size=None, /)\n"
 "--\n"
 "\n"
-"Resize stream to at most size bytes.\n"
+"Resize stream to at most \'size\' bytes.\n"
 "\n"
 "Position in the stream is left unchanged.  Size defaults to\n"
 "the current IO position as reported by tell().  If the stream\'s\n"
@@ -375,4 +375,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=c0e670a6d39d67fb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b0ef426afce9a6c3 input=a9049054013a1b77]*/

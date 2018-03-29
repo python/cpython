@@ -314,7 +314,7 @@ PyDoc_STRVAR(_io_BytesIO_truncate__doc__,
 "truncate($self, size=None, /)\n"
 "--\n"
 "\n"
-"Resize stream to at most size bytes.\n"
+"Resize stream to at most \'size\' bytes.\n"
 "\n"
 "Position in the stream is left unchanged.  Size defaults to\n"
 "the current IO position as reported by tell().  If the stream\'s\n"
@@ -446,4 +446,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=605eed15d8c98b4a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=934f685bde756d6d input=a9049054013a1b77]*/

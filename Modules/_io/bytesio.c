@@ -552,7 +552,7 @@ _io.BytesIO.truncate
     size: Py_ssize_t(accept={int, NoneType}, c_default="self->pos") = None
     /
 
-Resize stream to at most size bytes.
+Resize stream to at most 'size' bytes.
 
 Position in the stream is left unchanged.  Size defaults to
 the current IO position as reported by tell().  If the stream's
@@ -562,7 +562,7 @@ undetermined.  Returns the new size.
 
 static PyObject *
 _io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=9ad17650c15fa09b input=5f56a5c3b3d91e9d]*/
+/*[clinic end generated code: output=9ad17650c15fa09b input=0f69785dcc22737e]*/
 {
     CHECK_CLOSED(self);
     CHECK_EXPORTS(self);
