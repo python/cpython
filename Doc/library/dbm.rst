@@ -73,6 +73,10 @@ available, as well as :meth:`get` and :meth:`setdefault`.
 .. versionchanged:: 3.2
    :meth:`get` and :meth:`setdefault` are now available in all database modules.
 
+.. versionchanged:: 3.8
+   Deleting a key from a read-only database raises database module specific error
+   instead of :exc:`KeyError`.
+
 Key and values are always stored as bytes. This means that when
 strings are used they are implicitly converted to the default encoding before
 being stored.
@@ -147,10 +151,6 @@ supported.
 
    Raised on :mod:`dbm.gnu`-specific errors, such as I/O errors. :exc:`KeyError` is
    raised for general mapping errors like specifying an incorrect key.
-
-   .. versionchanged:: 3.8
-      Deleting a key from a read-only database raises :exc:`dbm.gnu.error` instead of
-      :exc:`KeyError`.
 
 
 .. function:: open(filename[, flag[, mode]])
@@ -262,10 +262,6 @@ to locate the appropriate header file to simplify building this module.
    Raised on :mod:`dbm.ndbm`-specific errors, such as I/O errors. :exc:`KeyError` is raised
    for general mapping errors like specifying an incorrect key.
 
-   .. versionchanged:: 3.8
-      Deleting a key from a read-only database raises :exc:`dbm.ndbm.error` instead of
-      :exc:`KeyError`.
-
 
 .. data:: library
 
@@ -338,10 +334,6 @@ The module defines the following:
 
    Raised on :mod:`dbm.dumb`-specific errors, such as I/O errors.  :exc:`KeyError` is
    raised for general mapping errors like specifying an incorrect key.
-
-   .. versionchanged:: 3.8
-      Deleting a key from a read-only database raises :exc:`dbm.dumb.error` instead of
-      :exc:`KeyError`.
 
 
 .. function:: open(filename[, flag[, mode]])
