@@ -71,6 +71,36 @@ class AbstractMemoryTests:
         m = None
         self.assertEqual(sys.getrefcount(b), oldrefcount)
 
+    def test_setitem_readonly_and_writable_buffer(self):
+        if not self.rw_type:
+            self.skipTest("no writable type to test")
+        b = self.rw_type(self._source)
+        oldrefcount = sys.getrefcount(b)
+        m = self._view(b)
+        readonly_m = m.cast("B", readonly=True)
+        def setitem(value):
+            readonly_m[0] = value
+        self.assertRaises(TypeError, setitem, 12)
+        m = None
+        readonly_m = None
+        self.assertEqual(sys.getrefcount(b), oldrefcount)
+
+    def test_setitem_readonly_and_readonly_buffer(self):
+        if not self.ro_type:
+            self.skipTest("no writable type to test")
+        tp = self.ro_type
+        b = self.ro_type(self._source)
+        oldrefcount = sys.getrefcount(b)
+        m = self._view(b)
+        self.assertRaises(TypeError, lambda: m.cast("B", readonly=False))
+        readonly_m = m.cast("B", readonly=True)
+        def setitem(value):
+            readonly_m[0] = value
+        self.assertRaises(TypeError, setitem, 12)
+        m = None
+        readonly_m = None
+        self.assertEqual(sys.getrefcount(b), oldrefcount)
+
     def test_setitem_writable(self):
         if not self.rw_type:
             self.skipTest("no writable type to test")
