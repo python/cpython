@@ -389,19 +389,19 @@ The :mod:`functools` module defines the following functions:
    like :func:`singledispatch` except that it is designed to be used as a
    method definition rather than being directly callable.
 
-   :class:`singledispatchmethod` can be used as follows:
+   :class:`singledispatchmethod` can be used as follows::
 
     class Negator:
         @singledispatchmethod
         def neg(self, arg):
             raise NotImplementedError("Cannot negate a")
 
-        @neg.register(int):
-        def _(self, arg):
+        @neg.register
+        def _(self, arg: int):
             return -arg
 
-        @neg.register(bool)
-        def _(self, arg):
+        @neg.register
+        def _(self, arg: bool):
             return not arg
 
 
