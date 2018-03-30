@@ -385,11 +385,12 @@ The :mod:`functools` module defines the following functions:
 
 .. class:: singledispatchmethod(func)
 
-   Return a new :class:`singledispatchmethod` descriptor which behaves
-   like :func:`singledispatch` except that it is designed to be used as a
-   method definition rather than being directly callable.
+   Transform a method into a :term:`single-dispatch <single
+   dispatch>` :term:`generic function`.
 
-   :class:`singledispatchmethod` can be used as follows::
+   To define a generic method, decorate it with the ``@singledispatchmethod``
+   decorator. Note that the dispatch happens on the type of the first non-self
+   or non-cls argument, create your function accordingly::
 
     class Negator:
         @singledispatchmethod
@@ -404,6 +405,29 @@ The :mod:`functools` module defines the following functions:
         def _(self, arg: bool):
             return not arg
 
+   ``@singledispatchmethod`` supports nesting with other decorators such as
+   ``@classmethod``. Note that to allow for ``dispatcher.register``,
+   ``singledispatchmethod`` must be the *outer most* decorator. Here is the
+   ``Negator`` class with the ``neg`` methods being class bound::
+
+    class Negator:
+        @singledispatchmethod
+        @classmethod
+        def neg(self, arg):
+            raise NotImplementedError("Cannot negate a")
+
+        @neg.register
+        @classmethod
+        def _(self, arg: int):
+            return -arg
+
+        @neg.register
+        @classmethod
+        def _(self, arg: bool):
+            return not arg
+
+   The same pattern can be used for other similar decorators: ``staticmethod``,
+   ``abstractmethod``, and others.
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 
