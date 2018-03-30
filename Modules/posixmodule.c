@@ -5142,6 +5142,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     Py_ssize_t argc, envc;
     PyObject* result = NULL;
     PyObject* seq = NULL;
+    PyObject* file_actions_obj = NULL;
  
 
     /* posix_spawn has three arguments: (path, argv, env), where
@@ -5194,17 +5195,17 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         if(seq == NULL) {
             goto exit;
         }
-        PyObject* file_actions_obj;
         PyObject* mode_obj;
 
         for (int i = 0; i < PySequence_Fast_GET_SIZE(seq); ++i) {
             file_actions_obj = PySequence_Fast_GET_ITEM(seq, i);
-
-            if(!PySequence_Check(file_actions_obj) | !PySequence_Size(file_actions_obj)) {
-                PyErr_SetString(PyExc_TypeError,"Each file_action element must be a non empty sequence");
+            if (file_actions_obj == NULL) {
                 goto exit;
             }
-
+            file_actions_obj = PySequence_Fast(file_actions_obj, "Each file_action element must be a non-empty sequence");
+            if (file_actions_obj == NULL) {
+                goto exit;
+            }
 
             mode_obj = PySequence_Fast_GET_ITEM(file_actions_obj, 0);
             int mode = PyLong_AsLong(mode_obj);
@@ -5219,19 +5220,19 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                         goto exit;
                     }
 
-                    long open_fd = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
+                    long open_fd = PyLong_AsLong(PySequence_Fast_GET_ITEM(file_actions_obj, 1));
                     if(PyErr_Occurred()) {
                         goto exit;
                     }
-                    const char* open_path = PyUnicode_AsUTF8(PySequence_GetItem(file_actions_obj, 2));
+                    const char* open_path = PyUnicode_AsUTF8(PySequence_Fast_GET_ITEM(file_actions_obj, 2));
                     if(open_path == NULL) {
                         goto exit;
                     }
-                    long open_oflag = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 3));
+                    long open_oflag = PyLong_AsLong(PySequence_Fast_GET_ITEM(file_actions_obj, 3));
                     if(PyErr_Occurred()) {
                         goto exit;
                     }
-                    long open_mode = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 4));
+                    long open_mode = PyLong_AsLong(PySequence_Fast_GET_ITEM(file_actions_obj, 4));
                     if(PyErr_Occurred()) {
                         goto exit;
                     }
@@ -5248,7 +5249,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                         goto exit;
                     }
 
-                    long close_fd = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
+                    long close_fd = PyLong_AsLong(PySequence_Fast_GET_ITEM(file_actions_obj, 1));
                     if(PyErr_Occurred()) {
                         goto exit;
                     }
@@ -5264,11 +5265,11 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                         goto exit;
                     }
 
-                    long fd1 = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
+                    long fd1 = PyLong_AsLong(PySequence_Fast_GET_ITEM(file_actions_obj, 1));
                     if(PyErr_Occurred()) {
                         goto exit;
                     }
-                    long fd2 = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 2));
+                    long fd2 = PyLong_AsLong(PySequence_Fast_GET_ITEM(file_actions_obj, 2));
                     if(PyErr_Occurred()) {
                         goto exit;
                     }
@@ -5282,7 +5283,9 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyErr_SetString(PyExc_TypeError,"Unknown file_actions identifier");
                     goto exit;
             }
+            Py_DECREF(file_actions_obj);
         }
+        file_actions_obj = NULL;
     }
 
     _Py_BEGIN_SUPPRESS_IPH
@@ -5297,6 +5300,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
 exit:
 
     Py_XDECREF(seq);
+    Py_XDECREF(file_actions_obj);
 
     if(file_actionsp) {
         posix_spawn_file_actions_destroy(file_actionsp);
