@@ -1,0 +1,1 @@
+The embedding tests can once again be built with clang 6.0
