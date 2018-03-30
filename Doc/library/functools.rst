@@ -413,17 +413,17 @@ The :mod:`functools` module defines the following functions:
     class Negator:
         @singledispatchmethod
         @classmethod
-        def neg(self, arg):
+        def neg(cls, arg):
             raise NotImplementedError("Cannot negate a")
 
         @neg.register
         @classmethod
-        def _(self, arg: int):
+        def _(cls, arg: int):
             return -arg
 
         @neg.register
         @classmethod
-        def _(self, arg: bool):
+        def _(cls, arg: bool):
             return not arg
 
    The same pattern can be used for other similar decorators: ``staticmethod``,
