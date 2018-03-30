@@ -2151,79 +2151,92 @@ class TestSingleDispatch(unittest.TestCase):
         class A:
             @functools.singledispatchmethod
             def t(self, arg):
-                return "base"
+                self.arg = "base"
             @t.register(int)
             def _(self, arg):
-                return "int"
+                self.arg = "int"
             @t.register(str)
             def _(self, arg):
-                return "str"
+                self.arg = "str"
         a = A()
 
-        self.assertEqual(a.t(0), "int")
-        self.assertEqual(a.t(''), "str")
-        self.assertEqual(a.t(0.0), "base")
+        a.t(0)
+        self.assertEqual(a.arg, "int")
+        aa = A()
+        self.assertFalse(hasattr(aa, 'arg'))
+        a.t('')
+        self.assertEqual(a.arg, "str")
+        aa = A()
+        self.assertFalse(hasattr(aa, 'arg'))
+        a.t(0.0)
+        self.assertEqual(a.arg, "base")
+        aa = A()
+        self.assertFalse(hasattr(aa, 'arg'))
 
     def test_staticmethod_register(self):
         class A:
             @functools.singledispatchmethod
             @staticmethod
             def t(arg):
-                return "base"
+                return arg
             @t.register(int)
             @staticmethod
             def _(arg):
-                return "int"
+                return isinstance(arg, int)
             @t.register(str)
             @staticmethod
             def _(arg):
-                return "str"
+                return isinstance(arg, str)
         a = A()
 
-        self.assertEqual(A.t(0), "int")
-        self.assertEqual(A.t(''), "str")
-        self.assertEqual(A.t(0.0), "base")
+        self.assertTrue(A.t(0))
+        self.assertTrue(A.t(''))
+        self.assertEqual(A.t(0.0), 0.0)
 
     def test_classmethod_register(self):
         class A:
+            def __init__(self, arg):
+                self.arg = arg
+
             @functools.singledispatchmethod
             @classmethod
             def t(cls, arg):
-                return "base"
+                return cls("base")
             @t.register(int)
             @classmethod
             def _(cls, arg):
-                return "int"
+                return cls("int")
             @t.register(str)
             @classmethod
             def _(cls, arg):
-                return "str"
-        a = A()
+                return cls("str")
 
-        self.assertEqual(A.t(0), "int")
-        self.assertEqual(A.t(''), "str")
-        self.assertEqual(A.t(0.0), "base")
+        self.assertEqual(A.t(0).arg, "int")
+        self.assertEqual(A.t('').arg, "str")
+        self.assertEqual(A.t(0.0).arg, "base")
 
     def test_callable_register(self):
         class A:
+            def __init__(self, arg):
+                self.arg = arg
+
             @functools.singledispatchmethod
             @classmethod
             def t(cls, arg):
-                return "base"
+                return cls("base")
 
         @A.t.register(int)
         @classmethod
         def _(cls, arg):
-            return "int"
+            return cls("int")
         @A.t.register(str)
         @classmethod
         def _(cls, arg):
-            return "str"
-        a = A()
+            return cls("str")
 
-        self.assertEqual(A.t(0), "int")
-        self.assertEqual(A.t(''), "str")
-        self.assertEqual(A.t(0.0), "base")
+        self.assertEqual(A.t(0).arg, "int")
+        self.assertEqual(A.t('').arg, "str")
+        self.assertEqual(A.t(0.0).arg, "base")
 
     def test_abstractmethod_register(self):
         class Abstract(abc.ABCMeta):
