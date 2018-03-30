@@ -2204,6 +2204,27 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A.t(''), "str")
         self.assertEqual(A.t(0.0), "base")
 
+    def test_callable_register(self):
+        class A:
+            @functools.singledispatchmethod
+            @classmethod
+            def t(cls, arg):
+                return "base"
+
+        @A.t.register(int)
+        @classmethod
+        def _(cls, arg):
+            return "int"
+        @A.t.register(str)
+        @classmethod
+        def _(cls, arg):
+            return "str"
+        a = A()
+
+        self.assertEqual(A.t(0), "int")
+        self.assertEqual(A.t(''), "str")
+        self.assertEqual(A.t(0.0), "base")
+
     def test_abstractmethod_register(self):
         class Abstract(abc.ABCMeta):
 
@@ -2213,6 +2234,23 @@ class TestSingleDispatch(unittest.TestCase):
                 pass
 
         self.assertTrue(Abstract.add.__isabstractmethod__)
+
+    def test_type_ann_register(self):
+        class A:
+            @functools.singledispatchmethod
+            def t(self, arg):
+                return "base"
+            @t.register
+            def _(self, arg: int):
+                return "int"
+            @t.register
+            def _(self, arg: str):
+                return "str"
+        a = A()
+
+        self.assertEqual(a.t(0), "int")
+        self.assertEqual(a.t(''), "str")
+        self.assertEqual(a.t(0.0), "base")
 
     def test_invalid_registrations(self):
         msg_prefix = "Invalid first argument to `register()`: "
