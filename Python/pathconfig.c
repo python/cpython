@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "osdefs.h"
 #include "internal/pystate.h"
+#include <wchar.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -255,11 +256,6 @@ Py_GetProgramName(void)
     return _Py_path_config.program_name;
 }
 
-
-#define _HAVE_SCRIPT_ARGUMENT(argc, argv) \
-  (argc > 0 && argv0 != NULL && \
-   wcscmp(argv0, L"-c") != 0 && wcscmp(argv0, L"-m") != 0)
-
 /* Compute argv[0] which will be prepended to sys.argv */
 PyObject*
 _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
@@ -267,6 +263,8 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
     wchar_t *argv0;
     wchar_t *p = NULL;
     Py_ssize_t n = 0;
+    int have_script_arg = 0;
+    int have_module_arg = 0;
 #ifdef HAVE_READLINK
     wchar_t link[MAXPATHLEN+1];
     wchar_t argv0copy[2*MAXPATHLEN+1];
@@ -278,11 +276,25 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
     wchar_t fullpath[MAX_PATH];
 #endif
 
-
     argv0 = argv[0];
+    if (argc > 0 && argv0 != NULL) {
+        have_module_arg = (wcscmp(argv0, L"-m") == 0);
+        have_script_arg = !have_module_arg && (wcscmp(argv0, L"-c") != 0);
+    }
+
+    if (have_module_arg) {
+        #if defined(HAVE_REALPATH) || defined(MS_WINDOWS)
+            _Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath));
+            argv0 = fullpath;
+            n = wcslen(argv0);
+        #else
+            argv0 = L".";
+            n = 1;
+        #endif
+    }
 
 #ifdef HAVE_READLINK
-    if (_HAVE_SCRIPT_ARGUMENT(argc, argv))
+    if (have_script_arg)
         nr = _Py_wreadlink(argv0, link, MAXPATHLEN);
     if (nr > 0) {
         /* It's a symlink */
@@ -310,7 +322,7 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
 
 #if SEP == '\\'
     /* Special case for Microsoft filename syntax */
-    if (_HAVE_SCRIPT_ARGUMENT(argc, argv)) {
+    if (have_script_arg) {
         wchar_t *q;
 #if defined(MS_WINDOWS)
         /* Replace the first element in argv with the full path. */
@@ -334,7 +346,7 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
         }
     }
 #else /* All other filename syntaxes */
-    if (_HAVE_SCRIPT_ARGUMENT(argc, argv)) {
+    if (have_script_arg) {
 #if defined(HAVE_REALPATH)
         if (_Py_wrealpath(argv0, fullpath, Py_ARRAY_LENGTH(fullpath))) {
             argv0 = fullpath;

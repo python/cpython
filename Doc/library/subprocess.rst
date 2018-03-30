@@ -39,7 +39,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   shell=False, cwd=None, timeout=None, check=False, \
-                  encoding=None, errors=None)
+                  encoding=None, errors=None, text=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -267,7 +267,8 @@ default values. The arguments that are most commonly needed are:
    .. index::
       single: universal newlines; subprocess module
 
-   If *encoding* or *errors* are specified, or *universal_newlines* is true,
+   If *encoding* or *errors* are specified, or *text* (also known as
+   *universal_newlines*) is true,
    the file objects *stdin*, *stdout* and *stderr* will be opened in text
    mode using the *encoding* and *errors* specified in the call or the
    defaults for :class:`io.TextIOWrapper`.
@@ -283,6 +284,9 @@ default values. The arguments that are most commonly needed are:
 
    .. versionadded:: 3.6
       Added *encoding* and *errors* parameters.
+
+   .. versionadded:: 3.7
+      Added the *text* parameter as an alias for *universal_newlines*.
 
    .. note::
 
@@ -328,19 +332,19 @@ functions.
                  cwd=None, env=None, universal_newlines=False, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=(), *, \
-                 encoding=None, errors=None)
+                 encoding=None, errors=None, text=None)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
-   *args* should be a sequence of program arguments or else a single string or
-   :term:`path-like object`. By default, the program to execute is the first
-   item in *args* if *args* is a sequence. If *args* is a string, the
-   interpretation is platform-dependent and described below.  See the *shell*
-   and *executable* arguments for additional differences from the default
-   behavior.  Unless otherwise stated, it is recommended to pass *args* as a sequence.
+   *args* should be a sequence of program arguments or else a single string.
+   By default, the program to execute is the first item in *args* if *args* is
+   a sequence.  If *args* is a string, the interpretation is
+   platform-dependent and described below.  See the *shell* and *executable*
+   arguments for additional differences from the default behavior.  Unless
+   otherwise stated, it is recommended to pass *args* as a sequence.
 
    On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
@@ -455,7 +459,10 @@ functions.
       common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed.
+   :const:`2` will be closed before the child process is executed.  Otherwise
+   when *close_fds* is false, file descriptors obey their inheritable flag
+   as described in :ref:`fd_inheritance`.
+
    On Windows, if *close_fds* is true then no handles will be inherited by the
    child process unless explicitly passed in the ``handle_list`` element of
    :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.
@@ -511,14 +518,17 @@ functions.
 
    .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
-   If *encoding* or *errors* are specified, the file objects *stdin*, *stdout*
-   and *stderr* are opened in text mode with the specified encoding and
-   *errors*, as described above in :ref:`frequently-used-arguments`. If
-   *universal_newlines* is ``True``, they are opened in text mode with default
-   encoding. Otherwise, they are opened as binary streams.
+   If *encoding* or *errors* are specified, or *text* is true, the file objects
+   *stdin*, *stdout* and *stderr* are opened in text mode with the specified
+   encoding and *errors*, as described above in :ref:`frequently-used-arguments`.
+   The *universal_newlines* argument is equivalent  to *text* and is provided
+   for backwards compatibility. By default, file objects are opened in binary mode.
 
    .. versionadded:: 3.6
       *encoding* and *errors* were added.
+
+   .. versionadded:: 3.7
+      *text* was added as a more readable alias for *universal_newlines*.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
@@ -550,10 +560,6 @@ functions.
    .. versionchanged:: 3.6
       Popen destructor now emits a :exc:`ResourceWarning` warning if the child
       process is still running.
-
-   .. versionchanged:: 3.7
-      *args*, or the first element of *args* if *args* is a sequence, can now
-      be a :term:`path-like object`.
 
 
 Exceptions
@@ -1086,6 +1092,9 @@ calls these functions.
 
    .. versionchanged:: 3.4
       Support for the *input* keyword argument was added.
+
+   .. versionchanged:: 3.6
+      *encoding* and *errors* were added.  See :func:`run` for details.
 
 .. _subprocess-replacements:
 

@@ -1594,6 +1594,72 @@ class GeneralModuleTests(unittest.TestCase):
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
             self.assertRaises(OverflowError, s.bind, (support.HOSTv6, 0, -10))
 
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
+    def test_getaddrinfo_ipv6_basic(self):
+        ((*_, sockaddr),) = socket.getaddrinfo(
+            'ff02::1de:c0:face:8D',  # Note capital letter `D`.
+            1234, socket.AF_INET6,
+            socket.SOCK_DGRAM,
+            socket.IPPROTO_UDP
+        )
+        self.assertEqual(sockaddr, ('ff02::1de:c0:face:8d', 1234, 0, 0))
+
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
+    @unittest.skipUnless(
+        hasattr(socket, 'if_nameindex'),
+        'if_nameindex is not supported')
+    def test_getaddrinfo_ipv6_scopeid_symbolic(self):
+        # Just pick up any network interface (Linux, Mac OS X)
+        (ifindex, test_interface) = socket.if_nameindex()[0]
+        ((*_, sockaddr),) = socket.getaddrinfo(
+            'ff02::1de:c0:face:8D%' + test_interface,
+            1234, socket.AF_INET6,
+            socket.SOCK_DGRAM,
+            socket.IPPROTO_UDP
+        )
+        # Note missing interface name part in IPv6 address
+        self.assertEqual(sockaddr, ('ff02::1de:c0:face:8d', 1234, 0, ifindex))
+
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
+    @unittest.skipUnless(
+        sys.platform == 'win32',
+        'Numeric scope id does not work or undocumented')
+    def test_getaddrinfo_ipv6_scopeid_numeric(self):
+        # Also works on Linux and Mac OS X, but is not documented (?)
+        # Windows, Linux and Max OS X allow nonexistent interface numbers here.
+        ifindex = 42
+        ((*_, sockaddr),) = socket.getaddrinfo(
+            'ff02::1de:c0:face:8D%' + str(ifindex),
+            1234, socket.AF_INET6,
+            socket.SOCK_DGRAM,
+            socket.IPPROTO_UDP
+        )
+        # Note missing interface name part in IPv6 address
+        self.assertEqual(sockaddr, ('ff02::1de:c0:face:8d', 1234, 0, ifindex))
+
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
+    @unittest.skipUnless(
+        hasattr(socket, 'if_nameindex'),
+        'if_nameindex is not supported')
+    def test_getnameinfo_ipv6_scopeid_symbolic(self):
+        # Just pick up any network interface.
+        (ifindex, test_interface) = socket.if_nameindex()[0]
+        sockaddr = ('ff02::1de:c0:face:8D', 1234, 0, ifindex)  # Note capital letter `D`.
+        nameinfo = socket.getnameinfo(sockaddr, socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
+        self.assertEqual(nameinfo, ('ff02::1de:c0:face:8d%' + test_interface, '1234'))
+
+    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
+    @unittest.skipUnless(
+        sys.platform == 'win32',
+        'Numeric scope id does not work or undocumented')
+    def test_getnameinfo_ipv6_scopeid_numeric(self):
+        # Also works on Linux (undocumented), but does not work on Mac OS X
+        # Windows and Linux allow nonexistent interface numbers here.
+        ifindex = 42
+        sockaddr = ('ff02::1de:c0:face:8D', 1234, 0, ifindex)  # Note capital letter `D`.
+        nameinfo = socket.getnameinfo(sockaddr, socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
+        self.assertEqual(nameinfo, ('ff02::1de:c0:face:8d%' + str(ifindex), '1234'))
+
     def test_str_for_enums(self):
         # Make sure that the AF_* and SOCK_* constants have enum-like string
         # reprs.
@@ -5879,6 +5945,27 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             with self.assertRaises(TypeError):
                 sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=-1)
 
+@unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
+class TestMSWindowsTCPFlags(unittest.TestCase):
+    knownTCPFlags = {
+                       # avaliable since long time ago
+                       'TCP_MAXSEG',
+                       'TCP_NODELAY',
+                       # available starting with Windows 10 1607
+                       'TCP_FASTOPEN',
+                       # available starting with Windows 10 1703
+                       'TCP_KEEPCNT',
+                       # available starting with Windows 10 1709
+                       'TCP_KEEPIDLE',
+                       'TCP_KEEPINTVL'
+                       }
+
+    def test_new_tcp_flags(self):
+        provided = [s for s in dir(socket) if s.startswith('TCP')]
+        unknown = [s for s in provided if s not in self.knownTCPFlags]
+
+        self.assertEqual([], unknown,
+            "New TCP flags were discovered. See bpo-32394 for more information")
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
@@ -5939,6 +6026,7 @@ def test_main():
         SendfileUsingSendTest,
         SendfileUsingSendfileTest,
     ])
+    tests.append(TestMSWindowsTCPFlags)
 
     thread_info = support.threading_setup()
     support.run_unittest(*tests)

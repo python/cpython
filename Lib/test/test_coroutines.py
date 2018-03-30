@@ -1846,6 +1846,36 @@ class CoroutineTest(unittest.TestCase):
             run_async(run_gen()),
             ([], [121]))
 
+    def test_comp_4_2(self):
+        async def f(it):
+            for i in it:
+                yield i
+
+        async def run_list():
+            return [i + 10 async for i in f(range(5)) if 0 < i < 4]
+        self.assertEqual(
+            run_async(run_list()),
+            ([], [11, 12, 13]))
+
+        async def run_set():
+            return {i + 10 async for i in f(range(5)) if 0 < i < 4}
+        self.assertEqual(
+            run_async(run_set()),
+            ([], {11, 12, 13}))
+
+        async def run_dict():
+            return {i + 10: i + 100 async for i in f(range(5)) if 0 < i < 4}
+        self.assertEqual(
+            run_async(run_dict()),
+            ([], {11: 101, 12: 102, 13: 103}))
+
+        async def run_gen():
+            gen = (i + 10 async for i in f(range(5)) if 0 < i < 4)
+            return [g + 100 async for g in gen]
+        self.assertEqual(
+            run_async(run_gen()),
+            ([], [111, 112, 113]))
+
     def test_comp_5(self):
         async def f(it):
             for i in it:
@@ -1948,6 +1978,71 @@ class CoroutineTest(unittest.TestCase):
             func()
             support.gc_collect()
         self.assertIn("was never awaited", stderr.getvalue())
+
+    def test_for_assign_raising_stop_async_iteration(self):
+        class BadTarget:
+            def __setitem__(self, key, value):
+                raise StopAsyncIteration(42)
+        tgt = BadTarget()
+        async def source():
+            yield 10
+
+        async def run_for():
+            with self.assertRaises(StopAsyncIteration) as cm:
+                async for tgt[0] in source():
+                    pass
+            self.assertEqual(cm.exception.args, (42,))
+            return 'end'
+        self.assertEqual(run_async(run_for()), ([], 'end'))
+
+        async def run_list():
+            with self.assertRaises(StopAsyncIteration) as cm:
+                return [0 async for tgt[0] in source()]
+            self.assertEqual(cm.exception.args, (42,))
+            return 'end'
+        self.assertEqual(run_async(run_list()), ([], 'end'))
+
+        async def run_gen():
+            gen = (0 async for tgt[0] in source())
+            a = gen.asend(None)
+            with self.assertRaises(RuntimeError) as cm:
+                await a
+            self.assertIsInstance(cm.exception.__cause__, StopAsyncIteration)
+            self.assertEqual(cm.exception.__cause__.args, (42,))
+            return 'end'
+        self.assertEqual(run_async(run_gen()), ([], 'end'))
+
+    def test_for_assign_raising_stop_async_iteration_2(self):
+        class BadIterable:
+            def __iter__(self):
+                raise StopAsyncIteration(42)
+        async def badpairs():
+            yield BadIterable()
+
+        async def run_for():
+            with self.assertRaises(StopAsyncIteration) as cm:
+                async for i, j in badpairs():
+                    pass
+            self.assertEqual(cm.exception.args, (42,))
+            return 'end'
+        self.assertEqual(run_async(run_for()), ([], 'end'))
+
+        async def run_list():
+            with self.assertRaises(StopAsyncIteration) as cm:
+                return [0 async for i, j in badpairs()]
+            self.assertEqual(cm.exception.args, (42,))
+            return 'end'
+        self.assertEqual(run_async(run_list()), ([], 'end'))
+
+        async def run_gen():
+            gen = (0 async for i, j in badpairs())
+            a = gen.asend(None)
+            with self.assertRaises(RuntimeError) as cm:
+                await a
+            self.assertIsInstance(cm.exception.__cause__, StopAsyncIteration)
+            self.assertEqual(cm.exception.__cause__.args, (42,))
+            return 'end'
+        self.assertEqual(run_async(run_gen()), ([], 'end'))
 
 
 class CoroAsyncIOCompatTest(unittest.TestCase):

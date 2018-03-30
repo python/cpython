@@ -729,7 +729,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
         uint32_t key_idx = 2 * idx;
         uint32_t val_idx = key_idx + 1;
 
-        assert(val_idx < Py_SIZE(self));
+        assert(val_idx < (size_t)Py_SIZE(self));
 
         PyObject *key_or_null = self->b_array[key_idx];
         PyObject *val_or_node = self->b_array[val_idx];
@@ -1123,7 +1123,7 @@ hamt_node_bitmap_find(PyHamtNode_Bitmap *self,
     key_idx = idx * 2;
     val_idx = key_idx + 1;
 
-    assert(val_idx < Py_SIZE(self));
+    assert(val_idx < (size_t)Py_SIZE(self));
 
     key_or_null = self->b_array[key_idx];
     val_or_node = self->b_array[val_idx];
@@ -1510,6 +1510,9 @@ hamt_node_collision_without(PyHamtNode_Collision *self,
             PyHamtNode_Collision *new = (PyHamtNode_Collision *)
                 hamt_node_collision_new(
                     self->c_hash, Py_SIZE(self) - 2);
+            if (new == NULL) {
+                return W_ERROR;
+            }
 
             /* Copy all other keys from `self` to `new` */
             Py_ssize_t i;
@@ -1742,7 +1745,10 @@ hamt_node_array_assoc(PyHamtNode_Array *self,
            Set the key to it./ */
         child_node = hamt_node_assoc(
             node, shift + 5, hash, key, val, added_leaf);
-        if (child_node == (PyHamtNode *)self) {
+        if (child_node == NULL) {
+            return NULL;
+        }
+        else if (child_node == (PyHamtNode *)self) {
             Py_DECREF(child_node);
             return (PyHamtNode *)self;
         }

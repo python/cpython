@@ -5,7 +5,7 @@
 \margl1440\margr1440\vieww13380\viewh14600\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\fs24 \cf0 This package will install Python $FULL_VERSION for Mac OS X $MACOSX_DEPLOYMENT_TARGET for the following architecture(s): $ARCHITECTURES.\
+\f0\fs24 \cf0 This package will install Python $FULL_VERSION for macOS $MACOSX_DEPLOYMENT_TARGET for the following architecture(s): $ARCHITECTURES.\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
 
@@ -19,32 +19,18 @@
 \b0 \ulnone \
 \
 For Python.3.7, python.org currently provides two installer variants for download: one that installs a 
-\i 64-bit/32-bit Intel
-\i0  Python capable of running on 
-\i macOS 10.6 (Snow Leopard)
-\i0  or later; and one that installs a 
 \i 64-bit-only 
 \i0 Python capable of running on 
 \i macOS 10.9 (Mavericks)
-\i0  or later.  This ReadMe was installed with the 
+\i0  or later; and one that installs a 
+\i 64-bit/32-bit Intel
+\i0  Python capable of running on 
+\i macOS 10.6 (Snow Leopard)
+\i0  or later.  (This ReadMe was installed with the 
 \i $MACOSX_DEPLOYMENT_TARGET
-\i0  variant.  Use the 10.6 variant if you are running on macOS 10.6 through 10.8 or if you want to produce standalone applications that can run on systems from 10.6.  If you are running on macOS 10.9 or later and if you have no need for compatibility with older systems, use the 10.9 variant.  The Pythons installed by these installers are built with private copies of some third-party libraries not included with or newer than those in macOS itself.  The list of these libraries varies by installer variant and is included at the end of the License.rtf file.
+\i0  variant.)  If you are running on macOS 10.9 or later and if you have no need for compatibility with older systems, use the 10.9 variant.  Use the 10.6 variant if you are running on macOS 10.6 through 10.8 or if you want to produce standalone applications that can run on systems from 10.6.  The Pythons installed by these installers are built with private copies of some third-party libraries not included with or newer than those in macOS itself.  The list of these libraries varies by installer variant and is included at the end of the License.rtf file.
 \b \ul \
 \
-Using IDLE or other Tk applications [NEW/CHANGED in 3.7.0b1] 
-\b0 \ulnone \
-\
-The 10.9+ installer variant comes with its own private version of Tcl/Tk 8.6. It does not use system-supplied or third-party supplied versions of Tcl/Tk.\
-\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-\cf0 For the 10.6+ variant, you continue to need to install a newer third-party version of the 
-\i Tcl/Tk
-\i0  8.5 (not 8.6) frameworks to use IDLE or other programs that use the Tkinter graphical user interface toolkit.  Visit {\field{\*\fldinst{HYPERLINK "https://www.python.org/download/mac/tcltk/"}}{\fldrslt https://www.python.org/download/mac/tcltk/}} for current information about supported and recommended versions of 
-\i Tcl/Tk
-\i0  for this version of Python and of macOS.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-
-\b \cf0 \ul \ulc0 \
 Certificate verification and OpenSSL \{UPDATED in 3.7.0b1]\
 
 \b0 \ulnone \
@@ -67,7 +53,13 @@ The bundled
 \f0  included with this installer has its own default certificate store for verifying download connections.\
 \
 
-\b \ul Other changes\
+\b \ul Using IDLE or other Tk applications [NEW/CHANGED in 3.7.0b3] 
+\b0 \ulnone \
+\
+Both installer variants come with their own private version of Tcl/Tk 8.6. They no longer use system-supplied or third-party supplied versions of Tcl/Tk.\
+
+\b \ul \
+Other changes\
 
 \b0 \ulnone \
 For other changes in this release, see the 

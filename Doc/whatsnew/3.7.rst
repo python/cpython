@@ -2,9 +2,6 @@
   What's New In Python 3.7
 ****************************
 
-:Release: |release|
-:Date: |today|
-
 .. Rules for maintenance:
 
    * Anyone can add text to this document.  Do not spend very much time
@@ -91,17 +88,17 @@ rather than ASCII.
 The platform support definition in :pep:`11` has also been updated to limit
 full text handling support to suitably configured non-ASCII based locales.
 
-As part of this change, the default error handler for ``stdin`` and ``stdout``
-is now ``surrogateescape`` (rather than ``strict``) when using any of the
-defined coercion target locales (currently ``C.UTF-8``, ``C.utf8``, and
-``UTF-8``). The default error handler for ``stderr`` continues to be
-``backslashreplace``, regardless of locale.
+As part of this change, the default error handler for :data:`~sys.stdin` and
+:data:`~sys.stdout` is now ``surrogateescape`` (rather than ``strict``) when
+using any of the defined coercion target locales (currently ``C.UTF-8``,
+``C.utf8``, and ``UTF-8``).  The default error handler for :data:`~sys.stderr`
+continues to be ``backslashreplace``, regardless of locale.
 
 Locale coercion is silent by default, but to assist in debugging potentially
 locale related integration problems, explicit warnings (emitted directly on
-``stderr`` can be requested by setting ``PYTHONCOERCECLOCALE=warn``. This
-setting will also cause the Python runtime to emit a warning if the legacy C
-locale remains active when the core interpreter is initialized.
+:data:`~sys.stderr` can be requested by setting ``PYTHONCOERCECLOCALE=warn``.
+This setting will also cause the Python runtime to emit a warning if the
+legacy C locale remains active when the core interpreter is initialized.
 
 .. seealso::
 
@@ -114,9 +111,9 @@ locale remains active when the core interpreter is initialized.
 PEP 553: Built-in breakpoint()
 ------------------------------
 
-:pep:`553` describes a new built-in called ``breakpoint()`` which makes it
+:pep:`553` describes a new built-in called :func:`breakpoint` which makes it
 easy and consistent to enter the Python debugger.  Built-in ``breakpoint()``
-calls ``sys.breakpointhook()``.  By default, this latter imports ``pdb`` and
+calls :func:`sys.breakpointhook`.  By default, this latter imports :mod:`pdb` and
 then calls ``pdb.set_trace()``, but by binding ``sys.breakpointhook()`` to the
 function of your choosing, ``breakpoint()`` can enter any debugger.  Or, the
 environment variable :envvar:`PYTHONBREAKPOINT` can be set to the callable of
@@ -165,13 +162,13 @@ PEP 562: Customization of access to module attributes
 -----------------------------------------------------
 
 It is sometimes convenient to customize or otherwise have control over access
-to module attributes. A typical example is managing deprecation warnings.
-Typical workarounds are assigning ``__class__`` of a module object to
-a custom subclass of :class:`types.ModuleType` or replacing the ``sys.modules``
-item with a custom wrapper instance. This procedure is now simplified by
-recognizing ``__getattr__`` defined directly in a module that would act like
-a normal ``__getattr__`` method, except that it will be defined on module
-*instances*.
+to module attributes.  A typical example is managing deprecation warnings.
+Typical workarounds are assigning :attr:`~instance.__class__` of a module
+object to a custom subclass of :class:`types.ModuleType` or replacing the
+:data:`sys.modules` item with a custom wrapper instance.  This procedure is
+now simplified by recognizing ``__getattr__`` defined directly in a module
+that would act like a normal :meth:`__getattr__` method, except that it will
+be defined on module *instances*.
 
 .. seealso::
 
@@ -217,7 +214,7 @@ following syntax valid::
         ...
 
 Since this change breaks compatibility, the new behavior can be enabled
-on a per-module basis in Python 3.7 using a ``__future__`` import, like
+on a per-module basis in Python 3.7 using a :mod:`__future__` import, like
 this::
 
     from __future__ import annotations
@@ -263,7 +260,7 @@ PEP 565: Show DeprecationWarning in ``__main__``
 
 The default handling of :exc:`DeprecationWarning` has been changed such that
 these warnings are once more shown by default, but only when the code
-triggering them is running directly in the ``__main__`` module. As a result,
+triggering them is running directly in the :mod:`__main__` module.  As a result,
 developers of single file scripts and those using Python interactively should
 once again start seeing deprecation warnings for the APIs they use, but
 deprecation warnings triggered by imported application, library and framework
@@ -275,7 +272,7 @@ between three different deprecation warning behaviours:
 * :exc:`FutureWarning`: always displayed by default, recommended for warnings
   intended to be seen by application end users (e.g. for deprecated application
   configuration settings).
-* :exc:`DeprecationWarning`: displayed by default only in ``__main__`` and when
+* :exc:`DeprecationWarning`: displayed by default only in :mod:`__main__` and when
   running tests, recommended for warnings intended to be seen by other Python
   developers where a version upgrade may result in changed behaviour or an
   error.
@@ -316,11 +313,11 @@ environment variable are added to control the UTF-8 mode.
 PEP 557: Data Classes
 ---------------------
 
-Adds a new module ``dataclasses``.  It provides a class decorator
-``dataclass`` which inspects the class's variable annotations (see
+Adds a new module :mod:`dataclasses`.  It provides a class decorator
+:func:`~dataclasses.dataclass` which inspects the class's variable annotations (see
 :pep:`526`) and using them, adds methods such as ``__init__``,
 ``__repr__``, and ``__eq__`` to the class.  It is similar to
-``typing.NamedTuple``, but also works on classes with mutable
+:class:`typing.NamedTuple`, but also works on classes with mutable
 instances, among other features.
 
 For example::
@@ -340,6 +337,25 @@ For example::
        PEP written and implemented by Eric V. Smith
 
 
+PEP 567: Context Variables
+--------------------------
+
+Adds a new module :mod:`contextvars`, that provides APIs to manage,
+store, and access non-local state.
+
+Context variables are natively supported in :mod:`asyncio` and are
+ready to be used without any extra configuration.
+
+The :mod:`decimal` module was updated to use *contextvars* to store
+the current decimal context.  This allows decimal operations to work
+with the correct context in async/await code.
+
+.. seealso::
+
+    :pep:`567` -- Context Variables
+       PEP written and implemented by Yury Selivanov
+
+
 New Development Mode: -X dev
 ----------------------------
 
@@ -355,7 +371,7 @@ Hash-based pycs
 Python has traditionally checked the up-to-dateness of bytecode cache files
 (i.e., ``.pyc`` files) by comparing the source metadata (last-modified timestamp
 and size) with source metadata saved in the cache file header when it was
-generated. While effective, this invalidation method has its drawbacks. When
+generated. While effective, this invalidation method has its drawbacks.  When
 filesystem timestamps are too coarse, Python can miss source updates, leading to
 user confusion. Additionally, having a timestamp in the cache file is
 problematic for `build reproduciblity <https://reproducible-builds.org/>`_ and
@@ -388,7 +404,8 @@ Other Language Changes
   whitespace, not only spaces. (Contributed by Robert Xiao in :issue:`28927`.)
 
 * :exc:`ImportError` now displays module name and module ``__file__`` path when
-  ``from ... import ...`` fails. (Contributed by Matthias Bussonnier in :issue:`29546`.)
+  ``from ... import ...`` fails. (Contributed by Matthias Bussonnier in
+  :issue:`29546`.)
 
 * Circular imports involving absolute imports with binding a submodule to
   a name are now supported.
@@ -397,6 +414,18 @@ Other Language Changes
 * ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather than
   ``format(str(self), '')``.
   (Contributed by Serhiy Storchaka in :issue:`28974`.)
+
+* In order to better support dynamic creation of stack traces,
+  :class:`types.TracebackType` can now be instantiated from Python code, and
+  the ``tb_next`` attribute on :ref:`tracebacks <traceback-objects>` is now
+  writable.
+  (Contributed by Nathaniel J. Smith in :issue:`30579`.)
+
+* When using the :option:`-m` switch, ``sys.path[0]`` is now eagerly expanded
+  to the full starting directory path, rather than being left as the empty
+  directory (which allows imports from the *current* working directory at the
+  time when an import occurs)
+  (Contributed by Nick Coghlan in :issue:`33053`.)
 
 
 New Modules
@@ -428,7 +457,6 @@ the user intermix options and positional arguments on the command line,
 as is possible in many unix commands.  It supports most but not all
 argparse features.  (Contributed by paul.j3 in :issue:`14191`.)
 
-
 binascii
 --------
 
@@ -436,21 +464,12 @@ The :func:`~binascii.b2a_uu` function now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
-
 calendar
 --------
 
 The class :class:`~calendar.HTMLCalendar` has new class attributes which ease
 the customisation of the CSS classes in the produced HTML calendar.
 (Contributed by Oz Tiram in :issue:`30095`.)
-
-cgi
----
-
-:func:`~cgi.parse_multipart` returns the same results as
-:class:`~FieldStorage` : for non-file fields, the value associated to a key
-is a list of strings, not bytes.
-(Contributed by Pierre Quentel in :issue:`29979`.)
 
 contextlib
 ----------
@@ -465,8 +484,8 @@ Alexander Mohr and Ilya Kulakov in :issue:`29302`.)
 cProfile
 --------
 
-cProfile command line now accepts `-m module_name` as an alternative to
-script path. (Contributed by Sanyam Khurana in :issue:`21862`.)
+:mod:`cProfile` command line now accepts ``-m module_name`` as an alternative
+to script path.  (Contributed by Sanyam Khurana in :issue:`21862`.)
 
 crypt
 -----
@@ -476,6 +495,15 @@ Added support for the Blowfish method.
 
 The :func:`~crypt.mksalt` function now allows to specify the number of rounds
 for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
+
+datetime
+--------
+
+Added the :meth:`datetime.fromisoformat <datetime.datetime.fromisoformat>`
+method, which constructs a :class:`~datetime.datetime` object from a string
+in one of the formats output by
+:meth:`datetime.isoformat <datetime.datetime.isoformat>`.
+(Contributed by Paul Ganssle in :issue:`15873`.)
 
 dis
 ---
@@ -488,7 +516,7 @@ classes).  (Contributed by Serhiy Storchaka in :issue:`11822`.)
 distutils
 ---------
 
-README.rst is now included in the list of distutils standard READMEs and
+``README.rst`` is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
 
@@ -496,7 +524,7 @@ therefore included in source distributions.
 and ``platforms`` fields are not specified as a list or a string.
 (Contributed by Berker Peksag in :issue:`19610`.)
 
-The ``upload`` command now longer tries to change CR end-of-line characters
+The ``upload`` command no longer tries to change CR end-of-line characters
 to CRLF.  This fixes a corruption issue with sdists that ended with a byte
 equivalent to CR.
 (Contributed by Bo Bayles in :issue:`32304`.)
@@ -504,28 +532,29 @@ equivalent to CR.
 http.client
 -----------
 
-Add Configurable *blocksize* to ``HTTPConnection`` and
-``HTTPSConnection`` for improved upload throughput.
+Add configurable *blocksize* to :class:`~http.client.HTTPConnection` and
+:class:`~http.client.HTTPSConnection` for improved upload throughput.
 (Contributed by Nir Soffer in :issue:`31945`.)
 
 http.server
 -----------
 
 :class:`~http.server.SimpleHTTPRequestHandler` supports the HTTP
-If-Modified-Since header. The server returns the 304 response status if the
+``If-Modified-Since`` header.  The server returns the 304 response status if the
 target file was not modified after the time specified in the header.
 (Contributed by Pierre Quentel in :issue:`29654`.)
 
-Add the parameter ``directory`` to the :class:`~http.server.SimpleHTTPRequestHandler`
-and the ``--directory`` to the command line of the module :mod:`~http.server`.
-With this parameter, the server serves the specified directory, by default it uses the current working directory.
+Add the parameter *directory* to the :class:`~http.server.SimpleHTTPRequestHandler`
+and the ``--directory`` to the command line of the module :mod:`http.server`.
+With this parameter, the server serves the specified directory, by default it
+uses the current working directory.
 (Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
 
 hmac
 ----
 
-The hmac module now has an optimized one-shot :func:`~hmac.digest` function,
-which is up to three times faster than :func:`~hmac.HMAC`.
+The :mod:`hmac` module now has an optimized one-shot :func:`~hmac.digest`
+function, which is up to three times faster than :func:`~hmac.HMAC`.
 (Contributed by Christian Heimes in :issue:`32433`.)
 
 importlib
@@ -537,11 +566,11 @@ support the loading of resource from packages.
 locale
 ------
 
-Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
+Added another argument *monetary* in :func:`~locale.format_string` of :mod:`locale`.
 If *monetary* is true, the conversion uses monetary thousands separator and
 grouping strings. (Contributed by Garvit in :issue:`10379`.)
 
-The :func:`locale.getpreferredencoding` function now always returns ``'UTF-8'``
+The :func:`~locale.getpreferredencoding` function now always returns ``'UTF-8'``
 on Android or in the UTF-8 mode  (:option:`-X` ``utf8`` option), the locale and
 the *do_setlocale* argument are ignored.
 
@@ -560,7 +589,7 @@ Serhiy Storchaka in :issue:`28682`.)
 Added support for :ref:`file descriptors <path_fd>` in :func:`~os.scandir`
 on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
-New function :func:`os.register_at_fork` allows registering Python callbacks
+New function :func:`~os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
@@ -571,8 +600,8 @@ pdb
 argument.  If given, this is printed to the console just before debugging
 begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 
-pdb command line now accepts `-m module_name` as an alternative to
-script file. (Contributed by Mario Corchero in :issue:`32206`.)
+:mod:`pdb` command line now accepts ``-m module_name`` as an alternative to
+script file.  (Contributed by Mario Corchero in :issue:`32206`.)
 
 py_compile
 ----------
@@ -585,7 +614,6 @@ This allows for guaranteeing
 files when they are created eagerly. (Contributed by Bernhard M. Wiedemann
 in :issue:`29708`.)
 
-
 re
 --
 
@@ -597,10 +625,19 @@ can be set within the scope of a group.
 ``'^$'`` or ``(?=-)`` that matches an empty string.
 (Contributed by Serhiy Storchaka in :issue:`25054`.)
 
+
+sqlite3
+-------
+
+:class:`sqlite3.Connection` now exposes a :class:`~sqlite3.Connection.backup`
+method, if the underlying SQLite library is at version 3.6.11 or higher.
+(Contributed by Lele Gaifax in :issue:`27645`.)
+
+
 ssl
 ---
 
-The ssl module now uses OpenSSL's builtin API instead of
+The :mod:`ssl` module now uses OpenSSL's builtin API instead of
 :func:`~ssl.match_hostname` to check host name or IP address. Values
 are validated during TLS handshake. Any cert validation error including
 a failing host name match now raises :exc:`~ssl.SSLCertVerificationError` and
@@ -629,6 +666,29 @@ ciphers that have been blocked by OpenSSL security update. Default cipher
 suite selection can be configured on compile time.
 (Contributed by Christian Heimes in :issue:`31429`.)
 
+Added support for validating server certificates containing
+internationalized domain names (IDNs). As part of this change, the
+:attr:`ssl.SSLSocket.server_hostname` attribute now stores the
+expected hostname in A-label form (``"xn--pythn-mua.org"``), rather
+than the U-label form (``"pythön.org"``). (Contributed by
+Nathaniel J. Smith and Christian Heimes in :issue:`28414`.)
+
+The ssl module has preliminary and experimental support for TLS 1.3 and
+OpenSSL 1.1.1. (Contributed by Christian Heimes in :issue:`32947`,
+:issue:`20995`, :issue:`29136`, and :issue:`30622`)
+
+:class:`~ssl.SSLSocket` and :class:`~ssl.SSLObject` no longer have a public
+constructor. Direct instantiation was never a documented and supported
+feature. Instances must be created with :class:`~ssl.SSLContext` methods
+:meth:`~ssl.SSLContext.wrap_socket` and :meth:`~ssl.SSLContext.wrap_bio`.
+(Contributed by Christian Heimes in :issue:`32951`)
+
+OpenSSL 1.1 APIs for setting the minimum and maximum TLS protocol version are
+available as :attr:`~ssl.SSLContext.minimum_version` and
+:attr:`~ssl.SSLContext.maximum_version`. Supported protocols are indicated
+by new flags like :data:`~ssl.HAS_TLSv1_1`.
+(Contributed by Christian Heimes in :issue:`32609`.)
+
 string
 ------
 
@@ -639,21 +699,24 @@ separately.  (Contributed by Barry Warsaw in :issue:`1198569`.)
 subprocess
 ----------
 
-On Windows the default for *close_fds* was changed from :const:`False` to
-:const:`True` when redirecting the standard handles. It's now possible to set
-*close_fds* to :const:`True` when redirecting the standard handles. See
+On Windows the default for *close_fds* was changed from ``False`` to
+``True`` when redirecting the standard handles.  It's now possible to set
+*close_fds* to ``True`` when redirecting the standard handles.  See
 :class:`subprocess.Popen`.
 
-This means that *close_fds* now defaults to :const:`True` on all supported
-platforms.
+This means that *close_fds* now defaults to ``True`` on all supported
+platforms.  (Contributed by Segev Finer in :issue:`19764`.)
 
 sys
 ---
 
 Added :attr:`sys.flags.dev_mode` flag for the new development mode.
 
-Deprecated :func:`sys.set_coroutine_wrapper` and
-:func:`sys.get_coroutine_wrapper`.
+tkinter
+-------
+
+Added :class:`tkinter.ttk.Spinbox`.
+(Contributed by Alan Moore in :issue:`32585`.)
 
 time
 ----
@@ -691,11 +754,12 @@ Peterson.)
 
 unittest
 --------
+
 Added new command-line option ``-k`` to filter tests to run with a substring or
 Unix shell-like pattern.  For example, ``python -m unittest -k foo`` runs the
 tests ``foo_tests.SomeTest.test_something``, ``bar_tests.SomeTest.test_foo``,
 but not ``bar_tests.FooTest.test_something``.
-
+(Contributed by Jonas Haag in :issue:`32071`.)
 
 unittest.mock
 -------------
@@ -704,7 +768,7 @@ The :const:`~unittest.mock.sentinel` attributes now preserve their identity
 when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`. (Contributed by
 Serhiy Storchaka in :issue:`20804`.)
 
-New function :const:`~unittest.mock.seal` will disable the creation of mock
+New function :func:`~unittest.mock.seal` will disable the creation of mock
 children by preventing to get or set any new attribute on the sealed mock.
 The sealing process is performed recursively. (Contributed by Mario Corchero
 in :issue:`30541`.)
@@ -712,8 +776,8 @@ in :issue:`30541`.)
 urllib.parse
 ------------
 
-:func:`urllib.parse.quote` has been updated from RFC 2396 to RFC 3986,
-adding `~` to the set of characters that is never quoted by default.
+:func:`urllib.parse.quote` has been updated from :rfc:`2396` to :rfc:`3986`,
+adding ``~`` to the set of characters that is never quoted by default.
 (Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
 
 uu
@@ -757,26 +821,27 @@ better readability.  (Contributed by Stefan Behnel in :issue:`31648`.)
 xmlrpc.server
 -------------
 
-:meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
-its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
+:meth:`register_function` of :class:`~xmlrpc.server.SimpleXMLRPCDispatcher` and
+its subclasses can be used as a decorator.  (Contributed by Xiang Zhang in
 :issue:`7769`.)
 
 zipapp
 ------
 
-Function :func:`zipapp.create_archive` now accepts an optional *filter*
+Function :func:`~zipapp.create_archive` now accepts an optional *filter*
 argument to allow the user to select which files should be included in the
-archive, and an optional *compressed* argument to generate a compressed
-archive.
+archive.  (Contributed by Irmen de Jong in :issue:`31072`.)
 
-A command line option ``--compress`` has also been added to support
-compression.
+Function :func:`~zipapp.create_archive` now accepts an optional *compressed*
+argument to generate a compressed archive.  A command line option
+``--compress`` has also been added to support compression.
+(Contributed by Zhiming Wang in :issue:`31638`.)
 
 
 Optimizations
 =============
 
-* Added two new opcodes: ``LOAD_METHOD`` and ``CALL_METHOD`` to avoid
+* Added two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`CALL_METHOD` to avoid
   instantiation of bound method objects for method calls, which results
   in method calls being faster up to 20%. (Contributed by Yury Selivanov and
   INADA Naoki in :issue:`26110`.)
@@ -807,12 +872,25 @@ Optimizations
   Python 3.6 by about 10% depending on the pattern.
   (Contributed by INADA Naoki in :issue:`31671`.)
 
-* :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
-  and :meth:`selectors.DevpollSelector.modify` may be around 10% faster under
-  heavy loads. (Contributed by Giampaolo Rodola' in :issue:`30014`)
+* :meth:`~selectors.BaseSelector.modify` methods of classes
+  :class:`selectors.EpollSelector`, :class:`selectors.PollSelector`
+  and :class:`selectors.DevpollSelector` may be around 10% faster under
+  heavy loads.  (Contributed by Giampaolo Rodola' in :issue:`30014`)
 
 * Constant folding is moved from peephole optimizer to new AST optimizer.
   (Contributed by Eugene Toder and INADA Naoki in :issue:`29469`)
+
+* Most functions and methods in :mod:`abc` have been rewritten in C.
+  This makes creation of abstract base classes, and calling :func:`isinstance`
+  and :func:`issubclass` on them 1.5x faster.  This also reduces Python
+  start-up time by up to 10%. (Contributed by Ivan Levkivskyi and INADA Naoki
+  in :issue:`31333`)
+
+* Significant speed improvements to alternate constructors for
+  :class:`datetime.date` and :class:`datetime.datetime` by using fast-path
+  constructors when not constructing subclasses. (Contributed by Paul Ganssle
+  in :issue:`32403`)
+
 
 Build and C API Changes
 =======================
@@ -864,6 +942,29 @@ Build and C API Changes
 * Support for building ``--without-threads`` is removed.
   (Contributed by Antoine Pitrou in :issue:`31370`.).
 
+* Added C API support for timezones with timezone constructors
+  :c:func:`PyTimeZone_FromOffset` and :c:func:`PyTimeZone_FromOffsetAndName`,
+  and access to the UTC singleton with :c:data:`PyDateTime_TimeZone_UTC`.
+  Contributed by Paul Ganssle in :issue:`10381`.
+
+- The type of results of :c:func:`PyThread_start_new_thread` and
+  :c:func:`PyThread_get_thread_ident`, and the *id* parameter of
+  :c:func:`PyThreadState_SetAsyncExc` changed from :c:type:`long` to
+  :c:type:`unsigned long`.
+  (Contributed by Serhiy Storchaka in :issue:`6532`.)
+
+- :c:func:`PyUnicode_AsWideCharString` now raises a :exc:`ValueError` if the
+  second argument is *NULL* and the :c:type:`wchar_t*` string contains null
+  characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
+
+- Changes to the startup sequence and the management of dynamic memory
+  allocators mean that the long documented requirement to call
+  :c:func:`Py_Initialize` before calling most C API functions is now
+  relied on more heavily, and failing to abide by it may lead to segfaults in
+  embedding applications. See the :ref:`porting-to-python-37` section in this
+  document and the :ref:`pre-init-safe` section in the C API documentation
+  for more details.
+
 
 Other CPython Implementation Changes
 ====================================
@@ -875,6 +976,14 @@ Other CPython Implementation Changes
 * Trace hooks may now opt in to receiving ``opcode`` events from the interpreter
   by setting the new ``f_trace_opcodes`` attribute to :const:`True` on the frame
   being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
+
+* Fixed some consistency problems with namespace package module attributes.
+  Namespace module objects now have an ``__file__`` that is set to ``None``
+  (previously unset), and their ``__spec__.origin`` is also set to ``None``
+  (previously the string ``"namespace"``).  See :issue:`32305`.  Also, the
+  namespace module object's ``__spec__.loader`` is set to the same value as
+  ``__loader__`` (previously, the former was set to ``None``).  See
+  :issue:`32303`.
 
 
 Deprecated
@@ -908,13 +1017,13 @@ Deprecated
 - Methods
   :meth:`MetaPathFinder.find_module() <importlib.abc.MetaPathFinder.find_module>`
   (replaced by
-  :meth:`MetaPathFinder.find_spec() <importlib.abc.MetaPathFinder.find_spec>`
-  ) and
+  :meth:`MetaPathFinder.find_spec() <importlib.abc.MetaPathFinder.find_spec>`)
+  and
   :meth:`PathEntryFinder.find_loader() <importlib.abc.PathEntryFinder.find_loader>`
   (replaced by
   :meth:`PathEntryFinder.find_spec() <importlib.abc.PathEntryFinder.find_spec>`)
-  both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`. (Contributed
-  by Matthias Bussonnier in :issue:`29576`)
+  both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`.
+  (Contributed by Matthias Bussonnier in :issue:`29576`)
 
 - Using non-integer value for selecting a plural form in :mod:`gettext` is
   now deprecated.  It never correctly worked. (Contributed by Serhiy Storchaka
@@ -925,23 +1034,17 @@ Deprecated
 - The :class:`importlib.abc.ResourceLoader` ABC has been deprecated in
   favour of :class:`importlib.abc.ResourceReader`.
 
+- Deprecated :func:`sys.set_coroutine_wrapper` and
+  :func:`sys.get_coroutine_wrapper`.
 
-Changes in the C API
---------------------
-
-- The type of results of :c:func:`PyThread_start_new_thread` and
-  :c:func:`PyThread_get_thread_ident`, and the *id* parameter of
-  :c:func:`PyThreadState_SetAsyncExc` changed from :c:type:`long` to
-  :c:type:`unsigned long`.
-  (Contributed by Serhiy Storchaka in :issue:`6532`.)
-
-- :c:func:`PyUnicode_AsWideCharString` now raises a :exc:`ValueError` if the
-  second argument is *NULL* and the :c:type:`wchar_t*` string contains null
-  characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
+- :func:`ssl.wrap_socket` is deprecated.  Use
+  :meth:`ssl.SSLContext.wrap_socket` instead.
+  (Contributed by Christian Heimes in :issue:`28124`.)
 
 
 Windows Only
 ------------
+
 - The python launcher, (py.exe), can accept 32 & 64 bit specifiers **without**
   having to specify a minor version as well. So ``py -3-32`` and ``py -3-64``
   become valid as well as ``py -3.7-32``, also the -*m*-64 and -*m.n*-64 forms
@@ -954,6 +1057,7 @@ Windows Only
   If py is run with a version specifier that cannot be matched it will also print
   the *short form* list of available specifiers.
   (Contributed by Steve Barnes in :issue:`30362`.)
+
 
 Removed
 =======
@@ -997,6 +1101,18 @@ API and Feature Removals
   :func:`~plistlib.readPlistFromBytes` are now normal dicts.  You no longer
   can use attribute access to access items of these dictionaries.
 
+* The ``asyncio.windows_utils.socketpair()`` function has been
+  removed: use directly :func:`socket.socketpair` which is available on all
+  platforms since Python 3.5 (before, it wasn't available on Windows).
+  ``asyncio.windows_utils.socketpair`` was just an alias to
+  ``socket.socketpair`` on Python 3.5 and newer.
+
+* :mod:`asyncio`: The module doesn't export :mod:`selectors` and
+  :mod:`_overlapped` modules as ``asyncio.selectors`` and
+  ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
+  ``import selectors`` for example.
+
+.. _porting-to-python-37:
 
 Porting to Python 3.7
 =====================
@@ -1028,34 +1144,30 @@ Changes in Python behavior
   parentheses can be omitted only on calls.
   (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
 
+* When using the ``-m`` switch, the starting directory is now added to sys.path,
+  rather than the current working directory. Any programs that are found to be
+  relying on the previous behaviour will need to be updated to manipulate
+  :data:`sys.path` appropriately.
+
 
 Changes in the Python API
 -------------------------
 
 * :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
-  non-daemon threads complete. Use daemonic threads by setting
-  :data:`ThreadingMixIn.daemon_threads` to ``True`` to not wait until threads
-  complete. (Contributed by Victor Stinner in :issue:`31233`.)
+  non-daemon threads complete.  Use daemonic threads by setting
+  :data:`socketserver.ThreadingMixIn.daemon_threads` to ``True`` to not
+  wait until threads complete.
+  (Contributed by Victor Stinner in :issue:`31233`.)
 
 * :meth:`socketserver.ForkingMixIn.server_close` now waits until all
   child processes complete. (Contributed by Victor Stinner in :issue:`31151`.)
 
 * The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
   locale to the ``LC_NUMERIC`` locale in some cases.
+  (Contributed by Victor Stinner in :issue:`31900`.)
 
-* The ``asyncio.windows_utils.socketpair()`` function has been
-  removed: use directly :func:`socket.socketpair` which is available on all
-  platforms since Python 3.5 (before, it wasn't available on Windows).
-  ``asyncio.windows_utils.socketpair()`` was just an alias to
-  ``socket.socketpair`` on Python 3.5 and newer.
-
-* :mod:`asyncio`: The module doesn't export :mod:`selectors` and
-  :mod:`_overlapped` modules as ``asyncio.selectors`` and
-  ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
-  ``import selectors`` for example.
-
-* :meth:`pkgutil.walk_packages` now raises ValueError if *path* is a string.
-  Previously an empty list was returned. (Contributed by Sanyam Khurana in
+* :meth:`pkgutil.walk_packages` now raises :exc:`ValueError` if *path* is a string.
+  Previously an empty list was returned.  (Contributed by Sanyam Khurana in
   :issue:`24744`.)
 
 * A format string argument for :meth:`string.Formatter.format`
@@ -1087,6 +1199,11 @@ Changes in the Python API
 * The :attr:`struct.Struct.format` type is now :class:`str` instead of
   :class:`bytes`. (Contributed by Victor Stinner in :issue:`21071`.)
 
+* :func:`~cgi.parse_multipart` returns now the same results as
+  :class:`~FieldStorage`: for non-file fields, the value associated to a key
+  is a list of strings, not bytes.
+  (Contributed by Pierre Quentel in :issue:`29979`.)
+
 * Due to internal changes in :mod:`socket` you won't be able to
   :func:`socket.fromshare` a socket :func:`~socket.socket.share`-ed in older
   Python versions.
@@ -1108,6 +1225,8 @@ Changes in the Python API
   avoid a warning escape them with a backslash.
   (Contributed by Serhiy Storchaka in :issue:`30349`.)
 
+  .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
+
 * The result of splitting a string on a :mod:`regular expression <re>`
   that could match an empty string has been changed.  For example
   splitting on ``r'\s*'`` will now split not only on whitespaces as it
@@ -1126,11 +1245,15 @@ Changes in the Python API
 
   :func:`re.sub()` now replaces empty matches adjacent to a previous
   non-empty match.  For example ``re.sub('x*', '-', 'abxd')`` returns now
-  ``'-a-b--d-'`` instead of ``'-a-b--d-'`` (the first minus between 'b' and
+  ``'-a-b--d-'`` instead of ``'-a-b-d-'`` (the first minus between 'b' and
   'd' replaces 'x', and the second minus replaces an empty string between
   'x' and 'd').
 
   (Contributed by Serhiy Storchaka in :issue:`25054` and :issue:`32308`.)
+
+* Change :func:`re.escape` to only escape regex special characters instead
+  of escaping all characters other than ASCII letters, numbers, and ``'_'``.
+  (Contributed by Serhiy Storchaka in :issue:`29995`.)
 
 * :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
   recent to be more consistent with :mod:`traceback`.
@@ -1142,8 +1265,6 @@ Changes in the Python API
   Therefore, checks like ``if sock.type == socket.SOCK_STREAM``
   work as expected on all platforms.
   (Contributed by Yury Selivanov in :issue:`32331`.)
-
-.. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
 
 * On Windows the default for the *close_fds* argument of
   :class:`subprocess.Popen` was changed from :const:`False` to :const:`True`
@@ -1173,26 +1294,37 @@ CPython bytecode changes
 * Added two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`CALL_METHOD`.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
-* Removed the STORE_ANNOTATION opcode.
+* Removed the :opcode:`STORE_ANNOTATION` opcode.
+  (Contributed by Mark Shannon in :issue:`32550`.)
 
 
 Other CPython implementation changes
 ------------------------------------
 
 * In preparation for potential future changes to the public CPython runtime
-  initialization API (see :pep:`432` for details), CPython's internal startup
+  initialization API (see :pep:`432` for an initial, but somewhat outdated,
+  draft), CPython's internal startup
   and configuration management logic has been significantly refactored. While
   these updates are intended to be entirely transparent to both embedding
   applications and users of the regular CPython CLI, they're being mentioned
   here as the refactoring changes the internal order of various operations
   during interpreter startup, and hence may uncover previously latent defects,
   either in embedding applications, or in CPython itself.
-  (Contributed by Nick Coghlan and Eric Snow as part of :issue:`22257`.)
+  (Initially contributed by Nick Coghlan and Eric Snow as part of
+  :issue:`22257`, and further updated by Nick, Eric, and Victor Stinner in a
+  number of other issues). Some known details affected:
+
+    * :c:func:`PySys_AddWarnOptionUnicode` is not currently usable by embedding
+      applications due to the requirement to create a Unicode object prior to
+      calling `Py_Initialize`. Use :c:func:`PySys_AddWarnOption` instead.
+    * warnings filters added by an embedding application with
+      :c:func:`PySys_AddWarnOption` should now more consistently take precedence
+      over the default filters set by the interpreter
 
 * Due to changes in the way the default warnings filters are configured,
-  setting ``Py_BytesWarningFlag`` to a value greater than one is no longer
-  sufficient to both emit ``BytesWarning`` messages and have them converted
-  to exceptions. Instead, the flag must be set (to cause the warnings to be
+  setting :c:data:`Py_BytesWarningFlag` to a value greater than one is no longer
+  sufficient to both emit :exc:`BytesWarning` messages and have them converted
+  to exceptions.  Instead, the flag must be set (to cause the warnings to be
   emitted in the first place), and an explicit ``error::BytesWarning``
   warnings filter added to convert them to exceptions.
 

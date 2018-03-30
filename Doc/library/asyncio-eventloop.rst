@@ -1043,7 +1043,7 @@ Server
           async def main(host, port):
               srv = await asyncio.start_server(
                   client_connected, host, port)
-              await loop.serve_forever()
+              await srv.serve_forever()
 
           asyncio.run(main('127.0.0.1', 0))
 
@@ -1114,7 +1114,7 @@ SendfileNotAvailableError
 
    Sendfile syscall is not available, subclass of :exc:`RuntimeError`.
 
-   Raised if the OS does not support senfile syscall for
+   Raised if the OS does not support sendfile syscall for
    given socket or file type.
 
 

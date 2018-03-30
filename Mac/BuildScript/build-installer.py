@@ -4,7 +4,7 @@ This script is used to build "official" universal installers on macOS.
 
 NEW for 3.7.0:
 - support Intel 64-bit-only () and 32-bit-only installer builds
-- use external Tcl/Tk 8.6 for 10.9+ builds
+- build and use internal Tcl/Tk 8.6 for 10.6+ builds
 - deprecate use of explicit SDK (--sdk-path=) since all but the oldest
   versions of Xcode support implicit setting of an SDK via environment
   variables (SDKROOT and friends, see the xcrun man page for more info).
@@ -24,7 +24,9 @@ Sphinx and dependencies are installed into a venv using the python3's pip
 so will fetch them from PyPI if necessary.  Since python3 is now used for
 Sphinx, build-installer.py should also be converted to use python3!
 
-build-installer currently requires an installed third-party version of
+For 3.7.0, when building for a 10.6 or higher deployment target,
+build-installer builds and links with its own copy of Tcl/Tk 8.6.
+Otherwise, it requires an installed third-party version of
 Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets), Tcl/TK 8.5
 (for 10.6 or later), or Tcl/TK 8.6 (for 10.9 or later)
 installed in /Library/Frameworks.  When installed,
@@ -161,7 +163,7 @@ def getTargetCompilers():
         '10.5': ('gcc', 'g++'),
         '10.6': ('gcc', 'g++'),
     }
-    return target_cc_map.get(DEPTARGET, ('gcc', 'gcc++') )
+    return target_cc_map.get(DEPTARGET, ('gcc', 'g++') )
 
 CC, CXX = getTargetCompilers()
 
@@ -190,9 +192,9 @@ USAGE = textwrap.dedent("""\
 EXPECTED_SHARED_LIBS = {}
 
 # Are we building and linking with our own copy of Tcl/TK?
-#   For now, do so if deployment target is 10.9+.
+#   For now, do so if deployment target is 10.6+.
 def internalTk():
-    return getDeptargetTuple() >= (10, 9)
+    return getDeptargetTuple() >= (10, 6)
 
 # List of names of third party software built with this installer.
 # The names will be inserted into the rtf version of the License.
@@ -225,9 +227,9 @@ def library_recipes():
     if internalTk():
         result.extend([
           dict(
-              name="Tcl 8.6.7",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.7-src.tar.gz",
-              checksum='5673aaf45b5de5d8dd80bb3daaeb8838',
+              name="Tcl 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.8-src.tar.gz",
+              checksum='81656d3367af032e0ae6157eff134f89',
               buildDir="unix",
               configure_pre=[
                     '--enable-shared',
@@ -241,9 +243,12 @@ def library_recipes():
                   },
               ),
           dict(
-              name="Tk 8.6.7",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.7-src.tar.gz",
-              checksum='46ea9c0165c515d87393700f4891ab6f',
+              name="Tk 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
+              checksum='5e0faecba458ee1386078fb228d008ba',
+              patches=[
+                  "tk868_on_10_8_10_9.patch",
+                   ],
               buildDir="unix",
               configure_pre=[
                     '--enable-aqua',

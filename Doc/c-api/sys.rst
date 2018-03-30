@@ -205,15 +205,23 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: void PySys_ResetWarnOptions()
 
-   Reset :data:`sys.warnoptions` to an empty list.
+   Reset :data:`sys.warnoptions` to an empty list. This function may be
+   called prior to :c:func:`Py_Initialize`.
 
 .. c:function:: void PySys_AddWarnOption(const wchar_t *s)
 
-   Append *s* to :data:`sys.warnoptions`.
+   Append *s* to :data:`sys.warnoptions`. This function must be called prior
+   to :c:func:`Py_Initialize` in order to affect the warnings filter list.
 
 .. c:function:: void PySys_AddWarnOptionUnicode(PyObject *unicode)
 
    Append *unicode* to :data:`sys.warnoptions`.
+
+   Note: this function is not currently usable from outside the CPython
+   implementation, as it must be called prior to the implicit import of
+   :mod:`warnings` in :c:func:`Py_Initialize` to be effective, but can't be
+   called until enough of the runtime has been initialized to permit the
+   creation of Unicode objects.
 
 .. c:function:: void PySys_SetPath(const wchar_t *path)
 
@@ -260,7 +268,8 @@ accessible to C code.  They all work with the current interpreter thread's
 .. c:function:: void PySys_AddXOption(const wchar_t *s)
 
    Parse *s* as a set of :option:`-X` options and add them to the current
-   options mapping as returned by :c:func:`PySys_GetXOptions`.
+   options mapping as returned by :c:func:`PySys_GetXOptions`. This function
+   may be called prior to :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.2
 

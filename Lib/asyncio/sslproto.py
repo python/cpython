@@ -504,6 +504,10 @@ class SSLProtocol(protocols.Protocol):
 
         The argument is a bytes object.
         """
+        if self._sslpipe is None:
+            # transport closing, sslpipe is destroyed
+            return
+
         try:
             ssldata, appdata = self._sslpipe.feed_ssldata(data)
         except ssl.SSLError as e:
@@ -636,7 +640,7 @@ class SSLProtocol(protocols.Protocol):
 
     def _process_write_backlog(self):
         # Try to make progress on the write backlog.
-        if self._transport is None:
+        if self._transport is None or self._sslpipe is None:
             return
 
         try:

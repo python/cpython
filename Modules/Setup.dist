@@ -114,6 +114,7 @@ _weakref _weakref.c		# weak references
 _functools _functoolsmodule.c   # Tools for working with functions and callable objects
 _operator _operator.c	        # operator.add() and similar goodies
 _collections _collectionsmodule.c # Container types
+_abc _abc.c                     # Abstract base classes
 itertools itertoolsmodule.c    # Functions creating iterators for efficient looping
 atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
 _signal signalmodule.c

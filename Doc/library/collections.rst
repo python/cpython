@@ -114,7 +114,7 @@ The class can be used to simulate nested scopes and is useful in templating.
       for templating is a read-only chain of mappings.  It also features
       pushing and popping of contexts similar to the
       :meth:`~collections.ChainMap.new_child` method and the
-      :meth:`~collections.ChainMap.parents` property.
+      :attr:`~collections.ChainMap.parents` property.
 
     * The `Nested Contexts recipe
       <https://code.activestate.com/recipes/577434/>`_ has options to control
@@ -270,7 +270,7 @@ For example::
 
         Return a list of the *n* most common elements and their counts from the
         most common to the least.  If *n* is omitted or ``None``,
-        :func:`most_common` returns *all* elements in the counter.
+        :meth:`most_common` returns *all* elements in the counter.
         Elements with equal counts are ordered arbitrarily:
 
             >>> Counter('abracadabra').most_common(3)  # doctest: +SKIP
@@ -357,12 +357,12 @@ or subtracting from an empty counter.
       restrictions on its keys and values.  The values are intended to be numbers
       representing counts, but you *could* store anything in the value field.
 
-    * The :meth:`most_common` method requires only that the values be orderable.
+    * The :meth:`~Counter.most_common` method requires only that the values be orderable.
 
     * For in-place operations such as ``c[key] += 1``, the value type need only
       support addition and subtraction.  So fractions, floats, and decimals would
       work and negative values are supported.  The same is also true for
-      :meth:`update` and :meth:`subtract` which allow negative and zero values
+      :meth:`~Counter.update` and :meth:`~Counter.subtract` which allow negative and zero values
       for both inputs and outputs.
 
     * The multiset methods are designed only for use cases with positive values.
@@ -370,7 +370,7 @@ or subtracting from an empty counter.
       are created.  There are no type restrictions, but the value type needs to
       support addition, subtraction, and comparison.
 
-    * The :meth:`elements` method requires integer counts.  It ignores zero and
+    * The :meth:`~Counter.elements` method requires integer counts.  It ignores zero and
       negative counts.
 
 .. seealso::
@@ -388,9 +388,9 @@ or subtracting from an empty counter.
       Section 4.6.3, Exercise 19*.
 
     * To enumerate all distinct multisets of a given size over a given set of
-      elements, see :func:`itertools.combinations_with_replacement`:
+      elements, see :func:`itertools.combinations_with_replacement`::
 
-            map(Counter, combinations_with_replacement('ABC', 2)) --> AA AB AC BB BC CC
+          map(Counter, combinations_with_replacement('ABC', 2)) # --> AA AB AC BB BC CC
 
 
 :class:`deque` objects
@@ -509,11 +509,14 @@ or subtracting from an empty counter.
         .. versionadded:: 3.2
 
 
-    .. method:: rotate(n)
+    .. method:: rotate(n=1)
 
-        Rotate the deque *n* steps to the right.  If *n* is negative, rotate to
-        the left.  Rotating one step to the right is equivalent to:
-        ``d.appendleft(d.pop())``.
+        Rotate the deque *n* steps to the right.  If *n* is negative, rotate
+        to the left.
+
+        When the deque is not empty, rotating one step to the right is equivalent
+        to ``d.appendleft(d.pop())``, and rotating one step to the left is
+        equivalent to ``d.append(d.popleft())``.
 
 
     Deque objects also provide one read-only attribute:
@@ -637,9 +640,9 @@ the :meth:`~deque.rotate` method::
                 # Remove an exhausted iterator.
                 iterators.popleft()
 
-The :meth:`rotate` method provides a way to implement :class:`deque` slicing and
+The :meth:`~deque.rotate` method provides a way to implement :class:`deque` slicing and
 deletion.  For example, a pure Python implementation of ``del d[n]`` relies on
-the :meth:`rotate` method to position elements to be popped::
+the ``rotate()`` method to position elements to be popped::
 
     def delete_nth(d, n):
         d.rotate(-n)
@@ -647,8 +650,8 @@ the :meth:`rotate` method to position elements to be popped::
         d.rotate(n)
 
 To implement :class:`deque` slicing, use a similar approach applying
-:meth:`rotate` to bring a target element to the left side of the deque. Remove
-old entries with :meth:`popleft`, add new entries with :meth:`extend`, and then
+:meth:`~deque.rotate` to bring a target element to the left side of the deque. Remove
+old entries with :meth:`~deque.popleft`, add new entries with :meth:`~deque.extend`, and then
 reverse the rotation.
 With minor variations on that approach, it is easy to implement Forth style
 stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
@@ -709,7 +712,7 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 :class:`defaultdict` Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Using :class:`list` as the :attr:`default_factory`, it is easy to group a
+Using :class:`list` as the :attr:`~defaultdict.default_factory`, it is easy to group a
 sequence of key-value pairs into a dictionary of lists:
 
     >>> s = [('yellow', 1), ('blue', 2), ('yellow', 3), ('blue', 4), ('red', 1)]
@@ -721,7 +724,7 @@ sequence of key-value pairs into a dictionary of lists:
     [('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
 
 When each key is encountered for the first time, it is not already in the
-mapping; so an entry is automatically created using the :attr:`default_factory`
+mapping; so an entry is automatically created using the :attr:`~defaultdict.default_factory`
 function which returns an empty :class:`list`.  The :meth:`list.append`
 operation then attaches the value to the new list.  When keys are encountered
 again, the look-up proceeds normally (returning the list for that key) and the
@@ -735,7 +738,7 @@ simpler and faster than an equivalent technique using :meth:`dict.setdefault`:
     >>> sorted(d.items())
     [('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
 
-Setting the :attr:`default_factory` to :class:`int` makes the
+Setting the :attr:`~defaultdict.default_factory` to :class:`int` makes the
 :class:`defaultdict` useful for counting (like a bag or multiset in other
 languages):
 
@@ -748,7 +751,7 @@ languages):
     [('i', 4), ('m', 1), ('p', 2), ('s', 4)]
 
 When a letter is first encountered, it is missing from the mapping, so the
-:attr:`default_factory` function calls :func:`int` to supply a default count of
+:attr:`~defaultdict.default_factory` function calls :func:`int` to supply a default count of
 zero.  The increment operation then builds up the count for each letter.
 
 The function :func:`int` which always returns zero is just a special case of
@@ -763,7 +766,7 @@ zero):
     >>> '%(name)s %(action)s to %(object)s' % d
     'John ran to <missing>'
 
-Setting the :attr:`default_factory` to :class:`set` makes the
+Setting the :attr:`~defaultdict.default_factory` to :class:`set` makes the
 :class:`defaultdict` useful for building a dictionary of sets:
 
     >>> s = [('red', 1), ('blue', 2), ('red', 3), ('blue', 4), ('red', 1), ('blue', 4)]
@@ -970,7 +973,7 @@ The subclass shown above sets ``__slots__`` to an empty tuple.  This helps
 keep memory requirements low by preventing the creation of instance dictionaries.
 
 Subclassing is not useful for adding new, stored fields.  Instead, simply
-create a new named tuple type from the :attr:`_fields` attribute:
+create a new named tuple type from the :attr:`~somenamedtuple._fields` attribute:
 
     >>> Point3D = namedtuple('Point3D', Point._fields + ('z',))
 
@@ -986,7 +989,7 @@ fields:
 .. versionchanged:: 3.5
    Property docstrings became writeable.
 
-Default values can be implemented by using :meth:`_replace` to
+Default values can be implemented by using :meth:`~somenamedtuple._replace` to
 customize a prototype instance:
 
     >>> Account = namedtuple('Account', 'owner balance transaction_count')
@@ -1197,15 +1200,22 @@ subclass directly from :class:`str`; however, this class can be easier
 to work with because the underlying string is accessible as an
 attribute.
 
-.. class:: UserString([sequence])
+.. class:: UserString(seq)
 
-    Class that simulates a string or a Unicode string object.  The instance's
+    Class that simulates a string object.  The instance's
     content is kept in a regular string object, which is accessible via the
     :attr:`data` attribute of :class:`UserString` instances.  The instance's
-    contents are initially set to a copy of *sequence*.  The *sequence* can
-    be an instance of :class:`bytes`, :class:`str`, :class:`UserString` (or a
-    subclass) or an arbitrary sequence which can be converted into a string using
-    the built-in :func:`str` function.
+    contents are initially set to a copy of *seq*.  The *seq* argument can
+    be any object which can be converted into a string using the built-in
+    :func:`str` function.
+
+    In addition to supporting the methods and operations of strings,
+    :class:`UserString` instances provide the following attribute:
+
+    .. attribute:: data
+
+        A real :class:`str` object used to store the contents of the
+        :class:`UserString` class.
 
     .. versionchanged:: 3.5
        New methods ``__getnewargs__``, ``__rmod__``, ``casefold``,
