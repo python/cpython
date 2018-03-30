@@ -16,6 +16,10 @@
 #ifndef __BLAKE2_IMPL_H__
 #define __BLAKE2_IMPL_H__
 
+#if defined(_WIN32) || defined(WIN32)
+#include <windows.h>
+#endif
+
 #include <stdint.h>
 #include <string.h>
 
