@@ -838,8 +838,7 @@ class singledispatchmethod:
 
     def __init__(self, func):
         if not callable(func) and not hasattr(func, "__get__"):
-            raise TypeError("{!r} is not callable or a descriptor"
-                                 .format(func))
+            raise TypeError(f"{func!r} is not callable or a descriptor")
 
         self.dispatcher = singledispatch(func)
         self.func = func
