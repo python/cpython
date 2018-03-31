@@ -60,7 +60,27 @@ del sys, _f, _g, _C, _c,                           # Not for export
 
 # Provide a PEP 3115 compliant mechanism for class creation
 def new_class(name, bases=(), kwds=None, exec_body=None):
-    """Create a class object dynamically using the appropriate metaclass."""
+    """Create a class object dynamically using the appropriate metaclass.
+
+    Arguments:
+    name -- the new class name
+    bases -- sequence of parent classes (default ())
+    kwds -- mapping of keyword arguments to be supplied to parents' `__init_subclass__`
+    exec_body -- a callback used to populate the freshly created class namespace
+
+    Note: the class-creation functionality of `new_class` is similar to `type`. However,
+    calls to `type` cannot be directly substituted by calls to `new_class`. For example:
+
+        type("MyClass", (), dict(my_method=lambda self: None))
+
+    ...is not equivalent to the below, which will produce a `TypeError`:
+
+        new_class("MyClass", (), dict(my_method=lambda self: None))
+
+    Instead, the correct way to use `new_class` in this instance is:
+
+        new_class("MyClass", (), {}, lambda ns: ns.update(dict(my_method=lambda self: None)))
+    """
     resolved_bases = resolve_bases(bases)
     meta, ns, kwds = prepare_class(name, resolved_bases, kwds)
     if exec_body is not None:
