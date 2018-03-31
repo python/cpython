@@ -3068,7 +3068,7 @@ PyDoc_STRVAR(memory_tolist_doc,
 \n\
 Return the data in the buffer as a list of elements.");
 PyDoc_STRVAR(memory_cast_doc,
-"cast($self, /, format, *, shape)\n--\n\
+"cast($self, /, format, *, shape, readonly)\n--\n\
 \n\
 Cast a memoryview to a new format or shape.");
 
