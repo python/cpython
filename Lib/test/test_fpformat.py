@@ -67,6 +67,16 @@ class FpformatTest(unittest.TestCase):
         else:
             self.fail("No exception on non-numeric sci")
 
+    def test_REDOS(self):
+        # This attack string will hang on the old decoder pattern.
+        attack = '+0' + ('0' * 1000000) + '++'
+        digs = 5 # irrelevant
+
+        # fix returns input if it does not decode
+        self.assertEqual(fpformat.fix(attack, digs), attack)
+        # sci raises NotANumber
+        with self.assertRaises(NotANumber):
+            fpformat.sci(attack, digs)
 
 def test_main():
     run_unittest(FpformatTest)

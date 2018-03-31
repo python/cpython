@@ -1,0 +1,4 @@
+A regex in fpformat was vulnerable to catastrophic backtracking. This regex
+was a potential DOS vector (REDOS). Based on typical uses of fpformat the
+risk seems low. The regex has been refactored and is now safe. Patch by
+Jamie Davis.
