@@ -8,7 +8,7 @@ import pickle
 import inspect
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar
+from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
 
@@ -1689,6 +1689,23 @@ class TestCase(unittest.TestCase):
         Alias = NonDataDerived[float]
         c = Alias(10, 1.0)
         self.assertEqual(c.new_method(), 1.0)
+
+    def test_generic_dynamic(self):
+        T = TypeVar('T')
+
+        @dataclass
+        class Parent(Generic[T]):
+            x: T
+        Child = make_dataclass('Child', [('y', T), ('z', Optional[T], None)],
+                               bases=(Parent[int], Generic[T]), namespace={'other': 42})
+        self.assertIs(Child[int](1, 2).z, None)
+        self.assertEqual(Child[int](1, 2, 3).z, 3)
+        self.assertEqual(Child[int](1, 2, 3).other, 42)
+        # Check that type aliases work correctly.
+        Alias = Child[T]
+        self.assertEqual(Alias[int](1, 2).x, 1)
+        # Check MRO resolution.
+        self.assertEqual(Child.__mro__, (Child, Parent, Generic, object))
 
     def test_helper_replace(self):
         @dataclass(frozen=True)
