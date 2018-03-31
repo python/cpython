@@ -1,16 +1,14 @@
 import unittest
-import Tkinter as tkinter
-from Tkinter import TclError
-import ttk
-from test.test_support import requires, run_unittest, have_unicode, u
+import tkinter
+from tkinter import ttk, TclError
+from test.support import requires
 import sys
 
-from test_functions import MockTclObj
-from support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
-                     simulate_mouse_click)
-from widget_tests import (add_standard_options, noconv, noconv_meth,
-    AbstractWidgetTest, StandardOptionsTests,
-    IntegerSizeTests, PixelSizeTests,
+from tkinter.test.test_ttk.test_functions import MockTclObj
+from tkinter.test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
+                                  simulate_mouse_click)
+from tkinter.test.widget_tests import (add_standard_options, noconv,
+    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
     setUpModule)
 
 requires('gui')
@@ -59,7 +57,7 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
     """Tests methods available in every ttk widget."""
 
     def setUp(self):
-        super(WidgetTest, self).setUp()
+        super().setUp()
         self.widget = ttk.Button(self.root, width=0, text="Text")
         self.widget.pack()
         self.widget.wait_visibility()
@@ -68,8 +66,8 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
     def test_identify(self):
         self.widget.update_idletasks()
         self.assertEqual(self.widget.identify(
-            self.widget.winfo_width() // 2,
-            self.widget.winfo_height() // 2
+            int(self.widget.winfo_width() / 2),
+            int(self.widget.winfo_height() / 2)
             ), "label")
         self.assertEqual(self.widget.identify(-1, -1), "")
 
@@ -115,7 +113,7 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
 
 
 class AbstractToplevelTest(AbstractWidgetTest, PixelSizeTests):
-    _conv_pixels = noconv_meth
+    _conv_pixels = noconv
 
 
 @add_standard_options(StandardTtkOptionsTests)
@@ -195,7 +193,7 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
         'takefocus', 'text', 'textvariable',
         'underline', 'width', 'wraplength',
     )
-    _conv_pixels = noconv_meth
+    _conv_pixels = noconv
 
     def create(self, **kwargs):
         return ttk.Label(self.root, **kwargs)
@@ -289,7 +287,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
     )
 
     def setUp(self):
-        super(EntryTest, self).setUp()
+        super().setUp()
         self.entry = self.create()
 
     def create(self, **kwargs):
@@ -422,7 +420,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
     )
 
     def setUp(self):
-        super(ComboboxTest, self).setUp()
+        super().setUp()
         self.combo = self.create()
 
     def create(self, **kwargs):
@@ -486,7 +484,8 @@ class ComboboxTest(EntryTest, unittest.TestCase):
                         expected=('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.combo, 'values', ('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.combo, 'values', (42, 3.14, '', 'any string'))
-        self.checkParam(self.combo, 'values', () if tcl_version < (8, 5) else '')
+        self.checkParam(self.combo, 'values', '',
+                        expected='' if get_tk_patchlevel() < (8, 5, 10) else ())
 
         self.combo['values'] = ['a', 1, 'c']
 
@@ -543,7 +542,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     )
 
     def setUp(self):
-        super(PanedWindowTest, self).setUp()
+        super().setUp()
         self.paned = self.create()
 
     def create(self, **kwargs):
@@ -751,11 +750,11 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
         'class', 'command', 'cursor', 'from', 'length',
         'orient', 'style', 'takefocus', 'to', 'value', 'variable',
     )
-    _conv_pixels = noconv_meth
+    _conv_pixels = noconv
     default_orient = 'horizontal'
 
     def setUp(self):
-        super(ScaleTest, self).setUp()
+        super().setUp()
         self.scale = self.create()
         self.scale.pack()
         self.scale.update()
@@ -859,7 +858,7 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
         'mode', 'maximum', 'phase',
         'style', 'takefocus', 'value', 'variable',
     )
-    _conv_pixels = noconv_meth
+    _conv_pixels = noconv
     default_orient = 'horizontal'
 
     def create(self, **kwargs):
@@ -907,7 +906,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
     )
 
     def setUp(self):
-        super(NotebookTest, self).setUp()
+        super().setUp()
         self.nb = self.create(padding=0)
         self.child1 = ttk.Label(self.root)
         self.child2 = ttk.Label(self.root)
@@ -1106,6 +1105,183 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
             self.nb.event_generate('<Alt-a>')
         self.assertEqual(self.nb.select(), str(self.child1))
 
+@add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
+class SpinboxTest(EntryTest, unittest.TestCase):
+    OPTIONS = (
+        'background', 'class', 'command', 'cursor', 'exportselection',
+        'font', 'foreground', 'format', 'from',  'increment',
+        'invalidcommand', 'justify', 'show', 'state', 'style',
+        'takefocus', 'textvariable', 'to', 'validate', 'validatecommand',
+        'values', 'width', 'wrap', 'xscrollcommand',
+    )
+
+    def setUp(self):
+        super().setUp()
+        self.spin = self.create()
+        self.spin.pack()
+
+    def create(self, **kwargs):
+        return ttk.Spinbox(self.root, **kwargs)
+
+    def _click_increment_arrow(self):
+        width = self.spin.winfo_width()
+        height = self.spin.winfo_height()
+        x = width - 5
+        y = height//2 - 5
+        self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
+        self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
+        self.spin.update_idletasks()
+
+    def _click_decrement_arrow(self):
+        width = self.spin.winfo_width()
+        height = self.spin.winfo_height()
+        x = width - 5
+        y = height//2 + 4
+        self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
+        self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
+        self.spin.update_idletasks()
+
+    def test_command(self):
+        success = []
+
+        self.spin['command'] = lambda: success.append(True)
+        self.spin.update()
+        self._click_increment_arrow()
+        self.spin.update()
+        self.assertTrue(success)
+
+        self._click_decrement_arrow()
+        self.assertEqual(len(success), 2)
+
+        # testing postcommand removal
+        self.spin['command'] = ''
+        self.spin.update_idletasks()
+        self._click_increment_arrow()
+        self._click_decrement_arrow()
+        self.spin.update()
+        self.assertEqual(len(success), 2)
+
+    def test_to(self):
+        self.spin['from'] = 0
+        self.spin['to'] = 5
+        self.spin.set(4)
+        self.spin.update()
+        self._click_increment_arrow()  # 5
+
+        self.assertEqual(self.spin.get(), '5')
+
+        self._click_increment_arrow()  # 5
+        self.assertEqual(self.spin.get(), '5')
+
+    def test_from(self):
+        self.spin['from'] = 1
+        self.spin['to'] = 10
+        self.spin.set(2)
+        self.spin.update()
+        self._click_decrement_arrow()  # 1
+        self.assertEqual(self.spin.get(), '1')
+        self._click_decrement_arrow()  # 1
+        self.assertEqual(self.spin.get(), '1')
+
+    def test_increment(self):
+        self.spin['from'] = 0
+        self.spin['to'] = 10
+        self.spin['increment'] = 4
+        self.spin.set(1)
+        self.spin.update()
+
+        self._click_increment_arrow()  # 5
+        self.assertEqual(self.spin.get(), '5')
+        self.spin['increment'] = 2
+        self.spin.update()
+        self._click_decrement_arrow()  # 3
+        self.assertEqual(self.spin.get(), '3')
+
+    def test_format(self):
+        self.spin.set(1)
+        self.spin['format'] = '%10.3f'
+        self.spin.update()
+        self._click_increment_arrow()
+        value = self.spin.get()
+
+        self.assertEqual(len(value), 10)
+        self.assertEqual(value.index('.'), 6)
+
+        self.spin['format'] = ''
+        self.spin.update()
+        self._click_increment_arrow()
+        value = self.spin.get()
+        self.assertTrue('.' not in value)
+        self.assertEqual(len(value), 1)
+
+    def test_wrap(self):
+        self.spin['to'] = 10
+        self.spin['from'] = 1
+        self.spin.set(1)
+        self.spin['wrap'] = True
+        self.spin.update()
+
+        self._click_decrement_arrow()
+        self.assertEqual(self.spin.get(), '10')
+
+        self._click_increment_arrow()
+        self.assertEqual(self.spin.get(), '1')
+
+        self.spin['wrap'] = False
+        self.spin.update()
+
+        self._click_decrement_arrow()
+        self.assertEqual(self.spin.get(), '1')
+
+    def test_values(self):
+        self.assertEqual(self.spin['values'],
+                         () if tcl_version < (8, 5) else '')
+        self.checkParam(self.spin, 'values', 'mon tue wed thur',
+                        expected=('mon', 'tue', 'wed', 'thur'))
+        self.checkParam(self.spin, 'values', ('mon', 'tue', 'wed', 'thur'))
+        self.checkParam(self.spin, 'values', (42, 3.14, '', 'any string'))
+        self.checkParam(
+            self.spin,
+            'values',
+            '',
+            expected='' if get_tk_patchlevel() < (8, 5, 10) else ()
+        )
+
+        self.spin['values'] = ['a', 1, 'c']
+
+        # test incrementing / decrementing values
+        self.spin.set('a')
+        self.spin.update()
+        self._click_increment_arrow()
+        self.assertEqual(self.spin.get(), '1')
+
+        self._click_decrement_arrow()
+        self.assertEqual(self.spin.get(), 'a')
+
+        # testing values with empty string set through configure
+        self.spin.configure(values=[1, '', 2])
+        self.assertEqual(self.spin['values'],
+                         ('1', '', '2') if self.wantobjects else
+                         '1 {} 2')
+
+        # testing values with spaces
+        self.spin['values'] = ['a b', 'a\tb', 'a\nb']
+        self.assertEqual(self.spin['values'],
+                         ('a b', 'a\tb', 'a\nb') if self.wantobjects else
+                         '{a b} {a\tb} {a\nb}')
+
+        # testing values with special characters
+        self.spin['values'] = [r'a\tb', '"a"', '} {']
+        self.assertEqual(self.spin['values'],
+                         (r'a\tb', '"a"', '} {') if self.wantobjects else
+                         r'a\\tb {"a"} \}\ \{')
+
+        # testing creating spinbox with empty string in values
+        spin2 = ttk.Spinbox(self.root, values=[1, 2, ''])
+        self.assertEqual(spin2['values'],
+                         ('1', '2', '') if self.wantobjects else '1 2 {}')
+        spin2.destroy()
+
 
 @add_standard_options(StandardTtkOptionsTests)
 class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
@@ -1116,7 +1292,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
     )
 
     def setUp(self):
-        super(TreeviewTest, self).setUp()
+        super().setUp()
         self.tv = self.create(padding=0)
 
     def create(self, **kwargs):
@@ -1127,7 +1303,8 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'columns', 'a b c',
                         expected=('a', 'b', 'c'))
         self.checkParam(widget, 'columns', ('a', 'b', 'c'))
-        self.checkParam(widget, 'columns', () if tcl_version < (8, 5) else '')
+        self.checkParam(widget, 'columns', (),
+                        expected='' if get_tk_patchlevel() < (8, 5, 10) else ())
 
     def test_displaycolumns(self):
         widget = self.create()
@@ -1442,7 +1619,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
             MockTclObj('first-item'))
 
         # unicode values
-        value = u'\xe1ba'
+        value = '\xe1ba'
         item = self.tv.insert('', 'end', values=(value, ))
         self.assertEqual(self.tv.item(item, 'values'),
                          (value,) if self.wantobjects else value)
@@ -1496,6 +1673,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
 
     def test_selection(self):
+        self.assertRaises(TypeError, self.tv.selection, 'spam')
         # item 'none' doesn't exist
         self.assertRaises(tkinter.TclError, self.tv.selection_set, 'none')
         self.assertRaises(tkinter.TclError, self.tv.selection_add, 'none')
@@ -1509,24 +1687,30 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         c3 = self.tv.insert(item1, 'end')
         self.assertEqual(self.tv.selection(), ())
 
-        self.tv.selection_set((c1, item2))
+        self.tv.selection_set(c1, item2)
         self.assertEqual(self.tv.selection(), (c1, item2))
         self.tv.selection_set(c2)
         self.assertEqual(self.tv.selection(), (c2,))
 
-        self.tv.selection_add((c1, item2))
+        self.tv.selection_add(c1, item2)
         self.assertEqual(self.tv.selection(), (c1, c2, item2))
         self.tv.selection_add(item1)
         self.assertEqual(self.tv.selection(), (item1, c1, c2, item2))
+        self.tv.selection_add()
+        self.assertEqual(self.tv.selection(), (item1, c1, c2, item2))
 
-        self.tv.selection_remove((item1, c3))
+        self.tv.selection_remove(item1, c3)
         self.assertEqual(self.tv.selection(), (c1, c2, item2))
         self.tv.selection_remove(c2)
         self.assertEqual(self.tv.selection(), (c1, item2))
+        self.tv.selection_remove()
+        self.assertEqual(self.tv.selection(), (c1, item2))
 
-        self.tv.selection_toggle((c1, c3))
+        self.tv.selection_toggle(c1, c3)
         self.assertEqual(self.tv.selection(), (c3, item2))
         self.tv.selection_toggle(item2)
+        self.assertEqual(self.tv.selection(), (c3,))
+        self.tv.selection_toggle()
         self.assertEqual(self.tv.selection(), (c3,))
 
         self.tv.insert('', 'end', id='with spaces')
@@ -1537,16 +1721,26 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.tv.selection_set('{brace')
         self.assertEqual(self.tv.selection(), ('{brace',))
 
-        if have_unicode:
-            self.tv.insert('', 'end', id=u(r'unicode\u20ac'))
-            self.tv.selection_set(u(r'unicode\u20ac'))
-            self.assertEqual(self.tv.selection(), (u(r'unicode\u20ac'),))
+        self.tv.insert('', 'end', id='unicode\u20ac')
+        self.tv.selection_set('unicode\u20ac')
+        self.assertEqual(self.tv.selection(), ('unicode\u20ac',))
 
-        self.tv.insert('', 'end', id='bytes\xe2\x82\xac')
-        self.tv.selection_set('bytes\xe2\x82\xac')
-        self.assertEqual(self.tv.selection(),
-                         (u(r'bytes\u20ac') if have_unicode else
-                          'bytes\xe2\x82\xac',))
+        self.tv.insert('', 'end', id=b'bytes\xe2\x82\xac')
+        self.tv.selection_set(b'bytes\xe2\x82\xac')
+        self.assertEqual(self.tv.selection(), ('bytes\xe2\x82\xac',))
+
+        self.tv.selection_set()
+        self.assertEqual(self.tv.selection(), ())
+
+        # Old interface
+        self.tv.selection_set((c1, item2))
+        self.assertEqual(self.tv.selection(), (c1, item2))
+        self.tv.selection_add((c1, item1))
+        self.assertEqual(self.tv.selection(), (item1, c1, item2))
+        self.tv.selection_remove((item1, c3))
+        self.assertEqual(self.tv.selection(), (c1, item2))
+        self.tv.selection_toggle((c1, c3))
+        self.assertEqual(self.tv.selection(), (c3, item2))
 
 
     def test_set(self):
@@ -1666,18 +1860,13 @@ class SizegripTest(AbstractWidgetTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Sizegrip(self.root, **kwargs)
 
-
 tests_gui = (
         ButtonTest, CheckbuttonTest, ComboboxTest, EntryTest,
         FrameTest, LabelFrameTest, LabelTest, MenubuttonTest,
         NotebookTest, PanedWindowTest, ProgressbarTest,
         RadiobuttonTest, ScaleTest, ScrollbarTest, SeparatorTest,
-        SizegripTest, TreeviewTest, WidgetTest,
-        )
-
-tests_gui = (
-        TreeviewTest,
+        SizegripTest, SpinboxTest, TreeviewTest, WidgetTest,
         )
 
 if __name__ == "__main__":
-    run_unittest(*tests_gui)
+    unittest.main()
