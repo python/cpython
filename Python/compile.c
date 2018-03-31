@@ -2742,8 +2742,7 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
             attr = PyUnicode_Substring(name, pos, (dot != -1) ? dot : len);
             if (!attr)
                 return 0;
-            ADDOP_O(c, IMPORT_FROM, attr, names);
-            Py_DECREF(attr);
+            ADDOP_N(c, IMPORT_FROM, attr, names);
             if (dot == -1) {
                 break;
             }
@@ -3207,8 +3206,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
                             "param invalid for local variable");
             return 0;
         }
-        ADDOP_O(c, op, mangled, varnames);
-        Py_DECREF(mangled);
+        ADDOP_N(c, op, mangled, varnames);
         return 1;
     case OP_GLOBAL:
         switch (ctx) {
