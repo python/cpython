@@ -5162,8 +5162,8 @@ parse_file_actions(PyObject *file_actions,
                 }
                 errno = posix_spawn_file_actions_addopen(file_actionsp,
                         fd, PyBytes_AS_STRING(path), oflag, (mode_t)mode);
+                Py_DECREF(path);  /* addopen copied it. */
                 if (errno) {
-                    Py_DECREF(path);
                     posix_error();
                     goto fail;
                 }
