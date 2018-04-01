@@ -52,6 +52,7 @@ C extensions.
    :numbered:
 
    extending.rst
+   newtypes_tutorial.rst
    newtypes.rst
    building.rst
    windows.rst
