@@ -3364,6 +3364,14 @@ compiler_boolop(struct compiler *c, expr_ty e)
 }
 
 static int
+is_empty_tuple(expr_ty e)
+{
+    return (e->kind == Constant_kind &&
+            PyTuple_Check(e->v.Constant.value) &&
+            PyTuple_GET_SIZE(e->v.Constant.value) == 0);
+}
+
+static int
 starunpack_helper(struct compiler *c, asdl_seq *elts,
                   int single_op, int inner_op, int outer_op)
 {
@@ -3372,13 +3380,15 @@ starunpack_helper(struct compiler *c, asdl_seq *elts,
     for (i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
-            if (nseen) {
-                ADDOP_I(c, inner_op, nseen);
-                nseen = 0;
+            if (!is_empty_tuple(elt->v.Starred.value)) {
+                if (nseen) {
+                    ADDOP_I(c, inner_op, nseen);
+                    nseen = 0;
+                    nsubitems++;
+                }
+                VISIT(c, expr, elt->v.Starred.value);
                 nsubitems++;
             }
-            VISIT(c, expr, elt->v.Starred.value);
-            nsubitems++;
         }
         else {
             VISIT(c, expr, elt);

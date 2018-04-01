@@ -1,0 +1,1 @@
+Optimize bytecode for the empty set "literal".
