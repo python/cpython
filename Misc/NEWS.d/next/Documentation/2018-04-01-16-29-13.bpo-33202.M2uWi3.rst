@@ -1,0 +1,1 @@
+Fix os.walk mentioning os.listdir instead of os.scandir
