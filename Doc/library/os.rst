@@ -3353,6 +3353,31 @@ written in Python, such as a mail server's external command delivery program.
    subprocesses.
 
 
+.. function:: posix_spawn(path, argv, env, file_actions=None)
+
+   Wraps the posix_spawn() C library API for use from Python.
+
+   Most users should use :class:`subprocess.run` instead of posix_spawn.
+
+   The *path*, *args*, and *env* arguments are similar to :func:`execve`.
+
+   The *file_actions* argument may be a sequence of tuples describing actions
+   to take on specific file descriptors in the child process between the C
+   library implementation's fork and exec steps.  The first item in each tuple
+   must be one of the three type indicator listed below describing the
+   remaining tuple elements:
+
+   (os.POSIX_SPAWN_OPEN, fd, path, open flags, mode)
+   (os.POSIX_SPAWN_CLOSE, fd)
+   (os.POSIX_SPAWN_DUP2, fd, new_fd)
+
+   These tuples correspond to the C library posix_spawn_file_actions_addopen,
+   posix_spawn_file_actions_addclose, and posix_spawn_file_actions_adddup2 API
+   calls used to prepare for the posix_spawn call itself.
+
+   .. versionadded:: 3.7
+
+
 .. function:: register_at_fork(*, before=None, after_in_parent=None, \
                                after_in_child=None)
 
