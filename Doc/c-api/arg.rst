@@ -151,18 +151,34 @@ which disallows mutable objects such as :class:`bytearray`.
       Previously, :exc:`TypeError` was raised when embedded null code points
       were encountered in the Python string.
 
+   .. deprecated-removed:: 3.3 4.0
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyUnicode_AsWideCharString`.
+
 ``u#`` (:class:`str`) [const Py_UNICODE \*, int]
    This variant on ``u`` stores into two C variables, the first one a pointer to a
    Unicode data buffer, the second one its length.  This variant allows
    null code points.
 
+   .. deprecated-removed:: 3.3 4.0
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyUnicode_AsWideCharString`.
+
 ``Z`` (:class:`str` or ``None``) [const Py_UNICODE \*]
    Like ``u``, but the Python object may also be ``None``, in which case the
    :c:type:`Py_UNICODE` pointer is set to *NULL*.
 
+   .. deprecated-removed:: 3.3 4.0
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyUnicode_AsWideCharString`.
+
 ``Z#`` (:class:`str` or ``None``) [const Py_UNICODE \*, int]
    Like ``u#``, but the Python object may also be ``None``, in which case the
    :c:type:`Py_UNICODE` pointer is set to *NULL*.
+
+   .. deprecated-removed:: 3.3 4.0
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyUnicode_AsWideCharString`.
 
 ``U`` (:class:`str`) [PyObject \*]
    Requires that the Python object is a Unicode object, without attempting
@@ -556,10 +572,18 @@ Building values
       Convert a null-terminated buffer of Unicode (UCS-2 or UCS-4) data to a Python
       Unicode object.  If the Unicode buffer pointer is *NULL*, ``None`` is returned.
 
+      .. deprecated-removed:: 3.3 4.0
+         Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+         :c:func:`PyUnicode_FromWideChar`.
+
    ``u#`` (:class:`str`) [const Py_UNICODE \*, int]
       Convert a Unicode (UCS-2 or UCS-4) data buffer and its length to a Python
       Unicode object.   If the Unicode buffer pointer is *NULL*, the length is ignored
       and ``None`` is returned.
+
+      .. deprecated-removed:: 3.3 4.0
+         Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+         :c:func:`PyUnicode_FromWideChar`.
 
    ``U`` (:class:`str` or ``None``) [const char \*]
       Same as ``s``.
