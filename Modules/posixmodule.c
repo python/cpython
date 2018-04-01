@@ -5143,9 +5143,7 @@ parse_file_actions(PyObject *file_actions,
                 "Each file_actions element must be a non-empty tuple");
             goto fail;
         }
-        int overflow;
-        long tag = PyLong_AsLongAndOverflow(PyTuple_GET_ITEM(file_action, 0),
-                                            &overflow);
+        long tag = PyLong_AsLong(PyTuple_GET_ITEM(file_action, 0));
         if (tag == -1 && PyErr_Occurred()) {
             goto fail;
         }
