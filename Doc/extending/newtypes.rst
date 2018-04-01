@@ -22,10 +22,9 @@ implement a handful of these.
 As you probably expect by now, we're going to go over this and give more
 information about the various handlers.  We won't go in the order they are
 defined in the structure, because there is a lot of historical baggage that
-impacts the ordering of the fields; be sure your type initialization keeps the
-fields in the right order!  It's often easiest to find an example that includes
-all the fields you need (even if they're initialized to ``0``) and then change
-the values to suit your new type. ::
+impacts the ordering of the fields.  It's often easiest to find an example
+that includes the fields you need and then change the values to suit your new
+type. ::
 
    const char *tp_name; /* For printing */
 
@@ -443,16 +442,22 @@ these in the :file:`Objects` directory of the Python source distribution. ::
    hashfunc tp_hash;
 
 This function, if you choose to provide it, should return a hash number for an
-instance of your data type. Here is a moderately pointless example::
+instance of your data type. Here is a simple example::
 
    static Py_hash_t
    newdatatype_hash(newdatatypeobject *obj)
    {
        Py_hash_t result;
-       result = obj->obj_UnderlyingDatatypePtr->size;
-       result = result * 3;
+       result = obj->some_size + 32767 * obj->some_number;
+       if (result == -1)
+          result = -2;
        return result;
    }
+
+:c:type:`Py_hash_t` is a signed integer type with a platform-varying width.
+Returning ``-1`` from :c:member:`~PyTypeObject.tp_hash` indicates an error,
+which is why you should be careful to avoid returning it when hash computation
+is successful, as seen above.
 
 ::
 
@@ -505,25 +510,33 @@ Here is a toy ``tp_call`` implementation::
 These functions provide support for the iterator protocol.  Both handlers
 take exactly one parameter, the instance for which they are being called,
 and return a new reference.  In the case of an error, they should set an
-exception and return *NULL*.
+exception and return *NULL*.  :c:member:`~PyTypeObject.tp_iter` corresponds
+to the Python :meth:`__iter__` method, while :c:member:`~PyTypeObject.tp_iternext`
+corresponds to the Python :meth:`~iterator.__next__` method.
 
-Any :term:`iterable` object must implement the ``tp_iter`` handler, which
-must return an :term:`iterator` object.  For collections (such as lists and
-tuples) which can support multiple iterators which do not interfere with
-each other, a new iterator should be created and returned by each call to
-``tp_iter``.  Objects which can only be iterated over once (usually due to
-side effects of iteration, for example file objects) can implement
-``tp_iter`` by returning a new reference to themselves, and should also
-implement the ``tp_iternext`` handler.
+Any :term:`iterable` object must implement the :c:member:`~PyTypeObject.tp_iter`
+handler, which must return an :term:`iterator` object.  Here the same guidelines
+apply as for Python classes:
 
-Any :term:`iterator` object should implement both ``tp_iter`` and ``tp_iternext``.
-The ``tp_iter`` handler should return a new reference to the iterator.  The
-``tp_iternext`` handler should return a new reference to the next object in the
-iteration, if there is one.  If the iteration has reached the end,
-``tp_iternext`` may return *NULL* without setting an exception, or it may
-also set :exc:`StopIteration` (while still returning *NULL*); avoiding
-the exception can yield slightly better performance.  If an actual error occurs,
-it should always set an exception and return *NULL*.
+* For collections (such as lists and tuples) which can support multiple
+  independent iterators, a new iterator should be created and returned by
+  each call to :c:member:`~PyTypeObject.tp_iter`.
+* Objects which can only be iterated over once (usually due to side effects of
+  iteration, such as file objects) can implement :c:member:`~PyTypeObject.tp_iter`
+  by returning a new reference to themselves -- and should also therefore
+  implement the :c:member:`~PyTypeObject.tp_iternext`  handler.
+
+Any :term:`iterator` object should implement both :c:member:`~PyTypeObject.tp_iter`
+and :c:member:`~PyTypeObject.tp_iternext`.  An iterator's
+:c:member:`~PyTypeObject.tp_iter` handler should return a new reference
+to the iterator.  Its :c:member:`~PyTypeObject.tp_iternext` handler should
+return a new reference to the next object in the iteration, if there is one.
+If the iteration has reached the end, :c:member:`~PyTypeObject.tp_iternext`
+may return *NULL* without setting an exception, or it may set
+:exc:`StopIteration` *in addition* to returning *NULL*; avoiding
+the exception can yield slightly better performance.  If an actual error
+occurs, :c:member:`~PyTypeObject.tp_iternext` should always set an exception
+and return *NULL*.
 
 
 .. _weakref-support:
@@ -535,14 +548,19 @@ One of the goals of Python's weak reference implementation is to allow any type
 to participate in the weak reference mechanism without incurring the overhead on
 performance-critical objects (such as numbers).
 
+.. seealso::
+   Documentation for the :mod:`weakref` module.
+
 For an object to be weakly referencable, the extension type must do two things:
 
 #. Include a :c:type:`PyObject\*` field in the C object structure dedicated to
-   the weak reference mechanism; it must be initialized to *NULL* by the object's
-   constructor.
+   the weak reference mechanism.  The object's constructor should leave it
+   *NULL* (which is automatic when using the default
+   :c:member:`~PyTypeObject.tp_alloc`).
 
-#. Set the :c:member:`~PyTypeObject.tp_weaklistoffset` member of the C type
-   object to the offset of the aforementioned field in the C object structure.
+#. Set the :c:member:`~PyTypeObject.tp_weaklistoffset` type member
+   to the offset of the aforementioned field in the C object structure,
+   so that the interpreter knows how to access and modify that field.
 
 Concretely, here is how a trivial object structure would be augmented
 with the required field::
@@ -572,10 +590,6 @@ non-*NULL*::
        Py_TYPE(self)->tp_free((PyObject *) self);
    }
 
-.. seealso::
-   The :mod:`weakref` module allows creating weak references to instances
-   of types that implement the protocol described above.
-
 
 More Suggestions
 ----------------
@@ -586,9 +600,9 @@ then search the C source files for ``tp_`` plus the function you want
 (for example, ``tp_richcompare``).  You will find examples of the function
 you want to implement.
 
-When you need to verify that an object is an instance of the type you are
-implementing, use the :c:func:`PyObject_TypeCheck` function. A sample of its use
-might be something like the following::
+When you need to verify that an object is a concrete instance of the type you
+are implementing, use the :c:func:`PyObject_TypeCheck` function.  A sample of
+its use might be something like the following::
 
    if (!PyObject_TypeCheck(some_object, &MyType)) {
        PyErr_SetString(PyExc_TypeError, "arg #1 not a mything");

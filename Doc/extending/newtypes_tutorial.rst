@@ -40,6 +40,12 @@ This sort of thing can only be explained by example, so here's a minimal, but
 complete, module that defines a new type named :class:`Noddy` inside a C
 extension module :mod:`noddy`:
 
+.. note::
+   What we're showing here is the traditional way of defining *static*
+   extension types.  It should be adequate for most uses.  The C API also
+   allows defining heap-allocated extension types using the
+   :c:func:`PyType_FromSpec` function, which isn't covered in this tutorial.
+
 .. literalinclude:: ../includes/noddy.c
 
 Now that's quite a bit to take in at once, but hopefully bits will seem familiar
@@ -61,7 +67,7 @@ The first bit is::
 
 This is what a Noddy object will contain.  ``PyObject_HEAD`` is mandatory
 at the start of each object struct and defines a field called ``ob_base``
-of type c:type:`PyObject`, containing a pointer to a type object and a
+of type :c:type:`PyObject`, containing a pointer to a type object and a
 reference count (these can be accessed using the macros :c:macro:`Py_REFCNT`
 and :c:macro:`Py_TYPE` respectively).  The reason for the macro is to
 abstract away the layout and to enable additional fields in debug builds.
@@ -70,9 +76,9 @@ abstract away the layout and to enable additional fields in debug builds.
    There is no semicolon above after the :c:macro:`PyObject_HEAD` macro.
    Be wary of adding one by accident: some compilers will complain.
 
-Of course, objects generally include other information in addition to
-the standard ``PyObject_HEAD`` boilerplate; for example, here is the
-definition for standard Python floats::
+Of course, objects generally store additional data besides the standard
+``PyObject_HEAD`` boilerplate; for example, here is the definition for
+standard Python floats::
 
    typedef struct {
        PyObject_HEAD
@@ -89,6 +95,11 @@ The second bit is the definition of the type object. ::
        .tp_itemsize = 0,
        .tp_new = PyType_GenericNew,
    };
+
+.. note::
+   We recommend using C99-style designated initializers as above, to
+   avoid listing all the :c:type:`PyTypeObject` fields that you don't care
+   about and also to avoid caring about the fields' declaration order.
 
 The actual definition of :c:type:`PyTypeObject` in :file:`object.h` has
 many more :ref:`fields <type-structs>` than the definition above.  The
@@ -701,15 +712,15 @@ participate in cycles::
        return 0;
    }
 
-Notice the use the :c:func:`Py_CLEAR` macro.  It is the recommended, safe,
-way of clearing data attributes of arbitrary types while decrementing
+Notice the use of the :c:func:`Py_CLEAR` macro.  It is the recommended and safe
+way to clear data attributes of arbitrary types while decrementing
 their reference counts.  If you were to call :c:func:`Py_XDECREF` instead
 on the attribute before setting it to *NULL*, there is a possibility
 that the attribute's destructor would call back into code that reads the
-attribute again (especially if there is a reference cycle).
+attribute again (*especially* if there is a reference cycle).
 
 .. note::
-   You could still emulate :c:func:`Py_CLEAR` by writing::
+   You could emulate :c:func:`Py_CLEAR` by writing::
 
       PyObject *tmp;
       tmp = self->first;
@@ -717,7 +728,8 @@ attribute again (especially if there is a reference cycle).
       Py_XDECREF(tmp);
 
    Nevertheless, it is much easier and less error-prone to always
-   call :c:func:`Py_CLEAR` when wanting to delete an attribute.
+   use :c:func:`Py_CLEAR` when deleting an attribute.  Don't
+   try to micro-optimize at the expense of robustness!
 
 The deallocator ``Noddy_dealloc`` may call arbitrary code when clearing
 attributes.  It means the circular GC can be triggered inside the function.
