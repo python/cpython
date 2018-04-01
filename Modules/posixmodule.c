@@ -5142,15 +5142,15 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     Py_ssize_t argc, envc;
     PyObject* result = NULL;
     PyObject* seq = NULL;
- 
+    PyObject* file_actions_obj = NULL;
 
     /* posix_spawn has three arguments: (path, argv, env), where
-   argv is a list or tuple of strings and env is a dictionary
-       like posix.environ. */
+    argv is a list or tuple of strings and env is a dictionary
+    like posix.environ. */
 
-    if (!PySequence_Check(argv)) {
+    if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
         PyErr_SetString(PyExc_TypeError,
-                        "posix_spawn: argv must be a tuple or list");
+                        "posix_spawn: argv must be a tuple");
         goto exit;
     }
     argc = PySequence_Size(argv);
@@ -5181,8 +5181,8 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     }
 
     pid_t pid;
-    if (file_actions != NULL && file_actions != Py_None) {
-        if(posix_spawn_file_actions_init(&_file_actions) != 0){
+    if (file_actions != Py_None) {
+        if (posix_spawn_file_actions_init(&_file_actions) != 0) {
             PyErr_SetString(PyExc_OSError,
                             "Error initializing file actions");
             goto exit;
@@ -5191,104 +5191,104 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         file_actionsp = &_file_actions;
 
         seq = PySequence_Fast(file_actions, "file_actions must be a sequence");
-        if(seq == NULL) {
+        if (seq == NULL) {
             goto exit;
         }
-        PyObject* file_actions_obj;
         PyObject* mode_obj;
 
         for (int i = 0; i < PySequence_Fast_GET_SIZE(seq); ++i) {
             file_actions_obj = PySequence_Fast_GET_ITEM(seq, i);
-
-            if(!PySequence_Check(file_actions_obj) | !PySequence_Size(file_actions_obj)) {
-                PyErr_SetString(PyExc_TypeError,"Each file_action element must be a non empty sequence");
+            if (file_actions_obj == NULL) {
+                goto exit;
+            }
+            file_actions_obj = PySequence_Fast(file_actions_obj,
+                                               "Each file_action element must be"\
+                                               " a non-empty sequence");
+            if (file_actions_obj == NULL) {
                 goto exit;
             }
 
-
             mode_obj = PySequence_Fast_GET_ITEM(file_actions_obj, 0);
             int mode = PyLong_AsLong(mode_obj);
+            if (mode == -1 && PyErr_Occurred()) {
+                goto exit;
+            }
 
             /* Populate the file_actions object */
 
             switch(mode) {
 
                 case POSIX_SPAWN_OPEN:
-                    if(PySequence_Size(file_actions_obj) != 5) {
+                    if (PySequence_Size(file_actions_obj) != 5) {
                         PyErr_SetString(PyExc_TypeError,"A open file_action object must have 5 elements");
                         goto exit;
                     }
+                    int open_fd, open_oflag, open_mode;
+                    char* open_path;
 
-                    long open_fd = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
-                    if(PyErr_Occurred()) {
+                    if (!PyArg_ParseTuple(file_actions_obj, "iisii", &mode, &open_fd, &open_path,
+                                          &open_oflag, &open_mode)) {
                         goto exit;
                     }
-                    const char* open_path = PyUnicode_AsUTF8(PySequence_GetItem(file_actions_obj, 2));
-                    if(open_path == NULL) {
-                        goto exit;
-                    }
-                    long open_oflag = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 3));
-                    if(PyErr_Occurred()) {
-                        goto exit;
-                    }
-                    long open_mode = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 4));
-                    if(PyErr_Occurred()) {
-                        goto exit;
-                    }
-                    if(posix_spawn_file_actions_addopen(file_actionsp, open_fd, open_path, open_oflag, open_mode)) {
+
+                    if (posix_spawn_file_actions_addopen(file_actionsp, open_fd, open_path, open_oflag, open_mode)) {
                         PyErr_SetString(PyExc_OSError,"Failed to add open file action");
                         goto exit;
                     }
-   
+
                     break;
 
                 case POSIX_SPAWN_CLOSE:
-                    if(PySequence_Size(file_actions_obj) != 2){
+                    if (PySequence_Size(file_actions_obj) != 2) {
                         PyErr_SetString(PyExc_TypeError,"A close file_action object must have 2 elements");
                         goto exit;
                     }
 
-                    long close_fd = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
-                    if(PyErr_Occurred()) {
+                    int close_fd;
+
+                    if (!PyArg_ParseTuple(file_actions_obj, "ii", &mode, &close_fd)) {
                         goto exit;
                     }
-                    if(posix_spawn_file_actions_addclose(file_actionsp, close_fd)) {
+
+                    if (posix_spawn_file_actions_addclose(file_actionsp, close_fd)) {
                         PyErr_SetString(PyExc_OSError,"Failed to add close file action");
                         goto exit;
                     }
+
                     break;
 
                 case POSIX_SPAWN_DUP2:
-                    if(PySequence_Size(file_actions_obj) != 3){
+                    if (PySequence_Size(file_actions_obj) != 3) {
                         PyErr_SetString(PyExc_TypeError,"A dup2 file_action object must have 3 elements");
                         goto exit;
                     }
 
-                    long fd1 = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
-                    if(PyErr_Occurred()) {
+                    int fd1, fd2;
+
+                    if (!PyArg_ParseTuple(file_actions_obj, "iii", &mode, &fd1, &fd2)) {
                         goto exit;
                     }
-                    long fd2 = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 2));
-                    if(PyErr_Occurred()) {
-                        goto exit;
-                    }
-                    if(posix_spawn_file_actions_adddup2(file_actionsp, fd1, fd2)) {
+
+                    if (posix_spawn_file_actions_adddup2(file_actionsp, fd1, fd2)) {
                         PyErr_SetString(PyExc_OSError,"Failed to add dup2 file action");
                         goto exit;
                     }
+
                     break;
 
                 default:
-                    PyErr_SetString(PyExc_TypeError,"Unknown file_actions identifier");
+                    PyErr_SetString(PyExc_ValueError,"Unknown file_actions identifier");
                     goto exit;
             }
+            Py_DECREF(file_actions_obj);
         }
+        file_actions_obj = NULL;
     }
 
     _Py_BEGIN_SUPPRESS_IPH
     int err_code = posix_spawn(&pid, path->narrow, file_actionsp, NULL, argvlist, envlist);
     _Py_END_SUPPRESS_IPH
-    if(err_code) {
+    if (err_code) {
         PyErr_SetString(PyExc_OSError,"posix_spawn call failed");
         goto exit;
     }
@@ -5297,11 +5297,12 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
 exit:
 
     Py_XDECREF(seq);
+    Py_XDECREF(file_actions_obj);
 
-    if(file_actionsp) {
+    if (file_actionsp) {
         posix_spawn_file_actions_destroy(file_actionsp);
     }
-    
+
     if (envlist) {
         free_string_array(envlist, envc);
     }
