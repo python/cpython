@@ -1,0 +1,1 @@
+Fixed numerous issues with :func:`os.posix_spawn()`.
