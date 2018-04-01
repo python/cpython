@@ -62,14 +62,15 @@ extern "C" {
 #define ATEQUAL         50
 #define RARROW          51
 #define ELLIPSIS        52
+#define COLONEQUAL      53
 /* Don't forget to update the table _PyParser_TokenNames in tokenizer.c! */
-#define OP              53
-#define ERRORTOKEN      54
+#define OP              54
+#define ERRORTOKEN      55
 /* These aren't used by the C tokenizer but are needed for tokenize.py */
-#define COMMENT         55
-#define NL              56
-#define ENCODING                57
-#define N_TOKENS        58
+#define COMMENT         56
+#define NL              57
+#define ENCODING                58
+#define N_TOKENS        59
 
 /* Special definitions for cooperation with parser */
 

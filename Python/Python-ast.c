@@ -262,6 +262,11 @@ static char *GeneratorExp_fields[]={
     "elt",
     "generators",
 };
+static PyTypeObject *AssignExp_type;
+static char *AssignExp_fields[]={
+    "target",
+    "value",
+};
 static PyTypeObject *Await_type;
 static char *Await_fields[]={
     "value",
@@ -937,6 +942,8 @@ static int init_types(void)
     GeneratorExp_type = make_type("GeneratorExp", expr_type,
                                   GeneratorExp_fields, 2);
     if (!GeneratorExp_type) return 0;
+    AssignExp_type = make_type("AssignExp", expr_type, AssignExp_fields, 2);
+    if (!AssignExp_type) return 0;
     Await_type = make_type("Await", expr_type, Await_fields, 1);
     if (!Await_type) return 0;
     Yield_type = make_type("Yield", expr_type, Yield_fields, 1);
@@ -1996,6 +2003,32 @@ GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
     p->kind = GeneratorExp_kind;
     p->v.GeneratorExp.elt = elt;
     p->v.GeneratorExp.generators = generators;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    return p;
+}
+
+expr_ty
+AssignExp(expr_ty target, expr_ty value, int lineno, int col_offset, PyArena
+          *arena)
+{
+    expr_ty p;
+    if (!target) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field target is required for AssignExp");
+        return NULL;
+    }
+    if (!value) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field value is required for AssignExp");
+        return NULL;
+    }
+    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = AssignExp_kind;
+    p->v.AssignExp.target = target;
+    p->v.AssignExp.value = value;
     p->lineno = lineno;
     p->col_offset = col_offset;
     return p;
@@ -3243,6 +3276,20 @@ ast2obj_expr(void* _o)
                              ast2obj_comprehension);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_generators, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case AssignExp_kind:
+        result = PyType_GenericNew(AssignExp_type, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(o->v.AssignExp.target);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_target, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->v.AssignExp.value);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -6446,6 +6493,44 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (*out == NULL) goto failed;
         return 0;
     }
+    isinstance = PyObject_IsInstance(obj, (PyObject*)AssignExp_type);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        expr_ty target;
+        expr_ty value;
+
+        if (_PyObject_LookupAttrId(obj, &PyId_target, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from AssignExp");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &target, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttrId(obj, &PyId_value, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from AssignExp");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &value, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = AssignExp(target, value, lineno, col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
     isinstance = PyObject_IsInstance(obj, (PyObject*)Await_type);
     if (isinstance == -1) {
         return 1;
@@ -8319,6 +8404,8 @@ PyInit__ast(void)
         return NULL;
     if (PyDict_SetItemString(d, "GeneratorExp", (PyObject*)GeneratorExp_type) <
         0) return NULL;
+    if (PyDict_SetItemString(d, "AssignExp", (PyObject*)AssignExp_type) < 0)
+        return NULL;
     if (PyDict_SetItemString(d, "Await", (PyObject*)Await_type) < 0) return
         NULL;
     if (PyDict_SetItemString(d, "Yield", (PyObject*)Yield_type) < 0) return

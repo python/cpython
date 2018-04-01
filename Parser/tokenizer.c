@@ -104,6 +104,7 @@ const char *_PyParser_TokenNames[] = {
     "ATEQUAL",
     "RARROW",
     "ELLIPSIS",
+    "COLONEQUAL",
     /* This table must match the #defines in token.h! */
     "OP",
     "<ERRORTOKEN>",
@@ -1216,6 +1217,11 @@ PyToken_TwoChars(int c1, int c2)
     case '@':
         switch (c2) {
         case '=':               return ATEQUAL;
+        }
+        break;
+    case ':':
+        switch (c2) {
+        case '=':               return COLONEQUAL;
         }
         break;
     }

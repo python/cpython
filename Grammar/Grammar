@@ -83,7 +83,7 @@ with_item: test ['as' expr]
 except_clause: 'except' [test ['as' NAME]]
 suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
 
-test: or_test ['if' or_test 'else' test] | lambdef
+test: [or_test ':='] or_test ['if' or_test 'else' test] | lambdef
 test_nocond: or_test | lambdef_nocond
 lambdef: 'lambda' [varargslist] ':' test
 lambdef_nocond: 'lambda' [varargslist] ':' test_nocond
