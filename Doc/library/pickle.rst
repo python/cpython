@@ -135,14 +135,14 @@ to read the pickle produced.
   information about improvements brought by protocol 2.
 
 * Protocol version 3 was added in Python 3.0.  It has explicit support for
-  :class:`bytes` objects and cannot be unpickled by Python 2.x.  This is
-  the default protocol, and the recommended protocol when compatibility with
-  other Python 3 versions is required.
+  :class:`bytes` objects and cannot be unpickled by Python 2.x.  This was
+  the default protocol in Python 3.0--3.7.
 
 * Protocol version 4 was added in Python 3.4.  It adds support for very large
   objects, pickling more kinds of objects, and some data format
-  optimizations.  Refer to :pep:`3154` for information about improvements
-  brought by protocol 4.
+  optimizations.  It is the default protocol starting with Python 3.8.
+  Refer to :pep:`3154` for information about improvements brought by
+  protocol 4.
 
 .. note::
    Serialization is a more primitive notion than persistence; although
@@ -179,8 +179,16 @@ The :mod:`pickle` module provides the following constants:
 
    An integer, the default :ref:`protocol version <pickle-protocols>` used
    for pickling.  May be less than :data:`HIGHEST_PROTOCOL`.  Currently the
-   default protocol is 3, a new protocol designed for Python 3.
+   default protocol is 4, first introduced in Python 3.4 and incompatible
+   with previous versions.
 
+   .. versionchanged:: 3.0
+
+      The default protocol is 3.
+
+   .. versionchanged:: 3.8
+
+      The default protocol is 4.
 
 The :mod:`pickle` module provides the following functions to make the pickling
 process more convenient:
