@@ -5154,7 +5154,8 @@ parse_file_actions(PyObject *file_actions,
                 int fd, oflag;
                 PyObject *path;
                 unsigned long mode;
-                if (!PyArg_ParseTuple(file_action, "OiO&ik",
+                if (!PyArg_ParseTuple(file_action, "OiO&ik"
+                        ";A open file_action tuple must have 5 elements",
                         &tag_obj, &fd, PyUnicode_FSConverter, &path,
                         &oflag, &mode))
                 {
@@ -5171,7 +5172,10 @@ parse_file_actions(PyObject *file_actions,
             }
             case POSIX_SPAWN_CLOSE: {
                 int fd;
-                if (!PyArg_ParseTuple(file_action, "Oi", &tag_obj, &fd)) {
+                if (!PyArg_ParseTuple(file_action, "Oi"
+                        ";A close file_action tuple must have 2 elements",
+                        &tag_obj, &fd))
+                {
                     goto fail;
                 }
                 errno = posix_spawn_file_actions_addclose(file_actionsp, fd);
@@ -5183,12 +5187,14 @@ parse_file_actions(PyObject *file_actions,
             }
             case POSIX_SPAWN_DUP2: {
                 int fd1, fd2;
-                if (!PyArg_ParseTuple(file_action, "Oii",
+                if (!PyArg_ParseTuple(file_action, "Oii"
+                        ";A dup2 file_action tuple must have 3 elements",
                         &tag_obj, &fd1, &fd2))
                 {
                     goto fail;
                 }
-                errno = posix_spawn_file_actions_adddup2(file_actionsp, fd1, fd2);
+                errno = posix_spawn_file_actions_adddup2(file_actionsp,
+                                                         fd1, fd2);
                 if (errno) {
                     posix_error();
                     goto fail;
@@ -5196,7 +5202,7 @@ parse_file_actions(PyObject *file_actions,
                 break;
             }
             default: {
-                PyErr_SetString(PyExc_ValueError,
+                PyErr_SetString(PyExc_TypeError,
                                 "Unknown file_actions identifier");
                 goto fail;
             }
@@ -5223,7 +5229,7 @@ os.posix_spawn
     env: object
         Dictionary of strings mapping to strings.
     file_actions: object = None
-        FileActions object.
+        A sequence of file action tuples.
     /
 
 Execute the program specified by path in a new process.
@@ -5232,7 +5238,7 @@ Execute the program specified by path in a new process.
 static PyObject *
 os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *env, PyObject *file_actions)
-/*[clinic end generated code: output=d023521f541c709c input=0ec9f1cfdc890be5]*/
+/*[clinic end generated code: output=d023521f541c709c input=a3db1021d33230dc]*/
 {
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
@@ -5292,7 +5298,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     _Py_END_SUPPRESS_IPH
     if (err_code) {
         errno = err_code;
-        posix_error();
+        PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
         goto exit;
     }
     result = PyLong_FromPid(pid);
