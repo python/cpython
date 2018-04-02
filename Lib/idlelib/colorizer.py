@@ -21,7 +21,7 @@ def make_pat():
     # 1st 'file' colorized normal, 2nd as builtin, 3rd as string
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
     comment = any("COMMENT", [r"#[^\n]*"])
-    stringprefix = r"(?i:\br|u|f|fr|rf|b|br|rb)?"
+    stringprefix = r"(?i:r|u|f|fr|rf|b|br|rb)?"
     sqstring = stringprefix + r"'[^'\\\n]*(\\.[^'\\\n]*)*'?"
     dqstring = stringprefix + r'"[^"\\\n]*(\\.[^"\\\n]*)*"?'
     sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
@@ -265,11 +265,14 @@ def _color_delegator(parent):  # htest #
     source = ("# Following has syntax errors\n"
         "if True: then int 1\nelif False: print 0\nelse: float(None)\n"
         "if iF + If + IF: 'keywork matching must respect case'\n"
-        "# All valid prefixes for unicode and byte strings should be colored\n"
+        "# All valid prefixes for unicode and byte strings should be colored.\n"
         "'x', '''x''', \"x\", \"\"\"x\"\"\"\n"
-        "r'x', u'x', R'x', U'x', f'x', F'x', ur'is invalid'\n"
+        "r'x', u'x', R'x', U'x', f'x', F'x'\n"
         "fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'\n"
-        "b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x'.rB'x',Rb'x',RB'x'\n")
+        "b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x'.rB'x',Rb'x',RB'x'\n"
+        "# Invalid combinations of legal characters should be half colored.\n"
+        "ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'"
+        )
     text = Text(top, background="white")
     text.pack(expand=1, fill="both")
     text.insert("insert", source)
