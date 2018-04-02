@@ -71,7 +71,7 @@ happened, in the form of a stack traceback. In general it contains a stack
 traceback listing source lines; however, it will not display lines read from
 standard input.
 
-:ref:`bltin-exceptions` lists the built-in exceptions and their meanings.
+:ref:`builtin-exceptions` lists the built-in exceptions and their meanings.
 
 
 .. _tut-handling:
