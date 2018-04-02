@@ -2572,6 +2572,11 @@ ast_for_expr(struct compiling *c, const node *n)
             if (TYPE(CHILD(n, 0)) == lambdef ||
                 TYPE(CHILD(n, 0)) == lambdef_nocond)
                 return ast_for_lambdef(c, CHILD(n, 0));
+            else if (NCH(n) == 3) {
+                /* TODO: Evaluate child 2, then assign it to child 0 */
+                /* Assert that child 1 is ":=" */
+                return ast_for_expr(c, CHILD(n, 2));
+            }
             else if (NCH(n) > 1)
                 return ast_for_ifexpr(c, n);
             /* Fallthrough */
