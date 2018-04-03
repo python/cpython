@@ -4152,9 +4152,10 @@ dump(PicklerObject *self, PyObject *obj)
     }
 
     if (save(self, obj, 0) < 0 ||
-        _Pickler_Write(self, &stop_op, 1) < 0)
+        _Pickler_Write(self, &stop_op, 1) < 0 ||
+        _Pickler_CommitFrame(self) < 0)
         return -1;
-
+    self->framing = 0;
     return 0;
 }
 
