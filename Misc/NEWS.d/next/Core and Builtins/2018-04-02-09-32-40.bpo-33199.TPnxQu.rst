@@ -1,0 +1,2 @@
+Fix ``ma_version_tag`` in dict implementation is uninitialized when copying
+from key-sharing dict.
