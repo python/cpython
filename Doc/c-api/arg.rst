@@ -568,22 +568,14 @@ Building values
    ``z#`` (:class:`str` or ``None``) [const char \*, int]
       Same as ``s#``.
 
-   ``u`` (:class:`str`) [const Py_UNICODE \*]
-      Convert a null-terminated buffer of Unicode (UCS-2 or UCS-4) data to a Python
+   ``u`` (:class:`str`) [const wchar_t \*]
+      Convert a null-terminated buffer of Unicode (UTF-16 or UCS-4) data to a Python
       Unicode object.  If the Unicode buffer pointer is *NULL*, ``None`` is returned.
 
-      .. deprecated-removed:: 3.3 4.0
-         Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-         :c:func:`PyUnicode_FromWideChar`.
-
-   ``u#`` (:class:`str`) [const Py_UNICODE \*, int]
-      Convert a Unicode (UCS-2 or UCS-4) data buffer and its length to a Python
+   ``u#`` (:class:`str`) [const wchar_t \*, int]
+      Convert a Unicode (UTF-16 or UCS-4) data buffer and its length to a Python
       Unicode object.   If the Unicode buffer pointer is *NULL*, the length is ignored
       and ``None`` is returned.
-
-      .. deprecated-removed:: 3.3 4.0
-         Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-         :c:func:`PyUnicode_FromWideChar`.
 
    ``U`` (:class:`str` or ``None``) [const char \*]
       Same as ``s``.
