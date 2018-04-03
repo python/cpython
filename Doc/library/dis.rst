@@ -1021,8 +1021,8 @@ the more significant byte last.
 .. opcode:: CALL_FUNCTION_VAR (argc)
 
    Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The
-   top element on the stack contains the variable argument list, followed by
-   keyword and positional arguments.
+   top elements on the stack are the keyword arguments, followed by the
+   variable argument list, and then the positional arguments.
 
 
 .. opcode:: CALL_FUNCTION_KW (argc)
@@ -1035,9 +1035,9 @@ the more significant byte last.
 .. opcode:: CALL_FUNCTION_VAR_KW (argc)
 
    Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`.  The
-   top element on the stack contains the keyword arguments dictionary, followed
-   by the variable-arguments tuple, followed by explicit keyword and positional
-   arguments.
+   top element on the stack contains the keyword arguments dictionary,
+   followed by explicit keyword arguments, then the variable-arguments tuple,
+   and finally by the positional arguments.
 
 
 .. opcode:: HAVE_ARGUMENT
