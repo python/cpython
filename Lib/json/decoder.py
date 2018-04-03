@@ -292,9 +292,9 @@ class JSONDecoder(object):
         ``object_pairs_hook``, if specified will be called with the result of
         every JSON object decoded with an ordered list of pairs.  The return
         value of ``object_pairs_hook`` will be used instead of the ``dict``.
-        This feature can be used to implement custom decoders (e.g. sort by
-        keys before creating dict).  If ``object_hook`` is also defined, the
-        ``object_pairs_hook`` takes priority.
+        This feature can be used to implement custom decoders.
+        If ``object_hook`` is also defined, the ``object_pairs_hook`` takes
+        priority.
 
         ``parse_float``, if specified, will be called with the string
         of every JSON float to be decoded. By default this is equivalent to
@@ -315,7 +315,6 @@ class JSONDecoder(object):
         characters will be allowed inside strings.  Control characters in
         this context are those with character codes in the 0-31 range,
         including ``'\\t'`` (tab), ``'\\n'``, ``'\\r'`` and ``'\\0'``.
-
         """
         self.object_hook = object_hook
         self.parse_float = parse_float or float
