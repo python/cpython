@@ -4505,8 +4505,10 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         ADDOP_O(c, LOAD_CONST, e->v.NameConstant.value, consts);
         break;
     case AssignExp_kind:
-        printf("Visiting!");
         VISIT(c, expr, e->v.AssignExp.value);
+        ADDOP(c, DUP_TOP);
+        VISIT(c, expr, e->v.AssignExp.target);
+        break;
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         if (e->v.Attribute.ctx != AugStore)

@@ -183,7 +183,6 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
 {
     int check_ctx = 1;
     expr_context_ty actual_ctx;
-
     /* First check expression context. */
     switch (exp->kind) {
     case Attribute_kind:
@@ -2573,9 +2572,13 @@ ast_for_expr(struct compiling *c, const node *n)
                 TYPE(CHILD(n, 0)) == lambdef_nocond)
                 return ast_for_lambdef(c, CHILD(n, 0));
             else if (NCH(n) == 3) {
-                /* TODO: Evaluate child 2, then assign it to child 0 */
-                /* Assert that child 1 is ":=" */
-                return ast_for_expr(c, CHILD(n, 2));
+                /* TODO: Assert that child 1 is ":=" */
+                expr_ty t = ast_for_expr(c, CHILD(n, 0));
+                expr_ty e = ast_for_expr(c, CHILD(n, 2));
+                if (!t || !e) return NULL;
+                if (!set_context(c, t, Store, CHILD(n, 0)))
+                    return NULL;
+                return AssignExp(t, e, LINENO(n), n->n_col_offset, c->c_arena);
             }
             else if (NCH(n) > 1)
                 return ast_for_ifexpr(c, n);
