@@ -230,10 +230,8 @@ Basic Usage
    *object_pairs_hook* is an optional function that will be called with the
    result of any object literal decoded with an ordered list of pairs.  The
    return value of *object_pairs_hook* will be used instead of the
-   :class:`dict`.  This feature can be used to implement custom decoders that
-   rely on the order that the key and value pairs are decoded (for example,
-   :func:`collections.OrderedDict` will remember the order of insertion). If
-   *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   :class:`dict`.  This feature can be used to implement custom decoders.
+   If *object_hook* is also defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
@@ -325,10 +323,8 @@ Encoders and Decoders
    *object_pairs_hook*, if specified will be called with the result of every
    JSON object decoded with an ordered list of pairs.  The return value of
    *object_pairs_hook* will be used instead of the :class:`dict`.  This
-   feature can be used to implement custom decoders that rely on the order
-   that the key and value pairs are decoded (for example,
-   :func:`collections.OrderedDict` will remember the order of insertion). If
-   *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   feature can be used to implement custom decoders.  If *object_hook* is also
+   defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
