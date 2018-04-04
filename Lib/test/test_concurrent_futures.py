@@ -349,7 +349,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         self.executor.submit(mul, 21, 2)
         self.executor.submit(mul, 6, 7)
         self.executor.submit(mul, 3, 14)
-        self.assertEqual(len(self.executor._threads), 3)
+        self.assertTrue(len(self.executor._threads) < 3)
         self.executor.shutdown()
         for t in self.executor._threads:
             t.join()
