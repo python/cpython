@@ -1232,6 +1232,25 @@ class GenericTests(BaseTestCase):
         class C(List[int], B): ...
         self.assertEqual(C.__mro__, (C, list, B, Generic, object))
 
+    def test_init_subclass_super_called(self):
+        class FinalException(Exception):
+            pass
+
+        class Final:
+            def __init_subclass__(cls, **kwargs) -> None:
+                for base in cls.__bases__:
+                    if base is not Final and issubclass(base, Final):
+                        raise FinalException(base)
+                super().__init_subclass__(**kwargs)
+        class Test(Generic[T], Final):
+            pass
+        with self.assertRaises(FinalException):
+            class Subclass(Test):
+                pass
+        with self.assertRaises(FinalException):
+            class Subclass(Test[int]):
+                pass
+
     def test_nested(self):
 
         G = Generic
