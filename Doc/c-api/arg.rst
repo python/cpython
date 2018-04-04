@@ -569,8 +569,9 @@ Building values
       Same as ``s#``.
 
    ``u`` (:class:`str`) [const wchar_t \*]
-      Convert a null-terminated buffer of Unicode (UTF-16 or UCS-4) data to a Python
-      Unicode object.  If the Unicode buffer pointer is *NULL*, ``None`` is returned.
+      Convert a null-terminated :c:type:`wchar_t` buffer of Unicode (UTF-16 or UCS-4)
+      data to a Python Unicode object.  If the Unicode buffer pointer is *NULL*,
+      ``None`` is returned.
 
    ``u#`` (:class:`str`) [const wchar_t \*, int]
       Convert a Unicode (UTF-16 or UCS-4) data buffer and its length to a Python
