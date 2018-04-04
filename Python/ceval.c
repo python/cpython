@@ -69,7 +69,7 @@ static PyObject * unicode_concatenate(PyObject *, PyObject *,
 static PyObject * special_lookup(PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyObject *func, PyObject *vararg);
 static void format_kwargs_mapping_error(PyObject *func, PyObject *kwargs);
-static void format_awaitable_error(PyTypeObject *, int);
+static void format_awaitable_error(PyTypeObject *, const _Py_CODEUNIT *);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -1738,8 +1738,7 @@ main_loop:
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
 
             if (iter == NULL) {
-                format_awaitable_error(Py_TYPE(iterable),
-                                       _Py_OPCODE(next_instr[-2]));
+                format_awaitable_error(Py_TYPE(iterable), next_instr);
             }
 
             Py_DECREF(iterable);
@@ -4940,16 +4939,20 @@ format_exc_unbound(PyCodeObject *co, int oparg)
 }
 
 static void
-format_awaitable_error(PyTypeObject *type, int prevopcode)
+format_awaitable_error(PyTypeObject *type, const _Py_CODEUNIT *next_instr)
 {
     if (type->tp_as_async == NULL || type->tp_as_async->am_await == NULL) {
+        int prevopcode = _Py_OPCODE(next_instr[-2]);
         if (prevopcode == BEFORE_ASYNC_WITH) {
             PyErr_Format(PyExc_TypeError,
                          "'async with' received an object from __aenter__ "
                          "that does not implement __await__: %.100s",
                          type->tp_name);
         }
-        else if (prevopcode == WITH_CLEANUP_START) {
+        else if (prevopcode == WITH_CLEANUP_START ||
+                 (prevopcode == CALL_FUNCTION_EX &&
+                  _Py_OPCODE(next_instr[-3]) == POP_BLOCK))
+        {
             PyErr_Format(PyExc_TypeError,
                          "'async with' received an object from __aexit__ "
                          "that does not implement __await__: %.100s",
