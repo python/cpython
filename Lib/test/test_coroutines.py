@@ -1269,6 +1269,7 @@ class CoroutineTest(unittest.TestCase):
             def __aexit__(self, *e):
                 return 444
 
+        # Exit with exception
         async def foo():
             async with CM():
                 1/0
@@ -1296,19 +1297,58 @@ class CoroutineTest(unittest.TestCase):
             def __aexit__(self, *e):
                 return 456
 
+        # Normal exit
         async def foo():
             nonlocal CNT
             async with CM():
                 CNT += 1
-
-
         with self.assertRaisesRegex(
                 TypeError,
                 "'async with' received an object from __aexit__ "
                 "that does not implement __await__: int"):
             run_async(foo())
-
         self.assertEqual(CNT, 1)
+
+        # Exit with 'break'
+        async def foo():
+            nonlocal CNT
+            for i in range(2):
+                async with CM():
+                    CNT += 1
+                    break
+        with self.assertRaisesRegex(
+                TypeError,
+                "'async with' received an object from __aexit__ "
+                "that does not implement __await__: int"):
+            run_async(foo())
+        self.assertEqual(CNT, 2)
+
+        # Exit with 'continue'
+        async def foo():
+            nonlocal CNT
+            for i in range(2):
+                async with CM():
+                    CNT += 1
+                    continue
+        with self.assertRaisesRegex(
+                TypeError,
+                "'async with' received an object from __aexit__ "
+                "that does not implement __await__: int"):
+            run_async(foo())
+        self.assertEqual(CNT, 3)
+
+        # Exit with 'return'
+        async def foo():
+            nonlocal CNT
+            async with CM():
+                CNT += 1
+                return
+        with self.assertRaisesRegex(
+                TypeError,
+                "'async with' received an object from __aexit__ "
+                "that does not implement __await__: int"):
+            run_async(foo())
+        self.assertEqual(CNT, 4)
 
 
     def test_with_9(self):
