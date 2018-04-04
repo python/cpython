@@ -642,10 +642,7 @@ class _GenericAlias(_Final, _root=True):
         self._special = special
         if special and name is None:
             orig_name = origin.__name__
-            if orig_name in _normalize_alias:
-                name = _normalize_alias[orig_name]
-            else:
-                name = orig_name
+            name = _normalize_alias.get(orig_name, orig_name)
         self._name = name
         if not isinstance(params, tuple):
             params = (params,)
