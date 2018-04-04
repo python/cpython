@@ -850,6 +850,7 @@ class Generic:
         return _GenericAlias(cls, params)
 
     def __init_subclass__(cls, *args, **kwargs):
+        super().__init_subclass__(*args, **kwargs)
         tvars = []
         if '__orig_bases__' in cls.__dict__:
             error = Generic in cls.__orig_bases__
