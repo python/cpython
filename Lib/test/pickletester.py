@@ -2781,29 +2781,30 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         # object again, the third serialized form should be identical to the
         # first one we obtained.
         data = ["abcdefg", "abcdefg", 44]
-        f = io.BytesIO()
-        pickler = self.pickler_class(f)
+        for proto in protocols:
+            f = io.BytesIO()
+            pickler = self.pickler_class(f, proto)
 
-        pickler.dump(data)
-        first_pickled = f.getvalue()
+            pickler.dump(data)
+            first_pickled = f.getvalue()
 
-        # Reset BytesIO object.
-        f.seek(0)
-        f.truncate()
+            # Reset BytesIO object.
+            f.seek(0)
+            f.truncate()
 
-        pickler.dump(data)
-        second_pickled = f.getvalue()
+            pickler.dump(data)
+            second_pickled = f.getvalue()
 
-        # Reset the Pickler and BytesIO objects.
-        pickler.clear_memo()
-        f.seek(0)
-        f.truncate()
+            # Reset the Pickler and BytesIO objects.
+            pickler.clear_memo()
+            f.seek(0)
+            f.truncate()
 
-        pickler.dump(data)
-        third_pickled = f.getvalue()
+            pickler.dump(data)
+            third_pickled = f.getvalue()
 
-        self.assertNotEqual(first_pickled, second_pickled)
-        self.assertEqual(first_pickled, third_pickled)
+            self.assertNotEqual(first_pickled, second_pickled)
+            self.assertEqual(first_pickled, third_pickled)
 
     def test_priming_pickler_memo(self):
         # Verify that we can set the Pickler's memo attribute.

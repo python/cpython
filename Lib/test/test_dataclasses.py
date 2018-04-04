@@ -8,7 +8,7 @@ import pickle
 import inspect
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar
+from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
 
@@ -133,8 +133,8 @@ class TestCase(unittest.TestCase):
         self.assertEqual(hash(C(10)), hash((10,)))
 
         # Creating this class should generate an exception, because
-        # __hash__ exists and is not None, which it would be if it had
-        # been auto-generated do due __eq__ being defined.
+        #  __hash__ exists and is not None, which it would be if it
+        #  had been auto-generated due to __eq__ being defined.
         with self.assertRaisesRegex(TypeError,
                                     'Cannot overwrite attribute __hash__'):
             @dataclass(unsafe_hash=True)
@@ -144,7 +144,6 @@ class TestCase(unittest.TestCase):
                     pass
                 def __hash__(self):
                     pass
-
 
     def test_overwrite_fields_in_derived_class(self):
         # Note that x from C1 replaces x in Base, but the order remains
@@ -624,7 +623,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(o1.x, o2.x)
 
     def test_no_options(self):
-        # call with dataclass()
+        # Call with dataclass().
         @dataclass()
         class C:
             x: int
@@ -639,7 +638,7 @@ class TestCase(unittest.TestCase):
             y: int
         self.assertNotEqual(Point(1, 2), (1, 2))
 
-        # And that we can't compare to another unrelated dataclass
+        # And that we can't compare to another unrelated dataclass.
         @dataclass
         class C:
             x: int
@@ -664,7 +663,7 @@ class TestCase(unittest.TestCase):
         self.assertNotEqual(Point3D(2017, 6, 3), Date(2017, 6, 3))
         self.assertNotEqual(Point3D(1, 2, 3), (1, 2, 3))
 
-        # Make sure we can't unpack
+        # Make sure we can't unpack.
         with self.assertRaisesRegex(TypeError, 'unpack'):
             x, y, z = Point3D(4, 5, 6)
 
@@ -695,7 +694,7 @@ class TestCase(unittest.TestCase):
             # Verify __init__.
 
             signature = inspect.signature(cls.__init__)
-            # Check the return type, should be None
+            # Check the return type, should be None.
             self.assertIs(signature.return_annotation, None)
 
             # Check each parameter.
@@ -716,12 +715,12 @@ class TestCase(unittest.TestCase):
             param = next(params)
             self.assertEqual(param.name, 'k')
             self.assertIs   (param.annotation, F)
-            # Don't test for the default, since it's set to MISSING
+            # Don't test for the default, since it's set to MISSING.
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             param = next(params)
             self.assertEqual(param.name, 'l')
             self.assertIs   (param.annotation, float)
-            # Don't test for the default, since it's set to MISSING
+            # Don't test for the default, since it's set to MISSING.
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             self.assertRaises(StopIteration, next, params)
 
@@ -805,6 +804,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(list(C.__annotations__), ['i'])
         self.assertEqual(C(10).foo(), 4)
         self.assertEqual(C(10).bar, 5)
+        self.assertEqual(C(10).i, 10)
 
     def test_post_init(self):
         # Just make sure it gets called
@@ -866,7 +866,7 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(C().x, 5)
 
-        # Now call super(), and it will raise
+        # Now call super(), and it will raise.
         @dataclass
         class C(B):
             def __post_init__(self):
@@ -927,8 +927,8 @@ class TestCase(unittest.TestCase):
 
         c = C(5)
         self.assertEqual(repr(c), 'TestCase.test_class_var.<locals>.C(x=5, y=10)')
-        self.assertEqual(len(fields(C)), 2)                 # We have 2 fields
-        self.assertEqual(len(C.__annotations__), 5)         # And 3 ClassVars
+        self.assertEqual(len(fields(C)), 2)                 # We have 2 fields.
+        self.assertEqual(len(C.__annotations__), 5)         # And 3 ClassVars.
         self.assertEqual(c.z, 1000)
         self.assertEqual(c.w, 2000)
         self.assertEqual(c.t, 3000)
@@ -1204,14 +1204,13 @@ class TestCase(unittest.TestCase):
         d = D(4, 5)
         self.assertEqual((d.x, d.z), (4, 5))
 
-
-    def x_test_classvar_default_factory(self):
-        # XXX: it's an error for a ClassVar to have a factory function
-        @dataclass
-        class C:
-            x: ClassVar[int] = field(default_factory=int)
-
-        self.assertIs(C().x, int)
+    def test_classvar_default_factory(self):
+        # It's an error for a ClassVar to have a factory function.
+        with self.assertRaisesRegex(TypeError,
+                                    'cannot have a default factory'):
+            @dataclass
+            class C:
+                x: ClassVar[int] = field(default_factory=int)
 
     def test_is_dataclass(self):
         class NotDataClass:
@@ -1263,7 +1262,7 @@ class TestCase(unittest.TestCase):
             fields(C())
 
     def test_helper_asdict(self):
-        # Basic tests for asdict(), it should return a new dictionary
+        # Basic tests for asdict(), it should return a new dictionary.
         @dataclass
         class C:
             x: int
@@ -1278,7 +1277,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(asdict(c)), dict)
 
     def test_helper_asdict_raises_on_classes(self):
-        # asdict() should raise on a class object
+        # asdict() should raise on a class object.
         @dataclass
         class C:
             x: int
@@ -1376,7 +1375,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(d), OrderedDict)
 
     def test_helper_astuple(self):
-        # Basic tests for astuple(), it should return a new tuple
+        # Basic tests for astuple(), it should return a new tuple.
         @dataclass
         class C:
             x: int
@@ -1391,7 +1390,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(astuple(c)), tuple)
 
     def test_helper_astuple_raises_on_classes(self):
-        # astuple() should raise on a class object
+        # astuple() should raise on a class object.
         @dataclass
         class C:
             x: int
@@ -1488,7 +1487,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(t), NT)
 
     def test_dynamic_class_creation(self):
-        cls_dict = {'__annotations__': OrderedDict(x=int, y=int),
+        cls_dict = {'__annotations__': {'x': int, 'y': int},
                     }
 
         # Create the class.
@@ -1501,7 +1500,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(asdict(cls(1, 2)), {'x': 1, 'y': 2})
 
     def test_dynamic_class_creation_using_field(self):
-        cls_dict = {'__annotations__': OrderedDict(x=int, y=int),
+        cls_dict = {'__annotations__': {'x': int, 'y': int},
                     'y': field(default=5),
                     }
 
@@ -1568,8 +1567,8 @@ class TestCase(unittest.TestCase):
 
     def test_alternate_classmethod_constructor(self):
         # Since __post_init__ can't take params, use a classmethod
-        # alternate constructor. This is mostly an example to show how
-        # to use this technique.
+        #  alternate constructor.  This is mostly an example to show
+        #  how to use this technique.
         @dataclass
         class C:
             x: int
@@ -1603,7 +1602,7 @@ class TestCase(unittest.TestCase):
             class C:
                 i: int = field(metadata=0)
 
-        # Make sure an empty dict works
+        # Make sure an empty dict works.
         @dataclass
         class C:
             i: int = field(metadata={})
@@ -1665,7 +1664,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(box.content, 42)
         self.assertEqual(box.label, '<unknown>')
 
-        # subscripting the resulting class should work, etc.
+        # Subscripting the resulting class should work, etc.
         Alias = List[LabeledBox[int]]
 
     def test_generic_extending(self):
@@ -1690,6 +1689,23 @@ class TestCase(unittest.TestCase):
         Alias = NonDataDerived[float]
         c = Alias(10, 1.0)
         self.assertEqual(c.new_method(), 1.0)
+
+    def test_generic_dynamic(self):
+        T = TypeVar('T')
+
+        @dataclass
+        class Parent(Generic[T]):
+            x: T
+        Child = make_dataclass('Child', [('y', T), ('z', Optional[T], None)],
+                               bases=(Parent[int], Generic[T]), namespace={'other': 42})
+        self.assertIs(Child[int](1, 2).z, None)
+        self.assertEqual(Child[int](1, 2, 3).z, 3)
+        self.assertEqual(Child[int](1, 2, 3).other, 42)
+        # Check that type aliases work correctly.
+        Alias = Child[T]
+        self.assertEqual(Alias[int](1, 2).x, 1)
+        # Check MRO resolution.
+        self.assertEqual(Child.__mro__, (Child, Parent, Generic, object))
 
     def test_helper_replace(self):
         @dataclass(frozen=True)
@@ -1930,7 +1946,7 @@ class TestFieldNoAnnotation(unittest.TestCase):
         with self.assertRaisesRegex(TypeError,
                                     "'f' is a field but has no type annotation"):
             # This is still an error: make sure we don't pick up the
-            # type annotation in the base class.
+            #  type annotation in the base class.
             @dataclass
             class C(B):
                 f = field()
@@ -1943,7 +1959,7 @@ class TestFieldNoAnnotation(unittest.TestCase):
         with self.assertRaisesRegex(TypeError,
                                     "'f' is a field but has no type annotation"):
             # This is still an error: make sure we don't pick up the
-            # type annotation in the base class.
+            #  type annotation in the base class.
             @dataclass
             class C(B):
                 f = field()
@@ -2177,7 +2193,7 @@ class TestRepr(unittest.TestCase):
 
 class TestFrozen(unittest.TestCase):
     def test_overwriting_frozen(self):
-        # frozen uses __setattr__ and __delattr__
+        # frozen uses __setattr__ and __delattr__.
         with self.assertRaisesRegex(TypeError,
                                     'Cannot overwrite attribute __setattr__'):
             @dataclass(frozen=True)
@@ -2472,16 +2488,16 @@ class TestHash(unittest.TestCase):
 
     def test_hash_no_args(self):
         # Test dataclasses with no hash= argument.  This exists to
-        # make sure that if the @dataclass parameter name is changed
-        # or the non-default hashing behavior changes, the default
-        # hashability keeps working the same way.
+        #  make sure that if the @dataclass parameter name is changed
+        #  or the non-default hashing behavior changes, the default
+        #  hashability keeps working the same way.
 
         class Base:
             def __hash__(self):
                 return 301
 
         # If frozen or eq is None, then use the default value (do not
-        # specify any value in the decorator).
+        #  specify any value in the decorator).
         for frozen, eq,    base,   expected       in [
             (None,  None,  object, 'unhashable'),
             (None,  None,  Base,   'unhashable'),
@@ -2533,9 +2549,9 @@ class TestHash(unittest.TestCase):
 
                 elif expected == 'object':
                     # I'm not sure what test to use here.  object's
-                    # hash isn't based on id(), so calling hash()
-                    # won't tell us much.  So, just check the function
-                    # used is object's.
+                    #  hash isn't based on id(), so calling hash()
+                    #  won't tell us much.  So, just check the
+                    #  function used is object's.
                     self.assertIs(C.__hash__, object.__hash__)
 
                 elif expected == 'tuple':
@@ -2664,10 +2680,11 @@ class TestSlots(unittest.TestCase):
             __slots__ = ('x',)
             x: Any
 
-        # There was a bug where a variable in a slot was assumed
-        #  to also have a default value (of type types.MemberDescriptorType).
+        # There was a bug where a variable in a slot was assumed to
+        #  also have a default value (of type
+        #  types.MemberDescriptorType).
         with self.assertRaisesRegex(TypeError,
-                                    "__init__\(\) missing 1 required positional argument: 'x'"):
+                                    r"__init__\(\) missing 1 required positional argument: 'x'"):
             C()
 
         # We can create an instance, and assign to x.
@@ -2697,6 +2714,77 @@ class TestSlots(unittest.TestCase):
 
         # We can add a new field to the derived instance.
         d.z = 10
+
+class TestDescriptors(unittest.TestCase):
+    def test_set_name(self):
+        # See bpo-33141.
+
+        # Create a descriptor.
+        class D:
+            def __set_name__(self, owner, name):
+                self.name = name + 'x'
+            def __get__(self, instance, owner):
+                if instance is not None:
+                    return 1
+                return self
+
+        # This is the case of just normal descriptor behavior, no
+        #  dataclass code is involved in initializing the descriptor.
+        @dataclass
+        class C:
+            c: int=D()
+        self.assertEqual(C.c.name, 'cx')
+
+        # Now test with a default value and init=False, which is the
+        #  only time this is really meaningful.  If not using
+        #  init=False, then the descriptor will be overwritten, anyway.
+        @dataclass
+        class C:
+            c: int=field(default=D(), init=False)
+        self.assertEqual(C.c.name, 'cx')
+        self.assertEqual(C().c, 1)
+
+    def test_non_descriptor(self):
+        # PEP 487 says __set_name__ should work on non-descriptors.
+        # Create a descriptor.
+
+        class D:
+            def __set_name__(self, owner, name):
+                self.name = name + 'x'
+
+        @dataclass
+        class C:
+            c: int=field(default=D(), init=False)
+        self.assertEqual(C.c.name, 'cx')
+
+    def test_lookup_on_instance(self):
+        # See bpo-33175.
+        class D:
+            pass
+
+        d = D()
+        # Create an attribute on the instance, not type.
+        d.__set_name__ = Mock()
+
+        # Make sure d.__set_name__ is not called.
+        @dataclass
+        class C:
+            i: int=field(default=d, init=False)
+
+        self.assertEqual(d.__set_name__.call_count, 0)
+
+    def test_lookup_on_class(self):
+        # See bpo-33175.
+        class D:
+            pass
+        D.__set_name__ = Mock()
+
+        # Make sure D.__set_name__ is called.
+        @dataclass
+        class C:
+            i: int=field(default=D(), init=False)
+
+        self.assertEqual(D.__set_name__.call_count, 1)
 
 
 if __name__ == '__main__':

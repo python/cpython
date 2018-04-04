@@ -20,10 +20,12 @@ class _pickle.UnpicklerMemoProxy "UnpicklerMemoProxyObject *" "&UnpicklerMemoPro
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4b3e113468a58e6c]*/
 
-/* Bump this when new opcodes are added to the pickle protocol. */
+/* Bump HIGHEST_PROTOCOL when new opcodes are added to the pickle protocol.
+   Bump DEFAULT_PROTOCOL only when the oldest still supported version of Python
+   already includes it. */
 enum {
     HIGHEST_PROTOCOL = 4,
-    DEFAULT_PROTOCOL = 3
+    DEFAULT_PROTOCOL = 4
 };
 
 /* Pickle opcodes. These must be kept updated with pickle.py.
@@ -4152,9 +4154,10 @@ dump(PicklerObject *self, PyObject *obj)
     }
 
     if (save(self, obj, 0) < 0 ||
-        _Pickler_Write(self, &stop_op, 1) < 0)
+        _Pickler_Write(self, &stop_op, 1) < 0 ||
+        _Pickler_CommitFrame(self) < 0)
         return -1;
-
+    self->framing = 0;
     return 0;
 }
 
@@ -7175,8 +7178,9 @@ This is equivalent to ``Pickler(file, protocol).dump(obj)``, but may
 be more efficient.
 
 The optional *protocol* argument tells the pickler to use the given
-protocol supported protocols are 0, 1, 2, 3 and 4.  The default
-protocol is 3; a backward-incompatible protocol designed for Python 3.
+protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
+protocol is 4. It was introduced in Python 3.4, it is incompatible
+with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
 version supported.  The higher the protocol used, the more recent the
@@ -7195,7 +7199,7 @@ to map the new Python 3 names to the old module names used in Python
 static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports)
-/*[clinic end generated code: output=a4774d5fde7d34de input=830f8a64cef6f042]*/
+/*[clinic end generated code: output=a4774d5fde7d34de input=93f1408489a87472]*/
 {
     PicklerObject *pickler = _Pickler_New();
 
@@ -7235,7 +7239,8 @@ Return the pickled representation of the object as a bytes object.
 
 The optional *protocol* argument tells the pickler to use the given
 protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
-protocol is 3; a backward-incompatible protocol designed for Python 3.
+protocol is 4. It was introduced in Python 3.4, it is incompatible
+with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
 version supported.  The higher the protocol used, the more recent the
@@ -7249,7 +7254,7 @@ Python 2, so that the pickle data stream is readable with Python 2.
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports)
-/*[clinic end generated code: output=d75d5cda456fd261 input=293dbeda181580b7]*/
+/*[clinic end generated code: output=d75d5cda456fd261 input=b6efb45a7d19b5ab]*/
 {
     PyObject *result;
     PicklerObject *pickler = _Pickler_New();
