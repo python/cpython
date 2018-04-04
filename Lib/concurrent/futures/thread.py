@@ -80,7 +80,14 @@ def _worker(executor_reference, work_queue, initializer, initargs):
                 work_item.run()
                 # Delete references to object. See issue16284
                 del work_item
+
+                # attempt to increment idle count
+                executor = executor_reference()
+                if executor is not None:
+                    executor._increase_idle_count()
+                del executor
                 continue
+
             executor = executor_reference()
             # Exit if:
             #   - The interpreter is shutting down OR
@@ -133,6 +140,8 @@ class ThreadPoolExecutor(_base.Executor):
 
         self._max_workers = max_workers
         self._work_queue = queue.SimpleQueue()
+        self._idle_lock = threading.Lock()
+        self._idle_count = 0
         self._threads = set()
         self._broken = False
         self._shutdown = False
@@ -178,12 +187,17 @@ class ThreadPoolExecutor(_base.Executor):
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def _adjust_thread_count(self):
+        #if idle threads are available, don't spin new threads
+        with self._idle_lock:
+            if self._idle_count > 0:
+                self._idle_count -= 1
+                return
+
         # When the executor gets lost, the weakref callback will wake up
         # the worker threads.
         def weakref_cb(_, q=self._work_queue):
             q.put(None)
-        # TODO(bquinlan): Should avoid creating new threads if there are more
-        # idle threads than items in the work queue.
+
         num_threads = len(self._threads)
         if num_threads < self._max_workers:
             thread_name = '%s_%d' % (self._thread_name_prefix or self,
@@ -197,6 +211,10 @@ class ThreadPoolExecutor(_base.Executor):
             t.start()
             self._threads.add(t)
             _threads_queues[t] = self._work_queue
+
+    def _increase_idle_count(self):
+        with self._idle_lock:
+            self._idle_count += 1
 
     def _initializer_failed(self):
         with self._shutdown_lock:
