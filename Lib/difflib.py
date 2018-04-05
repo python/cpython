@@ -1645,6 +1645,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                     yield from_line, to_line, found_diff
             except StopIteration:
                 # Catch exception from next() and return normally
+                return
 
 
 _file_template = """
