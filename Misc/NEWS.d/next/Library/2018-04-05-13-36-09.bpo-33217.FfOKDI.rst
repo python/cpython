@@ -1,0 +1,2 @@
+Deprecate looking up non-Enum objects in Enum classes and Enum members (will
+raise :exc:`TypeError` in 3.8+).
