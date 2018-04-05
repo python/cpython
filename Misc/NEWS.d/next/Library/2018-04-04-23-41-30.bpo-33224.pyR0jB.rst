@@ -1,0 +1,2 @@
+Update difflib.mdiff() for PEP 479.  Convert an uncaught StopIteration in a
+generator into a return-statement.

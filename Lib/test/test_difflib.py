@@ -93,6 +93,14 @@ class TestSFbugs(unittest.TestCase):
         self.assertEqual("+ \t\tI am a bug", diff[2])
         self.assertEqual("? +\n", diff[3])
 
+    def test_mdiff_catch_stop_iteration(self):
+        # Issue #33224
+        self.assertEqual(
+            list(difflib._mdiff(["2"], ["3"], 1)),
+            [((1, '\x00-2\x01'), (1, '\x00+3\x01'), True)],
+        )
+
+
 patch914575_from1 = """
    1. Beautiful is beTTer than ugly.
    2. Explicit is better than implicit.
