@@ -3137,6 +3137,21 @@ error:
     return NULL;
 }
 
+void *
+PyType_GetModuleState(PyTypeObject *type) {
+    PyObject *m;
+
+    assert(PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE));
+
+    m = PyType_GetModule(type);
+
+    if (m == NULL) {
+        return NULL;
+    }
+
+    return PyModule_GetState(m);
+}
+
 /* Internal API to look for a name through the MRO, bypassing the method cache.
    This returns a borrowed reference, and might set an exception.
    'error' is set to: -1: error with exception; 1: error without exception; 0: ok */

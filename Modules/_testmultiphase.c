@@ -144,14 +144,7 @@ _testmultiphase_StateAccessType___init___impl(StateAccessTypeObject *self,
                                               PyTypeObject *cls)
 /*[clinic end generated code: output=9765645eb57ff25d input=056b456e5f5b243e]*/
 {
-    PyObject *m;
-
-    m = PyType_GetModule(cls);
-    if (m == NULL) {
-        return -1;
-    }
-
-    self->m_state = PyModule_GetState(m);
+    self->m_state = PyType_GetModuleState(cls);
     if (self->m_state == NULL) {
         return -1;
     }
