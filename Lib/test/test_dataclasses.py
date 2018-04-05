@@ -2191,33 +2191,6 @@ class TestRepr(unittest.TestCase):
         self.assertEqual(repr(C(0)), 'x')
 
 
-class TestFrozen(unittest.TestCase):
-    def test_overwriting_frozen(self):
-        # frozen uses __setattr__ and __delattr__.
-        with self.assertRaisesRegex(TypeError,
-                                    'Cannot overwrite attribute __setattr__'):
-            @dataclass(frozen=True)
-            class C:
-                x: int
-                def __setattr__(self):
-                    pass
-
-        with self.assertRaisesRegex(TypeError,
-                                    'Cannot overwrite attribute __delattr__'):
-            @dataclass(frozen=True)
-            class C:
-                x: int
-                def __delattr__(self):
-                    pass
-
-        @dataclass(frozen=False)
-        class C:
-            x: int
-            def __setattr__(self, name, value):
-                self.__dict__['x'] = value * 2
-        self.assertEqual(C(10).x, 20)
-
-
 class TestEq(unittest.TestCase):
     def test_no_eq(self):
         # Test a class with no __eq__ and eq=False.
@@ -2671,6 +2644,44 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(s.x, 3)
         self.assertEqual(s.y, 10)
         self.assertEqual(s.cached, True)
+
+    def test_overwriting_frozen(self):
+        # frozen uses __setattr__ and __delattr__.
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __setattr__'):
+            @dataclass(frozen=True)
+            class C:
+                x: int
+                def __setattr__(self):
+                    pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __delattr__'):
+            @dataclass(frozen=True)
+            class C:
+                x: int
+                def __delattr__(self):
+                    pass
+
+        @dataclass(frozen=False)
+        class C:
+            x: int
+            def __setattr__(self, name, value):
+                self.__dict__['x'] = value * 2
+        self.assertEqual(C(10).x, 20)
+
+    def test_frozen_hash(self):
+        @dataclass(frozen=True)
+        class C:
+            x: Any
+
+        # If x is immutable, we can compute the hash.  No exception is
+        # raised.
+        hash(C(3))
+
+        # If x is mutable, computing the hash is an error.
+        with self.assertRaisesRegex(TypeError, 'unhashable type'):
+            hash(C({}))
 
 
 class TestSlots(unittest.TestCase):
