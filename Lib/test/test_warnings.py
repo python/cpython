@@ -637,7 +637,7 @@ class WarningsDisplayTests(unittest.TestCase):
         line_num = 3
         file_line = 'spam'
         format = u"%s:%s: %s: %s\n  %s\n"
-        expect = format % (file_name, line_num, category.__name__, str(message),
+        expect = format % (file_name, line_num, category.__name__, message,
                             file_line)
         self.assertEqual(expect, self.module.formatwarning(message,
                                     category, file_name, line_num, file_line))
@@ -655,7 +655,7 @@ class WarningsDisplayTests(unittest.TestCase):
         line_num = 3
         file_line = 'sp\xe4m'
         format = u"%s:%s: %s: %s\n  %s\n"
-        expect = format % (file_name, line_num, category.__name__, str(message),
+        expect = format % (file_name, line_num, category.__name__, message,
                             file_line)
         self.assertEqual(expect, self.module.formatwarning(message,
                                     category, file_name, line_num, file_line))
