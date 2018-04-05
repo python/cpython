@@ -149,6 +149,11 @@ script:
 
 notifications:
   email: false
+  webhooks:
+    urls:
+      - https://python.zulipchat.com/api/v1/external/travis?api_key=QTP4LAknlFml0NuPQmAetvH4KQaokiQE&stream=core%2Ftest+runs
+    on_success: change
+    on_failure: always
   irc:
     channels:
       # This is set to a secure variable to prevent forks from notifying the
