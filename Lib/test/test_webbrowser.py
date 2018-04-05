@@ -3,6 +3,8 @@ import unittest
 import subprocess
 from unittest import mock
 from test import support
+from test.support import script_helper
+import textwrap
 
 
 URL = 'http://www.example.com'
@@ -264,6 +266,23 @@ class BrowserRegistrationTest(unittest.TestCase):
 
     def test_register_preferred(self):
         self._check_registration(preferred=True)
+
+    def test_environment_variable_BROWSER_is_respected(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            import shutil, unittest
+            from test import support, test_webbrowser
+
+            def mock_which(path):
+                return True
+
+            class Test(test_webbrowser.ImportTest):
+
+                def setUp(self):
+                    super().setUp()
+                    support.patch(self, shutil, 'which', mock_which)
+
+            unittest.main()
+        """), BROWSER='test_browser')
 
 
 class ImportTest(unittest.TestCase):
