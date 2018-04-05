@@ -628,7 +628,7 @@ class WarningsDisplayTests(unittest.TestCase):
         file_name = os.path.splitext(warning_tests.__file__)[0] + '.py'
         line_num = 3
         file_line = linecache.getline(file_name, line_num).strip()
-        format = "%s:%s: %s: %s\n  %s\n"
+        format = u"%s:%s: %s: %s\n  %s\n"
         expect = format % (file_name, line_num, category.__name__, message,
                             file_line)
         self.assertEqual(expect, self.module.formatwarning(message,
@@ -647,7 +647,7 @@ class WarningsDisplayTests(unittest.TestCase):
         file_name = os.path.splitext(warning_tests.__file__)[0] + '.py'
         line_num = 3
         file_line = linecache.getline(file_name, line_num).strip()
-        format = "%s:%s: %s: %s\n  %s\n"
+        format = u"%s:%s: %s: %s\n  %s\n"
         expect = format % (file_name, line_num, category.__name__, message,
                             file_line)
         self.assertEqual(expect, self.module.formatwarning(message,
@@ -668,8 +668,8 @@ class WarningsDisplayTests(unittest.TestCase):
         file_name = unicode_file_name.encode(sys.getfilesystemencoding())
         line_num = 3
         file_line = 'spam'
-        format = "%s:%s: %s: %s\n  %s\n"
-        expect = format % (file_name, line_num, category.__name__, str(message),
+        format = u"%s:%s: %s: %s\n  %s\n"
+        expect = format % (file_name, line_num, category.__name__, message,
                             file_line)
         self.assertEqual(expect, self.module.formatwarning(message,
                                     category, file_name, line_num, file_line))
@@ -686,8 +686,8 @@ class WarningsDisplayTests(unittest.TestCase):
         file_name = 'file.py'
         line_num = 3
         file_line = 'sp\xe4m'
-        format = "%s:%s: %s: %s\n  %s\n"
-        expect = format % (file_name, line_num, category.__name__, str(message),
+        format = u"%s:%s: %s: %s\n  %s\n"
+        expect = format % (file_name, line_num, category.__name__, message,
                             file_line)
         self.assertEqual(expect, self.module.formatwarning(message,
                                     category, file_name, line_num, file_line))
