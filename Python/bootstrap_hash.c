@@ -505,12 +505,6 @@ pyurandom(void *buffer, Py_ssize_t size, int blocking, int raise)
        ENOSYS or EPERM. Fall back on reading from /dev/urandom. */
 #endif
 
-#ifdef __VXWORKS__
-    
-    //srand((uintmax_t)time(NULL));
-    //return rand();
-    return randPseudoBytes((unsigned char *)buffer, size);
-#endif  // __VXWORKS__
 
     return dev_urandom(buffer, size, raise);
 #endif
