@@ -96,7 +96,7 @@ resources to test.  Currently only the following are defined:
 
     largefile - It is okay to run some test that may create huge
                 files.  These tests can take a long time and may
-                consume >2GB of disk space temporarily.
+                consume >2 GiB of disk space temporarily.
 
     network -   It is okay to run tests that use external network
                 resource, e.g. testing SSL support for sockets.
@@ -127,8 +127,17 @@ Pattern examples:
 """
 
 
-RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network',
-                  'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'tzdata')
+ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
+                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui')
+
+# Other resources excluded from --use=all:
+#
+# - extralagefile (ex: test_zipfile64): really too slow to be enabled
+#   "by default"
+# - tzdata: while needed to validate fully test_datetime, it makes
+#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
+#   default (see bpo-30822).
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
 
 class _ArgParser(argparse.ArgumentParser):
 
@@ -344,7 +353,7 @@ def _parse_args(args, **kwargs):
         for a in ns.use:
             for r in a:
                 if r == 'all':
-                    ns.use_resources[:] = RESOURCE_NAMES
+                    ns.use_resources[:] = ALL_RESOURCES
                     continue
                 if r == 'none':
                     del ns.use_resources[:]

@@ -1559,6 +1559,15 @@ order (MRO) for bases """
         del cm.x
         self.assertNotHasAttr(cm, "x")
 
+    @support.refcount_test
+    def test_refleaks_in_classmethod___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        cm = classmethod(None)
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            cm.__init__(None)
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
     @support.impl_detail("the module 'xxsubtype' is internal")
     def test_classmethods_in_c(self):
         # Testing C-based class methods...
@@ -1613,6 +1622,15 @@ order (MRO) for bases """
         self.assertEqual(sm.__dict__, {"x" : 42})
         del sm.x
         self.assertNotHasAttr(sm, "x")
+
+    @support.refcount_test
+    def test_refleaks_in_staticmethod___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        sm = staticmethod(None)
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            sm.__init__(None)
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
     def test_staticmethods_in_c(self):
@@ -1783,6 +1801,12 @@ order (MRO) for bases """
             def f(self): return "C"
         class D(B, C):
             pass
+        self.assertEqual(A.mro(), [A, object])
+        self.assertEqual(A.__mro__, (A, object))
+        self.assertEqual(B.mro(), [B, A, object])
+        self.assertEqual(B.__mro__, (B, A, object))
+        self.assertEqual(C.mro(), [C, A, object])
+        self.assertEqual(C.__mro__, (C, A, object))
         self.assertEqual(D.mro(), [D, B, C, A, object])
         self.assertEqual(D.__mro__, (D, B, C, A, object))
         self.assertEqual(D().f(), "C")

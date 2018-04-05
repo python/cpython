@@ -105,8 +105,7 @@ sinpi(double x)
         r = sin(pi*(y-2.0));
         break;
     default:
-        assert(0);  /* should never get here */
-        r = -1.23e200; /* silence gcc warning */
+        Py_UNREACHABLE();
     }
     return copysign(1.0, x)*r;
 }

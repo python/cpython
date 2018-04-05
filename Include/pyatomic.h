@@ -10,6 +10,12 @@
 #include <stdatomic.h>
 #endif
 
+
+#if defined(_MSC_VER)
+#include <intrin.h>
+#include <immintrin.h>
+#endif
+
 /* This is modeled after the atomics interface from C1x, according to
  * the draft at
  * http://www.open-std.org/JTC1/SC22/wg14/www/docs/n1425.pdf.
@@ -87,8 +93,9 @@ typedef struct _Py_atomic_int {
             || (ORDER) == __ATOMIC_CONSUME),                  \
      __atomic_load_n(&(ATOMIC_VAL)->_value, ORDER))
 
-#else
-
+/* Only support GCC (for expression statements) and x86 (for simple
+ * atomic semantics) and MSVC x86/x64/ARM */
+#elif defined(__GNUC__) && (defined(__i386__) || defined(__amd64))
 typedef enum _Py_memory_order {
     _Py_memory_order_relaxed,
     _Py_memory_order_acquire,
@@ -105,9 +112,6 @@ typedef struct _Py_atomic_int {
     int _value;
 } _Py_atomic_int;
 
-/* Only support GCC (for expression statements) and x86 (for simple
- * atomic semantics) for now */
-#if defined(__GNUC__) && (defined(__i386__) || defined(__amd64))
 
 static __inline__ void
 _Py_atomic_signal_fence(_Py_memory_order order)
@@ -127,7 +131,7 @@ _Py_atomic_thread_fence(_Py_memory_order order)
 static __inline__ void
 _Py_ANNOTATE_MEMORY_ORDER(const volatile void *address, _Py_memory_order order)
 {
-    (void)address;		/* shut up -Wunused-parameter */
+    (void)address;              /* shut up -Wunused-parameter */
     switch(order) {
     case _Py_memory_order_release:
     case _Py_memory_order_acq_rel:
@@ -219,7 +223,291 @@ _Py_ANNOTATE_MEMORY_ORDER(const volatile void *address, _Py_memory_order order)
         result; \
     })
 
-#else  /* !gcc x86 */
+#elif defined(_MSC_VER)
+/*  _Interlocked* functions provide a full memory barrier and are therefore
+    enough for acq_rel and seq_cst. If the HLE variants aren't available
+    in hardware they will fall back to a full memory barrier as well.
+
+    This might affect performance but likely only in some very specific and
+    hard to meassure scenario.
+*/
+#if defined(_M_IX86) || defined(_M_X64)
+typedef enum _Py_memory_order {
+    _Py_memory_order_relaxed,
+    _Py_memory_order_acquire,
+    _Py_memory_order_release,
+    _Py_memory_order_acq_rel,
+    _Py_memory_order_seq_cst
+} _Py_memory_order;
+
+typedef struct _Py_atomic_address {
+    volatile uintptr_t _value;
+} _Py_atomic_address;
+
+typedef struct _Py_atomic_int {
+    volatile int _value;
+} _Py_atomic_int;
+
+
+#if defined(_M_X64)
+#define _Py_atomic_store_64bit(ATOMIC_VAL, NEW_VAL, ORDER) \
+    switch (ORDER) { \
+    case _Py_memory_order_acquire: \
+      _InterlockedExchange64_HLEAcquire((__int64 volatile*)ATOMIC_VAL, (__int64)NEW_VAL); \
+      break; \
+    case _Py_memory_order_release: \
+      _InterlockedExchange64_HLERelease((__int64 volatile*)ATOMIC_VAL, (__int64)NEW_VAL); \
+      break; \
+    default: \
+      _InterlockedExchange64((__int64 volatile*)ATOMIC_VAL, (__int64)NEW_VAL); \
+      break; \
+  }
+#else
+#define _Py_atomic_store_64bit(ATOMIC_VAL, NEW_VAL, ORDER) ((void)0);
+#endif
+
+#define _Py_atomic_store_32bit(ATOMIC_VAL, NEW_VAL, ORDER) \
+  switch (ORDER) { \
+  case _Py_memory_order_acquire: \
+    _InterlockedExchange_HLEAcquire((volatile long*)ATOMIC_VAL, (int)NEW_VAL); \
+    break; \
+  case _Py_memory_order_release: \
+    _InterlockedExchange_HLERelease((volatile long*)ATOMIC_VAL, (int)NEW_VAL); \
+    break; \
+  default: \
+    _InterlockedExchange((volatile long*)ATOMIC_VAL, (int)NEW_VAL); \
+    break; \
+  }
+
+#if defined(_M_X64)
+/*  This has to be an intptr_t for now.
+    gil_created() uses -1 as a sentinel value, if this returns
+    a uintptr_t it will do an unsigned compare and crash
+*/
+inline intptr_t _Py_atomic_load_64bit(volatile uintptr_t* value, int order) {
+    __int64 old;
+    switch (order) {
+    case _Py_memory_order_acquire:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange64_HLEAcquire((volatile __int64*)value, old, old) != old);
+      break;
+    }
+    case _Py_memory_order_release:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange64_HLERelease((volatile __int64*)value, old, old) != old);
+      break;
+    }
+    case _Py_memory_order_relaxed:
+      old = *value;
+      break;
+    default:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange64((volatile __int64*)value, old, old) != old);
+      break;
+    }
+    }
+    return old;
+}
+
+#else
+#define _Py_atomic_load_64bit(ATOMIC_VAL, ORDER) *ATOMIC_VAL
+#endif
+
+inline int _Py_atomic_load_32bit(volatile int* value, int order) {
+    long old;
+    switch (order) {
+    case _Py_memory_order_acquire:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange_HLEAcquire((volatile long*)value, old, old) != old);
+      break;
+    }
+    case _Py_memory_order_release:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange_HLERelease((volatile long*)value, old, old) != old);
+      break;
+    }
+    case _Py_memory_order_relaxed:
+      old = *value;
+      break;
+    default:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange((volatile long*)value, old, old) != old);
+      break;
+    }
+    }
+    return old;
+}
+
+#define _Py_atomic_store_explicit(ATOMIC_VAL, NEW_VAL, ORDER) \
+  if (sizeof(*ATOMIC_VAL._value) == 8) { \
+    _Py_atomic_store_64bit((volatile long long*)ATOMIC_VAL._value, NEW_VAL, ORDER) } else { \
+    _Py_atomic_store_32bit((volatile long*)ATOMIC_VAL._value, NEW_VAL, ORDER) }
+
+#define _Py_atomic_load_explicit(ATOMIC_VAL, ORDER) \
+  ( \
+    sizeof(*(ATOMIC_VAL._value)) == 8 ? \
+    _Py_atomic_load_64bit((volatile long long*)ATOMIC_VAL._value, ORDER) : \
+    _Py_atomic_load_32bit((volatile long*)ATOMIC_VAL._value, ORDER) \
+  )
+#elif defined(_M_ARM) || defined(_M_ARM64)
+typedef enum _Py_memory_order {
+    _Py_memory_order_relaxed,
+    _Py_memory_order_acquire,
+    _Py_memory_order_release,
+    _Py_memory_order_acq_rel,
+    _Py_memory_order_seq_cst
+} _Py_memory_order;
+
+typedef struct _Py_atomic_address {
+    volatile uintptr_t _value;
+} _Py_atomic_address;
+
+typedef struct _Py_atomic_int {
+    volatile int _value;
+} _Py_atomic_int;
+
+
+#if defined(_M_ARM64)
+#define _Py_atomic_store_64bit(ATOMIC_VAL, NEW_VAL, ORDER) \
+    switch (ORDER) { \
+    case _Py_memory_order_acquire: \
+      _InterlockedExchange64_acq((__int64 volatile*)ATOMIC_VAL, (__int64)NEW_VAL); \
+      break; \
+    case _Py_memory_order_release: \
+      _InterlockedExchange64_rel((__int64 volatile*)ATOMIC_VAL, (__int64)NEW_VAL); \
+      break; \
+    default: \
+      _InterlockedExchange64((__int64 volatile*)ATOMIC_VAL, (__int64)NEW_VAL); \
+      break; \
+  }
+#else
+#define _Py_atomic_store_64bit(ATOMIC_VAL, NEW_VAL, ORDER) ((void)0);
+#endif
+
+#define _Py_atomic_store_32bit(ATOMIC_VAL, NEW_VAL, ORDER) \
+  switch (ORDER) { \
+  case _Py_memory_order_acquire: \
+    _InterlockedExchange_acq((volatile long*)ATOMIC_VAL, (int)NEW_VAL); \
+    break; \
+  case _Py_memory_order_release: \
+    _InterlockedExchange_rel((volatile long*)ATOMIC_VAL, (int)NEW_VAL); \
+    break; \
+  default: \
+    _InterlockedExchange((volatile long*)ATOMIC_VAL, (int)NEW_VAL); \
+    break; \
+  }
+
+#if defined(_M_ARM64)
+/*  This has to be an intptr_t for now.
+    gil_created() uses -1 as a sentinel value, if this returns
+    a uintptr_t it will do an unsigned compare and crash
+*/
+inline intptr_t _Py_atomic_load_64bit(volatile uintptr_t* value, int order) {
+    uintptr_t old;
+    switch (order) {
+    case _Py_memory_order_acquire:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange64_acq(value, old, old) != old);
+      break;
+    }
+    case _Py_memory_order_release:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange64_rel(value, old, old) != old);
+      break;
+    }
+    case _Py_memory_order_relaxed:
+      old = *value;
+      break;
+    default:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange64(value, old, old) != old);
+      break;
+    }
+    }
+    return old;
+}
+
+#else
+#define _Py_atomic_load_64bit(ATOMIC_VAL, ORDER) *ATOMIC_VAL
+#endif
+
+inline int _Py_atomic_load_32bit(volatile int* value, int order) {
+    int old;
+    switch (order) {
+    case _Py_memory_order_acquire:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange_acq(value, old, old) != old);
+      break;
+    }
+    case _Py_memory_order_release:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange_rel(value, old, old) != old);
+      break;
+    }
+    case _Py_memory_order_relaxed:
+      old = *value;
+      break;
+    default:
+    {
+      do {
+        old = *value;
+      } while(_InterlockedCompareExchange(value, old, old) != old);
+      break;
+    }
+    }
+    return old;
+}
+
+#define _Py_atomic_store_explicit(ATOMIC_VAL, NEW_VAL, ORDER) \
+  if (sizeof(*ATOMIC_VAL._value) == 8) { \
+    _Py_atomic_store_64bit(ATOMIC_VAL._value, NEW_VAL, ORDER) } else { \
+    _Py_atomic_store_32bit(ATOMIC_VAL._value, NEW_VAL, ORDER) }
+
+#define _Py_atomic_load_explicit(ATOMIC_VAL, ORDER) \
+  ( \
+    sizeof(*(ATOMIC_VAL._value)) == 8 ? \
+    _Py_atomic_load_64bit(ATOMIC_VAL._value, ORDER) : \
+    _Py_atomic_load_32bit(ATOMIC_VAL._value, ORDER) \
+  )
+#endif
+#else  /* !gcc x86  !_msc_ver */
+typedef enum _Py_memory_order {
+    _Py_memory_order_relaxed,
+    _Py_memory_order_acquire,
+    _Py_memory_order_release,
+    _Py_memory_order_acq_rel,
+    _Py_memory_order_seq_cst
+} _Py_memory_order;
+
+typedef struct _Py_atomic_address {
+    uintptr_t _value;
+} _Py_atomic_address;
+
+typedef struct _Py_atomic_int {
+    int _value;
+} _Py_atomic_int;
 /* Fall back to other compilers and processors by assuming that simple
    volatile accesses are atomic.  This is false, so people should port
    this. */
@@ -229,8 +517,6 @@ _Py_ANNOTATE_MEMORY_ORDER(const volatile void *address, _Py_memory_order order)
     ((ATOMIC_VAL)->_value = NEW_VAL)
 #define _Py_atomic_load_explicit(ATOMIC_VAL, ORDER) \
     ((ATOMIC_VAL)->_value)
-
-#endif  /* !gcc x86 */
 #endif
 
 /* Standardized shortcuts. */
@@ -245,6 +531,5 @@ _Py_ANNOTATE_MEMORY_ORDER(const volatile void *address, _Py_memory_order order)
     _Py_atomic_store_explicit(ATOMIC_VAL, NEW_VAL, _Py_memory_order_relaxed)
 #define _Py_atomic_load_relaxed(ATOMIC_VAL) \
     _Py_atomic_load_explicit(ATOMIC_VAL, _Py_memory_order_relaxed)
-
 #endif  /* Py_BUILD_CORE */
 #endif  /* Py_ATOMIC_H */

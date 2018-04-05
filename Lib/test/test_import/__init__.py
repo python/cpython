@@ -111,6 +111,27 @@ class ImportTests(unittest.TestCase):
         self.assertIn(cm.exception.name, {'posixpath', 'ntpath'})
         self.assertIsNotNone(cm.exception)
 
+    def test_from_import_star_invalid_type(self):
+        import re
+        with _ready_to_import() as (name, path):
+            with open(path, 'w') as f:
+                f.write("__all__ = [b'invalid_type']")
+            globals = {}
+            with self.assertRaisesRegex(
+                TypeError, f"{re.escape(name)}\\.__all__ must be str"
+            ):
+                exec(f"from {name} import *", globals)
+            self.assertNotIn(b"invalid_type", globals)
+        with _ready_to_import() as (name, path):
+            with open(path, 'w') as f:
+                f.write("globals()[b'invalid_type'] = object()")
+            globals = {}
+            with self.assertRaisesRegex(
+                TypeError, f"{re.escape(name)}\\.__dict__ must be str"
+            ):
+                exec(f"from {name} import *", globals)
+            self.assertNotIn(b"invalid_type", globals)
+
     def test_case_sensitivity(self):
         # Brief digression to test that import is case-sensitive:  if we got
         # this far, we know for sure that "random" exists.
@@ -236,6 +257,23 @@ class ImportTests(unittest.TestCase):
         # import x.y.z as w binds z as w
         import test.support as y
         self.assertIs(y, test.support, y.__name__)
+
+    def test_issue31286(self):
+        # import in a 'finally' block resulted in SystemError
+        try:
+            x = ...
+        finally:
+            import test.support.script_helper as x
+
+        # import in a 'while' loop resulted in stack overflow
+        i = 0
+        while i < 10:
+            import test.support.script_helper as x
+            i += 1
+
+        # import in a 'for' loop resulted in segmentation fault
+        for i in range(2):
+            import test.support.script_helper as x
 
     def test_failing_reload(self):
         # A failing reload should leave the module object in sys.modules.
@@ -382,6 +420,18 @@ class ImportTests(unittest.TestCase):
 
         self.assertEqual(str(cm.exception),
             "cannot import name 'does_not_exist' from '<unknown module name>' (unknown location)")
+
+    @cpython_only
+    def test_issue31492(self):
+        # There shouldn't be an assertion failure in case of failing to import
+        # from a module with a bad __name__ attribute, or in case of failing
+        # to access an attribute of such a module.
+        with swap_attr(os, '__name__', None):
+            with self.assertRaises(ImportError):
+                from os import does_not_exist
+
+            with self.assertRaises(AttributeError):
+                os.does_not_exist
 
     def test_concurrency(self):
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
@@ -569,7 +619,7 @@ func_filename = func.__code__.co_filename
     def test_foreign_code(self):
         py_compile.compile(self.file_name)
         with open(self.compiled_name, "rb") as f:
-            header = f.read(12)
+            header = f.read(16)
             code = marshal.load(f)
         constants = list(code.co_consts)
         foreign_code = importlib.import_module.__code__
@@ -797,8 +847,11 @@ class PycacheTests(unittest.TestCase):
         unload(TESTFN)
         importlib.invalidate_caches()
         m = __import__(TESTFN)
-        self.assertEqual(m.__file__,
-                         os.path.join(os.curdir, os.path.relpath(pyc_file)))
+        try:
+            self.assertEqual(m.__file__,
+                             os.path.join(os.curdir, os.path.relpath(pyc_file)))
+        finally:
+            os.remove(pyc_file)
 
     def test___cached__(self):
         # Modules now also have an __cached__ that points to the pyc file.

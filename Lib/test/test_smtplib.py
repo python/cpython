@@ -15,16 +15,12 @@ import time
 import select
 import errno
 import textwrap
+import threading
 
 import unittest
 from test import support, mock_socket
+from test.support import HOST, HOSTv4, HOSTv6
 
-try:
-    import threading
-except ImportError:
-    threading = None
-
-HOST = support.HOST
 
 if sys.platform == 'darwin':
     # select.poll returns a select.POLLHUP at the end of the tests
@@ -191,7 +187,6 @@ MSG_END = '------------ END MESSAGE ------------\n'
 # test server times out, causing the test to fail.
 
 # Test behavior of smtpd.DebuggingServer
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class DebuggingServerTests(unittest.TestCase):
 
     maxDiff = None
@@ -212,8 +207,8 @@ class DebuggingServerTests(unittest.TestCase):
         # Pick a random unused port by passing 0 for the port number
         self.serv = smtpd.DebuggingServer((HOST, 0), ('nowhere', -1),
                                           decode_data=True)
-        # Keep a note of what port was assigned
-        self.port = self.serv.socket.getsockname()[1]
+        # Keep a note of what server host and port were assigned
+        self.host, self.port = self.serv.socket.getsockname()[:2]
         serv_args = (self.serv, self.serv_evt, self.client_evt)
         self.thread = threading.Thread(target=debugging_server, args=serv_args)
         self.thread.start()
@@ -235,6 +230,11 @@ class DebuggingServerTests(unittest.TestCase):
         smtpd.DEBUGSTREAM.close()
         smtpd.DEBUGSTREAM = self.old_DEBUGSTREAM
 
+    def get_output_without_xpeer(self):
+        test_output = self.output.getvalue()
+        return re.sub(r'(.*?)^X-Peer:\s*\S+\n(.*)', r'\1\2',
+                      test_output, flags=re.MULTILINE|re.DOTALL)
+
     def testBasic(self):
         # connect
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
@@ -242,16 +242,16 @@ class DebuggingServerTests(unittest.TestCase):
 
     def testSourceAddress(self):
         # connect
-        port = support.find_unused_port()
+        src_port = support.find_unused_port()
         try:
-            smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
-                    timeout=3, source_address=('127.0.0.1', port))
-            self.assertEqual(smtp.source_address, ('127.0.0.1', port))
+            smtp = smtplib.SMTP(self.host, self.port, local_hostname='localhost',
+                                timeout=3, source_address=(self.host, src_port))
+            self.assertEqual(smtp.source_address, (self.host, src_port))
             self.assertEqual(smtp.local_hostname, 'localhost')
             smtp.quit()
         except OSError as e:
             if e.errno == errno.EADDRINUSE:
-                self.skipTest("couldn't bind to port %d" % port)
+                self.skipTest("couldn't bind to source port %d" % src_port)
             raise
 
     def testNOOP(self):
@@ -378,10 +378,14 @@ class DebuggingServerTests(unittest.TestCase):
         self.client_evt.set()
         self.serv_evt.wait()
         self.output.flush()
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds as figuring out
+        # exactly what IP address format is put there is not easy (and
+        # irrelevant to our test).  Typically 127.0.0.1 or ::1, but it is
+        # not always the same as socket.gethostbyname(HOST). :(
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
 
     def testSendMessageWithAddresses(self):
         m = email.mime.text.MIMEText('A test message')
@@ -401,12 +405,13 @@ class DebuggingServerTests(unittest.TestCase):
         self.client_evt.set()
         self.serv_evt.wait()
         self.output.flush()
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds.
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         # The Bcc header should not be transmitted.
         del m['Bcc']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: foo@bar.com$", re.MULTILINE)
         self.assertRegex(debugout, sender)
@@ -430,10 +435,11 @@ class DebuggingServerTests(unittest.TestCase):
         self.client_evt.set()
         self.serv_evt.wait()
         self.output.flush()
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds.
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: foo@bar.com$", re.MULTILINE)
         self.assertRegex(debugout, sender)
@@ -456,10 +462,11 @@ class DebuggingServerTests(unittest.TestCase):
         self.client_evt.set()
         self.serv_evt.wait()
         self.output.flush()
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds.
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: joe@example.com$", re.MULTILINE)
         self.assertRegex(debugout, sender)
@@ -485,10 +492,11 @@ class DebuggingServerTests(unittest.TestCase):
         self.client_evt.set()
         self.serv_evt.wait()
         self.output.flush()
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds.
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: the_rescuers@Rescue-Aid-Society.com$", re.MULTILINE)
         self.assertRegex(debugout, sender)
@@ -519,10 +527,11 @@ class DebuggingServerTests(unittest.TestCase):
         # The Resent-Bcc headers are deleted before serialization.
         del m['Bcc']
         del m['Resent-Bcc']
-        # Add the X-Peer header that DebuggingServer adds
-        m['X-Peer'] = socket.gethostbyname('localhost')
+        # Remove the X-Peer header that DebuggingServer adds.
+        test_output = self.get_output_without_xpeer()
+        del m['X-Peer']
         mexpect = '%s%s\n%s' % (MSG_BEGIN, m.as_string(), MSG_END)
-        self.assertEqual(self.output.getvalue(), mexpect)
+        self.assertEqual(test_output, mexpect)
         debugout = smtpd.DEBUGSTREAM.getvalue()
         sender = re.compile("^sender: holy@grail.net$", re.MULTILINE)
         self.assertRegex(debugout, sender)
@@ -570,7 +579,6 @@ class NonConnectingTests(unittest.TestCase):
 
 
 # test response of client to a non-successful HELO message
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class BadHELOServerTests(unittest.TestCase):
 
     def setUp(self):
@@ -590,7 +598,6 @@ class BadHELOServerTests(unittest.TestCase):
                             HOST, self.port, 'localhost', 3)
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class TooLongLineTests(unittest.TestCase):
     respdata = b'250 OK' + (b'.' * smtplib._MAXLINE * 2) + b'\n'
 
@@ -604,7 +611,9 @@ class TooLongLineTests(unittest.TestCase):
         self.sock.settimeout(15)
         self.port = support.bind_port(self.sock)
         servargs = (self.evt, self.respdata, self.sock)
-        threading.Thread(target=server, args=servargs).start()
+        thread = threading.Thread(target=server, args=servargs)
+        thread.start()
+        self.addCleanup(thread.join)
         self.evt.wait()
         self.evt.clear()
 
@@ -816,6 +825,7 @@ class SimSMTPServer(smtpd.SMTPServer):
 
     def __init__(self, *args, **kw):
         self._extra_features = []
+        self._addresses = {}
         smtpd.SMTPServer.__init__(self, *args, **kw)
 
     def handle_accepted(self, conn, addr):
@@ -824,7 +834,8 @@ class SimSMTPServer(smtpd.SMTPServer):
             decode_data=self._decode_data)
 
     def process_message(self, peer, mailfrom, rcpttos, data):
-        pass
+        self._addresses['from'] = mailfrom
+        self._addresses['tos'] = rcpttos
 
     def add_feature(self, feature):
         self._extra_features.append(feature)
@@ -835,7 +846,6 @@ class SimSMTPServer(smtpd.SMTPServer):
 
 # Test various SMTP & ESMTP commands/behaviors that require a simulated server
 # (i.e., something with more features than DebuggingServer)
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class SMTPSimTests(unittest.TestCase):
 
     def setUp(self):
@@ -1064,6 +1074,21 @@ class SMTPSimTests(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, smtp.sendmail, 'Alice', 'Böb', '')
         self.assertRaises(UnicodeEncodeError, smtp.mail, 'Älice')
 
+    def test_name_field_not_included_in_envelop_addresses(self):
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost', timeout=3
+        )
+        self.addCleanup(smtp.close)
+
+        message = EmailMessage()
+        message['From'] = email.utils.formataddr(('Michaël', 'michael@example.com'))
+        message['To'] = email.utils.formataddr(('René', 'rene@example.com'))
+
+        self.assertDictEqual(smtp.send_message(message), {})
+
+        self.assertEqual(self.serv._addresses['from'], 'michael@example.com')
+        self.assertEqual(self.serv._addresses['tos'], ['rene@example.com'])
+
 
 class SimSMTPUTF8Server(SimSMTPServer):
 
@@ -1091,7 +1116,6 @@ class SimSMTPUTF8Server(SimSMTPServer):
         self.last_rcpt_options = rcpt_options
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class SMTPUTF8SimTests(unittest.TestCase):
 
     maxDiff = None
@@ -1227,7 +1251,6 @@ class SimSMTPAUTHInitialResponseServer(SimSMTPServer):
     channel_class = SimSMTPAUTHInitialResponseChannel
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class SMTPAUTHInitialResponseSimTests(unittest.TestCase):
     def setUp(self):
         self.real_getfqdn = socket.getfqdn

@@ -97,5 +97,7 @@ class Popen(object):
                 if self.wait(timeout=1.0) is None:
                     raise
 
+    kill = terminate
+
     def close(self):
         self.finalizer()

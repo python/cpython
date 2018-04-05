@@ -1,7 +1,0 @@
-Remove own implementation for thread-local storage.
-
-CPython has provided the own implementation for thread-local storage (TLS)
-on Python/thread.c, it's used in the case which a platform has not supplied
-native TLS.  However, currently all supported platforms (Windows and pthreads)
-have provided native TLS and defined the Py_HAVE_NATIVE_TLS macro with
-unconditional in any case.

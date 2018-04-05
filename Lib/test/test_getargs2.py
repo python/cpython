@@ -377,6 +377,12 @@ class Float_TestCase(unittest.TestCase):
         r = getargs_f(NAN)
         self.assertNotEqual(r, r)
 
+    @support.requires_IEEE_754
+    def test_f_rounding(self):
+        from _testcapi import getargs_f
+        self.assertEqual(getargs_f(3.40282356e38), FLT_MAX)
+        self.assertEqual(getargs_f(-3.40282356e38), -FLT_MAX)
+
     def test_d(self):
         from _testcapi import getargs_d
         self.assertEqual(getargs_d(4.25), 4.25)

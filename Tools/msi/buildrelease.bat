@@ -28,7 +28,8 @@ rem     {msi}           MSI filename        core.msi
 set DOWNLOAD_URL=https://www.python.org/ftp/python/{version}/{arch}{releasename}/{msi}
 
 set D=%~dp0
-set PCBUILD=%D%..\..\PCBuild\
+set PCBUILD=%D%..\..\PCbuild\
+if "%Py_OutDir%"=="" set Py_OutDir=%PCBUILD%
 set EXTERNALS=%D%..\..\externals\windows-installer\
 
 set BUILDX86=
@@ -76,9 +77,6 @@ if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable &
 if "%SKIPBUILD%" EQU "1" goto skipdoc
 if "%SKIPDOC%" EQU "1" goto skipdoc
 
-if not defined PYTHON where py -q || echo Cannot find py on path and PYTHON is not set. && exit /B 1
-if not defined SPHINXBUILD where sphinx-build -q || echo Cannot find sphinx-build on path and SPHINXBUILD is not set. && exit /B 1
-
 call "%D%..\..\doc\make.bat" htmlhelp
 if errorlevel 1 goto :eof
 :skipdoc
@@ -113,12 +111,12 @@ exit /B 0
 
 if "%1" EQU "x86" (
     set PGO=
-    set BUILD=%PCBUILD%win32\
+    set BUILD=%Py_OutDir%win32\
     set BUILD_PLAT=Win32
     set OUTDIR_PLAT=win32
     set OBJDIR_PLAT=x86
 ) else (
-    set BUILD=%PCBUILD%amd64\
+    set BUILD=%Py_OutDir%amd64\
     set PGO=%~2
     set BUILD_PLAT=x64
     set OUTDIR_PLAT=amd64
@@ -170,7 +168,7 @@ if not "%SKIPBUILD%" EQU "1" (
 if "%OUTDIR_PLAT%" EQU "win32" (
     %MSBUILD% "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
     if errorlevel 1 exit /B
-) else if not exist "%PCBUILD%win32\en-us\launcher.msi" (
+) else if not exist "%Py_OutDir%win32\en-us\launcher.msi" (
     %MSBUILD% "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
     if errorlevel 1 exit /B
 )

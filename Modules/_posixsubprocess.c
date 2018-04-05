@@ -169,7 +169,7 @@ make_inheritable(PyObject *py_fds_to_keep, int errpipe_write)
                called. */
             continue;
         }
-        if (_Py_set_inheritable((int)fd, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe((int)fd, 1, NULL) < 0)
             return -1;
     }
     return 0;
@@ -220,7 +220,7 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
     Py_ssize_t keep_seq_idx;
     int fd_num;
     /* As py_fds_to_keep is sorted we can loop through the list closing
-     * fds inbetween any in the keep list falling within our range. */
+     * fds in between any in the keep list falling within our range. */
     for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
         PyObject* py_keep_fd = PyTuple_GET_ITEM(py_fds_to_keep, keep_seq_idx);
         int keep_fd = PyLong_AsLong(py_keep_fd);
@@ -424,28 +424,28 @@ child_exec(char *const exec_array[],
        either 0, 1 or 2, it is possible that it is overwritten (#12607). */
     if (c2pwrite == 0)
         POSIX_CALL(c2pwrite = dup(c2pwrite));
-    if (errwrite == 0 || errwrite == 1)
+    while (errwrite == 0 || errwrite == 1)
         POSIX_CALL(errwrite = dup(errwrite));
 
     /* Dup fds for child.
        dup2() removes the CLOEXEC flag but we must do it ourselves if dup2()
        would be a no-op (issue #10806). */
     if (p2cread == 0) {
-        if (_Py_set_inheritable(p2cread, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe(p2cread, 1, NULL) < 0)
             goto error;
     }
     else if (p2cread != -1)
         POSIX_CALL(dup2(p2cread, 0));  /* stdin */
 
     if (c2pwrite == 1) {
-        if (_Py_set_inheritable(c2pwrite, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe(c2pwrite, 1, NULL) < 0)
             goto error;
     }
     else if (c2pwrite != -1)
         POSIX_CALL(dup2(c2pwrite, 1));  /* stdout */
 
     if (errwrite == 2) {
-        if (_Py_set_inheritable(errwrite, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe(errwrite, 1, NULL) < 0)
             goto error;
     }
     else if (errwrite != -1)
@@ -775,11 +775,11 @@ static PyMethodDef module_methods[] = {
 
 
 static struct PyModuleDef _posixsubprocessmodule = {
-	PyModuleDef_HEAD_INIT,
-	"_posixsubprocess",
-	module_doc,
-	-1,  /* No memory is needed. */
-	module_methods,
+        PyModuleDef_HEAD_INIT,
+        "_posixsubprocess",
+        module_doc,
+        -1,  /* No memory is needed. */
+        module_methods,
 };
 
 PyMODINIT_FUNC

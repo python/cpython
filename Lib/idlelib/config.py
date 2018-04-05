@@ -30,6 +30,7 @@ import os
 import sys
 
 from tkinter.font import Font
+import idlelib
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
@@ -159,14 +160,15 @@ class IdleConf:
         for config_type in self.config_types:
         (user home dir)/.idlerc/config-{config-type}.cfg
     """
-    def __init__(self):
+    def __init__(self, _utest=False):
         self.config_types = ('main', 'highlight', 'keys', 'extensions')
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
-        self.CreateConfigHandlers()
-        self.LoadCfgFiles()
 
+        if not _utest:
+            self.CreateConfigHandlers()
+            self.LoadCfgFiles()
 
     def CreateConfigHandlers(self):
         "Populate default and user config parser dictionaries."
@@ -215,7 +217,8 @@ class IdleConf:
             except OSError:
                 warn = ('\n Warning: unable to create user config directory\n' +
                         userDir + '\n Check path and permissions.\n Exiting!\n')
-                print(warn, file=sys.stderr)
+                if not idlelib.testing:
+                    print(warn, file=sys.stderr)
                 raise SystemExit
         # TODO continue without userDIr instead of exit
         return userDir
@@ -356,7 +359,8 @@ class IdleConf:
                 'stderr-foreground':'#000000',
                 'stderr-background':'#ffffff',
                 'console-foreground':'#000000',
-                'console-background':'#ffffff' }
+                'console-background':'#ffffff',
+                }
         for element in theme:
             if not cfgParser.has_option(themeName, element):
                 # Print warning that will return a default color
@@ -440,6 +444,11 @@ class IdleConf:
         for extn in userExtns:
             if extn not in extns: #user has added own extension
                 extns.append(extn)
+        for extn in ('AutoComplete','CodeContext',
+                     'FormatParagraph','ParenMatch'):
+            extns.remove(extn)
+            # specific exclusions because we are storing config for mainlined old
+            # extensions in config-extensions.def for backward compatibility
         if active_only:
             activeExtns = []
             for extn in extns:
@@ -463,16 +472,7 @@ class IdleConf:
 
     def RemoveKeyBindNames(self, extnNameList):
         "Return extnNameList with keybinding section names removed."
-        # TODO Easier to return filtered copy with list comp
-        names = extnNameList
-        kbNameIndicies = []
-        for name in names:
-            if name.endswith(('_bindings', '_cfgBindings')):
-                kbNameIndicies.append(names.index(name))
-        kbNameIndicies.sort(reverse=True)
-        for index in kbNameIndicies: #delete each keybinding section name
-            del(names[index])
-        return names
+        return [n for n in extnNameList if not n.endswith(('_bindings', '_cfgBindings'))]
 
     def GetExtnNameForEvent(self, virtualEvent):
         """Return the name of the extension binding virtualEvent, or None.
@@ -600,7 +600,12 @@ class IdleConf:
         return ('<<'+virtualEvent+'>>') in self.GetCoreKeys()
 
 # TODO make keyBindins a file or class attribute used for test above
-# and copied in function below
+# and copied in function below.
+
+    former_extension_events = {  #  Those with user-configurable keys.
+        '<<force-open-completions>>', '<<expand-word>>',
+        '<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
+         '<<run-module>>', '<<check-module>>', '<<zoom-height>>'}
 
     def GetCoreKeys(self, keySetName=None):
         """Return dict of core virtual-key keybindings for keySetName.
@@ -660,8 +665,17 @@ class IdleConf:
             '<<toggle-tabs>>': ['<Alt-Key-t>'],
             '<<change-indentwidth>>': ['<Alt-Key-u>'],
             '<<del-word-left>>': ['<Control-Key-BackSpace>'],
-            '<<del-word-right>>': ['<Control-Key-Delete>']
+            '<<del-word-right>>': ['<Control-Key-Delete>'],
+            '<<force-open-completions>>': ['<Control-Key-space>'],
+            '<<expand-word>>': ['<Alt-Key-slash>'],
+            '<<force-open-calltip>>': ['<Control-Key-backslash>'],
+            '<<flash-paren>>': ['<Control-Key-0>'],
+            '<<format-paragraph>>': ['<Alt-Key-q>'],
+            '<<run-module>>': ['<Key-F5>'],
+            '<<check-module>>': ['<Alt-Key-x>'],
+            '<<zoom-height>>': ['<Alt-Key-2>'],
             }
+
         if keySetName:
             if not (self.userCfg['keys'].has_section(keySetName) or
                     self.defaultCfg['keys'].has_section(keySetName)):
@@ -676,7 +690,8 @@ class IdleConf:
                     binding = self.GetKeyBinding(keySetName, event)
                     if binding:
                         keyBindings[event] = binding
-                    else: #we are going to return a default, print warning
+                    # Otherwise return default in keyBindings.
+                    elif event not in self.former_extension_events:
                         warning = (
                             '\n Warning: config.py - IdleConf.GetCoreKeys -\n'
                             ' problem retrieving key binding for event %r\n'
