@@ -161,7 +161,7 @@ define pystackv
 end
 
 document pu
- Generally useful macro to print a Unicode string
+  Generally useful macro to print a Unicode string
 end
 def pu
   set $uni = $arg0
