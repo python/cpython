@@ -132,7 +132,7 @@ def _sanitize_params(prefix, suffix, dir):
 class _RandomNameSequence:
     """An instance of _RandomNameSequence generates an endless
     sequence of unpredictable strings which can safely be incorporated
-    into file names.  Each string is six characters long.  Multiple
+    into file names.  Each string is eight characters long.  Multiple
     threads can safely use the same instance at the same time.
 
     _RandomNameSequence is an iterator."""
@@ -151,9 +151,7 @@ class _RandomNameSequence:
         return self
 
     def __next__(self):
-        c = self.characters
-        choose = self.rng.choice
-        letters = [choose(c) for dummy in range(8)]
+        letters = self.rng.choices(self.characters, k=8)
         return ''.join(letters)
 
 def _candidate_tempdir_list():
