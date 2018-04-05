@@ -1,5 +1,6 @@
 import sys
 from types import MappingProxyType, DynamicClassAttribute
+import warnings
 
 # try _collections first to reduce startup cost
 try:
@@ -713,7 +714,11 @@ class Flag(Enum):
 
     def __contains__(self, other):
         if not isinstance(other, self.__class__):
-            return NotImplemented
+            warnings.warn(
+                    "using non-Flags in containment checks will raise "
+                    "TypeError in 3.8+",
+                    DeprecationWarning, 2)
+            return False
         return other._value_ & self._value_ == other._value_
 
     def __repr__(self):

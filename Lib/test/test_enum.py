@@ -326,6 +326,7 @@ class TestEnum(unittest.TestCase):
         Season = self.Season
         self.assertIn(Season.AUTUMN, Season)
         self.assertNotIn(3, Season)
+        self.assertNotIn('AUTUMN', Season)
 
         val = Season(3)
         self.assertIn(val, Season)
@@ -333,6 +334,11 @@ class TestEnum(unittest.TestCase):
         class OtherEnum(Enum):
             one = 1; two = 2
         self.assertNotIn(OtherEnum.two, Season)
+
+    def test_member_contains(self):
+        self.assertRaises(TypeError, lambda: 'test' in self.Season.AUTUMN)
+        self.assertRaises(TypeError, lambda: 3 in self.Season.AUTUMN)
+        self.assertRaises(TypeError, lambda: 'AUTUMN' in self.Season.AUTUMN)
 
     def test_comparisons(self):
         Season = self.Season
@@ -2359,6 +2365,8 @@ class TestIntFlag(unittest.TestCase):
         self.assertFalse(R in WX)
         self.assertFalse(W in RX)
         self.assertFalse(X in RW)
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse('swallow' in RW)
 
     def test_bool(self):
         Perm = self.Perm

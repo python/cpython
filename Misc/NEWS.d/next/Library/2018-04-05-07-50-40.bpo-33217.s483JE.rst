@@ -1,0 +1,3 @@
+return False instead of True when non-Enum members are used in containment
+checks (`some_str in Color`);  deprecate non-Enum member usage to become
+:exc:`TypeError` in 3.8+
