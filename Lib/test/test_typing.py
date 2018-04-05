@@ -1058,14 +1058,15 @@ class GenericTests(BaseTestCase):
             self.assertEqual(x.bar, 'abc')
             self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
         samples = [Any, Union, Tuple, Callable, ClassVar,
-                   Union[int, str], ClassVar[List], Tuple[int, ...], Callable[[str], bytes]]
+                   Union[int, str], ClassVar[List], Tuple[int, ...], Callable[[str], bytes],
+                   typing.DefaultDict, typing.FrozenSet[int]]
         for s in samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 z = pickle.dumps(s, proto)
                 x = pickle.loads(z)
                 self.assertEqual(s, x)
         more_samples = [List, typing.Iterable, typing.Type, List[int],
-                        typing.Type[typing.Mapping]]
+                        typing.Type[typing.Mapping], typing.AbstractSet[Tuple[int, str]]]
         for s in more_samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 z = pickle.dumps(s, proto)
