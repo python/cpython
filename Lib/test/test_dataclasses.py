@@ -2675,7 +2675,8 @@ class TestFrozen(unittest.TestCase):
         class C:
             x: Any
 
-        # If x is immutable, we can compute the hash.
+        # If x is immutable, we can compute the hash.  No exception is
+        # raised.
         hash(C(3))
 
         # If x is mutable, computing the hash is an error.
