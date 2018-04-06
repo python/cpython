@@ -162,6 +162,10 @@ class ShareableTypeTests(unittest.TestCase):
             self.cid,
             ])
 
+    def test_bytes(self):
+        self._assert_values(i.to_bytes(2, 'little', signed=True)
+                            for i in range(-1, 258))
+
     def test_int(self):
         self._assert_values(range(-1, 258))
 

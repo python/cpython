@@ -1332,19 +1332,29 @@ _PyCrossInterpreterData_Lookup(PyObject *obj)
 
 /* cross-interpreter data for builtin types */
 
+struct _shared_bytes_data {
+    char *bytes;
+    Py_ssize_t len;
+};
+
 static PyObject *
 _new_bytes_object(_PyCrossInterpreterData *data)
 {
-    return PyBytes_FromString((char *)(data->data));
+    struct _shared_bytes_data *shared = (struct _shared_bytes_data *)(data->data);
+    return PyBytes_FromStringAndSize(shared->bytes, shared->len);
 }
 
 static int
 _bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    data->data = (void *)(PyBytes_AS_STRING(obj));
+    struct _shared_bytes_data *shared = PyMem_NEW(struct _shared_bytes_data, 1);
+    if (PyBytes_AsStringAndSize(obj, &shared->bytes, &shared->len) < 0) {
+        return -1;
+    }
+    data->data = (void *)shared;
     data->obj = obj;  // Will be "released" (decref'ed) when data released.
     data->new_object = _new_bytes_object;
-    data->free = NULL;  // Do not free the data (it belongs to the object).
+    data->free = PyMem_Free;
     return 0;
 }
 
