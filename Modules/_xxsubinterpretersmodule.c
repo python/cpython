@@ -2285,7 +2285,8 @@ static PyObject *
 interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Currently, 0 is always the main interpreter.
-    return PyLong_FromLongLong(0);
+    PY_INT64_T id = 0;
+    return (PyObject *)newinterpid(&InterpreterIDtype, id, 0);
 }
 
 PyDoc_STRVAR(get_main_doc,

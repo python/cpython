@@ -156,13 +156,16 @@ class GetCurrentTests(TestBase):
         main = interpreters.get_main()
         cur = interpreters.get_current()
         self.assertEqual(cur, main)
+        self.assertIsInstance(cur, interpreters.InterpreterID)
 
     def test_subinterpreter(self):
         main = interpreters.get_main()
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
             import _xxsubinterpreters as _interpreters
-            print(_interpreters.get_current())
+            cur = _interpreters.get_current()
+            print(cur)
+            assert isinstance(cur, _interpreters.InterpreterID)
             """))
         cur = int(out.strip())
         _, expected = interpreters.list_all()
@@ -176,13 +179,16 @@ class GetMainTests(TestBase):
         [expected] = interpreters.list_all()
         main = interpreters.get_main()
         self.assertEqual(main, expected)
+        self.assertIsInstance(main, interpreters.InterpreterID)
 
     def test_from_subinterpreter(self):
         [expected] = interpreters.list_all()
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
             import _xxsubinterpreters as _interpreters
-            print(_interpreters.get_main())
+            main = _interpreters.get_main()
+            print(main)
+            assert isinstance(main, _interpreters.InterpreterID)
             """))
         main = int(out.strip())
         self.assertEqual(main, expected)
@@ -293,6 +299,7 @@ class CreateTests(TestBase):
 
     def test_in_main(self):
         id = interpreters.create()
+        self.assertIsInstance(id, interpreters.InterpreterID)
 
         self.assertIn(id, interpreters.list_all())
 
@@ -328,6 +335,7 @@ class CreateTests(TestBase):
             import _xxsubinterpreters as _interpreters
             id = _interpreters.create()
             print(id)
+            assert isinstance(id, _interpreters.InterpreterID)
             """))
         id2 = int(out.strip())
 
@@ -891,6 +899,10 @@ class ChannelIDTests(TestBase):
 
 
 class ChannelTests(TestBase):
+
+    def test_create_cid(self):
+        cid = interpreters.channel_create()
+        self.assertIsInstance(cid, interpreters.ChannelID)
 
     def test_sequential_ids(self):
         before = interpreters.channel_list_all()
