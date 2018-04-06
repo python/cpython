@@ -1081,7 +1081,12 @@ find and load modules.
    .. classmethod:: invalidate_caches()
 
       Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
-      finders stored in :attr:`sys.path_importer_cache`.
+      finders stored in :data:`sys.path_importer_cache` that define the method.
+      Otherwise entries in :data:`sys.path_importer_cache` set to ``None`` are
+      deleted.
+
+      .. versionchanged:: 3.7
+         Entries of ``None`` in :data:`sys.path_importer_cache` are deleted.
 
    .. versionchanged:: 3.4
       Calls objects in :data:`sys.path_hooks` with the current working
