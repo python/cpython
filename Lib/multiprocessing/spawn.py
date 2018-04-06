@@ -178,12 +178,6 @@ def get_preparation_data(name):
         start_method=get_start_method(),
         )
 
-    if sys.platform != "win32":
-        # Pass the semaphore_tracker pid to avoid re-spawning it in every child
-        from . import semaphore_tracker
-        semaphore_tracker.ensure_running()
-        d['tracker_pid'] = semaphore_tracker._semaphore_tracker._pid
-
     # Figure out whether to initialise main in the subprocess as a module
     # or through direct execution (or to leave it alone entirely)
     main_module = sys.modules['__main__']
@@ -236,10 +230,6 @@ def prepare(data):
 
     if 'start_method' in data:
         set_start_method(data['start_method'], force=True)
-
-    if 'tracker_pid' in data:
-        from . import semaphore_tracker
-        semaphore_tracker._semaphore_tracker._pid = data["tracker_pid"]
 
     if 'init_main_from_name' in data:
         _fixup_main_from_name(data['init_main_from_name'])

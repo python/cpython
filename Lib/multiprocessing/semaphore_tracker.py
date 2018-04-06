@@ -95,6 +95,8 @@ class SemaphoreTracker(object):
     def _check_alive(self):
         '''Check for that the pipe has not been closed by sending a probe.'''
         try:
+            # We cannot use send here as it calls ensure_running, creating
+            # a cycle.
             os.write(self._fd, b'PROBE:0\n')
         except BrokenPipeError:
             return False
