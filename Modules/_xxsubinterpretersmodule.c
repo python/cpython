@@ -1413,6 +1413,13 @@ channelid_repr(PyObject *self)
     return PyUnicode_FromFormat(fmt, name, cid->id);
 }
 
+static PyObject *
+channelid_str(PyObject *self)
+{
+    channelid *cid = (channelid *)self;
+    return PyUnicode_FromFormat("%d", cid->id);
+}
+
 PyObject *
 channelid_int(PyObject *self)
 {
@@ -1637,7 +1644,7 @@ static PyTypeObject ChannelIDtype = {
     0,                              /* tp_as_mapping */
     channelid_hash,                 /* tp_hash */
     0,                              /* tp_call */
-    0,                              /* tp_str */
+    (reprfunc)channelid_str,        /* tp_str */
     0,                              /* tp_getattro */
     0,                              /* tp_setattro */
     0,                              /* tp_as_buffer */
@@ -1918,6 +1925,13 @@ interpid_repr(PyObject *self)
     return PyUnicode_FromFormat("%s(%d)", name, id->id);
 }
 
+static PyObject *
+interpid_str(PyObject *self)
+{
+    interpid *id = (interpid *)self;
+    return PyUnicode_FromFormat("%d", id->id);
+}
+
 PyObject *
 interpid_int(PyObject *self)
 {
@@ -2039,7 +2053,7 @@ static PyTypeObject InterpreterIDtype = {
     0,                              /* tp_as_mapping */
     interpid_hash,                  /* tp_hash */
     0,                              /* tp_call */
-    0,                              /* tp_str */
+    (reprfunc)interpid_str,         /* tp_str */
     0,                              /* tp_getattro */
     0,                              /* tp_setattro */
     0,                              /* tp_as_buffer */
