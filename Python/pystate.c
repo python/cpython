@@ -1349,6 +1349,29 @@ _bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
 }
 
 static PyObject *
+_new_long_object(_PyCrossInterpreterData *data)
+{
+    return PyLong_FromLongLong((int64_t)(data->data));
+}
+
+static int
+_long_shared(PyObject *obj, _PyCrossInterpreterData *data)
+{
+    int64_t value = PyLong_AsLongLong(obj);
+    if (value == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError, "try sending as bytes");
+        }
+        return -1;
+    }
+    data->data = (void *)value;
+    data->obj = NULL;
+    data->new_object = _new_long_object;
+    data->free = NULL;
+    return 0;
+}
+
+static PyObject *
 _new_none_object(_PyCrossInterpreterData *data)
 {
     // XXX Singleton refcounts are problematic across interpreters...
@@ -1372,6 +1395,11 @@ _register_builtins_for_crossinterpreter_data(void)
     // None
     if (_register_xidata((PyTypeObject *)PyObject_Type(Py_None), _none_shared) != 0) {
         Py_FatalError("could not register None for cross-interpreter sharing");
+    }
+
+    // int
+    if (_register_xidata(&PyLong_Type, _long_shared) != 0) {
+        Py_FatalError("could not register int for cross-interpreter sharing");
     }
 
     // bytes

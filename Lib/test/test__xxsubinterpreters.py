@@ -83,6 +83,8 @@ class IsShareableTests(unittest.TestCase):
                 None,
                 # builtin objects
                 b'spam',
+                10,
+                -10,
                 ]
         for obj in shareables:
             with self.subTest(obj):
@@ -110,7 +112,6 @@ class IsShareableTests(unittest.TestCase):
                 object,
                 object(),
                 Exception(),
-                42,
                 100.0,
                 'spam',
                 # user-defined types and objects
@@ -122,6 +123,47 @@ class IsShareableTests(unittest.TestCase):
             with self.subTest(obj):
                 self.assertFalse(
                     interpreters.is_shareable(obj))
+
+
+class ShareableTypeTests(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.cid = interpreters.channel_create()
+
+    def tearDown(self):
+        interpreters.channel_destroy(self.cid)
+        super().tearDown()
+
+    def _assert_values(self, values):
+        for obj in values:
+            with self.subTest(obj):
+                interpreters.channel_send(self.cid, obj)
+                got = interpreters.channel_recv(self.cid)
+
+                self.assertEqual(got, obj)
+                self.assertIs(type(got), type(obj))
+                # XXX Check the following in the channel tests?
+                #self.assertIsNot(got, obj)
+
+    def test_singletons(self):
+        for obj in [None]:
+            with self.subTest(obj):
+                interpreters.channel_send(self.cid, obj)
+                got = interpreters.channel_recv(self.cid)
+
+                # XXX What about between interpreters?
+                self.assertIs(got, obj)
+
+    def test_types(self):
+        self._assert_values([
+            b'spam',
+            9999,
+            self.cid,
+            ])
+
+    def test_int(self):
+        self._assert_values(range(-1, 258))
 
 
 ##################################
