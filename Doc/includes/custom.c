@@ -3,37 +3,37 @@
 typedef struct {
     PyObject_HEAD
     /* Type-specific fields go here. */
-} NoddyObject;
+} CustomObject;
 
-static PyTypeObject NoddyType = {
+static PyTypeObject CustomType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "noddy.Noddy",
-    .tp_doc = "Noddy objects",
-    .tp_basicsize = sizeof(NoddyObject),
+    .tp_name = "custom.Custom",
+    .tp_doc = "Custom objects",
+    .tp_basicsize = sizeof(CustomObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_new = PyType_GenericNew,
 };
 
-static PyModuleDef noddymodule = {
+static PyModuleDef custommodule = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "noddy",
+    .m_name = "custom",
     .m_doc = "Example module that creates an extension type.",
     .m_size = -1,
 };
 
 PyMODINIT_FUNC
-PyInit_noddy(void)
+PyInit_custom(void)
 {
     PyObject *m;
-    if (PyType_Ready(&NoddyType) < 0)
+    if (PyType_Ready(&CustomType) < 0)
         return NULL;
 
-    m = PyModule_Create(&noddymodule);
+    m = PyModule_Create(&custommodule);
     if (m == NULL)
         return NULL;
 
-    Py_INCREF(&NoddyType);
-    PyModule_AddObject(m, "Noddy", (PyObject *) &NoddyType);
+    Py_INCREF(&CustomType);
+    PyModule_AddObject(m, "Custom", (PyObject *) &CustomType);
     return m;
 }

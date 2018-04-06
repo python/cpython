@@ -36,8 +36,8 @@ So, if you want to define a new extension type, you need to create a new type
 object.
 
 This sort of thing can only be explained by example, so here's a minimal, but
-complete, module that defines a new type named :class:`Noddy` inside a C
-extension module :mod:`noddy`:
+complete, module that defines a new type named :class:`Custom` inside a C
+extension module :mod:`custom`:
 
 .. note::
    What we're showing here is the traditional way of defining *static*
@@ -45,26 +45,26 @@ extension module :mod:`noddy`:
    allows defining heap-allocated extension types using the
    :c:func:`PyType_FromSpec` function, which isn't covered in this tutorial.
 
-.. literalinclude:: ../includes/noddy.c
+.. literalinclude:: ../includes/custom.c
 
 Now that's quite a bit to take in at once, but hopefully bits will seem familiar
 from the previous chapter.  This file defines three things:
 
-#. What a :class:`Noddy` **object** contains: this is the ``NoddyObject``
-   struct, which is allocated once for each :class:`Noddy` instance.
-#. How the :class:`Noddy` **type** behaves: this is the ``NoddyType`` struct,
+#. What a :class:`Custom` **object** contains: this is the ``CustomObject``
+   struct, which is allocated once for each :class:`Custom` instance.
+#. How the :class:`Custom` **type** behaves: this is the ``CustomType`` struct,
    which defines a set of flags and function pointers that the interpreter
    inspects when specific operations are requested.
-#. How to initialize the :mod:`noddy` module: this is the ``PyInit_noddy``
-   function and the associated ``noddymodule`` struct.
+#. How to initialize the :mod:`custom` module: this is the ``PyInit_custom``
+   function and the associated ``custommodule`` struct.
 
 The first bit is::
 
    typedef struct {
        PyObject_HEAD
-   } NoddyObject;
+   } CustomObject;
 
-This is what a Noddy object will contain.  ``PyObject_HEAD`` is mandatory
+This is what a Custom object will contain.  ``PyObject_HEAD`` is mandatory
 at the start of each object struct and defines a field called ``ob_base``
 of type :c:type:`PyObject`, containing a pointer to a type object and a
 reference count (these can be accessed using the macros :c:macro:`Py_REFCNT`
@@ -86,11 +86,11 @@ standard Python floats::
 
 The second bit is the definition of the type object. ::
 
-   static PyTypeObject NoddyType = {
+   static PyTypeObject CustomType = {
        PyVarObject_HEAD_INIT(NULL, 0)
-       .tp_name = "noddy.Noddy",
-       .tp_doc = "Noddy objects",
-       .tp_basicsize = sizeof(NoddyObject),
+       .tp_name = "custom.Custom",
+       .tp_doc = "Custom objects",
+       .tp_basicsize = sizeof(CustomObject),
        .tp_itemsize = 0,
        .tp_new = PyType_GenericNew,
    };
@@ -112,29 +112,29 @@ We're going to pick it apart, one field at a time::
 This line is mandatory boilerplate to initialize the ``ob_base``
 field mentioned above. ::
 
-   .tp_name = "noddy.Noddy",
+   .tp_name = "custom.Custom",
 
 The name of our type.  This will appear in the default textual representation of
 our objects and in some error messages, for example:
 
 .. code-block:: python
 
-   >>> "" + noddy.Noddy()
+   >>> "" + custom.Custom()
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: can only concatenate str (not "noddy.Noddy") to str
+   TypeError: can only concatenate str (not "custom.Custom") to str
 
 Note that the name is a dotted name that includes both the module name and the
-name of the type within the module. The module in this case is :mod:`noddy` and
-the type is :class:`Noddy`, so we set the type name to :class:`noddy.Noddy`.
+name of the type within the module. The module in this case is :mod:`custom` and
+the type is :class:`Custom`, so we set the type name to :class:`custom.Custom`.
 Using the real dotted import path is important to make your type compatible
 with the :mod:`pydoc` and :mod:`pickle` modules. ::
 
-   .tp_basicsize = sizeof(NoddyObject),
+   .tp_basicsize = sizeof(CustomObject),
    .tp_itemsize = 0,
 
 This is so that Python knows how much memory to allocate when creating
-new :class:`Noddy` instances.  :c:member:`~PyTypeObject.tp_itemsize` is
+new :class:`Custom` instances.  :c:member:`~PyTypeObject.tp_itemsize` is
 only used for variable-sized objects and should otherwise be zero.
 
 .. note::
@@ -159,7 +159,7 @@ you will need to OR the corresponding flags.
 
 We provide a doc string for the type in :c:member:`~PyTypeObject.tp_doc`. ::
 
-   .tp_doc = "Noddy objects",
+   .tp_doc = "Custom objects",
 
 To enable object creation, we have to provide a :c:member:`~PyTypeObject.tp_new`
 handler.  This is the equivalent of the Python method :meth:`__new__`, but
@@ -169,33 +169,33 @@ implementation provided by the API function :c:func:`PyType_GenericNew`. ::
    .tp_new = PyType_GenericNew,
 
 Everything else in the file should be familiar, except for some code in
-:c:func:`PyInit_noddy`::
+:c:func:`PyInit_custom`::
 
-   if (PyType_Ready(&NoddyType) < 0)
+   if (PyType_Ready(&CustomType) < 0)
        return;
 
-This initializes the :class:`Noddy` type, filling in a number of members
+This initializes the :class:`Custom` type, filling in a number of members
 to the appropriate default values, including :attr:`ob_type` that we initially
 set to *NULL*. ::
 
-   PyModule_AddObject(m, "Noddy", (PyObject *) &NoddyType);
+   PyModule_AddObject(m, "Custom", (PyObject *) &CustomType);
 
 This adds the type to the module dictionary.  This allows us to create
-:class:`Noddy` instances by calling the :class:`Noddy` class:
+:class:`Custom` instances by calling the :class:`Custom` class:
 
 .. code-block:: python
 
-   >>> import noddy
-   >>> mynoddy = noddy.Noddy()
+   >>> import custom
+   >>> mycustom = custom.Custom()
 
 That's it!  All that remains is to build it; put the above code in a file called
-:file:`noddy.c` and:
+:file:`custom.c` and:
 
 .. code-block:: python
 
    from distutils.core import setup, Extension
-   setup(name="noddy", version="1.0",
-         ext_modules=[Extension("noddy", ["noddy.c"])])
+   setup(name="custom", version="1.0",
+         ext_modules=[Extension("custom", ["custom.c"])])
 
 in a file called :file:`setup.py`; then typing
 
@@ -203,13 +203,13 @@ in a file called :file:`setup.py`; then typing
 
    $ python setup.py build
 
-at a shell should produce a file :file:`noddy.so` in a subdirectory; move to
-that directory and fire up Python --- you should be able to ``import noddy`` and
-play around with Noddy objects.
+at a shell should produce a file :file:`custom.so` in a subdirectory; move to
+that directory and fire up Python --- you should be able to ``import custom`` and
+play around with Custom objects.
 
 That wasn't so hard, was it?
 
-Of course, the current Noddy type is pretty uninteresting. It has no data and
+Of course, the current Custom type is pretty uninteresting. It has no data and
 doesn't do anything. It can't even be subclassed.
 
 .. note::
@@ -224,10 +224,10 @@ Adding data and methods to the Basic example
 ============================================
 
 Let's extend the basic example to add some data and methods.  Let's also make
-the type usable as a base class. We'll create a new module, :mod:`noddy2` that
+the type usable as a base class. We'll create a new module, :mod:`custom2` that
 adds these capabilities:
 
-.. literalinclude:: ../includes/noddy2.c
+.. literalinclude:: ../includes/custom2.c
 
 
 This version of the module has a number of changes.
@@ -239,7 +239,7 @@ We've added an extra include::
 This include provides declarations that we use to handle attributes, as
 described a bit later.
 
-The  :class:`Noddy` type now has three data attributes in its C struct,
+The  :class:`Custom` type now has three data attributes in its C struct,
 *first*, *last*, and *number*.  The *first* and *last* variables are Python
 strings containing first and last names.  The *number* attribute is a C integer.
 
@@ -250,13 +250,13 @@ The object structure is updated accordingly::
        PyObject *first; /* first name */
        PyObject *last;  /* last name */
        int number;
-   } NoddyObject;
+   } CustomObject;
 
 Because we now have data to manage, we have to be more careful about object
 allocation and deallocation.  At a minimum, we need a deallocation method::
 
    static void
-   Noddy_dealloc(NoddyObject *self)
+   Custom_dealloc(CustomObject *self)
    {
        Py_XDECREF(self->first);
        Py_XDECREF(self->last);
@@ -265,19 +265,19 @@ allocation and deallocation.  At a minimum, we need a deallocation method::
 
 which is assigned to the :c:member:`~PyTypeObject.tp_dealloc` member::
 
-   .tp_dealloc = (destructor) Noddy_dealloc,
+   .tp_dealloc = (destructor) Custom_dealloc,
 
 This method first clears the reference counts of the two Python attributes.
 :c:func:`Py_XDECREF` correctly handles the case where its argument is
 *NULL* (which might happen here if ``tp_new`` failed midway).  It then
 calls the :c:member:`~PyTypeObject.tp_free` member of the object's type
 (computed by ``Py_TYPE(self)``) to free the object's memory.  Note that
-the object's type might not be :class:`NoddyType`, because the object may
+the object's type might not be :class:`CustomType`, because the object may
 be an instance of a subclass.
 
 .. note::
    The explicit cast to ``destructor`` above is needed because we defined
-   ``Noddy_dealloc`` to take a ``NoddyObject *`` argument, but the ``tp_dealloc``
+   ``Custom_dealloc`` to take a ``CustomObject *`` argument, but the ``tp_dealloc``
    function pointer expects to receive a ``PyObject *`` argument.  Otherwise,
    the compiler will emit a warning.  This is object-oriented polymorphism,
    in C!
@@ -286,10 +286,10 @@ We want to make sure that the first and last names are initialized to empty
 strings, so we provide a ``tp_new`` implementation::
 
    static PyObject *
-   Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+   Custom_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    {
-       NoddyObject *self;
-       self = (NoddyObject *) type->tp_alloc(type, 0);
+       CustomObject *self;
+       self = (CustomObject *) type->tp_alloc(type, 0);
        if (self != NULL) {
            self->first = PyUnicode_FromString("");
            if (self->first == NULL) {
@@ -308,17 +308,17 @@ strings, so we provide a ``tp_new`` implementation::
 
 and install it in the :c:member:`~PyTypeObject.tp_new` member::
 
-   .tp_new = Noddy_new,
+   .tp_new = Custom_new,
 
 The ``tp_new`` handler is responsible for creating (as opposed to initializing)
 objects of the type.  It is exposed in Python as the :meth:`__new__` method.
 It is not required to define a ``tp_new`` member, and indeed many extension
 types will simply reuse :c:func:`PyType_GenericNew`` as done in the first
-version of the ``Noddy`` type above.  In this case, we use the ``tp_new``
+version of the ``Custom`` type above.  In this case, we use the ``tp_new``
 handler to initialize the ``first`` and ``last`` attributes to non-*NULL*
 default values.
 
-``tp_new`` is passed the type being instantiated (not necessarily ``NoddyType``,
+``tp_new`` is passed the type being instantiated (not necessarily ``CustomType``,
 if a subclass is instantiated) and any arguments passed when the type was
 called, and is expected to return the instance created.  ``tp_new`` handlers
 always accept positional and keyword arguments, but they often ignore the
@@ -332,7 +332,7 @@ in C or ``__init__`` in Python) methods.
 The ``tp_new`` implementation calls the :c:member:`~PyTypeObject.tp_alloc`
 slot to allocate memory::
 
-   self = (NoddyObject *) type->tp_alloc(type, 0);
+   self = (CustomObject *) type->tp_alloc(type, 0);
 
 Since memory allocation may fail, we must check the :c:member:`~PyTypeObject.tp_alloc`
 result against *NULL* before proceeding.
@@ -358,7 +358,7 @@ We also define an initialization function which accepts arguments to provide
 initial values for our instance::
 
    static int
-   Noddy_init(NoddyObject *self, PyObject *args, PyObject *kwds)
+   Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
    {
        static char *kwlist[] = {"first", "last", "number", NULL};
        PyObject *first = NULL, *last = NULL, *tmp;
@@ -385,7 +385,7 @@ initial values for our instance::
 
 by filling the :c:member:`~PyTypeObject.tp_init` slot. ::
 
-   .tp_init = (initproc) Noddy_init,
+   .tp_init = (initproc) Custom_init,
 
 The :c:member:`~PyTypeObject.tp_init` slot is exposed in Python as the
 :meth:`__init__` method.  It is used to initialize an object after it's
@@ -428,19 +428,19 @@ don't we have to do this?
 We want to expose our instance variables as attributes. There are a
 number of ways to do that. The simplest way is to define member definitions::
 
-   static PyMemberDef Noddy_members[] = {
-       {"first", T_OBJECT_EX, offsetof(NoddyObject, first), 0,
+   static PyMemberDef Custom_members[] = {
+       {"first", T_OBJECT_EX, offsetof(CustomObject, first), 0,
         "first name"},
-       {"last", T_OBJECT_EX, offsetof(NoddyObject, last), 0,
+       {"last", T_OBJECT_EX, offsetof(CustomObject, last), 0,
         "last name"},
-       {"number", T_INT, offsetof(NoddyObject, number), 0,
-        "noddy number"},
+       {"number", T_INT, offsetof(CustomObject, number), 0,
+        "custom number"},
        {NULL}  /* Sentinel */
    };
 
 and put the definitions in the :c:member:`~PyTypeObject.tp_members` slot::
 
-   .tp_members = Noddy_members,
+   .tp_members = Custom_members,
 
 Each member definition has a member name, type, offset, access flags and
 documentation string.  See the :ref:`Generic-Attribute-Management` section
@@ -453,11 +453,11 @@ Further, the attributes can be deleted, setting the C pointers to *NULL*.  Even
 though we can make sure the members are initialized to non-*NULL* values, the
 members can be set to *NULL* if the attributes are deleted.
 
-We define a single method, :meth:`Noddy.name()`, that outputs the objects name as the
+We define a single method, :meth:`Custom.name()`, that outputs the objects name as the
 concatenation of the first and last names. ::
 
    static PyObject *
-   Noddy_name(NoddyObject *self)
+   Custom_name(CustomObject *self)
    {
        if (self->first == NULL) {
            PyErr_SetString(PyExc_AttributeError, "first");
@@ -470,8 +470,8 @@ concatenation of the first and last names. ::
        return PyUnicode_FromFormat("%S %S", self->first, self->last);
    }
 
-The method is implemented as a C function that takes a :class:`Noddy` (or
-:class:`Noddy` subclass) instance as the first argument.  Methods always take an
+The method is implemented as a C function that takes a :class:`Custom` (or
+:class:`Custom` subclass) instance as the first argument.  Methods always take an
 instance as the first argument. Methods often take positional and keyword
 arguments as well, but in this case we don't take any and don't need to accept
 a positional argument tuple or keyword argument dictionary. This method is
@@ -491,8 +491,8 @@ do that in the next section.
 Now that we've defined the method, we need to create an array of method
 definitions::
 
-   static PyMethodDef Noddy_methods[] = {
-       {"name", (PyCFunction) Noddy_name, METH_NOARGS,
+   static PyMethodDef Custom_methods[] = {
+       {"name", (PyCFunction) Custom_name, METH_NOARGS,
         "Return the name, combining the first and last name"
        },
        {NULL}  /* Sentinel */
@@ -503,7 +503,7 @@ is expecting no arguments other than *self*)
 
 and assign it to the :c:member:`~PyTypeObject.tp_methods` slot::
 
-   .tp_methods = Noddy_methods,
+   .tp_methods = Custom_methods,
 
 Finally, we'll make our type usable as a base class for subclassing.  We've
 written our methods carefully so far so that they don't make any assumptions
@@ -512,7 +512,7 @@ to add the :const:`Py_TPFLAGS_BASETYPE` to our class flag definition::
 
    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
 
-We rename :c:func:`PyInit_noddy` to :c:func:`PyInit_noddy2`, update the
+We rename :c:func:`PyInit_custom` to :c:func:`PyInit_custom2`, update the
 module name in the :c:type:`PyModuleDef` struct, and update the full class
 name in the :c:type:`PyTypeObject` struct.
 
@@ -521,10 +521,10 @@ Finally, we update our :file:`setup.py` file to build the new module:
 .. code-block:: python
 
    from distutils.core import setup, Extension
-   setup(name="noddy", version="1.0",
+   setup(name="custom", version="1.0",
          ext_modules=[
-            Extension("noddy", ["noddy.c"]),
-            Extension("noddy2", ["noddy2.c"]),
+            Extension("custom", ["custom.c"]),
+            Extension("custom2", ["custom2.c"]),
             ])
 
 
@@ -532,12 +532,12 @@ Providing finer control over data attributes
 ============================================
 
 In this section, we'll provide finer control over how the :attr:`first` and
-:attr:`last` attributes are set in the :class:`Noddy` example. In the previous
+:attr:`last` attributes are set in the :class:`Custom` example. In the previous
 version of our module, the instance variables :attr:`first` and :attr:`last`
 could be set to non-string values or even deleted. We want to make sure that
 these attributes always contain strings.
 
-.. literalinclude:: ../includes/noddy3.c
+.. literalinclude:: ../includes/custom3.c
 
 
 To provide greater control, over the :attr:`first` and :attr:`last` attributes,
@@ -545,14 +545,14 @@ we'll use custom getter and setter functions.  Here are the functions for
 getting and setting the :attr:`first` attribute::
 
    static PyObject *
-   Noddy_getfirst(NoddyObject *self, void *closure)
+   Custom_getfirst(CustomObject *self, void *closure)
    {
        Py_INCREF(self->first);
        return self->first;
    }
 
    static int
-   Noddy_setfirst(NoddyObject *self, PyObject *value, void *closure)
+   Custom_setfirst(CustomObject *self, PyObject *value, void *closure)
    {
        PyObject *tmp;
        if (value == NULL) {
@@ -571,39 +571,39 @@ getting and setting the :attr:`first` attribute::
        return 0;
    }
 
-The getter function is passed a :class:`Noddy` object and a "closure", which is
+The getter function is passed a :class:`Custom` object and a "closure", which is
 a void pointer.  In this case, the closure is ignored.  (The closure supports an
 advanced usage in which definition data is passed to the getter and setter. This
 could, for example, be used to allow a single set of getter and setter functions
 that decide the attribute to get or set based on data in the closure.)
 
-The setter function is passed the :class:`Noddy` object, the new value, and the
+The setter function is passed the :class:`Custom` object, the new value, and the
 closure.  The new value may be *NULL*, in which case the attribute is being
 deleted.  In our setter, we raise an error if the attribute is deleted or if its
 new value is not a string.
 
 We create an array of :c:type:`PyGetSetDef` structures::
 
-   static PyGetSetDef Noddy_getsetters[] = {
-       {"first", (getter) Noddy_getfirst, (setter) Noddy_setfirst,
+   static PyGetSetDef Custom_getsetters[] = {
+       {"first", (getter) Custom_getfirst, (setter) Custom_setfirst,
         "first name", NULL},
-       {"last", (getter) Noddy_getlast, (setter) Noddy_setlast,
+       {"last", (getter) Custom_getlast, (setter) Custom_setlast,
         "last name", NULL},
        {NULL}  /* Sentinel */
    };
 
 and register it in the :c:member:`~PyTypeObject.tp_getset` slot::
 
-   .tp_getset = Noddy_getsetters,
+   .tp_getset = Custom_getsetters,
 
 The last item in a :c:type:`PyGetSetDef` structure is the "closure" mentioned
 above.  In this case, we aren't using a closure, so we just pass *NULL*.
 
 We also remove the member definitions for these attributes::
 
-   static PyMemberDef Noddy_members[] = {
-       {"number", T_INT, offsetof(NoddyObject, number), 0,
-        "noddy number"},
+   static PyMemberDef Custom_members[] = {
+       {"number", T_INT, offsetof(CustomObject, number), 0,
+        "custom number"},
        {NULL}  /* Sentinel */
    };
 
@@ -611,7 +611,7 @@ We also need to update the :c:member:`~PyTypeObject.tp_init` handler to only
 allow strings [#]_ to be passed::
 
    static int
-   Noddy_init(NoddyObject *self, PyObject *args, PyObject *kwds)
+   Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
    {
        static char *kwlist[] = {"first", "last", "number", NULL};
        PyObject *first = NULL, *last = NULL, *tmp;
@@ -666,32 +666,32 @@ still has a reference from itself. Its reference count doesn't drop to zero.
 Fortunately, Python's cyclic garbage collector will eventually figure out that
 the list is garbage and free it.
 
-In the second version of the :class:`Noddy` example, we allowed any kind of
+In the second version of the :class:`Custom` example, we allowed any kind of
 object to be stored in the :attr:`first` or :attr:`last` attributes [#]_.
 Besides, in the second and third versions, we allowed subclassing
-:class:`Noddy`, and subclasses may add arbitrary attributes.  For any of
-those two reasons, :class:`Noddy` objects can participate in cycles:
+:class:`Custom`, and subclasses may add arbitrary attributes.  For any of
+those two reasons, :class:`Custom` objects can participate in cycles:
 
 .. code-block:: python
 
-   >>> import noddy3
-   >>> class Derived(noddy3.Noddy): pass
+   >>> import custom3
+   >>> class Derived(custom3.Custom): pass
    ...
    >>> n = Derived()
    >>> n.some_attribute = n
 
-To allow a :class:`Noddy` instance participating in a reference cycle to
-be properly detected and collected by the cyclic GC, our :class:`Noddy` type
+To allow a :class:`Custom` instance participating in a reference cycle to
+be properly detected and collected by the cyclic GC, our :class:`Custom` type
 needs to fill two additional slots and to enable a flag that enables these slots:
 
-.. literalinclude:: ../includes/noddy4.c
+.. literalinclude:: ../includes/custom4.c
 
 
 First, the traversal method lets the cyclic GC know about subobjects that could
 participate in cycles::
 
    static int
-   Noddy_traverse(NoddyObject *self, visitproc visit, void *arg)
+   Custom_traverse(CustomObject *self, visitproc visit, void *arg)
    {
        int vret;
        if (self->first) {
@@ -715,10 +715,10 @@ returned if it is non-zero.
 
 Python provides a :c:func:`Py_VISIT` macro that automates calling visit
 functions.  With :c:func:`Py_VISIT`, we can minimize the amount of boilerplate
-in ``Noddy_traverse``::
+in ``Custom_traverse``::
 
    static int
-   Noddy_traverse(NoddyObject *self, visitproc visit, void *arg)
+   Custom_traverse(CustomObject *self, visitproc visit, void *arg)
    {
        Py_VISIT(self->first);
        Py_VISIT(self->last);
@@ -733,7 +733,7 @@ Second, we need to provide a method for clearing any subobjects that can
 participate in cycles::
 
    static int
-   Noddy_clear(NoddyObject *self)
+   Custom_clear(CustomObject *self)
    {
        Py_CLEAR(self->first);
        Py_CLEAR(self->last);
@@ -759,18 +759,18 @@ attribute again (*especially* if there is a reference cycle).
    use :c:func:`Py_CLEAR` when deleting an attribute.  Don't
    try to micro-optimize at the expense of robustness!
 
-The deallocator ``Noddy_dealloc`` may call arbitrary code when clearing
+The deallocator ``Custom_dealloc`` may call arbitrary code when clearing
 attributes.  It means the circular GC can be triggered inside the function.
 Since the GC assumes reference count is not zero, we need to untrack the object
 from the GC by calling :c:func:`PyObject_GC_UnTrack` before clearing members.
 Here is our reimplemented deallocator using :c:func:`PyObject_GC_UnTrack`
-and ``Noddy_clear``::
+and ``Custom_clear``::
 
    static void
-   Noddy_dealloc(NoddyObject *self)
+   Custom_dealloc(CustomObject *self)
    {
        PyObject_GC_UnTrack(self);
-       Noddy_clear(self);
+       Custom_clear(self);
        Py_TYPE(self)->tp_free((PyObject *) self);
    }
 
@@ -791,15 +791,15 @@ types. It is easiest to inherit from the built in types, since an extension can
 easily use the :c:type:`PyTypeObject` it needs. It can be difficult to share
 these :c:type:`PyTypeObject` structures between extension modules.
 
-In this example we will create a :class:`Shoddy` type that inherits from the
+In this example we will create a :class:`SubList` type that inherits from the
 built-in :class:`list` type. The new type will be completely compatible with
 regular lists, but will have an additional :meth:`increment` method that
 increases an internal counter:
 
 .. code-block:: python
 
-   >>> import shoddy
-   >>> s = shoddy.Shoddy(range(3))
+   >>> import sublist
+   >>> s = sublist.SubList(range(3))
    >>> s.extend(s)
    >>> print(len(s))
    6
@@ -808,26 +808,26 @@ increases an internal counter:
    >>> print(s.increment())
    2
 
-.. literalinclude:: ../includes/shoddy.c
+.. literalinclude:: ../includes/sublist.c
 
 
-As you can see, the source code closely resembles the :class:`Noddy` examples in
+As you can see, the source code closely resembles the :class:`Custom` examples in
 previous sections. We will break down the main differences between them. ::
 
    typedef struct {
        PyListObject list;
        int state;
-   } ShoddyObject;
+   } SubListObject;
 
 The primary difference for derived type objects is that the base type's
 object structure must be the first value.  The base type will already include
 the :c:func:`PyObject_HEAD` at the beginning of its structure.
 
-When a Python object is a :class:`Shoddy` instance, its ``PyObject *`` pointer
-can be safely cast to both ``PyListObject *`` and ``ShoddyObject *``::
+When a Python object is a :class:`SubList` instance, its ``PyObject *`` pointer
+can be safely cast to both ``PyListObject *`` and ``SubListObject *``::
 
    static int
-   Shoddy_init(ShoddyObject *self, PyObject *args, PyObject *kwds)
+   SubList_init(SubListObject *self, PyObject *args, PyObject *kwds)
    {
        if (PyList_Type.tp_init((PyObject *) self, args, kwds) < 0)
            return -1;
@@ -851,19 +851,19 @@ issues, you can't fill that field directly with a reference to
 function::
 
    PyMODINIT_FUNC
-   PyInit_shoddy(void)
+   PyInit_sublist(void)
    {
        PyObject* m;
-       ShoddyType.tp_base = &PyList_Type;
-       if (PyType_Ready(&ShoddyType) < 0)
+       SubListType.tp_base = &PyList_Type;
+       if (PyType_Ready(&SubListType) < 0)
            return NULL;
 
-       m = PyModule_Create(&shoddymodule);
+       m = PyModule_Create(&sublistmodule);
        if (m == NULL)
            return NULL;
 
-       Py_INCREF(&ShoddyType);
-       PyModule_AddObject(m, "Shoddy", (PyObject *) &ShoddyType);
+       Py_INCREF(&SubListType);
+       PyModule_AddObject(m, "SubList", (PyObject *) &SubListType);
        return m;
    }
 
@@ -874,7 +874,7 @@ slot with :c:func:`PyType_GenericNew` -- the allocation function from the base
 type will be inherited.
 
 After that, calling :c:func:`PyType_Ready` and adding the type object to the
-module is the same as with the basic :class:`Noddy` examples.
+module is the same as with the basic :class:`Custom` examples.
 
 
 .. rubric:: Footnotes

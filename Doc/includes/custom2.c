@@ -6,10 +6,10 @@ typedef struct {
     PyObject *first; /* first name */
     PyObject *last;  /* last name */
     int number;
-} NoddyObject;
+} CustomObject;
 
 static void
-Noddy_dealloc(NoddyObject *self)
+Custom_dealloc(CustomObject *self)
 {
     Py_XDECREF(self->first);
     Py_XDECREF(self->last);
@@ -17,10 +17,10 @@ Noddy_dealloc(NoddyObject *self)
 }
 
 static PyObject *
-Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+Custom_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    NoddyObject *self;
-    self = (NoddyObject *) type->tp_alloc(type, 0);
+    CustomObject *self;
+    self = (CustomObject *) type->tp_alloc(type, 0);
     if (self != NULL) {
         self->first = PyUnicode_FromString("");
         if (self->first == NULL) {
@@ -38,7 +38,7 @@ Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-Noddy_init(NoddyObject *self, PyObject *args, PyObject *kwds)
+Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"first", "last", "number", NULL};
     PyObject *first = NULL, *last = NULL, *tmp;
@@ -63,18 +63,18 @@ Noddy_init(NoddyObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static PyMemberDef Noddy_members[] = {
-    {"first", T_OBJECT_EX, offsetof(NoddyObject, first), 0,
+static PyMemberDef Custom_members[] = {
+    {"first", T_OBJECT_EX, offsetof(CustomObject, first), 0,
      "first name"},
-    {"last", T_OBJECT_EX, offsetof(NoddyObject, last), 0,
+    {"last", T_OBJECT_EX, offsetof(CustomObject, last), 0,
      "last name"},
-    {"number", T_INT, offsetof(NoddyObject, number), 0,
-     "noddy number"},
+    {"number", T_INT, offsetof(CustomObject, number), 0,
+     "custom number"},
     {NULL}  /* Sentinel */
 };
 
 static PyObject *
-Noddy_name(NoddyObject *self, PyObject *Py_UNUSED(ignored))
+Custom_name(CustomObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->first == NULL) {
         PyErr_SetString(PyExc_AttributeError, "first");
@@ -87,46 +87,46 @@ Noddy_name(NoddyObject *self, PyObject *Py_UNUSED(ignored))
     return PyUnicode_FromFormat("%S %S", self->first, self->last);
 }
 
-static PyMethodDef Noddy_methods[] = {
-    {"name", (PyCFunction) Noddy_name, METH_NOARGS,
+static PyMethodDef Custom_methods[] = {
+    {"name", (PyCFunction) Custom_name, METH_NOARGS,
      "Return the name, combining the first and last name"
     },
     {NULL}  /* Sentinel */
 };
 
-static PyTypeObject NoddyType = {
+static PyTypeObject CustomType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "noddy2.Noddy",
-    .tp_doc = "Noddy objects",
-    .tp_basicsize = sizeof(NoddyObject),
+    .tp_name = "custom2.Custom",
+    .tp_doc = "Custom objects",
+    .tp_basicsize = sizeof(CustomObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_new = Noddy_new,
-    .tp_init = (initproc) Noddy_init,
-    .tp_dealloc = (destructor) Noddy_dealloc,
-    .tp_members = Noddy_members,
-    .tp_methods = Noddy_methods,
+    .tp_new = Custom_new,
+    .tp_init = (initproc) Custom_init,
+    .tp_dealloc = (destructor) Custom_dealloc,
+    .tp_members = Custom_members,
+    .tp_methods = Custom_methods,
 };
 
-static PyModuleDef noddymodule = {
+static PyModuleDef custommodule = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "noddy2",
+    .m_name = "custom2",
     .m_doc = "Example module that creates an extension type.",
     .m_size = -1,
 };
 
 PyMODINIT_FUNC
-PyInit_noddy2(void)
+PyInit_custom2(void)
 {
     PyObject *m;
-    if (PyType_Ready(&NoddyType) < 0)
+    if (PyType_Ready(&CustomType) < 0)
         return NULL;
 
-    m = PyModule_Create(&noddymodule);
+    m = PyModule_Create(&custommodule);
     if (m == NULL)
         return NULL;
 
-    Py_INCREF(&NoddyType);
-    PyModule_AddObject(m, "Noddy", (PyObject *) &NoddyType);
+    Py_INCREF(&CustomType);
+    PyModule_AddObject(m, "Custom", (PyObject *) &CustomType);
     return m;
 }
