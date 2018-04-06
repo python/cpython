@@ -1273,7 +1273,7 @@ Changes in the Python API
   redirection, you will have to pass ``close_fds=False`` to preserve the
   previous behaviour, or use
   :attr:`STARTUPINFO.lpAttributeList <subprocess.STARTUPINFO.lpAttributeList>`.
-  
+
 * :meth:`importlib.machinery.PathFinder.invalidate_caches` -- which implicitly
   affects :func:`importlib.invalidate_caches` -- now deletes entries
   in :data:`sys.path_importer_cache` which are set to ``None``.
