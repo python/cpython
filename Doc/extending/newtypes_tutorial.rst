@@ -313,7 +313,7 @@ and install it in the :c:member:`~PyTypeObject.tp_new` member::
 The ``tp_new`` handler is responsible for creating (as opposed to initializing)
 objects of the type.  It is exposed in Python as the :meth:`__new__` method.
 It is not required to define a ``tp_new`` member, and indeed many extension
-types will simply reuse :c:func:`PyType_GenericNew`` as done in the first
+types will simply reuse :c:func:`PyType_GenericNew` as done in the first
 version of the ``Custom`` type above.  In this case, we use the ``tp_new``
 handler to initialize the ``first`` and ``last`` attributes to non-*NULL*
 default values.
