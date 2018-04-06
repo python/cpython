@@ -36,7 +36,7 @@ handler.  Code to create and run the server looks like this::
 .. class:: ThreadedHTTPServer(server_address, RequestHandlerClass)
 
    This class is identical to HTTPServer but uses threads to handle
-   requests by using the :class:`~socketserver.ThreadingMixin`. This
+   requests by using the :class:`~socketserver.ThreadingMixIn`. This
    is useful to handle web browsers pre-opening sockets, on which
    :class:`HTTPServer` would wait indefinitely.
 
