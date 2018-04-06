@@ -283,7 +283,9 @@ Windows, choose :menuselection:`Start --> Programs --> Python X.Y -->
 Python (command line)`.   Once the interpreter is started, you type Python code
 at the prompt.  For example, on my Linux system, I type the three Python
 statements shown below, and get the output as shown, to find out my
-:file:`{prefix}` and :file:`{exec-prefix}`::
+:file:`{prefix}` and :file:`{exec-prefix}`:
+
+.. code-block:: pycon
 
    Python 2.4 (#26, Aug  7 2004, 17:19:02)
    Type "help", "copyright", "credits" or "license" for more information.
@@ -622,7 +624,9 @@ parsing your configuration file(s).
 
 Obviously, specifying the entire installation scheme every time you install a
 new module distribution would be very tedious.  Thus, you can put these options
-into your Distutils config file (see section :ref:`inst-config-files`)::
+into your Distutils config file (see section :ref:`inst-config-files`):
+
+.. code-block:: ini
 
    [install]
    install-base=$HOME
@@ -631,7 +635,9 @@ into your Distutils config file (see section :ref:`inst-config-files`)::
    install-scripts=python/scripts
    install-data=python/data
 
-or, equivalently, ::
+or, equivalently,
+
+.. code-block:: ini
 
    [install]
    install-base=$HOME/python

@@ -120,7 +120,9 @@ some compilers complain.  Fortunately, this member will be filled in for us by
    "noddy.Noddy",              /* tp_name */
 
 The name of our type.  This will appear in the default textual representation of
-our objects and in some error messages, for example::
+our objects and in some error messages, for example:
+
+.. code-block:: pycon
 
    >>> "" + noddy.new_noddy()
    Traceback (most recent call last):
@@ -196,7 +198,9 @@ including :attr:`ob_type` that we initially set to *NULL*. ::
    PyModule_AddObject(m, "Noddy", (PyObject *)&noddy_NoddyType);
 
 This adds the type to the module dictionary.  This allows us to create
-:class:`Noddy` instances by calling the :class:`Noddy` class::
+:class:`Noddy` instances by calling the :class:`Noddy` class:
+
+.. code-block:: pycon
 
    >>> import noddy
    >>> mynoddy = noddy.Noddy()
@@ -647,7 +651,9 @@ Supporting cyclic garbage collection
 
 Python has a cyclic-garbage collector that can identify unneeded objects even
 when their reference counts are not zero. This can happen when objects are
-involved in cycles.  For example, consider::
+involved in cycles.  For example, consider:
+
+.. code-block:: pycon
 
    >>> l = []
    >>> l.append(l)
@@ -660,7 +666,9 @@ the list is garbage and free it.
 
 In the second version of the :class:`Noddy` example, we allowed any kind of
 object to be stored in the :attr:`first` or :attr:`last` attributes [#]_. This
-means that :class:`Noddy` objects can participate in cycles::
+means that :class:`Noddy` objects can participate in cycles:
+
+.. code-block:: pycon
 
    >>> import noddy2
    >>> n = noddy2.Noddy()
@@ -800,7 +808,9 @@ these :class:`PyTypeObject` structures between extension modules.
 In this example we will create a :class:`Shoddy` type that inherits from the
 built-in :class:`list` type. The new type will be completely compatible with
 regular lists, but will have an additional :meth:`increment` method that
-increases an internal counter. ::
+increases an internal counter.
+
+.. code-block:: pycon
 
    >>> import shoddy
    >>> s = shoddy.Shoddy(range(3))
