@@ -1,6 +1,9 @@
+from collections import namedtuple
 import contextlib
+import itertools
 import os
 import pickle
+import sys
 from textwrap import dedent, indent
 import threading
 import time
@@ -14,6 +17,12 @@ interpreters = support.import_module('_xxsubinterpreters')
 
 ##################################
 # helpers
+
+def powerset(*sets):
+    return itertools.chain.from_iterable(
+        combinations(sets, r)
+        for r in range(len(sets)+1))
+
 
 def _captured_script(script):
     r, w = os.pipe()
@@ -54,22 +63,233 @@ def _running(interp):
     t.join()
 
 
+#@contextmanager
+#def run_threaded(id, source, **shared):
+#    def run():
+#        run_interp(id, source, **shared)
+#    t = threading.Thread(target=run)
+#    t.start()
+#    yield
+#    t.join()
+
+
+def run_interp(id, source, **shared):
+    _run_interp(id, source, shared)
+
+
+def _run_interp(id, source, shared, _mainns={}):
+    source = dedent(source)
+    main = interpreters.get_main()
+    if main == id:
+        if interpreters.get_current() != main:
+            raise RuntimeError
+        # XXX Run a func?
+        exec(source, _mainns)
+    else:
+        interpreters.run_string(id, source, shared)
+
+
+def run_interp_threaded(id, source, **shared):
+    def run():
+        _run(id, source, shared)
+    t = threading.Thread(target=run)
+    t.start()
+    t.join()
+
+
+class Interpreter(namedtuple('Interpreter', 'name id')):
+
+    @classmethod
+    def from_raw(cls, raw):
+        if isinstance(raw, cls):
+            return raw
+        elif isinstance(raw, str):
+            return cls(raw)
+        else:
+            raise NotImplementedError
+
+    def __new__(cls, name=None, id=None):
+        main = interpreters.get_main()
+        if id == main:
+            if not name:
+                name = 'main'
+            elif name != 'main':
+                raise ValueError(
+                    'name mismatch (expected "main", got "{}")'.format(name))
+            id = main
+        elif id is not None:
+            if not name:
+                name = 'interp'
+            elif name == 'main':
+                raise ValueError('name mismatch (unexpected "main")')
+            if not isinstance(id, interpreters.InterpreterID):
+                id = interpreters.InterpreterID(id)
+        elif not name or name == 'main':
+            name = 'main'
+            id = main
+        else:
+            id = interpreters.create()
+        self = super().__new__(cls, name, id)
+        return self
+
+
+# XXX expect_channel_closed() is unnecessary once we improve exc propagation.
+
+@contextlib.contextmanager
+def expect_channel_closed():
+    try:
+        yield
+    except interpreters.ChannelClosedError:
+        pass
+    else:
+        assert False, 'channel not closed'
+
+
+class ChannelAction(namedtuple('ChannelAction', 'action end interp')):
+
+    def __new__(cls, action, end=None, interp=None):
+        if not end:
+            end = 'both'
+        if not interp:
+            interp = 'main'
+        self = super().__new__(cls, action, end, interp)
+        return self
+
+    def __init__(self, *args, **kwargs):
+        if self.action == 'use':
+            if self.end not in ('same', 'opposite', 'send', 'recv'):
+                raise ValueError(self.end)
+        elif self.action in ('close', 'force-close'):
+            if self.end not in ('both', 'same', 'opposite', 'send', 'recv'):
+                raise ValueError(self.end)
+        else:
+            raise ValueError(self.action)
+        if self.interp not in ('main', 'same', 'other'):
+            raise ValueError(self.interp)
+
+    def resolve_end(self, end):
+        if self.end == 'same':
+            return end
+        elif self.end == 'opposite':
+            return 'recv' if end == 'send' else 'send'
+        else:
+            return self.end
+
+    def resolve_interp(self, interp, other):
+        if self.interp == 'same':
+            return interp
+        elif self.interp == 'other':
+            if other is None:
+                raise RuntimeError
+            return other
+        elif self.interp == 'main':
+            if interp.name == 'main':
+                return interp
+            elif other and other.name == 'main':
+                return other
+            else:
+                raise RuntimeError
+        # Per __init__(), there aren't any others.
+
+
+class ChannelState(namedtuple('ChannelState', 'pending closed')):
+
+    def __new__(cls, pending=0, *, closed=False):
+        self = super().__new__(cls, pending, closed)
+        return self
+
+    def incr(self):
+        return type(self)(self.pending + 1, closed=self.closed)
+
+    def decr(self):
+        return type(self)(self.pending - 1, closed=self.closed)
+
+    def close(self, *, force=True):
+        if self.closed:
+            if not force or self.pending == 0:
+                return self
+        return type(self)(0 if force else self.pending, closed=True)
+
+
+def run_action(cid, action, end, state, *, hideclosed=True):
+    if state.closed:
+        if action == 'use' and end == 'recv' and state.pending:
+            expectfail = False
+        else:
+            expectfail = True
+    else:
+        expectfail = False
+
+    try:
+        result = _run_action(cid, action, end, state)
+    except interpreters.ChannelClosedError:
+        if not hideclosed and not expectfail:
+            raise
+        result = state.close()
+    else:
+        if expectfail:
+            raise ...  # XXX
+    return result
+
+
+def _run_action(cid, action, end, state):
+    if action == 'use':
+        if end == 'send':
+            interpreters.channel_send(cid, b'spam')
+            return state.incr()
+        elif end == 'recv':
+            if not state.pending:
+                try:
+                    interpreters.channel_recv(cid)
+                except interpreters.ChannelEmptyError:
+                    return state
+                else:
+                    raise Exception('expected ChannelEmptyError')
+            else:
+                interpreters.channel_recv(cid)
+                return state.decr()
+        else:
+            raise ValueError(end)
+    elif action == 'close':
+        if end == 'boyh':
+            interpreters.channel_close(cid)
+        else:
+            interpreters.channel_close(cid)
+            #interpreters.channel_close(cid, end)
+        return state.close()
+    elif action == 'force-close':
+        if end == 'both':
+            interpreters.channel_close(cid, force=True)
+        else:
+            interpreters.channel_close(cid, end, force=True)
+        return state.close(force=True)
+    else:
+        raise ValueError(action)
+
+
+def clean_up_interpreters():
+    for id in interpreters.list_all():
+        if id == 0:  # main
+            continue
+        try:
+            interpreters.destroy(id)
+        except RuntimeError:
+            pass  # already destroyed
+
+
+def clean_up_channels():
+    for cid in interpreters.channel_list_all():
+        try:
+            interpreters.channel_destroy(cid)
+        except interpreters.ChannelNotFoundError:
+            pass  # already destroyed
+
+
 class TestBase(unittest.TestCase):
 
     def tearDown(self):
-        for id in interpreters.list_all():
-            if id == 0:  # main
-                continue
-            try:
-                interpreters.destroy(id)
-            except RuntimeError:
-                pass  # already destroyed
-
-        for cid in interpreters.channel_list_all():
-            try:
-                interpreters.channel_destroy(cid)
-            except interpreters.ChannelNotFoundError:
-                pass  # already destroyed
+        clean_up_interpreters()
+        clean_up_channels()
 
 
 ##################################
@@ -1273,6 +1493,111 @@ class ChannelReleaseTests(TestBase):
             interpreters.channel_recv(cid)
 
 
+class ChannelCloseFixture(namedtuple('ChannelCloseFixture',
+                                     'end interp other extra creator')):
+
+    def __new__(cls, end, interp, other, extra, creator):
+        assert end in ('send', 'recv')
+        interp = Interpreter.from_raw(interp)
+        other = Interpreter.from_raw(other)
+        extra = Interpreter.from_raw(extra)
+        if not creator:
+            creator = 'same'
+        self = super().__new__(cls, end, interp, other, extra, creator)
+        self._state = ChannelState()
+        self._prepped = set()
+        self._interps = {
+            interp.name: interp,
+            other.name: other,
+            extra.name: extra,
+            }
+        return self
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def cid(self):
+        try:
+            return self._cid
+        except AttributeError:
+            creator = self._get_interpreter(self.creator)
+            self._cid = self._new_channel(creator)
+            return self._cid
+
+    def get_interpreter(self, interp):
+        interp = self._get_interpreter(interp)
+        self._prep_interpreter(interp)
+        return interp
+
+    def expect_closed_error(self, end=None):
+        if end is None:
+            end = self.end
+        if end == 'recv' and self.state.closed == 'send':
+            return False
+        return bool(self.state.closed)
+
+    def prep_interpreter(self, interp):
+        self._prep_interpreter(interp)
+
+    def record_action(self, action, result):
+        self._state = result
+
+    def clean_up(self):
+        clean_up_interpreters()
+        clean_up_channels()
+
+    # internal methods
+
+    def _new_channel(self, creator):
+        if creator.name == 'main':
+            return interpreters.channel_create()
+        else:
+            ch = interpreters.channel_create()
+            run_interp(creator.id, f"""
+                import _xxsubinterpreters
+                cid = _xxsubinterpreters.channel_create()
+                # We purposefully send back an int to avoid tying the
+                # channel to the other interpreter.
+                _xxsubinterpreters.channel_send({ch}, int(cid))
+                del _xxsubinterpreters
+                """)
+            self._cid = interpreters.channel_recv(ch)
+        return self._cid
+
+    def _get_interpreter(self, interp):
+        if interp in ('same', 'interp'):
+            return self.interp
+        elif interp == 'other':
+            return self.other
+        elif interp == 'extra':
+            return self.extra
+        else:
+            name = interp
+            try:
+                interp = self._interps[name]
+            except KeyError:
+                interp = self._interps[name] = Interpreter(name)
+            return interp
+
+    def _prep_interpreter(self, interp):
+        if interp.id in self._prepped:
+            return
+        self._prepped.add(interp.id)
+        if interp.name == 'main':
+            return
+        run_interp(interp.id, f"""
+            import _xxsubinterpreters as interpreters
+            import test.test__xxsubinterpreters as helpers
+            ChannelState = helpers.ChannelState
+            try:
+                cid
+            except NameError:
+                cid = interpreters._channel_id({self.cid})
+            """)
+
+
 class ChannelCloseTests(TestBase):
 
     """
@@ -1287,6 +1612,8 @@ class ChannelCloseTests(TestBase):
     - creator (interp) / other
     - associated interpreter not running
     - associated interpreter destroyed
+
+    - close after unbound
     """
 
     """
@@ -1312,6 +1639,240 @@ class ChannelCloseTests(TestBase):
     close after:      None,send,recv,send/recv in None,same,other(incl. interp2),same+other(incl. interp2),all
     check closed:     send/recv for same/other(incl. interp2)
     """
+
+    def iter_action_sets(self):
+        # - used / not used  (associated / not associated)
+        # - empty / emptied / never emptied / partly emptied
+        # - closed / not closed
+        # - released / not released
+
+        yield []
+        yield [
+            ChannelAction('use', 'recv', 'same'),
+            ]
+        yield [
+            ChannelAction('use', 'send', 'same'),
+            ]
+        yield [
+            ChannelAction('use', 'recv', 'same'),
+            ChannelAction('use', 'send', 'same'),
+            ]
+
+#        interp: None, end, opposite, both
+#        other: None, end, opposite, both
+#
+#        ends = ['recv', 'send']
+#        for interpreters in powerset(interpreters):
+#
+#            actions = []
+#            for interp in interpreters:
+#                actions.append(
+#                    ChannelAction('use', end, interp))
+#            yield actions
+#
+#
+#        if other is None:
+#            for interp_ends in powerset(ends):
+#                actions = []
+#                for end_ in interp_ends:
+#                    action = ChannelAction('use', end_, 'same')
+#                    actions.append(action)
+#
+#                yield actions
+#
+#        interpreters = ['same']
+#        if other is not None:
+#            interpreters.append('other')
+#        interpreter_sets = powerset(interpreters)
+#
+#        for interpreters in powerset(interpreters):
+#            for other_ends in powerset(ends if other else []):
+#                for interp_ends in powerset(ends):
+#                    actions = []
+#                    for interp_ in interpreters:
+#                        if interp_
+#
+#
+#        for interp_ends in end_sets:
+#            actions = []
+#            for end_ in interp_ends:
+#                action = ChannelAction('use', end_, 'same')
+#                actions.append(action)
+#            if other is None:
+#                yield actions
+#
+#        for interp_ends in end_sets:
+#
+#            for other_ends in end_sets:
+#
+#        for interp_ in ('same', 'other'):
+#            if interp_ == 'other' and other is None:
+#                continue
+#            for end_ in ('same', 'opposite'):
+#                yield ChannelAction(action, end_, interp_)
+#
+#        ChannelAction('close', end, interp)
+#
+#        # use
+#        # pre-close
+#        ...
+#        return ()  # XXX
+#
+#    def _iter_use_action_sets(self, interp):
+#        for ends in powerset(['recv', 'send']):
+#            actions = []
+#            for end in ends:
+#                actions.append(
+#                    ChannelAction('use', end, interp))
+#            yield actions
+#
+#    def _iter_close_actions(self, interpreters):
+#        for end in ['recv', 'send']:
+#            for op in ['close', 'force-close']:
+#                for interp in interpreters:
+#                    yield ChannelAction(op, end, interp)
+#        yield None
+
+    def run_actions(self, fix, actions):
+        for action in actions:
+            self.run_action(fix, action)
+
+    def run_action(self, fix, action, *, hideclosed=True):
+        end = action.resolve_end(fix.end)
+        interp = action.resolve_interp(fix.interp, fix.other)
+        fix.prep_interpreter(interp)
+        if interp.name == 'main':
+            result = run_action(
+                fix.cid,
+                action.action,
+                end,
+                fix.state,
+                hideclosed=hideclosed,
+                )
+            fix.record_action(action, result)
+        else:
+            _cid = interpreters.channel_create()
+            run_interp(interp.id, f"""
+                result = helpers.run_action(
+                    {fix.cid},
+                    {repr(action.action)},
+                    {repr(end)},
+                    {repr(fix.state)},
+                    hideclosed={hideclosed},
+                    )
+                interpreters.channel_send({_cid}, result.pending.to_bytes(1, 'little'))
+                interpreters.channel_send({_cid}, b'X' if result.closed else b'')
+                """)
+            result = ChannelState(
+                pending=int.from_bytes(interpreters.channel_recv(_cid), 'little'),
+                closed=bool(interpreters.channel_recv(_cid)),
+                )
+            fix.record_action(action, result)
+
+    def iter_fixtures(self):
+        # XXX threads?
+        interpreters = [
+            ('main', 'interp', 'extra'),
+            ('interp', 'main', 'extra'),
+            ('interp1', 'interp2', 'extra'),
+            ('interp1', 'interp2', 'main'),
+        ]
+        for interp, other, extra in interpreters:
+            for creator in ('same', 'other', 'creator'):
+                for end in ('send', 'recv'):
+                    yield ChannelCloseFixture(end, interp, other, extra, creator)
+
+    def _close(self, fix, *, force):
+        op = 'force-close' if force else 'close'
+        close = ChannelAction(op, fix.end, 'same')
+        if not fix.expect_closed_error():
+            self.run_action(fix, close, hideclosed=False)
+        else:
+            with self.assertRaises(interpreters.ChannelClosedError):
+                self.run_action(fix, close, hideclosed=False)
+
+    def _assert_closed_in_interp(self, fix, interp=None):
+        if interp is None or interp.name == 'main':
+            with self.assertRaises(interpreters.ChannelClosedError):
+                interpreters.channel_recv(fix.cid)
+            with self.assertRaises(interpreters.ChannelClosedError):
+                interpreters.channel_send(fix.cid, b'spam')
+            with self.assertRaises(interpreters.ChannelClosedError):
+                interpreters.channel_close(fix.cid)
+            with self.assertRaises(interpreters.ChannelClosedError):
+                interpreters.channel_close(fix.cid, force=True)
+        else:
+            run_interp(interp.id, f"""
+                with helpers.expect_channel_closed():
+                    interpreters.channel_recv(cid)
+                """)
+            run_interp(interp.id, f"""
+                with helpers.expect_channel_closed():
+                    interpreters.channel_send(cid, b'spam')
+                """)
+            run_interp(interp.id, f"""
+                with helpers.expect_channel_closed():
+                    interpreters.channel_close(cid)
+                """)
+            run_interp(interp.id, f"""
+                with helpers.expect_channel_closed():
+                    interpreters.channel_close(cid, force=True)
+                """)
+
+    def _assert_closed(self, fix):
+        self.assertTrue(fix.state.closed)
+
+        for _ in range(fix.state.pending):
+            interpreters.channel_recv(fix.cid)
+        self._assert_closed_in_interp(fix)
+
+        for interp in ('same', 'other'):
+            interp = fix.get_interpreter(interp)
+            if interp.name == 'main':
+                continue
+            self._assert_closed_in_interp(fix, interp)
+
+        interp = fix.get_interpreter('fresh')
+        self._assert_closed_in_interp(fix, interp)
+
+    def test_exhaustive(self):
+        verbose = False
+        actions = [
+            ChannelAction('use', 'same', 'same'),
+            ]
+        i = 0
+        for actions in self.iter_action_sets():
+            print()
+            for fix in self.iter_fixtures():
+                i += 1
+                if verbose:
+                    print(i, fix)
+                else:
+                    if (i - 1) % 6 == 0:
+                        print(' ', end='')
+                    print('.', end=''); sys.stdout.flush()
+                with self.subTest('{} {}'.format(i, fix)):
+                    fix.prep_interpreter(fix.interp)
+                    self.run_actions(fix, actions)
+
+                    self._close(fix, force=False)
+
+                    self._assert_closed(fix)
+                # XXX Things slow down if we have too many interpreters.
+                fix.clean_up()
+        print()
+
+#    def test_exhaustive_force(self):
+#        actions = []
+#        for fix in self.iter_fixtures():
+#            with self.subTest(fix):
+#                self.run_actions(fix, actions)
+#
+#                self._close(fix, force=True)
+#
+#                self._assert_closed(fix)
+
+    # focused tests
 
     def test_single_user(self):
         cid = interpreters.channel_create()
