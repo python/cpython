@@ -739,7 +739,8 @@ module_getattro(PyModuleObject *m, PyObject *name)
             if (initializing > 0) {
                 PyErr_Format(PyExc_AttributeError,
                              "partially initialized "
-                             "module '%U' has no attribute '%U'",
+                             "module '%U' has no attribute '%U' "
+                             "(most likely due to a circular import)",
                              mod_name, name);
             }
             else {
