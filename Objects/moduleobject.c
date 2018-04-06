@@ -718,8 +718,36 @@ module_getattro(PyModuleObject *m, PyObject *name)
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
-            PyErr_Format(PyExc_AttributeError,
-                        "module '%U' has no attribute '%U'", mod_name, name);
+            _Py_IDENTIFIER(__spec__);
+            _Py_IDENTIFIER(_initializing);
+            PyObject *value = NULL;
+            PyObject *spec;
+            int initializing = 0;
+            Py_INCREF(mod_name);
+            spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
+            if (spec != NULL && spec != Py_None) {
+                value = _PyObject_GetAttrId(spec, &PyId__initializing);
+            }
+            if (value == NULL)
+                PyErr_Clear();
+            else {
+                initializing = PyObject_IsTrue(value);
+                Py_DECREF(value);
+                if (initializing < 0)
+                    PyErr_Clear();
+            }
+            if (initializing > 0) {
+                PyErr_Format(PyExc_AttributeError,
+                             "partially initialized "
+                             "module '%U' has no attribute '%U'",
+                             mod_name, name);
+            }
+            else {
+                PyErr_Format(PyExc_AttributeError,
+                             "module '%U' has no attribute '%U'",
+                             mod_name, name);
+            }
+            Py_DECREF(mod_name);
             return NULL;
         }
     }
