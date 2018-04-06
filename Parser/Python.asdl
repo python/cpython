@@ -15,11 +15,11 @@ module Python
 
     stmt = FunctionDef(identifier name, arguments args,
                        stmt* body, expr* decorator_list,
-                       int? decorated_lineno, expr? returns,
+                       int? def_lineno, expr? returns,
                        string? docstring)
           | AsyncFunctionDef(identifier name, arguments args,
                              stmt* body, expr* decorator_list,
-                             int? decorated_lineno, expr? returns,
+                             int? def_lineno, expr? returns,
                              string? docstring)
 
           | ClassDef(identifier name,
@@ -27,7 +27,7 @@ module Python
              keyword* keywords,
              stmt* body,
              expr* decorator_list,
-             int? decorated_lineno,
+             int? class_lineno,
              string? docstring)
           | Return(expr? value)
 
