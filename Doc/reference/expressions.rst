@@ -1339,7 +1339,7 @@ built-in types.
   are not equal to themselves (``x == x`` is false), or any other number.
   Additionally, all ordered comparison of any number to a not-a-number value
   will return ``False``.  For example, both ``3 < float('NaN')`` and
-  ``float('NaN') < 3`` will return ``False``. This is compliant with IEE 754.
+  ``float('NaN') < 3`` will return ``False``.  This is compliant with IEEE 754.
 
 * Binary sequences (instances of :class:`bytes` or :class:`bytearray`) can be
   compared within and across their types.  They compare lexicographically using
