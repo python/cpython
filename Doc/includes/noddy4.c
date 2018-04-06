@@ -144,7 +144,7 @@ static PyGetSetDef Noddy_getsetters[] = {
 };
 
 static PyObject *
-Noddy_name(NoddyObject *self)
+Noddy_name(NoddyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyUnicode_FromFormat("%S %S", self->first, self->last);
 }
@@ -158,7 +158,7 @@ static PyMethodDef Noddy_methods[] = {
 
 static PyTypeObject NoddyType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "noddy.Noddy",
+    .tp_name = "noddy4.Noddy",
     .tp_doc = "Noddy objects",
     .tp_basicsize = sizeof(NoddyObject),
     .tp_itemsize = 0,

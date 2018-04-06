@@ -74,7 +74,7 @@ static PyMemberDef Noddy_members[] = {
 };
 
 static PyObject *
-Noddy_name(NoddyObject *self)
+Noddy_name(NoddyObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->first == NULL) {
         PyErr_SetString(PyExc_AttributeError, "first");
@@ -96,7 +96,7 @@ static PyMethodDef Noddy_methods[] = {
 
 static PyTypeObject NoddyType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "noddy.Noddy",
+    .tp_name = "noddy2.Noddy",
     .tp_doc = "Noddy objects",
     .tp_basicsize = sizeof(NoddyObject),
     .tp_itemsize = 0,

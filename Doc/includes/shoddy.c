@@ -48,7 +48,7 @@ static PyModuleDef shoddymodule = {
 PyMODINIT_FUNC
 PyInit_shoddy(void)
 {
-    PyObject* m;
+    PyObject *m;
     ShoddyType.tp_base = &PyList_Type;
     if (PyType_Ready(&ShoddyType) < 0)
         return NULL;

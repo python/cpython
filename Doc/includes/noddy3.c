@@ -79,6 +79,7 @@ Noddy_getfirst(NoddyObject *self, void *closure)
 static int
 Noddy_setfirst(NoddyObject *self, PyObject *value, void *closure)
 {
+    PyObject *tmp;
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete the first attribute");
         return -1;
@@ -88,9 +89,10 @@ Noddy_setfirst(NoddyObject *self, PyObject *value, void *closure)
                         "The first attribute value must be a string");
         return -1;
     }
+    tmp = self->first;
     Py_INCREF(value);
-    Py_CLEAR(self->first);
     self->first = value;
+    Py_DECREF(tmp);
     return 0;
 }
 
@@ -104,6 +106,7 @@ Noddy_getlast(NoddyObject *self, void *closure)
 static int
 Noddy_setlast(NoddyObject *self, PyObject *value, void *closure)
 {
+    PyObject *tmp;
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete the last attribute");
         return -1;
@@ -113,9 +116,10 @@ Noddy_setlast(NoddyObject *self, PyObject *value, void *closure)
                         "The last attribute value must be a string");
         return -1;
     }
+    tmp = self->last;
     Py_INCREF(value);
-    Py_CLEAR(self->last);
     self->last = value;
+    Py_DECREF(tmp);
     return 0;
 }
 
@@ -128,7 +132,7 @@ static PyGetSetDef Noddy_getsetters[] = {
 };
 
 static PyObject *
-Noddy_name(NoddyObject *self)
+Noddy_name(NoddyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyUnicode_FromFormat("%S %S", self->first, self->last);
 }
@@ -142,7 +146,7 @@ static PyMethodDef Noddy_methods[] = {
 
 static PyTypeObject NoddyType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "noddy.Noddy",
+    .tp_name = "noddy3.Noddy",
     .tp_doc = "Noddy objects",
     .tp_basicsize = sizeof(NoddyObject),
     .tp_itemsize = 0,

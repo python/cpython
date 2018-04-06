@@ -28,7 +28,7 @@ type. ::
 
    const char *tp_name; /* For printing */
 
-The name of the type - as mentioned in the previous chapter, this will appear in
+The name of the type -- as mentioned in the previous chapter, this will appear in
 various places, almost entirely for diagnostic purposes. Try to choose something
 that will be helpful in such a situation! ::
 
@@ -44,7 +44,7 @@ comes in.  This will be dealt with later. ::
 Here you can put a string (or its address) that you want returned when the
 Python script references ``obj.__doc__`` to retrieve the doc string.
 
-Now we come to the basic type methods---the ones most extension types will
+Now we come to the basic type methods -- the ones most extension types will
 implement.
 
 
@@ -568,14 +568,14 @@ with the required field::
    typedef struct {
        PyObject_HEAD
        PyObject *weakreflist;  /* List of weak references */
-   } NoddyObject;
+   } TrivialObject;
 
 And the corresponding member in the statically-declared type object::
 
-   static PyTypeObject NoddyType = {
+   static PyTypeObject TrivialType = {
        PyVarObject_HEAD_INIT(NULL, 0)
        /* ... other members omitted for brevity ... */
-       .tp_weaklistoffset = offsetof(NoddyObject, weakreflist),
+       .tp_weaklistoffset = offsetof(TrivialObject, weakreflist),
    };
 
 The only further addition is that ``tp_dealloc`` needs to clear any weak
@@ -583,10 +583,12 @@ references (by calling :c:func:`PyObject_ClearWeakRefs`) if the field is
 non-*NULL*::
 
    static void
-   Noddy_dealloc(NoddyObject *self)
+   Trivial_dealloc(TrivialObject *self)
    {
+       /* Clear weakrefs first before calling any destructors */
        if (self->weakreflist != NULL)
            PyObject_ClearWeakRefs((PyObject *) self);
+       /* ... remainder of destruction code omitted for brevity ... */
        Py_TYPE(self)->tp_free((PyObject *) self);
    }
 
@@ -608,3 +610,10 @@ its use might be something like the following::
        PyErr_SetString(PyExc_TypeError, "arg #1 not a mything");
        return NULL;
    }
+
+.. seealso::
+   Download CPython source releases.
+      https://www.python.org/downloads/source/
+
+   The CPython project on GitHub, where the CPython source code is developed.
+      https://github.com/python/cpython
