@@ -4,11 +4,6 @@ Parens and Ticks Closing Extension
 When you hit left paren or tick,
 automatically creates the closing paren or tick.
 
-Author: Charles M. Wohlganger
-        charles.wohlganger@gmail.com
-
-Last Updated: 13-Aug-2017 by Charles Wohlganger
-
 Add to the end of config-extensions.def :
 
     [ParenClose]
