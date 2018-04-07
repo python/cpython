@@ -122,13 +122,17 @@ class CookieTests(unittest.TestCase):
             'Set-Cookie: Customer="WILE_E_COYOTE"; HttpOnly; Secure')
 
     def test_samesite_attrs(self):
-        samesite_values = ("Strict", "Lax")
+        samesite_values = ['Strict', 'Lax']
         for val in samesite_values:
             with self.subTest(val=val):
                 C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
                 C['Customer']['samesite'] = val
                 self.assertEqual(C.output(),
-                'Set-Cookie: Customer="WILE_E_COYOTE"; SameSite=%s' % val)
+                    'Set-Cookie: Customer="WILE_E_COYOTE"; SameSite=%s' % val)
+
+                C = cookies.SimpleCookie()
+                C.load('Customer="WILL_E_COYOTE"; SameSite=%s' % val)
+                self.assertEqual(C['Customer']['samesite'], val)
 
     def test_secure_httponly_false_if_not_present(self):
         C = cookies.SimpleCookie()
