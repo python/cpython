@@ -2545,7 +2545,7 @@ channel_close(PyObject *self, PyObject *args, PyObject *kwds)
     int recv = 0;
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$ppp:channel_release", kwlist,
+                                     "O|$ppp:channel_close", kwlist,
                                      &id, &send, &recv, &force)) {
         return NULL;
     }
