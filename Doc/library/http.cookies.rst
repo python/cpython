@@ -159,7 +159,7 @@ Morsel Objects
       :attr:`~Morsel.coded_value` are read-only.  Use :meth:`~Morsel.set` for
       setting them.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       Added support for :attr:`samesite` attribute.
 
 
