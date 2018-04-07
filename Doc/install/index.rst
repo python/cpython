@@ -724,7 +724,9 @@ A slightly less convenient way is to edit the :file:`site.py` file in Python's
 standard library, and modify ``sys.path``.  :file:`site.py` is automatically
 imported when the Python interpreter is executed, unless the :option:`-S` switch
 is supplied to suppress this behaviour.  So you could simply edit
-:file:`site.py` and add two lines to it::
+:file:`site.py` and add two lines to it:
+
+.. code-block:: python
 
    import sys
    sys.path.append('/www/python/')
@@ -845,7 +847,9 @@ plus a ``global`` section for global options that affect every command.  Each
 section consists of one option per line, specified as ``option=value``.
 
 For example, the following is a complete config file that just forces all
-commands to run quietly by default::
+commands to run quietly by default:
+
+.. code-block:: ini
 
    [global]
    verbose=0
@@ -859,7 +863,9 @@ distribution.
 
 You could override the default "build base" directory and make the
 :command:`build\*` commands always forcibly rebuild all files with the
-following::
+following:
+
+.. code-block:: ini
 
    [build]
    build-base=blib
