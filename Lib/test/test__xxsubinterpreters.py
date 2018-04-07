@@ -255,17 +255,18 @@ def _run_action(cid, action, end, state):
         else:
             raise ValueError(end)
     elif action == 'close':
-        if end == 'boyh':
-            interpreters.channel_close(cid)
-        else:
-            interpreters.channel_close(cid)
-            #interpreters.channel_close(cid, end)
+        kwargs = {}
+        if end in ('recv', 'send'):
+            kwargs[end] = True
+        interpreters.channel_close(cid, **kwargs)
         return state.close()
     elif action == 'force-close':
-        if end == 'both':
-            interpreters.channel_close(cid, force=True)
-        else:
-            interpreters.channel_close(cid, end, force=True)
+        kwargs = {
+            'force': True,
+            }
+        if end in ('recv', 'send'):
+            kwargs[end] = True
+        interpreters.channel_close(cid, **kwargs)
         return state.close(force=True)
     else:
         raise ValueError(action)
