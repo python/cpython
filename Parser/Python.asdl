@@ -15,20 +15,20 @@ module Python
 
     stmt = FunctionDef(identifier name, arguments args,
                        stmt* body, expr* decorator_list,
-                       int? def_lineno, expr? returns,
-                       string? docstring)
+                       expr? returns, string? docstring,
+                       int? def_lineno)
           | AsyncFunctionDef(identifier name, arguments args,
                              stmt* body, expr* decorator_list,
-                             int? def_lineno, expr? returns,
-                             string? docstring)
+                             expr? returns, string? docstring,
+                             int? def_lineno)
 
           | ClassDef(identifier name,
              expr* bases,
              keyword* keywords,
              stmt* body,
              expr* decorator_list,
-             int? class_lineno,
-             string? docstring)
+             string? docstring,
+             int? class_lineno)
           | Return(expr? value)
 
           | Delete(expr* targets)

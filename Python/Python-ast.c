@@ -39,16 +39,16 @@ static PyTypeObject *FunctionDef_type;
 _Py_IDENTIFIER(name);
 _Py_IDENTIFIER(args);
 _Py_IDENTIFIER(decorator_list);
-_Py_IDENTIFIER(def_lineno);
 _Py_IDENTIFIER(returns);
+_Py_IDENTIFIER(def_lineno);
 static char *FunctionDef_fields[]={
     "name",
     "args",
     "body",
     "decorator_list",
-    "def_lineno",
     "returns",
     "docstring",
+    "def_lineno",
 };
 static PyTypeObject *AsyncFunctionDef_type;
 static char *AsyncFunctionDef_fields[]={
@@ -56,9 +56,9 @@ static char *AsyncFunctionDef_fields[]={
     "args",
     "body",
     "decorator_list",
-    "def_lineno",
     "returns",
     "docstring",
+    "def_lineno",
 };
 static PyTypeObject *ClassDef_type;
 _Py_IDENTIFIER(bases);
@@ -70,8 +70,8 @@ static char *ClassDef_fields[]={
     "keywords",
     "body",
     "decorator_list",
-    "class_lineno",
     "docstring",
+    "class_lineno",
 };
 static PyTypeObject *Return_type;
 _Py_IDENTIFIER(value);
@@ -1252,7 +1252,7 @@ Suite(asdl_seq * body, PyArena *arena)
 
 stmt_ty
 FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
-            decorator_list, int def_lineno, expr_ty returns, string docstring,
+            decorator_list, expr_ty returns, string docstring, int def_lineno,
             int lineno, int col_offset, PyArena *arena)
 {
     stmt_ty p;
@@ -1274,9 +1274,9 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
     p->v.FunctionDef.args = args;
     p->v.FunctionDef.body = body;
     p->v.FunctionDef.decorator_list = decorator_list;
-    p->v.FunctionDef.def_lineno = def_lineno;
     p->v.FunctionDef.returns = returns;
     p->v.FunctionDef.docstring = docstring;
+    p->v.FunctionDef.def_lineno = def_lineno;
     p->lineno = lineno;
     p->col_offset = col_offset;
     return p;
@@ -1284,8 +1284,8 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
 
 stmt_ty
 AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq
-                 * decorator_list, int def_lineno, expr_ty returns, string
-                 docstring, int lineno, int col_offset, PyArena *arena)
+                 * decorator_list, expr_ty returns, string docstring, int
+                 def_lineno, int lineno, int col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!name) {
@@ -1306,9 +1306,9 @@ AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq
     p->v.AsyncFunctionDef.args = args;
     p->v.AsyncFunctionDef.body = body;
     p->v.AsyncFunctionDef.decorator_list = decorator_list;
-    p->v.AsyncFunctionDef.def_lineno = def_lineno;
     p->v.AsyncFunctionDef.returns = returns;
     p->v.AsyncFunctionDef.docstring = docstring;
+    p->v.AsyncFunctionDef.def_lineno = def_lineno;
     p->lineno = lineno;
     p->col_offset = col_offset;
     return p;
@@ -1316,7 +1316,7 @@ AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq
 
 stmt_ty
 ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, asdl_seq *
-         body, asdl_seq * decorator_list, int class_lineno, string docstring,
+         body, asdl_seq * decorator_list, string docstring, int class_lineno,
          int lineno, int col_offset, PyArena *arena)
 {
     stmt_ty p;
@@ -1334,8 +1334,8 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, asdl_seq *
     p->v.ClassDef.keywords = keywords;
     p->v.ClassDef.body = body;
     p->v.ClassDef.decorator_list = decorator_list;
-    p->v.ClassDef.class_lineno = class_lineno;
     p->v.ClassDef.docstring = docstring;
+    p->v.ClassDef.class_lineno = class_lineno;
     p->lineno = lineno;
     p->col_offset = col_offset;
     return p;
@@ -2673,11 +2673,6 @@ ast2obj_stmt(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_decorator_list, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_int(o->v.FunctionDef.def_lineno);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_def_lineno, value) == -1)
-            goto failed;
-        Py_DECREF(value);
         value = ast2obj_expr(o->v.FunctionDef.returns);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_returns, value) == -1)
@@ -2686,6 +2681,11 @@ ast2obj_stmt(void* _o)
         value = ast2obj_string(o->v.FunctionDef.docstring);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_docstring, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_int(o->v.FunctionDef.def_lineno);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_def_lineno, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -2713,11 +2713,6 @@ ast2obj_stmt(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_decorator_list, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_int(o->v.AsyncFunctionDef.def_lineno);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_def_lineno, value) == -1)
-            goto failed;
-        Py_DECREF(value);
         value = ast2obj_expr(o->v.AsyncFunctionDef.returns);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_returns, value) == -1)
@@ -2726,6 +2721,11 @@ ast2obj_stmt(void* _o)
         value = ast2obj_string(o->v.AsyncFunctionDef.docstring);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_docstring, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_int(o->v.AsyncFunctionDef.def_lineno);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_def_lineno, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -2757,14 +2757,14 @@ ast2obj_stmt(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_decorator_list, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_int(o->v.ClassDef.class_lineno);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_class_lineno, value) == -1)
-            goto failed;
-        Py_DECREF(value);
         value = ast2obj_string(o->v.ClassDef.docstring);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_docstring, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_int(o->v.ClassDef.class_lineno);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_class_lineno, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -4217,9 +4217,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         arguments_ty args;
         asdl_seq* body;
         asdl_seq* decorator_list;
-        int def_lineno;
         expr_ty returns;
         string docstring;
+        int def_lineno;
 
         if (_PyObject_LookupAttrId(obj, &PyId_name, &tmp) < 0) {
             return 1;
@@ -4307,19 +4307,6 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttrId(obj, &PyId_def_lineno, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            def_lineno = 0;
-        }
-        else {
-            int res;
-            res = obj2ast_int(tmp, &def_lineno, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
         if (_PyObject_LookupAttrId(obj, &PyId_returns, &tmp) < 0) {
             return 1;
         }
@@ -4346,8 +4333,21 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = FunctionDef(name, args, body, decorator_list, def_lineno,
-                           returns, docstring, lineno, col_offset, arena);
+        if (_PyObject_LookupAttrId(obj, &PyId_def_lineno, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            def_lineno = 0;
+        }
+        else {
+            int res;
+            res = obj2ast_int(tmp, &def_lineno, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = FunctionDef(name, args, body, decorator_list, returns,
+                           docstring, def_lineno, lineno, col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -4360,9 +4360,9 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         arguments_ty args;
         asdl_seq* body;
         asdl_seq* decorator_list;
-        int def_lineno;
         expr_ty returns;
         string docstring;
+        int def_lineno;
 
         if (_PyObject_LookupAttrId(obj, &PyId_name, &tmp) < 0) {
             return 1;
@@ -4450,19 +4450,6 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttrId(obj, &PyId_def_lineno, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            def_lineno = 0;
-        }
-        else {
-            int res;
-            res = obj2ast_int(tmp, &def_lineno, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
         if (_PyObject_LookupAttrId(obj, &PyId_returns, &tmp) < 0) {
             return 1;
         }
@@ -4489,8 +4476,22 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = AsyncFunctionDef(name, args, body, decorator_list, def_lineno,
-                                returns, docstring, lineno, col_offset, arena);
+        if (_PyObject_LookupAttrId(obj, &PyId_def_lineno, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            def_lineno = 0;
+        }
+        else {
+            int res;
+            res = obj2ast_int(tmp, &def_lineno, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = AsyncFunctionDef(name, args, body, decorator_list, returns,
+                                docstring, def_lineno, lineno, col_offset,
+                                arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -4504,8 +4505,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* keywords;
         asdl_seq* body;
         asdl_seq* decorator_list;
-        int class_lineno;
         string docstring;
+        int class_lineno;
 
         if (_PyObject_LookupAttrId(obj, &PyId_name, &tmp) < 0) {
             return 1;
@@ -4640,19 +4641,6 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttrId(obj, &PyId_class_lineno, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            class_lineno = 0;
-        }
-        else {
-            int res;
-            res = obj2ast_int(tmp, &class_lineno, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
         if (_PyObject_LookupAttrId(obj, &PyId_docstring, &tmp) < 0) {
             return 1;
         }
@@ -4666,8 +4654,21 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = ClassDef(name, bases, keywords, body, decorator_list,
-                        class_lineno, docstring, lineno, col_offset, arena);
+        if (_PyObject_LookupAttrId(obj, &PyId_class_lineno, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            class_lineno = 0;
+        }
+        else {
+            int res;
+            res = obj2ast_int(tmp, &class_lineno, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = ClassDef(name, bases, keywords, body, decorator_list, docstring,
+                        class_lineno, lineno, col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }

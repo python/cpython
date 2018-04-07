@@ -1609,12 +1609,12 @@ ast_for_funcdef_impl(struct compiling *c, const node *n,
         return NULL;
 
     if (is_async)
-        return AsyncFunctionDef(name, args, body, decorator_seq, LINENO(n),
-								returns, docstring, LINENO(n),
-                                n->n_col_offset, c->c_arena);
+        return AsyncFunctionDef(name, args, body, decorator_seq,
+                                                                returns, docstring, LINENO(n),
+                                LINENO(n), n->n_col_offset, c->c_arena);
     else
-        return FunctionDef(name, args, body, decorator_seq, LINENO(n), returns,
-                           docstring, LINENO(n),
+        return FunctionDef(name, args, body, decorator_seq, returns,
+                           docstring, LINENO(n), LINENO(n),
                            n->n_col_offset, c->c_arena);
 }
 
@@ -3952,8 +3952,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
             return NULL;
         if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
-        return ClassDef(classname, NULL, NULL, s, decorator_seq, LINENO(n),
-						docstring, LINENO(n), n->n_col_offset, c->c_arena);
+        return ClassDef(classname, NULL, NULL, s, decorator_seq, docstring,
+                        LINENO(n), n->n_col_offset, LINENO(n), c->c_arena);
     }
 
     if (TYPE(CHILD(n, 3)) == RPAR) { /* class NAME '(' ')' ':' suite */
@@ -3965,8 +3965,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
             return NULL;
         if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
-        return ClassDef(classname, NULL, NULL, s, decorator_seq, LINENO(n),
-						docstring, LINENO(n), n->n_col_offset, c->c_arena);
+        return ClassDef(classname, NULL, NULL, s, decorator_seq, docstring,
+                        LINENO(n), n->n_col_offset, LINENO(n), c->c_arena);
     }
 
     /* class NAME '(' arglist ')' ':' suite */
@@ -3992,8 +3992,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         return NULL;
 
     return ClassDef(classname, call->v.Call.args, call->v.Call.keywords, s,
-                    decorator_seq, LINENO(n), docstring, LINENO(n), n->n_col_offset,
-                    c->c_arena);
+                    decorator_seq, docstring, LINENO(n), n->n_col_offset,
+                    LINENO(n), c->c_arena);
 }
 
 static stmt_ty

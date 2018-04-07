@@ -1,0 +1,2 @@
+Add the ``def_lineno`` and ``class_lineno`` to expose the real line numbers
+of each statement.
