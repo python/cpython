@@ -281,6 +281,7 @@ class Morsel(dict):
         "secure"   : "Secure",
         "httponly" : "HttpOnly",
         "version"  : "Version",
+        "samesite" : "SameSite",
     }
 
     _flags = {'secure', 'httponly'}
