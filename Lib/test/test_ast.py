@@ -60,7 +60,7 @@ exec_tests = [
     "class C: 'docstring for class C'",
     # ClassDef, new style class
     "class C(object): pass",
-    # ClassDef which is decorated, test class_linenno
+    # ClassDef which is decorated, test class_lineno
     textwrap.dedent("""
     @deco
     class C:pass
@@ -215,13 +215,10 @@ eval_tests = [
 class AST_Tests(unittest.TestCase):
 
     def _assertTrueorder(self, ast_node, parent_pos):
-        import sys
         if not isinstance(ast_node, ast.AST) or ast_node._fields is None:
             return
         if isinstance(ast_node, (ast.expr, ast.stmt, ast.excepthandler)):
             node_pos = (ast_node.lineno, ast_node.col_offset)
-            if not node_pos >= parent_pos:
-                print(node_pos, parent_pos, file=sys.stderr)
             self.assertTrue(node_pos >= parent_pos)
             parent_pos = (ast_node.lineno, ast_node.col_offset)
         for name in ast_node._fields:
