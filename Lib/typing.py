@@ -95,6 +95,7 @@ __all__ = [
     'NewType',
     'no_type_check',
     'no_type_check_decorator',
+    'NoReturn',
     'overload',
     'Text',
     'TYPE_CHECKING',
@@ -284,8 +285,17 @@ class _Final:
         if '_root' not in kwds:
             raise TypeError("Cannot subclass special typing classes")
 
+class _Immutable:
+    """Mixin to indicate that object should not be copied."""
 
-class _SpecialForm(_Final, _root=True):
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
+
+
+class _SpecialForm(_Final, _Immutable, _root=True):
     """Internal indicator of special typing constructs.
     See _doc instance attribute for specific docs.
     """
@@ -327,8 +337,8 @@ class _SpecialForm(_Final, _root=True):
     def __repr__(self):
         return 'typing.' + self._name
 
-    def __copy__(self):
-        return self  # Special forms are immutable.
+    def __reduce__(self):
+        return self._name
 
     def __call__(self, *args, **kwds):
         raise TypeError(f"Cannot instantiate {self!r}")
@@ -495,7 +505,11 @@ class ForwardRef(_Final, _root=True):
         return f'ForwardRef({self.__forward_arg__!r})'
 
 
-class TypeVar(_Final, _root=True):
+def _find_name(mod, name):
+    return getattr(sys.modules[mod], name)
+
+
+class TypeVar(_Final, _Immutable, _root=True):
     """Type variable.
 
     Usage::
@@ -535,10 +549,12 @@ class TypeVar(_Final, _root=True):
       T.__covariant__ == False
       T.__contravariant__ = False
       A.__constraints__ == (str, bytes)
+
+    Note that only type variables defined in global scope can be pickled.
     """
 
     __slots__ = ('__name__', '__bound__', '__constraints__',
-                 '__covariant__', '__contravariant__')
+                 '__covariant__', '__contravariant__', '_def_mod')
 
     def __init__(self, name, *constraints, bound=None,
                  covariant=False, contravariant=False):
@@ -557,6 +573,7 @@ class TypeVar(_Final, _root=True):
             self.__bound__ = _type_check(bound, "Bound must be a type.")
         else:
             self.__bound__ = None
+        self._def_mod = sys._getframe(1).f_globals['__name__']  # for pickling
 
     def __getstate__(self):
         return {'name': self.__name__,
@@ -581,6 +598,9 @@ class TypeVar(_Final, _root=True):
             prefix = '~'
         return prefix + self.__name__
 
+    def __reduce__(self):
+        return (_find_name, (self._def_mod, self.__name__))
+
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
 # use three special attributes for internal bookkeeping of generic types:
@@ -590,6 +610,19 @@ class TypeVar(_Final, _root=True):
 #   e.g., Union[T, int].__origin__ == Union;
 # * __args__ is a tuple of all arguments used in subscripting,
 #   e.g., Dict[T, int].__args__ == (T, int).
+
+
+# Mapping from non-generic type names that have a generic alias in typing
+# but with a different name.
+_normalize_alias = {'list': 'List',
+                    'tuple': 'Tuple',
+                    'dict': 'Dict',
+                    'set': 'Set',
+                    'frozenset': 'FrozenSet',
+                    'deque': 'Deque',
+                    'defaultdict': 'DefaultDict',
+                    'type': 'Type',
+                    'Set': 'AbstractSet'}
 
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
@@ -609,7 +642,7 @@ class _GenericAlias(_Final, _root=True):
         self._special = special
         if special and name is None:
             orig_name = origin.__name__
-            name = orig_name[0].title() + orig_name[1:]
+            name = _normalize_alias.get(orig_name, orig_name)
         self._name = name
         if not isinstance(params, tuple):
             params = (params,)
@@ -723,6 +756,11 @@ class _GenericAlias(_Final, _root=True):
         raise TypeError("Subscripted generics cannot be used with"
                         " class and instance checks")
 
+    def __reduce__(self):
+        if self._special:
+            return self._name
+        return super().__reduce__()
+
 
 class _VariadicGenericAlias(_GenericAlias, _root=True):
     """Same as _GenericAlias above but for variadic aliases. Currently,
@@ -825,6 +863,7 @@ class Generic:
         return _GenericAlias(cls, params)
 
     def __init_subclass__(cls, *args, **kwargs):
+        super().__init_subclass__(*args, **kwargs)
         tvars = []
         if '__orig_bases__' in cls.__dict__:
             error = Generic in cls.__orig_bases__

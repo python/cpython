@@ -9,7 +9,7 @@ import types
 import unittest
 import importlib.util
 import importlib
-
+from test.support.script_helper import assert_python_failure
 
 class LoaderTests(abc.LoaderTests):
 
@@ -266,6 +266,20 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                 module = self.load_module_by_name(name)
                 self.assertEqual(module.__name__, name)
                 self.assertEqual(module.__doc__, "Module named in %s" % lang)
+
+    @unittest.skipIf(not hasattr(sys, 'gettotalrefcount'),
+            '--with-pydebug has to be enabled for this test')
+    def test_bad_traverse(self):
+        ''' Issue #32374: Test that traverse fails when accessing per-module
+            state before Py_mod_exec was executed.
+            (Multiphase initialization modules only)
+        '''
+        script = """if True:
+                import importlib.util as util
+                spec = util.find_spec('_testmultiphase')
+                spec.name = '_testmultiphase_with_bad_traverse'
+                m = spec.loader.create_module(spec)"""
+        assert_python_failure("-c", script)
 
 
 (Frozen_MultiPhaseExtensionModuleTests,

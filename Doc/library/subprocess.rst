@@ -339,12 +339,12 @@ functions.
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
-   *args* should be a sequence of program arguments or else a single string or
-   :term:`path-like object`. By default, the program to execute is the first
-   item in *args* if *args* is a sequence. If *args* is a string, the
-   interpretation is platform-dependent and described below.  See the *shell*
-   and *executable* arguments for additional differences from the default
-   behavior.  Unless otherwise stated, it is recommended to pass *args* as a sequence.
+   *args* should be a sequence of program arguments or else a single string.
+   By default, the program to execute is the first item in *args* if *args* is
+   a sequence.  If *args* is a string, the interpretation is
+   platform-dependent and described below.  See the *shell* and *executable*
+   arguments for additional differences from the default behavior.  Unless
+   otherwise stated, it is recommended to pass *args* as a sequence.
 
    On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
@@ -459,7 +459,10 @@ functions.
       common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed.
+   :const:`2` will be closed before the child process is executed.  Otherwise
+   when *close_fds* is false, file descriptors obey their inheritable flag
+   as described in :ref:`fd_inheritance`.
+
    On Windows, if *close_fds* is true then no handles will be inherited by the
    child process unless explicitly passed in the ``handle_list`` element of
    :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.
@@ -557,10 +560,6 @@ functions.
    .. versionchanged:: 3.6
       Popen destructor now emits a :exc:`ResourceWarning` warning if the child
       process is still running.
-
-   .. versionchanged:: 3.7
-      *args*, or the first element of *args* if *args* is a sequence, can now
-      be a :term:`path-like object`.
 
 
 Exceptions

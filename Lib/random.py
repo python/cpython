@@ -242,6 +242,8 @@ class Random(_random.Random):
                 "enough bits to choose from a population range this large.\n"
                 "To remove the range limitation, add a getrandbits() method.")
             return int(random() * n)
+        if n == 0:
+            raise ValueError("Boundary cannot be zero")
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
         r = random()
