@@ -317,7 +317,7 @@ class ExecutorShutdownTest:
             from concurrent.futures import {executor_type}
             if __name__ == "__main__":
                 context = '{context}'
-                if context == "":
+                if not context:
                     t = {executor_type}(5)
                 else:
                     from multiprocessing import get_context
