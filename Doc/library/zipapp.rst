@@ -27,7 +27,7 @@ can be used to create an executable archive from a directory containing
 Python code.  When run, the archive will execute the ``main`` function from
 the module ``myapp`` in the archive.
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m zipapp myapp -m "myapp:main"
    $ python myapp.pyz
@@ -41,7 +41,7 @@ Command-Line Interface
 
 When called as a program from the command line, the following form is used:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m zipapp source [options]
 
@@ -189,7 +189,7 @@ Examples
 
 Pack up a directory into an archive, and run it.
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m zipapp myapp
    $ python myapp.pyz
@@ -203,7 +203,7 @@ The same can be done using the :func:`create_archive` functon::
 To make the application directly executable on POSIX, specify an interpreter
 to use.
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m zipapp myapp -p "/usr/bin/env python"
    $ ./myapp.pyz
@@ -273,7 +273,7 @@ The steps to create a standalone archive are as follows:
 2. Install all of your application's dependencies into the ``myapp`` directory,
    using pip:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       $ python -m pip install -r requirements.txt --target myapp
 
@@ -288,7 +288,7 @@ The steps to create a standalone archive are as follows:
 
 4. Package the application using:
 
-   .. code-block:: sh
+   .. code-block:: shell-session
 
       $ python -m zipapp -p "interpreter" myapp
 
