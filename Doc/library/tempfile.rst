@@ -31,7 +31,7 @@ is recommended to use keyword arguments for clarity.
 
 The module defines the following user-callable items:
 
-.. function:: TemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None)
+.. function:: TemporaryFile(mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None)
 
    Return a :term:`file-like object` that can be used as a temporary storage area.
    The file is created securely, using the same rules as :func:`mkstemp`. It will be destroyed as soon
@@ -67,7 +67,7 @@ The module defines the following user-callable items:
       The :py:data:`os.O_TMPFILE` flag is now used if available.
 
 
-.. function:: NamedTemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True)
+.. function:: NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    the file is guaranteed to have a visible name in the file system (on
@@ -83,7 +83,7 @@ The module defines the following user-callable items:
    be used in a :keyword:`with` statement, just like a normal file.
 
 
-.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None)
+.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
