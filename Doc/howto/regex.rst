@@ -786,7 +786,9 @@ Frequently you need to obtain more information than just whether the RE matched
 or not.  Regular expressions are often used to dissect strings by writing a RE
 divided into several subgroups which match different components of interest.
 For example, an RFC-822 header line is divided into a header name and a value,
-separated by a ``':'``, like this::
+separated by a ``':'``, like this:
+
+.. code-block:: none
 
    From: author@example.com
    User-Agent: Thunderbird 1.5.0.9 (X11/20061227)

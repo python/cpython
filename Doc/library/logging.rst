@@ -179,7 +179,9 @@ is the module's name in the Python package namespace.
 
       You can specify *stack_info* independently of *exc_info*, e.g. to just show
       how you got to a certain point in your code, even when no exceptions were
-      raised. The stack frames are printed following a header line which says::
+      raised. The stack frames are printed following a header line which says:
+
+      .. code-block:: none
 
           Stack (most recent call last):
 
@@ -198,7 +200,9 @@ is the module's name in the Python package namespace.
          logger = logging.getLogger('tcpserver')
          logger.warning('Protocol problem: %s', 'connection reset', extra=d)
 
-      would print something like  ::
+      would print something like
+
+      .. code-block:: none
 
          2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
 
@@ -939,7 +943,9 @@ functions.
 
    You can specify *stack_info* independently of *exc_info*, e.g. to just show
    how you got to a certain point in your code, even when no exceptions were
-   raised. The stack frames are printed following a header line which says::
+   raised. The stack frames are printed following a header line which says:
+
+   .. code-block:: none
 
        Stack (most recent call last):
 
@@ -957,7 +963,9 @@ functions.
       d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
       logging.warning('Protocol problem: %s', 'connection reset', extra=d)
 
-   would print something like::
+   would print something like:
+
+   .. code-block:: none
 
       2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
 

@@ -178,11 +178,15 @@ Generic options
 .. cmdoption:: -V
                --version
 
-   Print the Python version number and exit.  Example output could be::
+   Print the Python version number and exit.  Example output could be:
+
+   .. code-block:: none
 
        Python 3.6.0b2+
 
-   When given twice, print more information about the build, like::
+   When given twice, print more information about the build, like:
+
+   .. code-block:: none
 
        Python 3.6.0b2+ (3.6:84a3c5003510+, Oct 26 2016, 02:33:55)
        [GCC 6.2.0 20161005]
@@ -355,7 +359,9 @@ Miscellaneous options
 
    Warning control.  Python's warning machinery by default prints warning
    messages to :data:`sys.stderr`.  A typical warning message has the following
-   form::
+   form:
+
+   .. code-block:: none
 
        file:line: category: message
 

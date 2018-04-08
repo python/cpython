@@ -222,7 +222,7 @@ Module contents
 The :mod:`site` module also provides a way to get the user directories from the
 command line:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 -m site --user-site
    /home/user/.local/lib/python3.3/site-packages

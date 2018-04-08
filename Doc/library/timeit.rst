@@ -25,7 +25,7 @@ Basic Examples
 The following example shows how the :ref:`timeit-command-line-interface`
 can be used to compare three different expressions:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 -m timeit '"-".join(str(n) for n in range(100))'
    10000 loops, best of 5: 30.2 usec per loop
@@ -264,7 +264,7 @@ Examples
 
 It is possible to provide a setup statement that is executed only once at the beginning:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m timeit -s 'text = "sample string"; char = "g"'  'char in text'
    5000000 loops, best of 5: 0.0877 usec per loop
@@ -293,7 +293,7 @@ The following examples show how to time expressions that contain multiple lines.
 Here we compare the cost of using :func:`hasattr` vs. :keyword:`try`/:keyword:`except`
 to test for missing and present object attributes:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m timeit 'try:' '  str.__bool__' 'except AttributeError:' '  pass'
    20000 loops, best of 5: 15.7 usec per loop
