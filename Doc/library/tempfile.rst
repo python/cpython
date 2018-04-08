@@ -52,6 +52,8 @@ The module defines the following user-callable items:
    stored.  *buffering*, *encoding* and *newline* are interpreted as for
    :func:`open`.
 
+   The default value of the *buffering* parameter is -1, which prevents buffering and is interpreted as for the :func: `open`.
+
    The *dir*, *prefix* and *suffix* parameters have the same meaning and
    defaults as with :func:`mkstemp`.
 
