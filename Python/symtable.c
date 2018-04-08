@@ -1460,6 +1460,10 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     case JoinedStr_kind:
         VISIT_SEQ(st, expr, e->v.JoinedStr.values);
         break;
+    case AssignExp_kind:
+        VISIT(st, expr, e->v.AssignExp.value);
+        VISIT(st, expr, e->v.AssignExp.target);
+        break;
     case Constant_kind:
     case Num_kind:
     case Str_kind:
