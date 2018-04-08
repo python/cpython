@@ -2196,7 +2196,9 @@ Changes in the Python API
   platform-specific selection is made.
   In environments where distributions are
   built on Windows and zip distributions are required, configure
-  the project with a ``setup.cfg`` file containing the following::
+  the project with a ``setup.cfg`` file containing the following:
+
+  .. code-block:: ini
 
     [sdist]
     formats=zip

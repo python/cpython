@@ -117,7 +117,7 @@ field mentioned above. ::
 The name of our type.  This will appear in the default textual representation of
 our objects and in some error messages, for example:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> "" + custom.Custom()
    Traceback (most recent call last):
@@ -183,7 +183,7 @@ set to *NULL*. ::
 This adds the type to the module dictionary.  This allows us to create
 :class:`Custom` instances by calling the :class:`Custom` class:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> import custom
    >>> mycustom = custom.Custom()
@@ -655,7 +655,7 @@ Python has a :term:`cyclic garbage collector (GC) <garbage collection>` that
 can identify unneeded objects even when their reference counts are not zero.
 This can happen when objects are involved in cycles.  For example, consider:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> l = []
    >>> l.append(l)
@@ -672,7 +672,7 @@ Besides, in the second and third versions, we allowed subclassing
 :class:`Custom`, and subclasses may add arbitrary attributes.  For any of
 those two reasons, :class:`Custom` objects can participate in cycles:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> import custom3
    >>> class Derived(custom3.Custom): pass
@@ -796,7 +796,7 @@ built-in :class:`list` type. The new type will be completely compatible with
 regular lists, but will have an additional :meth:`increment` method that
 increases an internal counter:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> import sublist
    >>> s = sublist.SubList(range(3))
