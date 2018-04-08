@@ -1,0 +1,1 @@
+PEP 473 Support: ``NameError`` has now an optional ``name`` attribue.
