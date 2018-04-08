@@ -1,0 +1,2 @@
+Changed Signature for Change Signature of TemporaryFile, NamedTemporaryFile,
+and SpooledTemporaryFile and add documentation.
