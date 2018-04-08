@@ -74,7 +74,9 @@ interpreter.
 
 Occasionally, a user's environment is so full that the :program:`/usr/bin/env`
 program fails; or there's no env program at all.  In that case, you can try the
-following hack (due to Alex Rezinsky)::
+following hack (due to Alex Rezinsky):
+
+.. code-block:: sh
 
    #! /bin/sh
    """:"

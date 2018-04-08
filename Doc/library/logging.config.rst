@@ -538,7 +538,9 @@ target handler, and the system will resolve to the handler from the
 id.  If, however, a user defines a ``my.package.MyHandler`` which has
 an ``alternate`` handler, the configuration system would not know that
 the ``alternate`` referred to a handler.  To cater for this, a generic
-resolution system allows the user to specify::
+resolution system allows the user to specify:
+
+.. code-block:: yaml
 
     handlers:
       file:
@@ -552,7 +554,9 @@ The literal string ``'cfg://handlers.file'`` will be resolved in an
 analogous way to strings with the ``ext://`` prefix, but looking
 in the configuration itself rather than the import namespace.  The
 mechanism allows access by dot or by index, in a similar way to
-that provided by ``str.format``.  Thus, given the following snippet::
+that provided by ``str.format``.  Thus, given the following snippet:
+
+.. code-block:: yaml
 
     handlers:
       email:
