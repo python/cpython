@@ -457,7 +457,9 @@ error code) requesting authentication.  This specifies the authentication scheme
 and a 'realm'. The header looks like: ``WWW-Authenticate: SCHEME
 realm="REALM"``.
 
-e.g. ::
+e.g.
+
+.. code-block:: none
 
     WWW-Authenticate: Basic realm="cPanel Users"
 
