@@ -261,7 +261,6 @@ class TestPOP3Class(TestCase):
         try:
             self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
         except:
-            traceback.print_exc()
             self.server.stop()
             self.server = None
             raise
@@ -416,7 +415,6 @@ class TestPOP3_SSLClass(TestPOP3Class):
         try:
             self.client = poplib.POP3_SSL(self.server.host, self.server.port)
         except:
-            traceback.print_exc()
             self.server.stop()
             self.server = None
             raise
@@ -466,7 +464,6 @@ class TestPOP3_TLSClass(TestPOP3Class):
             self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
             self.client.stls()
         except:
-            traceback.print_exc()
             self.server.stop()
             self.server = None
             raise
