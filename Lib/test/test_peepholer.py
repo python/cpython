@@ -335,6 +335,11 @@ class TestTranforms(BytecodeTestCase):
                 pass
         self.assertEqual(count_instr_recursively(forloop, 'BUILD_LIST'), 0)
 
+    def test_empty_set(self):
+        code = compile('{*()}', '<test>', 'eval')
+        self.assertNotInBytecode(code, 'BUILD_SET_UNPACK')
+        self.assertInBytecode(code, 'BUILD_SET', 0)
+
 
 class TestBuglets(unittest.TestCase):
 
