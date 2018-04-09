@@ -100,9 +100,9 @@ Extending :class:`JSONEncoder`::
     ['[2.0', ', 1.0', ']']
 
 
-.. highlight:: bash
+Using :mod:`json.tool` from the shell to validate and pretty-print:
 
-Using :mod:`json.tool` from the shell to validate and pretty-print::
+.. code-block:: shell-session
 
     $ echo '{"json":"obj"}' | python -m json.tool
     {
@@ -112,8 +112,6 @@ Using :mod:`json.tool` from the shell to validate and pretty-print::
     Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
 
 See :ref:`json-commandline` for detailed documentation.
-
-.. highlight:: python3
 
 .. note::
 
@@ -651,8 +649,6 @@ when serializing Python :class:`int` values of extremely large magnitude, or
 when serializing instances of "exotic" numerical types such as
 :class:`decimal.Decimal`.
 
-.. highlight:: bash
-
 .. _json-commandline:
 
 Command Line Interface
@@ -669,7 +665,9 @@ The :mod:`json.tool` module provides a simple command line interface to validate
 and pretty-print JSON objects.
 
 If the optional ``infile`` and ``outfile`` arguments are not
-specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively::
+specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively:
+
+.. code-block:: shell-session
 
     $ echo '{"json": "obj"}' | python -m json.tool
     {
@@ -688,7 +686,9 @@ Command line options
 
 .. cmdoption:: infile
 
-   The JSON file to be validated or pretty-printed::
+   The JSON file to be validated or pretty-printed:
+
+   .. code-block:: shell-session
 
       $ python -m json.tool mp_films.json
       [
