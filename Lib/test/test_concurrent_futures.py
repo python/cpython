@@ -328,7 +328,7 @@ class ExecutorShutdownTest:
                        context=getattr(self, "ctx", "")))
         # Errors in atexit hooks don't change the process exit code, check
         # stderr manually.
-        self.assertTrue(err)
+        self.assertIn("RuntimeError: cannot schedule new futures", err.decode())
         self.assertEqual(out.strip(), b"runtime-error")
 
     def test_hang_issue12364(self):
