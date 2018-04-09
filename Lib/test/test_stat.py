@@ -168,6 +168,7 @@ class TestFilemode:
             self.assertS_IS("LNK", st_mode)
 
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'os.mkfifo not available')
+    @unittest.skipIf('vxworks' in sys.platform, 'vxworks fifos have to be in /fifos and doesnt support permissions')
     def test_fifo(self):
         try:
             os.mkfifo(TESTFN, 0o700)

@@ -95,6 +95,7 @@ class TimeTestCase(unittest.TestCase):
             check_ns(time.clock_gettime(time.CLOCK_REALTIME),
                      time.clock_gettime_ns(time.CLOCK_REALTIME))
 
+    @unittest.skipIf('vxworks' in sys.platform, 'VxSim doesnt have processor time')
     def test_clock(self):
         with self.assertWarns(DeprecationWarning):
             time.clock()
@@ -487,6 +488,8 @@ class TimeTestCase(unittest.TestCase):
     def test_perf_counter(self):
         time.perf_counter()
 
+
+    @unittest.skipIf('vxworks' in sys.platform, 'VxSim doesnt support cpu time')
     def test_process_time(self):
         # process_time() should not include time spend during a sleep
         start = time.process_time()
@@ -583,6 +586,7 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.localtime, float("nan"))
         self.assertRaises(ValueError, time.ctime, float("nan"))
 
+    @unittest.skipIf('vxworks' in sys.platform, 'VxSim doesnt have processor time')
     def test_get_clock_info(self):
         clocks = ['clock', 'monotonic', 'perf_counter', 'process_time', 'time']
 
@@ -698,6 +702,7 @@ class _Test4dYear:
         self.assertEqual(self.yearstr(TIME_MAXYEAR), str(TIME_MAXYEAR))
         self.assertRaises(OverflowError, self.yearstr, TIME_MAXYEAR + 1)
 
+    @unittest.skipIf('vxworks' in sys.platform, 'VxWorks doesnt support negative year')
     def test_negative(self):
         self.assertEqual(self.yearstr(-1), self._format % -1)
         self.assertEqual(self.yearstr(-1234), '-1234')

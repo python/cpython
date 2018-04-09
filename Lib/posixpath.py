@@ -71,7 +71,9 @@ def isabs(s):
     sep = _get_sep(s)
     if _vxworks: #VxWorks paths dont always start with / and there is no good
                  # way to find if a path is absolute. V7COR-3074, F7233
-        return bool(_vxwapi.isAbs(s));
+        if not isinstance(s, str):
+            s = s.decode(sys.getdefaultencoding())
+        return bool(_vxwapi.isAbs(s))
     return s.startswith(sep)
 
 
