@@ -221,12 +221,15 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
         self.__flag.wait()
 
     def run(self):
-        self.active = True
-        self.__flag.set()
-        while self.active and asyncore.socket_map:
-            self.active_lock.acquire()
-            asyncore.loop(timeout=0.1, count=1)
-            self.active_lock.release()
+        try:
+            self.active = True
+            self.__flag.set()
+            while self.active and asyncore.socket_map:
+                self.active_lock.acquire()
+                asyncore.loop(timeout=0.1, count=1)
+                self.active_lock.release()
+        finally:
+            self.close()
 
     def stop(self):
         assert self.active
