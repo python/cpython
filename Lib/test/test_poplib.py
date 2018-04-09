@@ -10,6 +10,7 @@ import socket
 import os
 import errno
 import threading
+import traceback
 
 from unittest import TestCase, skipUnless
 from test import support as test_support
@@ -226,12 +227,12 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
             self.active_lock.acquire()
             asyncore.loop(timeout=0.1, count=1)
             self.active_lock.release()
-        asyncore.close_all(ignore_all=True)
 
     def stop(self):
         assert self.active
         self.active = False
         self.join()
+        asyncore.close_all(ignore_all=True)
 
     def handle_accepted(self, conn, addr):
         self.handler_instance = self.handler(conn)
@@ -254,7 +255,13 @@ class TestPOP3Class(TestCase):
     def setUp(self):
         self.server = DummyPOP3Server((HOST, PORT))
         self.server.start()
-        self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
+        try:
+            self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
+        except:
+            traceback.print_exc()
+            self.server.stop()
+            self.server = None
+            raise
 
     def tearDown(self):
         self.client.close()
@@ -403,7 +410,13 @@ class TestPOP3_SSLClass(TestPOP3Class):
         self.server = DummyPOP3Server((HOST, PORT))
         self.server.handler = DummyPOP3_SSLHandler
         self.server.start()
-        self.client = poplib.POP3_SSL(self.server.host, self.server.port)
+        try:
+            self.client = poplib.POP3_SSL(self.server.host, self.server.port)
+        except:
+            traceback.print_exc()
+            self.server.stop()
+            self.server = None
+            raise
 
     def test__all__(self):
         self.assertIn('POP3_SSL', poplib.__all__)
@@ -446,8 +459,14 @@ class TestPOP3_TLSClass(TestPOP3Class):
     def setUp(self):
         self.server = DummyPOP3Server((HOST, PORT))
         self.server.start()
-        self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
-        self.client.stls()
+        try:
+            self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
+            self.client.stls()
+        except:
+            traceback.print_exc()
+            self.server.stop()
+            self.server = None
+            raise
 
     def tearDown(self):
         if self.client.file is not None and self.client.sock is not None:

@@ -1,0 +1,2 @@
+Fix test_poplib hangs when an error occured in ``setUp()`` method or
+``DummyPOP3Server.run()``.
