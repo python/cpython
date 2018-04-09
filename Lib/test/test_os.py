@@ -2586,13 +2586,15 @@ class SendfileTestServer(asyncore.dispatcher, threading.Thread):
     # --- internals
 
     def run(self):
-        self._active = True
-        self.__flag.set()
-        while self._active and asyncore.socket_map:
-            self._active_lock.acquire()
-            asyncore.loop(timeout=0.001, count=1)
-            self._active_lock.release()
-        asyncore.close_all()
+        try:
+            self._active = True
+            self.__flag.set()
+            while self._active and asyncore.socket_map:
+                self._active_lock.acquire()
+                asyncore.loop(timeout=0.001, count=1)
+                self._active_lock.release()
+        finally:
+            self.close()
 
     def handle_accept(self):
         conn, addr = self.accept()
@@ -2629,9 +2631,20 @@ class TestSendfile(unittest.TestCase):
         support.threading_cleanup(*cls.key)
         support.unlink(support.TESTFN)
 
-    def setUp(self):
-        self.server = SendfileTestServer((support.HOST, 0))
+    def setup_server(self, server):
+        self.server = server
         self.server.start()
+
+        @self.addCleanup
+        def close_server():
+            if self.server.running:
+                self.server.stop()
+            # Explicitly clear the attribute to prevent dangling thread
+            self.server = None
+            asyncore.close_all(ignore_all=True)
+
+    def setUp(self):
+        self.setup_server(SendfileTestServer((support.HOST, 0)))
         self.client = socket.socket()
         self.client.connect((self.server.host, self.server.port))
         self.client.settimeout(1)
@@ -2644,9 +2657,6 @@ class TestSendfile(unittest.TestCase):
     def tearDown(self):
         self.file.close()
         self.client.close()
-        if self.server.running:
-            self.server.stop()
-        self.server = None
 
     def sendfile_wrapper(self, sock, file, offset, nbytes, headers=[], trailers=[]):
         """A higher level wrapper representing how an application is

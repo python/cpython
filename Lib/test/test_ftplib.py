@@ -272,13 +272,15 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
         self.__flag.wait()
 
     def run(self):
-        self.active = True
-        self.__flag.set()
-        while self.active and asyncore.socket_map:
-            self.active_lock.acquire()
-            asyncore.loop(timeout=0.1, count=1)
-            self.active_lock.release()
-        asyncore.close_all(ignore_all=True)
+        try:
+            self.active = True
+            self.__flag.set()
+            while self.active and asyncore.socket_map:
+                self.active_lock.acquire()
+                asyncore.loop(timeout=0.1, count=1)
+                self.active_lock.release()
+        finally:
+            self.close()
 
     def stop(self):
         assert self.active
@@ -464,20 +466,27 @@ if ssl is not None:
         handler = DummyTLS_FTPHandler
 
 
+def setup_server(self, server):
+    self.server = server
+    self.server.start()
+
+    @self.addCleanup
+    def close_server():
+        self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
+        asyncore.close_all(ignore_all=True)
+
+
 class TestFTPClass(TestCase):
 
     def setUp(self):
-        self.server = DummyFTPServer((HOST, 0))
-        self.server.start()
+        setup_server(self, DummyFTPServer((HOST, 0)))
         self.client = ftplib.FTP(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
 
     def tearDown(self):
         self.client.close()
-        self.server.stop()
-        # Explicitly clear the attribute to prevent dangling thread
-        self.server = None
-        asyncore.close_all(ignore_all=True)
 
     def check_data(self, received, expected):
         self.assertEqual(len(received), len(expected))
@@ -799,17 +808,12 @@ class TestFTPClass(TestCase):
 class TestIPv6Environment(TestCase):
 
     def setUp(self):
-        self.server = DummyFTPServer((HOSTv6, 0), af=socket.AF_INET6)
-        self.server.start()
+        setup_server(self, DummyFTPServer((HOSTv6, 0), af=socket.AF_INET6))
         self.client = ftplib.FTP(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
 
     def tearDown(self):
         self.client.close()
-        self.server.stop()
-        # Explicitly clear the attribute to prevent dangling thread
-        self.server = None
-        asyncore.close_all(ignore_all=True)
 
     def test_af(self):
         self.assertEqual(self.client.af, socket.AF_INET6)
@@ -846,8 +850,7 @@ class TestTLS_FTPClassMixin(TestFTPClass):
     """
 
     def setUp(self):
-        self.server = DummyTLS_FTPServer((HOST, 0))
-        self.server.start()
+        setup_server(self, DummyTLS_FTPServer((HOST, 0)))
         self.client = ftplib.FTP_TLS(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
         # enable TLS
@@ -860,17 +863,12 @@ class TestTLS_FTPClass(TestCase):
     """Specific TLS_FTP class tests."""
 
     def setUp(self):
-        self.server = DummyTLS_FTPServer((HOST, 0))
-        self.server.start()
+        setup_server(self, DummyTLS_FTPServer((HOST, 0)))
         self.client = ftplib.FTP_TLS(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
 
     def tearDown(self):
         self.client.close()
-        self.server.stop()
-        # Explicitly clear the attribute to prevent dangling thread
-        self.server = None
-        asyncore.close_all(ignore_all=True)
 
     def test_control_connection(self):
         self.assertNotIsInstance(self.client.sock, ssl.SSLSocket)
