@@ -7,7 +7,7 @@ import textwrap
 
 from test.support.script_helper import assert_python_ok
 from test.test_tools import skip_if_missing, toolsdir
-from test.support import temp_cwd
+from test.support import temp_cwd, temp_dir
 
 
 skip_if_missing()
@@ -160,3 +160,27 @@ class Test_pygettext(unittest.TestCase):
             """doc"""
         '''))
         self.assertIn('doc', msgids)
+
+    def test_files_list(self):
+        """Make sure the directories are inspected for source files
+           bpo-31920
+        """
+        text1 = 'Text to translate1'
+        text2 = 'Text to translate2'
+        text3 = 'Text to ignore'
+        with temp_cwd(None), temp_dir(None) as sdir:
+            os.mkdir(os.path.join(sdir, 'pypkg'))
+            with open(os.path.join(sdir, 'pypkg', 'pymod.py'), 'w') as sfile:
+                sfile.write(f'_({text1!r})')
+            os.mkdir(os.path.join(sdir, 'pkg.py'))
+            with open(os.path.join(sdir, 'pkg.py', 'pymod2.py'), 'w') as sfile:
+                sfile.write(f'_({text2!r})')
+            os.mkdir(os.path.join(sdir, 'CVS'))
+            with open(os.path.join(sdir, 'CVS', 'pymod3.py'), 'w') as sfile:
+                sfile.write(f'_({text3!r})')
+            assert_python_ok(self.script, sdir)
+            with open('messages.pot') as fp:
+                data = fp.read()
+            self.assertIn(f'msgid "{text1}"', data)
+            self.assertIn(f'msgid "{text2}"', data)
+            self.assertNotIn(text3, data)
