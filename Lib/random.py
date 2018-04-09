@@ -249,9 +249,6 @@ class Random(_random.Random):
         The implementation does not use getrandbits, but only random.
         """
 
-        if n == 0:
-            raise ValueError("Upper boundary cannot be zero")
-
         random = self.random
         if n >= maxsize:
             _warn("Underlying random() generator does not supply \n"
