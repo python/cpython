@@ -1,6 +1,5 @@
 import sys
 from types import MappingProxyType, DynamicClassAttribute
-import warnings
 
 # try _collections first to reduce startup cost
 try:
@@ -311,9 +310,10 @@ class EnumMeta(type):
 
     def __contains__(cls, member):
         if not isinstance(member, Enum):
+            import warnings
             warnings.warn(
                     "using non-Enums in containment checks will raise "
-                    "TypeError in 3.8+",
+                    "TypeError in 3.8",
                     DeprecationWarning, 2)
         return isinstance(member, cls) and member._name_ in cls._member_map_
 
@@ -719,9 +719,10 @@ class Flag(Enum):
 
     def __contains__(self, other):
         if not isinstance(other, self.__class__):
+            import warnings
             warnings.warn(
                     "using non-Flags in containment checks will raise "
-                    "TypeError in 3.8+",
+                    "TypeError in 3.8",
                     DeprecationWarning, 2)
             return False
         return other._value_ & self._value_ == other._value_
