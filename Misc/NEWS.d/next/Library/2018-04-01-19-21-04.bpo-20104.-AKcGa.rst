@@ -1,1 +1,1 @@
-Fixed numerous issues with :func:`os.posix_spawn()`.
+Improved error handling and fixed a reference leak in :func:`os.posix_spawn()`.
