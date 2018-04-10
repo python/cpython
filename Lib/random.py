@@ -38,7 +38,6 @@ General notes on the underlying Mersenne Twister core generator:
 """
 
 from warnings import warn as _warn
-from types import FunctionType as _FunctionType
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from os import urandom as _urandom
@@ -95,16 +94,26 @@ class Random(_random.Random):
         self.gauss_next = None
 
     def __init_subclass__(cls, **kwargs):
-        # Only call self.getrandbits if the original random() builtin method
-        # has not been overridden or if a new getrandbits() was supplied.
-        if type(cls.__dict__.get('getrandbits')) is _FunctionType:
+        """Control how subclasses generate random integers.
+
+        The algorithm a subclass can use depends on the random() and/or
+        getrandbits() implementation available to it and determines
+        whether it can generate random integers from arbitrarily large
+        ranges.
+        """
+
+        if (cls.random is _random.Random.random) or (
+            cls.getrandbits is not _random.Random.getrandbits):
+            # The original random() builtin method has not been overridden
+            # or a new getrandbits() was supplied.
+            # The subclass can use the getrandbits-dependent implementation
+            # of _randbelow().
             cls._randbelow = cls._randbelow_with_getrandbits
-        elif 'random' in cls.__dict__:
-            # There's an overridden random() method but no new getrandbits() method,
-            # so we can only use random() from here.
-            cls._randbelow = cls._randbelow_without_getrandbits
         else:
-            cls._randbelow = getattr(cls, cls._randbelow.__name__)
+            # There's an overridden random() method but no new getrandbits(),
+            # so the subclass can only use the getrandbits-independent
+            # implementation of _randbelow().
+            cls._randbelow = cls._randbelow_without_getrandbits
 
     def seed(self, a=None, version=2):
         """Initialize internal state from hashable object.

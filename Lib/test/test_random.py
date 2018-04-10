@@ -5,6 +5,7 @@ import os
 import time
 import pickle
 import warnings
+import logging
 from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
@@ -619,6 +620,16 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertRaises(ValueError, self.gen.getrandbits, 0)
         self.assertRaises(ValueError, self.gen.getrandbits, -1)
 
+    def test_randrange_uses_getrandbits(self):
+        # Verify use of getrandbits by randrange
+        # Use same seed as in the cross-platform repeatability test
+        # in test_genrandbits above.
+        self.gen.seed(1234567)
+        # If randrange uses getrandbits, it should pick getrandbits(100)
+        # when called with a 100-bits stop argument.
+        self.assertEqual(self.gen.randrange(2**99),
+                         97904845777343510404718956115)
+
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1
         # show that: k = int(1.001 + _log(n, 2))
@@ -937,72 +948,40 @@ class TestRandomSubclassing(unittest.TestCase):
                 random.Random.__init__(self)
         Subclass(newarg=1)
 
-    def test_overriding_random(self):
-        # First, let's assert our base class gets the selection of its
-        # _randbelow implementation right.
-        self.assertIs(
-            random.Random._randbelow, random.Random._randbelow_with_getrandbits
-        )
+    def test_subclasses_overriding_methods(self):
+        # Subclasses with an overridden random, but only the original
+        # getrandbits method should not rely on getrandbits in for randrange,
+        # but should use a getrandbits-independent implementation instead.
 
-        # Subclasses with a random method that got more recently defined than
-        # their getrandbits method should not rely on getrandbits in
-        # _randbelow, but select the getrandbits-independent implementation
-        # of _randbelow instead.
-
-        # Subclass doesn't override any of the methods => keep using
-        # original getrandbits-dependent version of _randbelow
-        class SubClass1(random.Random):
-            pass
-        self.assertIs(
-            SubClass1._randbelow, random.Random._randbelow_with_getrandbits
-        )
         # subclass providing its own random **and** getrandbits methods
         # like random.SystemRandom does => keep relying on getrandbits for
-        # _randbelow
+        # randrange
+        class SubClass1(random.Random):
+            def random(self):
+                return super().random()
+
+            def getrandbits(self, n):
+                logging.getLogger('getrandbits').info('used getrandbits')
+                return super().getrandbits(n)
+        with self.assertLogs('getrandbits'):
+            SubClass1().randrange(42)
+
+        # subclass providing only random => can only use random for randrange
         class SubClass2(random.Random):
             def random(self):
-                pass
+                logging.getLogger('random').info('used random')
+                return super().random()
+        with self.assertLogs('random'):
+            SubClass2().randrange(42)
 
-            def getrandbits(self):
-                pass
-        self.assertIs(
-            SubClass2._randbelow, random.Random._randbelow_with_getrandbits
-        )
-        # subclass providing only random => switch to getrandbits-independent
-        # version of _randbelow
-        class SubClass3(random.Random):
-            def random(self):
-                pass
-        self.assertIs(
-            SubClass3._randbelow, random.Random._randbelow_without_getrandbits
-        )
         # subclass defining getrandbits to complement its inherited random
-        # => can now rely on getrandbits for _randbelow again
-        class SubClass4(SubClass3):
-            def getrandbits(self):
-                pass
-        self.assertIs(
-            SubClass4._randbelow, random.Random._randbelow_with_getrandbits
-        )
-        # subclass overriding the getrandbits-dependent implementation of
-        # _randbelow => make sure it is used
-        class SubClass5(SubClass4):
-            def _randbelow_with_getrandbits(self):
-                pass
-        self.assertIs(
-            SubClass5._randbelow, SubClass5._randbelow_with_getrandbits
-        )
-        self.assertIsNot(
-            SubClass5._randbelow, random.Random._randbelow_with_getrandbits
-        )
-        # subclass defining random making it more recent than its inherited
-        # getrandbits => switch back to getrandbits-independent implementaion
-        class SubClass6(SubClass5):
-            def random(self):
-                pass
-        self.assertIs(
-            SubClass6._randbelow, random.Random._randbelow_without_getrandbits
-        )
+        # => can now rely on getrandbits for randrange again
+        class SubClass3(SubClass2):
+            def getrandbits(self, n):
+                logging.getLogger('getrandbits').info('used getrandbits')
+                return super().getrandbits(n)
+        with self.assertLogs('getrandbits'):
+            SubClass3().randrange(42)
 
 class TestModule(unittest.TestCase):
     def testMagicConstants(self):
