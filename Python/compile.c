@@ -3886,10 +3886,12 @@ compiler_sync_comprehension_generator(struct compiler *c,
         return 0;
 
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
-
     if (gen_index == 0) {
         /* Receive outermost iter as an implicit argument */
         c->u->u_argcount = 1;
+        /* In some cases, receive additional arguments */
+        if (c->u->u_ste->ste_classsyms)
+            c->u->u_argcount = PyList_Size(c->u->u_ste->ste_varnames);
         ADDOP_I(c, LOAD_FAST, 0);
     }
     else {
@@ -4106,6 +4108,13 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     co = assemble(c, 1);
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);
+    Py_ssize_t args = 1;
+    PyObject *varnames = NULL, *symbols = NULL;
+    if (c->u->u_ste->ste_classsyms) {
+        args = c->u->u_argcount;
+        varnames = c->u->u_ste->ste_varnames; Py_INCREF(varnames);
+        symbols = c->u->u_ste->ste_symbols; Py_INCREF(symbols);
+    }
     compiler_exit_scope(c);
     if (co == NULL)
         goto error;
@@ -4123,7 +4132,24 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP(c, GET_ITER);
     }
 
-    ADDOP_I(c, CALL_FUNCTION, 1);
+    /* Load up the early-bound names */
+    if (varnames) {
+        Py_ssize_t sz = PyList_Size(varnames);
+        Py_ssize_t i;
+        for (i = 1; i < sz; ++i) {
+            PyObject *name = PyList_GetItem(varnames, i);
+            PyObject *v = PyDict_GetItem(symbols, name);
+            long flags = 0; if (v) flags = PyLong_AS_LONG(v);
+            if (flags & DEF_EARLYBIND)
+                compiler_nameop(c, name, Load);
+            else
+                ADDOP_O(c, LOAD_CONST, Py_None, consts);
+        }
+    }
+    else args = 1;
+    Py_XDECREF(varnames); Py_XDECREF(symbols);
+
+    ADDOP_I(c, CALL_FUNCTION, args);
 
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP(c, GET_AWAITABLE);

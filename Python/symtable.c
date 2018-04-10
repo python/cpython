@@ -59,6 +59,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
     ste->ste_children = NULL;
+    ste->ste_classsyms = NULL;
 
     ste->ste_directives = NULL;
 
@@ -1484,6 +1485,21 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.Starred.value);
         break;
     case Name_kind:
+        if (e->v.Name.ctx == Load && st->st_cur->ste_classsyms) {
+            long localflags = 0, classflags = 0;
+            PyObject *v = PyDict_GetItem(st->st_cur->ste_symbols, e->v.Name.id);
+            if (v) localflags = PyLong_AsLong(v);
+            v = PyDict_GetItem(st->st_cur->ste_classsyms, e->v.Name.id);
+            if (v) classflags = PyLong_AsLong(v);
+            /* If the name has not (yet) been assigned to in this scope, AND it
+            has been assigned to in the surrounding scope, flag it Early Bind. */
+            if (!(localflags & DEF_LOCAL) && (classflags & DEF_LOCAL)) {
+                PyObject *val = PyLong_FromLong(localflags | DEF_PARAM | DEF_EARLYBIND);
+                PyDict_SetItem(st->st_cur->ste_symbols, e->v.Name.id, val);
+                Py_DECREF(val);
+                PyList_Append(st->st_cur->ste_varnames, e->v.Name.id);
+            }
+        }
         if (!symtable_add_def(st, e->v.Name.id,
                               e->v.Name.ctx == Load ? USE : DEF_LOCAL))
             VISIT_QUIT(st, 0);
@@ -1710,6 +1726,11 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     int is_generator = (e->kind == GeneratorExp_kind);
     comprehension_ty outermost = ((comprehension_ty)
                                     asdl_seq_GET(generators, 0));
+    PyObject *classsyms = NULL;
+    if (st->st_cur->ste_type == ClassBlock) {
+        /* Flag this as a comprehension in a class, with potential for early binding */
+        classsyms = st->st_cur->ste_symbols;
+    }
     /* Outermost iterator is evaluated in current scope */
     VISIT(st, expr, outermost->iter);
     /* Create comprehension scope for the rest */
@@ -1718,6 +1739,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
                               e->lineno, e->col_offset)) {
         return 0;
     }
+    st->st_cur->ste_classsyms = classsyms;
     if (outermost->is_async) {
         st->st_cur->ste_coroutine = 1;
     }
