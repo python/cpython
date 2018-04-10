@@ -1058,14 +1058,15 @@ class GenericTests(BaseTestCase):
             self.assertEqual(x.bar, 'abc')
             self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
         samples = [Any, Union, Tuple, Callable, ClassVar,
-                   Union[int, str], ClassVar[List], Tuple[int, ...], Callable[[str], bytes]]
+                   Union[int, str], ClassVar[List], Tuple[int, ...], Callable[[str], bytes],
+                   typing.DefaultDict, typing.FrozenSet[int]]
         for s in samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 z = pickle.dumps(s, proto)
                 x = pickle.loads(z)
                 self.assertEqual(s, x)
         more_samples = [List, typing.Iterable, typing.Type, List[int],
-                        typing.Type[typing.Mapping]]
+                        typing.Type[typing.Mapping], typing.AbstractSet[Tuple[int, str]]]
         for s in more_samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 z = pickle.dumps(s, proto)
@@ -1231,6 +1232,25 @@ class GenericTests(BaseTestCase):
         class B(Generic[S]): ...
         class C(List[int], B): ...
         self.assertEqual(C.__mro__, (C, list, B, Generic, object))
+
+    def test_init_subclass_super_called(self):
+        class FinalException(Exception):
+            pass
+
+        class Final:
+            def __init_subclass__(cls, **kwargs) -> None:
+                for base in cls.__bases__:
+                    if base is not Final and issubclass(base, Final):
+                        raise FinalException(base)
+                super().__init_subclass__(**kwargs)
+        class Test(Generic[T], Final):
+            pass
+        with self.assertRaises(FinalException):
+            class Subclass(Test):
+                pass
+        with self.assertRaises(FinalException):
+            class Subclass(Test[int]):
+                pass
 
     def test_nested(self):
 
