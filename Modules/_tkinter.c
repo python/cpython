@@ -216,6 +216,9 @@ static PyThreadState *tcl_tstate = NULL;
 #define ENTER_OVERLAP \
     Py_END_ALLOW_THREADS
 
+#define LEAVE_OVERLAP \
+    Py_BEGIN_ALLOW_THREADS
+
 #define LEAVE_OVERLAP_TCL \
     tcl_tstate = NULL; if(tcl_lock)PyThread_release_lock(tcl_lock); }
 
@@ -239,6 +242,7 @@ static PyThreadState *tcl_tstate = NULL;
 #define ENTER_TCL
 #define LEAVE_TCL
 #define ENTER_OVERLAP
+#define LEAVE_OVERLAP
 #define LEAVE_OVERLAP_TCL
 #define ENTER_PYTHON
 #define LEAVE_PYTHON
@@ -1644,24 +1648,28 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
 #endif
     {
 
-        objv = Tkapp_CallArgs(args, objStore, &objc);
-        if (!objv)
-            return NULL;
-
         ENTER_TCL
-
-        i = Tcl_EvalObjv(self->interp, objc, objv, flags);
-
         ENTER_OVERLAP
 
-        if (i == TCL_ERROR)
-            Tkinter_Error(selfptr);
-        else
-            res = Tkapp_CallResult(self);
+        objv = Tkapp_CallArgs(args, objStore, &objc);
 
+        if (objv) {
+
+            LEAVE_OVERLAP
+
+            i = Tcl_EvalObjv(self->interp, objc, objv, flags);
+
+            ENTER_OVERLAP
+
+            if (i == TCL_ERROR)
+                Tkinter_Error(selfptr);
+            else
+                res = Tkapp_CallResult(self);
+
+            Tkapp_CallDeallocArgs(objv, objStore, objc);
+            
+        }
         LEAVE_OVERLAP_TCL
-
-        Tkapp_CallDeallocArgs(objv, objStore, objc);
     }
     return res;
 }
@@ -1952,19 +1960,20 @@ SetVar(PyObject *self, PyObject *args, int flags)
         if (!PyArg_ParseTuple(args, "O&O:setvar",
                               varname_converter, &name1, &newValue))
             return NULL;
-        /* XXX Acquire tcl lock??? */
-        newval = AsObj(newValue);
-        if (newval == NULL)
-            return NULL;
         ENTER_TCL
-        ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, NULL,
-                           newval, flags);
         ENTER_OVERLAP
-        if (!ok)
-            Tkinter_Error(self);
-        else {
-            res = Py_None;
-            Py_INCREF(res);
+        newval = AsObj(newValue);
+        if (newval) {
+            LEAVE_OVERLAP
+            ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, NULL,
+            newval, flags);
+            ENTER_OVERLAP
+            if (!ok)
+                Tkinter_Error(self);
+            else {
+                res = Py_None;
+                Py_INCREF(res);
+            }
         }
         LEAVE_OVERLAP_TCL
         break;
@@ -1974,16 +1983,20 @@ SetVar(PyObject *self, PyObject *args, int flags)
             return NULL;
         CHECK_STRING_LENGTH(name1);
         CHECK_STRING_LENGTH(name2);
-        /* XXX must hold tcl lock already??? */
-        newval = AsObj(newValue);
         ENTER_TCL
-        ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, name2, newval, flags);
         ENTER_OVERLAP
-        if (!ok)
-            Tkinter_Error(self);
-        else {
-            res = Py_None;
-            Py_INCREF(res);
+        newval = AsObj(newValue);
+        if (newval) {
+            LEAVE_OVERLAP
+            ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, name2,
+            newval, flags);
+            ENTER_OVERLAP
+            if (!ok)
+                Tkinter_Error(self);
+            else {
+                res = Py_None;
+                Py_INCREF(res);
+            }
         }
         LEAVE_OVERLAP_TCL
         break;
