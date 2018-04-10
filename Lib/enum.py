@@ -313,7 +313,7 @@ class EnumMeta(type):
             import warnings
             warnings.warn(
                     "using non-Enums in containment checks will raise "
-                    "TypeError in 3.8",
+                    "TypeError in Python 3.8",
                     DeprecationWarning, 2)
         return isinstance(member, cls) and member._name_ in cls._member_map_
 
@@ -722,7 +722,7 @@ class Flag(Enum):
             import warnings
             warnings.warn(
                     "using non-Flags in containment checks will raise "
-                    "TypeError in 3.8",
+                    "TypeError in Python 3.8",
                     DeprecationWarning, 2)
             return False
         return other._value_ & self._value_ == other._value_
