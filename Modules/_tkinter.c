@@ -151,23 +151,26 @@ Copyright (C) 1994 Steen Lumholt.
    interpreter lock was used for this.  However, this causes problems when
    other Python threads need to run while Tcl is blocked waiting for events.
 
-   To solve this problem, a separate lock for Tcl is introduced.  Holding it
-   is incompatible with holding Python's interpreter lock.  The following four
-   macros manipulate both locks together.
+
+   To solve this problem, a separate lock for Tcl is introduced.
+   We normally treat holding it as incompatible with holding Python's
+   interpreter lock. The following macros manipulate both locks together.
 
    ENTER_TCL and LEAVE_TCL are brackets, just like Py_BEGIN_ALLOW_THREADS and
    Py_END_ALLOW_THREADS.  They should be used whenever a call into Tcl is made
    that could call an event handler, or otherwise affect the state of a Tcl
    interpreter.  These assume that the surrounding code has the Python
-   interpreter lock; inside the brackets, the Python interpreter lock has been
-   released and the lock for Tcl has been acquired.
+   interpreter lock: ENTER_TCL releases the Python lock, then acquires the Tcl
+   lock, and LEAVE_TCL does the reverse.
 
    Sometimes, it is necessary to have both the Python lock and the Tcl lock.
-   (For example, when transferring data from the Tcl interpreter result to a
-   Python string object.)  This can be done by using different macros to close
-   the ENTER_TCL block: ENTER_OVERLAP reacquires the Python lock (and restores
-   the thread state) but doesn't release the Tcl lock; LEAVE_OVERLAP_TCL
-   releases the Tcl lock.
+   (For example, when transferring data between the Tcl interpreter and/or
+   objects and Python objects.) To avoid deadlocks, when acquiring, we always
+   acquire the Tcl lock first, then the Python lock. The additional macros for
+   finer lock control are: ENTER_OVERLAP acquires the Python lock (and restores
+   the thread state) when already holding the Tcl lock; LEAVE_OVERLAP releases
+   the Python lock and keeps the Tcl lock; and LEAVE_OVERLAP_TCL releases the
+   Tcl lock and keeps the Python lock.
 
    By contrast, ENTER_PYTHON and LEAVE_PYTHON are used in Tcl event
    handlers when the handler needs to use Python.  Such event handlers are
