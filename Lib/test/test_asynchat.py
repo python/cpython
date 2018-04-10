@@ -211,7 +211,7 @@ class TestAsynchat(unittest.TestCase):
 
         self.assertEqual(c.contents,
                          [b"hello world", b"", b"I'm not dead yet!"])
-
+    @unittest.skipIf("vxworks" in sys.platform, 'vxworks doesnt inform the server side when the client disconnects')
     def test_close_when_done(self):
         s, event = start_echo_server()
         s.start_resend_event = threading.Event()
