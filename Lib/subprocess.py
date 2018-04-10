@@ -1741,10 +1741,10 @@ class Popen(object):
                 while selector.get_map():
                     timeout = self._remaining_time(endtime)
                     if timeout is not None and timeout < 0:
-                            raise TimeoutExpired(self.args, orig_timeout)
+                        raise TimeoutExpired(self.args, orig_timeout)
                     ready = selector.select(timeout)
                     #TODO Also a temporary workaround for V7COR-5635
-                        self._check_timeout(endtime, orig_timeout)
+                    self._check_timeout(endtime, orig_timeout)
                     # XXX Rewrite these to use non-blocking I/O on the file
                     # objects; they are no longer using C stdio!
 
