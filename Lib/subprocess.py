@@ -914,8 +914,6 @@ class Popen(object):
         universal_newlines.
         """
 
-        if _vxworks:
-            timeout=5
 
         if self._communication_started and input:
             raise ValueError("Cannot send input after starting communication")
@@ -1743,16 +1741,10 @@ class Popen(object):
                 while selector.get_map():
                     timeout = self._remaining_time(endtime)
                     if timeout is not None and timeout < 0:
-                        if not _vxworks:
                             raise TimeoutExpired(self.args, orig_timeout)
-                        else:
-                            break;
                     ready = selector.select(timeout)
                     #TODO Also a temporary workaround for V7COR-5635
-                    if not _vxworks:
                         self._check_timeout(endtime, orig_timeout)
-                    else:
-                        pass
                     # XXX Rewrite these to use non-blocking I/O on the file
                     # objects; they are no longer using C stdio!
 
