@@ -414,6 +414,15 @@ def _joinrealpath(path, rest, seen):
         if not _vxworks:
             rest = rest[1:]
             path = sep
+        else:
+            if rest.startswith(sep):
+                rest = rest[1:]
+                path = sep
+            else:
+                ind = rest.find(':')
+                ind = 0 if ind < 0 else ind
+                path = rest[:ind]
+                rest = rest[ind:]
 
     while rest:
         name, _, rest = rest.partition(sep)
