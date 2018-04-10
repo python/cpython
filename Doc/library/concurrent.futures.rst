@@ -94,6 +94,38 @@ Executor Objects
               e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
               e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
 
+    .. method:: stat()
+
+
+       The following method is meant to introspect the state of the
+       :class:`Executor` and the tasks processed by it. It returns a dictionary
+       containing the following keys:
+
+           - `worker_count`: actual number of workers in the executor.
+           - `active_worker_count`: number of workers currently running a task
+             in the executor.
+           - `idle_worker_count`: number of workers currently waiting for a new
+             task to be submitted to the executor.
+           - `task_count`: number of task pending for the executor.
+           - `active_task_count`: number of task which are currently being
+             processed by the executor.
+           - `waiting_task_count`: number of task waiting to be processed by
+             the executor.
+           - `active_tasks`: a dictionary with WorkItems representing the tasks
+             which are currently being processed by the executor. The WorkItem
+             object is a container holding the function *fn*, its arguments
+             *args* and *kwargs* and the associated :class:`Future` in *future*.
+           - `waiting_tasks`: a dictionary with WorkItems representing the
+             tasks waiting to be processed by the executor. The WorkItem object
+             is a container holding the function *fn*, its arguments *args* and
+             *kwargs* and the associated :class:`Future` in *future*.
+           - `status`: a string holding the status of the executor. It can be
+             one of {"not_started", "running", "broken", "shutting_down",
+             "shutdown"}.
+
+       .. versionchanged:: 3.7
+          Added the *stat* method.
+
 
 ThreadPoolExecutor
 ------------------
