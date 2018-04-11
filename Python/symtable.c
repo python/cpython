@@ -1731,9 +1731,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         /* Flag this as a comprehension in a class, with potential for early binding */
         classsyms = st->st_cur->ste_symbols;
     }
-    /* Outermost iterator is evaluated in current scope */
-    VISIT(st, expr, outermost->iter);
-    /* Create comprehension scope for the rest */
+    /* Create comprehension scope */
     if (!scope_name ||
         !symtable_enter_block(st, scope_name, FunctionBlock, (void *)e,
                               e->lineno, e->col_offset)) {
@@ -1743,11 +1741,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     if (outermost->is_async) {
         st->st_cur->ste_coroutine = 1;
     }
-    /* Outermost iter is received as an argument */
-    if (!symtable_implicit_arg(st, 0)) {
-        symtable_exit_block(st, (void *)e);
-        return 0;
-    }
+    VISIT(st, expr, outermost->iter);
     VISIT(st, expr, outermost->target);
     VISIT_SEQ(st, expr, outermost->ifs);
     VISIT_SEQ_TAIL(st, comprehension, generators, 1);

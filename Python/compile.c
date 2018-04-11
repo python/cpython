@@ -3887,18 +3887,14 @@ compiler_sync_comprehension_generator(struct compiler *c,
 
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen_index == 0) {
-        /* Receive outermost iter as an implicit argument */
-        c->u->u_argcount = 1;
-        /* In some cases, receive additional arguments */
+        c->u->u_argcount = 0;
+        /* In some cases, receive many arguments */
         if (c->u->u_ste->ste_classsyms)
             c->u->u_argcount = PyList_Size(c->u->u_ste->ste_varnames);
-        ADDOP_I(c, LOAD_FAST, 0);
     }
-    else {
-        /* Sub-iter - calculate on the fly */
-        VISIT(c, expr, gen->iter);
-        ADDOP(c, GET_ITER);
-    }
+    VISIT(c, expr, gen->iter);
+    ADDOP(c, GET_ITER);
+
     compiler_use_next_block(c, start);
     ADDOP_JREL(c, FOR_ITER, anchor);
     NEXT_BLOCK(c);
@@ -3975,15 +3971,13 @@ compiler_async_comprehension_generator(struct compiler *c,
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
 
     if (gen_index == 0) {
-        /* Receive outermost iter as an implicit argument */
-        c->u->u_argcount = 1;
-        ADDOP_I(c, LOAD_FAST, 0);
+        c->u->u_argcount = 0;
+        /* In some cases, receive many arguments */
+        if (c->u->u_ste->ste_classsyms)
+            c->u->u_argcount = PyList_Size(c->u->u_ste->ste_varnames);
     }
-    else {
-        /* Sub-iter - calculate on the fly */
-        VISIT(c, expr, gen->iter);
-        ADDOP(c, GET_AITER);
-    }
+    VISIT(c, expr, gen->iter);
+    ADDOP(c, GET_AITER);
 
     compiler_use_next_block(c, start);
 
@@ -4051,12 +4045,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
                        expr_ty val)
 {
     PyCodeObject *co = NULL;
-    comprehension_ty outermost;
     PyObject *qualname = NULL;
     int is_async_function = c->u->u_ste->ste_coroutine;
     int is_async_generator = 0;
-
-    outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
 
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
                               (void *)e, e->lineno))
@@ -4124,19 +4115,11 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     Py_DECREF(qualname);
     Py_DECREF(co);
 
-    VISIT(c, expr, outermost->iter);
-
-    if (outermost->is_async) {
-        ADDOP(c, GET_AITER);
-    } else {
-        ADDOP(c, GET_ITER);
-    }
-
     /* Load up the early-bound names */
     if (varnames) {
         Py_ssize_t sz = PyList_Size(varnames);
         Py_ssize_t i;
-        for (i = 1; i < sz; ++i) {
+        for (i = 0; i < sz; ++i) {
             PyObject *name = PyList_GetItem(varnames, i);
             PyObject *v = PyDict_GetItem(symbols, name);
             long flags = 0; if (v) flags = PyLong_AS_LONG(v);
@@ -4146,7 +4129,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
                 ADDOP_O(c, LOAD_CONST, Py_None, consts);
         }
     }
-    else args = 1;
+    else args = 0;
     Py_XDECREF(varnames); Py_XDECREF(symbols);
 
     ADDOP_I(c, CALL_FUNCTION, args);
