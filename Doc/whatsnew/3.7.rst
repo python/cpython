@@ -1041,6 +1041,12 @@ Deprecated
   :meth:`ssl.SSLContext.wrap_socket` instead.
   (Contributed by Christian Heimes in :issue:`28124`.)
 
+- In Python 3.8, attempting to check for non-Enum objects in :class:`Enum`
+  classes will raise a :exc:`TypeError` (e.g. ``1 in Color``); similarly,
+  attempting to check for non-Flag objects in a :class:`Flag` member will
+  raise :exc:`TypeError` (e.g. ``1 in Perm.RW``); currently, both operations
+  return :const:`False` instead.
+
 
 Windows Only
 ------------
