@@ -1,0 +1,2 @@
+"Expected" token is now shown on syntax error.  Based on patch by Oliver
+Gramberg and Dave Malcolm.

@@ -1347,6 +1347,10 @@ err_input(perrdetail *err)
         else {
             errtype = PyExc_SyntaxError;
             msg = "invalid syntax";
+            if (err->expected != -1)
+                msg_obj = PyUnicode_FromFormat(
+                        "invalid syntax - %s expected",
+                        _PyParser_TokenDescs[err->expected]);
         }
         break;
     case E_TOKEN:

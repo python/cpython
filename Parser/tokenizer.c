@@ -50,7 +50,7 @@ static void tok_backup(struct tok_state *tok, int c);
 
 /* Token names */
 
-const char *_PyParser_TokenNames[] = {
+const char * const _PyParser_TokenNames[] = {
     "ENDMARKER",
     "NAME",
     "NUMBER",
@@ -113,6 +113,74 @@ const char *_PyParser_TokenNames[] = {
     "<N_TOKENS>"
 };
 
+static const int _update_PyParser_TokenNames = Py_BUILD_ASSERT_EXPR(
+    Py_ARRAY_LENGTH(_PyParser_TokenNames) == N_TOKENS + 1);
+
+const char * const _PyParser_TokenDescs[] = {
+    "end marker", /* ENDMARKER */
+    "name", /* "NAME", */
+    "number", /* NUMBER */
+    "string",  /* STRING" */
+    "newline", /* NEWLINE */
+    "indent", /* INDENT */
+    "dedent", /* DEDENT */
+    "'('", /* LPAR */
+    "')'", /* RPAR */
+    "'['", /* LSQB */
+    "']'", /* RSQB */
+    "':'", /* COLON */
+    "','", /* COMMA */
+    "';'", /* SEMI */
+    "'+'", /* PLUS */
+    "'-'", /* MINUS */
+    "'*'", /* STAR */
+    "'/'", /* SLASH */
+    "'|'", /* VBAR */
+    "'&'", /* AMPER */
+    "'<'", /* LESS */
+    "'>'", /* GREATER */
+    "'='", /* EQUAL */
+    "'.'", /* DOT */
+    "'%'", /* PERCENT */
+    "'{'", /* LBRACE */
+    "'}'", /* RBRACE */
+    "'=='", /* EQEQUAL */
+    "'!='", /* NOTEQUAL */
+    "'<='", /* LESSEQUAL */
+    "'>='", /* GREATEREQUAL */
+    "'~'", /* TILDE */
+    "'^'", /* CIRCUMFLEX */
+    "'<<'", /* LEFTSHIFT */
+    "'>>'", /* RIGHTSHIFT */
+    "'**'", /* DOUBLESTAR */
+    "'+='", /* PLUSEQUAL */
+    "'-='", /* MINEQUAL */
+    "'*='", /* STAREQUAL */
+    "'/='", /* SLASHEQUAL */
+    "'%='", /* PERCENTEQUAL */
+    "'&='", /* AMPEREQUAL */
+    "'|='", /* VBAREQUAL */
+    "'^='", /* CIRCUMFLEXEQUAL */
+    "'<<='", /* LEFTSHIFTEQUAL */
+    "'>>='", /* RIGHTSHIFTEQUAL */
+    "'**='", /* DOUBLESTAREQUAL */
+    "'//'", /* DOUBLESLASH */
+    "'//='", /* DOUBLESLASHEQUAL */
+    "'@'", /* AT */
+    "'@='", /* ATEQUAL */
+    "'->'", /* RARROW */
+    "'...'", /* ELLIPSIS */
+    /* This table must match the #defines in token.h! */
+    "OP", /* OP */
+    "<ERRORTOKEN>", /* <ERRORTOKEN> */
+    "comment", /* COMMENT */
+    "new line", /* NL */
+    "encoding cookie", /* ENCODING */
+    "<N_TOKENS>" /* <N_TOKENS */
+};
+
+static const int _update_PyParser_TokenDescs = Py_BUILD_ASSERT_EXPR(
+    Py_ARRAY_LENGTH(_PyParser_TokenDescs) == N_TOKENS + 1);
 
 /* Create and initialize a new tok_state structure */
 

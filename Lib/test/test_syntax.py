@@ -29,7 +29,7 @@ Errors from set_context():
 
 >>> obj.None = 1
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: invalid syntax - name expected
 
 >>> None = 1
 Traceback (most recent call last):
@@ -102,17 +102,17 @@ SyntaxError: non-default argument follows default argument
 >>> def f(x, None):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: invalid syntax - ')' expected
 
 >>> def f(*None):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: invalid syntax - ')' expected
 
 >>> def f(**None):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: invalid syntax - name expected
 
 
 From ast_for_funcdef():
@@ -120,7 +120,7 @@ From ast_for_funcdef():
 >>> def None(x):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: invalid syntax - name expected
 
 
 From ast_for_call():

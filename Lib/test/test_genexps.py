@@ -87,7 +87,7 @@ Verify that parenthesis are required when used as a keyword argument value
     >>> dict(a = i for i in range(10))
     Traceback (most recent call last):
        ...
-    SyntaxError: invalid syntax
+    SyntaxError: invalid syntax - ')' expected
 
 Verify that parenthesis are required when used as a keyword argument value
 
