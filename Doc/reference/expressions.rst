@@ -172,7 +172,7 @@ Common syntax elements for comprehensions are:
 
 .. productionlist::
    comprehension: `expression` `comp_for`
-   comp_for: [ASYNC] "for" `target_list` "in" `or_test` [`comp_iter`]
+   comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
    comp_if: "if" `expression_nocond` [`comp_iter`]
 
