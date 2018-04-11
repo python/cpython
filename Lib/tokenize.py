@@ -284,7 +284,7 @@ class Untokenizer:
                 self.encoding = tokval
                 continue
 
-            if toknum in (NAME, NUMBER, ASYNC, AWAIT):
+            if toknum in (NAME, NUMBER):
                 tokval += ' '
 
             # Insert a space between two consecutive strings
