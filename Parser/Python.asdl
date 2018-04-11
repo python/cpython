@@ -14,18 +14,21 @@ module Python
         | Suite(stmt* body)
 
     stmt = FunctionDef(identifier name, arguments args,
-                       stmt* body, expr* decorator_list, expr? returns,
-                       string? docstring)
+                       stmt* body, expr* decorator_list,
+                       expr? returns, string? docstring,
+                       int? def_lineno)
           | AsyncFunctionDef(identifier name, arguments args,
-                             stmt* body, expr* decorator_list, expr? returns,
-                             string? docstring)
+                             stmt* body, expr* decorator_list,
+                             expr? returns, string? docstring,
+                             int? def_lineno)
 
           | ClassDef(identifier name,
              expr* bases,
              keyword* keywords,
              stmt* body,
              expr* decorator_list,
-             string? docstring)
+             string? docstring,
+             int? class_lineno)
           | Return(expr? value)
 
           | Delete(expr* targets)

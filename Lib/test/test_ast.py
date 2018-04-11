@@ -2,6 +2,7 @@ import ast
 import dis
 import os
 import sys
+import textwrap
 import unittest
 import weakref
 
@@ -14,7 +15,12 @@ def to_tuple(t):
         return [to_tuple(e) for e in t]
     result = [t.__class__.__name__]
     if hasattr(t, 'lineno') and hasattr(t, 'col_offset'):
-        result.append((t.lineno, t.col_offset))
+        decorated_lineno = ()
+        if hasattr(t, 'def_lineno'):
+            decorated_lineno = (t.def_lineno,)
+        elif hasattr(t, 'class_lineno'):
+            decorated_lineno = (t.class_lineno,)
+        result.append((t.lineno, t.col_offset) + decorated_lineno)
     if t._fields is None:
         return tuple(result)
     for f in t._fields:
@@ -43,12 +49,22 @@ exec_tests = [
     "def f(**kwargs): pass",
     # FunctionDef with all kind of args and docstring
     "def f(a, b=1, c=None, d=[], e={}, *args, f=42, **kwargs): 'doc for f()'",
+    # FunctionDef which is decorated, test def_lineno
+    textwrap.dedent("""
+    @deco
+    def f(a): pass
+    """),
     # ClassDef
     "class C:pass",
     # ClassDef with docstring
     "class C: 'docstring for class C'",
     # ClassDef, new style class
     "class C(object): pass",
+    # ClassDef which is decorated, test class_lineno
+    textwrap.dedent("""
+    @deco
+    class C:pass
+    """),
     # Return
     "def f():return 1",
     # Delete
@@ -1126,17 +1142,19 @@ def main():
 exec_results = [
 ('Module', [('Expr', (1, 0), ('NameConstant', (1, 0), None))], None),
 ('Module', [], 'module docstring'),
-('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], [], None, []), [('Pass', (1, 9))], [], None, None)], None),
-('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], [], None, []), [], [], None, 'function docstring')], None),
-('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 6), 'a', None)], None, [], [], None, []), [('Pass', (1, 10))], [], None, None)], None),
-('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 6), 'a', None)], None, [], [], None, [('Num', (1, 8), 0)]), [('Pass', (1, 12))], [], None, None)], None),
-('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], ('arg', (1, 7), 'args', None), [], [], None, []), [('Pass', (1, 14))], [], None, None)], None),
-('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], [], ('arg', (1, 8), 'kwargs', None), []), [('Pass', (1, 17))], [], None, None)], None),
-('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 6), 'a', None), ('arg', (1, 9), 'b', None), ('arg', (1, 14), 'c', None), ('arg', (1, 22), 'd', None), ('arg', (1, 28), 'e', None)], ('arg', (1, 35), 'args', None), [('arg', (1, 41), 'f', None)], [('Num', (1, 43), 42)], ('arg', (1, 49), 'kwargs', None), [('Num', (1, 11), 1), ('NameConstant', (1, 16), None), ('List', (1, 24), [], ('Load',)), ('Dict', (1, 30), [], [])]), [], [], None, 'doc for f()')], None),
-('Module', [('ClassDef', (1, 0), 'C', [], [], [('Pass', (1, 8))], [], None)], None),
-('Module', [('ClassDef', (1, 0), 'C', [], [], [], [], 'docstring for class C')], None),
-('Module', [('ClassDef', (1, 0), 'C', [('Name', (1, 8), 'object', ('Load',))], [], [('Pass', (1, 17))], [], None)], None),
-('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], [], None, []), [('Return', (1, 8), ('Num', (1, 15), 1))], [], None, None)], None),
+('Module', [('FunctionDef', (1, 0, 1), 'f', ('arguments', [], None, [], [], None, []), [('Pass', (1, 9))], [], None, None, 1)], None),
+('Module', [('FunctionDef', (1, 0, 1), 'f', ('arguments', [], None, [], [], None, []), [], [], None, 'function docstring', 1)], None),
+('Module', [('FunctionDef', (1, 0, 1), 'f', ('arguments', [('arg', (1, 6), 'a', None)], None, [], [], None, []), [('Pass', (1, 10))], [], None, None, 1)], None),
+('Module', [('FunctionDef', (1, 0, 1), 'f', ('arguments', [('arg', (1, 6), 'a', None)], None, [], [], None, [('Num', (1, 8), 0)]), [('Pass', (1, 12))], [], None, None, 1)], None),
+('Module', [('FunctionDef', (1, 0, 1), 'f', ('arguments', [], ('arg', (1, 7), 'args', None), [], [], None, []), [('Pass', (1, 14))], [], None, None, 1)], None),
+('Module', [('FunctionDef', (1, 0, 1), 'f', ('arguments', [], None, [], [], ('arg', (1, 8), 'kwargs', None), []), [('Pass', (1, 17))], [], None, None, 1)], None),
+('Module', [('FunctionDef', (1, 0, 1), 'f', ('arguments', [('arg', (1, 6), 'a', None), ('arg', (1, 9), 'b', None), ('arg', (1, 14), 'c', None), ('arg', (1, 22), 'd', None), ('arg', (1, 28), 'e', None)], ('arg', (1, 35), 'args', None), [('arg', (1, 41), 'f', None)], [('Num', (1, 43), 42)], ('arg', (1, 49), 'kwargs', None), [('Num', (1, 11), 1), ('NameConstant', (1, 16), None), ('List', (1, 24), [], ('Load',)), ('Dict', (1, 30), [], [])]), [], [], None, 'doc for f()', 1)], None),
+('Module', [('FunctionDef', (2, 0, 3), 'f', ('arguments', [('arg', (3, 6), 'a', None)], None, [], [], None, []), [('Pass', (3, 10))], [('Name', (2, 1), 'deco', ('Load',))], None, None, 3)], None),
+('Module', [('ClassDef', (0, 1, 1), 'C', [], [], [('Pass', (1, 8))], [], None, 1)], None),
+('Module', [('ClassDef', (0, 1, 1), 'C', [], [], [], [], 'docstring for class C', 1)], None),
+('Module', [('ClassDef', (0, 1, 1), 'C', [('Name', (1, 8), 'object', ('Load',))], [], [('Pass', (1, 17))], [], None, 1)], None),
+('Module', [('ClassDef', (2, 0, 3), 'C', [], [], [('Pass', (3, 8))], [('Name', (2, 1), 'deco', ('Load',))], None, 3)], None),
+('Module', [('FunctionDef', (1, 0, 1), 'f', ('arguments', [], None, [], [], None, []), [('Return', (1, 8), ('Num', (1, 15), 1))], [], None, None, 1)], None),
 ('Module', [('Delete', (1, 0), [('Name', (1, 4), 'v', ('Del',))])], None),
 ('Module', [('Assign', (1, 0), [('Name', (1, 0), 'v', ('Store',))], ('Num', (1, 4), 1))], None),
 ('Module', [('AugAssign', (1, 0), ('Name', (1, 0), 'v', ('Store',)), ('Add',), ('Num', (1, 5), 1))], None),
@@ -1165,12 +1183,12 @@ exec_results = [
 ('Module', [('Expr', (1, 0), ('DictComp', (1, 0), ('Name', (1, 1), 'a', ('Load',)), ('Name', (1, 5), 'b', ('Load',)), [('comprehension', ('Tuple', (1, 11), [('Name', (1, 11), 'v', ('Store',)), ('Name', (1, 13), 'w', ('Store',))], ('Store',)), ('Name', (1, 18), 'x', ('Load',)), [], 0)]))], None),
 ('Module', [('Expr', (1, 0), ('SetComp', (1, 0), ('Name', (1, 1), 'r', ('Load',)), [('comprehension', ('Name', (1, 7), 'l', ('Store',)), ('Name', (1, 12), 'x', ('Load',)), [('Name', (1, 17), 'g', ('Load',))], 0)]))], None),
 ('Module', [('Expr', (1, 0), ('SetComp', (1, 0), ('Name', (1, 1), 'r', ('Load',)), [('comprehension', ('Tuple', (1, 7), [('Name', (1, 7), 'l', ('Store',)), ('Name', (1, 9), 'm', ('Store',))], ('Store',)), ('Name', (1, 14), 'x', ('Load',)), [], 0)]))], None),
-('Module', [('AsyncFunctionDef', (1, 6), 'f', ('arguments', [], None, [], [], None, []), [('Expr', (3, 1), ('Await', (3, 1), ('Call', (3, 7), ('Name', (3, 7), 'something', ('Load',)), [], [])))], [], None, 'async function')], None),
-('Module', [('AsyncFunctionDef', (1, 6), 'f', ('arguments', [], None, [], [], None, []), [('AsyncFor', (2, 7), ('Name', (2, 11), 'e', ('Store',)), ('Name', (2, 16), 'i', ('Load',)), [('Expr', (2, 19), ('Num', (2, 19), 1))], [('Expr', (3, 7), ('Num', (3, 7), 2))])], [], None, None)], None),
-('Module', [('AsyncFunctionDef', (1, 6), 'f', ('arguments', [], None, [], [], None, []), [('AsyncWith', (2, 7), [('withitem', ('Name', (2, 12), 'a', ('Load',)), ('Name', (2, 17), 'b', ('Store',)))], [('Expr', (2, 20), ('Num', (2, 20), 1))])], [], None, None)], None),
+('Module', [('AsyncFunctionDef', (1, 6, 1), 'f', ('arguments', [], None, [], [], None, []), [('Expr', (3, 1), ('Await', (3, 1), ('Call', (3, 7), ('Name', (3, 7), 'something', ('Load',)), [], [])))], [], None, 'async function', 1)], None),
+('Module', [('AsyncFunctionDef', (1, 6, 1), 'f', ('arguments', [], None, [], [], None, []), [('AsyncFor', (2, 7), ('Name', (2, 11), 'e', ('Store',)), ('Name', (2, 16), 'i', ('Load',)), [('Expr', (2, 19), ('Num', (2, 19), 1))], [('Expr', (3, 7), ('Num', (3, 7), 2))])], [], None, None, 1)], None),
+('Module', [('AsyncFunctionDef', (1, 6, 1), 'f', ('arguments', [], None, [], [], None, []), [('AsyncWith', (2, 7), [('withitem', ('Name', (2, 12), 'a', ('Load',)), ('Name', (2, 17), 'b', ('Store',)))], [('Expr', (2, 20), ('Num', (2, 20), 1))])], [], None, None, 1)], None),
 ('Module', [('Expr', (1, 0), ('Dict', (1, 0), [None, ('Num', (1, 10), 2)], [('Dict', (1, 3), [('Num', (1, 4), 1)], [('Num', (1, 6), 2)]), ('Num', (1, 12), 3)]))], None),
 ('Module', [('Expr', (1, 0), ('Set', (1, 0), [('Starred', (1, 1), ('Set', (1, 2), [('Num', (1, 3), 1), ('Num', (1, 6), 2)]), ('Load',)), ('Num', (1, 10), 3)]))], None),
-('Module', [('AsyncFunctionDef', (1, 6), 'f', ('arguments', [], None, [], [], None, []), [('Expr', (2, 1), ('ListComp', (2, 2), ('Name', (2, 2), 'i', ('Load',)), [('comprehension', ('Name', (2, 14), 'b', ('Store',)), ('Name', (2, 19), 'c', ('Load',)), [], 1)]))], [], None, None)], None),
+('Module', [('AsyncFunctionDef', (1, 6, 1), 'f', ('arguments', [], None, [], [], None, []), [('Expr', (2, 1), ('ListComp', (2, 2), ('Name', (2, 2), 'i', ('Load',)), [('comprehension', ('Name', (2, 14), 'b', ('Store',)), ('Name', (2, 19), 'c', ('Load',)), [], 1)]))], [], None, None, 1)], None),
 ]
 single_results = [
 ('Interactive', [('Expr', (1, 0), ('BinOp', (1, 0), ('Num', (1, 0), 1), ('Add',), ('Num', (1, 2), 2)))]),
