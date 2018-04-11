@@ -1814,13 +1814,6 @@ Yield by itself yields None:
 [None]
 
 
-Yield is allowed only in the outermost iterable in generator expression:
-
->>> def f(): list(i for i in [(yield 26)])
->>> type(f())
-<class 'generator'>
-
-
 A yield expression with augmented assignment.
 
 >>> def coroutine(seq):
@@ -1845,6 +1838,11 @@ A yield expression with augmented assignment.
 
 
 Check some syntax errors for yield expressions:
+
+>>> def f(): list(i for i in [(yield 26)])
+Traceback (most recent call last):
+  ...
+SyntaxError: 'yield' inside generator expression
 
 >>> f=lambda: (yield 1),(yield 2)
 Traceback (most recent call last):
