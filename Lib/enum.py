@@ -309,6 +309,12 @@ class EnumMeta(type):
         return cls._create_(value, names, module=module, qualname=qualname, type=type, start=start)
 
     def __contains__(cls, member):
+        if not isinstance(member, Enum):
+            import warnings
+            warnings.warn(
+                    "using non-Enums in containment checks will raise "
+                    "TypeError in Python 3.8",
+                    DeprecationWarning, 2)
         return isinstance(member, cls) and member._name_ in cls._member_map_
 
     def __delattr__(cls, attr):
@@ -713,7 +719,12 @@ class Flag(Enum):
 
     def __contains__(self, other):
         if not isinstance(other, self.__class__):
-            return NotImplemented
+            import warnings
+            warnings.warn(
+                    "using non-Flags in containment checks will raise "
+                    "TypeError in Python 3.8",
+                    DeprecationWarning, 2)
+            return False
         return other._value_ & self._value_ == other._value_
 
     def __repr__(self):

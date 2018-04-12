@@ -325,7 +325,10 @@ class TestEnum(unittest.TestCase):
     def test_contains(self):
         Season = self.Season
         self.assertIn(Season.AUTUMN, Season)
-        self.assertNotIn(3, Season)
+        with self.assertWarns(DeprecationWarning):
+            self.assertNotIn(3, Season)
+        with self.assertWarns(DeprecationWarning):
+            self.assertNotIn('AUTUMN', Season)
 
         val = Season(3)
         self.assertIn(val, Season)
@@ -333,6 +336,11 @@ class TestEnum(unittest.TestCase):
         class OtherEnum(Enum):
             one = 1; two = 2
         self.assertNotIn(OtherEnum.two, Season)
+
+    def test_member_contains(self):
+        self.assertRaises(TypeError, lambda: 'test' in self.Season.AUTUMN)
+        self.assertRaises(TypeError, lambda: 3 in self.Season.AUTUMN)
+        self.assertRaises(TypeError, lambda: 'AUTUMN' in self.Season.AUTUMN)
 
     def test_comparisons(self):
         Season = self.Season
@@ -1745,6 +1753,13 @@ class TestFlag(unittest.TestCase):
     class Perm(Flag):
         R, W, X = 4, 2, 1
 
+    class Color(Flag):
+        BLACK = 0
+        RED = 1
+        GREEN = 2
+        BLUE = 4
+        PURPLE = RED|BLUE
+
     class Open(Flag):
         RO = 0
         WO = 1
@@ -1954,7 +1969,21 @@ class TestFlag(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, FlagStooges.CURLY|FlagStooges.MOE)
         test_pickle_dump_load(self.assertIs, FlagStooges)
 
-    def test_containment(self):
+    def test_contains(self):
+        Open = self.Open
+        Color = self.Color
+        self.assertFalse(Color.BLACK in Open)
+        self.assertFalse(Open.RO in Color)
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse('BLACK' in Color)
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse('RO' in Open)
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse(1 in Color)
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse(1 in Open)
+
+    def test_member_contains(self):
         Perm = self.Perm
         R, W, X = Perm
         RW = R | W
@@ -2064,6 +2093,13 @@ class TestIntFlag(unittest.TestCase):
         X = 1 << 0
         W = 1 << 1
         R = 1 << 2
+
+    class Color(IntFlag):
+        BLACK = 0
+        RED = 1
+        GREEN = 2
+        BLUE = 4
+        PURPLE = RED|BLUE
 
     class Open(IntFlag):
         RO = 0
@@ -2340,7 +2376,23 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(len(lst), len(Thing))
         self.assertEqual(len(Thing), 0, Thing)
 
-    def test_containment(self):
+    def test_contains(self):
+        Color = self.Color
+        Open = self.Open
+        self.assertTrue(Color.GREEN in Color)
+        self.assertTrue(Open.RW in Open)
+        self.assertFalse(Color.GREEN in Open)
+        self.assertFalse(Open.RW in Color)
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse('GREEN' in Color)
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse('RW' in Open)
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse(2 in Color)
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse(2 in Open)
+
+    def test_member_contains(self):
         Perm = self.Perm
         R, W, X = Perm
         RW = R | W
@@ -2359,6 +2411,8 @@ class TestIntFlag(unittest.TestCase):
         self.assertFalse(R in WX)
         self.assertFalse(W in RX)
         self.assertFalse(X in RW)
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse('swallow' in RW)
 
     def test_bool(self):
         Perm = self.Perm
