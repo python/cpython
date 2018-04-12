@@ -1,2 +1,3 @@
-Change the line number of decorated defs back to the def or class token, not
-the first decorator.
+Change the line number of decorated defs back to the def or class token in the
+AST, not the first decorator. Have the change of line number happen in the
+compiler.
