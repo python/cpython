@@ -1,0 +1,2 @@
+Change the line number of decorated defs back to the def or class token, not
+the first decorator.

@@ -1686,19 +1686,12 @@ ast_for_decorated(struct compiling *c, const node *n)
            TYPE(CHILD(n, 1)) == classdef);
 
     if (TYPE(CHILD(n, 1)) == funcdef) {
-      thing = ast_for_funcdef(c, CHILD(n, 1), decorator_seq);
+       return ast_for_funcdef(c, CHILD(n, 1), decorator_seq);
     } else if (TYPE(CHILD(n, 1)) == classdef) {
-      thing = ast_for_classdef(c, CHILD(n, 1), decorator_seq);
+      return ast_for_classdef(c, CHILD(n, 1), decorator_seq);
     } else if (TYPE(CHILD(n, 1)) == async_funcdef) {
-      thing = ast_for_async_funcdef(c, CHILD(n, 1), decorator_seq);
+      return ast_for_async_funcdef(c, CHILD(n, 1), decorator_seq);
     }
-    /* we count the decorators in when talking about the class' or
-     * function's line number */
-    if (thing) {
-        thing->lineno = LINENO(n);
-        thing->col_offset = n->n_col_offset;
-    }
-    return thing;
 }
 
 static expr_ty
