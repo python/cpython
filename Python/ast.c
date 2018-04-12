@@ -1672,7 +1672,6 @@ static stmt_ty
 ast_for_decorated(struct compiling *c, const node *n)
 {
     /* decorated: decorators (classdef | funcdef | async_funcdef) */
-    stmt_ty thing = NULL;
     asdl_seq *decorator_seq = NULL;
 
     REQ(n, decorated);
@@ -1691,6 +1690,8 @@ ast_for_decorated(struct compiling *c, const node *n)
         return ast_for_classdef(c, CHILD(n, 1), decorator_seq);
     } else if (TYPE(CHILD(n, 1)) == async_funcdef) {
         return ast_for_async_funcdef(c, CHILD(n, 1), decorator_seq);
+    } else {
+        return NULL; // should never ever happen
     }
 }
 
