@@ -124,7 +124,7 @@ function calls leading up to the error, in the order they occurred.</p>'''
         args, varargs, varkw, locals = inspect.getargvalues(frame)
         call = ''
         if func != '?':
-            call = 'in ' + strong(func.replace("<", "&lt;").replace(">", "&gt;")) + \
+            call = 'in ' + strong(pydoc.html.escape(func)) + \
                 inspect.formatargvalues(args, varargs, varkw, locals,
                     formatvalue=lambda value: '=' + pydoc.html.repr(value))
 
