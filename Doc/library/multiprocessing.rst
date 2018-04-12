@@ -367,6 +367,15 @@ For example::
    from multiprocessing import Pool, TimeoutError
    import time
    import os
+   import random
+
+   def random_sleep():
+       duration = random() * 5.0
+       time.sleep(duration)
+       return duration
+
+   def report_slept_duration(duration):
+       print("Slept for %0.2f seconds." % duration)
 
    def f(x):
        return x*x
@@ -402,6 +411,10 @@ For example::
                print("We lacked patience and got a multiprocessing.TimeoutError")
 
            print("For the moment, the pool remains available for more work")
+
+           for i in range(10):
+               pool.apply_async(random_sleep, callback=report_slept_duration)
+           print("Finished adding to pool. Waiting for jobs to finish.")
 
        # exiting the 'with'-block has stopped the pool
        print("Now the pool is closed and no longer available")
@@ -2114,17 +2127,16 @@ with the :class:`Pool` class.
 
       A variant of the :meth:`apply` method which returns a result object.
 
-      If *callback* is specified then it should be a callable which accepts a
-      single argument.  When the result becomes ready *callback* is applied to
-      it, that is unless the call failed, in which case the *error_callback*
-      is applied instead.
+      The *callback*, if specified, must be a callable taking a single argument.
+      When *func* successfully finishes, *callback* is applied to its return value,
+      back in the main process.
 
       If *error_callback* is specified then it should be a callable which
-      accepts a single argument.  If the target function fails, then
+      accepts a single argument.  If *func* raises an exception, then
       the *error_callback* is called with the exception instance.
 
-      Callbacks should complete immediately since otherwise the thread which
-      handles the results will get blocked.
+      During the time callbacks run, they impede further pool maintenance, so
+      they should be designed to complete immediately.
 
    .. method:: map(func, iterable[, chunksize])
 
@@ -2139,17 +2151,16 @@ with the :class:`Pool` class.
 
       A variant of the :meth:`.map` method which returns a result object.
 
-      If *callback* is specified then it should be a callable which accepts a
-      single argument.  When the result becomes ready *callback* is applied to
-      it, that is unless the call failed, in which case the *error_callback*
-      is applied instead.
+      The *callback*, if specified, must be a callable taking a single argument.
+      When *func* successfully finishes, *callback* is applied to its return value,
+      back in the main process.
 
       If *error_callback* is specified then it should be a callable which
-      accepts a single argument.  If the target function fails, then
+      accepts a single argument.  If *func* raises an exception, then
       the *error_callback* is called with the exception instance.
 
-      Callbacks should complete immediately since otherwise the thread which
-      handles the results will get blocked.
+      During the time callbacks run, they impede further pool maintenance, so
+      they should be designed to complete immediately.
 
    .. method:: imap(func, iterable[, chunksize])
 

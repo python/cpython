@@ -356,7 +356,9 @@ class Pool(object):
     def apply_async(self, func, args=(), kwds={}, callback=None,
             error_callback=None):
         '''
-        Asynchronous version of `apply()` method.
+        Asynchronous version of `apply()` method. If supplied,
+        `callback(return_value)`, or `error_callback(exception_instance)`
+        is run from pool process.
         '''
         if self._state != RUN:
             raise ValueError("Pool not running")
@@ -367,7 +369,9 @@ class Pool(object):
     def map_async(self, func, iterable, chunksize=None, callback=None,
             error_callback=None):
         '''
-        Asynchronous version of `map()` method.
+        Asynchronous version of `map()` method. If supplied,
+        `callback(return_value)`, or `error_callback(exception_instance)`
+        is run from pool process.
         '''
         return self._map_async(func, iterable, mapstar, chunksize, callback,
             error_callback)
