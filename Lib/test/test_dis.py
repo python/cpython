@@ -65,7 +65,7 @@ dis_c_class_method = """\
               8 STORE_ATTR               0 (x)
              10 LOAD_CONST               0 (None)
              12 RETURN_VALUE
-""" % (_C.cm.__code__.co_firstlineno + 2,)
+""" % (_C.cm.__code__.co_firstlineno + 1,)
 
 dis_c_static_method = """\
 %3d           0 LOAD_FAST                0 (x)
@@ -74,7 +74,7 @@ dis_c_static_method = """\
               6 STORE_FAST               0 (x)
               8 LOAD_CONST               0 (None)
              10 RETURN_VALUE
-""" % (_C.sm.__code__.co_firstlineno + 2,)
+""" % (_C.sm.__code__.co_firstlineno + 1,)
 
 # Class disassembling info has an extra newline at end.
 dis_c = """\
