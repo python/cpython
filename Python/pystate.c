@@ -1308,6 +1308,10 @@ _PyCrossInterpreterData_Register_Class(PyTypeObject *cls,
     return res;
 }
 
+/* Cross-interpreter objects are looked up by exact match on the class.
+   We can reassess this policy when we move from a global registry to a
+   tp_* slot. */
+
 crossinterpdatafunc
 _PyCrossInterpreterData_Lookup(PyObject *obj)
 {
