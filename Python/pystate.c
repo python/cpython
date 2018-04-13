@@ -1362,6 +1362,33 @@ _bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
     return 0;
 }
 
+struct _shared_str_data {
+    int kind;
+    const void *buffer;
+    Py_ssize_t len;
+};
+
+static PyObject *
+_new_str_object(_PyCrossInterpreterData *data)
+{
+    struct _shared_str_data *shared = (struct _shared_str_data *)(data->data);
+    return PyUnicode_FromKindAndData(shared->kind, shared->buffer, shared->len);
+}
+
+static int
+_str_shared(PyObject *obj, _PyCrossInterpreterData *data)
+{
+    struct _shared_str_data *shared = PyMem_NEW(struct _shared_str_data, 1);
+    shared->kind = PyUnicode_KIND(obj);
+    shared->buffer = PyUnicode_DATA(obj);
+    shared->len = PyUnicode_GET_LENGTH(obj) - 1;
+    data->data = (void *)shared;
+    data->obj = obj;  // Will be "released" (decref'ed) when data released.
+    data->new_object = _new_str_object;
+    data->free = PyMem_Free;
+    return 0;
+}
+
 static PyObject *
 _new_long_object(_PyCrossInterpreterData *data)
 {
@@ -1419,6 +1446,11 @@ _register_builtins_for_crossinterpreter_data(void)
     // bytes
     if (_register_xidata(&PyBytes_Type, _bytes_shared) != 0) {
         Py_FatalError("could not register bytes for cross-interpreter sharing");
+    }
+
+    // str
+    if (_register_xidata(&PyUnicode_Type, _str_shared) != 0) {
+        Py_FatalError("could not register str for cross-interpreter sharing");
     }
 }
 

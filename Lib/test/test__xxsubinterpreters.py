@@ -308,6 +308,7 @@ class IsShareableTests(unittest.TestCase):
                 None,
                 # builtin objects
                 b'spam',
+                'spam',
                 10,
                 -10,
                 ]
@@ -338,14 +339,13 @@ class IsShareableTests(unittest.TestCase):
                 object(),
                 Exception(),
                 100.0,
-                'spam',
                 # user-defined types and objects
                 Cheese,
                 Cheese('Wensleydale'),
                 SubBytes(b'spam'),
                 ]
         for obj in not_shareables:
-            with self.subTest(obj):
+            with self.subTest(repr(obj)):
                 self.assertFalse(
                     interpreters.is_shareable(obj))
 
