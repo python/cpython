@@ -1,0 +1,2 @@
+Don't return an empty list from the generator for
+:meth:`importlib.resources.contents` when called on a namespace package.
