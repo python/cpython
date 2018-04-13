@@ -239,14 +239,14 @@ def contents(package: Package) -> Iterator[str]:
     reader = _get_resource_reader(package)
     if reader is not None:
         yield from reader.contents()
-        return
     # Is the package a namespace package?  By definition, namespace packages
     # cannot have resources.  We could use _check_location() and catch the
     # exception, but that's extra work, so just inline the check.
-    if package.__spec__.origin is None or not package.__spec__.has_location:
-        return []
-    package_directory = Path(package.__spec__.origin).parent
-    yield from os.listdir(str(package_directory))
+    elif package.__spec__.origin is None or not package.__spec__.has_location:
+        return
+    else:
+        package_directory = Path(package.__spec__.origin).parent
+        yield from os.listdir(str(package_directory))
 
 
 # Private implementation of ResourceReader and get_resource_reader() for
