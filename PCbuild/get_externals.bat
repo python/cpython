@@ -41,7 +41,7 @@ echo.Fetching external libraries...
 
 set libraries=
 set libraries=%libraries%                                    bzip2-1.0.6
-if NOT "%IncludeSSL%"=="false" set libraries=%libraries%     openssl-1.0.2k
+if NOT "%IncludeSSL%"=="false" set libraries=%libraries%     openssl-1.0.2o
 set libraries=%libraries%                                    sqlite-3.21.0.0
 if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tcl-core-8.6.6.0
 if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tk-8.6.6.0
