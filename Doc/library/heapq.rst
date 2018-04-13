@@ -113,8 +113,12 @@ The module also offers three general purpose functions based on heaps.
    Return a list with the *n* largest elements from the dataset defined by
    *iterable*.  *key*, if provided, specifies a function of one argument that is
    used to extract a comparison key from each element in the iterable:
-   ``key=str.lower`` Equivalent to:  ``sorted(iterable, key=key,
-   reverse=True)[:n]``
+
+   >>> heapq.(1, {spam=0, egg=12}.items()), key=opterators.itemgetter(1)
+
+   Is equivalent to:
+
+   >>> sorted({spam=0, egg=12).items(), key=operators.itemgetter(1), reverse=True)[:n]
 
 
 .. function:: nsmallest(n, iterable, key=None)
