@@ -1493,7 +1493,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             if (v) classflags = PyLong_AsLong(v);
             /* If the name has not (yet) been assigned to in this scope, AND it
             has been assigned to in the surrounding scope, flag it Early Bind. */
-            if (!(localflags & DEF_LOCAL) && (classflags & DEF_LOCAL)) {
+            if (!(localflags & (DEF_LOCAL|DEF_EARLYBIND)) && (classflags & DEF_LOCAL)) {
                 PyObject *val = PyLong_FromLong(localflags | DEF_PARAM | DEF_EARLYBIND);
                 PyDict_SetItem(st->st_cur->ste_symbols, e->v.Name.id, val);
                 Py_DECREF(val);
