@@ -1702,6 +1702,7 @@ class ChannelCloseFixture(namedtuple('ChannelCloseFixture',
             """)
 
 
+@unittest.skip('these tests take several hours to run')
 class ExhaustiveChannelTests(TestBase):
 
     """
