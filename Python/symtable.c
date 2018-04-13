@@ -195,7 +195,6 @@ static int symtable_visit_keyword(struct symtable *st, keyword_ty);
 static int symtable_visit_slice(struct symtable *st, slice_ty);
 static int symtable_visit_params(struct symtable *st, asdl_seq *args);
 static int symtable_visit_argannotations(struct symtable *st, asdl_seq *args);
-static int symtable_implicit_arg(struct symtable *st, int pos);
 static int symtable_visit_annotations(struct symtable *st, stmt_ty s, arguments_ty, expr_ty);
 static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
 
@@ -1521,20 +1520,6 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     }
     VISIT_QUIT(st, 1);
-}
-
-static int
-symtable_implicit_arg(struct symtable *st, int pos)
-{
-    PyObject *id = PyUnicode_FromFormat(".%d", pos);
-    if (id == NULL)
-        return 0;
-    if (!symtable_add_def(st, id, DEF_PARAM)) {
-        Py_DECREF(id);
-        return 0;
-    }
-    Py_DECREF(id);
-    return 1;
 }
 
 static int
