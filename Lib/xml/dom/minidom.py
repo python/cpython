@@ -823,6 +823,7 @@ class Element(Node):
         # Restore this since the node is still useful and otherwise
         # unlinked
         node.ownerDocument = self.ownerDocument
+        return node
 
     removeAttributeNodeNS = removeAttributeNode
 
