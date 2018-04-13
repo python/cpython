@@ -89,6 +89,7 @@ EXACT_TOKEN_TYPES = {
     '->':  RARROW,
     '@':   AT,
     '@=':  ATEQUAL,
+    ':=':  COLONEQUAL,
 }
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
@@ -169,7 +170,7 @@ String = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
 # recognized as two instances of =).
 Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"!=",
                  r"//=?", r"->",
-                 r"[+\-*/%&@|^=<>]=?",
+                 r"[+\-*/%&@|^=<>:]=?",
                  r"~")
 
 Bracket = '[][(){}]'
