@@ -132,9 +132,9 @@ class ResourceFromZipsTest(util.ZipSetupBase, unittest.TestCase):
 
 class NamespaceTest(unittest.TestCase):
     def test_namespaces_cannot_have_resources(self):
-        contents = set(resources.contents(
-            'test.test_importlib.data03.namespace'))
-        self.assertEqual(len(contents), 0)
+        with self.assertRaises(StopIteration) as cm:
+            next(resources.contents('test.test_importlib.data03.namespace'))
+        self.assertIsNone(cm.exception.value)
         # Even though there is a file in the namespace directory, it is not
         # considered a resource, since namespace packages can't have them.
         self.assertFalse(resources.is_resource(
