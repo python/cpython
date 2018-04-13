@@ -1,0 +1,1 @@
+Fixed race conditions in Tkinter when passing data to/from nonthreaded Tcl
