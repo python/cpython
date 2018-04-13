@@ -165,14 +165,14 @@ Generator expression in function arguments
     ...
         list(*x for x in (range(5) for i in range(3)))
                   ^
-    SyntaxError: invalid syntax
+    SyntaxError: invalid syntax - ')' expected
 
     >>> dict(**x for x in [{1:2}])
     Traceback (most recent call last):
     ...
         dict(**x for x in [{1:2}])
                    ^
-    SyntaxError: invalid syntax
+    SyntaxError: invalid syntax - ')' expected
 
 Iterable argument unpacking
 
