@@ -362,6 +362,26 @@ class AbstractMemoryTests:
             self.assertEqual(list(reversed(m)), aslist)
             self.assertEqual(list(reversed(m)), list(m[::-1]))
 
+    def test_writable_toreadonly(self):
+        tp = self.rw_type
+        if tp is None:
+            self.skipTest("no writable type to test")
+        b = tp(self._source)
+        m = self._view(b)
+        self.assertFalse(m.readonly)
+        m = m.toreadonly()
+        self.assertTrue(m.readonly)
+        self.assertTrue(memoryview(m).readonly)
+
+    def test_readonly_toreadonly(self):
+        tp = self.ro_type
+        if tp is None:
+            self.skipTest("no read-only type to test")
+        b = tp(self._source)
+        m = self._view(b)
+        self.assertTrue(m.readonly)
+        self.assertIs(m, m.toreadonly())
+
     def test_issue22668(self):
         a = array.array('H', [256, 256, 256, 256])
         x = memoryview(a)

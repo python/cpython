@@ -2833,6 +2833,15 @@ class TestBufferProtocol(unittest.TestCase):
         m = memoryview(ex)
         self.assertRaises(NotImplementedError, m.tolist)
 
+    def test_memoryview_toreadonly(self):
+        a = array.array('h', list(range(-6, 6)))
+        m = memoryview(a)
+        self.assertFalse(m.readonly)
+        m = m.toreadonly()
+        self.assertTrue(m.readonly)
+        self.assertTrue(memoryview(m).readonly)
+        self.assertIs(m, m.toreadonly())
+
     def test_memoryview_repr(self):
         m = memoryview(bytearray(9))
         r = m.__repr__()
