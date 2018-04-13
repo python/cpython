@@ -1984,8 +1984,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     // fixup decorators to be the first line number internally.
     if (asdl_seq_LEN(decos) > 0) {
-            expr_ty first_decorator = asdl_seq_GET(decos, 0);
-            c->u->u_firstlineno = first_decorator->lineno;
+        expr_ty first_decorator = asdl_seq_GET(decos, 0);
+        c->u->u_firstlineno = first_decorator->lineno;
     }
 
     funcflags = compiler_default_arguments(c, args);
