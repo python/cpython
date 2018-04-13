@@ -7,6 +7,7 @@ import unittest
 import pickle
 import weakref
 import errno
+import abc
 
 from test.support import (TESTFN, captured_stderr, check_impl_detail,
                           check_warnings, cpython_only, gc_collect, run_unittest,
@@ -1336,6 +1337,53 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.msg, 'test')
                 self.assertEqual(exc.name, orig.name)
                 self.assertEqual(exc.path, orig.path)
+
+    def test_exception_registration(self):
+        # See issue12029
+        class A(Exception, metaclass=abc.ABCMeta):
+            pass
+        class B(Exception):
+            pass
+        A.register(B)
+        try:
+            raise B
+        except A:
+            pass
+        except B:
+            self.fail("Caught B, should have caught A")
+
+    def test_exception_subclasscheck(self):
+        # Test that a bad __subclasscheck__ does not cause failure
+        class RaisingMeta(type):
+            def __subclasscheck__(self, cls):
+                raise RuntimeError
+        class RaisingCatchingMeta(type):
+            def __subclasscheck__(self, cls):
+                try:
+                    raise RuntimeError
+                except RuntimeError:
+                    pass
+        def recursion():
+            return recursion()
+        class RecursingMeta(type):
+            def __subclasscheck__(self, cls):
+                recursion()
+        reclimit = sys.getrecursionlimit()
+        try:
+            sys.setrecursionlimit(1000)
+            for metaclass in [RaisingMeta, RaisingCatchingMeta, RecursingMeta]:
+                BadException = metaclass('BadException', (Exception,), {})
+                try:
+                    raise ValueError
+                # this handler should cause an exception that is ignored
+                except BadException:
+                    self.fail('caught a bad exception but shouldn\'t')
+                except ValueError:
+                    pass
+                else:
+                    self.fail('ValueError not raised')
+        finally:
+            sys.setrecursionlimit(reclimit)
 
 
 if __name__ == '__main__':

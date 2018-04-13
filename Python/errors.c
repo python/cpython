@@ -203,8 +203,20 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
     if (PyExceptionInstance_Check(err))
         err = PyExceptionInstance_Class(err);
 
-    if (PyExceptionClass_Check(err) && PyExceptionClass_Check(exc)) {
-        return PyType_IsSubtype((PyTypeObject *)err, (PyTypeObject *)exc);
+    if (PyExceptionClass_Check(err) &&  PyExceptionClass_Check(exc)) {
+        int res = 0;
+        PyObject *exception, *value, *tb;
+        PyErr_Fetch(&exception, &value, &tb);
+        /* PyObject_IsSubclass() can recurse and therefore is
+           not safe (see test_bad_getattr in test.pickletester). */
+        res = PyObject_IsSubclass(err, exc);
+        /* This function must not fail, so print the error here */
+        if (res == -1) {
+            PyErr_WriteUnraisable(err);
+            res = 0;
+        }
+        PyErr_Restore(exception, value, tb);
+        return res;
     }
 
     return err == exc;

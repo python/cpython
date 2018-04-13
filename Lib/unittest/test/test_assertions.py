@@ -1,3 +1,4 @@
+import abc
 import datetime
 import warnings
 import weakref
@@ -369,6 +370,16 @@ class TestLongMessage(unittest.TestCase):
                               ['^TypeError not raised$', '^oops$',
                                '^TypeError not raised$',
                                '^TypeError not raised : oops$'])
+
+    def testAssertRaisesWithMetaClass(self):
+        # See issue33271
+        class A(Exception, metaclass=abc.ABCMeta):
+            pass
+        class B(Exception):
+            pass
+        A.register(B)
+        with self.assertRaises(A, msg="Exception B should be interpreted as A"):
+            raise B
 
     def testAssertRaisesRegex(self):
         # test error not raised

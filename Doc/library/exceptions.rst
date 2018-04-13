@@ -8,11 +8,11 @@ Built-in Exceptions
    statement: except
 
 In Python, all exceptions must be instances of a class that derives from
-:class:`BaseException`.  In a :keyword:`try` statement with an :keyword:`except`
-clause that mentions a particular class, that clause also handles any exception
-classes derived from that class (but not exception classes from which *it* is
-derived).  Two exception classes that are not related via subclassing are never
-equivalent, even if they have the same name.
+:class:`BaseException`.  A :keyword:`try` statement with an :keyword:`except`
+clause that mentions a class handles exceptions of that class and its
+subclasses (as defined by :func:`issubclass`). Two exception classes that
+are not related via subclassing are never equivalent, even if they have the
+same name.
 
 .. index:: statement: raise
 

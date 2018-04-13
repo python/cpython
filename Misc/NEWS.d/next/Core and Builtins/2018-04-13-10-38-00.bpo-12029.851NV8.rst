@@ -1,0 +1,3 @@
+Fix bug where exception matching fails to match virtual subclasses because
+``PyErr_GivenExceptionMatches`` used ``PyType_IsSubtype`` instead of
+``PyObject_IsSubclass``.
