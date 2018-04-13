@@ -131,7 +131,7 @@ class ResourceFromZipsTest(util.ZipSetupBase, unittest.TestCase):
 
 
 class NamespaceTest(unittest.TestCase):
-    def test_namespaces_cant_have_resources(self):
+    def test_namespaces_cannot_have_resources(self):
         contents = set(resources.contents(
             'test.test_importlib.data03.namespace'))
         self.assertEqual(len(contents), 0)
