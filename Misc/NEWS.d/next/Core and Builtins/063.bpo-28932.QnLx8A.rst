@@ -1,1 +1,0 @@
-Do not include <sys/random.h> if it does not exist.

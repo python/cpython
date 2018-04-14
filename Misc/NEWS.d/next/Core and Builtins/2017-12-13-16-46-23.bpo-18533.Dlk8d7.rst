@@ -1,3 +1,0 @@
-``repr()`` on a dict containing its own ``viewvalues()`` or
-``viewitems()`` no longer raises ``RuntimeError``.  Instead, use
-``...``, as for other recursive structures.  Patch by Ben North.

@@ -1,2 +1,0 @@
-``telnetlib``: ``select.error`` doesn't have an ``errno`` attribute. Patch
-by Segev Finer.

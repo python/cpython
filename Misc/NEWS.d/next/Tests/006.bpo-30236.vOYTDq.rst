@@ -1,1 +1,0 @@
-Backported test.regrtest options -m/--match and -G/--failfast from Python 3.
