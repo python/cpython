@@ -3591,6 +3591,25 @@ copying.
          :mod:`struct` module syntax as well as multi-dimensional
          representations.
 
+   .. method:: toreadonly()
+
+      Return a readonly version of the memoryview object.  The original
+      memoryview object is unchanged. ::
+
+         >>> m = memoryview(bytearray(b'abc'))
+         >>> mm = m.toreadonly()
+         >>> mm.tolist()
+         [89, 98, 99]
+         >>> mm[0] = 42
+         Traceback (most recent call last):
+           File "<stdin>", line 1, in <module>
+         TypeError: cannot modify read-only memory
+         >>> m[0] = 43
+         >>> mm.tolist()
+         [43, 98, 99]
+
+      .. versionadded:: 3.8
+
    .. method:: release()
 
       Release the underlying buffer exposed by the memoryview object.  Many

@@ -362,6 +362,17 @@ class AbstractMemoryTests:
             self.assertEqual(list(reversed(m)), aslist)
             self.assertEqual(list(reversed(m)), list(m[::-1]))
 
+    def test_toreadonly(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            mm = m.toreadonly()
+            self.assertTrue(mm.readonly)
+            self.assertTrue(memoryview(mm).readonly)
+            self.assertEqual(mm.tolist(), m.tolist())
+            mm.release()
+            m.tolist()
+
     def test_issue22668(self):
         a = array.array('H', [256, 256, 256, 256])
         x = memoryview(a)
