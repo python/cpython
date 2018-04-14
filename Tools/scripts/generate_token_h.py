@@ -23,7 +23,7 @@ footer = """
 #define ISEOF(x)                ((x) == ENDMARKER)
 
 
-PyAPI_DATA(const char *) _PyParser_TokenNames[]; /* Token names */
+PyAPI_DATA(const char * const) _PyParser_TokenNames[]; /* Token names */
 PyAPI_FUNC(int) PyToken_OneChar(int);
 PyAPI_FUNC(int) PyToken_TwoChars(int, int);
 PyAPI_FUNC(int) PyToken_ThreeChars(int, int, int);

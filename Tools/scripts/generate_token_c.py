@@ -9,7 +9,7 @@ template = """\
 
 /* Token names */
 
-const char *_PyParser_TokenNames[] = {
+const char * const _PyParser_TokenNames[] = {
 %s\
 };
 
