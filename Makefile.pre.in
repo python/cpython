@@ -862,8 +862,8 @@ regen-token:
 .PHONY: regen-symbol
 regen-symbol: $(srcdir)/Include/graminit.h
 	# Regenerate Lib/symbol.py from Include/graminit.h
-	# using Lib/symbol.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Lib/symbol.py \
+	# using Tools/scripts/generate_symbol_py.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_symbol_py.py \
 		$(srcdir)/Include/graminit.h \
 		$(srcdir)/Lib/symbol.py
 
