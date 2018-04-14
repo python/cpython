@@ -1,5 +1,0 @@
-All 2.7 macOS installer variants now supply their own version of ``OpenSSL
-1.0.2``; the Apple-supplied SSL libraries and root certificates are not
-longer used.  The ``Installer Certificate`` command in
-``/Applications/Python 2.7`` may be used to download and install a default
-set of root certificates from the third-party ``certifi`` package.

@@ -1,3 +1,0 @@
-Default macOS deployment target is now set by ``configure`` to the build
-system's OS version (as is done by Python 3), not ``10.4``; override with,
-for example, ``./configure MACOSX_DEPLOYMENT_TARGET=10.4``.

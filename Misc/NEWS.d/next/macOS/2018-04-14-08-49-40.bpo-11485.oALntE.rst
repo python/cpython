@@ -1,5 +1,0 @@
-python.org macOS Pythons no longer supply a default SDK value (e.g.
-``-isysroot /``) or specific compiler version default (e.g. ``gcc-4.2``)
-when building extension modules.  Use ``CC``, ``SDKROOT``, and
-``DEVELOPER_DIR`` environment variables to override compilers or to use an
-SDK.  See Apple's ``xcrun`` man page for more info.

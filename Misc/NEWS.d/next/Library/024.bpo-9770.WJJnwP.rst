@@ -1,1 +1,0 @@
-curses.ascii predicates now work correctly with negative integers.
