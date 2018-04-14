@@ -712,7 +712,7 @@ be positional::
    Namespace(bar='BAR', foo='FOO')
    >>> parser.parse_args(['--foo', 'FOO'])
    usage: PROG [-h] [-f FOO] bar
-   PROG: error: too few arguments
+   PROG: error: the following arguments are required: bar
 
 
 action
@@ -898,7 +898,7 @@ values are:
      Namespace(foo=['a', 'b'])
      >>> parser.parse_args([])
      usage: PROG [-h] foo [foo ...]
-     PROG: error: too few arguments
+     PROG: error: the following arguments are required: foo
 
 .. _`argparse.REMAINDER`:
 
