@@ -1,2 +1,0 @@
-Add a new PYTHONSHOWREFCOUNT environment variable. In debug mode, Python now
-only print the total reference count if PYTHONSHOWREFCOUNT is set.

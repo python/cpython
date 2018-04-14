@@ -1,2 +1,0 @@
-Fixed integer overflow in cPickle when pickle large strings or too many
-objects.

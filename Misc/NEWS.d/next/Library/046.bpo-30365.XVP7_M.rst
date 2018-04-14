@@ -1,3 +1,0 @@
-Fixed a deprecation warning about the doctype() method of the
-xml.etree.ElementTree.XMLParser class.  Now it is emitted only when define
-the doctype() method in the subclass of XMLParser.

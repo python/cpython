@@ -1,2 +1,0 @@
-Disable computed gotos by default for clang < 5.0. It caused significant
-performance regression.

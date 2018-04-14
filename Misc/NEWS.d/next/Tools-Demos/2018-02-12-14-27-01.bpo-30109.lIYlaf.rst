@@ -1,2 +1,0 @@
-Fixed Tools/scripts/reindent.py for non-ASCII files. It now processes files
-as binary streams. This also fixes "make reindent".
