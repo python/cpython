@@ -2,10 +2,15 @@
    Test cases for pyclbr.py
    Nick Mathewson
 '''
+
+import os
 import sys
+from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
+from test import support
+from functools import partial
 
 StaticMethodType = type(staticmethod(lambda: None))
 ClassMethodType = type(classmethod(lambda c: None))
@@ -150,6 +155,67 @@ class PyclbrTest(TestCase):
         #
         self.checkModule('test.pyclbr_input', ignore=['om'])
 
+    def test_nested(self):
+        mb = pyclbr
+        # Set arguments for descriptor creation and _creat_tree call.
+        m, p, f, t, i = 'test', '', 'test.py', {}, None
+        source = dedent("""\
+        def f0:
+            def f1(a,b,c):
+                def f2(a=1, b=2, c=3): pass
+                    return f1(a,b,d)
+            class c1: pass
+        class C0:
+            "Test class."
+            def F1():
+                "Method."
+                return 'return'
+            class C1():
+                class C2:
+                    "Class nested within nested class."
+                    def F3(): return 1+1
+
+        """)
+        actual = mb._create_tree(m, p, f, source, t, i)
+
+        # Create descriptors, linked together, and expected dict.
+        f0 = mb.Function(m, 'f0', f, 1)
+        f1 = mb._nest_function(f0, 'f1', 2)
+        f2 = mb._nest_function(f1, 'f2', 3)
+        c1 = mb._nest_class(f0, 'c1', 5)
+        C0 = mb.Class(m, 'C0', None, f, 6)
+        F1 = mb._nest_function(C0, 'F1', 8)
+        C1 = mb._nest_class(C0, 'C1', 11)
+        C2 = mb._nest_class(C1, 'C2', 12)
+        F3 = mb._nest_function(C2, 'F3', 14)
+        expected = {'f0':f0, 'C0':C0}
+
+        def compare(parent1, children1, parent2, children2):
+            """Return equality of tree pairs.
+
+            Each parent,children pair define a tree.  The parents are
+            assumed equal.  Comparing the children dictionaries as such
+            does not work due to comparison by identity and double
+            linkage.  We separate comparing string and number attributes
+            from comparing the children of input children.
+            """
+            self.assertEqual(children1.keys(), children2.keys())
+            for ob in children1.values():
+                self.assertIs(ob.parent, parent1)
+            for ob in children2.values():
+                self.assertIs(ob.parent, parent2)
+            for key in children1.keys():
+                o1, o2 = children1[key], children2[key]
+                t1 = type(o1), o1.name, o1.file, o1.module, o1.lineno
+                t2 = type(o2), o2.name, o2.file, o2.module, o2.lineno
+                self.assertEqual(t1, t2)
+                if type(o1) is mb.Class:
+                    self.assertEqual(o1.methods, o2.methods)
+                # Skip superclasses for now as not part of example
+                compare(o1, o1.children, o2, o2.children)
+
+        compare(None, actual, None, expected)
+
     def test_others(self):
         cm = self.checkModule
 
@@ -157,6 +223,8 @@ class PyclbrTest(TestCase):
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('cgi', ignore=('log',))      # set with = in module
         cm('pickle', ignore=('partial',))
+        # TODO(briancurtin): openfp is deprecated as of 3.7.
+        # Update this once it has been removed.
         cm('aifc', ignore=('openfp', '_aifc_params'))  # set with = in module
         cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
         cm('pdb')

@@ -92,7 +92,6 @@ class CommonTestMixin:
                 y = pickle.loads(pickle.dumps(x, proto))
                 self.assertEqual(y, x)
 
-
 class CommonTestMixin_v4(CommonTestMixin):
 
     def test_leading_zeros(self):
@@ -405,6 +404,9 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
 class NetmaskTestMixin_v4(CommonTestMixin_v4):
     """Input validation on interfaces and networks is very similar"""
 
+    def test_no_mask(self):
+        self.assertEqual(str(self.factory('1.2.3.4')), '1.2.3.4/32')
+
     def test_split_netmask(self):
         addr = "1.2.3.4/32/24"
         with self.assertAddressError("Only one '/' permitted in %r" % addr):
@@ -477,6 +479,56 @@ class InterfaceTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
 class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
     factory = ipaddress.IPv4Network
 
+    def test_subnet_of(self):
+        # containee left of container
+        self.assertFalse(
+            self.factory('10.0.0.0/30').subnet_of(
+                self.factory('10.0.1.0/24')))
+        # containee inside container
+        self.assertTrue(
+            self.factory('10.0.0.0/30').subnet_of(
+                self.factory('10.0.0.0/24')))
+        # containee right of container
+        self.assertFalse(
+            self.factory('10.0.0.0/30').subnet_of(
+                self.factory('10.0.1.0/24')))
+        # containee larger than container
+        self.assertFalse(
+            self.factory('10.0.1.0/24').subnet_of(
+                self.factory('10.0.0.0/30')))
+
+    def test_supernet_of(self):
+        # containee left of container
+        self.assertFalse(
+            self.factory('10.0.0.0/30').supernet_of(
+                self.factory('10.0.1.0/24')))
+        # containee inside container
+        self.assertFalse(
+            self.factory('10.0.0.0/30').supernet_of(
+                self.factory('10.0.0.0/24')))
+        # containee right of container
+        self.assertFalse(
+            self.factory('10.0.0.0/30').supernet_of(
+                self.factory('10.0.1.0/24')))
+        # containee larger than container
+        self.assertTrue(
+            self.factory('10.0.0.0/24').supernet_of(
+                self.factory('10.0.0.0/30')))
+
+    def test_subnet_of_mixed_types(self):
+        with self.assertRaises(TypeError):
+            ipaddress.IPv4Network('10.0.0.0/30').supernet_of(
+                ipaddress.IPv6Network('::1/128'))
+        with self.assertRaises(TypeError):
+            ipaddress.IPv6Network('::1/128').supernet_of(
+                ipaddress.IPv4Network('10.0.0.0/30'))
+        with self.assertRaises(TypeError):
+            ipaddress.IPv4Network('10.0.0.0/30').subnet_of(
+                ipaddress.IPv6Network('::1/128'))
+        with self.assertRaises(TypeError):
+            ipaddress.IPv6Network('::1/128').subnet_of(
+                ipaddress.IPv4Network('10.0.0.0/30'))
+
 
 class NetmaskTestMixin_v6(CommonTestMixin_v6):
     """Input validation on interfaces and networks is very similar"""
@@ -539,6 +591,42 @@ class InterfaceTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
 
 class NetworkTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
     factory = ipaddress.IPv6Network
+
+    def test_subnet_of(self):
+        # containee left of container
+        self.assertFalse(
+            self.factory('2000:999::/56').subnet_of(
+                self.factory('2000:aaa::/48')))
+        # containee inside container
+        self.assertTrue(
+            self.factory('2000:aaa::/56').subnet_of(
+                self.factory('2000:aaa::/48')))
+        # containee right of container
+        self.assertFalse(
+            self.factory('2000:bbb::/56').subnet_of(
+                self.factory('2000:aaa::/48')))
+        # containee larger than container
+        self.assertFalse(
+            self.factory('2000:aaa::/48').subnet_of(
+                self.factory('2000:aaa::/56')))
+
+    def test_supernet_of(self):
+        # containee left of container
+        self.assertFalse(
+            self.factory('2000:999::/56').supernet_of(
+                self.factory('2000:aaa::/48')))
+        # containee inside container
+        self.assertFalse(
+            self.factory('2000:aaa::/56').supernet_of(
+                self.factory('2000:aaa::/48')))
+        # containee right of container
+        self.assertFalse(
+            self.factory('2000:bbb::/56').supernet_of(
+                self.factory('2000:aaa::/48')))
+        # containee larger than container
+        self.assertTrue(
+            self.factory('2000:aaa::/48').supernet_of(
+                self.factory('2000:aaa::/56')))
 
 
 class FactoryFunctionErrors(BaseTestCase):
@@ -1039,10 +1127,30 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.IPv4Address('1.2.3.1'), hosts[0])
         self.assertEqual(ipaddress.IPv4Address('1.2.3.254'), hosts[-1])
 
+        ipv6_network = ipaddress.IPv6Network('2001:658:22a:cafe::/120')
+        hosts = list(ipv6_network.hosts())
+        self.assertEqual(255, len(hosts))
+        self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), hosts[0])
+        self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::ff'), hosts[-1])
+
         # special case where only 1 bit is left for address
-        self.assertEqual([ipaddress.IPv4Address('2.0.0.0'),
-                          ipaddress.IPv4Address('2.0.0.1')],
-                         list(ipaddress.ip_network('2.0.0.0/31').hosts()))
+        addrs = [ipaddress.IPv4Address('2.0.0.0'),
+                 ipaddress.IPv4Address('2.0.0.1')]
+        str_args = '2.0.0.0/31'
+        tpl_args = ('2.0.0.0', 31)
+        self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
+        self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
+        self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
+                         list(ipaddress.ip_network(tpl_args).hosts()))
+
+        addrs = [ipaddress.IPv6Address('2001:658:22a:cafe::'),
+                 ipaddress.IPv6Address('2001:658:22a:cafe::1')]
+        str_args = '2001:658:22a:cafe::/127'
+        tpl_args = ('2001:658:22a:cafe::', 127)
+        self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
+        self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
+        self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
+                         list(ipaddress.ip_network(tpl_args).hosts()))
 
     def testFancySubnetting(self):
         self.assertEqual(sorted(self.ipv4_network.subnets(prefixlen_diff=3)),

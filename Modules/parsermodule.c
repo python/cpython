@@ -299,13 +299,10 @@ parser_compare_nodes(node *left, node *right)
  *
  */
 
-#define TEST_COND(cond) ((cond) ? Py_True : Py_False)
-
 static PyObject *
 parser_richcompare(PyObject *left, PyObject *right, int op)
 {
     int result;
-    PyObject *v;
 
     /* neither argument should be NULL, unless something's gone wrong */
     if (left == NULL || right == NULL) {
@@ -315,8 +312,7 @@ parser_richcompare(PyObject *left, PyObject *right, int op)
 
     /* both arguments should be instances of PyST_Object */
     if (!PyST_Object_Check(left) || !PyST_Object_Check(right)) {
-        v = Py_NotImplemented;
-        goto finished;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     if (left == right)
@@ -326,33 +322,7 @@ parser_richcompare(PyObject *left, PyObject *right, int op)
         result = parser_compare_nodes(((PyST_Object *)left)->st_node,
                                       ((PyST_Object *)right)->st_node);
 
-    /* Convert return value to a Boolean */
-    switch (op) {
-      case Py_EQ:
-        v = TEST_COND(result == 0);
-        break;
-      case Py_NE:
-        v = TEST_COND(result != 0);
-        break;
-      case Py_LE:
-        v = TEST_COND(result <= 0);
-        break;
-      case Py_GE:
-        v = TEST_COND(result >= 0);
-        break;
-      case Py_LT:
-        v = TEST_COND(result < 0);
-        break;
-      case Py_GT:
-        v = TEST_COND(result > 0);
-        break;
-      default:
-        PyErr_BadArgument();
-        return NULL;
-    }
-  finished:
-    Py_INCREF(v);
-    return v;
+    Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
 /*  parser_newstobject(node* st)

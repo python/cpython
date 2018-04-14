@@ -115,14 +115,14 @@ PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
 "the unused_data attribute.");
 
 #define _BZ2_BZ2DECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)_bz2_BZ2Decompressor_decompress, METH_FASTCALL, _bz2_BZ2Decompressor_decompress__doc__},
+    {"decompress", (PyCFunction)_bz2_BZ2Decompressor_decompress, METH_FASTCALL|METH_KEYWORDS, _bz2_BZ2Decompressor_decompress__doc__},
 
 static PyObject *
 _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
                                      Py_ssize_t max_length);
 
 static PyObject *
-_bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "max_length", NULL};
@@ -174,4 +174,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0e97a1d716b35a14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=564a0313177fff63 input=a9049054013a1b77]*/

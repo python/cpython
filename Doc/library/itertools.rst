@@ -32,7 +32,7 @@ operator can be mapped across two vectors to form an efficient dot-product:
 ``sum(map(operator.mul, vector1, vector2))``.
 
 
-**Infinite Iterators:**
+**Infinite iterators:**
 
 ==================  =================       =================================================               =========================================
 Iterator            Arguments               Results                                                         Example
@@ -53,7 +53,7 @@ Iterator                        Arguments                       Results         
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F``
 :func:`dropwhile`               pred, seq                       seq[n], seq[n+1], starting when pred fails          ``dropwhile(lambda x: x<5, [1,4,6,4,1]) --> 6 4 1``
 :func:`filterfalse`             pred, seq                       elements of seq where pred(elem) is false           ``filterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
-:func:`groupby`                 iterable[, keyfunc]             sub-iterators grouped by value of keyfunc(v)
+:func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> C D E F G``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000``
 :func:`takewhile`               pred, seq                       seq[0], seq[1], until pred fails                    ``takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4``
@@ -61,7 +61,7 @@ Iterator                        Arguments                       Results         
 :func:`zip_longest`             p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-``
 ============================    ============================    =================================================   =============================================================
 
-**Combinatoric generators:**
+**Combinatoric iterators:**
 
 ==============================================   ====================       =============================================================
 Iterator                                         Arguments                  Results
@@ -401,13 +401,14 @@ loops that truncate the stream.
           def __iter__(self):
               return self
           def __next__(self):
+              self.id = object()
               while self.currkey == self.tgtkey:
                   self.currvalue = next(self.it)    # Exit on StopIteration
                   self.currkey = self.keyfunc(self.currvalue)
               self.tgtkey = self.currkey
-              return (self.currkey, self._grouper(self.tgtkey))
-          def _grouper(self, tgtkey):
-              while self.currkey == tgtkey:
+              return (self.currkey, self._grouper(self.tgtkey, self.id))
+          def _grouper(self, tgtkey, id):
+              while self.id is id and self.currkey == tgtkey:
                   yield self.currvalue
                   try:
                       self.currvalue = next(self.it)
@@ -435,15 +436,24 @@ loops that truncate the stream.
           # islice('ABCDEFG', 2, None) --> C D E F G
           # islice('ABCDEFG', 0, None, 2) --> A C E G
           s = slice(*args)
-          it = iter(range(s.start or 0, s.stop or sys.maxsize, s.step or 1))
+          start, stop, step = s.start or 0, s.stop or sys.maxsize, s.step or 1
+          it = iter(range(start, stop, step))
           try:
               nexti = next(it)
           except StopIteration:
+              # Consume *iterable* up to the *start* position.
+              for i, element in zip(range(start), iterable):
+                  pass
               return
-          for i, element in enumerate(iterable):
-              if i == nexti:
-                  yield element
-                  nexti = next(it)
+          try:
+              for i, element in enumerate(iterable):
+                  if i == nexti:
+                      yield element
+                      nexti = next(it)
+          except StopIteration:
+              # Consume to *stop*.
+              for i, element in zip(range(i + 1, stop), iterable):
+                  pass
 
    If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
    then the step defaults to one.
@@ -630,26 +640,25 @@ loops that truncate the stream.
    iterables are of uneven length, missing values are filled-in with *fillvalue*.
    Iteration continues until the longest iterable is exhausted.  Roughly equivalent to::
 
-      class ZipExhausted(Exception):
-          pass
-
-      def zip_longest(*args, **kwds):
+      def zip_longest(*args, fillvalue=None):
           # zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
-          fillvalue = kwds.get('fillvalue')
-          counter = len(args) - 1
-          def sentinel():
-              nonlocal counter
-              if not counter:
-                  raise ZipExhausted
-              counter -= 1
-              yield fillvalue
-          fillers = repeat(fillvalue)
-          iterators = [chain(it, sentinel(), fillers) for it in args]
-          try:
-              while iterators:
-                  yield tuple(map(next, iterators))
-          except ZipExhausted:
-              pass
+          iterators = [iter(it) for it in args]
+          num_active = len(iterators)
+          if not num_active:
+              return
+          while True:
+              values = []
+              for i, it in enumerate(iterators):
+                  try:
+                      value = next(it)
+                  except StopIteration:
+                      num_active -= 1
+                      if not num_active:
+                          return
+                      iterators[i] = repeat(fillvalue)
+                      value = fillvalue
+                  values.append(value)
+              yield tuple(values)
 
    If one of the iterables is potentially infinite, then the :func:`zip_longest`
    function should be wrapped with something that limits the number of calls
@@ -679,6 +688,11 @@ which incur interpreter overhead.
        "Return first n items of the iterable as a list"
        return list(islice(iterable, n))
 
+   def prepend(value, iterator):
+       "Prepend a single value in front of an iterator"
+       # prepend(1, [2, 3, 4]) -> 1 2 3 4
+       return chain([value], iterator)
+
    def tabulate(function, start=0):
        "Return function(0), function(1), ..."
        return map(function, count(start))
@@ -688,8 +702,8 @@ which incur interpreter overhead.
        # tail(3, 'ABCDEFG') --> E F G
        return iter(collections.deque(iterable, maxlen=n))
 
-   def consume(iterator, n):
-       "Advance the iterator n-steps ahead. If n is none, consume entirely."
+   def consume(iterator, n=None):
+       "Advance the iterator n-steps ahead. If n is None, consume entirely."
        # Use functions that consume iterators at C speed.
        if n is None:
            # feed the entire iterator into a zero-length deque
@@ -753,15 +767,16 @@ which incur interpreter overhead.
    def roundrobin(*iterables):
        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
        # Recipe credited to George Sakkis
-       pending = len(iterables)
+       num_active = len(iterables)
        nexts = cycle(iter(it).__next__ for it in iterables)
-       while pending:
+       while num_active:
            try:
                for next in nexts:
                    yield next()
            except StopIteration:
-               pending -= 1
-               nexts = cycle(islice(nexts, pending))
+               # Remove the iterator we just exhausted from the cycle.
+               num_active -= 1
+               nexts = cycle(islice(nexts, num_active))
 
    def partition(pred, iterable):
        'Use a predicate to partition entries into false entries and true entries'
@@ -857,6 +872,29 @@ which incur interpreter overhead.
        n = len(pool)
        indices = sorted(random.randrange(n) for i in range(r))
        return tuple(pool[i] for i in indices)
+
+   def nth_combination(iterable, r, index):
+       'Equivalent to list(combinations(iterable, r))[index]'
+       pool = tuple(iterable)
+       n = len(pool)
+       if r < 0 or r > n:
+           raise ValueError
+       c = 1
+       k = min(r, n-r)
+       for i in range(1, k+1):
+           c = c * (n - k + i) // i
+       if index < 0:
+           index += c
+       if index < 0 or index >= c:
+           raise IndexError
+       result = []
+       while r:
+           c, n, r = c*r//n, n-1, r-1
+           while index >= c:
+               index -= c
+               c, n = c*(n-r)//n, n-1
+           result.append(pool[-1-n])
+       return tuple(result)
 
 Note, many of the above recipes can be optimized by replacing global lookups
 with local variables defined as default values.  For example, the

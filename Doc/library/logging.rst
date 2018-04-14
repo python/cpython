@@ -91,13 +91,17 @@ is the module's name in the Python package namespace.
          scenario is to attach handlers only to the root logger, and to let
          propagation take care of the rest.
 
-   .. method:: Logger.setLevel(lvl)
+   .. method:: Logger.setLevel(level)
 
-      Sets the threshold for this logger to *lvl*. Logging messages which are less
-      severe than *lvl* will be ignored. When a logger is created, the level is set to
-      :const:`NOTSET` (which causes all messages to be processed when the logger is
-      the root logger, or delegation to the parent when the logger is a non-root
-      logger). Note that the root logger is created with level :const:`WARNING`.
+      Sets the threshold for this logger to *level*. Logging messages which are less
+      severe than *level* will be ignored; logging messages which have severity *level*
+      or higher will be emitted by whichever handler or handlers service this logger,
+      unless a handler's level has been set to a higher severity level than *level*.
+
+      When a logger is created, the level is set to :const:`NOTSET` (which causes
+      all messages to be processed when the logger is the root logger, or delegation
+      to the parent when the logger is a non-root logger). Note that the root logger
+      is created with level :const:`WARNING`.
 
       The term 'delegation to the parent' means that if a logger has a level of
       NOTSET, its chain of ancestor loggers is traversed until either an ancestor with
@@ -113,7 +117,7 @@ is the module's name in the Python package namespace.
       See :ref:`levels` for a list of levels.
 
       .. versionchanged:: 3.2
-         The *lvl* parameter now accepts a string representation of the
+         The *level* parameter now accepts a string representation of the
          level such as 'INFO' as an alternative to the integer constants
          such as :const:`INFO`. Note, however, that levels are internally stored
          as integers, and methods such as e.g. :meth:`getEffectiveLevel` and
@@ -175,7 +179,9 @@ is the module's name in the Python package namespace.
 
       You can specify *stack_info* independently of *exc_info*, e.g. to just show
       how you got to a certain point in your code, even when no exceptions were
-      raised. The stack frames are printed following a header line which says::
+      raised. The stack frames are printed following a header line which says:
+
+      .. code-block:: none
 
           Stack (most recent call last):
 
@@ -194,7 +200,9 @@ is the module's name in the Python package namespace.
          logger = logging.getLogger('tcpserver')
          logger.warning('Protocol problem: %s', 'connection reset', extra=d)
 
-      would print something like  ::
+      would print something like
+
+      .. code-block:: none
 
          2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
 
@@ -263,14 +271,14 @@ is the module's name in the Python package namespace.
       message. This method should only be called from an exception handler.
 
 
-   .. method:: Logger.addFilter(filt)
+   .. method:: Logger.addFilter(filter)
 
-      Adds the specified filter *filt* to this logger.
+      Adds the specified filter *filter* to this logger.
 
 
-   .. method:: Logger.removeFilter(filt)
+   .. method:: Logger.removeFilter(filter)
 
-      Removes the specified filter *filt* from this logger.
+      Removes the specified filter *filter* from this logger.
 
 
    .. method:: Logger.filter(record)
@@ -324,7 +332,7 @@ is the module's name in the Python package namespace.
       .. versionadded:: 3.2
 
    .. versionchanged:: 3.7
-      Loggers can now be picked and unpickled.
+      Loggers can now be pickled and unpickled.
 
 .. _levels:
 
@@ -389,33 +397,34 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
       Releases the thread lock acquired with :meth:`acquire`.
 
 
-   .. method:: Handler.setLevel(lvl)
+   .. method:: Handler.setLevel(level)
 
-      Sets the threshold for this handler to *lvl*. Logging messages which are less
-      severe than *lvl* will be ignored. When a handler is created, the level is set
-      to :const:`NOTSET` (which causes all messages to be processed).
+      Sets the threshold for this handler to *level*. Logging messages which are
+      less severe than *level* will be ignored. When a handler is created, the
+      level is set to :const:`NOTSET` (which causes all messages to be
+      processed).
 
       See :ref:`levels` for a list of levels.
 
       .. versionchanged:: 3.2
-         The *lvl* parameter now accepts a string representation of the
+         The *level* parameter now accepts a string representation of the
          level such as 'INFO' as an alternative to the integer constants
          such as :const:`INFO`.
 
 
-   .. method:: Handler.setFormatter(form)
+   .. method:: Handler.setFormatter(fmt)
 
-      Sets the :class:`Formatter` for this handler to *form*.
-
-
-   .. method:: Handler.addFilter(filt)
-
-      Adds the specified filter *filt* to this handler.
+      Sets the :class:`Formatter` for this handler to *fmt*.
 
 
-   .. method:: Handler.removeFilter(filt)
+   .. method:: Handler.addFilter(filter)
 
-      Removes the specified filter *filt* from this handler.
+      Adds the specified filter *filter* to this handler.
+
+
+   .. method:: Handler.removeFilter(filter)
+
+      Removes the specified filter *filter* from this handler.
 
 
    .. method:: Handler.filter(record)
@@ -775,14 +784,14 @@ the options available to you.
 | lineno         | ``%(lineno)d``          | Source line number where the logging call was |
 |                |                         | issued (if available).                        |
 +----------------+-------------------------+-----------------------------------------------+
+| message        | ``%(message)s``         | The logged message, computed as ``msg %       |
+|                |                         | args``. This is set when                      |
+|                |                         | :meth:`Formatter.format` is invoked.          |
++----------------+-------------------------+-----------------------------------------------+
 | module         | ``%(module)s``          | Module (name portion of ``filename``).        |
 +----------------+-------------------------+-----------------------------------------------+
 | msecs          | ``%(msecs)d``           | Millisecond portion of the time when the      |
 |                |                         | :class:`LogRecord` was created.               |
-+----------------+-------------------------+-----------------------------------------------+
-| message        | ``%(message)s``         | The logged message, computed as ``msg %       |
-|                |                         | args``. This is set when                      |
-|                |                         | :meth:`Formatter.format` is invoked.          |
 +----------------+-------------------------+-----------------------------------------------+
 | msg            | You shouldn't need to   | The format string passed in the original      |
 |                | format this yourself.   | logging call. Merged with ``args`` to         |
@@ -934,7 +943,9 @@ functions.
 
    You can specify *stack_info* independently of *exc_info*, e.g. to just show
    how you got to a certain point in your code, even when no exceptions were
-   raised. The stack frames are printed following a header line which says::
+   raised. The stack frames are printed following a header line which says:
+
+   .. code-block:: none
 
        Stack (most recent call last):
 
@@ -952,7 +963,9 @@ functions.
       d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
       logging.warning('Protocol problem: %s', 'connection reset', extra=d)
 
-   would print something like::
+   would print something like:
+
+   .. code-block:: none
 
       2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
 

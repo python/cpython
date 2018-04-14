@@ -125,19 +125,38 @@ SyntaxError: invalid syntax
 
 From ast_for_call():
 
->>> def f(it, *varargs):
+>>> def f(it, *varargs, **kwargs):
 ...     return list(it)
 >>> L = range(10)
 >>> f(x for x in L)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> f(x for x in L, 1)
 Traceback (most recent call last):
-SyntaxError: Generator expression must be parenthesized if not sole argument
+SyntaxError: Generator expression must be parenthesized
+>>> f(x for x in L, y=1)
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
+>>> f(x for x in L, *[])
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
+>>> f(x for x in L, **{})
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
+>>> f(L, x for x in L)
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
 >>> f(x for x in L, y for y in L)
 Traceback (most recent call last):
-SyntaxError: Generator expression must be parenthesized if not sole argument
+SyntaxError: Generator expression must be parenthesized
+>>> f(x for x in L,)
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
 >>> f((x for x in L), 1)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> class C(x for x in L):
+...     pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 >>> def g(*args, **kwargs):
 ...     print(args, sorted(kwargs.items()))
@@ -279,7 +298,7 @@ continue in for loop under finally should be ok.
     >>> test()
     9
 
-Start simple, a continue in a finally should not be allowed.
+continue in a finally should be ok.
 
     >>> def test():
     ...    for abc in range(10):
@@ -287,11 +306,9 @@ Start simple, a continue in a finally should not be allowed.
     ...            pass
     ...        finally:
     ...            continue
-    Traceback (most recent call last):
-      ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
-
-This is essentially a continue in a finally which should not be allowed.
+    ...    print(abc)
+    >>> test()
+    9
 
     >>> def test():
     ...    for abc in range(10):
@@ -302,9 +319,24 @@ This is essentially a continue in a finally which should not be allowed.
     ...                continue
     ...            except:
     ...                pass
-    Traceback (most recent call last):
-      ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
+    ...    print(abc)
+    >>> test()
+    9
+
+    >>> def test():
+    ...    for abc in range(10):
+    ...        try:
+    ...            pass
+    ...        finally:
+    ...            try:
+    ...                pass
+    ...            except:
+    ...                continue
+    ...    print(abc)
+    >>> test()
+    9
+
+A continue outside loop should not be allowed.
 
     >>> def foo():
     ...     try:
@@ -313,42 +345,7 @@ This is essentially a continue in a finally which should not be allowed.
     ...         continue
     Traceback (most recent call last):
       ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
-
-    >>> def foo():
-    ...     for a in ():
-    ...       try:
-    ...           pass
-    ...       finally:
-    ...           continue
-    Traceback (most recent call last):
-      ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
-
-    >>> def foo():
-    ...     for a in ():
-    ...         try:
-    ...             pass
-    ...         finally:
-    ...             try:
-    ...                 continue
-    ...             finally:
-    ...                 pass
-    Traceback (most recent call last):
-      ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
-
-    >>> def foo():
-    ...  for a in ():
-    ...   try: pass
-    ...   finally:
-    ...    try:
-    ...     pass
-    ...    except:
-    ...     continue
-    Traceback (most recent call last):
-      ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
+    SyntaxError: 'continue' not properly in loop
 
 There is one test for a break that is not in a loop.  The compiler
 uses a single data structure to keep track of try-finally and loops,
@@ -400,11 +397,24 @@ build.  The number of blocks must be greater than CO_MAXBLOCKS.  SF #1565514
 Misuse of the nonlocal and global statement can lead to a few unique syntax errors.
 
    >>> def f():
+   ...     print(x)
+   ...     global x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: name 'x' is used prior to global declaration
+
+   >>> def f():
    ...     x = 1
    ...     global x
    Traceback (most recent call last):
      ...
    SyntaxError: name 'x' is assigned to before global declaration
+
+   >>> def f(x):
+   ...     global x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: name 'x' is parameter and global
 
    >>> def f():
    ...     x = 1
@@ -414,6 +424,15 @@ Misuse of the nonlocal and global statement can lead to a few unique syntax erro
    Traceback (most recent call last):
      ...
    SyntaxError: name 'x' is used prior to nonlocal declaration
+
+   >>> def f():
+   ...     x = 1
+   ...     def g():
+   ...         x = 2
+   ...         nonlocal x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: name 'x' is assigned to before nonlocal declaration
 
    >>> def f(x):
    ...     nonlocal x
@@ -440,24 +459,7 @@ From SF bug #1705365
      ...
    SyntaxError: nonlocal declaration not allowed at module level
 
-TODO(jhylton): Figure out how to test SyntaxWarning with doctest.
-
-##   >>> def f(x):
-##   ...     def f():
-##   ...         print(x)
-##   ...         nonlocal x
-##   Traceback (most recent call last):
-##     ...
-##   SyntaxWarning: name 'x' is assigned to before nonlocal declaration
-
-##   >>> def f():
-##   ...     x = 1
-##   ...     nonlocal x
-##   Traceback (most recent call last):
-##     ...
-##   SyntaxWarning: name 'x' is assigned to before nonlocal declaration
-
- From https://bugs.python.org/issue25973
+From https://bugs.python.org/issue25973
    >>> class A:
    ...     def f(self):
    ...         nonlocal __x
@@ -568,7 +570,6 @@ Corner-cases that used to crash:
 
 import re
 import unittest
-import warnings
 
 from test import support
 
@@ -604,19 +605,25 @@ class SyntaxTestCase(unittest.TestCase):
     def test_assign_del(self):
         self._check_error("del f()", "delete")
 
-    def test_global_err_then_warn(self):
-        # Bug #763201:  The SyntaxError raised for one global statement
-        # shouldn't be clobbered by a SyntaxWarning issued for a later one.
+    def test_global_param_err_first(self):
         source = """if 1:
             def error(a):
                 global a  # SyntaxError
-            def warning():
+            def error2():
                 b = 1
-                global b  # SyntaxWarning
+                global b  # SyntaxError
             """
-        warnings.filterwarnings(action='ignore', category=SyntaxWarning)
-        self._check_error(source, "global")
-        warnings.filters.pop(0)
+        self._check_error(source, "parameter and global", lineno=3)
+
+    def test_nonlocal_param_err_first(self):
+        source = """if 1:
+            def error(a):
+                nonlocal a  # SyntaxError
+            def error2():
+                b = 1
+                global b  # SyntaxError
+            """
+        self._check_error(source, "parameter and nonlocal", lineno=3)
 
     def test_break_outside_loop(self):
         self._check_error("break", "outside loop")
@@ -639,12 +646,12 @@ class SyntaxTestCase(unittest.TestCase):
                           "positional argument follows keyword argument")
 
     def test_kwargs_last2(self):
-        self._check_error("int(**{base: 10}, '2')",
+        self._check_error("int(**{'base': 10}, '2')",
                           "positional argument follows "
                           "keyword argument unpacking")
 
     def test_kwargs_last3(self):
-        self._check_error("int(**{base: 10}, *['2'])",
+        self._check_error("int(**{'base': 10}, *['2'])",
                           "iterable argument unpacking follows "
                           "keyword argument unpacking")
 

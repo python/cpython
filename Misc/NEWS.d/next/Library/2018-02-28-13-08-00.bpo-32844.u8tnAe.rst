@@ -1,0 +1,2 @@
+Fix wrong redirection of a low descriptor (0 or 1) to stderr in subprocess
+if another low descriptor is closed.

@@ -74,6 +74,11 @@ python \- an interpreted, interactive, object-oriented programming language
 ]
 .br
        [
+.B \--check-hash-based-pycs
+\'default\'|\'always\'|\'never\'
+]
+.br
+       [
 .B \-c
 .I command
 |
@@ -123,8 +128,11 @@ Specify the command to execute (see next section).
 This terminates the option list (following options are passed as
 arguments to the command).
 .TP
+.BI "\-\-check-hash-based-pycs " mode
+Configure how Python evaluates the up-to-dateness of hash-based .pyc files.
+.TP
 .B \-d
-Turn on parser debugging output (for wizards only, depending on
+Turn on parser debugging output (for expert only, depending on
 compilation options).
 .TP
 .B \-E
@@ -156,10 +164,13 @@ for the named module and runs the corresponding
 file as a script.
 .TP
 .B \-O
-Turn on basic optimizations.  Given twice, causes docstrings to be discarded.
+Remove assert statements and any code conditional on the value of
+__debug__; augment the filename for compiled (bytecode) files by
+adding .opt-1 before the .pyc extension.
 .TP
 .B \-OO
-Discard docstrings in addition to the \fB-O\fP optimizations.
+Do \fB-O\fP and also discard docstrings; change the filename for
+compiled (bytecode) files by adding .opt-2 before the .pyc extension.
 .TP
 .B \-q
 Do not print the version and copyright messages. These messages are
@@ -178,13 +189,8 @@ that it entails.  Also disable these manipulations if
 is explicitly imported later.
 .TP
 .B \-u
-Force the binary I/O layers of stdout and stderr to be unbuffered.
-stdin is always buffered.
-The text I/O layer will still be line-buffered.
-.\" Note that there is internal buffering in readlines() and
-.\" file-object iterators ("for line in sys.stdin") which is not
-.\" influenced by this option.  To work around this, you will want to use
-.\" "sys.stdin.readline()" inside a "while 1:" loop.
+Force the stdout and stderr streams to be unbuffered.
+This option has no effect on the stdin stream.
 .TP
 .B \-v
 Print a message each time a module is initialized, showing the place
@@ -438,7 +444,7 @@ Main website:  https://www.python.org/
 .br
 Documentation:  https://docs.python.org/
 .br
-Developer resources:  https://docs.python.org/devguide/
+Developer resources:  https://devguide.python.org/
 .br
 Downloads:  https://www.python.org/downloads/
 .br

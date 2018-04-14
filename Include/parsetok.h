@@ -21,13 +21,13 @@ typedef struct {
 } perrdetail;
 
 #if 0
-#define PyPARSE_YIELD_IS_KEYWORD	0x0001
+#define PyPARSE_YIELD_IS_KEYWORD        0x0001
 #endif
 
-#define PyPARSE_DONT_IMPLY_DEDENT	0x0002
+#define PyPARSE_DONT_IMPLY_DEDENT       0x0002
 
 #if 0
-#define PyPARSE_WITH_IS_KEYWORD		0x0003
+#define PyPARSE_WITH_IS_KEYWORD         0x0003
 #define PyPARSE_PRINT_IS_FUNCTION       0x0004
 #define PyPARSE_UNICODE_LITERALS        0x0008
 #endif

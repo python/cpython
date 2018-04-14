@@ -20,7 +20,6 @@ import time
 import unittest
 
 from test import support
-android_not_root = support.android_not_root
 
 @contextlib.contextmanager
 def kill_on_error(proc):
@@ -312,14 +311,16 @@ class SocketEINTRTest(EINTRBaseTest):
     # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=203162
     @support.requires_freebsd_version(10, 3)
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'needs mkfifo()')
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def _test_open(self, do_open_close_reader, do_open_close_writer):
         filename = support.TESTFN
 
         # Use a fifo: until the child opens it for reading, the parent will
         # block when trying to open it for writing.
         support.unlink(filename)
-        os.mkfifo(filename)
+        try:
+            os.mkfifo(filename)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
         self.addCleanup(support.unlink, filename)
 
         code = '\n'.join((

@@ -1286,7 +1286,8 @@ class AbstractHTTPHandler(BaseHandler):
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.unredirected_hdrs)
-        headers.update((k, v) for k, v in req.headers.items() if k not in headers)
+        headers.update({k: v for k, v in req.headers.items()
+                        if k not in headers})
 
         # TODO(jhylton): Should this be redesigned to handle
         # persistent connections?
@@ -1792,7 +1793,6 @@ class URLopener:
             if filename:
                 tfp = open(filename, 'wb')
             else:
-                import tempfile
                 garbage, path = splittype(url)
                 garbage, path = splithost(path or "")
                 path, garbage = splitquery(path or "")

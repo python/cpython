@@ -1389,7 +1389,7 @@ Release date: 2014-09-22
 Core and Builtins
 -----------------
 
-- Issue #22258: Fix the the internal function set_inheritable() on Illumos.
+- Issue #22258: Fix the internal function set_inheritable() on Illumos.
   This platform exposes the function ``ioctl(FIOCLEX)``, but calling it fails
   with errno is ENOTTY: "Inappropriate ioctl for device". set_inheritable()
   now falls back to the slower ``fcntl()`` (``F_GETFD`` and then ``F_SETFD``).
@@ -1597,7 +1597,7 @@ Library
   negative values the same way for keyword arguments as it does for
   positional arguments.
 
-- Issue #21812: turtle.shapetransform did not tranform the turtle on the
+- Issue #21812: turtle.shapetransform did not transform the turtle on the
   first call.  (Issue identified and fixed by Lita Cho.)
 
 - Issue #21635: The difflib SequenceMatcher.get_matching_blocks() method
@@ -3245,7 +3245,7 @@ Core and Builtins
 
 - Issue #19466: Clear the frames of daemon threads earlier during the
   Python shutdown to call objects destructors. So "unclosed file" resource
-  warnings are now corretly emitted for daemon threads.
+  warnings are now correctly emitted for daemon threads.
 
 - Issue #19514: Deduplicate some _Py_IDENTIFIER declarations.
   Patch by Andrei Dorian Duma.
@@ -3386,7 +3386,7 @@ Library
 - Issue #19448: Add private API to SSL module to lookup ASN.1 objects by OID,
   NID, short name and long name.
 
-- Issue #19282: dbm.open now supports the context management protocol. (Inital
+- Issue #19282: dbm.open now supports the context management protocol. (Initial
   patch by Claudiu Popa)
 
 - Issue #8311: Added support for writing any bytes-like objects in the aifc,
@@ -3481,7 +3481,7 @@ Library
 - Issue #19227: Remove pthread_atfork() handler. The handler was added to
   solve #18747 but has caused issues.
 
-- Issue #19420: Fix reference leak in module initalization code of
+- Issue #19420: Fix reference leak in module initialization code of
   _hashopenssl.c
 
 - Issue #19329: Optimized compiling charsets in regular expressions.
@@ -4175,7 +4175,7 @@ Library
 
 - Issue #18709: Fix CVE-2013-4238. The SSL module now handles NULL bytes
   inside subjectAltName correctly. Formerly the module has used OpenSSL's
-  GENERAL_NAME_print() function to get the string represention of ASN.1
+  GENERAL_NAME_print() function to get the string representation of ASN.1
   strings for ``rfc822Name`` (email), ``dNSName`` (DNS) and
   ``uniformResourceIdentifier`` (URI).
 
@@ -4268,7 +4268,7 @@ IDLE
 Documentation
 -------------
 
-- Issue #18743: Fix references to non-existant "StringIO" module.
+- Issue #18743: Fix references to non-existent "StringIO" module.
 
 - Issue #18783: Removed existing mentions of Python long type in docstrings,
   error messages and comments.
@@ -5022,7 +5022,7 @@ Library
   Thomas Barlow.
 
 - Issue #17358: Modules loaded by imp.load_source() and load_compiled() (and by
-  extention load_module()) now have a better chance of working when reloaded.
+  extension load_module()) now have a better chance of working when reloaded.
 
 - Issue #17804: New function ``struct.iter_unpack`` allows for streaming
   struct unpacking.
@@ -5135,8 +5135,8 @@ Library
   error message has been removed.  Patch by Ram Rachum.
 
 - Issue #18080: When building a C extension module on OS X, if the compiler
-  is overriden with the CC environment variable, use the new compiler as
-  the default for linking if LDSHARED is not also overriden.  This restores
+  is overridden with the CC environment variable, use the new compiler as
+  the default for linking if LDSHARED is not also overridden.  This restores
   Distutils behavior introduced in 3.2.3 and inadvertently dropped in 3.3.0.
 
 - Issue #18113: Fixed a refcount leak in the curses.panel module's
@@ -5207,7 +5207,7 @@ Library
   specifically addresses a stack misalignment issue on x86 and issues on
   some more recent platforms.
 
-- Issue #8862: Fixed curses cleanup when getkey is interrputed by a signal.
+- Issue #8862: Fixed curses cleanup when getkey is interrupted by a signal.
 
 - Issue #17443: imaplib.IMAP4_stream was using the default unbuffered IO
   in subprocess, but the imap code assumes buffered IO.  In Python2 this
@@ -5382,7 +5382,7 @@ Library
   internal XML encoding is not UTF-8 or US-ASCII.  It also now accepts bytes
   and strings larger than 2 GiB.
 
-- Issue #6083: Fix multiple segmentation faults occured when PyArg_ParseTuple
+- Issue #6083: Fix multiple segmentation faults occurred when PyArg_ParseTuple
   parses nested mutating sequence.
 
 - Issue #5289: Fix ctypes.util.find_library on Solaris.
@@ -9752,7 +9752,7 @@ Library
 - Issue #11382: Trivial system calls, such as dup() or pipe(), needn't
   release the GIL.  Patch by Charles-François Natali.
 
-- Issue #11223: Add threading._info() function providing informations about
+- Issue #11223: Add threading._info() function providing information about
   the thread implementation.
 
 - Issue #11731: simplify/enhance email parser/generator API by introducing
@@ -26790,7 +26790,7 @@ using sre (without changes to the re API).
 
 filecmp - supersedes the old cmp.py and dircmp.py modules.
 
-tabnanny - check Python sources for tab-width dependance.  (Moved from
+tabnanny - check Python sources for tab-width dependence.  (Moved from
 Tools/scripts/.)
 
 urllib2 - new and improved but incompatible version of urllib (still
@@ -29642,7 +29642,7 @@ of the object in the message.
 - Fixed a bug in list.sort() that would occasionally dump core.
 
 - Fixed a bug in PyNumber_Power() that caused numeric arrays to fail
-when taken tothe real power.
+when taken to the real power.
 
 - Fixed a number of bugs in the file reading code, at least one of
 which could cause a core dump on NT, and one of which would
@@ -29689,7 +29689,7 @@ thanks to Charles Waldman.
 - Many nits fixed in the manuals, thanks to Fred Drake and many others
 (especially Rob Hooft and Andrew Kuchling).  The HTML version now uses
 HTML markup instead of inline GIF images for tables; only two images
-are left (for obsure bits of math).  The index of the HTML version has
+are left (for obscure bits of math).  The index of the HTML version has
 also been much improved.  Finally, it is once again possible to
 generate an Emacs info file from the library manual (but I don't
 commit to supporting this in future versions).
@@ -30341,7 +30341,7 @@ http://grail.cnri.reston.va.us/python/essays/packages.html
 for more info.
 
 - Changes to standard library subdirectory names: those subdirectories
-that are not packages have been renamed with a hypen in their name,
+that are not packages have been renamed with a hyphen in their name,
 e.g. lib-tk, lib-stdwin, plat-win, plat-linux2, plat-sunos5, dos-8x3.
 The test suite is now a package -- to run a test, you must now use
 "import test.test_foo".
@@ -34181,7 +34181,7 @@ You need STDWIN version 0.9.7 (released 30 June 1992) for the stdwin
 interface
 
 Dynamic loading is now supported for Sun (and other non-COFF systems)
-throug dld-3.2.3, as well as for SGI (a new version of Jack Jansen's
+through dld-3.2.3, as well as for SGI (a new version of Jack Jansen's
 DL is out, 1.4)
 
 The system-dependent code for the use of the select() system call is

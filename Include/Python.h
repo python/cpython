@@ -18,7 +18,7 @@
 #error "Python's source code assumes C's unsigned char is an 8-bit type."
 #endif
 
-#if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
+#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
 #define _SGI_MP_SOURCE
 #endif
 
@@ -34,6 +34,9 @@
 #include <stdlib.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_CRYPT_H
+#include <crypt.h>
 #endif
 
 /* For size_t? */
@@ -109,6 +112,7 @@
 #include "pyerrors.h"
 
 #include "pystate.h"
+#include "context.h"
 
 #include "pyarena.h"
 #include "modsupport.h"

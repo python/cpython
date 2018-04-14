@@ -10,17 +10,12 @@
 #include "zlib.h"
 
 
-#ifdef WITH_THREAD
-    #include "pythread.h"
-    #define ENTER_ZLIB(obj) \
-        Py_BEGIN_ALLOW_THREADS; \
-        PyThread_acquire_lock((obj)->lock, 1); \
-        Py_END_ALLOW_THREADS;
-    #define LEAVE_ZLIB(obj) PyThread_release_lock((obj)->lock);
-#else
-    #define ENTER_ZLIB(obj)
-    #define LEAVE_ZLIB(obj)
-#endif
+#include "pythread.h"
+#define ENTER_ZLIB(obj) \
+    Py_BEGIN_ALLOW_THREADS; \
+    PyThread_acquire_lock((obj)->lock, 1); \
+    Py_END_ALLOW_THREADS;
+#define LEAVE_ZLIB(obj) PyThread_release_lock((obj)->lock);
 
 #if defined(ZLIB_VERNUM) && ZLIB_VERNUM >= 0x1221
 #  define AT_LEAST_ZLIB_1_2_2_1
@@ -51,9 +46,7 @@ typedef struct
     char eof;
     int is_initialised;
     PyObject *zdict;
-    #ifdef WITH_THREAD
-        PyThread_type_lock lock;
-    #endif
+    PyThread_type_lock lock;
 } compobject;
 
 static void
@@ -112,14 +105,12 @@ newcompobject(PyTypeObject *type)
         Py_DECREF(self);
         return NULL;
     }
-#ifdef WITH_THREAD
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
         Py_DECREF(self);
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
         return NULL;
     }
-#endif
     return self;
 }
 
@@ -142,7 +133,7 @@ PyZlib_Free(voidpf ctx, void *ptr)
 static void
 arrange_input_buffer(z_stream *zst, Py_ssize_t *remains)
 {
-    zst->avail_in = Py_MIN((size_t)*remains, UINT_MAX);
+    zst->avail_in = (uInt)Py_MIN((size_t)*remains, UINT_MAX);
     *remains -= zst->avail_in;
 }
 
@@ -177,7 +168,7 @@ arrange_output_buffer_with_maximum(z_stream *zst, PyObject **buffer,
         }
     }
 
-    zst->avail_out = Py_MIN((size_t)(length - occupied), UINT_MAX);
+    zst->avail_out = (uInt)Py_MIN((size_t)(length - occupied), UINT_MAX);
     zst->next_out = (Byte *)PyBytes_AS_STRING(*buffer) + occupied;
 
     return length;
@@ -615,9 +606,7 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
 static void
 Dealloc(compobject *self)
 {
-#ifdef WITH_THREAD
     PyThread_free_lock(self->lock);
-#endif
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     Py_XDECREF(self->zdict);
@@ -1149,9 +1138,7 @@ static PyMethodDef comp_methods[] =
 {
     ZLIB_COMPRESS_COMPRESS_METHODDEF
     ZLIB_COMPRESS_FLUSH_METHODDEF
-#ifdef HAVE_ZLIB_COPY
     ZLIB_COMPRESS_COPY_METHODDEF
-#endif
     {NULL, NULL}
 };
 
@@ -1159,9 +1146,7 @@ static PyMethodDef Decomp_methods[] =
 {
     ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF
     ZLIB_DECOMPRESS_FLUSH_METHODDEF
-#ifdef HAVE_ZLIB_COPY
     ZLIB_DECOMPRESS_COPY_METHODDEF
-#endif
     {NULL, NULL}
 };
 
@@ -1376,18 +1361,33 @@ PyInit_zlib(void)
     PyModule_AddIntMacro(m, DEFLATED);
     PyModule_AddIntMacro(m, DEF_MEM_LEVEL);
     PyModule_AddIntMacro(m, DEF_BUF_SIZE);
+    // compression levels
+    PyModule_AddIntMacro(m, Z_NO_COMPRESSION);
     PyModule_AddIntMacro(m, Z_BEST_SPEED);
     PyModule_AddIntMacro(m, Z_BEST_COMPRESSION);
     PyModule_AddIntMacro(m, Z_DEFAULT_COMPRESSION);
+    // compression strategies
     PyModule_AddIntMacro(m, Z_FILTERED);
     PyModule_AddIntMacro(m, Z_HUFFMAN_ONLY);
+#ifdef Z_RLE // 1.2.0.1
+    PyModule_AddIntMacro(m, Z_RLE);
+#endif
+#ifdef Z_FIXED // 1.2.2.2
+    PyModule_AddIntMacro(m, Z_FIXED);
+#endif
     PyModule_AddIntMacro(m, Z_DEFAULT_STRATEGY);
-
-    PyModule_AddIntMacro(m, Z_FINISH);
+    // allowed flush values
     PyModule_AddIntMacro(m, Z_NO_FLUSH);
+    PyModule_AddIntMacro(m, Z_PARTIAL_FLUSH);
     PyModule_AddIntMacro(m, Z_SYNC_FLUSH);
     PyModule_AddIntMacro(m, Z_FULL_FLUSH);
-
+    PyModule_AddIntMacro(m, Z_FINISH);
+#ifdef Z_BLOCK // 1.2.0.5 for inflate, 1.2.3.4 for deflate
+    PyModule_AddIntMacro(m, Z_BLOCK);
+#endif
+#ifdef Z_TREES // 1.2.3.4, only for inflate
+    PyModule_AddIntMacro(m, Z_TREES);
+#endif
     ver = PyUnicode_FromString(ZLIB_VERSION);
     if (ver != NULL)
         PyModule_AddObject(m, "ZLIB_VERSION", ver);
