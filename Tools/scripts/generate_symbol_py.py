@@ -8,7 +8,7 @@ def main(inFileName="Include/graminit.h", outFileName="Lib/symbol.py"):
     try:
         fp = open(inFileName)
     except OSError as err:
-        sys.stdout.write("I/O error: %s\n" % str(err))
+        sys.stderr.write("I/O error: %s\n" % str(err))
         sys.exit(1)
     with fp:
         lines = fp.read().split("\n")
@@ -49,4 +49,5 @@ def main(inFileName="Include/graminit.h", outFileName="Lib/symbol.py"):
     with fp:
         fp.write("\n".join(format))
 
-main(*sys.argv[1:])
+if __name__ == '__main__':
+    main(*sys.argv[1:])
