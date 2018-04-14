@@ -69,7 +69,8 @@ def main(token_py='Lib/token.py', outfile='Parser/token.c'):
     tok_name = token.tok_name
     ERRORTOKEN = token.ERRORTOKEN
     N_TOKENS = token.N_TOKENS
-    EXACT_TOKEN_TYPES = token.EXACT_TOKEN_TYPES
+    EXACT_TOKEN_TYPES = dict(token.EXACT_TOKEN_TYPES)
+    EXACT_TOKEN_TYPES['<>'] = EXACT_TOKEN_TYPES['!=']
     chars_to_token = {}
     for string, value in EXACT_TOKEN_TYPES.items():
         assert 1 <= len(string) <= 3
