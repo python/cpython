@@ -3624,13 +3624,15 @@ copying.
 
       .. versionadded:: 3.2
 
-   .. method:: cast(format[, shape])
+   .. method:: cast(format[, shape, readonly])
 
       Cast a memoryview to a new format or shape. *shape* defaults to
       ``[byte_length//new_itemsize]``, which means that the result view
       will be one-dimensional. The return value is a new memoryview, but
       the buffer itself is not copied. Supported casts are 1D -> C-:term:`contiguous`
-      and C-contiguous -> 1D.
+      and C-contiguous -> 1D. If *readonly* is ``True`` the result view will
+      not be writable. Triying to cast a view with a readonly underlying buffer to
+      a writable view will raise a :class:`ValueError`.
 
       The destination format is restricted to a single element native format in
       :mod:`struct` syntax. One of the formats must be a byte format

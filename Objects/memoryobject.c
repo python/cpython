@@ -1338,16 +1338,17 @@ zero_in_shape(PyMemoryViewObject *mv)
 static PyObject *
 memory_cast(PyMemoryViewObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"format", "shape", NULL};
+    static char *kwlist[] = {"format", "shape", "readonly", NULL};
     PyMemoryViewObject *mv = NULL;
     PyObject *shape = NULL;
+    int readonly = self->view.readonly;
     PyObject *format;
     Py_ssize_t ndim = 1;
 
     CHECK_RELEASED(self);
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist,
-                                     &format, &shape)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O$p", kwlist,
+                                     &format, &shape, &readonly)) {
         return NULL;
     }
     if (!PyUnicode_Check(format)) {
@@ -1365,6 +1366,13 @@ memory_cast(PyMemoryViewObject *self, PyObject *args, PyObject *kwds)
             "memoryview: cannot cast view with zeros in shape or strides");
         return NULL;
     }
+
+    if (self->view.readonly && !readonly){
+        PyErr_SetString(PyExc_TypeError,
+        "memoryview: cannot cast readonly buffer to a writable buffer.");
+        return NULL;
+    }
+
     if (shape) {
         CHECK_LIST_OR_TUPLE(shape)
         ndim = PySequence_Fast_GET_SIZE(shape);
@@ -1390,6 +1398,8 @@ memory_cast(PyMemoryViewObject *self, PyObject *args, PyObject *kwds)
         goto error;
     if (shape && cast_to_ND(mv, shape, (int)ndim) < 0)
         goto error;
+
+    mv->view.readonly = readonly;
 
     return (PyObject *)mv;
 
@@ -3058,7 +3068,7 @@ PyDoc_STRVAR(memory_tolist_doc,
 \n\
 Return the data in the buffer as a list of elements.");
 PyDoc_STRVAR(memory_cast_doc,
-"cast($self, /, format, *, shape)\n--\n\
+"cast($self, /, format, *, shape, readonly)\n--\n\
 \n\
 Cast a memoryview to a new format or shape.");
 

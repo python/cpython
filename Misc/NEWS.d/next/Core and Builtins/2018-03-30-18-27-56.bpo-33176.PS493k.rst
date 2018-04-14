@@ -1,0 +1,1 @@
+Add readonly flag to memoryview.cast to create readonly memoryviews.
