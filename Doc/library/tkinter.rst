@@ -32,8 +32,8 @@ this should open a window demonstrating a simple Tk interface.
    `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_
       Online reference for tkinter supported by effbot.org.
 
-   `Tcl/Tk manual <https://www.tcl.tk/man/tcl8.5/>`_
-      Official manual for the latest tcl/tk version.
+   `Tcl/Tk 8.6 man pages <https://www.tcl.tk/man/tcl8.6/>`_
+      The Tcl/Tk manual on www.tcl.tk.
 
    `Programming Python <http://learning-python.com/about-pp4e.html>`_
       Book by Mark Lutz, has excellent coverage of Tkinter.
