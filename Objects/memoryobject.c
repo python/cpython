@@ -1402,10 +1402,9 @@ static PyObject *
 memory_toreadonly(PyMemoryViewObject *self, PyObject *noargs)
 {
     CHECK_RELEASED(self);
-    if (self->view.readonly) {
-        Py_INCREF(self);
-        return (PyObject *) self;
-    }
+    /* Even if self is already readonly, we still need to create a new
+     * object for .release() to work correctly.
+     */
     self = (PyMemoryViewObject *) mbuf_add_view(self->mbuf, &self->view);
     if (self != NULL) {
         self->view.readonly = 1;

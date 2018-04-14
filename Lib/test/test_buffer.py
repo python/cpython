@@ -924,23 +924,30 @@ class TestBufferProtocol(unittest.TestCase):
             except BufferError: # re-exporter does not provide full information
                 return
             ex = result.obj if isinstance(result, memoryview) else result
-            self.assertIs(m.obj, ex)
-            self.assertEqual(m.nbytes, expected_len)
-            self.assertEqual(m.itemsize, itemsize)
-            self.assertEqual(m.format, fmt)
-            self.assertEqual(m.readonly, readonly)
-            self.assertEqual(m.ndim, ndim)
-            self.assertEqual(m.shape, tuple(shape))
-            if not (sliced and suboffsets):
-                self.assertEqual(m.strides, tuple(strides))
-            self.assertEqual(m.suboffsets, tuple(suboffsets))
 
-            n = 1 if ndim == 0 else len(lst)
-            self.assertEqual(len(m), n)
+            def check_memoryview(m, expected_readonly=readonly):
+                self.assertIs(m.obj, ex)
+                self.assertEqual(m.nbytes, expected_len)
+                self.assertEqual(m.itemsize, itemsize)
+                self.assertEqual(m.format, fmt)
+                self.assertEqual(m.readonly, expected_readonly)
+                self.assertEqual(m.ndim, ndim)
+                self.assertEqual(m.shape, tuple(shape))
+                if not (sliced and suboffsets):
+                    self.assertEqual(m.strides, tuple(strides))
+                self.assertEqual(m.suboffsets, tuple(suboffsets))
 
-            rep = result.tolist() if fmt else result.tobytes()
-            self.assertEqual(rep, lst)
-            self.assertEqual(m, result)
+                n = 1 if ndim == 0 else len(lst)
+                self.assertEqual(len(m), n)
+
+                rep = result.tolist() if fmt else result.tobytes()
+                self.assertEqual(rep, lst)
+                self.assertEqual(m, result)
+
+            check_memoryview(m)
+            with m.toreadonly() as mm:
+                check_memoryview(mm, expected_readonly=True)
+            m.tobytes()  # Releasing mm didn't release m
 
     def verify_getbuf(self, orig_ex, ex, req, sliced=False):
         def simple_fmt(ex):
@@ -2832,15 +2839,6 @@ class TestBufferProtocol(unittest.TestCase):
         ex = ndarray([b"a",b"b",b"c",b"d",b"e",b"f"], shape=[2,3], format='s')
         m = memoryview(ex)
         self.assertRaises(NotImplementedError, m.tolist)
-
-    def test_memoryview_toreadonly(self):
-        a = array.array('h', list(range(-6, 6)))
-        m = memoryview(a)
-        self.assertFalse(m.readonly)
-        m = m.toreadonly()
-        self.assertTrue(m.readonly)
-        self.assertTrue(memoryview(m).readonly)
-        self.assertIs(m, m.toreadonly())
 
     def test_memoryview_repr(self):
         m = memoryview(bytearray(9))
