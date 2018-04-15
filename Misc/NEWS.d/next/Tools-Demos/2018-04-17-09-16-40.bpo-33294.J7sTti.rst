@@ -1,0 +1,7 @@
+Purpose of the patch is to support more complex expressions for py-print
+command. Small example:
+
+(gdb) py-print t
+local 't' = <Test(t=[1, 2, 3, 4, {'a': 'b', 'c': 'd'}], x=123) at remote 0x7ffff6f15780>
+(gdb) py-print t.t[4]["a"]
+local 't.t[4]["a"]' = 'b'

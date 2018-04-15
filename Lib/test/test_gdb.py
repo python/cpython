@@ -889,6 +889,62 @@ class PyPrintTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\nbuiltin 'len' = <built-in method len of module object at remote 0x-?[0-9a-f]+>\n.*")
 
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
+    def test_complex_expr_print(self):
+        tested_code = '''
+class Player:
+    def __init__(self):
+        self.name = 'Martin'
+        self.team = 'HC Sparta Praha'
+        self.skills = {'defence': 2}
+        self.numbers = (11, 22, 33)
+
+a = [0, 1, 2, Player()]
+b = 0
+id(0)'''
+
+        gdb_output = self.get_stack_trace(tested_code,
+                                          cmds_after_breakpoint=['py-up', 'py-print a[0]'])
+        self.assertRegex(gdb_output, r".*\nglobal 'a\[0\]' = 0\n.*")
+        gdb_output = self.get_stack_trace(tested_code,
+                                          cmds_after_breakpoint=['py-up', 'py-print a[3].name'])
+        self.assertRegex(gdb_output, r".*\nglobal 'a\[3\]\.name' = 'Martin'\n.*")
+        gdb_output = self.get_stack_trace(tested_code,
+                                          cmds_after_breakpoint=['py-up', 'py-print a[3].skills["defence"]'])
+        self.assertRegex(gdb_output, r".*\nglobal 'a\[3\].skills\[\"defence\"\]' = 2\n.*")
+        gdb_output = self.get_stack_trace(tested_code,
+                                          cmds_after_breakpoint=['py-up', 'py-print a[3].numbers[1]'])
+        self.assertRegex(gdb_output, r".*\nglobal 'a\[3\].numbers\[1\]' = 22\n.*")
+
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
+    def test_complex_expr_error(self):
+        tested_code = '''
+class Player:
+    def __init__(self):
+        self.name = 'Martin'
+        self.team = 'HC Sparta Praha'
+        self.skills = {'defence': 2}
+        self.numbers = (11, 22, 33)
+
+variables = [1, 2, 3]
+player = Player()
+id(0)'''
+
+        gdb_output = self.get_stack_trace(tested_code,
+                                  cmds_after_breakpoint=['py-up', 'py-print variables[0'])
+        self.assertRegex(gdb_output, r".*\nCan't find closing bracket in variables\[0\n.*")
+        gdb_output = self.get_stack_trace(tested_code,
+                                  cmds_after_breakpoint=['py-up', 'py-print player.color'])
+        self.assertRegex(gdb_output, r".*\nCan't find color of <__main__.HeapTypeObjectPtr object at 0x-?[0-9a-f]+>\n.*")
+        gdb_output = self.get_stack_trace(tested_code,
+                                  cmds_after_breakpoint=['py-up', 'py-print player.skills[mykey]'])
+        self.assertRegex(gdb_output, r".*\nKey name mykey must be a string value\n.*")
+        gdb_output = self.get_stack_trace(tested_code,
+                                  cmds_after_breakpoint=['py-up', 'py-print player.skills["mykey"]'])
+        self.assertRegex(gdb_output, r".*\nCan't find mykey of <__main__.PyDictObjectPtr object at 0x-?[0-9a-f]+>\n.*")
+
 class PyLocalsTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
