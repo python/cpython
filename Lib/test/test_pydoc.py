@@ -1103,7 +1103,7 @@ class TestInternalUtilities(unittest.TestCase):
         return pydoc._get_revised_path(given_path, argv0)
 
     def _get_starting_path(self):
-        # Get a copy of sys.path without the current directory
+        # Get a copy of sys.path without the current directory.
         clean_path = sys.path.copy()
         for spelling in self.curdir_spellings:
             for __ in range(clean_path.count(spelling)):
