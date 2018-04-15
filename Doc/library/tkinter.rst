@@ -788,7 +788,8 @@ Bitmap/Pixelmap images can be created through the subclasses of
 
 * :class:`BitmapImage` can be used for X11 bitmap data.
 
-* :class:`PhotoImage` can be used for PNG, GIF and PPM/PGM color bitmaps.
+* :class:`PhotoImage` can be used for GIF and PPM/PGM bitmaps. This class can
+  also be used for PNG bitmaps starting with Tcl/Tk 8.6.
 
 Either type of image is created through either the ``file`` or the ``data``
 option (other options are available as well).
