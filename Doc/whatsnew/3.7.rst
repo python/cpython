@@ -1144,11 +1144,13 @@ Changes in Python behavior
   parentheses can be omitted only on calls.
   (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
 
-* When using the ``-m`` switch, the starting directory is now added to sys.path,
-  rather than the current working directory. Any programs that are checking for
-  the empty string in :data:`sys.path`, or otherwise relying on the previous
-  behaviour, will need to be updated accordingly (e.g. by checking for
-  ``os.getcwd()`` in addition to checking for the empty string).
+* When using the :option:`-m` switch, the initial working directory is now added
+  to :data:`sys.path`, rather than an empty string (which dynamically denoted
+  the current working directory at the time of each import). Any programs that
+  are checking for the empty string, or otherwise relying on the previous
+  behaviour, will need to be updated accordingly (e.g. by also checking for
+  ``os.getcwd()`` or ``os.path.dirname(__main__.__file__)``, depending on why
+  the code was checking for the empty string in the first place).
 
 
 Changes in the Python API

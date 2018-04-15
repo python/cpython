@@ -2643,7 +2643,7 @@ def _get_revised_path(given_path, argv0):
 
 # Note: the tests only cover _get_revised_path, not _adjust_cli_path itself
 def _adjust_cli_sys_path():
-    """Ensures current directory is on sys.path, and __main__ directory is not
+    """Ensures current directory is on sys.path, and __main__ directory is not.
 
     Exception: __main__ dir is left alone if it's also pydoc's directory.
     """
