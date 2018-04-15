@@ -788,7 +788,7 @@ of :class:`tkinter.Image`:
 
 * :class:`BitmapImage` for images in XBM format.
 
-* :class:`PhotoImage` for images in PPM, PGM, GIF and PNG formats. The latter
+* :class:`PhotoImage` for images in PGM, PPM, GIF and PNG formats. The latter
   is supported starting with Tk 8.6.
 
 Either type of image is created through either the ``file`` or the ``data``
