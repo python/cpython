@@ -4145,7 +4145,7 @@ compiler_genexp(struct compiler *c, expr_ty e)
 {
     static identifier name;
     if (!name) {
-        name = PyUnicode_FromString("<genexpr>");
+        name = PyUnicode_InternFromString("<genexpr>");
         if (!name)
             return 0;
     }
@@ -4160,7 +4160,7 @@ compiler_listcomp(struct compiler *c, expr_ty e)
 {
     static identifier name;
     if (!name) {
-        name = PyUnicode_FromString("<listcomp>");
+        name = PyUnicode_InternFromString("<listcomp>");
         if (!name)
             return 0;
     }
@@ -4175,7 +4175,7 @@ compiler_setcomp(struct compiler *c, expr_ty e)
 {
     static identifier name;
     if (!name) {
-        name = PyUnicode_FromString("<setcomp>");
+        name = PyUnicode_InternFromString("<setcomp>");
         if (!name)
             return 0;
     }
@@ -4191,7 +4191,7 @@ compiler_dictcomp(struct compiler *c, expr_ty e)
 {
     static identifier name;
     if (!name) {
-        name = PyUnicode_FromString("<dictcomp>");
+        name = PyUnicode_InternFromString("<dictcomp>");
         if (!name)
             return 0;
     }
