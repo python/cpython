@@ -1145,9 +1145,10 @@ Changes in Python behavior
   (Contributed by Serhiy Storchaka in :issue:`32012` and :issue:`32023`.)
 
 * When using the ``-m`` switch, the starting directory is now added to sys.path,
-  rather than the current working directory. Any programs that are found to be
-  relying on the previous behaviour will need to be updated to manipulate
-  :data:`sys.path` appropriately.
+  rather than the current working directory. Any programs that are checking for
+  the empty string in :data:`sys.path`, or otherwise relying on the previous
+  behaviour, will need to be updated accordingly (e.g. by checking for
+  ``os.getcwd()`` in addition to checking for the empty string).
 
 
 Changes in the Python API

@@ -1,0 +1,5 @@
+Fixed regression when running pydoc with the ``-m`` switch. (The regression
+was introduced in 3.7.0b3 by the resolution of bpo-33053)
+
+This fix also changed pydoc to add ``os.getcwd()`` to ``sys.path`` when
+necessary, rather than adding ``"."``.
