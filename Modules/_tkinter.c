@@ -255,6 +255,13 @@ static PyThreadState *tcl_tstate = NULL;
     { PyThreadState *tstate = PyEval_SaveThread(); \
         if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate; }
 
+#define ENTER_PYTHON_OVERLAP \
+{ PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; PyEval_RestoreThread((tstate)); }
+
+#define LEAVE_PYTHON_OVERLAP \
+{ PyThreadState *tstate = PyEval_SaveThread(); tcl_tstate = tstate; }
+
+
 #define CHECK_TCL_APPARTMENT \
     if (((TkappObject *)self)->threaded && \
         ((TkappObject *)self)->thread_id != Tcl_GetCurrentThread()) { \
@@ -1405,17 +1412,17 @@ Tkapp_CallProc(Tkapp_CallEvent *e, int flags)
     Tcl_Obj **objv;
     int objc;
     int i;
-    ENTER_PYTHON
+    ENTER_PYTHON_OVERLAP
     objv = Tkapp_CallArgs(e->args, objStore, &objc);
     if (!objv) {
         PyErr_Fetch(e->exc_type, e->exc_value, e->exc_tb);
         *(e->res) = NULL;
     }
-    LEAVE_PYTHON
+    LEAVE_PYTHON_OVERLAP
     if (!objv)
         goto done;
     i = Tcl_EvalObjv(e->self->interp, objc, objv, e->flags);
-    ENTER_PYTHON
+    ENTER_PYTHON_OVERLAP
     if (i == TCL_ERROR) {
         *(e->res) = NULL;
         *(e->exc_type) = NULL;
@@ -1427,7 +1434,7 @@ Tkapp_CallProc(Tkapp_CallEvent *e, int flags)
     else {
         *(e->res) = Tkapp_CallResult(e->self);
     }
-    LEAVE_PYTHON
+    LEAVE_PYTHON_OVERLAP
 
     Tkapp_CallDeallocArgs(objv, objStore, objc);
 done:
@@ -1520,7 +1527,11 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
             else
                 res = Tkapp_CallResult(self);
 
+            LEAVE_OVERLAP
+
             Tkapp_CallDeallocArgs(objv, objStore, objc);
+
+            ENTER_OVERLAP
             
         }
         LEAVE_OVERLAP_TCL
@@ -2379,14 +2390,17 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *argv[
     if (res == NULL)
         return PythonCmd_Error(interp);
 
+    ENTER_TCL
+    ENTER_OVERLAP
     obj_res = AsObj(res);
+    if (obj_res) {
+        Tcl_SetObjResult(interp, obj_res);
+        rv = TCL_OK;
+    }
+    LEAVE_OVERLAP_TCL
     if (obj_res == NULL) {
         Py_DECREF(res);
         return PythonCmd_Error(interp);
-    }
-    else {
-        Tcl_SetObjResult(interp, obj_res);
-        rv = TCL_OK;
     }
 
     Py_DECREF(res);
