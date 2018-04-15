@@ -2462,7 +2462,7 @@ typedef struct {
 } PythonCmd_ClientData;
 
 static int
-PythonCmd_Error(Tcl_Interp *interp)
+PythonCmd_Error(void)
 {
     errorInCmd = 1;
     PyErr_Fetch(&excInCmd, &valInCmd, &trbInCmd);
@@ -2490,20 +2490,20 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 
     /* Create argument list (argv1, ..., argvN) */
     if (!(arg = PyTuple_New(argc - 1)))
-        return PythonCmd_Error(interp);
+        return PythonCmd_Error();
 
     for (i = 0; i < (argc - 1); i++) {
         PyObject *s = fromTclString(argv[i + 1]);
         if (!s || PyTuple_SetItem(arg, i, s)) {
             Py_DECREF(arg);
-            return PythonCmd_Error(interp);
+            return PythonCmd_Error();
         }
     }
     res = PyEval_CallObject(func, arg);
     Py_DECREF(arg);
 
     if (res == NULL)
-        return PythonCmd_Error(interp);
+        return PythonCmd_Error();
 
     ENTER_TCL
     ENTER_OVERLAP
@@ -2515,7 +2515,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
     LEAVE_OVERLAP_TCL
     if (obj_res == NULL) {
         Py_DECREF(res);
-        return PythonCmd_Error(interp);
+        return PythonCmd_Error();
     }
 
     Py_DECREF(res);
