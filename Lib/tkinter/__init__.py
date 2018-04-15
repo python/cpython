@@ -3533,7 +3533,7 @@ class Image:
             self.tk.call('image', 'width', self.name))
 
 class PhotoImage(Image):
-    """Widget which can display colored images in GIF, PPM/PGM format."""
+    """Widget which can display colored images in PNG, GIF, PPM/PGM format."""
     def __init__(self, name=None, cnf={}, master=None, **kw):
         """Create an image with NAME.
 
