@@ -107,6 +107,8 @@ class ABCMeta(type):
 
     def __subclasscheck__(cls, subclass):
         """Override for issubclass(subclass, cls)."""
+        if not isinstance(subclass, type):
+            raise TypeError('issubclass() arg 1 must be a class')
         # Check cache
         if subclass in cls._abc_cache:
             return True

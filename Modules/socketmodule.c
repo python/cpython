@@ -315,6 +315,70 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 /* Provides the IsWindows7SP1OrGreater() function */
 #include <VersionHelpers.h>
 
+/* remove some flags on older version Windows during run-time.
+   https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
+typedef struct {
+    DWORD build_number;  /* available starting with this Win10 BuildNumber */
+    const char flag_name[20];
+} FlagRuntimeInfo;
+
+/* IMPORTANT: make sure the list ordered by descending build_number */
+static FlagRuntimeInfo win_runtime_flags[] = {
+    /* available starting with Windows 10 1709 */
+    {16299, "TCP_KEEPIDLE"},
+    {16299, "TCP_KEEPINTVL"},
+    /* available starting with Windows 10 1703 */
+    {15063, "TCP_KEEPCNT"},
+    /* available starting with Windows 10 1607 */
+    {14393, "TCP_FASTOPEN"}
+};
+
+static void
+remove_unusable_flags(PyObject *m)
+{
+    PyObject *dict;
+    OSVERSIONINFOEX info;
+    DWORDLONG dwlConditionMask;
+
+    dict = PyModule_GetDict(m);
+    if (dict == NULL) {
+        return;
+    }
+
+    /* set to Windows 10, except BuildNumber. */
+    memset(&info, 0, sizeof(info));
+    info.dwOSVersionInfoSize = sizeof(info);
+    info.dwMajorVersion = 10;
+    info.dwMinorVersion = 0;
+
+    /* set Condition Mask */
+    dwlConditionMask = 0;
+    VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
+    VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
+    VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+    for (int i=0; i<sizeof(win_runtime_flags)/sizeof(FlagRuntimeInfo); i++) {
+        info.dwBuildNumber = win_runtime_flags[i].build_number;
+        /* greater than or equal to the specified version? 
+           Compatibility Mode will not cheat VerifyVersionInfo(...) */
+        if (VerifyVersionInfo(
+                &info,
+                VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
+                dwlConditionMask)) {
+            break;
+        }
+        else {
+            if (PyDict_GetItemString(
+                    dict,
+                    win_runtime_flags[i].flag_name) != NULL) {
+                PyDict_DelItemString(
+                    dict,
+                    win_runtime_flags[i].flag_name);
+            }
+        }
+    }
+}
+
 #endif
 
 #include <stddef.h>
@@ -2678,8 +2742,8 @@ sock_gettimeout(PySocketSockObject *s)
 PyDoc_STRVAR(gettimeout_doc,
 "gettimeout() -> timeout\n\
 \n\
-Returns the timeout in seconds (float) associated with socket \n\
-operations. A timeout of None indicates that timeouts on socket \n\
+Returns the timeout in seconds (float) associated with socket\n\
+operations. A timeout of None indicates that timeouts on socket\n\
 operations are disabled.");
 
 /* s.setsockopt() method.
@@ -2769,7 +2833,7 @@ setsockopt(level, option, value: buffer)\n\
 setsockopt(level, option, None, optlen: int)\n\
 \n\
 Set a socket option.  See the Unix manual for level and option.\n\
-The value argument can either be an integer, a string buffer, or \n\
+The value argument can either be an integer, a string buffer, or\n\
 None, optlen.");
 
 
@@ -3327,8 +3391,8 @@ sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 PyDoc_STRVAR(recv_into_doc,
 "recv_into(buffer, [nbytes[, flags]]) -> nbytes_read\n\
 \n\
-A version of recv() that stores its data into a buffer rather than creating \n\
-a new string.  Receive up to buffersize bytes from the socket.  If buffersize \n\
+A version of recv() that stores its data into a buffer rather than creating\n\
+a new string.  Receive up to buffersize bytes from the socket.  If buffersize\n\
 is not specified (or 0), receive up to the size available in the given buffer.\n\
 \n\
 See recv() for documentation about the flags.");
@@ -5794,7 +5858,7 @@ Convert a 16-bit unsigned integer from network to host byte order.\n\
 Note that in case the received integer does not fit in 16-bit unsigned\n\
 integer, but does fit in a positive C int, it is silently truncated to\n\
 16-bit unsigned integer.\n\
-However, this silent truncation feature is deprecated, and will raise an \n\
+However, this silent truncation feature is deprecated, and will raise an\n\
 exception in future versions of Python.");
 
 
@@ -5865,7 +5929,7 @@ Convert a 16-bit unsigned integer from host to network byte order.\n\
 Note that in case the received integer does not fit in 16-bit unsigned\n\
 integer, but does fit in a positive C int, it is silently truncated to\n\
 16-bit unsigned integer.\n\
-However, this silent truncation feature is deprecated, and will raise an \n\
+However, this silent truncation feature is deprecated, and will raise an\n\
 exception in future versions of Python.");
 
 
@@ -7905,5 +7969,11 @@ PyInit__socket(void)
 #if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)
     netdb_lock = PyThread_allocate_lock();
 #endif
+
+#ifdef MS_WINDOWS
+    /* remove some flags on older version Windows during run-time */
+    remove_unusable_flags(m);
+#endif
+
     return m;
 }

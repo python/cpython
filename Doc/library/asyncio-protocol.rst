@@ -339,7 +339,7 @@ Protocol classes
    control of the receive buffer.
 
    .. versionadded:: 3.7
-      **Important:** this has been been added to asyncio in Python 3.7
+      **Important:** this has been added to asyncio in Python 3.7
       *on a provisional basis*!  Treat it as an experimental API that
       might be changed or removed in Python 3.8.
 
@@ -450,7 +450,7 @@ Streaming protocols with manual receive buffer control
 ------------------------------------------------------
 
 .. versionadded:: 3.7
-   **Important:** :class:`BufferedProtocol` has been been added to
+   **Important:** :class:`BufferedProtocol` has been added to
    asyncio in Python 3.7 *on a provisional basis*!  Consider it as an
    experimental API that might be changed or removed in Python 3.8.
 

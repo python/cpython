@@ -51,7 +51,7 @@ class EmbeddingTests(unittest.TestCase):
         if p.returncode != 0 and support.verbose:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
-            print(f"stderr:\n{out}")
+            print(f"stderr:\n{err}")
             print(f"------")
 
         self.assertEqual(p.returncode, 0,
@@ -83,7 +83,7 @@ class EmbeddingTests(unittest.TestCase):
         for line in out.splitlines():
             if line == "--- Pass {} ---".format(numloops):
                 self.assertEqual(len(current_run), 0)
-                if support.verbose:
+                if support.verbose > 1:
                     print(line)
                 numloops += 1
                 continue
@@ -96,7 +96,7 @@ class EmbeddingTests(unittest.TestCase):
             # Parse the line from the loop.  The first line is the main
             # interpreter and the 3 afterward are subinterpreters.
             interp = Interp(*match.groups())
-            if support.verbose:
+            if support.verbose > 1:
                 print(interp)
             self.assertTrue(interp.interp)
             self.assertTrue(interp.tstate)
@@ -190,12 +190,33 @@ class EmbeddingTests(unittest.TestCase):
 
     def test_pre_initialization_api(self):
         """
-        Checks the few parts of the C-API that work before the runtine
+        Checks some key parts of the C-API that need to work before the runtine
         is initialized (via Py_Initialize()).
         """
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
         out, err = self.run_embedded_interpreter("pre_initialization_api", env=env)
-        self.assertEqual(out, '')
+        if sys.platform == "win32":
+            expected_path = self.test_exe
+        else:
+            expected_path = os.path.join(os.getcwd(), "spam")
+        expected_output = f"sys.executable: {expected_path}\n"
+        self.assertIn(expected_output, out)
+        self.assertEqual(err, '')
+
+    def test_pre_initialization_sys_options(self):
+        """
+        Checks that sys.warnoptions and sys._xoptions can be set before the
+        runtime is initialized (otherwise they won't be effective).
+        """
+        env = dict(PYTHONPATH=os.pathsep.join(sys.path))
+        out, err = self.run_embedded_interpreter(
+                        "pre_initialization_sys_options", env=env)
+        expected_output = (
+            "sys.warnoptions: ['once', 'module', 'default']\n"
+            "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"
+            "warnings.filters[:3]: ['default', 'module', 'once']\n"
+        )
+        self.assertIn(expected_output, out)
         self.assertEqual(err, '')
 
     def test_bpo20891(self):

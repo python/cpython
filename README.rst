@@ -1,4 +1,4 @@
-This is Python version 3.7.0 beta 1+
+This is Python version 3.8.0 alpha 0
 ====================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
@@ -126,7 +126,7 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.7 <https://docs.python.org/3.7/whatsnew/3.7.html>`_ document.  For a more
+3.8 <https://docs.python.org/3.8/whatsnew/3.8.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
@@ -139,7 +139,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.7 <https://docs.python.org/3.7/>`_ is online,
+`Documentation for Python 3.8 <https://docs.python.org/3.8/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -172,9 +172,10 @@ something is wrong.
 By default, tests are prevented from overusing resources like disk space and
 memory.  To enable these tests, run ``make testall``.
 
-If any tests fail, you can re-run the failing test(s) in verbose mode::
+If any tests fail, you can re-run the failing test(s) in verbose mode.  For
+example, if ``test_os`` and ``test_gdb`` failed, you can run::
 
-    make test TESTOPTS="-v test_that_failed"
+    make test TESTOPTS="-v test_os test_gdb"
 
 If the failure persists and appears to be a problem with Python rather than
 your environment, you can `file a bug report <https://bugs.python.org>`_ and
@@ -195,8 +196,8 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.7 with 3.7 being the
-primary version, you would execute ``make install`` in your 3.7 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.8 with 3.8 being the
+primary version, you would execute ``make install`` in your 3.8 build directory
 and ``make altinstall`` in the others.
 
 
@@ -226,7 +227,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`537` for Python 3.7 release details.
+See :pep:`569` for Python 3.8 release details.
 
 
 Copyright and License Information

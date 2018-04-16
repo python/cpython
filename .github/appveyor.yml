@@ -1,4 +1,4 @@
-version: 3.7build{build}
+version: 3.8build{build}
 clone_depth: 5
 branches:
   only:
@@ -6,7 +6,7 @@ branches:
     - /\d\.\d/
     - buildbot-custom
 cache:
-  - externals -> PCbuild\*
+  - externals -> PCbuild
 before_build:
   - ps: |+
       if ($env:APPVEYOR_RE_BUILD) {

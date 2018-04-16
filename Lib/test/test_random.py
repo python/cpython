@@ -651,7 +651,10 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             # Population range too large (n >= maxsize)
             self.gen._randbelow(maxsize+1, maxsize = maxsize)
         self.gen._randbelow(5640, maxsize = maxsize)
-
+        # issue 33203: test that _randbelow raises ValueError on
+        # n == 0 also in its getrandbits-independent branch.
+        with self.assertRaises(ValueError):
+            self.gen._randbelow(0, maxsize=maxsize)
         # This might be going too far to test a single line, but because of our
         # noble aim of achieving 100% test coverage we need to write a case in
         # which the following line in Random._randbelow() gets executed:

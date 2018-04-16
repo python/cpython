@@ -8,44 +8,20 @@ import unittest
 from idlelib import pyparse
 
 
-class StringTranslatePseudoMappingTest(unittest.TestCase):
+class ParseMapTest(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        whitespace_chars = ' \t\n\r'
-        cls.preserve_dict = {ord(c): ord(c) for c in whitespace_chars}
-        cls.default = ord('x')
-        cls.mapping = pyparse.StringTranslatePseudoMapping(
-                                cls.preserve_dict, default_value=ord('x'))
+    def test_parsemap(self):
+        keepwhite = {ord(c): ord(c) for c in ' \t\n\r'}
+        mapping = pyparse.ParseMap(keepwhite)
+        self.assertEqual(mapping[ord('\t')], ord('\t'))
+        self.assertEqual(mapping[ord('a')], ord('x'))
+        self.assertEqual(mapping[1000], ord('x'))
 
-    @classmethod
-    def tearDownClass(cls):
-        del cls.preserve_dict, cls.default, cls.mapping
-
-    def test__init__(self):
-        m = self.mapping
-        self.assertEqual(m._non_defaults, self.preserve_dict)
-        self.assertEqual(m._default_value, self.default)
-
-    def test__get_item__(self):
-        self.assertEqual(self.mapping[ord('\t')], ord('\t'))
-        self.assertEqual(self.mapping[ord('a')], self.default)
-
-    def test__len__(self):
-        self.assertEqual(len(self.mapping), len(self.preserve_dict))
-
-    def test__iter__(self):
-        count = 0
-        for key, value in self.mapping.items():
-            self.assertIn(key, self.preserve_dict)
-            count += 1
-        self.assertEqual(count, len(self.mapping))
-
-    def test_get(self):
-        self.assertEqual(self.mapping.get(ord('\t')), ord('\t'))
-        self.assertEqual(self.mapping.get('a'), self.default)
-        # Default is a parameter, but it isn't used.
-        self.assertEqual(self.mapping.get('a', default=500), self.default)
+    def test_trans(self):
+        # trans is the production instance of ParseMap, used in _study1
+        parser = pyparse.Parser(4, 4)
+        self.assertEqual('\t a([{b}])b"c\'d\n'.translate(pyparse.trans),
+                          'xxx(((x)))x"x\'x\n')
 
 
 class PyParseTest(unittest.TestCase):
@@ -62,32 +38,32 @@ class PyParseTest(unittest.TestCase):
         self.assertEqual(self.parser.indentwidth, 4)
         self.assertEqual(self.parser.tabwidth, 4)
 
-    def test_set_str(self):
+    def test_set_code(self):
         eq = self.assertEqual
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
 
         # Not empty and doesn't end with newline.
         with self.assertRaises(AssertionError):
-            setstr('a')
+            setcode('a')
 
         tests = ('',
                  'a\n')
 
         for string in tests:
             with self.subTest(string=string):
-                setstr(string)
-                eq(p.str, string)
+                setcode(string)
+                eq(p.code, string)
                 eq(p.study_level, 0)
 
     def test_find_good_parse_start(self):
         eq = self.assertEqual
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
         start = p.find_good_parse_start
 
         # Split def across lines.
-        setstr('"""This is a module docstring"""\n'
+        setcode('"""This is a module docstring"""\n'
                'class C():\n'
                '    def __init__(self, a,\n'
                '                 b=True):\n'
@@ -117,7 +93,7 @@ class PyParseTest(unittest.TestCase):
 
         # Code without extra line break in def line - mostly returns the same
         # values.
-        setstr('"""This is a module docstring"""\n'
+        setcode('"""This is a module docstring"""\n'
                'class C():\n'
                '    def __init__(self, a, b=True):\n'
                '        pass\n'
@@ -138,28 +114,24 @@ class PyParseTest(unittest.TestCase):
                 '        pass\n'
                 )
         p = self.parser
-        p.set_str(code)
+        p.set_code(code)
 
         # Previous character is not a newline.
         with self.assertRaises(AssertionError):
             p.set_lo(5)
 
-        # A value of 0 doesn't change self.str.
+        # A value of 0 doesn't change self.code.
         p.set_lo(0)
-        self.assertEqual(p.str, code)
+        self.assertEqual(p.code, code)
 
         # An index that is preceded by a newline.
         p.set_lo(44)
-        self.assertEqual(p.str, code[44:])
-
-    def test_tran(self):
-        self.assertEqual('\t a([{b}])b"c\'d\n'.translate(self.parser._tran),
-                          'xxx(((x)))x"x\'x\n')
+        self.assertEqual(p.code, code[44:])
 
     def test_study1(self):
         eq = self.assertEqual
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
         study = p._study1
 
         (NONE, BACKSLASH, FIRST, NEXT, BRACKET) = range(5)
@@ -197,7 +169,7 @@ class PyParseTest(unittest.TestCase):
 
         for test in tests:
             with self.subTest(string=test.string):
-                setstr(test.string)  # resets study_level
+                setcode(test.string)  # resets study_level
                 study()
                 eq(p.study_level, 1)
                 eq(p.goodlines, test.goodlines)
@@ -209,7 +181,7 @@ class PyParseTest(unittest.TestCase):
     def test_get_continuation_type(self):
         eq = self.assertEqual
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
         gettype = p.get_continuation_type
 
         (NONE, BACKSLASH, FIRST, NEXT, BRACKET) = range(5)
@@ -224,13 +196,13 @@ class PyParseTest(unittest.TestCase):
 
         for test in tests:
             with self.subTest(string=test.string):
-                setstr(test.string)
+                setcode(test.string)
                 eq(gettype(), test.continuation)
 
     def test_study2(self):
         eq = self.assertEqual
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
         study = p._study2
 
         TestInfo = namedtuple('TestInfo', ['string', 'start', 'end', 'lastch',
@@ -276,7 +248,7 @@ class PyParseTest(unittest.TestCase):
 
         for test in tests:
             with self.subTest(string=test.string):
-                setstr(test.string)
+                setcode(test.string)
                 study()
                 eq(p.study_level, 2)
                 eq(p.stmt_start, test.start)
@@ -291,7 +263,7 @@ class PyParseTest(unittest.TestCase):
     def test_get_num_lines_in_stmt(self):
         eq = self.assertEqual
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
         getlines = p.get_num_lines_in_stmt
 
         TestInfo = namedtuple('TestInfo', ['string', 'lines'])
@@ -307,19 +279,19 @@ class PyParseTest(unittest.TestCase):
             )
 
         # Blank string doesn't have enough elements in goodlines.
-        setstr('')
+        setcode('')
         with self.assertRaises(IndexError):
             getlines()
 
         for test in tests:
             with self.subTest(string=test.string):
-                setstr(test.string)
+                setcode(test.string)
                 eq(getlines(), test.lines)
 
     def test_compute_bracket_indent(self):
         eq = self.assertEqual
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
         indent = p.compute_bracket_indent
 
         TestInfo = namedtuple('TestInfo', ['string', 'spaces'])
@@ -340,18 +312,18 @@ class PyParseTest(unittest.TestCase):
              )
 
         # Must be C_BRACKET continuation type.
-        setstr('def function1(self, a, b):\n')
+        setcode('def function1(self, a, b):\n')
         with self.assertRaises(AssertionError):
             indent()
 
         for test in tests:
-            setstr(test.string)
+            setcode(test.string)
             eq(indent(), test.spaces)
 
     def test_compute_backslash_indent(self):
         eq = self.assertEqual
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
         indent = p.compute_backslash_indent
 
         # Must be C_BACKSLASH continuation type.
@@ -361,7 +333,7 @@ class PyParseTest(unittest.TestCase):
                   )
         for string in errors:
             with self.subTest(string=string):
-                setstr(string)
+                setcode(string)
                 with self.assertRaises(AssertionError):
                     indent()
 
@@ -384,13 +356,13 @@ class PyParseTest(unittest.TestCase):
                  )
         for test in tests:
             with self.subTest(string=test.string):
-                setstr(test.string)
+                setcode(test.string)
                 eq(indent(), test.spaces)
 
     def test_get_base_indent_string(self):
         eq = self.assertEqual
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
         baseindent = p.get_base_indent_string
 
         TestInfo = namedtuple('TestInfo', ['string', 'indent'])
@@ -405,14 +377,14 @@ class PyParseTest(unittest.TestCase):
 
         for test in tests:
             with self.subTest(string=test.string):
-                setstr(test.string)
+                setcode(test.string)
                 eq(baseindent(), test.indent)
 
     def test_is_block_opener(self):
         yes = self.assertTrue
         no = self.assertFalse
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
         opener = p.is_block_opener
 
         TestInfo = namedtuple('TestInfo', ['string', 'assert_'])
@@ -433,14 +405,14 @@ class PyParseTest(unittest.TestCase):
 
         for test in tests:
             with self.subTest(string=test.string):
-                setstr(test.string)
+                setcode(test.string)
                 test.assert_(opener())
 
     def test_is_block_closer(self):
         yes = self.assertTrue
         no = self.assertFalse
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
         closer = p.is_block_closer
 
         TestInfo = namedtuple('TestInfo', ['string', 'assert_'])
@@ -462,13 +434,13 @@ class PyParseTest(unittest.TestCase):
 
         for test in tests:
             with self.subTest(string=test.string):
-                setstr(test.string)
+                setcode(test.string)
                 test.assert_(closer())
 
     def test_get_last_stmt_bracketing(self):
         eq = self.assertEqual
         p = self.parser
-        setstr = p.set_str
+        setcode = p.set_code
         bracketing = p.get_last_stmt_bracketing
 
         TestInfo = namedtuple('TestInfo', ['string', 'bracket'])
@@ -489,7 +461,7 @@ class PyParseTest(unittest.TestCase):
 
         for test in tests:
             with self.subTest(string=test.string):
-                setstr(test.string)
+                setcode(test.string)
                 eq(bracketing(), test.bracket)
 
 

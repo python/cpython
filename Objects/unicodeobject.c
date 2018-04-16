@@ -3727,10 +3727,6 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
     }
 
     if (PyUnicode_Check(path)) {
-        if (PyUnicode_READY(path) == -1) {
-            Py_DECREF(path);
-            return 0;
-        }
         output = path;
     }
     else if (PyBytes_Check(path) || is_buffer) {
@@ -6426,7 +6422,7 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
         if (ch < 0x100) {
             *p++ = (char) ch;
         }
-        /* U+0000-U+00ff range: Map 16-bit characters to '\uHHHH' */
+        /* U+0100-U+ffff range: Map 16-bit characters to '\uHHHH' */
         else if (ch < 0x10000) {
             *p++ = '\\';
             *p++ = 'u';
@@ -11591,7 +11587,7 @@ unicode_hash(PyObject *self)
 PyDoc_STRVAR(index__doc__,
              "S.index(sub[, start[, end]]) -> int\n\
 \n\
-Return the lowest index in S where substring sub is found, \n\
+Return the lowest index in S where substring sub is found,\n\
 such that sub is contained within S[start:end].  Optional\n\
 arguments start and end are interpreted as in slice notation.\n\
 \n\

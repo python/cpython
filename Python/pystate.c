@@ -103,15 +103,24 @@ _PyInitError
 _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 {
     runtime->interpreters.next_id = 0;
-    /* Since we only call _PyRuntimeState_Init() once per process
-       (see _PyRuntime_Initialize()), we make sure the mutex is
-       initialized here. */
+
+    /* Py_Finalize() calls _PyRuntimeState_Fini() which clears the mutex.
+       Create a new mutex if needed. */
     if (runtime->interpreters.mutex == NULL) {
+        /* Force default allocator, since _PyRuntimeState_Fini() must
+           use the same allocator than this function. */
+        PyMemAllocatorEx old_alloc;
+        _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
         runtime->interpreters.mutex = PyThread_allocate_lock();
+
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
         if (runtime->interpreters.mutex == NULL) {
             return _Py_INIT_ERR("Can't initialize threads for interpreter");
         }
     }
+
     return _Py_INIT_OK();
 }
 
@@ -933,9 +942,19 @@ _PyGILState_Fini(void)
 void
 _PyGILState_Reinit(void)
 {
+    /* Force default allocator, since _PyRuntimeState_Fini() must
+       use the same allocator than this function. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     _PyRuntime.interpreters.mutex = PyThread_allocate_lock();
-    if (_PyRuntime.interpreters.mutex == NULL)
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (_PyRuntime.interpreters.mutex == NULL) {
         Py_FatalError("Can't initialize threads for interpreter");
+    }
+
     PyThreadState *tstate = PyGILState_GetThisThreadState();
     PyThread_tss_delete(&_PyRuntime.gilstate.autoTSSkey);
     if (PyThread_tss_create(&_PyRuntime.gilstate.autoTSSkey) != 0) {

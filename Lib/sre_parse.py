@@ -264,19 +264,19 @@ class Tokenizer:
             result += c
             self.__next()
         return result
-    def getuntil(self, terminator):
+    def getuntil(self, terminator, name):
         result = ''
         while True:
             c = self.next
             self.__next()
             if c is None:
                 if not result:
-                    raise self.error("missing group name")
+                    raise self.error("missing " + name)
                 raise self.error("missing %s, unterminated name" % terminator,
                                  len(result))
             if c == terminator:
                 if not result:
-                    raise self.error("missing group name", 1)
+                    raise self.error("missing " + name, 1)
                 break
             result += c
         return result
@@ -321,6 +321,18 @@ def _class_escape(source, escape):
                 raise source.error("incomplete escape %s" % escape, len(escape))
             c = int(escape[2:], 16)
             chr(c) # raise ValueError for invalid code
+            return LITERAL, c
+        elif c == "N" and source.istext:
+            import unicodedata
+            # named unicode escape e.g. \N{EM DASH}
+            if not source.match('{'):
+                raise source.error("missing {")
+            charname = source.getuntil('}', 'character name')
+            try:
+                c = ord(unicodedata.lookup(charname))
+            except KeyError:
+                raise source.error("undefined character name %r" % charname,
+                                   len(charname) + len(r'\N{}'))
             return LITERAL, c
         elif c in OCTDIGITS:
             # octal escape (up to three digits)
@@ -369,6 +381,18 @@ def _escape(source, escape, state):
                 raise source.error("incomplete escape %s" % escape, len(escape))
             c = int(escape[2:], 16)
             chr(c) # raise ValueError for invalid code
+            return LITERAL, c
+        elif c == "N" and source.istext:
+            import unicodedata
+            # named unicode escape e.g. \N{EM DASH}
+            if not source.match('{'):
+                raise source.error("missing {")
+            charname = source.getuntil('}', 'character name')
+            try:
+                c = ord(unicodedata.lookup(charname))
+            except KeyError:
+                raise source.error("undefined character name %r" % charname,
+                                   len(charname) + len(r'\N{}'))
             return LITERAL, c
         elif c == "0":
             # octal escape
@@ -679,13 +703,13 @@ def _parse(source, state, verbose, nested, first=False):
                     # python extensions
                     if sourcematch("<"):
                         # named group: skip forward to end of name
-                        name = source.getuntil(">")
+                        name = source.getuntil(">", "group name")
                         if not name.isidentifier():
                             msg = "bad character in group name %r" % name
                             raise source.error(msg, len(name) + 1)
                     elif sourcematch("="):
                         # named backreference
-                        name = source.getuntil(")")
+                        name = source.getuntil(")", "group name")
                         if not name.isidentifier():
                             msg = "bad character in group name %r" % name
                             raise source.error(msg, len(name) + 1)
@@ -748,7 +772,7 @@ def _parse(source, state, verbose, nested, first=False):
 
                 elif char == "(":
                     # conditional backreference group
-                    condname = source.getuntil(")")
+                    condname = source.getuntil(")", "group name")
                     if condname.isidentifier():
                         condgroup = state.groupdict.get(condname)
                         if condgroup is None:
@@ -977,7 +1001,7 @@ def parse_template(source, pattern):
                 name = ""
                 if not s.match("<"):
                     raise s.error("missing <")
-                name = s.getuntil(">")
+                name = s.getuntil(">", "group name")
                 if name.isidentifier():
                     try:
                         index = groupindex[name]

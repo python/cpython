@@ -1,0 +1,1 @@
+Minimal fix to prevent buffer overrun in os.symlink on Windows

@@ -1060,8 +1060,6 @@ format_float_short(double d, char format_code,
         else {
             /* shouldn't get here: Gay's code should always return
                something starting with a digit, an 'I',  or 'N' */
-            strncpy(p, "ERR", 3);
-            /* p += 3; */
             Py_UNREACHABLE();
         }
         goto exit;

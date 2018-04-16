@@ -964,6 +964,9 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     if (!self->writable)
         return err_mode("writing");
 
+    if (!b->len) {
+        return PyLong_FromLong(0);
+    }
     if (b->len > BUFMAX)
         len = BUFMAX;
     else

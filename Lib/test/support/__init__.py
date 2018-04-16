@@ -948,10 +948,14 @@ def temp_dir(path=None, quiet=False):
             warnings.warn(f'tests may fail, unable to create '
                           f'temporary directory {path!r}: {exc}',
                           RuntimeWarning, stacklevel=3)
+    if dir_created:
+        pid = os.getpid()
     try:
         yield path
     finally:
-        if dir_created:
+        # In case the process forks, let only the parent remove the
+        # directory. The child has a diffent process id. (bpo-30028)
+        if dir_created and pid == os.getpid():
             rmtree(path)
 
 @contextlib.contextmanager
@@ -1061,8 +1065,8 @@ def make_bad_fd():
         file.close()
         unlink(TESTFN)
 
-def check_syntax_error(testcase, statement, *, lineno=None, offset=None):
-    with testcase.assertRaises(SyntaxError) as cm:
+def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None):
+    with testcase.assertRaisesRegex(SyntaxError, errtext) as cm:
         compile(statement, '<test string>', 'exec')
     err = cm.exception
     testcase.assertIsNotNone(err.lineno)
@@ -2836,3 +2840,21 @@ class SaveSignals:
 def with_pymalloc():
     import _testcapi
     return _testcapi.WITH_PYMALLOC
+
+
+class FakePath:
+    """Simple implementing of the path protocol.
+    """
+    def __init__(self, path):
+        self.path = path
+
+    def __repr__(self):
+        return f'<FakePath {self.path!r}>'
+
+    def __fspath__(self):
+        if (isinstance(self.path, BaseException) or
+            isinstance(self.path, type) and
+                issubclass(self.path, BaseException)):
+            raise self.path
+        else:
+            return self.path

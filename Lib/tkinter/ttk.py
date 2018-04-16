@@ -28,8 +28,6 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
 import tkinter
 from tkinter import _flatten, _join, _stringify, _splitdict
 
-_sentinel = object()
-
 # Verify if Tk is new enough to not need the Tile package
 _REQUIRE_TILE = True if tkinter.TkVersion < 8.5 else False
 
@@ -1363,7 +1361,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         already exist in the tree. Otherwise, a new unique identifier
         is generated."""
         opts = _format_optdict(kw)
-        if iid:
+        if iid is not None:
             res = self.tk.call(self._w, "insert", parent, index,
                 "-id", iid, *opts)
         else:
@@ -1423,26 +1421,9 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         self.tk.call(self._w, "see", item)
 
 
-    def selection(self, selop=_sentinel, items=None):
+    def selection(self):
         """Returns the tuple of selected items."""
-        if selop is _sentinel:
-            selop = None
-        elif selop is None:
-            import warnings
-            warnings.warn(
-                "The selop=None argument of selection() is deprecated "
-                "and will be removed in Python 3.8",
-                DeprecationWarning, 3)
-        elif selop in ('set', 'add', 'remove', 'toggle'):
-            import warnings
-            warnings.warn(
-                "The selop argument of selection() is deprecated "
-                "and will be removed in Python 3.8, "
-                "use selection_%s() instead" % (selop,),
-                DeprecationWarning, 3)
-        else:
-            raise TypeError('Unsupported operation')
-        return self.tk.splitlist(self.tk.call(self._w, "selection", selop, items))
+        return self.tk.splitlist(self.tk.call(self._w, "selection"))
 
 
     def _selection(self, selop, items):
