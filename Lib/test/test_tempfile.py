@@ -1227,15 +1227,23 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
             # TemporaryFile can create files
             # No point in testing the name params - the file has no name.
             tempfile.TemporaryFile()
-
+        
+        @unittest.skipIf('vxworks' in sys.platform, 'VxWorks fails externally when trying to delete the folder with fd still open')
         def test_has_no_name(self):
             # TemporaryFile creates files with no names (on this system)
             dir = tempfile.mkdtemp()
             f = tempfile.TemporaryFile(dir=dir)
             f.write(b'blat')
 
-            f.close()
-            os.rmdir(dir)
+            # Sneaky: because this file has no name, it should not prevent
+            # us from removing the directory it was created in.
+            try:
+                os.rmdir(dir)
+            except:
+                #cleanup
+                f.close()
+                os.rmdir(dir)
+                raise
 
         def test_multiple_close(self):
             # A TemporaryFile can be closed many times without error

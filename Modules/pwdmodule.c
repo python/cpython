@@ -125,14 +125,6 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
                          "getpwuid(): uid not found");
         return NULL;
     }
-#ifdef __VXWORKS__
-    //Vxworks doesnt have getpwuid
-    p->pw_name = "root";
-    p->pw_uid = (uid_t) 1;
-    p->pw_gid = (uid_t) 1;
-    p->pw_dir = "buildbot-VirtualBox:/home/buildbot/other/vxworks/workbench-4/workspace/vxlib/usr/root";
-    p->pw_shell = NULL;
-#else
     if ((p = getpwuid(uid)) == NULL) {
         PyObject *uid_obj = _PyLong_FromUid(uid);
         if (uid_obj == NULL)
@@ -143,7 +135,6 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
         return NULL;
     }
     return mkpwent(p);
-#endif
 }
 
 /*[clinic input]

@@ -567,7 +567,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         # This should pass whenever a C double has 53 bit precision.
         span = 2 ** 53
         cum = 0
-        for i in range(1000):
+        for i in range(100):
             cum |= int(self.gen.random() * span)
         self.assertEqual(cum, span-1)
 
