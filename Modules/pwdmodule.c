@@ -135,7 +135,6 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
         return NULL;
     }
     return mkpwent(p);
-#endif
 }
 
 /*[clinic input]
