@@ -219,7 +219,6 @@ from __future__ import print_function"""
 
         old_contents = read_file()
         rt = self.rt(fixers=fixers)
-
         rt.refactor_file(test_file, True)
         new_contents = read_file()
         return old_contents, new_contents
