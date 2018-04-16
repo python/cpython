@@ -611,6 +611,19 @@ class TypeVar(_Final, _Immutable, _root=True):
 # * __args__ is a tuple of all arguments used in subscripting,
 #   e.g., Dict[T, int].__args__ == (T, int).
 
+
+# Mapping from non-generic type names that have a generic alias in typing
+# but with a different name.
+_normalize_alias = {'list': 'List',
+                    'tuple': 'Tuple',
+                    'dict': 'Dict',
+                    'set': 'Set',
+                    'frozenset': 'FrozenSet',
+                    'deque': 'Deque',
+                    'defaultdict': 'DefaultDict',
+                    'type': 'Type',
+                    'Set': 'AbstractSet'}
+
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
 
@@ -629,7 +642,7 @@ class _GenericAlias(_Final, _root=True):
         self._special = special
         if special and name is None:
             orig_name = origin.__name__
-            name = orig_name[0].title() + orig_name[1:]
+            name = _normalize_alias.get(orig_name, orig_name)
         self._name = name
         if not isinstance(params, tuple):
             params = (params,)
@@ -850,6 +863,7 @@ class Generic:
         return _GenericAlias(cls, params)
 
     def __init_subclass__(cls, *args, **kwargs):
+        super().__init_subclass__(*args, **kwargs)
         tvars = []
         if '__orig_bases__' in cls.__dict__:
             error = Generic in cls.__orig_bases__
