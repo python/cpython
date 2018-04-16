@@ -3095,42 +3095,33 @@ PyType_GetModule(PyTypeObject *type) {
 
 PyTypeObject *
 PyType_DefiningTypeFromSlotFunc(PyTypeObject *type, int slot, void *func) {
-    void *base_func;
-    int found = 0;
+    Py_ssize_t pos = 0;
+    PyObject *mro = type->tp_mro;
 
     assert(PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE));
 
     while(1) {
-        base_func = PyType_GetSlot(type, slot);
-        if (base_func == func) {
-            found = 1;
+        if (PyType_GetSlot(type, slot) == func) {
             break;
         }
-        if (!PyType_HasFeature(type->tp_base, Py_TPFLAGS_HEAPTYPE)) {
-            break;
-        }
-        type = type->tp_base;
-    }
 
-    if (!found) {
-        goto error;
-    }
-
-    while(1) {
-        base_func = PyType_GetSlot(type->tp_base, slot);
-        if (base_func != func && found) {
-            /* PyType_GetSlot might set an exception in case of
-             * walking through bases got through to an
-             * extension/builtin type (i.e. object) */
-            PyErr_Clear();
-            return type;
-        }
-
-        type = type->tp_base;
+        type = (PyTypeObject *)PyTuple_GetItem(mro, pos);
         if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
             goto error;
         }
+        pos++;
     }
+
+    while(1) {
+        PyTypeObject *next = (PyTypeObject *)PyTuple_GetItem(mro, pos);
+        if (!PyType_HasFeature(next, Py_TPFLAGS_HEAPTYPE)
+         || PyType_GetSlot(next, slot) != func) {
+            return type;
+        }
+        type = next;
+        pos++;
+    }
+
 error:
     PyErr_SetString(PyExc_Exception,
                     "Defining type has not been found.");
