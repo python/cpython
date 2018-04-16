@@ -937,6 +937,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn("maximum recursion depth exceeded", str(v))
 
     @cpython_only
+    @unittest.skipIf(sys.platform == "vxworks", "VxWorks: V7COR-5635 Needs to be fixed before this runs")
     def test_recursion_normalizing_exception(self):
         # Issue #22898.
         # Test that a RecursionError is raised when tstate->recursion_depth is
@@ -996,6 +997,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn(b'Done.', out)
 
     @cpython_only
+    @unittest.skipIf(sys.platform == "vxworks", "VxWorks: V7COR-5635 Needs to be fixed before this runs")
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
         # PyErr_NormalizeException() maximum recursion depth has been
@@ -1014,6 +1016,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn(b'Done.', out)
 
     @cpython_only
+    @unittest.skipIf(sys.platform == "vxworks", "VxWorks: V7COR-5635 Needs to be fixed before this runs")
     def test_recursion_normalizing_with_no_memory(self):
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
@@ -1197,6 +1200,7 @@ class ExceptionTests(unittest.TestCase):
                 self.assertTrue(report.endswith("\n"))
 
     @cpython_only
+    @unittest.skipIf(sys.platform == "vxworks", "VxWorks: V7COR-5635 Needs to be fixed before this runs")
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
             import _testcapi

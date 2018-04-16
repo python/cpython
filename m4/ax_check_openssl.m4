@@ -83,6 +83,17 @@ AC_DEFUN([AX_CHECK_OPENSSL], [
                 found=true
                 AC_MSG_RESULT([yes])
                 break
+            elif test -f "$ssldir/public/openssl/ssl.h"; then
+                OPENSSL_INCLUDES="-I$ssldir/public"
+                OPENSSL_LDFLAGS="-L$ssldir/../lib"
+                if test "$ac_sys_system" == VxWorks; then
+                    OPENSSL_LIBS="-lOPENSSL -lHASH"
+                else
+                    OPENSSL_LIBS="-lOPENSSL"
+                fi
+                found=true
+                AC_MSG_RESULT([yes])
+                break
             else
                 AC_MSG_RESULT([no])
             fi

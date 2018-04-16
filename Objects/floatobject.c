@@ -785,8 +785,13 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
      * the platform pow to step in and do the rest.
      */
     errno = 0;
+#ifndef __VXWORKS__
     PyFPE_START_PROTECT("pow", return NULL)
     ix = pow(iv, iw);
+#else
+    PyFPE_START_PROTECT("powl", return NULL)
+    ix = powl(iv, iw);
+#endif
     PyFPE_END_PROTECT(ix)
     Py_ADJUST_ERANGE1(ix);
     if (negate_result)

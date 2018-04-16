@@ -1,6 +1,6 @@
 # Autodetecting setup.py script for building the Python extensions
 #
-
+#
 import sys, os, importlib.machinery, re, optparse
 from glob import glob
 import importlib._bootstrap
@@ -38,6 +38,8 @@ def get_platform():
         return 'osf1'
     return sys.platform
 host_platform = get_platform()
+
+_vxworks = 'vxworks' in host_platform;
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 COMPILED_WITH_PYDEBUG = ('--with-pydebug' in sysconfig.get_config_var("CONFIG_ARGS"))
@@ -147,7 +149,7 @@ def find_file(filename, std_dirs, paths):
 
 def mathlib():
     # VxWorks has no libm
-    if host_platform == 'vxworks':
+    if _vxworks:
         return []
     else:
         return ['m']
@@ -307,9 +309,8 @@ class PyBuildExt(build_ext):
         if compiler is not None:
             (ccshared,cflags) = sysconfig.get_config_vars('CCSHARED','CFLAGS')
             args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags
-
             #VxWorks uses '@filepath' extension to add include paths without overflowing windows cmd line buffer
-            if host_platform == 'vxworks':
+            if _vxworks:
                 cppflags = sysconfig.get_config_var('CPPFLAGS').split()
                 for item in cppflags:
                     self.announce('ITEM: "%s"' % item )
@@ -376,6 +377,16 @@ class PyBuildExt(build_ext):
             print("Following modules built successfully"
                   " but were removed because they could not be imported:")
             print_three_column(failed)
+            print()
+
+        if any('_ssl' in l
+               for l in (missing, self.failed, self.failed_on_import)):
+            print()
+            print("Could not build the ssl module!")
+            print("Python requires an OpenSSL 1.0.2 or 1.1 compatible "
+                  "libssl with X509_VERIFY_PARAM_set1_host().")
+            print("LibreSSL 2.6.4 and earlier do not provide the necessary "
+                  "APIs, https://github.com/libressl-portable/portable/issues/381")
             print()
 
     def build_extension(self, ext):
@@ -549,7 +560,7 @@ class PyBuildExt(build_ext):
             add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
             add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
         # only change this for cross builds for 3.3, issues on Mageia
-        if cross_compiling and not host_platform == 'vxworks':
+        if cross_compiling and not _vxworks:
             self.add_gcc_paths()
         self.add_multiarch_paths()
 
@@ -590,7 +601,7 @@ class PyBuildExt(build_ext):
         if ((not cross_compiling and
                 os.path.normpath(sys.base_prefix) != '/usr' and
                 not sysconfig.get_config_var('PYTHONFRAMEWORK')) or
-                host_platform == 'vxworks'):
+                _vxworks):
             # OSX note: Don't add LIBDIR and INCLUDEDIR to building a framework
             # (PYTHONFRAMEWORK is set) to avoid # linking problems when
             # building a framework with different architectures than
@@ -601,7 +612,7 @@ class PyBuildExt(build_ext):
                             sysconfig.get_config_var("INCLUDEDIR"))
 
         #VxWorks requires some macros from CPPFLAGS to select the correct CPU headers
-        if host_platform == 'vxworks':
+        if _vxworks:
             cppflags = sysconfig.get_config_var('CPPFLAGS').split()
             for item in cppflags:
                 self.announce('ITEM: "%s"' % item)
@@ -726,6 +737,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_opcode', ['_opcode.c']) )
         # asyncio speedups
         exts.append( Extension("_asyncio", ["_asynciomodule.c"]) )
+        # _abc speedups
+        exts.append( Extension("_abc", ["_abc.c"]) )
         # _queue module
         exts.append( Extension("_queue", ["_queuemodule.c"]) )
 
@@ -742,7 +755,7 @@ class PyBuildExt(build_ext):
         # pwd(3)
         exts.append( Extension('pwd', ['pwdmodule.c']) )
         # grp(3)
-        if host_platform != 'vxworks':
+        if not _vxworks:
             exts.append( Extension('grp', ['grpmodule.c']) )
         # spwd, shadow passwords
         if (config_h_vars.get('HAVE_GETSPNAM', False) or
@@ -770,6 +783,10 @@ class PyBuildExt(build_ext):
             ['_xxtestfuzz/_xxtestfuzz.c', '_xxtestfuzz/fuzzer.c'])
         )
 
+        # Python interface to subinterpreter C-API.
+        exts.append(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c'],
+                              define_macros=[('Py_BUILD_CORE', '')]))
+
         #
         # Here ends the simple stuff.  From here on, modules need certain
         # libraries, are platform-specific, or present other surprises.
@@ -781,7 +798,7 @@ class PyBuildExt(build_ext):
         #
         # Operations on audio samples
         # According to #993173, this one should actually work fine on
-        # 64-bit platforms.
+        # 64-bit platforms.i
         #
         # audioop needs libm for floor() in multiple functions.
         exts.append( Extension('audioop', ['audioop.c'],
@@ -876,15 +893,18 @@ class PyBuildExt(build_ext):
             libs = ['crypt']
         else:
             libs = []
-        if host_platform != 'vxworks':
+        if _vxworks:
             exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
 
         # CSV files
         exts.append( Extension('_csv', ['_csv.c']) )
 
         # POSIX subprocess module helper.
-        if host_platform != 'vxworks':
+        if _vxworks:
+            exts.append( Extension('_vxwapi', ['_vxwapi.c']) )
+        else:
             exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
+
 
         # socket(2)
         exts.append( Extension('_socket', ['socketmodule.c'],
@@ -1337,32 +1357,19 @@ class PyBuildExt(build_ext):
             missing.append('_gdbm')
 
         # Unix-only modules
-        if host_platform != 'win32' and host_platform != 'vxworks':
+        if host_platform != 'win32' and not _vxworks:
             # Steen Lumholt's termios module
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface
             exts.append( Extension('resource', ['resource.c']) )
-
-            # Sun yellow pages. Some systems have the functions in libc.
-            if (host_platform not in ['cygwin', 'qnx6'] and
-                find_file('rpcsvc/yp_prot.h', inc_dirs, []) is not None):
-                nis_libs = []
-                nis_includes = []
-                if self.compiler.find_library_file(lib_dirs, 'nsl'):
-                    nis_libs.append('nsl')
-                if self.compiler.find_library_file(lib_dirs, 'tirpc'):
-                    # Sun RPC has been moved from glibc to libtirpc
-                    # rpcsvc/yp_prot.h is still in /usr/include, but
-                    # rpc/rpc.h has been moved into tirpc/ subdir.
-                    nis_libs.append('tirpc')
-                    nis_includes.append('/usr/include/tirpc')
-                exts.append( Extension('nis', ['nismodule.c'],
-                                       libraries = nis_libs,
-                                       include_dirs=nis_includes) )
-            else:
-                missing.append('nis')
         else:
-            missing.extend(['nis', 'resource', 'termios'])
+            missing.extend(['resource', 'termios'])
+
+        nis = self._detect_nis(inc_dirs, lib_dirs)
+        if nis is not None:
+            exts.append(nis)
+        else:
+            missing.append('nis')
 
         # Curses support, requiring the System V version of curses, often
         # provided by the ncurses library.
@@ -2023,7 +2030,6 @@ class PyBuildExt(build_ext):
                 if (self.compiler.find_library_file(lib_dirs, lib_name)):
                     ffi_lib = lib_name
                     break
-
         if ffi_inc and ffi_lib:
             ext.include_dirs.extend(ffi_inc)
             ext.libraries.append(ffi_lib)
@@ -2184,13 +2190,16 @@ class PyBuildExt(build_ext):
         if krb5_h:
             ssl_incs.extend(krb5_h)
 
-        ssl_ext = Extension(
-            '_ssl', ['_ssl.c'],
-            include_dirs=openssl_includes,
-            library_dirs=openssl_libdirs,
-            libraries=openssl_libs,
-            depends=['socketmodule.h']
-        )
+        if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
+            ssl_ext = Extension(
+                '_ssl', ['_ssl.c'],
+                include_dirs=openssl_includes,
+                library_dirs=openssl_libdirs,
+                libraries=openssl_libs,
+                depends=['socketmodule.h']
+            )
+        else:
+            ssl_ext = None
 
         hashlib_ext = Extension(
             '_hashlib', ['_hashopenssl.c'],
@@ -2201,6 +2210,51 @@ class PyBuildExt(build_ext):
         )
 
         return ssl_ext, hashlib_ext
+
+    def _detect_nis(self, inc_dirs, lib_dirs):
+        if host_platform in {'win32', 'cygwin', 'qnx6'}:
+            return None
+
+        libs = []
+        library_dirs = []
+        includes_dirs = []
+
+        # bpo-32521: glibc has deprecated Sun RPC for some time. Fedora 28
+        # moved headers and libraries to libtirpc and libnsl. The headers
+        # are in tircp and nsl sub directories.
+        rpcsvc_inc = find_file(
+            'rpcsvc/yp_prot.h', inc_dirs,
+            [os.path.join(inc_dir, 'nsl') for inc_dir in inc_dirs]
+        )
+        rpc_inc = find_file(
+            'rpc/rpc.h', inc_dirs,
+            [os.path.join(inc_dir, 'tirpc') for inc_dir in inc_dirs]
+        )
+        if rpcsvc_inc is None or rpc_inc is None:
+            # not found
+            return None
+        includes_dirs.extend(rpcsvc_inc)
+        includes_dirs.extend(rpc_inc)
+
+        if self.compiler.find_library_file(lib_dirs, 'nsl'):
+            libs.append('nsl')
+        else:
+            # libnsl-devel: check for libnsl in nsl/ subdirectory
+            nsl_dirs = [os.path.join(lib_dir, 'nsl') for lib_dir in lib_dirs]
+            libnsl = self.compiler.find_library_file(nsl_dirs, 'nsl')
+            if libnsl is not None:
+                library_dirs.append(os.path.dirname(libnsl))
+                libs.append('nsl')
+
+        if self.compiler.find_library_file(lib_dirs, 'tirpc'):
+            libs.append('tirpc')
+
+        return Extension(
+            'nis', ['nismodule.c'],
+            libraries=libs,
+            library_dirs=library_dirs,
+            include_dirs=includes_dirs
+        )
 
 
 class PyBuildInstall(install):

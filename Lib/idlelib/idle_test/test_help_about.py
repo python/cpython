@@ -50,35 +50,37 @@ class LiveDialogTest(unittest.TestCase):
     def test_printer_buttons(self):
         """Test buttons whose commands use printer function."""
         dialog = self.dialog
-        button_sources = [(dialog.py_license, license),
-                          (dialog.py_copyright, copyright),
-                          (dialog.py_credits, credits)]
+        button_sources = [(dialog.py_license, license, 'license'),
+                          (dialog.py_copyright, copyright, 'copyright'),
+                          (dialog.py_credits, credits, 'credits')]
 
-        for button, printer in button_sources:
-            printer._Printer__setup()
-            button.invoke()
-            get = dialog._current_textview.viewframe.textframe.text.get
-            self.assertEqual(printer._Printer__lines[0], get('1.0', '1.end'))
-            self.assertEqual(
-                    printer._Printer__lines[1], get('2.0', '2.end'))
-            dialog._current_textview.destroy()
+        for button, printer, name in button_sources:
+            with self.subTest(name=name):
+                printer._Printer__setup()
+                button.invoke()
+                get = dialog._current_textview.viewframe.textframe.text.get
+                lines = printer._Printer__lines
+                self.assertEqual(lines[0], get('1.0', '1.end'))
+                self.assertEqual(lines[1], get('2.0', '2.end'))
+                dialog._current_textview.destroy()
 
     def test_file_buttons(self):
         """Test buttons that display files."""
         dialog = self.dialog
-        button_sources = [(self.dialog.readme, 'README.txt'),
-                          (self.dialog.idle_news, 'NEWS.txt'),
-                          (self.dialog.idle_credits, 'CREDITS.txt')]
+        button_sources = [(self.dialog.readme, 'README.txt', 'readme'),
+                          (self.dialog.idle_news, 'NEWS.txt', 'news'),
+                          (self.dialog.idle_credits, 'CREDITS.txt', 'credits')]
 
-        for button, filename in button_sources:
-            button.invoke()
-            fn = findfile(filename, subdir='idlelib')
-            get = dialog._current_textview.viewframe.textframe.text.get
-            with open(fn) as f:
-                self.assertEqual(f.readline().strip(), get('1.0', '1.end'))
-                f.readline()
-                self.assertEqual(f.readline().strip(), get('3.0', '3.end'))
-            dialog._current_textview.destroy()
+        for button, filename, name in button_sources:
+            with  self.subTest(name=name):
+                button.invoke()
+                fn = findfile(filename, subdir='idlelib')
+                get = dialog._current_textview.viewframe.textframe.text.get
+                with open(fn, encoding='utf-8') as f:
+                    self.assertEqual(f.readline().strip(), get('1.0', '1.end'))
+                    f.readline()
+                    self.assertEqual(f.readline().strip(), get('3.0', '3.end'))
+                dialog._current_textview.destroy()
 
 
 class DefaultTitleTest(unittest.TestCase):

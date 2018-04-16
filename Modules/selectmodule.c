@@ -1307,10 +1307,13 @@ pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyErr_SetString(PyExc_ValueError, "negative sizehint");
         return NULL;
     }
+
+#ifdef HAVE_EPOLL_CREATE1
     if (flags && flags != EPOLL_CLOEXEC) {
         PyErr_SetString(PyExc_OSError, "invalid flags");
         return NULL;
     }
+#endif
 
     return newPyEpoll_Object(type, sizehint, -1);
 }

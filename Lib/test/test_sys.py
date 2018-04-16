@@ -192,7 +192,7 @@ class SysModuleTest(unittest.TestCase):
         sys.setrecursionlimit(10000)
         self.assertEqual(sys.getrecursionlimit(), 10000)
         sys.setrecursionlimit(oldlimit)
-
+    @unittest.skipIf('vxworks' in sys.platform, 'VxWorks doesnt cleanly handle stack overflows')
     def test_recursionlimit_recovery(self):
         if hasattr(sys, 'gettrace') and sys.gettrace():
             self.skipTest('fatal error if run with a trace function')

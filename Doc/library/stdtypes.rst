@@ -1653,6 +1653,15 @@ expression support in the :mod:`re` module).
    from the "Alphabetic" property defined in the Unicode Standard.
 
 
+.. method:: str.isascii()
+
+   Return true if the string is empty or all characters in the string are ASCII,
+   false otherwise.
+   ASCII characters have code points in the range U+0000-U+007F.
+
+   .. versionadded:: 3.7
+
+
 .. method:: str.isdecimal()
 
    Return true if all characters in the string are decimal
@@ -2939,6 +2948,16 @@ place, and instead produce new objects.
       True
       >>> b'ABCabc1'.isalpha()
       False
+
+
+.. method:: bytes.isascii()
+            bytearray.isascii()
+
+   Return true if the sequence is empty or all bytes in the sequence are ASCII,
+   false otherwise.
+   ASCII bytes are in the range 0-0x7F.
+
+   .. versionadded:: 3.7
 
 
 .. method:: bytes.isdigit()

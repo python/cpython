@@ -43,6 +43,7 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
 
 import sys
 _mswindows = (sys.platform == "win32")
+_vxworks = (sys.platform == "vxworks")
 
 import io
 import os
@@ -136,7 +137,10 @@ if _mswindows:
             self.wShowWindow = wShowWindow
             self.lpAttributeList = lpAttributeList or {"handle_list": []}
 else:
-    import _posixsubprocess
+    if(_vxworks):
+        import _vxwapi
+    else:
+        import _posixsubprocess
     import select
     import selectors
     import threading
@@ -304,9 +308,9 @@ def call(*popenargs, timeout=None, **kwargs):
     with Popen(*popenargs, **kwargs) as p:
         try:
             return p.wait(timeout=timeout)
-        except:
+        except:  # Including KeyboardInterrupt, wait handled that.
             p.kill()
-            p.wait()
+            # We don't call p.wait() again as p.__exit__ does that for us.
             raise
 
 
@@ -409,7 +413,8 @@ class CompletedProcess(object):
                                      self.stderr)
 
 
-def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
+def run(*popenargs,
+        input=None, capture_output=False, timeout=None, check=False, **kwargs):
     """Run command with arguments and return a CompletedProcess instance.
 
     The returned instance will have attributes args, returncode, stdout and
@@ -442,6 +447,13 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
             raise ValueError('stdin and input arguments may not both be used.')
         kwargs['stdin'] = PIPE
 
+    if capture_output:
+        if ('stdout' in kwargs) or ('stderr' in kwargs):
+            raise ValueError('stdout and stderr arguments may not be used '
+                             'with capture_output.')
+        kwargs['stdout'] = PIPE
+        kwargs['stderr'] = PIPE
+
     with Popen(*popenargs, **kwargs) as process:
         try:
             stdout, stderr = process.communicate(input, timeout=timeout)
@@ -450,9 +462,9 @@ def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
             stdout, stderr = process.communicate()
             raise TimeoutExpired(process.args, timeout, output=stdout,
                                  stderr=stderr)
-        except:
+        except:  # Including KeyboardInterrupt, communicate handled that.
             process.kill()
-            process.wait()
+            # We don't call process.wait() as .__exit__ does that for us.
             raise
         retcode = process.poll()
         if check and retcode:
@@ -594,12 +606,14 @@ class Popen(object):
       stdin, stdout and stderr: These specify the executed programs' standard
           input, standard output and standard error file handles, respectively.
 
-      preexec_fn: (POSIX only) An object to be called in the child process
-          just before the child is executed.
+      preexec_fn: (non VxWorks POSIX only) An object to be called in the
+          child process just before the child is executed.
 
-      close_fds: Controls closing or inheriting of file descriptors.
+      close_fds: (not supported on vxworks) Controls closing or
+          inheriting of file descriptors.
 
-      shell: If true, the command will be executed through the shell.
+      shell: (not supported on vxworks) If true, the command will
+          be executed through the shell.
 
       cwd: Sets the current directory before the child is executed.
 
@@ -628,7 +642,7 @@ class Popen(object):
 
     def __init__(self, args, bufsize=-1, executable=None,
                  stdin=None, stdout=None, stderr=None,
-                 preexec_fn=None, close_fds=True,
+                 preexec_fn=None, close_fds=False,
                  shell=False, cwd=None, env=None, universal_newlines=None,
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
@@ -653,7 +667,24 @@ class Popen(object):
             if preexec_fn is not None:
                 raise ValueError("preexec_fn is not supported on Windows "
                                  "platforms")
+
+
         else:
+            # VxWorks
+            if _vxworks:
+                if shell:
+                    raise ValueError("shell is not supported on VxWorks Platforms");
+                if preexec_fn is not None:
+                    raise ValueError("Preexecution function is not supported on"
+                                 "VxWorks platforms")
+                if close_fds:
+                    raise ValueError("close_fds is not supported on VxWorks "
+                                     "Platforms")
+                if start_new_session:
+                    raise ValueError("VxWorks doesnt support sessions");
+
+
+
             # POSIX
             if pass_fds and not close_fds:
                 warnings.warn("pass_fds overriding close_fds.", RuntimeWarning)
@@ -713,6 +744,11 @@ class Popen(object):
                 errread = msvcrt.open_osfhandle(errread.Detach(), 0)
 
         self.text_mode = encoding or errors or text or universal_newlines
+
+        # How long to resume waiting on a child after the first ^C.
+        # There is no right value for this.  The purpose is to be polite
+        # yet remain good for interactive users trying to exit a tool.
+        self._sigint_wait_secs = 0.25  # 1/xkcd221.getRandomNumber()
 
         self._closed_child_pipe_fds = False
 
@@ -787,7 +823,7 @@ class Popen(object):
     def __enter__(self):
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, value, traceback):
         if self.stdout:
             self.stdout.close()
         if self.stderr:
@@ -796,6 +832,22 @@ class Popen(object):
             if self.stdin:
                 self.stdin.close()
         finally:
+            if exc_type == KeyboardInterrupt:
+                # https://bugs.python.org/issue25942
+                # In the case of a KeyboardInterrupt we assume the SIGINT
+                # was also already sent to our child processes.  We can't
+                # block indefinitely as that is not user friendly.
+                # If we have not already waited a brief amount of time in
+                # an interrupted .wait() or .communicate() call, do so here
+                # for consistency.
+                if self._sigint_wait_secs > 0:
+                    try:
+                        self._wait(timeout=self._sigint_wait_secs)
+                    except TimeoutExpired:
+                        pass
+                self._sigint_wait_secs = 0  # Note that this has been done.
+                return  # resume the KeyboardInterrupt
+
             # Wait for the process to terminate, to avoid zombies.
             self.wait()
 
@@ -804,7 +856,7 @@ class Popen(object):
             # We didn't get to successfully create a child process.
             return
         if self.returncode is None:
-            # Not reading subprocess exit status creates a zombi process which
+            # Not reading subprocess exit status creates a zombie process which
             # is only destroyed at the parent python process exit
             _warn("subprocess %s is still running" % self.pid,
                   ResourceWarning, source=self)
@@ -862,6 +914,9 @@ class Popen(object):
         universal_newlines.
         """
 
+        if _vxworks:
+            timeout=30
+
         if self._communication_started and input:
             raise ValueError("Cannot send input after starting communication")
 
@@ -889,6 +944,21 @@ class Popen(object):
 
             try:
                 stdout, stderr = self._communicate(input, endtime, timeout)
+            except KeyboardInterrupt:
+                # https://bugs.python.org/issue25942
+                # See the detailed comment in .wait().
+                if timeout is not None:
+                    sigint_timeout = min(self._sigint_wait_secs,
+                                         self._remaining_time(endtime))
+                else:
+                    sigint_timeout = self._sigint_wait_secs
+                self._sigint_wait_secs = 0  # nothing else should wait.
+                try:
+                    self._wait(timeout=sigint_timeout)
+                except TimeoutExpired:
+                    pass
+                raise  # resume the KeyboardInterrupt
+
             finally:
                 self._communication_started = True
 
@@ -917,6 +987,30 @@ class Popen(object):
             return
         if _time() > endtime:
             raise TimeoutExpired(self.args, orig_timeout)
+
+
+    def wait(self, timeout=None):
+        """Wait for child process to terminate; returns self.returncode."""
+        if timeout is not None:
+            endtime = _time() + timeout
+        try:
+            return self._wait(timeout=timeout)
+        except KeyboardInterrupt:
+            # https://bugs.python.org/issue25942
+            # The first keyboard interrupt waits briefly for the child to
+            # exit under the common assumption that it also received the ^C
+            # generated SIGINT and will exit rapidly.
+            if timeout is not None:
+                sigint_timeout = min(self._sigint_wait_secs,
+                                     self._remaining_time(endtime))
+            else:
+                sigint_timeout = self._sigint_wait_secs
+            self._sigint_wait_secs = 0  # nothing else should wait.
+            try:
+                self._wait(timeout=sigint_timeout)
+            except TimeoutExpired:
+                pass
+            raise  # resume the KeyboardInterrupt
 
 
     if _mswindows:
@@ -1029,7 +1123,12 @@ class Popen(object):
             assert not pass_fds, "pass_fds not supported on Windows."
 
             if not isinstance(args, str):
-                args = list2cmdline(args)
+                try:
+                    args = os.fsdecode(args)  # os.PathLike -> str
+                except TypeError:  # not an os.PathLike, must be a sequence.
+                    args = list(args)
+                    args[0] = os.fsdecode(args[0])  # os.PathLike -> str
+                    args = list2cmdline(args)
 
             # Process startup details
             if startupinfo is None:
@@ -1127,16 +1226,16 @@ class Popen(object):
             return self.returncode
 
 
-        def wait(self, timeout=None):
-            """Wait for child process to terminate.  Returns returncode
-            attribute."""
+        def _wait(self, timeout):
+            """Internal implementation of wait() on Windows."""
             if timeout is None:
                 timeout_millis = _winapi.INFINITE
             else:
                 timeout_millis = int(timeout * 1000)
             if self.returncode is None:
+                # API note: Returns immediately if timeout_millis == 0.
                 result = _winapi.WaitForSingleObject(self._handle,
-                                                    timeout_millis)
+                                                     timeout_millis)
                 if result == _winapi.WAIT_TIMEOUT:
                     raise TimeoutExpired(self.args, timeout)
                 self.returncode = _winapi.GetExitCodeProcess(self._handle)
@@ -1298,10 +1397,14 @@ class Popen(object):
                            restore_signals, start_new_session):
             """Execute program (POSIX version)"""
 
+
             if isinstance(args, (str, bytes)):
                 args = [args]
             else:
-                args = list(args)
+                try:
+                    args = list(args)
+                except TypeError:  # os.PathLike instead of a sequence?
+                    args = [os.fsencode(args)]  # os.PathLike -> [str]
 
             if shell:
                 # On Android the default shell is at '/system/bin/sh'.
@@ -1352,7 +1455,62 @@ class Popen(object):
                             for dir in os.get_exec_path(env))
                     fds_to_keep = set(pass_fds)
                     fds_to_keep.add(errpipe_write)
-                    self.pid = _posixsubprocess.fork_exec(
+                    if(_vxworks):
+                        #Hack method to have child spawn with correct FD's
+                        #copy parent std fds
+                        #set parent stdfd's as desired child fds
+                        #spawn child
+                        #resture parent stdfds to std values
+                        #
+                        #!!!Massive caveat in that the child inherits all pipes
+                        tmp_stdin = None;
+                        tmp_stdout = None;
+                        tmp_stderr = None;
+                        #save old stdio fds
+                        #replace stdiofds with desired child fds
+                        if c2pwrite >= 0:
+                            tmp_stdout = os.dup(1);
+                            os.dup2(c2pwrite, 1);
+
+                        if p2cread >= 0:
+                            tmp_stdin = os.dup(0);
+                            os.dup2(p2cread, 0);
+
+                        if errwrite >= 0:
+                            tmp_stderr = os.dup(2);
+                            os.dup2(errwrite, 2);
+                        tmp_cwd = None;
+                        if cwd:
+                            tmp_cwd = os.getcwd()
+                            os.chdir(cwd)
+                        if env_list is None:
+                            env_list = [envKey + "=" + envVal for envKey,envVal in os.environ.copy().items()]
+                        else:
+                            env_list = [envKey + "=" + envVal for envKey,envVal in env.items()] #Sacrifice efficiency for readability
+                        if p2cwrite > 2:
+                            env_list.append("closeFD="+str(p2cwrite))
+                        self.pid = _vxwapi.rtpSpawn(
+                            executable_list[0].decode("UTF-8"),
+                            args,env_list, 100,0x1000000,0,0)
+                        if tmp_cwd is not None:
+                            os.chdir(tmp_cwd)
+
+
+                        if tmp_stdin is not None:
+                            os.dup2(tmp_stdin, 0)
+                            os.close(tmp_stdin)
+
+                        if tmp_stdout is not None:
+                            os.dup2(tmp_stdout, 1)
+                            os.close(tmp_stdout)
+
+                        if tmp_stderr is not None:
+                            os.dup2(tmp_stderr, 2)
+                            os.close(tmp_stderr)
+
+
+                    else:
+                        self.pid = _posixsubprocess.fork_exec(
                             args, executable_list,
                             close_fds, tuple(sorted(map(int, fds_to_keep))),
                             cwd, env_list,
@@ -1382,6 +1540,8 @@ class Popen(object):
                 # exception (limited in size)
                 errpipe_data = bytearray()
                 while True:
+                    if _vxworks:
+                        break
                     part = os.read(errpipe_read, 50000)
                     errpipe_data += part
                     if not part or len(errpipe_data) > 50000:
@@ -1498,9 +1658,8 @@ class Popen(object):
             return (pid, sts)
 
 
-        def wait(self, timeout=None):
-            """Wait for child process to terminate.  Returns returncode
-            attribute."""
+        def _wait(self, timeout):
+            """Internal implementation of wait() on POSIX."""
             if self.returncode is not None:
                 return self.returncode
 
@@ -1556,7 +1715,6 @@ class Popen(object):
 
             stdout = None
             stderr = None
-
             # Only create this mapping if we haven't already.
             if not self._communication_started:
                 self._fileobj2output = {}
@@ -1574,7 +1732,6 @@ class Popen(object):
 
             if self._input:
                 input_view = memoryview(self._input)
-
             with _PopenSelector() as selector:
                 if self.stdin and input:
                     selector.register(self.stdin, selectors.EVENT_WRITE)
@@ -1586,11 +1743,16 @@ class Popen(object):
                 while selector.get_map():
                     timeout = self._remaining_time(endtime)
                     if timeout is not None and timeout < 0:
-                        raise TimeoutExpired(self.args, orig_timeout)
-
+                        if not _vxworks:
+                            raise TimeoutExpired(self.args, orig_timeout)
+                        else:
+                            break;
                     ready = selector.select(timeout)
-                    self._check_timeout(endtime, orig_timeout)
-
+                    #TODO Also a temporary workaround for V7COR-5635
+                    if not _vxworks:
+                        self._check_timeout(endtime, orig_timeout)
+                    else:
+                        pass
                     # XXX Rewrite these to use non-blocking I/O on the file
                     # objects; they are no longer using C stdio!
 
@@ -1611,11 +1773,8 @@ class Popen(object):
                             data = os.read(key.fd, 32768)
                             if not data:
                                 selector.unregister(key.fileobj)
-                                key.fileobj.close()
                             self._fileobj2output[key.fileobj].append(data)
-
             self.wait(timeout=self._remaining_time(endtime))
-
             # All data exchanged.  Translate lists into strings.
             if stdout is not None:
                 stdout = b''.join(stdout)

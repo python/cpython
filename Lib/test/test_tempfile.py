@@ -448,6 +448,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         self.assertEqual(mode, expected)
 
     @unittest.skipUnless(has_spawnl, 'os.spawnl not available')
+    @unittest.skipIf('vxworks' in sys.platform, 'file handles are inherited since no cloexec on vxworks')
     def test_noinherit(self):
         # _mkstemp_inner file handles are not inherited by child processes
 
@@ -739,6 +740,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             os.rmdir(dir)
 
     @unittest.skipUnless(has_stat, 'os.stat not available')
+    @unittest.skipIf('vxworks' in sys.platform, 'vxworks mkdir doesnt respect mode on hrfs')
     def test_mode(self):
         # mkdtemp creates directories with the proper mode
 
@@ -1232,15 +1234,8 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
             f = tempfile.TemporaryFile(dir=dir)
             f.write(b'blat')
 
-            # Sneaky: because this file has no name, it should not prevent
-            # us from removing the directory it was created in.
-            try:
-                os.rmdir(dir)
-            except:
-                # cleanup
-                f.close()
-                os.rmdir(dir)
-                raise
+            f.close()
+            os.rmdir(dir)
 
         def test_multiple_close(self):
             # A TemporaryFile can be closed many times without error

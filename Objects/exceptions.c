@@ -2840,26 +2840,31 @@ _PyErr_TrySetFromCause(const char *format, ...)
 static int
 _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
 {
-    PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
-    if (strip_sep_obj == NULL)
-        return -1;
-
-    // PRINT_OFFSET is to remove `print ` word from the data.
+    // PRINT_OFFSET is to remove the `print ` prefix from the data.
     const int PRINT_OFFSET = 6;
     const int STRIP_BOTH = 2;
-    // Issue 32028: Handle case when whitespace is used with print call
-    PyObject *initial_data = _PyUnicode_XStrip(self->text, STRIP_BOTH, strip_sep_obj);
-    if (initial_data == NULL) {
-        Py_DECREF(strip_sep_obj);
-        return -1;
+    Py_ssize_t start_pos = start + PRINT_OFFSET;
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
+    Py_UCS4 semicolon = ';';
+    Py_ssize_t end_pos = PyUnicode_FindChar(self->text, semicolon,
+                                            start_pos, text_len, 1);
+    if (end_pos < -1) {
+      return -1;
+    } else if (end_pos == -1) {
+      end_pos = text_len;
     }
-    Py_ssize_t text_len = PyUnicode_GET_LENGTH(initial_data);
-    PyObject *data = PyUnicode_Substring(initial_data, PRINT_OFFSET, text_len);
-    Py_DECREF(initial_data);
+
+    PyObject *data = PyUnicode_Substring(self->text, start_pos, end_pos);
     if (data == NULL) {
-        Py_DECREF(strip_sep_obj);
         return -1;
     }
+
+    PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
+    if (strip_sep_obj == NULL) {
+        Py_DECREF(data);
+        return -1;
+    }
+
     PyObject *new_data = _PyUnicode_XStrip(data, STRIP_BOTH, strip_sep_obj);
     Py_DECREF(data);
     Py_DECREF(strip_sep_obj);

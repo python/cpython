@@ -16,7 +16,7 @@ PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
 #define PyCF_MASK (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT | \
                    CO_FUTURE_WITH_STATEMENT | CO_FUTURE_PRINT_FUNCTION | \
                    CO_FUTURE_UNICODE_LITERALS | CO_FUTURE_BARRY_AS_BDFL | \
-                   CO_FUTURE_GENERATOR_STOP)
+                   CO_FUTURE_GENERATOR_STOP | CO_FUTURE_ANNOTATIONS)
 #define PyCF_MASK_OBSOLETE (CO_NESTED)
 #define PyCF_SOURCE_IS_UTF8  0x0100
 #define PyCF_DONT_IMPLY_DEDENT 0x0200
@@ -45,6 +45,7 @@ typedef struct {
 #define FUTURE_UNICODE_LITERALS "unicode_literals"
 #define FUTURE_BARRY_AS_BDFL "barry_as_FLUFL"
 #define FUTURE_GENERATOR_STOP "generator_stop"
+#define FUTURE_ANNOTATIONS "annotations"
 
 struct _mod; /* Declare the existence of this type */
 #define PyAST_Compile(mod, s, f, ar) PyAST_CompileEx(mod, s, f, -1, ar)

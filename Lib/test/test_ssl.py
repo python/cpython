@@ -18,6 +18,7 @@ import asyncore
 import weakref
 import platform
 import functools
+import sysconfig
 try:
     import ctypes
 except ImportError:
@@ -30,7 +31,7 @@ PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = support.HOST
 IS_LIBRESSL = ssl.OPENSSL_VERSION.startswith('LibreSSL')
 IS_OPENSSL_1_1 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0)
-
+PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 def data_file(*name):
     return os.path.join(os.path.dirname(__file__), *name)
@@ -104,6 +105,7 @@ SIGNED_CERTFILE_ECC_HOSTNAME = 'localhost-ecc'
 SIGNING_CA = data_file("capath", "ceff1710.0")
 # cert with all kinds of subject alt names
 ALLSANFILE = data_file("allsans.pem")
+IDNSANSFILE = data_file("idnsans.pem")
 
 REMOTE_HOST = "self-signed.pythontest.net"
 
@@ -278,6 +280,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.RAND_add(bytearray(b"this is a random bytearray object"), 75.0)
 
     @unittest.skipUnless(os.name == 'posix', 'requires posix')
+    @unittest.skipIf('vxworks' in sys.platform, 'vxworks doesnt support os.fork')
     def test_random_fork(self):
         status = ssl.RAND_status()
         if not status:
@@ -502,14 +505,17 @@ class BasicSocketTests(unittest.TestCase):
             test_wrap_socket(sock,
                              certfile=certfile)
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_empty_cert(self):
         """Wrapping with an empty cert file"""
         self.bad_cert_test("nullcert.pem")
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_malformed_cert(self):
         """Wrapping with a badly formatted certificate (syntax error)"""
         self.bad_cert_test("badcert.pem")
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_malformed_key(self):
         """Wrapping with a badly formatted key (syntax error)"""
         self.bad_cert_test("badkey.pem")
@@ -936,6 +942,19 @@ class ContextTests(unittest.TestCase):
         with self.assertRaisesRegex(ssl.SSLError, "No cipher can be selected"):
             ctx.set_ciphers("^$:,;?*'dorothyx")
 
+    @unittest.skipUnless(PY_SSL_DEFAULT_CIPHERS == 1,
+                         "Test applies only to Python default ciphers")
+    def test_python_ciphers(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ciphers = ctx.get_ciphers()
+        for suite in ciphers:
+            name = suite['name']
+            self.assertNotIn("PSK", name)
+            self.assertNotIn("SRP", name)
+            self.assertNotIn("MD5", name)
+            self.assertNotIn("RC4", name)
+            self.assertNotIn("3DES", name)
+
     @unittest.skipIf(ssl.OPENSSL_VERSION_INFO < (1, 0, 2, 0, 0), 'OpenSSL too old')
     def test_get_ciphers(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -988,6 +1007,19 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self.assertTrue(ctx.check_hostname)
 
+    def test_hostname_checks_common_name(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.assertTrue(ctx.hostname_checks_common_name)
+        if ssl.HAS_NEVER_CHECK_COMMON_NAME:
+            ctx.hostname_checks_common_name = True
+            self.assertTrue(ctx.hostname_checks_common_name)
+            ctx.hostname_checks_common_name = False
+            self.assertFalse(ctx.hostname_checks_common_name)
+            ctx.hostname_checks_common_name = True
+            self.assertTrue(ctx.hostname_checks_common_name)
+        else:
+            with self.assertRaises(AttributeError):
+                ctx.hostname_checks_common_name = True
 
     @unittest.skipUnless(have_verify_flags(),
                          "verify_flags need OpenSSL > 0.9.8")
@@ -1009,6 +1041,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             ctx.verify_flags = None
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_load_cert_chain(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         # Combined key and cert in a single file
@@ -1092,6 +1125,7 @@ class ContextTests(unittest.TestCase):
         # Make sure the password function isn't called if it isn't needed
         ctx.load_cert_chain(CERTFILE, password=getpass_exception)
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_load_verify_locations(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_verify_locations(CERTFILE)
@@ -1169,6 +1203,7 @@ class ContextTests(unittest.TestCase):
             ctx.load_verify_locations(cadata=b"broken")
 
 
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_load_dh_params(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_dh_params(DHFILE)
@@ -1469,7 +1504,7 @@ class SSLErrorTests(unittest.TestCase):
         e = ssl.SSLZeroReturnError(1, "foo")
         self.assertEqual(str(e), "foo")
         self.assertEqual(e.errno, 1)
-
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_lib_reason(self):
         # Test the library and reason attributes
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1510,6 +1545,16 @@ class SSLErrorTests(unittest.TestCase):
         with self.assertRaises(UnicodeError):
             ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
                          server_hostname="xn--.com")
+
+    def test_bad_server_hostname(self):
+        ctx = ssl.create_default_context()
+        with self.assertRaises(ValueError):
+            ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                         server_hostname="")
+        with self.assertRaises(ValueError):
+            ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                         server_hostname=".example.org")
+
 
 class MemoryBIOTests(unittest.TestCase):
 
@@ -1575,7 +1620,6 @@ class MemoryBIOTests(unittest.TestCase):
 
 
 class SimpleBackgroundTests(unittest.TestCase):
-
     """Tests that connect to a simple server running in the background"""
 
     def setUp(self):
@@ -1717,6 +1761,7 @@ class SimpleBackgroundTests(unittest.TestCase):
             self.assertTrue(cert)
 
     @unittest.skipIf(os.name == "nt", "Can't use a socket as a file under Windows")
+    @unittest.skipIf('vxworks' in sys.platform, 'Not Supported on VxWorks')
     def test_makefile_close(self):
         # Issue #5238: creating a file-like object with makefile() shouldn't
         # delay closing the underlying "real socket" (here tested with its
@@ -2536,8 +2581,9 @@ class ThreadedTests(unittest.TestCase):
         with server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname="invalid") as s:
-                with self.assertRaisesRegex(ssl.CertificateError,
-                                            "hostname 'invalid' doesn't match 'localhost'"):
+                with self.assertRaisesRegex(
+                        ssl.CertificateError,
+                        "Hostname mismatch, certificate is not valid for 'invalid'."):
                     s.connect((HOST, server.port))
 
         # missing server_hostname arg should cause an exception, too
@@ -2591,6 +2637,70 @@ class ThreadedTests(unittest.TestCase):
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
                 self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
+
+    def test_check_hostname_idn(self):
+        if support.verbose:
+            sys.stdout.write("\n")
+
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        server_context.load_cert_chain(IDNSANSFILE)
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.check_hostname = True
+        context.load_verify_locations(SIGNING_CA)
+
+        # correct hostname should verify, when specified in several
+        # different ways
+        idn_hostnames = [
+            ('könig.idn.pythontest.net',
+             'könig.idn.pythontest.net',),
+            ('xn--knig-5qa.idn.pythontest.net',
+             'xn--knig-5qa.idn.pythontest.net'),
+            (b'xn--knig-5qa.idn.pythontest.net',
+             b'xn--knig-5qa.idn.pythontest.net'),
+
+            ('königsgäßchen.idna2003.pythontest.net',
+             'königsgäßchen.idna2003.pythontest.net'),
+            ('xn--knigsgsschen-lcb0w.idna2003.pythontest.net',
+             'xn--knigsgsschen-lcb0w.idna2003.pythontest.net'),
+            (b'xn--knigsgsschen-lcb0w.idna2003.pythontest.net',
+             b'xn--knigsgsschen-lcb0w.idna2003.pythontest.net'),
+        ]
+        for server_hostname, expected_hostname in idn_hostnames:
+            server = ThreadedEchoServer(context=server_context, chatty=True)
+            with server:
+                with context.wrap_socket(socket.socket(),
+                                         server_hostname=server_hostname) as s:
+                    self.assertEqual(s.server_hostname, expected_hostname)
+                    s.connect((HOST, server.port))
+                    cert = s.getpeercert()
+                    self.assertEqual(s.server_hostname, expected_hostname)
+                    self.assertTrue(cert, "Can't get peer certificate.")
+
+                with ssl.SSLSocket(socket.socket(),
+                                   server_hostname=server_hostname) as s:
+                    s.connect((HOST, server.port))
+                    s.getpeercert()
+                    self.assertEqual(s.server_hostname, expected_hostname)
+
+        # bug https://bugs.python.org/issue28414
+        # IDNA 2008 deviations are broken
+        idna2008 = 'xn--knigsgchen-b4a3dun.idna2008.pythontest.net'
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with self.assertRaises(UnicodeError):
+                with context.wrap_socket(socket.socket(),
+                                         server_hostname=idna2008) as s:
+                    s.connect((HOST, server.port))
+
+        # incorrect hostname should raise an exception
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with context.wrap_socket(socket.socket(),
+                                     server_hostname="python.example.org") as s:
+                with self.assertRaises(ssl.CertificateError):
+                    s.connect((HOST, server.port))
 
     def test_wrong_cert(self):
         """Connecting when the server rejects the client's certificate

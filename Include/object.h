@@ -536,11 +536,20 @@ PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
-/* Same as PyObject_GetAttr(), but don't raise AttributeError. */
-PyAPI_FUNC(PyObject *) _PyObject_GetAttrWithoutError(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, struct _Py_Identifier *);
 PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObject *);
 PyAPI_FUNC(int) _PyObject_HasAttrId(PyObject *, struct _Py_Identifier *);
+/* Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which
+   don't raise AttributeError.
+
+   Return 1 and set *result != NULL if an attribute is found.
+   Return 0 and set *result == NULL if an attribute is not found;
+   an AttributeError is silenced.
+   Return -1 and set *result == NULL if an error other than AttributeError
+   is raised.
+*/
+PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, struct _Py_Identifier *, PyObject **);
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);

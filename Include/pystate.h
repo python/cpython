@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#include "pythread.h"
+
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
 #define MAX_CO_EXTRA_USERS 255
@@ -26,29 +28,24 @@ typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
 typedef struct {
     int install_signal_handlers;  /* Install signal handlers? -1 means unset */
-    int ignore_environment; /* -E */
+
+    int ignore_environment; /* -E, Py_IgnoreEnvironmentFlag */
     int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
-    int _disable_importlib; /* Needed by freeze_importlib */
     const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
-    int dev_mode;           /* -X dev */
-    int faulthandler;       /* -X faulthandler */
-    int tracemalloc;        /* -X tracemalloc=N */
-    int import_time;        /* -X importtime */
+    int dev_mode;           /* PYTHONDEVMODE, -X dev */
+    int faulthandler;       /* PYTHONFAULTHANDLER, -X faulthandler */
+    int tracemalloc;        /* PYTHONTRACEMALLOC, -X tracemalloc=N */
+    int import_time;        /* PYTHONPROFILEIMPORTTIME, -X importtime */
     int show_ref_count;     /* -X showrefcount */
     int show_alloc_count;   /* -X showalloccount */
     int dump_refs;          /* PYTHONDUMPREFS */
     int malloc_stats;       /* PYTHONMALLOCSTATS */
     int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
     int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
-    int utf8_mode;          /* -X utf8 or PYTHONUTF8 environment variable,
-                               -1 means unknown */
+    int utf8_mode;          /* PYTHONUTF8, -X utf8; -1 means unknown */
 
-    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
-    wchar_t *home;          /* PYTHONHOME environment variable,
-                               see also Py_SetPythonHome(). */
     wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
-
     int argc;               /* Number of command line arguments,
                                -1 means unset */
     wchar_t **argv;         /* Command line arguments */
@@ -59,6 +56,24 @@ typedef struct {
 
     int nwarnoption;        /* Number of warnings options */
     wchar_t **warnoptions;  /* Warnings options */
+
+    /* Path configuration inputs */
+    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
+    wchar_t *home;          /* PYTHONHOME environment variable,
+                               see also Py_SetPythonHome(). */
+
+    /* Path configuration outputs */
+    int nmodule_search_path;        /* Number of sys.path paths,
+                                       -1 means unset */
+    wchar_t **module_search_paths;  /* sys.path paths */
+    wchar_t *executable;    /* sys.executable */
+    wchar_t *prefix;        /* sys.prefix */
+    wchar_t *base_prefix;   /* sys.base_prefix */
+    wchar_t *exec_prefix;   /* sys.exec_prefix */
+    wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
+
+    /* Private fields */
+    int _disable_importlib; /* Needed by freeze_importlib */
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT \
@@ -67,7 +82,8 @@ typedef struct {
         .use_hash_seed = -1, \
         .coerce_c_locale = -1, \
         .utf8_mode = -1, \
-        .argc = -1}
+        .argc = -1, \
+        .nmodule_search_path = -1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API
@@ -97,6 +113,8 @@ typedef struct _is {
     struct _ts *tstate_head;
 
     int64_t id;
+    int64_t id_refcount;
+    PyThread_type_lock id_mutex;
 
     PyObject *modules;
     PyObject *modules_by_index;
@@ -335,11 +353,26 @@ PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
 PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 
 
+/* Routines for advanced debuggers, requested by David Beazley.
+   Don't use unless you know what you are doing! */
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Main(void);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
+PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
+PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
+
+typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
+#endif
+
 /* Variable and macro for in-line access to current thread state */
 
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
 #ifdef Py_BUILD_CORE
+#ifndef MS_WINDOWS
+#  include "internal/pystate.h"
+#endif
 #  define _PyThreadState_Current _PyRuntime.gilstate.tstate_current
 #  define PyThreadState_GET() \
              ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
@@ -414,18 +447,6 @@ PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 */
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
-#endif
-
-/* Routines for advanced debuggers, requested by David Beazley.
-   Don't use unless you know what you are doing! */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Main(void);
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
-PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
-PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
-
-typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
 #endif
 
 #ifdef __cplusplus

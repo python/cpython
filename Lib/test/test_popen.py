@@ -16,6 +16,7 @@ python = sys.executable
 if ' ' in python:
     python = '"' + python + '"'     # quote embedded space for cmdline
 
+@unittest.skipIf('vxworks' in sys.platform, 'VxWorks doesnt support shell')
 class PopenTest(unittest.TestCase):
 
     def _do_test_commandline(self, cmdline, expected):

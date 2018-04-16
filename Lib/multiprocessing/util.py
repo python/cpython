@@ -396,6 +396,13 @@ def _close_stdin():
 #
 
 def spawnv_passfds(path, args, passfds):
+    if 'vxworks' in sys.platform:
+        import subprocess
+        try:
+            return subprocess.Popen(args).pid
+        except:
+            pass
+        return
     import _posixsubprocess
     passfds = tuple(sorted(map(int, passfds)))
     errpipe_read, errpipe_write = os.pipe()

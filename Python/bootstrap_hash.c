@@ -18,6 +18,11 @@
 #  if !defined(HAVE_GETRANDOM) && defined(HAVE_GETRANDOM_SYSCALL)
 #    include <sys/syscall.h>
 #  endif
+#  ifdef __VXWORKS__
+#    include <randomNumGen.h>
+#    include <stdlib.h>
+#    include <time.h>
+#  endif
 #endif
 
 #ifdef Py_DEBUG
@@ -499,6 +504,7 @@ pyurandom(void *buffer, Py_ssize_t size, int blocking, int raise)
     /* getrandom() or getentropy() function is not available: failed with
        ENOSYS or EPERM. Fall back on reading from /dev/urandom. */
 #endif
+
 
     return dev_urandom(buffer, size, raise);
 #endif

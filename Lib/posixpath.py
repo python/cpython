@@ -28,6 +28,10 @@ import stat
 import genericpath
 from genericpath import *
 
+_vxworks = 'vxworks' in sys.platform
+if _vxworks:
+    import _vxwapi
+
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime","islink","exists","lexists","isdir","isfile",
@@ -65,13 +69,17 @@ def isabs(s):
     """Test whether a path is absolute"""
     s = os.fspath(s)
     sep = _get_sep(s)
+    if _vxworks: #VxWorks paths dont always start with / and there is no good
+                 # way to find if a path is absolute. V7COR-3074, F7233
+        if not isinstance(s, str):
+            s = s.decode(sys.getdefaultencoding())
+        return bool(_vxwapi.isAbs(s))
     return s.startswith(sep)
 
 
 # Join pathnames.
 # Ignore the previous parts if a part is absolute.
 # Insert a '/' unless the first part is empty or already ends in '/'.
-
 def join(a, *p):
     """Join two or more pathname components, inserting '/' as needed.
     If any component is an absolute path, all previous path components
@@ -386,11 +394,13 @@ def realpath(filename):
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
     path, ok = _joinrealpath(filename[:0], filename, {})
+    print(path)
     return abspath(path)
 
 # Join two paths, normalizing and eliminating any symbolic links
 # encountered in the second path.
 def _joinrealpath(path, rest, seen):
+    print(path + " " + rest + " " + str(seen))
     if isinstance(path, bytes):
         sep = b'/'
         curdir = b'.'
@@ -401,8 +411,18 @@ def _joinrealpath(path, rest, seen):
         pardir = '..'
 
     if isabs(rest):
-        rest = rest[1:]
-        path = sep
+        if not _vxworks:
+            rest = rest[1:]
+            path = sep
+        else:
+            if rest.startswith(sep):
+                rest = rest[1:]
+                path = sep
+            else:
+                ind = rest.find(':')
+                ind = 0 if ind < 0 else ind
+                path = rest[:ind]
+                rest = rest[ind:]
 
     while rest:
         name, _, rest = rest.partition(sep)

@@ -1,10 +1,10 @@
 import getpass
 import os
+import sys
 import unittest
 from io import BytesIO, StringIO, TextIOWrapper
 from unittest import mock
 from test import support
-
 try:
     import termios
 except ImportError:

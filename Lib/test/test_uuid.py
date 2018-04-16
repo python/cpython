@@ -2,6 +2,7 @@ import unittest.mock
 from test import support
 import builtins
 import contextlib
+import sys
 import io
 import os
 import shutil
@@ -311,6 +312,32 @@ class BaseTestUUID:
         node2 = self.uuid.getnode()
         self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
 
+    # bpo-32502: UUID1 requires a 48-bit identifier, but hardware identifiers
+    # need not necessarily be 48 bits (e.g., EUI-64).
+    def test_uuid1_eui64(self):
+        # Confirm that uuid.getnode ignores hardware addresses larger than 48
+        # bits. Mock out each platform's *_getnode helper functions to return
+        # something just larger than 48 bits to test. This will cause
+        # uuid.getnode to fall back on uuid._random_getnode, which will
+        # generate a valid value.
+        too_large_getter = lambda: 1 << 48
+        with unittest.mock.patch.multiple(
+            self.uuid,
+            _node=None,  # Ignore any cached node value.
+            _NODE_GETTERS_WIN32=[too_large_getter],
+            _NODE_GETTERS_UNIX=[too_large_getter],
+        ):
+            node = self.uuid.getnode()
+        self.assertTrue(0 < node < (1 << 48), '%012x' % node)
+
+        # Confirm that uuid1 can use the generated node, i.e., the that
+        # uuid.getnode fell back on uuid._random_getnode() rather than using
+        # the value from too_large_getter above.
+        try:
+            self.uuid.uuid1(node=node)
+        except ValueError as e:
+            self.fail('uuid1 was given an invalid node ID')
+
     def test_uuid1(self):
         equal = self.assertEqual
 
@@ -455,6 +482,7 @@ class BaseTestUUID:
             equal(str(u), v)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipIf('vxworks' in sys.platform, 'no os fork in VxWorks')
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
         # the same sequence of UUIDs in the parent and any

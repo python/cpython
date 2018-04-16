@@ -56,6 +56,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 static _PyInitError add_main_module(PyInterpreterState *interp);
 static _PyInitError initfsencoding(PyInterpreterState *interp);
 static _PyInitError initsite(void);
+static void initVxworksSubprocess(void);
 static _PyInitError init_sys_streams(PyInterpreterState *interp);
 static _PyInitError initsigs(void);
 static void call_py_exitfuncs(PyInterpreterState *);
@@ -276,7 +277,7 @@ get_locale_encoding(void)
         return NULL;
     }
     return get_codec_name(codeset);
-#elif defined(__ANDROID__)
+#elif defined(__ANDROID__) || defined(__VXWORKS__)
     return get_codec_name("UTF-8");
 #else
     PyErr_SetNone(PyExc_NotImplementedError);
@@ -312,7 +313,7 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     Py_INCREF(interp->import_func);
 
     /* Import the _imp module */
-    impmod = PyInit_imp();
+    impmod = PyInit__imp();
     if (impmod == NULL) {
         return _Py_INIT_ERR("can't import _imp");
     }
@@ -681,8 +682,12 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
        Instead we destroy the previously created GIL here, which ensures
        that we can call Py_Initialize / Py_FinalizeEx multiple times. */
     _PyEval_FiniThreads();
+
     /* Auto-thread-state API */
     _PyGILState_Init(interp, tstate);
+
+    /* Create the GIL */
+    PyEval_InitThreads();
 
     _Py_ReadyTypes();
 
@@ -888,6 +893,10 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
             return err;
         }
     }
+#ifdef __VXWORKS__
+    initVxworksSubprocess();
+#endif
+
     return _Py_INIT_OK();
 }
 
@@ -1315,7 +1324,9 @@ new_interpreter(PyThreadState **tstate_p)
         PyDict_SetItemString(interp->sysdict, "modules", modules);
         _PySys_EndInit(interp->sysdict, &interp->config);
     }
-
+    PyObject *sys_path = PySys_GetObject("path");
+    PyObject* objectsRepresentation = PyObject_Repr(sys_path);
+    const char* s = PyBytes_AS_STRING(PyUnicode_AsUTF8String(objectsRepresentation));
     bimod = _PyImport_FindBuiltin("builtins", modules);
     if (bimod != NULL) {
         interp->builtins = PyModule_GetDict(bimod);
@@ -1509,10 +1520,6 @@ initfsencoding(PyInterpreterState *interp)
         Py_FileSystemDefaultEncoding = "utf-8";
         Py_FileSystemDefaultEncodeErrors = "surrogatepass";
     }
-#elif defined(__VXWORKS__)
-    {
-    Py_FileSystemDefaultEncoding = "ascii";
-    }
 #else
     if (Py_FileSystemDefaultEncoding == NULL &&
         interp->core_config.utf8_mode)
@@ -1558,6 +1565,22 @@ initsite(void)
     Py_DECREF(m);
     return _Py_INIT_OK();
 }
+
+#ifdef __VXWORKS__
+static void
+initVxworksSubprocess(void)
+{
+    const char* s = getenv("closeFD");
+    if(s)
+    {
+        int fd = atoi(s);
+        if(fd > 2){
+            int err = close(fd);
+        }
+        putenv("closeFD=");
+    }             
+}
+#endif
 
 /* Check if a file descriptor is valid or not.
    Return 0 if the file descriptor is invalid, return non-zero otherwise. */

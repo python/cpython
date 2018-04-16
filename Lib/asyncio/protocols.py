@@ -2,7 +2,7 @@
 
 __all__ = (
     'BaseProtocol', 'Protocol', 'DatagramProtocol',
-    'SubprocessProtocol',
+    'SubprocessProtocol', 'BufferedProtocol',
 )
 
 
@@ -102,6 +102,57 @@ class Protocol(BaseProtocol):
         """
 
 
+class BufferedProtocol(BaseProtocol):
+    """Interface for stream protocol with manual buffer control.
+
+    Important: this has been been added to asyncio in Python 3.7
+    *on a provisional basis*!  Consider it as an experimental API that
+    might be changed or removed in Python 3.8.
+
+    Event methods, such as `create_server` and `create_connection`,
+    accept factories that return protocols that implement this interface.
+
+    The idea of BufferedProtocol is that it allows to manually allocate
+    and control the receive buffer.  Event loops can then use the buffer
+    provided by the protocol to avoid unnecessary data copies.  This
+    can result in noticeable performance improvement for protocols that
+    receive big amounts of data.  Sophisticated protocols can allocate
+    the buffer only once at creation time.
+
+    State machine of calls:
+
+      start -> CM [-> GB [-> BU?]]* [-> ER?] -> CL -> end
+
+    * CM: connection_made()
+    * GB: get_buffer()
+    * BU: buffer_updated()
+    * ER: eof_received()
+    * CL: connection_lost()
+    """
+
+    def get_buffer(self):
+        """Called to allocate a new receive buffer.
+
+        Must return an object that implements the
+        :ref:`buffer protocol <bufferobjects>`.
+        """
+
+    def buffer_updated(self, nbytes):
+        """Called when the buffer was updated with the received data.
+
+        *nbytes* is the total number of bytes that were written to
+        the buffer.
+        """
+
+    def eof_received(self):
+        """Called when the other end calls write_eof() or equivalent.
+
+        If this returns a false value (including None), the transport
+        will close itself.  If it returns a true value, closing the
+        transport is up to the protocol.
+        """
+
+
 class DatagramProtocol(BaseProtocol):
     """Interface for datagram protocol."""
 
@@ -134,3 +185,7 @@ class SubprocessProtocol(BaseProtocol):
 
     def process_exited(self):
         """Called when subprocess has exited."""
+
+
+def _is_buffered_protocol(proto):
+    return hasattr(proto, 'get_buffer') and not hasattr(proto, 'data_received')

@@ -176,10 +176,6 @@ class BaseFutureTests:
             fut.remove_done_callback(lambda f: None)
 
         fut = self.cls.__new__(self.cls, loop=self.loop)
-        with self.assertRaises((RuntimeError, AttributeError)):
-            fut._schedule_callbacks()
-
-        fut = self.cls.__new__(self.cls, loop=self.loop)
         try:
             repr(fut)
         except (RuntimeError, AttributeError):

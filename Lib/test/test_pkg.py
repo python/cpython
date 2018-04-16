@@ -235,6 +235,7 @@ class TestPkg(unittest.TestCase):
             """
         self.run_code(s)
 
+    @unittest.skipIf('vxworks' in sys.platform, 'no __path__ in vxworks posix')
     def test_7(self):
         hier = [
                 ("t7.py", ""),

@@ -1784,7 +1784,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
             }
         }
 
-        /* We are into optional args, skip thru to any remaining
+        /* We are into optional args, skip through to any remaining
          * keyword args */
         msg = skipitem(&format, p_va, flags);
         if (msg) {
@@ -2176,7 +2176,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
             return cleanreturn(1, &freelist);
         }
 
-        /* We are into optional args, skip thru to any remaining
+        /* We are into optional args, skip through to any remaining
          * keyword args */
         msg = skipitem(&format, p_va, flags);
         assert(msg == NULL);

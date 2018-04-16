@@ -7,6 +7,8 @@
 #include <sys/types.h>
 #include <string.h>
 
+
+
 #ifdef __APPLE__
 #  include <mach-o/dyld.h>
 #endif
@@ -92,7 +94,7 @@
  * process to find the installed Python tree.
  *
  * An embedding application can use Py_SetPath() to override all of
- * these authomatic path computations.
+ * these automatic path computations.
  *
  * NOTE: Windows MSVC builds use PC/getpathp.c instead!
  */
@@ -259,13 +261,31 @@ joinpath(wchar_t *buffer, wchar_t *stuff)
     buffer[n+k] = '\0';
 }
 
+#ifdef __VXWORKS__
+
+// Vxworks has abs paths that dont start with /
+// THIS IS A TEMPORARY HACK
+static int
+checkDev(wchar_t *p) {
+	int i = wcscspn(p,L":");
+	int b = wcscspn(p,L"/");
+	if(i < b) return 1;
+	return 0;
+}
+
+#endif
 
 /* copy_absolute requires that path be allocated at least
    MAXPATHLEN + 1 bytes and that p be no more than MAXPATHLEN bytes. */
 static void
 copy_absolute(wchar_t *path, wchar_t *p, size_t pathlen)
 {
+
+#ifdef __VXWORKS__
+	if (checkDev(p) || p[0] == SEP) {
+#else
     if (p[0] == SEP) {
+#endif
         wcscpy(path, p);
     }
     else {
@@ -416,6 +436,7 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
                        PyCalculatePath *calculate, wchar_t *exec_prefix)
 {
     size_t n;
+    
 
     /* If PYTHONHOME is set, we believe it unconditionally */
     if (core_config->home) {
@@ -460,11 +481,16 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
         }
     }
 
+    
     /* Search from argv0_path, until root is found */
     copy_absolute(exec_prefix, calculate->argv0_path, MAXPATHLEN+1);
     do {
         n = wcslen(exec_prefix);
+#ifdef __VXWORKS__
+        joinpath(exec_prefix, L"lib/common/python" VERSION);
+#else
         joinpath(exec_prefix, calculate->lib_python);
+#endif
         joinpath(exec_prefix, L"lib-dynload");
         if (isdir(exec_prefix)) {
             return 1;
@@ -500,7 +526,12 @@ calculate_exec_prefix(const _PyCoreConfig *core_config,
                 "Could not find platform dependent libraries <exec_prefix>\n");
         }
         wcsncpy(exec_prefix, calculate->exec_prefix, MAXPATHLEN);
+#ifdef __VXWORKS__
+        joinpath(exec_prefix, L"lib/common/" VERSION);
+        joinpath(exec_prefix, L"lib-dynload");
+#else
         joinpath(exec_prefix, L"lib/lib-dynload");
+#endif
     }
     /* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
 }
@@ -513,6 +544,9 @@ calculate_reduce_exec_prefix(PyCalculatePath *calculate, wchar_t *exec_prefix)
         reduce(exec_prefix);
         reduce(exec_prefix);
         reduce(exec_prefix);
+#ifdef __VXWORKS__ //vxworks has an added /common/ to path
+        reduce(exec_prefix);
+#endif
         if (!exec_prefix[0]) {
             wcscpy(exec_prefix, separator);
         }
@@ -827,16 +861,16 @@ calculate_module_search_path(const _PyCoreConfig *core_config,
             buf[end] = '\0';
         }
         else {
-            wcscat(buf, defpath);
+        	wcscat(buf, defpath);
             break;
         }
         defpath = delim + 1;
     }
     wcscat(buf, delimiter);
 
+
     /* Finally, on goes the directory for dynamic-load modules */
     wcscat(buf, exec_prefix);
-
     config->module_search_path = buf;
     return _Py_INIT_OK();
 }
@@ -935,7 +969,6 @@ calculate_path_impl(const _PyCoreConfig *core_config,
     }
 
     calculate_reduce_exec_prefix(calculate, exec_prefix);
-
     config->exec_prefix = _PyMem_RawWcsdup(exec_prefix);
     if (config->exec_prefix == NULL) {
         return _Py_INIT_NO_MEMORY();
