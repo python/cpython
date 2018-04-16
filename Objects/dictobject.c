@@ -400,9 +400,6 @@ dk_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
  * This means that dicts double in size when growing without deletions,
  * but have more head room when the number of deletions is on a par with the
  * number of insertions.  See also bpo-17563 and bpo-33205.
- * Raising this to used*4 doubles memory consumption depending on the size of
- * the dictionary, but results in half the number of resizes, less effort to
- * resize.
  *
  * GROWTH_RATE was set to used*4 up to version 3.2.
  * GROWTH_RATE was set to used*2 in version 3.3.0
