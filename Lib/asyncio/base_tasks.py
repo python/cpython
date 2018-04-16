@@ -13,10 +13,10 @@ def _task_repr_info(task):
         info[0] = 'cancelling'
 
     coro = coroutines._format_coroutine(task._coro)
-    info.insert(1, 'coro=<%s>' % coro)
+    info.insert(1, f'coro=<{coro}>')
 
     if task._fut_waiter is not None:
-        info.insert(2, 'wait_for=%r' % task._fut_waiter)
+        info.insert(2, f'wait_for={task._fut_waiter!r}')
     return info
 
 
@@ -61,15 +61,15 @@ def _task_print_stack(task, limit, file):
             linecache.checkcache(filename)
         line = linecache.getline(filename, lineno, f.f_globals)
         extracted_list.append((filename, lineno, name, line))
+
     exc = task._exception
     if not extracted_list:
-        print('No stack for %r' % task, file=file)
+        print(f'No stack for {task!r}', file=file)
     elif exc is not None:
-        print('Traceback for %r (most recent call last):' % task,
-              file=file)
+        print(f'Traceback for {task!r} (most recent call last):', file=file)
     else:
-        print('Stack for %r (most recent call last):' % task,
-              file=file)
+        print(f'Stack for {task!r} (most recent call last):', file=file)
+
     traceback.print_list(extracted_list, file=file)
     if exc is not None:
         for line in traceback.format_exception_only(exc.__class__, exc):

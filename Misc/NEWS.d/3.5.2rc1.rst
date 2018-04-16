@@ -420,7 +420,7 @@ patch by ingrid.
 .. section: Library
 
 A new version of typing.py provides several new classes and features:
-@overload outside stubs, Reversible, DefaultDict, Text, ContextManager,
+@overload outside stubs, DefaultDict, Text, ContextManager,
 Type[], NewType(), TYPE_CHECKING, and numerous bug fixes (note that some of
 the new features are not yet implemented in mypy or other static analyzers).
 Also classes for PEP 492 (Awaitable, AsyncIterable, AsyncIterator) have been
@@ -2006,7 +2006,7 @@ Adds validation of ucrtbase[d].dll version with warning for old versions.
 .. nonce: 102DA-
 .. section: Build
 
-Avoid error about nonexistant fileblocks.o file by using a lower-level check
+Avoid error about nonexistent fileblocks.o file by using a lower-level check
 for st_blocks in struct stat.
 
 ..

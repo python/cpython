@@ -29,6 +29,7 @@ class SemaphoreTracker(object):
     def __init__(self):
         self._lock = threading.Lock()
         self._fd = None
+        self._pid = None
 
     def getfd(self):
         self.ensure_running()
@@ -40,8 +41,20 @@ class SemaphoreTracker(object):
         This can be run from any process.  Usually a child process will use
         the semaphore created by its parent.'''
         with self._lock:
-            if self._fd is not None:
-                return
+            if self._pid is not None:
+                # semaphore tracker was launched before, is it still running?
+                pid, status = os.waitpid(self._pid, os.WNOHANG)
+                if not pid:
+                    # => still alive
+                    return
+                # => dead, launch it again
+                os.close(self._fd)
+                self._fd = None
+                self._pid = None
+
+                warnings.warn('semaphore_tracker: process died unexpectedly, '
+                              'relaunching.  Some semaphores might leak.')
+
             fds_to_pass = []
             try:
                 fds_to_pass.append(sys.stderr.fileno())
@@ -55,12 +68,13 @@ class SemaphoreTracker(object):
                 exe = spawn.get_executable()
                 args = [exe] + util._args_from_interpreter_flags()
                 args += ['-c', cmd % r]
-                util.spawnv_passfds(exe, args, fds_to_pass)
+                pid = util.spawnv_passfds(exe, args, fds_to_pass)
             except:
                 os.close(w)
                 raise
             else:
                 self._fd = w
+                self._pid = pid
             finally:
                 os.close(r)
 

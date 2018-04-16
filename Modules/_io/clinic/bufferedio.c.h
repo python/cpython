@@ -97,7 +97,7 @@ static PyObject *
 _io__Buffered_peek_impl(buffered *self, Py_ssize_t size);
 
 static PyObject *
-_io__Buffered_peek(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_peek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = 0;
@@ -124,7 +124,7 @@ static PyObject *
 _io__Buffered_read_impl(buffered *self, Py_ssize_t n);
 
 static PyObject *
-_io__Buffered_read(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_read(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
@@ -151,7 +151,7 @@ static PyObject *
 _io__Buffered_read1_impl(buffered *self, Py_ssize_t n);
 
 static PyObject *
-_io__Buffered_read1(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_read1(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
@@ -240,7 +240,7 @@ static PyObject *
 _io__Buffered_readline_impl(buffered *self, Py_ssize_t size);
 
 static PyObject *
-_io__Buffered_readline(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_readline(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -267,7 +267,7 @@ static PyObject *
 _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence);
 
 static PyObject *
-_io__Buffered_seek(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_seek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *targetobj;
@@ -295,7 +295,7 @@ static PyObject *
 _io__Buffered_truncate_impl(buffered *self, PyObject *pos);
 
 static PyObject *
-_io__Buffered_truncate(buffered *self, PyObject **args, Py_ssize_t nargs)
+_io__Buffered_truncate(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *pos = Py_None;
@@ -476,4 +476,4 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2b817df0bf814ddc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9a20dd4eaabb5d58 input=a9049054013a1b77]*/

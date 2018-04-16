@@ -497,7 +497,7 @@ You can't use lists as keys, since lists can be modified in place using index
 assignments, slice assignments, or methods like :meth:`append` and
 :meth:`extend`.
 
-It is best to think of a dictionary as an unordered set of *key: value* pairs,
+It is best to think of a dictionary as a set of *key: value* pairs,
 with the requirement that the keys are unique (within one dictionary). A pair of
 braces creates an empty dictionary: ``{}``. Placing a comma-separated list of
 key:value pairs within the braces adds initial key:value pairs to the
@@ -509,9 +509,9 @@ pair with ``del``. If you store using a key that is already in use, the old
 value associated with that key is forgotten.  It is an error to extract a value
 using a non-existent key.
 
-Performing ``list(d.keys())`` on a dictionary returns a list of all the keys
-used in the dictionary, in arbitrary order (if you want it sorted, just use
-``sorted(d.keys())`` instead). [2]_  To check whether a single key is in the
+Performing ``list(d)`` on a dictionary returns a list of all the keys
+used in the dictionary, in insertion order (if you want it sorted, just use
+``sorted(d)`` instead). To check whether a single key is in the
 dictionary, use the :keyword:`in` keyword.
 
 Here is a small example using a dictionary::
@@ -519,16 +519,16 @@ Here is a small example using a dictionary::
    >>> tel = {'jack': 4098, 'sape': 4139}
    >>> tel['guido'] = 4127
    >>> tel
-   {'sape': 4139, 'guido': 4127, 'jack': 4098}
+   {'jack': 4098, 'sape': 4139, 'guido': 4127}
    >>> tel['jack']
    4098
    >>> del tel['sape']
    >>> tel['irv'] = 4127
    >>> tel
-   {'guido': 4127, 'irv': 4127, 'jack': 4098}
-   >>> list(tel.keys())
-   ['irv', 'guido', 'jack']
-   >>> sorted(tel.keys())
+   {'jack': 4098, 'guido': 4127, 'irv': 4127}
+   >>> list(tel)
+   ['jack', 'guido', 'irv']
+   >>> sorted(tel)
    ['guido', 'irv', 'jack']
    >>> 'guido' in tel
    True
@@ -539,7 +539,7 @@ The :func:`dict` constructor builds dictionaries directly from sequences of
 key-value pairs::
 
    >>> dict([('sape', 4139), ('guido', 4127), ('jack', 4098)])
-   {'sape': 4139, 'jack': 4098, 'guido': 4127}
+   {'sape': 4139, 'guido': 4127, 'jack': 4098}
 
 In addition, dict comprehensions can be used to create dictionaries from
 arbitrary key and value expressions::
@@ -551,7 +551,7 @@ When the keys are simple strings, it is sometimes easier to specify pairs using
 keyword arguments::
 
    >>> dict(sape=4139, guido=4127, jack=4098)
-   {'sape': 4139, 'jack': 4098, 'guido': 4127}
+   {'sape': 4139, 'guido': 4127, 'jack': 4098}
 
 
 .. _tut-loopidioms:
@@ -710,7 +710,3 @@ interpreter will raise a :exc:`TypeError` exception.
 
 .. [1] Other languages may return the mutated object, which allows method
        chaining, such as ``d->insert("a")->remove("b")->sort();``.
-
-.. [2] Calling ``d.keys()`` will return a :dfn:`dictionary view` object.  It
-       supports operations like membership test and iteration, but its contents
-       are not independent of the original dictionary -- it is only a *view*.

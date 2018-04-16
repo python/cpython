@@ -285,6 +285,10 @@ the full reference.
    See the :func:`setup` function for a list of keyword arguments accepted  by the
    Distribution constructor. :func:`setup` creates a Distribution instance.
 
+   .. versionchanged:: 3.7
+      :class:`~distutils.core.Distribution` now warns if ``classifiers``,
+      ``keywords`` and ``platforms`` fields are not specified as a list or
+      a string.
 
 .. class:: Command
 

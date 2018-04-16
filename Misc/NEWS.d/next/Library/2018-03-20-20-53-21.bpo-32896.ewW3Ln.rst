@@ -1,0 +1,2 @@
+Fix an error where subclassing a dataclass with a field that uses a
+default_factory would generate an incorrect class.

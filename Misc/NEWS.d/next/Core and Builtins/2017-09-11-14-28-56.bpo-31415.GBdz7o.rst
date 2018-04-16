@@ -1,2 +1,0 @@
-Add ``-X importtime`` option to show how long each import takes. It can
-be used to optimize application's startup time.

@@ -144,9 +144,18 @@ green. Idle tests must not disturb the environment in a way that makes
 other tests fail (issue 18081).
 
 To run an individual Testcase or test method, extend the dotted name
-given to unittest on the command line.
+given to unittest on the command line or use the test -m option.  The
+latter allows use of other regrtest options.  When using the latter,
+all components of the pattern must be present, but any can be replaced
+by '*'.
 
 python -m unittest -v idlelib.idle_test.test_xyz.Test_case.test_meth
+python -m test -m idlelib.idle_test.text_xyz.Test_case.test_meth test_idle
+
+The test suite can be run in an IDLE user process from Shell.
+>>> import test.autotest  # Issue 25588, 2017/10/13, 3.6.4, 3.7.0a2.
+There are currently failures not usually present, and this does not
+work when run from the editor.
 
 
 4. Human-mediated Tests

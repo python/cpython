@@ -1,6 +1,7 @@
 # tests common to dict and UserDict
 import unittest
 import collections
+import sys
 
 
 class BasicTestMappingProtocol(unittest.TestCase):
@@ -618,6 +619,14 @@ class TestHashMappingProtocol(TestMappingProtocol):
 
         d = self._full_mapping({1: BadRepr()})
         self.assertRaises(Exc, repr, d)
+
+    def test_repr_deep(self):
+        d = self._empty_mapping()
+        for i in range(sys.getrecursionlimit() + 100):
+            d0 = d
+            d = self._empty_mapping()
+            d[1] = d0
+        self.assertRaises(RecursionError, repr, d)
 
     def test_eq(self):
         self.assertEqual(self._empty_mapping(), self._empty_mapping())

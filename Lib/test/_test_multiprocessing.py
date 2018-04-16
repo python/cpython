@@ -4,6 +4,7 @@
 
 import unittest
 import queue as pyqueue
+import contextlib
 import time
 import io
 import itertools
@@ -582,6 +583,102 @@ class _TestProcess(BaseTestCase):
         proc.join()
         self.assertTrue(evt.is_set())
 
+    @classmethod
+    def _test_error_on_stdio_flush(self, evt, break_std_streams={}):
+        for stream_name, action in break_std_streams.items():
+            if action == 'close':
+                stream = io.StringIO()
+                stream.close()
+            else:
+                assert action == 'remove'
+                stream = None
+            setattr(sys, stream_name, None)
+        evt.set()
+
+    def test_error_on_stdio_flush_1(self):
+        # Check that Process works with broken standard streams
+        streams = [io.StringIO(), None]
+        streams[0].close()
+        for stream_name in ('stdout', 'stderr'):
+            for stream in streams:
+                old_stream = getattr(sys, stream_name)
+                setattr(sys, stream_name, stream)
+                try:
+                    evt = self.Event()
+                    proc = self.Process(target=self._test_error_on_stdio_flush,
+                                        args=(evt,))
+                    proc.start()
+                    proc.join()
+                    self.assertTrue(evt.is_set())
+                    self.assertEqual(proc.exitcode, 0)
+                finally:
+                    setattr(sys, stream_name, old_stream)
+
+    def test_error_on_stdio_flush_2(self):
+        # Same as test_error_on_stdio_flush_1(), but standard streams are
+        # broken by the child process
+        for stream_name in ('stdout', 'stderr'):
+            for action in ('close', 'remove'):
+                old_stream = getattr(sys, stream_name)
+                try:
+                    evt = self.Event()
+                    proc = self.Process(target=self._test_error_on_stdio_flush,
+                                        args=(evt, {stream_name: action}))
+                    proc.start()
+                    proc.join()
+                    self.assertTrue(evt.is_set())
+                    self.assertEqual(proc.exitcode, 0)
+                finally:
+                    setattr(sys, stream_name, old_stream)
+
+    @classmethod
+    def _sleep_and_set_event(self, evt, delay=0.0):
+        time.sleep(delay)
+        evt.set()
+
+    def check_forkserver_death(self, signum):
+        # bpo-31308: if the forkserver process has died, we should still
+        # be able to create and run new Process instances (the forkserver
+        # is implicitly restarted).
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        sm = multiprocessing.get_start_method()
+        if sm != 'forkserver':
+            # The fork method by design inherits all fds from the parent,
+            # trying to go against it is a lost battle
+            self.skipTest('test not appropriate for {}'.format(sm))
+
+        from multiprocessing.forkserver import _forkserver
+        _forkserver.ensure_running()
+
+        evt = self.Event()
+        proc = self.Process(target=self._sleep_and_set_event, args=(evt, 1.0))
+        proc.start()
+
+        pid = _forkserver._forkserver_pid
+        os.kill(pid, signum)
+        time.sleep(1.0)  # give it time to die
+
+        evt2 = self.Event()
+        proc2 = self.Process(target=self._sleep_and_set_event, args=(evt2,))
+        proc2.start()
+        proc2.join()
+        self.assertTrue(evt2.is_set())
+        self.assertEqual(proc2.exitcode, 0)
+
+        proc.join()
+        self.assertTrue(evt.is_set())
+        self.assertIn(proc.exitcode, (0, 255))
+
+    def test_forkserver_sigint(self):
+        # Catchable signal
+        self.check_forkserver_death(signal.SIGINT)
+
+    def test_forkserver_sigkill(self):
+        # Uncatchable signal
+        if os.name != 'nt':
+            self.check_forkserver_death(signal.SIGKILL)
+
 
 #
 #
@@ -959,6 +1056,61 @@ class _TestQueue(BaseTestCase):
             self.assertTrue(q.get(timeout=1.0))
             close_queue(q)
 
+        with test.support.captured_stderr():
+            # bpo-33078: verify that the queue size is correctly handled
+            # on errors.
+            q = self.Queue(maxsize=1)
+            q.put(NotSerializable())
+            q.put(True)
+            try:
+                self.assertEqual(q.qsize(), 1)
+            except NotImplementedError:
+                # qsize is not available on all platform as it
+                # relies on sem_getvalue
+                pass
+            # bpo-30595: use a timeout of 1 second for slow buildbots
+            self.assertTrue(q.get(timeout=1.0))
+            # Check that the size of the queue is correct
+            self.assertTrue(q.empty())
+            close_queue(q)
+
+    def test_queue_feeder_on_queue_feeder_error(self):
+        # bpo-30006: verify feeder handles exceptions using the
+        # _on_queue_feeder_error hook.
+        if self.TYPE != 'processes':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        class NotSerializable(object):
+            """Mock unserializable object"""
+            def __init__(self):
+                self.reduce_was_called = False
+                self.on_queue_feeder_error_was_called = False
+
+            def __reduce__(self):
+                self.reduce_was_called = True
+                raise AttributeError
+
+        class SafeQueue(multiprocessing.queues.Queue):
+            """Queue with overloaded _on_queue_feeder_error hook"""
+            @staticmethod
+            def _on_queue_feeder_error(e, obj):
+                if (isinstance(e, AttributeError) and
+                        isinstance(obj, NotSerializable)):
+                    obj.on_queue_feeder_error_was_called = True
+
+        not_serializable_obj = NotSerializable()
+        # The captured_stderr reduces the noise in the test report
+        with test.support.captured_stderr():
+            q = SafeQueue(ctx=multiprocessing.get_context())
+            q.put(not_serializable_obj)
+
+            # Verify that q is still functionning correctly
+            q.put(True)
+            self.assertTrue(q.get(timeout=1.0))
+
+        # Assert that the serialization and the hook have been called correctly
+        self.assertTrue(not_serializable_obj.reduce_was_called)
+        self.assertTrue(not_serializable_obj.on_queue_feeder_error_was_called)
 #
 #
 #
@@ -3220,10 +3372,24 @@ class _TestHeap(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
 
+    def setUp(self):
+        super().setUp()
+        # Make pristine heap for these tests
+        self.old_heap = multiprocessing.heap.BufferWrapper._heap
+        multiprocessing.heap.BufferWrapper._heap = multiprocessing.heap.Heap()
+
+    def tearDown(self):
+        multiprocessing.heap.BufferWrapper._heap = self.old_heap
+        super().tearDown()
+
     def test_heap(self):
         iterations = 5000
         maxblocks = 50
         blocks = []
+
+        # get the heap object
+        heap = multiprocessing.heap.BufferWrapper._heap
+        heap._DISCARD_FREE_SPACE_LARGER_THAN = 0
 
         # create and destroy lots of blocks of different sizes
         for i in range(iterations):
@@ -3233,31 +3399,52 @@ class _TestHeap(BaseTestCase):
             if len(blocks) > maxblocks:
                 i = random.randrange(maxblocks)
                 del blocks[i]
-
-        # get the heap object
-        heap = multiprocessing.heap.BufferWrapper._heap
+            del b
 
         # verify the state of the heap
-        all = []
-        occupied = 0
-        heap._lock.acquire()
-        self.addCleanup(heap._lock.release)
-        for L in list(heap._len_to_seq.values()):
-            for arena, start, stop in L:
-                all.append((heap._arenas.index(arena), start, stop,
-                            stop-start, 'free'))
-        for arena, start, stop in heap._allocated_blocks:
-            all.append((heap._arenas.index(arena), start, stop,
-                        stop-start, 'occupied'))
-            occupied += (stop-start)
+        with heap._lock:
+            all = []
+            free = 0
+            occupied = 0
+            for L in list(heap._len_to_seq.values()):
+                # count all free blocks in arenas
+                for arena, start, stop in L:
+                    all.append((heap._arenas.index(arena), start, stop,
+                                stop-start, 'free'))
+                    free += (stop-start)
+            for arena, arena_blocks in heap._allocated_blocks.items():
+                # count all allocated blocks in arenas
+                for start, stop in arena_blocks:
+                    all.append((heap._arenas.index(arena), start, stop,
+                                stop-start, 'occupied'))
+                    occupied += (stop-start)
 
-        all.sort()
+            self.assertEqual(free + occupied,
+                             sum(arena.size for arena in heap._arenas))
 
-        for i in range(len(all)-1):
-            (arena, start, stop) = all[i][:3]
-            (narena, nstart, nstop) = all[i+1][:3]
-            self.assertTrue((arena != narena and nstart == 0) or
-                            (stop == nstart))
+            all.sort()
+
+            for i in range(len(all)-1):
+                (arena, start, stop) = all[i][:3]
+                (narena, nstart, nstop) = all[i+1][:3]
+                if arena != narena:
+                    # Two different arenas
+                    self.assertEqual(stop, heap._arenas[arena].size)  # last block
+                    self.assertEqual(nstart, 0)         # first block
+                else:
+                    # Same arena: two adjacent blocks
+                    self.assertEqual(stop, nstart)
+
+        # test free'ing all blocks
+        random.shuffle(blocks)
+        while blocks:
+            blocks.pop()
+
+        self.assertEqual(heap._n_frees, heap._n_mallocs)
+        self.assertEqual(len(heap._pending_free_blocks), 0)
+        self.assertEqual(len(heap._arenas), 0)
+        self.assertEqual(len(heap._allocated_blocks), 0, heap._allocated_blocks)
+        self.assertEqual(len(heap._len_to_seq), 0)
 
     def test_free_from_gc(self):
         # Check that freeing of blocks by the garbage collector doesn't deadlock
@@ -4045,7 +4232,7 @@ class TestNoForkBomb(unittest.TestCase):
 #
 
 class TestForkAwareThreadLock(unittest.TestCase):
-    # We recurisvely start processes.  Issue #17555 meant that the
+    # We recursively start processes.  Issue #17555 meant that the
     # after fork registry would get duplicate entries for the same
     # lock.  The size of the registry at generation n was ~2**n.
 
@@ -4097,7 +4284,7 @@ class TestCloseFds(unittest.TestCase):
 
     def close(self, fd):
         if WIN32:
-            socket.socket(fileno=fd).close()
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=fd).close()
         else:
             os.close(fd)
 
@@ -4151,7 +4338,7 @@ class TestIgnoreEINTR(unittest.TestCase):
         conn.send('ready')
         x = conn.recv()
         conn.send(x)
-        conn.send_bytes(b'x'*(1024*1024))   # sending 1 MB should block
+        conn.send_bytes(b'x' * (1024 * 1024))   # sending 1 MiB should block
 
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore(self):
@@ -4275,14 +4462,14 @@ class TestStartMethod(unittest.TestCase):
             self.fail("failed spawning forkserver or grandchild")
 
 
-#
-# Check that killing process does not leak named semaphores
-#
-
 @unittest.skipIf(sys.platform == "win32",
                  "test semantics don't make sense on Windows")
 class TestSemaphoreTracker(unittest.TestCase):
+
     def test_semaphore_tracker(self):
+        #
+        # Check that killing process does not leak named semaphores
+        #
         import subprocess
         cmd = '''if 1:
             import multiprocessing as mp, time, os
@@ -4295,7 +4482,7 @@ class TestSemaphoreTracker(unittest.TestCase):
         '''
         r, w = os.pipe()
         p = subprocess.Popen([sys.executable,
-                             '-c', cmd % (w, w)],
+                             '-E', '-c', cmd % (w, w)],
                              pass_fds=[w],
                              stderr=subprocess.PIPE)
         os.close(w)
@@ -4315,6 +4502,40 @@ class TestSemaphoreTracker(unittest.TestCase):
         expected = 'semaphore_tracker: There appear to be 2 leaked semaphores'
         self.assertRegex(err, expected)
         self.assertRegex(err, r'semaphore_tracker: %r: \[Errno' % name1)
+
+    def check_semaphore_tracker_death(self, signum, should_die):
+        # bpo-31310: if the semaphore tracker process has died, it should
+        # be restarted implicitly.
+        from multiprocessing.semaphore_tracker import _semaphore_tracker
+        _semaphore_tracker.ensure_running()
+        pid = _semaphore_tracker._pid
+        os.kill(pid, signum)
+        time.sleep(1.0)  # give it time to die
+
+        ctx = multiprocessing.get_context("spawn")
+        with contextlib.ExitStack() as stack:
+            if should_die:
+                stack.enter_context(self.assertWarnsRegex(
+                    UserWarning,
+                    "semaphore_tracker: process died"))
+            sem = ctx.Semaphore()
+            sem.acquire()
+            sem.release()
+            wr = weakref.ref(sem)
+            # ensure `sem` gets collected, which triggers communication with
+            # the semaphore tracker
+            del sem
+            gc.collect()
+            self.assertIsNone(wr())
+
+    def test_semaphore_tracker_sigint(self):
+        # Catchable signal (ignored by semaphore tracker)
+        self.check_semaphore_tracker_death(signal.SIGINT, False)
+
+    def test_semaphore_tracker_sigkill(self):
+        # Uncatchable signal.
+        self.check_semaphore_tracker_death(signal.SIGKILL, True)
+
 
 class TestSimpleQueue(unittest.TestCase):
 

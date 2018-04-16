@@ -11,8 +11,7 @@ import unittest
 from unittest import mock
 
 from test import support
-android_not_root = support.android_not_root
-TESTFN = support.TESTFN
+from test.support import TESTFN, FakePath
 
 try:
     import grp, pwd
@@ -192,18 +191,15 @@ class _BasePurePathTest(object):
         P = self.cls
         p = P('a')
         self.assertIsInstance(p, P)
-        class PathLike:
-            def __fspath__(self):
-                return "a/b/c"
         P('a', 'b', 'c')
         P('/a', 'b', 'c')
         P('a/b/c')
         P('/a/b/c')
-        P(PathLike())
+        P(FakePath("a/b/c"))
         self.assertEqual(P(P('a')), P('a'))
         self.assertEqual(P(P('a'), 'b'), P('a/b'))
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
-        self.assertEqual(P(P('a'), P('b'), P('c')), P(PathLike()))
+        self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
 
     def _check_str_subclass(self, *args):
         # Issue #21127: it should be possible to construct a PurePath object
@@ -1911,10 +1907,12 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA' / 'bah').is_fifo())
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_is_fifo_true(self):
         P = self.cls(BASE, 'myfifo')
-        os.mkfifo(str(P))
+        try:
+            os.mkfifo(str(P))
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
         self.assertTrue(P.is_fifo())
         self.assertFalse(P.is_socket())
         self.assertFalse(P.is_file())
