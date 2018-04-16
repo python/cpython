@@ -206,6 +206,23 @@ from __future__ import print_function"""
         self.assertNotEqual(old_contents, new_contents)
         return new_contents
 
+    def refactor_file(self, test_file, fixers=_2TO3_FIXERS):
+        tmpdir = tempfile.mkdtemp(prefix="2to3-test_refactor")
+        self.addCleanup(shutil.rmtree, tmpdir)
+        shutil.copy(test_file, tmpdir)
+        test_file = os.path.join(tmpdir, os.path.basename(test_file))
+
+        def read_file():
+            with open(test_file, "rb") as fp:
+                return fp.read()
+
+        old_contents = read_file()
+        rt = self.rt(fixers=fixers)
+
+        rt.refactor_file(test_file, True)
+        new_contents = read_file()
+        return old_contents, new_contents
+
     def test_refactor_file(self):
         test_file = os.path.join(FIXER_DIR, "parrot_example.py")
         self.check_file_refactoring(test_file, _DEFAULT_FIXERS)
@@ -282,6 +299,17 @@ from __future__ import print_function"""
             fn = os.path.join(TEST_DATA_DIR, "crlf.py")
             fixes = refactor.get_fixers_from_package("lib2to3.fixes")
             self.check_file_refactoring(fn, fixes)
+        finally:
+            os.linesep = old_sep
+
+    def test_crlf_unchanged(self):
+        old_sep = os.linesep
+        os.linesep = "\n"
+        try:
+            fn = os.path.join(TEST_DATA_DIR, "crlf.py")
+            old, new = self.refactor_file(fn)
+            self.assertIn(b"\r\n", old)
+            self.assertIn(b"\r\n", new)
         finally:
             os.linesep = old_sep
 
