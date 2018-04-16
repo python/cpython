@@ -48,6 +48,10 @@ except NameError:
 def group(*choices): return '(' + '|'.join(choices) + ')'
 def any(*choices): return group(*choices) + '*'
 def maybe(*choices): return group(*choices) + '?'
+def _combinations(*l):
+    return set(
+        x + y for x in l for y in l + ("",) if x.casefold() != y.casefold()
+    )
 
 Whitespace = r'[ \f\t]*'
 Comment = r'#[^\r\n]*'
@@ -74,7 +78,7 @@ Double = r'[^"\\]*(?:\\.[^"\\]*)*"'
 Single3 = r"[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''"
 # Tail end of """ string.
 Double3 = r'[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
-_litprefix = r"(?:[uUrRbBfF]|[rR][bB]|[bBuU][rR])?"
+_litprefix = r"(?:[uUrRbBfF]|[rR][fFbB]|[fFbBuU][rR])?"
 Triple = group(_litprefix + "'''", _litprefix + '"""')
 # Single-line ' or " string.
 String = group(_litprefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
@@ -105,59 +109,29 @@ PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
 tokenprog, pseudoprog, single3prog, double3prog = list(map(
     re.compile, (Token, PseudoToken, Single3, Double3)))
+
+_strprefixes = (
+    _combinations('r', 'R', 'f', 'F') |
+    _combinations('r', 'R', 'b', 'B') |
+    {'u', 'U', 'ur', 'uR', 'Ur', 'UR'}
+)
+
 endprogs = {"'": re.compile(Single), '"': re.compile(Double),
             "'''": single3prog, '"""': double3prog,
-            "r'''": single3prog, 'r"""': double3prog,
-            "u'''": single3prog, 'u"""': double3prog,
-            "b'''": single3prog, 'b"""': double3prog,
-            "f'''": single3prog, 'f"""': double3prog,
-            "ur'''": single3prog, 'ur"""': double3prog,
-            "br'''": single3prog, 'br"""': double3prog,
-            "rb'''": single3prog, 'rb"""': double3prog,
-            "R'''": single3prog, 'R"""': double3prog,
-            "U'''": single3prog, 'U"""': double3prog,
-            "B'''": single3prog, 'B"""': double3prog,
-            "F'''": single3prog, 'F"""': double3prog,
-            "uR'''": single3prog, 'uR"""': double3prog,
-            "Ur'''": single3prog, 'Ur"""': double3prog,
-            "UR'''": single3prog, 'UR"""': double3prog,
-            "bR'''": single3prog, 'bR"""': double3prog,
-            "Br'''": single3prog, 'Br"""': double3prog,
-            "BR'''": single3prog, 'BR"""': double3prog,
-            "rB'''": single3prog, 'rB"""': double3prog,
-            "Rb'''": single3prog, 'Rb"""': double3prog,
-            "RB'''": single3prog, 'RB"""': double3prog,
-            'r': None, 'R': None,
-            'u': None, 'U': None,
-            'f': None, 'F': None,
-            'b': None, 'B': None}
+            **{f"{prefix}'''": single3prog for prefix in _strprefixes},
+            **{f'{prefix}"""': double3prog for prefix in _strprefixes},
+            **{prefix: None for prefix in _strprefixes}}
 
-triple_quoted = {}
-for t in ("'''", '"""',
-          "r'''", 'r"""', "R'''", 'R"""',
-          "u'''", 'u"""', "U'''", 'U"""',
-          "b'''", 'b"""', "B'''", 'B"""',
-          "f'''", 'f"""', "F'''", 'F"""',
-          "ur'''", 'ur"""', "Ur'''", 'Ur"""',
-          "uR'''", 'uR"""', "UR'''", 'UR"""',
-          "br'''", 'br"""', "Br'''", 'Br"""',
-          "bR'''", 'bR"""', "BR'''", 'BR"""',
-          "rb'''", 'rb"""', "Rb'''", 'Rb"""',
-          "rB'''", 'rB"""', "RB'''", 'RB"""',):
-    triple_quoted[t] = t
-single_quoted = {}
-for t in ("'", '"',
-          "r'", 'r"', "R'", 'R"',
-          "u'", 'u"', "U'", 'U"',
-          "b'", 'b"', "B'", 'B"',
-          "f'", 'f"', "F'", 'F"',
-          "ur'", 'ur"', "Ur'", 'Ur"',
-          "uR'", 'uR"', "UR'", 'UR"',
-          "br'", 'br"', "Br'", 'Br"',
-          "bR'", 'bR"', "BR'", 'BR"',
-          "rb'", 'rb"', "Rb'", 'Rb"',
-          "rB'", 'rB"', "RB'", 'RB"',):
-    single_quoted[t] = t
+triple_quoted = (
+    {"'''", '"""'} |
+    {f"{prefix}'''" for prefix in _strprefixes} |
+    {f'{prefix}"""' for prefix in _strprefixes}
+)
+single_quoted = (
+    {"'", '"'} |
+    {f"{prefix}'" for prefix in _strprefixes} |
+    {f'{prefix}"' for prefix in _strprefixes}
+)
 
 tabsize = 8
 
