@@ -211,6 +211,7 @@ from __future__ import print_function"""
         self.addCleanup(shutil.rmtree, tmpdir)
         shutil.copy(test_file, tmpdir)
         test_file = os.path.join(tmpdir, os.path.basename(test_file))
+        os.chmod(test_file, 0o644)
 
         def read_file():
             with open(test_file, "rb") as fp:
