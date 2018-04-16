@@ -303,15 +303,10 @@ from __future__ import print_function"""
             os.linesep = old_sep
 
     def test_crlf_unchanged(self):
-        old_sep = os.linesep
-        os.linesep = "\n"
-        try:
-            fn = os.path.join(TEST_DATA_DIR, "crlf.py")
-            old, new = self.refactor_file(fn)
-            self.assertIn(b"\r\n", old)
-            self.assertIn(b"\r\n", new)
-        finally:
-            os.linesep = old_sep
+        fn = os.path.join(TEST_DATA_DIR, "crlf.py")
+        old, new = self.refactor_file(fn)
+        self.assertIn(b"\r\n", old)
+        self.assertIn(b"\r\n", new)
 
     def test_refactor_docstring(self):
         rt = self.rt()
