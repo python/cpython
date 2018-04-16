@@ -1,0 +1,2 @@
+Some modules configured in Modules/Setup are not anymore built with
+-DPy_BUILD_CORE.
