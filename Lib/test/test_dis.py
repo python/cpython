@@ -146,12 +146,12 @@ dis_bug1333982 = """\
 %3d           0 LOAD_CONST               1 (0)
               2 POP_JUMP_IF_TRUE        26
               4 LOAD_GLOBAL              0 (AssertionError)
-              6 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
-              8 LOAD_CONST               3 ('bug1333982.<locals>.<listcomp>')
-             10 MAKE_FUNCTION            0
-             12 LOAD_FAST                0 (x)
-             14 GET_ITER
-             16 CALL_FUNCTION            1
+              6 LOAD_CLOSURE             0 (x)
+              8 BUILD_TUPLE              1
+             10 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
+             12 LOAD_CONST               3 ('bug1333982.<locals>.<listcomp>')
+             14 MAKE_FUNCTION            8 (closure)
+             16 CALL_FUNCTION            0
 
 %3d          18 LOAD_CONST               4 (1)
              20 BINARY_ADD
@@ -362,14 +362,13 @@ dis_nested_0 = """\
 dis_nested_1 = """%s
 Disassembly of <code object foo at 0x..., file "%s", line %d>:
 %3d           0 LOAD_CLOSURE             0 (x)
-              2 BUILD_TUPLE              1
-              4 LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
-              6 LOAD_CONST               2 ('_h.<locals>.foo.<locals>.<listcomp>')
-              8 MAKE_FUNCTION            8 (closure)
-             10 LOAD_DEREF               1 (y)
-             12 GET_ITER
-             14 CALL_FUNCTION            1
-             16 RETURN_VALUE
+              2 LOAD_CLOSURE             1 (y)
+              4 BUILD_TUPLE              2
+              6 LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
+              8 LOAD_CONST               2 ('_h.<locals>.foo.<locals>.<listcomp>')
+             10 MAKE_FUNCTION            8 (closure)
+             12 CALL_FUNCTION            0
+             14 RETURN_VALUE
 """ % (dis_nested_0,
        __file__,
        _h.__code__.co_firstlineno + 1,
@@ -381,15 +380,16 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 dis_nested_2 = """%s
 Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
 %3d           0 BUILD_LIST               0
-              2 LOAD_FAST                0 (.0)
-        >>    4 FOR_ITER                12 (to 18)
-              6 STORE_FAST               1 (z)
-              8 LOAD_DEREF               0 (x)
-             10 LOAD_FAST                1 (z)
-             12 BINARY_ADD
-             14 LIST_APPEND              2
-             16 JUMP_ABSOLUTE            4
-        >>   18 RETURN_VALUE
+              2 LOAD_DEREF               1 (y)
+              4 GET_ITER
+        >>    6 FOR_ITER                12 (to 20)
+              8 STORE_FAST               0 (z)
+             10 LOAD_DEREF               0 (x)
+             12 LOAD_FAST                0 (z)
+             14 BINARY_ADD
+             16 LIST_APPEND              2
+             18 JUMP_ABSOLUTE            6
+        >>   20 RETURN_VALUE
 """ % (dis_nested_1,
        __file__,
        _h.__code__.co_firstlineno + 3,
