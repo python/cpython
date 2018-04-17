@@ -358,9 +358,7 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
 #ifdef Py_BUILD_CORE
-#ifndef MS_WINDOWS
 #  include "internal/pystate.h"
-#endif
 #  define _PyThreadState_Current _PyRuntime.gilstate.tstate_current
 #  define PyThreadState_GET() \
              ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
