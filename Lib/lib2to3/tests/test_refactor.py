@@ -180,31 +180,41 @@ from __future__ import print_function"""
     def check_file_refactoring(self, test_file, fixers=_2TO3_FIXERS,
                                options=None, mock_log_debug=None,
                                actually_write=True):
-        tmpdir = tempfile.mkdtemp(prefix="2to3-test_refactor")
-        self.addCleanup(shutil.rmtree, tmpdir)
-        # make a copy of the tested file that we can write to
-        shutil.copy(test_file, tmpdir)
-        test_file = os.path.join(tmpdir, os.path.basename(test_file))
-        os.chmod(test_file, 0o644)
-
-        def read_file():
-            with open(test_file, "rb") as fp:
-                return fp.read()
-
-        old_contents = read_file()
+        test_file = self.init_test_file(test_file)
+        old_contents = self.read_file(test_file)
         rt = self.rt(fixers=fixers, options=options)
         if mock_log_debug:
             rt.log_debug = mock_log_debug
 
         rt.refactor_file(test_file)
-        self.assertEqual(old_contents, read_file())
+        self.assertEqual(old_contents, self.read_file(test_file))
 
         if not actually_write:
             return
         rt.refactor_file(test_file, True)
-        new_contents = read_file()
+        new_contents = self.read_file(test_file)
         self.assertNotEqual(old_contents, new_contents)
         return new_contents
+
+    def init_test_file(self, test_file):
+        tmpdir = tempfile.mkdtemp(prefix="2to3-test_refactor")
+        self.addCleanup(shutil.rmtree, tmpdir)
+        shutil.copy(test_file, tmpdir)
+        test_file = os.path.join(tmpdir, os.path.basename(test_file))
+        os.chmod(test_file, 0o644)
+        return test_file
+
+    def read_file(self, test_file):
+        with open(test_file, "rb") as fp:
+            return fp.read()
+
+    def refactor_file(self, test_file, fixers=_2TO3_FIXERS):
+        test_file = self.init_test_file(test_file)
+        old_contents = self.read_file(test_file)
+        rt = self.rt(fixers=fixers)
+        rt.refactor_file(test_file, True)
+        new_contents = self.read_file(test_file)
+        return old_contents, new_contents
 
     def test_refactor_file(self):
         test_file = os.path.join(FIXER_DIR, "parrot_example.py")
@@ -284,6 +294,12 @@ from __future__ import print_function"""
             self.check_file_refactoring(fn, fixes)
         finally:
             os.linesep = old_sep
+
+    def test_crlf_unchanged(self):
+        fn = os.path.join(TEST_DATA_DIR, "crlf.py")
+        old, new = self.refactor_file(fn)
+        self.assertIn(b"\r\n", old)
+        self.assertIn(b"\r\n", new)
 
     def test_refactor_docstring(self):
         rt = self.rt()

@@ -1,0 +1,1 @@
+Ensure line-endings are respected when using lib2to3.
