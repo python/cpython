@@ -1411,14 +1411,9 @@ class GrammarTests(unittest.TestCase):
         check_syntax_error(self, "foo(100, x for x in range(10))")
 
     def test_comprehension_specials(self):
-        # test for outmost iterable precomputation
+        # test that the outmost iterable is not precomputed
         x = 10; g = (i for i in range(x)); x = 5
-        self.assertEqual(len(list(g)), 10)
-
-        # This should hold, since we're only precomputing outmost iterable.
-        x = 10; t = False; g = ((i,j) for i in range(x) if t for j in range(x))
-        x = 5; t = True;
-        self.assertEqual([(i,j) for i in range(10) for j in range(5)], list(g))
+        self.assertEqual(len(list(g)), 5)
 
         # Grammar allows multiple adjacent 'if's in listcomps and genexps,
         # even though it's silly. Make sure it works (ifelse broke this.)
