@@ -23,31 +23,6 @@
     (blocks[start]==blocks[end])
 
 
-/* Scans back N consecutive LOAD_CONST instructions, skipping NOPs,
-   returns index of the Nth last's LOAD_CONST's EXTENDED_ARG prefix.
-   Callers are responsible to check CONST_STACK_LEN beforehand.
-*/
-static Py_ssize_t
-lastn_const_start(const _Py_CODEUNIT *codestr, Py_ssize_t i, Py_ssize_t n)
-{
-    assert(n > 0);
-    for (;;) {
-        i--;
-        assert(i >= 0);
-        if (_Py_OPCODE(codestr[i]) == LOAD_CONST) {
-            if (!--n) {
-                while (i > 0 && _Py_OPCODE(codestr[i-1]) == EXTENDED_ARG) {
-                    i--;
-                }
-                return i;
-            }
-        }
-        else {
-            assert(_Py_OPCODE(codestr[i]) == EXTENDED_ARG);
-        }
-    }
-}
-
 /* Scans through EXTENDED ARGs, seeking the index of the effective opcode */
 static Py_ssize_t
 find_op(const _Py_CODEUNIT *codestr, Py_ssize_t codelen, Py_ssize_t i)
@@ -121,48 +96,6 @@ copy_op_arg(_Py_CODEUNIT *codestr, Py_ssize_t i, unsigned char op,
     return maxi - 1;
 }
 
-/* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
-   with    LOAD_CONST (c1, c2, ... cn).
-   The consts table must still be in list form so that the
-   new constant (c1, c2, ... cn) can be appended.
-   Called with codestr pointing to the first LOAD_CONST.
-*/
-static Py_ssize_t
-fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t codelen,
-                        Py_ssize_t c_start, Py_ssize_t opcode_end,
-                        PyObject *consts, int n)
-{
-    /* Pre-conditions */
-    assert(PyList_CheckExact(consts));
-
-    /* Buildup new tuple of constants */
-    PyObject *newconst = PyTuple_New(n);
-    if (newconst == NULL) {
-        return -1;
-    }
-
-    for (Py_ssize_t i = 0, pos = c_start; i < n; i++, pos++) {
-        assert(pos < opcode_end);
-        pos = find_op(codestr, codelen, pos);
-        assert(_Py_OPCODE(codestr[pos]) == LOAD_CONST);
-
-        unsigned int arg = get_arg(codestr, pos);
-        PyObject *constant = PyList_GET_ITEM(consts, arg);
-        Py_INCREF(constant);
-        PyTuple_SET_ITEM(newconst, i, constant);
-    }
-
-    /* Append folded constant onto consts */
-    if (PyList_Append(consts, newconst)) {
-        Py_DECREF(newconst);
-        return -1;
-    }
-    Py_DECREF(newconst);
-
-    return copy_op_arg(codestr, c_start, LOAD_CONST,
-                       PyList_GET_SIZE(consts)-1, opcode_end);
-}
-
 static unsigned int *
 markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
 {
@@ -228,8 +161,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     unsigned char *lnotab;
     unsigned int cum_orig_offset, last_offset;
     Py_ssize_t tabsiz;
-    // Count runs of consecutive LOAD_CONSTs
-    unsigned int cumlc = 0, lastlc = 0;
     unsigned int *blocks = NULL;
 
     /* Bail out if an exception is set */
@@ -278,37 +209,23 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             nexti++;
         nextop = nexti < codelen ? _Py_OPCODE(codestr[nexti]) : 0;
 
-        lastlc = cumlc;
-        cumlc = 0;
-
         switch (opcode) {
                 /* Skip over LOAD_CONST trueconst
                    POP_JUMP_IF_FALSE xx.  This improves
                    "while 1" performance.  */
             case LOAD_CONST:
-                cumlc = lastlc + 1;
                 if (nextop != POP_JUMP_IF_FALSE  ||
                     !ISBASICBLOCK(blocks, op_start, i + 1)  ||
                     !PyObject_IsTrue(PyList_GET_ITEM(consts, get_arg(codestr, i))))
                     break;
                 fill_nops(codestr, op_start, nexti + 1);
-                cumlc = 0;
                 break;
 
-                /* Try to fold tuples of constants.
-                   Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
+                /* Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
                    Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
                    Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
             case BUILD_TUPLE:
                 j = get_arg(codestr, i);
-                if (j > 0 && lastlc >= j) {
-                    h = lastn_const_start(codestr, op_start, j);
-                    if (ISBASICBLOCK(blocks, h, op_start)) {
-                        h = fold_tuple_on_constants(codestr, codelen,
-                                                    h, i+1, consts, j);
-                        break;
-                    }
-                }
                 if (nextop != UNPACK_SEQUENCE  ||
                     !ISBASICBLOCK(blocks, op_start, i + 1) ||
                     j != get_arg(codestr, nexti))
