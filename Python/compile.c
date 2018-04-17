@@ -5506,6 +5506,29 @@ fold_tuples_on_constants(struct compiler *c, basicblock *b)
                 continue;
             }
         }
+        if (nconsts > 2) {
+            /* Replace LOAD_CONST c1, LOAD_CONST c2, ... LOAD_CONST cn
+               with    LOAD_CONST (c1, c2, ... cn), UNPACK_SEQUENCE n.
+            */
+            n = nconsts;
+            newconst = PyTuple_New(n);
+            if (!newconst)
+                return 0;
+            for (j = 0; j < n; j++) {
+                arg = b->b_instr[i - 1 - j].i_oparg;
+                item = PyList_GET_ITEM(c->u->u_consts_list, arg);
+                Py_INCREF(item);
+                PyTuple_SET_ITEM(newconst, j, item);
+            }
+            arg = compiler_add_const(c, newconst);
+            Py_DECREF(newconst);
+            if (arg < 0)
+                return 0;
+            set_instr(b, i - n,  LOAD_CONST, arg);
+            set_instr(b, i - n + 1,  UNPACK_SEQUENCE, n);
+            remove_instr_range(b, i - n + 2, i);
+            i -= n - 1;
+        }
         nconsts = 0;
     }
     return 1;
