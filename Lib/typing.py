@@ -165,7 +165,7 @@ def _collect_type_vars(types):
         if isinstance(t, TypeVar) and t not in tvars:
             tvars.append(t)
         if isinstance(t, _GenericAlias) and not t._special:
-            tvars.extend([t for t in t.__parameters__ if t not in tvars])
+            tvars.extend([ty for ty in t.__parameters__ if ty not in tvars])
     return tuple(tvars)
 
 
