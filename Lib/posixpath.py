@@ -394,13 +394,11 @@ def realpath(filename):
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
     path, ok = _joinrealpath(filename[:0], filename, {})
-    print(path)
     return abspath(path)
 
 # Join two paths, normalizing and eliminating any symbolic links
 # encountered in the second path.
 def _joinrealpath(path, rest, seen):
-    print(path + " " + rest + " " + str(seen))
     if isinstance(path, bytes):
         sep = b'/'
         curdir = b'.'
