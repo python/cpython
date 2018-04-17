@@ -368,16 +368,24 @@ def disassemble(co, lasti=-1, *, file=None):
     _disassemble_bytes(co.co_code, lasti, co.co_varnames, co.co_names,
                        co.co_consts, cell_names, linestarts, file=file)
 
+def _walk_consts(consts, seen):
+    for x in consts:
+        if hasattr(x, 'co_code'):
+            if x not in seen:
+                seen.add(x)
+                yield x
+        elif isinstance(x, (tuple, frozenset)):
+            yield from _walk_consts(x, seen)
+
 def _disassemble_recursive(co, *, file=None, depth=None):
     disassemble(co, file=file)
     if depth is None or depth > 0:
         if depth is not None:
             depth = depth - 1
-        for x in co.co_consts:
-            if hasattr(x, 'co_code'):
-                print(file=file)
-                print("Disassembly of %r:" % (x,), file=file)
-                _disassemble_recursive(x, file=file, depth=depth)
+        for x in _walk_consts(co.co_consts, {co}):
+            print(file=file)
+            print("Disassembly of %r:" % (x,), file=file)
+            _disassemble_recursive(x, file=file, depth=depth)
 
 def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        constants=None, cells=None, linestarts=None,

@@ -208,7 +208,7 @@ static int compiler_async_comprehension_generator(
                                       asdl_seq *generators, int gen_index,
                                       expr_ty elt, expr_ty val, int type);
 
-static PyCodeObject *assemble(struct compiler *, int addNone);
+static PyCodeObject *assemble(struct compiler *, int addNone, int keepFirst);
 static PyObject *__doc__, *__annotations__;
 
 #define CAPSULE_NAME "compile.c compiler unit"
@@ -1662,7 +1662,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
                      mod->kind);
         return 0;
     }
-    co = assemble(c, addNone);
+    co = assemble(c, addNone, 0);
     compiler_exit_scope(c);
     return co;
 }
@@ -2029,7 +2029,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     /* if there was a docstring, we need to skip the first statement */
     VISIT_SEQ_IN_SCOPE(c, stmt, body);
-    co = assemble(c, 1);
+    co = assemble(c, 1, 1);
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);
     compiler_exit_scope(c);
@@ -2146,7 +2146,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         ADDOP_IN_SCOPE(c, RETURN_VALUE);
         /* create the code object */
-        co = assemble(c, 1);
+        co = assemble(c, 1, 0);
     }
     /* leave the new scope */
     compiler_exit_scope(c);
@@ -2361,11 +2361,11 @@ compiler_lambda(struct compiler *c, expr_ty e)
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (c->u->u_ste->ste_generator) {
-        co = assemble(c, 0);
+        co = assemble(c, 0, 1);
     }
     else {
         ADDOP_IN_SCOPE(c, RETURN_VALUE);
-        co = assemble(c, 1);
+        co = assemble(c, 1, 1);
     }
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);
@@ -4117,7 +4117,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP(c, RETURN_VALUE);
     }
 
-    co = assemble(c, 1);
+    co = assemble(c, 1, 0);
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);
     compiler_exit_scope(c);
@@ -5480,11 +5480,20 @@ fold_tuples_on_constants(struct compiler *c, basicblock *b)
             nconsts++;
             continue;
         }
-        if (instr->i_opcode == BUILD_TUPLE) {
+        if (instr->i_opcode == BUILD_TUPLE ||
+            instr->i_opcode == BUILD_LIST ||
+            instr->i_opcode == BUILD_SET)
+        {
             n = instr->i_oparg;
-            if (n <= nconsts) {
+            if (n <= nconsts && (instr->i_opcode == BUILD_TUPLE || n > 1)) {
                 /* Replace LOAD_CONST c1, ... LOAD_CONST cn, BUILD_TUPLE n
                    with    LOAD_CONST (c1, ... cn).
+
+                   Replace LOAD_CONST c1, ... LOAD_CONST cn, BUILD_LIST n
+                   with    LOAD_CONST (c1, ... cn), BUILD_LIST_UNPACK 1.
+
+                   Replace LOAD_CONST c1, ... LOAD_CONST cn, BUILD_SET n
+                   with    LOAD_CONST frozenset({c1, ... cn}), BUILD_SET_UNPACK 1.
                 */
                 newconst = PyTuple_New(n);
                 if (!newconst)
@@ -5495,14 +5504,29 @@ fold_tuples_on_constants(struct compiler *c, basicblock *b)
                     Py_INCREF(item);
                     PyTuple_SET_ITEM(newconst, j, item);
                 }
+                if (instr->i_opcode == BUILD_SET) {
+                    Py_SETREF(newconst, PyFrozenSet_New(newconst));
+                    if (!newconst)
+                        return 0;
+                }
                 arg = compiler_add_const(c, newconst);
                 Py_DECREF(newconst);
                 if (arg < 0)
                     return 0;
                 set_instr(b, i - n,  LOAD_CONST, arg);
-                remove_instr_range(b, i - n + 1, i + 1);
-                i -= n;
                 nconsts -= n - 1;
+                if (instr->i_opcode == BUILD_SET) {
+                    set_instr(b, i - n + 1,  BUILD_SET_UNPACK, 1);
+                    remove_instr_range(b, i - n + 2, i + 1);
+                }
+                else if (instr->i_opcode == BUILD_LIST) {
+                    set_instr(b, i - n + 1,  BUILD_LIST_UNPACK, 1);
+                    remove_instr_range(b, i - n + 2, i + 1);
+                }
+                else {
+                    remove_instr_range(b, i - n + 1, i + 1);
+                }
+                i -= n;
                 continue;
             }
         }
@@ -5534,8 +5558,61 @@ fold_tuples_on_constants(struct compiler *c, basicblock *b)
     return 1;
 }
 
+static int
+remove_unused_constants(struct compiler *c, struct assembler *a, int keepFirst)
+{
+    basicblock *b;
+    int i, j, k, n;
+    int *indices;
+    PyObject *consts;
+
+    n = PyList_GET_SIZE(c->u->u_consts_list);
+    if (n <= keepFirst) {
+        return 1;
+    }
+    indices = PyMem_New(int, n);
+    if (indices == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    for (i = 0; i < n; i++) {
+        indices[i] = -1;
+    }
+    if (keepFirst) {
+        /* The first constant is a docstring or None. */
+        indices[0] = 0;
+    }
+    k = keepFirst;
+    for (j = a->a_nblocks - 1; j >= 0; j--) {
+        b = a->a_postorder[j];
+        for (i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (instr->i_opcode == LOAD_CONST) {
+                if (indices[instr->i_oparg] < 0) {
+                    indices[instr->i_oparg] = k++;
+                }
+                instr->i_oparg = indices[instr->i_oparg];
+            }
+        }
+    }
+    consts = PyList_New(k);
+    if (consts == NULL) {
+        PyMem_Del(indices);
+        return 0;
+    }
+    for (i = 0; i < n; i++) {
+        if (indices[i] >= 0) {
+            PyList_SET_ITEM(consts, indices[i],
+                            PyList_GET_ITEM(c->u->u_consts_list, i));
+            PyList_SET_ITEM(c->u->u_consts_list, i, NULL);
+        }
+    }
+    Py_SETREF(c->u->u_consts_list, consts);
+    return 1;
+}
+
 static PyCodeObject *
-assemble(struct compiler *c, int addNone)
+assemble(struct compiler *c, int addNone, int keepFirst)
 {
     basicblock *b, *entryblock;
     struct assembler a;
@@ -5576,6 +5653,8 @@ assemble(struct compiler *c, int addNone)
         if (!fold_tuples_on_constants(c, b))
             goto error;
     }
+    if (!remove_unused_constants(c, &a, keepFirst))
+        goto error;
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
