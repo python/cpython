@@ -799,6 +799,10 @@ reference to the image. When the last Python reference to the image object is
 deleted, the image data is deleted as well, and Tk will display an empty box
 wherever the image was used.
 
+.. seealso::
+
+    The `Pillow package <https://pillow.readthedocs.io/>`_ adds support for
+    formats such as BMP, JPEG, TIFF, and WebP, among others.
 
 .. _tkinter-file-handlers:
 
