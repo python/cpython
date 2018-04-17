@@ -155,7 +155,7 @@ class CmdLineTest(unittest.TestCase):
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows has a native unicode API')
     @unittest.skipIf('vxworks' in sys.platform,
-                     "Not supported on VxWorks: VxWorks doesnt support non ascii rtpSpawn")
+                     "Not supported on VxWorks: main() does not support unicode arguments")
     def test_undecodable_code(self):
         undecodable = b"\xff"
         env = os.environ.copy()

@@ -304,7 +304,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.RAND_add(bytearray(b"this is a random bytearray object"), 75.0)
 
     @unittest.skipUnless(os.name == 'posix', 'requires posix')
-    @unittest.skipIf('vxworks' in sys.platform, 'vxworks doesnt support os.fork')
+    @unittest.skipIf('vxworks' in sys.platform, 'VxWorks does not support os.fork')
     def test_random_fork(self):
         status = ssl.RAND_status()
         if not status:

@@ -117,8 +117,6 @@ import sys, os, re, subprocess
 
 import warnings
 
-_vxworks = sys.platform == "vxworks";
-
 ### Globals & Constants
 
 # Determine the platform's /dev/null device
@@ -773,7 +771,7 @@ def _syscmd_file(target, default=''):
         default in case the command should fail.
 
     """
-    if sys.platform in ('dos', 'win32', 'win16') or 'vxworks' in sys.platform:
+    if sys.platform in ('dos', 'win32', 'win16', 'vxworks'):
         # XXX Others too ?
         return default
     target = _follow_symlinks(target)

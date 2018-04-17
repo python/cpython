@@ -606,14 +606,14 @@ class Popen(object):
       stdin, stdout and stderr: These specify the executed programs' standard
           input, standard output and standard error file handles, respectively.
 
-      preexec_fn: (non VxWorks POSIX only) An object to be called in the
-          child process just before the child is executed.
+      preexec_fn: (POSIX only) An object to be called in the child process
+          just before the child is executed.
 
-      close_fds: (not supported on vxworks) Controls closing or
-          inheriting of file descriptors.
+      close_fds: Controls closing or inheriting of file descriptors. 
+	      (not supported on VxWorks)
 
-      shell: (not supported on vxworks) If true, the command will
-          be executed through the shell.
+      shell: If true, the command will be executed through the shell.
+	      (not supported on VxWorks)
 
       cwd: Sets the current directory before the child is executed.
 
@@ -673,16 +673,15 @@ class Popen(object):
             # VxWorks
             if _vxworks:
                 if shell:
-                    raise ValueError("shell is not supported on VxWorks Platforms");
+                    raise ValueError("shell is not supported on VxWorks")
                 if preexec_fn is not None:
                     raise ValueError("Preexecution function is not supported on"
-                                 "VxWorks platforms")
+                                 "VxWorks");
                 if close_fds:
-                    raise ValueError("close_fds is not supported on VxWorks "
-                                     "Platforms")
+                    raise ValueError("close_fds is not supported on VxWorks")
+                                     
                 if start_new_session:
-                    raise ValueError("VxWorks doesnt support sessions");
-
+                    raise ValueError("VxWorks does not support sessions");
 
 
             # POSIX

@@ -138,7 +138,7 @@ class NetrcTestCase(unittest.TestCase):
     def test_file_not_found_explicit(self):
         self.assertRaises(FileNotFoundError, netrc.netrc,
                           file='unlikely_netrc')
-    @unittest.skipIf('vxworks' in sys.platform, 'no home set segfaults vxworks')
+    @unittest.skipIf('vxworks' in sys.platform, 'VxWorks does not require or have a HOME directory')
     def test_home_not_set(self):
         fake_home = support.TESTFN
         os.mkdir(fake_home)
