@@ -353,18 +353,6 @@ PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
 PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 
 
-/* Routines for advanced debuggers, requested by David Beazley.
-   Don't use unless you know what you are doing! */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Main(void);
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
-PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
-PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
-
-typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
-#endif
-
 /* Variable and macro for in-line access to current thread state */
 
 /* Assuming the current thread holds the GIL, this is the
@@ -447,6 +435,18 @@ PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 */
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
+#endif
+
+/* Routines for advanced debuggers, requested by David Beazley.
+   Don't use unless you know what you are doing! */
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Main(void);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
+PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
+PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
+
+typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
 #endif
 
 #ifdef __cplusplus
