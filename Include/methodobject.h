@@ -60,7 +60,7 @@ typedef struct PyMethodDef PyMethodDef;
 PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
                                          PyObject *);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
 #define PyCFunction_NewEx(ML, SELF, MOD) PyCMethod_New((ML), (SELF), (MOD), NULL)
 PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
                                      PyObject *, PyTypeObject *);

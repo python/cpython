@@ -202,7 +202,7 @@ PyAPI_FUNC(PyObject*) PyType_FromSpecWithBases(PyType_Spec*, PyObject*);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
 PyAPI_FUNC(void*) PyType_GetSlot(struct _typeobject*, int);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
 PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObject *);
 #endif
 
@@ -236,6 +236,11 @@ PyAPI_FUNC(PyObject *) PyType_GenericNew(struct _typeobject *,
                                                PyObject *, PyObject *);
 PyAPI_FUNC(unsigned int) PyType_ClearCache(void);
 PyAPI_FUNC(void) PyType_Modified(struct _typeobject *);
+
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
+PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
+#endif
 
 /* Generic operations on objects */
 PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
@@ -362,8 +367,7 @@ given type object has a specified feature.
 /* Type structure has tp_finalize member (3.4) */
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
-/* Heap type structure has non-NULL ht_module member (3.7) */
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
 #define Py_TPFLAGS_HEAP_IMMUTABLE (1UL << 1)
 #endif
 
