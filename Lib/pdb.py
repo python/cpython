@@ -1096,7 +1096,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
-        sys.call_tracing(p.run, (arg, globals, locals))
+        try:
+            sys.call_tracing(p.run, (arg, globals, locals))
+        except Exception as exc:
+            print('Failed to run cmd: %r' % exc)
         self.message("LEAVING RECURSIVE DEBUGGER")
         sys.settrace(self.trace_dispatch)
         self.lastcmd = p.lastcmd
