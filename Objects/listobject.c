@@ -76,6 +76,32 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     return 0;
 }
 
+static int
+list_preallocate_exact(PyListObject *self, Py_ssize_t size)
+{
+    PyObject **items;
+    size_t allocated, num_allocated_bytes;
+
+    allocated = (size_t)size;
+    if (allocated > (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    if (size == 0) {
+        allocated = 0;
+    }
+    num_allocated_bytes = allocated * sizeof(PyObject *);
+    items = (PyObject **)PyMem_Malloc(num_allocated_bytes);
+    if (items == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    self->ob_item = items;
+    self->allocated = allocated;
+    return 0;
+}
+
 /* Debug statistic to compare allocations with reuse through the free list */
 #undef SHOW_ALLOC_COUNT
 #ifdef SHOW_ALLOC_COUNT
@@ -2649,6 +2675,13 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         (void)_list_clear(self);
     }
     if (iterable != NULL) {
+        Py_ssize_t iter_len = PyObject_LengthHint(iterable, 0);
+        if (iter_len == -1){
+            PyErr_Clear();
+        }
+        if (iter_len > 0 && list_preallocate_exact(self, iter_len)) {
+            return -1;
+        }
         PyObject *rv = list_extend(self, iterable);
         if (rv == NULL)
             return -1;
