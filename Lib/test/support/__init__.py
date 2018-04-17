@@ -2473,7 +2473,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
 
     The 'extra' argument can be a set of names that wouldn't otherwise be
     automatically detected as "public", like objects without a proper
-    '__module__' attriubute. If provided, it will be added to the
+    '__module__' attribute. If provided, it will be added to the
     automatically detected ones.
 
     The 'blacklist' argument can be a set of names that must not be treated
