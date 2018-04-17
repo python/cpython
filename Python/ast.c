@@ -2572,7 +2572,7 @@ ast_for_expr(struct compiling *c, const node *n)
                 TYPE(CHILD(n, 0)) == lambdef_nocond)
                 return ast_for_lambdef(c, CHILD(n, 0));
             else if (NCH(n) == 3) {
-                /* TODO: Assert that child 1 is ":=" */
+                assert(!strcmp(STR(CHILD(n, 1)), ":="));
                 expr_ty t = ast_for_expr(c, CHILD(n, 0));
                 expr_ty e = ast_for_expr(c, CHILD(n, 2));
                 if (!t || !e) return NULL;
