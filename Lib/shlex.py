@@ -298,6 +298,10 @@ class shlex:
         return token
 
 def split(s, comments=False, posix=True):
+    if s is None:
+        import warnings
+        warnings.warn("Passing None for 's' to shlex.split() is deprecated.",
+                      DeprecationWarning, stacklevel=2)
     lex = shlex(s, posix=posix)
     lex.whitespace_split = True
     if not comments:

@@ -36,6 +36,8 @@ The :mod:`shlex` module defines the following functions:
       instance, passing ``None`` for *s* will read the string to split from
       standard input.
 
+   .. deprecated:: 3.8
+      Passing ``None`` for *s*.
 
 .. function:: quote(s)
 
