@@ -62,6 +62,11 @@ get_warnings_attr(const char *attr, int try_import)
             return NULL;
         }
     }
+    else if (_Py_Finalizing != NULL) {
+        /* PyImport_GetModuleDict() isn't safe during interpreter shutdown,
+         * so like above, fall back to the C implementation. */
+        return NULL;
+    }
     else {
         all_modules = PyImport_GetModuleDict();
 
