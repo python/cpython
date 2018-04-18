@@ -876,6 +876,19 @@ class Counter(dict):
                 self[elem] = other_count
         return self._keep_positive()
 
+    # Methods for broadcast multiplication and division by a scalar.
+    # These are not multi-set methods so they allow positive, negative,
+    # and zero output values of any numeric type.
+
+    def __mul__(self, x):
+        ''' Multiply all counts by a scalar
+
+        >>> c = Counter(a=3, b=2, c=1)
+        >>> c * 5
+        Counter({'a': 15, 'b': 10, 'c': 5})
+
+        '''
+        return Counter({elem: count * x for elem, count in self.items()})
 
 ########################################################################
 ###  ChainMap
