@@ -1281,6 +1281,28 @@ PyToken_ThreeChars(int c1, int c2, int c3)
 }
 
 static int
+syntaxerror(struct tok_state *tok, const char *format, ...)
+{
+#ifndef PGEN
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    PyErr_FormatV(PyExc_SyntaxError, format, vargs);
+    va_end(vargs);
+    PyErr_SyntaxLocationObject(tok->filename,
+                               tok->lineno,
+                               tok->cur - tok->line_start);
+    tok->done = E_ERROR;
+#else
+    tok->done = E_TOKEN;
+#endif
+    return ERRORTOKEN;
+}
+
+static int
 indenterror(struct tok_state *tok)
 {
     tok->done = E_TABSPACE;
@@ -1333,8 +1355,8 @@ tok_decimal_tail(struct tok_state *tok)
         }
         c = tok_nextc(tok);
         if (!isdigit(c)) {
-            tok->done = E_TOKEN;
             tok_backup(tok, c);
+            syntaxerror(tok, "invalid decimal literal");
             return 0;
         }
     }
@@ -1562,9 +1584,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                         c = tok_nextc(tok);
                     }
                     if (!isxdigit(c)) {
-                        tok->done = E_TOKEN;
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        return syntaxerror(tok, "invalid hexadecimal literal");
                     }
                     do {
                         c = tok_nextc(tok);
@@ -1579,14 +1600,23 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                         c = tok_nextc(tok);
                     }
                     if (c < '0' || c >= '8') {
-                        tok->done = E_TOKEN;
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        if (isdigit(c)) {
+                            return syntaxerror(tok,
+                                    "invalid digit '%c' in octal literal", c);
+                        }
+                        else {
+                            return syntaxerror(tok, "invalid octal literal");
+                        }
                     }
                     do {
                         c = tok_nextc(tok);
                     } while ('0' <= c && c < '8');
                 } while (c == '_');
+                if (isdigit(c)) {
+                    return syntaxerror(tok,
+                            "invalid digit '%c' in octal literal", c);
+                }
             }
             else if (c == 'b' || c == 'B') {
                 /* Binary */
@@ -1596,14 +1626,23 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                         c = tok_nextc(tok);
                     }
                     if (c != '0' && c != '1') {
-                        tok->done = E_TOKEN;
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        if (isdigit(c)) {
+                            return syntaxerror(tok,
+                                    "invalid digit '%c' in binary literal", c);
+                        }
+                        else {
+                            return syntaxerror(tok, "invalid binary literal");
+                        }
                     }
                     do {
                         c = tok_nextc(tok);
                     } while (c == '0' || c == '1');
                 } while (c == '_');
+                if (isdigit(c)) {
+                    return syntaxerror(tok,
+                            "invalid digit '%c' in binary literal", c);
+                }
             }
             else {
                 int nonzero = 0;
@@ -1613,9 +1652,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     if (c == '_') {
                         c = tok_nextc(tok);
                         if (!isdigit(c)) {
-                            tok->done = E_TOKEN;
                             tok_backup(tok, c);
-                            return ERRORTOKEN;
+                            return syntaxerror(tok, "invalid decimal literal");
                         }
                     }
                     if (c != '0') {
@@ -1642,9 +1680,11 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 }
                 else if (nonzero) {
                     /* Old-style octal: now disallowed. */
-                    tok->done = E_TOKEN;
                     tok_backup(tok, c);
-                    return ERRORTOKEN;
+                    return syntaxerror(tok,
+                                       "leading zeros in decimal integer "
+                                       "literals are not permitted; "
+                                       "use an 0o prefix for octal integers");
                 }
             }
         }
@@ -1676,9 +1716,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     if (c == '+' || c == '-') {
                         c = tok_nextc(tok);
                         if (!isdigit(c)) {
-                            tok->done = E_TOKEN;
                             tok_backup(tok, c);
-                            return ERRORTOKEN;
+                            return syntaxerror(tok, "invalid decimal literal");
                         }
                     } else if (!isdigit(c)) {
                         tok_backup(tok, c);
