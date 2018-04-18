@@ -891,7 +891,21 @@ class Counter(dict):
         return Counter({elem: count * x for elem, count in self.items()})
 
     __rmul__ = __mul__
-    
+
+    def __imul__(self, x):
+        ''' In-place multiply all counts by a scalar
+
+        >>> c = Counter(a=3, b=2, c=1)
+        >>> c *= 5
+        >>> c
+        Counter({'a': 15, 'b': 10, 'c': 5})
+
+        '''
+        for elem in self:
+            self[elem] *= x
+        return self
+
+
 ########################################################################
 ###  ChainMap
 ########################################################################
