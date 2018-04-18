@@ -1989,6 +1989,8 @@ class TestCounter(unittest.TestCase):
                          Counter(a=50, b=10, c=5, d=0, e=-5, f=12.5, g=10+35j))
         self.assertEqual(c * 0.5,
                          Counter(a=5, b=1, c=.5, d=0, e=-.5, f=1.25, g=1+3.5j))
+        self.assertEqual(5 * c,
+                         Counter(a=50, b=10, c=5, d=0, e=-5, f=12.5, g=10+35j))
         # XXX handle non-scalar and reversed of
 
 ################################################################################
