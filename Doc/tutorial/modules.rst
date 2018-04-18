@@ -382,8 +382,8 @@ module names".  For example, the module name :mod:`A.B` designates a submodule
 named ``B`` in a package named ``A``.  Just like the use of modules saves the
 authors of different modules from having to worry about each other's global
 variable names, the use of dotted module names saves the authors of multi-module
-packages like NumPy or the Python Imaging Library from having to worry about
-each other's module names.
+packages like NumPy or Pillow from having to worry about each other's module
+names.
 
 Suppose you want to design a collection of modules (a "package") for the uniform
 handling of sound files and sound data.  There are many different sound file
