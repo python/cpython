@@ -1,0 +1,2 @@
+Treats ``utf-8`` and all it's aliases (``utf8``, ``u8``, ...) in the same
+maner in ``json.dumps(o, ensure_ascii=Flase, encoding='u8')``
