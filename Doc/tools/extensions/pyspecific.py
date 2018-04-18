@@ -23,9 +23,10 @@ from docutils import nodes, utils
 from sphinx import addnodes
 from sphinx.builders import Builder
 from sphinx.locale import translators
+from sphinx.util import status_iterator
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.html import HTMLTranslator
-from sphinx.writers.text import TextWriter
+from sphinx.writers.text import TextWriter, TextTranslator
 from sphinx.writers.latex import LaTeXTranslator
 from sphinx.domains.python import PyModulelevel, PyClassmember
 
@@ -295,8 +296,11 @@ pydoc_topic_labels = [
 class PydocTopicsBuilder(Builder):
     name = 'pydoc-topics'
 
+    default_translator_class = TextTranslator
+
     def init(self):
         self.topics = {}
+        self.secnumbers = {}
 
     def get_outdated_docs(self):
         return 'all pydoc topics'
@@ -306,9 +310,9 @@ class PydocTopicsBuilder(Builder):
 
     def write(self, *ignored):
         writer = TextWriter(self)
-        for label in self.status_iterator(pydoc_topic_labels,
-                                          'building topics... ',
-                                          length=len(pydoc_topic_labels)):
+        for label in status_iterator(pydoc_topic_labels,
+                                     'building topics... ',
+                                     length=len(pydoc_topic_labels)):
             if label not in self.env.domaindata['std']['labels']:
                 self.warn('label %r not in documentation' % label)
                 continue
