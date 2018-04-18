@@ -327,6 +327,15 @@ static PyObject* pysqlite_blob_repeat(pysqlite_Blob *self, PyObject *args)
     return NULL;
 }
 
+static int pysqlite_blob_contains(pysqlite_Blob *self, PyObject *args)
+{
+    if (pysqlite_check_blob(self)) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Blob don't support cotains operation");
+    }
+    return -1;
+}
+
 static PyObject* pysqlite_blob_item(pysqlite_Blob *self, Py_ssize_t i)
 {
     if (!pysqlite_check_blob(self)) {
@@ -606,6 +615,7 @@ static PySequenceMethods blob_sequence_methods = {
     .sq_repeat = (ssizeargfunc)pysqlite_blob_repeat,
     .sq_item = (ssizeargfunc)pysqlite_blob_item,
     .sq_ass_item = (ssizeobjargproc)pysqlite_blob_ass_item,
+    .sq_contains = (objobjproc)pysqlite_blob_contains,
 };
 
 static PyMappingMethods blob_mapping_methods = {

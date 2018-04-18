@@ -677,6 +677,10 @@ class BlobTests(unittest.TestCase):
         with self.assertRaises(SystemError):
             self.blob * 5
 
+    def CheckBlobContainsNotSupported(self):
+        with self.assertRaises(SystemError):
+            b"aaaaa" in self.blob
+
 @unittest.skipUnless(threading, 'This test requires threading.')
 class ThreadTests(unittest.TestCase):
     def setUp(self):
