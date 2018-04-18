@@ -322,21 +322,19 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         # An absolutely minimal test of position information.  Better
         # tests would be a big project.
         code = "def f(x):\n    return x + 1"
-        st1 = parser.suite(code)
-        st2 = st1.totuple(line_info=1, col_info=1)
+        st = parser.suite(code)
 
         def walk(tree):
             node_type = tree[0]
             next = tree[1]
-            if isinstance(next, tuple):
+            if isinstance(next, (tuple, list)):
                 for elt in tree[1:]:
                     for x in walk(elt):
                         yield x
             else:
                 yield tree
 
-        terminals = list(walk(st2))
-        self.assertEqual([
+        expected = [
             (1, 'def', 1, 0),
             (1, 'f', 1, 4),
             (7, '(', 1, 5),
@@ -352,8 +350,25 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
             (4, '', 2, 16),
             (6, '', 2, -1),
             (4, '', 2, -1),
-            (0, '', 2, -1)],
-                         terminals)
+            (0, '', 2, -1),
+        ]
+
+        self.assertEqual(list(walk(st.totuple(line_info=True, col_info=True))),
+                         expected)
+        self.assertEqual(list(walk(st.totuple())),
+                         [(t, n) for t, n, l, c in expected])
+        self.assertEqual(list(walk(st.totuple(line_info=True))),
+                         [(t, n, l) for t, n, l, c in expected])
+        self.assertEqual(list(walk(st.totuple(col_info=True))),
+                         [(t, n, c) for t, n, l, c in expected])
+        self.assertEqual(list(walk(st.tolist(line_info=True, col_info=True))),
+                         [list(x) for x in expected])
+        self.assertEqual(list(walk(parser.st2tuple(st, line_info=True,
+                                                   col_info=True))),
+                         expected)
+        self.assertEqual(list(walk(parser.st2list(st, line_info=True,
+                                                  col_info=True))),
+                         [list(x) for x in expected])
 
     def test_extended_unpacking(self):
         self.check_suite("*a = y")
