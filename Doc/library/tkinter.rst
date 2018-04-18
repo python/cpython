@@ -801,7 +801,7 @@ wherever the image was used.
 
 .. seealso::
 
-    The `Pillow package <https://pillow.readthedocs.io/>`_ adds support for
+    The `Pillow package <http://python-pillow.org/>`_ adds support for
     formats such as BMP, JPEG, TIFF, and WebP, among others.
 
 .. _tkinter-file-handlers:
