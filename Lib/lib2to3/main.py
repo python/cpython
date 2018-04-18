@@ -80,7 +80,7 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
             filename += self._append_suffix
         if orig_filename != filename:
             output_dir = os.path.dirname(filename)
-            if not os.path.isdir(output_dir):
+            if not os.path.isdir(output_dir) and output_dir:
                 os.makedirs(output_dir)
             self.log_message('Writing converted %s to %s.', orig_filename,
                              filename)
