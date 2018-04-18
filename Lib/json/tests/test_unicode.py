@@ -84,6 +84,19 @@ class TestUnicode(object):
         self.assertRaises(UnicodeEncodeError, self.loads, '"a"', u"rat\xe9")
         self.assertRaises(TypeError, self.loads, '"a"', 1)
 
+    def test_aliases(self):
+        self.assertEqual(type(self.dumps({"u": "t"}, ensure_ascii=False)), str)
+        self.assertEqual(type(self.dumps({"u": "t"}, ensure_ascii=False, encoding='u8')), str)
+        self.assertEqual(type(self.dumps({"u": "t"}, ensure_ascii=False, encoding='latin1')), unicode)
+
+    def test_mixed_types(self):
+        s = {u"u": "a", "t": "\xe2\x82\xac"}
+        self.assertRaises(UnicodeError, self.dumps, s, ensure_ascii=False)
+        self.assertRaises(UnicodeError, self.dumps, s, ensure_ascii=False, encoding='utf8')
+
+    def test_invalid_encoding(self):
+        self.assertRaises(LookupError, self.dumps, [1, 2, 3], encoding='spam')
+
 
 class TestPyUnicode(TestUnicode, PyTest): pass
 class TestCUnicode(TestUnicode, CTest): pass

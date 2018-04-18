@@ -1,5 +1,6 @@
 """Implementation of JSONEncoder
 """
+import codecs
 import re
 
 try:
@@ -160,7 +161,7 @@ class JSONEncoder(object):
             self.item_separator, self.key_separator = separators
         if default is not None:
             self.default = default
-        self.encoding = encoding
+        self.encoding = codecs.lookup(encoding).name
 
     def default(self, o):
         """Implement this method in a subclass such that it returns
