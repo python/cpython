@@ -1,0 +1,1 @@
+Fix a rare crash when issuing warnings during interpreter shutdown.
