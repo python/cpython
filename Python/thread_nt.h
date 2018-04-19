@@ -105,7 +105,7 @@ LeaveNonRecursiveMutex(PNRMUTEX mutex)
         return FALSE;
     mutex->locked = 0;
     result = PyCOND_SIGNAL(&mutex->cv);
-    result &= PyMUTEX_UNLOCK(&mutex->cs);
+    PyMUTEX_UNLOCK(&mutex->cs);
     return result;
 }
 
