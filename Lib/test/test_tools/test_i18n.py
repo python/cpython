@@ -2,7 +2,7 @@
 
 import os
 import unittest
-import textwrap
+from textwrap import dedent
 
 from test.support.script_helper import assert_python_ok
 from test.test_tools import skip_if_missing, toolsdir
@@ -107,9 +107,68 @@ class Test_pygettext(unittest.TestCase):
             # This will raise if the date format does not exactly match.
             datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
 
+    def test_funcdocstring(self):
+        for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
+            with self.subTest(doc):
+                msgids = self.extract_docstrings_from_str(dedent('''\
+                def foo(bar):
+                    %s
+                ''' % doc))
+                self.assertIn('doc', msgids)
+
+    def test_funcdocstring_bytes(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        def foo(bar):
+            b"""doc"""
+        '''))
+        self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
+
+    def test_funcdocstring_fstring(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        def foo(bar):
+            f"""doc"""
+        '''))
+        self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
+
+    def test_classdocstring(self):
+        for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
+            with self.subTest(doc):
+                msgids = self.extract_docstrings_from_str(dedent('''\
+                class C:
+                    %s
+                ''' % doc))
+                self.assertIn('doc', msgids)
+
+    def test_classdocstring_bytes(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        class C:
+            b"""doc"""
+        '''))
+        self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
+
+    def test_classdocstring_fstring(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        class C:
+            f"""doc"""
+        '''))
+        self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
+
+    def test_msgid(self):
+        msgids = self.extract_docstrings_from_str(
+                '''_("""doc""" r'str' u"ing")''')
+        self.assertIn('docstring', msgids)
+
+    def test_msgid_bytes(self):
+        msgids = self.extract_docstrings_from_str('_(b"""doc""")')
+        self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
+
+    def test_msgid_fstring(self):
+        msgids = self.extract_docstrings_from_str('_(f"""doc""")')
+        self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
+
     def test_funcdocstring_annotated_args(self):
         """ Test docstrings for functions with annotated args """
-        msgids = self.extract_docstrings_from_str(textwrap.dedent('''\
+        msgids = self.extract_docstrings_from_str(dedent('''\
         def foo(bar: str):
             """doc"""
         '''))
@@ -117,7 +176,7 @@ class Test_pygettext(unittest.TestCase):
 
     def test_funcdocstring_annotated_return(self):
         """ Test docstrings for functions with annotated return type """
-        msgids = self.extract_docstrings_from_str(textwrap.dedent('''\
+        msgids = self.extract_docstrings_from_str(dedent('''\
         def foo(bar) -> str:
             """doc"""
         '''))
@@ -125,7 +184,7 @@ class Test_pygettext(unittest.TestCase):
 
     def test_funcdocstring_defvalue_args(self):
         """ Test docstring for functions with default arg values """
-        msgids = self.extract_docstrings_from_str(textwrap.dedent('''\
+        msgids = self.extract_docstrings_from_str(dedent('''\
         def foo(bar=()):
             """doc"""
         '''))
@@ -135,7 +194,7 @@ class Test_pygettext(unittest.TestCase):
         """ Test docstring extraction for multiple functions combining
         annotated args, annotated return types and default arg values
         """
-        msgids = self.extract_docstrings_from_str(textwrap.dedent('''\
+        msgids = self.extract_docstrings_from_str(dedent('''\
         def foo1(bar: tuple=()) -> str:
             """doc1"""
 
@@ -153,7 +212,7 @@ class Test_pygettext(unittest.TestCase):
         """ Test docstring extraction for a class with colons occuring within
         the parentheses.
         """
-        msgids = self.extract_docstrings_from_str(textwrap.dedent('''\
+        msgids = self.extract_docstrings_from_str(dedent('''\
         class D(L[1:2], F({1: 2}), metaclass=M(lambda x: x)):
             """doc"""
         '''))
