@@ -46,6 +46,9 @@ struct _dictkeysobject {
     /* Number of used entries in dk_entries. */
     Py_ssize_t dk_nentries;
 
+    /* Whether OrderedDict's cache is synchronized with dict table */
+    unsigned int dk_clean;
+
     /* Actual hash table of dk_size entries. It holds indices in dk_entries,
        or DKIX_EMPTY(-1) or DKIX_DUMMY(-2).
 
