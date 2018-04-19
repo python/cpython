@@ -877,7 +877,7 @@ class Counter(dict):
         return self._keep_positive()
 
     # Methods for broadcast multiplication and division by a scalar.
-    # These are not multi-set methods so they allow positive, negative,
+    # These are not multiset methods so they allow positive, negative,
     # and zero output values of any numeric type.
 
     def __mul__(self, x):
@@ -899,7 +899,7 @@ class Counter(dict):
     def __rmul__(self, x):
         ''' Multiply all counts by a scalar '''
         if isinstance(x, _collections_abc.Sized):
-            return NotImplemented
+            raise TypeError('Expected a scalar')
         return Counter({elem: x * count for elem, count in self.items()})
 
     def __imul__(self, x):
