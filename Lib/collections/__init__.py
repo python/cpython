@@ -889,7 +889,11 @@ class Counter(dict):
 
         '''
         if isinstance(x, _collections_abc.Sized):
-            return NotImplemented
+            # This could return NotImplemented but we prefer to have a
+            # more informative error message.  Limiting interoperability
+            # with other classes may also make it easier to make future
+            # modifications including multiplication by non-scalars.
+            raise TypeError('Expected a scalar')
         return Counter({elem: count * x for elem, count in self.items()})
 
     def __rmul__(self, x):
@@ -908,7 +912,7 @@ class Counter(dict):
 
         '''
         if isinstance(x, _collections_abc.Sized):
-            return NotImplemented
+            raise TypeError('Expected a scalar')
         for elem in self:
             self[elem] *= x
         return self
