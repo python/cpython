@@ -5299,10 +5299,12 @@ dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
         return NULL;
     while (PyDict_Next(dict, &pos, &k, &v)) {
         i = PyLong_AS_LONG(v);
-        /* The keys of the dictionary are tuples. (see compiler_add_o
-         * and _PyCode_ConstantKey). The object we want is always second,
-         * though. */
-        k = PyTuple_GET_ITEM(k, 1);
+        /* The keys of the dictionary can be tuples wrapping a contant.
+         * (see compiler_add_o and _PyCode_ConstantKey). In that case
+         * the object we want is always second. */
+        if (PyTuple_CheckExact(k)) {
+            k = PyTuple_GET_ITEM(k, 1);
+        }
         Py_INCREF(k);
         assert((i - offset) < size);
         assert((i - offset) >= 0);
