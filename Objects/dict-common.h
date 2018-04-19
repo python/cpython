@@ -58,8 +58,12 @@ struct _dictkeysobject {
        - 4 bytes if dk_size <= 0xffffffff (int32_t*)
        - 8 bytes otherwise (int64_t*)
 
-       Dynamically sized, 8 is minimum. */
+       Dynamically sized, SIZEOF_VOID_P is minimum. */
+#if SIZEOF_VOID_P > 4
     int64_t dk_indices[1];
+#else
+    int32_t dk_indices[1];
+#endif
 
     /* "PyDictKeyEntry dk_entries[dk_usable];" array follows:
        see the DK_ENTRIES() macro */
