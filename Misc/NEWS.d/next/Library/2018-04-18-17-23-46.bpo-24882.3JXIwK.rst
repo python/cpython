@@ -1,0 +1,2 @@
+Modify ThreadPoolExecutor to spawn worker threads on creation, instead of on
+work submission.

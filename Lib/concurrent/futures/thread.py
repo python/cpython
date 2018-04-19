@@ -142,6 +142,25 @@ class ThreadPoolExecutor(_base.Executor):
         self._initializer = initializer
         self._initargs = initargs
 
+        # eagerly create all worker threads
+
+        # When the executor gets destroyed, the weakref callback will wake up
+        # the worker threads.
+        def weakref_cb(_, q=self._work_queue):
+            q.put(None)
+        for thread_num in range(max_workers):
+            thread_name = '%s_%d' % (self._thread_name_prefix or self,
+                                     thread_num)
+            t = threading.Thread(name=thread_name, target=_worker,
+                                 args=(weakref.ref(self, weakref_cb),
+                                       self._work_queue,
+                                       self._initializer,
+                                       self._initargs))
+            t.daemon = True
+            t.start()
+            self._threads.add(t)
+            _threads_queues[t] = self._work_queue
+
     def submit(self, fn, *args, **kwargs):
         with self._shutdown_lock:
             if self._broken:
@@ -157,30 +176,8 @@ class ThreadPoolExecutor(_base.Executor):
             w = _WorkItem(f, fn, args, kwargs)
 
             self._work_queue.put(w)
-            self._adjust_thread_count()
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
-
-    def _adjust_thread_count(self):
-        # When the executor gets lost, the weakref callback will wake up
-        # the worker threads.
-        def weakref_cb(_, q=self._work_queue):
-            q.put(None)
-        # TODO(bquinlan): Should avoid creating new threads if there are more
-        # idle threads than items in the work queue.
-        num_threads = len(self._threads)
-        if num_threads < self._max_workers:
-            thread_name = '%s_%d' % (self._thread_name_prefix or self,
-                                     num_threads)
-            t = threading.Thread(name=thread_name, target=_worker,
-                                 args=(weakref.ref(self, weakref_cb),
-                                       self._work_queue,
-                                       self._initializer,
-                                       self._initargs))
-            t.daemon = True
-            t.start()
-            self._threads.add(t)
-            _threads_queues[t] = self._work_queue
 
     def _initializer_failed(self):
         with self._shutdown_lock:

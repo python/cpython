@@ -346,7 +346,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         self.executor.submit(mul, 21, 2)
         self.executor.submit(mul, 6, 7)
         self.executor.submit(mul, 3, 14)
-        self.assertEqual(len(self.executor._threads), 3)
+        self.assertEqual(len(self.executor._threads), self.worker_count)
         self.executor.shutdown()
         for t in self.executor._threads:
             t.join()
@@ -742,6 +742,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         executor = self.executor_type()
         self.assertEqual(executor._max_workers,
                          (os.cpu_count() or 1) * 5)
+        executor.shutdown()
 
 
 class ProcessPoolExecutorTest(ExecutorTest):
