@@ -1983,7 +1983,7 @@ class TestCounter(unittest.TestCase):
         self.assertTrue(c.called)
         self.assertEqual(dict(c), {'a': 5, 'b': 2, 'c': 1, 'd': 1, 'r':2 })
 
-    def test_scaling_methods(self):
+    def test_scaling_multiply_methods(self):
         c = Counter(a=10, b=2, c=1, d=0, e=-1, f=2.5, g=2+7j)
         self.assertEqual(c * 5,
                          Counter(a=50, b=10, c=5, d=0, e=-5, f=12.5, g=10+35j))
@@ -2004,6 +2004,37 @@ class TestCounter(unittest.TestCase):
             Counter(a=1, b=2, x=3, y=4) * c
         with self.assertRaises(TypeError):
             c *= Counter(a=1, b=2, x=3, y=4)
+
+    def test_scaling_division_methods(self):
+        c = Counter(a=10, b=2, c=1, d=0, e=-1, f=2.5, g=2+7j)
+        # self.assertEqual(c / 5,
+        #                  Counter(a=50, b=10, c=5, d=0, e=-5, f=12.5, g=10+35j))
+        # self.assertEqual(c / 0.5,
+        #                  Counter(a=5, b=1, c=.5, d=0, e=-.5, f=1.25, g=1+3.5j))
+        # self.assertEqual(5 / c,
+        #                  Counter(a=50, b=10, c=5, d=0, e=-5, f=12.5, g=10+35j))
+        # original_c = c
+        # c /= 5
+        # self.assertEqual(c,
+        #                  Counter(a=50, b=10, c=5, d=0, e=-5, f=12.5, g=10+35j))
+        # self.assertIs(c, original_c)
+
+        # Verify rejection of non-scalars
+        with self.assertRaises(TypeError):
+            c / Counter(a=1, b=2, x=3, y=4)
+        with self.assertRaises(TypeError):
+            Counter(a=1, b=2, x=3, y=4) / c
+        with self.assertRaises(TypeError):
+            c /= Counter(a=1, b=2, x=3, y=4)
+
+        # Verify handling of zeros
+        with self.assertRaises(ZeroDivisionError):
+            Counter(a=1, b=2, x=3, y=4) / 0
+        with self.assertRaises(ZeroDivisionError):
+            1 / Counter(a=1, b=2, x=0, y=4)
+        with self.assertRaises(ZeroDivisionError):
+            c = Counter(a=1, b=2, x=0, y=4)
+            c /= 0
 
 
 ################################################################################
