@@ -892,7 +892,11 @@ class Counter(dict):
             return NotImplemented
         return Counter({elem: count * x for elem, count in self.items()})
 
-    __rmul__ = __mul__
+    def __rmul__(self, x):
+        ''' Multiply all counts by a scalar '''
+        if isinstance(x, _collections_abc.Sized):
+            return NotImplemented
+        return Counter({elem: x * count for elem, count in self.items()})
 
     def __imul__(self, x):
         ''' In-place multiply all counts by a scalar
