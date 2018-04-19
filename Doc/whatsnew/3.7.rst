@@ -593,6 +593,14 @@ New function :func:`~os.register_at_fork` allows registering Python callbacks
 to be executed on a process fork.  (Contributed by Antoine Pitrou in
 :issue:`16500`.)
 
+Exposed the system calls *preadv*, *preadv2*, *pwritev* and *pwritev2* through
+the new functions :func:`~os.preadv` and :func:`~os.pwritev`. (Contributed by
+Pablo Galindo in :issue:`31368`.)
+
+Exposed the system call *posix_spawn* through the new function
+:func:`~os.posix_spawn`. (Contributed by Pablo Galindo, Serhiy Storchaka and
+Gregory P. Smith in :issue:`20104`.)
+
 pdb
 ---
 
