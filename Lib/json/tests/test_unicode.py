@@ -85,10 +85,10 @@ class TestUnicode(object):
         self.assertRaises(TypeError, self.loads, '"a"', 1)
 
     def test_aliases(self):
-        t1 = type(self.dumps({"u": "t"}, ensure_ascii=False, encoding='u8'))
-        t2 = type(self.dumps({"u": "t"}, ensure_ascii=False))
-        self.assertEqual(t1, t2)
-
+        s1 = self.dumps({"u": "t"}, ensure_ascii=False, encoding='utf-8')
+        s2 = self.dumps({"u": "t"}, ensure_ascii=False, encoding='u8')
+        self.assertEqual(type(s1), type(s2))
+        self.assertEqual(s1, s2)
 
 
 class TestPyUnicode(TestUnicode, PyTest): pass
