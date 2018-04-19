@@ -233,6 +233,27 @@ lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
 static Py_ssize_t lookdict_split(PyDictObject *mp, PyObject *key,
                                  Py_hash_t hash, PyObject **value_addr);
 
+/* dict_lookup_func() returns index of entry which can be used like DK_ENTRIES(dk)[index].
+ * -1 when no entry found, -3 when compare raises error.
+ */
+typedef Py_ssize_t (*dict_lookup_func)
+    (PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
+
+#define LOOKDICT_UNICODE_NODUMMY    0
+#define LOOKDICT_UNICODE            1
+#define LOOKDICT_SPLIT              2
+#define LOOKDICT_COMMON             3
+
+static const dict_lookup_func lookup_funcs[] = {
+    [LOOKDICT_UNICODE_NODUMMY] =    lookdict_unicode_nodummy,
+    [LOOKDICT_UNICODE] =            lookdict_unicode,
+    [LOOKDICT_SPLIT] =              lookdict_split,
+    [LOOKDICT_COMMON] =             lookdict,
+};
+
+#define LOOKUP(d, key, hash, pvalue) \
+    (lookup_funcs[(d)->ma_keys->dk_lookup]((d), (key), (hash), (pvalue)))
+
 static int dictresize(PyDictObject *mp, Py_ssize_t minused);
 
 /*Global counter used to set ma_version_tag field of dictionary.
@@ -408,19 +429,20 @@ dk_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
 #define GROWTH_RATE(d) ((d)->ma_used*3)
 
 #define ENSURE_ALLOWS_DELETIONS(d) \
-    if ((d)->ma_keys->dk_lookup == lookdict_unicode_nodummy) { \
-        (d)->ma_keys->dk_lookup = lookdict_unicode; \
+    if ((d)->ma_keys->dk_lookup == LOOKDICT_UNICODE_NODUMMY) { \
+        (d)->ma_keys->dk_lookup = LOOKDICT_UNICODE; \
     }
 
 /* This immutable, empty PyDictKeysObject is used for PyDict_Clear()
  * (which cannot fail and thus can do no allocation).
  */
 static PyDictKeysObject empty_keys_struct = {
-        1, /* dk_refcnt */
-        1, /* dk_size */
-        lookdict_split, /* dk_lookup */
-        0, /* dk_usable (immutable) */
-        0, /* dk_nentries */
+        .dk_refcnt = 1,
+        .dk_size = 1,
+        .dk_usable = 0,
+        .dk_nentries = 0,
+        .dk_lookup = LOOKDICT_SPLIT,
+        .dk_clean = 0,
         .dk_indices = { .as_1 = {DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
                                  DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY}},
 };
@@ -541,8 +563,9 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
     DK_DEBUG_INCREF dk->dk_refcnt = 1;
     dk->dk_size = size;
     dk->dk_usable = usable;
-    dk->dk_lookup = lookdict_unicode_nodummy;
+    dk->dk_lookup = LOOKDICT_UNICODE_NODUMMY;
     dk->dk_nentries = 0;
+    dk->dk_clean = 0;
     memset(&dk->dk_indices.as_1[0], 0xff, es * size);
     memset(DK_ENTRIES(dk), 0, sizeof(PyDictKeyEntry) * usable);
     return dk;
@@ -781,7 +804,7 @@ lookdict_unicode(PyDictObject *mp, PyObject *key,
        unicodes is to override __eq__, and for speed we don't cater to
        that here. */
     if (!PyUnicode_CheckExact(key)) {
-        mp->ma_keys->dk_lookup = lookdict;
+        mp->ma_keys->dk_lookup = LOOKDICT_COMMON;
         return lookdict(mp, key, hash, value_addr);
     }
 
@@ -824,7 +847,7 @@ lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
        unicodes is to override __eq__, and for speed we don't cater to
        that here. */
     if (!PyUnicode_CheckExact(key)) {
-        mp->ma_keys->dk_lookup = lookdict;
+        mp->ma_keys->dk_lookup = LOOKDICT_COMMON;
         return lookdict(mp, key, hash, value_addr);
     }
 
@@ -906,7 +929,7 @@ _PyDict_HasOnlyStringKeys(PyObject *dict)
     PyObject *key, *value;
     assert(PyDict_Check(dict));
     /* Shortcut */
-    if (((PyDictObject *)dict)->ma_keys->dk_lookup != lookdict)
+    if (((PyDictObject *)dict)->ma_keys->dk_lookup != LOOKDICT_COMMON)
         return 1;
     while (PyDict_Next(dict, &pos, &key, &value))
         if (!PyUnicode_Check(key))
@@ -986,6 +1009,23 @@ insertion_resize(PyDictObject *mp)
     return dictresize(mp, GROWTH_RATE(mp));
 }
 
+/* Return the index into the hash table, regardless of a valid node.
+   Used in OrderedDict.  */
+Py_ssize_t
+_PyDict_GetIndex(PyDictObject *d, PyObject *key, Py_hash_t hash)
+{
+    PyObject *value = NULL;
+    Py_ssize_t ix = LOOKUP(d, key, hash, &value);
+    if (ix == DKIX_EMPTY) {
+        return d->ma_keys->dk_nentries;  /* index of new entry */
+    }
+    if (ix < 0) {
+        return -1;
+    }
+    /* We use pointer arithmetic to get the entry's index into the table. */
+    return ix;
+}
+
 /*
 Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
@@ -1004,11 +1044,11 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
             goto Fail;
     }
 
-    Py_ssize_t ix = mp->ma_keys->dk_lookup(mp, key, hash, &old_value);
+    Py_ssize_t ix = LOOKUP(mp, key, hash, &old_value);
     if (ix == DKIX_ERROR)
         goto Fail;
 
-    assert(PyUnicode_CheckExact(key) || mp->ma_keys->dk_lookup == lookdict);
+    assert(PyUnicode_CheckExact(key) || mp->ma_keys->dk_lookup == LOOKDICT_COMMON);
     MAINTAIN_TRACKING(mp, key, value);
 
     /* When insertion order is different from shared key, we can't share
@@ -1123,27 +1163,24 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
     }
 
     oldkeys = mp->ma_keys;
-
-    /* NOTE: Current odict checks mp->ma_keys to detect resize happen.
-     * So we can't reuse oldkeys even if oldkeys->dk_size == newsize.
-     * TODO: Try reusing oldkeys when reimplement odict.
-     */
-
-    /* Allocate a new table. */
-    mp->ma_keys = new_keys_object(newsize);
-    if (mp->ma_keys == NULL) {
-        mp->ma_keys = oldkeys;
-        return -1;
+    oldvalues = mp->ma_values;
+    if (newsize != oldkeys->dk_size || oldvalues != NULL) {
+        /* Allocate a new table. */
+        mp->ma_keys = new_keys_object(newsize);
+        if (mp->ma_keys == NULL) {
+            mp->ma_keys = oldkeys;
+            return -1;
+        }
+        // New table must be large enough.
+        assert(mp->ma_keys->dk_usable >= mp->ma_used);
+        if (oldkeys->dk_lookup == LOOKDICT_COMMON)
+            mp->ma_keys->dk_lookup = LOOKDICT_COMMON;
     }
-    // New table must be large enough.
-    assert(mp->ma_keys->dk_usable >= mp->ma_used);
-    if (oldkeys->dk_lookup == lookdict)
-        mp->ma_keys->dk_lookup = lookdict;
+    mp->ma_keys->dk_clean = 0;
 
     numentries = mp->ma_used;
     oldentries = DK_ENTRIES(oldkeys);
     newentries = DK_ENTRIES(mp->ma_keys);
-    oldvalues = mp->ma_values;
     if (oldvalues != NULL) {
         /* Convert split table into new combined table.
          * We must incref keys; we can transfer values.
@@ -1167,7 +1204,8 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
     }
     else {  // combined table.
         if (oldkeys->dk_nentries == numentries) {
-            memcpy(newentries, oldentries, numentries * sizeof(PyDictKeyEntry));
+            /* Source and destination can overlap if reuse an old table. */
+            memmove(newentries, oldentries, numentries * sizeof(PyDictKeyEntry));
         }
         else {
             PyDictKeyEntry *ep = oldentries;
@@ -1178,14 +1216,24 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
             }
         }
 
-        assert(oldkeys->dk_lookup != lookdict_split);
-        assert(oldkeys->dk_refcnt == 1);
-        if (oldkeys->dk_size == PyDict_MINSIZE &&
-            numfreekeys < PyDict_MAXFREELIST) {
-            DK_DEBUG_DECREF keys_free_list[numfreekeys++] = oldkeys;
+        if (oldkeys != mp->ma_keys) {
+            assert(oldkeys->dk_lookup != LOOKDICT_SPLIT);
+            assert(oldkeys->dk_refcnt == 1);
+            if (oldkeys->dk_size == PyDict_MINSIZE &&
+                numfreekeys < PyDict_MAXFREELIST)
+            {
+                DK_DEBUG_DECREF keys_free_list[numfreekeys++] = oldkeys;
+            }
+            else {
+                DK_DEBUG_DECREF PyObject_FREE(oldkeys);
+            }
         }
         else {
-            DK_DEBUG_DECREF PyObject_FREE(oldkeys);
+            oldkeys->dk_usable = USABLE_FRACTION(newsize);
+            memset(&oldkeys->dk_indices.as_1[0], 0xff,
+                   DK_IXSIZE(oldkeys) * newsize);
+            memset(newentries + numentries, 0,
+                   sizeof(PyDictKeyEntry) * (oldkeys->dk_usable - numentries));
         }
     }
 
@@ -1210,15 +1258,15 @@ make_keys_shared(PyObject *op)
         PyDictKeyEntry *ep0;
         PyObject **values;
         assert(mp->ma_keys->dk_refcnt == 1);
-        if (mp->ma_keys->dk_lookup == lookdict) {
+        if (mp->ma_keys->dk_lookup == LOOKDICT_COMMON) {
             return NULL;
         }
-        else if (mp->ma_keys->dk_lookup == lookdict_unicode) {
+        else if (mp->ma_keys->dk_lookup == LOOKDICT_UNICODE) {
             /* Remove dummy keys */
             if (dictresize(mp, DK_SIZE(mp->ma_keys)))
                 return NULL;
         }
-        assert(mp->ma_keys->dk_lookup == lookdict_unicode_nodummy);
+        assert(mp->ma_keys->dk_lookup == LOOKDICT_UNICODE_NODUMMY);
         /* Copy values into a new array */
         ep0 = DK_ENTRIES(mp->ma_keys);
         size = USABLE_FRACTION(DK_SIZE(mp->ma_keys));
@@ -1232,7 +1280,7 @@ make_keys_shared(PyObject *op)
             values[i] = ep0[i].me_value;
             ep0[i].me_value = NULL;
         }
-        mp->ma_keys->dk_lookup = lookdict_split;
+        mp->ma_keys->dk_lookup = LOOKDICT_SPLIT;
         mp->ma_values = values;
     }
     DK_INCREF(mp->ma_keys);
@@ -1309,14 +1357,14 @@ PyDict_GetItem(PyObject *op, PyObject *key)
         /* preserve the existing exception */
         PyObject *err_type, *err_value, *err_tb;
         PyErr_Fetch(&err_type, &err_value, &err_tb);
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
+        ix = LOOKUP(mp, key, hash, &value);
         /* ignore errors */
         PyErr_Restore(err_type, err_value, err_tb);
         if (ix < 0)
             return NULL;
     }
     else {
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
+        ix = LOOKUP(mp, key, hash, &value);
         if (ix < 0) {
             PyErr_Clear();
             return NULL;
@@ -1341,7 +1389,7 @@ _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
         return NULL;
     }
 
-    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
+    ix = LOOKUP(mp, key, hash, &value);
     if (ix < 0) {
         return NULL;
     }
@@ -1373,7 +1421,7 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
         }
     }
 
-    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
+    ix = LOOKUP(mp, key, hash, &value);
     if (ix < 0)
         return NULL;
     return value;
@@ -1412,14 +1460,14 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
     }
 
     /* namespace 1: globals */
-    ix = globals->ma_keys->dk_lookup(globals, key, hash, &value);
+    ix = LOOKUP(globals, key, hash, &value);
     if (ix == DKIX_ERROR)
         return NULL;
     if (ix != DKIX_EMPTY && value != NULL)
         return value;
 
     /* namespace 2: builtins */
-    ix = builtins->ma_keys->dk_lookup(builtins, key, hash, &value);
+    ix = LOOKUP(builtins, key, hash, &value);
     if (ix < 0)
         return NULL;
     return value;
@@ -1528,7 +1576,7 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
     assert(key);
     assert(hash != -1);
     mp = (PyDictObject *)op;
-    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &old_value);
+    ix = LOOKUP(mp, key, hash, &old_value);
     if (ix == DKIX_ERROR)
         return -1;
     if (ix == DKIX_EMPTY || old_value == NULL) {
@@ -1541,7 +1589,7 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
         if (dictresize(mp, DK_SIZE(mp->ma_keys))) {
             return -1;
         }
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &old_value);
+        ix = LOOKUP(mp, key, hash, &old_value);
         assert(ix >= 0);
     }
 
@@ -1571,7 +1619,7 @@ _PyDict_DelItemIf(PyObject *op, PyObject *key,
     if (hash == -1)
         return -1;
     mp = (PyDictObject *)op;
-    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &old_value);
+    ix = LOOKUP(mp, key, hash, &old_value);
     if (ix == DKIX_ERROR)
         return -1;
     if (ix == DKIX_EMPTY || old_value == NULL) {
@@ -1584,7 +1632,7 @@ _PyDict_DelItemIf(PyObject *op, PyObject *key,
         if (dictresize(mp, DK_SIZE(mp->ma_keys))) {
             return -1;
         }
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &old_value);
+        ix = LOOKUP(mp, key, hash, &old_value);
         assert(ix >= 0);
     }
 
@@ -1731,7 +1779,7 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
         _PyErr_SetKeyError(key);
         return NULL;
     }
-    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &old_value);
+    ix = LOOKUP(mp, key, hash, &old_value);
     if (ix == DKIX_ERROR)
         return NULL;
     if (ix == DKIX_EMPTY || old_value == NULL) {
@@ -1748,7 +1796,7 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
         if (dictresize(mp, DK_SIZE(mp->ma_keys))) {
             return NULL;
         }
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &old_value);
+        ix = LOOKUP(mp, key, hash, &old_value);
         assert(ix >= 0);
     }
 
@@ -2014,7 +2062,7 @@ dict_subscript(PyDictObject *mp, PyObject *key)
         if (hash == -1)
             return NULL;
     }
-    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
+    ix = LOOKUP(mp, key, hash, &value);
     if (ix == DKIX_ERROR)
         return NULL;
     if (ix == DKIX_EMPTY || value == NULL) {
@@ -2661,7 +2709,7 @@ dict_equal(PyDictObject *a, PyDictObject *b)
             /* ditto for key */
             Py_INCREF(key);
             /* reuse the known hash value */
-            b->ma_keys->dk_lookup(b, key, ep->me_hash, &bval);
+            LOOKUP(b, key, ep->me_hash, &bval);
             if (bval == NULL) {
                 Py_DECREF(key);
                 Py_DECREF(aval);
@@ -2726,7 +2774,7 @@ dict___contains__(PyDictObject *self, PyObject *key)
         if (hash == -1)
             return NULL;
     }
-    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
+    ix = LOOKUP(mp, key, hash, &value);
     if (ix == DKIX_ERROR)
         return NULL;
     if (ix == DKIX_EMPTY || value == NULL)
@@ -2758,7 +2806,7 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
         if (hash == -1)
             return NULL;
     }
-    ix = (self->ma_keys->dk_lookup) (self, key, hash, &val);
+    ix = LOOKUP(self, key, hash, &val);
     if (ix == DKIX_ERROR)
         return NULL;
     if (ix == DKIX_EMPTY || val == NULL) {
@@ -2792,7 +2840,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
             return NULL;
     }
 
-    Py_ssize_t ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
+    Py_ssize_t ix = LOOKUP(mp, key, hash, &value);
     if (ix == DKIX_ERROR)
         return NULL;
 
@@ -2918,7 +2966,7 @@ dict_popitem(PyDictObject *mp)
         return NULL;
     }
     /* Convert split table to combined table */
-    if (mp->ma_keys->dk_lookup == lookdict_split) {
+    if (mp->ma_keys->dk_lookup == LOOKDICT_SPLIT) {
         if (dictresize(mp, DK_SIZE(mp->ma_keys))) {
             Py_DECREF(res);
             return NULL;
@@ -2960,7 +3008,7 @@ dict_traverse(PyObject *op, visitproc visit, void *arg)
     PyDictKeyEntry *entries = DK_ENTRIES(keys);
     Py_ssize_t i, n = keys->dk_nentries;
 
-    if (keys->dk_lookup == lookdict) {
+    if (keys->dk_lookup == LOOKDICT_COMMON) {
         for (i = 0; i < n; i++) {
             if (entries[i].me_value != NULL) {
                 Py_VISIT(entries[i].me_value);
@@ -3108,7 +3156,7 @@ PyDict_Contains(PyObject *op, PyObject *key)
         if (hash == -1)
             return -1;
     }
-    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
+    ix = LOOKUP(mp, key, hash, &value);
     if (ix == DKIX_ERROR)
         return -1;
     return (ix != DKIX_EMPTY && value != NULL);
@@ -3122,7 +3170,7 @@ _PyDict_Contains(PyObject *op, PyObject *key, Py_hash_t hash)
     PyObject *value;
     Py_ssize_t ix;
 
-    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
+    ix = LOOKUP(mp, key, hash, &value);
     if (ix == DKIX_ERROR)
         return -1;
     return (ix != DKIX_EMPTY && value != NULL);
@@ -4264,7 +4312,7 @@ _PyDict_NewKeysForClass(void)
     if (keys == NULL)
         PyErr_Clear();
     else
-        keys->dk_lookup = lookdict_split;
+        keys->dk_lookup = LOOKDICT_SPLIT;
     return keys;
 }
 

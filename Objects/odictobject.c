@@ -490,12 +490,9 @@ struct _odictobject {
     PyDictObject od_dict;        /* the underlying dict */
     _ODictNode *od_first;        /* first node in the linked list, if any */
     _ODictNode *od_last;         /* last node in the linked list, if any */
-    /* od_fast_nodes, od_fast_nodes_size and od_resize_sentinel are managed
-     * by _odict_resize().
-     * Note that we rely on implementation details of dict for both. */
-    _ODictNode **od_fast_nodes;  /* hash table that mirrors the dict table */
-    Py_ssize_t od_fast_nodes_size;
-    void *od_resize_sentinel;    /* changes if odict should be resized */
+    /* od_fast_nodes is managed by _odict_resize().
+     * Note that we rely on implementation details of dict for it. */
+    _ODictNode **od_fast_nodes;  /* table that mirrors the dict table */
 
     size_t od_state;             /* incremented whenever the LL changes */
     PyObject *od_inst_dict;      /* OrderedDict().__dict__ */
@@ -539,24 +536,6 @@ _odict_free_fast_nodes(PyODictObject *od) {
     }
 }
 
-/* Return the index into the hash table, regardless of a valid node. */
-static Py_ssize_t
-_odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
-{
-    PyObject *value = NULL;
-    PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
-    Py_ssize_t ix;
-
-    ix = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value);
-    if (ix == DKIX_EMPTY) {
-        return keys->dk_nentries;  /* index of new entry */
-    }
-    if (ix < 0)
-        return -1;
-    /* We use pointer arithmetic to get the entry's index into the table. */
-    return ix;
-}
-
 /* Replace od->od_fast_nodes with a new table matching the size of dict's. */
 static int
 _odict_resize(PyODictObject *od) {
@@ -575,8 +554,9 @@ _odict_resize(PyODictObject *od) {
 
     /* Copy the current nodes into the table. */
     _odict_FOREACH(od, node) {
-        i = _odict_get_index_raw(od, _odictnode_KEY(node),
-                                 _odictnode_HASH(node));
+        i = _PyDict_GetIndex((PyDictObject *)od,
+                             _odictnode_KEY(node),
+                             _odictnode_HASH(node));
         if (i < 0) {
             PyMem_FREE(fast_nodes);
             return -1;
@@ -587,8 +567,7 @@ _odict_resize(PyODictObject *od) {
     /* Replace the old fast nodes table. */
     _odict_free_fast_nodes(od);
     od->od_fast_nodes = fast_nodes;
-    od->od_fast_nodes_size = size;
-    od->od_resize_sentinel = ((PyDictObject *)od)->ma_keys;
+    ((PyDictObject *)od)->ma_keys->dk_clean = 1;
     return 0;
 }
 
@@ -596,20 +575,14 @@ _odict_resize(PyODictObject *od) {
 static Py_ssize_t
 _odict_get_index(PyODictObject *od, PyObject *key, Py_hash_t hash)
 {
-    PyDictKeysObject *keys;
-
-    assert(key != NULL);
-    keys = ((PyDictObject *)od)->ma_keys;
-
     /* Ensure od_fast_nodes and dk_entries are in sync. */
-    if (od->od_resize_sentinel != keys ||
-        od->od_fast_nodes_size != keys->dk_size) {
+    if (!((PyDictObject *)od)->ma_keys->dk_clean) {
         int resize_res = _odict_resize(od);
         if (resize_res < 0)
             return -1;
     }
 
-    return _odict_get_index_raw(od, key, hash);
+    return _PyDict_GetIndex((PyDictObject *)od, key, hash);
 }
 
 /* Returns NULL if there was some error or the key was not found. */
