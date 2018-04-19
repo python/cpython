@@ -1996,7 +1996,15 @@ class TestCounter(unittest.TestCase):
         self.assertEqual(c,
                          Counter(a=50, b=10, c=5, d=0, e=-5, f=12.5, g=10+35j))
         self.assertIs(c, original_c)
-        # XXX handle non-scalar and reversed of
+
+        # Verify rejection of non-scalars
+        with self.assertRaises(TypeError):
+            c * Counter(a=1, b=2, x=3, y=4)
+        with self.assertRaises(TypeError):
+            Counter(a=1, b=2, x=3, y=4) * c
+        with self.assertRaises(TypeError):
+            c *= Counter(a=1, b=2, x=3, y=4)
+
 
 ################################################################################
 ### Run tests

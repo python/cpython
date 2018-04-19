@@ -888,6 +888,8 @@ class Counter(dict):
         Counter({'a': 15, 'b': 10, 'c': 5})
 
         '''
+        if isinstance(x, _collections_abc.Sized):
+            return NotImplemented
         return Counter({elem: count * x for elem, count in self.items()})
 
     __rmul__ = __mul__
@@ -901,6 +903,8 @@ class Counter(dict):
         Counter({'a': 15, 'b': 10, 'c': 5})
 
         '''
+        if isinstance(x, _collections_abc.Sized):
+            return NotImplemented
         for elem in self:
             self[elem] *= x
         return self
