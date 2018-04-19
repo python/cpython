@@ -282,7 +282,7 @@ class Hook:
 
         if self.display:
             if plain:
-                doc = doc.replace('&', '&amp;').replace('<', '&lt;')
+                doc = pydoc.html.escape(doc)
                 self.file.write('<pre>' + doc + '</pre>\n')
             else:
                 self.file.write(doc + '\n')
