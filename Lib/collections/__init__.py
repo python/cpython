@@ -917,6 +917,43 @@ class Counter(dict):
             self[elem] *= x
         return self
 
+    def __truediv__(self, x):
+        ''' Divide all counts by a scalar
+
+        >>> c = Counter(a=3, b=2, c=1)
+        >>> c / 5
+        Counter({'a': 0.6, 'b': 0.4, 'c': 0.2})
+
+        '''
+        if isinstance(x, _collections_abc.Sized):
+            # This could return NotImplemented but we prefer to have a
+            # more informative error message.  Limiting interoperability
+            # with other classes may also make it easier to make future
+            # modifications including multiplication by non-scalars.
+            raise TypeError('Expected a scalar')
+        return Counter({elem: count / x for elem, count in self.items()})
+
+    def __rtruediv__(self, x):
+        ''' Divide a scalar by the counts '''
+        if isinstance(x, _collections_abc.Sized):
+            raise TypeError('Expected a scalar')
+        return Counter({elem: x / count for elem, count in self.items()})
+
+    def __itruediv__(self, x):
+        ''' In-place divide all counts by a scalar
+
+        >>> c = Counter(a=3, b=2, c=1)
+        >>> c /= 5
+        >>> c
+        Counter({'a': 0.6, 'b': 0.4, 'c': 0.2})
+
+        '''
+        if isinstance(x, _collections_abc.Sized):
+            raise TypeError('Expected a scalar')
+        for elem in self:
+            self[elem] /= x
+        return self
+
 
 ########################################################################
 ###  ChainMap
