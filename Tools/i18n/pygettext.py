@@ -232,6 +232,10 @@ def escape_nonascii(s, encoding):
     return ''.join(escapes[b] for b in s.encode(encoding))
 
 
+def is_literal_string(s):
+    return s[0] in '\'"' or (s[0] in 'rRuU' and s[1] in '\'"')
+
+
 def safe_eval(s):
     # unwrap quotes, safely
     return eval(s, {'__builtins__':{}}, {})
@@ -317,8 +321,8 @@ class TokenEater:
     def __call__(self, ttype, tstring, stup, etup, line):
         # dispatch
 ##        import token
-##        print >> sys.stderr, 'ttype:', token.tok_name[ttype], \
-##              'tstring:', tstring
+##        print('ttype:', token.tok_name[ttype], 'tstring:', tstring,
+##              file=sys.stderr)
         self.__state(ttype, tstring, stup[0])
 
     def __waiting(self, ttype, tstring, lineno):
@@ -327,7 +331,7 @@ class TokenEater:
         if opts.docstrings and not opts.nodocstrings.get(self.__curfile):
             # module docstring?
             if self.__freshmodule:
-                if ttype == tokenize.STRING:
+                if ttype == tokenize.STRING and is_literal_string(tstring):
                     self.__addentry(safe_eval(tstring), lineno, isdocstring=1)
                     self.__freshmodule = 0
                 elif ttype not in (tokenize.COMMENT, tokenize.NL):
@@ -353,7 +357,7 @@ class TokenEater:
 
     def __suitedocstring(self, ttype, tstring, lineno):
         # ignore any intervening noise
-        if ttype == tokenize.STRING:
+        if ttype == tokenize.STRING and is_literal_string(tstring):
             self.__addentry(safe_eval(tstring), lineno, isdocstring=1)
             self.__state = self.__waiting
         elif ttype not in (tokenize.NEWLINE, tokenize.INDENT,
@@ -378,7 +382,7 @@ class TokenEater:
             if self.__data:
                 self.__addentry(EMPTYSTRING.join(self.__data))
             self.__state = self.__waiting
-        elif ttype == tokenize.STRING:
+        elif ttype == tokenize.STRING and is_literal_string(tstring):
             self.__data.append(safe_eval(tstring))
         elif ttype not in [tokenize.COMMENT, token.INDENT, token.DEDENT,
                            token.NEWLINE, tokenize.NL]:

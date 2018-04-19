@@ -1,0 +1,2 @@
+:program:`pygettext.py` now recognizes only literal strings as docstrings
+and translatable strings, and rejects bytes literals and f-string expressions.
