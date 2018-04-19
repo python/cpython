@@ -488,14 +488,21 @@ _PyCode_ConstantKey(PyObject *op)
 {
     PyObject *key;
 
-    /* Py_None and Py_Ellipsis are singleton */
+    /* Py_None and Py_Ellipsis are singletons. */
     if (op == Py_None || op == Py_Ellipsis
        || PyLong_CheckExact(op)
-       || PyBool_Check(op)
-       || PyBytes_CheckExact(op)
        || PyUnicode_CheckExact(op)
           /* code_richcompare() uses _PyCode_ConstantKey() internally */
-       || PyCode_Check(op)) {
+       || PyCode_Check(op))
+    {
+        /* Objects of these types are always different from object of other
+         * type and from tuples. */
+        Py_INCREF(op);
+        key = op;
+    }
+    else if (PyBool_Check(op) || PyBytes_CheckExact(op)) {
+        /* Make booleans different from integers 0 and 1.
+         * Avoid BytesWarning from comparing bytes with strings. */
         key = PyTuple_Pack(2, Py_TYPE(op), op);
     }
     else if (PyFloat_CheckExact(op)) {
