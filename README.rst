@@ -92,15 +92,16 @@ below.
 Profile Guided Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-PGO takes advantage of recent versions of the GCC or Clang compilers.  If ran,
-``make profile-opt`` will do several steps.
+PGO takes advantage of recent versions of the GCC or Clang compilers.  If used,
+either via ``configure --enable-optimizations`` above or by manually running
+``make profile-opt`` regardless of configure flags it will do several steps.
 
 First, the entire Python directory is cleaned of temporary files that may have
 resulted in a previous compilation.
 
 Then, an instrumented version of the interpreter is built, using suitable
-compiler flags for each flavour. Note that this is just an intermediary step
-and the binary resulted after this step is not good for real life workloads, as
+compiler flags for each flavour. Note that this is just an intermediary step.
+The binary resulting from this step is not good for real life workloads as
 it has profiling instructions embedded inside.
 
 After this instrumented version of the interpreter is built, the Makefile will
