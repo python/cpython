@@ -39,7 +39,7 @@ bpo-31860: The font sample in the settings dialog is now editable.
 Edits persist while IDLE remains open.
 Patch by Serhiy Storchake and Terry Jan Reedy.
 
-bpo-31858: Restrict shell prompt manipulaton to the shell.
+bpo-31858: Restrict shell prompt manipulation to the shell.
 Editor and output windows only see an empty last prompt line.  This
 simplifies the code and fixes a minor bug when newline is inserted.
 Sys.ps1, if present, is read on Shell start-up, but is not set or changed.

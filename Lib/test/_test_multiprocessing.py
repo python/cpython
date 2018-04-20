@@ -1104,7 +1104,7 @@ class _TestQueue(BaseTestCase):
             q = SafeQueue(ctx=multiprocessing.get_context())
             q.put(not_serializable_obj)
 
-            # Verify that q is still functionning correctly
+            # Verify that q is still functioning correctly
             q.put(True)
             self.assertTrue(q.get(timeout=1.0))
 

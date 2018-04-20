@@ -39,7 +39,7 @@ Now let's partition this bit representation of the hash into blocks of
     0b00_00000_10010_11101_00101_01011_10000 = 19830128
           (6)   (5)   (4)   (3)   (2)   (1)
 
-Each block of 5 bits represents a number betwen 0 and 31.  So if we have
+Each block of 5 bits represents a number between 0 and 31.  So if we have
 a tree that consists of nodes, each of which is an array of 32 pointers,
 those 5-bit blocks will encode a position on a single tree level.
 
@@ -832,7 +832,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
                pairs.
 
                Small hamt objects (<30 keys) usually don't have any
-               Array nodes at all.  Betwen ~30 and ~400 keys hamt
+               Array nodes at all.  Between ~30 and ~400 keys hamt
                objects usually have one Array node, and usually it's
                a root node.
             */

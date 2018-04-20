@@ -5948,7 +5948,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
 @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
 class TestMSWindowsTCPFlags(unittest.TestCase):
     knownTCPFlags = {
-                       # avaliable since long time ago
+                       # available since long time ago
                        'TCP_MAXSEG',
                        'TCP_NODELAY',
                        # available starting with Windows 10 1607
