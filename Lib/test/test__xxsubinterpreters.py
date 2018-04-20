@@ -1001,7 +1001,7 @@ class ChannelTests(TestBase):
             interpreters.channel_recv(cid)
 
     def test_drop_partially(self):
-        # XXX Is partial close too wierd/confusing?
+        # XXX Is partial close too weird/confusing?
         cid = interpreters.channel_create()
         interpreters.channel_send(cid, None)
         interpreters.channel_recv(cid)
