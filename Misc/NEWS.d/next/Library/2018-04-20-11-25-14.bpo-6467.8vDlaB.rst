@@ -1,0 +1,3 @@
+Have importlib.resources.contents() and
+importlib.abc.ResourceReader.contents() return an iterable instead of an
+iterator.
