@@ -2573,7 +2573,7 @@ PyDict_Copy(PyObject *o)
            (3) if 'mp' is non-compact ('del' operation does not resize dicts),
                do fast-copy only if it has at most 1/3 non-used keys.
 
-           The last condition (3) is important to guard against a pathalogical
+           The last condition (3) is important to guard against a pathological
            case when a large dict is almost emptied with multiple del/pop
            operations and copied after that.  In cases like this, we defer to
            PyDict_Merge, which produces a compacted copy.
