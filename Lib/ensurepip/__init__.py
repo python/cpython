@@ -24,8 +24,8 @@ def _run_pip(args, additional_paths=None):
         sys.path = additional_paths + sys.path
 
     # Install the bundled software
-    import pip
-    return pip.main(args)
+    import pip._internal
+    return pip._internal.main(args)
 
 
 def version():
