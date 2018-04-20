@@ -616,8 +616,7 @@ the module.
 module.__path__
 ---------------
 
-By definition, if a module has a ``__path__`` attribute, it is a package,
-regardless of its value.
+By definition, if a module has a ``__path__`` attribute, it is a package.
 
 A package's ``__path__`` attribute is used during imports of its subpackages.
 Within the import machinery, it functions much the same as :data:`sys.path`,
