@@ -2291,7 +2291,7 @@ class PyBuildScripts(build_scripts):
         newoutfiles = []
         newupdated_files = []
         for filename in outfiles:
-            if filename.endswith(('2to3', 'pyvenv')):
+            if filename.endswith('2to3'):
                 newfilename = filename + fullversion
             else:
                 newfilename = filename + minoronly
@@ -2359,7 +2359,7 @@ def main():
           # check the PyBuildScripts command above, and change the links
           # created by the bininstall target in Makefile.pre.in
           scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3",
-                     "Tools/scripts/2to3", "Tools/scripts/pyvenv"]
+                     "Tools/scripts/2to3"]
         )
 
 # --install-platlib
