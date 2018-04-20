@@ -298,7 +298,7 @@ PyDict_Fini(void)
             2 : sizeof(int32_t))
 #endif
 #define DK_ENTRIES(dk) \
-    ((PyDictKeyEntry*)(&(dk)->dk_indices.as_1[DK_SIZE(dk) * DK_IXSIZE(dk)]))
+    ((PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[DK_SIZE(dk) * DK_IXSIZE(dk)]))
 
 #define DK_DEBUG_INCREF _Py_INC_REFTOTAL _Py_REF_DEBUG_COMMA
 #define DK_DEBUG_DECREF _Py_DEC_REFTOTAL _Py_REF_DEBUG_COMMA
@@ -316,21 +316,21 @@ dk_get_index(PyDictKeysObject *keys, Py_ssize_t i)
     Py_ssize_t ix;
 
     if (s <= 0xff) {
-        int8_t *indices = keys->dk_indices.as_1;
+        int8_t *indices = (int8_t*)(keys->dk_indices);
         ix = indices[i];
     }
     else if (s <= 0xffff) {
-        int16_t *indices = keys->dk_indices.as_2;
+        int16_t *indices = (int16_t*)(keys->dk_indices);
         ix = indices[i];
     }
 #if SIZEOF_VOID_P > 4
     else if (s > 0xffffffff) {
-        int64_t *indices = keys->dk_indices.as_8;
+        int64_t *indices = (int64_t*)(keys->dk_indices);
         ix = indices[i];
     }
 #endif
     else {
-        int32_t *indices = keys->dk_indices.as_4;
+        int32_t *indices = (int32_t*)(keys->dk_indices);
         ix = indices[i];
     }
     assert(ix >= DKIX_DUMMY);
@@ -346,23 +346,23 @@ dk_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
     assert(ix >= DKIX_DUMMY);
 
     if (s <= 0xff) {
-        int8_t *indices = keys->dk_indices.as_1;
+        int8_t *indices = (int8_t*)(keys->dk_indices);
         assert(ix <= 0x7f);
         indices[i] = (char)ix;
     }
     else if (s <= 0xffff) {
-        int16_t *indices = keys->dk_indices.as_2;
+        int16_t *indices = (int16_t*)(keys->dk_indices);
         assert(ix <= 0x7fff);
         indices[i] = (int16_t)ix;
     }
 #if SIZEOF_VOID_P > 4
     else if (s > 0xffffffff) {
-        int64_t *indices = keys->dk_indices.as_8;
+        int64_t *indices = (int64_t*)(keys->dk_indices);
         indices[i] = ix;
     }
 #endif
     else {
-        int32_t *indices = keys->dk_indices.as_4;
+        int32_t *indices = (int32_t*)(keys->dk_indices);
         assert(ix <= 0x7fffffff);
         indices[i] = (int32_t)ix;
     }
@@ -396,17 +396,16 @@ dk_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
  */
 
 /* GROWTH_RATE. Growth rate upon hitting maximum load.
- * Currently set to used*2 + capacity/2.
+ * Currently set to used*3.
  * This means that dicts double in size when growing without deletions,
  * but have more head room when the number of deletions is on a par with the
- * number of insertions.
- * Raising this to used*4 doubles memory consumption depending on the size of
- * the dictionary, but results in half the number of resizes, less effort to
- * resize.
+ * number of insertions.  See also bpo-17563 and bpo-33205.
+ *
  * GROWTH_RATE was set to used*4 up to version 3.2.
  * GROWTH_RATE was set to used*2 in version 3.3.0
+ * GROWTH_RATE was set to used*2 + capacity/2 in 3.4.0-3.6.0.
  */
-#define GROWTH_RATE(d) (((d)->ma_used*2)+((d)->ma_keys->dk_size>>1))
+#define GROWTH_RATE(d) ((d)->ma_used*3)
 
 #define ENSURE_ALLOWS_DELETIONS(d) \
     if ((d)->ma_keys->dk_lookup == lookdict_unicode_nodummy) { \
@@ -422,8 +421,8 @@ static PyDictKeysObject empty_keys_struct = {
         lookdict_split, /* dk_lookup */
         0, /* dk_usable (immutable) */
         0, /* dk_nentries */
-        .dk_indices = { .as_1 = {DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
-                                 DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY}},
+        {DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
+         DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY}, /* dk_indices */
 };
 
 static PyObject *empty_values[1] = { NULL };
@@ -531,7 +530,6 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
     }
     else {
         dk = PyObject_MALLOC(sizeof(PyDictKeysObject)
-                             - Py_MEMBER_SIZE(PyDictKeysObject, dk_indices)
                              + es * size
                              + sizeof(PyDictKeyEntry) * usable);
         if (dk == NULL) {
@@ -544,7 +542,7 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
     dk->dk_usable = usable;
     dk->dk_lookup = lookdict_unicode_nodummy;
     dk->dk_nentries = 0;
-    memset(&dk->dk_indices.as_1[0], 0xff, es * size);
+    memset(&dk->dk_indices[0], 0xff, es * size);
     memset(DK_ENTRIES(dk), 0, sizeof(PyDictKeyEntry) * usable);
     return dk;
 }
@@ -3008,7 +3006,6 @@ _PyDict_SizeOf(PyDictObject *mp)
        in the type object. */
     if (mp->ma_keys->dk_refcnt == 1)
         res += (sizeof(PyDictKeysObject)
-                - Py_MEMBER_SIZE(PyDictKeysObject, dk_indices)
                 + DK_IXSIZE(mp->ma_keys) * size
                 + sizeof(PyDictKeyEntry) * usable);
     return res;
@@ -3018,7 +3015,6 @@ Py_ssize_t
 _PyDict_KeysSize(PyDictKeysObject *keys)
 {
     return (sizeof(PyDictKeysObject)
-            - Py_MEMBER_SIZE(PyDictKeysObject, dk_indices)
             + DK_IXSIZE(keys) * DK_SIZE(keys)
             + USABLE_FRACTION(DK_SIZE(keys)) * sizeof(PyDictKeyEntry));
 }
