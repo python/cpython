@@ -104,33 +104,33 @@ PYTHONPATH=$(COREPYTHONPATH)
 # This only contains the minimal set of modules required to run the
 # setup.py script in the root of the Python source tree.
 
-posix posixmodule.c		# posix (UNIX) system calls
-errno errnomodule.c		# posix (UNIX) errno values
-pwd pwdmodule.c			# this is needed to find out the user's home dir
-				# if $HOME is not set
-_sre _sre.c			# Fredrik Lundh's new regular expressions
-_codecs _codecsmodule.c		# access to the builtin codecs and codec registry
-_weakref _weakref.c		# weak references
-_functools _functoolsmodule.c   # Tools for working with functions and callable objects
-_operator _operator.c	        # operator.add() and similar goodies
-_collections _collectionsmodule.c # Container types
-_abc _abc.c                     # Abstract base classes
-itertools itertoolsmodule.c    # Functions creating iterators for efficient looping
-atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
-_signal signalmodule.c
-_stat _stat.c			# stat.h interface
-time timemodule.c	# -lm # time operations and variables
-_thread _threadmodule.c         # low-level threading interface
+posix -DPy_BUILD_CORE posixmodule.c	# posix (UNIX) system calls
+errno errnomodule.c			# posix (UNIX) errno values
+pwd pwdmodule.c				# this is needed to find out the user's home dir
+					# if $HOME is not set
+_sre _sre.c				# Fredrik Lundh's new regular expressions
+_codecs _codecsmodule.c			# access to the builtin codecs and codec registry
+_weakref _weakref.c			# weak references
+_functools -DPy_BUILD_CORE _functoolsmodule.c   # Tools for working with functions and callable objects
+_operator _operator.c	        	# operator.add() and similar goodies
+_collections _collectionsmodule.c	# Container types
+_abc _abc.c				# Abstract base classes
+itertools itertoolsmodule.c		# Functions creating iterators for efficient looping
+atexit atexitmodule.c			# Register functions to be run at interpreter-shutdown
+_signal -DPy_BUILD_CORE signalmodule.c
+_stat _stat.c				# stat.h interface
+time -DPy_BUILD_CORE timemodule.c	# -lm # time operations and variables
+_thread -DPy_BUILD_CORE _threadmodule.c	# low-level threading interface
 
 # access to ISO C locale support
 _locale _localemodule.c  # -lintl
 
 # Standard I/O baseline
-_io -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
+_io -DPy_BUILD_CORE -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
 
 # The zipimport module is always imported at startup. Having it as a
 # builtin module avoids some bootstrapping problems and reduces overhead.
-zipimport zipimport.c
+zipimport -DPy_BUILD_CORE zipimport.c
 
 # faulthandler module
 faulthandler faulthandler.c
