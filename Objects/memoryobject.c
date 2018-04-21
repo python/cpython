@@ -1398,6 +1398,20 @@ error:
     return NULL;
 }
 
+static PyObject *
+memory_toreadonly(PyMemoryViewObject *self, PyObject *noargs)
+{
+    CHECK_RELEASED(self);
+    /* Even if self is already readonly, we still need to create a new
+     * object for .release() to work correctly.
+     */
+    self = (PyMemoryViewObject *) mbuf_add_view(self->mbuf, &self->view);
+    if (self != NULL) {
+        self->view.readonly = 1;
+    };
+    return (PyObject *) self;
+}
+
 
 /**************************************************************************/
 /*                               getbuffer                                */
@@ -3061,6 +3075,10 @@ PyDoc_STRVAR(memory_cast_doc,
 "cast($self, /, format, *, shape)\n--\n\
 \n\
 Cast a memoryview to a new format or shape.");
+PyDoc_STRVAR(memory_toreadonly_doc,
+"toreadonly($self, /)\n--\n\
+\n\
+Return a readonly version of the memoryview.");
 
 static PyMethodDef memory_methods[] = {
     {"release",     (PyCFunction)memory_release, METH_NOARGS, memory_release_doc},
@@ -3068,6 +3086,7 @@ static PyMethodDef memory_methods[] = {
     {"hex",         (PyCFunction)memory_hex, METH_NOARGS, memory_hex_doc},
     {"tolist",      (PyCFunction)memory_tolist, METH_NOARGS, memory_tolist_doc},
     {"cast",        (PyCFunction)memory_cast, METH_VARARGS|METH_KEYWORDS, memory_cast_doc},
+    {"toreadonly",  (PyCFunction)memory_toreadonly, METH_NOARGS, memory_toreadonly_doc},
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, NULL},
     {NULL,          NULL}
