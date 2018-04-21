@@ -193,8 +193,8 @@ modules using the Distutils:
 module distribution
    a collection of Python modules distributed together as a single downloadable
    resource and meant to be installed *en masse*.  Examples of some well-known
-   module distributions are NumPy, SciPy, PIL (the Python Imaging
-   Library), or mxBase.  (This would be called a *package*, except that term is
+   module distributions are NumPy, SciPy, Pillow,
+   or mxBase.  (This would be called a *package*, except that term is
    already taken in the Python context: a single module distribution may contain
    zero, one, or many Python packages.)
 
