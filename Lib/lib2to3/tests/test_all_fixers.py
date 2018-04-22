@@ -21,7 +21,11 @@ class Test_all(support.TestCase):
 
     def test_all_project_files(self):
         for filepath in support.all_project_files():
-            self.refactor.refactor_file(filepath)
+            try:
+                self.refactor.refactor_file(filepath)
+            except Exception:
+                print('Refactoring failed on', filepath)
+                raise
 
 if __name__ == '__main__':
     unittest.main()

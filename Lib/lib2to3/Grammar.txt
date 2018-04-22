@@ -110,7 +110,7 @@ atom: ('(' [yield_expr|testlist_gexp] ')' |
        '[' [listmaker] ']' |
        '{' [dictsetmaker] '}' |
        '`' testlist1 '`' |
-       NAME | NUMBER | STRING+ | '.' '.' '.')
+       NAME | NUMBER | STRING+ | '...')
 listmaker: (test|star_expr) ( old_comp_for | (',' (test|star_expr))* [','] )
 testlist_gexp: (test|star_expr) ( old_comp_for | (',' (test|star_expr))* [','] )
 lambdef: 'lambda' [varargslist] ':' test
