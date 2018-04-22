@@ -50,11 +50,11 @@ class TestAbstractNumbers(unittest.TestCase):
 
             @property
             def real(self):
-                return self.i
+                return self._imag
 
             @property
             def imag(self):
-                return self.i
+                return self._real
 
             def __add__(self, other):
                 pass
@@ -99,8 +99,16 @@ class TestAbstractNumbers(unittest.TestCase):
             def __eq__(self, other):
                 return isinstance(other, SubComplex) and self.imag == other.imag and self.real == other.real
 
-        sc = SubComplex()
-        self.assertIsInstance(sc, SubComplex)
+            @imag.setter
+            def imag(self, value):
+                self._imag = value
+
+            @real.setter
+            def real(self, value):
+                self._real = value
+
+        sc = SubComplex(0,0)
+        self.assertIsInstance(sc, Complex)
 
         nonInstances = [None, "hat", lambda x: x + 1]
 
@@ -114,9 +122,10 @@ class TestAbstractNumbers(unittest.TestCase):
             y = random()
             self.assertEqual(SubComplex.__sub__(x, y), x - y)
             self.assertEqual(SubComplex.__rsub__(x, y), - x + y)
-            sc1 = SubComplex()
-            sc2 = SubComplex()
+            sc1 = SubComplex(x, y)
+            sc2 = SubComplex(x, y)
             self.assertEqual(sc1, sc2)
+            self.assertNotEqual(x, y + 1e-6)
 
 
 if __name__ == "__main__":
