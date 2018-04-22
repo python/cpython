@@ -50,11 +50,11 @@ class TestAbstractNumbers(unittest.TestCase):
 
             @property
             def real(self):
-                pass
+                return self.i
 
             @property
             def imag(self):
-                pass
+                return self.i
 
             def __add__(self, other):
                 pass
@@ -92,8 +92,9 @@ class TestAbstractNumbers(unittest.TestCase):
             def conjugate(self):
                 pass
 
-            def __init__(self):
-                pass
+            def __init__(self, r, i):
+                self.real = r
+                self.imag = i
 
             def __eq__(self, other):
                 return isinstance(other, SubComplex) and self.imag == other.imag and self.real == other.real
@@ -113,6 +114,9 @@ class TestAbstractNumbers(unittest.TestCase):
             y = random()
             self.assertEqual(SubComplex.__sub__(x, y), x - y)
             self.assertEqual(SubComplex.__rsub__(x, y), - x + y)
+            sc1 = SubComplex()
+            sc2 = SubComplex()
+            self.assertEqual(sc1, sc2)
 
 
 if __name__ == "__main__":
