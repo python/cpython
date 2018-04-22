@@ -28,6 +28,8 @@ class TestNumbers(unittest.TestCase):
         self.assertEqual(-7.3, float(-7.3).conjugate())
 
     def test_complex(self):
+        self.assertFalse(bool(complex(0,0)))
+        self.assertTrue(bool(complex(1,2)))
         self.assertFalse(issubclass(complex, Real))
         self.assertTrue(issubclass(complex, Complex))
 
