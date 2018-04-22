@@ -489,10 +489,11 @@ class ExtendedInterpolation(Interpolation):
                 path = m.group(1).split(':')
                 rest = rest[m.end():]
                 sect = section
-                opt = option
                 try:
                     if len(path) == 1:
                         opt = parser.optionxform(path[0])
+                        if opt not in map:
+                            map.update(parser.items(parser.default_section))
                         v = map[opt]
                     elif len(path) == 2:
                         sect = path[0]
