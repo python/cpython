@@ -207,6 +207,16 @@ class CookieTests(unittest.TestCase):
         with self.assertRaises(cookies.CookieError):
             C.load(rawdata)
 
+    def test_comment_quoting(self):
+        c = cookies.SimpleCookie()
+        c['foo'] = '\N{COPYRIGHT SIGN}'
+        self.assertEqual(str(c['foo']), 'Set-Cookie: foo="\\251"')
+        c['foo']['comment'] = 'comment \N{COPYRIGHT SIGN}'
+        self.assertEqual(
+            str(c['foo']),
+            'Set-Cookie: foo="\\251"; Comment="comment \\251"'
+        )
+
 
 class MorselTests(unittest.TestCase):
     """Tests for the Morsel object."""
