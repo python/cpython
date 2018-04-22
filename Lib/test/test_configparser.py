@@ -912,11 +912,9 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
                                     '%(reference)s', 'reference'))
 
     def test_items(self):
-        self.check_items_config([('default', '<default>'),
-                                 ('getdefault', '|<default>|'),
+        self.check_items_config([('getdefault', '|<default>|'),
                                  ('key', '|value|'),
-                                 ('name', 'value'),
-                                 ('value', 'value')])
+                                 ('name', 'value')])
 
     def test_safe_interpolation(self):
         # See http://www.python.org/sf/511737
@@ -1090,11 +1088,9 @@ class RawConfigParserTestCase(BasicTestCase, unittest.TestCase):
            "something %(with11)s lots of interpolation (11 steps)")
 
     def test_items(self):
-        self.check_items_config([('default', '<default>'),
-                                 ('getdefault', '|%(default)s|'),
+        self.check_items_config([('getdefault', '|%(default)s|'),
                                  ('key', '|%(name)s|'),
-                                 ('name', '%(value)s'),
-                                 ('value', 'value')])
+                                 ('name', '%(value)s')])
 
     def test_set_nonstring_types(self):
         cf = self.newconfig()
@@ -1356,10 +1352,7 @@ class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
         longname = 'yeah, sections can be indented as well'
         self.assertFalse(cf.getboolean(longname, 'are they subsections'))
         self.assertEqual(cf.get(longname, 'lets use some Unicode'), '片仮名')
-        self.assertEqual(len(cf.items('another one!')), 5) # 4 in section and
-                                                           # `go` from DEFAULT
-        with self.assertRaises(configparser.InterpolationMissingOptionError):
-            cf.items('no values here')
+        self.assertEqual(len(cf.items('another one!')), 4)
         self.assertEqual(cf.get('tricky interpolation', 'lets'), 'do this')
         self.assertEqual(cf.get('tricky interpolation', 'lets'),
                          cf.get('tricky interpolation', 'go'))
