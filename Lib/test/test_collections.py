@@ -2007,17 +2007,20 @@ class TestCounter(unittest.TestCase):
 
     def test_scaling_division_methods(self):
         c = Counter(a=10, b=2, c=1, d=0, e=-1, f=2.5, g=2+7j)
-        # self.assertEqual(c / 5,
-        #                  Counter(a=50, b=10, c=5, d=0, e=-5, f=12.5, g=10+35j))
-        # self.assertEqual(c / 0.5,
-        #                  Counter(a=5, b=1, c=.5, d=0, e=-.5, f=1.25, g=1+3.5j))
-        # self.assertEqual(5 / c,
-        #                  Counter(a=50, b=10, c=5, d=0, e=-5, f=12.5, g=10+35j))
-        # original_c = c
-        # c /= 5
-        # self.assertEqual(c,
-        #                  Counter(a=50, b=10, c=5, d=0, e=-5, f=12.5, g=10+35j))
-        # self.assertIs(c, original_c)
+        self.assertEqual(c / 5,
+                         Counter(a=2, b=.4, c=.2, d=0, e=-.2, f=.5, g=.4+1.4j))
+        self.assertEqual(c / 0.5,
+                         Counter(a=20, b=4, c=2, d=0, e=-2, f=5, g=4+14j))
+        c = Counter(a=10, b=2, c=1, e=-1, f=2.5, g=2+4j)
+        self.assertEqual(5 / c,
+                         Counter(a=.5, b=2.5, c=5, e=-5, f=2, g=0.5-1j))
+
+        c = Counter(a=10, b=2, c=1, d=0, e=-1, f=2.5, g=2+7j)
+        original_c = c
+        c /= 5
+        self.assertEqual(c,
+                         Counter(a=2, b=.4, c=.2, d=0, e=-.2, f=.5, g=.4+1.4j))
+        self.assertIs(c, original_c)
 
         # Verify rejection of non-scalars
         with self.assertRaises(TypeError):
