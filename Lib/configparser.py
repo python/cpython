@@ -843,9 +843,11 @@ class RawConfigParser(MutableMapping):
         d = self._defaults.copy()
         try:
             d.update(self._sections[section])
+            section_keys = list(self._sections[section])
         except KeyError:
             if section != self.default_section:
                 raise NoSectionError(section)
+            section_keys = list(d)
         # Update with the entry specific variables
         if vars:
             for key, value in vars.items():
@@ -854,7 +856,8 @@ class RawConfigParser(MutableMapping):
             section, option, d[option], d)
         if raw:
             value_getter = lambda option: d[option]
-        return [(option, value_getter(option)) for option in d.keys()]
+        return [(option, value_getter(option)) for option in d.keys()
+                if option in section_keys]
 
     def popitem(self):
         """Remove a section from the parser and return it as
