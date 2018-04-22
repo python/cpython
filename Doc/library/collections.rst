@@ -315,6 +315,7 @@ Common patterns for working with :class:`Counter` objects::
     Counter(dict(list_of_pairs))    # convert from a list of (elem, cnt) pairs
     c.most_common()[:-n-1:-1]       # n least common elements
     +c                              # remove zero and negative counts
+    c * (100.0 / sum(c.values()))   # express counts as percentages
 
 Several mathematical operations are provided for combining :class:`Counter`
 objects to produce multisets (counters that have counts greater than zero).
@@ -343,8 +344,29 @@ or subtracting from an empty counter.
     >>> -c
     Counter({'b': 4})
 
+The :class:`Counter` class also supports broadcast multiplication and division
+by a scalar.  Unlike the multiset operations, there is no special handling for
+zero or negative inputs and outputs.  The goal is to provide a simple way to
+scale counts upwards or downwards.
+
+    >>> c = Counter(a=10, b=15, c=25)
+    >>> c * 10
+    Counter({'c': 250, 'b': 150, 'a': 100})
+    >>> c / 5
+    Counter({'c': 5.0, 'b': 3.0, 'a': 2.0})
+
+    >>> # Express counts as a percentage of the total
+    >>> c * (100.0 / sum(c.values()))
+    Counter({'c': 50.0, 'b': 30.0, 'a': 20.0})
+
+Note in the latter example, true division caused the output values to be
+expressed as floats.
+
 .. versionadded:: 3.3
     Added support for unary plus, unary minus, and in-place multiset operations.
+
+.. versionadded:: 3.8
+    Added support for scaling operations (multiplication and division by a scalar).
 
 .. note::
 
@@ -369,6 +391,10 @@ or subtracting from an empty counter.
       The inputs may be negative or zero, but only outputs with positive values
       are created.  There are no type restrictions, but the value type needs to
       support addition, subtraction, and comparison.
+
+    * The scaling operations (multiplication and division by a scalar) work with any
+      numeric type.  Both inputs and outputs are allowed to have negative or zero
+      values.
 
     * The :meth:`~Counter.elements` method requires integer counts.  It ignores zero and
       negative counts.
