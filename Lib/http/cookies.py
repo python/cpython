@@ -408,6 +408,8 @@ class Morsel(dict):
                 append("%s=%s" % (self._reserved[key], _getdate(value)))
             elif key == "max-age" and isinstance(value, int):
                 append("%s=%d" % (self._reserved[key], value))
+            elif key == "comment" and isinstance(value, str):
+                append("%s=%s" % (self._reserved[key], _quote(value)))
             elif key in self._flags:
                 if value:
                     append(str(self._reserved[key]))
