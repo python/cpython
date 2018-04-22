@@ -22,7 +22,7 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
 
 .. seealso::
 
-   Tkinter-specific documentation:
+   Tkinter documentation:
 
    `Python Tkinter Resources <https://wiki.python.org/moin/TkInter>`_
       The Python Tkinter Topic Guide provides a great deal of information on using Tk
@@ -40,6 +40,12 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
    `Python and Tkinter Programming <https://www.manning.com/books/python-and-tkinter-programming>`_
       Book by John Grayson (ISBN 1-884777-81-3).
 
+   `Programming Python <http://learning-python.com/about-pp4e.html>`_
+      Book by Mark Lutz, has excellent coverage of Tkinter.
+
+   `TKDocs <http://www.tkdocs.com/>`_
+      Extensive tutorial plus friendlier widget pages for some of the widgets.
+
    Tcl/Tk documentation:
 
    `Tcl/Tk recent man pages <https://www.tcl.tk/doc/>`_
@@ -53,12 +59,6 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
 
    `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_
       Brent Welch's encyclopedic book.
-
-   `TKDocs <http://www.tkdocs.com/>`_
-      Extensive tutorial plus friendlier widget pages for some of the widgets.
-
-   `Programming Python <http://learning-python.com/about-pp4e.html>`_
-      Book by Mark Lutz, has excellent coverage of Tkinter.
 
 
 Tkinter Modules
