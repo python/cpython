@@ -783,12 +783,13 @@ Menu indexes (menu.invoke(), menu.entryconfig(), etc.)
 Images
 ^^^^^^
 
-Bitmap/Pixelmap images can be created through the subclasses of
-:class:`tkinter.Image`:
+Images of different formats can be created through the corresponding subclass
+of :class:`tkinter.Image`:
 
-* :class:`BitmapImage` can be used for X11 bitmap data.
+* :class:`BitmapImage` for images in XBM format.
 
-* :class:`PhotoImage` can be used for GIF and PPM/PGM color bitmaps.
+* :class:`PhotoImage` for images in PGM, PPM, GIF and PNG formats. The latter
+  is supported starting with Tk 8.6.
 
 Either type of image is created through either the ``file`` or the ``data``
 option (other options are available as well).
@@ -799,6 +800,10 @@ reference to the image. When the last Python reference to the image object is
 deleted, the image data is deleted as well, and Tk will display an empty box
 wherever the image was used.
 
+.. seealso::
+
+    The `Pillow <http://python-pillow.org/>`_ package adds support for
+    formats such as BMP, JPEG, TIFF, and WebP, among others.
 
 .. _tkinter-file-handlers:
 
