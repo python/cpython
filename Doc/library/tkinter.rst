@@ -28,23 +28,23 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
       The Python Tkinter Topic Guide provides a great deal of information on using Tk
       from Python and links to other sources of information on Tk.
 
+   `TKDocs <http://www.tkdocs.com/>`_
+      Extensive tutorial plus friendlier widget pages for some of the widgets.
+
    `Tkinter reference: a GUI for Python <https://infohost.nmt.edu/tcc/help/pubs/tkinter/web/index.html>`_
       On-line reference material.
 
    `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_
       Online reference for tkinter supported by effbot.org.
 
+   `Programming Python <http://learning-python.com/about-pp4e.html>`_
+      Book by Mark Lutz, has excellent coverage of Tkinter.
+
    `Modern Tkinter for Busy Python Developers <https://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
       Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
 
    `Python and Tkinter Programming <https://www.manning.com/books/python-and-tkinter-programming>`_
       Book by John Grayson (ISBN 1-884777-81-3).
-
-   `Programming Python <http://learning-python.com/about-pp4e.html>`_
-      Book by Mark Lutz, has excellent coverage of Tkinter.
-
-   `TKDocs <http://www.tkdocs.com/>`_
-      Extensive tutorial plus friendlier widget pages for some of the widgets.
 
    Tcl/Tk documentation:
 
