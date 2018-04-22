@@ -1,0 +1,1 @@
+Fix quoting of the ``Comment`` attribute of :class:`http.cookies.SimpleCookie`.
