@@ -1152,8 +1152,16 @@ class Misc:
             self.tk.call('winfo', 'reqwidth', self._w))
 
     def winfo_rgb(self, color):
-        """Return tuple of decimal values for red, green, blue for
-        COLOR in this widget."""
+        """Return a tuple of the RGB values for color in this widget.
+
+        Args:
+            color: String representation of the color either as a name
+                or as # followed by 4-, 8-, 12-, or 16-bit hex values.
+
+        Returns:
+            A 3-tuple of ints in the range (0, 65535) of the red, green,
+            and blue intensities for color.
+        """
         return self._getints(
             self.tk.call('winfo', 'rgb', self._w, color))
 

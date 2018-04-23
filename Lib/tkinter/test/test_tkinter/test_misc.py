@@ -192,6 +192,24 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaises(tkinter.TclError):
             root.clipboard_get()
 
+    def test_winfo_rgb(self):
+        root = self.root
+        rgb = root.winfo_rgb
+
+        # Color name.
+        self.assertEqual(rgb('red'), (65535, 0, 0))
+        # #RGB
+        self.assertEqual(rgb('#f00'), (65535, 0, 0))
+        # #RRGGBB
+        self.assertEqual(rgb('#ff0000'), (65535, 0, 0))
+        # #RRRGGGBBB
+        self.assertEqual(rgb('#000fff000'), (0, 65535, 0))
+        # #RRRRGGGGBBBB
+        self.assertEqual(rgb('#ffff0000ffff'), (65535, 0, 65535))
+        # RGB triplet is invalid input.
+        with self.assertRaises(tkinter.TclError):
+            rgb((255, 0, 0))
+
 
 tests_gui = (MiscTest, )
 
