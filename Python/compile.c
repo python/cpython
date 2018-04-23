@@ -1949,6 +1949,26 @@ compiler_default_arguments(struct compiler *c, arguments_ty args)
     return funcflags;
 }
 
+static int corrected_firstlineno(struct compiler *c, stmt_ty s,
+                                                                 asdl_seq * decos)
+{
+        /* To keep the ability to get the relevant source of a decorated item
+        using inspect.getsource, we need to keep the first line number
+        of the code object as the first line number of the first decorator.
+        This used to be done via the AST, but it is better to hide this
+        internally.
+        */
+        if (asdl_seq_LEN(decos) > 0) {
+                expr_ty first_decorator = asdl_seq_GET(decos, 0);
+                c->u->u_firstlineno = first_decorator->lineno;
+                return first_decorator->lineno;
+        }
+        else {
+                return s->lineno;
+        }
+        
+}
+
 static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
@@ -1988,11 +2008,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (!compiler_decorators(c, decos))
         return 0;
 
-    // fixup decorators to be the first line number internally.
-    if (asdl_seq_LEN(decos) > 0) {
-        expr_ty first_decorator = asdl_seq_GET(decos, 0);
-        c->u->u_firstlineno = first_decorator->lineno;
-    }
+        
+        int first_lineno = corrected_firstlineno(c, s, decos);
+    
 
     funcflags = compiler_default_arguments(c, args);
     if (funcflags == -1) {
@@ -2007,7 +2025,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         funcflags |= 0x04;
     }
 
-    if (!compiler_enter_scope(c, name, scope_type, (void *)s, s->lineno)) {
+    if (!compiler_enter_scope(c, name, scope_type, (void *)s, first_lineno)) {
         return 0;
     }
 
@@ -2056,6 +2074,8 @@ compiler_class(struct compiler *c, stmt_ty s)
     if (!compiler_decorators(c, decos))
         return 0;
 
+        int first_lineno = corrected_firstlineno(c, s, decos);
+
     /* ultimately generate code for:
          <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
        where:
@@ -2070,7 +2090,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 
     /* 1. compile the class body into a code object */
     if (!compiler_enter_scope(c, s->v.ClassDef.name,
-                              COMPILER_SCOPE_CLASS, (void *)s, s->lineno))
+                              COMPILER_SCOPE_CLASS, (void *)s, first_lineno))
         return 0;
     /* this block represents what we do in the new scope */
     {
