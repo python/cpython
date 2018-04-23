@@ -846,19 +846,16 @@ class RawConfigParser(MutableMapping):
         except KeyError:
             if section != self.default_section:
                 raise NoSectionError(section)
+        orig_keys = list(d.keys())
         # Update with the entry specific variables
         if vars:
             for key, value in vars.items():
                 d[self.optionxform(key)] = value
-        # Change `vars` from None to a dict to avoid TypeError on return.
-        else:
-            vars = {}
         value_getter = lambda option: self._interpolation.before_get(self,
             section, option, d[option], d)
         if raw:
             value_getter = lambda option: d[option]
-        return [(option, value_getter(option)) for option in d.keys()
-                if option not in vars]
+        return [(option, value_getter(option)) for option in orig_keys]
 
     def popitem(self):
         """Remove a section from the parser and return it as
