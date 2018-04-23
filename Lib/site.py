@@ -334,9 +334,15 @@ def getsitepackages(prefixes=None):
         seen.add(prefix)
 
         if os.sep == '/':
-            sitepackages.append(os.path.join(prefix, "lib",
+            from sysconfig import get_config_var
+            platlibdir = get_config_var("platlibdir")
+            sitepackages.append(os.path.join(prefix, platlibdir,
                                         "python%d.%d" % sys.version_info[:2],
                                         "site-packages"))
+            if platlibdir != "lib":
+                sitepackages.append(os.path.join(prefix, "lib",
+                                            "python%d.%d" % sys.version_info[:2],
+                                            "site-packages"))
         else:
             sitepackages.append(prefix)
             sitepackages.append(os.path.join(prefix, "lib", "site-packages"))

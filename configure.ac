@@ -4628,12 +4628,26 @@ else
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
+# platlibdir must be defined before LIBPL definition
+AC_MSG_CHECKING(for custom platlibdir)
+AC_ARG_WITH(custom-platlibdir,
+    [AS_HELP_STRING([--with-custom-platlibdir=<libdirname>],
+        [set the platlibdir name to a custom string])],
+    [],
+    [with_custom_platlibdir=yes])
+AS_CASE($with_custom_platlibdir,
+    [yes],[platlibdir=`basename ${libdir}`],
+    [no],[platlibdir=lib],
+    [platlibdir=$with_custom_platlibdir])
+AC_MSG_RESULT($platlibdir)
+AC_SUBST(platlibdir)
+
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST(PY_ENABLE_SHARED)
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}"
+  LIBPL='$(prefix)'"/${platlibdir}/python${VERSION}/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(prefix)'"/${platlibdir}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 AC_SUBST(LIBPL)
 
