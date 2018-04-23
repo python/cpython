@@ -1,0 +1,1 @@
+Adding scalar multiplication/division support to collections.Counter().
