@@ -22,10 +22,6 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
 
 .. seealso::
 
-   `Tk commands <https://www.tcl.tk/man/tcl8.6/TkCmd/contents.htm>`_
-      Commands without underscores in their name correspond to :mod:`tkinter` or :mod:`tkinter.ttk` widget classes.
-      Change '6' to match the minor version of your Tcl/Tk installation (e.g. '5' for Tcl/Tk 8.5).
-
    Tkinter documentation:
 
    `Python Tkinter Resources <https://wiki.python.org/moin/TkInter>`_
@@ -51,6 +47,10 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
       Book by John Grayson (ISBN 1-884777-81-3).
 
    Tcl/Tk documentation:
+
+   `Tk commands <https://www.tcl.tk/man/tcl8.6/TkCmd/contents.htm>`_
+      Most commands are available as :mod:`tkinter` or :mod:`tkinter.ttk` classes.
+      Change '8.6' to match the version of your Tcl/Tk installation.
 
    `Tcl/Tk recent man pages <https://www.tcl.tk/doc/>`_
       Recent Tcl/Tk manuals on www.tcl.tk.
