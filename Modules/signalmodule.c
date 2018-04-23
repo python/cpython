@@ -759,7 +759,6 @@ iterable_to_sigset(PyObject *iterable, sigset_t *mask)
     int result = -1;
     PyObject *iterator, *item;
     long signum;
-    int err;
 
     sigemptyset(mask);
 
@@ -781,11 +780,14 @@ iterable_to_sigset(PyObject *iterable, sigset_t *mask)
         Py_DECREF(item);
         if (signum == -1 && PyErr_Occurred())
             goto error;
-        if (0 < signum && signum < NSIG)
-            err = sigaddset(mask, (int)signum);
-        else
-            err = 1;
-        if (err) {
+        if (0 < signum && signum < NSIG) {
+            /* bpo-33329: ignore sigaddset() return value as it can fail
+             * for some reserved signals, but we want the `range(1, NSIG)`
+             * idiom to allow selecting all valid signals.
+             */
+            (void) sigaddset(mask, (int)signum);
+        }
+        else {
             PyErr_Format(PyExc_ValueError,
                          "signal number %ld out of range", signum);
             goto error;
