@@ -1,0 +1,2 @@
+`ConfigParser.items` amended so any values passed in using the `vars`
+argument are not included in the resulting output.
