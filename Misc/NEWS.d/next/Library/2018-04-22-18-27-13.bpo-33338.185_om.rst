@@ -1,0 +1,8 @@
+lib2to3's tokenizer was synchronized with the built-in tokenizer, providing
+many wins, including:
+
+- the ``tokenize.tokenize()`` API is now mimicked in ``lib2to3``, including
+automatic encoding detection and yielding ENCODING tokens; - Unicode
+identifiers are now supported; - ELLIPSIS is its own token type now; -
+Untokenizer improved with backports of 5e6db31, 9dc3a36, 5b8d2c3, e411b66,
+and BPO-2495.
