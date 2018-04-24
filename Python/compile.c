@@ -1950,7 +1950,7 @@ compiler_default_arguments(struct compiler *c, arguments_ty args)
 }
 
 static int corrected_firstlineno(struct compiler *c, stmt_ty s,
-                                                                 asdl_seq * decos)
+                                 asdl_seq * decos)
 {
         /* To keep the ability to get the relevant source of a decorated item
         using inspect.getsource, we need to keep the first line number
@@ -1966,7 +1966,6 @@ static int corrected_firstlineno(struct compiler *c, stmt_ty s,
         else {
                 return s->lineno;
         }
-        
 }
 
 static int
@@ -2008,10 +2007,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (!compiler_decorators(c, decos))
         return 0;
 
-        
-        int first_lineno = corrected_firstlineno(c, s, decos);
+    int first_lineno = corrected_firstlineno(c, s, decos);
     
-
     funcflags = compiler_default_arguments(c, args);
     if (funcflags == -1) {
         return 0;
@@ -2074,7 +2071,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     if (!compiler_decorators(c, decos))
         return 0;
 
-        int first_lineno = corrected_firstlineno(c, s, decos);
+    int first_lineno = corrected_firstlineno(c, s, decos);
 
     /* ultimately generate code for:
          <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
