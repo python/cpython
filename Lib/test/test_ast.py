@@ -2,6 +2,7 @@ import ast
 import dis
 import os
 import sys
+import textwrap
 import unittest
 import weakref
 
@@ -43,12 +44,36 @@ exec_tests = [
     "def f(**kwargs): pass",
     # FunctionDef with all kind of args and docstring
     "def f(a, b=1, c=None, d=[], e={}, *args, f=42, **kwargs): 'doc for f()'",
+    # Decorated FunctionDef
+    textwrap.dedent("""
+    @deco
+    def f():...
+    """),
+    # Multiple decorators on a FunctionDef
+    textwrap.dedent("""
+    @deco1
+    @deco2()
+    def f():...
+    """),
     # ClassDef
     "class C:pass",
     # ClassDef with docstring
     "class C: 'docstring for class C'",
     # ClassDef, new style class
     "class C(object): pass",
+    # Decorated ClassDef
+    textwrap.dedent("""
+    @foo
+    class A:
+        pass
+    """),
+    # Multiple decorators on a ClassDef
+    textwrap.dedent("""
+    @foo1
+    @bar(4)
+    class A:
+        pass
+    """),
     # Return
     "def f():return 1",
     # Delete
@@ -1133,9 +1158,13 @@ exec_results = [
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], ('arg', (1, 7), 'args', None), [], [], None, []), [('Pass', (1, 14))], [], None, None)], None),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], [], ('arg', (1, 8), 'kwargs', None), []), [('Pass', (1, 17))], [], None, None)], None),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 6), 'a', None), ('arg', (1, 9), 'b', None), ('arg', (1, 14), 'c', None), ('arg', (1, 22), 'd', None), ('arg', (1, 28), 'e', None)], ('arg', (1, 35), 'args', None), [('arg', (1, 41), 'f', None)], [('Num', (1, 43), 42)], ('arg', (1, 49), 'kwargs', None), [('Num', (1, 11), 1), ('NameConstant', (1, 16), None), ('List', (1, 24), [], ('Load',)), ('Dict', (1, 30), [], [])]), [], [], None, 'doc for f()')], None),
+('Module', [('FunctionDef', (3, 0), 'f', ('arguments', [], None, [], [], None, []), [('Expr', (3, 8), ('Ellipsis', (3, 8)))], [('Name', (2, 1), 'deco', ('Load',))], None, None)], None),
+('Module', [('FunctionDef', (4, 0), 'f', ('arguments', [], None, [], [], None, []), [('Expr', (4, 8), ('Ellipsis', (4, 8)))], [('Name', (2, 1), 'deco1', ('Load',)), ('Call', (3, 0), ('Name', (3, 1), 'deco2', ('Load',)), [], [])], None, None)], None),
 ('Module', [('ClassDef', (1, 0), 'C', [], [], [('Pass', (1, 8))], [], None)], None),
 ('Module', [('ClassDef', (1, 0), 'C', [], [], [], [], 'docstring for class C')], None),
 ('Module', [('ClassDef', (1, 0), 'C', [('Name', (1, 8), 'object', ('Load',))], [], [('Pass', (1, 17))], [], None)], None),
+('Module', [('ClassDef', (3, 0), 'A', [], [], [('Pass', (4, 4))], [('Name', (2, 1), 'foo', ('Load',))], None)], None),
+('Module', [('ClassDef', (4, 0), 'A', [], [], [('Pass', (5, 4))], [('Name', (2, 1), 'foo1', ('Load',)), ('Call', (3, 1), ('Name', (3, 1), 'bar', ('Load',)), [('Num', (3, 5), 4)], [])], None)], None),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], [], None, []), [('Return', (1, 8), ('Num', (1, 15), 1))], [], None, None)], None),
 ('Module', [('Delete', (1, 0), [('Name', (1, 4), 'v', ('Del',))])], None),
 ('Module', [('Assign', (1, 0), [('Name', (1, 0), 'v', ('Store',))], ('Num', (1, 4), 1))], None),
