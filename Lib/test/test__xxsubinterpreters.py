@@ -1379,12 +1379,104 @@ class ChannelTests(TestBase):
         with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_close(cid)
 
-    def test_close_with_unused_items(self):
+    def test_close_empty(self):
+        tests = [
+            (False, False),
+            (True, False),
+            (False, True),
+            (True, True),
+            ]
+        for send, recv in tests:
+            with self.subTest((send, recv)):
+                cid = interpreters.channel_create()
+                interpreters.channel_send(cid, b'spam')
+                interpreters.channel_recv(cid)
+                interpreters.channel_close(cid, send=send, recv=recv)
+
+                with self.assertRaises(interpreters.ChannelClosedError):
+                    interpreters.channel_send(cid, b'eggs')
+                with self.assertRaises(interpreters.ChannelClosedError):
+                    interpreters.channel_recv(cid)
+
+    def test_close_defaults_with_unused_items(self):
         cid = interpreters.channel_create()
         interpreters.channel_send(cid, b'spam')
         interpreters.channel_send(cid, b'ham')
-        interpreters.channel_close(cid)
 
+        with self.assertRaises(interpreters.ChannelNotEmptyError):
+            interpreters.channel_close(cid)
+        interpreters.channel_recv(cid)
+        interpreters.channel_send(cid, b'eggs')
+
+    def test_close_recv_with_unused_items_unforced(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_send(cid, b'ham')
+
+        with self.assertRaises(interpreters.ChannelNotEmptyError):
+            interpreters.channel_close(cid, recv=True)
+        interpreters.channel_recv(cid)
+        interpreters.channel_send(cid, b'eggs')
+        interpreters.channel_recv(cid)
+        interpreters.channel_recv(cid)
+        interpreters.channel_close(cid, recv=True)
+
+    def test_close_send_with_unused_items_unforced(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_send(cid, b'ham')
+        interpreters.channel_close(cid, send=True)
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_send(cid, b'eggs')
+        interpreters.channel_recv(cid)
+        interpreters.channel_recv(cid)
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_recv(cid)
+
+    def test_close_both_with_unused_items_unforced(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_send(cid, b'ham')
+
+        with self.assertRaises(interpreters.ChannelNotEmptyError):
+            interpreters.channel_close(cid, recv=True, send=True)
+        interpreters.channel_recv(cid)
+        interpreters.channel_send(cid, b'eggs')
+        interpreters.channel_recv(cid)
+        interpreters.channel_recv(cid)
+        interpreters.channel_close(cid, recv=True)
+
+    def test_close_recv_with_unused_items_forced(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_send(cid, b'ham')
+        interpreters.channel_close(cid, recv=True, force=True)
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_send(cid, b'eggs')
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_recv(cid)
+
+    def test_close_send_with_unused_items_forced(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_send(cid, b'ham')
+        interpreters.channel_close(cid, send=True, force=True)
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_send(cid, b'eggs')
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_recv(cid)
+
+    def test_close_both_with_unused_items_forced(self):
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, b'spam')
+        interpreters.channel_send(cid, b'ham')
+        interpreters.channel_close(cid, send=True, recv=True, force=True)
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_send(cid, b'eggs')
         with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_recv(cid)
 
