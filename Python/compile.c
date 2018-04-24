@@ -1952,20 +1952,20 @@ compiler_default_arguments(struct compiler *c, arguments_ty args)
 static int corrected_firstlineno(struct compiler *c, stmt_ty s,
                                  asdl_seq * decos)
 {
-        /* To keep the ability to get the relevant source of a decorated item
-        using inspect.getsource, we need to keep the first line number
-        of the code object as the first line number of the first decorator.
-        This used to be done via the AST, but it is better to hide this
-        internally.
-        */
-        if (asdl_seq_LEN(decos) > 0) {
-                expr_ty first_decorator = asdl_seq_GET(decos, 0);
-                c->u->u_firstlineno = first_decorator->lineno;
-                return first_decorator->lineno;
-        }
-        else {
-                return s->lineno;
-        }
+    /* To keep the ability to get the relevant source of a decorated item
+       using inspect.getsource, we need to keep the first line number
+       of the code object as the first line number of the first decorator.
+       This used to be done via the AST, but it is better to hide this
+       internally.
+    */
+    if (asdl_seq_LEN(decos)) {
+        expr_ty first_decorator = asdl_seq_GET(decos, 0);
+        c->u->u_firstlineno = first_decorator->lineno;
+        return first_decorator->lineno;
+    }
+    else {
+        return s->lineno;
+    }
 }
 
 static int

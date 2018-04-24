@@ -47,13 +47,22 @@ exec_tests = [
     # Decorated FunctionDef
     textwrap.dedent("""
     @deco
-    def f():...
+    def f():
+        pass
     """),
     # Multiple decorators on a FunctionDef
     textwrap.dedent("""
     @deco1
     @deco2()
-    def f():...
+    def f():
+        pass
+    """),
+    # decorated closure
+    textwrap.dedent("""
+    def f():
+        @deco
+        def g():
+            pass
     """),
     # ClassDef
     "class C:pass",
@@ -73,6 +82,13 @@ exec_tests = [
     @bar(4)
     class A:
         pass
+    """),
+    # Decorated method
+    textwrap.dedent("""
+    class A:
+        @deco
+        def m(self):
+            pass
     """),
     # Return
     "def f():return 1",
@@ -232,9 +248,11 @@ class AST_Tests(unittest.TestCase):
             parent_pos = (ast_node.lineno, ast_node.col_offset)
         for name in ast_node._fields:
             value = getattr(ast_node, name)
-            # Since decorators are stored as an attribute of a FunctionDef
-            # they don't follow the true order of the syntax.
-            if isinstance(value, list) and name != 'decorator_list':
+            if name == 'decorator_list':
+                # Decorators come before a FunctionDef
+                for decorator in value:
+                    self.assertTrue(decorator.lineno < ast_node.lineno)
+            elif isinstance(value, list):
                 for child in value:
                     self._assertTrueorder(child, parent_pos)
             elif value is not None:
@@ -1160,13 +1178,15 @@ exec_results = [
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], ('arg', (1, 7), 'args', None), [], [], None, []), [('Pass', (1, 14))], [], None, None)], None),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], [], ('arg', (1, 8), 'kwargs', None), []), [('Pass', (1, 17))], [], None, None)], None),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 6), 'a', None), ('arg', (1, 9), 'b', None), ('arg', (1, 14), 'c', None), ('arg', (1, 22), 'd', None), ('arg', (1, 28), 'e', None)], ('arg', (1, 35), 'args', None), [('arg', (1, 41), 'f', None)], [('Num', (1, 43), 42)], ('arg', (1, 49), 'kwargs', None), [('Num', (1, 11), 1), ('NameConstant', (1, 16), None), ('List', (1, 24), [], ('Load',)), ('Dict', (1, 30), [], [])]), [], [], None, 'doc for f()')], None),
-('Module', [('FunctionDef', (3, 0), 'f', ('arguments', [], None, [], [], None, []), [('Expr', (3, 8), ('Ellipsis', (3, 8)))], [('Name', (2, 1), 'deco', ('Load',))], None, None)], None),
-('Module', [('FunctionDef', (4, 0), 'f', ('arguments', [], None, [], [], None, []), [('Expr', (4, 8), ('Ellipsis', (4, 8)))], [('Name', (2, 1), 'deco1', ('Load',)), ('Call', (3, 0), ('Name', (3, 1), 'deco2', ('Load',)), [], [])], None, None)], None),
+('Module', [('FunctionDef', (3, 0), 'f', ('arguments', [], None, [], [], None, []), [('Pass', (4, 4))], [('Name', (2, 1), 'deco', ('Load',))], None, None)], None),
+('Module', [('FunctionDef', (4, 0), 'f', ('arguments', [], None, [], [], None, []), [('Pass', (5, 4))], [('Name', (2, 1), 'deco1', ('Load',)), ('Call', (3, 0), ('Name', (3, 1), 'deco2', ('Load',)), [], [])], None, None)], None),
+('Module', [('FunctionDef', (2, 0), 'f', ('arguments', [], None, [], [], None, []), [('FunctionDef', (4, 4), 'g', ('arguments', [], None, [], [], None, []), [('Pass', (5, 8))], [('Name', (3, 5), 'deco', ('Load',))], None, None)], [], None, None)], None),
 ('Module', [('ClassDef', (1, 0), 'C', [], [], [('Pass', (1, 8))], [], None)], None),
 ('Module', [('ClassDef', (1, 0), 'C', [], [], [], [], 'docstring for class C')], None),
 ('Module', [('ClassDef', (1, 0), 'C', [('Name', (1, 8), 'object', ('Load',))], [], [('Pass', (1, 17))], [], None)], None),
 ('Module', [('ClassDef', (3, 0), 'A', [], [], [('Pass', (4, 4))], [('Name', (2, 1), 'foo', ('Load',))], None)], None),
 ('Module', [('ClassDef', (4, 0), 'A', [], [], [('Pass', (5, 4))], [('Name', (2, 1), 'foo1', ('Load',)), ('Call', (3, 1), ('Name', (3, 1), 'bar', ('Load',)), [('Num', (3, 5), 4)], [])], None)], None),
+('Module', [('ClassDef', (2, 0), 'A', [], [], [('FunctionDef', (4, 4), 'm', ('arguments', [('arg', (4, 10), 'self', None)], None, [], [], None, []), [('Pass', (5, 8))], [('Name', (3, 5), 'deco', ('Load',))], None, None)], [], None)], None),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], [], None, []), [('Return', (1, 8), ('Num', (1, 15), 1))], [], None, None)], None),
 ('Module', [('Delete', (1, 0), [('Name', (1, 4), 'v', ('Del',))])], None),
 ('Module', [('Assign', (1, 0), [('Name', (1, 0), 'v', ('Store',))], ('Num', (1, 4), 1))], None),
