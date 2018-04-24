@@ -137,3 +137,15 @@ class cls135:
         def func137():
             never_reached1
             never_reached2
+
+#line 141
+def func142():
+    @wrap
+    def inner():
+        pass
+
+#line 147
+def func148():
+    @wrap
+    class A:
+        pass

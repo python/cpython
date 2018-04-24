@@ -542,6 +542,10 @@ class TestDecorators(GetSourceBase):
     def test_decorator_with_lambda(self):
         self.assertSourceEqual(mod2.func114, 113, 115)
 
+    def test_inner_decorated(self):
+        self.assertSourceEqual(mod2.func142, 142, 145)
+        self.assertSourceEqual(mod2.func148, 148, 151)
+
 class TestOneliners(GetSourceBase):
     fodderModule = mod2
     def test_oneline_lambda(self):

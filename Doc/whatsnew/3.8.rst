@@ -80,6 +80,11 @@ Other Language Changes
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
+* Corrected the AST to give the actual line number of a decorated definition.
+  The first line number of the code object still points to the first
+  decorator.
+  (Contributed by Ethan Smith in :issue:`33211`.)
+
 
 New Modules
 ===========

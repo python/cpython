@@ -1686,13 +1686,14 @@ ast_for_decorated(struct compiling *c, const node *n)
 
     if (TYPE(CHILD(n, 1)) == funcdef) {
         return ast_for_funcdef(c, CHILD(n, 1), decorator_seq);
-    } else if (TYPE(CHILD(n, 1)) == classdef) {
-        return ast_for_classdef(c, CHILD(n, 1), decorator_seq);
-    } else if (TYPE(CHILD(n, 1)) == async_funcdef) {
-        return ast_for_async_funcdef(c, CHILD(n, 1), decorator_seq);
-    } else {
-        Py_UNREACHABLE();
     }
+    if (TYPE(CHILD(n, 1)) == classdef) {
+        return ast_for_classdef(c, CHILD(n, 1), decorator_seq);
+    }
+    if (TYPE(CHILD(n, 1)) == async_funcdef) {
+        return ast_for_async_funcdef(c, CHILD(n, 1), decorator_seq);
+    }
+    Py_UNREACHABLE();
 }
 
 static expr_ty

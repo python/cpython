@@ -1960,7 +1960,6 @@ static int corrected_firstlineno(struct compiler *c, stmt_ty s,
     */
     if (asdl_seq_LEN(decos)) {
         expr_ty first_decorator = asdl_seq_GET(decos, 0);
-        c->u->u_firstlineno = first_decorator->lineno;
         return first_decorator->lineno;
     }
     else {
@@ -2024,6 +2023,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     if (!compiler_enter_scope(c, name, scope_type, (void *)s, first_lineno)) {
         return 0;
+    }
+
+    // modify first line number for decorated nodes
+    if (asdl_seq_LEN(decos)) {
+        expr_ty first_decorator = asdl_seq_GET(decos, 0);
+        c->u->u_firstlineno = first_decorator->lineno;
     }
 
     /* if not -OO mode, add docstring */
@@ -2091,6 +2096,12 @@ compiler_class(struct compiler *c, stmt_ty s)
         return 0;
     /* this block represents what we do in the new scope */
     {
+        // modify first line number for decorated nodes
+        if (asdl_seq_LEN(decos)) {
+            expr_ty first_decorator = asdl_seq_GET(decos, 0);
+            c->u->u_firstlineno = first_decorator->lineno;
+        }
+
         /* use the class name for name mangling */
         Py_INCREF(s->v.ClassDef.name);
         Py_XSETREF(c->u->u_private, s->v.ClassDef.name);
