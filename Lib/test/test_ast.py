@@ -232,7 +232,9 @@ class AST_Tests(unittest.TestCase):
             parent_pos = (ast_node.lineno, ast_node.col_offset)
         for name in ast_node._fields:
             value = getattr(ast_node, name)
-            if isinstance(value, list):
+            # Since decorators are stored as an attribute of a FunctionDef
+            # they don't follow the true order of the syntax.
+            if isinstance(value, list) and name != 'decorator_list':
                 for child in value:
                     self._assertTrueorder(child, parent_pos)
             elif value is not None:
