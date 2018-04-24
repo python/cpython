@@ -210,11 +210,23 @@ static PyThreadState *tcl_tstate = NULL;
 #endif
 
 #define ENTER_TCL \
-    { PyThreadState *tstate = PyThreadState_Get(); Py_BEGIN_ALLOW_THREADS \
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate;
+    { PyThreadState *tstate = PyThreadState_Get();\
+        ENTER_TCL_CUSTOM_TSTATE(tstate)
+
+#define ENTER_TCL_CUSTOM_TSTATE(tstate) \
+        Py_BEGIN_ALLOW_THREADS\
+        if (tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate;
 
 #define LEAVE_TCL \
     tcl_tstate = NULL; if(tcl_lock)PyThread_release_lock(tcl_lock); Py_END_ALLOW_THREADS}
+
+#define LEAVE_TCL_WITH_BUSYWAIT(result) \
+    tcl_tstate = NULL; \
+    if (tcl_lock)PyThread_release_lock(tcl_lock);\
+    if (result == 0)\
+        Sleep(Tkinter_busywaitinterval);\
+    Py_END_ALLOW_THREADS
+
 
 #define ENTER_OVERLAP \
     Py_END_ALLOW_THREADS
@@ -250,7 +262,9 @@ static PyThreadState *tcl_tstate = NULL;
 #else
 
 #define ENTER_TCL
+#define ENTER_TCL_CUSTOM_TSTATE(tstate)
 #define LEAVE_TCL
+#define LEAVE_TCL_WITH_BUSYWAIT(result)
 #define ENTER_OVERLAP
 #define LEAVE_OVERLAP
 #define LEAVE_OVERLAP_TCL
@@ -3081,15 +3095,9 @@ Tkapp_MainLoop(PyObject *selfptr, PyObject *args)
             LEAVE_TCL
         }
         else {
-            Py_BEGIN_ALLOW_THREADS
-            if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
-            tcl_tstate = tstate;
+            ENTER_TCL_CUSTOM_TSTATE(tstate)
             result = Tcl_DoOneEvent(TCL_DONT_WAIT);
-            tcl_tstate = NULL;
-            if(tcl_lock)PyThread_release_lock(tcl_lock);
-            if (result == 0)
-                Sleep(Tkinter_busywaitinterval);
-            Py_END_ALLOW_THREADS
+            LEAVE_TCL_WITH_BUSYWAIT(result)
         }
 #else
         result = Tcl_DoOneEvent(0);
@@ -3595,17 +3603,11 @@ EventHook(void)
         }
 #endif
 #if defined(WITH_THREAD) || defined(MS_WINDOWS)
-        Py_BEGIN_ALLOW_THREADS
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
-        tcl_tstate = event_tstate;
+        ENTER_TCL_CUSTOM_TSTATE(event_tstate)
 
         result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 
-        tcl_tstate = NULL;
-        if(tcl_lock)PyThread_release_lock(tcl_lock);
-        if (result == 0)
-            Sleep(Tkinter_busywaitinterval);
-        Py_END_ALLOW_THREADS
+        LEAVE_TCL_WITH_BUSYWAIT(result)
 #else
         result = Tcl_DoOneEvent(0);
 #endif
