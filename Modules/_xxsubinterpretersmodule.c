@@ -310,6 +310,7 @@ static PyObject *ChannelError;
 static PyObject *ChannelNotFoundError;
 static PyObject *ChannelClosedError;
 static PyObject *ChannelEmptyError;
+static PyObject *ChannelNotEmptyError;
 
 static int
 channel_exceptions_init(PyObject *ns)
@@ -353,6 +354,16 @@ channel_exceptions_init(PyObject *ns)
         return -1;
     }
     if (PyDict_SetItemString(ns, "ChannelEmptyError", ChannelEmptyError) != 0) {
+        return -1;
+    }
+
+    // An operation tried to close a non-empty channel.
+    ChannelNotEmptyError = PyErr_NewException(
+            "_xxsubinterpreters.ChannelNotEmptyError", ChannelError, NULL);
+    if (ChannelNotEmptyError == NULL) {
+        return -1;
+    }
+    if (PyDict_SetItemString(ns, "ChannelNotEmptyError", ChannelNotEmptyError) != 0) {
         return -1;
     }
 
