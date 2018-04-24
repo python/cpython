@@ -104,7 +104,8 @@ LeaveNonRecursiveMutex(PNRMUTEX mutex)
     if (PyMUTEX_LOCK(&mutex->cs))
         return FALSE;
     mutex->locked = 0;
-    result = PyCOND_SIGNAL(&mutex->cv);
+    /* condvar APIs return 0 on success. We need to return TRUE on success. */
+    result = !PyCOND_SIGNAL(&mutex->cv);
     PyMUTEX_UNLOCK(&mutex->cs);
     return result;
 }
