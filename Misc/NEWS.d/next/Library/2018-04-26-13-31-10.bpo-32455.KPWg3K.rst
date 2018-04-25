@@ -1,0 +1,2 @@
+Add *jump* parameter to :func:`dis.stack_effect` and to undocumented C API
+function :c:func:`PyCompile_OpcodeStackEffect`.
