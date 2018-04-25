@@ -852,6 +852,9 @@ class SysModuleTest(unittest.TestCase):
         check(-1<<1000, [traceback[-1]])
         check(None, traceback)
 
+    def test_no_duplicates_in_meta_path(self):
+        self.assertEqual(len(sys.meta_path), len(set(sys.meta_path)))
+
 
 @test.support.cpython_only
 class SizeofTest(unittest.TestCase):
