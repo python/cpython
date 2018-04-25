@@ -354,12 +354,16 @@ PyImport_Cleanup(void)
 
     if (Py_VerboseFlag)
         PySys_WriteStderr("# clear builtins._\n");
-    PyDict_SetItemString(interp->builtins, "_", Py_None);
+    if (PyDict_SetItemString(interp->builtins, "_", Py_None) < 0) {
+        PyErr_Clear();
+    }
 
     for (p = sys_deletes; *p != NULL; p++) {
         if (Py_VerboseFlag)
             PySys_WriteStderr("# clear sys.%s\n", *p);
-        PyDict_SetItemString(interp->sysdict, *p, Py_None);
+        if (PyDict_SetItemString(interp->sysdict, *p, Py_None) < 0) {
+            PyErr_Clear();
+        }
     }
     for (p = sys_files; *p != NULL; p+=2) {
         if (Py_VerboseFlag)
@@ -367,7 +371,9 @@ PyImport_Cleanup(void)
         value = PyDict_GetItemString(interp->sysdict, *(p+1));
         if (value == NULL)
             value = Py_None;
-        PyDict_SetItemString(interp->sysdict, *p, value);
+        if (PyDict_SetItemString(interp->sysdict, *p, value) < 0) {
+            PyErr_Clear();
+        }
     }
 
     /* We prepare a list which will receive (name, weakref) tuples of
@@ -381,14 +387,17 @@ PyImport_Cleanup(void)
 #define STORE_MODULE_WEAKREF(name, mod) \
     if (weaklist != NULL) { \
         PyObject *wr = PyWeakref_NewRef(mod, NULL); \
-        if (name && wr) { \
+        if (wr) { \
             PyObject *tup = PyTuple_Pack(2, name, wr); \
-            PyList_Append(weaklist, tup); \
+            if (!tup || PyList_Append(weaklist, tup) < 0) { \
+                PyErr_Clear(); \
+            } \
             Py_XDECREF(tup); \
+            Py_DECREF(wr); \
         } \
-        Py_XDECREF(wr); \
-        if (PyErr_Occurred()) \
+        else { \
             PyErr_Clear(); \
+        } \
     }
 
     /* Remove all modules from sys.modules, hoping that garbage collection
@@ -399,7 +408,9 @@ PyImport_Cleanup(void)
             if (Py_VerboseFlag && PyUnicode_Check(key))
                 PySys_FormatStderr("# cleanup[2] removing %U\n", key);
             STORE_MODULE_WEAKREF(key, value);
-            PyDict_SetItem(modules, key, Py_None);
+            if (PyDict_SetItem(modules, key, Py_None) < 0) {
+                PyErr_Clear();
+            }
         }
     }
 
@@ -472,6 +483,7 @@ PyImport_Cleanup(void)
     /* Once more */
     _PyGC_CollectNoFail();
 
+#undef CLEAR_MODULE
 #undef STORE_MODULE_WEAKREF
 }
 
