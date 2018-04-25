@@ -859,6 +859,10 @@ static int
 stack_effect(int opcode, int oparg, int jump)
 {
     switch (opcode) {
+        case NOP:
+        case EXTENDED_ARG:
+            return 0;
+
         /* Stack manipulation */
         case POP_TOP:
             return -1;
