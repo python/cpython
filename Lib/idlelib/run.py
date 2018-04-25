@@ -251,7 +251,7 @@ def fix_scaling(root):
             font = tkFont.Font(root=root, name=name, exists=True)
             size = int(font['size'])
             if size < 0:
-                font['size'] = round(-0.75*size)
+                font['size'] = int(round(-0.75*size))
 
 
 class MyRPCServer(rpc.RPCServer):
