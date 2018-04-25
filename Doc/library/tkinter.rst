@@ -11,7 +11,7 @@ the Tk GUI toolkit.  Both Tk and :mod:`Tkinter` are available on most Unix
 platforms, as well as on Windows systems.  (Tk itself is not part of Python; it
 is maintained at ActiveState.)
 
-Running ``python -m tkinter`` from the command line should open a window
+Running ``python -m Tkinter`` from the command line should open a window
 demonstrating a simple Tk interface, letting you know that :mod:`Tkinter` is
 properly installed on your system, and also showing what version of Tcl/Tk is
 installed, so you can read the Tcl/Tk documentation specific to that version.
