@@ -375,16 +375,27 @@ class TestCoverageCommandLineOutput(unittest.TestCase):
     def setUp(self):
         with open(self.codefile, 'w') as f:
             f.write(textwrap.dedent('''\
-            x = 42
-            if []:
-                print('unreachable')
+                x = 42
+                if []:
+                    print('unreachable')
             '''))
 
     def tearDown(self):
         unlink(self.codefile)
         unlink(self.coverfile)
 
-    def test_cover_files_written(self):
+    def test_cover_files_written_no_highlight(self):
+        argv = '-m trace --count'.split() + [self.codefile]
+        status, stdout, stderr = assert_python_ok(*argv)
+        self.assertTrue(os.path.exists(self.coverfile))
+        with open(self.coverfile) as f:
+            self.assertEqual(f.read(), textwrap.dedent('''\
+                    1: x = 42
+                    1: if []:
+                           print('unreachable')
+            '''))
+
+    def test_cover_files_written_with_highlight(self):
         argv = '-m trace --count --missing'.split() + [self.codefile]
         status, stdout, stderr = assert_python_ok(*argv)
         self.assertTrue(os.path.exists(self.coverfile))
@@ -393,7 +404,7 @@ class TestCoverageCommandLineOutput(unittest.TestCase):
                     1: x = 42
                     1: if []:
                 >>>>>>     print('unreachable')
-                '''))
+            '''))
 
 class TestCommandLine(unittest.TestCase):
 
