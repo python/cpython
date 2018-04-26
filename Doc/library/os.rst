@@ -1126,17 +1126,23 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionadded:: 3.7
 
-.. data:: RWF_DSYNC (since Linux 4.7)
+.. data:: RWF_DSYNC
+
    Provide a per-write equivalent of the O_DSYNC open(2) flag. This flag
    is meaningful only for pwritev2(), and its effect applies only to the
    data range written by the system call.
 
+   Availability: Linux (version 4.7).
+
    .. versionadded:: 3.7
 
-.. data:: RWF_SYNC (since Linux 4.7)
+.. data:: RWF_SYNC
+
    Provide a per-write equivalent of the O_SYNC open(2) flag. This flag is
    meaningful only for pwritev2(), and its effect applies only to the data
    range written by the system call.
+
+   Availability: Linux (version 4.7).
 
    .. versionadded:: 3.7
 
@@ -1260,22 +1266,28 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.7
 
 
-.. data:: RWF_HIPRI (since Linux 4.6)
+.. data:: RWF_HIPRI
+
    High priority read/write. Allows block-based filesystems to use polling
    of the device, which provides lower latency, but may use additional
    resources. (Currently, this feature is usable only on a file descriptor
    opened using the O_DIRECT flag.)
 
+   Availability: Linux (version 4.6).
+
    .. versionadded:: 3.7
 
 
-.. data:: RWF_NOWAIT (since Linux 4.14)
+.. data:: RWF_NOWAIT
+
    Do not wait for data which is not immediately available. If this flag
    is  specified, the preadv2() system call will return instantly
    if it would have to read data from the backing storage or wait for a lock.
    If some data was successfully read, it will return the number of bytes
    read. If no bytes were read, it will return -1 and set errno to EAGAIN.
    Currently, this flag is meaningful only for preadv2().
+
+   Availability: Linux (version 4.14).
 
    .. versionadded:: 3.7
 

@@ -1,0 +1,1 @@
+Update Windows installer to use OpenSSL 1.1.0h.
