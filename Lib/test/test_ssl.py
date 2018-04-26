@@ -6,6 +6,7 @@ import unittest
 from test import test_support as support
 from test.script_helper import assert_python_ok
 import asyncore
+import exceptions
 import socket
 import select
 import time
@@ -32,6 +33,13 @@ IS_OPENSSL_1_1 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0)
 
 def data_file(*name):
     return os.path.join(os.path.dirname(__file__), *name)
+
+def _can_decode_unicode(unicode_str):
+    try:
+        unicode_str.decode()
+        return True
+    except exceptions.UnicodeEncodeError:
+        return False
 
 # The custom key and certificate files used in test_ssl are generated
 # using Lib/test/make_ssl_certs.py.
@@ -988,6 +996,7 @@ class ContextTests(unittest.TestCase):
             ctx.load_verify_locations(cadata=b"broken")
 
 
+    @unittest.skipIf(not _can_decode_unicode(u'dhpäräm.pem'), "cannot decode unicode path")
     def test_load_dh_params(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.load_dh_params(DHFILE)
