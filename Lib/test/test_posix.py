@@ -12,7 +12,6 @@ import time
 import os
 import platform
 import pwd
-import random
 import stat
 import tempfile
 import unittest
@@ -1441,12 +1440,17 @@ class TestPosixSpawn(unittest.TestCase):
             self.assertEqual(f.read(), str(pid))
 
     def test_no_such_executable(self):
-        no_such_executable = 'no_such_executable%s' % random.getrandbits(32)
-        with self.assertRaises(FileNotFoundError) as cm:
-            posix.posix_spawn(no_such_executable,
-                              [no_such_executable],
-                              os.environ)
-        self.assertEqual(cm.exception.filename, no_such_executable)
+        no_such_executable = 'no_such_executable'
+        try:
+            pid = posix.posix_spawn(no_such_executable,
+                                    [no_such_executable],
+                                    os.environ)
+        except FileNotFoundError as exc:
+            self.assertEqual(exc.filename, no_such_executable)
+        else:
+            pid2, status = os.waitpid(pid, 0)
+            self.assertEqual(pid2, pid)
+            self.assertNotEqual(status, 0)
 
     def test_specify_environment(self):
         envfile = support.TESTFN
