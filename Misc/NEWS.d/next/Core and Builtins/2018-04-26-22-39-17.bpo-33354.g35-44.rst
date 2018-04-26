@@ -1,0 +1,2 @@
+Skip `test_load_dh_params` when Python filesystem encoding cannot decode the
+provided path.
