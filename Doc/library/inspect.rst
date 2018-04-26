@@ -247,9 +247,10 @@ attributes:
 
 .. function:: getmembers(object[, predicate])
 
-   Return all the members of an object in a list of (name, value) pairs sorted by
-   name.  If the optional *predicate* argument is supplied, only members for which
-   the predicate returns a true value are included.
+   Return all the members of an object in a list of ``(name, value)``
+   pairs sorted by name. If the optional *predicate* argument—which will be
+   called with the ``value`` object of each member—is supplied, only members
+   for which the predicate returns a true value are included.
 
    .. note::
 
