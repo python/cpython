@@ -1495,7 +1495,7 @@ class ChannelTests(TestBase):
         interp = interpreters.create()
         interpreters.run_string(interp, dedent(f"""
             import _xxsubinterpreters as _interpreters
-            _interpreters.channel_close({cid})
+            _interpreters.channel_close({cid}, force=True)
             """))
         with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_recv(cid)
@@ -1508,7 +1508,7 @@ class ChannelTests(TestBase):
         interpreters.channel_send(cid, b'spam')
         interpreters.channel_send(cid, b'spam')
         interpreters.channel_recv(cid)
-        interpreters.channel_close(cid)
+        interpreters.channel_close(cid, force=True)
 
         with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_send(cid, b'eggs')
