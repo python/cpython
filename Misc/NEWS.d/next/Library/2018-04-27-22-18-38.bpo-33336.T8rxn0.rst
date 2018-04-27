@@ -1,0 +1,2 @@
+``imaplib`` now allows ``MOVE`` command in ``IMAP4.uid()`` and potentially
+as a name of supported method of ``IMAP4`` object.
