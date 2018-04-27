@@ -2339,6 +2339,10 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     basicblock *try, *except, *end, *after_try, *try_cleanup,
                *after_loop_else;
 
+    if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
+        return compiler_error(c, "'async for' outside async function");
+    }
+
     PyObject *stop_aiter_error = _PyUnicode_FromId(&PyId_StopAsyncIteration);
     if (stop_aiter_error == NULL) {
         return 0;
@@ -4204,6 +4208,9 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
+    if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
+        return compiler_error(c, "'async with' outside async function");
+    }
 
     block = compiler_new_block(c);
     finally = compiler_new_block(c);
