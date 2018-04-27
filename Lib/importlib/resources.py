@@ -44,8 +44,7 @@ def _normalize_path(path) -> str:
 
     If the resulting string contains path separators, an exception is raised.
     """
-    str_path = str(path)
-    parent, file_name = os.path.split(str_path)
+    parent, file_name = os.path.split(path)
     if parent:
         raise ValueError('{!r} must be only a file name'.format(path))
     else:
@@ -243,10 +242,10 @@ def contents(package: Package) -> Iterable[str]:
     # cannot have resources.  We could use _check_location() and catch the
     # exception, but that's extra work, so just inline the check.
     elif package.__spec__.origin is None or not package.__spec__.has_location:
-        return []
+        return ()
     else:
         package_directory = Path(package.__spec__.origin).parent
-        return os.listdir(str(package_directory))
+        return os.listdir(package_directory)
 
 
 # Private implementation of ResourceReader and get_resource_reader() for
