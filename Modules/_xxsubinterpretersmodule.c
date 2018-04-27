@@ -1250,7 +1250,9 @@ _channel_recv(_channels *channels, int64_t id)
     _PyCrossInterpreterData *data = _channel_next(chan, interp->id);
     PyThread_release_lock(mutex);
     if (data == NULL) {
-        PyErr_Format(ChannelEmptyError, "channel %d is empty", id);
+        if (!PyErr_Occurred()) {
+            PyErr_Format(ChannelEmptyError, "channel %d is empty", id);
+        }
         return NULL;
     }
 
