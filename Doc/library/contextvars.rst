@@ -8,7 +8,7 @@
 
 --------------
 
-This module provides APIs to manage, store, and access non-local
+This module provides APIs to manage, store, and access context-local
 state.  The :class:`~contextvars.ContextVar` class is used to declare
 and work with *Context Variables*.  The :func:`~contextvars.copy_context`
 function and the :class:`~contextvars.Context` class should be used to
