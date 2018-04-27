@@ -297,7 +297,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     if (delta_iblock > 0) {
         f->f_iblock -= delta_iblock;
         PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-        delta += (f->f_stacktop - f->f_valuestack) - b->b_level;
+        delta += (int)(f->f_stacktop - f->f_valuestack) - b->b_level;
         if (b->b_type == SETUP_FINALLY &&
             code[b->b_handler] == WITH_CLEANUP_START)
         {
