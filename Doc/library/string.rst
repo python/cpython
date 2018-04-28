@@ -483,6 +483,11 @@ The available presentation types for floating point and decimal values are:
    |         | from the significand, and the decimal point is also      |
    |         | removed if there are no remaining digits following it.   |
    |         |                                                          |
+   |         | Also, The ``'#'`` option causes the "alternate form" to  |
+   |         | be used for the conversion. The alternate form is defined|
+   |         | differently for different types. For ``'g'`` conversion, |
+   |         | trailing zeros are not removed from the result.          |
+   |         |                                                          |
    |         | Positive and negative infinity, positive and negative    |
    |         | zero, and nans, are formatted as ``inf``, ``-inf``,      |
    |         | ``0``, ``-0`` and ``nan`` respectively, regardless of    |
