@@ -21,6 +21,7 @@
       'en': 'English',
       'fr': 'French',
       'ja': 'Japanese',
+      'ko': 'Korean',
   };
 
   function build_version_select(current_version, current_release) {
