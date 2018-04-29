@@ -521,7 +521,7 @@ PyImport_Cleanup(void)
     }
     PyDict_Clear(interp->builtins);
     if (PyDict_Update(interp->builtins, interp->builtins_copy)) {
-        PyErr_WriteUnraisable(NULL);
+        PyErr_Clear();
     }
     Py_XDECREF(dict);
     /* Clear module dict copies stored in the interpreter state */
