@@ -2537,7 +2537,7 @@ PyLong_FromUnicodeObject(PyObject *u, int base)
 /* forward */
 static PyLongObject *x_divrem
     (PyLongObject *, PyLongObject *, PyLongObject **);
-static PyObject *long_long(PyObject *v);
+static PyObject *long_long(PyObject *v, PyObject *Py_UNUSED(ignored));
 
 /* Int division with remainder, top-level routine */
 
@@ -2557,7 +2557,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         (size_a == size_b &&
          a->ob_digit[size_a-1] < b->ob_digit[size_b-1])) {
         /* |a| < |b|. */
-        *prem = (PyLongObject *)long_long((PyObject *)a);
+        *prem = (PyLongObject *)long_long((PyObject *)a, NULL);
         if (*prem == NULL) {
             return -1;
         }
@@ -4242,7 +4242,7 @@ long_abs(PyLongObject *v)
     if (Py_SIZE(v) < 0)
         return long_neg(v);
     else
-        return long_long((PyObject *)v);
+        return long_long((PyObject *)v, NULL);
 }
 
 static int
@@ -4554,7 +4554,7 @@ long_or(PyObject *a, PyObject *b)
 }
 
 static PyObject *
-long_long(PyObject *v)
+long_long(PyObject *v, PyObject *Py_UNUSED(ignored))
 {
     if (PyLong_CheckExact(v))
         Py_INCREF(v);
@@ -5028,7 +5028,7 @@ long_round(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|O", &o_ndigits))
         return NULL;
     if (o_ndigits == NULL)
-        return long_long(self);
+        return long_long(self, NULL);
 
     ndigits = PyNumber_Index(o_ndigits);
     if (ndigits == NULL)
@@ -5037,7 +5037,7 @@ long_round(PyObject *self, PyObject *args)
     /* if ndigits >= 0 then no rounding is necessary; return self unchanged */
     if (Py_SIZE(ndigits) >= 0) {
         Py_DECREF(ndigits);
-        return long_long(self);
+        return long_long(self, NULL);
     }
 
     /* result = self - divmod_near(self, 10 ** -ndigits)[1] */
@@ -5279,7 +5279,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
 }
 
 static PyMethodDef long_methods[] = {
-    {"conjugate",       (PyCFunction)long_long, METH_NOARGS,
+    {"conjugate",       long_long, METH_NOARGS,
      "Returns self, the complex conjugate of any int."},
     INT_BIT_LENGTH_METHODDEF
 #if 0
@@ -5288,11 +5288,11 @@ static PyMethodDef long_methods[] = {
 #endif
     INT_TO_BYTES_METHODDEF
     INT_FROM_BYTES_METHODDEF
-    {"__trunc__",       (PyCFunction)long_long, METH_NOARGS,
+    {"__trunc__",       long_long, METH_NOARGS,
      "Truncating an Integral returns itself."},
-    {"__floor__",       (PyCFunction)long_long, METH_NOARGS,
+    {"__floor__",       long_long, METH_NOARGS,
      "Flooring an Integral returns itself."},
-    {"__ceil__",        (PyCFunction)long_long, METH_NOARGS,
+    {"__ceil__",        long_long, METH_NOARGS,
      "Ceiling of an Integral returns itself."},
     {"__round__",       (PyCFunction)long_round, METH_VARARGS,
      "Rounding an Integral returns itself.\n"

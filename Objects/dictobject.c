@@ -2511,7 +2511,7 @@ _PyDict_MergeEx(PyObject *a, PyObject *b, int override)
 }
 
 static PyObject *
-dict_copy(PyDictObject *mp)
+dict_copy(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 {
     return PyDict_Copy((PyObject*)mp);
 }
@@ -2874,7 +2874,7 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
 }
 
 static PyObject *
-dict_clear(PyDictObject *mp)
+dict_clear(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 {
     PyDict_Clear((PyObject *)mp);
     Py_RETURN_NONE;
@@ -2892,7 +2892,7 @@ dict_pop(PyDictObject *mp, PyObject *args)
 }
 
 static PyObject *
-dict_popitem(PyDictObject *mp)
+dict_popitem(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t i, j;
     PyDictKeyEntry *ep0, *ep;
@@ -3020,7 +3020,7 @@ _PyDict_KeysSize(PyDictKeysObject *keys)
 }
 
 static PyObject *
-dict_sizeof(PyDictObject *mp)
+dict_sizeof(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromSsize_t(_PyDict_SizeOf(mp));
 }
@@ -3051,9 +3051,9 @@ PyDoc_STRVAR(copy__doc__,
 "D.copy() -> a shallow copy of D");
 
 /* Forward */
-static PyObject *dictkeys_new(PyObject *);
-static PyObject *dictitems_new(PyObject *);
-static PyObject *dictvalues_new(PyObject *);
+static PyObject *dictkeys_new(PyObject *, PyObject *);
+static PyObject *dictitems_new(PyObject *, PyObject *);
+static PyObject *dictvalues_new(PyObject *, PyObject *);
 
 PyDoc_STRVAR(keys__doc__,
              "D.keys() -> a set-like object providing a view on D's keys");
@@ -3074,11 +3074,11 @@ static PyMethodDef mapp_methods[] = {
      pop__doc__},
     {"popitem",         (PyCFunction)dict_popitem,      METH_NOARGS,
      popitem__doc__},
-    {"keys",            (PyCFunction)dictkeys_new,      METH_NOARGS,
+    {"keys",            dictkeys_new,                   METH_NOARGS,
     keys__doc__},
-    {"items",           (PyCFunction)dictitems_new,     METH_NOARGS,
+    {"items",           dictitems_new,                  METH_NOARGS,
     items__doc__},
-    {"values",          (PyCFunction)dictvalues_new,    METH_NOARGS,
+    {"values",          dictvalues_new,                 METH_NOARGS,
     values__doc__},
     {"update",          (PyCFunction)dict_update,       METH_VARARGS | METH_KEYWORDS,
      update__doc__},
@@ -3361,7 +3361,7 @@ dictiter_traverse(dictiterobject *di, visitproc visit, void *arg)
 }
 
 static PyObject *
-dictiter_len(dictiterobject *di)
+dictiter_len(dictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = 0;
     if (di->di_dict != NULL && di->di_used == di->di_dict->ma_used)
@@ -3373,7 +3373,7 @@ PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-dictiter_reduce(dictiterobject *di);
+dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored));
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
@@ -3652,7 +3652,7 @@ PyTypeObject PyDictIterItem_Type = {
 
 
 static PyObject *
-dictiter_reduce(dictiterobject *di)
+dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
     PyObject *list;
     dictiterobject tmp;
@@ -4092,7 +4092,7 @@ PyTypeObject PyDictKeys_Type = {
 };
 
 static PyObject *
-dictkeys_new(PyObject *dict)
+dictkeys_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 {
     return _PyDictView_New(dict, &PyDictKeys_Type);
 }
@@ -4182,7 +4182,7 @@ PyTypeObject PyDictItems_Type = {
 };
 
 static PyObject *
-dictitems_new(PyObject *dict)
+dictitems_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 {
     return _PyDictView_New(dict, &PyDictItems_Type);
 }
@@ -4247,7 +4247,7 @@ PyTypeObject PyDictValues_Type = {
 };
 
 static PyObject *
-dictvalues_new(PyObject *dict)
+dictvalues_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 {
     return _PyDictView_New(dict, &PyDictValues_Type);
 }

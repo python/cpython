@@ -618,7 +618,7 @@ PyDoc_STRVAR(
     "Cancel overlapped operation");
 
 static PyObject *
-Overlapped_cancel(OverlappedObject *self)
+Overlapped_cancel(OverlappedObject *self, PyObject *Py_UNUSED(ignored))
 {
     BOOL ret = TRUE;
 

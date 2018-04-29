@@ -1619,13 +1619,13 @@ NotImplemented_repr(PyObject *op)
 }
 
 static PyObject *
-NotImplemented_reduce(PyObject *op)
+NotImplemented_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     return PyUnicode_FromString("NotImplemented");
 }
 
 static PyMethodDef notimplemented_methods[] = {
-    {"__reduce__", (PyCFunction)NotImplemented_reduce, METH_NOARGS, NULL},
+    {"__reduce__", NotImplemented_reduce, METH_NOARGS, NULL},
     {NULL, NULL}
 };
 

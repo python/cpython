@@ -101,7 +101,7 @@ meth_dealloc(PyCFunctionObject *m)
 }
 
 static PyObject *
-meth_reduce(PyCFunctionObject *m)
+meth_reduce(PyCFunctionObject *m, PyObject *Py_UNUSED(ignored))
 {
     PyObject *builtins;
     PyObject *getattr;

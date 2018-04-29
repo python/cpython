@@ -13792,7 +13792,7 @@ unicode_sizeof_impl(PyObject *self)
 }
 
 static PyObject *
-unicode_getnewargs(PyObject *v)
+unicode_getnewargs(PyObject *v, PyObject *Py_UNUSED(ignored))
 {
     PyObject *copy = _PyUnicode_Copy(v);
     if (!copy)
@@ -13853,7 +13853,7 @@ static PyMethodDef unicode_methods[] = {
     {"_decimal2ascii", (PyCFunction) unicode__decimal2ascii, METH_NOARGS},
 #endif
 
-    {"__getnewargs__",  (PyCFunction)unicode_getnewargs, METH_NOARGS},
+    {"__getnewargs__",  unicode_getnewargs, METH_NOARGS},
     {NULL, NULL}
 };
 
@@ -15334,7 +15334,7 @@ unicodeiter_next(unicodeiterobject *it)
 }
 
 static PyObject *
-unicodeiter_len(unicodeiterobject *it)
+unicodeiter_len(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = 0;
     if (it->it_seq)
@@ -15345,7 +15345,7 @@ unicodeiter_len(unicodeiterobject *it)
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-unicodeiter_reduce(unicodeiterobject *it)
+unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),

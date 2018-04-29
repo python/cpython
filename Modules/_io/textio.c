@@ -66,7 +66,7 @@ PyDoc_STRVAR(textiobase_detach_doc,
     );
 
 static PyObject *
-textiobase_detach(PyObject *self)
+textiobase_detach(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _unsupported("detach");
 }
@@ -148,7 +148,7 @@ textiobase_errors_get(PyObject *self, void *context)
 
 
 static PyMethodDef textiobase_methods[] = {
-    {"detach", (PyCFunction)textiobase_detach, METH_NOARGS, textiobase_detach_doc},
+    {"detach", textiobase_detach, METH_NOARGS, textiobase_detach_doc},
     {"read", textiobase_read, METH_VARARGS, textiobase_read_doc},
     {"readline", textiobase_readline, METH_VARARGS, textiobase_readline_doc},
     {"write", textiobase_write, METH_VARARGS, textiobase_write_doc},

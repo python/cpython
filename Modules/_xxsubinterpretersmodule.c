@@ -2171,7 +2171,7 @@ So does an unrecognized ID.");
 
 
 static PyObject *
-interp_list_all(PyObject *self)
+interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *ids, *id;
     PyInterpreterState *interp;
@@ -2209,7 +2209,7 @@ Return a list containing the ID of every existing interpreter.");
 
 
 static PyObject *
-interp_get_current(PyObject *self)
+interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp =_get_current();
     if (interp == NULL) {
@@ -2225,7 +2225,7 @@ Return the ID of current interpreter.");
 
 
 static PyObject *
-interp_get_main(PyObject *self)
+interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Currently, 0 is always the main interpreter.
     return PyLong_FromLongLong(0);
@@ -2341,7 +2341,7 @@ PyDoc_STRVAR(is_running_doc,
 Return whether or not the identified interpreter is running.");
 
 static PyObject *
-channel_create(PyObject *self)
+channel_create(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int64_t cid = _channel_create(&_globals.channels);
     if (cid < 0) {
@@ -2389,7 +2389,7 @@ Close and finalize the channel.  Afterward attempts to use the channel\n\
 will behave as though it never existed.");
 
 static PyObject *
-channel_list_all(PyObject *self)
+channel_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int64_t count = 0;
     int64_t *cids = _channels_list_all(&_globals.channels, &count);
@@ -2546,11 +2546,11 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS, create_doc},
     {"destroy",                   (PyCFunction)interp_destroy,
      METH_VARARGS, destroy_doc},
-    {"list_all",                  (PyCFunction)interp_list_all,
+    {"list_all",                  interp_list_all,
      METH_NOARGS, list_all_doc},
-    {"get_current",               (PyCFunction)interp_get_current,
+    {"get_current",               interp_get_current,
      METH_NOARGS, get_current_doc},
-    {"get_main",                  (PyCFunction)interp_get_main,
+    {"get_main",                  interp_get_main,
      METH_NOARGS, get_main_doc},
     {"is_running",                (PyCFunction)interp_is_running,
      METH_VARARGS, is_running_doc},
@@ -2560,11 +2560,11 @@ static PyMethodDef module_functions[] = {
     {"is_shareable",              (PyCFunction)object_is_shareable,
      METH_VARARGS, is_shareable_doc},
 
-    {"channel_create",            (PyCFunction)channel_create,
+    {"channel_create",            channel_create,
      METH_NOARGS, channel_create_doc},
     {"channel_destroy",           (PyCFunction)channel_destroy,
      METH_VARARGS, channel_destroy_doc},
-    {"channel_list_all",          (PyCFunction)channel_list_all,
+    {"channel_list_all",          channel_list_all,
      METH_NOARGS, channel_list_all_doc},
     {"channel_send",              (PyCFunction)channel_send,
      METH_VARARGS, channel_send_doc},
