@@ -38,8 +38,7 @@ def delete_files():
 
 
 class AnyDBMTestCase:
-    _dict = {'0': b'',
-             'a': b'Python:',
+    _dict = {'a': b'Python:',
              'b': b'Programming',
              'c': b'the',
              'd': b'way',
@@ -107,6 +106,20 @@ class AnyDBMTestCase:
         self.init_db()
         f = dbm.open(_fname, 'r')
         keys = self.keys_helper(f)
+        f.close()
+
+    def test_empty_value(self):
+        if getattr(dbm._defaultmod, 'library', None) == 'Berkeley DB':
+            self.skipTest("Berkeley DB doesn't distinguish the empty value "
+                          "from the absent one")
+        f = dbm.open(_fname, 'c')
+        self.assertEqual(f.keys(), [])
+        f[b'empty'] = b''
+        self.assertEqual(f.keys(), [b'empty'])
+        self.assertIn(b'empty', f)
+        self.assertEqual(f[b'empty'], b'')
+        self.assertEqual(f.get(b'empty'), b'')
+        self.assertEqual(f.setdefault(b'empty'), b'')
         f.close()
 
     def test_anydbm_access(self):
