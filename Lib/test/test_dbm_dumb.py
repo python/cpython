@@ -89,7 +89,7 @@ class DumbDBMTestCase(unittest.TestCase):
                                    'The database is opened for reading only'):
             del f[b'a']
         # get() works as in the dict interface
-        self.assertEqual(f.get(b'a'), self._dict[b'a'])
+        self.assertEqual(f.get(b'b'), self._dict[b'b'])
         self.assertEqual(f.get(b'xxx', b'foo'), b'foo')
         self.assertIsNone(f.get(b'xxx'))
         with self.assertRaises(KeyError):
