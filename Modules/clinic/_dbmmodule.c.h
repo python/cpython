@@ -39,7 +39,7 @@ _dbm_dbm_keys(dbmobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_dbm_dbm_get__doc__,
-"get($self, key, default=b\'\', /)\n"
+"get($self, key, default=None, /)\n"
 "--\n"
 "\n"
 "Return the value for key if present, otherwise default.");
@@ -57,7 +57,7 @@ _dbm_dbm_get(dbmobject *self, PyObject *args)
     PyObject *return_value = NULL;
     const char *key;
     Py_ssize_clean_t key_length;
-    PyObject *default_value = NULL;
+    PyObject *default_value = Py_None;
 
     if (!PyArg_ParseTuple(args, "s#|O:get",
         &key, &key_length, &default_value)) {
@@ -141,4 +141,4 @@ dbmopen(PyObject *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=001fabffcecb99f1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=919cc4337be4a5d3 input=a9049054013a1b77]*/
