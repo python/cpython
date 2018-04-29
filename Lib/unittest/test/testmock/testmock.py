@@ -1451,12 +1451,11 @@ class MockTest(unittest.TestCase):
         self.assertEqual(f1_data, f2_data)
 
     def test_mock_open_dunder_iter_issue_32933(self):
-        mocked_open = mock.mock_open(read_data='Remarkable Bird\nThe Norwegian Blue\nBeautiful Plumage')
+        mocked_open = mock.mock_open(read_data='Remarkable\nNorwegian Blue')
         f1 = mocked_open('a-name')
         lines = [line for line in f1]
-        self.assertEqual(lines[0], 'Remarkable Bird\n')
-        self.assertEqual(lines[1], 'The Norwegian Blue\n')
-        self.assertEqual(lines[2], 'Beautiful Plumage')
+        self.assertEqual(lines[0], 'Remarkable\n')
+        self.assertEqual(lines[1], 'Norwegian Blue\n')
 
     def test_mock_open_write(self):
         # Test exception in file writing write()
