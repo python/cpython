@@ -1006,7 +1006,7 @@ devpoll_internal_close(devpollObject *self)
 }
 
 static PyObject*
-devpoll_close(devpollObject *self)
+devpoll_close(devpollObject *self, PyObject *Py_UNUSED(ignored))
 {
     errno = devpoll_internal_close(self);
     if (errno < 0) {
@@ -1032,7 +1032,7 @@ devpoll_get_closed(devpollObject *self)
 }
 
 static PyObject*
-devpoll_fileno(devpollObject *self)
+devpoll_fileno(devpollObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
@@ -1327,7 +1327,7 @@ pyepoll_dealloc(pyEpoll_Object *self)
 }
 
 static PyObject*
-pyepoll_close(pyEpoll_Object *self)
+pyepoll_close(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
 {
     errno = pyepoll_internal_close(self);
     if (errno < 0) {
@@ -1353,7 +1353,7 @@ pyepoll_get_closed(pyEpoll_Object *self)
 }
 
 static PyObject*
-pyepoll_fileno(pyEpoll_Object *self)
+pyepoll_fileno(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->epfd < 0)
         return pyepoll_err_closed();
@@ -2053,7 +2053,7 @@ kqueue_queue_dealloc(kqueue_queue_Object *self)
 }
 
 static PyObject*
-kqueue_queue_close(kqueue_queue_Object *self)
+kqueue_queue_close(kqueue_queue_Object *self, PyObject *Py_UNUSED(ignored))
 {
     errno = kqueue_queue_internal_close(self);
     if (errno < 0) {
@@ -2079,7 +2079,7 @@ kqueue_queue_get_closed(kqueue_queue_Object *self)
 }
 
 static PyObject*
-kqueue_queue_fileno(kqueue_queue_Object *self)
+kqueue_queue_fileno(kqueue_queue_Object *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->kqfd < 0)
         return kqueue_queue_err_closed();

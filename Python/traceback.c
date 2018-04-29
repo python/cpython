@@ -87,7 +87,7 @@ tb_new_impl(PyTypeObject *type, PyObject *tb_next, PyFrameObject *tb_frame,
 }
 
 static PyObject *
-tb_dir(PyTracebackObject *self)
+tb_dir(PyTracebackObject *self, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("[ssss]", "tb_frame", "tb_next",
                                    "tb_lasti", "tb_lineno");
