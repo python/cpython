@@ -417,14 +417,14 @@ PyImport_Cleanup(void)
     if (Py_VerboseFlag)
         PySys_WriteStderr("# clear builtins._\n");
     if (PyDict_SetItemString(interp->builtins, "_", Py_None) < 0) {
-        PyErr_Clear();
+        PyErr_WriteUnraisable(NULL);
     }
 
     for (p = sys_deletes; *p != NULL; p++) {
         if (Py_VerboseFlag)
             PySys_WriteStderr("# clear sys.%s\n", *p);
         if (PyDict_SetItemString(interp->sysdict, *p, Py_None) < 0) {
-            PyErr_Clear();
+            PyErr_WriteUnraisable(NULL);
         }
     }
     for (p = sys_files; *p != NULL; p+=2) {
@@ -434,7 +434,7 @@ PyImport_Cleanup(void)
         if (value == NULL)
             value = Py_None;
         if (PyDict_SetItemString(interp->sysdict, *p, value) < 0) {
-            PyErr_Clear();
+            PyErr_WriteUnraisable(NULL);
         }
     }
 
@@ -443,8 +443,9 @@ PyImport_Cleanup(void)
        for diagnosis messages (in verbose mode), while the weakref helps
        detect those modules which have been held alive. */
     weaklist = PyList_New(0);
-    if (weaklist == NULL)
-        PyErr_Clear();
+    if (weaklist == NULL) {
+        PyErr_WriteUnraisable(NULL);
+    }
 
 #define STORE_MODULE_WEAKREF(name, mod) \
     if (weaklist != NULL) { \
@@ -452,13 +453,13 @@ PyImport_Cleanup(void)
         if (wr) { \
             PyObject *tup = PyTuple_Pack(2, name, wr); \
             if (!tup || PyList_Append(weaklist, tup) < 0) { \
-                PyErr_Clear(); \
+                PyErr_WriteUnraisable(NULL); \
             } \
             Py_XDECREF(tup); \
             Py_DECREF(wr); \
         } \
         else { \
-            PyErr_Clear(); \
+            PyErr_WriteUnraisable(NULL); \
         } \
     }
 #define CLEAR_MODULE(name, mod) \
@@ -467,7 +468,7 @@ PyImport_Cleanup(void)
             PySys_FormatStderr("# cleanup[2] removing %U\n", name); \
         STORE_MODULE_WEAKREF(name, mod); \
         if (PyObject_SetItem(modules, name, Py_None) < 0) { \
-            PyErr_Clear(); \
+            PyErr_WriteUnraisable(NULL); \
         } \
     }
 
@@ -482,13 +483,13 @@ PyImport_Cleanup(void)
     else {
         PyObject *iterator = PyObject_GetIter(modules);
         if (iterator == NULL) {
-            PyErr_Clear();
+            PyErr_WriteUnraisable(NULL);
         }
         else {
             while ((key = PyIter_Next(iterator))) {
                 value = PyObject_GetItem(modules, key);
                 if (value == NULL) {
-                    PyErr_Clear();
+                    PyErr_WriteUnraisable(NULL);
                     continue;
                 }
                 CLEAR_MODULE(key, value);
@@ -496,7 +497,7 @@ PyImport_Cleanup(void)
                 Py_DECREF(key);
             }
             if (PyErr_Occurred()) {
-                PyErr_Clear();
+                PyErr_WriteUnraisable(NULL);
             }
             Py_DECREF(iterator);
         }
@@ -508,17 +509,20 @@ PyImport_Cleanup(void)
     }
     else {
         _Py_IDENTIFIER(clear);
-        if (_PyObject_CallMethodId(modules, &PyId_clear, "") == NULL)
-            PyErr_Clear();
+        if (_PyObject_CallMethodId(modules, &PyId_clear, "") == NULL) {
+            PyErr_WriteUnraisable(NULL);
+        }
     }
     /* Restore the original builtins dict, to ensure that any
        user data gets cleared. */
     dict = PyDict_Copy(interp->builtins);
-    if (dict == NULL)
-        PyErr_Clear();
+    if (dict == NULL) {
+        PyErr_WriteUnraisable(NULL);
+    }
     PyDict_Clear(interp->builtins);
-    if (PyDict_Update(interp->builtins, interp->builtins_copy))
+    if (PyDict_Update(interp->builtins, interp->builtins_copy)) {
         PyErr_Clear();
+    }
     Py_XDECREF(dict);
     /* Clear module dict copies stored in the interpreter state */
     _PyState_ClearModules();
