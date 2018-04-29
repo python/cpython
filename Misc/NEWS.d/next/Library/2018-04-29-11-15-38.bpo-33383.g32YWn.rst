@@ -1,0 +1,2 @@
+Fixed crash in the get() method of the :mod:`dbm.ndbm` database object when
+it is called with a single argument.
