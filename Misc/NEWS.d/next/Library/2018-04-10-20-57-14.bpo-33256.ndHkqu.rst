@@ -1,0 +1,1 @@
+Fix display of ``<module>`` call in the html produced by ``cgitb.html()``. Patch by Stéphane Blondon.
