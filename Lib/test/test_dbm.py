@@ -86,12 +86,21 @@ class AnyDBMTestCase:
         f = dbm.open(_fname, 'c')
         self._dict['g'] = f[b'g'] = b"indented"
         self.read_helper(f)
+        # setdefault() works as in the dict interface
+        self.assertEqual(f.setdefault(b'xxx', b'foo'), b'foo')
+        self.assertEqual(f[b'xxx'], b'foo')
         f.close()
 
     def test_anydbm_read(self):
         self.init_db()
         f = dbm.open(_fname, 'r')
         self.read_helper(f)
+        # get() works as in the dict interface
+        self.assertEqual(f.get(b'a'), self._dict['a'])
+        self.assertEqual(f.get(b'xxx', b'foo'), b'foo')
+        self.assertIsNone(f.get(b'xxx'))
+        with self.assertRaises(KeyError):
+            f[b'xxx']
         f.close()
 
     def test_anydbm_keys(self):
