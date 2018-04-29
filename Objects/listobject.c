@@ -2983,9 +2983,9 @@ typedef struct {
 static void listiter_dealloc(listiterobject *);
 static int listiter_traverse(listiterobject *, visitproc, void *);
 static PyObject *listiter_next(listiterobject *);
-static PyObject *listiter_len(listiterobject *);
+static PyObject *listiter_len(listiterobject *, PyObject *);
 static PyObject *listiter_reduce_general(void *_it, int forward);
-static PyObject *listiter_reduce(listiterobject *);
+static PyObject *listiter_reduce(listiterobject *, PyObject *);
 static PyObject *listiter_setstate(listiterobject *, PyObject *state);
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
@@ -3092,7 +3092,7 @@ listiter_next(listiterobject *it)
 }
 
 static PyObject *
-listiter_len(listiterobject *it)
+listiter_len(listiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len;
     if (it->it_seq) {
@@ -3104,7 +3104,7 @@ listiter_len(listiterobject *it)
 }
 
 static PyObject *
-listiter_reduce(listiterobject *it)
+listiter_reduce(listiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     return listiter_reduce_general(it, 1);
 }
@@ -3136,8 +3136,8 @@ typedef struct {
 static void listreviter_dealloc(listreviterobject *);
 static int listreviter_traverse(listreviterobject *, visitproc, void *);
 static PyObject *listreviter_next(listreviterobject *);
-static PyObject *listreviter_len(listreviterobject *);
-static PyObject *listreviter_reduce(listreviterobject *);
+static PyObject *listreviter_len(listreviterobject *, PyObject *);
+static PyObject *listreviter_reduce(listreviterobject *, PyObject *);
 static PyObject *listreviter_setstate(listreviterobject *, PyObject *);
 
 static PyMethodDef listreviter_methods[] = {
@@ -3246,7 +3246,7 @@ listreviter_next(listreviterobject *it)
 }
 
 static PyObject *
-listreviter_len(listreviterobject *it)
+listreviter_len(listreviterobject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = it->it_index + 1;
     if (it->it_seq == NULL || PyList_GET_SIZE(it->it_seq) < len)
@@ -3255,7 +3255,7 @@ listreviter_len(listreviterobject *it)
 }
 
 static PyObject *
-listreviter_reduce(listreviterobject *it)
+listreviter_reduce(listreviterobject *it, PyObject *Py_UNUSED(ignored))
 {
     return listiter_reduce_general(it, 0);
 }
