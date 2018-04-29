@@ -274,7 +274,7 @@ static PySequenceMethods dbm_as_sequence = {
 _dbm.dbm.get
 
     key: str(accept={str, robuffer}, zeroes=True)
-    default: object(c_default="NULL") = b''
+    default: object = None
     /
 
 Return the value for key if present, otherwise default.
@@ -283,7 +283,7 @@ Return the value for key if present, otherwise default.
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, const char *key,
                   Py_ssize_clean_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=b44f95eba8203d93 input=a3a279957f85eb6d]*/
+/*[clinic end generated code: output=b44f95eba8203d93 input=b788eba0ffad2e91]*/
 /*[clinic end generated code: output=4f5c0e523eaf1251 input=9402c0af8582dc69]*/
 {
     datum dbm_key, val;
