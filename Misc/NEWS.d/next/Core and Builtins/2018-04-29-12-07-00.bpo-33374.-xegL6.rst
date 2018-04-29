@@ -1,0 +1,3 @@
+Tweak the definition of PyGC_Head, so compilers do not believe it is always
+16-byte aligned on x86. This prevents crashes with more aggressive
+optimizations present in GCC 8.
