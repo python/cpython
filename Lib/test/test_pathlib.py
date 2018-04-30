@@ -1479,6 +1479,7 @@ class _BasePathTest(object):
             import ctypes
         except ImportError:
             # No ctypes means we can't expands paths
+            pass
         else:
             def _check_resolve(self, p, expected, strict=True):
                 q = p.resolve(strict)
