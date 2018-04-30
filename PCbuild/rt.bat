@@ -1,6 +1,6 @@
 @echo off
 rem Run Tests.  Run the regression test suite.
-rem Usage:  rt [-d] [-O] [-q] [-x64] regrtest_args
+rem Usage:  rt [-d|b] [-O] [-q] [-x64] regrtest_args
 rem -d   Run Debug build (python_d.exe).  Else release build.
 rem -O   Run python.exe or python_d.exe (see -d) with -O.
 rem -q   "quick" -- normally the tests are run twice, the first time
@@ -28,20 +28,21 @@ rem     rt -u "network,largefile"
 setlocal
 
 set pcbuild=%~dp0
-set prefix=%pcbuild%win32\
 set suffix=
 set qmode=
 set dashO=
 set regrtestargs=
+set exe=
 
 :CheckOpts
 if "%1"=="-O" (set dashO=-O)     & shift & goto CheckOpts
 if "%1"=="-q" (set qmode=yes)    & shift & goto CheckOpts
 if "%1"=="-d" (set suffix=_d)    & shift & goto CheckOpts
-if "%1"=="-x64" (set prefix=%pcbuild%amd64\) & shift & goto CheckOpts
+if "%1"=="-x64" (set prefix=%pcbuild%amd64) & shift & goto CheckOpts
 if NOT "%1"=="" (set regrtestargs=%regrtestargs% %1) & shift & goto CheckOpts
 
-set exe=%prefix%python%suffix%.exe
+if not defined prefix set prefix=%pcbuild%win32
+set exe=%prefix%\python%suffix%.exe
 set cmd="%exe%" %dashO% -u -Wd -E -bb -m test %regrtestargs%
 if defined qmode goto Qmode
 
@@ -49,7 +50,7 @@ echo Deleting .pyc files ...
 "%exe%" "%pcbuild%rmpyc.py"
 
 echo Cleaning _pth files ...
-if exist %prefix%*._pth del %prefix%*._pth
+if exist %prefix%\*._pth del %prefix%\*._pth
 
 echo on
 %cmd%

@@ -1,6 +1,8 @@
 # Current docs for the syntax of this file are at:
 #  https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted.md
 
+name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
+
 queue:
   name: Hosted VS2017
 
@@ -26,4 +28,5 @@ steps:
 
 - script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
   displayName: 'Tests'
-
+  env:
+    PREFIX: $(Py_OutDir)\win32
