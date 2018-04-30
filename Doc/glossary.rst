@@ -39,6 +39,17 @@ Glossary
       and loaders (in the :mod:`importlib.abc` module).  You can create your own
       ABCs with the :mod:`abc` module.
 
+   annotation
+      A type metadata value associated with a global variable, a class
+      attribute, or function parameter/return value.
+
+      Annotations are stored in the :attr:`__annotations__` special attribute
+      of a module (when annotating a global variable), class (when annotating
+      one of its attributes) or function (when annotating its parameters or
+      return value) and can be accessed using :func:`typing.get_type_hints`.
+
+      See :pep:`484` and :pep:`526` which describe this functionality.
+
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
       function.  There are two kinds of argument:
@@ -367,16 +378,18 @@ Glossary
       and the :ref:`function` section.
 
    function annotation
-      An arbitrary metadata value associated with a function parameter or return
-      value. Its syntax is explained in section :ref:`function`.  Annotations
-      may be accessed via the :attr:`__annotations__` special attribute of a
-      function object.
+      An :term:`annotation` of a function or a method.
 
-      See also the :term:`variable annotation` glossary entry.
+      For example, this function is annotated as requiring its parameters to be
+      int and as returning an int as well::
 
-      Annotations are meant to provide a standard way for programmers to
-      document types of functions they design.  See :pep:`484`, which
-      describes this functionality.
+         def sum_two_numbers(a: int, b: int) -> int:
+            return a + b
+
+      Its syntax is explained in section :ref:`function`.
+
+      See also the :term:`variable annotation` glossary entry, and :pep:`484`,
+      which describes this functionality.
 
    __future__
       A pseudo-module which programmers can use to enable new language features
@@ -1017,17 +1030,16 @@ Glossary
       :func:`bytes.splitlines` for an additional use.
 
    variable annotation
-      A type metadata value associated with a module global variable or
-      a class attribute. Its syntax is explained in section :ref:`annassign`.
-      Annotations are stored in the :attr:`__annotations__` special
-      attribute of a class or module object and can be accessed using
-      :func:`typing.get_type_hints`.
+      An :term:`annotation` of a global variable, or a class property.
 
-      See also the :term:`function annotation` glossary entry.
+      For example, this variable is annotated as an int::
 
-      Annotations are meant to provide a standard way for programmers to
-      document types of functions they design.  See :pep:`484` and :pep:`526`
-      which describe this functionality.
+         count: int = 0
+
+      Its syntax is explained in section :ref:`annassign`.
+
+      See also the :term:`function annotation` glossary entry, see :pep:`484`
+      and :pep:`526` which describe this functionality.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users
