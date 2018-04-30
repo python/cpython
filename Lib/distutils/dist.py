@@ -1056,6 +1056,9 @@ class DistributionMetadata:
             self.provides = None
             self.requires = None
             self.obsoletes = None
+            # PEP 566
+            self.long_description_content_type = None
+            self.provides_extras = None
 
     def read_pkg_file(self, file):
         """Reads the metadata values from a file object."""
