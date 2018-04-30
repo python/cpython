@@ -1469,29 +1469,9 @@ class _BasePathTest(object):
         self.assertEqual(set(p.glob("../xyzzy")), set())
 
 
-    if os.name == 'nt':
-        # Tests will fail if TEMP was a short path.
-        def _check_resolve(self, p, expected, strict=True):
-            q = p.resolve(strict)
-            try:
-                import ctypes
-            except ImportError:
-                # No ctypes means we can't expands paths
-                pass
-            else:
-                p2 = str(expected)
-                buffer = ctypes.create_unicode_buffer(len(p2) * 2)
-                length = ctypes.windll.kernel32.GetLongPathNameW(
-                    p2, buffer, len(buffer))
-                if length:
-                    p2 = buffer[:length]
-                expected = type(expected)(p2)
-            self.assertEqual(q, expected)
-
-    else:
-        def _check_resolve(self, p, expected, strict=True):
-            q = p.resolve(strict)
-            self.assertEqual(q, expected)
+    def _check_resolve(self, p, expected, strict=True):
+        q = p.resolve(strict)
+        self.assertEqual(q, expected)
 
     # this can be used to check both relative and absolute resolutions
     _check_resolve_relative = _check_resolve_absolute = _check_resolve
@@ -1536,7 +1516,7 @@ class _BasePathTest(object):
             # resolves to 'dirB/..' first before resolving to parent of dirB.
             self._check_resolve_relative(p, P(BASE, 'foo', 'in', 'spam'), False)
         # Now create absolute symlinks
-        d = tempfile.mkdtemp(suffix='-dirD')
+        d = support._longpath(tempfile.mkdtemp(suffix='-dirD'))
         self.addCleanup(support.rmtree, d)
         os.symlink(os.path.join(d), join('dirA', 'linkX'))
         os.symlink(join('dirB'), os.path.join(d, 'linkY'))
