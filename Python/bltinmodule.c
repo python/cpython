@@ -353,12 +353,10 @@ Fail_arg:
 PyDoc_STRVAR(filter_doc,
 "filter(function or None, iterable) -> list, string or tuple\n\
 \n\
-Construct a list from those elements of iterable for which function returns\n\
-true. iterable may be either a sequence, a container which supports\n\
-iteration, or an iterator. If iterable is a string or a tuple, the result\n\
-also has that type; otherwise it is always a list. If function is None, the\n\
-identity function is assumed, that is, all elements of iterable that are\n\
-false are removed.");
+Return a sequence yielding those items of iterable for which function(item)\n\
+is true. If function is None, return the items that are true.\n\
+If iterable is a string or a tuple, the result also has that type; otherwise\n\
+it is always a list.");
 
 static PyObject *
 builtin_format(PyObject *self, PyObject *args)
