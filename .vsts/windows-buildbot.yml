@@ -1,0 +1,14 @@
+resources:
+- repo: self
+  clean: true
+  fetchDepth: 5
+queue:
+  name: Hosted VS2017
+steps:
+- script: PCbuild\build.bat -e
+  displayName: 'Build CPython'
+- script: python.bat -m test.pythoninfo
+  displayName: 'Display build info'
+- script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+  displayName: 'Tests'
+
