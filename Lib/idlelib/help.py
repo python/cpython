@@ -175,26 +175,33 @@ class HelpText(Text):
         Text.__init__(self, parent, wrap='word', highlightthickness=0,
                       padx=5, borderwidth=0, width=uwide, height=uhigh)
 
-        normalfont = self.findfont(['TkDefaultFont', 'arial', 'helvetica'])
-        fixedfont = self.findfont(['TkFixedFont', 'monaco', 'courier'])
-        self['font'] = (normalfont, 12)
-        self.tag_configure('em', font=(normalfont, 12, 'italic'))
-        self.tag_configure('h1', font=(normalfont, 20, 'bold'))
-        self.tag_configure('h2', font=(normalfont, 18, 'bold'))
-        self.tag_configure('h3', font=(normalfont, 15, 'bold'))
-        self.tag_configure('pre', font=(fixedfont, 12), background='#f6f6ff')
-        self.tag_configure('preblock', font=(fixedfont, 10), lmargin1=25,
-                borderwidth=1, relief='solid', background='#eeffcc')
-        self.tag_configure('l1', lmargin1=25, lmargin2=25)
-        self.tag_configure('l2', lmargin1=50, lmargin2=50)
-        self.tag_configure('l3', lmargin1=75, lmargin2=75)
-        self.tag_configure('l4', lmargin1=100, lmargin2=100)
+        self.create_fonts()
+        self.configure_tags()
 
         self.parser = HelpParser(self)
         with open(filename, encoding='utf-8') as f:
             contents = f.read()
         self.parser.feed(contents)
+
+        self.bind_events()
         self['state'] = 'disabled'
+        self.focus_set()
+
+    def create_fonts(self):
+        "Create fonts to be used with tags."
+        self.base_size = idleConf.GetOption('main', 'EditorWindow',
+                                            'font-size', type='int')
+        normalfont = self.findfont(['TkDefaultFont', 'arial', 'helvetica'])
+        fixedfont = self.findfont(['TkFixedFont', 'monaco', 'courier'])
+
+        self.fonts = fonts = {}
+        fonts['normal'] = tkfont.Font(self, family=normalfont)
+        fonts['em'] = tkfont.Font(self, family=normalfont, slant='italic')
+        for tag in ('h3', 'h2', 'h1'):
+            fonts[tag] = tkfont.Font(self, family=normalfont, weight='bold')
+        for tag in ('pre', 'preblock'):
+            fonts[tag] = tkfont.Font(self, family=fixedfont)
+        self.scale_fontsize(base=self.base_size)
 
     def findfont(self, names):
         "Return name of first font family derived from names."
@@ -206,6 +213,52 @@ class HelpText(Text):
                                   for x in tkfont.families(root=self)):
                 return name
 
+    def configure_tags(self):
+        "Configure tags used in parsing."
+        self['font'] = self.fonts['normal']
+        for tag in ('em', 'h1', 'h2', 'h3', 'pre', 'preblock'):
+            self.tag_configure(tag, font=self.fonts[tag])
+        self.tag_configure('pre', background='#f6f6ff')
+        self.tag_configure('preblock', lmargin1=25, borderwidth=1,
+                           relief='solid', background='#eeffcc')
+        self.tag_configure('l1', lmargin1=25, lmargin2=25)
+        self.tag_configure('l2', lmargin1=50, lmargin2=50)
+        self.tag_configure('l3', lmargin1=75, lmargin2=75)
+        self.tag_configure('l4', lmargin1=100, lmargin2=100)
+
+    def bind_events(self):
+        "Bind events."
+        # Zoom out works with or without shift.
+        self.event_add('<<zoom-text-out>>',
+                       *['<Control-Key-equal>', '<Control-Key-plus>'])
+        self.bind('<<zoom-text-out>>', lambda e: self.zoom(e, 'out'))
+
+        self.event_add('<<zoom-text-in>>', '<Control-Key-minus>')
+        self.bind('<<zoom-text-in>>', lambda e: self.zoom(e, 'in'))
+
+        # Windows and Mac use MouseWheel.
+        self.bind('<Control-MouseWheel>', lambda e: self.zoom(e, 'wheel'))
+        # Linux uses Button 4 (scroll down) and Button 5 (scroll up).
+        self.bind('<Control-Button-4>', lambda e: self.zoom(e, 'wheel'))
+        self.bind('<Control-Button-5>', lambda e: self.zoom(e, 'wheel'))
+
+    def scale_fontsize(self, base=12):
+        "Scale tag sizes based on the size of normal text."
+        # Scale percentages are from Sphinx classic.css.
+        scale = {'normal': 1.0, 'h6': 1.0, 'h5': 1.1, 'h4': 1.2, 'h3': 1.4,
+                 'h2': 1.6, 'h1': 2.0, 'em': 1.0, 'pre': 1.0, 'preblock': 0.9}
+        for tag in self.fonts:
+            self.fonts[tag]['size'] = int(base * scale[tag])
+
+    def zoom(self, event, how='out'):
+        "Handle zooming text in/out."
+        if how == 'wheel':
+            # Button 5 or negative delta is when mouse wheel is scrolled down.
+            how = 'in' if event.num == 5 or event.delta < 0 else 'out'
+        factor = 1.1 if how == 'out' else 0.9
+        self.base_size = round(self.base_size * factor)
+        self.scale_fontsize(base=self.base_size)
+
 
 class HelpFrame(Frame):
     "Display html text, scrollbar, and toc."
@@ -213,6 +266,7 @@ class HelpFrame(Frame):
         Frame.__init__(self, parent)
         self.text = text = HelpText(self, filename)
         self['background'] = text['background']
+
         self.toc = toc = self.toc_menu(text)
         self.scroll = scroll = Scrollbar(self, command=text.yview)
         text['yscrollcommand'] = scroll.set
