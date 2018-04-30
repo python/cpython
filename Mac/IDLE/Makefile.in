@@ -11,7 +11,6 @@ LIBDEST=$(prefix)/lib/python$(VERSION)
 UNIVERSALSDK=@UNIVERSALSDK@
 builddir=	../..
 PYTHONFRAMEWORK=@PYTHONFRAMEWORK@
-LIPO_32BIT_FLAGS=@LIPO_32BIT_FLAGS@
 
 
 RUNSHARED=      @RUNSHARED@
@@ -71,10 +70,6 @@ IDLE.app:  \
 		--resource=$(srcdir)/../Icons/PythonCompiled.icns \
 		--python=$(prefix)/Resources/Python.app/Contents/MacOS/Python \
 		build
-ifneq ($(LIPO_32BIT_FLAGS),)
-	rm "IDLE.app/Contents/MacOS/Python"
-	lipo $(LIPO_32BIT_FLAGS) -output "IDLE.app/Contents/MacOS/Python" "$(BUILDPYTHON)"
-endif
 
 Info.plist: $(srcdir)/Info.plist.in
 	sed 's/%VERSION%/'"`$(RUNSHARED) $(BUILDPYTHON) -c 'import platform; print platform.python_version()'`"'/g' < $(srcdir)/Info.plist.in > Info.plist

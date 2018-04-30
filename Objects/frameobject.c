@@ -89,6 +89,9 @@ frame_getlineno(PyFrameObject *f, void *closure)
  *  o 'try'/'for'/'while' blocks can't be jumped into because the blockstack
  *    needs to be set up before their code runs, and for 'for' loops the
  *    iterator needs to be on the stack.
+ *  o Jumps cannot be made from within a trace function invoked with a
+ *    'return' or 'exception' event since the eval loop has been exited at
+ *    that time.
  */
 static int
 frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
@@ -122,13 +125,32 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         return -1;
     }
 
+    /* Upon the 'call' trace event of a new frame, f->f_lasti is -1 and
+     * f->f_trace is NULL, check first on the first condition.
+     * Forbidding jumps from the 'call' event of a new frame is a side effect
+     * of allowing to set f_lineno only from trace functions. */
+    if (f->f_lasti == -1) {
+        PyErr_Format(PyExc_ValueError,
+                     "can't jump from the 'call' trace event of a new frame");
+        return -1;
+    }
+
     /* You can only do this from within a trace function, not via
      * _getframe or similar hackery. */
-    if (!f->f_trace)
-    {
+    if (!f->f_trace) {
         PyErr_Format(PyExc_ValueError,
-                     "f_lineno can only be set by a"
-                     " line trace function");
+                     "f_lineno can only be set by a trace function");
+        return -1;
+    }
+
+    /* Forbid jumps upon a 'return' trace event (except after executing a
+     * YIELD_VALUE opcode, f_stacktop is not NULL in that case) and upon an
+     * 'exception' trace event.
+     * Jumps from 'call' trace events have already been forbidden above for new
+     * frames, so this check does not change anything for 'call' events. */
+    if (f->f_stacktop == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                "can only jump from a 'line' trace event");
         return -1;
     }
 
@@ -177,6 +199,15 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     PyString_AsStringAndSize(f->f_code->co_code, (char **)&code, &code_len);
     min_addr = MIN(new_lasti, f->f_lasti);
     max_addr = MAX(new_lasti, f->f_lasti);
+
+    /* The trace function is called with a 'return' trace event after the
+     * execution of a yield statement. */
+    assert(f->f_lasti != -1);
+    if (code[f->f_lasti] == YIELD_VALUE) {
+        PyErr_SetString(PyExc_ValueError,
+                "can't jump from a yield statement");
+        return -1;
+    }
 
     /* You can't jump onto a line with an 'except' statement on it -
      * they expect to have an exception on the top of the stack, which
@@ -337,6 +368,11 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     while (f->f_iblock > new_iblock) {
         PyTryBlock *b = &f->f_blockstack[--f->f_iblock];
         while ((f->f_stacktop - f->f_valuestack) > b->b_level) {
+            PyObject *v = (*--f->f_stacktop);
+            Py_DECREF(v);
+        }
+        if (b->b_type == SETUP_WITH) {
+            /* Pop the exit function. */
             PyObject *v = (*--f->f_stacktop);
             Py_DECREF(v);
         }
