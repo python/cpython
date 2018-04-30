@@ -1,0 +1,2 @@
+Traceback displayed by cgitb as text or html does not display parentheses if
+the current call in directly in the module
