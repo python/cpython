@@ -1473,6 +1473,22 @@ class _BasePathTest(object):
         q = p.resolve(strict)
         self.assertEqual(q, expected)
 
+    if os.name == 'nt':
+        # Tests will fail if TEMP was a short path.
+        try:
+            import ctypes
+        except ImportError:
+            # No ctypes means we can't expands paths
+        else:
+            def _check_resolve(self, p, expected, strict=True):
+                q = p.resolve(strict)
+                buffer = ctypes.create_unicode_buffer(len(expected) * 2)
+                length = ctypes.windll.kernel32.GetLongPathNameW(
+                    expected, buffer, len(buffer))
+                if length:
+                    expected = buffer[:length]
+                self.assertEqual(q, expected)
+
     # this can be used to check both relative and absolute resolutions
     _check_resolve_relative = _check_resolve_absolute = _check_resolve
 
