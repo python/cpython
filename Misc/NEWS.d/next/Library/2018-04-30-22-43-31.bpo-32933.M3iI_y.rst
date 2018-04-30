@@ -1,0 +1,1 @@
+unittest.mock.mock_open now supports iteration over the file contents.
