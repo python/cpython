@@ -9,7 +9,7 @@ from importlib.abc import ResourceLoader
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from types import ModuleType
-from typing import Iterator, Optional, Set, Union   # noqa: F401
+from typing import Iterable, Iterator, Optional, Set, Union   # noqa: F401
 from typing import cast
 from typing.io import BinaryIO, TextIO
 from zipimport import ZipImportError
@@ -44,8 +44,7 @@ def _normalize_path(path) -> str:
 
     If the resulting string contains path separators, an exception is raised.
     """
-    str_path = str(path)
-    parent, file_name = os.path.split(str_path)
+    parent, file_name = os.path.split(path)
     if parent:
         raise ValueError('{!r} must be only a file name'.format(path))
     else:
@@ -228,8 +227,8 @@ def is_resource(package: Package, name: str) -> bool:
     return path.is_file()
 
 
-def contents(package: Package) -> Iterator[str]:
-    """Return the list of entries in 'package'.
+def contents(package: Package) -> Iterable[str]:
+    """Return an iterable of entries in 'package'.
 
     Note that not all entries are resources.  Specifically, directories are
     not considered resources.  Use `is_resource()` on each entry returned here
@@ -238,15 +237,15 @@ def contents(package: Package) -> Iterator[str]:
     package = _get_package(package)
     reader = _get_resource_reader(package)
     if reader is not None:
-        yield from reader.contents()
-        return
+        return reader.contents()
     # Is the package a namespace package?  By definition, namespace packages
     # cannot have resources.  We could use _check_location() and catch the
     # exception, but that's extra work, so just inline the check.
-    if package.__spec__.origin is None or not package.__spec__.has_location:
-        return []
-    package_directory = Path(package.__spec__.origin).parent
-    yield from os.listdir(str(package_directory))
+    elif package.__spec__.origin is None or not package.__spec__.has_location:
+        return ()
+    else:
+        package_directory = Path(package.__spec__.origin).parent
+        return os.listdir(package_directory)
 
 
 # Private implementation of ResourceReader and get_resource_reader() for
