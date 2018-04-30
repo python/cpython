@@ -104,15 +104,13 @@ def updatecache(filename, module_globals=None):
             except (ImportError, OSError):
                 pass
             else:
-                if data is None:
-                    # No luck, the PEP302 loader cannot find the source
-                    # for this module.
-                    return []
-                cache[filename] = (
-                    len(data), None,
-                    [line+'\n' for line in data.splitlines()], fullname
-                )
-                return cache[filename][2]
+                # If data is None, then the PEP302 loader didn't find
+                # sources. In that case, we still continue searching for
+                # the sources by filename (bpo-32797).
+                if data is not None:
+                    lines = [line + '\n' for line in data.splitlines()]
+                    cache[filename] = (len(data), None, lines, fullname)
+                    return lines
 
         # Try looking through the module search path, which is only useful
         # when handling a relative filename.

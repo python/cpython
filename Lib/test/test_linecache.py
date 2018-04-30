@@ -237,6 +237,17 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(lines3, [])
         self.assertEqual(linecache.getlines(FILENAME), lines)
 
+    def test_loader_get_source(self):
+        from types import ModuleType
+        from importlib.machinery import ExtensionFileLoader
+        mod = ModuleType("fake_io")
+        mod_globals = mod.__dict__
+        mod_globals["__loader__"] = ExtensionFileLoader("fake_io", "")
+
+        # bpo-32797: this should return the source code of "io.py" even
+        # though the loader's get_source() returns None.
+        self.assertTrue(linecache.getlines("io.py", mod_globals))
+
 
 if __name__ == "__main__":
     unittest.main()

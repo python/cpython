@@ -1,0 +1,2 @@
+linecache continues searching for the source file by filename if the ``get_source``
+method of the ``__loader__`` returns ``None``.
