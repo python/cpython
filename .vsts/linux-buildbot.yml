@@ -17,7 +17,7 @@ steps:
   clean: true
   fetchDepth: 5
 
-- script: sudo apt-get update && sudo apt-get install libssl-dev
+- script: sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install libssl-dev
   displayName: 'Install OpenSSL libraries'
 
 - script: ./configure --with-pydebug
