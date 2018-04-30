@@ -2050,11 +2050,24 @@ authentication* using the :mod:`hmac` module.
       unavailable then it is ``None``.
 
 
-The module defines two exceptions:
+The module defines the following exceptions:
+
+.. exception:: ProcessError
+
+   The base class of all :mod:`multiprocessing` exceptions.
+
+.. exception:: BufferTooShort
+
+   Exception raised by :meth:`Connection.recv_bytes_into()` when the supplied
+   buffer object is too small for the message read.
 
 .. exception:: AuthenticationError
 
-   Exception raised when there is an authentication error.
+   Raised when there is an authentication error.
+
+.. exception:: TimeoutError
+
+   Raised by methods with a timeout when the timeout expires.
 
 
 **Examples**
