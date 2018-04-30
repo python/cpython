@@ -13,7 +13,8 @@ trigger:
 variables:
   # Relocate build outputs outside of source directory to make cleaning faster
   Py_IntDir: $(Build.BinariesDirectory)\obj
-  Py_OutDir: $(Build.BinariesDirectory)\out
+  # UNDONE: Do not build to a different directory because of broken tests
+  #Py_OutDir: $(Build.BinariesDirectory)\out
   EXTERNAL_DIR: $(Build.BinariesDirectory)\externals
 
 steps:
@@ -29,5 +30,5 @@ steps:
 
 - script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
   displayName: 'Tests'
-  env:
-    PREFIX: $(Py_OutDir)\win32
+  #env:
+  #  PREFIX: $(Py_OutDir)\win32
