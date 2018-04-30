@@ -378,7 +378,7 @@ Glossary
       and the :ref:`function` section.
 
    function annotation
-      An :term:`annotation` of a function or a method.
+      An :term:`annotation` of a function or method.
 
       For example, this function is annotated as requiring its parameters to be
       int and as returning an int as well::
@@ -1030,7 +1030,7 @@ Glossary
       :func:`bytes.splitlines` for an additional use.
 
    variable annotation
-      An :term:`annotation` of a global variable, or a class property.
+      An :term:`annotation` of a global variable, or class variable.
 
       For example, this variable is annotated as an int::
 
