@@ -1024,6 +1024,8 @@ the more significant byte last.
    top elements on the stack are the keyword arguments, followed by the
    variable argument list, and then the positional arguments.
 
+   .. versionchanged:: 3.5
+      The order of elements in the stack was changed.
 
 .. opcode:: CALL_FUNCTION_KW (argc)
 
@@ -1039,6 +1041,8 @@ the more significant byte last.
    followed by explicit keyword arguments, then the variable-arguments tuple,
    and finally by the positional arguments.
 
+   .. versionchanged:: 3.5
+      The order of elements in the stack was changed.
 
 .. opcode:: HAVE_ARGUMENT
 
