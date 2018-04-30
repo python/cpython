@@ -17,6 +17,9 @@ steps:
   clean: true
   fetchDepth: 5
 
+- script: sudo apt-get install libssl-dev
+  displayName: 'Install OpenSSL libraries'
+
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'
 
