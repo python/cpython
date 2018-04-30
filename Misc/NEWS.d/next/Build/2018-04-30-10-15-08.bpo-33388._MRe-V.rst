@@ -1,0 +1,1 @@
+Preliminary support for new fields from PEP 566 in distutils.
