@@ -2510,6 +2510,18 @@ expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
 
+static int
+ignore_attribute_error(PyObject *value)
+{
+    if (value == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return -1;
+        }
+        PyErr_Clear();
+    }
+    return 0;
+}
+
 static PyObject*
 xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
 {
@@ -2563,14 +2575,24 @@ xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
         return NULL;
     }
 
+    ALLOC(sizeof(XMLParserObject), "create expatparser");
+
+    /* Init to NULL to keep the error handling below manageable. */
+    self->target =
+        self->handle_xml =
+        self->handle_start =
+        self->handle_data =
+        self->handle_end =
+        self->handle_comment =
+        self->handle_pi =
+        self->handle_close =
+        NULL;
+
     /* setup target handlers */
     if (!target) {
         target = treebuilder_new();
         if (!target) {
-            EXPAT(ParserFree)(self->parser);
-            PyObject_Del(self->names);
-            PyObject_Del(self->entity);
-            PyObject_Del(self);
+            Py_DECREF(self);
             return NULL;
         }
     } else
@@ -2578,14 +2600,40 @@ xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
     self->target = target;
 
     self->handle_xml = PyObject_GetAttrString(target, "xml");
+    if (ignore_attribute_error(self->handle_xml)) {
+        Py_DECREF(self);
+        return NULL;
+    }
     self->handle_start = PyObject_GetAttrString(target, "start");
+    if (ignore_attribute_error(self->handle_start)) {
+        Py_DECREF(self);
+        return NULL;
+    }
     self->handle_data = PyObject_GetAttrString(target, "data");
+    if (ignore_attribute_error(self->handle_data)) {
+        Py_DECREF(self);
+        return NULL;
+    }
     self->handle_end = PyObject_GetAttrString(target, "end");
+    if (ignore_attribute_error(self->handle_end)) {
+        Py_DECREF(self);
+        return NULL;
+    }
     self->handle_comment = PyObject_GetAttrString(target, "comment");
+    if (ignore_attribute_error(self->handle_comment)) {
+        Py_DECREF(self);
+        return NULL;
+    }
     self->handle_pi = PyObject_GetAttrString(target, "pi");
+    if (ignore_attribute_error(self->handle_pi)) {
+        Py_DECREF(self);
+        return NULL;
+    }
     self->handle_close = PyObject_GetAttrString(target, "close");
-
-    PyErr_Clear();
+    if (ignore_attribute_error(self->handle_close)) {
+        Py_DECREF(self);
+        return NULL;
+    }
 
     /* configure parser */
     EXPAT(SetUserData)(self->parser, self);
@@ -2618,8 +2666,6 @@ xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
         (XML_UnknownEncodingHandler) expat_unknown_encoding_handler, NULL
         );
 #endif
-
-    ALLOC(sizeof(XMLParserObject), "create expatparser");
 
     return (PyObject*) self;
 }
