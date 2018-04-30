@@ -325,7 +325,10 @@ class TestEnum(unittest.TestCase):
     def test_contains(self):
         Season = self.Season
         self.assertIn(Season.AUTUMN, Season)
-        self.assertNotIn(3, Season)
+        with self.assertRaises(TypeError):
+            3 in Season
+        with self.assertRaises(TypeError):
+            'AUTUMN' in Season
 
         val = Season(3)
         self.assertIn(val, Season)
@@ -1752,6 +1755,13 @@ class TestFlag(unittest.TestCase):
         AC = 3
         CE = 1<<19
 
+    class Color(Flag):
+        BLACK = 0
+        RED = 1
+        GREEN = 2
+        BLUE = 4
+        PURPLE = RED|BLUE
+
     def test_str(self):
         Perm = self.Perm
         self.assertEqual(str(Perm.R), 'Perm.R')
@@ -1954,7 +1964,21 @@ class TestFlag(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, FlagStooges.CURLY|FlagStooges.MOE)
         test_pickle_dump_load(self.assertIs, FlagStooges)
 
-    def test_containment(self):
+    def test_contains(self):
+        Open = self.Open
+        Color = self.Color
+        self.assertFalse(Color.BLACK in Open)
+        self.assertFalse(Open.RO in Color)
+        with self.assertRaises(TypeError):
+            'BLACK' in Color
+        with self.assertRaises(TypeError):
+            'RO' in Open
+        with self.assertRaises(TypeError):
+            1 in Color
+        with self.assertRaises(TypeError):
+            1 in Open
+
+    def test_member_contains(self):
         Perm = self.Perm
         R, W, X = Perm
         RW = R | W
@@ -2071,6 +2095,13 @@ class TestIntFlag(unittest.TestCase):
         RW = 2
         AC = 3
         CE = 1<<19
+
+    class Color(IntFlag):
+        BLACK = 0
+        RED = 1
+        GREEN = 2
+        BLUE = 4
+        PURPLE = RED|BLUE
 
     def test_type(self):
         Perm = self.Perm
@@ -2340,7 +2371,23 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(len(lst), len(Thing))
         self.assertEqual(len(Thing), 0, Thing)
 
-    def test_containment(self):
+    def test_contains(self):
+        Open = self.Open
+        Color = self.Color
+        self.assertTrue(Color.GREEN in Color)
+        self.assertTrue(Open.RW in Open)
+        self.assertFalse(Color.GREEN in Open)
+        self.assertFalse(Open.RW in Color)
+        with self.assertRaises(TypeError):
+            'GREEN' in Color
+        with self.assertRaises(TypeError):
+            'RW' in Open
+        with self.assertRaises(TypeError):
+            2 in Color
+        with self.assertRaises(TypeError):
+            2 in Open
+
+    def test_member_contains(self):
         Perm = self.Perm
         R, W, X = Perm
         RW = R | W
@@ -2359,6 +2406,8 @@ class TestIntFlag(unittest.TestCase):
         self.assertFalse(R in WX)
         self.assertFalse(W in RX)
         self.assertFalse(X in RW)
+        with self.assertRaises(TypeError):
+            self.assertFalse('test' in RW)
 
     def test_bool(self):
         Perm = self.Perm
