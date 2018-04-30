@@ -2537,7 +2537,7 @@ PyLong_FromUnicodeObject(PyObject *u, int base)
 /* forward */
 static PyLongObject *x_divrem
     (PyLongObject *, PyLongObject *, PyLongObject **);
-static PyObject *long_long(PyObject *v, PyObject *Py_UNUSED(ignored));
+static PyObject *long_long(PyObject *v);
 
 /* Int division with remainder, top-level routine */
 
@@ -2557,7 +2557,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         (size_a == size_b &&
          a->ob_digit[size_a-1] < b->ob_digit[size_b-1])) {
         /* |a| < |b|. */
-        *prem = (PyLongObject *)long_long((PyObject *)a, NULL);
+        *prem = (PyLongObject *)long_long((PyObject *)a);
         if (*prem == NULL) {
             return -1;
         }
@@ -4242,7 +4242,7 @@ long_abs(PyLongObject *v)
     if (Py_SIZE(v) < 0)
         return long_neg(v);
     else
-        return long_long((PyObject *)v, NULL);
+        return long_long((PyObject *)v);
 }
 
 static int
@@ -4554,7 +4554,7 @@ long_or(PyObject *a, PyObject *b)
 }
 
 static PyObject *
-long_long(PyObject *v, PyObject *Py_UNUSED(ignored))
+long_long(PyObject *v)
 {
     if (PyLong_CheckExact(v))
         Py_INCREF(v);
@@ -4880,12 +4880,14 @@ int___getnewargs___impl(PyObject *self)
 }
 
 static PyObject *
-long_get0(PyLongObject *v, void *context) {
+long_get0(PyObject *Py_UNUSED(self), void *Py_UNUSED(context))
+{
     return PyLong_FromLong(0L);
 }
 
 static PyObject *
-long_get1(PyLongObject *v, void *context) {
+long_get1(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
+{
     return PyLong_FromLong(1L);
 }
 
@@ -5028,7 +5030,7 @@ long_round(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|O", &o_ndigits))
         return NULL;
     if (o_ndigits == NULL)
-        return long_long(self, NULL);
+        return long_long(self);
 
     ndigits = PyNumber_Index(o_ndigits);
     if (ndigits == NULL)
@@ -5037,7 +5039,7 @@ long_round(PyObject *self, PyObject *args)
     /* if ndigits >= 0 then no rounding is necessary; return self unchanged */
     if (Py_SIZE(ndigits) >= 0) {
         Py_DECREF(ndigits);
-        return long_long(self, NULL);
+        return long_long(self);
     }
 
     /* result = self - divmod_near(self, 10 ** -ndigits)[1] */
@@ -5278,8 +5280,14 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     return long_obj;
 }
 
+static PyObject *
+long_long_meth(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return long_long(self);
+}
+
 static PyMethodDef long_methods[] = {
-    {"conjugate",       long_long, METH_NOARGS,
+    {"conjugate",       long_long_meth, METH_NOARGS,
      "Returns self, the complex conjugate of any int."},
     INT_BIT_LENGTH_METHODDEF
 #if 0
@@ -5288,11 +5296,11 @@ static PyMethodDef long_methods[] = {
 #endif
     INT_TO_BYTES_METHODDEF
     INT_FROM_BYTES_METHODDEF
-    {"__trunc__",       long_long, METH_NOARGS,
+    {"__trunc__",       long_long_meth, METH_NOARGS,
      "Truncating an Integral returns itself."},
-    {"__floor__",       long_long, METH_NOARGS,
+    {"__floor__",       long_long_meth, METH_NOARGS,
      "Flooring an Integral returns itself."},
-    {"__ceil__",        long_long, METH_NOARGS,
+    {"__ceil__",        long_long_meth, METH_NOARGS,
      "Ceiling of an Integral returns itself."},
     {"__round__",       (PyCFunction)long_round, METH_VARARGS,
      "Rounding an Integral returns itself.\n"
@@ -5305,19 +5313,19 @@ static PyMethodDef long_methods[] = {
 
 static PyGetSetDef long_getset[] = {
     {"real",
-     (getter)long_long, (setter)NULL,
+     (getter)long_long_meth, (setter)NULL,
      "the real part of a complex number",
      NULL},
     {"imag",
-     (getter)long_get0, (setter)NULL,
+     long_get0, (setter)NULL,
      "the imaginary part of a complex number",
      NULL},
     {"numerator",
-     (getter)long_long, (setter)NULL,
+     (getter)long_long_meth, (setter)NULL,
      "the numerator of a rational number in lowest terms",
      NULL},
     {"denominator",
-     (getter)long_get1, (setter)NULL,
+     long_get1, (setter)NULL,
      "the denominator of a rational number in lowest terms",
      NULL},
     {NULL}  /* Sentinel */
@@ -5347,7 +5355,7 @@ static PyNumberMethods long_as_number = {
     long_divmod,                /*nb_divmod*/
     long_pow,                   /*nb_power*/
     (unaryfunc)long_neg,        /*nb_negative*/
-    (unaryfunc)long_long,       /*tp_positive*/
+    long_long,                  /*tp_positive*/
     (unaryfunc)long_abs,        /*tp_absolute*/
     (inquiry)long_bool,         /*tp_bool*/
     (unaryfunc)long_invert,     /*nb_invert*/
