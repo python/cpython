@@ -389,11 +389,11 @@ class TestCoverageCommandLineOutput(unittest.TestCase):
         status, stdout, stderr = assert_python_ok(*argv)
         self.assertTrue(os.path.exists(self.coverfile))
         with open(self.coverfile) as f:
-            self.assertEqual(f.read(), textwrap.dedent('''\
-                    1: x = 42
-                    1: if []:
-                           print('unreachable')
-            '''))
+            self.assertEqual(f.read(),
+                "    1: x = 42\n"
+                "    1: if []:\n"
+                "           print('unreachable')\n"
+            )
 
     def test_cover_files_written_with_highlight(self):
         argv = '-m trace --count --missing'.split() + [self.codefile]
