@@ -312,7 +312,7 @@ class EnumMeta(type):
         if not isinstance(member, Enum):
             raise TypeError(
                 "Unsupported operands type(s) for 'in': '%s' and '%s'" % (
-                    type(member).__qualname__, type(Enum).__qualname__))
+                    type(member).__qualname__, cls.__qualname__))
         return isinstance(member, cls) and member._name_ in cls._member_map_
 
     def __delattr__(cls, attr):
@@ -719,7 +719,7 @@ class Flag(Enum):
         if not isinstance(other, self.__class__):
             raise TypeError(
                 "Unsupported operands type(s) for 'in': '%s' and '%s'" % (
-                    type(other).__qualname__, type(self).__qualname__))
+                    type(other).__qualname__, self.__qualname__))
         return other._value_ & self._value_ == other._value_
 
     def __repr__(self):
