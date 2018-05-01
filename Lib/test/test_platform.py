@@ -353,14 +353,14 @@ class PlatformTest(unittest.TestCase):
 class DeprecationTest(unittest.TestCase):
 
     def test_dist_deprecation(self):
-        with self.assertWarns(PendingDeprecationWarning) as cm:
+        with self.assertWarns(DeprecationWarning) as cm:
             platform.dist()
         self.assertEqual(str(cm.warning),
                          'dist() and linux_distribution() functions are '
                          'deprecated in Python 3.5')
 
     def test_linux_distribution_deprecation(self):
-        with self.assertWarns(PendingDeprecationWarning) as cm:
+        with self.assertWarns(DeprecationWarning) as cm:
             platform.linux_distribution()
         self.assertEqual(str(cm.warning),
                          'dist() and linux_distribution() functions are '
