@@ -574,7 +574,7 @@ For an example of the usage of queues for interprocess communication see
 
 .. function:: Pipe([duplex])
 
-   Returns a pair ``(conn1, conn2)`` of :class:`Connection` object representing
+   Returns a pair ``(conn1, conn2)`` of :class:`Connection` objects representing
    the ends of a pipe.
 
    If *duplex* is ``True`` (the default) then the pipe is bidirectional.  If
