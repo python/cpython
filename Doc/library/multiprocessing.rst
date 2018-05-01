@@ -574,9 +574,8 @@ For an example of the usage of queues for interprocess communication see
 
 .. function:: Pipe([duplex])
 
-   Returns a pair ``(conn1, conn2)`` of
-   :class:`~multiprocessing.connection.Connection` objects representing the
-   ends of a pipe.
+   Returns a pair ``(conn1, conn2)`` of :class:`Connection` objects
+   representing the ends of a pipe.
 
    If *duplex* is ``True`` (the default) then the pipe is bidirectional.  If
    *duplex* is ``False`` then the pipe is unidirectional: ``conn1`` can only be
@@ -804,7 +803,7 @@ Miscellaneous
 Connection Objects
 ~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: multiprocessing.connection
+.. currentmodule:: None
 
 Connection objects allow the sending and receiving of picklable objects or
 strings.  They can be thought of as message oriented connected sockets.
