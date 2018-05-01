@@ -17,7 +17,7 @@ steps:
   clean: true
   fetchDepth: 5
 
-- script: deb-src http://archive.ubuntu.com/ubuntu/ xenial main && sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install libssl-dev
+- script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update && sudo apt-get -yq install libssl-dev
   displayName: 'Install build dependencies'
 
 - script: ./configure --with-pydebug
