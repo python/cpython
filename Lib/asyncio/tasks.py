@@ -318,7 +318,7 @@ FIRST_EXCEPTION = concurrent.futures.FIRST_EXCEPTION
 ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 
 
-async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
+async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED, return_on=Exception):
     """Wait for the Futures and coroutines given by fs to complete.
 
     The sequence futures must not be empty.
@@ -330,9 +330,11 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     Usage:
 
         done, pending = await asyncio.wait(fs)
+        done, pending = await asyncio.wait(fs, return_when=FIRST_EXCEPTION, return_on=CustomException)
 
     Note: This does not raise TimeoutError! Futures that aren't done
     when the timeout occurs are returned in the second set.
+
     """
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
         raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
@@ -346,7 +348,7 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
 
-    return await _wait(fs, timeout, return_when, loop)
+    return await _wait(fs, timeout, return_when, loop, return_on)
 
 
 def _release_waiter(waiter, *args):
@@ -408,7 +410,7 @@ async def wait_for(fut, timeout, *, loop=None):
         timeout_handle.cancel()
 
 
-async def _wait(fs, timeout, return_when, loop):
+async def _wait(fs, timeout, return_when, loop, return_on=Exception):
     """Internal helper for wait() and wait_for().
 
     The fs argument must be a collection of Futures.
@@ -426,7 +428,7 @@ async def _wait(fs, timeout, return_when, loop):
         if (counter <= 0 or
             return_when == FIRST_COMPLETED or
             return_when == FIRST_EXCEPTION and (not f.cancelled() and
-                                                f.exception() is not None)):
+                                                isinstance(f.exception(), return_on))):
             if timeout_handle is not None:
                 timeout_handle.cancel()
             if not waiter.done():
