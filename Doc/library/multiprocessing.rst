@@ -804,7 +804,6 @@ Connection Objects
 ~~~~~~~~~~~~~~~~~~
 
 .. currentmodule:: None
-   :noindex:
 
 Connection objects allow the sending and receiving of picklable objects or
 strings.  They can be thought of as message oriented connected sockets.
@@ -814,6 +813,7 @@ Connection objects are usually created using
 :ref:`multiprocessing-listeners-clients`.
 
 .. class:: Connection
+   :noindex:
 
    .. method:: send(obj)
 
