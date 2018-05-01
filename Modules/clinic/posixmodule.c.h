@@ -1742,7 +1742,7 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 "  env\n"
 "    Dictionary of strings mapping to strings.\n"
 "  file_actions\n"
-"    FileActions object.");
+"    A sequence of file action tuples.");
 
 #define OS_POSIX_SPAWN_METHODDEF    \
     {"posix_spawn", (PyCFunction)os_posix_spawn, METH_FASTCALL, os_posix_spawn__doc__},
@@ -6589,4 +6589,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=fc603214822bdda6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8d3d9dddf254c3c2 input=a9049054013a1b77]*/
