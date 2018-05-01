@@ -2768,14 +2768,12 @@ features:
 
    It is an error to specify tuples for both *times* and *ns*.
 
-   Whether a directory can be given for *path*
-   depends on whether the operating system implements directories as files
-   (for example, Windows does not).  Note that the exact times you set here may
-   not be returned by a subsequent :func:`~os.stat` call, depending on the
-   resolution with which your operating system records access and modification
-   times; see :func:`~os.stat`.  The best way to preserve exact times is to
-   use the *st_atime_ns* and *st_mtime_ns* fields from the :func:`os.stat`
-   result object with the *ns* parameter to `utime`.
+   Note that the exact times you set here may not be returned by a subsequent
+   :func:`~os.stat` call, depending on the resolution with which your operating
+   system records access and modification times; see :func:`~os.stat`. The best
+   way to preserve exact times is to use the *st_atime_ns* and *st_mtime_ns*
+   fields from the :func:`os.stat` result object with the *ns* parameter to
+   `utime`.
 
    This function can support :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>` and :ref:`not
