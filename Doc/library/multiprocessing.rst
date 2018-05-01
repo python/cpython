@@ -1977,7 +1977,7 @@ authentication* using the :mod:`hmac` module.
 .. function:: Client(address[, family[, authenticate[, authkey]]])
 
    Attempt to set up a connection to the listener which is using address
-   *address*, returning a :class:`~Connection`.
+   *address*, returning a :class:`Connection`.
 
    The type of the connection is determined by *family* argument, but this can
    generally be omitted since it can usually be inferred from the format of
@@ -2033,7 +2033,7 @@ authentication* using the :mod:`hmac` module.
    .. method:: accept()
 
       Accept a connection on the bound socket or named pipe of the listener
-      object and return a :class:`~Connection` object.
+      object and return a :class:`Connection` object.
       If authentication is attempted and fails, then
       :exc:`~multiprocessing.AuthenticationError` is raised.
 
