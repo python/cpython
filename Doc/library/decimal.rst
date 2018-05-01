@@ -1187,7 +1187,10 @@ In addition to the three supplied contexts, new contexts can be created with the
 
    .. method:: divmod(x, y)
 
-      Divides two numbers and returns the integer part of the result.
+      Divides two numbers and returns a pair of numbers consisting of their quotient 
+      and remainder when using integer division.
+      
+      The result is always equal to *(divide_int(x,y), remainder(x,y))*.
 
 
    .. method:: exp(x)
