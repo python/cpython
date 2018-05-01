@@ -1,0 +1,9 @@
+.. bpo: 33374
+.. date: 2018-04-29-12-07-00
+.. nonce: -xegL6
+.. release date: 2018-04-29
+.. section: Core and Builtins
+
+Tweak the definition of PyGC_Head, so compilers do not believe it is always
+16-byte aligned on x86. This prevents crashes with more aggressive
+optimizations present in GCC 8.

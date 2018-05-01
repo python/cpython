@@ -1,7 +1,15 @@
 Building a Python Mac OS X distribution
 =======================================
 
-The ``build-install.py`` script creates Python distributions, including
+WARNING
+-------
+
+The instructions in this README are incomplete and not up-to-date.
+In particular, they do not explain how to create a modern flat installer
+package from the now obsolete bundle-format installer package produced
+by ``build-installer.py``.
+
+The ``build-installer.py`` script creates Python distributions, including
 certain third-party libraries as necessary.  It builds a complete 
 framework-based Python out-of-tree, installs it in a funny place with 
 $DESTROOT, massages that installation to remove .pyc files and such, creates 

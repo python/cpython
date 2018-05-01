@@ -1,2 +1,0 @@
-Raise a TypeError instead of SystemError in case warnings.onceregistry is
-not a dictionary. Patch by Oren Milman.

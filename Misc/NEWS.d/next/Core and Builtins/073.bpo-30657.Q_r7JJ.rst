@@ -1,2 +1,0 @@
-Fixed possible integer overflow in PyString_DecodeEscape. Patch by Jay
-Bosamiya.

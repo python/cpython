@@ -1,1 +1,0 @@
-Fix range checking in GB18030 decoder.  Original patch by Ma Lin.

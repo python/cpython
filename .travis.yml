@@ -8,6 +8,11 @@ cache:
   - pip
   - ccache
 
+env:
+  global:
+    # Use -O3 because we don't use debugger on Travis-CI
+    - CFLAGS="-O3"
+
 branches:
   only:
     - master
