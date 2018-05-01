@@ -574,8 +574,8 @@ For an example of the usage of queues for interprocess communication see
 
 .. function:: Pipe([duplex])
 
-   Returns a pair ``(conn1, conn2)`` of :class:`Connection` objects
-   representing the ends of a pipe.
+   Returns a pair ``(conn1, conn2)`` of :class:`Connection` object representing
+   the ends of a pipe.
 
    If *duplex* is ``True`` (the default) then the pipe is bidirectional.  If
    *duplex* is ``False`` then the pipe is unidirectional: ``conn1`` can only be
@@ -804,6 +804,7 @@ Connection Objects
 ~~~~~~~~~~~~~~~~~~
 
 .. currentmodule:: None
+   :noindex:
 
 Connection objects allow the sending and receiving of picklable objects or
 strings.  They can be thought of as message oriented connected sockets.
@@ -1948,8 +1949,7 @@ Listeners and Clients
    :synopsis: API for dealing with sockets.
 
 Usually message passing between processes is done using queues or by using
-:class:`~Connection` objects returned by
-:func:`~multiprocessing.Pipe`.
+:class:`Connection` objects returned by :func:`~multiprocessing.Pipe`.
 
 However, the :mod:`multiprocessing.connection` module allows some extra
 flexibility.  It basically gives a high level message oriented API for dealing
@@ -2144,10 +2144,10 @@ an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.
 Authentication keys
 ~~~~~~~~~~~~~~~~~~~
 
-When one uses :meth:`Connection.recv <Connection.recv>`, the
+When one uses :meth:`Connection.recv`, the
 data received is automatically
-unpickled. Unfortunately unpickling data from an untrusted source is a security
-risk. Therefore :class:`Listener` and :func:`Client` use the :mod:`hmac` module
+unpickled.  Unfortunately unpickling data from an untrusted source is a security
+risk.  Therefore :class:`Listener` and :func:`Client` use the :mod:`hmac` module
 to provide digest authentication.
 
 An authentication key is a string which can be thought of as a password: once a
