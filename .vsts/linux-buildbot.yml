@@ -17,8 +17,8 @@ steps:
   clean: true
   fetchDepth: 5
 
-- script: sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install libssl-dev
-  displayName: 'Install OpenSSL libraries'
+- script: deb-src http://archive.ubuntu.com/ubuntu/ xenial main && sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install libssl-dev
+  displayName: 'Install build dependencies'
 
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'
@@ -29,5 +29,5 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
-- script: make buildbottest TESTOPTS="-j4 -uall,-cpu,-network"
-  displayName: 'Tests'
+# - script: make buildbottest TESTOPTS="-j4 -uall,-cpu,-network"
+#   displayName: 'Tests'
