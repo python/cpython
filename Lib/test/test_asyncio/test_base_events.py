@@ -1848,9 +1848,16 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     def prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
-        port = support.find_unused_port()
-        server = self.run_loop(self.loop.create_server(
-            lambda: proto, support.HOST, port))
+        for _ in range(5):
+            port = support.find_unused_port()
+            try:
+                server = self.run_loop(self.loop.create_server(
+                    lambda: proto, support.HOST, port))
+                break
+            except OSError:
+                pass
+        else:
+            self.fail("Unable to obtain free port to create server")
         self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
 
         def cleanup():
