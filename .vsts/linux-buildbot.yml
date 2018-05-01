@@ -17,7 +17,7 @@ steps:
   clean: true
   fetchDepth: 5
 
-- script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update && sudo apt-get -yq build-dep python3
+- script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update && sudo apt-get -yq build-dep python3.7
   displayName: 'Install build dependencies'
 
 - script: ./configure --with-pydebug
