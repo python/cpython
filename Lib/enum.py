@@ -311,7 +311,7 @@ class EnumMeta(type):
     def __contains__(cls, member):
         if not isinstance(member, Enum):
             raise TypeError(
-                "Unsupported operands type(s) for 'in': '%s' and '%s'" % (
+                "unsupported operand type(s) for 'in': '%s' and '%s'" % (
                     type(member).__qualname__, cls.__qualname__))
         return isinstance(member, cls) and member._name_ in cls._member_map_
 
@@ -718,7 +718,7 @@ class Flag(Enum):
     def __contains__(self, other):
         if not isinstance(other, self.__class__):
             raise TypeError(
-                "Unsupported operands type(s) for 'in': '%s' and '%s'" % (
+                "unsupported operand type(s) for 'in': '%s' and '%s'" % (
                     type(other).__qualname__, self.__qualname__))
         return other._value_ & self._value_ == other._value_
 
