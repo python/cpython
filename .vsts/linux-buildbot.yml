@@ -29,5 +29,5 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
-# - script: make buildbottest TESTOPTS="-j4 -uall,-cpu,-network"
-#   displayName: 'Tests'
+- script: make buildbottest TESTOPTS="-j4 -uall,-cpu,-network"
+  displayName: 'Tests'
