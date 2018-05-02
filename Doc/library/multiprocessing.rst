@@ -813,7 +813,6 @@ Connection objects are usually created using
 :ref:`multiprocessing-listeners-clients`.
 
 .. class:: Connection
-   :noindex:
 
    .. method:: send(obj)
 
