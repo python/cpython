@@ -1,0 +1,2 @@
+Parameter return_on has been added to asyncio.tasks.wait coroutine in order
+to allow defining a custom exception or tuple of exceptions to return on.
