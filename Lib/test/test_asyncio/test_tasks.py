@@ -1714,8 +1714,8 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         parent.cancel()
         # This should cancel inner1 and inner2 but bot child1 and child2.
-        test_utils.run_briefly(self.loop)
-        self.assertIsInstance(parent.exception(), asyncio.CancelledError)
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(parent)
         self.assertTrue(inner1.cancelled())
         self.assertTrue(inner2.cancelled())
         child1.set_result(1)
