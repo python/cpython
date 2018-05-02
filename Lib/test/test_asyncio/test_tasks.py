@@ -2036,34 +2036,26 @@ class BaseTaskTests:
         self._test_cancel_wait_for(60.0)
 
     def test_cancel_gather(self):
-        """Ensure that a gathering future refuses to be cancelled once all
-        children are done"""
+        """test gather cancels propelry after children are done
+
+        This is Python issue #26923
+        """
         loop = asyncio.new_event_loop()
         self.addCleanup(loop.close)
 
         fut = self.new_future(loop)
-        # The indirection fut->child_coro is needed since otherwise the
-        # gathering task is done at the same time as the child future
-        def child_coro():
-            return (yield from fut)
-        gather_future = asyncio.gather(child_coro(), loop=loop)
-        gather_task = asyncio.ensure_future(gather_future, loop=loop)
 
-        cancel_result = None
-        def cancelling_callback(_):
-            nonlocal cancel_result
-            cancel_result = gather_task.cancel()
-        fut.add_done_callback(cancelling_callback)
+        async def killer():
+            fut.set_result(42)
+            task.cancel()
 
-        fut.set_result(42) # calls the cancelling_callback after fut is done()
+        async def outer():
+            await asyncio.gather(fut, killer(), loop=loop)
+            self.fail('cancelled gather did not cancel its task')
 
-        # At this point the task should complete.
-        loop.run_until_complete(gather_task)
-
-        # Python issue #26923: asyncio.gather drops cancellation
-        self.assertEqual(cancel_result, False)
-        self.assertFalse(gather_task.cancelled())
-        self.assertEqual(gather_task.result(), [42])
+        task = asyncio.ensure_future(outer(), loop=loop)
+        with self.assertRaises(asyncio.CancelledError):
+            loop.run_until_complete(task)
 
     def test_exception_traceback(self):
         # See http://bugs.python.org/issue28843
