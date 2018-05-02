@@ -1744,8 +1744,10 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
     if (otherset == NULL)
         return NULL;
     rv = set_symmetric_difference_update(otherset, (PyObject *)so);
-    if (rv == NULL)
+    if (rv == NULL) {
+        Py_DECREF(otherset);
         return NULL;
+    }
     Py_DECREF(rv);
     return (PyObject *)otherset;
 }
