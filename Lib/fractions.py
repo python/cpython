@@ -280,16 +280,47 @@ class Fraction(numbers.Rational):
         return a._denominator
 
     def __repr__(self):
-        """repr(self)"""
-        return '%s(%s, %s)' % (self.__class__.__name__,
-                               self._numerator, self._denominator)
+        pair = (self.numerator, self.denominator)
+        vulgars = {
+            (1, 2): "½",
+            (1, 3): "⅓",
+            (1, 4): "¼",
+            (1, 5): "⅕",
+            (1, 6): "⅙",
+            (1, 7): "⅐",
+            (1, 8): "⅛",
+            (1, 9): "⅑",
+            (1, 10): "⅒",
+            (0, 3): "↉",
+            (2, 3): "⅔",
+            (3, 4): "¾",
+            (2, 5): "⅖",
+            (3, 5): "⅗",
+            (4, 5): "⅘",
+            (5, 6): "⅚",
+            (3, 8): "⅜",
+            (5, 8): "⅝",
+            (7, 8): "⅞"
+        }
+        if pair in vulgars:
+            return "({})".format(vulgars[pair])
+        elif self.denominator == 1:
+            return repr(self.numerator)
+        top_alphabet = "⁰¹²³⁴⁵⁶⁷⁸⁹"
+        bottom_alphabet = "₀₁₂₃₄₅₆₇₈₉"
+        num, denom = pair
+        top, bottom = "", ""
+        while num:
+            num, remainder = divmod(num, 10)
+            top = top_alphabet[remainder] + top
+        while denom:
+            denom, remainder = divmod(denom, 10)
+            bottom = bottom_alphabet[remainder] + bottom
+        return "({}/{})".format(top or "⁰", bottom or "₀")
 
     def __str__(self):
         """str(self)"""
-        if self._denominator == 1:
-            return str(self._numerator)
-        else:
-            return '%s/%s' % (self._numerator, self._denominator)
+        return repr(self)
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         """Generates forward and reverse operators given a purely-rational
