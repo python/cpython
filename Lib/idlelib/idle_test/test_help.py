@@ -1,14 +1,17 @@
 "Test help, coverage 87%."
 
+import sys
+
 from idlelib import help
 import unittest
 from test.support import requires
 requires('gui')
 from os.path import abspath, dirname, join
-from tkinter import Tk
+from tkinter import Tk, Text, TclError
 from tkinter import font as tkfont
 from idlelib import config
 
+darwin = sys.platform == 'darwin'
 usercfg = help.idleConf.userCfg
 testcfg = {
     'main': config.IdleUserConfParser(''),
@@ -16,6 +19,7 @@ testcfg = {
     'keys': config.IdleUserConfParser(''),
     'extensions': config.IdleUserConfParser(''),
 }
+
 
 class HelpFrameTest(unittest.TestCase):
 
@@ -39,73 +43,119 @@ class HelpFrameTest(unittest.TestCase):
         self.assertEqual(text.get('1.0', '1.end'), ' IDLE ')
 
 
-class HelpTestTest(unittest.TestCase):
+class FontSizerTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.root = root = Tk()
         root.withdraw()
-        helpfile = join(dirname(dirname(abspath(__file__))), 'help.html')
-        cls.text = help.HelpText(root, helpfile)
-        help.idleConf.userCfg = testcfg
+        cls.text = Text(root)
 
     @classmethod
     def tearDownClass(cls):
-        help.idleConf.userCfg = usercfg
         del cls.text
         cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
 
-    def test_scale_fontsize(self):
+    def setUp(self):
         text = self.text
-        eq = self.assertEqual
-        tags = ('normal', 'h3', 'h2', 'h1', 'em', 'pre', 'preblock')
-        save_fonts = text.fonts
-        text.fonts = {tag: tkfont.Font(text, family='courier') for tag in tags}
+        self.font = font = tkfont.Font(text, ('courier', 30))
+        text['font'] = font
+        text.insert('end', 'Test Text')
+        self.sizer = help.FontSizer(text)
 
-        text.scale_fontsize()
-        sizes = [text.fonts[tag]['size'] for tag in tags]
-        eq(sizes, [12, 16, 19, 24, 12, 12, 10])
-
-        text.scale_fontsize(21)
-        sizes = [text.fonts[tag]['size'] for tag in tags]
-        eq(sizes, [21, 29, 33, 42, 21, 21, 18])
-
-        text.fonts = save_fonts
+    def tearDown(self):
+        del self.sizer, self.font
 
     def test_zoom(self):
         text = self.text
+        font = tkfont.Font(name=text['font'], exists=True, root=text)
+        eq = self.assertEqual
+        text.focus_set()
+
+        wheel = '<Control-MouseWheel>'
+        button4 = '<Control-Button-4>'
+        button5 = '<Control-Button-5>'
+
+        tests = ((wheel, {}, 31, None),
+                 (wheel, {'delta': 1 if darwin else -120}, 30, None),
+                 (button5, {}, 29, '<ButtonRelease-5>'),
+                 (wheel, {'delta': -1 if darwin else 120}, 30, None),
+                 (button4, {}, 31, '<ButtonRelease-4>'))
+
+        eq(font['size'], 30)
+
+        for event, kw, result, after in tests:
+            with self.subTest(event=event):
+                text.event_generate(event, **kw)
+                eq(font['size'], result)
+                if after:
+                    text.event_generate(after)
+
+class HelpTextTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        help.idleConf.userCfg = testcfg
+        testcfg['main'].SetOption('EditorWindow', 'font-size', '12')
+        cls.root = root = Tk()
+        root.withdraw()
+        helpfile = join(dirname(dirname(abspath(__file__))), 'help.html')
+        cls.text = help.HelpText(root, helpfile)
+        cls.tags = ('h3', 'h2', 'h1', 'em', 'pre', 'preblock')
+
+    @classmethod
+    def tearDownClass(cls):
+        help.idleConf.userCfg = usercfg
+        del cls.text, cls.tags
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def get_sizes(self):
+        return [self.text.fonts[tag]['size'] for tag in self.tags]
+
+    def test_scale_tagfonts(self):
+        text = self.text
         eq = self.assertEqual
 
-        tags = ('normal', 'h3', 'h2', 'h1', 'em', 'pre', 'preblock')
-        base = [12, 16, 19, 24, 12, 12, 10]
-        zoomout = [13, 18, 20, 26, 13, 13, 11]
-        zoomin = [11, 15, 17, 22, 11, 11, 9]
+        save_fonts = text.fonts
+        text.fonts = {tag: tkfont.Font(text, family='courier') for tag in self.tags}
 
-        tests = (('<<zoom-text-out>>', 0, zoomout),
-                 ('<<zoom-text-in>>', 0, base),
-                 ('<<zoom-text-in>>', 0, zoomin),
-                 ('<Control-MouseWheel>', 0, base),
-                 ('<Control-MouseWheel>', -120, zoomin),
-                 ('<Control-MouseWheel>', 120, base),
-                 ('<Control-Button-4>', 0, zoomout),
-                 ('<Control-Button-5>', 0, base))
+        text.scale_tagfonts(12)
+        eq(self.get_sizes(), [14, 16, 19, 12, 12, 10])
 
-        # Base size starts at 12.
-        sizes = [text.fonts[tag]['size'] for tag in tags]
-        eq(text.base_size, base[0])
-        eq(sizes, base)
+        text.scale_tagfonts(21)
+        eq(self.get_sizes(), [25, 29, 33, 21, 21, 18])
 
-        for event, delta, result in tests:
+        text.fonts = save_fonts
+
+    def test_font_sizing(self):
+        text = self.text
+        eq = self.assertEqual
+
+        base = [14, 16, 19, 12, 12, 10]
+        zoomout = [15, 18, 20, 13, 13, 11]
+        zoomin = [13, 15, 17, 11, 11, 9]
+        wheel = '<Control-MouseWheel>'
+        button4 = '<Control-Button-4>'
+        button5 = '<Control-Button-5>'
+
+        tests = ((wheel, {}, zoomout, None),
+                 (wheel, {'delta': 1 if darwin else -120}, base, None),
+                 (button5, {}, zoomin, '<ButtonRelease-5>'),
+                 (wheel, {'delta': -1 if darwin else 120}, base, None),
+                 (button4, {}, zoomout, '<ButtonRelease-4>'))
+
+        eq(self.get_sizes(), base)
+
+        for event, kw, result, after in tests:
             with self.subTest(event=event):
-                if event == '<Control-MouseWheel>':
-                    text.event_generate(event, delta=delta)
-                else:
-                    text.event_generate(event)
-                sizes = [text.fonts[tag]['size'] for tag in tags]
-                eq(text.base_size, result[0])
-                eq(sizes, result)
+                text.event_generate(event, **kw)
+                eq(self.get_sizes(), result)
+                if after:
+                    text.event_generate(after)
 
 
 if __name__ == '__main__':

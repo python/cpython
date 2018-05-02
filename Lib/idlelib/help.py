@@ -24,11 +24,13 @@ copy_strip - Copy idle.html to help.html, rstripping each line.
 
 show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
 """
+import sys
+
 from html.parser import HTMLParser
 from os.path import abspath, dirname, isfile, join
 from platform import python_version
 
-from tkinter import Toplevel, Frame, Text, Menu
+from tkinter import Toplevel, Frame, Text, Menu, EventType
 from tkinter.ttk import Menubutton, Scrollbar
 from tkinter import font as tkfont
 
@@ -38,6 +40,11 @@ from idlelib.config import idleConf
 
 
 ## IDLE Help ##
+
+darwin = sys.platform == 'darwin'
+MINIMUM_FONT_SIZE = 6
+MAXIMUM_FONT_SIZE = 100
+
 
 class HelpParser(HTMLParser):
     """Render help.html into a text widget.
@@ -165,6 +172,57 @@ class HelpParser(HTMLParser):
             self.text.insert('end', d, (self.tags, self.chartags))
 
 
+class FontSizer:
+    "Support dynamic widget font resizing."
+    def __init__(self, widget, callback=None):
+        """"Add font resizing functionality to widget.
+
+        Args:
+            widget: Tk widget with font attribute to size.
+            callback: Function to call for additional font resizing
+                based on widget's font attribute.
+        """
+        self.widget = widget
+        self.callback = callback
+        self.bind_events()
+
+    def bind_events(self):
+        "Bind events to the widget."
+        shortcut = 'Command' if darwin else 'Control'
+        # Zoom out works with or without shift.
+        self.widget.event_add(
+                '<<zoom-text-out>>',
+                *[f'<{shortcut}-Key-equal>', f'<{shortcut}-Key-plus>'])
+        self.widget.bind('<<zoom-text-out>>', self.zoom)
+
+        self.widget.event_add(
+                '<<zoom-text-in>>',
+                *[f'<{shortcut}-Key-minus>', f'<{shortcut}-Key-underscore>'])
+        self.widget.bind('<<zoom-text-in>>', self.zoom)
+
+        # Windows and Mac use MouseWheel.
+        self.widget.bind('<Control-MouseWheel>', self.zoom)
+        # Linux uses Button 4 (scroll down) and Button 5 (scroll up).
+        self.widget.bind('<Control-Button-4>', self.zoom)
+        self.widget.bind('<Control-Button-5>', self.zoom)
+
+    def zoom(self, event):
+        "Handle zooming in/out."
+        if event.type == EventType.KeyPress:
+            increase = event.keysym in {'plus', 'equal'}
+        elif event.type == EventType.MouseWheel:
+            increase = event.delta >= 0 == darwin
+        elif event.type == EventType.Button:
+            increase = event.num == 4
+
+        font = tkfont.Font(self.widget, name=self.widget['font'], exists=True)
+        new_size = (min(font['size'] + 1, MAXIMUM_FONT_SIZE) if increase
+                    else max(font['size'] - 1, MINIMUM_FONT_SIZE))
+        font['size'] = new_size
+        if self.callback:
+            self.callback(new_size)
+
+
 class HelpText(Text):
     "Display help.html."
     def __init__(self, parent, filename):
@@ -183,25 +241,28 @@ class HelpText(Text):
             contents = f.read()
         self.parser.feed(contents)
 
-        self.bind_events()
         self['state'] = 'disabled'
         self.focus_set()
 
     def create_fonts(self):
         "Create fonts to be used with tags."
-        self.base_size = idleConf.GetOption('main', 'EditorWindow',
-                                            'font-size', type='int')
+        base_size = idleConf.GetOption('main', 'EditorWindow',
+                                       'font-size', type='int')
         normalfont = self.findfont(['TkDefaultFont', 'arial', 'helvetica'])
         fixedfont = self.findfont(['TkFixedFont', 'monaco', 'courier'])
 
+        self.base_font = tkfont.Font(self, (normalfont, base_size))
+        self['font'] = self.base_font
+
         self.fonts = fonts = {}
-        fonts['normal'] = tkfont.Font(self, family=normalfont)
         fonts['em'] = tkfont.Font(self, family=normalfont, slant='italic')
         for tag in ('h3', 'h2', 'h1'):
             fonts[tag] = tkfont.Font(self, family=normalfont, weight='bold')
         for tag in ('pre', 'preblock'):
             fonts[tag] = tkfont.Font(self, family=fixedfont)
-        self.scale_fontsize(base=self.base_size)
+        self.scale_tagfonts(base_size)
+
+        FontSizer(self, self.scale_tagfonts)
 
     def findfont(self, names):
         "Return name of first font family derived from names."
@@ -215,7 +276,6 @@ class HelpText(Text):
 
     def configure_tags(self):
         "Configure tags used in parsing."
-        self['font'] = self.fonts['normal']
         for tag in ('em', 'h1', 'h2', 'h3', 'pre', 'preblock'):
             self.tag_configure(tag, font=self.fonts[tag])
         self.tag_configure('pre', background='#f6f6ff')
@@ -226,38 +286,13 @@ class HelpText(Text):
         self.tag_configure('l3', lmargin1=75, lmargin2=75)
         self.tag_configure('l4', lmargin1=100, lmargin2=100)
 
-    def bind_events(self):
-        "Bind events."
-        # Zoom out works with or without shift.
-        self.event_add('<<zoom-text-out>>',
-                       *['<Control-Key-equal>', '<Control-Key-plus>'])
-        self.bind('<<zoom-text-out>>', lambda e: self.zoom(e, 'out'))
-
-        self.event_add('<<zoom-text-in>>', '<Control-Key-minus>')
-        self.bind('<<zoom-text-in>>', lambda e: self.zoom(e, 'in'))
-
-        # Windows and Mac use MouseWheel.
-        self.bind('<Control-MouseWheel>', lambda e: self.zoom(e, 'wheel'))
-        # Linux uses Button 4 (scroll down) and Button 5 (scroll up).
-        self.bind('<Control-Button-4>', lambda e: self.zoom(e, 'wheel'))
-        self.bind('<Control-Button-5>', lambda e: self.zoom(e, 'wheel'))
-
-    def scale_fontsize(self, base=12):
+    def scale_tagfonts(self, base):
         "Scale tag sizes based on the size of normal text."
         # Scale percentages are from Sphinx classic.css.
-        scale = {'normal': 1.0, 'h6': 1.0, 'h5': 1.1, 'h4': 1.2, 'h3': 1.4,
-                 'h2': 1.6, 'h1': 2.0, 'em': 1.0, 'pre': 1.0, 'preblock': 0.9}
+        scale = {'h3': 1.2, 'h2': 1.4, 'h1': 1.6,
+                 'em': 1.0, 'pre': 1.0, 'preblock': 0.9}
         for tag in self.fonts:
             self.fonts[tag]['size'] = int(base * scale[tag])
-
-    def zoom(self, event, how='out'):
-        "Handle zooming text in/out."
-        if how == 'wheel':
-            # Button 5 or negative delta is when mouse wheel is scrolled down.
-            how = 'in' if event.num == 5 or event.delta < 0 else 'out'
-        factor = 1.1 if how == 'out' else 0.9
-        self.base_size = round(self.base_size * factor)
-        self.scale_fontsize(base=self.base_size)
 
 
 class HelpFrame(Frame):
