@@ -570,28 +570,6 @@ def _wrap_awaitable(awaitable):
     return (yield from awaitable.__await__())
 
 
-class _GatheringFuture(futures.Future):
-    """Helper for gather().
-
-    This overrides cancel() to cancel all the children and act more
-    like Task.cancel(), which doesn't immediately mark itself as
-    cancelled.
-    """
-
-    def __init__(self, children, *, loop=None):
-        super().__init__(loop=loop)
-        self._children = children
-
-    def cancel(self):
-        if self.done():
-            return False
-        ret = False
-        for child in self._children:
-            if child.cancel():
-                ret = True
-        return ret
-
-
 def gather(*coros_or_futures, loop=None, return_exceptions=False):
     """Return a future aggregating results from the given coroutines/futures.
 
@@ -615,84 +593,82 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
     prevent the cancellation of one child to cause other children to
     be cancelled.)
     """
-    if not coros_or_futures:
-        if loop is None:
-            loop = events.get_event_loop()
-        outer = loop.create_future()
-        outer.set_result([])
-        return outer
-
-    def _done_callback(fut):
-        nonlocal nfinished
-        nfinished += 1
-
-        if outer.done():
-            if not fut.cancelled():
-                # Mark exception retrieved.
-                fut.exception()
-            return
-
-        if not return_exceptions:
-            if fut.cancelled():
-                # Check if 'fut' is cancelled first, as
-                # 'fut.exception()' will *raise* a CancelledError
-                # instead of returning it.
-                exc = futures.CancelledError()
-                outer.set_exception(exc)
-                return
-            else:
-                exc = fut.exception()
-                if exc is not None:
-                    outer.set_exception(exc)
-                    return
-
-        if nfinished == nfuts:
-            # All futures are done; create a list of results
-            # and set it to the 'outer' future.
-            results = []
-
-            for fut in children:
-                if fut.cancelled():
-                    # Check if 'fut' is cancelled first, as
-                    # 'fut.exception()' will *raise* a CancelledError
-                    # instead of returning it.
-                    res = futures.CancelledError()
-                else:
-                    res = fut.exception()
-                    if res is None:
-                        res = fut.result()
-                results.append(res)
-
-            outer.set_result(results)
-
-    arg_to_fut = {}
-    children = []
-    nfuts = 0
-    nfinished = 0
-    for arg in coros_or_futures:
-        if arg not in arg_to_fut:
-            fut = ensure_future(arg, loop=loop)
+    for corf in coros_or_futures:
+        if isinstance(corf, futures.Future):
             if loop is None:
-                loop = futures._get_loop(fut)
-            if fut is not arg:
-                # 'arg' was not a Future, therefore, 'fut' is a new
-                # Future created specifically for 'arg'.  Since the caller
-                # can't control it, disable the "destroy pending task"
-                # warning.
-                fut._log_destroy_pending = False
+                loop = corf._loop
+            elif loop is not corf._loop:
+                raise ValueError(
+                    "all futures must belong to the same loop in gather")
+    return ensure_future(_gather(*coros_or_futures, loop=loop,
+                                 return_exceptions=return_exceptions,
+                                 _nocancel=True),
+                         loop=loop)
 
-            nfuts += 1
-            arg_to_fut[arg] = fut
-            fut.add_done_callback(_done_callback)
 
-        else:
-            # There's a duplicate Future object in coros_or_futures.
-            fut = arg_to_fut[arg]
+async def _gather(*coros_or_futures, loop=None,
+                  return_exceptions=False, _nocancel=False):
+    """A coroutine version of gather
 
-        children.append(fut)
+    gather() was traditionally a plain function that returns a future. This is a
+    coroutine implentation of it, and gather() wraps it in an ensure_future(),
+    and does some other minor stuff for backwards compatiblity.
 
-    outer = _GatheringFuture(children, loop=loop)
-    return outer
+    The parameters are the same as for gather(). A new, internal _nocancel
+    parameter is added for backwards compatiblity: if it is True, the task
+    returned by gather() will have a CancelledError set if one of the gathered
+    futures raises it, but the future is not considered cancelled().
+    """
+    if loop is None:
+        loop = events.get_event_loop()
+
+    async def run_one(awaitable, args):
+        nonlocal n
+
+        try:
+            ret = await awaitable
+            for i in args:
+                results[i] = ret
+        except Exception as exc:
+            if return_exceptions:
+                for i in args:
+                    results[i] = exc
+            elif not future.done():
+                future.set_exception(exc)
+        finally:
+            n -= 1
+            if n == 0 and not future.done():
+                future.set_result(None)
+
+    unique = {}
+    for i, arg in enumerate(coros_or_futures):
+        unique.setdefault(arg, []).append(i)
+
+    tasks = [ensure_future(run_one(k, v), loop=loop)
+             for k, v in unique.items()]
+    n = len(tasks)
+    results = [None] * len(coros_or_futures)
+
+    while n > 0:
+        future = loop.create_future()
+        try:
+            await future
+        except futures.CancelledError as exc:
+            if future.cancelled():
+                if n == 0:
+                    # Python issue #26923: asyncio.gather drops cancellation
+                    raise
+                for task in tasks:
+                    task.cancel()
+            else:  # one of the gathered futures got cancelled
+                if _nocancel:
+                    # this sets a CancelledError for the task, but
+                    # task.cancelled() stays False.
+                    current_task(loop=loop).cancel()
+                    return
+                else:
+                    raise
+    return results
 
 
 def shield(arg, *, loop=None):
