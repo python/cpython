@@ -1,0 +1,2 @@
+Added support for the `setpgroup`, `resetids`, `setsigmask`, `setsigdef` and
+`scheduler` parameters of `posix_spawn`. Patch by Pablo Galindo.
