@@ -1748,7 +1748,9 @@ class Helper:
     # Either add symbols to this dictionary or to the symbols dictionary
     # directly: Whichever is easier. They are merged later.
     _symbols_inverse = {
-        'STRINGS' : ("'", "'''", "r'", "b'", '"""', '"', 'r"', 'b"'),
+        'STRINGS' : ("'", "'''", '"', '"""', "b'", 'b"', "B'", 'B"', "f'",
+                     'f"', "F'", 'F"', "r'", 'r"', "R'", 'R"', "u'", 'u"',
+                     "U'", 'U"'),
         'OPERATORS' : ('+', '-', '*', '**', '/', '//', '%', '<<', '>>', '&',
                        '|', '^', '~', '<', '>', '<=', '>=', '==', '!=', '<>'),
         'COMPARISON' : ('<', '>', '<=', '>=', '==', '!=', '<>'),
@@ -1910,7 +1912,9 @@ has the same effect as typing a particular string at the help> prompt.
                 if not request: break
             except (KeyboardInterrupt, EOFError):
                 break
-            request = replace(request, '"', '', "'", '').strip()
+            request = request.strip()
+            if not (request[0].lower() in 'bfru' and request[1] in ("'", '"')):
+                request = replace(request, '"', '', "'", '')
             if request.lower() in ('q', 'quit'): break
             if request == 'help':
                 self.intro()
