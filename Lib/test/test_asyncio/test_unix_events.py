@@ -466,10 +466,13 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.addCleanup(self.file.close)
         super().setUp()
 
-    def make_socket(self, blocking=False):
+    def make_socket(self, cleanup=True):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setblocking(blocking)
-        self.addCleanup(sock.close)
+        sock.setblocking(False)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024)
+        if cleanup:
+            self.addCleanup(sock.close)
         return sock
 
     def run_loop(self, coro):
@@ -479,13 +482,18 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
         port = support.find_unused_port()
+        srv_sock = self.make_socket(cleanup=False)
+        srv_sock.bind((support.HOST, port))
         server = self.run_loop(self.loop.create_server(
-            lambda: proto, support.HOST, port))
+            lambda: proto, sock=srv_sock))
         self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
 
         def cleanup():
-            proto.transport.close()
-            self.run_loop(proto.wait_closed())
+            if proto.transport is not None:
+                # can be None if the task was cancelled before
+                # connection_made callback
+                proto.transport.close()
+                self.run_loop(proto.wait_closed())
 
             server.close()
             self.run_loop(server.wait_closed())
@@ -494,28 +502,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
         return sock, proto
 
-    def test_success(self):
-        sock, proto = self.prepare()
-        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
-        sock.close()
-        self.run_loop(proto.wait_closed())
-
-        self.assertEqual(ret, len(self.DATA))
-        self.assertEqual(proto.data, self.DATA)
-        self.assertEqual(self.file.tell(), len(self.DATA))
-
-    def test_with_offset_and_count(self):
-        sock, proto = self.prepare()
-        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file,
-                                                    1000, 2000))
-        sock.close()
-        self.run_loop(proto.wait_closed())
-
-        self.assertEqual(proto.data, self.DATA[1000:3000])
-        self.assertEqual(self.file.tell(), 3000)
-        self.assertEqual(ret, 2000)
-
-    def test_sendfile_not_available(self):
+    def test_sock_sendfile_not_available(self):
         sock, proto = self.prepare()
         with mock.patch('asyncio.unix_events.os', spec=[]):
             with self.assertRaisesRegex(events.SendfileNotAvailableError,
@@ -524,7 +511,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
                                                               0, None))
         self.assertEqual(self.file.tell(), 0)
 
-    def test_sendfile_not_a_file(self):
+    def test_sock_sendfile_not_a_file(self):
         sock, proto = self.prepare()
         f = object()
         with self.assertRaisesRegex(events.SendfileNotAvailableError,
@@ -533,7 +520,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
                                                           0, None))
         self.assertEqual(self.file.tell(), 0)
 
-    def test_sendfile_iobuffer(self):
+    def test_sock_sendfile_iobuffer(self):
         sock, proto = self.prepare()
         f = io.BytesIO()
         with self.assertRaisesRegex(events.SendfileNotAvailableError,
@@ -542,7 +529,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
                                                           0, None))
         self.assertEqual(self.file.tell(), 0)
 
-    def test_sendfile_not_regular_file(self):
+    def test_sock_sendfile_not_regular_file(self):
         sock, proto = self.prepare()
         f = mock.Mock()
         f.fileno.return_value = -1
@@ -552,37 +539,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
                                                           0, None))
         self.assertEqual(self.file.tell(), 0)
 
-    def test_sendfile_zero_size(self):
-        sock, proto = self.prepare()
-        fname = support.TESTFN + '.suffix'
-        with open(fname, 'wb') as f:
-            pass  # make zero sized file
-        f = open(fname, 'rb')
-        self.addCleanup(f.close)
-        self.addCleanup(support.unlink, fname)
-        ret = self.run_loop(self.loop._sock_sendfile_native(sock, f,
-                                                            0, None))
-        sock.close()
-        self.run_loop(proto.wait_closed())
-
-        self.assertEqual(ret, 0)
-        self.assertEqual(self.file.tell(), 0)
-
-    def test_mix_sendfile_and_regular_send(self):
-        buf = b'1234567890' * 1024 * 1024  # 10 MB
-        sock, proto = self.prepare()
-        self.run_loop(self.loop.sock_sendall(sock, buf))
-        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
-        self.run_loop(self.loop.sock_sendall(sock, buf))
-        sock.close()
-        self.run_loop(proto.wait_closed())
-
-        self.assertEqual(ret, len(self.DATA))
-        expected = buf + self.DATA + buf
-        self.assertEqual(proto.data, expected)
-        self.assertEqual(self.file.tell(), len(self.DATA))
-
-    def test_cancel1(self):
+    def test_sock_sendfile_cancel1(self):
         sock, proto = self.prepare()
 
         fut = self.loop.create_future()
@@ -595,7 +552,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         with self.assertRaises(KeyError):
             self.loop._selector.get_key(sock)
 
-    def test_cancel2(self):
+    def test_sock_sendfile_cancel2(self):
         sock, proto = self.prepare()
 
         fut = self.loop.create_future()
@@ -608,7 +565,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         with self.assertRaises(KeyError):
             self.loop._selector.get_key(sock)
 
-    def test_blocking_error(self):
+    def test_sock_sendfile_blocking_error(self):
         sock, proto = self.prepare()
 
         fileno = self.file.fileno()
@@ -621,7 +578,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.assertIsNotNone(key)
         fut.add_done_callback.assert_called_once_with(mock.ANY)
 
-    def test_os_error_first_call(self):
+    def test_sock_sendfile_os_error_first_call(self):
         sock, proto = self.prepare()
 
         fileno = self.file.fileno()
@@ -635,7 +592,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.assertIsInstance(exc, events.SendfileNotAvailableError)
         self.assertEqual(0, self.file.tell())
 
-    def test_os_error_next_call(self):
+    def test_sock_sendfile_os_error_next_call(self):
         sock, proto = self.prepare()
 
         fileno = self.file.fileno()
@@ -652,7 +609,7 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.assertIs(exc, err)
         self.assertEqual(1000, self.file.tell())
 
-    def test_exception(self):
+    def test_sock_sendfile_exception(self):
         sock, proto = self.prepare()
 
         fileno = self.file.fileno()

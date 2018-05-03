@@ -504,6 +504,66 @@ signal_getsignal_impl(PyObject *module, int signalnum)
     }
 }
 
+
+/*[clinic input]
+signal.strsignal
+
+    signalnum: int
+    /
+
+Return the system description of the given signal.
+
+The return values can be such as "Interrupt", "Segmentation fault", etc.
+Returns None if the signal is not recognized.
+[clinic start generated code]*/
+
+static PyObject *
+signal_strsignal_impl(PyObject *module, int signalnum)
+/*[clinic end generated code: output=44e12e1e3b666261 input=b77914b03f856c74]*/
+{
+    char *res;
+
+    if (signalnum < 1 || signalnum >= NSIG) {
+        PyErr_SetString(PyExc_ValueError,
+                "signal number out of range");
+        return NULL;
+    }
+
+#ifdef MS_WINDOWS
+    /* Custom redefinition of POSIX signals allowed on Windows */
+    switch (signalnum) {
+        case SIGINT:
+            res = "Interrupt";
+            break;
+        case SIGILL:
+            res = "Illegal instruction";
+            break;
+        case SIGABRT:
+            res = "Aborted";
+            break;
+        case SIGFPE:
+            res = "Floating point exception";
+            break;
+        case SIGSEGV:
+            res = "Segmentation fault";
+            break;
+        case SIGTERM:
+            res = "Terminated";
+            break;
+        default:
+            Py_RETURN_NONE;
+    }
+#else
+    errno = 0;
+    res = strsignal(signalnum);
+
+    if (errno || res == NULL || strstr(res, "Unknown signal") != NULL)
+        Py_RETURN_NONE;
+#endif
+
+    return Py_BuildValue("s", res);
+}
+
 #ifdef HAVE_SIGINTERRUPT
 
 /*[clinic input]
@@ -759,7 +819,6 @@ iterable_to_sigset(PyObject *iterable, sigset_t *mask)
     int result = -1;
     PyObject *iterator, *item;
     long signum;
-    int err;
 
     sigemptyset(mask);
 
@@ -781,11 +840,14 @@ iterable_to_sigset(PyObject *iterable, sigset_t *mask)
         Py_DECREF(item);
         if (signum == -1 && PyErr_Occurred())
             goto error;
-        if (0 < signum && signum < NSIG)
-            err = sigaddset(mask, (int)signum);
-        else
-            err = 1;
-        if (err) {
+        if (0 < signum && signum < NSIG) {
+            /* bpo-33329: ignore sigaddset() return value as it can fail
+             * for some reserved signals, but we want the `range(1, NSIG)`
+             * idiom to allow selecting all valid signals.
+             */
+            (void) sigaddset(mask, (int)signum);
+        }
+        else {
             PyErr_Format(PyExc_ValueError,
                          "signal number %ld out of range", signum);
             goto error;
@@ -1152,6 +1214,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_SETITIMER_METHODDEF
     SIGNAL_GETITIMER_METHODDEF
     SIGNAL_SIGNAL_METHODDEF
+    SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
     {"set_wakeup_fd", (PyCFunction)signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
     SIGNAL_SIGINTERRUPT_METHODDEF

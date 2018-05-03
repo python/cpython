@@ -77,6 +77,11 @@ created.  Socket addresses are represented as follows:
   backward compatibility.  Note, however, omission of *scopeid* can cause problems
   in manipulating scoped IPv6 addresses.
 
+  .. versionchanged:: 3.7
+     For multicast addresses (with *scopeid* meaningful) *address* may not contain
+     ``%scope`` (or ``zone id``) part. This information is superfluous and may
+     be safely omitted (recommended).
+
 - :const:`AF_NETLINK` sockets are represented as pairs ``(pid, groups)``.
 
 - Linux-only support for TIPC is available using the :const:`AF_TIPC`
@@ -315,8 +320,15 @@ Constants
       ``SO_DOMAIN``, ``SO_PROTOCOL``, ``SO_PEERSEC``, ``SO_PASSSEC``,
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
 
+   .. versionchanged:: 3.6.5
+      On Windows, ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` appear if run-time Windows
+      supports.
+
    .. versionchanged:: 3.7
       ``TCP_NOTSENT_LOWAT`` was added.
+
+      On Windows, ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` appear if run-time Windows
+      supports.
 
 .. data:: AF_CAN
           PF_CAN
@@ -461,10 +473,15 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
    constants. The protocol number is usually zero and may be omitted or in the
    case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`.  If *fileno* is specified, the other
-   arguments are ignored, causing the socket with the specified file descriptor
-   to return.  Unlike :func:`socket.fromfd`, *fileno* will return the same
-   socket and not a duplicate. This may help close a detached socket using
+   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`
+
+   If *fileno* is specified, the values for *family*, *type*, and *proto* are
+   auto-detected from the specified file descriptor.  Auto-detection can be
+   overruled by calling the function with explicit *family*, *type*, or *proto*
+   arguments.  This only affects how Python represents e.g. the return value
+   of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
+   :func:`socket.fromfd`, *fileno* will return the same socket and not a
+   duplicate. This may help close a detached socket using
    :meth:`socket.close()`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
@@ -578,6 +595,14 @@ Other functions
 The :mod:`socket` module also offers various network-related services:
 
 
+.. function:: close(fd)
+
+   Close a socket file descriptor. This is like :func:`os.close`, but for
+   sockets. On some platforms (most noticeable Windows) :func:`os.close`
+   does not work for socket file descriptors.
+
+   .. versionadded:: 3.7
+
 .. function:: getaddrinfo(host, port, family=0, type=0, proto=0, flags=0)
 
    Translate the *host*/*port* argument into a sequence of 5-tuples that contain
@@ -621,6 +646,10 @@ The :mod:`socket` module also offers various network-related services:
 
    .. versionchanged:: 3.2
       parameters can now be passed using keyword arguments.
+
+   .. versionchanged:: 3.7
+      for IPv6 multicast addresses, string representing an address will not
+      contain ``%scope`` part.
 
 .. function:: getfqdn([name])
 
@@ -680,6 +709,8 @@ The :mod:`socket` module also offers various network-related services:
    or numeric address representation in *host*.  Similarly, *port* can contain a
    string port name or a numeric port number.
 
+   For IPv6 addresses, ``%scope`` is appended to the host part if *sockaddr*
+   contains meaningful *scopeid*. Usually this happens for multicast addresses.
 
 .. function:: getprotobyname(protocolname)
 
@@ -1079,6 +1110,16 @@ to sockets.
    to decode C structures encoded as byte strings).
 
 
+.. method:: socket.getblocking()
+
+   Return ``True`` if socket is in blocking mode, ``False`` if in
+   non-blocking.
+
+   This is equivalent to checking ``socket.gettimeout() == 0``.
+
+   .. versionadded:: 3.7
+
+
 .. method:: socket.gettimeout()
 
    Return the timeout in seconds (float) associated with socket operations,
@@ -1170,6 +1211,10 @@ to sockets.
       an exception, the method now retries the system call instead of raising
       an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
+   .. versionchanged:: 3.7
+      For multicast IPv6 address, first item of *address* does not contain
+      ``%scope`` part anymore. In order to get full IPv6 address use
+      :func:`getnameinfo`.
 
 .. method:: socket.recvmsg(bufsize[, ancbufsize[, flags]])
 

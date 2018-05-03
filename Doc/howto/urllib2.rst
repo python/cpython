@@ -56,12 +56,20 @@ The simplest way to use urllib.request is as follows::
     with urllib.request.urlopen('http://python.org/') as response:
        html = response.read()
 
-If you wish to retrieve a resource via URL and store it in a temporary location,
-you can do so via the :func:`~urllib.request.urlretrieve` function::
+If you wish to retrieve a resource via URL and store it in a temporary
+location, you can do so via the :func:`shutil.copyfileobj` and
+:func:`tempfile.NamedTemporaryFile` functions::
 
+    import shutil
+    import tempfile
     import urllib.request
-    local_filename, headers = urllib.request.urlretrieve('http://python.org/')
-    html = open(local_filename)
+
+    with urllib.request.urlopen('http://python.org/') as response:
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            shutil.copyfileobj(response, tmp_file)
+
+    with open(tmp_file.name) as html:
+        pass
 
 Many uses of urllib will be that simple (note that instead of an 'http:' URL we
 could have used a URL starting with 'ftp:', 'file:', etc.).  However, it's the
@@ -457,7 +465,9 @@ error code) requesting authentication.  This specifies the authentication scheme
 and a 'realm'. The header looks like: ``WWW-Authenticate: SCHEME
 realm="REALM"``.
 
-e.g. ::
+e.g.
+
+.. code-block:: none
 
     WWW-Authenticate: Basic realm="cPanel Users"
 

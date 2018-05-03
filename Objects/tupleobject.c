@@ -45,7 +45,7 @@ static void
 show_track(void)
 {
     PyInterpreterState *interp = PyThreadState_GET()->interp;
-    if (!inter->core_config.show_alloc_count) {
+    if (!interp->core_config.show_alloc_count) {
         return;
     }
 
@@ -335,7 +335,7 @@ error:
 
 /* The addend 82520, was selected from the range(0, 1000000) for
    generating the greatest number of prime multipliers for tuples
-   upto length eight:
+   up to length eight:
 
      1082527, 1165049, 1082531, 1165057, 1247581, 1330103, 1082533,
      1330111, 1412633, 1165069, 1247599, 1495177, 1577699
@@ -989,7 +989,7 @@ tupleiter_next(tupleiterobject *it)
 }
 
 static PyObject *
-tupleiter_len(tupleiterobject *it)
+tupleiter_len(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = 0;
     if (it->it_seq)
@@ -1000,7 +1000,7 @@ tupleiter_len(tupleiterobject *it)
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-tupleiter_reduce(tupleiterobject *it)
+tupleiter_reduce(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq)
         return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),

@@ -2037,6 +2037,7 @@ class AbstractPickleTests(unittest.TestCase):
 
     # Exercise framing (proto >= 4) for significant workloads
 
+    FRAME_SIZE_MIN = 4
     FRAME_SIZE_TARGET = 64 * 1024
 
     def check_frame_opcodes(self, pickled):
@@ -2047,36 +2048,43 @@ class AbstractPickleTests(unittest.TestCase):
         framed by default and are therefore considered a frame by themselves in
         the following consistency check.
         """
-        last_arg = last_pos = last_frame_opcode_size = None
-        frameless_opcode_sizes = {
-            'BINBYTES': 5,
-            'BINUNICODE': 5,
-            'BINBYTES8': 9,
-            'BINUNICODE8': 9,
-        }
+        frame_end = frameless_start = None
+        frameless_opcodes = {'BINBYTES', 'BINUNICODE', 'BINBYTES8', 'BINUNICODE8'}
         for op, arg, pos in pickletools.genops(pickled):
-            if op.name in frameless_opcode_sizes:
-                if len(arg) > self.FRAME_SIZE_TARGET:
-                    frame_opcode_size = frameless_opcode_sizes[op.name]
-                    arg = len(arg)
-                else:
-                    continue
-            elif op.name == 'FRAME':
-                frame_opcode_size = 9
-            else:
-                continue
+            if frame_end is not None:
+                self.assertLessEqual(pos, frame_end)
+                if pos == frame_end:
+                    frame_end = None
 
-            if last_pos is not None:
-                # The previous frame's size should be equal to the number
-                # of bytes up to the current frame.
-                frame_size = pos - last_pos - last_frame_opcode_size
-                self.assertEqual(frame_size, last_arg)
-            last_arg, last_pos = arg, pos
-            last_frame_opcode_size = frame_opcode_size
-        # The last frame's size should be equal to the number of bytes up
-        # to the pickle's end.
-        frame_size = len(pickled) - last_pos - last_frame_opcode_size
-        self.assertEqual(frame_size, last_arg)
+            if frame_end is not None:  # framed
+                self.assertNotEqual(op.name, 'FRAME')
+                if op.name in frameless_opcodes:
+                    # Only short bytes and str objects should be written
+                    # in a frame
+                    self.assertLessEqual(len(arg), self.FRAME_SIZE_TARGET)
+
+            else:  # not framed
+                if (op.name == 'FRAME' or
+                    (op.name in frameless_opcodes and
+                     len(arg) > self.FRAME_SIZE_TARGET)):
+                    # Frame or large bytes or str object
+                    if frameless_start is not None:
+                        # Only short data should be written outside of a frame
+                        self.assertLess(pos - frameless_start,
+                                        self.FRAME_SIZE_MIN)
+                        frameless_start = None
+                elif frameless_start is None and op.name != 'PROTO':
+                    frameless_start = pos
+
+            if op.name == 'FRAME':
+                self.assertGreaterEqual(arg, self.FRAME_SIZE_MIN)
+                frame_end = pos + 9 + arg
+
+        pos = len(pickled)
+        if frame_end is not None:
+            self.assertEqual(frame_end, pos)
+        elif frameless_start is not None:
+            self.assertLess(pos - frameless_start, self.FRAME_SIZE_MIN)
 
     def test_framing_many_objects(self):
         obj = list(range(10**5))
@@ -2095,7 +2103,8 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_framing_large_objects(self):
         N = 1024 * 1024
-        obj = [b'x' * N, b'y' * N, 'z' * N]
+        small_items = [[i] for i in range(10)]
+        obj = [b'x' * N, *small_items, b'y' * N, 'z' * N]
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             for fast in [False, True]:
                 with self.subTest(proto=proto, fast=fast):
@@ -2119,12 +2128,9 @@ class AbstractPickleTests(unittest.TestCase):
                     # Perform full equality check if the lengths match.
                     self.assertEqual(obj, unpickled)
                     n_frames = count_opcode(pickle.FRAME, pickled)
-                    if not fast:
-                        # One frame per memoize for each large object.
-                        self.assertGreaterEqual(n_frames, len(obj))
-                    else:
-                        # One frame at the beginning and one at the end.
-                        self.assertGreaterEqual(n_frames, 2)
+                    # A single frame for small objects between
+                    # first two large objects.
+                    self.assertEqual(n_frames, 1)
                     self.check_frame_opcodes(pickled)
 
     def test_optional_frames(self):
@@ -2152,7 +2158,9 @@ class AbstractPickleTests(unittest.TestCase):
 
         frame_size = self.FRAME_SIZE_TARGET
         num_frames = 20
-        obj = [bytes([i]) * frame_size for i in range(num_frames)]
+        # Large byte objects (dict values) intermitted with small objects
+        # (dict keys)
+        obj = {i: bytes([i]) * frame_size for i in range(num_frames)}
 
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             pickled = self.dumps(obj, proto)
@@ -2773,29 +2781,30 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         # object again, the third serialized form should be identical to the
         # first one we obtained.
         data = ["abcdefg", "abcdefg", 44]
-        f = io.BytesIO()
-        pickler = self.pickler_class(f)
+        for proto in protocols:
+            f = io.BytesIO()
+            pickler = self.pickler_class(f, proto)
 
-        pickler.dump(data)
-        first_pickled = f.getvalue()
+            pickler.dump(data)
+            first_pickled = f.getvalue()
 
-        # Reset BytesIO object.
-        f.seek(0)
-        f.truncate()
+            # Reset BytesIO object.
+            f.seek(0)
+            f.truncate()
 
-        pickler.dump(data)
-        second_pickled = f.getvalue()
+            pickler.dump(data)
+            second_pickled = f.getvalue()
 
-        # Reset the Pickler and BytesIO objects.
-        pickler.clear_memo()
-        f.seek(0)
-        f.truncate()
+            # Reset the Pickler and BytesIO objects.
+            pickler.clear_memo()
+            f.seek(0)
+            f.truncate()
 
-        pickler.dump(data)
-        third_pickled = f.getvalue()
+            pickler.dump(data)
+            third_pickled = f.getvalue()
 
-        self.assertNotEqual(first_pickled, second_pickled)
-        self.assertEqual(first_pickled, third_pickled)
+            self.assertNotEqual(first_pickled, second_pickled)
+            self.assertEqual(first_pickled, third_pickled)
 
     def test_priming_pickler_memo(self):
         # Verify that we can set the Pickler's memo attribute.

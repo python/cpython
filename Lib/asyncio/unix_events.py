@@ -92,7 +92,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         except (ValueError, OSError) as exc:
             raise RuntimeError(str(exc))
 
-        handle = events.Handle(callback, args, self)
+        handle = events.Handle(callback, args, self, None)
         self._signal_handlers[sig] = handle
 
         try:
@@ -250,7 +250,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     async def create_unix_server(
             self, protocol_factory, path=None, *,
             sock=None, backlog=100, ssl=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            start_serving=True):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 
@@ -302,11 +303,12 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     f'A UNIX Domain Stream Socket was expected, got {sock!r}')
 
-        server = base_events.Server(self, [sock])
-        sock.listen(backlog)
         sock.setblocking(False)
-        self._start_serving(protocol_factory, sock, ssl, server,
-                            ssl_handshake_timeout=ssl_handshake_timeout)
+        server = base_events.Server(self, [sock], protocol_factory,
+                                    ssl, backlog, ssl_handshake_timeout)
+        if start_serving:
+            server._start_serving()
+
         return server
 
     async def _sock_sendfile_native(self, sock, file, offset, count):
@@ -360,6 +362,17 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                             fd, sock, fileno,
                             offset, count, blocksize, total_sent)
         except OSError as exc:
+            if (registered_fd is not None and
+                    exc.errno == errno.ENOTCONN and
+                    type(exc) is not ConnectionError):
+                # If we have an ENOTCONN and this isn't a first call to
+                # sendfile(), i.e. the connection was closed in the middle
+                # of the operation, normalize the error to ConnectionError
+                # to make it consistent across all Posix systems.
+                new_exc = ConnectionError(
+                    "socket is not connected", errno.ENOTCONN)
+                new_exc.__cause__ = exc
+                exc = new_exc
             if total_sent == 0:
                 # We can get here for different reasons, the main
                 # one being 'file' is not a regular mmap(2)-like

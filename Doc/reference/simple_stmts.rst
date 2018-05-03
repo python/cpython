@@ -686,9 +686,8 @@ The :keyword:`continue` statement
    continue_stmt: "continue"
 
 :keyword:`continue` may only occur syntactically nested in a :keyword:`for` or
-:keyword:`while` loop, but not nested in a function or class definition or
-:keyword:`finally` clause within that loop.  It continues with the next
-cycle of the nearest enclosing loop.
+:keyword:`while` loop, but not nested in a function or class definition within
+that loop.  It continues with the next cycle of the nearest enclosing loop.
 
 When :keyword:`continue` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`finally` clause is executed before
@@ -853,12 +852,15 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
-.. XXX change this if future is cleaned out
+The only feature in Python 3.7 that requires using the future statement is
+``annotations``.
 
-The features recognized by Python 3.0 are ``absolute_import``, ``division``,
-``generators``, ``unicode_literals``, ``print_function``, ``nested_scopes`` and
-``with_statement``.  They are all redundant because they are always enabled, and
-only kept for backwards compatibility.
+All historical features enabled by the future statement are still recognized
+by Python 3.  The list includes ``absolute_import``, ``division``,
+``generators``, ``generator_stop``, ``unicode_literals``,
+``print_function``, ``nested_scopes`` and ``with_statement``.  They are
+all redundant because they are always enabled, and only kept for
+backwards compatibility.
 
 A future statement is recognized and treated specially at compile time: Changes
 to the semantics of core constructs are often implemented by generating

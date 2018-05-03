@@ -22,8 +22,9 @@ from . import base_events
 from . import constants
 from . import events
 from . import futures
-from . import transports
+from . import protocols
 from . import sslproto
+from . import transports
 from .log import logger
 
 
@@ -256,7 +257,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _add_reader(self, fd, callback, *args):
         self._check_closed()
-        handle = events.Handle(callback, args, self)
+        handle = events.Handle(callback, args, self, None)
         try:
             key = self._selector.get_key(fd)
         except KeyError:
@@ -292,7 +293,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _add_writer(self, fd, callback, *args):
         self._check_closed()
-        handle = events.Handle(callback, args, self)
+        handle = events.Handle(callback, args, self, None)
         try:
             key = self._selector.get_key(fd)
         except KeyError:
@@ -540,6 +541,20 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result((conn, address))
 
+    async def _sendfile_native(self, transp, file, offset, count):
+        del self._transports[transp._sock_fd]
+        resume_reading = transp.is_reading()
+        transp.pause_reading()
+        await transp._make_empty_waiter()
+        try:
+            return await self.sock_sendfile(transp._sock, file, offset, count,
+                                            fallback=False)
+        finally:
+            transp._reset_empty_waiter()
+            if resume_reading:
+                transp.resume_reading()
+            self._transports[transp._sock_fd] = transp
+
     def _process_events(self, event_list):
         for key, mask in event_list:
             fileobj, (reader, writer) = key.fileobj, key.data
@@ -695,12 +710,20 @@ class _SelectorTransport(transports._FlowControlMixin,
 class _SelectorSocketTransport(_SelectorTransport):
 
     _start_tls_compatible = True
+    _sendfile_compatible = constants._SendfileMode.TRY_NATIVE
 
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None):
+
+        if protocols._is_buffered_protocol(protocol):
+            self._read_ready = self._read_ready__get_buffer
+        else:
+            self._read_ready = self._read_ready__data_received
+
         super().__init__(loop, sock, protocol, extra, server)
         self._eof = False
         self._paused = False
+        self._empty_waiter = None
 
         # Disable the Nagle algorithm -- small writes will be
         # sent without waiting for the TCP ACK.  This generally
@@ -735,29 +758,74 @@ class _SelectorSocketTransport(_SelectorTransport):
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
 
-    def _read_ready(self):
+    def _read_ready__get_buffer(self):
+        if self._conn_lost:
+            return
+
+        try:
+            buf = self._protocol.get_buffer()
+        except Exception as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.get_buffer() call failed.')
+            return
+
+        try:
+            nbytes = self._sock.recv_into(buf)
+        except (BlockingIOError, InterruptedError):
+            return
+        except Exception as exc:
+            self._fatal_error(exc, 'Fatal read error on socket transport')
+            return
+
+        if not nbytes:
+            self._read_ready__on_eof()
+            return
+
+        try:
+            self._protocol.buffer_updated(nbytes)
+        except Exception as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.buffer_updated() call failed.')
+
+    def _read_ready__data_received(self):
         if self._conn_lost:
             return
         try:
             data = self._sock.recv(self.max_size)
         except (BlockingIOError, InterruptedError):
-            pass
+            return
         except Exception as exc:
             self._fatal_error(exc, 'Fatal read error on socket transport')
+            return
+
+        if not data:
+            self._read_ready__on_eof()
+            return
+
+        try:
+            self._protocol.data_received(data)
+        except Exception as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.data_received() call failed.')
+
+    def _read_ready__on_eof(self):
+        if self._loop.get_debug():
+            logger.debug("%r received EOF", self)
+
+        try:
+            keep_open = self._protocol.eof_received()
+        except Exception as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.eof_received() call failed.')
+            return
+
+        if keep_open:
+            # We're keeping the connection open so the
+            # protocol can write more, but we still can't
+            # receive more, so remove the reader callback.
+            self._loop._remove_reader(self._sock_fd)
         else:
-            if data:
-                self._protocol.data_received(data)
-            else:
-                if self._loop.get_debug():
-                    logger.debug("%r received EOF", self)
-                keep_open = self._protocol.eof_received()
-                if keep_open:
-                    # We're keeping the connection open so the
-                    # protocol can write more, but we still can't
-                    # receive more, so remove the reader callback.
-                    self._loop._remove_reader(self._sock_fd)
-                else:
-                    self.close()
+            self.close()
 
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
@@ -765,6 +833,8 @@ class _SelectorSocketTransport(_SelectorTransport):
                             f'not {type(data).__name__!r}')
         if self._eof:
             raise RuntimeError('Cannot call write() after write_eof()')
+        if self._empty_waiter is not None:
+            raise RuntimeError('unable to write; sendfile is in progress')
         if not data:
             return
 
@@ -807,12 +877,16 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._loop._remove_writer(self._sock_fd)
             self._buffer.clear()
             self._fatal_error(exc, 'Fatal write error on socket transport')
+            if self._empty_waiter is not None:
+                self._empty_waiter.set_exception(exc)
         else:
             if n:
                 del self._buffer[:n]
             self._maybe_resume_protocol()  # May append to buffer.
             if not self._buffer:
                 self._loop._remove_writer(self._sock_fd)
+                if self._empty_waiter is not None:
+                    self._empty_waiter.set_result(None)
                 if self._closing:
                     self._call_connection_lost(None)
                 elif self._eof:
@@ -827,6 +901,23 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def can_write_eof(self):
         return True
+
+    def _call_connection_lost(self, exc):
+        super()._call_connection_lost(exc)
+        if self._empty_waiter is not None:
+            self._empty_waiter.set_exception(
+                ConnectionError("Connection is closed by peer"))
+
+    def _make_empty_waiter(self):
+        if self._empty_waiter is not None:
+            raise RuntimeError("Empty waiter is already set")
+        self._empty_waiter = self._loop.create_future()
+        if not self._buffer:
+            self._empty_waiter.set_result(None)
+        return self._empty_waiter
+
+    def _reset_empty_waiter(self):
+        self._empty_waiter = None
 
 
 class _SelectorDatagramTransport(_SelectorTransport):

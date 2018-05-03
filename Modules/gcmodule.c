@@ -24,6 +24,7 @@
 */
 
 #include "Python.h"
+#include "internal/context.h"
 #include "internal/mem.h"
 #include "internal/pystate.h"
 #include "frameobject.h"        /* for PyFrame_ClearFreeList */
@@ -790,6 +791,7 @@ clear_freelists(void)
     (void)PyDict_ClearFreeList();
     (void)PySet_ClearFreeList();
     (void)PyAsyncGen_ClearFreeLists();
+    (void)PyContext_ClearFreeList();
 }
 
 /* This is the main function.  Read this to understand how the

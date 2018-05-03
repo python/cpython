@@ -1653,6 +1653,15 @@ expression support in the :mod:`re` module).
    from the "Alphabetic" property defined in the Unicode Standard.
 
 
+.. method:: str.isascii()
+
+   Return true if the string is empty or all characters in the string are ASCII,
+   false otherwise.
+   ASCII characters have code points in the range U+0000-U+007F.
+
+   .. versionadded:: 3.7
+
+
 .. method:: str.isdecimal()
 
    Return true if all characters in the string are decimal
@@ -2941,6 +2950,16 @@ place, and instead produce new objects.
       False
 
 
+.. method:: bytes.isascii()
+            bytearray.isascii()
+
+   Return true if the sequence is empty or all bytes in the sequence are ASCII,
+   false otherwise.
+   ASCII bytes are in the range 0-0x7F.
+
+   .. versionadded:: 3.7
+
+
 .. method:: bytes.isdigit()
             bytearray.isdigit()
 
@@ -3571,6 +3590,25 @@ copying.
          :meth:`tolist` now supports all single character native formats in
          :mod:`struct` module syntax as well as multi-dimensional
          representations.
+
+   .. method:: toreadonly()
+
+      Return a readonly version of the memoryview object.  The original
+      memoryview object is unchanged. ::
+
+         >>> m = memoryview(bytearray(b'abc'))
+         >>> mm = m.toreadonly()
+         >>> mm.tolist()
+         [89, 98, 99]
+         >>> mm[0] = 42
+         Traceback (most recent call last):
+           File "<stdin>", line 1, in <module>
+         TypeError: cannot modify read-only memory
+         >>> m[0] = 43
+         >>> mm.tolist()
+         [43, 98, 99]
+
+      .. versionadded:: 3.8
 
    .. method:: release()
 
@@ -4237,16 +4275,16 @@ support membership tests:
    Return an iterator over the keys, values or items (represented as tuples of
    ``(key, value)``) in the dictionary.
 
-   Keys and values are iterated over in an arbitrary order which is non-random,
-   varies across Python implementations, and depends on the dictionary's history
-   of insertions and deletions. If keys, values and items views are iterated
-   over with no intervening modifications to the dictionary, the order of items
-   will directly correspond.  This allows the creation of ``(value, key)`` pairs
+   Keys and values are iterated over in insertion order.
+   This allows the creation of ``(value, key)`` pairs
    using :func:`zip`: ``pairs = zip(d.values(), d.keys())``.  Another way to
    create the same list is ``pairs = [(v, k) for (k, v) in d.items()]``.
 
    Iterating views while adding or deleting entries in the dictionary may raise
    a :exc:`RuntimeError` or fail to iterate over all entries.
+
+   .. versionchanged:: 3.7
+      Dict order is guaranteed to be insertion order.
 
 .. describe:: x in dictview
 
@@ -4274,9 +4312,9 @@ An example of dictionary view usage::
    >>> print(n)
    504
 
-   >>> # keys and values are iterated over in the same order
+   >>> # keys and values are iterated over in the same order (insertion order)
    >>> list(keys)
-   ['eggs', 'bacon', 'sausage', 'spam']
+   ['eggs', 'sausage', 'bacon', 'spam']
    >>> list(values)
    [2, 1, 1, 500]
 
@@ -4284,7 +4322,7 @@ An example of dictionary view usage::
    >>> del dishes['eggs']
    >>> del dishes['sausage']
    >>> list(keys)
-   ['spam', 'bacon']
+   ['bacon', 'spam']
 
    >>> # set operations
    >>> keys & {'eggs', 'bacon', 'salad'}

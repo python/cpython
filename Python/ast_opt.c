@@ -369,7 +369,8 @@ fold_subscr(expr_ty node, PyArena *arena, int optimize)
 }
 
 /* Change literal list or set of constants into constant
-   tuple or frozenset respectively.
+   tuple or frozenset respectively.  Change literal list of
+   non-constants into tuple.
    Used for right operand of "in" and "not in" tests and for iterable
    in "for" loop and comprehensions.
 */
@@ -378,7 +379,21 @@ fold_iter(expr_ty arg, PyArena *arena, int optimize)
 {
     PyObject *newval;
     if (arg->kind == List_kind) {
-        newval = make_const_tuple(arg->v.List.elts);
+        /* First change a list into tuple. */
+        asdl_seq *elts = arg->v.List.elts;
+        Py_ssize_t n = asdl_seq_LEN(elts);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
+            if (e->kind == Starred_kind) {
+                return 1;
+            }
+        }
+        expr_context_ty ctx = arg->v.List.ctx;
+        arg->kind = Tuple_kind;
+        arg->v.Tuple.elts = elts;
+        arg->v.Tuple.ctx = ctx;
+        /* Try to create a constant tuple. */
+        newval = make_const_tuple(elts);
     }
     else if (arg->kind == Set_kind) {
         newval = make_const_tuple(arg->v.Set.elts);

@@ -488,6 +488,29 @@ class catch_warnings(object):
         self._module._showwarnmsg_impl = self._showwarnmsg_impl
 
 
+# Private utility function called by _PyErr_WarnUnawaitedCoroutine
+def _warn_unawaited_coroutine(coro):
+    msg_lines = [
+        f"coroutine '{coro.__qualname__}' was never awaited\n"
+    ]
+    if coro.cr_origin is not None:
+        import linecache, traceback
+        def extract():
+            for filename, lineno, funcname in reversed(coro.cr_origin):
+                line = linecache.getline(filename, lineno)
+                yield (filename, lineno, funcname, line)
+        msg_lines.append("Coroutine created at (most recent call last)\n")
+        msg_lines += traceback.format_list(list(extract()))
+    msg = "".join(msg_lines).rstrip("\n")
+    # Passing source= here means that if the user happens to have tracemalloc
+    # enabled and tracking where the coroutine was created, the warning will
+    # contain that traceback. This does mean that if they have *both*
+    # coroutine origin tracking *and* tracemalloc enabled, they'll get two
+    # partially-redundant tracebacks. If we wanted to be clever we could
+    # probably detect this case and avoid it, but for now we don't bother.
+    warn(msg, category=RuntimeWarning, stacklevel=2, source=coro)
+
+
 # filters contains a sequence of filter 5-tuples
 # The components of the 5-tuple are:
 # - an action: error, ignore, always, default, module, or once

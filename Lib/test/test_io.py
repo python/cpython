@@ -37,6 +37,7 @@ from collections import deque, UserList
 from itertools import cycle, count
 from test import support
 from test.support.script_helper import assert_python_ok, run_python_until_end
+from test.support import FakePath
 
 import codecs
 import io  # C implementation of io
@@ -891,13 +892,6 @@ class IOTest(unittest.TestCase):
                 self.assertEqual(bytes(buffer), b"12345")
 
     def test_fspath_support(self):
-        class PathLike:
-            def __init__(self, path):
-                self.path = path
-
-            def __fspath__(self):
-                return self.path
-
         def check_path_succeeds(path):
             with self.open(path, "w") as f:
                 f.write("egg\n")
@@ -905,16 +899,25 @@ class IOTest(unittest.TestCase):
             with self.open(path, "r") as f:
                 self.assertEqual(f.read(), "egg\n")
 
-        check_path_succeeds(PathLike(support.TESTFN))
-        check_path_succeeds(PathLike(support.TESTFN.encode('utf-8')))
+        check_path_succeeds(FakePath(support.TESTFN))
+        check_path_succeeds(FakePath(support.TESTFN.encode('utf-8')))
 
-        bad_path = PathLike(TypeError)
+        with self.open(support.TESTFN, "w") as f:
+            bad_path = FakePath(f.fileno())
+            with self.assertRaises(TypeError):
+                self.open(bad_path, 'w')
+
+        bad_path = FakePath(None)
         with self.assertRaises(TypeError):
+            self.open(bad_path, 'w')
+
+        bad_path = FakePath(FloatingPointError)
+        with self.assertRaises(FloatingPointError):
             self.open(bad_path, 'w')
 
         # ensure that refcounting is correct with some error conditions
         with self.assertRaisesRegex(ValueError, 'read/write/append mode'):
-            self.open(PathLike(support.TESTFN), 'rwxa')
+            self.open(FakePath(support.TESTFN), 'rwxa')
 
     def test_RawIOBase_readall(self):
         # Exercise the default unlimited RawIOBase.read() and readall()
@@ -1722,6 +1725,23 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
             self.assertEqual(bufio.tell(), 6)
         with self.open(support.TESTFN, "rb", buffering=0) as f:
             self.assertEqual(f.read(), b"abc")
+
+    def test_truncate_after_write(self):
+        # Ensure that truncate preserves the file position after
+        # writes longer than the buffer size.
+        # Issue: https://bugs.python.org/issue32228
+        with self.open(support.TESTFN, "wb") as f:
+            # Fill with some buffer
+            f.write(b'\x00' * 10000)
+        buffer_sizes = [8192, 4096, 200]
+        for buffer_size in buffer_sizes:
+            with self.open(support.TESTFN, "r+b", buffering=buffer_size) as f:
+                f.write(b'\x00' * (buffer_size + 1))
+                # After write write_pos and write_end are set to 0
+                f.read(1)
+                # read operation makes sure that pos != raw_pos
+                f.truncate()
+                self.assertEqual(f.tell(), buffer_size + 2)
 
     @support.requires_resource('cpu')
     def test_threads(self):
@@ -4107,8 +4127,6 @@ class SignalsTest(unittest.TestCase):
     def test_interrupted_write_buffered(self):
         self.check_interrupted_write(b"xy", b"xy", mode="wb")
 
-    # Issue #22331: The test hangs on FreeBSD 7.2
-    @support.requires_freebsd_version(8)
     def test_interrupted_write_text(self):
         self.check_interrupted_write("xy", b"xy", mode="w", encoding="ascii")
 

@@ -13,11 +13,16 @@
 The :mod:`tkinter` package ("Tk interface") is the standard Python interface to
 the Tk GUI toolkit.  Both Tk and :mod:`tkinter` are available on most Unix
 platforms, as well as on Windows systems.  (Tk itself is not part of Python; it
-is maintained at ActiveState.) You can check that :mod:`tkinter` is properly
-installed on your system by running ``python -m tkinter`` from the command line;
-this should open a window demonstrating a simple Tk interface.
+is maintained at ActiveState.)
+
+Running ``python -m tkinter`` from the command line should open a window
+demonstrating a simple Tk interface, letting you know that :mod:`tkinter` is
+properly installed on your system, and also showing what version of Tcl/Tk is
+installed, so you can read the Tcl/Tk documentation specific to that version.
 
 .. seealso::
+
+   Tkinter documentation:
 
    `Python Tkinter Resources <https://wiki.python.org/moin/TkInter>`_
       The Python Tkinter Topic Guide provides a great deal of information on using Tk
@@ -32,9 +37,6 @@ this should open a window demonstrating a simple Tk interface.
    `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_
       Online reference for tkinter supported by effbot.org.
 
-   `Tcl/Tk manual <https://www.tcl.tk/man/tcl8.5/>`_
-      Official manual for the latest tcl/tk version.
-
    `Programming Python <http://learning-python.com/about-pp4e.html>`_
       Book by Mark Lutz, has excellent coverage of Tkinter.
 
@@ -42,7 +44,25 @@ this should open a window demonstrating a simple Tk interface.
       Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
 
    `Python and Tkinter Programming <https://www.manning.com/books/python-and-tkinter-programming>`_
-      The book by John Grayson (ISBN 1-884777-81-3).
+      Book by John Grayson (ISBN 1-884777-81-3).
+
+   Tcl/Tk documentation:
+
+   `Tk commands <https://www.tcl.tk/man/tcl8.6/TkCmd/contents.htm>`_
+      Most commands are available as :mod:`tkinter` or :mod:`tkinter.ttk` classes.
+      Change '8.6' to match the version of your Tcl/Tk installation.
+
+   `Tcl/Tk recent man pages <https://www.tcl.tk/doc/>`_
+      Recent Tcl/Tk manuals on www.tcl.tk.
+
+   `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_
+      The Tk/Tcl development is largely taking place at ActiveState.
+
+   `Tcl and the Tk Toolkit <https://www.amazon.com/exec/obidos/ASIN/020163337X>`_
+      Book by John Ousterhout, the inventor of Tcl.
+
+   `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_
+      Brent Welch's encyclopedic book.
 
 
 Tkinter Modules
@@ -173,21 +193,6 @@ documentation that exists. Here are some hints:
 
 * :file:`tkinter/__init__.py` is a last resort for most, but can be a good
   place to go when nothing else makes sense.
-
-
-.. seealso::
-
-   `Tcl/Tk 8.6 man pages <https://www.tcl.tk/man/tcl8.6/>`_
-      The Tcl/Tk manual on www.tcl.tk.
-
-   `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_
-      The Tk/Tcl development is largely taking place at ActiveState.
-
-   `Tcl and the Tk Toolkit <https://www.amazon.com/exec/obidos/ASIN/020163337X>`_
-      The book by John Ousterhout, the inventor of Tcl.
-
-   `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_
-      Brent Welch's encyclopedic book.
 
 
 A Simple Hello World Program
@@ -783,12 +788,13 @@ Menu indexes (menu.invoke(), menu.entryconfig(), etc.)
 Images
 ^^^^^^
 
-Bitmap/Pixelmap images can be created through the subclasses of
-:class:`tkinter.Image`:
+Images of different formats can be created through the corresponding subclass
+of :class:`tkinter.Image`:
 
-* :class:`BitmapImage` can be used for X11 bitmap data.
+* :class:`BitmapImage` for images in XBM format.
 
-* :class:`PhotoImage` can be used for GIF and PPM/PGM color bitmaps.
+* :class:`PhotoImage` for images in PGM, PPM, GIF and PNG formats. The latter
+  is supported starting with Tk 8.6.
 
 Either type of image is created through either the ``file`` or the ``data``
 option (other options are available as well).
@@ -799,6 +805,10 @@ reference to the image. When the last Python reference to the image object is
 deleted, the image data is deleted as well, and Tk will display an empty box
 wherever the image was used.
 
+.. seealso::
+
+    The `Pillow <http://python-pillow.org/>`_ package adds support for
+    formats such as BMP, JPEG, TIFF, and WebP, among others.
 
 .. _tkinter-file-handlers:
 

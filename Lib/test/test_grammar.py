@@ -251,6 +251,8 @@ class CNS:
 
 class GrammarTests(unittest.TestCase):
 
+    check_syntax_error = check_syntax_error
+
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
 
@@ -857,6 +859,59 @@ class GrammarTests(unittest.TestCase):
                 break
         self.assertEqual(count, 0)
 
+    def test_continue_in_finally(self):
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                pass
+            finally:
+                continue
+            break
+        self.assertEqual(count, 2)
+
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                break
+            finally:
+                continue
+        self.assertEqual(count, 2)
+
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                1/0
+            finally:
+                continue
+            break
+        self.assertEqual(count, 2)
+
+        for count in [0, 1]:
+            try:
+                pass
+            finally:
+                continue
+            break
+        self.assertEqual(count, 1)
+
+        for count in [0, 1]:
+            try:
+                break
+            finally:
+                continue
+        self.assertEqual(count, 1)
+
+        for count in [0, 1]:
+            try:
+                1/0
+            finally:
+                continue
+            break
+        self.assertEqual(count, 1)
+
     def test_return_in_finally(self):
         def g1():
             try:
@@ -920,15 +975,7 @@ class GrammarTests(unittest.TestCase):
         def g(): [x for x in [(yield 1)]]
         def g(): [x for x in [(yield from ())]]
 
-        def check(code, warntext):
-            with self.assertWarnsRegex(DeprecationWarning, warntext):
-                compile(code, '<test string>', 'exec')
-            import warnings
-            with warnings.catch_warnings():
-                warnings.filterwarnings('error', category=DeprecationWarning)
-                with self.assertRaisesRegex(SyntaxError, warntext):
-                    compile(code, '<test string>', 'exec')
-
+        check = self.check_syntax_error
         check("def g(): [(yield x) for x in ()]",
               "'yield' inside list comprehension")
         check("def g(): [x for x in () if not (yield x)]",
