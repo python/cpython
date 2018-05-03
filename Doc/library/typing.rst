@@ -666,6 +666,12 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.6
 
+.. class:: AsyncContextManager(Generic[T_co])
+
+   A generic async version of :class:`contextlib.AbstractContextManager`.
+
+   .. versionadded:: 3.6
+
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
    A generic version of :class:`dict`.
