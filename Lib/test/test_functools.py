@@ -571,6 +571,26 @@ class TestPartialMethod(unittest.TestCase):
             self.assertFalse(getattr(func, '__isabstractmethod__', False))
 
 
+class TestPartialClass(unittest.TestCase):
+
+    def test_subclass(self):
+        dict_of_lists = functools.partialclass(collections.defaultdict, list)
+        self.assertTrue(issubclass(dict_of_lists, collections.defaultdict))
+
+        bad_dict_of_lists = functools.partial(collections.defaultdict, list)
+        with self.assertRaises(TypeError):
+            issubclass(bad_dict_of_lists, collections.defaultdict)
+
+    def test_delegates(self):
+        dict_of_lists = functools.partialclass(collections.defaultdict, list)
+        d = dict_of_lists()
+        d[1].append(2)
+        d[3].extend([4, 6, 8])
+        d[1].append(10)
+        self.assertEqual(d[1], [2, 10])
+        self.assertEqual(d[3], [4, 6, 8])
+
+
 class TestUpdateWrapper(unittest.TestCase):
 
     def check_wrapper(self, wrapper, wrapped,

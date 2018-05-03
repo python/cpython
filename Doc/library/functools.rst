@@ -167,11 +167,15 @@ The :mod:`functools` module defines the following functions:
 
 .. function:: partial(func, *args, **keywords)
 
-   Return a new :class:`partial` object which when called will behave like *func*
-   called with the positional arguments *args* and keyword arguments *keywords*. If
-   more arguments are supplied to the call, they are appended to *args*. If
-   additional keyword arguments are supplied, they extend and override *keywords*.
-   Roughly equivalent to::
+   Return a new "partial function application".
+
+   A partial function application object behaves like *func* called with the
+   positional arguments *args* and keyword arguments *keywords*.  If more
+   arguments are supplied to the call, they are appended to *args*.  If
+   additional keyword arguments are supplied, they extend and override
+   *keywords*.
+
+   :class:`partial` is roughly equivalent to::
 
       def partial(func, *args, **keywords):
           def newfunc(*fargs, **fkeywords):
@@ -183,11 +187,10 @@ The :mod:`functools` module defines the following functions:
           newfunc.keywords = keywords
           return newfunc
 
-   The :func:`partial` is used for partial function application which "freezes"
-   some portion of a function's arguments and/or keywords resulting in a new object
-   with a simplified signature.  For example, :func:`partial` can be used to create
-   a callable that behaves like the :func:`int` function where the *base* argument
-   defaults to two:
+   :class:`partial` transforms a function into a callable object with a
+   simplified signature.  For example, it can be used to create a callable that
+   behaves like the :func:`int` function where the *base* argument defaults to
+   two:
 
       >>> from functools import partial
       >>> basetwo = partial(int, base=2)
@@ -198,23 +201,26 @@ The :mod:`functools` module defines the following functions:
 
 .. class:: partialmethod(func, *args, **keywords)
 
-   Return a new :class:`partialmethod` descriptor which behaves
-   like :class:`partial` except that it is designed to be used as a method
-   definition rather than being directly callable.
+   Return a new "partial method application".
 
-   *func* must be a :term:`descriptor` or a callable (objects which are both,
-   like normal functions, are handled as descriptors).
+   A partial method application behaves like the "partial function
+   application" returned by :class:`partial` except that it is designed to be
+   used as a method definition rather than being directly callable.
+
+   *func* must be a :term:`descriptor` or a callable.  Objects that are both
+   descriptors and callable---like normal functions---are handled as
+   descriptors.
 
    When *func* is a descriptor (such as a normal Python function,
    :func:`classmethod`, :func:`staticmethod`, :func:`abstractmethod` or
    another instance of :class:`partialmethod`), calls to ``__get__`` are
    delegated to the underlying descriptor, and an appropriate
-   :class:`partial` object returned as the result.
+   :class:`partial` object is returned.
 
    When *func* is a non-descriptor callable, an appropriate bound method is
    created dynamically. This behaves like a normal Python function when
    used as a method: the *self* argument will be inserted as the first
-   positional argument, even before the *args* and *keywords* supplied to
+   positional argument---even before the *args* and *keywords* supplied to
    the :class:`partialmethod` constructor.
 
    Example::
@@ -239,6 +245,25 @@ The :mod:`functools` module defines the following functions:
 
    .. versionadded:: 3.4
 
+.. class:: partialclass(cls, *args, **keywords)
+
+   Return a new "partial class application" class.
+
+   A partial class application behaves like the "partial function application"
+   :class:`partial` applied to *cls* except that it is a subclass of *cls*.
+
+   Example::
+
+      >>> import collections
+      >>> dict_of_lists = partialclass(collections.defaultdict, list)
+      >>> issubclass(dict_of_lists, collections.defaultdict)
+      True
+      >>> d = dict_of_lists()
+      >>> d[1].append(2)
+      >>> d[1]
+      >>> [2]
+
+   .. versionadded:: 3.7
 
 .. function:: reduce(function, iterable[, initializer])
 

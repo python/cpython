@@ -11,7 +11,7 @@
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
-           'partialmethod', 'singledispatch']
+           'partialmethod', 'partialclass', 'singledispatch']
 
 try:
     from _functools import reduce
@@ -387,6 +387,19 @@ class partialmethod(object):
     @property
     def __isabstractmethod__(self):
         return getattr(self.func, "__isabstractmethod__", False)
+
+
+def partialclass(cls, *args, **kwargs):
+    """Partial class application of the given arguments and keywords.
+
+    The returned object behaves like a "partial function application" on cls
+    except that it is a subclass of cls.
+    """
+
+    class PartialClass(cls):
+        __init__ = partialmethod(cls.__init__, *args, **kwargs)
+
+    return PartialClass
 
 
 ################################################################################
