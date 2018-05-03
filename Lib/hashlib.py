@@ -249,5 +249,6 @@ for __func_name in __always_supported:
 
 
 # Cleanup locals()
-del __always_supported, __func_name, __get_hash
-del __py_new, __hash_new, __get_openssl_constructor
+if 0:
+    del __always_supported, __func_name, __get_hash
+    del __py_new, __hash_new, __get_openssl_constructor
