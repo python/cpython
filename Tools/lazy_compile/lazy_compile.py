@@ -82,22 +82,23 @@ class Transformer(ast.NodeTransformer):
         future_stmt = None
         body = []
         for stmt in node.body:
-            if isinstance(stmt, ast.ImportFrom) and stmt.module == '__future__':
-                future_stmt = stmt
-                body.append(stmt)
+            if isinstance(stmt, ast.ImportFrom):
+                if stmt.module == '__future__':
+                    future_stmt = stmt
+                    body.append(stmt)
+                else:
+                    nodes = self._compile_import_from(stmt)
+                    body.extend(nodes)
             elif isinstance(stmt, ast.Import):
                 # translate import statements, one import node can become
                 # many
                 nodes = self._compile_import(stmt)
                 body.extend(nodes)
-            elif isinstance(stmt, ast.ImportFrom):
-                nodes = self._compile_import_from(stmt)
-                body.extend(nodes)
             else:
                 body.append(stmt)
         # insert our new code into the start of module body
         if future_stmt is not None:
-            idx = body.index(future_stmt)
+            idx = body.index(future_stmt) + 1
         else:
             idx = 0
         body[idx:idx] = [self._make_init_dict()]
