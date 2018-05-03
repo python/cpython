@@ -380,8 +380,9 @@ Glossary
    function annotation
       An :term:`annotation` of a function or method.
 
-      For example, this function is annotated as requiring its parameters to be
-      int and as returning an int as well::
+      For example, this function has its parameters annotated as taking
+      :class:`int` arguments and its return value annotated as being an
+      :class:`int` as well::
 
          def sum_two_numbers(a: int, b: int) -> int:
             return a + b
@@ -1032,9 +1033,14 @@ Glossary
    variable annotation
       An :term:`annotation` of a global variable, or class variable.
 
-      For example, this variable is annotated as an int::
+      For example, this variable is annotated as taking :class:`int` values::
 
          count: int = 0
+
+      When annotating variables, assignment is optional:
+
+         class C:
+             field: int
 
       Its syntax is explained in section :ref:`annassign`.
 
