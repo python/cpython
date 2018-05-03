@@ -1037,7 +1037,7 @@ Glossary
 
          count: int = 0
 
-      When annotating variables, assignment is optional:
+      When annotating variables, assignment is optional::
 
          class C:
              field: int
