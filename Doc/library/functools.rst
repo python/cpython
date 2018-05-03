@@ -263,7 +263,7 @@ The :mod:`functools` module defines the following functions:
       >>> d[1]
       >>> [2]
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
 
 .. function:: reduce(function, iterable[, initializer])
 
