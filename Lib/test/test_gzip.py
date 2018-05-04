@@ -332,6 +332,12 @@ class TestGzip(unittest.TestCase):
             with gzip.GzipFile(fileobj=f, mode="w") as g:
                 self.assertEqual(g.name, "")
 
+    def test_fileobj_from_io_open(self):
+        fd = os.open(self.filename, os.O_WRONLY | os.O_CREAT)
+        with io.open(fd, "wb") as f:
+            with gzip.GzipFile(fileobj=f, mode="w") as g:
+                self.assertEqual(g.name, "")
+
     def test_fileobj_mode(self):
         gzip.GzipFile(self.filename, "wb").close()
         with open(self.filename, "r+b") as f:
