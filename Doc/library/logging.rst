@@ -515,8 +515,9 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
    Returns a new instance of the :class:`Formatter` class.  The instance is
    initialized with a format string for the message as a whole, as well as a
    format string for the date/time portion of a message.  If no *fmt* is
-   specified, ``'%(message)s'`` is used.  If no *datefmt* is specified, the
-   ISO8601 date format is used.
+   specified, ``'%(message)s'`` is used.  If no *datefmt* is specified, an
+   ISO8601-like (or RFC3339-like) date format is used. See the
+   :meth:`formatTime` documentation for more details.
 
    The *style* parameter can be one of '%', '{' or '$' and determines how
    the format string will be merged with its data: using one of %-formatting,
@@ -556,8 +557,8 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       formatters to provide for any specific requirement, but the basic behavior
       is as follows: if *datefmt* (a string) is specified, it is used with
       :func:`time.strftime` to format the creation time of the
-      record. Otherwise, the ISO8601 format is used.  The resulting string is
-      returned.
+      record. Otherwise, an ISO8601-like (or RDC 3339-like) format is used.  The
+      resulting string is returned.
 
       This function uses a user-configurable function to convert the creation
       time to a tuple. By default, :func:`time.localtime` is used; to change
@@ -568,7 +569,7 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       attribute in the ``Formatter`` class.
 
       .. versionchanged:: 3.3
-         Previously, the default ISO 8601 format was hard-coded as in this
+         Previously, the default ISO8601-like format was hard-coded as in this
          example: ``2010-09-06 22:38:15,292`` where the part before the comma is
          handled by a strptime format string (``'%Y-%m-%d %H:%M:%S'``), and the
          part after the comma is a millisecond value. Because strptime does not
