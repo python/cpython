@@ -1747,10 +1747,9 @@ class Helper:
     }
     # Either add symbols to this dictionary or to the symbols dictionary
     # directly: Whichever is easier. They are merged later.
+    _strprefixes = [p + q for p in ('b', 'f', 'r', 'u') for q in ("'", '"')]
     _symbols_inverse = {
-        'STRINGS' : ("'", "'''", '"', '"""', "b'", 'b"', "B'", 'B"', "f'",
-                     'f"', "F'", 'F"', "r'", 'r"', "R'", 'R"', "u'", 'u"',
-                     "U'", 'U"'),
+        'STRINGS' : ("'", "'''", '"', '"""', *_strprefixes),
         'OPERATORS' : ('+', '-', '*', '**', '/', '//', '%', '<<', '>>', '&',
                        '|', '^', '~', '<', '>', '<=', '>=', '==', '!=', '<>'),
         'COMPARISON' : ('<', '>', '<=', '>=', '==', '!=', '<>'),
@@ -1913,7 +1912,9 @@ has the same effect as typing a particular string at the help> prompt.
             except (KeyboardInterrupt, EOFError):
                 break
             request = request.strip()
-            if not (request[0].lower() in 'bfru' and request[1] in ("'", '"')):
+            if not (len(request) == 2 and
+                    request[0].lower() in ('b', 'f', 'r', 'u') and
+                    request[1] in ("'", '"')):
                 request = replace(request, '"', '', "'", '')
             if request.lower() in ('q', 'quit'): break
             if request == 'help':
