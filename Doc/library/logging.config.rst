@@ -783,10 +783,10 @@ Sections which specify formatter configuration are typified by the following.
 
 The ``format`` entry is the overall format string, and the ``datefmt`` entry is
 the :func:`strftime`\ -compatible date/time format string.  If empty, the
-package substitutes ISO8601 format date/times, which is almost equivalent to
-specifying the date format string ``'%Y-%m-%d %H:%M:%S'``.  The ISO8601 format
-also specifies milliseconds, which are appended to the result of using the above
-format string, with a comma separator.  An example time in ISO8601 format is
+package substitutes ISO8601-style format date/times, which is almost equivalent to
+specifying the date format string ``'%Y-%m-%d %H:%M:%S'``.  This format also
+specifies milliseconds, which are appended to the result of using the above
+format string, with a comma separator.  An example time in this format is
 ``2003-01-23 00:29:50,411``.
 
 The ``class`` entry is optional.  It indicates the name of the formatter's class
