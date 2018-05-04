@@ -341,6 +341,31 @@ PyDoc_STRVAR(signal_sigwait__doc__,
 
 #endif /* defined(HAVE_SIGWAIT) */
 
+#if (defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS))
+
+PyDoc_STRVAR(signal_valid_signals__doc__,
+"valid_signals($module, /)\n"
+"--\n"
+"\n"
+"Return a set of valid signal numbers on this platform.\n"
+"\n"
+"The signal numbers returned by this function can be safely passed to\n"
+"functions like `pthread_sigmask`.");
+
+#define SIGNAL_VALID_SIGNALS_METHODDEF    \
+    {"valid_signals", (PyCFunction)signal_valid_signals, METH_NOARGS, signal_valid_signals__doc__},
+
+static PyObject *
+signal_valid_signals_impl(PyObject *module);
+
+static PyObject *
+signal_valid_signals(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return signal_valid_signals_impl(module);
+}
+
+#endif /* (defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS)) */
+
 #if defined(HAVE_SIGWAITINFO)
 
 PyDoc_STRVAR(signal_sigwaitinfo__doc__,
@@ -459,6 +484,10 @@ exit:
     #define SIGNAL_SIGWAIT_METHODDEF
 #endif /* !defined(SIGNAL_SIGWAIT_METHODDEF) */
 
+#ifndef SIGNAL_VALID_SIGNALS_METHODDEF
+    #define SIGNAL_VALID_SIGNALS_METHODDEF
+#endif /* !defined(SIGNAL_VALID_SIGNALS_METHODDEF) */
+
 #ifndef SIGNAL_SIGWAITINFO_METHODDEF
     #define SIGNAL_SIGWAITINFO_METHODDEF
 #endif /* !defined(SIGNAL_SIGWAITINFO_METHODDEF) */
@@ -470,4 +499,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=7b41486acf93aa8e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f35d79e0cfee3f1b input=a9049054013a1b77]*/
