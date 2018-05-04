@@ -167,8 +167,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         if not isinstance(sig, int):
             raise TypeError(f'sig must be an int, not {sig!r}')
 
-        if not (1 <= sig < signal.NSIG):
-            raise ValueError(f'sig {sig} out of range(1, {signal.NSIG})')
+        if sig not in signal.valid_signals():
+            raise ValueError(f'invalid signal number {sig}')
 
     def _make_read_pipe_transport(self, pipe, protocol, waiter=None,
                                   extra=None):

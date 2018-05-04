@@ -2810,7 +2810,7 @@ class SaveSignals:
     def __init__(self):
         import signal
         self.signal = signal
-        self.signals = list(range(1, signal.NSIG))
+        self.signals = signal.valid_signals()
         # SIGKILL and SIGSTOP signals cannot be ignored nor caught
         for signame in ('SIGKILL', 'SIGSTOP'):
             try:

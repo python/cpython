@@ -841,11 +841,21 @@ iterable_to_sigset(PyObject *iterable, sigset_t *mask)
         if (signum == -1 && PyErr_Occurred())
             goto error;
         if (0 < signum && signum < NSIG) {
-            /* bpo-33329: ignore sigaddset() return value as it can fail
-             * for some reserved signals, but we want the `range(1, NSIG)`
-             * idiom to allow selecting all valid signals.
-             */
-            (void) sigaddset(mask, (int)signum);
+            if (sigaddset(mask, (int)signum)) {
+                if (errno != EINVAL) {
+                    /* Probably impossible */
+                    PyErr_SetFromErrno(PyExc_OSError);
+                    goto error;
+                }
+                /* For backwards compatibility, allow idioms such as
+                 * `range(1, NSIG)` but warn about invalid signal numbers
+                 */
+                const char *msg =
+                    "invalid signal number %ld, please use valid_signals()";
+                if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1, msg, signum)) {
+                    goto error;
+                }
+            }
         }
         else {
             PyErr_Format(PyExc_ValueError,
@@ -999,6 +1009,47 @@ signal_sigwait(PyObject *module, PyObject *sigset)
 }
 
 #endif   /* #ifdef HAVE_SIGWAIT */
+
+
+#if defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS)
+
+/*[clinic input]
+signal.valid_signals
+
+Return a set of valid signal numbers on this platform.
+
+The signal numbers returned by this function can be safely passed to
+functions like `pthread_sigmask`.
+[clinic start generated code]*/
+
+static PyObject *
+signal_valid_signals_impl(PyObject *module)
+/*[clinic end generated code: output=1609cffbcfcf1314 input=86a3717ff25288f2]*/
+{
+#ifdef MS_WINDOWS
+#ifdef SIGBREAK
+    PyObject *tup = Py_BuildValue("(iiiiiii)", SIGABRT, SIGBREAK, SIGFPE,
+                                  SIGILL, SIGINT, SIGSEGV, SIGTERM);
+#else
+    PyObject *tup = Py_BuildValue("(iiiiii)", SIGABRT, SIGFPE, SIGILL,
+                                  SIGINT, SIGSEGV, SIGTERM);
+#endif
+    if (tup == NULL) {
+        return NULL;
+    }
+    PyObject *set = PySet_New(tup);
+    Py_DECREF(tup);
+    return set;
+#else
+    sigset_t mask;
+    if (sigemptyset(&mask) || sigfillset(&mask)) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return sigset_to_set(mask);
+#endif
+}
+
+#endif   /* #if defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS) */
 
 
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
@@ -1225,6 +1276,9 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_SIGWAIT_METHODDEF
     SIGNAL_SIGWAITINFO_METHODDEF
     SIGNAL_SIGTIMEDWAIT_METHODDEF
+#if defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS)
+    SIGNAL_VALID_SIGNALS_METHODDEF
+#endif
     {NULL, NULL}           /* sentinel */
 };
 
