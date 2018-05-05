@@ -15,9 +15,11 @@ SOURCE_URI = 'https://github.com/python/cpython/tree/2.7/%s'
 from docutils import nodes, utils
 from docutils.parsers.rst import Directive
 
+from sphinx.util import status_iterator
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.html import HTMLTranslator
 from sphinx.writers.latex import LaTeXTranslator
+from sphinx.writers.text import TextTranslator
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -158,8 +160,11 @@ from sphinx.writers.text import TextWriter
 class PydocTopicsBuilder(Builder):
     name = 'pydoc-topics'
 
+    default_translator_class = TextTranslator
+
     def init(self):
         self.topics = {}
+        self.secnumbers = {}
 
     def get_outdated_docs(self):
         return 'all pydoc topics'
@@ -169,9 +174,9 @@ class PydocTopicsBuilder(Builder):
 
     def write(self, *ignored):
         writer = TextWriter(self)
-        for label in self.status_iterator(pydoc_topic_labels,
-                                          'building topics... ',
-                                          length=len(pydoc_topic_labels)):
+        for label in status_iterator(pydoc_topic_labels,
+                                     'building topics... ',
+                                     length=len(pydoc_topic_labels)):
             if label not in self.env.domaindata['std']['labels']:
                 self.warn('label %r not in documentation' % label)
                 continue

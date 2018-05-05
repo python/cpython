@@ -1330,7 +1330,7 @@ to speed up repeated connections from the same clients.
 
       import socket, ssl
 
-      context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+      context = ssl.SSLContext(ssl.PROTOCOL_TLS)
       context.verify_mode = ssl.CERT_REQUIRED
       context.check_hostname = True
       context.load_default_certs()
@@ -1536,7 +1536,7 @@ If you prefer to tune security settings yourself, you might create
 a context from scratch (but beware that you might not get the settings
 right)::
 
-   >>> context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+   >>> context = ssl.SSLContext(ssl.PROTOCOL_TLS)
    >>> context.verify_mode = ssl.CERT_REQUIRED
    >>> context.check_hostname = True
    >>> context.load_verify_locations("/etc/ssl/certs/ca-bundle.crt")
@@ -1806,6 +1806,23 @@ handle forked processes.  Applications must change the PRNG state of the
 parent process if they use any SSL feature with :func:`os.fork`.  Any
 successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
 :func:`~ssl.RAND_pseudo_bytes` is sufficient.
+
+
+.. ssl-libressl:
+
+LibreSSL support
+----------------
+
+LibreSSL is a fork of OpenSSL 1.0.1. The ssl module has limited support for
+LibreSSL. Some features are not available when the ssl module is compiled
+with LibreSSL.
+
+* LibreSSL >= 2.6.1 no longer supports NPN. The methods
+  :meth:`SSLContext.set_npn_protocols` and
+  :meth:`SSLSocket.selected_npn_protocol` are not available.
+* :meth:`SSLContext.set_default_verify_paths` ignores the env vars
+  :envvar:`SSL_CERT_FILE` and :envvar:`SSL_CERT_PATH` although
+  :func:`get_default_verify_paths` still reports them.
 
 
 .. seealso::

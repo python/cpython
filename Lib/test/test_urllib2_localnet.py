@@ -577,7 +577,7 @@ class TestUrlopen(BaseTestCase):
         sni_name = [None]
         def cb_sni(ssl_sock, server_name, initial_context):
             sni_name[0] = server_name
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
         context.set_servername_callback(cb_sni)
         handler = self.start_https_server(context=context, certfile=CERT_localhost)
         context = ssl.create_default_context(cafile=CERT_localhost)

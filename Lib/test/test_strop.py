@@ -2,10 +2,11 @@ import warnings
 warnings.filterwarnings("ignore", "strop functions are obsolete;",
                         DeprecationWarning,
                         r'test.test_strop|unittest')
-import strop
 import unittest
 import sys
 from test import test_support
+
+strop = test_support.import_module("strop")
 
 
 class StropFunctionTestCase(unittest.TestCase):

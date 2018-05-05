@@ -860,7 +860,7 @@ class HTTPSTest(TestCase):
         import ssl
         test_support.requires('network')
         with test_support.transient_internet('self-signed.pythontest.net'):
-            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS)
             context.verify_mode = ssl.CERT_REQUIRED
             context.load_verify_locations(CERT_selfsigned_pythontestdotnet)
             h = httplib.HTTPSConnection('self-signed.pythontest.net', 443, context=context)
@@ -874,7 +874,7 @@ class HTTPSTest(TestCase):
         import ssl
         test_support.requires('network')
         with test_support.transient_internet('self-signed.pythontest.net'):
-            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS)
             context.verify_mode = ssl.CERT_REQUIRED
             context.load_verify_locations(CERT_localhost)
             h = httplib.HTTPSConnection('self-signed.pythontest.net', 443, context=context)
@@ -895,7 +895,7 @@ class HTTPSTest(TestCase):
         # The (valid) cert validates the HTTP hostname
         import ssl
         server = self.make_server(CERT_localhost)
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
         context.verify_mode = ssl.CERT_REQUIRED
         context.load_verify_locations(CERT_localhost)
         h = httplib.HTTPSConnection('localhost', server.port, context=context)
@@ -907,7 +907,7 @@ class HTTPSTest(TestCase):
         # The (valid) cert doesn't validate the HTTP hostname
         import ssl
         server = self.make_server(CERT_fakehostname)
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
         context.verify_mode = ssl.CERT_REQUIRED
         context.check_hostname = True
         context.load_verify_locations(CERT_fakehostname)

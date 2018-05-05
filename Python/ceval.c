@@ -689,11 +689,19 @@ PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
 #ifdef DYNAMIC_EXECUTION_PROFILE
-  #undef USE_COMPUTED_GOTOS
+    #undef USE_COMPUTED_GOTOS
 #endif
 #ifdef HAVE_COMPUTED_GOTOS
     #ifndef USE_COMPUTED_GOTOS
-    #define USE_COMPUTED_GOTOS 1
+        #if defined(__clang__) && (__clang_major__ < 5)
+            /* Computed gotos caused significant performance regression
+             * with clang < 5.0.
+             * https://bugs.python.org/issue32616
+             */
+            #define USE_COMPUTED_GOTOS 0
+        #else
+            #define USE_COMPUTED_GOTOS 1
+        #endif
     #endif
 #else
     #if defined(USE_COMPUTED_GOTOS) && USE_COMPUTED_GOTOS
@@ -2590,6 +2598,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
         TARGET(IMPORT_NAME)
         {
+            long res;
             w = GETITEM(names, oparg);
             x = PyDict_GetItemString(f->f_builtins, "__import__");
             if (x == NULL) {
@@ -2600,7 +2609,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             Py_INCREF(x);
             v = POP();
             u = TOP();
-            if (PyInt_AsLong(u) != -1 || PyErr_Occurred())
+            res = PyInt_AsLong(u);
+            if (res != -1 || PyErr_Occurred()) {
+                if (res == -1) {
+                    assert(PyErr_Occurred());
+                    PyErr_Clear();
+                }
                 w = PyTuple_Pack(5,
                             w,
                             f->f_globals,
@@ -2608,6 +2622,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                                   Py_None : f->f_locals,
                             v,
                             u);
+            }
             else
                 w = PyTuple_Pack(4,
                             w,
