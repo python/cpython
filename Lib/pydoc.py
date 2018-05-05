@@ -1649,7 +1649,7 @@ class Helper:
     # directly: Whichever is easier. They are merged later.
     _strprefixes = [p + q for p in ('b', 'r', 'u') for q in ("'", '"')]
     _symbols_inverse = {
-        'STRINGS' : ("'", "'''", '"""', '"', *_strprefixes),
+        'STRINGS' : ("'", "'''", '"""', '"') + tuple(_strprefixes),
         'OPERATORS' : ('+', '-', '*', '**', '/', '//', '%', '<<', '>>', '&',
                        '|', '^', '~', '<', '>', '<=', '>=', '==', '!=', '<>'),
         'COMPARISON' : ('<', '>', '<=', '>=', '==', '!=', '<>'),
