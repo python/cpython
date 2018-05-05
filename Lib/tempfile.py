@@ -517,7 +517,7 @@ class _TemporaryFileWrapper:
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
-                       dir=None, delete=True, errors=None):
+                       dir=None, delete=True, *, errors=None):
     """Create and return a temporary file.
     Arguments:
     'prefix', 'suffix', 'dir' -- as for mkstemp.
@@ -567,7 +567,7 @@ else:
 
     def TemporaryFile(mode='w+b', buffering=-1, encoding=None,
                       newline=None, suffix=None, prefix=None,
-                      dir=None, errors=None):
+                      dir=None, *, errors=None):
         """Create and return a temporary file.
         Arguments:
         'prefix', 'suffix', 'dir' -- as for mkstemp.
@@ -633,7 +633,7 @@ class SpooledTemporaryFile:
 
     def __init__(self, max_size=0, mode='w+b', buffering=-1,
                  encoding=None, newline=None,
-                 suffix=None, prefix=None, dir=None, errors=None):
+                 suffix=None, prefix=None, dir=None, *, errors=None):
         if 'b' in mode:
             self._file = _io.BytesIO()
         else:
