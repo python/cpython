@@ -372,6 +372,7 @@ class TestGzip(unittest.TestCase):
         with tempfile.SpooledTemporaryFile() as f:
             with gzip.GzipFile(fileobj=f, mode='wb') as archive:
                 archive.write(b'data')
+                self.assertEqual(archive.name, '')
 
 def test_main(verbose=None):
     test_support.run_unittest(TestGzip)
