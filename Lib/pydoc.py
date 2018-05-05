@@ -1912,9 +1912,10 @@ has the same effect as typing a particular string at the help> prompt.
             except (KeyboardInterrupt, EOFError):
                 break
             request = request.strip()
-            if not (len(request) == 2 and
-                    request[0].lower() in ('b', 'f', 'r', 'u') and
-                    request[1] in ("'", '"')):
+
+            # Make sure significant trailing quoting marks of literals don't
+            # get deleted while cleaning input
+            if request.lower() not in self._strprefixes:
                 request = replace(request, '"', '', "'", '')
             if request.lower() in ('q', 'quit'): break
             if request == 'help':
