@@ -23,6 +23,7 @@ Public functions:       Internaldate2tuple
 __version__ = "2.58"
 
 import binascii, errno, random, re, socket, subprocess, sys, time, calendar
+from collections import namedtuple
 from datetime import datetime, timezone, timedelta
 from io import DEFAULT_BUFFER_SIZE
 
@@ -131,6 +132,10 @@ _Literal = br'.*{(?P<size>\d+)}$'
 _Untagged_status = br'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?'
 
 
+# Store capabilities present in the current server
+# Add additional ones as needed
+AvailableCapabilities = namedtuple('Capas', ['MOVE', 'UIDPLUS'])
+
 
 class IMAP4:
 
@@ -194,6 +199,7 @@ class IMAP4:
         self.continuation_response = '' # Last continuation response
         self.is_readonly = False        # READ-ONLY desired state
         self.tagnum = 0
+        self._features_available = AvailableCapabilities(False, False)
         self._tls_established = False
         self._mode_ascii()
 
@@ -611,6 +617,14 @@ class IMAP4:
         if typ != 'OK':
             raise self.error(dat[-1])
         self.state = 'AUTH'
+
+        ok, dat = self.capability()
+        if typ != 'OK':
+            raise self.error(dat[-1])
+        capas = dat[0].decode()
+        self._features_available = AvailableCapabilities._make(
+            ['MOVE' in capas, 'UIDPLUS' in capas])
+
         return typ, dat
 
 
@@ -654,6 +668,40 @@ class IMAP4:
         name = 'LSUB'
         typ, dat = self._simple_command(name, directory, pattern)
         return self._untagged_response(typ, dat, name)
+
+    def move_messages(self, target: str, messages: str) -> None:
+        """
+        Higher level command to move message inside of one account.
+
+        :param target: name of the folder to move messages into
+        :param messages: UID sequence set (according to
+                         https://tools.ietf.org/html/rfc3501#section-9)
+        """
+        if self._features_available.MOVE:
+            typ, dat = self._simple_command('UID', 'MOVE',
+                                            messages, target)
+            ok, data = self._untagged_response(typ, dat, 'MOVE')
+            if ok != 'OK':
+                raise IOError('Cannot move messages to folder %s' % target)
+        elif self._features_available.UIDPLUS:
+            ok, data = self.uid('COPY', '%s %s' % (messages, target))
+            if ok != 'OK':
+                raise IOError('Cannot copy messages to folder %s' % target)
+            ok, data = self.uid('STORE',
+                                    r'+FLAGS.SILENT (\DELETED) %s' % messages)
+            if ok != 'OK':
+                raise IOError('Cannot delete messages.')
+            ok, data = self.uid('EXPUNGE', messages)
+            if ok != 'OK':
+                raise IOError('Cannot expunge messages.')
+        else:
+            ok, data = self.uid('COPY', '%s %s' % (messages, target))
+            if ok != 'OK':
+                raise IOError('Cannot copy messages to folder %s' % target)
+            ok, data = self.uid('STORE',
+                                    r'+FLAGS.SILENT (\DELETED) %s' % messages)
+            if ok != 'OK':
+                raise IOError('Cannot delete messages.')
 
     def myrights(self, mailbox):
         """Show my ACLs for a mailbox (i.e. the rights that I have on mailbox).
@@ -1063,6 +1111,8 @@ class IMAP4:
         dat = str(dat[-1], self._encoding)
         dat = dat.upper()
         self.capabilities = tuple(dat.split())
+        self._features_available = AvailableCapabilities._make(
+            ['MOVE' in dat, 'UIDPLUS' in dat])
 
 
     def _get_response(self):

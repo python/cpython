@@ -538,6 +538,57 @@ class NewIMAPTestsMixin():
         self.assertEqual(data[0], b'Returned to authenticated state. (Success)')
         self.assertEqual(client.state, 'AUTH')
 
+    def test_move_messages(self):
+        from email.message import EmailMessage
+
+        class MoveServer(SimpleIMAPHandler):
+            capabilities = 'ENABLE UTF8=ACCEPT'
+
+            def cmd_ENABLE(self, tag, args):
+                self._send_tagged(tag, 'OK', 'ENABLE successful')
+
+            def cmd_AUTHENTICATE(self, tag, args):
+                self._send_textline('+')
+                self.server.response = yield
+                self._send_tagged(tag, 'OK', 'FAKEAUTH successful')
+
+            def cmd_APPEND(self, tag, args):
+                self._send_textline('+')
+                self.server.response = yield
+                self._send_tagged(tag, 'OK', 'okay')
+
+            def cmd_CREATE(self, tag, args):
+                print(f'args = {args}')
+                self._send_textline('* CREATE ' + args[0])
+                self._send_tagged(tag, 'OK', 'okay')
+
+        client, _ = self._setup(MoveServer)
+        typ, data = client.login('user', 'pass')
+        self.assertEqual(len(client._features_available), 2)
+        typ, data = client.create('source')
+        self.assertEqual(typ, 'OK')
+        typ, data = client.create('target')
+        self.assertEqual(typ, 'OK')
+
+        msg = EmailMessage()
+        msg.set_content('This is a testing message')
+        msg['Subject'] = 'Test message'
+        msg['From'] = 'test@example.com'
+        msg['To'] = 'testee@example.com'
+        # typ, data = client.append('source', None, None, msg.as_bytes())
+        # self.assertEqual(typ, 'OK')
+        # typ, data = client.select('source')
+        # self.assertEqual(typ, 'OK')
+        # self.assertEqual(int(data[0]), 1)
+        # typ, data = client.search(None, 'source')
+        # self.assertEqual(typ, 'OK')
+        # msg_id =
+        # typ, data = client.move_messages()
+        # self.assertEqual(typ, 'OK')
+        # typ, data = client.search(None, 'target')
+        # self.assertEqual(typ, 'OK')
+        # self.assertEqual(int(data[0]), 1)
+
 
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
     imap_class = imaplib.IMAP4
