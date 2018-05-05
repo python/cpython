@@ -78,18 +78,9 @@ class SocketServerTest(unittest.TestCase):
         self.port_seed = 0
         self.test_files = []
 
-        # The ProcessingTCPServer and ProcessingUDPServer both modify the
-        # environment, specifically the "multiprocessing.process._dangling"
-        # WeakSet() of created processes.
-        self._multiproc_dangling = multiprocessing.process._dangling.copy()
-
     def tearDown(self):
         signal_alarm(0)  # Didn't deadlock.
         reap_children()
-
-        # Make sure to reset the environment after the test.
-        multiprocessing.process._dangling.clear()
-        multiprocessing.process._dangling.update(self._multiproc_dangling)
 
         for fn in self.test_files:
             try:
@@ -398,7 +389,17 @@ class ThreadingErrorTestServer(socketserver.ThreadingMixIn,
 
 if HAVE_FORKING:
     class ForkingErrorTestServer(socketserver.ForkingMixIn, BaseErrorTestServer):
-        pass
+        def __init__(self, *pos, **kw):
+            self.done = multiprocessing.Event()
+            super().__init__(*pos, **kw)
+
+        def shutdown_request(self, *pos, **kw):
+            super().shutdown_request(*pos, **kw)
+            self.collect_children()
+            self.done.set()
+
+        def wait_done(self):
+            self.done.wait()
 
 
 class SocketWriterTest(unittest.TestCase):
