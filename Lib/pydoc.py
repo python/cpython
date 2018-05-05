@@ -1915,8 +1915,9 @@ has the same effect as typing a particular string at the help> prompt.
 
             # Make sure significant trailing quoting marks of literals don't
             # get deleted while cleaning input
-            if request.lower() not in self._strprefixes:
-                request = replace(request, '"', '', "'", '')
+            if (len(request) > 2 and request[0] == request[-1] in ("'", '"')
+                    and request[0] not in request[1:-1]):
+                request = request[1:-1]
             if request.lower() in ('q', 'quit'): break
             if request == 'help':
                 self.intro()
