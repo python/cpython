@@ -846,6 +846,9 @@ for k, v in sorted(locale_encoding_alias.items()):
 #
 # SS 2014-10-01:
 # Updated alias mapping with glibc 2.19 supported locales.
+#
+# Licht-T 2018-05-05:
+# Add en_il mapping, which is added in glibc 2.24.
 
 locale_alias = {
     'a3':                                   'az_AZ.KOI8-C',
@@ -977,6 +980,7 @@ locale_alias = {
     'en_gb':                                'en_GB.ISO8859-1',
     'en_hk':                                'en_HK.ISO8859-1',
     'en_ie':                                'en_IE.ISO8859-1',
+    'en_il':                                'en_IL.UTF-8',
     'en_in':                                'en_IN.ISO8859-1',
     'en_ng':                                'en_NG.UTF-8',
     'en_nz':                                'en_NZ.ISO8859-1',
