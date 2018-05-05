@@ -97,7 +97,7 @@ class GzipFile(io.BufferedIOBase):
             # attribute. Avoid saving this in the gzip header's filename field.
             filename = getattr(fileobj, 'name', '')
             if (
-                not isinstance(filename, (str, unicode)) or
+                not isinstance(filename, basestring) or
                 filename == '<fdopen>'
             ):
                 filename = ''
