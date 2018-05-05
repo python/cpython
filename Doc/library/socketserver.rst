@@ -102,6 +102,8 @@ server classes.
            ProcessingMixIn
            ThreadingMixIn
 
+   .. versionadded:: 3.8
+
    Forking, multiprocessing, and threading versions of each type of server can
    be created using these mix-in classes.  For instance,
    :class:`ThreadingUDPServer` is created as follows::
@@ -148,6 +150,8 @@ server classes.
            ProcessingUDPServer
            ThreadingTCPServer
            ThreadingUDPServer
+
+   .. versionadded:: 3.8
 
    These classes are pre-defined using the mix-in classes.
 
