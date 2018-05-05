@@ -96,10 +96,7 @@ class GzipFile(io.BufferedIOBase):
             # Issue #13781: os.fdopen() creates a fileobj with a bogus name
             # attribute. Avoid saving this in the gzip header's filename field.
             filename = getattr(fileobj, 'name', '')
-            if (
-                not isinstance(filename, basestring) or
-                filename == '<fdopen>'
-            ):
+            if not isinstance(filename, basestring) or filename == '<fdopen>':
                 filename = ''
         if mode is None:
             if hasattr(fileobj, 'mode'): mode = fileobj.mode
