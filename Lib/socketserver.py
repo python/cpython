@@ -204,7 +204,7 @@ class BaseServer:
         """Constructor.  May be extended, do not override."""
         self.server_address = server_address
         self.RequestHandlerClass = RequestHandlerClass
-        self.__is_shut_down = threading.Event()
+        self.__is_shut_down = multiprocessing.Event()
         self.__shutdown_request = False
 
     def server_activate(self):
@@ -674,9 +674,12 @@ class ProcessingMixIn(ChildProcessManagerMixIn):
                               if p.sentinel in joinable_sentinels]
 
         # Just need to join() one.
-        proc = joinable_processes[0]
-        proc.join()
-        return proc.pid
+        if joinable_processes:
+            proc = joinable_processes[0]
+            proc.join()
+            return proc.pid
+        else:
+            return None
 
     def _process_request_in_child(self, request, client_address):
         """Handles the actual request in the new child process."""
