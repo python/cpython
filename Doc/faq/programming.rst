@@ -472,13 +472,11 @@ object ``x`` refers to).  After this assignment we have two objects (the ints
 
 Some operations (for example ``y.append(10)`` and ``y.sort()``) mutate the
 object, whereas superficially similar operations (for example ``y = y + [10]``
-and ``sorted(y)``) create a new object.  In general in Python (and almost cases
-in the standard library) a method that mutates an object will return ``None``
-to help avoid getting the two types of operations confused.( A specific case
-is that ``a_list.pop([index])`` will remove and return item at index
-(default last). ) So if you mistakenly write ``y.sort()`` thinking it will
-give you a sorted copy of ``y``, you'll instead end up with ``None``, which will
-likely cause your program to generate an easily diagnosed error.
+and ``sorted(y)``) create a new object.  In general in Python a method that
+mutates an object will return ``None`` to help avoid getting the two types
+of operations confused.  So if you mistakenly write ``y.sort()`` thinking it
+will give you a sorted copy of ``y``, you'll instead end up with ``None``,
+which will likely cause your program to generate an easily diagnosed error.
 
 However, there is one class of operations where the same operation sometimes
 has different behaviors with different types:  the augmented assignment

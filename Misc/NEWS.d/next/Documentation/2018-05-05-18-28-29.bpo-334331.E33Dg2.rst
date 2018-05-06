@@ -1,1 +1,1 @@
-Change description about programming, faq for https://docs.python.org/3/
+Removed wrong statement in programming faq.
