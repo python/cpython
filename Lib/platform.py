@@ -374,7 +374,7 @@ def _linux_distribution(distname, version, id, supported_dists,
             return distname, version, id
 
         except IOError:
-            return linux_dist_origin()
+            return linux_dist_origin(distname, version, id)
     else:
         return linux_dist_origin(distname, version, id)
 
