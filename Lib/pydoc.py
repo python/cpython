@@ -1647,9 +1647,9 @@ class Helper:
     }
     # Either add symbols to this dictionary or to the symbols dictionary
     # directly: Whichever is easier. They are merged later.
-    _strprefixes = [p + q for p in ('b', 'r', 'u') for q in ("'", '"')]
+    _strprefixes = tuple(p + q for p in ('b', 'r', 'u') for q in ("'", '"'))
     _symbols_inverse = {
-        'STRINGS' : ("'", "'''", '"""', '"') + tuple(_strprefixes),
+        'STRINGS' : ("'", "'''", '"""', '"') + _strprefixes,
         'OPERATORS' : ('+', '-', '*', '**', '/', '//', '%', '<<', '>>', '&',
                        '|', '^', '~', '<', '>', '<=', '>=', '==', '!=', '<>'),
         'COMPARISON' : ('<', '>', '<=', '>=', '==', '!=', '<>'),
