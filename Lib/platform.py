@@ -135,6 +135,7 @@ except AttributeError:
 # Directory to search for configuration information on Unix.
 # Constant used by test_platform to test linux_distribution().
 _UNIXCONFDIR = '/etc'
+_os_release = '/etc/os-release'
 
 ### Platform specific APIs
 
@@ -328,35 +329,54 @@ def _linux_distribution(distname, version, id, supported_dists,
         args given as parameters.
 
     """
-    try:
-        etc = os.listdir(_UNIXCONFDIR)
-    except OSError:
-        # Probably not a Unix system
+    def linux_dist_origin(distname, version, id):
+        try:
+            etc = os.listdir(_UNIXCONFDIR)
+        except OSError:
+            # Probably not a Unix system
+            return distname, version, id
+        etc.sort()
+        for file in etc:
+            m = _release_filename.match(file)
+            if m is not None:
+                _distname, dummy = m.groups()
+                if _distname in supported_dists:
+                    distname = _distname
+                    break
+        else:
+            return _dist_try_harder(distname, version, id)
+
+        # Read the first line
+        with open(os.path.join(_UNIXCONFDIR, file), 'r',
+                  encoding='utf-8', errors='surrogateescape') as f:
+            firstline = f.readline()
+        _distname, _version, _id = _parse_release_file(firstline)
+
+        if _distname and full_distribution_name:
+            distname = _distname
+        if _version:
+            version = _version
+        if _id:
+            id = _id
         return distname, version, id
-    etc.sort()
-    for file in etc:
-        m = _release_filename.match(file)
-        if m is not None:
-            _distname, dummy = m.groups()
-            if _distname in supported_dists:
-                distname = _distname
-                break
+
+    if os.path.exists(_os_release):
+        try:
+            _os_release_file = open(_os_release)
+            _os_release_content = _os_release_file.read()
+
+            get_name = re.findall(r'NAME=.*', _os_release_content)[0]
+            distname = get_name.split('"')[1]
+            get_version = re.findall(r'VERSION_ID=.*', _os_release_content)[0]
+            version = get_version.split('=')[1]
+            get_id = re.findall(r'ID=.*', _os_release_content)[0]
+            id = get_id.split('=')[1]
+            return distname, version, id
+
+        except IOError:
+            return linux_dist_origin()
     else:
-        return _dist_try_harder(distname, version, id)
-
-    # Read the first line
-    with open(os.path.join(_UNIXCONFDIR, file), 'r',
-              encoding='utf-8', errors='surrogateescape') as f:
-        firstline = f.readline()
-    _distname, _version, _id = _parse_release_file(firstline)
-
-    if _distname and full_distribution_name:
-        distname = _distname
-    if _version:
-        version = _version
-    if _id:
-        id = _id
-    return distname, version, id
+        return linux_dist_origin(distname, version, id)
 
 # To maintain backwards compatibility:
 
