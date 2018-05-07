@@ -1271,16 +1271,20 @@ PyLong_FromPy_off_t(Py_off_t offset)
 /* Convert an iterable of integers to a sigset.
    Return 1 on success, return 0 and raise an exception on error. */
 int
-_Py_Sigset_Converter(PyObject *iterable, void *addr)
+_Py_Sigset_Converter(PyObject *obj, void *addr)
 {
     sigset_t *mask = (sigset_t *)addr;
     PyObject *iterator, *item;
     long signum;
     int overflow;
 
-    sigemptyset(mask);
+    if (sigemptyset(mask)) {
+        /* Probably only if mask == NULL. */
+        PyErr_SetFromErrno(PyExc_OSError);
+        return 0;
+    }
 
-    iterator = PyObject_GetIter(iterable);
+    iterator = PyObject_GetIter(obj);
     if (iterator == NULL) {
         return 0;
     }
