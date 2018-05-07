@@ -296,6 +296,23 @@ def _parse_release_file(firstline):
             id = l[1]
     return '', version, id
 
+def _prase_os_release(os_release_file):
+    params = ['NAME', 'VERSION_ID', 'ID']
+    vars_ = []
+    for line in os_release_file:
+        for param in params:
+            get_name = re.search(r'^' + param + '.*', line)
+            index = params.index(param)
+            if get_name != None:
+                params[index] = get_name.group(0)
+    for param in params:
+        param_split = param.split('=')
+        if len(param_split) > 1:
+            vars_.append(param_split[1])
+        else:
+            vars_.append('')
+    return vars_[0], vars_[1], vars_[2]
+
 def linux_distribution(distname='', version='', id='',
 
                        supported_dists=_supported_dists,
@@ -333,16 +350,22 @@ def _linux_distribution(distname, version, id, supported_dists,
     except OSError:
         # Probably not a Unix system
         return distname, version, id
-    etc.sort()
-    for file in etc:
-        m = _release_filename.match(file)
-        if m is not None:
-            _distname, dummy = m.groups()
-            if _distname in supported_dists:
-                distname = _distname
-                break
-    else:
-        return _dist_try_harder(distname, version, id)
+    try:
+        os_release_path = os.path.join(_UNIXCONFDIR, 'os-release')
+        with open(os_release_path, 'r', encoding='utf-8') as os_release_file:
+            distname, version, id = _prase_os_release(os_release_file)
+        return distname, version, id
+    except OSError:
+        etc.sort()
+        for file in etc:
+            m = _release_filename.match(file)
+            if m is not None:
+                _distname, dummy = m.groups()
+                if _distname in supported_dists:
+                    distname = _distname
+                    break
+        else:
+            return _dist_try_harder(distname, version, id)
 
     # Read the first line
     with open(os.path.join(_UNIXCONFDIR, file), 'r',

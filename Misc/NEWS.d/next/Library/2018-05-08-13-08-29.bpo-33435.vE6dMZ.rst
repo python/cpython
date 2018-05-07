@@ -1,0 +1,2 @@
+Fixed incorrect version detection of linux in some distributions (platform.py linux_distribution()).
+Now checked file os-release and if it is in the system then parse the information from it.
