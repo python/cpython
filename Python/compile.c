@@ -2025,12 +2025,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    // modify first line number for decorated nodes
-    if (asdl_seq_LEN(decos)) {
-        expr_ty first_decorator = asdl_seq_GET(decos, 0);
-        c->u->u_firstlineno = first_decorator->lineno;
-    }
-
     /* if not -OO mode, add docstring */
     if (c->c_optimize < 2 && s->v.FunctionDef.docstring)
         docstring = s->v.FunctionDef.docstring;
@@ -2096,12 +2090,6 @@ compiler_class(struct compiler *c, stmt_ty s)
         return 0;
     /* this block represents what we do in the new scope */
     {
-        // modify first line number for decorated nodes
-        if (asdl_seq_LEN(decos)) {
-            expr_ty first_decorator = asdl_seq_GET(decos, 0);
-            c->u->u_firstlineno = first_decorator->lineno;
-        }
-
         /* use the class name for name mangling */
         Py_INCREF(s->v.ClassDef.name);
         Py_XSETREF(c->u->u_private, s->v.ClassDef.name);
