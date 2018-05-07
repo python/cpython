@@ -1949,8 +1949,8 @@ compiler_default_arguments(struct compiler *c, arguments_ty args)
     return funcflags;
 }
 
-static int corrected_firstlineno(struct compiler *c, stmt_ty s,
-                                 asdl_seq * decos)
+static int
+corrected_firstlineno(struct compiler *c, stmt_ty s, asdl_seq * decos)
 {
     /* To keep the ability to get the relevant source of a decorated item
        using inspect.getsource, we need to keep the first line number
