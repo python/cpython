@@ -1,0 +1,2 @@
+In the method, "_PyImportZip_Init(void)", of Python/import.c, the variable, "PyObject \*path_hooks, \*zimpimport;", seems to be typo, which can be "zipimport".
+Modified "zimpimport" to "zipimport" in L. 95, 107, 108, 115, 117 of Python/import.c.
