@@ -622,7 +622,7 @@ if hasattr(os, "fork"):
         def _wait_on_any_child(self, blocking):
             """Waits on any forked child to complete."""
             while True:
-                active_pids = self.active_children.keys()
+                active_pids = list(self.active_children.keys())
                 for active_pid in active_pids:
                     pid, _ = os.waitpid(active_pid, os.WNOHANG)
                     if pid:
@@ -668,9 +668,10 @@ class ProcessingMixIn(ChildProcessManagerMixIn):
 
         # Get all of the joinable processes.
         from multiprocessing.connection import wait
-        sentinels = [p.sentinel for p in self.active_children.values()]
+        children = list(self.active_children.values())
+        sentinels = [p.sentinel for p in children]
         joinable_sentinels = wait(sentinels, timeout)
-        joinable_processes = [p for p in self.active_children.values()
+        joinable_processes = [p for p in children
                               if p.sentinel in joinable_sentinels]
 
         # Just need to join() one.
