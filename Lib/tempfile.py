@@ -609,7 +609,8 @@ else:
             else:
                 try:
                     return _io.open(fd, mode, buffering=buffering,
-                                    newline=newline, encoding=encoding, errors=errors)
+                                    newline=newline, encoding=encoding,
+                                    errors=errors)
                 except:
                     _os.close(fd)
                     raise
