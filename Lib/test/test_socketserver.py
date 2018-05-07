@@ -212,13 +212,13 @@ class SocketServerTest(unittest.TestCase):
     @requires_unix_sockets
     def test_UnixStreamServer(self):
         self.run_server(socketserver.UnixStreamServer,
-                        socketserver.StreamRequestHandler,
+                        EchoingStreamRequestHandler,
                         self.stream_examine)
 
     @requires_unix_sockets
     def test_ThreadingUnixStreamServer(self):
         self.run_server(socketserver.ThreadingUnixStreamServer,
-                        socketserver.StreamRequestHandler,
+                        EchoingStreamRequestHandler,
                         self.stream_examine)
 
     @requires_unix_sockets
@@ -226,7 +226,7 @@ class SocketServerTest(unittest.TestCase):
     def test_ForkingUnixStreamServer(self):
         with simple_subprocess(self):
             self.run_server(ForkingUnixStreamServer,
-                            socketserver.StreamRequestHandler,
+                            EchoingStreamRequestHandler,
                             self.stream_examine)
 
     def test_UDPServer(self):
@@ -243,7 +243,7 @@ class SocketServerTest(unittest.TestCase):
     def test_ForkingUDPServer(self):
         with simple_subprocess(self):
             self.run_server(socketserver.ForkingUDPServer,
-                            socketserver.DatagramRequestHandler,
+                            EchoingDatagramRequestHandler,
                             self.dgram_examine)
 
     def test_ProcessingUDPServer(self):
@@ -254,20 +254,20 @@ class SocketServerTest(unittest.TestCase):
     @requires_unix_sockets
     def test_UnixDatagramServer(self):
         self.run_server(socketserver.UnixDatagramServer,
-                        socketserver.DatagramRequestHandler,
+                        EchoingDatagramRequestHandler,
                         self.dgram_examine)
 
     @requires_unix_sockets
     def test_ThreadingUnixDatagramServer(self):
         self.run_server(socketserver.ThreadingUnixDatagramServer,
-                        socketserver.DatagramRequestHandler,
+                        EchoingDatagramRequestHandler,
                         self.dgram_examine)
 
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixDatagramServer(self):
         self.run_server(ForkingUnixDatagramServer,
-                        socketserver.DatagramRequestHandler,
+                        EchoingDatagramRequestHandler,
                         self.dgram_examine)
 
     @reap_threads
