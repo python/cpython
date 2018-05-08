@@ -1867,7 +1867,7 @@ When a class definition is executed, the following steps occur:
 Resolving MRO entries
 ^^^^^^^^^^^^^^^^^^^^^
 
-If a base that appears in class definition is not an instance of :func:`type`,
+If a base that appears in class definition is not an instance of :class:`type`,
 then an ``__mro_entries__`` method is searched on it. If found, it is called
 with the original bases tuple. This method must return a tuple of classes that
 will be used instead of this base. The tuple may be empty, in such case
@@ -2083,16 +2083,15 @@ Emulating generic types
 One can implement the generic class syntax as specified by :pep:`484`
 (for example ``List[int]``) by defining a special method
 
-.. method:: class.__class_getitem__(cls, args)
+.. classmethod:: object.__class_getitem__(cls, key)
 
    Return an object representing the specialization of a generic class
-   by type arguments found in ``args`` tuple.
+   by type arguments found in *key*.
 
 This method is looked up on the class object itself, and when defined in
-the class body, this method is implicitly a class method.
-
-.. note:: This mechanism is primarily reserved for use with static type
-   hints, other usage is discouraged.
+the class body, this method is implicitly a class method.  Note, this
+mechanism is primarily reserved for use with static type hints, other usage
+is discouraged.
 
 .. seealso::
 
