@@ -1354,13 +1354,16 @@ PEP 545: Python Documentation Translations
 ------------------------------------------
 
 :pep:`545` describes the process to translate Python documentation,
-and two translations have been added:
+and three translations have been added:
 
 - Japanese: https://docs.python.org/ja/ and associated GitHub
   repository: https://github.com/python/python-docs-ja
 
 - French: https://docs.python.org/fr/ and associated GitHub
   repository: https://github.com/python/python-docs-fr
+
+- Korean: https://docs.python.org/ko/ and associated GitHub
+  repository: https://github.com/python/python-docs-ko
 
 (Contributed by Julien Palard, Inada Naoki, and Victor Stinner in
 :issue:`26546`.)

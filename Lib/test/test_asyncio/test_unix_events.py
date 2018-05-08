@@ -69,6 +69,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     @mock.patch('asyncio.unix_events.signal')
     def test_add_signal_handler_setup_error(self, m_signal):
         m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
         m_signal.set_wakeup_fd.side_effect = ValueError
 
         self.assertRaises(
@@ -96,6 +97,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     @mock.patch('asyncio.unix_events.signal')
     def test_add_signal_handler(self, m_signal):
         m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
 
         cb = lambda: True
         self.loop.add_signal_handler(signal.SIGHUP, cb)
@@ -106,6 +108,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     @mock.patch('asyncio.unix_events.signal')
     def test_add_signal_handler_install_error(self, m_signal):
         m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
 
         def set_wakeup_fd(fd):
             if fd == -1:
@@ -125,6 +128,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     @mock.patch('asyncio.base_events.logger')
     def test_add_signal_handler_install_error2(self, m_logging, m_signal):
         m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
 
         class Err(OSError):
             errno = errno.EINVAL
@@ -145,6 +149,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
             errno = errno.EINVAL
         m_signal.signal.side_effect = Err
         m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
 
         self.assertRaises(
             RuntimeError,
@@ -156,6 +161,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     @mock.patch('asyncio.unix_events.signal')
     def test_remove_signal_handler(self, m_signal):
         m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
 
         self.loop.add_signal_handler(signal.SIGHUP, lambda: True)
 
@@ -170,6 +176,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     def test_remove_signal_handler_2(self, m_signal):
         m_signal.NSIG = signal.NSIG
         m_signal.SIGINT = signal.SIGINT
+        m_signal.valid_signals = signal.valid_signals
 
         self.loop.add_signal_handler(signal.SIGINT, lambda: True)
         self.loop._signal_handlers[signal.SIGHUP] = object()
@@ -187,6 +194,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     @mock.patch('asyncio.base_events.logger')
     def test_remove_signal_handler_cleanup_error(self, m_logging, m_signal):
         m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
         self.loop.add_signal_handler(signal.SIGHUP, lambda: True)
 
         m_signal.set_wakeup_fd.side_effect = ValueError
@@ -197,6 +205,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     @mock.patch('asyncio.unix_events.signal')
     def test_remove_signal_handler_error(self, m_signal):
         m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
         self.loop.add_signal_handler(signal.SIGHUP, lambda: True)
 
         m_signal.signal.side_effect = OSError
@@ -207,6 +216,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     @mock.patch('asyncio.unix_events.signal')
     def test_remove_signal_handler_error2(self, m_signal):
         m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
         self.loop.add_signal_handler(signal.SIGHUP, lambda: True)
 
         class Err(OSError):
@@ -219,6 +229,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     @mock.patch('asyncio.unix_events.signal')
     def test_close(self, m_signal):
         m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
 
         self.loop.add_signal_handler(signal.SIGHUP, lambda: True)
         self.loop.add_signal_handler(signal.SIGCHLD, lambda: True)
@@ -236,6 +247,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
     @mock.patch('asyncio.unix_events.signal')
     def test_close_on_finalizing(self, m_signal, m_sys):
         m_signal.NSIG = signal.NSIG
+        m_signal.valid_signals = signal.valid_signals
         self.loop.add_signal_handler(signal.SIGHUP, lambda: True)
 
         self.assertEqual(len(self.loop._signal_handlers), 1)

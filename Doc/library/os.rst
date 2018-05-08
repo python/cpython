@@ -2768,14 +2768,12 @@ features:
 
    It is an error to specify tuples for both *times* and *ns*.
 
-   Whether a directory can be given for *path*
-   depends on whether the operating system implements directories as files
-   (for example, Windows does not).  Note that the exact times you set here may
-   not be returned by a subsequent :func:`~os.stat` call, depending on the
-   resolution with which your operating system records access and modification
-   times; see :func:`~os.stat`.  The best way to preserve exact times is to
-   use the *st_atime_ns* and *st_mtime_ns* fields from the :func:`os.stat`
-   result object with the *ns* parameter to `utime`.
+   Note that the exact times you set here may not be returned by a subsequent
+   :func:`~os.stat` call, depending on the resolution with which your operating
+   system records access and modification times; see :func:`~os.stat`. The best
+   way to preserve exact times is to use the *st_atime_ns* and *st_mtime_ns*
+   fields from the :func:`os.stat` result object with the *ns* parameter to
+   `utime`.
 
    This function can support :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>` and :ref:`not
@@ -3367,25 +3365,41 @@ written in Python, such as a mail server's external command delivery program.
 
 .. function:: posix_spawn(path, argv, env, file_actions=None)
 
-   Wraps the posix_spawn() C library API for use from Python.
+   Wraps the :c:func:`posix_spawn` C library API for use from Python.
 
-   Most users should use :class:`subprocess.run` instead of posix_spawn.
+   Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
 
    The *path*, *args*, and *env* arguments are similar to :func:`execve`.
 
    The *file_actions* argument may be a sequence of tuples describing actions
    to take on specific file descriptors in the child process between the C
-   library implementation's fork and exec steps.  The first item in each tuple
-   must be one of the three type indicator listed below describing the
-   remaining tuple elements:
+   library implementation's :c:func:`fork` and :c:func:`exec` steps.
+   The first item in each tuple must be one of the three type indicator
+   listed below describing the remaining tuple elements:
 
-   (os.POSIX_SPAWN_OPEN, fd, path, open flags, mode)
-   (os.POSIX_SPAWN_CLOSE, fd)
-   (os.POSIX_SPAWN_DUP2, fd, new_fd)
+   .. data:: POSIX_SPAWN_OPEN
 
-   These tuples correspond to the C library posix_spawn_file_actions_addopen,
-   posix_spawn_file_actions_addclose, and posix_spawn_file_actions_adddup2 API
-   calls used to prepare for the posix_spawn call itself.
+      (``os.POSIX_SPAWN_OPEN``, *fd*, *path*, *flags*, *mode*)
+
+      Performs ``os.dup2(os.open(path, flags, mode), fd)``.
+
+   .. data:: POSIX_SPAWN_CLOSE
+
+      (``os.POSIX_SPAWN_CLOSE``, *fd*)
+
+      Performs ``os.close(fd)``.
+
+   .. data:: POSIX_SPAWN_DUP2
+
+      (``os.POSIX_SPAWN_DUP2``, *fd*, *new_fd*)
+
+      Performs ``os.dup2(fd, new_fd)``.
+
+   These tuples correspond to the C library
+   :c:func:`posix_spawn_file_actions_addopen`,
+   :c:func:`posix_spawn_file_actions_addclose`, and
+   :c:func:`posix_spawn_file_actions_adddup2` API calls used to prepare
+   for the :c:func:`posix_spawn` call itself.
 
    .. versionadded:: 3.7
 
