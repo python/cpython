@@ -102,18 +102,16 @@ class Random(_random.Random):
         ranges.
         """
 
-        if (cls.random is _random.Random.random) or (
-            cls.getrandbits is not _random.Random.getrandbits):
-            # The original random() builtin method has not been overridden
-            # or a new getrandbits() was supplied.
-            # The subclass can use the getrandbits-dependent implementation
-            # of _randbelow().
-            cls._randbelow = cls._randbelow_with_getrandbits
-        else:
-            # There's an overridden random() method but no new getrandbits(),
-            # so the subclass can only use the getrandbits-independent
-            # implementation of _randbelow().
-            cls._randbelow = cls._randbelow_without_getrandbits
+        for c in cls.__mro__:
+            if '_randbelow' in c.__dict__:
+                # just inherit it
+                break
+            if 'getrandbits' in c.__dict__:
+                cls._randbelow = cls._randbelow_with_getrandbits
+                break
+            if 'random' in c.__dict__:
+                cls._randbelow = cls._randbelow_without_getrandbits
+                break
 
     def seed(self, a=None, version=2):
         """Initialize internal state from hashable object.
