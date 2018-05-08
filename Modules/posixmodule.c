@@ -5217,7 +5217,7 @@ parse_posix_spawn_flags(PyObject *setpgroup, PyObject *resetids, PyObject *setsi
 
    if (setsigmask) {
         sigset_t set;
-        if (!PyArg_Parse(setsigmask, "O&", _Py_Sigset_Converter, &set)) {
+        if (!_Py_Sigset_Converter(setsigmask, &set)) {
             goto fail;
         }
         errno = posix_spawnattr_setsigmask(attrp, &set);
@@ -5230,7 +5230,7 @@ parse_posix_spawn_flags(PyObject *setpgroup, PyObject *resetids, PyObject *setsi
 
     if (setsigdef) {
         sigset_t set;
-        if (!PyArg_Parse(setsigdef, "O&", _Py_Sigset_Converter, &set)) {
+        if (!_Py_Sigset_Converter(setsigdef, &set)) {
             goto fail;
         }
         errno = posix_spawnattr_setsigdefault(attrp, &set);
@@ -5255,10 +5255,6 @@ parse_posix_spawn_flags(PyObject *setpgroup, PyObject *resetids, PyObject *setsi
             int schedpolicy = _PyLong_AsInt(py_schedpolicy);
 
             if (schedpolicy == -1 && PyErr_Occurred()) {
-                goto fail;
-            }
-            if (schedpolicy > INT_MAX || schedpolicy < INT_MIN) {
-                PyErr_SetString(PyExc_OverflowError, "sched_policy out of range");
                 goto fail;
             }
             errno = posix_spawnattr_setschedpolicy(attrp, schedpolicy);
