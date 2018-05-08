@@ -108,7 +108,7 @@ def abs_paths():
             pass
         try:
             m.__cached__ = os.path.abspath(m.__cached__)
-        except (AttributeError, OSError):
+        except (AttributeError, OSError, TypeError):
             pass
 
 
