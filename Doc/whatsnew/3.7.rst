@@ -356,6 +356,25 @@ with the correct context in async/await code.
        PEP written and implemented by Yury Selivanov
 
 
+PEP 560: Core support for typing module and generic types
+---------------------------------------------------------
+
+Initially :pep:`484` was designed in such way that it would not introduce *any*
+changes to the core CPython interpreter. Now type hints and the :mod:`typing`
+module are extensively used by the community, so this restriction is removed.
+The PEP introduces two special methods :meth:`__class_getitem__` and
+``__mro_entries__``, these methods are now used by most classes and special
+constructs in :mod:`typing`. As a result, the speed of various operations
+with types increased up to 7 times, the generic types can be used without
+metaclass conflicts, and several long standing bugs in :mod:`typing` module are
+fixed.
+
+.. seealso::
+
+   :pep:`560` -- Core support for typing module and generic types
+      PEP written and implemented by Ivan Levkivskyi
+
+
 New Development Mode: -X dev
 ----------------------------
 
