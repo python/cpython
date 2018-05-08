@@ -1,0 +1,2 @@
+The *file_actions* parameter of :func:`os.posix_spawn` is now a
+keyword-only and no longer accepts ``None``.
