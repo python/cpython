@@ -1599,7 +1599,7 @@ class TestPosixSpawn(unittest.TestCase):
             sys.executable,
             [sys.executable, '-c', code],
             os.environ,
-            scheduler=(None, os.sched_param(os.PRIO_PROCESS))
+            scheduler=(None, os.sched_param(priority))
         )
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
@@ -1617,7 +1617,7 @@ class TestPosixSpawn(unittest.TestCase):
             sys.executable,
             [sys.executable, '-c', code],
             os.environ,
-            scheduler=(os.SCHED_OTHER, os.sched_param(os.PRIO_PROCESS))
+            scheduler=(policy, os.sched_param(priority))
         )
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
