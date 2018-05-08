@@ -40,12 +40,13 @@ Glossary
       ABCs with the :mod:`abc` module.
 
    annotation
-      A type metadata value associated with a global variable, a class
-      attribute, or function parameter/return value.
+      A metadata value associated with a global variable, a class variable or a
+      function or method parameter or return value, that stores a
+      :term:`type hint`.
 
       Annotations are stored in the :attr:`__annotations__` special attribute
       of a module (when annotating a global variable), class (when annotating
-      one of its attributes) or function (when annotating its parameters or
+      a class variable) or function or method (when annotating a parameter or a
       return value) and can be accessed using :func:`typing.get_type_hints`.
 
       See :pep:`484` and :pep:`526` which describe this functionality.
@@ -378,7 +379,7 @@ Glossary
       and the :ref:`function` section.
 
    function annotation
-      An :term:`annotation` of a function or method.
+      An :term:`annotation` of a function, or a method.
 
       For example, this function has its parameters annotated as taking
       :class:`int` arguments and its return value annotated as being an
@@ -1023,6 +1024,18 @@ Glossary
       :attr:`~instance.__class__` attribute or can be retrieved with
       ``type(obj)``.
 
+   type hint
+      An specification about the expected type for a global variable, class
+      variable, function or method parameter or return value.
+
+      While type hints are optional and are not enforced by Python when used,
+      they are very useful for static type analysis tools, and aid IDEs on code
+      completion and refactoring.
+
+      Type hints are stored in :term:`annotations <annotation>`.
+
+      See also :pep:`483` which describe this functionality.
+
    universal newlines
       A manner of interpreting text streams in which all of the following are
       recognized as ending a line: the Unix end-of-line convention ``'\n'``,
@@ -1031,7 +1044,7 @@ Glossary
       :func:`bytes.splitlines` for an additional use.
 
    variable annotation
-      An :term:`annotation` of a global variable, or class variable.
+      An :term:`annotation` of a global variable, or a class variable.
 
       For example, this variable is annotated as taking :class:`int` values::
 
@@ -1044,7 +1057,7 @@ Glossary
 
       Its syntax is explained in section :ref:`annassign`.
 
-      See also the :term:`function annotation` glossary entry, see :pep:`484`
+      See also the :term:`function annotation` glossary entry, and :pep:`484`
       and :pep:`526` which describe this functionality.
 
    virtual environment
