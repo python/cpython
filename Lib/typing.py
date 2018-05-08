@@ -607,7 +607,8 @@ class TypeVar(_Final, _Immutable, _root=True):
 # * __parameters__ is a tuple of unique free type parameters of a generic
 #   type, for example, Dict[T, T].__parameters__ == (T,);
 # * __origin__ keeps a reference to a type that was subscripted,
-#   e.g., Union[T, int].__origin__ == Union;
+#   e.g., Union[T, int].__origin__ == Union, or the non-generic version of
+#   the type.
 # * __args__ is a tuple of all arguments used in subscripting,
 #   e.g., Dict[T, int].__args__ == (T, int).
 
