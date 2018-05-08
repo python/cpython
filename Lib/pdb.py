@@ -201,6 +201,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.stack = []
         self.curindex = 0
         self.curframe = None
+        self.curframe_locals = None
         self.tb_lineno.clear()
 
     def setup(self, f, tb):

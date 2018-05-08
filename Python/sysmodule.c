@@ -464,8 +464,21 @@ call_trampoline(PyObject* callback,
 {
     PyObject *result;
     PyObject *stack[3];
+    int res;
+    PyThreadState *tstate = PyThreadState_GET();
+    int tracing = tstate->tracing;
 
-    if (PyFrame_FastToLocalsWithError(frame) < 0) {
+    /* frame->f_locals may still hold a reference to an object that was set in
+     * a previous invocation of PyFrame_FastToLocalsWithError() while the
+     * Python code being traced may not anymore hold any reference to this
+     * object. Re-enable temporarily tracing to allow the corresponding
+     * destructor to be traced/profiled (issue bpo-33446). */
+    tstate->tracing = 0;
+    tstate->use_tracing = 1;
+    res = PyFrame_FastToLocalsWithError(frame);
+    tstate->use_tracing = 0;
+    tstate->tracing = tracing;
+    if (res < 0) {
         return NULL;
     }
 

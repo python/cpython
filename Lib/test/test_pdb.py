@@ -1140,6 +1140,39 @@ def test_pdb_issue_20766():
     pdb 2: <built-in function default_int_handler>
     """
 
+def test_pdb_issue_33446():
+    """Test that the destructor of a local variable is traced.
+
+    >>> def test_function():
+    ...     class C:
+    ...         def __del__(self):
+    ...             within_destructor = True
+    ...
+    ...     a = C()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput(['step',
+    ...                    'step',
+    ...                    'step',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_33446[0]>(8)test_function()
+    -> pass
+    (Pdb) step
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_33446[0]>(8)test_function()->None
+    -> pass
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_issue_33446[0]>(3)__del__()
+    -> def __del__(self):
+    (Pdb) step
+    > <doctest test.test_pdb.test_pdb_issue_33446[0]>(4)__del__()
+    -> within_destructor = True
+    (Pdb) continue
+    """
+
 
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):

@@ -447,6 +447,32 @@ class TraceTestCase(unittest.TestCase):
             [(0, 'call'),
              (1, 'line')])
 
+    def test_18_trace_locals_destructors(self):
+        # Issue bpo-33446: destructors of local variables are now traced.
+        def func():
+            class C:
+                def __del__(self):
+                    lineno = 3
+
+            a = C()
+            a = 1
+            lineno = 7
+
+        self.run_and_compare(func,
+           [(0, 'call'),
+            (1, 'line'),
+            (1, 'call'),
+            (1, 'line'),
+            (2, 'line'),
+            (2, 'return'),
+            (5, 'line'),
+            (6, 'line'),
+            (2, 'call'),
+            (3, 'line'),
+            (3, 'return'),
+            (7, 'line'),
+            (7, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""
