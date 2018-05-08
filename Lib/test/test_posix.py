@@ -1515,6 +1515,12 @@ class TestPosixSpawn(unittest.TestCase):
         )
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
+    def test_setpgroup_wrong_type(self):
+        with self.assertRaises(TypeError):
+            posix.posix_spawn(sys.executable,
+                              [sys.executable, "-c", "pass"],
+                              os.environ, setpgroup="023")
+
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                            'need signal.pthread_sigmask()')
     def test_setsigmask(self):
@@ -1544,26 +1550,6 @@ class TestPosixSpawn(unittest.TestCase):
                               [sys.executable, "-c", "pass"],
                               os.environ, setsigmask=[9998, 9999])
 
-    @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
-    def test_setscheduler_only_param(self):
-        pid = posix.posix_spawn(
-            sys.executable,
-            [sys.executable, '-c', "pass"],
-            os.environ,
-            scheduler=(None, os.sched_param(os.PRIO_PROCESS))
-        )
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
-
-    @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
-    def test_setscheduler_with_policy(self):
-        pid = posix.posix_spawn(
-            sys.executable,
-            [sys.executable, '-c', "pass"],
-            os.environ,
-            scheduler=(os.SCHED_OTHER, os.sched_param(os.PRIO_PROCESS))
-        )
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
-
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
     def test_setsigdef(self):
@@ -1581,7 +1567,9 @@ class TestPosixSpawn(unittest.TestCase):
         finally:
             signal.signal(signal.SIGUSR1, original_handler)
 
-        self.assertNotEqual(os.waitpid(pid, 0), (pid, 0))
+        pid2, status = os.waitpid(pid, 0)
+        self.assertEqual(pid2, pid)
+        self.assertNotEqual(status, 0)
 
     def test_setsigdef_wrong_type(self):
         with self.assertRaises(TypeError):
@@ -1597,11 +1585,41 @@ class TestPosixSpawn(unittest.TestCase):
                               [sys.executable, "-c", "pass"],
                               os.environ, setsigdef=[9998, 9999])
 
-    def test_setgroup_wrong_type(self):
-        with self.assertRaises(TypeError):
-            posix.posix_spawn(sys.executable,
-                              [sys.executable, "-c", "pass"],
-                              os.environ, setgroup="023")
+    @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
+    def test_setscheduler_only_param(self):
+        policy = os.sched_getscheduler(0)
+        priority = os.sched_get_priority_min(policy)
+        code = textwrap.dedent(f"""\
+        import os
+        if os.sched_getscheduler(0) != {policy}:
+            os.exit(101)
+        if os.sched_getparam(0).sched_priority != {priority}:
+            os.exit(102)""")
+        pid = posix.posix_spawn(
+            sys.executable,
+            [sys.executable, '-c', code],
+            os.environ,
+            scheduler=(None, os.sched_param(os.PRIO_PROCESS))
+        )
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
+    @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
+    def test_setscheduler_with_policy(self):
+        policy = os.sched_getscheduler(0)
+        priority = os.sched_get_priority_min(policy)
+        code = textwrap.dedent(f"""\
+        import os
+        if os.sched_getscheduler(0) != {policy}:
+            os.exit(101)
+        if os.sched_getparam(0).sched_priority != {priority}:
+            os.exit(102)""")
+        pid = posix.posix_spawn(
+            sys.executable,
+            [sys.executable, '-c', code],
+            os.environ,
+            scheduler=(os.SCHED_OTHER, os.sched_param(os.PRIO_PROCESS))
+        )
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
     def test_multiple_file_actions(self):
         file_actions = [
