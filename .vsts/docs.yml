@@ -19,7 +19,7 @@ steps:
   clean: true
   fetchDepth: 5
 
-- script: sudo apt-get update && sudo apt-get install texlive-full
+- script: sudo apt-get update && sudo apt-get install -qy --force-yes texlive-full 
   displayName: 'Install LaTeX'
 
 - task: UsePythonVersion@0
