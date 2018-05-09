@@ -607,7 +607,8 @@ class TypeVar(_Final, _Immutable, _root=True):
 # * __parameters__ is a tuple of unique free type parameters of a generic
 #   type, for example, Dict[T, T].__parameters__ == (T,);
 # * __origin__ keeps a reference to a type that was subscripted,
-#   e.g., Union[T, int].__origin__ == Union;
+#   e.g., Union[T, int].__origin__ == Union, or the non-generic version of
+#   the type.
 # * __args__ is a tuple of all arguments used in subscripting,
 #   e.g., Dict[T, int].__args__ == (T, int).
 
@@ -835,7 +836,11 @@ class Generic:
         if cls is Generic:
             raise TypeError("Type Generic cannot be instantiated; "
                             "it can be used only as a base class")
-        return super().__new__(cls)
+        if super().__new__ is object.__new__:
+            obj = super().__new__(cls)
+        else:
+            obj = super().__new__(cls, *args, **kwds)
+        return obj
 
     @_tp_cache
     def __class_getitem__(cls, params):
@@ -1385,6 +1390,7 @@ class NamedTupleMeta(type):
                                 "follow default field(s) {default_names}"
                                 .format(field_name=field_name,
                                         default_names=', '.join(defaults_dict.keys())))
+        nm_tpl.__new__.__annotations__ = collections.OrderedDict(types)
         nm_tpl.__new__.__defaults__ = tuple(defaults)
         nm_tpl._field_defaults = defaults_dict
         # update from user namespace without overriding special namedtuple attributes
