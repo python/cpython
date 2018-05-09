@@ -734,7 +734,7 @@ are always available.  They are listed here in alphabetical order.
    :meth:`x.__int__() <object.__int__>`. If *x* defines
    :meth:`x.__trunc__() <object.__trunc__>` but not
    :meth:`x.__int__() <object.__int__>`, then return
-   if :meth:`x.__trunc__() <object.__trunc__>`.  For floating point numbers,
+   :meth:`x.__trunc__() <object.__trunc__>`.  For floating point numbers,
    this truncates towards zero.
 
    If *x* is not a number or if *base* is given, then *x* must be a string,
