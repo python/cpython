@@ -19,13 +19,13 @@ steps:
   clean: true
   fetchDepth: 5
 
+- script: sudo apt-get update && sudo apt-get install texlive-full
+  displayName: 'Install LaTeX'
+
 - task: UsePythonVersion@0
   displayName: 'Use Python 3.6 or later'
   inputs:
     versionSpec: '>=3.6'
-
-- script: apt-get install texlive-full
-  displayName: 'Install LaTeX'
 
 - script: python -m pip install sphinx blurb python-docs-theme
   displayName: 'Install build dependencies'
