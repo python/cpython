@@ -27,7 +27,7 @@ steps:
 - script: python -m pip install sphinx blurb python-docs-theme
   displayName: 'Install build dependencies'
 
-- script: make html PYTHON=python SPHINXBUILD=sphinx-build BLURB=blurb
+- script: make html PYTHON=python SPHINXBUILD='python -m sphinx-build' BLURB='python -m blurb'
   workingDirectory: '$(build.sourcesDirectory)/Doc'
   displayName: 'Build documentation'
 
