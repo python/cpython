@@ -2398,7 +2398,8 @@ def can_xattr():
     if not hasattr(os, "setxattr"):
         can = False
     else:
-        tmp_fp, tmp_name = tempfile.mkstemp()
+        tmp_dir = tempfile.mkdtemp()
+        tmp_fp, tmp_name = tempfile.mkstemp(dir=tmp_dir)
         try:
             with open(TESTFN, "wb") as fp:
                 try:
@@ -2416,6 +2417,7 @@ def can_xattr():
         finally:
             unlink(TESTFN)
             unlink(tmp_name)
+            rmdir(tmp_dir)
     _can_xattr = can
     return can
 
