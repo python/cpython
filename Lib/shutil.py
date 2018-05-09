@@ -306,49 +306,48 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     function that supports the same signature (like copy()) can be used.
 
     """
-    names = os.listdir(src)
     if ignore is not None:
-        ignored_names = ignore(src, names)
+        ignored_names = ignore(src, os.listdir(src))
     else:
         ignored_names = set()
-
     os.makedirs(dst)
     errors = []
-    for name in names:
-        if name in ignored_names:
+    for entry in os.scandir(src):
+        if entry.name in ignored_names:
             continue
-        srcname = os.path.join(src, name)
-        dstname = os.path.join(dst, name)
+        dstname = os.path.join(dst, entry.name)
         try:
-            if os.path.islink(srcname):
-                linkto = os.readlink(srcname)
+            try:
+                entry_is_symlink = entry.is_symlink()
+            except OSError:
+                entry_is_symlink = False
+            if entry_is_symlink:
+                linkto = os.readlink(entry.path)
                 if symlinks:
                     # We can't just leave it to `copy_function` because legacy
                     # code with a custom `copy_function` may rely on copytree
                     # doing the right thing.
                     os.symlink(linkto, dstname)
-                    copystat(srcname, dstname, follow_symlinks=not symlinks)
-                else:
-                    # ignore dangling symlink if the flag is on
-                    if not os.path.exists(linkto) and ignore_dangling_symlinks:
-                        continue
-                    # otherwise let the copy occurs. copy2 will raise an error
-                    if os.path.isdir(srcname):
-                        copytree(srcname, dstname, symlinks, ignore,
-                                 copy_function)
-                    else:
-                        copy_function(srcname, dstname)
-            elif os.path.isdir(srcname):
-                copytree(srcname, dstname, symlinks, ignore, copy_function)
-            else:
-                # Will raise a SpecialFileError for unsupported file types
-                copy_function(srcname, dstname)
+                    copystat(entry.path, dstname, follow_symlinks=not symlinks)
+                    continue
+                # ignore dangling symlink if the flag is on
+                if not os.path.exists(linkto) and ignore_dangling_symlinks:
+                    continue
+                # otherwise let the copy occurs. copy2 will raise an error
+            try:
+                entry_is_dir = entry.is_dir()
+            except OSError:
+                entry_is_dir = False
+            if entry_is_dir:
+                copytree(entry.path, dstname, symlinks, ignore, copy_function)
+                continue
+            copy_function(entry.path, dstname)
         # catch the Error from the recursive copytree so that we can
         # continue with other files
         except Error as err:
             errors.extend(err.args[0])
         except OSError as why:
-            errors.append((srcname, dstname, str(why)))
+            errors.append((entry.path, dstname, str(why)))
     try:
         copystat(src, dst)
     except OSError as why:
