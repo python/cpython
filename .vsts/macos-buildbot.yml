@@ -19,10 +19,7 @@ steps:
   clean: true
   fetchDepth: 5
 
-- script: brew install openssl && brew link openssl --force
-  displayName: 'Install OpenSSL'
-
-- script: ./configure --with-pydebug
+- script: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl
   displayName: 'Configure CPython (debug)'
 
 - script: make -s -j4
