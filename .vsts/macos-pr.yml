@@ -19,6 +19,9 @@ steps:
   clean: true
   fetchDepth: 5
 
+- script: brew install openssl && brew link openssl --force
+  displayName: 'Install OpenSSL'
+
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'
 
