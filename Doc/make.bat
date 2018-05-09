@@ -10,7 +10,7 @@ if not defined SPHINXBUILD if defined PYTHON (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
-        %PYTHON% -m pip install sphinx
+        %PYTHON% -m pip install sphinx python-docs-theme
         if errorlevel 1 exit /B
     )
     set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sphinx.main()"
