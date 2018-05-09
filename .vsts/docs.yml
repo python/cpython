@@ -28,11 +28,12 @@ steps:
   displayName: 'Install build dependencies'
 
 - script: make html PYTHON=python SPHINXBUILD=sphinx-build BLURB=blurb
+  workingDirectory: '$(build.sourcesDirectory)/docs'
   displayName: 'Build CPython'
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish generated HTML'
   inputs:
-    PathToPublish: '$(Build.SourcesDirectory)/docs/build/html'
+    PathToPublish: '$(build.sourcesDirectory)/docs/build/html'
     ArtifactName: html
     publishLocation: Container
