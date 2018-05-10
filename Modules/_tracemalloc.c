@@ -67,7 +67,10 @@ static PyThread_type_lock tables_lock;
 
 #define DEFAULT_DOMAIN 0
 
-/* Pack the frame_t structure to reduce the memory footprint. */
+/* Pack the pointer_t structure to reduce the memory footprint. */
+#if defined(_MSC_VER)
+#pragma pack(push, 4)
+#endif
 typedef struct
 #ifdef __GNUC__
 __attribute__((packed))
@@ -76,14 +79,18 @@ __attribute__((packed))
     uintptr_t ptr;
     unsigned int domain;
 } pointer_t;
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 /* Pack the frame_t structure to reduce the memory footprint on 64-bit
    architectures: 12 bytes instead of 16. */
+#if defined(_MSC_VER)
+#pragma pack(push, 4)
+#endif
 typedef struct
 #ifdef __GNUC__
 __attribute__((packed))
-#elif defined(_MSC_VER)
-#pragma pack(push, 4)
 #endif
 {
     /* filename cannot be NULL: "<unknown>" is used if the Python frame
