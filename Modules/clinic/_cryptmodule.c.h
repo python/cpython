@@ -14,7 +14,7 @@ PyDoc_STRVAR(crypt_crypt__doc__,
 "results for a given *word*.");
 
 #define CRYPT_CRYPT_METHODDEF    \
-    {"crypt", (PyCFunction)crypt_crypt, METH_FASTCALL, crypt_crypt__doc__},
+    {"crypt", (PyCFunction)(void *)crypt_crypt, METH_FASTCALL, crypt_crypt__doc__},
 
 static PyObject *
 crypt_crypt_impl(PyObject *module, const char *word, const char *salt);
@@ -35,4 +35,4 @@ crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8d803e53466b1cd3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eefa014d6537181f input=a9049054013a1b77]*/
