@@ -781,6 +781,26 @@ cat >> conftest.c <<EOF
         ia64-linux-gnu
 # elif defined(__m68k__) && !defined(__mcoldfire__)
         m68k-linux-gnu
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6el-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6el-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6el-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
 # elif defined(__mips_hard_float) && defined(_MIPSEL)
 #  if _MIPS_SIM == _ABIO32
         mipsel-linux-gnu
@@ -823,6 +843,14 @@ cat >> conftest.c <<EOF
         sparc64-linux-gnu
 # elif defined(__sparc__)
         sparc-linux-gnu
+# elif defined(__riscv)
+#  if __riscv_xlen == 32
+        riscv32-linux-gnu
+#  elif __riscv_xlen == 64
+        riscv64-linux-gnu
+#  else
+#   error unknown platform triplet
+#  endif
 # else
 #   error unknown platform triplet
 # endif
@@ -3446,7 +3474,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
  sched_rr_get_interval \
- sigaction sigaltstack siginterrupt sigpending sigrelse \
+ sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
  sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \

@@ -297,7 +297,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     if (delta_iblock > 0) {
         f->f_iblock -= delta_iblock;
         PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-        delta += (f->f_stacktop - f->f_valuestack) - b->b_level;
+        delta += (int)(f->f_stacktop - f->f_valuestack) - b->b_level;
         if (b->b_type == SETUP_FINALLY &&
             code[b->b_handler] == WITH_CLEANUP_START)
         {
@@ -500,7 +500,7 @@ frame_tp_clear(PyFrameObject *f)
 }
 
 static PyObject *
-frame_clear(PyFrameObject *f)
+frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     if (f->f_executing) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -519,7 +519,7 @@ PyDoc_STRVAR(clear__doc__,
 "F.clear(): clear most references held by the frame");
 
 static PyObject *
-frame_sizeof(PyFrameObject *f)
+frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res, extras, ncells, nfrees;
 

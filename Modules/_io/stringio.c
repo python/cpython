@@ -812,7 +812,7 @@ _io_StringIO_seekable_impl(stringio *self)
 */
 
 static PyObject *
-stringio_getstate(stringio *self)
+stringio_getstate(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *initvalue = _io_StringIO_getvalue_impl(self);
     PyObject *dict;

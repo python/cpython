@@ -619,7 +619,7 @@ filter_next(filterobject *lz)
 }
 
 static PyObject *
-filter_reduce(filterobject *lz)
+filter_reduce(filterobject *lz, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
 }
@@ -1331,7 +1331,7 @@ exit:
 }
 
 static PyObject *
-map_reduce(mapobject *lz)
+map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t numargs = PyTuple_GET_SIZE(lz->iters);
     PyObject *args = PyTuple_New(numargs+1);
@@ -2656,7 +2656,7 @@ zip_next(zipobject *lz)
 }
 
 static PyObject *
-zip_reduce(zipobject *lz)
+zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
 {
     /* Just recreate the zip with the internal iterator tuple */
     return Py_BuildValue("OO", Py_TYPE(lz), lz->ittuple);
