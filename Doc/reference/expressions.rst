@@ -145,9 +145,7 @@ An empty pair of parentheses yields an empty tuple object.  Since tuples are
 immutable, the rules for literals apply (i.e., two occurrences of the empty
 tuple may or may not yield the same object).
 
-.. index::
-   single: comma
-   pair: tuple; display
+.. index:: single: comma
 
 Note that tuples are not formed by the parentheses, but rather by use of the
 comma operator.  The exception is the empty tuple, for which parentheses *are*
@@ -1741,7 +1739,8 @@ precedence and have a left-to-right chaining feature as described in the
 | ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
 | ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
 +-----------------------------------------------+-------------------------------------+
-| ``(expressions...)``,                         | Binding or tuple display,           |
+| ``(expressions...)``,                         | Binding or parenthesized            |
+|                                               | expressions,                        |
 | ``[expressions...]``,                         | list display,                       |
 | ``{key: value...}``,                          | dictionary display,                 |
 | ``{expressions...}``                          | set display                         |
