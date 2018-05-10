@@ -465,7 +465,7 @@ def venv(known_paths):
 
     if candidate_confs:
         virtual_conf = candidate_confs[0]
-        system_site = "true"
+        system_site = "false"
         # Issue 25185: Use UTF-8, as that's what the venv module uses when
         # writing the file.
         with open(virtual_conf, encoding='utf-8') as f:
@@ -486,7 +486,7 @@ def venv(known_paths):
 
         # addsitepackages will process site_prefix again if its in PREFIXES,
         # but that's ok; known_paths will prevent anything being added twice
-        if system_site == "true":
+        if system_site != "false":
             PREFIXES.insert(0, sys.prefix)
         else:
             PREFIXES = [sys.prefix]
