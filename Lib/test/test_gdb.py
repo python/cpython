@@ -162,7 +162,7 @@ class DebuggerTests(unittest.TestCase):
             commands += ['set print entry-values no']
 
         if cmds_after_breakpoint:
-            commands += cmds_after_breakpoint
+            commands += ['next'] + cmds_after_breakpoint
         else:
             commands += ['backtrace']
 
@@ -202,6 +202,8 @@ class DebuggerTests(unittest.TestCase):
             'BFD: ',
             # ignore all warnings
             'warning: ',
+            # See #32962
+            'Python Exception',
             )
         for line in errlines:
             if not line:
@@ -849,7 +851,7 @@ id(42)
         ''')
         # Verify with "py-bt":
         gdb_output = self.get_stack_trace(cmd,
-                                          cmds_after_breakpoint=['break wrapper_call', 'continue', 'py-bt'])
+                                          cmds_after_breakpoint=['break wrapper_call', 'continue', 'next', 'py-bt'])
         self.assertRegex(gdb_output,
                          r"<method-wrapper u?'__init__' of MyList object at ")
 
