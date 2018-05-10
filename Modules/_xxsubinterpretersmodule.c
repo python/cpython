@@ -2794,11 +2794,11 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channel_send_doc},
     {"channel_recv",              (PyCFunction)channel_recv,
      METH_VARARGS | METH_KEYWORDS, channel_recv_doc},
-    {"channel_close",             (PyCFunction)channel_close,
+    {"channel_close",             (PyCFunction)(void *)channel_close,
      METH_VARARGS | METH_KEYWORDS, channel_close_doc},
-    {"channel_release",           (PyCFunction)channel_release,
+    {"channel_release",           (PyCFunction)(void *)channel_release,
      METH_VARARGS | METH_KEYWORDS, channel_release_doc},
-    {"_channel_id",               (PyCFunction)channel__channel_id,
+    {"_channel_id",               (PyCFunction)(void *)channel__channel_id,
      METH_VARARGS | METH_KEYWORDS, NULL},
 
     {NULL,                        NULL}           /* sentinel */

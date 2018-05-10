@@ -3111,7 +3111,7 @@ static PyMethodDef mapp_methods[] = {
     items__doc__},
     {"values",          dictvalues_new,                 METH_NOARGS,
     values__doc__},
-    {"update",          (PyCFunction)dict_update,       METH_VARARGS | METH_KEYWORDS,
+    {"update",          (PyCFunction)(void *)dict_update, METH_VARARGS | METH_KEYWORDS,
      update__doc__},
     DICT_FROMKEYS_METHODDEF
     {"clear",           (PyCFunction)dict_clear,        METH_NOARGS,
