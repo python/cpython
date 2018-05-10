@@ -1590,11 +1590,11 @@ class TestPosixSpawn(unittest.TestCase):
         policy = os.sched_getscheduler(0)
         priority = os.sched_get_priority_min(policy)
         code = textwrap.dedent(f"""\
-        import os
-        if os.sched_getscheduler(0) != {policy}:
-            os.exit(101)
-        if os.sched_getparam(0).sched_priority != {priority}:
-            os.exit(102)""")
+            import os
+            if os.sched_getscheduler(0) != {policy}:
+                os.exit(101)
+            if os.sched_getparam(0).sched_priority != {priority}:
+                os.exit(102)""")
         pid = posix.posix_spawn(
             sys.executable,
             [sys.executable, '-c', code],
@@ -1608,11 +1608,11 @@ class TestPosixSpawn(unittest.TestCase):
         policy = os.sched_getscheduler(0)
         priority = os.sched_get_priority_min(policy)
         code = textwrap.dedent(f"""\
-        import os
-        if os.sched_getscheduler(0) != {policy}:
-            os.exit(101)
-        if os.sched_getparam(0).sched_priority != {priority}:
-            os.exit(102)""")
+            import os
+            if os.sched_getscheduler(0) != {policy}:
+                os.exit(101)
+            if os.sched_getparam(0).sched_priority != {priority}:
+                os.exit(102)""")
         pid = posix.posix_spawn(
             sys.executable,
             [sys.executable, '-c', code],
