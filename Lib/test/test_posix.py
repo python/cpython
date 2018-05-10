@@ -1462,7 +1462,7 @@ class TestPosixSpawn(unittest.TestCase):
         """
         pid = posix.posix_spawn(sys.executable,
                                 [sys.executable, '-c', script],
-                                {'foo': 'bar'})
+                                {**os.environ, 'foo': 'bar'})
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
         with open(envfile) as f:
             self.assertEqual(f.read(), 'bar')
