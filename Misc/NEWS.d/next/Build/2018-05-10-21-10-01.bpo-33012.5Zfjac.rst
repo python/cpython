@@ -1,0 +1,2 @@
+Add ``-Wno-cast-function-type`` for gcc 8 for silencing warnings about
+function casts like casting to PyCFunction in method definition lists.
