@@ -40,7 +40,7 @@ Glossary
       ABCs with the :mod:`abc` module.
 
    annotation
-      A metadata value associated with a global variable, a class variable or a
+      A metadata value associated with a global variable, a class attribute or a
       function or method parameter or return value, that stores a
       :term:`type hint`.
 
@@ -1044,7 +1044,7 @@ Glossary
       :func:`bytes.splitlines` for an additional use.
 
    variable annotation
-      An :term:`annotation` of a global variable, or a class variable.
+      An :term:`annotation` of a global variable, or a class attribute.
 
       For example, this variable is annotated as taking :class:`int` values::
 
