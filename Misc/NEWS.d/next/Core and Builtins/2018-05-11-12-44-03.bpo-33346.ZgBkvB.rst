@@ -1,0 +1,3 @@
+Asynchronous comprehensions are now allowed inside comprehensions in
+asynchronous functions.  Outer comprehensions implicitly become
+asynchronous.

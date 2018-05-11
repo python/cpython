@@ -4075,7 +4075,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     PyCodeObject *co = NULL;
     comprehension_ty outermost;
     PyObject *qualname = NULL;
-    int is_async_function = c->u->u_ste->ste_coroutine;
+    int scope_type = c->u->u_scope_type;
     int is_async_generator = 0;
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
@@ -4088,7 +4088,10 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     is_async_generator = c->u->u_ste->ste_coroutine;
 
-    if (is_async_generator && !is_async_function && type != COMP_GENEXP) {
+    if (is_async_generator && type != COMP_GENEXP &&
+        scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
+        scope_type != COMPILER_SCOPE_COMPREHENSION)
+    {
         if (e->lineno > c->u->u_lineno) {
             c->u->u_lineno = e->lineno;
             c->u->u_lineno_set = 0;

@@ -1741,7 +1741,14 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         return 0;
     }
     st->st_cur->ste_generator = is_generator;
-    return symtable_exit_block(st, (void *)e);
+    int is_async = st->st_cur->ste_coroutine && !is_generator;
+    if (!symtable_exit_block(st, (void *)e)) {
+        return 0;
+    }
+    if (is_async) {
+        st->st_cur->ste_coroutine = 1;
+    }
+    return 1;
 }
 
 static int
