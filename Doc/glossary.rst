@@ -187,6 +187,15 @@ Glossary
       normally contain method definitions which operate on instances of the
       class.
 
+   class variable
+      A variable defined in a class and intended to be modified only at
+      class level (i.e., not in an instance of the class).
+
+      Class variables can be specified as such through
+      :term:`type hints <type hint>`.
+
+      See :pep:`526` which describes class variable annotations.
+
    coercion
       The implicit conversion of an instance of one type to another during an
       operation which involves two arguments of the same type.  For example,
