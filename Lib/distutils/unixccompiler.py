@@ -71,7 +71,7 @@ class UnixCCompiler(CCompiler):
     # reasonable common default here, but it's not necessarily used on all
     # Unices!
 
-    src_extensions = [".c",".C",".cc",".cxx",".cpp",".m"]
+    src_extensions = [".c",".C",".cc",".cxx",".cpp",".m",".mm"]
     obj_extension = ".o"
     static_lib_extension = ".a"
     shared_lib_extension = ".so"
