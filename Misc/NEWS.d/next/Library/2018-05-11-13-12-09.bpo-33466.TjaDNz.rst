@@ -1,0 +1,2 @@
+Support compiling Objective-C++ (“.mm”) files within Distutils. Patch by
+Alexander Böhn.
