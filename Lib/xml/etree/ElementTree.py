@@ -1448,7 +1448,8 @@ class XMLParser:
     def __init__(self, html=_sentinel, target=None, encoding=None):
         if html is not _sentinel:
             warnings.warn(
-                "The html argument of XMLParser() is deprecated",
+                "The html argument of XMLParser() is deprecated since 3.4"
+                " and will be ignored.",
                 DeprecationWarning, stacklevel=2)
         try:
             from xml.parsers import expat

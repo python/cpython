@@ -3282,7 +3282,8 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
 {
     if (html != NULL) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "The html argument of XMLParser() is deprecated",
+                         "The html argument of XMLParser() is deprecated since"
+                         " 3.4 and will be ignored.",
                          1) < 0) {
             return -1;
         }
