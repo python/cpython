@@ -836,7 +836,7 @@ class Generic:
         if cls is Generic:
             raise TypeError("Type Generic cannot be instantiated; "
                             "it can be used only as a base class")
-        if super().__new__ is object.__new__:
+        if super().__new__ is object.__new__ and cls.__init__ is not object.__init__:
             obj = super().__new__(cls)
         else:
             obj = super().__new__(cls, *args, **kwds)
