@@ -46,7 +46,7 @@ Glossary
 
       Annotations are stored in the :attr:`__annotations__` special attribute
       of a module (when annotating a global variable), class (when annotating
-      a class variable) or function or method (when annotating a parameter or a
+      one of its attributes) or function or method (when annotating a parameter or a
       return value) and can be accessed using :func:`typing.get_type_hints`.
 
       See :pep:`484` and :pep:`526` which describe this functionality.
@@ -1025,11 +1025,11 @@ Glossary
       ``type(obj)``.
 
    type hint
-      An specification about the expected type for a global variable, class
+      A specification about the expected type for a global variable, class
       variable, function or method parameter or return value.
 
       While type hints are optional and are not enforced by Python when used,
-      they are very useful for static type analysis tools, and aid IDEs on code
+      they are useful for static type analysis tools, and aid IDEs on code
       completion and refactoring.
 
       Type hints are stored in :term:`annotations <annotation>`.
