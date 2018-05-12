@@ -6,6 +6,7 @@ from test import test_support
 import os
 import io
 import struct
+import tempfile
 gzip = test_support.import_module('gzip')
 
 data1 = """  int length=DEFAULTALLOC, err = Z_OK;
@@ -331,6 +332,12 @@ class TestGzip(unittest.TestCase):
             with gzip.GzipFile(fileobj=f, mode="w") as g:
                 self.assertEqual(g.name, "")
 
+    def test_fileobj_from_io_open(self):
+        fd = os.open(self.filename, os.O_WRONLY | os.O_CREAT)
+        with io.open(fd, "wb") as f:
+            with gzip.GzipFile(fileobj=f, mode="w") as g:
+                self.assertEqual(g.name, "")
+
     def test_fileobj_mode(self):
         gzip.GzipFile(self.filename, "wb").close()
         with open(self.filename, "r+b") as f:
@@ -358,6 +365,14 @@ class TestGzip(unittest.TestCase):
                   b'\x0bI-.\x01\x002\xd1Mx\x04\x00\x00\x00')
         with gzip.GzipFile(fileobj=io.BytesIO(gzdata)) as f:
             self.assertEqual(f.read(), b'Test')
+
+    def test_fileobj_without_name(self):
+        # Issue #33038: GzipFile should not assume that file objects that have
+        # a .name attribute use a non-None value.
+        with tempfile.SpooledTemporaryFile() as f:
+            with gzip.GzipFile(fileobj=f, mode='wb') as archive:
+                archive.write(b'data')
+                self.assertEqual(archive.name, '')
 
 def test_main(verbose=None):
     test_support.run_unittest(TestGzip)
