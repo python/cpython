@@ -25,6 +25,7 @@ import heapq as _heapq
 from _weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 from reprlib import recursive_repr as _recursive_repr
+import warnings
 
 try:
     from _collections import deque
@@ -425,6 +426,9 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
 
     def _asdict(self):
         'Return a new OrderedDict which maps field names to their values.'
+        # https://bugs.python.org/issue33463
+        warnings.warn('_asdict will return a basic dict instead of OrderedDict',
+            PendingDeprecationWarning)
         return OrderedDict(zip(self._fields, self))
 
     def __getnewargs__(self):
