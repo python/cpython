@@ -182,6 +182,12 @@ _PARAMS = '__dataclass_params__'
 # __init__.
 _POST_INIT_NAME = '__post_init__'
 
+# String prefixes that string annotations for ClassVar may have.  See
+# https://bugs.python.org/issue33453 for details.
+_CLASSVAR_PREFIXES = ('ClassVar', 'typing.ClassVar')
+
+# String prefixes that string annotations for InitVar may have.
+_INITVAR_PREFIXES = ('InitVar', 'dataclasses.InitVar')
 
 class _InitVarMeta(type):
     def __getitem__(self, params):
@@ -549,22 +555,33 @@ def _get_field(cls, a_name, a_type):
     f.name = a_name
     f.type = a_type
 
-    # If typing has not been imported, then it's impossible for
-    #  any annotation to be a ClassVar. So, only look for ClassVar
-    #  if typing has been imported.
-    typing = sys.modules.get('typing')
-    if typing is not None:
-        # This test uses a typing internal class, but it's the best
-        #  way to test if this is a ClassVar.
-        if (type(a_type) is typing._GenericAlias and
-                a_type.__origin__ is typing.ClassVar):
-            # This field is a ClassVar, so it's not a field.
-            f._field_type = _FIELD_CLASSVAR
+    # Check for string annotations.  get_type_hints() won't always
+    #  work for us (see https://github.com/python/typing/issues/508
+    #  for example.  So, make a best effort to see if this is a
+    #  ClassVar or InitVar.
+    # For the complete discussion, see https://bugs.python.org/issue33453
+    if isinstance(f.type, str) and f.type.startswith(_CLASSVAR_PREFIXES):
+        f._field_type = _FIELD_CLASSVAR
+    else:
+        # If typing has not been imported, then it's impossible for
+        #  any annotation to be a ClassVar. So, only look for ClassVar
+        #  if typing has been imported.
+        typing = sys.modules.get('typing')
+        if typing is not None:
+            # This test uses a typing internal class, but it's the best
+            #  way to test if this is a ClassVar.
+            if (type(a_type) is typing._GenericAlias and
+                    a_type.__origin__ is typing.ClassVar):
+                # This field is a ClassVar, so it's not a regular field.
+                f._field_type = _FIELD_CLASSVAR
 
+    # If the type is InitVar, or if it's a string annotation and looks
+    #  like an InitVar, then it's an InitVar.
     if f._field_type is _FIELD:
-        # Check if this is an InitVar.
-        if a_type is InitVar:
-            # InitVars are not fields, either.
+        if (f.type is InitVar or
+            (isinstance(f.type, str) and
+             f.type.startswith(_INITVAR_PREFIXES))):
+            # This field is an InitVars, so it's not a regular field.
             f._field_type = _FIELD_INITVAR
 
     # Validations for fields.  This is delayed until now, instead of
@@ -597,7 +614,6 @@ def _set_new_attribute(cls, name, value):
         return True
     setattr(cls, name, value)
     return False
-
 
 
 # Decide if/how we're going to create a hash function.  Key is

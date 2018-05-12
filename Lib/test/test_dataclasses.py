@@ -2798,5 +2798,61 @@ class TestDescriptors(unittest.TestCase):
         self.assertEqual(D.__set_name__.call_count, 1)
 
 
+class TestStringAnnotations(unittest.TestCase):
+    def test_classvar(self):
+        # Because the test is just str.startswith and not a regex,
+        # things like ClassVarx are still considered a ClassVar.
+        for typestr in ('ClassVar', 'typing.ClassVar',
+                        'ClassVar[int]', 'typing.ClassVar[int]'
+                        'ClassVarx', 'typing.ClassVarx'):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is a ClassVar, so C() takes no args.
+                C()
+
+                # And it won't appear in the class's dict because it doesn't
+                # have a default.
+                self.assertNotIn('x', C.__dict__)
+
+    def test_isnt_classvar(self):
+        for typestr in ('CV', 't.ClassVar', 'dataclasses.ClassVar',
+                        'dataclasses.InitVar'):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is not a ClassVar, so C() takes one arg.
+                C(1)
+
+    def test_initvar(self):
+        for typestr in ('InitVar', 'dataclasses.InitVar',
+                        'InitVar[int]', 'dataclasses.InitVar[int]',
+                        'InitVarx', 'dataclasses.InitVarx'):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is an InitVar, so doesn't create a member.
+                with self.assertRaisesRegex(AttributeError,
+                                            "object has no attribute 'x'"):
+                    C(1).x
+
+    def test_isnt_initvar(self):
+        for typestr in ('IV', 'dc.InitVar', 'xdataclasses.InitVar',
+                        'typing.InitVar'):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is not an InitVar, so there will be a member x.
+                C(1).x
+
+
 if __name__ == '__main__':
     unittest.main()
