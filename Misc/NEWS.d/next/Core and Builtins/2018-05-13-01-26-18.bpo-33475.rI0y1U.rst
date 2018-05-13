@@ -1,2 +1,2 @@
-Fixed miscellaneous bugs in onverting annotations to strings and optimize
-parenthesis in the string representation.
+Fixed miscellaneous bugs in converting annotations to strings and optimized
+parentheses in the string representation.
