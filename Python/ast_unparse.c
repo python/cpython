@@ -76,21 +76,22 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
 
 enum {
     PR_TUPLE,
-    PR_TEST,
-    PR_OR,
-    PR_AND,
-    PR_NOT,
-    PR_CMP,
+    PR_TEST,            /* 'if'-'else', 'lambda' */
+    PR_OR,              /* 'or' */
+    PR_AND,             /* 'and' */
+    PR_NOT,             /* 'not' */
+    PR_CMP,             /* '<', '>', '==', '>=', '<=', '!=',
+                           'in', 'not in', 'is', 'is not' */
     PR_EXPR,
-    PR_BOR = PR_EXPR,
-    PR_BXOR,
-    PR_BAND,
-    PR_SHIFT,
-    PR_ARITH,
-    PR_TERM,
-    PR_FACTOR,
-    PR_POWER,
-    PR_AWAIT,
+    PR_BOR = PR_EXPR,   /* '|' */
+    PR_BXOR,            /* '^' */
+    PR_BAND,            /* '&' */
+    PR_SHIFT,           /* '<<', '>>' */
+    PR_ARITH,           /* '+', '-' */
+    PR_TERM,            /* '*', '@', '/', '%', '//' */
+    PR_FACTOR,          /* unary '+', '-', '~' */
+    PR_POWER,           /* '**' */
+    PR_AWAIT,           /* 'await' */
     PR_ATOM,
 };
 
@@ -121,9 +122,9 @@ append_ast_binop(_PyUnicodeWriter *writer, expr_ty e, int level)
 {
     const char *op;
     int pr;
-    bool rassoc = false;
+    bool rassoc = false;  /* is right-associative? */
 
-    switch(e->v.BinOp.op) {
+    switch (e->v.BinOp.op) {
     case Add: op = " + "; pr = PR_ARITH; break;
     case Sub: op = " - "; pr = PR_ARITH; break;
     case Mult: op = " * "; pr = PR_TERM; break;
@@ -138,7 +139,9 @@ append_ast_binop(_PyUnicodeWriter *writer, expr_ty e, int level)
     case FloorDiv: op = " // "; pr = PR_TERM; break;
     case Pow: op = " ** "; pr = PR_POWER; rassoc = true; break;
     default:
-        Py_UNREACHABLE();
+        PyErr_SetString(PyExc_SystemError,
+                        "unknown binary operator");
+        return -1;
     }
 
     APPEND_STR_IF(level > pr, "(");
@@ -155,13 +158,15 @@ append_ast_unaryop(_PyUnicodeWriter *writer, expr_ty e, int level)
     const char *op;
     int pr;
 
-    switch(e->v.UnaryOp.op) {
+    switch (e->v.UnaryOp.op) {
     case Invert: op = "~"; pr = PR_FACTOR; break;
     case Not: op = "not "; pr = PR_NOT; break;
     case UAdd: op = "+"; pr = PR_FACTOR; break;
     case USub: op = "-"; pr = PR_FACTOR; break;
     default:
-        Py_UNREACHABLE();
+        PyErr_SetString(PyExc_SystemError,
+                        "unknown unary operator");
+        return -1;
     }
 
     APPEND_STR_IF(level > pr, "(");
@@ -586,9 +591,8 @@ build_fstring_body(asdl_seq *values, bool is_format_spec)
     body_writer.min_length = 256;
     body_writer.overallocate = 1;
 
-    value_count = asdl_seq_LEN(values) - 1;
-    assert(value_count >= 0);
-    for (i = 0; i <= value_count; ++i) {
+    value_count = asdl_seq_LEN(values);
+    for (i = 0; i < value_count; ++i) {
         if (-1 == append_fstring_element(&body_writer,
                                          (expr_ty)asdl_seq_GET(values, i),
                                          is_format_spec
@@ -629,6 +633,8 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 {
     const char *conversion;
     const char *outer_brace = "{";
+    /* Grammar allows PR_TUPLE, but use >PR_TEST for adding parenthesis
+       around a lambda with ':' */
     PyObject *temp_fv_str = expr_as_unicode(e->v.FormattedValue.value, PR_TEST + 1);
     if (!temp_fv_str) {
         return -1;
@@ -650,13 +656,13 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 
     if (e->v.FormattedValue.conversion > 0) {
         switch (e->v.FormattedValue.conversion) {
-        case 97:
+        case 'a':
             conversion = "!a";
             break;
-        case 114:
+        case 'r':
             conversion = "!r";
             break;
-        case 115:
+        case 's':
             conversion = "!s";
             break;
         default:
@@ -736,7 +742,7 @@ append_ast_ext_slice(_PyUnicodeWriter *writer, slice_ty slice)
 static int
 append_ast_slice(_PyUnicodeWriter *writer, slice_ty slice)
 {
-    switch(slice->kind) {
+    switch (slice->kind) {
     case Slice_kind:
         return append_ast_simple_slice(writer, slice);
     case ExtSlice_kind:
@@ -859,7 +865,6 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_starred(writer, e);
     case Name_kind:
         return _PyUnicodeWriter_WriteStr(writer, e->v.Name.id);
-    /* child nodes of List and Tuple will have expr_context set */
     case List_kind:
         return append_ast_list(writer, e);
     case Tuple_kind:

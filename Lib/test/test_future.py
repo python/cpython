@@ -168,7 +168,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('(a ** b) ** c ** d')
         eq('v1 << 2')
         eq('1 >> v2')
-        eq(r'1 % finished')
+        eq('1 % finished')
         eq('1 + v2 - v3 * 4 ^ 5 ** v6 / 7 // 8')
         eq('not great')
         eq('not not great')
