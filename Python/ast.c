@@ -4063,7 +4063,7 @@ ast_for_stmt(struct compiling *c, const node *n)
                 return ast_for_async_stmt(c, ch);
             default:
                 PyErr_Format(PyExc_SystemError,
-                             "unhandled small_stmt: TYPE=%d NCH=%d\n",
+                             "unhandled compound_stmt: TYPE=%d NCH=%d\n",
                              TYPE(n), NCH(n));
                 return NULL;
         }
