@@ -35,8 +35,15 @@ steps:
   displayName: 'Build documentation'
 
 - task: PublishBuildArtifacts@1
-  displayName: 'Publish generated Docs'
+  displayName: 'Publish build'
   inputs:
     PathToPublish: '$(build.sourcesDirectory)/Doc/build'
     ArtifactName: build
+    publishLocation: Container
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish dist'
+  inputs:
+    PathToPublish: '$(build.sourcesDirectory)/Doc/dist'
+    ArtifactName: dist
     publishLocation: Container
