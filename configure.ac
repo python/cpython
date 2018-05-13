@@ -1901,7 +1901,7 @@ fi
 # options before we can check whether -Kpthread improves anything.
 AC_MSG_CHECKING(whether pthreads are available without options)
 AC_CACHE_VAL(ac_cv_pthread_is_default,
-[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+[AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <pthread.h>
 
@@ -1930,13 +1930,13 @@ else
 # -Kpthread, if available, provides the right #defines
 # and linker options to make pthread_create available
 # Some compilers won't report that they do not support -Kpthread,
-# so we need to run a program to see whether it really made the
+# so we need to link a program to see whether it really made the
 # function available.
 AC_MSG_CHECKING(whether $CC accepts -Kpthread)
 AC_CACHE_VAL(ac_cv_kpthread,
 [ac_save_cc="$CC"
 CC="$CC -Kpthread"
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <pthread.h>
 
@@ -1959,13 +1959,13 @@ then
 # -Kthread, if available, provides the right #defines
 # and linker options to make pthread_create available
 # Some compilers won't report that they do not support -Kthread,
-# so we need to run a program to see whether it really made the
+# so we need to link a program to see whether it really made the
 # function available.
 AC_MSG_CHECKING(whether $CC accepts -Kthread)
 AC_CACHE_VAL(ac_cv_kthread,
 [ac_save_cc="$CC"
 CC="$CC -Kthread"
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <pthread.h>
 
@@ -1988,13 +1988,13 @@ then
 # -pthread, if available, provides the right #defines
 # and linker options to make pthread_create available
 # Some compilers won't report that they do not support -pthread,
-# so we need to run a program to see whether it really made the
+# so we need to link a program to see whether it really made the
 # function available.
 AC_MSG_CHECKING(whether $CC accepts -pthread)
 AC_CACHE_VAL(ac_cv_pthread,
 [ac_save_cc="$CC"
 CC="$CC -pthread"
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <pthread.h>
 
