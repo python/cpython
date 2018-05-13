@@ -1618,10 +1618,7 @@ recheck:
 # Regenerate configure and pyconfig.h.in
 .PHONY: autoconf
 autoconf:
-	# Regenerate the configure script from configure.ac using autoconf
-	(cd $(srcdir); autoconf -Wall)
-	# Regenerate pyconfig.h.in from configure.ac using autoheader
-	(cd $(srcdir); autoheader -Wall)
+	(cd "$(srcdir)" && autoreconf --force --verbose --install -Wall)
 
 # Create a tags file for vi
 tags::
