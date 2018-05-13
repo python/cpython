@@ -262,14 +262,13 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
-.. function:: loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
+.. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
    Deserialize *s* (a :class:`str`, :class:`bytes` or :class:`bytearray`
    instance containing a JSON document) to a Python object using this
    :ref:`conversion table <json-to-py-table>`.
 
-   The other arguments have the same meaning as in :func:`load`, except
-   *encoding* which is ignored and deprecated.
+   The other arguments have the same meaning as in :func:`load`.
 
    If the data being deserialized is not a valid JSON document, a
    :exc:`JSONDecodeError` will be raised.

@@ -1,0 +1,2 @@
+json.loads *encoding* keyword which was deprecated and ignored since Python
+3.1 has been removed
