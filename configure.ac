@@ -1994,7 +1994,7 @@ AC_MSG_CHECKING(whether $CC accepts -pthread)
 AC_CACHE_VAL(ac_cv_pthread,
 [ac_save_cc="$CC"
 CC="$CC"
-LDFLAGS="-pthread"
+CFLAGS="-pthread"
 AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <pthread.h>
@@ -2263,7 +2263,7 @@ then CC="$CC -Kpthread"
 elif test "$ac_cv_kthread" = "yes"
 then CC="$CC -Kthread"
 elif test "$ac_cv_pthread" = "yes"
-then CC="$CC"; BASECFLAGS="-pthread"; BASECXXFLAGS="-pthread"
+then CC="$CC"; BASECFLAGS="$BASECFLAGS -pthread"; BASECXXFLAGS="$BASECXXFLAGS -pthread"
 fi
 
 AC_MSG_CHECKING(for pthread_t)
@@ -2976,10 +2976,10 @@ then
 elif test "$ac_cv_pthread" = "yes"
 then
     CC="$CC"
-    BASECFLAGS="-pthread"
+    BASECFLAGS="$BASECFLAGS -pthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX"
-	BASECXXFLAGS="-pthread"
+	BASECXXFLAGS="$BASECFLAGS -pthread"
     fi
     posix_threads=yes
 else
