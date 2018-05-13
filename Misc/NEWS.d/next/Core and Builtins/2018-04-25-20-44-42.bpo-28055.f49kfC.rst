@@ -1,0 +1,1 @@
+Fix unaligned accesses in siphash24(). Patch by Rolf Eike Beer.
