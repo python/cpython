@@ -251,6 +251,10 @@ class Event:
     type - type of the event as a number
     widget - widget in which the event occurred
     delta - delta of wheel movement (MouseWheel)
+    detail - certain fixed strings (see tcl/tk documentation)
+             (Enter, Leave, FocusIn, FocusOut, ConfigureRequest)
+    user_data - data string which was passed to event_generate or empty string
+                (VirtualEvent)
     """
 
     def __repr__(self):
@@ -1595,7 +1599,7 @@ class Misc:
         w = self
         while w.master is not None: w = w.master
         return w
-    _subst_format = ('%#', '%b', '%f', '%h', '%k',
+    _subst_format = ('%#', '%b', '%d', '%f', '%h', '%k',
              '%s', '%t', '%w', '%x', '%y',
              '%A', '%E', '%K', '%N', '%W', '%T', '%X', '%Y', '%D')
     _subst_format_str = " ".join(_subst_format)
@@ -1613,11 +1617,14 @@ class Misc:
             except (ValueError, TclError):
                 return s
 
-        nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, W, T, X, Y, D = args
-        # Missing: (a, c, d, m, o, v, B, R)
+        nsign, b, d, f, h, k, s, t, w, x, y, A, E, K, N, W, T, X, Y, D = args
+        # Missing: (a, c, m, o, v, B, R)
         e = Event()
         # serial field: valid for all events
         # number of button: ButtonPress and ButtonRelease events only
+        # detail: for Enter, Leave, FocusIn, FocusOut and ConfigureRequest
+        # events certain fixed strings (see tcl/tk documentation)
+        # user_data: data string from a virtual event or an empty string
         # height field: Configure, ConfigureRequest, Create,
         # ResizeRequest, and Expose events only
         # keycode field: KeyPress and KeyRelease events only
@@ -1631,6 +1638,8 @@ class Misc:
         # KeyRelease, and Motion events
         e.serial = getint(nsign)
         e.num = getint_event(b)
+        e.user_data = d
+        e.detail = d
         try: e.focus = getboolean(f)
         except TclError: pass
         e.height = getint_event(h)
