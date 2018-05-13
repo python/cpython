@@ -677,9 +677,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
         zipimport.zipimporter(filename)
         zipimport.zipimporter(os.fsencode(filename))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             zipimport.zipimporter(bytearray(os.fsencode(filename)))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             zipimport.zipimporter(memoryview(os.fsencode(filename)))
 
     @support.cpython_only
@@ -687,14 +687,14 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # The interpreter shouldn't crash in case of calling methods of an
         # uninitialized zipimport.zipimporter object.
         zi = zipimport.zipimporter.__new__(zipimport.zipimporter)
-        self.assertRaises(ValueError, zi.find_module, 'foo')
-        self.assertRaises(ValueError, zi.find_loader, 'foo')
-        self.assertRaises(ValueError, zi.load_module, 'foo')
-        self.assertRaises(ValueError, zi.get_filename, 'foo')
-        self.assertRaises(ValueError, zi.is_package, 'foo')
-        self.assertRaises(ValueError, zi.get_data, 'foo')
-        self.assertRaises(ValueError, zi.get_code, 'foo')
-        self.assertRaises(ValueError, zi.get_source, 'foo')
+        self.assertRaises((ValueError, AttributeError), zi.find_module, 'foo')
+        self.assertRaises((ValueError, AttributeError), zi.find_loader, 'foo')
+        self.assertRaises((ValueError, AttributeError), zi.load_module, 'foo')
+        self.assertRaises((ValueError, AttributeError), zi.get_filename, 'foo')
+        self.assertRaises((ValueError, AttributeError), zi.is_package, 'foo')
+        self.assertRaises((ValueError, AttributeError), zi.get_data, 'foo')
+        self.assertRaises((ValueError, AttributeError), zi.get_code, 'foo')
+        self.assertRaises((ValueError, AttributeError), zi.get_source, 'foo')
 
 
 @support.requires_zlib
@@ -712,7 +712,7 @@ class CompressedZipImportTestCase(UncompressedZipImportTestCase):
             zip_file.writestr('bar.py', b'print("hello world")', ZIP_DEFLATED)
         zi = zipimport.zipimporter(TEMP_ZIP)
         with support.swap_attr(zlib, 'decompress', bad_decompress):
-            self.assertRaises(TypeError, zi.get_source, 'bar')
+            self.assertRaises((TypeError, AttributeError), zi.get_source, 'bar')
 
 
 class BadFileZipImportTestCase(unittest.TestCase):

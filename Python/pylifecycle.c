@@ -290,7 +290,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     PyObject *importlib;
     PyObject *impmod;
     PyObject *value;
-    _PyInitError err;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
     if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
@@ -332,11 +331,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     Py_DECREF(value);
     Py_DECREF(impmod);
 
-    err = _PyImportZip_Init();
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
     return _Py_INIT_OK();
 }
 
@@ -351,7 +345,7 @@ initexternalimport(PyInterpreterState *interp)
         return _Py_INIT_ERR("external importer setup failed");
     }
     Py_DECREF(value);
-    return _Py_INIT_OK();
+    return _PyImportZip_Init();
 }
 
 /* Helper functions to better handle the legacy C locale

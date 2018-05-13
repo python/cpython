@@ -128,10 +128,6 @@ _locale _localemodule.c  # -lintl
 # Standard I/O baseline
 _io -DPy_BUILD_CORE -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
 
-# The zipimport module is always imported at startup. Having it as a
-# builtin module avoids some bootstrapping problems and reduces overhead.
-zipimport -DPy_BUILD_CORE zipimport.c
-
 # faulthandler module
 faulthandler faulthandler.c
 
