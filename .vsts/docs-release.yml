@@ -6,23 +6,15 @@ name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 queue:
   name: Hosted Linux Preview
 
-trigger:
-  branches:
-    include:
-    - master
-    - 3.7
-    - 3.6
-    - vsts
-  paths:
-    include:
-    - Doc/*
-
 #variables:
 
 steps:
 - checkout: self
   clean: true
   fetchDepth: 5
+
+- script: sudo apt-get update && sudo apt-get install -qy --force-yes texlive-full 
+  displayName: 'Install LaTeX'
 
 - task: UsePythonVersion@0
   displayName: 'Use Python 3.6 or later'
@@ -32,7 +24,7 @@ steps:
 - script: python -m pip install sphinx blurb python-docs-theme
   displayName: 'Install build dependencies'
 
-- script: make html PYTHON=python SPHINXBUILD='python -m sphinx' BLURB='python -m blurb'
+- script: make dist PYTHON=python SPHINXBUILD='python -m sphinx' BLURB='python -m blurb'
   workingDirectory: '$(build.sourcesDirectory)/Doc'
   displayName: 'Build documentation'
 
@@ -41,4 +33,11 @@ steps:
   inputs:
     PathToPublish: '$(build.sourcesDirectory)/Doc/build'
     ArtifactName: build
+    publishLocation: Container
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish dist'
+  inputs:
+    PathToPublish: '$(build.sourcesDirectory)/Doc/dist'
+    ArtifactName: dist
     publishLocation: Container
