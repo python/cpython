@@ -1,0 +1,4 @@
+The urllib.robotparser's ``__str__`` representation now includes wildcard
+entries and the "Crawl-delay" and "Request-rate" fields. Also removes extra
+newlines that were being appended to the end of the string. Patch by
+Michael Lazar.
