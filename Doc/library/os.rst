@@ -3447,7 +3447,7 @@ written in Python, such as a mail server's external command delivery program.
    library :c:data:`POSIX_SPAWN_RESETIDS` flag.
 
    The *setsigmask* argument will set the signal mask to the signal set
-   specified. If the parameter is not used, then the child will inherits the
+   specified. If the parameter is not used, then the child inherits the
    parent's signal mask. This argument corresponds to the C library
    :c:data:`POSIX_SPAWN_SETSIGMASK` flag.
 

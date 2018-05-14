@@ -5423,7 +5423,7 @@ os.posix_spawn
     setsigdef: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
     scheduler: object = NULL
-        A tuple with the scheduler policy (optinal) and parameters.
+        A tuple with the scheduler policy (optional) and parameters.
 Execute the program specified by path in a new process.
 [clinic start generated code]*/
 
@@ -5433,7 +5433,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *setpgroup, PyObject *resetids,
                     PyObject *setsigmask, PyObject *setsigdef,
                     PyObject *scheduler)
-/*[clinic end generated code: output=9ed52ce93bef3143 input=2f923b47b11cc8c4]*/
+/*[clinic end generated code: output=9ed52ce93bef3143 input=29fb938a0224bcb0]*/
 {
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
