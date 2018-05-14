@@ -1294,7 +1294,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError(
                     'host/port and sock can not be specified at the same time')
 
-            AF_INET6 = getattr(socket, 'AF_INET6', 0)
+            AF_INET6 = getattr(socket, 'AF_INET6', None)
             if reuse_address is None:
                 reuse_address = os.name == 'posix' and sys.platform != 'cygwin'
             sockets = []
