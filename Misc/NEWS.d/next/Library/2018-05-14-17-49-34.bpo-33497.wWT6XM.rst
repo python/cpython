@@ -1,0 +1,2 @@
+Add errors param to cgi.parse_multipart and make an encoding in FieldStorage
+use the given errors (needed for Twisted).  Patch by Amber Brown.
