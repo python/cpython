@@ -1,0 +1,3 @@
+Change dataclasses.Fields repr to use the repr of each of its members,
+instead of str.  This makes it more clear what each field actually
+represents.  This is especially true for the 'type' member.
