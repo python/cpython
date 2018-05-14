@@ -230,14 +230,14 @@ class Field:
     def __repr__(self):
         return ('Field('
                 f'name={self.name!r},'
-                f'type={self.type},'
-                f'default={self.default},'
-                f'default_factory={self.default_factory},'
-                f'init={self.init},'
-                f'repr={self.repr},'
-                f'hash={self.hash},'
-                f'compare={self.compare},'
-                f'metadata={self.metadata}'
+                f'type={self.type!r},'
+                f'default={self.default!r},'
+                f'default_factory={self.default_factory!r},'
+                f'init={self.init!r},'
+                f'repr={self.repr!r},'
+                f'hash={self.hash!r},'
+                f'compare={self.compare!r},'
+                f'metadata={self.metadata!r}'
                 ')')
 
     # This is used to support the PEP 487 __set_name__ protocol in the
