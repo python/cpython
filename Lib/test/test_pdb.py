@@ -313,16 +313,19 @@ def test_list_commands():
     ...     ret = test_function_2('baz')
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-    ...     'list',      # list first function
-    ...     'step',      # step into second function
-    ...     'list',      # list second function
-    ...     'list',      # continue listing to EOF
-    ...     'list 1,3',  # list specific lines
-    ...     'list x',    # invalid argument
-    ...     'next',      # step to import
-    ...     'next',      # step over import
-    ...     'step',      # step into do_nothing
-    ...     'longlist',  # list all lines
+    ...     'list',       # list first function
+    ...     'step',       # step into second function
+    ...     'listsize',   # list the printed line
+    ...     'listsize 5', # set the list size
+    ...     'listsize',   # list the printed line
+    ...     'list',       # list second function
+    ...     'list',       # continue listing to EOF
+    ...     'list 1,3',   # list specific lines
+    ...     'list x',     # invalid argument
+    ...     'next',       # step to import
+    ...     'next',       # step over import
+    ...     'step',       # step into do_nothing
+    ...     'longlist',   # list all lines
     ...     'source do_something',  # list all lines of function
     ...     'source fooxxx',        # something that doesn't exit
     ...     'continue',
@@ -339,6 +342,12 @@ def test_list_commands():
     --Call--
     > <doctest test.test_pdb.test_list_commands[0]>(1)test_function_2()
     -> def test_function_2(foo):
+    (Pdb) listsize
+    List size: 10
+    (Pdb) listsize 5
+    List size: 5
+    (Pdb) listsize
+    List size: 5
     (Pdb) list
       1  ->     def test_function_2(foo):
       2             import test.test_pdb
@@ -346,17 +355,13 @@ def test_list_commands():
       4             'some...'
       5             'more...'
       6             'code...'
+    (Pdb) list
       7             'to...'
       8             'make...'
       9             'a...'
      10             'long...'
      11             'listing...'
-    (Pdb) list
      12             'useful...'
-     13             '...'
-     14             '...'
-     15             return foo
-    [EOF]
     (Pdb) list 1,3
       1  ->     def test_function_2(foo):
       2             import test.test_pdb

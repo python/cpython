@@ -133,6 +133,9 @@ class _rstr(str):
 # line_prefix = ': '    # Use this to get the old situation back
 line_prefix = '\n-> '   # Probably a better default
 
+# Number of lines that `list` prints
+DEFAULT_LIST_SIZE = 10
+
 class Pdb(bdb.Bdb, cmd.Cmd):
 
     _previous_sigint_handler = None
@@ -149,6 +152,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
+        self.list_size = DEFAULT_LIST_SIZE
         # Try to load readline if it exists
         try:
             import readline
@@ -1191,6 +1195,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_p = _complete_expression
     complete_pp = _complete_expression
 
+    def do_listsize(self, arg):
+        """listsize [count]
+
+        Make the `list` command display `count` source lines.
+        Default value is 10.
+        """
+
+        if not arg:
+            self.message(f'List size: {self.list_size}')
+        elif arg.isdigit():
+            self.list_size = int(arg)
+            self.message(f'List size: {self.list_size}')
+        else:
+            self.error('count number expected')
+
     def do_list(self, arg):
         """l(ist) [first [,last] | .]
 
@@ -1228,7 +1247,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             first = self.lineno + 1
         if last is None:
-            last = first + 10
+            last = first + self.list_size
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
