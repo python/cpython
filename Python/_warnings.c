@@ -883,6 +883,13 @@ get_source_line(PyObject *module_globals, int lineno)
     PyObject *source_list;
     PyObject *source_line;
 
+    if (!PyDict_Check(module_globals)) {
+        PyErr_Format(PyExc_TypeError,
+                     "module_globals must be a dict, " "not '%.200s'",
+                     Py_TYPE(module_globals)->tp_name);
+        return NULL;
+    }
+
     /* Check/get the requisite pieces needed for the loader. */
     loader = _PyDict_GetItemIdWithError(module_globals, &PyId___loader__);
     if (loader == NULL) {
@@ -951,7 +958,7 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
                 &registry, &module_globals, &sourceobj))
         return NULL;
 
-    if (module_globals) {
+    if (module_globals && module_globals != Py_None) {
         source_line = get_source_line(module_globals, lineno);
         if (source_line == NULL && PyErr_Occurred()) {
             return NULL;
