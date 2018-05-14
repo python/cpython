@@ -1421,9 +1421,6 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test "$CC" != 'g++' ; then
-	    STRICT_PROTO="-Wstrict-prototypes"
-	fi
         # For gcc 4.x we need to use -fwrapv so lets check if its supported
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
@@ -1469,8 +1466,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	OPT="$OPT $STRICT_PROTO"
 
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
