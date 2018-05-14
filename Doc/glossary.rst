@@ -42,7 +42,7 @@ Glossary
    annotation
       A metadata value associated with a global variable, a class attribute or a
       function or method parameter or return value, that has no specific
-      purpouse (i.e. it's up to the user to use them as they see fit).
+      purpouse (i.e. it's up to the user to use it as they see fit).
 
       Annotations are stored in the :attr:`__annotations__` special attribute
       of a module (when annotating a global variable), class (when annotating
