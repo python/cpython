@@ -79,7 +79,8 @@ PyDoc_STRVAR(Struct_unpack_from__doc__,
 "\n"
 "Values are unpacked according to the format string Struct.format.\n"
 "\n"
-"The buffer\'s size in bytes, minus offset, must be at least Struct.size.\n"
+"The buffer\'s size in bytes, starting at position offset, must be\n"
+"at least Struct.size.\n"
 "\n"
 "See help(struct) for more on format strings.");
 
@@ -91,7 +92,7 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset);
 
 static PyObject *
-Struct_unpack_from(PyStructObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"buffer", "offset", NULL};
@@ -198,7 +199,7 @@ static PyObject *
 unpack_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer);
 
 static PyObject *
-unpack(PyObject *module, PyObject **args, Py_ssize_t nargs)
+unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyStructObject *s_object = NULL;
@@ -239,7 +240,7 @@ unpack_from_impl(PyObject *module, PyStructObject *s_object,
                  Py_buffer *buffer, Py_ssize_t offset);
 
 static PyObject *
-unpack_from(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "buffer", "offset", NULL};
@@ -284,7 +285,7 @@ iter_unpack_impl(PyObject *module, PyStructObject *s_object,
                  PyObject *buffer);
 
 static PyObject *
-iter_unpack(PyObject *module, PyObject **args, Py_ssize_t nargs)
+iter_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyStructObject *s_object = NULL;
@@ -302,4 +303,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=fce060787b4c5261 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d79b009652ae0b89 input=a9049054013a1b77]*/

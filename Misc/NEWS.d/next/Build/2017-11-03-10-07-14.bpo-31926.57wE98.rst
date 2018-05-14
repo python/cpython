@@ -1,2 +1,0 @@
-Fixed Argument Clinic sometimes causing compilation errors when there was
-more than one function and/or method in a .c file with the same name.

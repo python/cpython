@@ -113,7 +113,7 @@ class MimeTypes:
         Optional `strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
-        scheme, url = urllib.parse.splittype(url)
+        scheme, url = urllib.parse._splittype(url)
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
@@ -410,7 +410,7 @@ def _default_mime_types():
         '.bat'    : 'text/plain',
         '.bcpio'  : 'application/x-bcpio',
         '.bin'    : 'application/octet-stream',
-        '.bmp'    : 'image/x-ms-bmp',
+        '.bmp'    : 'image/bmp',
         '.c'      : 'text/plain',
         '.cdf'    : 'application/x-netcdf',
         '.cpio'   : 'application/x-cpio',

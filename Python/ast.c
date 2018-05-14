@@ -4063,7 +4063,7 @@ ast_for_stmt(struct compiling *c, const node *n)
                 return ast_for_async_stmt(c, ch);
             default:
                 PyErr_Format(PyExc_SystemError,
-                             "unhandled small_stmt: TYPE=%d NCH=%d\n",
+                             "unhandled compound_stmt: TYPE=%d NCH=%d\n",
                              TYPE(n), NCH(n));
                 return NULL;
         }
@@ -4160,18 +4160,19 @@ warn_invalid_escape_sequence(struct compiling *c, const node *n,
     }
     if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg,
                                    c->c_filename, LINENO(n),
-                                   NULL, NULL) < 0 &&
-        PyErr_ExceptionMatches(PyExc_DeprecationWarning))
+                                   NULL, NULL) < 0)
     {
-        const char *s;
+        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+            const char *s;
 
-        /* Replace the DeprecationWarning exception with a SyntaxError
-           to get a more accurate error report */
-        PyErr_Clear();
+            /* Replace the DeprecationWarning exception with a SyntaxError
+               to get a more accurate error report */
+            PyErr_Clear();
 
-        s = PyUnicode_AsUTF8(msg);
-        if (s != NULL) {
-            ast_error(c, n, s);
+            s = PyUnicode_AsUTF8(msg);
+            if (s != NULL) {
+                ast_error(c, n, s);
+            }
         }
         Py_DECREF(msg);
         return -1;
@@ -4312,7 +4313,7 @@ fstring_fix_node_location(const node *parent, node *n, char *expr_str)
                     break;
                 start--;
             }
-            cols += substr - start;
+            cols += (int)(substr - start);
             /* Fix lineno in mulitline strings. */
             while ((substr = strchr(substr + 1, '\n')))
                 lines--;

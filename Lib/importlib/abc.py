@@ -340,3 +340,49 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
         """
 
 _register(SourceLoader, machinery.SourceFileLoader)
+
+
+class ResourceReader(metaclass=abc.ABCMeta):
+
+    """Abstract base class to provide resource-reading support.
+
+    Loaders that support resource reading are expected to implement
+    the ``get_resource_reader(fullname)`` method and have it either return None
+    or an object compatible with this ABC.
+    """
+
+    @abc.abstractmethod
+    def open_resource(self, resource):
+        """Return an opened, file-like object for binary reading.
+
+        The 'resource' argument is expected to represent only a file name
+        and thus not contain any subdirectory components.
+
+        If the resource cannot be found, FileNotFoundError is raised.
+        """
+        raise FileNotFoundError
+
+    @abc.abstractmethod
+    def resource_path(self, resource):
+        """Return the file system path to the specified resource.
+
+        The 'resource' argument is expected to represent only a file name
+        and thus not contain any subdirectory components.
+
+        If the resource does not exist on the file system, raise
+        FileNotFoundError.
+        """
+        raise FileNotFoundError
+
+    @abc.abstractmethod
+    def is_resource(self, name):
+        """Return True if the named 'name' is consider a resource."""
+        raise FileNotFoundError
+
+    @abc.abstractmethod
+    def contents(self):
+        """Return an iterable of strings over the contents of the package."""
+        return []
+
+
+_register(ResourceReader, machinery.SourceFileLoader)

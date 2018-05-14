@@ -238,8 +238,8 @@ and the ``__annotations__`` attribute.
       and Guido van Rossum. Implemented by Ivan Levkivskyi.
 
    Tools that use or will use the new syntax:
-   `mypy <http://github.com/python/mypy>`_,
-   `pytype <http://github.com/google/pytype>`_, PyCharm, etc.
+   `mypy <http://www.mypy-lang.org/>`_,
+   `pytype <https://github.com/google/pytype>`_, PyCharm, etc.
 
 
 .. _whatsnew36-pep515:
@@ -1568,7 +1568,7 @@ mark class variables.  As introduced in :pep:`526`, a variable annotation
 wrapped in ClassVar indicates that a given attribute is intended to be used as
 a class variable and should not be set on instances of that class.
 (Contributed by Ivan Levkivskyi in `Github #280
-<https://github.com/python/typing/issues/280>`_.)
+<https://github.com/python/typing/pull/280>`_.)
 
 A new :const:`~typing.TYPE_CHECKING` constant that is assumed to be
 ``True`` by the static type chekers, but is ``False`` at runtime.
@@ -2196,7 +2196,9 @@ Changes in the Python API
   platform-specific selection is made.
   In environments where distributions are
   built on Windows and zip distributions are required, configure
-  the project with a ``setup.cfg`` file containing the following::
+  the project with a ``setup.cfg`` file containing the following:
+
+  .. code-block:: ini
 
     [sdist]
     formats=zip
