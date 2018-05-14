@@ -198,7 +198,7 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
          DeprecationWarning, 2)
     return urllib.parse.parse_qsl(qs, keep_blank_values, strict_parsing)
 
-def parse_multipart(fp, pdict, encoding="utf-8", errors="strict"):
+def parse_multipart(fp, pdict, encoding="utf-8", errors="replace"):
     """Parse multipart input.
 
     Arguments:
