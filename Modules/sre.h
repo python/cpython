@@ -67,6 +67,7 @@ typedef struct {
     void* end; /* end of original string */
     /* attributes for the match object */
     PyObject* string;
+    Py_buffer buffer;
     Py_ssize_t pos, endpos;
     int isbytes;
     int charsize; /* character size */
@@ -74,11 +75,12 @@ typedef struct {
     Py_ssize_t lastindex;
     Py_ssize_t lastmark;
     void** mark;
+    int match_all;
+    int must_advance;
     /* dynamically allocated stuff */
     char* data_stack;
     size_t data_stack_size;
     size_t data_stack_base;
-    Py_buffer buffer;
     /* current repeat context */
     SRE_REPEAT *repeat;
 } SRE_STATE;

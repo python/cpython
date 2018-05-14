@@ -1,0 +1,3 @@
+:class:`sqlite3.Connection` now exposes a :class:`~sqlite3.Connection.backup`
+method, if the underlying SQLite library is at version 3.6.11
+or higher.  Patch by Lele Gaifax.

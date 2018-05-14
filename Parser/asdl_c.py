@@ -497,11 +497,27 @@ class Obj2ModVisitor(PickleVisitor):
 
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
+        self.emit("if (_PyObject_LookupAttrId(obj, &PyId_%s, &tmp) < 0) {" % field.name, depth)
+        self.emit("return 1;", depth+1)
+        self.emit("}", depth)
         if not field.opt:
-            self.emit("tmp = _PyObject_GetAttrId(obj, &PyId_%s);" % field.name, depth)
+            self.emit("if (tmp == NULL) {", depth)
+            message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
+            format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
+            self.emit(format % message, depth+1, reflow=False)
+            self.emit("return 1;", depth+1)
         else:
-            self.emit("tmp = get_not_none(obj, &PyId_%s);" % field.name, depth)
-        self.emit("if (tmp != NULL) {", depth)
+            self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
+            self.emit("Py_CLEAR(tmp);", depth+1)
+            if self.isNumeric(field):
+                self.emit("%s = 0;" % field.name, depth+1)
+            elif not self.isSimpleType(field):
+                self.emit("%s = NULL;" % field.name, depth+1)
+            else:
+                raise TypeError("could not determine the default value for %s" % field.name)
+        self.emit("}", depth)
+        self.emit("else {", depth)
+
         self.emit("int res;", depth+1)
         if field.seq:
             self.emit("Py_ssize_t len;", depth+1)
@@ -539,25 +555,6 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (res != 0) goto failed;", depth+1)
 
         self.emit("Py_CLEAR(tmp);", depth+1)
-        if not field.opt:
-            self.emit("} else {", depth)
-            self.emit("if (PyErr_ExceptionMatches(PyExc_AttributeError)) {", depth+1)
-            message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
-            format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
-            self.emit(format % message, depth+2, reflow=False)
-            self.emit("}", depth+1)
-            self.emit("return 1;", depth+1)
-        else:
-            self.emit("} else if (PyErr_Occurred()) {", depth)
-            self.emit("return 1;", depth+1)
-            self.emit("} else {", depth)
-
-            if self.isNumeric(field):
-                self.emit("%s = 0;" % field.name, depth+1)
-            elif not self.isSimpleType(field):
-                self.emit("%s = NULL;" % field.name, depth+1)
-            else:
-                raise TypeError("could not determine the default value for %s" % field.name)
         self.emit("}", depth)
 
 
@@ -662,17 +659,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    fields = _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__fields);
+    if (_PyObject_LookupAttrId((PyObject*)Py_TYPE(self), &PyId__fields, &fields) < 0) {
+        goto cleanup;
+    }
     if (fields) {
         numfields = PySequence_Size(fields);
         if (numfields == -1)
             goto cleanup;
-    }
-    else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
-    }
-    else {
-        goto cleanup;
     }
 
     res = 0; /* if no error occurs, this stays 0 to the end */
@@ -713,19 +706,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
-    PyObject *res;
     _Py_IDENTIFIER(__dict__);
-    PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
-    if (dict == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
-            PyErr_Clear();
-        else
-            return NULL;
+    PyObject *dict;
+    if (_PyObject_LookupAttrId(self, &PyId___dict__, &dict) < 0) {
+        return NULL;
     }
     if (dict) {
-        res = Py_BuildValue("O()O", Py_TYPE(self), dict);
-        Py_DECREF(dict);
-        return res;
+        return Py_BuildValue("O()N", Py_TYPE(self), dict);
     }
     return Py_BuildValue("O()", Py_TYPE(self));
 }
@@ -963,22 +950,6 @@ static int add_ast_fields(void)
     }
     Py_DECREF(empty_tuple);
     return 0;
-}
-
-static PyObject *get_not_none(PyObject *obj, _Py_Identifier *id)
-{
-    PyObject *attr = _PyObject_GetAttrId(obj, id);
-    if (!attr) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-        }
-        return NULL;
-    }
-    else if (attr == Py_None) {
-        Py_DECREF(attr);
-        return NULL;
-    }
-    return attr;
 }
 
 """, 0, reflow=False)

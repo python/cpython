@@ -126,7 +126,7 @@ Glossary
 
    BDFL
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
-      <https://www.python.org/~guido/>`_, Python's creator.
+      <https://gvanrossum.github.io/>`_, Python's creator.
 
    binary file
       A :term:`file object` able to read and write
@@ -372,9 +372,11 @@ Glossary
       may be accessed via the :attr:`__annotations__` special attribute of a
       function object.
 
-      Python itself does not assign any particular meaning to function
-      annotations. They are intended to be interpreted by third-party libraries
-      or tools.  See :pep:`3107`, which describes some of their potential uses.
+      See also the :term:`variable annotation` glossary entry.
+
+      Annotations are meant to provide a standard way for programmers to
+      document types of functions they design.  See :pep:`484`, which
+      describes this functionality.
 
    __future__
       A pseudo-module which programmers can use to enable new language features
@@ -391,7 +393,8 @@ Glossary
    garbage collection
       The process of freeing memory when it is not used anymore.  Python
       performs garbage collection via reference counting and a cyclic garbage
-      collector that is able to detect and break reference cycles.
+      collector that is able to detect and break reference cycles.  The
+      garbage collector can be controlled using the :mod:`gc` module.
 
       .. index:: single: generator
 
@@ -457,6 +460,12 @@ Glossary
       because performance suffered in the common single-processor case. It
       is believed that overcoming this performance issue would make the
       implementation much more complicated and therefore costlier to maintain.
+
+
+   hash-based pyc
+      A bytecode cache file that uses the hash rather than the last-modified
+      time of the corresponding source file to determine its validity. See
+      :ref:`pyc-invalidation`.
 
    hashable
       An object is *hashable* if it has a hash value which never changes during
@@ -1014,10 +1023,11 @@ Glossary
       attribute of a class or module object and can be accessed using
       :func:`typing.get_type_hints`.
 
-      Python itself does not assign any particular meaning to variable
-      annotations. They are intended to be interpreted by third-party libraries
-      or type checking tools. See :pep:`526`, :pep:`484` which describe
-      some of their potential uses.
+      See also the :term:`function annotation` glossary entry.
+
+      Annotations are meant to provide a standard way for programmers to
+      document types of functions they design.  See :pep:`484` and :pep:`526`
+      which describe this functionality.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users

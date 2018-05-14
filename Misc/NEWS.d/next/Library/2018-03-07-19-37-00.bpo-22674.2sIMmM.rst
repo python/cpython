@@ -1,0 +1,2 @@
+Add the strsignal() function in the signal module that returns the system
+description of the given signal, as returned by strsignal(3).

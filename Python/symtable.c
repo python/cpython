@@ -69,7 +69,6 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_varkeywords = 0;
     ste->ste_opt_lineno = 0;
     ste->ste_opt_col_offset = 0;
-    ste->ste_tmpname = 0;
     ste->ste_lineno = lineno;
     ste->ste_col_offset = col_offset;
 
@@ -1083,24 +1082,6 @@ error:
 }
 
 static int
-symtable_new_tmpname(struct symtable *st)
-{
-    char tmpname[256];
-    identifier tmp;
-
-    PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]",
-                  ++st->st_cur->ste_tmpname);
-    tmp = PyUnicode_InternFromString(tmpname);
-    if (!tmp)
-        return 0;
-    if (!symtable_add_def(st, tmp, DEF_LOCAL))
-        return 0;
-    Py_DECREF(tmp);
-    return 1;
-}
-
-
-static int
 symtable_record_directive(struct symtable *st, identifier name, stmt_ty s)
 {
     PyObject *data, *mangled;
@@ -1723,7 +1704,6 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
                               expr_ty elt, expr_ty value)
 {
     int is_generator = (e->kind == GeneratorExp_kind);
-    int needs_tmp = !is_generator;
     comprehension_ty outermost = ((comprehension_ty)
                                     asdl_seq_GET(generators, 0));
     /* Outermost iterator is evaluated in current scope */
@@ -1734,17 +1714,11 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
                               e->lineno, e->col_offset)) {
         return 0;
     }
-    st->st_cur->ste_generator = is_generator;
     if (outermost->is_async) {
         st->st_cur->ste_coroutine = 1;
     }
     /* Outermost iter is received as an argument */
     if (!symtable_implicit_arg(st, 0)) {
-        symtable_exit_block(st, (void *)e);
-        return 0;
-    }
-    /* Allocate temporary name if needed */
-    if (needs_tmp && !symtable_new_tmpname(st)) {
         symtable_exit_block(st, (void *)e);
         return 0;
     }
@@ -1754,6 +1728,19 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     if (value)
         VISIT(st, expr, value);
     VISIT(st, expr, elt);
+    if (st->st_cur->ste_generator) {
+        PyErr_SetString(PyExc_SyntaxError,
+            (e->kind == ListComp_kind) ? "'yield' inside list comprehension" :
+            (e->kind == SetComp_kind) ? "'yield' inside set comprehension" :
+            (e->kind == DictComp_kind) ? "'yield' inside dict comprehension" :
+            "'yield' inside generator expression");
+        PyErr_SyntaxLocationObject(st->st_filename,
+                                   st->st_cur->ste_lineno,
+                                   st->st_cur->ste_col_offset);
+        symtable_exit_block(st, (void *)e);
+        return 0;
+    }
+    st->st_cur->ste_generator = is_generator;
     return symtable_exit_block(st, (void *)e);
 }
 

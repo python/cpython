@@ -1,1 +1,0 @@
-Add a ``cancelled()`` method to :class:`asyncio.Handle`.  Patch by Marat Sharafutdinov.
