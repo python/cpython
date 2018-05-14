@@ -1,16 +1,13 @@
-import fnmatch
 import functools
 import io
 import ntpath
 import os
 import posixpath
-import re
 import sys
 from _collections_abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
 supports_symlinks = True
@@ -226,6 +223,7 @@ class _WindowsFlavour(_Flavour):
 
     def make_uri(self, path):
         # Under Windows, file URIs use the UTF-8 encoding.
+        from urllib.parse import quote_from_bytes as urlquote_from_bytes
         drive = path.drive
         if len(drive) == 2 and drive[1] == ':':
             # It's a path on a local drive => 'file:///c:/a/b'
@@ -347,6 +345,7 @@ class _PosixFlavour(_Flavour):
     def make_uri(self, path):
         # We represent the path using the local filesystem encoding,
         # for portability to other applications.
+        from urllib.parse import quote_from_bytes as urlquote_from_bytes
         bpath = bytes(path)
         return 'file://' + urlquote_from_bytes(bpath)
 
@@ -498,6 +497,8 @@ class _PreciseSelector(_Selector):
 class _WildcardSelector(_Selector):
 
     def __init__(self, pat, child_parts):
+        import fnmatch
+        import re
         self.pat = re.compile(fnmatch.translate(pat))
         _Selector.__init__(self, child_parts)
 
@@ -914,6 +915,7 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
+        import fnmatch
         cf = self._flavour.casefold
         path_pattern = cf(path_pattern)
         drv, root, pat_parts = self._flavour.parse_parts((path_pattern,))
