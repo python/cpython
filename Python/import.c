@@ -92,7 +92,7 @@ _PyImportHooks_Init(void)
 _PyInitError
 _PyImportZip_Init(void)
 {
-    PyObject *path_hooks, *zimpimport;
+    PyObject *path_hooks, *zipimport;
     int err = 0;
 
     path_hooks = PySys_GetObject("path_hooks");
@@ -104,17 +104,17 @@ _PyImportZip_Init(void)
     if (Py_VerboseFlag)
         PySys_WriteStderr("# installing zipimport hook\n");
 
-    zimpimport = PyImport_ImportModule("zipimport");
-    if (zimpimport == NULL) {
+    zipimport = PyImport_ImportModule("zipimport");
+    if (zipimport == NULL) {
         PyErr_Clear(); /* No zip import module -- okay */
         if (Py_VerboseFlag)
             PySys_WriteStderr("# can't import zipimport\n");
     }
     else {
         _Py_IDENTIFIER(zipimporter);
-        PyObject *zipimporter = _PyObject_GetAttrId(zimpimport,
+        PyObject *zipimporter = _PyObject_GetAttrId(zipimport,
                                                     &PyId_zipimporter);
-        Py_DECREF(zimpimport);
+        Py_DECREF(zipimport);
         if (zipimporter == NULL) {
             PyErr_Clear(); /* No zipimporter object -- okay */
             if (Py_VerboseFlag)
