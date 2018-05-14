@@ -1769,6 +1769,31 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                          "^Executing <Task.*stop_loop_coro.*> "
                          "took .* seconds$")
 
+    def test_reentrancy(self):
+        fut1 = self.loop.create_future()
+        fut2 = self.loop.create_future()
+
+        def blocker():
+            return self.loop.run_until_complete(asyncio.sleep(0.5))
+
+        async def coro_for_task():
+            fut2.set_result(None)
+
+        async def coro():
+            self.loop.call_soon(fut1.set_result, None)
+            t = self.loop.create_task(coro_for_task())
+            blocker()
+            self.assertTrue(fut1.done())
+            self.assertTrue(fut2.done())
+            await t
+            await fut1
+            await fut2
+
+        self.loop.set_reentrancy(True)
+        try:
+            self.loop.run_until_complete(coro())
+        finally:
+            self.loop.set_reentrancy(False)
 
 class RunningLoopTests(unittest.TestCase):
 

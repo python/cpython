@@ -357,6 +357,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._task_factory = None
         self._coroutine_origin_tracking_enabled = False
         self._coroutine_origin_tracking_saved_depth = None
+        self._reentrancy = False
+        self._reentrant_occurred = False
 
         # A weak set of all asynchronous generators that are
         # being iterated by the loop.
@@ -528,6 +530,23 @@ class BaseEventLoop(events.AbstractEventLoop):
             self._set_coroutine_origin_tracking(False)
             sys.set_asyncgen_hooks(*old_agen_hooks)
 
+    def _run_reentrant(self, future):
+        """A reentrant run_forever, but scoped the the life time of a task"""
+        done = future.done
+        # We need to "leave" the current task
+        current_task = tasks.current_task(self)
+        try:
+            tasks._leave_task(self, current_task)
+            while True:
+                self._run_once()
+                if done() or self._stopping:
+                    break
+        finally:
+            # Restore the current_task
+            tasks._enter_task(self, current_task)
+            self._reentrant_occurred = True
+
+
     def run_until_complete(self, future):
         """Run until the Future is done.
 
@@ -548,9 +567,14 @@ class BaseEventLoop(events.AbstractEventLoop):
             # is no need to log the "destroy pending task" message
             future._log_destroy_pending = False
 
-        future.add_done_callback(_run_until_complete_cb)
+        is_reentrant = self.is_running() and self._reentrancy
+
         try:
-            self.run_forever()
+            if is_reentrant:
+                self._run_reentrant(future)
+            else:
+                future.add_done_callback(_run_until_complete_cb)
+                self.run_forever()
         except:
             if new_task and future.done() and not future.cancelled():
                 # The coroutine raised a BaseException. Consume the exception
@@ -1719,10 +1743,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         # they will be run the next time (after another I/O poll).
         # Use an idiom that is thread-safe without using locks.
         ntodo = len(self._ready)
+        self._reentrant_occurred = False
         for i in range(ntodo):
             handle = self._ready.popleft()
             if handle._cancelled:
                 continue
+
             if self._debug:
                 try:
                     self._current_handle = handle
@@ -1736,6 +1762,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                     self._current_handle = None
             else:
                 handle._run()
+
+            if self._reentrant_occurred:
+                # A child has _run_once, we should break so we don't overrun
+                break
         handle = None  # Needed to break cycles when an exception occurs.
 
     def _set_coroutine_origin_tracking(self, enabled):
@@ -1761,3 +1791,9 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if self.is_running():
             self.call_soon_threadsafe(self._set_coroutine_origin_tracking, enabled)
+
+    def get_reentrancy(self):
+        return self._reentrancy
+
+    def set_reentrancy(self, enabled):
+        self._reentrancy = enabled
