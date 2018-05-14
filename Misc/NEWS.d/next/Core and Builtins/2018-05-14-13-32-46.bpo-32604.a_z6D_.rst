@@ -1,0 +1,3 @@
+Remove the _xxsubinterpreters module (meant for testing) and associated
+helpers.  It can be added back when we are ready to add tests related to
+subinterpreters.
