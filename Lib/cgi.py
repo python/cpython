@@ -459,7 +459,8 @@ class FieldStorage:
         self.type = ctype
         self.type_options = pdict
         if 'boundary' in pdict:
-            self.innerboundary = pdict['boundary'].encode(self.encoding)
+            self.innerboundary = pdict['boundary'].encode(self.encoding,
+                                                          self.errors)
         else:
             self.innerboundary = b""
 
