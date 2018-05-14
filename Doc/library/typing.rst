@@ -666,6 +666,13 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.6
 
+.. class:: AsyncContextManager(Generic[T_co])
+
+   An ABC with async abstract :meth:`__aenter__` and :meth:`__aexit__`
+   methods.
+
+   .. versionadded:: 3.6
+
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
    A generic version of :class:`dict`.
