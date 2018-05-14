@@ -653,6 +653,7 @@ element_gc_clear(ElementObject *self)
 static void
 element_dealloc(ElementObject* self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     Py_TRASHCAN_SAFE_BEGIN(self)
 
@@ -2025,6 +2026,9 @@ static void
 elementiter_dealloc(ElementIterObject *it)
 {
     ParentLocator *p = it->parent_stack;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(it);
+
     while (p) {
         ParentLocator *temp = p;
         Py_XDECREF(p->parent);
@@ -2034,8 +2038,6 @@ elementiter_dealloc(ElementIterObject *it)
 
     Py_XDECREF(it->sought_tag);
     Py_XDECREF(it->root_element);
-
-    PyObject_GC_UnTrack(it);
     PyObject_GC_Del(it);
 }
 
@@ -3952,6 +3954,11 @@ PyInit__elementtree(void)
     st->deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
     Py_XDECREF(temp);
 
+    if (st->deepcopy_obj == NULL) {
+        return NULL;
+    }
+
+    assert(!PyErr_Occurred());
     if (!(st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
         return NULL;
 

@@ -1,0 +1,283 @@
+.. bpo: 18818
+.. date: 7851
+.. nonce: fsZ51D
+.. release date: 2013-09-29
+.. section: Core and Builtins
+
+The "encodingname" part of PYTHONIOENCODING is now optional.
+
+..
+
+.. bpo: 19098
+.. date: 7850
+.. nonce: 5XU9uv
+.. section: Core and Builtins
+
+Prevent overflow in the compiler when the recursion limit is set absurdly
+high.
+
+..
+
+.. bpo: 18929
+.. date: 7849
+.. nonce: xt9_At
+.. section: Library
+
+`inspect.classify_class_attrs()` now correctly finds class attributes
+returned by `dir()` that are located in the metaclass.
+
+..
+
+.. bpo: 18950
+.. date: 7848
+.. nonce: DHn3qf
+.. section: Library
+
+Fix miscellaneous bugs in the sunau module. Au_read.readframes() now updates
+current file position and reads correct number of frames from multichannel
+stream.  Au_write.writeframesraw() now correctly updates current file
+position.  Au_read.getnframes() now returns an integer (as in Python 2).
+Au_read and Au_write now correctly works with file object if start file
+position is not a zero.
+
+..
+
+.. bpo: 18594
+.. date: 7847
+.. nonce: Dm34qD
+.. section: Library
+
+The fast path for collections.Counter() was never taken due to an over-
+restrictive type check.
+
+..
+
+.. bpo: 19053
+.. date: 7846
+.. nonce: DkcFZ8
+.. section: Library
+
+ZipExtFile.read1() with non-zero argument no more returns empty bytes until
+end of data.
+
+..
+
+.. bpo: 0
+.. date: 7845
+.. nonce: x-7joT
+.. section: Library
+
+logging: added support for Unix domain sockets to SocketHandler and
+DatagramHandler.
+
+..
+
+.. bpo: 18996
+.. date: 7844
+.. nonce: 1Waotx
+.. section: Library
+
+TestCase.assertEqual() now more cleverly shorten differing strings in error
+report.
+
+..
+
+.. bpo: 19034
+.. date: 7843
+.. nonce: S5MyMF
+.. section: Library
+
+repr() for tkinter.Tcl_Obj now exposes string reperesentation.
+
+..
+
+.. bpo: 18978
+.. date: 7842
+.. nonce: qyLkAY
+.. section: Library
+
+``urllib.request.Request`` now allows the method to be indicated on the
+class and no longer sets it to None in ``__init__``.
+
+..
+
+.. bpo: 18626
+.. date: 7841
+.. nonce: X3HiU3
+.. section: Library
+
+the inspect module now offers a basic command line introspection interface
+(Initial patch by Claudiu Popa)
+
+..
+
+.. bpo: 3015
+.. date: 7840
+.. nonce: Db5Zwa
+.. section: Library
+
+Fixed tkinter with wantobject=False.  Any Tcl command call returned empty
+string.
+
+..
+
+.. bpo: 19037
+.. date: 7839
+.. nonce: OfBhoU
+.. section: Library
+
+The mailbox module now makes all changes to maildir files before moving them
+into place, to avoid race conditions with other programs that may be
+accessing the maildir directory.
+
+..
+
+.. bpo: 14984
+.. date: 7838
+.. nonce: iRbFp4
+.. section: Library
+
+On POSIX systems, when netrc is called without a filename argument (and
+therefore is reading the user's $HOME/.netrc file), it now enforces the same
+security rules as typical ftp clients: the .netrc file must be owned by the
+user that owns the process and must not be readable by any other user.
+
+..
+
+.. bpo: 18873
+.. date: 7837
+.. nonce: 3ezwXm
+.. section: Library
+
+The tokenize module now detects Python source code encoding only in comment
+lines.
+
+..
+
+.. bpo: 17764
+.. date: 7836
+.. nonce: czuuKO
+.. section: Library
+
+Enable http.server to bind to a user specified network interface.  Patch
+contributed by Malte Swart.
+
+..
+
+.. bpo: 18937
+.. date: 7835
+.. nonce: bcvKgi
+.. section: Library
+
+Add an assertLogs() context manager to unittest.TestCase to ensure that a
+block of code emits a message using the logging module.
+
+..
+
+.. bpo: 17324
+.. date: 7834
+.. nonce: 0PkOTi
+.. section: Library
+
+Fix http.server's request handling case on trailing '/'. Patch contributed
+by Vajrasky Kok.
+
+..
+
+.. bpo: 19018
+.. date: 7833
+.. nonce: mntKOW
+.. section: Library
+
+The heapq.merge() function no longer suppresses IndexError in the underlying
+iterables.
+
+..
+
+.. bpo: 18784
+.. date: 7832
+.. nonce: dtzGbX
+.. section: Library
+
+The uuid module no longer attempts to load libc via ctypes.CDLL if all the
+necessary functions have already been found in libuuid.  Patch by Evgeny
+Sologubov.
+
+..
+
+.. bpo: 0
+.. date: 7831
+.. nonce: 22MCfN
+.. section: Library
+
+The :envvar:`PYTHONFAULTHANDLER` environment variable now only enables the
+faulthandler module if the variable is non-empty. Same behaviour than other
+variables like :envvar:`PYTHONDONTWRITEBYTECODE`.
+
+..
+
+.. bpo: 1565525
+.. date: 7830
+.. nonce: 0rVMB7
+.. section: Library
+
+New function ``traceback.clear_frames`` will clear the local variables of
+all the stack frames referenced by a traceback object.
+
+..
+
+.. bpo: 18952
+.. date: 7829
+.. nonce: ysovuf
+.. section: Tests
+
+Fix regression in support data downloads introduced when test.support was
+converted to a package. Regression noticed by Zachary Ware.
+
+..
+
+.. bpo: 18873
+.. date: 7828
+.. nonce: dyLPY9
+.. section: IDLE
+
+IDLE now detects Python source code encoding only in comment lines.
+
+..
+
+.. bpo: 18988
+.. date: 7827
+.. nonce: 6CpesW
+.. section: IDLE
+
+The "Tab" key now works when a word is already autocompleted.
+
+..
+
+.. bpo: 17003
+.. date: 7826
+.. nonce: eQGdny
+.. section: Documentation
+
+Unified the size argument names in the io module with common practice.
+
+..
+
+.. bpo: 18596
+.. date: 7825
+.. nonce: TMPNJZ
+.. section: Build
+
+Support the use of address sanity checking in recent versions of clang and
+GCC by appropriately marking known false alarms in the small object
+allocator. Patch contributed by Dhiru Kholia.
+
+..
+
+.. bpo: 18873
+.. date: 7824
+.. nonce: i_1Tf_
+.. section: Tools/Demos
+
+2to3 and the findnocoding.py script now detect Python source code encoding
+only in comment lines.

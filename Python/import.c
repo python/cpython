@@ -1461,11 +1461,9 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                 Py_DECREF(partition);
             }
         }
-
-        if (PyDict_GetItem(interp->modules, package) == NULL) {
-            PyErr_Format(PyExc_SystemError,
-                    "Parent module %R not loaded, cannot perform relative "
-                    "import", package);
+        if (PyUnicode_GET_LENGTH(package) == 0) {
+            PyErr_SetString(PyExc_ImportError,
+                    "attempted relative import with no known parent package");
             goto error;
         }
     }
@@ -1806,9 +1804,13 @@ PyImport_Import(PyObject *module_name)
     Py_DECREF(r);
 
     modules = PyImport_GetModuleDict();
-    r = PyDict_GetItem(modules, module_name);
-    if (r != NULL)
+    r = PyDict_GetItemWithError(modules, module_name);
+    if (r != NULL) {
         Py_INCREF(r);
+    }
+    else if (!PyErr_Occurred()) {
+        PyErr_SetObject(PyExc_KeyError, module_name);
+    }
 
   err:
     Py_XDECREF(globals);

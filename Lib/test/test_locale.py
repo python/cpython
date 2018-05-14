@@ -339,9 +339,14 @@ class TestCollation(unittest.TestCase):
         self.assertLess(locale.strcoll('a', 'b'), 0)
         self.assertEqual(locale.strcoll('a', 'a'), 0)
         self.assertGreater(locale.strcoll('b', 'a'), 0)
+        # embedded null character
+        self.assertRaises(ValueError, locale.strcoll, 'a\0', 'a')
+        self.assertRaises(ValueError, locale.strcoll, 'a', 'a\0')
 
     def test_strxfrm(self):
         self.assertLess(locale.strxfrm('a'), locale.strxfrm('b'))
+        # embedded null character
+        self.assertRaises(ValueError, locale.strxfrm, 'a\0')
 
 
 class TestEnUSCollation(BaseLocalizedTest, TestCollation):

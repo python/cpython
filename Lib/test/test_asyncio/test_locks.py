@@ -176,6 +176,28 @@ class LockTests(test_utils.TestCase):
         self.assertTrue(tb.cancelled())
         self.assertTrue(tc.done())
 
+    def test_finished_waiter_cancelled(self):
+        lock = asyncio.Lock(loop=self.loop)
+
+        ta = asyncio.Task(lock.acquire(), loop=self.loop)
+        test_utils.run_briefly(self.loop)
+        self.assertTrue(lock.locked())
+
+        tb = asyncio.Task(lock.acquire(), loop=self.loop)
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(len(lock._waiters), 1)
+
+        # Create a second waiter, wake up the first, and cancel it.
+        # Without the fix, the second was not woken up.
+        tc = asyncio.Task(lock.acquire(), loop=self.loop)
+        lock.release()
+        tb.cancel()
+        test_utils.run_briefly(self.loop)
+
+        self.assertTrue(lock.locked())
+        self.assertTrue(ta.done())
+        self.assertTrue(tb.cancelled())
+
     def test_release_not_acquired(self):
         lock = asyncio.Lock(loop=self.loop)
 

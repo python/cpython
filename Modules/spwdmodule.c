@@ -134,6 +134,7 @@ spwd_getspnam_impl(PyObject *module, PyObject *arg)
 
     if ((bytes = PyUnicode_EncodeFSDefault(arg)) == NULL)
         return NULL;
+    /* check for embedded null bytes */
     if (PyBytes_AsStringAndSize(bytes, &name, NULL) == -1)
         goto out;
     if ((p = getspnam(name)) == NULL) {

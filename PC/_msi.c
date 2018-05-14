@@ -600,8 +600,12 @@ summary_setproperty(msiobj* si, PyObject *args)
         return NULL;
 
     if (PyUnicode_Check(data)) {
+        const WCHAR *value = _PyUnicode_AsUnicode(data);
+        if (value == NULL) {
+            return NULL;
+        }
         status = MsiSummaryInfoSetPropertyW(si->h, field, VT_LPSTR,
-            0, NULL, PyUnicode_AsUnicode(data));
+            0, NULL, value);
     } else if (PyLong_CheckExact(data)) {
         long value = PyLong_AsLong(data);
         if (value == -1 && PyErr_Occurred()) {

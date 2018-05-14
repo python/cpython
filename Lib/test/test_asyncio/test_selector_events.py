@@ -24,15 +24,13 @@ MOCK_ANY = mock.ANY
 
 class TestBaseSelectorEventLoop(BaseSelectorEventLoop):
 
-    def close(self):
-        # Don't call the close() method of the parent class, because the
-        # selector is mocked
-        self._closed = True
-
     def _make_self_pipe(self):
         self._ssock = mock.Mock()
         self._csock = mock.Mock()
         self._internal_fds += 1
+
+    def _close_self_pipe(self):
+        pass
 
 
 def list_to_buffer(l=()):

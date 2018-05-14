@@ -570,6 +570,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->ssl = NULL;
     self->Socket = NULL;
     self->ctx = sslctx;
+    Py_INCREF(sslctx);
     self->shutdown_seen_zero = 0;
     self->handshake_done = 0;
     self->owner = NULL;
@@ -583,8 +584,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         }
         self->server_hostname = hostname;
     }
-
-    Py_INCREF(sslctx);
 
     /* Make sure the SSL error state is initialized */
     (void) ERR_get_state();
@@ -2466,6 +2465,8 @@ context_clear(PySSLContext *self)
 static void
 context_dealloc(PySSLContext *self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(self);
     context_clear(self);
     SSL_CTX_free(self->ctx);
 #ifdef OPENSSL_NPN_NEGOTIATED

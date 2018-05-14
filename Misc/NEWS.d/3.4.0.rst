@@ -1,0 +1,17 @@
+.. bpo: 20939
+.. date: 8350
+.. nonce: MX5O4e
+.. release date: 2014-03-16
+.. section: Library
+
+Fix test_geturl failure in test_urllibnet due to new redirect of
+http://www.python.org/ to https://www.python.org.
+
+..
+
+.. bpo: 0
+.. date: 8349
+.. nonce: 1hrH2G
+.. section: Documentation
+
+Merge in all documentation changes since branching 3.4.0rc1.

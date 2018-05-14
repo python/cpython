@@ -744,6 +744,20 @@ getenvironment(PyObject* environment)
                 "environment can only contain strings");
             goto error;
         }
+        if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
+            PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto error;
+        }
+        /* Search from index 1 because on Windows starting '=' is allowed for
+           defining hidden environment variables. */
+        if (PyUnicode_GET_LENGTH(key) == 0 ||
+            PyUnicode_FindChar(key, '=', 1, PyUnicode_GET_LENGTH(key), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            goto error;
+        }
         if (totalsize > PY_SSIZE_T_MAX - PyUnicode_GET_LENGTH(key) - 1) {
             PyErr_SetString(PyExc_OverflowError, "environment too long");
             goto error;
@@ -846,12 +860,13 @@ _winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
 
     if (env_mapping != Py_None) {
         environment = getenvironment(env_mapping);
-        if (! environment)
+        if (environment == NULL) {
             return NULL;
+        }
+        /* contains embedded null characters */
         wenvironment = PyUnicode_AsUnicode(environment);
-        if (wenvironment == NULL)
-        {
-            Py_XDECREF(environment);
+        if (wenvironment == NULL) {
+            Py_DECREF(environment);
             return NULL;
         }
     }

@@ -672,7 +672,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 #ifdef CTYPES_UNICODE
     if (PyUnicode_Check(obj)) {
         pa->ffi_type = &ffi_type_pointer;
-        pa->value.p = PyUnicode_AsWideCharString(obj, NULL);
+        pa->value.p = _PyUnicode_AsWideCharString(obj);
         if (pa->value.p == NULL)
             return -1;
         pa->keep = PyCapsule_New(pa->value.p, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);
@@ -1235,14 +1235,15 @@ The handle may be used to locate exported functions in this\n\
 module.\n";
 static PyObject *load_library(PyObject *self, PyObject *args)
 {
-    WCHAR *name;
+    const WCHAR *name;
     PyObject *nameobj;
     PyObject *ignored;
     HMODULE hMod;
-    if (!PyArg_ParseTuple(args, "O|O:LoadLibrary", &nameobj, &ignored))
+
+    if (!PyArg_ParseTuple(args, "U|O:LoadLibrary", &nameobj, &ignored))
         return NULL;
 
-    name = PyUnicode_AsUnicode(nameobj);
+    name = _PyUnicode_AsUnicode(nameobj);
     if (!name)
         return NULL;
 

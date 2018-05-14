@@ -2711,5 +2711,17 @@ class TestFolding(TestEmailBase):
         self._test(parser.get_unstructured('xxx   ' + 'y'*77),
                    'xxx  \n ' + 'y'*77 + '\n')
 
+    def test_long_filename_attachment(self):
+        folded = self.policy.fold('Content-Disposition', 'attachment; filename="TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TES.txt"')
+        self.assertEqual(
+            'Content-Disposition: attachment;\n filename="TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TES.txt"\n',
+            folded
+        )
+        folded = self.policy.fold('Content-Disposition', 'attachment; filename="TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_T.txt"')
+        self.assertEqual(
+            'Content-Disposition: attachment;\n filename="TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_TEST_T.txt"\n',
+            folded
+        )
+
 if __name__ == '__main__':
     unittest.main()
