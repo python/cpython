@@ -1413,14 +1413,14 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
     length = PyLong_AsSsize_t(length_attr);
+    Py_DECREF(length_attr);
     if (length == -1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_SetString(PyExc_OverflowError,
                             "The '_length_' attribute is too large");
-        Py_DECREF(length_attr);
+        }
         goto error;
     }
-    Py_DECREF(length_attr);
 
     type_attr = PyObject_GetAttrString((PyObject *)result, "_type_");
     if (!type_attr) {
