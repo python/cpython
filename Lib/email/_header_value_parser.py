@@ -1815,6 +1815,8 @@ def get_mailbox_list(value):
         if value and value[0] == ',':
             mailbox_list.append(ListSeparator)
             value = value[1:]
+    if not value:
+        value = ';'
     return mailbox_list, value
 
 
