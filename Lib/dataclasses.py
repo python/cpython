@@ -274,12 +274,12 @@ class _DataclassParams:
 
     def __repr__(self):
         return ('_DataclassParams('
-                f'init={self.init},'
-                f'repr={self.repr},'
-                f'eq={self.eq},'
-                f'order={self.order},'
-                f'unsafe_hash={self.unsafe_hash},'
-                f'frozen={self.frozen}'
+                f'init={self.init!r},'
+                f'repr={self.repr!r},'
+                f'eq={self.eq!r},'
+                f'order={self.order!r},'
+                f'unsafe_hash={self.unsafe_hash!r},'
+                f'frozen={self.frozen!r}'
                 ')')
 
 
