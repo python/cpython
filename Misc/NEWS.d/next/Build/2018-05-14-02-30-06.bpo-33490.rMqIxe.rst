@@ -1,0 +1,2 @@
+Configure pthread logic was rewritten to use autoconf-archive pthread
+detection
