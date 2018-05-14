@@ -193,7 +193,7 @@ class RobotFileParser:
         entries = self.entries
         if self.default_entry is not None:
             entries = entries + [self.default_entry]
-        return '\n\n'.join(map(str, entries))
+        return '\n'.join(map(str, entries)) + '\n'
 
 
 class RuleLine:
@@ -232,6 +232,7 @@ class Entry:
             rate = self.req_rate
             ret.append(f"Request-rate: {rate.requests}/{rate.seconds}")
         ret.extend(map(str, self.rulelines))
+        ret.append('')  # for compatibility
         return '\n'.join(ret)
 
     def applies_to(self, useragent):
