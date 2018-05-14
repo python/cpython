@@ -41,13 +41,16 @@ Glossary
 
    annotation
       A metadata value associated with a global variable, a class attribute or a
-      function or method parameter or return value, that stores a
-      :term:`type hint`.
+      function or method parameter or return value, that has no specific
+      purpouse (i.e. it's up to the user to use them as they see fit).
 
       Annotations are stored in the :attr:`__annotations__` special attribute
       of a module (when annotating a global variable), class (when annotating
       one of its attributes) or function or method (when annotating a parameter or a
-      return value) and can be accessed using :func:`typing.get_type_hints`.
+      return value).
+
+      Annotations can be used to specify :term:`type hint <type hints>`. These
+      hints can be accessed using :func:`typing.get_type_hints`.
 
       See :pep:`484` and :pep:`526` which describe this functionality.
 
@@ -390,14 +393,15 @@ Glossary
    function annotation
       An :term:`annotation` of a function, or a method.
 
-      For example, this function has its parameters annotated as taking
-      :class:`int` arguments and its return value annotated as being an
-      :class:`int` as well::
+      Function annotations can be used to specify
+      :term:`type hint <type hints>`:: this function has its parameters
+      annotated as taking :class:`int` arguments and its return value annotated
+      as being an :class:`int` as well::
 
          def sum_two_numbers(a: int, b: int) -> int:
             return a + b
 
-      Its syntax is explained in section :ref:`function`.
+      Function annotation syntax is explained in section :ref:`function`.
 
       See also the :term:`variable annotation` glossary entry, and :pep:`484`,
       which describes this functionality.
@@ -1038,7 +1042,7 @@ Glossary
       variable, function or method parameter or return value.
 
       While type hints are optional and are not enforced by Python when used,
-      they are useful for static type analysis tools, and aid IDEs on code
+      they are useful to static type analysis tools, and aid IDEs on code
       completion and refactoring.
 
       Type hints are stored in :term:`annotations <annotation>`.
@@ -1055,7 +1059,9 @@ Glossary
    variable annotation
       An :term:`annotation` of a global variable, or a class attribute.
 
-      For example, this variable is annotated as taking :class:`int` values::
+      Variable annotations can be used to specify
+      :term:`type hint <type hints>`:: this variable is annotated as taking
+      :class:`int` values::
 
          count: int = 0
 
@@ -1064,7 +1070,7 @@ Glossary
          class C:
              field: int
 
-      Its syntax is explained in section :ref:`annassign`.
+      Variable annotation syntax is explained in section :ref:`annassign`.
 
       See also the :term:`function annotation` glossary entry, and :pep:`484`
       and :pep:`526` which describe this functionality.
