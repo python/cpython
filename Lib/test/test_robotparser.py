@@ -265,7 +265,8 @@ Disallow: /some/path
 User-agent: *
 Crawl-delay: 1
 Request-rate: 3/15
-Disallow: /cyberworld/map/\
+Disallow: /cyberworld/map/
+
 """
 
     def test_string_formatting(self):
