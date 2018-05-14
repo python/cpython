@@ -1851,6 +1851,46 @@ class Win32SymlinkTests(unittest.TestCase):
             os.remove(file1)
             shutil.rmtree(level1)
 
+    @unittest.skip('Python 3.4 will crash safely on this buffer '
+        'overflow, but still crashes')
+    def test_buffer_overflow(self):
+        # Older versions would have a buffer overflow when detecting
+        # whether a link source was a directory. This test ensures we
+        # no longer crash, but does not otherwise validate the behavior
+        segment = 'X' * 27
+        path = os.path.join(*[segment] * 10)
+        test_cases = [
+            # overflow with absolute src
+            ('\\' + path, segment),
+            # overflow dest with relative src
+            (segment, path),
+            # overflow when joining src
+            (path[:180], path[:180]),
+        ]
+        for src, dest in test_cases:
+            try:
+                os.symlink(src, dest)
+            except FileNotFoundError:
+                pass
+            else:
+                try:
+                    os.remove(dest)
+                except OSError:
+                    pass
+            # Also test with bytes, since that is a separate code path.
+            try:
+                os.symlink(os.fsencode(src), os.fsencode(dest))
+            except ValueError:
+                # Conversion function checks for len(arg) >= 260
+                pass
+            except FileNotFoundError:
+                pass
+            else:
+                try:
+                    os.remove(dest)
+                except OSError:
+                    pass
+
 
 @support.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):
