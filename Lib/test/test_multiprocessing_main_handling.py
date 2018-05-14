@@ -26,6 +26,31 @@ support.import_module('multiprocessing.synchronize')
 
 verbose = support.verbose
 
+# The common suite for test scripts
+test_source_suite = """\
+    import sys
+    from multiprocessing import Pool, set_start_method
+    start_method = sys.argv[1]
+    set_start_method(start_method)
+    p = Pool(5)
+    result = p.map_async({func}, {values})
+    timeout = 10
+    elapsed = 0
+    while timeout < 160:    # this gives ~5m to finish
+        result.wait(timeout)
+        if result.ready():
+            break
+        elapsed += timeout
+        timeout *= 2
+        print('Warning -- unable to join workers after %d seconds' % elapsed,
+              file=sys.stderr)
+    else:
+        # waited long enough
+        raise RuntimeError("Timed out waiting for results")
+    results = sorted(result.get())
+    print(start_method, "->", results)
+"""
+
 test_source = """\
 # multiprocessing includes all sorts of shenanigans to make __main__
 # attributes accessible in the subprocess in a pickle compatible way.
@@ -33,10 +58,6 @@ test_source = """\
 # We run the "doesn't work in the interactive interpreter" example from
 # the docs to make sure it *does* work from an executed __main__,
 # regardless of the invocation mechanism
-
-import sys
-import time
-from multiprocessing import Pool, set_start_method
 
 # We use this __main__ defined function in the map call below in order to
 # check that multiprocessing in correctly running the unguarded
@@ -51,19 +72,7 @@ if "check_sibling" in __file__:
     from . import sibling
 
 if __name__ == '__main__':
-    start_method = sys.argv[1]
-    set_start_method(start_method)
-    p = Pool(5)
-    results = []
-    p.map_async(f, [1, 2, 3], callback=results.extend)
-    deadline = time.time() + 10 # up to 10 s to report the results
-    while not results:
-        time.sleep(0.05)
-        if time.time() > deadline:
-            raise RuntimeError("Timed out waiting for results")
-    results.sort()
-    print(start_method, "->", results)
-"""
+""" + test_source_suite.format(func='f', values=[1, 2, 3])
 
 test_source_main_skipped_in_children = """\
 # __main__.py files have an implied "if __name__ == '__main__'" so
@@ -74,24 +83,8 @@ test_source_main_skipped_in_children = """\
 
 if __name__ != "__main__":
     raise RuntimeError("Should only be called as __main__!")
-
-import sys
-import time
-from multiprocessing import Pool, set_start_method
-
-start_method = sys.argv[1]
-set_start_method(start_method)
-p = Pool(5)
-results = []
-p.map_async(int, [1, 4, 9], callback=results.extend)
-deadline = time.time() + 10 # up to 10 s to report the results
-while not results:
-    time.sleep(0.05)
-    if time.time() > deadline:
-        raise RuntimeError("Timed out waiting for results")
-results.sort()
-print(start_method, "->", results)
-"""
+else:
+""" + test_source_suite.format(func='int', values=[1, 4, 9])
 
 # These helpers were copied from test_cmd_line_script & tweaked a bit...
 
@@ -143,8 +136,12 @@ class MultiProcessingCmdLineMixin():
         if verbose > 1:
             print("Output from test script %r:" % script_name)
             print(repr(out))
-        self.assertEqual(exit_code, 0)
-        self.assertEqual(err.decode('utf-8'), '')
+        # Any output on stderr is strictly informational (at this point).
+        # An unsuccessful test script has an exit code which is already
+        # verified by assert_python_ok().
+        if verbose and err:
+            print(file=sys.stderr)
+            print(err.decode('utf-8'), file=sys.stderr, end=' ... ', flush=True)
         expected_results = "%s -> [1, 4, 9]" % self.start_method
         self.assertEqual(out.decode('utf-8').strip(), expected_results)
 
