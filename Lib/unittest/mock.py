@@ -13,6 +13,7 @@ __all__ = (
     'ANY',
     'call',
     'create_autospec',
+    'CoroutineMock',
     'FILTER_DIR',
     'NonCallableMock',
     'NonCallableMagicMock',
@@ -24,7 +25,7 @@ __all__ = (
 
 __version__ = '1.0'
 
-
+import asyncio
 import inspect
 import pprint
 import sys
@@ -250,7 +251,7 @@ class _Sentinel(object):
 
     def __getattr__(self, name):
         if name == '__bases__':
-            # Without this help(unittest.mock) raises an exception
+            # Without this help() raises an exception
             raise AttributeError
         return self._sentinels.setdefault(name, _SentinelObject(name))
 
@@ -357,8 +358,43 @@ class Base(object):
         pass
 
 
+_is_coroutine = asyncio.iscoroutine
+_isawaitable = inspect.isawaitable
 
-class NonCallableMock(Base):
+def _get_is_coroutine(self):
+    return self.__dict__['_mock_is_coroutine']
+
+
+def _set_is_coroutine(self, value):
+    # property setters and getters are overridden by Mock(), we need to
+    # update the dict to add values
+    value = _is_coroutine if bool(value) else False
+    self.__dict__['_mock_is_coroutine'] = value
+
+
+class IsCoroutineMeta(type):
+    def __new__(meta, name, base, namespace):
+        namespace.update({
+            '_get_is_coroutine': _get_is_coroutine,
+            '_set_is_coroutine': _set_is_coroutine,
+            'is_coroutine': property(_get_is_coroutine, _set_is_coroutine,
+                                 doc="True if the object mocked is a coroutine"),
+            '_is_coroutine': property(_get_is_coroutine),
+        })
+
+        def __setattr__(self, name, value):
+
+            if name == 'is_coroutine':
+                self._set_is_coroutine(value)
+            else:
+                return base[0].__setattr__(self, name, value)
+
+        namespace['__setattr__'] = __setattr__
+
+        return super().__new__(meta, name, base, namespace)
+
+
+class NonCallableMock(Base, metaclass=IsCoroutineMeta):
     """A non-callable version of `Mock`"""
 
     def __new__(cls, *args, **kw):
@@ -372,8 +408,9 @@ class NonCallableMock(Base):
 
     def __init__(
             self, spec=None, wraps=None, name=None, spec_set=None,
-            parent=None, _spec_state=None, _new_name='', _new_parent=None,
-            _spec_as_instance=False, _eat_self=None, unsafe=False, **kwargs
+            parent=None, is_coroutine=None, _spec_state=None, _new_name='',
+            _new_parent=None, _spec_as_instance=False, _eat_self=None,
+            unsafe=False, **kwargs
         ):
         if _new_parent is None:
             _new_parent = parent
@@ -414,6 +451,7 @@ class NonCallableMock(Base):
             _spec_state
         )
 
+        self._set_is_coroutine(is_coroutine)
 
     def attach_mock(self, mock, attribute):
         """
@@ -925,6 +963,98 @@ def _try_iter(obj):
         return obj
 
 
+class _AwaitEvent:
+    def __init__(self, mock):
+        self._mock = mock
+        self._condition = None
+
+    @asyncio.coroutine
+    def wait(self, skip=0):
+        """
+        Wait for await.
+
+        :param skip: How many awaits will be skipped.
+                     As a result, the mock should be awaited at least
+                     ``skip + 1`` times.
+        """
+        def predicate(mock):
+            return mock.await_count > skip
+
+        return (yield from self.wait_for(predicate))
+
+    @asyncio.coroutine
+    def wait_next(self, skip=0):
+        """
+        Wait for the next await.
+
+        Unlike :meth:`wait` that counts any await, mock has to be awaited once
+        more, disregarding to the current
+        :attr:`asynctest.CoroutineMock.await_count`.
+
+        :param skip: How many awaits will be skipped.
+                     As a result, the mock should be awaited at least
+                     ``skip + 1`` more times.
+        """
+        await_count = self._mock.await_count
+
+        def predicate(mock):
+            return mock.await_count > await_count + skip
+
+        return (yield from self.wait_for(predicate))
+
+    @asyncio.coroutine
+    def wait_for(self, predicate):
+        """
+        Wait for a given predicate to become True.
+
+        :param predicate: A callable that receives mock which result
+                          will be interpreted as a boolean value.
+                          The final predicate value is the return value.
+        """
+        condition = self._get_condition()
+
+        try:
+            yield from condition.acquire()
+
+            def _predicate():
+                return predicate(self._mock)
+
+            return (yield from condition.wait_for(_predicate))
+        finally:
+            condition.release()
+
+    @asyncio.coroutine
+    def _notify(self):
+        condition = self._get_condition()
+
+        try:
+            yield from condition.acquire()
+            condition.notify_all()
+        finally:
+            condition.release()
+
+    def _get_condition(self):
+        """
+        Creation of condition is delayed, to minimize the change of using the
+        wrong loop.
+
+        A user may create a mock with _AwaitEvent before selecting the
+        execution loop.  Requiring a user to delay creation is error-prone and
+        inflexible. Instead, condition is created when user actually starts to
+        use the mock.
+        """
+        # No synchronization is needed:
+        #   - asyncio is thread unsafe
+        #   - there are no awaits here, method will be executed without
+        #   switching asyncio context.
+        if self._condition is None:
+            self._condition = asyncio.Condition()
+
+        return self._condition
+
+    def __bool__(self):
+        return self._mock.await_count != 0
+
 
 class CallableMixin(Base):
 
@@ -1026,7 +1156,6 @@ class CallableMixin(Base):
         return ret_val
 
 
-
 class Mock(CallableMixin, NonCallableMock):
     """
     Create a new `Mock` object. `Mock` takes several optional arguments
@@ -1079,6 +1208,231 @@ class Mock(CallableMixin, NonCallableMock):
     """
 
 
+class CoroutineMock(Mock):
+    """
+    Enhance :class:`~asynctest.mock.Mock` with features allowing to mock
+    a coroutine function.
+
+    The :class:`~asynctest.CoroutineMock` object will behave so the object is
+    recognized as coroutine function, and the result of a call as a coroutine:
+
+    >>> mock = CoroutineMock()
+    >>> asyncio.iscoroutinefunction(mock)
+    True
+    >>> asyncio.iscoroutine(mock())
+    True
+
+
+    The result of ``mock()`` is a coroutine which will have the outcome of
+    ``side_effect`` or ``return_value``:
+
+    - if ``side_effect`` is a function, the coroutine will return the result
+      of that function,
+    - if ``side_effect`` is an exception, the coroutine will raise the
+      exception,
+    - if ``side_effect`` is an iterable, the coroutine will return the next
+      value of the iterable, however, if the sequence of result is exhausted,
+      ``StopIteration`` is raised immediately,
+    - if ``side_effect`` is not defined, the coroutine will return the value
+      defined by ``return_value``, hence, by default, the coroutine returns
+      a new :class:`~asynctest.CoroutineMock` object.
+
+    If the outcome of ``side_effect`` or ``return_value`` is a coroutine, the
+    mock coroutine obtained when the mock object is called will be this
+    coroutine itself (and not a coroutine returning a coroutine).
+
+    The test author can also specify a wrapped object with ``wraps``. In this
+    case, the :class:`~asynctest.Mock` object behavior is the same as with an
+    :class:`.Mock` object: the wrapped object may have methods
+    defined as coroutine functions.
+    """
+    #: Property which is set when the mock is awaited. Its ``wait`` and
+    #: ``wait_next`` coroutine methods can be used to synchronize execution.
+    #:
+    #: .. versionadded:: 0.12
+    awaited = _delegating_property('awaited')
+    #: Number of times the mock has been awaited.
+    #:
+    #: .. versionadded:: 0.12
+    await_count = _delegating_property('await_count')
+    await_args = _delegating_property('await_args')
+    await_args_list = _delegating_property('await_args_list')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # asyncio.iscoroutinefunction() checks this property to say if an
+        # object is a coroutine
+        # It is set through __dict__ because when spec_set is True, this
+        # attribute is likely undefined.
+        self.__dict__['_is_coroutine'] = _is_coroutine
+        self.__dict__['_mock_awaited'] = _AwaitEvent(self)
+        self.__dict__['_mock_await_count'] = 0
+        self.__dict__['_mock_await_args'] = None
+        self.__dict__['_mock_await_args_list'] = _CallList()
+
+    def _mock_call(_mock_self, *args, **kwargs):
+        try:
+            result = super()._mock_call(*args, **kwargs)
+            _call = _mock_self.call_args
+
+            @asyncio.coroutine
+            def proxy():
+                try:
+                    if _isawaitable(result):
+                        return (yield from result)
+                    else:
+                        return result
+                finally:
+                    _mock_self.await_count += 1
+                    _mock_self.await_args = _call
+                    _mock_self.await_args_list.append(_call)
+                    yield from _mock_self.awaited._notify()
+
+            return proxy()
+        except StopIteration as e:
+            side_effect = _mock_self.side_effect
+            if side_effect is not None and not callable(side_effect):
+                raise
+
+            return asyncio.coroutine(_raise)(e)
+        except BaseException as e:
+            return asyncio.coroutine(_raise)(e)
+
+    def assert_awaited(_mock_self):
+        """
+        Assert that the mock was awaited at least once.
+
+        .. versionadded:: 0.12
+        """
+        self = _mock_self
+        if self.await_count == 0:
+            msg = ("Expected '%s' to have been awaited." %
+                   self._mock_name or 'mock')
+            raise AssertionError(msg)
+
+    def assert_awaited_once(_mock_self, *args, **kwargs):
+        """
+        Assert that the mock was awaited exactly once.
+
+        .. versionadded:: 0.12
+        """
+        self = _mock_self
+        if not self.await_count == 1:
+            msg = ("Expected '%s' to have been awaited once. Awaited %s times." %
+                   (self._mock_name or 'mock', self.await_count))
+            raise AssertionError(msg)
+
+    def assert_awaited_with(_mock_self, *args, **kwargs):
+        """
+        Assert that the last await was with the specified arguments.
+
+        .. versionadded:: 0.12
+        """
+        self = _mock_self
+        if self.await_args is None:
+            expected = self._format_mock_call_signature(args, kwargs)
+            raise AssertionError('Expected await: %s\nNot awaited' % (expected,))
+
+        def _error_message():
+            msg = self._format_mock_failure_message(args, kwargs)
+            return msg
+
+        expected = self._call_matcher((args, kwargs))
+        actual = self._call_matcher(self.await_args)
+        if expected != actual:
+            cause = expected if isinstance(expected, Exception) else None
+            raise AssertionError(_error_message()) from cause
+
+    def assert_awaited_once_with(_mock_self, *args, **kwargs):
+        """
+        Assert that the mock was awaited exactly once and with the specified arguments.
+
+        .. versionadded:: 0.12
+        """
+        self = _mock_self
+        if not self.await_count == 1:
+            msg = ("Expected '%s' to be awaited once. Awaited %s times." %
+                   (self._mock_name or 'mock', self.await_count))
+            raise AssertionError(msg)
+        return self.assert_awaited_with(*args, **kwargs)
+
+    def assert_any_await(_mock_self, *args, **kwargs):
+        """
+        Assert the mock has ever been awaited with the specified arguments.
+
+        .. versionadded:: 0.12
+        """
+        self = _mock_self
+        expected = self._call_matcher((args, kwargs))
+        actual = [self._call_matcher(c) for c in self.await_args_list]
+        if expected not in actual:
+            cause = expected if isinstance(expected, Exception) else None
+            expected_string = self._format_mock_call_signature(args, kwargs)
+            raise AssertionError(
+                '%s await not found' % expected_string
+            ) from cause
+
+    def assert_has_awaits(_mock_self, calls, any_order=False):
+        """
+        Assert the mock has been awaited with the specified calls.
+        The :attr:`await_args_list` list is checked for the awaits.
+
+        If `any_order` is False (the default) then the awaits must be
+        sequential. There can be extra calls before or after the
+        specified awaits.
+
+        If `any_order` is True then the awaits can be in any order, but
+        they must all appear in :attr:`await_args_list`.
+
+        .. versionadded:: 0.12
+        """
+        self = _mock_self
+        expected = [self._call_matcher(c) for c in calls]
+        cause = expected if isinstance(expected, Exception) else None
+        all_awaits = _CallList(self._call_matcher(c) for c in self.await_args_list)
+        if not any_order:
+            if expected not in all_awaits:
+                raise AssertionError(
+                    'Awaits not found.\nExpected: %r\n'
+                    'Actual: %r' % (_CallList(calls), self.await_args_list)
+                ) from cause
+            return
+
+        all_awaits = list(all_awaits)
+
+        not_found = []
+        for kall in expected:
+            try:
+                all_awaits.remove(kall)
+            except ValueError:
+                not_found.append(kall)
+        if not_found:
+            raise AssertionError(
+                '%r not all found in await list' % (tuple(not_found),)
+            ) from cause
+
+    def assert_not_awaited(_mock_self):
+        """
+        Assert that the mock was never awaited.
+
+        .. versionadded:: 0.12
+        """
+        self = _mock_self
+        if self.await_count != 0:
+            msg = ("Expected '%s' to not have been awaited. Awaited %s times." %
+                   (self._mock_name or 'mock', self.await_count))
+            raise AssertionError(msg)
+
+    def reset_mock(self, *args, **kwargs):
+        """
+        See :func:`.Mock.reset_mock()`
+        """
+        super().reset_mock(*args, **kwargs)
+        self.awaited = _AwaitEvent(self)
+        self.await_count = 0
+        self.await_args = None
+        self.await_args_list = _CallList()
 
 def _dot_lookup(thing, comp, import_path):
     try:
@@ -1730,7 +2084,7 @@ _non_defaults = {
     '__reduce__', '__reduce_ex__', '__getinitargs__', '__getnewargs__',
     '__getstate__', '__setstate__', '__getformat__', '__setformat__',
     '__repr__', '__dir__', '__subclasses__', '__format__',
-    '__getnewargs_ex__',
+    '__getnewargs_ex__', '__aenter__', '__aexit__', '__anext__', '__aiter__',
 }
 
 
@@ -2156,6 +2510,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         spec = type(spec)
 
     is_type = isinstance(spec, type)
+    is_coroutine_func = asyncio.iscoroutinefunction(spec)
 
     _kwargs = {'spec': spec}
     if spec_set:
@@ -2173,6 +2528,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # descriptors don't have a spec
         # because we don't know what type they return
         _kwargs = {}
+    elif is_coroutine_func:
+        if instance:
+            raise RuntimeError("Instance can not be True when create_autospec "
+                               "is mocking a coroutine function")
+        Klass = CoroutineMock
     elif not _callable(spec):
         Klass = NonCallableMagicMock
     elif is_type and instance and not _instance_callable(spec):
