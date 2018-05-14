@@ -1553,14 +1553,6 @@ class ForwardRefTests(BaseTestCase):
         with self.assertRaises(SyntaxError):
             get_type_hints(foo)
 
-    def test_type_error(self):
-
-        def foo(a: Tuple['42']):
-            pass
-
-        with self.assertRaises(TypeError):
-            get_type_hints(foo)
-
     def test_name_error(self):
 
         def foo(a: 'Noode[T]'):
@@ -1589,6 +1581,20 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(cth, {})
         ith = get_type_hints(C().foo)
         self.assertEqual(ith, {})
+
+    def test_no_type_check_forward_ref_as_string(self):
+        class C:
+            foo: typing.ClassVar[int] = 7
+        class D:
+            foo: ClassVar[int] = 7
+        class E:
+            foo: 'typing.ClassVar[int]' = 7
+        class F:
+            foo: 'ClassVar[int]' = 7
+
+        expected_result = {'foo': typing.ClassVar[int]}
+        for clazz in [C, D, E, F]:
+            self.assertEqual(get_type_hints(clazz), expected_result)
 
     def test_no_type_check_no_bases(self):
         class C:

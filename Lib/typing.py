@@ -486,9 +486,7 @@ class ForwardRef(_Final, _root=True):
                 globalns = localns
             elif localns is None:
                 localns = globalns
-            self.__forward_value__ = _type_check(
-                eval(self.__forward_code__, globalns, localns),
-                "Forward references must evaluate to types.")
+            self.__forward_value__ = eval(self.__forward_code__, globalns, localns)
             self.__forward_evaluated__ = True
         return self.__forward_value__
 
