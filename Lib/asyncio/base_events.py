@@ -1294,7 +1294,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError(
                     'host/port and sock can not be specified at the same time')
 
-            AF_INET6 = getattr(socket, 'AF_INET6', None)
+            AF_INET6 = getattr(socket, 'AF_INET6', 0)
             if reuse_address is None:
                 reuse_address = os.name == 'posix' and sys.platform != 'cygwin'
             sockets = []
@@ -1334,7 +1334,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                     # Disable IPv4/IPv6 dual stack support (enabled by
                     # default on Linux) which makes a single socket
                     # listen on both address families.
-                    if af == AF_INET6 and hasattr(socket, 'IPPROTO_IPV6'):
+                    if (AF_INET6 and af == AF_INET6 and
+                        hasattr(socket, 'IPPROTO_IPV6')):
                         sock.setsockopt(socket.IPPROTO_IPV6,
                                         socket.IPV6_V6ONLY,
                                         True)
