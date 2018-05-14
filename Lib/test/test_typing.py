@@ -253,10 +253,9 @@ class UnionTests(BaseTestCase):
     def test_union_object(self):
         u = Union[object]
         self.assertEqual(u, object)
-        u = Union[int, object]
-        self.assertEqual(u, object)
-        u = Union[object, int]
-        self.assertEqual(u, object)
+        u1 = Union[int, object]
+        u2 = Union[object, int]
+        self.assertEqual(u1, u2)
 
     def test_unordered(self):
         u1 = Union[int, float]
@@ -267,13 +266,9 @@ class UnionTests(BaseTestCase):
         t = Union[Employee]
         self.assertIs(t, Employee)
 
-    def test_base_class_disappears(self):
-        u = Union[Employee, Manager, int]
-        self.assertEqual(u, Union[int, Employee])
-        u = Union[Manager, int, Employee]
-        self.assertEqual(u, Union[int, Employee])
+    def test_base_class_kept(self):
         u = Union[Employee, Manager]
-        self.assertIs(u, Employee)
+        self.assertIsNot(u, Employee)
 
     def test_union_union(self):
         u = Union[int, float]
@@ -317,7 +312,6 @@ class UnionTests(BaseTestCase):
     def test_union_generalization(self):
         self.assertFalse(Union[str, typing.Iterable[int]] == str)
         self.assertFalse(Union[str, typing.Iterable[int]] == typing.Iterable[int])
-        self.assertTrue(Union[str, typing.Iterable] == typing.Iterable)
 
     def test_union_compare_other(self):
         self.assertNotEqual(Union, object)
@@ -917,7 +911,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Union[T, U][int, Union[int, str]], Union[int, str])
         class Base: ...
         class Derived(Base): ...
-        self.assertEqual(Union[T, Base][Derived], Base)
+        self.assertEqual(Union[T, Base][Union[Base, Derived]], Union[Base, Derived])
         with self.assertRaises(TypeError):
             Union[T, int][1]
 
