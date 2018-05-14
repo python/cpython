@@ -2,6 +2,24 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(dict___reversed____doc__,
+"__reversed__($self, /)\n"
+"--\n"
+"\n"
+"Return a reverse iterator over the dict keys.");
+
+#define DICT___REVERSED___METHODDEF    \
+    {"__reversed__", (PyCFunction)dict___reversed__, METH_NOARGS, dict___reversed____doc__},
+
+static PyObject *
+dict___reversed___impl(PyDictObject *self);
+
+static PyObject *
+dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return dict___reversed___impl(self);
+}
+
 PyDoc_STRVAR(dict_fromkeys__doc__,
 "fromkeys($type, iterable, value=None, /)\n"
 "--\n"
@@ -103,4 +121,4 @@ dict_setdefault(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d7508c5091609a23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b473dd75acb72f93 input=a9049054013a1b77]*/
