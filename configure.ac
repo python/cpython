@@ -5,11 +5,9 @@ dnl ***********************************************
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define(PYTHON_VERSION, 3.8)
 
-AC_PREREQ(2.65)
+AC_PREREQ(2.68)
 
 AC_INIT(python, PYTHON_VERSION, https://bugs.python.org/)
-
-AC_CONFIG_MACRO_DIR(m4)
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
@@ -1894,123 +1892,8 @@ then
 	BASECFLAGS="$BASECFLAGS $ac_arch_flags"
 fi
 
-# On some compilers, pthreads are available without further options
-# (e.g. MacOS X). On some of these systems, the compiler will not
-# complain if unaccepted options are passed (e.g. gcc on Mac OS X).
-# So we have to see first whether pthreads are available without
-# options before we can check whether -Kpthread improves anything.
-AC_MSG_CHECKING(whether pthreads are available without options)
-AC_CACHE_VAL(ac_cv_pthread_is_default,
-[AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <pthread.h>
-
-void* routine(void* p){return NULL;}
-
-int main(){
-  pthread_t p;
-  if(pthread_create(&p,NULL,routine,NULL)!=0)
-    return 1;
-  (void)pthread_detach(p);
-  return 0;
-}
-]])],[
-  ac_cv_pthread_is_default=yes
-  ac_cv_kthread=no
-  ac_cv_pthread=no
-],[ac_cv_pthread_is_default=no],[ac_cv_pthread_is_default=no])
-])
-AC_MSG_RESULT($ac_cv_pthread_is_default)
-
-
-if test $ac_cv_pthread_is_default = yes
-then
-  ac_cv_kpthread=no
-else
-# -Kpthread, if available, provides the right #defines
-# and linker options to make pthread_create available
-# Some compilers won't report that they do not support -Kpthread,
-# so we need to run a program to see whether it really made the
-# function available.
-AC_MSG_CHECKING(whether $CC accepts -Kpthread)
-AC_CACHE_VAL(ac_cv_kpthread,
-[ac_save_cc="$CC"
-CC="$CC -Kpthread"
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <pthread.h>
-
-void* routine(void* p){return NULL;}
-
-int main(){
-  pthread_t p;
-  if(pthread_create(&p,NULL,routine,NULL)!=0)
-    return 1;
-  (void)pthread_detach(p);
-  return 0;
-}
-]])],[ac_cv_kpthread=yes],[ac_cv_kpthread=no],[ac_cv_kpthread=no])
-CC="$ac_save_cc"])
-AC_MSG_RESULT($ac_cv_kpthread)
-fi
-
-if test $ac_cv_kpthread = no -a $ac_cv_pthread_is_default = no
-then
-# -Kthread, if available, provides the right #defines
-# and linker options to make pthread_create available
-# Some compilers won't report that they do not support -Kthread,
-# so we need to run a program to see whether it really made the
-# function available.
-AC_MSG_CHECKING(whether $CC accepts -Kthread)
-AC_CACHE_VAL(ac_cv_kthread,
-[ac_save_cc="$CC"
-CC="$CC -Kthread"
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <pthread.h>
-
-void* routine(void* p){return NULL;}
-
-int main(){
-  pthread_t p;
-  if(pthread_create(&p,NULL,routine,NULL)!=0)
-    return 1;
-  (void)pthread_detach(p);
-  return 0;
-}
-]])],[ac_cv_kthread=yes],[ac_cv_kthread=no],[ac_cv_kthread=no])
-CC="$ac_save_cc"])
-AC_MSG_RESULT($ac_cv_kthread)
-fi
-
-if test $ac_cv_kthread = no -a $ac_cv_pthread_is_default = no
-then
-# -pthread, if available, provides the right #defines
-# and linker options to make pthread_create available
-# Some compilers won't report that they do not support -pthread,
-# so we need to run a program to see whether it really made the
-# function available.
-AC_MSG_CHECKING(whether $CC accepts -pthread)
-AC_CACHE_VAL(ac_cv_pthread,
-[ac_save_cc="$CC"
-CC="$CC -pthread"
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <pthread.h>
-
-void* routine(void* p){return NULL;}
-
-int main(){
-  pthread_t p;
-  if(pthread_create(&p,NULL,routine,NULL)!=0)
-    return 1;
-  (void)pthread_detach(p);
-  return 0;
-}
-]])],[ac_cv_pthread=yes],[ac_cv_pthread=no],[ac_cv_pthread=no])
-CC="$ac_save_cc"])
-AC_MSG_RESULT($ac_cv_pthread)
-fi
+AX_PTHREAD
+CC="$CC $PTHREAD_CFLAGS"
 
 # If we have set a CC compiler flag for thread support then
 # check if it works for CXX, too.
@@ -2020,32 +1903,15 @@ then
 AC_MSG_CHECKING(whether $CXX also accepts flags for thread support)
 ac_save_cxx="$CXX"
 
-if test "$ac_cv_kpthread" = "yes"
+CXX="$CXX $PTHREAD_CFLAGS"
+echo 'void foo();int main(){foo();}void foo(){}' > conftest.$ac_ext
+$CXX -c conftest.$ac_ext 2>&5
+if $CXX -o conftest$ac_exeext conftest.$ac_objext 2>&5 \
+&& test -s conftest$ac_exeext && ./conftest$ac_exeext
 then
-  CXX="$CXX -Kpthread"
-  ac_cv_cxx_thread=yes
-elif test "$ac_cv_kthread" = "yes"
-then
-  CXX="$CXX -Kthread"
-  ac_cv_cxx_thread=yes
-elif test "$ac_cv_pthread" = "yes"
-then
-  CXX="$CXX -pthread"
-  ac_cv_cxx_thread=yes
-fi
-
-if test $ac_cv_cxx_thread = yes
-then
-  echo 'void foo();int main(){foo();}void foo(){}' > conftest.$ac_ext
-  $CXX -c conftest.$ac_ext 2>&5
-  if $CXX -o conftest$ac_exeext conftest.$ac_objext 2>&5 \
-     && test -s conftest$ac_exeext && ./conftest$ac_exeext
-  then
-    ac_cv_cxx_thread=yes
-  else
-    ac_cv_cxx_thread=no
-  fi
-  rm -fr conftest*
+ac_cv_cxx_thread=yes
+else
+ac_cv_cxx_thread=no
 fi
 AC_MSG_RESULT($ac_cv_cxx_thread)
 fi
@@ -2255,14 +2121,9 @@ AC_CHECK_SIZEOF(time_t, [], [
 ])
 
 # if have pthread_t then define SIZEOF_PTHREAD_T
-ac_save_cc="$CC"
-if test "$ac_cv_kpthread" = "yes"
-then CC="$CC -Kpthread"
-elif test "$ac_cv_kthread" = "yes"
-then CC="$CC -Kthread"
-elif test "$ac_cv_pthread" = "yes"
-then CC="$CC -pthread"
-fi
+
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+LDFLAGS="$LDFLAGS $PTHREAD_FLAGS"
 
 AC_MSG_CHECKING(for pthread_t)
 have_pthread_t=no
@@ -2296,7 +2157,6 @@ if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
 else
   AC_MSG_RESULT(no)
 fi
-CC="$ac_save_cc"
 
 AC_SUBST(OTHER_LIBTOOL_OPT)
 case $ac_sys_system/$ac_sys_release in
@@ -2952,97 +2812,8 @@ AC_SUBST(LDLAST)
 AH_TEMPLATE(_REENTRANT,
   [Define to force use of thread-safe errno, h_errno, and other functions])
 
-if test "$ac_cv_pthread_is_default" = yes
-then
-    # Defining _REENTRANT on system with POSIX threads should not hurt.
-    AC_DEFINE(_REENTRANT)
-    posix_threads=yes
-elif test "$ac_cv_kpthread" = "yes"
-then
-    CC="$CC -Kpthread"
-    if test "$ac_cv_cxx_thread" = "yes"; then
-        CXX="$CXX -Kpthread"
-    fi
-    posix_threads=yes
-elif test "$ac_cv_kthread" = "yes"
-then
-    CC="$CC -Kthread"
-    if test "$ac_cv_cxx_thread" = "yes"; then
-        CXX="$CXX -Kthread"
-    fi
-    posix_threads=yes
-elif test "$ac_cv_pthread" = "yes"
-then
-    CC="$CC -pthread"
-    if test "$ac_cv_cxx_thread" = "yes"; then
-        CXX="$CXX -pthread"
-    fi
-    posix_threads=yes
-else
-    if test ! -z "$withval" -a -d "$withval"
-    then LDFLAGS="$LDFLAGS -L$withval"
-    fi
-
-    # According to the POSIX spec, a pthreads implementation must
-    # define _POSIX_THREADS in unistd.h. Some apparently don't
-    # (e.g. gnu pth with pthread emulation)
-    AC_MSG_CHECKING(for _POSIX_THREADS in unistd.h)
-    AC_EGREP_CPP(yes,
-    [
-#include <unistd.h>
-#ifdef _POSIX_THREADS
-yes
-#endif
-    ], unistd_defines_pthreads=yes, unistd_defines_pthreads=no)
-    AC_MSG_RESULT($unistd_defines_pthreads)
-
-    AC_DEFINE(_REENTRANT)
-    # Just looking for pthread_create in libpthread is not enough:
-    # on HP/UX, pthread.h renames pthread_create to a different symbol name.
-    # So we really have to include pthread.h, and then link.
-    _libs=$LIBS
-    LIBS="$LIBS -lpthread"
-    AC_MSG_CHECKING([for pthread_create in -lpthread])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#include <stdio.h>
-#include <pthread.h>
-
-void * start_routine (void *arg) { exit (0); }]], [[
-pthread_create (NULL, NULL, start_routine, NULL)]])],[
-    AC_MSG_RESULT(yes)
-    posix_threads=yes
-    ],[
-    LIBS=$_libs
-    AC_CHECK_FUNC(pthread_detach, [
-    posix_threads=yes
-    ],[
-    AC_CHECK_LIB(pthreads, pthread_create, [
-    posix_threads=yes
-    LIBS="$LIBS -lpthreads"
-    ], [
-    AC_CHECK_LIB(c_r, pthread_create, [
-    posix_threads=yes
-    LIBS="$LIBS -lc_r"
-    ], [
-    AC_CHECK_LIB(pthread, __pthread_create_system, [
-    posix_threads=yes
-    LIBS="$LIBS -lpthread"
-    ], [
-    AC_CHECK_LIB(cma, pthread_create, [
-    posix_threads=yes
-    LIBS="$LIBS -lcma"
-    ],[
-    AC_MSG_ERROR([could not find pthreads on your system])
-    ])
-    ])])])])])
-
-    AC_CHECK_LIB(mpc, usconfig, [
-    LIBS="$LIBS -lmpc"
-    ])
-
-fi
-
-if test "$posix_threads" = "yes"; then
+if test "$ax_pthread_ok" = "xyes"; then
+      posix_threads=yes
       if test "$unistd_defines_pthreads" = "no"; then
          AC_DEFINE(_POSIX_THREADS, 1,
          [Define if you have POSIX threads,
