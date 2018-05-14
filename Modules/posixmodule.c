@@ -246,10 +246,6 @@ extern int lstat(const char *, struct stat *);
 
 #endif /* !_MSC_VER */
 
-#ifdef HAVE_POSIX_SPAWN
-#include <spawn.h>
-#endif
-
 #ifdef HAVE_UTIME_H
 #include <utime.h>
 #endif /* HAVE_UTIME_H */
@@ -5105,218 +5101,6 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 }
 
 #endif /* HAVE_EXECV */
-
-#ifdef HAVE_POSIX_SPAWN
-
-enum posix_spawn_file_actions_identifier {
-    POSIX_SPAWN_OPEN,
-    POSIX_SPAWN_CLOSE,
-    POSIX_SPAWN_DUP2
-};
-
-static int
-parse_file_actions(PyObject *file_actions,
-                   posix_spawn_file_actions_t *file_actionsp)
-{
-    PyObject *seq;
-    PyObject *file_action = NULL;
-    PyObject *tag_obj;
-
-    seq = PySequence_Fast(file_actions,
-                          "file_actions must be a sequence or None");
-    if (seq == NULL) {
-        return -1;
-    }
-
-    errno = posix_spawn_file_actions_init(file_actionsp);
-    if (errno) {
-        posix_error();
-        Py_DECREF(seq);
-        return -1;
-    }
-
-    for (int i = 0; i < PySequence_Fast_GET_SIZE(seq); ++i) {
-        file_action = PySequence_Fast_GET_ITEM(seq, i);
-        Py_INCREF(file_action);
-        if (!PyTuple_Check(file_action) || !PyTuple_GET_SIZE(file_action)) {
-            PyErr_SetString(PyExc_TypeError,
-                "Each file_actions element must be a non-empty tuple");
-            goto fail;
-        }
-        long tag = PyLong_AsLong(PyTuple_GET_ITEM(file_action, 0));
-        if (tag == -1 && PyErr_Occurred()) {
-            goto fail;
-        }
-
-        /* Populate the file_actions object */
-        switch (tag) {
-            case POSIX_SPAWN_OPEN: {
-                int fd, oflag;
-                PyObject *path;
-                unsigned long mode;
-                if (!PyArg_ParseTuple(file_action, "OiO&ik"
-                        ";A open file_action tuple must have 5 elements",
-                        &tag_obj, &fd, PyUnicode_FSConverter, &path,
-                        &oflag, &mode))
-                {
-                    goto fail;
-                }
-                errno = posix_spawn_file_actions_addopen(file_actionsp,
-                        fd, PyBytes_AS_STRING(path), oflag, (mode_t)mode);
-                Py_DECREF(path);  /* addopen copied it. */
-                if (errno) {
-                    posix_error();
-                    goto fail;
-                }
-                break;
-            }
-            case POSIX_SPAWN_CLOSE: {
-                int fd;
-                if (!PyArg_ParseTuple(file_action, "Oi"
-                        ";A close file_action tuple must have 2 elements",
-                        &tag_obj, &fd))
-                {
-                    goto fail;
-                }
-                errno = posix_spawn_file_actions_addclose(file_actionsp, fd);
-                if (errno) {
-                    posix_error();
-                    goto fail;
-                }
-                break;
-            }
-            case POSIX_SPAWN_DUP2: {
-                int fd1, fd2;
-                if (!PyArg_ParseTuple(file_action, "Oii"
-                        ";A dup2 file_action tuple must have 3 elements",
-                        &tag_obj, &fd1, &fd2))
-                {
-                    goto fail;
-                }
-                errno = posix_spawn_file_actions_adddup2(file_actionsp,
-                                                         fd1, fd2);
-                if (errno) {
-                    posix_error();
-                    goto fail;
-                }
-                break;
-            }
-            default: {
-                PyErr_SetString(PyExc_TypeError,
-                                "Unknown file_actions identifier");
-                goto fail;
-            }
-        }
-        Py_DECREF(file_action);
-    }
-    Py_DECREF(seq);
-    return 0;
-
-fail:
-    Py_DECREF(seq);
-    Py_DECREF(file_action);
-    (void)posix_spawn_file_actions_destroy(file_actionsp);
-    return -1;
-}
-
-/*[clinic input]
-
-os.posix_spawn
-    path: path_t
-        Path of executable file.
-    argv: object
-        Tuple or list of strings.
-    env: object
-        Dictionary of strings mapping to strings.
-    file_actions: object = None
-        A sequence of file action tuples.
-    /
-
-Execute the program specified by path in a new process.
-[clinic start generated code]*/
-
-static PyObject *
-os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
-                    PyObject *env, PyObject *file_actions)
-/*[clinic end generated code: output=d023521f541c709c input=a3db1021d33230dc]*/
-{
-    EXECV_CHAR **argvlist = NULL;
-    EXECV_CHAR **envlist = NULL;
-    posix_spawn_file_actions_t file_actions_buf;
-    posix_spawn_file_actions_t *file_actionsp = NULL;
-    Py_ssize_t argc, envc;
-    PyObject *result = NULL;
-    pid_t pid;
-    int err_code;
-
-    /* posix_spawn has three arguments: (path, argv, env), where
-       argv is a list or tuple of strings and env is a dictionary
-       like posix.environ. */
-
-    if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "posix_spawn: argv must be a tuple or list");
-        goto exit;
-    }
-    argc = PySequence_Size(argv);
-    if (argc < 1) {
-        PyErr_SetString(PyExc_ValueError, "posix_spawn: argv must not be empty");
-        return NULL;
-    }
-
-    if (!PyMapping_Check(env)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "posix_spawn: environment must be a mapping object");
-        goto exit;
-    }
-
-    argvlist = parse_arglist(argv, &argc);
-    if (argvlist == NULL) {
-        goto exit;
-    }
-    if (!argvlist[0][0]) {
-        PyErr_SetString(PyExc_ValueError,
-            "posix_spawn: argv first element cannot be empty");
-        goto exit;
-    }
-
-    envlist = parse_envlist(env, &envc);
-    if (envlist == NULL) {
-        goto exit;
-    }
-
-    if (file_actions != Py_None) {
-        if (parse_file_actions(file_actions, &file_actions_buf)) {
-            goto exit;
-        }
-        file_actionsp = &file_actions_buf;
-    }
-
-    _Py_BEGIN_SUPPRESS_IPH
-    err_code = posix_spawn(&pid, path->narrow,
-                           file_actionsp, NULL, argvlist, envlist);
-    _Py_END_SUPPRESS_IPH
-    if (err_code) {
-        errno = err_code;
-        PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
-        goto exit;
-    }
-    result = PyLong_FromPid(pid);
-
-exit:
-    if (file_actionsp) {
-        (void)posix_spawn_file_actions_destroy(file_actionsp);
-    }
-    if (envlist) {
-        free_string_array(envlist, envc);
-    }
-    if (argvlist) {
-        free_string_array(argvlist, argc);
-    }
-    return result;
-}
-#endif /* HAVE_POSIX_SPAWN */
-
 
 #if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)
 /*[clinic input]
@@ -12839,7 +12623,6 @@ static PyMethodDef posix_methods[] = {
     OS_NICE_METHODDEF
     OS_GETPRIORITY_METHODDEF
     OS_SETPRIORITY_METHODDEF
-    OS_POSIX_SPAWN_METHODDEF
 #ifdef HAVE_READLINK
     {"readlink",        (PyCFunction)posix_readlink,
                         METH_VARARGS | METH_KEYWORDS,
@@ -13392,13 +13175,6 @@ all_ins(PyObject *m)
 #endif
 #ifdef RWF_NOWAIT
     if (PyModule_AddIntConstant(m, "RWF_NOWAIT", RWF_NOWAIT)) return -1;
-#endif
-
-/* constants for posix_spawn */
-#ifdef HAVE_POSIX_SPAWN
-    if (PyModule_AddIntConstant(m, "POSIX_SPAWN_OPEN", POSIX_SPAWN_OPEN)) return -1;
-    if (PyModule_AddIntConstant(m, "POSIX_SPAWN_CLOSE", POSIX_SPAWN_CLOSE)) return -1;
-    if (PyModule_AddIntConstant(m, "POSIX_SPAWN_DUP2", POSIX_SPAWN_DUP2)) return -1;
 #endif
 
 #ifdef HAVE_SPAWNV
