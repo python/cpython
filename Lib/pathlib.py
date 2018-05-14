@@ -223,16 +223,16 @@ class _WindowsFlavour(_Flavour):
 
     def make_uri(self, path):
         # Under Windows, file URIs use the UTF-8 encoding.
-        from urllib.parse import quote_from_bytes as urlquote_from_bytes
+        from urllib.parse import quote_from_bytes
         drive = path.drive
         if len(drive) == 2 and drive[1] == ':':
             # It's a path on a local drive => 'file:///c:/a/b'
             rest = path.as_posix()[2:].lstrip('/')
             return 'file:///%s/%s' % (
-                drive, urlquote_from_bytes(rest.encode('utf-8')))
+                drive, quote_from_bytes(rest.encode('utf-8')))
         else:
             # It's a path on a network drive => 'file://host/share/a/b'
-            return 'file:' + urlquote_from_bytes(path.as_posix().encode('utf-8'))
+            return 'file:' + quote_from_bytes(path.as_posix().encode('utf-8'))
 
     def gethomedir(self, username):
         if 'HOME' in os.environ:
@@ -345,9 +345,9 @@ class _PosixFlavour(_Flavour):
     def make_uri(self, path):
         # We represent the path using the local filesystem encoding,
         # for portability to other applications.
-        from urllib.parse import quote_from_bytes as urlquote_from_bytes
+        from urllib.parse import quote_from_bytes
         bpath = bytes(path)
-        return 'file://' + urlquote_from_bytes(bpath)
+        return 'file://' + quote_from_bytes(bpath)
 
     def gethomedir(self, username):
         if not username:
