@@ -1,6 +1,10 @@
 @setlocal enableextensions
 @echo off
 
+echo FAILED TESTS!
+set EXITCODE=1
+exit /B %EXITCODE%
+
 set D=%~dp0
 set PCBUILD=%D%..\..\PCbuild\
 
