@@ -889,7 +889,7 @@ Text I/O
      characters written are translated to the given string.
 
    If *line_buffering* is ``True``, :meth:`flush` is implied when a call to
-   write contains a newline character.
+   write contains a newline character or a carriage return.
 
    If *write_through* is ``True``, calls to :meth:`write` are guaranteed
    not to be buffered: any data written on the :class:`TextIOWrapper`
