@@ -91,12 +91,12 @@ class ImportTests(unittest.TestCase):
         self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'os' \(.*os.py\)")
 
     def test_from_import_missing_attr_has_name_and_so_path(self):
-        import binascii
+        import _hashlib
         with self.assertRaises(ImportError) as cm:
-            from binascii import i_dont_exist
-        self.assertEqual(cm.exception.name, 'binascii')
-        self.assertEqual(cm.exception.path, binascii.__file__)
-        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'binascii' \(.*\.(so|pyd)\)")
+            from _hashlib import i_dont_exist
+        self.assertEqual(cm.exception.name, '_hashlib')
+        self.assertEqual(cm.exception.path, _hashlib.__file__)
+        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from '_hashlib' \(.*\.(so|pyd)\)")
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
