@@ -144,7 +144,8 @@ static const char usage_6[] =
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
 "   locale coercion and locale compatibility warnings on stderr.\n"
-"PYTHONDEVMODE: enable the development mode.\n";
+"PYTHONDEVMODE: enable the development mode.\n"
+"PYTHONBYTECODEPATH: alternate directory for bytecode cache (pyc) files.\n";
 
 static void
 pymain_usage(int error, const wchar_t* program)

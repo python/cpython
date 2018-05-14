@@ -587,6 +587,15 @@ conflict.
    specifying the :option:`-B` option.
 
 
+.. envvar:: PYTHONBYTECODEPATH
+
+   If this is set, Python will write ``.pyc`` files in a mirror directory tree
+   at this path, instead of in ``__pycache__`` directories within the source
+   tree.
+
+   .. versionadded:: 3.8
+
+
 .. envvar:: PYTHONHASHSEED
 
    If this variable is not set or set to ``random``, a random value is used

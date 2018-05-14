@@ -102,6 +102,16 @@ def _path_isdir(path):
     return _path_is_mode_type(path, 0o040000)
 
 
+def _path_isabs(path):
+    """Replacement for os.path.isabs.
+
+    Considers a Windows drive-relative path (no drive, but starts with slash) to
+    still be "absolute".
+    """
+    return path.startswith(path_separators) or path[1:3] in {
+        f':{s}' for s in path_separators}
+
+
 def _write_atomic(path, data, mode=0o666):
     """Best-effort function to write data to a path atomically.
     Be prepared to handle a FileExistsError if concurrent writing of the
@@ -312,7 +322,33 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
         if not optimization.isalnum():
             raise ValueError('{!r} is not alphanumeric'.format(optimization))
         almost_filename = '{}.{}{}'.format(almost_filename, _OPT, optimization)
-    return _path_join(head, _PYCACHE, almost_filename + BYTECODE_SUFFIXES[0])
+    filename = almost_filename + BYTECODE_SUFFIXES[0]
+    if BYTECODE_BASE_PATH is not None:
+        # We need an absolute path to the py file to avoid the possibility of
+        # collisions within BYTECODE_BASE_PATH, if someone has two different
+        # `foo/bar.py` on their system and they import both of them using the
+        # same BYTECODE_BASE_PATH. Let's say BYTECODE_BASE_PATH is
+        # `C:\Bytecode`; the idea here is that if we get `Foo\Bar`, we first
+        # make it absolute (`C:\Somewhere\Foo\Bar`), then make it root-relative
+        # (`Somewhere\Foo\Bar`), so we end up placing the bytecode file in
+        # an unambiguous `C:\Bytecode\Somewhere\Foo\Bar\`.
+        if not _path_isabs(head):
+            head = _path_join(_os.getcwd(), head)
+
+        # Strip initial drive from a Windows path. We know we have an absolute
+        # path here, so the second part of the check rules out a POSIX path that
+        # happens to contain a colon at the second character.
+        if head[1] == ':' and head[0] not in path_separators:
+            head = head[2:]
+
+        # Strip initial path separator from `head` to complete the conversion
+        # back to a root-relative path before joining.
+        return _path_join(
+            BYTECODE_BASE_PATH,
+            head.lstrip(path_separators),
+            filename,
+        )
+    return _path_join(head, _PYCACHE, filename)
 
 
 def source_from_cache(path):
@@ -328,23 +364,26 @@ def source_from_cache(path):
         raise NotImplementedError('sys.implementation.cache_tag is None')
     path = _os.fspath(path)
     head, pycache_filename = _path_split(path)
-    head, pycache = _path_split(head)
-    if pycache != _PYCACHE:
-        raise ValueError('{} not bottom-level directory in '
-                         '{!r}'.format(_PYCACHE, path))
+    if BYTECODE_BASE_PATH is not None and head.startswith(
+            BYTECODE_BASE_PATH + path_sep):
+        head = head[len(BYTECODE_BASE_PATH):]
+    else:
+        head, pycache = _path_split(head)
+        if pycache != _PYCACHE:
+            raise ValueError(f'{_PYCACHE} not bottom-level directory in '
+                             f'{path!r}')
     dot_count = pycache_filename.count('.')
     if dot_count not in {2, 3}:
-        raise ValueError('expected only 2 or 3 dots in '
-                         '{!r}'.format(pycache_filename))
+        raise ValueError(f'expected only 2 or 3 dots in {pycache_filename!r}')
     elif dot_count == 3:
         optimization = pycache_filename.rsplit('.', 2)[-2]
         if not optimization.startswith(_OPT):
             raise ValueError("optimization portion of filename does not start "
-                             "with {!r}".format(_OPT))
+                             f"with {_OPT!r}")
         opt_level = optimization[len(_OPT):]
         if not opt_level.isalnum():
-            raise ValueError("optimization level {!r} is not an alphanumeric "
-                             "value".format(optimization))
+            raise ValueError(f"optimization level {optimization!r} is not an "
+                             "alphanumeric value")
     base_filename = pycache_filename.partition('.')[0]
     return _path_join(head, base_filename + SOURCE_SUFFIXES[0])
 
@@ -1554,6 +1593,10 @@ def _setup(_bootstrap_module):
         SOURCE_SUFFIXES.append('.pyw')
         if '_d.pyd' in EXTENSION_SUFFIXES:
             WindowsRegistryFinder.DEBUG_BUILD = True
+    bytecode_base_path = _os.environ.get(b'PYTHONBYTECODEPATH') or None
+    if bytecode_base_path is not None:
+        bytecode_base_path = bytecode_base_path.decode().rstrip(path_separators)
+    setattr(self_module, 'BYTECODE_BASE_PATH', bytecode_base_path)
 
 
 def _install(_bootstrap_module):

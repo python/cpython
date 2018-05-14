@@ -1,9 +1,10 @@
-from . import util
+﻿from . import util
 abc = util.import_importlib('importlib.abc')
 init = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
+import contextlib
 import importlib.util
 import os
 import pathlib
@@ -12,6 +13,7 @@ import sys
 from test import support
 import types
 import unittest
+import unittest.mock
 import warnings
 
 
@@ -557,8 +559,8 @@ class PEP3147Tests:
 
     tag = sys.implementation.cache_tag
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag not be None')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag not be None')
     def test_cache_from_source(self):
         # Given the path to a .py file, return the path to its PEP 3147
         # defined .pyc file (i.e. under __pycache__).
@@ -678,8 +680,8 @@ class PEP3147Tests:
             self.util.cache_from_source('\\foo\\bar\\baz/qux.py', optimization=''),
             '\\foo\\bar\\baz\\__pycache__\\qux.{}.pyc'.format(self.tag))
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag not be None')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag not be None')
     def test_source_from_cache_path_like_arg(self):
         path = pathlib.PurePath('foo', 'bar', 'baz', 'qux.py')
         expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
@@ -687,9 +689,8 @@ class PEP3147Tests:
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag to not be '
-                         'None')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache(self):
         # Given the path to a PEP 3147 defined .pyc file, return the path to
         # its source.  This tests the good path.
@@ -749,14 +750,99 @@ class PEP3147Tests:
         with self.assertRaises(ValueError):
             self.util.source_from_cache(path)
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag to not be '
-                         'None')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_path_like_arg(self):
         path = pathlib.PurePath('foo', 'bar', 'baz', '__pycache__',
                                 'qux.{}.pyc'.format(self.tag))
         expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
         self.assertEqual(self.util.source_from_cache(path), expect)
+
+    @contextlib.contextmanager
+    def bytecode_path(self, path):
+        # Patch directly in globals of the functions under test, because we have
+        # no direct access to the right _bootstrap_external module to patch.
+
+        # cache_from_source and source_from_cache come from the same module,
+        # thus they share the same globals dict, so we only have to patch it
+        # once.
+        _globals = self.util.cache_from_source.__globals__
+
+        _orig_path = _globals['BYTECODE_BASE_PATH']
+        _globals['BYTECODE_BASE_PATH'] = path
+        try:
+            yield
+        finally:
+            _globals['BYTECODE_BASE_PATH'] = _orig_path
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_cache_from_source_respects_PYTHONBYTECODEPATH(self):
+        # If PYTHONBYTECODEPATH env var is set, cache_from_source will return
+        # a bytecode path inside that directory (in a subdirectory mirroring the
+        # .py file's path) rather than in a __pycache__ dir next to the py file.
+        bytecode_paths = [
+            os.path.join(os.path.sep, 'tmp', 'bytecode'),
+            os.path.join(os.path.sep, 'tmp', '\u2603'),  # non-ASCII in path!
+            os.path.join(os.path.sep, 'tmp', 'trailing-slash') + os.path.sep,
+        ]
+        drive = 'C:' if os.name == 'nt' else ''
+        for bytecode_path in bytecode_paths:
+            bytecode_path = drive + bytecode_path
+            with self.subTest(path=bytecode_path):
+                path = drive + os.path.join(
+                    os.path.sep, 'foo', 'bar', 'baz', 'qux.py')
+                expect = os.path.join(
+                    bytecode_path, 'foo', 'bar', 'baz',
+                    'qux.{}.pyc'.format(self.tag))
+                with self.bytecode_path(bytecode_path):
+                    self.assertEqual(
+                        self.util.cache_from_source(path, optimization=''),
+                        expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_cache_from_source_respects_PYTHONBYTECODEPATH_relative(self):
+        # If the .py path we are given is relative, we will resolve to an
+        # absolute path before prefixing with PYTHONBYTECODEPATH, to avoid any
+        # possible ambiguity
+        bytecode_path = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        root = os.path.splitdrive(os.getcwd())[0] + os.path.sep
+        expect = os.path.join(
+            bytecode_path,
+            os.path.relpath(os.getcwd(), root),
+            'foo', 'bar', 'baz', 'qux.{}.pyc'.format(self.tag))
+        with self.bytecode_path(bytecode_path):
+            self.assertEqual(
+                self.util.cache_from_source(path, optimization=''),
+                expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_source_from_cache_inside_PYTHONBYTECODEPATH(self):
+        # If PYTHONBYTECODEPATH is set and the cache path we get is inside it,
+        # we return an absolute path to the py file based on the remainder of
+        # the path within PYTHONBYTECODEPATH
+        bytecode_path = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = os.path.join(bytecode_path, 'foo', 'bar', 'baz',
+                            'qux.{}.pyc'.format(self.tag))
+        expect = os.path.join(os.path.sep, 'foo', 'bar', 'baz', 'qux.py')
+        with self.bytecode_path(bytecode_path):
+            self.assertEqual(self.util.source_from_cache(path), expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_source_from_cache_outside_PYTHONBYTECODEPATH(self):
+        # If PYTHONBYTECODEPATH is set but the cache path we get is not inside
+        # it, just ignore it and handle the cache path according to the default
+        # behavior.
+        bytecode_path = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = os.path.join('foo', 'bar', 'baz', '__pycache__',
+                            'qux.{}.pyc'.format(self.tag))
+        expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        with self.bytecode_path(bytecode_path):
+            self.assertEqual(self.util.source_from_cache(path), expect)
 
 
 (Frozen_PEP3147Tests,

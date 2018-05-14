@@ -1,0 +1,2 @@
+Add :envvar:`PYTHONBYTECODEPATH` environment variable to set an alternate
+root path for writing module bytecode cache files.
