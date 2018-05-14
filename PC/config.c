@@ -32,7 +32,7 @@ extern PyObject* PyInit__locale(void);
 #endif
 extern PyObject* PyInit__codecs(void);
 extern PyObject* PyInit__weakref(void);
-/* XXX: These two should really be extracted to standalone extensions. */
+/* XXX: This one should really be extracted to standalone extension. */
 extern PyObject* PyInit_xxsubtype(void);
 extern PyObject* PyInit_zipimport(void);
 extern PyObject* PyInit__random(void);
