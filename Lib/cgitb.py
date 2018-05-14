@@ -57,9 +57,19 @@ def strong(text):
 
 def grey(text):
     if text:
-        return '<font color="#909090">' + text + '</font>'
+        return '<font color="#696969">' + text + '</font>'
     else:
         return ''
+
+def title(exception, version, date):
+    subtitle = version + ' | ' + date
+    return '''
+<font face="helvetica, arial">
+  <h1 style="font-size: 1.6em; margin-top: 0px; border-bottom: 1px solid #ddd;">{exception}</h1>
+  <p style="color: #959595">
+    {subtitle}
+  </p>
+</font>'''.format(exception=exception, subtitle=grey(subtitle))
 
 def lookup(name, frame, locals):
     """Find the value for a given name in the given environment."""
@@ -105,11 +115,9 @@ def html(einfo, context=5):
         etype = etype.__name__
     pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
     date = time.ctime(time.time())
-    head = '<body bgcolor="#f0f0f8">' + pydoc.html.heading(
-        '<big><big>%s</big></big>' %
-        strong(pydoc.html.escape(str(etype))),
-        '#ffffff', '#6622aa', pyver + '<br>' + date) + '''
-<p>A problem occurred in a Python script.  Here is the sequence of
+    head = '<body bgcolor="#f0f0f8">' + title(
+        pydoc.html.escape(str(etype)), pyver, date) + '''
+<p><font face="helvetica, arial">A problem occurred in a Python script.  Here is the sequence of
 function calls leading up to the error, in the order they occurred.</p>'''
 
     indent = '<tt>' + small('&nbsp;' * 5) + '&nbsp;</tt>'
@@ -144,10 +152,10 @@ function calls leading up to the error, in the order they occurred.</p>'''
                 num = small('&nbsp;' * (5-len(str(i))) + str(i)) + '&nbsp;'
                 if i in highlight:
                     line = '<tt>=&gt;%s%s</tt>' % (num, pydoc.html.preformat(line))
-                    rows.append('<tr><td bgcolor="#ffccee">%s</td></tr>' % line)
+                    rows.append('<tr><td bgcolor="#6c5fc7"><font color="#ffffff">%s</td></tr>' % line)
                 else:
                     line = '<tt>&nbsp;&nbsp;%s%s</tt>' % (num, pydoc.html.preformat(line))
-                    rows.append('<tr><td>%s</td></tr>' % grey(line))
+                    rows.append('<tr><td>%s</td></tr>' % line)
                 i += 1
 
         done, dump = {}, []
@@ -165,7 +173,7 @@ function calls leading up to the error, in the order they occurred.</p>'''
             else:
                 dump.append(name + ' <em>undefined</em>')
 
-        rows.append('<tr><td>%s</td></tr>' % small(grey(', '.join(dump))))
+        rows.append('<tr><td>%s<br><br></td></tr>' % small(grey(', '.join(dump))))
         frames.append('''
 <table width="100%%" cellspacing=0 cellpadding=0 border=0>
 %s</table>''' % '\n'.join(rows))
