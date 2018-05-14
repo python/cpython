@@ -110,6 +110,13 @@ class Profile(_lsprof.Profiler):
         finally:
             self.disable()
 
+    def __enter__(self):
+        self.enable()
+        return self
+
+    def __exit__(self, *exc_info):
+        self.disable()
+
 # ____________________________________________________________
 
 def label(code):
