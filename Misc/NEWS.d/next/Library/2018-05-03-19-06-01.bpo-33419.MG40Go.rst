@@ -1,0 +1,2 @@
+Added :class:`functools.partialclass`, which implements "partial class
+application".
