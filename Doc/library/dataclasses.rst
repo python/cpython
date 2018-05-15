@@ -12,8 +12,32 @@
 --------------
 
 This module provides a decorator and functions for automatically
-adding generated special methods to classes.  It was originally
-described in :pep:`526`.
+adding generated :term:`special method`\s such as :meth:`__init__` and
+:meth:`__repr__` to user-defined classes.  It was originally described
+in :pep:`557`.
+
+The member variables to use in these generated methods are defined
+using :pep:`526` type annotations.  For example this code::
+
+  @dataclass
+  class InventoryItem:
+      '''Class for keeping track of an item in inventory.'''
+      name: str
+      unit_price: float
+      quantity_on_hand: int = 0
+
+      def total_cost(self) -> float:
+          return self.unit_price * self.quantity_on_hand
+
+Will add, among other things, a :meth:`__init__` that looks like::
+
+  def __init__(self, name: str, unit_price: float, quantity_on_hand: int=0):
+      self.name = name
+      self.unit_price = unit_price
+      self.quantity_on_hand = quantity_on_hand
+
+Note that this method is automatically added to the class: it is not
+directly specified in the ``InventoryItem`` definition shown above.
 
 .. versionadded:: 3.7
 
