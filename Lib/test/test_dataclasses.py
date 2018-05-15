@@ -603,7 +603,6 @@ class TestCase(unittest.TestCase):
                 class C:
                     x: ClassVar[typ] = Subclass()
 
-
     def test_deliberately_mutable_defaults(self):
         # If a mutable default isn't in the known list of
         #  (list, dict, set), then it's okay.
@@ -927,14 +926,16 @@ class TestCase(unittest.TestCase):
             z: ClassVar[int] = 1000
             w: ClassVar[int] = 2000
             t: ClassVar[int] = 3000
+            s: ClassVar      = 4000
 
         c = C(5)
         self.assertEqual(repr(c), 'TestCase.test_class_var.<locals>.C(x=5, y=10)')
         self.assertEqual(len(fields(C)), 2)                 # We have 2 fields.
-        self.assertEqual(len(C.__annotations__), 5)         # And 3 ClassVars.
+        self.assertEqual(len(C.__annotations__), 6)         # And 4 ClassVars.
         self.assertEqual(c.z, 1000)
         self.assertEqual(c.w, 2000)
         self.assertEqual(c.t, 3000)
+        self.assertEqual(c.s, 4000)
         C.z += 1
         self.assertEqual(c.z, 1001)
         c = C(20)
@@ -942,6 +943,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(c.z, 1001)
         self.assertEqual(c.w, 2000)
         self.assertEqual(c.t, 3000)
+        self.assertEqual(c.s, 4000)
 
     def test_class_var_no_default(self):
         # If a ClassVar has no default value, it should not be set on the class.
@@ -2906,22 +2908,43 @@ class TestStringAnnotations(unittest.TestCase):
     def test_classvar_module_level_import(self):
         from . import dataclass_module_1
         from . import dataclass_module_1_str
-
-        for m in (dataclass_module_1, dataclass_module_1_str):
-            with self.subTest(m=m):
-                # x is a ClassVar, so C() takes no args.
-                m.C()
-                self.assertEqual(m.C.x, 20)
-
-    def test_classvar_import_classvar(self):
         from . import dataclass_module_2
         from . import dataclass_module_2_str
 
-        for m in (dataclass_module_2, dataclass_module_2_str):
+        for m in (dataclass_module_1, dataclass_module_1_str,
+                  dataclass_module_2, dataclass_module_2_str,
+                  ):
             with self.subTest(m=m):
-                # x is a ClassVar, so C() takes no args.
-                m.C()
-                self.assertEqual(m.C.x, 20)
+                # There's a difference in how the ClassVars are
+                # interpreted when using string annotations or
+                # not. See the imported modules for details.
+                if m.USING_STRINGS:
+                    c = m.CV(10)
+                else:
+                    c = m.CV()
+                self.assertEqual(c.cv0, 20)
+
+
+                # There's a difference in how the InitVars are
+                # interpreted when using string annotations or
+                # not. See the imported modules for details.
+                c = m.IV(0, 1, 2, 3, 4)
+
+                for field_name in ('iv0', 'iv1', 'iv2', 'iv3'):
+                    with self.subTest(field_name=field_name):
+                        with self.assertRaisesRegex(AttributeError, f"object has no attribute '{field_name}'"):
+                            # Since field_name is an InitVar, it's
+                            # not an instance field.
+                            getattr(c, field_name)
+
+                if m.USING_STRINGS:
+                    # iv4 is interpreted as a normal field.
+                    self.assertIn('not_iv4', c.__dict__)
+                    self.assertEqual(c.not_iv4, 4)
+                else:
+                    # iv4 is interpreted as an InitVar, so it
+                    # won't exist on the instance.
+                    self.assertNotIn('not_iv4', c.__dict__)
 
 
 if __name__ == '__main__':

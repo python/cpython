@@ -537,7 +537,23 @@ def _hash_fn(fields):
                       [f'return hash({self_tuple})'])
 
 
-def _is_type(annotation, cls, a_module, a_type):
+def _is_classvar(a_type, typing):
+    if typing:
+        # This test uses a typing internal class, but it's the best
+        #  way to test if this is a ClassVar.
+        return (a_type is typing.ClassVar
+                or (type(a_type) is typing._GenericAlias
+                    and a_type.__origin__ is typing.ClassVar))
+
+
+
+def _is_initvar(a_type, dataclasses):
+    # The module we're checking against is the module we're
+    # currently in (dataclasses.py).
+    return a_type is dataclasses.InitVar
+
+
+def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # Given a type annotation string, does it refer to a_type in
     # a_module?  For example, when checking that annotation denotes a
     # ClassVar, then a_module is typing, and a_type is
@@ -552,6 +568,30 @@ def _is_type(annotation, cls, a_module, a_type):
     # a_module is the module we want to match
     # a_type is the type in that module we want to match
 
+    # Since this test does not do a local namespace lookup (and
+    # instead only a module (global) lookup), there are some things it
+    # gets wrong.
+
+    # With string annotations, this will work:
+    # CV = ClassVar
+    # @dataclass
+    # class C0:
+    #   cv0: CV
+
+    # But this will not:
+    # @dataclass
+    # class C1:
+    #   CV = ClassVar
+    #   cv1: CV
+
+    # In C1, the code in this function will look up "CV" in the module
+    # and not find it, so it will not consider cv1 as a ClassVar.
+    # This is a fairly obscure corner case, and the best way to fix it
+    # would be to eval() the string "CV" with the correct global and
+    # local namespaces.  However that would involve a eval() penalty
+    # for every single field of every dataclass that's defined.  It
+    # was judged not worth it.
+
     match = _MODULE_IDENTIFIER_RE.match(annotation)
     if match:
         ns = None
@@ -565,7 +605,7 @@ def _is_type(annotation, cls, a_module, a_type):
             module = sys.modules.get(cls.__module__)
             if module and module.__dict__.get(module_name) is a_module:
                 ns = sys.modules.get(a_type.__module__).__dict__
-        if ns and ns.get(match.group(2)) is a_type:
+        if ns and is_type_predicate(ns.get(match.group(2)), a_module):
             return True
     return False
 
@@ -613,10 +653,10 @@ def _get_field(cls, a_name, a_type):
     if typing:
         # This test uses a typing internal class, but it's the best
         #  way to test if this is a ClassVar.
-        if ((type(a_type) is typing._GenericAlias
-             and a_type.__origin__ is typing.ClassVar)
+        if (_is_classvar(a_type, typing)
             or (isinstance(f.type, str)
-                and _is_type(f.type, cls, typing, typing.ClassVar))):
+                and _is_type(f.type, cls, typing, typing.ClassVar,
+                             _is_classvar))):
             f._field_type = _FIELD_CLASSVAR
 
     # If the type is InitVar, or if it's a matching string annotation,
@@ -625,9 +665,10 @@ def _get_field(cls, a_name, a_type):
         # The module we're checking against is the module we're
         # currently in (dataclasses.py).
         dataclasses = sys.modules[__name__]
-        if (f.type is dataclasses.InitVar
+        if (_is_initvar(a_type, dataclasses)
             or (isinstance(f.type, str)
-                and _is_type(f.type, cls, dataclasses, dataclasses.InitVar))):
+                and _is_type(f.type, cls, dataclasses, dataclasses.InitVar,
+                             _is_initvar))):
             f._field_type = _FIELD_INITVAR
 
     # Validations for individual fields.  This is delayed until now,
