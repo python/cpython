@@ -21,7 +21,7 @@
 #endif /* HAVE_SYS_STAT_H */
 
 #ifdef MS_WINDOWS
-#include <consoleapi.h>
+#include <Windows.h>
 #endif
 
 /* Various interned strings */
