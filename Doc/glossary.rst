@@ -49,8 +49,8 @@ Glossary
       one of its attributes) or function or method (when annotating a parameter or a
       return value).
 
-      Annotations are not stored when annotating a local variable, but a variable
-      will become local when annotating it:
+      The annotation of a local variable is not stored, but a variable will
+      become local when annotated:
 
          def f():
              a: int
