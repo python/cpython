@@ -90,6 +90,7 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(cm.exception.path, os.__file__)
         self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'os' \(.*os.py\)")
 
+    @cpython_only
     def test_from_import_missing_attr_has_name_and_so_path(self):
         import _testcapi
         with self.assertRaises(ImportError) as cm:
