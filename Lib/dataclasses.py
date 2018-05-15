@@ -167,9 +167,14 @@ MISSING = _MISSING_TYPE()
 _EMPTY_METADATA = types.MappingProxyType({})
 
 # Markers for the various kinds of fields and pseudo-fields.
-_FIELD = object()                 # An actual field.
-_FIELD_CLASSVAR = object()        # Not a field, but a ClassVar.
-_FIELD_INITVAR = object()         # Not a field, but an InitVar.
+class _FIELD_BASE:
+    def __init__(self, name):
+        self.name = name
+    def __repr__(self):
+        return self.name
+_FIELD = _FIELD_BASE('_FIELD')
+_FIELD_CLASSVAR = _FIELD_BASE('_FIELD_CLASSVAR')
+_FIELD_INITVAR = _FIELD_BASE('_FIELD_INITVAR')
 
 # The name of an attribute on the class where we store the Field
 #  objects. Also used to check if a class is a Data Class.
@@ -242,7 +247,8 @@ class Field:
                 f'repr={self.repr!r},'
                 f'hash={self.hash!r},'
                 f'compare={self.compare!r},'
-                f'metadata={self.metadata!r}'
+                f'metadata={self.metadata!r},'
+                f'_field_type={self._field_type}'
                 ')')
 
     # This is used to support the PEP 487 __set_name__ protocol in the
@@ -279,12 +285,12 @@ class _DataclassParams:
 
     def __repr__(self):
         return ('_DataclassParams('
-                f'init={self.init},'
-                f'repr={self.repr},'
-                f'eq={self.eq},'
-                f'order={self.order},'
-                f'unsafe_hash={self.unsafe_hash},'
-                f'frozen={self.frozen}'
+                f'init={self.init!r},'
+                f'repr={self.repr!r},'
+                f'eq={self.eq!r},'
+                f'order={self.order!r},'
+                f'unsafe_hash={self.unsafe_hash!r},'
+                f'frozen={self.frozen!r}'
                 ')')
 
 
