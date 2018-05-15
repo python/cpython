@@ -13,7 +13,7 @@ def any(name, alternates):
     return "(?P<%s>" % name + "|".join(alternates) + ")"
 
 def make_pat():
-    kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
+    kw = r"\b" + any("KEYWORD", keyword.kwlist + ['async', 'await']) + r"\b"
     builtinlist = [str(name) for name in dir(builtins)
                                         if not name.startswith('_') and \
                                         name not in keyword.kwlist]
