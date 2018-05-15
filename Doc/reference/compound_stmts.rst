@@ -684,6 +684,8 @@ can be used to create instance variables with different implementation details.
    :pep:`3129` - Class Decorators
 
 
+.. _async:
+
 Coroutines
 ==========
 
