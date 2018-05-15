@@ -1071,7 +1071,7 @@ Glossary
       :func:`bytes.splitlines` for an additional use.
 
    variable annotation
-      An :term:`annotation` of a global variable, or a class attribute.
+      An :term:`annotation` of a variable, or a class attribute.
 
       Variable annotations can be used to specify
       :term:`type hints <type hint>`:: this variable is expected to take
