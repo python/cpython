@@ -5,7 +5,7 @@ import threading
 from . import process
 from . import reduction
 
-__all__ = []            # things are copied from here to __init__.py
+__all__ = []
 
 #
 # Exceptions
