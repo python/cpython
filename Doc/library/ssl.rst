@@ -803,6 +803,15 @@ Constants
       The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15,
       3.6.3 and 3.7.0 for backwards compatibility with OpenSSL 1.0.2.
 
+.. data:: OP_NO_RENEGOTIATION
+
+   Disable all renegotiation in TLSv1.2 and earlier. Do not send
+   HelloRequest messages, and ignore renegotiation requests via ClientHello.
+
+   This option is only available with OpenSSL 1.1.0h and later.
+
+   .. versionadded:: 3.7
+
 .. data:: OP_CIPHER_SERVER_PREFERENCE
 
    Use the server's cipher ordering preference, rather than the client's.
