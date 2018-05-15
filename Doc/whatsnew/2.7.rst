@@ -1828,7 +1828,7 @@ new features were added.  Most of these features were implemented
 by Michael Foord, unless otherwise noted.  The enhanced version of
 the module is downloadable separately for use with Python versions 2.4 to 2.6,
 packaged as the :mod:`unittest2` package, from
-https://pypi.python.org/pypi/unittest2.
+https://pypi.org/project/unittest2.
 
 When used from the command line, the module can automatically discover
 tests.  It's not as fancy as `py.test <http://pytest.org>`__ or

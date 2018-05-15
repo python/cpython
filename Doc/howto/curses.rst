@@ -41,7 +41,7 @@ appearance---and the curses library will figure out what control codes
 need to be sent to the terminal to produce the right output.  curses
 doesn't provide many user-interface concepts such as buttons, checkboxes,
 or dialogs; if you need such features, consider a user interface library such as
-`Urwid <https://pypi.python.org/pypi/urwid/>`_.
+`Urwid <https://pypi.org/project/urwid/>`_.
 
 The curses library was originally written for BSD Unix; the later System V
 versions of Unix from AT&T added many enhancements and new functions. BSD curses
@@ -55,7 +55,7 @@ everything, though.
 
 The Windows version of Python doesn't include the :mod:`curses`
 module.  A ported version called `UniCurses
-<https://pypi.python.org/pypi/UniCurses>`_ is available.  You could
+<https://pypi.org/project/UniCurses>`_ is available.  You could
 also try `the Console module <http://effbot.org/zone/console-index.htm>`_
 written by Fredrik Lundh, which doesn't
 use the same API as curses but provides cursor-addressable text output
@@ -432,7 +432,7 @@ User Input
 
 The C curses library offers only very simple input mechanisms. Python's
 :mod:`curses` module adds a basic text-input widget.  (Other libraries
-such as `Urwid <https://pypi.python.org/pypi/urwid/>`_ have more extensive
+such as `Urwid <https://pypi.org/project/urwid/>`_ have more extensive
 collections of widgets.)
 
 There are two methods for getting input from a window:
