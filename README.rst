@@ -94,7 +94,7 @@ Profile Guided Optimization
 
 PGO takes advantage of recent versions of the GCC or Clang compilers.  If used,
 either via ``configure --enable-optimizations`` or by manually running
-``make profile-opt`` regardless of configure flags, it the optimized build
+``make profile-opt`` regardless of configure flags, the optimized build
 process will perform the following steps:
 
 The entire Python directory is cleaned of temporary files that may have
