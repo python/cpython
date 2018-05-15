@@ -2470,12 +2470,8 @@ PyDoc_STRVAR(channel_recv_doc,
 Return a new object from the data at the from of the channel's queue.");
 
 static PyObject *
-channel_close(PyObject *self, PyObject *args, PyObject *kwds)
+channel_close(PyObject *self, PyObject *id)
 {
-    PyObject *id;
-    if (!PyArg_UnpackTuple(args, "channel_recv", 1, 1, &id)) {
-        return NULL;
-    }
     int64_t cid = _coerce_id(id);
     if (cid < 0) {
         return NULL;
@@ -2570,8 +2566,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS, channel_send_doc},
     {"channel_recv",              (PyCFunction)channel_recv,
      METH_VARARGS, channel_recv_doc},
-    {"channel_close",             (PyCFunction)channel_close,
-     METH_VARARGS, channel_close_doc},
+    {"channel_close",             channel_close,
+     METH_O, channel_close_doc},
     {"channel_drop_interpreter",  (PyCFunction)channel_drop_interpreter,
      METH_VARARGS | METH_KEYWORDS, channel_drop_interpreter_doc},
     {"_channel_id",               (PyCFunction)channel__channel_id,
