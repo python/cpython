@@ -462,6 +462,8 @@ class ScalableSelectorMixIn:
         s = self.SELECTOR()
         self.addCleanup(s.close)
 
+        print(f'** NUM_FDS = {NUM_FDS} **')
+
         for i in range(NUM_FDS // 2):
             try:
                 rd, wr = self.make_socketpair()
