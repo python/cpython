@@ -3430,21 +3430,32 @@ else
 fi
 
 # checks for library functions
-AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
+AC_FUNC_CHOWN
+AC_FUNC_FSEEKO
+AC_FUNC_GETGROUPS
+AC_FUNC_MBRTOWC
+AC_FUNC_MKTIME
+AC_FUNC_MMAP
+AC_FUNC_SETPGRP
+AC_FUNC_LSTAT
+
+
+
+AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset \
  clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
- getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
+ getgrouplist getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
- memrchr mbrtowc mkdirat mkfifo \
- mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
+ initgroups kill killpg lchmod lchown lockf linkat lutimes \
+ memrchr mkdirat mkfifo \
+ mkfifoat mknod mknodat mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
  pthread_init pthread_kill putenv pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
  sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
- setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
+ setlocale setregid setreuid setresuid setresgid setsid setpgid setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
  sched_rr_get_interval \
  sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
@@ -3723,7 +3734,7 @@ AC_CHECK_FUNCS(forkpty,,
 )
 
 # check for long file support functions
-AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
+AC_CHECK_FUNCS(fseek64 fstatvfs ftell64 statvfs)
 
 AC_REPLACE_FUNCS(dup2 strdup)
 AC_CHECK_FUNCS(getpgrp,
