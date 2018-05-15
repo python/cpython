@@ -302,7 +302,7 @@ def linux_distribution(distname='', version='', id='',
                        full_distribution_name=1):
     import warnings
     warnings.warn("dist() and linux_distribution() functions are deprecated "
-                  "in Python 3.5", PendingDeprecationWarning, stacklevel=2)
+                  "in Python 3.5", DeprecationWarning, stacklevel=2)
     return _linux_distribution(distname, version, id, supported_dists,
                                full_distribution_name)
 
@@ -376,7 +376,7 @@ def dist(distname='', version='', id='',
     """
     import warnings
     warnings.warn("dist() and linux_distribution() functions are deprecated "
-                  "in Python 3.5", PendingDeprecationWarning, stacklevel=2)
+                  "in Python 3.5", DeprecationWarning, stacklevel=2)
     return _linux_distribution(distname, version, id,
                                supported_dists=supported_dists,
                                full_distribution_name=0)
@@ -1345,7 +1345,7 @@ def platform(aliased=0, terse=0):
                 'ignore',
                 r'dist\(\) and linux_distribution\(\) '
                 'functions are deprecated .*',
-                PendingDeprecationWarning,
+                DeprecationWarning,
             )
             distname, distversion, distid = dist('')
         if distname and not terse:
