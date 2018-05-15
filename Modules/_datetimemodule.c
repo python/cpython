@@ -2960,17 +2960,20 @@ date_strptime(PyObject *cls, PyObject *args)
 
     datetime = datetime_strptime((PyObject *)&PyDateTime_DateTimeType, args);
 
-    if (datetime == NULL)
+    if (datetime == NULL) {
         return NULL;
+    }
 
     if (DATE_GET_HOUR(datetime) ||
         DATE_GET_MINUTE(datetime) ||
         DATE_GET_SECOND(datetime) ||
-        DATE_GET_MICROSECOND(datetime))
+        DATE_GET_MICROSECOND(datetime)) {
         PyErr_SetString(PyExc_ValueError,
             "date.strptime value cannot have a time part");
-    else
+    }
+    else {
         date = datetime_getdate((PyDateTime_DateTime *)datetime);
+    }
 
     Py_DECREF(datetime);
     return date;
@@ -4077,28 +4080,33 @@ time_strptime(PyObject *cls, PyObject *args)
      */
     if (emptyDatetime == NULL) {
         PyObject *emptyStringPair = Py_BuildValue("ss", "", "");
-        if (emptyStringPair == NULL)
+        if (emptyStringPair == NULL) {
             return NULL;
+        }
         emptyDatetime = datetime_strptime(
             (PyObject *)&PyDateTime_DateTimeType,
             emptyStringPair);
         Py_DECREF(emptyStringPair);
-        if (emptyDatetime == NULL)
+        if (emptyDatetime == NULL) {
             return NULL;
+        }
     }
 
     datetime = datetime_strptime((PyObject *)&PyDateTime_DateTimeType, args);
 
-    if (datetime == NULL)
+    if (datetime == NULL) {
         return NULL;
+    }
 
     if (GET_YEAR(datetime) != GET_YEAR(emptyDatetime)
         || GET_MONTH(datetime) != GET_MONTH(emptyDatetime)
-        || GET_DAY(datetime) != GET_DAY(emptyDatetime))
+        || GET_DAY(datetime) != GET_DAY(emptyDatetime)) {
         PyErr_SetString(PyExc_ValueError,
                         "time.strptime value cannot have a date part");
-    else
+    }
+    else {
         time = datetime_gettime((PyDateTime_DateTime *)datetime);
+    }
 
     Py_DECREF(datetime);
     return time;
