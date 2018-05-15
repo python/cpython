@@ -2903,6 +2903,26 @@ class TestStringAnnotations(unittest.TestCase):
                 # x is not an InitVar, so there will be a member x.
                 self.assertEqual(C(10).x, 10)
 
+    def test_classvar_module_level_import(self):
+        from . import dataclass_module_1
+        from . import dataclass_module_1_str
+
+        for m in (dataclass_module_1, dataclass_module_1_str):
+            with self.subTest(m=m):
+                # x is a ClassVar, so C() takes no args.
+                m.C()
+                self.assertEqual(m.C.x, 20)
+
+    def test_classvar_import_classvar(self):
+        from . import dataclass_module_2
+        from . import dataclass_module_2_str
+
+        for m in (dataclass_module_2, dataclass_module_2_str):
+            with self.subTest(m=m):
+                # x is a ClassVar, so C() takes no args.
+                m.C()
+                self.assertEqual(m.C.x, 20)
+
 
 if __name__ == '__main__':
     unittest.main()
