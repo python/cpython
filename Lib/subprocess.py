@@ -727,7 +727,16 @@ class Popen(object):
         # yet remain good for interactive users trying to exit a tool.
         self._sigint_wait_secs = 0.25  # 1/xkcd221.getRandomNumber()
 
-        self._closed_child_pipe_fds = False
+        self._child_pipes_to_close = set()
+        if stdin == PIPE:
+            self._child_pipes_to_close.add(p2cread)
+        if stdout == PIPE:
+            self._child_pipes_to_close.add(c2pwrite)
+        if stderr == PIPE:
+            self._child_pipes_to_close.add(errwrite)
+        if hasattr(self, '_devnull'):
+            self._child_pipes_to_close.add(self._devnull)
+
 
         try:
             if p2cwrite != -1:
@@ -756,32 +765,26 @@ class Popen(object):
                                 restore_signals, start_new_session)
         except:
             # Cleanup if the child failed starting.
-            for f in filter(None, (self.stdin, self.stdout, self.stderr)):
-                try:
-                    f.close()
-                except OSError:
-                    pass  # Ignore EBADF or other errors.
-
-            if not self._closed_child_pipe_fds:
-                to_close = []
-                if stdin == PIPE:
-                    to_close.append(p2cread)
-                if stdout == PIPE:
-                    to_close.append(c2pwrite)
-                if stderr == PIPE:
-                    to_close.append(errwrite)
-                if hasattr(self, '_devnull'):
-                    to_close.append(self._devnull)
-                for fd in to_close:
-                    try:
-                        if _mswindows and isinstance(fd, Handle):
-                            fd.Close()
-                        else:
-                            os.close(fd)
-                    except OSError:
-                        pass
-
+            self._cleanup_on_exec_failure()
             raise
+            
+    def _cleanup_on_exec_failure(self):
+        for f in filter(None, (self.stdin, self.stdout, self.stderr)):
+            try:
+                f.close()
+            except OSError:
+                pass  # Ignore EBADF or other errors.
+
+        for fd in self._child_pipes_to_close:
+            try:
+                if _mswindows and isinstance(fd, Handle):
+                    fd.Close()
+                else:
+                    os.close(fd)
+            except OSError:
+                pass
+
+        self._child_pipes_to_close.clear()
 
     @property
     def universal_newlines(self):
@@ -1356,7 +1359,6 @@ class Popen(object):
                     c2pread, c2pwrite,
                     errread, errwrite)
 
-
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            pass_fds, cwd, env,
                            startupinfo, creationflags, shell,
@@ -1386,7 +1388,7 @@ class Popen(object):
             # For transferring possible exec failure from child to parent.
             # Data format: "exception name:hex errno:description"
             # Pickle is not used; it is complex and involves memory allocation.
-            errpipe_read, errpipe_write = os.pipe()
+            errpipe_read, errpipe_write = self._get_exec_err_pipe()
             # errpipe_write must not be in the standard io 0, 1, or 2 fd range.
             low_fds_to_close = []
             while errpipe_write < 3:
@@ -1434,18 +1436,32 @@ class Popen(object):
                     os.close(errpipe_write)
 
                 # self._devnull is not always defined.
+                to_close = set()
                 devnull_fd = getattr(self, '_devnull', None)
                 if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
-                    os.close(p2cread)
+                    to_close.add(p2cread)
                 if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
-                    os.close(c2pwrite)
+                    to_close.add(c2pwrite)
                 if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
-                    os.close(errwrite)
+                    to_close.add(errwrite)
                 if devnull_fd is not None:
-                    os.close(devnull_fd)
-                # Prevent a double close of these fds from __init__ on error.
-                self._closed_child_pipe_fds = True
+                    to_close.add(devnull_fd)
+                for fd in to_close:
+                    os.close(fd)
+                    # Prevent a double close of these fds from __init__ on error.
+                    self._child_pipes_to_close.remove(fd)
+            except:
+                os.close(errpipe_read)
+                raise
 
+            self._wait_exec_done(orig_executable, cwd, errpipe_read)
+
+        def _get_exec_err_pipe(self):
+            return os.pipe()
+
+        def _wait_exec_done(self, orig_executable, cwd, errpipe_read):
+            assert errpipe_read is not None
+            try:
                 # Wait for exec to fail or succeed; possibly raising an
                 # exception (limited in size)
                 errpipe_data = bytearray()
@@ -1459,46 +1475,40 @@ class Popen(object):
                 os.close(errpipe_read)
 
             if errpipe_data:
-                try:
-                    pid, sts = os.waitpid(self.pid, 0)
-                    if pid == self.pid:
-                        self._handle_exitstatus(sts)
-                    else:
-                        self.returncode = sys.maxsize
-                except ChildProcessError:
-                    pass
-
-                try:
-                    exception_name, hex_errno, err_msg = (
-                            errpipe_data.split(b':', 2))
-                    # The encoding here should match the encoding
-                    # written in by the subprocess implementations
-                    # like _posixsubprocess
-                    err_msg = err_msg.decode()
-                except ValueError:
-                    exception_name = b'SubprocessError'
-                    hex_errno = b'0'
-                    err_msg = 'Bad exception data from child: {!r}'.format(
-                                  bytes(errpipe_data))
-                child_exception_type = getattr(
-                        builtins, exception_name.decode('ascii'),
-                        SubprocessError)
-                if issubclass(child_exception_type, OSError) and hex_errno:
-                    errno_num = int(hex_errno, 16)
-                    child_exec_never_called = (err_msg == "noexec")
-                    if child_exec_never_called:
-                        err_msg = ""
-                        # The error must be from chdir(cwd).
-                        err_filename = cwd
-                    else:
-                        err_filename = orig_executable
-                    if errno_num != 0:
-                        err_msg = os.strerror(errno_num)
-                        if errno_num == errno.ENOENT:
-                            err_msg += ': ' + repr(err_filename)
-                    raise child_exception_type(errno_num, err_msg, err_filename)
-                raise child_exception_type(err_msg)
-
+                self._check_exec_result(orig_executable, cwd, errpipe_data)
+ 
+        def _check_exec_result(self, orig_executable, cwd, errpipe_data):
+            try:
+                os.waitpid(self.pid, 0)
+            except ChildProcessError:
+                pass
+            try:
+                exception_name, hex_errno, err_msg = (
+                        errpipe_data.split(b':', 2))
+            except ValueError:
+                exception_name = b'SubprocessError'
+                hex_errno = b'0'
+                err_msg = (b'Bad exception data from child: ' +
+                            repr(errpipe_data))
+            child_exception_type = getattr(
+                    builtins, exception_name.decode('ascii'),
+                    SubprocessError)
+            err_msg = err_msg.decode(errors="surrogatepass")
+            if issubclass(child_exception_type, OSError) and hex_errno:
+                errno_num = int(hex_errno, 16)
+                child_exec_never_called = (err_msg == "noexec")
+                if child_exec_never_called:
+                    err_msg = ""
+                if errno_num != 0:
+                    err_msg = os.strerror(errno_num)
+                    if errno_num == errno.ENOENT:
+                        if child_exec_never_called:
+                            # The error must be from chdir(cwd).
+                            err_msg += ': ' + repr(cwd)
+                        else:
+                            err_msg += ': ' + repr(orig_executable)
+                raise child_exception_type(errno_num, err_msg)
+            raise child_exception_type(err_msg)
 
         def _handle_exitstatus(self, sts, _WIFSIGNALED=os.WIFSIGNALED,
                 _WTERMSIG=os.WTERMSIG, _WIFEXITED=os.WIFEXITED,
