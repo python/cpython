@@ -132,10 +132,6 @@ except AttributeError:
         # Standard Unix uses /dev/null
         DEV_NULL = '/dev/null'
 
-# Directory to search for configuration information on Unix.
-# Constant used by test_platform to test linux_distribution().
-_UNIXCONFDIR = '/etc'
-
 ### Platform specific APIs
 
 _libc_search = re.compile(b'(__libc_init)'
@@ -248,138 +244,6 @@ def _dist_try_harder(distname, version, id):
             return distname, version, id
 
     return distname, version, id
-
-_release_filename = re.compile(r'(\w+)[-_](release|version)', re.ASCII)
-_lsb_release_version = re.compile(r'(.+)'
-                                  r' release '
-                                  r'([\d.]+)'
-                                  r'[^(]*(?:\((.+)\))?', re.ASCII)
-_release_version = re.compile(r'([^0-9]+)'
-                              r'(?: release )?'
-                              r'([\d.]+)'
-                              r'[^(]*(?:\((.+)\))?', re.ASCII)
-
-# See also http://www.novell.com/coolsolutions/feature/11251.html
-# and http://linuxmafia.com/faq/Admin/release-files.html
-# and http://data.linux-ntfs.org/rpm/whichrpm
-# and http://www.die.net/doc/linux/man/man1/lsb_release.1.html
-
-_supported_dists = (
-    'SuSE', 'debian', 'fedora', 'redhat', 'centos',
-    'mandrake', 'mandriva', 'rocks', 'slackware', 'yellowdog', 'gentoo',
-    'UnitedLinux', 'turbolinux', 'arch', 'mageia')
-
-def _parse_release_file(firstline):
-
-    # Default to empty 'version' and 'id' strings.  Both defaults are used
-    # when 'firstline' is empty.  'id' defaults to empty when an id can not
-    # be deduced.
-    version = ''
-    id = ''
-
-    # Parse the first line
-    m = _lsb_release_version.match(firstline)
-    if m is not None:
-        # LSB format: "distro release x.x (codename)"
-        return tuple(m.groups())
-
-    # Pre-LSB format: "distro x.x (codename)"
-    m = _release_version.match(firstline)
-    if m is not None:
-        return tuple(m.groups())
-
-    # Unknown format... take the first two words
-    l = firstline.strip().split()
-    if l:
-        version = l[0]
-        if len(l) > 1:
-            id = l[1]
-    return '', version, id
-
-def linux_distribution(distname='', version='', id='',
-
-                       supported_dists=_supported_dists,
-                       full_distribution_name=1):
-    import warnings
-    warnings.warn("dist() and linux_distribution() functions are deprecated "
-                  "in Python 3.5", DeprecationWarning, stacklevel=2)
-    return _linux_distribution(distname, version, id, supported_dists,
-                               full_distribution_name)
-
-def _linux_distribution(distname, version, id, supported_dists,
-                        full_distribution_name):
-
-    """ Tries to determine the name of the Linux OS distribution name.
-
-        The function first looks for a distribution release file in
-        /etc and then reverts to _dist_try_harder() in case no
-        suitable files are found.
-
-        supported_dists may be given to define the set of Linux
-        distributions to look for. It defaults to a list of currently
-        supported Linux distributions identified by their release file
-        name.
-
-        If full_distribution_name is true (default), the full
-        distribution read from the OS is returned. Otherwise the short
-        name taken from supported_dists is used.
-
-        Returns a tuple (distname, version, id) which default to the
-        args given as parameters.
-
-    """
-    try:
-        etc = os.listdir(_UNIXCONFDIR)
-    except OSError:
-        # Probably not a Unix system
-        return distname, version, id
-    etc.sort()
-    for file in etc:
-        m = _release_filename.match(file)
-        if m is not None:
-            _distname, dummy = m.groups()
-            if _distname in supported_dists:
-                distname = _distname
-                break
-    else:
-        return _dist_try_harder(distname, version, id)
-
-    # Read the first line
-    with open(os.path.join(_UNIXCONFDIR, file), 'r',
-              encoding='utf-8', errors='surrogateescape') as f:
-        firstline = f.readline()
-    _distname, _version, _id = _parse_release_file(firstline)
-
-    if _distname and full_distribution_name:
-        distname = _distname
-    if _version:
-        version = _version
-    if _id:
-        id = _id
-    return distname, version, id
-
-# To maintain backwards compatibility:
-
-def dist(distname='', version='', id='',
-
-         supported_dists=_supported_dists):
-
-    """ Tries to determine the name of the Linux OS distribution name.
-
-        The function first looks for a distribution release file in
-        /etc and then reverts to _dist_try_harder() in case no
-        suitable files are found.
-
-        Returns a tuple (distname, version, id) which default to the
-        args given as parameters.
-
-    """
-    import warnings
-    warnings.warn("dist() and linux_distribution() functions are deprecated "
-                  "in Python 3.5", DeprecationWarning, stacklevel=2)
-    return _linux_distribution(distname, version, id,
-                               supported_dists=supported_dists,
-                               full_distribution_name=0)
 
 def popen(cmd, mode='r', bufsize=-1):
 
@@ -1338,26 +1202,11 @@ def platform(aliased=0, terse=0):
             platform = _platform(system, release, version, csd)
 
     elif system in ('Linux',):
-        # Linux based systems
-        with warnings.catch_warnings():
-            # see issue #1322 for more information
-            warnings.filterwarnings(
-                'ignore',
-                r'dist\(\) and linux_distribution\(\) '
-                'functions are deprecated .*',
-                DeprecationWarning,
-            )
-            distname, distversion, distid = dist('')
-        if distname and not terse:
-            platform = _platform(system, release, machine, processor,
-                                 'with',
-                                 distname, distversion, distid)
-        else:
-            # If the distribution name is unknown check for libc vs. glibc
-            libcname, libcversion = libc_ver(sys.executable)
-            platform = _platform(system, release, machine, processor,
-                                 'with',
-                                 libcname+libcversion)
+        # check for libc vs. glibc
+        libcname, libcversion = libc_ver(sys.executable)
+        platform = _platform(system, release, machine, processor,
+                             'with',
+                             libcname+libcversion)
     elif system == 'Java':
         # Java platforms
         r, v, vminfo, (os_name, os_version, os_arch) = java_ver()
