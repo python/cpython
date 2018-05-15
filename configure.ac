@@ -2186,16 +2186,16 @@ AC_CHECK_TYPE(__uint128_t,
 
 # Sizes of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
-AC_CHECK_SIZEOF(int, 4)
-AC_CHECK_SIZEOF(long, 4)
-AC_CHECK_SIZEOF(long long, 8)
-AC_CHECK_SIZEOF(void *, 4)
-AC_CHECK_SIZEOF(short, 2)
-AC_CHECK_SIZEOF(float, 4)
-AC_CHECK_SIZEOF(double, 8)
-AC_CHECK_SIZEOF(fpos_t, 4)
-AC_CHECK_SIZEOF(size_t, 4)
-AC_CHECK_SIZEOF(pid_t, 4)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(void *)
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(float)
+AC_CHECK_SIZEOF(double)
+AC_CHECK_SIZEOF(fpos_t)
+AC_CHECK_SIZEOF(size_t)
+AC_CHECK_SIZEOF(pid_t)
 AC_CHECK_SIZEOF(uintptr_t)
 
 AC_MSG_CHECKING(for long double support)
@@ -2206,10 +2206,10 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[long double x; x = (long double)0;]])
 ],[])
 AC_MSG_RESULT($have_long_double)
 if test "$have_long_double" = yes ; then
-AC_CHECK_SIZEOF(long double, 16)
+AC_CHECK_SIZEOF(long double)
 fi
 
-AC_CHECK_SIZEOF(_Bool, 1)
+AC_CHECK_SIZEOF(_Bool)
 
 AC_CHECK_SIZEOF(off_t, [], [
 #ifdef HAVE_SYS_TYPES_H
@@ -4509,7 +4509,7 @@ wchar_h="no"
 # determine wchar_t size
 if test "$wchar_h" = yes
 then
-  AC_CHECK_SIZEOF(wchar_t, 4, [#include <wchar.h>])
+  AC_CHECK_SIZEOF(wchar_t, [], [#include <wchar.h>])
 fi
 
 AC_MSG_CHECKING(for UCS-4 tcl)
