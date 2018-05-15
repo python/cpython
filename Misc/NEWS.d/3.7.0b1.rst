@@ -748,6 +748,8 @@ subinterpreter C-API and a new cross-interpreter data sharing mechanism. The
 module is primarily intended for more thorough testing of the existing
 subinterpreter support.
 
+Note that the _xxsubinterpreters module has been removed in 3.7.0rc1.
+
 ..
 
 .. bpo: 32602

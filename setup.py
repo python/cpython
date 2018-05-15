@@ -757,10 +757,6 @@ class PyBuildExt(build_ext):
             ['_xxtestfuzz/_xxtestfuzz.c', '_xxtestfuzz/fuzzer.c'])
         )
 
-        # Python interface to subinterpreter C-API.
-        exts.append(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c'],
-                              define_macros=[('Py_BUILD_CORE', '')]))
-
         #
         # Here ends the simple stuff.  From here on, modules need certain
         # libraries, are platform-specific, or present other surprises.
