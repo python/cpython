@@ -377,7 +377,6 @@ class TestPOP3Class(TestCase):
         self.assertEqual(ctx.check_hostname, True)
         with self.assertRaises(ssl.CertificateError):
             resp = self.client.stls(context=ctx)
-        print(list(socket.getaddrinfo("localhost", self.server.port, type=socket.SOCK_STREAM)))
         self.client = poplib.POP3("localhost", self.server.port, timeout=3)
         resp = self.client.stls(context=ctx)
         self.assertEqual(resp, expected)
