@@ -555,43 +555,6 @@ EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 # when running configure or make.  The build should not break if they do.
 # BASECFLAGS should generally not be messed with, however.
 
-# XXX shouldn't some/most/all of this code be merged with the stuff later
-# on that fiddles with OPT and BASECFLAGS?
-AC_MSG_CHECKING(for --without-gcc)
-AC_ARG_WITH(gcc,
-            AS_HELP_STRING([--without-gcc], [never use gcc]),
-[
-	case $withval in
-	no)	CC=${CC:-cc}
-		without_gcc=yes;;
-	yes)	CC=gcc
-		without_gcc=no;;
-	*)	CC=$withval
-		without_gcc=$withval;;
-	esac], [
-	case $ac_sys_system in
-	AIX*)   CC=${CC:-xlc_r}
-		without_gcc=;;
-	*)	without_gcc=no;;
-	esac])
-AC_MSG_RESULT($without_gcc)
-
-AC_MSG_CHECKING(for --with-icc)
-AC_ARG_WITH(icc,
-            AS_HELP_STRING([--with-icc], [build with icc]),
-[
-	case $withval in
-	no)	CC=${CC:-cc}
-		with_icc=no;;
-	yes)	CC=icc
-		CXX=icpc
-		with_icc=yes;;
-	*)	CC=$withval
-		with_icc=$withval;;
-	esac], [
-	with_icc=no])
-AC_MSG_RESULT($with_icc)
-
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
 then
@@ -1749,7 +1712,6 @@ yes)
 	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
 	    ;;
 
-    # is there any other compiler on Darwin besides gcc?
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
