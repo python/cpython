@@ -558,8 +558,8 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             weekday, julian, tz, tzname, gmtoff), fraction, gmtoff_fraction
 
 date_specs = ('%a', '%A', '%b', '%B', '%c', '%d', '%j', '%m', '%U',
-              '%w', '%W', '%x', '%y', '%Y',)
-time_specs = ('%T', '%R', '%H', '%I', '%M', '%S', '%f', '%i', '%s',)
+              '%w', '%W', '%x', '%y', '%Y', '%G', '%u', '%V',)
+time_specs = ('%H', '%I', '%M', '%S', '%f',)
 
 def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input string and the
