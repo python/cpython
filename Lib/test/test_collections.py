@@ -796,13 +796,13 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
     def test_Reversible(self):
         # Check some non-reversibles
-        non_samples = [None, 42, 3.14, 1j, dict(), set(), frozenset()]
+        non_samples = [None, 42, 3.14, 1j, set(), frozenset()]
         for x in non_samples:
             self.assertNotIsInstance(x, Reversible)
             self.assertFalse(issubclass(type(x), Reversible), repr(type(x)))
         # Check some non-reversible iterables
         non_reversibles = [dict().keys(), dict().items(), dict().values(),
-                           Counter(), Counter().keys(), Counter().items(),
+                           Counter().keys(), Counter().items(),
                            Counter().values(), _test_gen(),
                            (x for x in []), iter([]), reversed([])]
         for x in non_reversibles:
@@ -811,7 +811,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
         # Check some reversible iterables
         samples = [bytes(), str(), tuple(), list(), OrderedDict(),
                    OrderedDict().keys(), OrderedDict().items(),
-                   OrderedDict().values()]
+                   OrderedDict().values(), Counter(), dict()]
         for x in samples:
             self.assertIsInstance(x, Reversible)
             self.assertTrue(issubclass(type(x), Reversible), repr(type(x)))
