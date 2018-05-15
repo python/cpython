@@ -268,13 +268,14 @@ def _color_delegator(parent):  # htest #
         "else: float(None)\n"
         "if iF + If + IF: 'keyword matching must respect case'\n"
         "if'': x or''  # valid string-keyword no-space combinations\n"
+        "async def f(): await g()\n"
         "# All valid prefixes for unicode and byte strings should be colored.\n"
         "'x', '''x''', \"x\", \"\"\"x\"\"\"\n"
         "r'x', u'x', R'x', U'x', f'x', F'x'\n"
         "fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'\n"
         "b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x'.rB'x',Rb'x',RB'x'\n"
         "# Invalid combinations of legal characters should be half colored.\n"
-        "ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'"
+        "ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'\n"
         )
     text = Text(top, background="white")
     text.pack(expand=1, fill="both")
