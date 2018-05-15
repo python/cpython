@@ -580,12 +580,14 @@ def _get_field(cls, a_name, a_type):
             default = MISSING
         f = field(default=default)
 
-    # Assume it's a normal field until proven otherwise.
-    f._field_type = _FIELD
-
     # Only at this point do we know the name and the type. Set them.
     f.name = a_name
     f.type = a_type
+
+    # Assume it's a normal field until proven otherwise.  We're next
+    #  going to decide if it's a ClassVar or InitVar, everything else
+    #  is just a normal field.
+    f._field_type = _FIELD
 
     # In addition to checking for actual types here, also check for
     #  string annotations.  get_type_hints() won't always work for us
