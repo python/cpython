@@ -27,6 +27,7 @@ static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop_policy;
 static PyObject *asyncio_future_repr_info_func;
 static PyObject *asyncio_iscoroutine_func;
+static PyObject *asyncio_isfuture_func;
 static PyObject *asyncio_task_get_stack_func;
 static PyObject *asyncio_task_print_stack_func;
 static PyObject *asyncio_task_repr_info_func;
@@ -191,6 +192,19 @@ is_coroutine(PyObject *coro)
        type(coro) is in iscoroutine_typecache
     */
     return has_it;
+}
+
+
+static inline int
+is_future(PyObject *fut)
+{
+  printf("is_future is called.");
+  if (PyObject_HasAttr(
+        Py_TYPE(fut), "_asyncio_future_blocking"
+  ) && PyObject_GetAttr(fut, "_asyncio_future_blocking") != Py_None) {
+      return 1;
+  }
+  return 0;
 }
 
 
@@ -3170,6 +3184,7 @@ module_free(void *m)
     Py_CLEAR(asyncio_future_repr_info_func);
     Py_CLEAR(asyncio_get_event_loop_policy);
     Py_CLEAR(asyncio_iscoroutine_func);
+    Py_CLEAR(asyncio_isfuture_func);
     Py_CLEAR(asyncio_task_get_stack_func);
     Py_CLEAR(asyncio_task_print_stack_func);
     Py_CLEAR(asyncio_task_repr_info_func);
@@ -3236,6 +3251,7 @@ module_init(void)
     GET_MOD_ATTR(asyncio_future_repr_info_func, "_future_repr_info")
     GET_MOD_ATTR(asyncio_InvalidStateError, "InvalidStateError")
     GET_MOD_ATTR(asyncio_CancelledError, "CancelledError")
+    GET_MOD_ATTR(asyncio_isfuture_func, "isfuture")
 
     WITH_MOD("asyncio.base_tasks")
     GET_MOD_ATTR(asyncio_task_repr_info_func, "_task_repr_info")
