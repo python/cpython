@@ -24,7 +24,7 @@ class AuthenticationError(ProcessError):
     pass
 
 #
-# Base type for contexts
+# Base type for contexts. Bound methods of an instance of this type are included in __all__ of __init__.py
 #
 
 class BaseContext(object):
@@ -260,8 +260,6 @@ class DefaultContext(BaseContext):
                 return ['fork', 'spawn', 'forkserver']
             else:
                 return ['fork', 'spawn']
-
-DefaultContext.__all__ = [x for x in dir(DefaultContext) if x[0] != '_']
 
 #
 # Context types for fixed start method
