@@ -1,13 +1,13 @@
 @echo off
 rem Run Tests.  Run the regression test suite.
-rem Usage:  rt [-d|b] [-O] [-q] [-x64] regrtest_args
+rem Usage:  rt [-d] [-O] [-q] [-x64] regrtest_args
 rem -d   Run Debug build (python_d.exe).  Else release build.
 rem -O   Run python.exe or python_d.exe (see -d) with -O.
 rem -q   "quick" -- normally the tests are run twice, the first time
 rem      after deleting all the .pyc files reachable from Lib/.
 rem      -q runs the tests just once, and without deleting .pyc files.
 rem -x64 Run the 64-bit build of python (or python_d if -d was specified)
-rem      from the 'amd64' dir instead of the 32-bit build in this dir.
+rem      When omitted, uses %PREFIX% if set or the 32-bit build
 rem All leading instances of these switches are shifted off, and
 rem whatever remains (up to 9 arguments) is passed to regrtest.py.
 rem For example,

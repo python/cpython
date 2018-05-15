@@ -376,7 +376,9 @@ class TestPOP3Class(TestCase):
         self.assertEqual(ctx.check_hostname, True)
         with self.assertRaises(ssl.CertificateError):
             resp = self.client.stls(context=ctx)
-        self.client = poplib.POP3("localhost", self.server.port, timeout=3)
+        host = (test_support.HOST if test_support.IPV6_ENABLED
+                else test_support.HOSTv4)
+        self.client = poplib.POP3(host, self.server.port, timeout=3)
         resp = self.client.stls(context=ctx)
         self.assertEqual(resp, expected)
 
