@@ -9316,11 +9316,9 @@ _PyUnicode_InsertThousandsGrouping(
             if (!thousands_sep_data)
                 return -1;
         }
-        else {
-            data = _PyUnicode_AsKind(unicode, thousands_sep_kind);
-            if (!data)
-                return -1;
-        }
+        /* when thousands_sep_kind > kind, trust
+         * the writer setting by _PyUnicodeWriter_Prepare.
+         */
     }
 
     switch (kind) {
@@ -9354,8 +9352,6 @@ _PyUnicode_InsertThousandsGrouping(
     if (unicode != NULL && thousands_sep_kind != kind) {
         if (thousands_sep_kind < kind)
             PyMem_Free(thousands_sep_data);
-        else
-            PyMem_Free(data);
     }
     if (unicode == NULL) {
         *maxchar = 127;

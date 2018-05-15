@@ -436,6 +436,34 @@ class FormatTest(unittest.TestCase):
             self.assertIn(sep, text)
             self.assertIn(point, text)
             self.assertEqual(text.replace(sep, ''), '1234' + point + '5')
+
+            text = format(12, "n")
+            self.assertEqual(text, '12')
+        finally:
+            locale.setlocale(locale.LC_ALL, oldloc)
+
+    def test_locale_ucs2_sep(self):
+        try:
+            oldloc = locale.setlocale(locale.LC_ALL)
+            locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+        except locale.Error as err:
+            self.skipTest("Cannot set locale: {}".format(err))
+        try:
+            localeconv = locale.localeconv()
+            sep = localeconv['thousands_sep']
+            point = localeconv['decimal_point']
+
+            text = format(123456789, "n")
+            self.assertIn(sep, text)
+            self.assertEqual(text.replace(sep, ''), '123456789')
+
+            text = format(1234.5, "n")
+            self.assertIn(sep, text)
+            self.assertIn(point, text)
+            self.assertEqual(text.replace(sep, ''), '1234' + point + '5')
+
+            text = format(12, "n")
+            self.assertEqual(text, '12')
         finally:
             locale.setlocale(locale.LC_ALL, oldloc)
 
