@@ -14,7 +14,7 @@ def main():
 
     for project, version in ensurepip._PROJECTS:
         data = json.loads(urllib.request.urlopen(
-            "https://pypi.org/project/{}/json".format(project),
+            "https://pypi.python.org/pypi/{}/json".format(project),
             cadefault=True,
         ).read().decode("utf8"))
         upstream_version = data["info"]["version"]

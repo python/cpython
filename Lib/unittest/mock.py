@@ -2,7 +2,7 @@
 # Test tools for mocking and patching.
 # Maintained by Michael Foord
 # Backport for other versions of Python available from
-# http://pypi.org/project/mock
+# http://pypi.python.org/pypi/mock
 
 __all__ = (
     'Mock',

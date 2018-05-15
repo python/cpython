@@ -6,7 +6,7 @@
 #
 # sample script to install or update a set of default Root Certificates
 # for the ssl module.  Uses the certificates provided by the certifi package:
-#       https://pypi.org/project/certifi
+#       https://pypi.python.org/pypi/certifi
 
 import os
 import os.path
