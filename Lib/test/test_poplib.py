@@ -179,8 +179,7 @@ class DummyPOP3Handler(asynchat.async_chat):
                 elif err.args[0] == ssl.SSL_ERROR_EOF:
                     return self.handle_close()
                 # TODO: SSLError does not expose alert information
-                elif ("SSLV3_ALERT_BAD_CERTIFICATE" in err.args[1] or
-                      "SSLV3_ALERT_CERTIFICATE_UNKNOWN" in err.args[1]):
+                elif "SSLV3_ALERT_BAD_CERTIFICATE" in err.args[1]:
                     return self.handle_close()
                 raise
             except OSError as err:
@@ -377,9 +376,8 @@ class TestPOP3Class(TestCase):
         self.assertEqual(ctx.check_hostname, True)
         with self.assertRaises(ssl.CertificateError):
             resp = self.client.stls(context=ctx)
-        host = (test_support.HOST if test_support.IPV6_ENABLED
-                else test_support.HOSTv4)
-        self.client = poplib.POP3(host, self.server.port, timeout=3)
+        print(list(socket.getaddrinfo("localhost", self.server.port, type=socket.SOCK_STREAM)))
+        self.client = poplib.POP3("localhost", self.server.port, timeout=3)
         resp = self.client.stls(context=ctx)
         self.assertEqual(resp, expected)
 
