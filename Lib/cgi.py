@@ -198,13 +198,14 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
          DeprecationWarning, 2)
     return urllib.parse.parse_qsl(qs, keep_blank_values, strict_parsing)
 
-def parse_multipart(fp, pdict, encoding="utf-8"):
+def parse_multipart(fp, pdict, encoding="utf-8", errors="replace"):
     """Parse multipart input.
 
     Arguments:
     fp   : input file
     pdict: dictionary containing other parameters of content-type header
-    encoding: request encoding
+    encoding, errors: request encoding and error handler, passed to
+        FieldStorage
 
     Returns a dictionary just like parse_qs(): keys are the field names, each
     value is a list of values for that field. For non-file fields, the value
@@ -217,7 +218,7 @@ def parse_multipart(fp, pdict, encoding="utf-8"):
     headers = Message()
     headers.set_type(ctype)
     headers['Content-Length'] = pdict['CONTENT-LENGTH']
-    fs = FieldStorage(fp, headers=headers, encoding=encoding,
+    fs = FieldStorage(fp, headers=headers, encoding=encoding, errors=errors,
         environ={'REQUEST_METHOD': 'POST'})
     return {k: fs.getlist(k) for k in fs}
 
@@ -458,7 +459,8 @@ class FieldStorage:
         self.type = ctype
         self.type_options = pdict
         if 'boundary' in pdict:
-            self.innerboundary = pdict['boundary'].encode(self.encoding)
+            self.innerboundary = pdict['boundary'].encode(self.encoding,
+                                                          self.errors)
         else:
             self.innerboundary = b""
 

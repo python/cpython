@@ -882,7 +882,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 {
     PySSLSocket *self;
     SSL_CTX *ctx = sslctx->ctx;
-    long mode;
 
     self = PyObject_New(PySSLSocket, &PySSLSocket_Type);
     if (self == NULL)
@@ -919,11 +918,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         BIO_up_ref(outbio->bio);
         SSL_set_bio(self->ssl, inbio->bio, outbio->bio);
     }
-    mode = SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER;
-#ifdef SSL_MODE_AUTO_RETRY
-    mode |= SSL_MODE_AUTO_RETRY;
-#endif
-    SSL_set_mode(self->ssl, mode);
+    SSL_set_mode(self->ssl,
+                 SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_AUTO_RETRY);
 
     if (server_hostname != NULL) {
         if (_ssl_configure_hostname(self, server_hostname) < 0) {
@@ -5848,6 +5844,10 @@ PyInit__ssl(void)
 #ifdef SSL_OP_ENABLE_MIDDLEBOX_COMPAT
     PyModule_AddIntConstant(m, "OP_ENABLE_MIDDLEBOX_COMPAT",
                             SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+#endif
+#ifdef SSL_OP_NO_RENEGOTIATION
+    PyModule_AddIntConstant(m, "OP_NO_RENEGOTIATION",
+                            SSL_OP_NO_RENEGOTIATION);
 #endif
 
 #ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
