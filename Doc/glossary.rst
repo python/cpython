@@ -49,7 +49,7 @@ Glossary
       one of its attributes) or function or method (when annotating a parameter or a
       return value).
 
-      Annotations can be used to specify :term:`type hint <type hints>`. These
+      Annotations can be used to specify :term:`type hints <type hint>`. These
       hints can be accessed using :func:`typing.get_type_hints`.
 
       See :pep:`484` and :pep:`526` which describe this functionality.
@@ -194,7 +194,7 @@ Glossary
       A variable defined in a class and intended to be modified only at
       class level (i.e., not in an instance of the class).
 
-      Class variables can be specified as such through
+      Variables can be specified as expected to be class variables through
       :term:`type hints <type hint>`.
 
       See :pep:`526` which describes class variable annotations.
@@ -394,9 +394,9 @@ Glossary
       An :term:`annotation` of a function, or a method.
 
       Function annotations can be used to specify
-      :term:`type hint <type hints>`:: this function has its parameters
-      annotated as taking :class:`int` arguments and its return value annotated
-      as being an :class:`int` as well::
+      :term:`type hints <type hint>`:: this function is expected to take two
+      :class:`int` arguments and is also expected to have an :class:`int`
+      return value::
 
          def sum_two_numbers(a: int, b: int) -> int:
             return a + b
@@ -1041,11 +1041,11 @@ Glossary
       A specification about the expected type for a global variable, class
       variable, function or method parameter or return value.
 
-      While type hints are optional and are not enforced by Python when used,
+      Type hints are optional and are not enforced by Python but
       they are useful to static type analysis tools, and aid IDEs on code
       completion and refactoring.
 
-      Type hints are stored in :term:`annotations <annotation>`.
+      Type hints are declared via :term:`annotations <annotation>`.
 
       See also :pep:`483` which describe this functionality.
 
@@ -1060,7 +1060,7 @@ Glossary
       An :term:`annotation` of a global variable, or a class attribute.
 
       Variable annotations can be used to specify
-      :term:`type hint <type hints>`:: this variable is annotated as taking
+      :term:`type hints <type hint>`:: this variable is expected to take
       :class:`int` values::
 
          count: int = 0
