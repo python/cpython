@@ -546,7 +546,6 @@ def _is_classvar(a_type, typing):
                     and a_type.__origin__ is typing.ClassVar))
 
 
-
 def _is_initvar(a_type, dataclasses):
     # The module we're checking against is the module we're
     # currently in (dataclasses.py).
@@ -563,26 +562,28 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # looking in sys.modules (again!), and seems like a waste since
     # the caller already knows a_module.
 
-    # typename is a string type annotation
-    # cls is the class that this annotation was found in
-    # a_module is the module we want to match
-    # a_type is the type in that module we want to match
+    # - annotation is a string type annotation
+    # - cls is the class that this annotation was found in
+    # - a_module is the module we want to match
+    # - a_type is the type in that module we want to match
+    # - is_type_predicate is a function called with (obj, a_module)
+    #   that determines if obj is of the desired type.
 
     # Since this test does not do a local namespace lookup (and
     # instead only a module (global) lookup), there are some things it
     # gets wrong.
 
     # With string annotations, this will work:
-    # CV = ClassVar
-    # @dataclass
-    # class C0:
-    #   cv0: CV
+    #   CV = ClassVar
+    #   @dataclass
+    #   class C0:
+    #     cv0: CV
 
     # But this will not:
-    # @dataclass
-    # class C1:
-    #   CV = ClassVar
-    #   cv1: CV
+    #   @dataclass
+    #   class C1:
+    #     CV = ClassVar
+    #     cv1: CV
 
     # In C1, the code in this function will look up "CV" in the module
     # and not find it, so it will not consider cv1 as a ClassVar.
@@ -962,7 +963,7 @@ def fields(class_or_instance):
 
     # Might it be worth caching this, per class?
     try:
-        fields =  getattr(class_or_instance, _FIELDS)
+        fields = getattr(class_or_instance, _FIELDS)
     except AttributeError:
         raise TypeError('must be called with a dataclass type or instance')
 
