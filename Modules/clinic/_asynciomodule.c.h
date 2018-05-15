@@ -2,6 +2,19 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(_asyncio_isfuture__doc__,
+"isfuture($module, obj, /)\n"
+"--\n"
+"\n"
+"Return True if obj is a Future instance.\n"
+"\n"
+"This returns True when obj is a Future instance or is advertising\n"
+"itself as duck-type compatible by setting _asyncio_future_blocking.\n"
+"See comment in Future for more details.");
+
+#define _ASYNCIO_ISFUTURE_METHODDEF    \
+    {"isfuture", (PyCFunction)_asyncio_isfuture, METH_O, _asyncio_isfuture__doc__},
+
 PyDoc_STRVAR(_asyncio_Future___init____doc__,
 "Future(*, loop=None)\n"
 "--\n"
@@ -711,4 +724,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b6148b0134e7a819 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ddba804d97cdf0d input=a9049054013a1b77]*/

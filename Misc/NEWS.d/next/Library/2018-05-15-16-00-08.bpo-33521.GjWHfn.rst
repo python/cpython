@@ -1,0 +1,1 @@
+Add 1.32x faster C implementation of asyncio.isfuture().

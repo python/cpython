@@ -381,4 +381,5 @@ except ImportError:
     pass
 else:
     # _CFuture is needed for tests.
+    isfuture = _asyncio.isfuture
     Future = _CFuture = _asyncio.Future

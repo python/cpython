@@ -27,7 +27,6 @@ static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop_policy;
 static PyObject *asyncio_future_repr_info_func;
 static PyObject *asyncio_iscoroutine_func;
-static PyObject *asyncio_isfuture_func;
 static PyObject *asyncio_task_get_stack_func;
 static PyObject *asyncio_task_print_stack_func;
 static PyObject *asyncio_task_repr_info_func;
@@ -194,17 +193,49 @@ is_coroutine(PyObject *coro)
     return has_it;
 }
 
+/*[clinic input]
+_asyncio.isfuture
 
-static inline int
-is_future(PyObject *fut)
+    obj: object
+    /
+
+Return True if obj is a Future instance.
+
+This returns True when obj is a Future instance or is advertising
+itself as duck-type compatible by setting _asyncio_future_blocking.
+See comment in Future for more details.
+
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_isfuture(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=3c79d083f507d4fa input=a71fdef4d9b354b4]*/
 {
-  printf("is_future is called.");
-  if (PyObject_HasAttr(
-        Py_TYPE(fut), "_asyncio_future_blocking"
-  ) && PyObject_GetAttr(fut, "_asyncio_future_blocking") != Py_None) {
-      return 1;
-  }
-  return 0;
+    _Py_IDENTIFIER(__class__);
+    PyObject* class = _PyObject_GetAttrId(obj, &PyId___class__);
+    if (class == NULL) {
+        return NULL;
+    }
+    _Py_IDENTIFIER(_asyncio_future_blocking);
+    int class_has_attr = _PyObject_HasAttrId(
+        class, &PyId__asyncio_future_blocking);
+    Py_DECREF(class);
+    if (class_has_attr < 0) {
+        return NULL;
+    }
+    if (!class_has_attr) {
+        Py_RETURN_FALSE;
+    }
+    PyObject* obj_attr = _PyObject_GetAttrId(obj, &PyId__asyncio_future_blocking);
+    if (obj_attr == NULL) {
+        return NULL;
+    }
+    if (obj_attr != Py_None) {
+        Py_DECREF(obj_attr);
+        Py_RETURN_TRUE;
+    }
+    Py_DECREF(obj_attr);
+    Py_RETURN_FALSE;
 }
 
 
@@ -3184,7 +3215,6 @@ module_free(void *m)
     Py_CLEAR(asyncio_future_repr_info_func);
     Py_CLEAR(asyncio_get_event_loop_policy);
     Py_CLEAR(asyncio_iscoroutine_func);
-    Py_CLEAR(asyncio_isfuture_func);
     Py_CLEAR(asyncio_task_get_stack_func);
     Py_CLEAR(asyncio_task_print_stack_func);
     Py_CLEAR(asyncio_task_repr_info_func);
@@ -3251,7 +3281,6 @@ module_init(void)
     GET_MOD_ATTR(asyncio_future_repr_info_func, "_future_repr_info")
     GET_MOD_ATTR(asyncio_InvalidStateError, "InvalidStateError")
     GET_MOD_ATTR(asyncio_CancelledError, "CancelledError")
-    GET_MOD_ATTR(asyncio_isfuture_func, "isfuture")
 
     WITH_MOD("asyncio.base_tasks")
     GET_MOD_ATTR(asyncio_task_repr_info_func, "_task_repr_info")
@@ -3292,6 +3321,7 @@ PyDoc_STRVAR(module_doc, "Accelerator module for asyncio");
 
 static PyMethodDef asyncio_methods[] = {
     _ASYNCIO_GET_EVENT_LOOP_METHODDEF
+    _ASYNCIO_ISFUTURE_METHODDEF
     _ASYNCIO_GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__SET_RUNNING_LOOP_METHODDEF
