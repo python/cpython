@@ -1553,6 +1553,14 @@ class ForwardRefTests(BaseTestCase):
         with self.assertRaises(SyntaxError):
             get_type_hints(foo)
 
+    def test_type_error(self):
+
+        def foo(a: Tuple['42']):
+            pass
+
+        with self.assertRaises(TypeError):
+            get_type_hints(foo)
+
     def test_name_error(self):
 
         def foo(a: 'Noode[T]'):
