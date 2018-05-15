@@ -248,7 +248,8 @@ Unix Platforms
 
    This is another name for :func:`linux_distribution`.
 
-   .. deprecated-removed:: 3.5 3.7
+   .. deprecated-removed:: 3.5 3.8
+      See alternative like the `distro <https://pypi.org/project/distro>`_ package.
 
 .. function:: linux_distribution(distname='', version='', id='', supported_dists=('SuSE','debian','redhat','mandrake',...), full_distribution_name=1)
 
@@ -266,7 +267,8 @@ Unix Platforms
    parameters.  ``id`` is the item in parentheses after the version number.  It
    is usually the version codename.
 
-   .. deprecated-removed:: 3.5 3.7
+   .. deprecated-removed:: 3.5 3.8
+      See alternative like the `distro <https://pypi.org/project/distro>`_ package.
 
 .. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=2048)
 
