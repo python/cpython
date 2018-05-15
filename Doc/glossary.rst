@@ -50,14 +50,14 @@ Glossary
       return value).
 
       The annotation of a local variable is not stored, but a variable will
-      become local when annotated:
+      become local when annotated::
 
          def f():
              a: int
              print(a)  # raises UnboundLocalError
                        # Commenting out the a: int makes it a NameError.
 
-      as if the code were:
+      as if the code were::
 
          def f():
              if False: a = 0
