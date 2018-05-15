@@ -622,6 +622,8 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
+ac_header_list=
+ac_func_list=
 ac_subst_vars='LTLIBOBJS
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -640,8 +642,8 @@ HAVE_GETHOSTBYNAME_R
 HAVE_GETHOSTBYNAME_R_3_ARG
 HAVE_GETHOSTBYNAME_R_5_ARG
 HAVE_GETHOSTBYNAME_R_6_ARG
-LIBOBJS
 TRUE
+LIBOBJS
 MACHDEP_OBJS
 DYNLOADFILE
 DLINCLDIR
@@ -2621,6 +2623,11 @@ $as_echo "$as_me: creating cache $cache_file" >&6;}
   >$cache_file
 fi
 
+as_fn_append ac_header_list " sys/time.h"
+as_fn_append ac_header_list " unistd.h"
+as_fn_append ac_func_list " alarm"
+as_fn_append ac_header_list " stdlib.h"
+as_fn_append ac_header_list " sys/param.h"
 # Check that the precious variables saved in the cache have kept the same
 # value.
 ac_cache_corrupted=false
@@ -11250,21 +11257,987 @@ $as_echo "$MACHDEP_OBJS" >&6; }
 fi
 
 # checks for library functions
-for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
+for ac_header in unistd.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "unistd.h" "ac_cv_header_unistd_h" "$ac_includes_default"
+if test "x$ac_cv_header_unistd_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UNISTD_H 1
+_ACEOF
+
+fi
+
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for working chown" >&5
+$as_echo_n "checking for working chown... " >&6; }
+if ${ac_cv_func_chown_works+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_func_chown_works=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$ac_includes_default
+#include <fcntl.h>
+
+int
+main ()
+{
+  char *f = "conftest.chown";
+  struct stat before, after;
+
+  if (creat (f, 0600) < 0)
+    return 1;
+  if (stat (f, &before) < 0)
+    return 1;
+  if (chown (f, (uid_t) -1, (gid_t) -1) == -1)
+    return 1;
+  if (stat (f, &after) < 0)
+    return 1;
+  return ! (before.st_uid == after.st_uid && before.st_gid == after.st_gid);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_func_chown_works=yes
+else
+  ac_cv_func_chown_works=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+rm -f conftest.chown
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_chown_works" >&5
+$as_echo "$ac_cv_func_chown_works" >&6; }
+if test $ac_cv_func_chown_works = yes; then
+
+$as_echo "#define HAVE_CHOWN 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _LARGEFILE_SOURCE value needed for large files" >&5
+$as_echo_n "checking for _LARGEFILE_SOURCE value needed for large files... " >&6; }
+if ${ac_cv_sys_largefile_source+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  while :; do
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/types.h> /* for off_t */
+     #include <stdio.h>
+int
+main ()
+{
+int (*fp) (FILE *, off_t, int) = fseeko;
+     return fseeko (stdin, 0, 0) && fp (stdin, 0, 0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_sys_largefile_source=no; break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#define _LARGEFILE_SOURCE 1
+#include <sys/types.h> /* for off_t */
+     #include <stdio.h>
+int
+main ()
+{
+int (*fp) (FILE *, off_t, int) = fseeko;
+     return fseeko (stdin, 0, 0) && fp (stdin, 0, 0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_sys_largefile_source=1; break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  ac_cv_sys_largefile_source=unknown
+  break
+done
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sys_largefile_source" >&5
+$as_echo "$ac_cv_sys_largefile_source" >&6; }
+case $ac_cv_sys_largefile_source in #(
+  no | unknown) ;;
+  *)
+cat >>confdefs.h <<_ACEOF
+#define _LARGEFILE_SOURCE $ac_cv_sys_largefile_source
+_ACEOF
+;;
+esac
+rm -rf conftest*
+
+# We used to try defining _XOPEN_SOURCE=500 too, to work around a bug
+# in glibc 2.1.3, but that breaks too many other things.
+# If you want fseeko and ftello with glibc, upgrade to a fixed glibc.
+if test $ac_cv_sys_largefile_source != unknown; then
+
+$as_echo "#define HAVE_FSEEKO 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking type of array argument to getgroups" >&5
+$as_echo_n "checking type of array argument to getgroups... " >&6; }
+if ${ac_cv_type_getgroups+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_type_getgroups=cross
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+/* Thanks to Mike Rendell for this test.  */
+$ac_includes_default
+#define NGID 256
+#undef MAX
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
+
+int
+main ()
+{
+  gid_t gidset[NGID];
+  int i, n;
+  union { gid_t gval; long int lval; }  val;
+
+  val.lval = -1;
+  for (i = 0; i < NGID; i++)
+    gidset[i] = val.gval;
+  n = getgroups (sizeof (gidset) / MAX (sizeof (int), sizeof (gid_t)) - 1,
+		 gidset);
+  /* Exit non-zero if getgroups seems to require an array of ints.  This
+     happens when gid_t is short int but getgroups modifies an array
+     of ints.  */
+  return n > 0 && gidset[n] != val.gval;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_type_getgroups=gid_t
+else
+  ac_cv_type_getgroups=int
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+if test $ac_cv_type_getgroups = cross; then
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <unistd.h>
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "getgroups.*int.*gid_t" >/dev/null 2>&1; then :
+  ac_cv_type_getgroups=gid_t
+else
+  ac_cv_type_getgroups=int
+fi
+rm -f conftest*
+
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_getgroups" >&5
+$as_echo "$ac_cv_type_getgroups" >&6; }
+
+cat >>confdefs.h <<_ACEOF
+#define GETGROUPS_T $ac_cv_type_getgroups
+_ACEOF
+
+
+ac_fn_c_check_func "$LINENO" "getgroups" "ac_cv_func_getgroups"
+if test "x$ac_cv_func_getgroups" = xyes; then :
+
+fi
+
+
+# If we don't yet have getgroups, see if it's in -lbsd.
+# This is reported to be necessary on an ITOS 3000WS running SEIUX 3.1.
+ac_save_LIBS=$LIBS
+if test $ac_cv_func_getgroups = no; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getgroups in -lbsd" >&5
+$as_echo_n "checking for getgroups in -lbsd... " >&6; }
+if ${ac_cv_lib_bsd_getgroups+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lbsd  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char getgroups ();
+int
+main ()
+{
+return getgroups ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_bsd_getgroups=yes
+else
+  ac_cv_lib_bsd_getgroups=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bsd_getgroups" >&5
+$as_echo "$ac_cv_lib_bsd_getgroups" >&6; }
+if test "x$ac_cv_lib_bsd_getgroups" = xyes; then :
+  GETGROUPS_LIB=-lbsd
+fi
+
+fi
+
+# Run the program to test the functionality of the system-supplied
+# getgroups function only if there is such a function.
+if test $ac_cv_func_getgroups = yes; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working getgroups" >&5
+$as_echo_n "checking for working getgroups... " >&6; }
+if ${ac_cv_func_getgroups_works+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_func_getgroups_works=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+/* On Ultrix 4.3, getgroups (0, 0) always fails.  */
+       return getgroups (0, 0) == -1;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_func_getgroups_works=yes
+else
+  ac_cv_func_getgroups_works=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getgroups_works" >&5
+$as_echo "$ac_cv_func_getgroups_works" >&6; }
+else
+  ac_cv_func_getgroups_works=no
+fi
+if test $ac_cv_func_getgroups_works = yes; then
+
+$as_echo "#define HAVE_GETGROUPS 1" >>confdefs.h
+
+fi
+LIBS=$ac_save_LIBS
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether mbrtowc and mbstate_t are properly declared" >&5
+$as_echo_n "checking whether mbrtowc and mbstate_t are properly declared... " >&6; }
+if ${ac_cv_func_mbrtowc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <wchar.h>
+int
+main ()
+{
+wchar_t wc;
+	      char const s[] = "";
+	      size_t n = 1;
+	      mbstate_t state;
+	      return ! (sizeof state && (mbrtowc) (&wc, s, n, &state));
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_func_mbrtowc=yes
+else
+  ac_cv_func_mbrtowc=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_mbrtowc" >&5
+$as_echo "$ac_cv_func_mbrtowc" >&6; }
+  if test $ac_cv_func_mbrtowc = yes; then
+
+$as_echo "#define HAVE_MBRTOWC 1" >>confdefs.h
+
+  fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether time.h and sys/time.h may both be included" >&5
+$as_echo_n "checking whether time.h and sys/time.h may both be included... " >&6; }
+if ${ac_cv_header_time+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/types.h>
+#include <sys/time.h>
+#include <time.h>
+
+int
+main ()
+{
+if ((struct tm *) 0)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_header_time=yes
+else
+  ac_cv_header_time=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_time" >&5
+$as_echo "$ac_cv_header_time" >&6; }
+if test $ac_cv_header_time = yes; then
+
+$as_echo "#define TIME_WITH_SYS_TIME 1" >>confdefs.h
+
+fi
+
+
+
+
+  for ac_header in $ac_header_list
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default
+"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+
+
+
+
+
+
+
+  for ac_func in $ac_func_list
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for working mktime" >&5
+$as_echo_n "checking for working mktime... " >&6; }
+if ${ac_cv_func_working_mktime+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_func_working_mktime=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+/* Test program from Paul Eggert and Tony Leneis.  */
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
+#include <limits.h>
+#include <stdlib.h>
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+
+#ifndef HAVE_ALARM
+# define alarm(X) /* empty */
+#endif
+
+/* Work around redefinition to rpl_putenv by other config tests.  */
+#undef putenv
+
+static time_t time_t_max;
+static time_t time_t_min;
+
+/* Values we'll use to set the TZ environment variable.  */
+static const char *tz_strings[] = {
+  (const char *) 0, "TZ=GMT0", "TZ=JST-9",
+  "TZ=EST+3EDT+2,M10.1.0/00:00:00,M2.3.0/00:00:00"
+};
+#define N_STRINGS (sizeof (tz_strings) / sizeof (tz_strings[0]))
+
+/* Return 0 if mktime fails to convert a date in the spring-forward gap.
+   Based on a problem report from Andreas Jaeger.  */
+static int
+spring_forward_gap ()
+{
+  /* glibc (up to about 1998-10-07) failed this test. */
+  struct tm tm;
+
+  /* Use the portable POSIX.1 specification "TZ=PST8PDT,M4.1.0,M10.5.0"
+     instead of "TZ=America/Vancouver" in order to detect the bug even
+     on systems that don't support the Olson extension, or don't have the
+     full zoneinfo tables installed.  */
+  putenv ((char*) "TZ=PST8PDT,M4.1.0,M10.5.0");
+
+  tm.tm_year = 98;
+  tm.tm_mon = 3;
+  tm.tm_mday = 5;
+  tm.tm_hour = 2;
+  tm.tm_min = 0;
+  tm.tm_sec = 0;
+  tm.tm_isdst = -1;
+  return mktime (&tm) != (time_t) -1;
+}
+
+static int
+mktime_test1 (time_t now)
+{
+  struct tm *lt;
+  return ! (lt = localtime (&now)) || mktime (lt) == now;
+}
+
+static int
+mktime_test (time_t now)
+{
+  return (mktime_test1 (now)
+	  && mktime_test1 ((time_t) (time_t_max - now))
+	  && mktime_test1 ((time_t) (time_t_min + now)));
+}
+
+static int
+irix_6_4_bug ()
+{
+  /* Based on code from Ariel Faigon.  */
+  struct tm tm;
+  tm.tm_year = 96;
+  tm.tm_mon = 3;
+  tm.tm_mday = 0;
+  tm.tm_hour = 0;
+  tm.tm_min = 0;
+  tm.tm_sec = 0;
+  tm.tm_isdst = -1;
+  mktime (&tm);
+  return tm.tm_mon == 2 && tm.tm_mday == 31;
+}
+
+static int
+bigtime_test (int j)
+{
+  struct tm tm;
+  time_t now;
+  tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = j;
+  now = mktime (&tm);
+  if (now != (time_t) -1)
+    {
+      struct tm *lt = localtime (&now);
+      if (! (lt
+	     && lt->tm_year == tm.tm_year
+	     && lt->tm_mon == tm.tm_mon
+	     && lt->tm_mday == tm.tm_mday
+	     && lt->tm_hour == tm.tm_hour
+	     && lt->tm_min == tm.tm_min
+	     && lt->tm_sec == tm.tm_sec
+	     && lt->tm_yday == tm.tm_yday
+	     && lt->tm_wday == tm.tm_wday
+	     && ((lt->tm_isdst < 0 ? -1 : 0 < lt->tm_isdst)
+		  == (tm.tm_isdst < 0 ? -1 : 0 < tm.tm_isdst))))
+	return 0;
+    }
+  return 1;
+}
+
+static int
+year_2050_test ()
+{
+  /* The correct answer for 2050-02-01 00:00:00 in Pacific time,
+     ignoring leap seconds.  */
+  unsigned long int answer = 2527315200UL;
+
+  struct tm tm;
+  time_t t;
+  tm.tm_year = 2050 - 1900;
+  tm.tm_mon = 2 - 1;
+  tm.tm_mday = 1;
+  tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
+  tm.tm_isdst = -1;
+
+  /* Use the portable POSIX.1 specification "TZ=PST8PDT,M4.1.0,M10.5.0"
+     instead of "TZ=America/Vancouver" in order to detect the bug even
+     on systems that don't support the Olson extension, or don't have the
+     full zoneinfo tables installed.  */
+  putenv ((char*) "TZ=PST8PDT,M4.1.0,M10.5.0");
+
+  t = mktime (&tm);
+
+  /* Check that the result is either a failure, or close enough
+     to the correct answer that we can assume the discrepancy is
+     due to leap seconds.  */
+  return (t == (time_t) -1
+	  || (0 < t && answer - 120 <= t && t <= answer + 120));
+}
+
+int
+main ()
+{
+  time_t t, delta;
+  int i, j;
+
+  /* This test makes some buggy mktime implementations loop.
+     Give up after 60 seconds; a mktime slower than that
+     isn't worth using anyway.  */
+  alarm (60);
+
+  for (;;)
+    {
+      t = (time_t_max << 1) + 1;
+      if (t <= time_t_max)
+	break;
+      time_t_max = t;
+    }
+  time_t_min = - ((time_t) ~ (time_t) 0 == (time_t) -1) - time_t_max;
+
+  delta = time_t_max / 997; /* a suitable prime number */
+  for (i = 0; i < N_STRINGS; i++)
+    {
+      if (tz_strings[i])
+	putenv ((char*) tz_strings[i]);
+
+      for (t = 0; t <= time_t_max - delta; t += delta)
+	if (! mktime_test (t))
+	  return 1;
+      if (! (mktime_test ((time_t) 1)
+	     && mktime_test ((time_t) (60 * 60))
+	     && mktime_test ((time_t) (60 * 60 * 24))))
+	return 1;
+
+      for (j = 1; ; j <<= 1)
+	if (! bigtime_test (j))
+	  return 1;
+	else if (INT_MAX / 2 < j)
+	  break;
+      if (! bigtime_test (INT_MAX))
+	return 1;
+    }
+  return ! (irix_6_4_bug () && spring_forward_gap () && year_2050_test ());
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_func_working_mktime=yes
+else
+  ac_cv_func_working_mktime=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_working_mktime" >&5
+$as_echo "$ac_cv_func_working_mktime" >&6; }
+if test $ac_cv_func_working_mktime = no; then
+  case " $LIBOBJS " in
+  *" mktime.$ac_objext "* ) ;;
+  *) LIBOBJS="$LIBOBJS mktime.$ac_objext"
+ ;;
+esac
+
+fi
+
+
+
+
+
+
+for ac_func in getpagesize
+do :
+  ac_fn_c_check_func "$LINENO" "getpagesize" "ac_cv_func_getpagesize"
+if test "x$ac_cv_func_getpagesize" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GETPAGESIZE 1
+_ACEOF
+
+fi
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for working mmap" >&5
+$as_echo_n "checking for working mmap... " >&6; }
+if ${ac_cv_func_mmap_fixed_mapped+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_func_mmap_fixed_mapped=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$ac_includes_default
+/* malloc might have been renamed as rpl_malloc. */
+#undef malloc
+
+/* Thanks to Mike Haertel and Jim Avera for this test.
+   Here is a matrix of mmap possibilities:
+	mmap private not fixed
+	mmap private fixed at somewhere currently unmapped
+	mmap private fixed at somewhere already mapped
+	mmap shared not fixed
+	mmap shared fixed at somewhere currently unmapped
+	mmap shared fixed at somewhere already mapped
+   For private mappings, we should verify that changes cannot be read()
+   back from the file, nor mmap's back from the file at a different
+   address.  (There have been systems where private was not correctly
+   implemented like the infamous i386 svr4.0, and systems where the
+   VM page cache was not coherent with the file system buffer cache
+   like early versions of FreeBSD and possibly contemporary NetBSD.)
+   For shared mappings, we should conversely verify that changes get
+   propagated back to all the places they're supposed to be.
+
+   Grep wants private fixed already mapped.
+   The main things grep needs to know about mmap are:
+   * does it exist and is it safe to write into the mmap'd area
+   * how to use it (BSD variants)  */
+
+#include <fcntl.h>
+#include <sys/mman.h>
+
+#if !defined STDC_HEADERS && !defined HAVE_STDLIB_H
+char *malloc ();
+#endif
+
+/* This mess was copied from the GNU getpagesize.h.  */
+#ifndef HAVE_GETPAGESIZE
+# ifdef _SC_PAGESIZE
+#  define getpagesize() sysconf(_SC_PAGESIZE)
+# else /* no _SC_PAGESIZE */
+#  ifdef HAVE_SYS_PARAM_H
+#   include <sys/param.h>
+#   ifdef EXEC_PAGESIZE
+#    define getpagesize() EXEC_PAGESIZE
+#   else /* no EXEC_PAGESIZE */
+#    ifdef NBPG
+#     define getpagesize() NBPG * CLSIZE
+#     ifndef CLSIZE
+#      define CLSIZE 1
+#     endif /* no CLSIZE */
+#    else /* no NBPG */
+#     ifdef NBPC
+#      define getpagesize() NBPC
+#     else /* no NBPC */
+#      ifdef PAGESIZE
+#       define getpagesize() PAGESIZE
+#      endif /* PAGESIZE */
+#     endif /* no NBPC */
+#    endif /* no NBPG */
+#   endif /* no EXEC_PAGESIZE */
+#  else /* no HAVE_SYS_PARAM_H */
+#   define getpagesize() 8192	/* punt totally */
+#  endif /* no HAVE_SYS_PARAM_H */
+# endif /* no _SC_PAGESIZE */
+
+#endif /* no HAVE_GETPAGESIZE */
+
+int
+main ()
+{
+  char *data, *data2, *data3;
+  const char *cdata2;
+  int i, pagesize;
+  int fd, fd2;
+
+  pagesize = getpagesize ();
+
+  /* First, make a file with some known garbage in it. */
+  data = (char *) malloc (pagesize);
+  if (!data)
+    return 1;
+  for (i = 0; i < pagesize; ++i)
+    *(data + i) = rand ();
+  umask (0);
+  fd = creat ("conftest.mmap", 0600);
+  if (fd < 0)
+    return 2;
+  if (write (fd, data, pagesize) != pagesize)
+    return 3;
+  close (fd);
+
+  /* Next, check that the tail of a page is zero-filled.  File must have
+     non-zero length, otherwise we risk SIGBUS for entire page.  */
+  fd2 = open ("conftest.txt", O_RDWR | O_CREAT | O_TRUNC, 0600);
+  if (fd2 < 0)
+    return 4;
+  cdata2 = "";
+  if (write (fd2, cdata2, 1) != 1)
+    return 5;
+  data2 = (char *) mmap (0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd2, 0L);
+  if (data2 == MAP_FAILED)
+    return 6;
+  for (i = 0; i < pagesize; ++i)
+    if (*(data2 + i))
+      return 7;
+  close (fd2);
+  if (munmap (data2, pagesize))
+    return 8;
+
+  /* Next, try to mmap the file at a fixed address which already has
+     something else allocated at it.  If we can, also make sure that
+     we see the same garbage.  */
+  fd = open ("conftest.mmap", O_RDWR);
+  if (fd < 0)
+    return 9;
+  if (data2 != mmap (data2, pagesize, PROT_READ | PROT_WRITE,
+		     MAP_PRIVATE | MAP_FIXED, fd, 0L))
+    return 10;
+  for (i = 0; i < pagesize; ++i)
+    if (*(data + i) != *(data2 + i))
+      return 11;
+
+  /* Finally, make sure that changes to the mapped area do not
+     percolate back to the file as seen by read().  (This is a bug on
+     some variants of i386 svr4.0.)  */
+  for (i = 0; i < pagesize; ++i)
+    *(data2 + i) = *(data2 + i) + 1;
+  data3 = (char *) malloc (pagesize);
+  if (!data3)
+    return 12;
+  if (read (fd, data3, pagesize) != pagesize)
+    return 13;
+  for (i = 0; i < pagesize; ++i)
+    if (*(data + i) != *(data3 + i))
+      return 14;
+  close (fd);
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_func_mmap_fixed_mapped=yes
+else
+  ac_cv_func_mmap_fixed_mapped=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_mmap_fixed_mapped" >&5
+$as_echo "$ac_cv_func_mmap_fixed_mapped" >&6; }
+if test $ac_cv_func_mmap_fixed_mapped = yes; then
+
+$as_echo "#define HAVE_MMAP 1" >>confdefs.h
+
+fi
+rm -f conftest.mmap conftest.txt
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether setpgrp takes no argument" >&5
+$as_echo_n "checking whether setpgrp takes no argument... " >&6; }
+if ${ac_cv_func_setpgrp_void+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  as_fn_error $? "cannot check setpgrp when cross compiling" "$LINENO" 5
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+/* If this system has a BSD-style setpgrp which takes arguments,
+  setpgrp(1, 1) will fail with ESRCH and return -1, in that case
+  exit successfully. */
+  return setpgrp (1,1) != -1;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_func_setpgrp_void=no
+else
+  ac_cv_func_setpgrp_void=yes
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_setpgrp_void" >&5
+$as_echo "$ac_cv_func_setpgrp_void" >&6; }
+if test $ac_cv_func_setpgrp_void = yes; then
+
+$as_echo "#define SETPGRP_VOID 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether lstat correctly handles trailing slash" >&5
+$as_echo_n "checking whether lstat correctly handles trailing slash... " >&6; }
+if ${ac_cv_func_lstat_dereferences_slashed_symlink+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  rm -f conftest.sym conftest.file
+echo >conftest.file
+if test "$as_ln_s" = "ln -s" && ln -s conftest.file conftest.sym; then
+  if test "$cross_compiling" = yes; then :
+  ac_cv_func_lstat_dereferences_slashed_symlink=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+struct stat sbuf;
+     /* Linux will dereference the symlink and fail, as required by POSIX.
+	That is better in the sense that it means we will not
+	have to compile and use the lstat wrapper.  */
+     return lstat ("conftest.sym/", &sbuf) == 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_func_lstat_dereferences_slashed_symlink=yes
+else
+  ac_cv_func_lstat_dereferences_slashed_symlink=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+else
+  # If the `ln -s' command failed, then we probably don't even
+  # have an lstat function.
+  ac_cv_func_lstat_dereferences_slashed_symlink=no
+fi
+rm -f conftest.sym conftest.file
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_lstat_dereferences_slashed_symlink" >&5
+$as_echo "$ac_cv_func_lstat_dereferences_slashed_symlink" >&6; }
+
+test $ac_cv_func_lstat_dereferences_slashed_symlink = yes &&
+
+cat >>confdefs.h <<_ACEOF
+#define LSTAT_FOLLOWS_SLASHED_SYMLINK 1
+_ACEOF
+
+
+if test "x$ac_cv_func_lstat_dereferences_slashed_symlink" = xno; then
+  case " $LIBOBJS " in
+  *" lstat.$ac_objext "* ) ;;
+  *) LIBOBJS="$LIBOBJS lstat.$ac_objext"
+ ;;
+esac
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether lstat accepts an empty string" >&5
+$as_echo_n "checking whether lstat accepts an empty string... " >&6; }
+if ${ac_cv_func_lstat_empty_string_bug+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_func_lstat_empty_string_bug=yes
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+struct stat sbuf;
+  return lstat ("", &sbuf) == 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_func_lstat_empty_string_bug=no
+else
+  ac_cv_func_lstat_empty_string_bug=yes
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_lstat_empty_string_bug" >&5
+$as_echo "$ac_cv_func_lstat_empty_string_bug" >&6; }
+if test $ac_cv_func_lstat_empty_string_bug = yes; then
+  case " $LIBOBJS " in
+  *" lstat.$ac_objext "* ) ;;
+  *) LIBOBJS="$LIBOBJS lstat.$ac_objext"
+ ;;
+esac
+
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_LSTAT_EMPTY_STRING_BUG 1
+_ACEOF
+
+fi
+
+
+
+
+for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset \
  clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
- getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
+ getgrouplist getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
- memrchr mbrtowc mkdirat mkfifo \
- mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
+ initgroups kill killpg lchmod lchown lockf linkat lutimes \
+ memrchr mkdirat mkfifo \
+ mkfifoat mknod mknodat mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
  pthread_init pthread_kill putenv pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
  sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
- setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
+ setlocale setregid setreuid setresuid setresgid setsid setpgid setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
  sched_rr_get_interval \
  sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
@@ -12345,7 +13318,7 @@ done
 
 
 # check for long file support functions
-for ac_func in fseek64 fseeko fstatvfs ftell64 ftello statvfs
+for ac_func in fseek64 fstatvfs ftell64 statvfs
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"

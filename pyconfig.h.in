@@ -33,6 +33,10 @@
 /* Define if flock needs to be linked with bsd library. */
 #undef FLOCK_NEEDS_LIBBSD
 
+/* Define to the type of elements in the array set by `getgroups'. Usually
+   this is either `int' or `gid_t'. */
+#undef GETGROUPS_T
+
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
@@ -110,7 +114,7 @@
 /* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
 
-/* Define to 1 if you have the `chown' function. */
+/* Define to 1 if your system has a working `chown' function. */
 #undef HAVE_CHOWN
 
 /* Define if you have the 'chroot' function. */
@@ -342,7 +346,7 @@
 /* Define to 1 if you have the `fseek64' function. */
 #undef HAVE_FSEEK64
 
-/* Define to 1 if you have the `fseeko' function. */
+/* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
 #undef HAVE_FSEEKO
 
 /* Define to 1 if you have the `fstatat' function. */
@@ -356,9 +360,6 @@
 
 /* Define to 1 if you have the `ftell64' function. */
 #undef HAVE_FTELL64
-
-/* Define to 1 if you have the `ftello' function. */
-#undef HAVE_FTELLO
 
 /* Define to 1 if you have the `ftime' function. */
 #undef HAVE_FTIME
@@ -406,7 +407,7 @@
 /* Define to 1 if you have the `getgrouplist' function. */
 #undef HAVE_GETGROUPLIST
 
-/* Define to 1 if you have the `getgroups' function. */
+/* Define to 1 if your system has a working `getgroups' function. */
 #undef HAVE_GETGROUPS
 
 /* Define to 1 if you have the `gethostbyname' function. */
@@ -620,8 +621,9 @@
 /* Define to 1 if the system has the type `long double'. */
 #undef HAVE_LONG_DOUBLE
 
-/* Define to 1 if you have the `lstat' function. */
-#undef HAVE_LSTAT
+/* Define to 1 if `lstat' has the bug that it succeeds when given the
+   zero-length file name argument. */
+#undef HAVE_LSTAT_EMPTY_STRING_BUG
 
 /* Define to 1 if you have the `lutimes' function. */
 #undef HAVE_LUTIMES
@@ -629,7 +631,7 @@
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
 
-/* Define to 1 if you have the `mbrtowc' function. */
+/* Define to 1 if mbrtowc and mbstate_t are properly declared. */
 #undef HAVE_MBRTOWC
 
 /* Define to 1 if you have the <memory.h> header file. */
@@ -653,10 +655,7 @@
 /* Define to 1 if you have the `mknodat' function. */
 #undef HAVE_MKNODAT
 
-/* Define to 1 if you have the `mktime' function. */
-#undef HAVE_MKTIME
-
-/* Define to 1 if you have the `mmap' function. */
+/* Define to 1 if you have a working `mmap' system call. */
 #undef HAVE_MMAP
 
 /* Define to 1 if you have the `mremap' function. */
@@ -1273,6 +1272,10 @@
 /* Define if log1p(-0.) is 0. rather than -0. */
 #undef LOG1P_DROPS_ZERO_SIGN
 
+/* Define to 1 if `lstat' dereferences a symlink specified with a trailing
+   slash. */
+#undef LSTAT_FOLLOWS_SLASHED_SYMLINK
+
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */
 #undef MAJOR_IN_MKDEV
@@ -1342,6 +1345,9 @@
 
 /* Define if setpgrp() must be called as setpgrp(0, 0). */
 #undef SETPGRP_HAVE_ARG
+
+/* Define to 1 if the `setpgrp' function takes no argument. */
+#undef SETPGRP_VOID
 
 /* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
 #undef SIGNED_RIGHT_SHIFT_ZERO_FILLS
@@ -1501,7 +1507,7 @@
 /* Define to include mbstate_t for mbrtowc */
 #undef _INCLUDE__STDC_A1_SOURCE
 
-/* This must be defined on some systems to enable large file support. */
+/* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
 #undef _LARGEFILE_SOURCE
 
 /* This must be defined on AIX systems to enable large file support. */
