@@ -11,18 +11,19 @@
 
 --------------
 
-This module provides a decorator and functions for adding generated
-methods to classes.
+This module provides a decorator and functions for automatically
+adding generated special methods to classes.  It was originally
+described in :pep:`526`.
 
-   .. versionadded:: 3.7
+.. versionadded:: 3.7
 
-Functions provided
-------------------
+Module-level decorators, classes, and functions
+-----------------------------------------------
 
-.. decorator:: dataclass
+.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 
    This function is a :term:`decorator` that is used to add generated
-   methods to classes, as described below.
+   :term:`special method`\s to classes, as described below.
 
    The :func:`dataclass` decorator examines the class to find
    ``field``\s.  A ``field`` is defined as class variable that has a
@@ -37,12 +38,6 @@ Functions provided
    the class, described below.  If any of the added methods already
    exist on the class, a :exc:`TypeError` will be raised.  The decorator
    returns the same class that is called on: no new class is created.
-
-   The :func:`dataclass` decorator is typically used with no parameters and
-   no parentheses.  However, it also supports the following logical
-   signature::
-
-     def dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 
    If :func:`dataclass` is used just as a simple decorator with no parameters,
    it acts as if it has the default values documented in this
@@ -160,27 +155,32 @@ Functions provided
    follows a field with a default value.  This is true either when this
    occurs in a single class, or as a result of class inheritance.
 
-.. function:: field
+.. function:: field(*, default=MISSING, default_factory=MISSING, repr=True, hash=None, init=True, compare=True, metadata=None)
 
    For common and simple use cases, no other functionality is
    required.  There are, however, some Data Class features that
    require additional per-field information.  To satisfy this need for
    additional information, you can replace the default field value
-   with a call to the provided :func:`field` function.  The signature
-   of :func:`field` is::
+   with a call to the provided :func:`field` function.  For example::
 
-     def field(*, default=MISSING, default_factory=MISSING, repr=True,
-            hash=None, init=True, compare=True, metadata=None)
+     @dataclass
+     class C:
+         l: List[int] = field(default_factory=list)
 
-   The ``MISSING`` value is a sentinel object used to detect if the
-   ``default`` and ``default_factory`` parameters are provided.  This
-   sentinel is used because ``None`` is a valid value for ``default``.
+     c = C()
+     c.l += [1, 2, 3]
 
-   The parameters to ``field()`` are:
+   As shown above, the ``MISSING`` value is a sentinel object used to
+   detect if the ``default`` and ``default_factory`` parameters are
+   provided.  This sentinel is used because ``None`` is a valid value
+   for ``default``.  No code should directly use the ``MISSING``
+   value.
+
+   The parameters to :func:`field` are:
 
    - ``default``: If provided, this will be the default value for this
-     field.  This is needed because the ``field`` call itself replaces
-     the normal position of the default value.
+     field.  This is needed because the :meth:`field` call itself
+     replaces the normal position of the default value.
 
    - ``default_factory``: If provided, it must be a zero-argument
      callable that will be called when a default value is needed for
@@ -257,14 +257,131 @@ Functions provided
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
 
-post-init processing
+.. function:: fields(class_or_instance)
+
+   Returns a tuple of :class:`Field` objects
+   that define the fields for this Data Class.  Accepts either a Data
+   Class, or an instance of a Data Class.  Raises :exc:`ValueError` if
+   not passed a Data Class or instance of one.  Does not return
+   pseudo-fields which are ``ClassVar`` or ``InitVar``.
+
+.. function:: asdict(instance, *, dict_factory=dict)
+
+   Converts the Data Class ``instance`` to a dict (by using the
+   factory function ``dict_factory``).  Each Data Class is converted
+   to a dict of its fields, as name:value pairs.  Data Classes, dicts,
+   lists, and tuples are recursed into.  For example::
+
+     @dataclass
+     class Point:
+          x: int
+          y: int
+
+     @dataclass
+     class C:
+          l: List[Point]
+
+     p = Point(10, 20)
+     assert asdict(p) == {'x': 10, 'y': 20}
+
+     c = C([Point(0, 0), Point(10, 4)])
+     assert asdict(c) == {'l': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
+
+   Raises :exc:`TypeError` if ``instance`` is not a Data Class instance.
+
+.. function:: astuple(*, tuple_factory=tuple)
+
+   Converts the Data Class ``instance`` to a tuple (by using the
+   factory function ``tuple_factory``).  Each Data Class is converted
+   to a tuple of its field values.  Data Classes, dicts, lists, and
+   tuples are recursed into.
+
+   Continuing from the previous example::
+
+     assert astuple(p) == (10, 20)
+     assert astuple(c) == ([(0, 0), (10, 4)],)
+
+   Raises :exc:`TypeError` if ``instance`` is not a Data Class instance.
+
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None)
+
+   Creates a new Data Class with name ``cls_name``, fields as defined
+   in ``fields``, base classes as given in ``bases``, and initialized
+   with a namespace as given in ``namespace``.  ``fields`` is an
+   iterable whose elements are either ``name``, ``(name, type)``, or
+   ``(name, type, Field)``.  If just ``name`` is supplied,
+   ``typing.Any`` is used for ``type``.  This function is not strictly
+   required, because any Python mechanism for creating a new class with
+   ``__annotations__`` can then apply the :func:`dataclass` function to
+   convert that class to a Data Class.  This function is provided as a
+   convenience.  For example::
+
+     C = make_dataclass('C',
+                        [('x', int),
+                          'y',
+                         ('z', int, field(default=5))],
+                        namespace={'add_one': lambda self: self.x + 1})
+
+   Is equivalent to::
+
+     @dataclass
+     class C:
+         x: int
+         y: 'typing.Any'
+         z: int = 5
+
+         def add_one(self):
+             return self.x + 1
+
+.. function:: replace(instance, **changes)
+
+   Creates a new object of the same type of ``instance``, replacing
+   fields with values from ``changes``.  If ``instance`` is not a Data
+   Class, raises :exc:`TypeError`.  If values in ``changes`` do not
+   specify fields, raises :exc:`TypeError`.
+
+   The newly returned object is created by calling the :meth:`__init__`
+   method of the Data Class.  This ensures that
+   :meth:`__post_init__`, if present, is also called.
+
+   Init-only variables without default values, if any exist, must be
+   specified on the call to :func:`replace` so that they can be passed to
+   :meth:`__init__` and :meth:`__post_init__`.
+
+   It is an error for :func:`changes` to contain any fields that are
+   defined as having ``init=False``.  A :exc:`ValueError` will be raised
+   in this case.
+
+   Be forewarned about how ``init=False`` fields work during a call to
+   :func:`replace`.  They are not copied from the source object, but
+   rather are initialized in :meth:`__post_init__`, if they're
+   initialized at all.  It is expected that ``init=False`` fields will
+   be rarely and judiciously used.  If they are used, it might be wise
+   to have alternate class constructors, or perhaps a custom
+   ``replace()`` (or similarly named) method which handles instance
+   copying.
+
+.. function:: is_dataclass(class_or_instance)
+
+   Returns True if its parameter is a dataclass or an instance of one,
+   otherwise returns False.
+
+   If you need to know if a class is an instance of a dataclass (and
+   not a dataclass itself), then add a further check for ``not
+   isinstance(obj, type)``::
+
+     def is_dataclass_instance(obj):
+         return is_dataclass(obj) and not isinstance(obj, type)
+
+Post-init processing
 --------------------
 
 The generated :meth:`__init__` code will call a method named
 :meth:`__post_init__`, if :meth:`__post_init__` is defined on the
-class.  It will be called as ``self.__post_init__()``.  If any
-``InitVar`` fields are defined, they will also be passed to
-:meth:`__post_init`.  If no :meth:`__init__` method is generated, then
+class.  It will normally be called as ``self.__post_init__()``.
+However, if any ``InitVar`` fields are defined, they will also be
+passed to :meth:`__post_init` in the order they were defined in the
+class.  If no :meth:`__init__` method is generated, then
 :meth:`__post_init__` will not automatically be called.
 
 Among other uses, this allows for initializing field values that
@@ -281,17 +398,18 @@ depend on one or more other fields.  For example::
 
 See the section below on init-only variables for ways to pass
 parameters to :meth:`__post_init__`.  Also see the warning about how
-``replace()`` handles ``init=False`` fields.
+:func:`replace` handles ``init=False`` fields.
 
 Class variables
 ---------------
 
-One place where :func:`dataclass` actually inspects the type of a field is
-to determine if a field is a class variable as defined in PEP 526.  It
-does this by checking if the type of the field is ``typing.ClassVar``.
-If a field is a ``ClassVar``, it is excluded from consideration as a
-field and is ignored by the Data Class mechanisms.  Such ``ClassVar`` pseudo-fields are not
-returned by the module-level ``fields()`` function.
+One of two places where :func:`dataclass` actually inspects the type
+of a field is to determine if a field is a class variable as defined
+in :pep:`526`.  It does this by checking if the type of the field is
+``typing.ClassVar``.  If a field is a ``ClassVar``, it is excluded
+from consideration as a field and is ignored by the Data Class
+mechanisms.  Such ``ClassVar`` pseudo-fields are not returned by the
+module-level :func:`fields` function.
 
 Init-only variables
 -------------------
@@ -301,7 +419,7 @@ determine if a field is an init-only variable.  It does this by seeing
 if the type of a field is of type ``dataclasses.InitVar``.  If a field
 is an ``InitVar``, it is considered a pseudo-field called an init-only
 field.  As it is not a true field, it is not returned by the
-module-level ``fields()`` function.  Init-only fields are added as
+module-level :func:`fields` function.  Init-only fields are added as
 parameters to the generated :meth:`__init__` method, and are passed to
 the optional :meth:`__post_init__` method.  They are not otherwise used
 by Data Classes.
@@ -321,7 +439,7 @@ value is not provided when creating the class::
 
   c = C(10, database=my_database)
 
-In this case, ``fields()`` will return ``Field`` objects for ``i`` and
+In this case, :func:`fields` will return :class:`Field` objects for ``i`` and
 ``j``, but not for ``database``.
 
 Frozen instances
@@ -440,125 +558,3 @@ Mutable default values
          x: list = field(default_factory=list)
 
      assert D().x is not D().x
-
-Module level helper functions
------------------------------
-
-.. function:: fields
-
-   ``fields(class_or_instance)``: Returns a tuple of :class:`Field` objects
-   that define the fields for this Data Class.  Accepts either a Data
-   Class, or an instance of a Data Class.  Raises :exc:`ValueError` if
-   not passed a Data Class or instance of one.  Does not return
-   pseudo-fields which are ``ClassVar`` or ``InitVar``.
-
-.. function:: asdict
-
-   ``asdict(instance, *, dict_factory=dict)``: Converts the Data Class
-   ``instance`` to a dict (by using the factory function
-   ``dict_factory``).  Each Data Class is converted to a dict of its
-   fields, as name:value pairs.  Data Classes, dicts, lists, and
-   tuples are recursed into.  For example::
-
-     @dataclass
-     class Point:
-          x: int
-          y: int
-
-     @dataclass
-     class C:
-          l: List[Point]
-
-     p = Point(10, 20)
-     assert asdict(p) == {'x': 10, 'y': 20}
-
-     c = C([Point(0, 0), Point(10, 4)])
-     assert asdict(c) == {'l': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
-
-   Raises :exc:`TypeError` if ``instance`` is not a Data Class instance.
-
-.. function:: astuple
-
-   ``astuple(*, tuple_factory=tuple)``: Converts the Data Class
-   ``instance`` to a tuple (by using the factory function
-   ``tuple_factory``).  Each Data Class is converted to a tuple of its
-   field values.  Data Classes, dicts, lists, and tuples are recursed
-   into.
-
-   Continuing from the previous example::
-
-     assert astuple(p) == (10, 20)
-     assert astuple(c) == ([(0, 0), (10, 4)],)
-
-   Raises :exc:`TypeError` if ``instance`` is not a Data Class instance.
-
-.. function:: make_dataclass
-
-   ``make_dataclass(cls_name, fields, *, bases=(), namespace=None)``:
-   Creates a new Data Class with name ``cls_name``, fields as defined
-   in ``fields``, base classes as given in ``bases``, and initialized
-   with a namespace as given in ``namespace``.  ``fields`` is an
-   iterable whose elements are either ``name``, ``(name, type)``, or
-   ``(name, type, Field)``.  If just ``name`` is supplied,
-   ``typing.Any`` is used for ``type``.  This function is not strictly
-   required, because any Python mechanism for creating a new class with
-   ``__annotations__`` can then apply the :func:`dataclass` function to
-   convert that class to a Data Class.  This function is provided as a
-   convenience.  For example::
-
-     C = make_dataclass('C',
-                        [('x', int),
-                          'y',
-                         ('z', int, field(default=5))],
-                        namespace={'add_one': lambda self: self.x + 1})
-
-   Is equivalent to::
-
-     @dataclass
-     class C:
-         x: int
-         y: 'typing.Any'
-         z: int = 5
-
-         def add_one(self):
-             return self.x + 1
-
-.. function:: replace
-
-   ``replace(instance, **changes)``: Creates a new object of the same
-   type of ``instance``, replacing fields with values from ``changes``.
-   If ``instance`` is not a Data Class, raises :exc:`TypeError`.  If
-   values in ``changes`` do not specify fields, raises :exc:`TypeError`.
-
-   The newly returned object is created by calling the :meth:`__init__`
-   method of the Data Class.  This ensures that
-   :meth:`__post_init__`, if present, is also called.
-
-   Init-only variables without default values, if any exist, must be
-   specified on the call to :func:`replace` so that they can be passed to
-   :meth:`__init__` and :meth:`__post_init__`.
-
-   It is an error for :func:`changes` to contain any fields that are
-   defined as having ``init=False``.  A :exc:`ValueError` will be raised
-   in this case.
-
-   Be forewarned about how ``init=False`` fields work during a call to
-   :func:`replace`.  They are not copied from the source object, but
-   rather are initialized in :meth:`__post_init__`, if they're
-   initialized at all.  It is expected that ``init=False`` fields will
-   be rarely and judiciously used.  If they are used, it might be wise
-   to have alternate class constructors, or perhaps a custom
-   ``replace()`` (or similarly named) method which handles instance
-   copying.
-
-.. function:: is_dataclass
-
-   ``is_dataclass(class_or_instance)``: Returns True if its parameter
-   is a dataclass or an instance of one, otherwise returns False.
-
-   If you need to know if a class is an instance of a dataclass (and
-   not a dataclass itself), then add a further check for ``not
-   isinstance(obj, type)``::
-
-     def is_dataclass_instance(obj):
-         return is_dataclass(obj) and not isinstance(obj, type)
