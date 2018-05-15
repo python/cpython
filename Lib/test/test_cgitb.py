@@ -11,7 +11,7 @@ class TestCgitb(unittest.TestCase):
         self.assertEqual(cgitb.small(text), "<small>{}</small>".format(text))
         self.assertEqual(cgitb.strong(text), "<strong>{}</strong>".format(text))
         self.assertEqual(cgitb.grey(text),
-                         '<font color="#909090">{}</font>'.format(text))
+                         '<font color="#696969">{}</font>'.format(text))
 
     def test_blanks(self):
         self.assertEqual(cgitb.small(""), "")
