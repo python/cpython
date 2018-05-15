@@ -63,195 +63,209 @@ Functions provided
 
    The parameters to :func:`dataclass` are:
 
-- ``init``: If true (the default), a ``__init__`` method will be
-  generated.
+   - ``init``: If true (the default), a :meth:`__init__` method will be
+     generated.
 
-- ``repr``: If true (the default), a ``__repr__`` method will be
-  generated.  The generated repr string will have the class name and
-  the name and repr of each field, in the order they are defined in
-  the class.  Fields that are marked as being excluded from the repr
-  are not included.  For example:
-  ``InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)``.
+     If the class already defines :meth:`__init__`, this parameter is
+     ignored.
 
-  If the class already defines ``__repr__``, this parameter is
-  ignored.
+   - ``repr``: If true (the default), a :meth:`__repr__` method will be
+     generated.  The generated repr string will have the class name and
+     the name and repr of each field, in the order they are defined in
+     the class.  Fields that are marked as being excluded from the repr
+     are not included.  For example:
+     ``InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)``.
 
-- ``eq``: If true (the default), an ``__eq__`` method will be
-  generated.  This method compares the class as if it were a tuple of its
-  fields, in order.  Both instances in the comparison must be of the
-  identical type.
+     If the class already defines :meth:`__repr__`, this parameter is
+     ignored.
 
-  If the class already defines ``__eq__``, this parameter is ignored.
+   - ``eq``: If true (the default), an :meth:`__eq__` method will be
+     generated.  This method compares the class as if it were a tuple
+     of its fields, in order.  Both instances in the comparison must
+     be of the identical type.
 
-- ``order``: If true (the default is False), ``__lt__``, ``__le__``,
-  ``__gt__``, and ``__ge__`` methods will be generated.  These compare
-  the class as if it were a tuple of its fields, in order.  Both
-  instances in the comparison must be of the identical type.  If
-  ``order`` is true and ``eq`` is false, a :exc:`ValueError` is raised.
+     If the class already defines :meth:`__eq__`, this parameter is
+     ignored.
 
-  If the class already defines any of ``__lt__``, ``__le__``,
-  ``__gt__``, or ``__ge__``, then :exc:`ValueError` is raised.
+   - ``order``: If true (the default is ``False``), :meth:`__lt__`,
+     :meth:`__le__`, :meth:`__gt__`, and :meth:`__ge__` methods will be
+     generated.  These compare the class as if it were a tuple of its
+     fields, in order.  Both instances in the comparison must be of the
+     identical type.  If ``order`` is true and ``eq`` is false, a
+     :exc:`ValueError` is raised.
 
-- ``unsafe_hash``: If ``False`` (the default), the ``__hash__`` method
-  is generated according to how ``eq`` and ``frozen`` are set.
+     If the class already defines any of :meth:`__lt__`,
+     :meth:`__le__`, :meth:`__gt__`, or :meth:`__ge__`, then
+     :exc:`ValueError` is raised.
 
-  If ``eq`` and ``frozen`` are both true, Data Classes will generate a
-  ``__hash__`` method for you.  If ``eq`` is true and ``frozen`` is
-  false, ``__hash__`` will be set to ``None``, marking it unhashable
-  (which it is).  If ``eq`` is false, ``__hash__`` will be left
-  untouched meaning the ``__hash__`` method of the superclass will be
-  used (if the superclass is ``object``, this means it will fall back
-  to id-based hashing).
+   - ``unsafe_hash``: If ``False`` (the default), the :meth:`__hash__` method
+     is generated according to how ``eq`` and ``frozen`` are set.
 
-  Although not recommended, you can force Data Classes to create a
-  ``__hash__`` method with ``unsafe_hash=True``. This might be the
-  case if your class is logically immutable but can nonetheless be
-  mutated. This is a specialized use case and should be considered
-  carefully.
+     If ``eq`` and ``frozen`` are both true, :func:`dataclass` will
+     generate a :meth:`__hash__` method for you.  If ``eq`` is true
+     and ``frozen`` is false, :meth:`__hash__` will be set to
+     ``None``, marking it unhashable (which it is, since it is
+     mutable).  If ``eq`` is false, :meth:`__hash__` will be left
+     untouched meaning the :meth:`__hash__` method of the superclass
+     will be used (if the superclass is :class:`object`, this means it will
+     fall back to id-based hashing).
 
-  If a class already has an explicitely defined ``__hash__`` the
-  behavior when adding ``__hash__`` is modified.  An expicitely
-  defined ``__hash__`` is defined when:
+     Although not recommended, you can force :func:`dataclass` to
+     create a :meth:`__hash__` method with ``unsafe_hash=True``. This
+     might be the case if your class is logically immutable but can
+     nonetheless be mutated. This is a specialized use case and should
+     be considered carefully.
 
-    - ``__eq__`` is defined in the class and ``__hash__`` is defined
-      with any value other than ``None``.
+     If a class already has an explicitely defined :meth:`__hash__`
+     the behavior when adding :meth:`__hash__` is modified.  An
+     expicitely defined :meth:`__hash__` is defined when:
 
-    - ``__eq__`` is defined in the class and any non-``None``
-      ``__hash__`` is defined.
+       - :meth:`__eq__` is defined in the class and :meth:`__hash__` is defined
+         with any value other than ``None``.
 
-    - ``__eq__`` is not defined on the class, and any ``__hash__`` is
-      defined.
+       - :meth:`__eq__` is defined in the class and any non-``None``
+         :meth:`__hash__` is defined.
 
-  If ``unsafe_hash`` is true and an explicitely defined ``__hash__``
-  is present, then :exc:`ValueError` is raised.
+       - :meth:`__eq__` is not defined on the class, and any :meth:`__hash__` is
+         defined.
 
-  If ``unsafe_hash`` is false and an explicitely defined ``__hash__``
-  is present, then no ``__hash__`` is added.
+     If ``unsafe_hash`` is true and an explicitely defined :meth:`__hash__`
+     is present, then :exc:`ValueError` is raised.
 
-  See the Python documentation for more information.
+     If ``unsafe_hash`` is false and an explicitely defined :meth:`__hash__`
+     is present, then no :meth:`__hash__` is added.
 
-- ``frozen``: If true (the default is False), assigning to fields will
-  generate an exception.  This emulates read-only frozen instances.
-  If either ``__getattr__`` or ``__setattr__`` is defined in the
-  class, then :exc:`ValueError` is raised.  See the discussion below.
+     See the Python documentation for more information.
 
-``field``\s may optionally specify a default value, using normal
-Python syntax::
+   - ``frozen``: If true (the default is False), assigning to fields will
+     generate an exception.  This emulates read-only frozen instances.
+     If either :meth:`__getattr__` or :meth:`__setattr__` is defined in
+     the class, then :exc:`ValueError` is raised.  See the discussion
+     below.
 
-  @dataclass
-  class C:
-      a: int       # 'a' has no default value
-      b: int = 0   # assign a default value for 'b'
+   ``field``\s may optionally specify a default value, using normal
+   Python syntax::
 
-In this example, both ``a`` and ``b`` will be included in the added
-``__init__`` method, which will be defined as::
+     @dataclass
+     class C:
+         a: int       # 'a' has no default value
+         b: int = 0   # assign a default value for 'b'
 
-  def __init__(self, a: int, b: int = 0):
+   In this example, both ``a`` and ``b`` will be included in the added
+   :meth:`__init__` method, which will be defined as::
 
-:exc:`TypeError` will be raised if a field without a default value
-follows a field with a default value.  This is true either when this
-occurs in a single class, or as a result of class inheritance.
+     def __init__(self, a: int, b: int = 0):
 
-For common and simple use cases, no other functionality is required.
-There are, however, some Data Class features that require additional
-per-field information.  To satisfy this need for additional
-information, you can replace the default field value with a call to
-the provided ``field()`` function.  The signature of ``field()`` is::
+   :exc:`TypeError` will be raised if a field without a default value
+   follows a field with a default value.  This is true either when this
+   occurs in a single class, or as a result of class inheritance.
 
-  def field(*, default=MISSING, default_factory=MISSING, repr=True,
+.. function:: field
+
+   For common and simple use cases, no other functionality is
+   required.  There are, however, some Data Class features that
+   require additional per-field information.  To satisfy this need for
+   additional information, you can replace the default field value
+   with a call to the provided :func:`field` function.  The signature
+   of :func:`field` is::
+
+     def field(*, default=MISSING, default_factory=MISSING, repr=True,
             hash=None, init=True, compare=True, metadata=None)
 
-The ``MISSING`` value is a sentinel object used to detect if the
-``default`` and ``default_factory`` parameters are provided.  This
-sentinel is used because ``None`` is a valid value for ``default``.
+   The ``MISSING`` value is a sentinel object used to detect if the
+   ``default`` and ``default_factory`` parameters are provided.  This
+   sentinel is used because ``None`` is a valid value for ``default``.
 
-The parameters to ``field()`` are:
+   The parameters to ``field()`` are:
 
-- ``default``: If provided, this will be the default value for this
-  field.  This is needed because the ``field`` call itself replaces
-  the normal position of the default value.
+   - ``default``: If provided, this will be the default value for this
+     field.  This is needed because the ``field`` call itself replaces
+     the normal position of the default value.
 
-- ``default_factory``: If provided, it must be a zero-argument
-  callable that will be called when a default value is needed for this
-  field.  Among other purposes, this can be used to specify fields
-  with mutable default values, as discussed below.  It is an error to
-  specify both ``default`` and ``default_factory``.
+   - ``default_factory``: If provided, it must be a zero-argument
+     callable that will be called when a default value is needed for
+     this field.  Among other purposes, this can be used to specify
+     fields with mutable default values, as discussed below.  It is an
+     error to specify both ``default`` and ``default_factory``.
 
-- ``init``: If true (the default), this field is included as a
-  parameter to the generated ``__init__`` method.
+   - ``init``: If true (the default), this field is included as a
+     parameter to the generated :meth:`__init__` method.
 
-- ``repr``: If true (the default), this field is included in the
-  string returned by the generated ``__repr__`` method.
+   - ``repr``: If true (the default), this field is included in the
+     string returned by the generated :meth:`__repr__` method.
 
-- ``compare``: If True (the default), this field is included in the
-  generated equality and comparison methods (``__eq__``, ``__gt__``,
-  et al.).
+   - ``compare``: If true (the default), this field is included in the
+     generated equality and comparison methods (:meth:`__eq__`,
+     :meth:`__gt__`, et al.).
 
-- ``hash``: This can be a bool or ``None``.  If True, this field is
-  included in the generated ``__hash__`` method.  If ``None`` (the
-  default), use the value of ``compare``: this would normally be the
-  expected behavior.  A field should be considered in the hash if
-  it's used for comparisons.  Setting this value to anything other
-  than ``None`` is discouraged.
+   - ``hash``: This can be a bool or ``None``.  If True, this field is
+     included in the generated :meth:`__hash__` method.  If ``None`` (the
+     default), use the value of ``compare``: this would normally be
+     the expected behavior.  A field should be considered in the hash
+     if it's used for comparisons.  Setting this value to anything
+     other than ``None`` is discouraged.
 
-  One possible reason to set ``hash=False`` but ``compare=True`` would
-  be if a field is expensive to compute a hash value for, that field
-  is needed for equality testing, and there are other fields that
-  contribute to the type's hash value.  Even if a field is excluded
-  from the hash, it will still be used for comparisons.
+     One possible reason to set ``hash=False`` but ``compare=True``
+     would be if a field is expensive to compute a hash value for,
+     that field is needed for equality testing, and there are other
+     fields that contribute to the type's hash value.  Even if a field
+     is excluded from the hash, it will still be used for comparisons.
 
-- ``metadata``: This can be a mapping or None. None is treated as an
-  empty dict.  This value is wrapped in ``types.MappingProxyType`` to
-  make it read-only, and exposed on the Field object. It is not used
-  at all by Data Classes, and is provided as a third-party extension
-  mechanism.  Multiple third-parties can each have their own key, to
-  use as a namespace in the metadata.
+   - ``metadata``: This can be a mapping or None. None is treated as
+     an empty dict.  This value is wrapped in
+     :func:`~types.MappingProxyType` to make it read-only, and exposed
+     on the :class:`Field` object. It is not used at all by Data
+     Classes, and is provided as a third-party extension mechanism.
+     Multiple third-parties can each have their own key, to use as a
+     namespace in the metadata.
 
-If the default value of a field is specified by a call to ``field()``,
-then the class attribute for this field will be replaced by the
-specified ``default`` value.  If no ``default`` is provided, then the
-class attribute will be deleted.  The intent is that after the
-:func:`dataclass` decorator runs, the class attributes will all contain
-the default values for the fields, just as if the default value itself
-were specified.  For example, after::
+   If the default value of a field is specified by a call to
+   :func:`field()`, then the class attribute for this field will be
+   replaced by the specified ``default`` value.  If no ``default`` is
+   provided, then the class attribute will be deleted.  The intent is
+   that after the :func:`dataclass` decorator runs, the class
+   attributes will all contain the default values for the fields, just
+   as if the default value itself were specified.  For example,
+   after::
 
-  @dataclass
-  class C:
-      x: int
-      y: int = field(repr=False)
-      z: int = field(repr=False, default=10)
-      t: int = 20
+     @dataclass
+     class C:
+         x: int
+         y: int = field(repr=False)
+         z: int = field(repr=False, default=10)
+         t: int = 20
 
-The class attribute ``C.z`` will be ``10``, the class attribute
-``C.t`` will be ``20``, and the class attributes ``C.x`` and ``C.y``
-will not be set.
+   The class attribute ``C.z`` will be ``10``, the class attribute
+   ``C.t`` will be ``20``, and the class attributes ``C.x`` and
+   ``C.y`` will not be set.
 
-``Field`` objects
------------------
+.. class:: Field
 
-``Field`` objects describe each defined field. These objects are
-created internally, and are returned by the ``fields()`` module-level
-method (see below).  Users should never instantiate a ``Field``
-object directly.  Its documented attributes are:
+   :class:`Field` objects describe each defined field. These objects
+   are created internally, and are returned by the :func:`fields`
+   module-level method (see below).  Users should never instantiate a
+   :class:`Field` object directly.  Its documented attributes are:
 
-- ``name``: The name of the field.
+     - ``name``: The name of the field.
 
-- ``type``: The type of the field.
+     - ``type``: The type of the field.
 
-- ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
-  ``compare``, and ``metadata`` have the identical meaning and values
-  as they do in the ``field()`` declaration.
+     - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
+       ``compare``, and ``metadata`` have the identical meaning and
+       values as they do in the :func:`field` declaration.
 
-Other attributes may exist, but they are private and must not be
-inspected or relied on.
+   Other attributes may exist, but they are private and must not be
+   inspected or relied on.
 
 post-init processing
 --------------------
 
-The generated ``__init__`` code will call a method named
-``__post_init__``, if it is defined on the class.  It will be called
-as ``self.__post_init__()``.  If no ``__init__`` method is generated,
-then ``__post_init__`` will not automatically be called.
+The generated :meth:`__init__` code will call a method named
+:meth:`__post_init__`, if :meth:`__post_init__` is defined on the
+class.  It will be called as ``self.__post_init__()``.  If any
+``InitVar`` fields are defined, they will also be passed to
+:meth:`__post_init`.  If no :meth:`__init__` method is generated, then
+:meth:`__post_init__` will not automatically be called.
 
 Among other uses, this allows for initializing field values that
 depend on one or more other fields.  For example::
@@ -266,7 +280,7 @@ depend on one or more other fields.  For example::
             self.c = self.a + self.b
 
 See the section below on init-only variables for ways to pass
-parameters to ``__post_init__()``.  Also see the warning about how
+parameters to :meth:`__post_init__`.  Also see the warning about how
 ``replace()`` handles ``init=False`` fields.
 
 Class variables
@@ -288,8 +302,8 @@ if the type of a field is of type ``dataclasses.InitVar``.  If a field
 is an ``InitVar``, it is considered a pseudo-field called an init-only
 field.  As it is not a true field, it is not returned by the
 module-level ``fields()`` function.  Init-only fields are added as
-parameters to the generated ``__init__`` method, and are passed to
-the optional ``__post_init__`` method.  They are not otherwise used
+parameters to the generated :meth:`__init__` method, and are passed to
+the optional :meth:`__post_init__` method.  They are not otherwise used
 by Data Classes.
 
 For example, suppose a field will be initialzed from a database, if a
@@ -314,21 +328,21 @@ Frozen instances
 ----------------
 
 It is not possible to create truly immutable Python objects.  However,
-by passing ``frozen=True`` to the ``@dataclass`` decorator you can
+by passing ``frozen=True`` to the :meth:`dataclass` decorator you can
 emulate immutability.  In that case, Data Classes will add
-``__setattr__`` and ``__delattr__`` methods to the class.  These
-methods will raise a ``FrozenInstanceError`` when invoked.
+:meth:`__setattr__` and :meth:`__delattr__` methods to the class.  These
+methods will raise a :exc:`FrozenInstanceError` when invoked.
 
 There is a tiny performance penalty when using ``frozen=True``:
-``__init__`` cannot use simple assignment to initialize fields, and
-must use ``object.__setattr__``.
+:meth:`__init__` cannot use simple assignment to initialize fields, and
+must use :meth:`object.__setattr__`.
 
 Inheritance
 -----------
 
-When the Data Class is being created by the ``@dataclass`` decorator,
+When the Data Class is being created by the :meth:`dataclass` decorator,
 it looks through all of the class's base classes in reverse MRO (that
-is, starting at ``object``) and, for each Data Class that it finds,
+is, starting at :class:`object`) and, for each Data Class that it finds,
 adds the fields from that base class to an ordered mapping of fields.
 After all of the base class fields are added, it adds its own fields
 to the ordered mapping.  All of the generated methods will use this
@@ -349,190 +363,202 @@ example::
 The final list of fields is, in order, ``x``, ``y``, ``z``.  The final
 type of ``x`` is ``int``, as specified in class ``C``.
 
-The generated ``__init__`` method for ``C`` will look like::
+The generated :meth:`__init__` method for ``C`` will look like::
 
   def __init__(self, x: int = 15, y: int = 0, z: int = 10):
 
 Default factory functions
 -------------------------
 
-If a field specifies a ``default_factory``, it is called with zero
-arguments when a default value for the field is needed.  For example,
-to create a new instance of a list, use::
+   If a :func:`field` specifies a ``default_factory``, it is called with
+   zero arguments when a default value for the field is needed.  For
+   example, to create a new instance of a list, use::
 
-  l: list = field(default_factory=list)
+     l: list = field(default_factory=list)
 
-If a field is excluded from ``__init__`` (using ``init=False``) and
-the field also specifies ``default_factory``, then the default factory
-function will always be called from the generated ``__init__``
-function.  This happens because there is no other way to give the
-field an initial value.
+   If a field is excluded from :meth:`__init__` (using ``init=False``)
+   and the field also specifies ``default_factory``, then the default
+   factory function will always be called from the generated
+   :meth:`__init__` function.  This happens because there is no other
+   way to give the field an initial value.
 
 Mutable default values
 ----------------------
 
-Python stores default member variable values in class attributes.
-Consider this example, not using Data Classes::
+   Python stores default member variable values in class attributes.
+   Consider this example, not using Data Classes::
 
-  class C:
-      x = []
-      def add(self, element):
-          self.x += element
+     class C:
+         x = []
+         def add(self, element):
+             self.x += element
 
-  o1 = C()
-  o2 = C()
-  o1.add(1)
-  o2.add(2)
-  assert o1.x == [1, 2]
-  assert o1.x is o2.x
+     o1 = C()
+     o2 = C()
+     o1.add(1)
+     o2.add(2)
+     assert o1.x == [1, 2]
+     assert o1.x is o2.x
 
-Note that the two instances of class ``C`` share the same class
-variable ``x``, as expected.
+   Note that the two instances of class ``C`` share the same class
+   variable ``x``, as expected.
 
-Using Data Classes, *if* this code was valid::
+   Using Data Classes, *if* this code was valid::
 
-  @dataclass
-  class D:
-      x: List = []
-      def add(self, element):
-          self.x += element
+     @dataclass
+     class D:
+         x: List = []
+         def add(self, element):
+             self.x += element
 
-it would generate code similar to::
+   it would generate code similar to::
 
-  class D:
-      x = []
-      def __init__(self, x=x):
-          self.x = x
-      def add(self, element):
-          self.x += element
+     class D:
+         x = []
+         def __init__(self, x=x):
+             self.x = x
+         def add(self, element):
+             self.x += element
 
-  assert D().x is D().x
+     assert D().x is D().x
 
-This has the same issue as the original example using class ``C``.
-That is, two instances of class ``D`` that do not specify a value for
-``x`` when creating a class instance will share the same copy of
-``x``.  Because Data Classes just use normal Python class creation
-they also share this problem.  There is no general way for Data
-Classes to detect this condition.  Instead, Data Classes will raise a
-:exc:`TypeError` if it detects a default parameter of type ``list``,
-``dict``, or ``set``.  This is a partial solution, but it does protect
-against many common errors.
+   This has the same issue as the original example using class ``C``.
+   That is, two instances of class ``D`` that do not specify a value for
+   ``x`` when creating a class instance will share the same copy of
+   ``x``.  Because Data Classes just use normal Python class creation
+   they also share this problem.  There is no general way for Data
+   Classes to detect this condition.  Instead, Data Classes will raise a
+   :exc:`TypeError` if it detects a default parameter of type ``list``,
+   ``dict``, or ``set``.  This is a partial solution, but it does protect
+   against many common errors.
 
-Using default factory functions is a way to create new instances of
-mutable types as default values for fields::
+   Using default factory functions is a way to create new instances of
+   mutable types as default values for fields::
 
-  @dataclass
-  class D:
-      x: list = field(default_factory=list)
+     @dataclass
+     class D:
+         x: list = field(default_factory=list)
 
-  assert D().x is not D().x
+     assert D().x is not D().x
 
 Module level helper functions
 -----------------------------
 
-- ``fields(class_or_instance)``: Returns a tuple of ``Field`` objects
-  that define the fields for this Data Class.  Accepts either a Data
-  Class, or an instance of a Data Class.  Raises :exc:`ValueError` if not
-  passed a Data Class or instance of one.  Does not return
-  pseudo-fields which are ``ClassVar`` or ``InitVar``.
+.. function:: fields
 
-- ``asdict(instance, *, dict_factory=dict)``: Converts the Data Class
-  ``instance`` to a dict (by using the factory function
-  ``dict_factory``).  Each Data Class is converted to a dict of its
-  fields, as name:value pairs.  Data Classes, dicts, lists, and tuples
-  are recursed into.  For example::
+   ``fields(class_or_instance)``: Returns a tuple of :class:`Field` objects
+   that define the fields for this Data Class.  Accepts either a Data
+   Class, or an instance of a Data Class.  Raises :exc:`ValueError` if
+   not passed a Data Class or instance of one.  Does not return
+   pseudo-fields which are ``ClassVar`` or ``InitVar``.
 
-    @dataclass
-    class Point:
+.. function:: asdict
+
+   ``asdict(instance, *, dict_factory=dict)``: Converts the Data Class
+   ``instance`` to a dict (by using the factory function
+   ``dict_factory``).  Each Data Class is converted to a dict of its
+   fields, as name:value pairs.  Data Classes, dicts, lists, and
+   tuples are recursed into.  For example::
+
+     @dataclass
+     class Point:
+          x: int
+          y: int
+
+     @dataclass
+     class C:
+          l: List[Point]
+
+     p = Point(10, 20)
+     assert asdict(p) == {'x': 10, 'y': 20}
+
+     c = C([Point(0, 0), Point(10, 4)])
+     assert asdict(c) == {'l': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
+
+   Raises :exc:`TypeError` if ``instance`` is not a Data Class instance.
+
+.. function:: astuple
+
+   ``astuple(*, tuple_factory=tuple)``: Converts the Data Class
+   ``instance`` to a tuple (by using the factory function
+   ``tuple_factory``).  Each Data Class is converted to a tuple of its
+   field values.  Data Classes, dicts, lists, and tuples are recursed
+   into.
+
+   Continuing from the previous example::
+
+     assert astuple(p) == (10, 20)
+     assert astuple(c) == ([(0, 0), (10, 4)],)
+
+   Raises :exc:`TypeError` if ``instance`` is not a Data Class instance.
+
+.. function:: make_dataclass
+
+   ``make_dataclass(cls_name, fields, *, bases=(), namespace=None)``:
+   Creates a new Data Class with name ``cls_name``, fields as defined
+   in ``fields``, base classes as given in ``bases``, and initialized
+   with a namespace as given in ``namespace``.  ``fields`` is an
+   iterable whose elements are either ``name``, ``(name, type)``, or
+   ``(name, type, Field)``.  If just ``name`` is supplied,
+   ``typing.Any`` is used for ``type``.  This function is not strictly
+   required, because any Python mechanism for creating a new class with
+   ``__annotations__`` can then apply the :func:`dataclass` function to
+   convert that class to a Data Class.  This function is provided as a
+   convenience.  For example::
+
+     C = make_dataclass('C',
+                        [('x', int),
+                          'y',
+                         ('z', int, field(default=5))],
+                        namespace={'add_one': lambda self: self.x + 1})
+
+   Is equivalent to::
+
+     @dataclass
+     class C:
          x: int
-         y: int
+         y: 'typing.Any'
+         z: int = 5
 
-    @dataclass
-    class C:
-         l: List[Point]
+         def add_one(self):
+             return self.x + 1
 
-    p = Point(10, 20)
-    assert asdict(p) == {'x': 10, 'y': 20}
+.. function:: replace
 
-    c = C([Point(0, 0), Point(10, 4)])
-    assert asdict(c) == {'l': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
+   ``replace(instance, **changes)``: Creates a new object of the same
+   type of ``instance``, replacing fields with values from ``changes``.
+   If ``instance`` is not a Data Class, raises :exc:`TypeError`.  If
+   values in ``changes`` do not specify fields, raises :exc:`TypeError`.
 
-  Raises :exc:`TypeError` if ``instance`` is not a Data Class instance.
+   The newly returned object is created by calling the :meth:`__init__`
+   method of the Data Class.  This ensures that
+   :meth:`__post_init__`, if present, is also called.
 
-- ``astuple(*, tuple_factory=tuple)``: Converts the Data Class
-  ``instance`` to a tuple (by using the factory function
-  ``tuple_factory``).  Each Data Class is converted to a tuple of its
-  field values.  Data Classes, dicts, lists, and tuples are recursed
-  into.
+   Init-only variables without default values, if any exist, must be
+   specified on the call to :func:`replace` so that they can be passed to
+   :meth:`__init__` and :meth:`__post_init__`.
 
-  Continuing from the previous example::
+   It is an error for :func:`changes` to contain any fields that are
+   defined as having ``init=False``.  A :exc:`ValueError` will be raised
+   in this case.
 
-    assert astuple(p) == (10, 20)
-    assert astuple(c) == ([(0, 0), (10, 4)],)
+   Be forewarned about how ``init=False`` fields work during a call to
+   :func:`replace`.  They are not copied from the source object, but
+   rather are initialized in :meth:`__post_init__`, if they're
+   initialized at all.  It is expected that ``init=False`` fields will
+   be rarely and judiciously used.  If they are used, it might be wise
+   to have alternate class constructors, or perhaps a custom
+   ``replace()`` (or similarly named) method which handles instance
+   copying.
 
-  Raises :exc:`TypeError` if ``instance`` is not a Data Class instance.
+.. function:: is_dataclass
 
-- ``make_dataclass(cls_name, fields, *, bases=(), namespace=None)``:
-  Creates a new Data Class with name ``cls_name``, fields as defined
-  in ``fields``, base classes as given in ``bases``, and initialized
-  with a namespace as given in ``namespace``.  ``fields`` is an
-  iterable whose elements are either ``name``, ``(name, type)``, or
-  ``(name, type, Field)``.  If just ``name`` is supplied,
-  ``typing.Any`` is used for ``type``.  This function is not strictly
-  required, because any Python mechanism for creating a new class with
-  ``__annotations__`` can then apply the :func:`dataclass` function to
-  convert that class to a Data Class.  This function is provided as a
-  convenience.  For example::
+   ``is_dataclass(class_or_instance)``: Returns True if its parameter
+   is a dataclass or an instance of one, otherwise returns False.
 
-    C = make_dataclass('C',
-                       [('x', int),
-                         'y',
-                        ('z', int, field(default=5))],
-                       namespace={'add_one': lambda self: self.x + 1})
+   If you need to know if a class is an instance of a dataclass (and
+   not a dataclass itself), then add a further check for ``not
+   isinstance(obj, type)``::
 
-  Is equivalent to::
-
-    @dataclass
-    class C:
-        x: int
-        y: 'typing.Any'
-        z: int = 5
-
-        def add_one(self):
-            return self.x + 1
-
-- ``replace(instance, **changes)``: Creates a new object of the same
-  type of ``instance``, replacing fields with values from ``changes``.
-  If ``instance`` is not a Data Class, raises :exc:`TypeError`.  If
-  values in ``changes`` do not specify fields, raises :exc:`TypeError`.
-
-  The newly returned object is created by calling the ``__init__``
-  method of the Data Class.  This ensures that
-  ``__post_init__``, if present, is also called.
-
-  Init-only variables without default values, if any exist, must be
-  specified on the call to ``replace`` so that they can be passed to
-  ``__init__`` and ``__post_init__``.
-
-  It is an error for ``changes`` to contain any fields that are
-  defined as having ``init=False``.  A :exc:`ValueError` will be raised
-  in this case.
-
-  Be forewarned about how ``init=False`` fields work during a call to
-  ``replace()``.  They are not copied from the source object, but
-  rather are initialized in ``__post_init__()``, if they're
-  initialized at all.  It is expected that ``init=False`` fields will
-  be rarely and judiciously used.  If they are used, it might be wise
-  to have alternate class constructors, or perhaps a custom
-  ``replace()`` (or similarly named) method which handles instance
-  copying.
-
-- ``is_dataclass(class_or_instance)``: Returns True if its parameter
-  is a dataclass or an instance of one, otherwise returns False.
-
-  If you need to know if a class is an instance of a dataclass (and
-  not a dataclass itself), then add a further check for ``not
-  isinstance(obj, type)``::
-
-    def is_dataclass_instance(obj):
-        return is_dataclass(obj) and not isinstance(obj, type)
+     def is_dataclass_instance(obj):
+         return is_dataclass(obj) and not isinstance(obj, type)
