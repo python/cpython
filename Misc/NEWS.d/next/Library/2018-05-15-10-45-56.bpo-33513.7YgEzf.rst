@@ -1,0 +1,3 @@
+Fixed incorrect version detection of linux in some distributions (Lib/platform.py method: linux_distribution()).
+Now checked file os-release and if the file exists - parse the information from it, else used old method.
+This commit for python 2.7.

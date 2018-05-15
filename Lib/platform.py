@@ -290,6 +290,23 @@ def _parse_release_file(firstline):
             id = l[1]
     return '', version, id
 
+def _prase_os_release(os_release_file):
+    params = ['NAME', 'VERSION_ID', 'ID']
+    vars_ = []
+    for line in os_release_file:
+        for param in params:
+            get_name = re.search(r'^' + param + '.*', line)
+            index = params.index(param)
+            if get_name != None:
+                params[index] = get_name.group(0)
+    for param in params:
+        param_split = param.split('=')
+        if len(param_split) > 1:
+            vars_.append(param_split[1])
+        else:
+            vars_.append('')
+    return vars_[0], vars_[1], vars_[2]
+
 def linux_distribution(distname='', version='', id='',
 
                        supported_dists=_supported_dists,
@@ -314,35 +331,43 @@ def linux_distribution(distname='', version='', id='',
         args given as parameters.
 
     """
+    def linux_dist_origin(distname, version, id):
+        try:
+            etc = os.listdir('/etc')
+        except os.error:
+            # Probably not a Unix system
+            return distname,version,id
+        etc.sort()
+        for file in etc:
+            m = _release_filename.match(file)
+            if m is not None:
+                _distname,dummy = m.groups()
+                if _distname in supported_dists:
+                    distname = _distname
+                    break
+        else:
+            return _dist_try_harder(distname,version,id)
+
+        # Read the first line
+        f = open('/etc/'+file, 'r')
+        firstline = f.readline()
+        f.close()
+        _distname, _version, _id = _parse_release_file(firstline)
+
+        if _distname and full_distribution_name:
+            distname = _distname
+        if _version:
+            version = _version
+        if _id:
+            id = _id
+        return distname, version, id
+
     try:
-        etc = os.listdir('/etc')
-    except os.error:
-        # Probably not a Unix system
-        return distname,version,id
-    etc.sort()
-    for file in etc:
-        m = _release_filename.match(file)
-        if m is not None:
-            _distname,dummy = m.groups()
-            if _distname in supported_dists:
-                distname = _distname
-                break
-    else:
-        return _dist_try_harder(distname,version,id)
-
-    # Read the first line
-    f = open('/etc/'+file, 'r')
-    firstline = f.readline()
-    f.close()
-    _distname, _version, _id = _parse_release_file(firstline)
-
-    if _distname and full_distribution_name:
-        distname = _distname
-    if _version:
-        version = _version
-    if _id:
-        id = _id
-    return distname, version, id
+        os_release_path = '/etc/os-release'
+        with open(os_release_path, 'r') as os_release:
+            return _prase_os_release(os_release)
+    except IOError:
+        return linux_dist_origin(distname, version, id)
 
 # To maintain backwards compatibility:
 
