@@ -6090,6 +6090,40 @@ exit:
 
 #endif /* defined(HAVE_GETRANDOM_SYSCALL) */
 
+#if defined(HAVE_GETENTROPY)
+
+PyDoc_STRVAR(os_getentropy__doc__,
+"getentropy($module, /, size)\n"
+"--\n"
+"\n"
+"Obtain a series of random bytes.");
+
+#define OS_GETENTROPY_METHODDEF    \
+    {"getentropy", (PyCFunction)os_getentropy, METH_FASTCALL|METH_KEYWORDS, os_getentropy__doc__},
+
+static PyObject *
+os_getentropy_impl(PyObject *module, Py_ssize_t size);
+
+static PyObject *
+os_getentropy(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"size", NULL};
+    static _PyArg_Parser _parser = {"n:getentropy", _keywords, 0};
+    Py_ssize_t size;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &size)) {
+        goto exit;
+    }
+    return_value = os_getentropy_impl(module, size);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_GETENTROPY) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -6589,4 +6623,8 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=8d3d9dddf254c3c2 input=a9049054013a1b77]*/
+
+#ifndef OS_GETENTROPY_METHODDEF
+    #define OS_GETENTROPY_METHODDEF
+#endif /* !defined(OS_GETENTROPY_METHODDEF) */
+/*[clinic end generated code: output=1e265525c5c2d81f input=a9049054013a1b77]*/

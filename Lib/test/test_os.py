@@ -1359,6 +1359,30 @@ class GetRandomTests(unittest.TestCase):
         data2 = os.getrandom(16)
         self.assertNotEqual(data1, data2)
 
+@unittest.skipUnless(hasattr(os, 'getentropy'), 'need os.getentropy()')
+class GetEntropyTests(unittest.TestCase):
+    def test_getentropy0(self):
+      try:
+          os.getentropy(0)
+      except OSError as exc:
+          assert exc.errno == errno.EIO
+
+    def test_getentropy257(self):
+      try:
+          os.getentropy(257)
+      except OSError as exc:
+          assert exc.errno == errno.EIO
+  
+    def test_getentropy256(self):
+      bytes = os.getentropy(256)
+      assert bytes != None
+
+    def test_getentropy_double(self):
+      bytesa = os.getentropy(256)
+      bytesb = os.getentropy(256)
+      assert bytesa != None
+      assert bytesb != None
+  
 
 # os.urandom() doesn't use a file descriptor when it is implemented with the
 # getentropy() function, the getrandom() function or the getrandom() syscall
