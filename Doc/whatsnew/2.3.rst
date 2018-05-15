@@ -659,7 +659,7 @@ The heart of the catalog is the new Distutils :command:`register` command.
 Running ``python setup.py register`` will collect the metadata describing a
 package, such as its name, version, maintainer, description, &c., and send it to
 a central catalog server.  The resulting catalog is available from
-https://pypi.python.org/pypi.
+https://pypi.org.
 
 To make the catalog a bit more useful, a new optional *classifiers* keyword
 argument has been added to the Distutils :func:`setup` function.  A list of

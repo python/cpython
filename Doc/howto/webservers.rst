@@ -301,7 +301,7 @@ following WSGI-application::
     WSGIServer(app).run()
 
 This is a simple WSGI application, but you need to install `flup
-<https://pypi.python.org/pypi/flup/1.0>`_ first, as flup handles the low level
+<https://pypi.org/project/flup/1.0>`_ first, as flup handles the low level
 FastCGI access.
 
 .. seealso::
@@ -583,7 +583,7 @@ alternate storage mechanism.
      helps with choosing a method for saving data
 
    * `SQLAlchemy <http://www.sqlalchemy.org/>`_, the most powerful OR-Mapper
-     for Python, and `Elixir <https://pypi.python.org/pypi/Elixir>`_, which makes
+     for Python, and `Elixir <https://pypi.org/project/Elixir>`_, which makes
      SQLAlchemy easier to use
 
    * `SQLObject <http://www.sqlobject.org/>`_, another popular OR-Mapper
