@@ -303,18 +303,22 @@ Module-level decorators, classes, and functions
 
    Raises :exc:`TypeError` if ``instance`` is not a Data Class instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 
    Creates a new Data Class with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
    with a namespace as given in ``namespace``.  ``fields`` is an
-   iterable whose elements are either ``name``, ``(name, type)``, or
-   ``(name, type, Field)``.  If just ``name`` is supplied,
-   ``typing.Any`` is used for ``type``.  This function is not strictly
-   required, because any Python mechanism for creating a new class with
-   ``__annotations__`` can then apply the :func:`dataclass` function to
-   convert that class to a Data Class.  This function is provided as a
-   convenience.  For example::
+   iterable whose elements are each either ``name``, ``(name, type)``,
+   or ``(name, type, Field)``.  If just ``name`` is supplied,
+   ``typing.Any`` is used for ``type``.  The values of ``init``,
+   ``repr``, ``eq``, ``order``, ``unsafe_hash``, and ``frozen`` have
+   the same meaning as they do in :func:`dataclass`.
+
+   This function is not strictly required, because any Python
+   mechanism for creating a new class with ``__annotations__`` can
+   then apply the :func:`dataclass` function to convert that class to
+   a Data Class.  This function is provided as a convenience.  For
+   example::
 
      C = make_dataclass('C',
                         [('x', int),
