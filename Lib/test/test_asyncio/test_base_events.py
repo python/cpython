@@ -1848,8 +1848,9 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     def prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
+        af = socket.AF_UNSPEC if support.IPV6_ENABLED else socket.AF_INET
         server = self.run_loop(self.loop.create_server(
-            lambda: proto, support.HOST, 0))
+            lambda: proto, support.HOST, 0, family=af))
         port = server.sockets[0].getsockname()[1]
         self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
 

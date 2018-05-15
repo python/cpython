@@ -1334,7 +1334,6 @@ class BaseEventLoop(events.AbstractEventLoop):
                     # Disable IPv4/IPv6 dual stack support (enabled by
                     # default on Linux) which makes a single socket
                     # listen on both address families.
-                    print(f'*** af={af}, AF_INET6={AF_INET6} ***')
                     if af == AF_INET6 and hasattr(socket, 'IPPROTO_IPV6'):
                         sock.setsockopt(socket.IPPROTO_IPV6,
                                         socket.IPV6_V6ONLY,
