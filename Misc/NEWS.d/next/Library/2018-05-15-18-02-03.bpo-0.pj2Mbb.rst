@@ -1,0 +1,1 @@
+Fix ClassVar as string failure when getting type hints
