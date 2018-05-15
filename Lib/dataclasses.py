@@ -1,3 +1,4 @@
+import re
 import sys
 import copy
 import types
@@ -182,12 +183,10 @@ _PARAMS = '__dataclass_params__'
 # __init__.
 _POST_INIT_NAME = '__post_init__'
 
-# String prefixes that string annotations for ClassVar may have.  See
+# String regex that string annotations for ClassVar or InitVar must match.
+# Allows "identifier.identifier[" or "identifier[".
 # https://bugs.python.org/issue33453 for details.
-_CLASSVAR_PREFIXES = ('ClassVar', 'typing.ClassVar')
-
-# String prefixes that string annotations for InitVar may have.
-_INITVAR_PREFIXES = ('InitVar', 'dataclasses.InitVar')
+_MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)\s*\[')
 
 class _InitVarMeta(type):
     def __getitem__(self, params):
@@ -532,6 +531,39 @@ def _hash_fn(fields):
                       [f'return hash({self_tuple})'])
 
 
+def _is_type(annotation, cls, a_module, a_type):
+    # Given a type annotation string, does it refer to a_type in
+    # a_module?  For example, when checking that annotation denotes a
+    # ClassVar, then a_module is typing, and a_type is
+    # typing.ClassVar.
+
+    # It's possible to look up a_module given a_type, but it involves
+    # looking in sys.modules (again!), and seems like a waste since
+    # the caller already knows a_module.
+
+    # typename is a string type annotation
+    # cls is the class that this annotation was found in
+    # a_module is the module we want to match
+    # a_type is the type in that module we want to match
+
+    match = _MODULE_IDENTIFIER_RE.match(annotation)
+    if match:
+        ns = None
+        module_name = match.group(1)
+        if not module_name:
+            # No module name, assume the class's module did
+            # "from dataclasses import InitVar".
+            ns = sys.modules.get(cls.__module__).__dict__
+        else:
+            # Look up module_name in the class's module.
+            module = sys.modules.get(cls.__module__)
+            if module and module.__dict__.get(module_name) is a_module:
+                ns = sys.modules.get(a_type.__module__).__dict__
+        if ns and ns.get(match.group(2)) is a_type:
+            return True
+    return False
+
+
 def _get_field(cls, a_name, a_type):
     # Return a Field object for this field name and type.  ClassVars
     #  and InitVars are also returned, but marked as such (see
@@ -555,38 +587,44 @@ def _get_field(cls, a_name, a_type):
     f.name = a_name
     f.type = a_type
 
-    # Check for string annotations.  get_type_hints() won't always
-    #  work for us (see https://github.com/python/typing/issues/508
-    #  for example.  So, make a best effort to see if this is a
-    #  ClassVar or InitVar.
-    # For the complete discussion, see https://bugs.python.org/issue33453
-    if isinstance(f.type, str) and f.type.startswith(_CLASSVAR_PREFIXES):
-        f._field_type = _FIELD_CLASSVAR
-    else:
-        # If typing has not been imported, then it's impossible for
-        #  any annotation to be a ClassVar. So, only look for ClassVar
-        #  if typing has been imported.
-        typing = sys.modules.get('typing')
-        if typing is not None:
-            # This test uses a typing internal class, but it's the best
-            #  way to test if this is a ClassVar.
-            if (type(a_type) is typing._GenericAlias and
-                    a_type.__origin__ is typing.ClassVar):
-                # This field is a ClassVar, so it's not a regular field.
-                f._field_type = _FIELD_CLASSVAR
+    # In addition to checking for actual types here, also check for
+    #  string annotations.  get_type_hints() won't always work for us
+    #  (see https://github.com/python/typing/issues/508 for example),
+    #  plus it's expensive and would require an eval for every stirng
+    #  annotation.  So, make a best effort to see if this is a
+    #  ClassVar or InitVar using regex's and checking that the thing
+    #  referenced is actually of the correct type.
 
-    # If the type is InitVar, or if it's a string annotation and looks
-    #  like an InitVar, then it's an InitVar.
+    # For the complete discussion, see https://bugs.python.org/issue33453
+
+    # If typing has not been imported, then it's impossible for any
+    #  annotation to be a ClassVar. So, only look for ClassVar if
+    #  typing has been imported by any module (not necessarily cls's
+    #  module).
+    typing = sys.modules.get('typing')
+    if typing:
+        # This test uses a typing internal class, but it's the best
+        #  way to test if this is a ClassVar.
+        if ((type(a_type) is typing._GenericAlias
+             and a_type.__origin__ is typing.ClassVar)
+            or (isinstance(f.type, str)
+                and _is_type(f.type, cls, typing, typing.ClassVar))):
+            f._field_type = _FIELD_CLASSVAR
+
+    # If the type is InitVar, or if it's a matching string annotation,
+    # then it's an InitVar.
     if f._field_type is _FIELD:
-        if (f.type is InitVar or
-            (isinstance(f.type, str) and
-             f.type.startswith(_INITVAR_PREFIXES))):
-            # This field is an InitVars, so it's not a regular field.
+        # The module we're checking against is the module we're
+        # currently in (dataclasses.py).
+        dataclasses = sys.modules[__name__]
+        if (f.type is dataclasses.InitVar
+            or (isinstance(f.type, str)
+                and _is_type(f.type, cls, dataclasses, dataclasses.InitVar))):
             f._field_type = _FIELD_INITVAR
 
-    # Validations for fields.  This is delayed until now, instead of
-    # in the Field() constructor, since only here do we know the field
-    # name, which allows better error reporting.
+    # Validations for individual fields.  This is delayed until now,
+    # instead of in the Field() constructor, since only here do we
+    # know the field name, which allows for better error reporting.
 
     # Special restrictions for ClassVar and InitVar.
     if f._field_type in (_FIELD_CLASSVAR, _FIELD_INITVAR):

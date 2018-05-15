@@ -12,6 +12,9 @@ from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Op
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
 
+import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
+import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
+
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
 
@@ -2802,9 +2805,17 @@ class TestStringAnnotations(unittest.TestCase):
     def test_classvar(self):
         # Because the test is just str.startswith and not a regex,
         # things like ClassVarx are still considered a ClassVar.
-        for typestr in ('ClassVar', 'typing.ClassVar',
-                        'ClassVar[int]', 'typing.ClassVar[int]'
-                        'ClassVarx', 'typing.ClassVarx'):
+        for typestr in ('ClassVar[int]',
+                        'ClassVar [int]'
+                        ' ClassVar [int]'
+                        'typing.ClassVar[int]',
+                        'typing.ClassVar[str]',
+                        ' typing.ClassVar[str]',
+                        'typing .ClassVar[str]',
+                        'typing. ClassVar[str]',
+                        'typing.ClassVar [str]',
+                        'typing.ClassVar [ str]',
+                        ):
             with self.subTest(typestr=typestr):
                 @dataclass
                 class C:
@@ -2818,8 +2829,19 @@ class TestStringAnnotations(unittest.TestCase):
                 self.assertNotIn('x', C.__dict__)
 
     def test_isnt_classvar(self):
-        for typestr in ('CV', 't.ClassVar', 'dataclasses.ClassVar',
-                        'dataclasses.InitVar'):
+        for typestr in ('CV',
+                        't.ClassVar',
+                        't.ClassVar[int]',
+                        'typing..ClassVar[int]',
+                        'typing.ClassVar.[int]',
+                        'ClassVar'
+                        'Classvar[int]'
+                        'typing.ClassVarx[int]',
+                        'typong.ClassVar[int]',
+                        'dataclasses.ClassVar[int]',
+                        'typingxClassVar[str]',
+                        'dataclasses.InitVar',
+                        ):
             with self.subTest(typestr=typestr):
                 @dataclass
                 class C:
@@ -2829,9 +2851,13 @@ class TestStringAnnotations(unittest.TestCase):
                 C(1)
 
     def test_initvar(self):
-        for typestr in ('InitVar', 'dataclasses.InitVar',
-                        'InitVar[int]', 'dataclasses.InitVar[int]',
-                        'InitVarx', 'dataclasses.InitVarx'):
+        for typestr in (#'InitVar',
+                        #'dataclasses.InitVar',
+                        'InitVar[int]',
+                        'dataclasses.InitVar[int]',
+                        #'InitVarx',
+                        #'dataclasses.InitVarx',
+                        ):
             with self.subTest(typestr=typestr):
                 @dataclass
                 class C:
@@ -2843,8 +2869,11 @@ class TestStringAnnotations(unittest.TestCase):
                     C(1).x
 
     def test_isnt_initvar(self):
-        for typestr in ('IV', 'dc.InitVar', 'xdataclasses.InitVar',
-                        'typing.InitVar'):
+        for typestr in ('IV',
+                        'dc.InitVar',
+                        'xdataclasses.xInitVar',
+                        'typing.xInitVar[int]',
+                        ):
             with self.subTest(typestr=typestr):
                 @dataclass
                 class C:
