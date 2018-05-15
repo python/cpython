@@ -37,5 +37,5 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
-- script: make buildbottest TESTOPTS="-j4 -uall,-cpu test_asyncio test_poplib"
+- script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
   displayName: 'Tests'
