@@ -35,7 +35,7 @@ is based on the 'action -> assertion' pattern instead of 'record -> replay'
 used by many mocking frameworks.
 
 There is a backport of :mod:`unittest.mock` for earlier versions of Python,
-available as `mock on PyPI <https://pypi.python.org/pypi/mock>`_.
+available as `mock on PyPI <https://pypi.org/project/mock>`_.
 
 
 Quick Guide
@@ -2085,7 +2085,7 @@ mock_open
     the start.  If you need more control over the data that you are feeding to
     the tested code you will need to customize this mock for yourself.  When that
     is insufficient, one of the in-memory filesystem packages on `PyPI
-    <https://pypi.python.org/pypi>`_ can offer a realistic filesystem for testing.
+    <https://pypi.org>`_ can offer a realistic filesystem for testing.
 
    .. versionchanged:: 3.4
       Added :meth:`~io.IOBase.readline` and :meth:`~io.IOBase.readlines` support.
