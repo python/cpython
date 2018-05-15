@@ -40,7 +40,7 @@ Glossary
       ABCs with the :mod:`abc` module.
 
    annotation
-      A metadata value associated with a global variable, a class attribute or a
+      A metadata value associated with a variable, a class attribute or a
       function or method parameter or return value, that has no specific
       purpouse (i.e. it's up to the user to use it as they see fit).
 
@@ -48,6 +48,20 @@ Glossary
       of a module (when annotating a global variable), class (when annotating
       one of its attributes) or function or method (when annotating a parameter or a
       return value).
+
+      Annotations are not stored when annotating local variables, but variables
+      will become locals when annotating them:
+
+         def f():
+             a: int
+             print(a)  # raises UnboundLocalError
+                       # Commenting out the a: int makes it a NameError.
+
+      as if the code were:
+
+         def f():
+             if False: a = 0
+             print(a)  # raises UnboundLocalError
 
       Annotations can be used to specify :term:`type hints <type hint>`. These
       hints can be accessed using :func:`typing.get_type_hints`.
