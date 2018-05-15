@@ -408,7 +408,7 @@ Glossary
       An :term:`annotation` of a function, or a method.
 
       Function annotations can be used to specify
-      :term:`type hints <type hint>`:: this function is expected to take two
+      :term:`type hints <type hint>`: this function is expected to take two
       :class:`int` arguments and is also expected to have an :class:`int`
       return value::
 
@@ -1074,7 +1074,7 @@ Glossary
       An :term:`annotation` of a variable, or a class attribute.
 
       Variable annotations can be used to specify
-      :term:`type hints <type hint>`:: this variable is expected to take
+      :term:`type hints <type hint>`: this variable is expected to take
       :class:`int` values::
 
          count: int = 0
