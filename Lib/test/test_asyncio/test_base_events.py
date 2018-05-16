@@ -1856,7 +1856,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
         for _ in range(10):
             try:
                 self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
-            except ConnectionRefusedError:
+            except OSError:
                 time.sleep(0.1)
                 continue
             else:
