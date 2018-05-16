@@ -10,6 +10,7 @@ import socket
 import os
 import errno
 import threading
+import traceback
 
 from unittest import TestCase, skipUnless
 from test import support as test_support
@@ -220,18 +221,21 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
         self.__flag.wait()
 
     def run(self):
-        self.active = True
-        self.__flag.set()
-        while self.active and asyncore.socket_map:
-            self.active_lock.acquire()
-            asyncore.loop(timeout=0.1, count=1)
-            self.active_lock.release()
-        asyncore.close_all(ignore_all=True)
+        try:
+            self.active = True
+            self.__flag.set()
+            while self.active and asyncore.socket_map:
+                self.active_lock.acquire()
+                asyncore.loop(timeout=0.1, count=1)
+                self.active_lock.release()
+        finally:
+            self.close()
 
     def stop(self):
         assert self.active
         self.active = False
         self.join()
+        asyncore.close_all(ignore_all=True)
 
     def handle_accepted(self, conn, addr):
         self.handler_instance = self.handler(conn)
@@ -251,16 +255,24 @@ class TestPOP3Class(TestCase):
     def assertOK(self, resp):
         self.assertTrue(resp.startswith(b"+OK"))
 
-    def setUp(self):
+    def setup_server(self, handler_class=None):
         self.server = DummyPOP3Server((HOST, PORT))
+        if handler_class is not None:
+            self.server.handler = handler_class
         self.server.start()
+
+        @self.addCleanup
+        def close_server():
+            self.server.stop()
+            # Explicitly clear the attribute to prevent dangling thread
+            self.server = None
+
+    def setUp(self):
+        self.setup_server()
         self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
 
     def tearDown(self):
         self.client.close()
-        self.server.stop()
-        # Explicitly clear the attribute to prevent dangling thread
-        self.server = None
 
     def test_getwelcome(self):
         self.assertEqual(self.client.getwelcome(),
@@ -400,9 +412,7 @@ class TestPOP3_SSLClass(TestPOP3Class):
     # repeat previous tests by using poplib.POP3_SSL
 
     def setUp(self):
-        self.server = DummyPOP3Server((HOST, PORT))
-        self.server.handler = DummyPOP3_SSLHandler
-        self.server.start()
+        self.setup_server(DummyPOP3_SSLHandler)
         self.client = poplib.POP3_SSL(self.server.host, self.server.port)
 
     def test__all__(self):
@@ -444,8 +454,7 @@ class TestPOP3_TLSClass(TestPOP3Class):
     # repeat previous tests by using poplib.POP3.stls()
 
     def setUp(self):
-        self.server = DummyPOP3Server((HOST, PORT))
-        self.server.start()
+        self.setup_server()
         self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
         self.client.stls()
 
@@ -458,9 +467,6 @@ class TestPOP3_TLSClass(TestPOP3Class):
                 # response will be treated as response to QUIT and raise
                 # this exception
                 self.client.close()
-        self.server.stop()
-        # Explicitly clear the attribute to prevent dangling thread
-        self.server = None
 
     def test_stls(self):
         self.assertRaises(poplib.error_proto, self.client.stls)
