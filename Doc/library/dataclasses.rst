@@ -122,7 +122,7 @@ Module-level decorators, classes, and functions
 
      :meth:`__hash__` is used by built-in :meth:`hash()`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
-     :meth:`__hash__` implies that instances of the class are mutable.
+     :meth:`__hash__` implies that instances of the class are immutable.
      Mutability is a complicated property that depends on the programmer's
      intent, the existence and behavior of :meth:`__eq__`, and the values of
      the ``eq`` and ``frozen`` flags in the :func:`dataclass` decorator.
