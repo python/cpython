@@ -56,8 +56,10 @@ steps:
     libffi-dev
     uuid-dev
   displayName: 'apt-get install dependencies'
-- script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $(build.sourcesDirectory)/multissl --openssl $(OPENSSL) --machine linux-x86_64
+- script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $(build.sourcesDirectory)/multissl --openssl $(OPENSSL)
   displayName: 'python multissltests.py'
+  env:
+    SYSTEM: Linux
 
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'

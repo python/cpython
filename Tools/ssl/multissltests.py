@@ -125,11 +125,6 @@ parser.add_argument(
         "all and runs the test suite."
     )
 )
-parser.add_argument(
-    '--machine',
-    default='',
-    help="Override the automatic machine type detection."
-)
 
 
 class AbstractBuilder(object):
@@ -157,7 +152,6 @@ class AbstractBuilder(object):
         # build directory (removed after install)
         self.build_dir = os.path.join(
             self.src_dir, self.build_template.format(version))
-        self.machine = args.machine
 
     def __str__(self):
         return "<{0.__class__.__name__} for {0.version}>".format(self)
@@ -261,8 +255,6 @@ class AbstractBuilder(object):
         log.info("Running build in {}".format(self.build_dir))
         cwd = self.build_dir
         cmd = ["./config", "shared", "--prefix={}".format(self.install_dir)]
-        if self.machine:
-            cmd.append(self.machine)
         self._subprocess_call(cmd, cwd=cwd)
         # Old OpenSSL versions do not support parallel builds.
         self._subprocess_call(["make", "-j1"], cwd=cwd)
