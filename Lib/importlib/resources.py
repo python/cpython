@@ -15,6 +15,10 @@ from typing.io import BinaryIO, TextIO
 from zipimport import ZipImportError
 
 
+__all__ = ['Package', 'Resource',
+           'open_binary', 'open_text', 'read_binary', 'read_text',
+           'path', 'is_resource', 'contents']
+
 Package = Union[str, ModuleType]
 Resource = Union[str, os.PathLike]
 
