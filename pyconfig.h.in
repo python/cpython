@@ -617,7 +617,7 @@
 /* Define to 1 if you have the `log2' function. */
 #undef HAVE_LOG2
 
-/* Define this if you have the type long double. */
+/* Define to 1 if the system has the type `long double'. */
 #undef HAVE_LONG_DOUBLE
 
 /* Define to 1 if you have the `lstat' function. */
@@ -940,9 +940,6 @@
 
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
-
-/* Define if your compiler provides ssize_t */
-#undef HAVE_SSIZE_T
 
 /* Define to 1 if you have the `statvfs' function. */
 #undef HAVE_STATVFS
@@ -1361,9 +1358,6 @@
 /* The size of `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* The size of `long double', as computed by sizeof. */
-#undef SIZEOF_LONG_DOUBLE
-
 /* The size of `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
 
@@ -1572,6 +1566,9 @@
 
 /* Define to `int' if <sys/socket.h> does not define. */
 #undef socklen_t
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef ssize_t
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
