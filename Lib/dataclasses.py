@@ -544,12 +544,11 @@ def _hash_fn(fields):
 
 
 def _is_classvar(a_type, typing):
-    if typing:
-        # This test uses a typing internal class, but it's the best
-        # way to test if this is a ClassVar.
-        return (a_type is typing.ClassVar
-                or (type(a_type) is typing._GenericAlias
-                    and a_type.__origin__ is typing.ClassVar))
+    # This test uses a typing internal class, but it's the best way to
+    # test if this is a ClassVar.
+    return (a_type is typing.ClassVar
+            or (type(a_type) is typing._GenericAlias
+                and a_type.__origin__ is typing.ClassVar))
 
 
 def _is_initvar(a_type, dataclasses):
