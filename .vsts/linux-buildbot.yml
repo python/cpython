@@ -42,7 +42,7 @@ steps:
   displayName: 'apt-get build-dep python3.5'
 - script: sudo apt-get -yq install uuid-dev
   displayName: 'apt-get install uuid-dev'
-- script: python Tools/ssl/multissltests.py --steps=library --base-directory $HOME/multissl --openssl $(OPENSSL) >/dev/null 2>&1
+- script: python Tools/ssl/multissltests.py --steps=library --base-directory $HOME/multissl --openssl $(OPENSSL)
   displayName: 'python multissltests.py'
   env:
     # Use -O3 because we don't use debugger on Travis-CI
