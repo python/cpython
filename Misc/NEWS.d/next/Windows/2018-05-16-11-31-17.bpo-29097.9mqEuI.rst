@@ -1,0 +1,2 @@
+Fix bug where ``datetime.fromtimestamp`` erronously throws an OSError on
+Windows for values between 0 and 86400

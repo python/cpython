@@ -4944,12 +4944,10 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         self.assertEqual(t0.fold, 0)
         self.assertEqual(t1.fold, 1)
 
-
     def test_fromtimestamp_low_fold_detection(self):
         # Ensure that fold detection doesn't cause an
         # OSError for really low values, see bpo-29097
         self.assertEqual(datetime.fromtimestamp(0).fold, 0)
-
 
     @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
     def test_timestamp(self):
