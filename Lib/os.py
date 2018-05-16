@@ -23,6 +23,7 @@ and opendir), and leave all pathname manipulation to os.path
 
 #'
 import abc
+import inspect
 import sys
 import stat as st
 
@@ -658,7 +659,7 @@ def get_exec_path(env=None):
 
 
 # Change environ to automatically call putenv(), unsetenv if they exist.
-from _collections_abc import MutableMapping
+from _collections_abc import MutableMapping, Mapping
 
 class _Environ(MutableMapping):
     def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue, putenv, unsetenv):
@@ -847,6 +848,14 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
             raise TypeError('argv must be a tuple or a list')
         if not args or not args[0]:
             raise ValueError('argv first element cannot be empty')
+
+        sig = inspect.signature(func)
+        if len(sig.parameters) == 3:
+            if env is None:
+                raise TypeError('env must not be None')
+            elif not isinstance(env, Mapping):
+                raise TypeError('env must be a mapping object')
+
         pid = fork()
         if not pid:
             # Child
