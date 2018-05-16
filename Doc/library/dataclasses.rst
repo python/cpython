@@ -1,8 +1,8 @@
-:mod:`dataclasses` --- Dataclasses
-==========================================
+:mod:`dataclasses` --- Data Classes
+===================================
 
 .. module:: dataclasses
-    :synopsis: Generate special methods and add to user-defined classes.
+    :synopsis: Generate special methods on user-defined classes.
 
 .. moduleauthor:: Eric V. Smith <eric@trueblade.com>
 .. sectionauthor:: Eric V. Smith <eric@trueblade.com>
