@@ -1,2 +1,1 @@
-Added support for optional Site Map extension to urllib robotparser. Patch
-by Lady Red, based on patch by Peter Wirtz.
+Added support for optional Site Map extension to urllib robotparser. Patch by Lady Red, based on patch by Peter Wirtz.
