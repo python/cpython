@@ -265,7 +265,7 @@ _release_version = re.compile(r'([^0-9]+)'
 # and http://www.die.net/doc/linux/man/man1/lsb_release.1.html
 
 _supported_dists = (
-    'SuSE', 'debian', 'fedora', 'redhat', 'centos',
+    'SuSE', 'debian', 'fedora', 'redhat', 'centos', 'oracle'
     'mandrake', 'mandriva', 'rocks', 'slackware', 'yellowdog', 'gentoo',
     'UnitedLinux', 'turbolinux', 'arch', 'mageia')
 

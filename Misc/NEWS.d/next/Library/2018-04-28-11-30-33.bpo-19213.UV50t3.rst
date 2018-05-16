@@ -1,0 +1,2 @@
++Return Oracle OS information in ``platform.linux_distibution()``
++instead of RedHat. Patch by Komail Kanjee.
