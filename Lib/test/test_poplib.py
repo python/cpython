@@ -179,7 +179,8 @@ class DummyPOP3Handler(asynchat.async_chat):
                 elif err.args[0] == ssl.SSL_ERROR_EOF:
                     return self.handle_close()
                 # TODO: SSLError does not expose alert information
-                elif "SSLV3_ALERT_BAD_CERTIFICATE" in err.args[1]:
+                elif ("SSLV3_ALERT_BAD_CERTIFICATE" in err.args[1] or
+                      "SSLV3_ALERT_CERTIFICATE_UNKNOWN" in err.args[1]):
                     return self.handle_close()
                 raise
             except OSError as err:
@@ -222,11 +223,12 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
     def run(self):
         self.active = True
         self.__flag.set()
-        while self.active and asyncore.socket_map:
-            self.active_lock.acquire()
-            asyncore.loop(timeout=0.1, count=1)
-            self.active_lock.release()
-        asyncore.close_all(ignore_all=True)
+        try:
+            while self.active and asyncore.socket_map:
+                with self.active_lock:
+                    asyncore.loop(timeout=0.1, count=1)
+        finally:
+            asyncore.close_all(ignore_all=True)
 
     def stop(self):
         assert self.active
