@@ -1,13 +1,13 @@
 parameters:
-  OPENSSL=1.1.0g
-  OPENSSL_DIR="$HOME/multissl/openssl/$(OPENSSL)"
-  PATH="$(OPENSSL_DIR)/bin:$(PATH)"
+  OPENSSL: 1.1.0g
+  OPENSSL_DIR: "$HOME/multissl/openssl/$(OPENSSL)"
+  PATH: "$(OPENSSL_DIR)/bin:$(PATH)"
   # Use -O3 because we don't use debugger on Travis-CI
-  CFLAGS="-I$(OPENSSL_DIR)/include -O3"
-  LDFLAGS="-L$(OPENSSL_DIR)/lib"
+  CFLAGS: "-I$(OPENSSL_DIR)/include -O3"
+  LDFLAGS: "-L$(OPENSSL_DIR)/lib"
   # Set rpath with env var instead of -Wl,-rpath linker flag
   # OpenSSL ignores LDFLAGS when linking bin/openssl
-  LD_RUN_PATH="$(OPENSSL_DIR)/lib"
+  LD_RUN_PATH: "$(OPENSSL_DIR)/lib"
 
 steps:
 - script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
