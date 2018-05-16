@@ -1599,6 +1599,30 @@ class ForwardRefTests(BaseTestCase):
         # verify that @no_type_check never affects bases
         self.assertEqual(get_type_hints(C.meth), {'x': int})
 
+    def test_no_type_check_forward_ref_as_string(self):
+        class C:
+            foo: typing.ClassVar[int] = 7
+        class D:
+            foo: ClassVar[int] = 7
+        class E:
+            foo: 'typing.ClassVar[int]' = 7
+        class F:
+            foo: 'ClassVar[int]' = 7
+
+        expected_result = {'foo': typing.ClassVar[int]}
+        for clazz in [C, D, E, F]:
+            self.assertEqual(get_type_hints(clazz), expected_result)
+
+    def test_nested_classvar_fails_forward_ref_check(self):
+        class E:
+            foo: 'typing.ClassVar[typing.ClassVar[int]]' = 7
+        class F:
+            foo: ClassVar['ClassVar[int]'] = 7
+
+        for clazz in [E, F]:
+            with self.assertRaises(TypeError):
+                get_type_hints(clazz)
+
     def test_meta_no_type_check(self):
 
         @no_type_check_decorator

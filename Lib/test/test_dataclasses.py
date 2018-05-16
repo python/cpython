@@ -12,6 +12,9 @@ from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Op
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
 
+import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
+import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
+
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
 
@@ -600,7 +603,6 @@ class TestCase(unittest.TestCase):
                 class C:
                     x: ClassVar[typ] = Subclass()
 
-
     def test_deliberately_mutable_defaults(self):
         # If a mutable default isn't in the known list of
         #  (list, dict, set), then it's okay.
@@ -924,14 +926,16 @@ class TestCase(unittest.TestCase):
             z: ClassVar[int] = 1000
             w: ClassVar[int] = 2000
             t: ClassVar[int] = 3000
+            s: ClassVar      = 4000
 
         c = C(5)
         self.assertEqual(repr(c), 'TestCase.test_class_var.<locals>.C(x=5, y=10)')
         self.assertEqual(len(fields(C)), 2)                 # We have 2 fields.
-        self.assertEqual(len(C.__annotations__), 5)         # And 3 ClassVars.
+        self.assertEqual(len(C.__annotations__), 6)         # And 4 ClassVars.
         self.assertEqual(c.z, 1000)
         self.assertEqual(c.w, 2000)
         self.assertEqual(c.t, 3000)
+        self.assertEqual(c.s, 4000)
         C.z += 1
         self.assertEqual(c.z, 1001)
         c = C(20)
@@ -939,6 +943,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(c.z, 1001)
         self.assertEqual(c.w, 2000)
         self.assertEqual(c.t, 3000)
+        self.assertEqual(c.s, 4000)
 
     def test_class_var_no_default(self):
         # If a ClassVar has no default value, it should not be set on the class.
@@ -1821,114 +1826,6 @@ class TestCase(unittest.TestCase):
                     self.assertEqual(new_sample.x, another_new_sample.x)
                     self.assertEqual(sample.y, another_new_sample.y)
 
-    def test_helper_make_dataclass(self):
-        C = make_dataclass('C',
-                           [('x', int),
-                            ('y', int, field(default=5))],
-                           namespace={'add_one': lambda self: self.x + 1})
-        c = C(10)
-        self.assertEqual((c.x, c.y), (10, 5))
-        self.assertEqual(c.add_one(), 11)
-
-
-    def test_helper_make_dataclass_no_mutate_namespace(self):
-        # Make sure a provided namespace isn't mutated.
-        ns = {}
-        C = make_dataclass('C',
-                           [('x', int),
-                            ('y', int, field(default=5))],
-                           namespace=ns)
-        self.assertEqual(ns, {})
-
-    def test_helper_make_dataclass_base(self):
-        class Base1:
-            pass
-        class Base2:
-            pass
-        C = make_dataclass('C',
-                           [('x', int)],
-                           bases=(Base1, Base2))
-        c = C(2)
-        self.assertIsInstance(c, C)
-        self.assertIsInstance(c, Base1)
-        self.assertIsInstance(c, Base2)
-
-    def test_helper_make_dataclass_base_dataclass(self):
-        @dataclass
-        class Base1:
-            x: int
-        class Base2:
-            pass
-        C = make_dataclass('C',
-                           [('y', int)],
-                           bases=(Base1, Base2))
-        with self.assertRaisesRegex(TypeError, 'required positional'):
-            c = C(2)
-        c = C(1, 2)
-        self.assertIsInstance(c, C)
-        self.assertIsInstance(c, Base1)
-        self.assertIsInstance(c, Base2)
-
-        self.assertEqual((c.x, c.y), (1, 2))
-
-    def test_helper_make_dataclass_init_var(self):
-        def post_init(self, y):
-            self.x *= y
-
-        C = make_dataclass('C',
-                           [('x', int),
-                            ('y', InitVar[int]),
-                            ],
-                           namespace={'__post_init__': post_init},
-                           )
-        c = C(2, 3)
-        self.assertEqual(vars(c), {'x': 6})
-        self.assertEqual(len(fields(c)), 1)
-
-    def test_helper_make_dataclass_class_var(self):
-        C = make_dataclass('C',
-                           [('x', int),
-                            ('y', ClassVar[int], 10),
-                            ('z', ClassVar[int], field(default=20)),
-                            ])
-        c = C(1)
-        self.assertEqual(vars(c), {'x': 1})
-        self.assertEqual(len(fields(c)), 1)
-        self.assertEqual(C.y, 10)
-        self.assertEqual(C.z, 20)
-
-    def test_helper_make_dataclass_other_params(self):
-        C = make_dataclass('C',
-                           [('x', int),
-                            ('y', ClassVar[int], 10),
-                            ('z', ClassVar[int], field(default=20)),
-                            ],
-                           init=False)
-        # Make sure we have a repr, but no init.
-        self.assertNotIn('__init__', vars(C))
-        self.assertIn('__repr__', vars(C))
-
-        # Make sure random other params don't work.
-        with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
-            C = make_dataclass('C',
-                               [],
-                               xxinit=False)
-
-    def test_helper_make_dataclass_no_types(self):
-        C = make_dataclass('Point', ['x', 'y', 'z'])
-        c = C(1, 2, 3)
-        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
-                                             'y': 'typing.Any',
-                                             'z': 'typing.Any'})
-
-        C = make_dataclass('Point', ['x', ('y', int), 'z'])
-        c = C(1, 2, 3)
-        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
-                                             'y': int,
-                                             'z': 'typing.Any'})
-
 
 class TestFieldNoAnnotation(unittest.TestCase):
     def test_field_without_annotation(self):
@@ -2796,6 +2693,315 @@ class TestDescriptors(unittest.TestCase):
             i: int=field(default=D(), init=False)
 
         self.assertEqual(D.__set_name__.call_count, 1)
+
+
+class TestStringAnnotations(unittest.TestCase):
+    def test_classvar(self):
+        # Some expressions recognized as ClassVar really aren't.  But
+        #  if you're using string annotations, it's not an exact
+        #  science.
+        # These tests assume that both "import typing" and "from
+        # typing import *" have been run in this file.
+        for typestr in ('ClassVar[int]',
+                        'ClassVar [int]'
+                        ' ClassVar [int]',
+                        'ClassVar',
+                        ' ClassVar ',
+                        'typing.ClassVar[int]',
+                        'typing.ClassVar[str]',
+                        ' typing.ClassVar[str]',
+                        'typing .ClassVar[str]',
+                        'typing. ClassVar[str]',
+                        'typing.ClassVar [str]',
+                        'typing.ClassVar [ str]',
+
+                        # Not syntactically valid, but these will
+                        #  be treated as ClassVars.
+                        'typing.ClassVar.[int]',
+                        'typing.ClassVar+',
+                        ):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is a ClassVar, so C() takes no args.
+                C()
+
+                # And it won't appear in the class's dict because it doesn't
+                # have a default.
+                self.assertNotIn('x', C.__dict__)
+
+    def test_isnt_classvar(self):
+        for typestr in ('CV',
+                        't.ClassVar',
+                        't.ClassVar[int]',
+                        'typing..ClassVar[int]',
+                        'Classvar',
+                        'Classvar[int]',
+                        'typing.ClassVarx[int]',
+                        'typong.ClassVar[int]',
+                        'dataclasses.ClassVar[int]',
+                        'typingxClassVar[str]',
+                        ):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is not a ClassVar, so C() takes one arg.
+                self.assertEqual(C(10).x, 10)
+
+    def test_initvar(self):
+        # These tests assume that both "import dataclasses" and "from
+        #  dataclasses import *" have been run in this file.
+        for typestr in ('InitVar[int]',
+                        'InitVar [int]'
+                        ' InitVar [int]',
+                        'InitVar',
+                        ' InitVar ',
+                        'dataclasses.InitVar[int]',
+                        'dataclasses.InitVar[str]',
+                        ' dataclasses.InitVar[str]',
+                        'dataclasses .InitVar[str]',
+                        'dataclasses. InitVar[str]',
+                        'dataclasses.InitVar [str]',
+                        'dataclasses.InitVar [ str]',
+
+                        # Not syntactically valid, but these will
+                        #  be treated as InitVars.
+                        'dataclasses.InitVar.[int]',
+                        'dataclasses.InitVar+',
+                        ):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is an InitVar, so doesn't create a member.
+                with self.assertRaisesRegex(AttributeError,
+                                            "object has no attribute 'x'"):
+                    C(1).x
+
+    def test_isnt_initvar(self):
+        for typestr in ('IV',
+                        'dc.InitVar',
+                        'xdataclasses.xInitVar',
+                        'typing.xInitVar[int]',
+                        ):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is not an InitVar, so there will be a member x.
+                self.assertEqual(C(10).x, 10)
+
+    def test_classvar_module_level_import(self):
+        from . import dataclass_module_1
+        from . import dataclass_module_1_str
+        from . import dataclass_module_2
+        from . import dataclass_module_2_str
+
+        for m in (dataclass_module_1, dataclass_module_1_str,
+                  dataclass_module_2, dataclass_module_2_str,
+                  ):
+            with self.subTest(m=m):
+                # There's a difference in how the ClassVars are
+                # interpreted when using string annotations or
+                # not. See the imported modules for details.
+                if m.USING_STRINGS:
+                    c = m.CV(10)
+                else:
+                    c = m.CV()
+                self.assertEqual(c.cv0, 20)
+
+
+                # There's a difference in how the InitVars are
+                # interpreted when using string annotations or
+                # not. See the imported modules for details.
+                c = m.IV(0, 1, 2, 3, 4)
+
+                for field_name in ('iv0', 'iv1', 'iv2', 'iv3'):
+                    with self.subTest(field_name=field_name):
+                        with self.assertRaisesRegex(AttributeError, f"object has no attribute '{field_name}'"):
+                            # Since field_name is an InitVar, it's
+                            # not an instance field.
+                            getattr(c, field_name)
+
+                if m.USING_STRINGS:
+                    # iv4 is interpreted as a normal field.
+                    self.assertIn('not_iv4', c.__dict__)
+                    self.assertEqual(c.not_iv4, 4)
+                else:
+                    # iv4 is interpreted as an InitVar, so it
+                    # won't exist on the instance.
+                    self.assertNotIn('not_iv4', c.__dict__)
+
+
+class TestMakeDataclass(unittest.TestCase):
+    def test_simple(self):
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', int, field(default=5))],
+                           namespace={'add_one': lambda self: self.x + 1})
+        c = C(10)
+        self.assertEqual((c.x, c.y), (10, 5))
+        self.assertEqual(c.add_one(), 11)
+
+
+    def test_no_mutate_namespace(self):
+        # Make sure a provided namespace isn't mutated.
+        ns = {}
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', int, field(default=5))],
+                           namespace=ns)
+        self.assertEqual(ns, {})
+
+    def test_base(self):
+        class Base1:
+            pass
+        class Base2:
+            pass
+        C = make_dataclass('C',
+                           [('x', int)],
+                           bases=(Base1, Base2))
+        c = C(2)
+        self.assertIsInstance(c, C)
+        self.assertIsInstance(c, Base1)
+        self.assertIsInstance(c, Base2)
+
+    def test_base_dataclass(self):
+        @dataclass
+        class Base1:
+            x: int
+        class Base2:
+            pass
+        C = make_dataclass('C',
+                           [('y', int)],
+                           bases=(Base1, Base2))
+        with self.assertRaisesRegex(TypeError, 'required positional'):
+            c = C(2)
+        c = C(1, 2)
+        self.assertIsInstance(c, C)
+        self.assertIsInstance(c, Base1)
+        self.assertIsInstance(c, Base2)
+
+        self.assertEqual((c.x, c.y), (1, 2))
+
+    def test_init_var(self):
+        def post_init(self, y):
+            self.x *= y
+
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', InitVar[int]),
+                            ],
+                           namespace={'__post_init__': post_init},
+                           )
+        c = C(2, 3)
+        self.assertEqual(vars(c), {'x': 6})
+        self.assertEqual(len(fields(c)), 1)
+
+    def test_class_var(self):
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', ClassVar[int], 10),
+                            ('z', ClassVar[int], field(default=20)),
+                            ])
+        c = C(1)
+        self.assertEqual(vars(c), {'x': 1})
+        self.assertEqual(len(fields(c)), 1)
+        self.assertEqual(C.y, 10)
+        self.assertEqual(C.z, 20)
+
+    def test_other_params(self):
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', ClassVar[int], 10),
+                            ('z', ClassVar[int], field(default=20)),
+                            ],
+                           init=False)
+        # Make sure we have a repr, but no init.
+        self.assertNotIn('__init__', vars(C))
+        self.assertIn('__repr__', vars(C))
+
+        # Make sure random other params don't work.
+        with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
+            C = make_dataclass('C',
+                               [],
+                               xxinit=False)
+
+    def test_no_types(self):
+        C = make_dataclass('Point', ['x', 'y', 'z'])
+        c = C(1, 2, 3)
+        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
+        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+                                             'y': 'typing.Any',
+                                             'z': 'typing.Any'})
+
+        C = make_dataclass('Point', ['x', ('y', int), 'z'])
+        c = C(1, 2, 3)
+        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
+        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+                                             'y': int,
+                                             'z': 'typing.Any'})
+
+    def test_invalid_type_specification(self):
+        for bad_field in [(),
+                          (1, 2, 3, 4),
+                          ]:
+            with self.subTest(bad_field=bad_field):
+                with self.assertRaisesRegex(TypeError, r'Invalid field: '):
+                    make_dataclass('C', ['a', bad_field])
+
+        # And test for things with no len().
+        for bad_field in [float,
+                          lambda x:x,
+                          ]:
+            with self.subTest(bad_field=bad_field):
+                with self.assertRaisesRegex(TypeError, r'has no len\(\)'):
+                    make_dataclass('C', ['a', bad_field])
+
+    def test_duplicate_field_names(self):
+        for field in ['a', 'ab']:
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(TypeError, 'Field name duplicated'):
+                    make_dataclass('C', [field, 'a', field])
+
+    def test_keyword_field_names(self):
+        for field in ['for', 'async', 'await', 'as']:
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(TypeError, 'must not be keywords'):
+                    make_dataclass('C', ['a', field])
+                with self.assertRaisesRegex(TypeError, 'must not be keywords'):
+                    make_dataclass('C', [field])
+                with self.assertRaisesRegex(TypeError, 'must not be keywords'):
+                    make_dataclass('C', [field, 'a'])
+
+    def test_non_identifier_field_names(self):
+        for field in ['()', 'x,y', '*', '2@3', '', 'little johnny tables']:
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                    make_dataclass('C', ['a', field])
+                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                    make_dataclass('C', [field])
+                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                    make_dataclass('C', [field, 'a'])
+
+    def test_underscore_field_names(self):
+        # Unlike namedtuple, it's okay if dataclass field names have
+        # an underscore.
+        make_dataclass('C', ['_', '_a', 'a_a', 'a_'])
+
+    def test_funny_class_names_names(self):
+        # No reason to prevent weird class names, since
+        # types.new_class allows them.
+        for classname in ['()', 'x,y', '*', '2@3', '']:
+            with self.subTest(classname=classname):
+                C = make_dataclass(classname, ['a', 'b'])
+                self.assertEqual(C.__name__, classname)
 
 
 if __name__ == '__main__':

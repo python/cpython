@@ -12,6 +12,7 @@ class BaseRobotTest:
     agent = 'test_robotparser'
     good = []
     bad = []
+    site_maps = None
 
     def setUp(self):
         lines = io.StringIO(self.robots_txt).readlines()
@@ -35,6 +36,9 @@ class BaseRobotTest:
             agent, url = self.get_agent_and_url(url)
             with self.subTest(url=url, agent=agent):
                 self.assertFalse(self.parser.can_fetch(agent, url))
+
+    def test_site_maps(self):
+        self.assertEqual(self.parser.site_maps(), self.site_maps)
 
 
 class UserAgentWildcardTest(BaseRobotTest, unittest.TestCase):
@@ -63,6 +67,23 @@ Disallow:
     """
     good = ['/', '/test.html', ('cybermapper', '/cyberworld/map/index.html')]
     bad = ['/cyberworld/map/index.html']
+
+
+class SitemapTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+# robots.txt for http://www.example.com/
+
+User-agent: *
+Sitemap: http://www.gstatic.com/s2/sitemaps/profiles-sitemap.xml
+Sitemap: http://www.google.com/hostednews/sitemap_index.xml
+Request-rate: 3/15
+Disallow: /cyberworld/map/ # This is an infinite virtual URL space
+
+    """
+    good = ['/', '/test.html']
+    bad = ['/cyberworld/map/index.html']
+    site_maps = ['http://www.gstatic.com/s2/sitemaps/profiles-sitemap.xml',
+                 'http://www.google.com/hostednews/sitemap_index.xml']
 
 
 class RejectAllRobotsTest(BaseRobotTest, unittest.TestCase):

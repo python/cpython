@@ -2198,16 +2198,8 @@ AC_CHECK_SIZEOF(size_t, 4)
 AC_CHECK_SIZEOF(pid_t, 4)
 AC_CHECK_SIZEOF(uintptr_t)
 
-AC_MSG_CHECKING(for long double support)
-have_long_double=no
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[long double x; x = (long double)0;]])],[
-  AC_DEFINE(HAVE_LONG_DOUBLE, 1, [Define this if you have the type long double.])
-  have_long_double=yes
-],[])
-AC_MSG_RESULT($have_long_double)
-if test "$have_long_double" = yes ; then
+AC_TYPE_LONG_DOUBLE
 AC_CHECK_SIZEOF(long double, 16)
-fi
 
 AC_CHECK_SIZEOF(_Bool, 1)
 
