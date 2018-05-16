@@ -49,10 +49,10 @@ class Chooser(Dialog):
         """Adjust result returned from call to tk_chooseColor.
 
         Return both an RGB tuple of ints in the range (0, 255) and the
-        tk color string in the form #xxxxxx.
+        tk color string in the form #rrggbb.
         """
         # Result can be many things: an empty tuple, an empty string, or
-        # a Tcl_Obj, so this somewhat weird check handles that.
+        # a _tkinter.Tcl_Obj, so this somewhat weird check handles that.
         if not result or not str(result):
             return None, None  # canceled
 
