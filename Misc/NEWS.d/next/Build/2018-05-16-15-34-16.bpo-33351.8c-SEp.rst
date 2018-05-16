@@ -1,0 +1,4 @@
+Add struct packing for pointer_t and fix struct packing under clang-cl for
+frame_t.
+
+Patch by Ethan Smith
