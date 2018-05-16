@@ -5845,6 +5845,10 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "OP_ENABLE_MIDDLEBOX_COMPAT",
                             SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
 #endif
+#ifdef SSL_OP_NO_RENEGOTIATION
+    PyModule_AddIntConstant(m, "OP_NO_RENEGOTIATION",
+                            SSL_OP_NO_RENEGOTIATION);
+#endif
 
 #ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
     PyModule_AddIntConstant(m, "HOSTFLAG_ALWAYS_CHECK_SUBJECT",
