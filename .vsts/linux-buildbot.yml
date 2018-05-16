@@ -56,7 +56,7 @@ steps:
     libffi-dev
     uuid-dev
   displayName: 'apt-get install uuid-dev'
-- script: python Tools/ssl/multissltests.py --steps=library --base-directory $HOME/multissl --openssl $(OPENSSL)
+- script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $HOME/multissl --openssl $(OPENSSL) --debug
   displayName: 'python multissltests.py'
   env:
     # Use -O3 because we don't use debugger on Travis-CI
