@@ -219,6 +219,9 @@ _get_tcl_lib_path()
 */
 
 static PyThread_type_lock tcl_lock = 0;
+/* Only the thread holding the lock can modify these */
+static unsigned long tcl_lock_thread_ident = 0;
+static unsigned int tcl_lock_reentry_count = 0;
 
 #ifdef TCL_THREADS
 static Tcl_ThreadDataKey state_key;
@@ -229,21 +232,43 @@ typedef PyThreadState *ThreadSpecificData;
 static PyThreadState *tcl_tstate = NULL;
 #endif
 
+#define ACQUIRE_TCL_LOCK \
+if (tcl_lock) {\
+    if (tcl_lock_thread_ident == PyThread_get_thread_ident()) {\
+        tcl_lock_reentry_count++; \
+        if(!tcl_lock_reentry_count) \
+            Py_FatalError("Tcl lock reentry count overflow"); \
+    } else { \
+        PyThread_acquire_lock(tcl_lock, 1); \
+        tcl_lock_thread_ident = PyThread_get_thread_ident(); \
+    }\
+}
+
+#define RELEASE_TCL_LOCK \
+if (tcl_lock){\
+    if (tcl_lock_reentry_count) { \
+        tcl_lock_reentry_count--; \
+    } else { \
+        tcl_lock_thread_ident = 0; \
+        PyThread_release_lock(tcl_lock); \
+    }\
+}
+
 #define ENTER_TCL \
     { PyThreadState *tstate = PyThreadState_Get();\
         ENTER_TCL_CUSTOM_TSTATE(tstate)
 
 #define ENTER_TCL_CUSTOM_TSTATE(tstate) \
         Py_BEGIN_ALLOW_THREADS\
-        if (tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate;
+        ACQUIRE_TCL_LOCK; tcl_tstate = tstate;
 
 #define LEAVE_TCL \
     tcl_tstate = NULL; \
-    if(tcl_lock)PyThread_release_lock(tcl_lock); Py_END_ALLOW_THREADS}
+    RELEASE_TCL_LOCK; Py_END_ALLOW_THREADS}
 
 #define LEAVE_TCL_WITH_BUSYWAIT(result) \
     tcl_tstate = NULL; \
-    if (tcl_lock)PyThread_release_lock(tcl_lock);\
+    RELEASE_TCL_LOCK;\
     if (result == 0)\
         Sleep(Tkinter_busywaitinterval);\
     Py_END_ALLOW_THREADS
@@ -256,16 +281,16 @@ static PyThreadState *tcl_tstate = NULL;
     Py_BEGIN_ALLOW_THREADS
 
 #define LEAVE_OVERLAP_TCL \
-    tcl_tstate = NULL; if(tcl_lock)PyThread_release_lock(tcl_lock); }
+    tcl_tstate = NULL; RELEASE_TCL_LOCK; }
 
 #define ENTER_PYTHON \
     { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
-        if(tcl_lock) \
-          PyThread_release_lock(tcl_lock); PyEval_RestoreThread((tstate)); }
+        RELEASE_TCL_LOCK; PyEval_RestoreThread((tstate)); }
 
 #define LEAVE_PYTHON \
     { PyThreadState *tstate = PyEval_SaveThread(); \
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate; }
+    ACQUIRE_TCL_LOCK;\
+    tcl_tstate = tstate; }
 
 #define ENTER_PYTHON_OVERLAP \
 { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; PyEval_RestoreThread((tstate)); }
