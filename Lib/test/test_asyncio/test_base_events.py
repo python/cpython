@@ -1848,10 +1848,22 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     def prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
-        port = support.find_unused_port()
+        af = socket.AF_UNSPEC if support.IPV6_ENABLED else socket.AF_INET
         server = self.run_loop(self.loop.create_server(
-            lambda: proto, support.HOST, port))
-        self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+            lambda: proto, support.HOST, 0, family=af))
+        port = server.sockets[0].getsockname()[1]
+
+        for _ in range(10):
+            try:
+                self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+            except OSError:
+                time.sleep(0.5)
+                continue
+            else:
+                break
+        else:
+            # One last try, so we get the exception
+            self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
 
         def cleanup():
             server.close()
