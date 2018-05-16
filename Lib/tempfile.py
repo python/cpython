@@ -169,7 +169,9 @@ def _candidate_tempdir_list():
 
     # Failing that, try OS-specific locations.
     if _os.name == 'nt':
-        dirlist.extend([ r'c:\temp', r'c:\tmp', r'\temp', r'\tmp' ])
+        dirlist.extend([ _os.path.expanduser(r'~\AppData\Local\Temp'),
+                         _os.path.expandvars(r'%SYSTEMROOT%\Temp'),
+                         r'c:\temp', r'c:\tmp', r'\temp', r'\tmp' ])
     else:
         dirlist.extend([ '/tmp', '/var/tmp', '/usr/tmp' ])
 
