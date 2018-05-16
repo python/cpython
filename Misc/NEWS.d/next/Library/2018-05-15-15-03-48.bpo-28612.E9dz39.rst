@@ -1,0 +1,3 @@
+Added support for Site Maps to urllib's ``RobotFileParser`` as
+:meth:`RobotFileParser.site_maps() <urllib.robotparser.RobotFileParser.site_maps>`.
+Patch by Lady Red, based on patch by Peter Wirtz.
