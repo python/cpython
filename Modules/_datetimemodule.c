@@ -4640,7 +4640,7 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
 #ifdef MS_WINDOWS
         && (timet - max_fold_seconds > 0)
 #endif
-    	) {
+        ) {
         long long probe_seconds, result_seconds, transition;
 
         result_seconds = utc_to_seconds(year, month, day,
