@@ -1,3 +1,4 @@
+import re
 import sys
 import copy
 import types
@@ -187,6 +188,10 @@ _PARAMS = '__dataclass_params__'
 # __init__.
 _POST_INIT_NAME = '__post_init__'
 
+# String regex that string annotations for ClassVar or InitVar must match.
+# Allows "identifier.identifier[" or "identifier[".
+# https://bugs.python.org/issue33453 for details.
+_MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
 class _InitVarMeta(type):
     def __getitem__(self, params):
@@ -532,6 +537,80 @@ def _hash_fn(fields):
                       [f'return hash({self_tuple})'])
 
 
+def _is_classvar(a_type, typing):
+    if typing:
+        # This test uses a typing internal class, but it's the best
+        #  way to test if this is a ClassVar.
+        return (a_type is typing.ClassVar
+                or (type(a_type) is typing._GenericAlias
+                    and a_type.__origin__ is typing.ClassVar))
+
+
+def _is_initvar(a_type, dataclasses):
+    # The module we're checking against is the module we're
+    # currently in (dataclasses.py).
+    return a_type is dataclasses.InitVar
+
+
+def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
+    # Given a type annotation string, does it refer to a_type in
+    # a_module?  For example, when checking that annotation denotes a
+    # ClassVar, then a_module is typing, and a_type is
+    # typing.ClassVar.
+
+    # It's possible to look up a_module given a_type, but it involves
+    # looking in sys.modules (again!), and seems like a waste since
+    # the caller already knows a_module.
+
+    # - annotation is a string type annotation
+    # - cls is the class that this annotation was found in
+    # - a_module is the module we want to match
+    # - a_type is the type in that module we want to match
+    # - is_type_predicate is a function called with (obj, a_module)
+    #   that determines if obj is of the desired type.
+
+    # Since this test does not do a local namespace lookup (and
+    # instead only a module (global) lookup), there are some things it
+    # gets wrong.
+
+    # With string annotations, this will work:
+    #   CV = ClassVar
+    #   @dataclass
+    #   class C0:
+    #     cv0: CV
+
+    # But this will not:
+    #   @dataclass
+    #   class C1:
+    #     CV = ClassVar
+    #     cv1: CV
+
+    # In C1, the code in this function will look up "CV" in the module
+    # and not find it, so it will not consider cv1 as a ClassVar.
+    # This is a fairly obscure corner case, and the best way to fix it
+    # would be to eval() the string "CV" with the correct global and
+    # local namespaces.  However that would involve a eval() penalty
+    # for every single field of every dataclass that's defined.  It
+    # was judged not worth it.
+
+    match = _MODULE_IDENTIFIER_RE.match(annotation)
+    if match:
+        ns = None
+        module_name = match.group(1)
+        if not module_name:
+            # No module name, assume the class's module did
+            # "from dataclasses import InitVar".
+            ns = sys.modules.get(cls.__module__).__dict__
+        else:
+            # Look up module_name in the class's module.
+            module = sys.modules.get(cls.__module__)
+            if module and module.__dict__.get(module_name) is a_module:
+                ns = sys.modules.get(a_type.__module__).__dict__
+        if ns and is_type_predicate(ns.get(match.group(2)), a_module):
+            return True
+    return False
+
+
 def _get_field(cls, a_name, a_type):
     # Return a Field object for this field name and type.  ClassVars
     #  and InitVars are also returned, but marked as such (see
@@ -548,34 +627,54 @@ def _get_field(cls, a_name, a_type):
             default = MISSING
         f = field(default=default)
 
-    # Assume it's a normal field until proven otherwise.
-    f._field_type = _FIELD
-
     # Only at this point do we know the name and the type. Set them.
     f.name = a_name
     f.type = a_type
 
-    # If typing has not been imported, then it's impossible for
-    #  any annotation to be a ClassVar. So, only look for ClassVar
-    #  if typing has been imported.
+    # Assume it's a normal field until proven otherwise.  We're next
+    #  going to decide if it's a ClassVar or InitVar, everything else
+    #  is just a normal field.
+    f._field_type = _FIELD
+
+    # In addition to checking for actual types here, also check for
+    #  string annotations.  get_type_hints() won't always work for us
+    #  (see https://github.com/python/typing/issues/508 for example),
+    #  plus it's expensive and would require an eval for every stirng
+    #  annotation.  So, make a best effort to see if this is a
+    #  ClassVar or InitVar using regex's and checking that the thing
+    #  referenced is actually of the correct type.
+
+    # For the complete discussion, see https://bugs.python.org/issue33453
+
+    # If typing has not been imported, then it's impossible for any
+    #  annotation to be a ClassVar. So, only look for ClassVar if
+    #  typing has been imported by any module (not necessarily cls's
+    #  module).
     typing = sys.modules.get('typing')
-    if typing is not None:
+    if typing:
         # This test uses a typing internal class, but it's the best
         #  way to test if this is a ClassVar.
-        if (type(a_type) is typing._GenericAlias and
-                a_type.__origin__ is typing.ClassVar):
-            # This field is a ClassVar, so it's not a field.
+        if (_is_classvar(a_type, typing)
+            or (isinstance(f.type, str)
+                and _is_type(f.type, cls, typing, typing.ClassVar,
+                             _is_classvar))):
             f._field_type = _FIELD_CLASSVAR
 
+    # If the type is InitVar, or if it's a matching string annotation,
+    # then it's an InitVar.
     if f._field_type is _FIELD:
-        # Check if this is an InitVar.
-        if a_type is InitVar:
-            # InitVars are not fields, either.
+        # The module we're checking against is the module we're
+        # currently in (dataclasses.py).
+        dataclasses = sys.modules[__name__]
+        if (_is_initvar(a_type, dataclasses)
+            or (isinstance(f.type, str)
+                and _is_type(f.type, cls, dataclasses, dataclasses.InitVar,
+                             _is_initvar))):
             f._field_type = _FIELD_INITVAR
 
-    # Validations for fields.  This is delayed until now, instead of
-    # in the Field() constructor, since only here do we know the field
-    # name, which allows better error reporting.
+    # Validations for individual fields.  This is delayed until now,
+    # instead of in the Field() constructor, since only here do we
+    # know the field name, which allows for better error reporting.
 
     # Special restrictions for ClassVar and InitVar.
     if f._field_type in (_FIELD_CLASSVAR, _FIELD_INITVAR):
@@ -603,7 +702,6 @@ def _set_new_attribute(cls, name, value):
         return True
     setattr(cls, name, value)
     return False
-
 
 
 # Decide if/how we're going to create a hash function.  Key is
@@ -865,7 +963,7 @@ def fields(class_or_instance):
 
     # Might it be worth caching this, per class?
     try:
-        fields =  getattr(class_or_instance, _FIELDS)
+        fields = getattr(class_or_instance, _FIELDS)
     except AttributeError:
         raise TypeError('must be called with a dataclass type or instance')
 
