@@ -1,6 +1,6 @@
 parameters:
   OPENSSL: 1.1.0g
-  OPENSSL_DIR: "$HOME/multissl/openssl/$(OPENSSL)"
+  OPENSSL_DIR: "$(build.sourcesDirectory)/multissl/openssl/$(OPENSSL)"
 
 steps:
 - script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
@@ -26,12 +26,5 @@ steps:
     libffi-dev
     uuid-dev
   displayName: 'apt-get install uuid-dev'
-- script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $HOME/multissl --openssl $(OPENSSL)
+- script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $(build.sourcesDirectory)/multissl --openssl $(OPENSSL) --machine linux-x86_64
   displayName: 'python multissltests.py'
-  env:
-    # Use -O3 because we don't use debugger on Travis-CI
-    CFLAGS: "-I$(OPENSSL_DIR)/include -O3"
-    LDFLAGS: "-L$(OPENSSL_DIR)/lib"
-    # Set rpath with env var instead of -Wl,-rpath linker flag
-    # OpenSSL ignores LDFLAGS when linking bin/openssl
-    LD_RUN_PATH: "$(OPENSSL_DIR)/lib"

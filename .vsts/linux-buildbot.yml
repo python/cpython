@@ -21,7 +21,7 @@ trigger:
 variables:
   # Copy-pasted from linux-deps.yml until template support arrives
   OPENSSL: 1.1.0g
-  OPENSSL_DIR: "$HOME/multissl/openssl/$(OPENSSL)"
+  OPENSSL_DIR: "$(build.sourcesDirectory)/multissl/openssl/$(OPENSSL)"
 
 
 steps:
@@ -55,17 +55,9 @@ steps:
     liblzma-dev
     libffi-dev
     uuid-dev
-  displayName: 'apt-get install uuid-dev'
-- script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $HOME/multissl --openssl $(OPENSSL) --debug
+  displayName: 'apt-get install dependencies'
+- script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $(build.sourcesDirectory)/multissl --openssl $(OPENSSL) --machine linux-x86_64
   displayName: 'python multissltests.py'
-
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish OpenSSL source'
-  condition: succeededOrFailed()
-  inputs:
-    pathToPublish: '/root/multissl'
-    artifactName: 'multissl'
-    artifactType: 'container'
 
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'
