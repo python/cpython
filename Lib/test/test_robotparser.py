@@ -82,8 +82,8 @@ Disallow: /cyberworld/map/ # This is an infinite virtual URL space
     """
     good = ['/', '/test.html']
     bad = ['/cyberworld/map/index.html']
-    site_maps = ["http://www.gstatic.com/s2/sitemaps/profiles-sitemap.xml",
-                 "http://www.google.com/hostednews/sitemap_index.xml"]
+    site_maps = ['http://www.gstatic.com/s2/sitemaps/profiles-sitemap.xml',
+                 'http://www.google.com/hostednews/sitemap_index.xml']
 
 
 class RejectAllRobotsTest(BaseRobotTest, unittest.TestCase):
@@ -313,7 +313,7 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
             # Short poll interval to make the test finish quickly.
             # Time between requests is short enough that we won't wake
             # up spuriously too many times.
-            kwargs={'poll_interval': 0.01})
+            kwargs={'poll_interval':0.01})
         self.t.daemon = True  # In case this function raises.
         self.t.start()
 
@@ -373,7 +373,6 @@ class NetworkTestCase(unittest.TestCase):
         self.assertEqual(parser.mtime(), 0)
         self.assertIsNone(parser.crawl_delay('*'))
         self.assertIsNone(parser.request_rate('*'))
-
 
 if __name__ == '__main__':
     unittest.main()
