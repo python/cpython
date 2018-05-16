@@ -68,5 +68,9 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
+# Run patchcheck and fail if anything is discovered
+- script: ./python Tools/scripts/patchcheck.py --travis true
+  displayName: 'Run patchcheck.py'
+
 - script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
   displayName: 'Tests'
