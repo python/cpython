@@ -251,9 +251,8 @@ PyAPI_FUNC(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, Py_ssize_t);
 #ifndef Py_LIMITED_API
 typedef union _gc_head {
     struct {
-        union _gc_head *gc_next;
-        union _gc_head *gc_prev;
-        Py_ssize_t gc_refs;
+        union _gc_head *gc_next;  // NULL means the object is not tracked
+        uintptr_t gc_prev;
     } gc;
     double dummy;  /* force worst-case alignment */
 } PyGC_Head;
@@ -263,44 +262,39 @@ extern PyGC_Head *_PyGC_generation0;
 #define _Py_AS_GC(o) ((PyGC_Head *)(o)-1)
 
 /* Bit 0 is set when tp_finalize is called */
-#define _PyGC_REFS_MASK_FINALIZED  (1 << 0)
-/* The (N-1) most significant bits contain the gc state / refcount */
-#define _PyGC_REFS_SHIFT           (1)
-#define _PyGC_REFS_MASK            (((size_t) -1) << _PyGC_REFS_SHIFT)
+#define _PyGC_PREV_MASK_FINALIZED  (1 << 0)
+/* Bit 1 and 2 is used in gcmodule.c */
+/* The (N-3) most significant bits contain the real address. */
+#define _PyGC_PREV_SHIFT           (3)
+#define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
-#define _PyGCHead_REFS(g) ((g)->gc.gc_refs >> _PyGC_REFS_SHIFT)
-#define _PyGCHead_SET_REFS(g, v) do { \
-    (g)->gc.gc_refs = ((g)->gc.gc_refs & ~_PyGC_REFS_MASK) \
-        | (((size_t)(v)) << _PyGC_REFS_SHIFT);             \
+#define _PyGCHead_PREV(g) ((PyGC_Head*)((g)->gc.gc_prev & _PyGC_PREV_MASK))
+#define _PyGCHead_SET_PREV(g, p) do { \
+    assert(((uintptr_t)p & ~_PyGC_PREV_MASK) == 0); \
+    (g)->gc.gc_prev = ((g)->gc.gc_prev & ~_PyGC_PREV_MASK) \
+        | ((uintptr_t)(p)); \
     } while (0)
-#define _PyGCHead_DECREF(g) ((g)->gc.gc_refs -= 1 << _PyGC_REFS_SHIFT)
 
-#define _PyGCHead_FINALIZED(g) (((g)->gc.gc_refs & _PyGC_REFS_MASK_FINALIZED) != 0)
+#define _PyGCHead_FINALIZED(g) (((g)->gc.gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0)
 #define _PyGCHead_SET_FINALIZED(g, v) do {  \
-    (g)->gc.gc_refs = ((g)->gc.gc_refs & ~_PyGC_REFS_MASK_FINALIZED) \
+    (g)->gc.gc_prev = ((g)->gc.gc_prev & ~_PyGC_PREV_MASK_FINALIZED) \
         | (v != 0); \
     } while (0)
 
 #define _PyGC_FINALIZED(o) _PyGCHead_FINALIZED(_Py_AS_GC(o))
 #define _PyGC_SET_FINALIZED(o, v) _PyGCHead_SET_FINALIZED(_Py_AS_GC(o), v)
 
-#define _PyGC_REFS(o) _PyGCHead_REFS(_Py_AS_GC(o))
-
-#define _PyGC_REFS_UNTRACKED                    (-2)
-#define _PyGC_REFS_REACHABLE                    (-3)
-#define _PyGC_REFS_TENTATIVELY_UNREACHABLE      (-4)
-
 /* Tell the GC to track this object.  NB: While the object is tracked the
  * collector it must be safe to call the ob_traverse method. */
 #define _PyObject_GC_TRACK(o) do { \
     PyGC_Head *g = _Py_AS_GC(o); \
-    if (_PyGCHead_REFS(g) != _PyGC_REFS_UNTRACKED) \
+    if (g->gc.gc_next != NULL) \
         Py_FatalError("GC object already tracked"); \
-    _PyGCHead_SET_REFS(g, _PyGC_REFS_REACHABLE); \
+    assert((g->gc.gc_prev & 6) == 0); \
     g->gc.gc_next = _PyGC_generation0; \
-    g->gc.gc_prev = _PyGC_generation0->gc.gc_prev; \
-    g->gc.gc_prev->gc.gc_next = g; \
-    _PyGC_generation0->gc.gc_prev = g; \
+    _PyGCHead_SET_PREV(g, _PyGC_generation0->gc.gc_prev); \
+    _PyGCHead_PREV(_PyGC_generation0)->gc.gc_next = g; \
+    _PyGC_generation0->gc.gc_prev = (uintptr_t)g; \
     } while (0);
 
 /* Tell the GC to stop tracking this object.
@@ -309,16 +303,15 @@ extern PyGC_Head *_PyGC_generation0;
  */
 #define _PyObject_GC_UNTRACK(o) do { \
     PyGC_Head *g = _Py_AS_GC(o); \
-    assert(_PyGCHead_REFS(g) != _PyGC_REFS_UNTRACKED); \
-    _PyGCHead_SET_REFS(g, _PyGC_REFS_UNTRACKED); \
-    g->gc.gc_prev->gc.gc_next = g->gc.gc_next; \
-    g->gc.gc_next->gc.gc_prev = g->gc.gc_prev; \
+    assert(g->gc.gc_next != NULL); \
+    _PyGCHead_PREV(g)->gc.gc_next = g->gc.gc_next; \
+    _PyGCHead_SET_PREV(g->gc.gc_next, _PyGCHead_PREV(g)); \
     g->gc.gc_next = NULL; \
+    g->gc.gc_prev &= _PyGC_PREV_MASK_FINALIZED; \
     } while (0);
 
 /* True if the object is currently tracked by the GC. */
-#define _PyObject_GC_IS_TRACKED(o) \
-    (_PyGC_REFS(o) != _PyGC_REFS_UNTRACKED)
+#define _PyObject_GC_IS_TRACKED(o) (_Py_AS_GC(o)->gc.gc_next != NULL)
 
 /* True if the object may be tracked by the GC in the future, or already is.
    This can be useful to implement some optimizations. */

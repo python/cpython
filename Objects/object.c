@@ -2095,7 +2095,7 @@ _PyTrash_deposit_object(PyObject *op)
     assert(PyObject_IS_GC(op));
     assert(!_PyObject_GC_IS_TRACKED(op));
     assert(op->ob_refcnt == 0);
-    _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyRuntime.gc.trash_delete_later;
+    _PyGCHead_SET_PREV(_Py_AS_GC(op), _PyRuntime.gc.trash_delete_later);
     _PyRuntime.gc.trash_delete_later = op;
 }
 
@@ -2107,7 +2107,7 @@ _PyTrash_thread_deposit_object(PyObject *op)
     assert(PyObject_IS_GC(op));
     assert(!_PyObject_GC_IS_TRACKED(op));
     assert(op->ob_refcnt == 0);
-    _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *) tstate->trash_delete_later;
+    _PyGCHead_SET_PREV(_Py_AS_GC(op), tstate->trash_delete_later);
     tstate->trash_delete_later = op;
 }
 
