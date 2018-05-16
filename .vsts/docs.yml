@@ -29,10 +29,10 @@ steps:
   inputs:
     versionSpec: '>=3.6'
 
-- script: python -m pip install sphinx blurb python-docs-theme
+- script: python -m pip install sphinx~=1.6.1 blurb python-docs-theme
   displayName: 'Install build dependencies'
 
-- script: make html PYTHON=python SPHINXBUILD='python -m sphinx' BLURB='python -m blurb'
+- script: make check suspicious html PYTHON=python
   workingDirectory: '$(build.sourcesDirectory)/Doc'
   displayName: 'Build documentation'
 
