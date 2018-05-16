@@ -1857,10 +1857,13 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
             try:
                 self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
             except OSError:
-                time.sleep(0.1)
+                time.sleep(0.5)
                 continue
             else:
                 break
+        else:
+            # One last try, so we get the exception
+            self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
 
         def cleanup():
             server.close()
