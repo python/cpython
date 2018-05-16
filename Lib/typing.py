@@ -106,7 +106,7 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _type_check(arg, msg):
+def _type_check(arg, msg, is_argument=False):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
@@ -118,12 +118,16 @@ def _type_check(arg, msg):
 
     We append the repr() of the actual value (truncated to 100 chars).
     """
+    invalid_generic_forms = (Generic, _Protocol)
+    if not is_argument:
+        invalid_generic_forms = invalid_generic_forms + (ClassVar, )
+
     if arg is None:
         return type(None)
     if isinstance(arg, str):
         return ForwardRef(arg)
     if (isinstance(arg, _GenericAlias) and
-            arg.__origin__ in (Generic, _Protocol, ClassVar)):
+            arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
     if (isinstance(arg, _SpecialForm) and arg is not Any or
             arg in (Generic, _Protocol)):
@@ -464,9 +468,10 @@ class ForwardRef(_Final, _root=True):
     """Internal wrapper to hold a forward reference."""
 
     __slots__ = ('__forward_arg__', '__forward_code__',
-                 '__forward_evaluated__', '__forward_value__')
+                 '__forward_evaluated__', '__forward_value__',
+                 '__forward_is_argument__')
 
-    def __init__(self, arg):
+    def __init__(self, arg, is_argument=False):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
         try:
@@ -477,6 +482,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_code__ = code
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
+        self.__forward_is_argument__ = is_argument
 
     def _evaluate(self, globalns, localns):
         if not self.__forward_evaluated__ or localns is not globalns:
@@ -488,7 +494,8 @@ class ForwardRef(_Final, _root=True):
                 localns = globalns
             self.__forward_value__ = _type_check(
                 eval(self.__forward_code__, globalns, localns),
-                "Forward references must evaluate to types.")
+                "Forward references must evaluate to types.",
+                is_argument=self.__forward_is_argument__)
             self.__forward_evaluated__ = True
         return self.__forward_value__
 
@@ -998,7 +1005,7 @@ def get_type_hints(obj, globalns=None, localns=None):
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
-                    value = ForwardRef(value)
+                    value = ForwardRef(value, is_argument=True)
                 value = _eval_type(value, base_globals, localns)
                 hints[name] = value
         return hints
