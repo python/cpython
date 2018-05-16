@@ -190,15 +190,14 @@ _get_tcl_lib_path()
    By contrast, ENTER_PYTHON and LEAVE_PYTHON are used in Tcl event
    handlers when the handler needs to use Python.  Such event handlers
    are entered while the lock for Tcl is held; the event handler
-   presumably needs to use Python.  ENTER_PYTHON releases the lock for
-   Tcl and acquires the Python interpreter lock, restoring the
-   appropriate thread state, and LEAVE_PYTHON releases the Python
-   interpreter lock and re-acquires the lock for Tcl.  It is okay for
-   ENTER_TCL/LEAVE_TCL pairs to be contained inside the code between
-   ENTER_PYTHON and LEAVE_PYTHON.
-
-   These locks expand to several statements and brackets; they should
-   not be used in branches of if statements and the like.
+   presumably needs to use Python.  ENTER_PYTHON acquires the Python
+   interpreter lock, restoring the appropriate thread state, and
+   LEAVE_PYTHON releases the Python interpreter lock.  Tcl lock is not
+   released because that would lead to a race condition: another,
+   unrelated call that uses these macros may start (but not finish) in
+   the meantime, and a wrong Tcl stack frame will be on top when the original
+   handler regains the lock.  Since a handler's Python payload may need to make
+   Tkinter calls itself, the Tcl lock is made reentrant.
 
    If Tcl is threaded, this approach won't work anymore. The Tcl
    interpreter is only valid in the thread that created it, and all Tk
