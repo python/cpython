@@ -86,8 +86,6 @@ structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
       .. versionadded:: 3.8
 
 
-
-
 The following example demonstrates basic use of the :class:`RobotFileParser`
 class::
 
