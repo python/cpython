@@ -15,7 +15,7 @@ Building the docs
 
 You need to have Sphinx <http://sphinx-doc.org/> installed; it is the toolset
 used to build the docs.  It is not included in this tree, but maintained
-separately and available from PyPI <https://pypi.python.org/pypi/Sphinx>.
+separately and available from PyPI <https://pypi.org/project/Sphinx>.
 
 
 Using make

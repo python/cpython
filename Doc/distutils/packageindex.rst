@@ -248,4 +248,4 @@ without warnings does not guarantee that PyPI will convert the content
 successfully.
 
 
-.. _Python Package Index (PyPI): https://pypi.python.org/pypi
+.. _Python Package Index (PyPI): https://pypi.org
