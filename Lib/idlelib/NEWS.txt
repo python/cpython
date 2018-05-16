@@ -1,7 +1,10 @@
-What's New in IDLE 3.6.5
-Released on 2017-03-26?
+What's New in IDLE 3.6.6
+Released on 2018-06-15?
 ======================================
 
+
+bpo-29706: IDLE now colors async and await as keywords in 3.6.
+They become full keywords in 3.7.
 
 bpo-21474: Update word/identifier definition from ascii to unicode.
 In text and entry boxes, this affects selection by double-click,
@@ -12,6 +15,11 @@ bpo-33204: Consistently color invalid string prefixes.
 A 'u' string prefix cannot be paired with either 'r' or 'f'.
 IDLE now consistently colors as much of the prefix, starting at the
 right, as is valid.  Revise and extend colorizer test.
+
+
+What's New in IDLE 3.6.5
+Released on 2018-03-28
+======================================
 
 bpo-32984: Set __file__ while running a startup file.
 Like Python, IDLE optionally runs 1 startup file in the Shell window
