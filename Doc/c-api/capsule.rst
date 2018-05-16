@@ -107,6 +107,9 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    exception and return *NULL*.  However, if :c:func:`PyCapsule_Import` failed to
    import the module, and *no_block* was true, no exception is set.
 
+   .. versionchanged:: 3.8
+      Supported importing submodules as in ``package.module.attribute``.
+
 .. c:function:: int PyCapsule_IsValid(PyObject *capsule, const char *name)
 
    Determines whether or not *capsule* is a valid capsule.  A valid capsule is

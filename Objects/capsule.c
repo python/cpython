@@ -197,41 +197,47 @@ PyCapsule_Import(const char *name, int no_block)
     PyObject *object = NULL;
     void *return_value = NULL;
     char *trace;
-    size_t name_length = (strlen(name) + 1) * sizeof(char);
-    char *name_dup = (char *)PyMem_MALLOC(name_length);
+    char *name_dup = _PyMem_Strdup(name);
 
     if (!name_dup) {
         return NULL;
     }
 
-    memcpy(name_dup, name, name_length);
-
     trace = name_dup;
-    while (trace) {
+    while (1) {
         char *dot = strchr(trace, '.');
         if (dot) {
-            *dot++ = '\0';
+            *dot = '\0';
         }
-
-        if (object == NULL) {
-            if (no_block) {
-                object = PyImport_ImportModuleNoBlock(trace);
-            } else {
-                object = PyImport_ImportModule(trace);
-                if (!object) {
-                    PyErr_Format(PyExc_ImportError, "PyCapsule_Import could not import module \"%s\"", trace);
-                }
-            }
-        } else {
+        if (object) {
             PyObject *object2 = PyObject_GetAttrString(object, trace);
             Py_DECREF(object);
             object = object2;
         }
-        if (!object) {
-            goto EXIT;
+        if (!dot) {
+            break;
         }
-
-        trace = dot;
+        if (!object) {
+            if (no_block) {
+                object = PyImport_ImportModuleNoBlock(name_dup);
+            } else {
+                object = PyImport_ImportModule(name_dup);
+                if (!object) {
+                    PyErr_Format(PyExc_ImportError,
+                                 "PyCapsule_Import could not import "
+                                 "module \"%s\"",
+                                 name_dup);
+                }
+            }
+            if (!object) {
+                goto EXIT;
+            }
+        }
+        *dot = '.';
+        trace = dot + 1;
+    }
+    if (!object && trace != name_dup) {
+        goto EXIT;
     }
 
     /* compare attribute name to module.name by hand */
@@ -246,9 +252,7 @@ PyCapsule_Import(const char *name, int no_block)
 
 EXIT:
     Py_XDECREF(object);
-    if (name_dup) {
-        PyMem_FREE(name_dup);
-    }
+    PyMem_Free(name_dup);
     return return_value;
 }
 
