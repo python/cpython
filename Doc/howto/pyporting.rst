@@ -427,25 +427,25 @@ to make sure everything functions as expected in both versions of Python.
 
 
 .. _2to3: https://docs.python.org/3/library/2to3.html
-.. _caniusepython3: https://pypi.python.org/pypi/caniusepython3
+.. _caniusepython3: https://pypi.org/project/caniusepython3
 .. _cheat sheet: http://python-future.org/compatible_idioms.html
-.. _coverage.py: https://pypi.python.org/pypi/coverage
+.. _coverage.py: https://pypi.org/project/coverage
 .. _Futurize: http://python-future.org/automatic_conversion.html
 .. _importlib: https://docs.python.org/3/library/importlib.html#module-importlib
 .. _importlib2: https://pypi.python.org/pypi/importlib2
 .. _Modernize: https://python-modernize.readthedocs.org/en/latest/
 .. _mypy: http://mypy-lang.org/
 .. _Porting to Python 3: http://python3porting.com/
-.. _Pylint: https://pypi.python.org/pypi/pylint
+.. _Pylint: https://pypi.org/project/pylint
 
 .. _Python 3 Q & A: https://ncoghlan-devs-python-notes.readthedocs.org/en/latest/python3/questions_and_answers.html
 
 .. _pytype: https://github.com/google/pytype
 .. _python-future: http://python-future.org/
 .. _python-porting: https://mail.python.org/mailman/listinfo/python-porting
-.. _six: https://pypi.python.org/pypi/six
-.. _tox: https://pypi.python.org/pypi/tox
-.. _trove classifier: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+.. _six: https://pypi.org/project/six
+.. _tox: https://pypi.org/project/tox
+.. _trove classifier: https://pypi.org/classifiers
 
 .. _"What's New": https://docs.python.org/3/whatsnew/index.html
 
