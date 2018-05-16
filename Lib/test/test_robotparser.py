@@ -374,5 +374,5 @@ class NetworkTestCase(unittest.TestCase):
         self.assertIsNone(parser.crawl_delay('*'))
         self.assertIsNone(parser.request_rate('*'))
 
-if __name__ == '__main__':
+if __name__=='__main__':
     unittest.main()
