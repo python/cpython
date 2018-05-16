@@ -1059,6 +1059,11 @@ Glossary
    variable annotation
       An :term:`annotation` of a variable, or a class attribute.
 
+      When annotating variables, assignment is optional::
+
+         class C:
+             field: 'annotation'
+
       Annotating a variable will make it local::
 
          def f():
@@ -1077,11 +1082,6 @@ Glossary
       :class:`int` values::
 
          count: int = 0
-
-      When annotating variables, assignment is optional::
-
-         class C:
-             field: int
 
       Variable annotation syntax is explained in section :ref:`annassign`.
 
