@@ -368,7 +368,7 @@ if sys.platform.startswith("win"):
         try:
             import ctypes
         except ImportError:
-            # No ctypes means we can't expands paths
+            # No ctypes means we can't expands paths.
             pass
         else:
             buffer = ctypes.create_unicode_buffer(len(path) * 2)

@@ -10,9 +10,9 @@ queue:
     amd64:
       buildOpt: -p x64
       outDirSuffix: amd64
-    # win32:
-    #   buildOpt:
-    #   outDirSuffix: win32
+    win32:
+      buildOpt:
+      outDirSuffix: win32
 
 trigger:
   branches:
@@ -20,7 +20,6 @@ trigger:
     - master
     - 3.7
     - 3.6
-    - vsts
   paths:
     exclude:
     - Doc/*
