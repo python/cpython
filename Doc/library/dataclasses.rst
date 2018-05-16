@@ -293,7 +293,7 @@ Module-level decorators, classes, and functions
 
    Converts the Data Class ``instance`` to a dict (by using the
    factory function ``dict_factory``).  Each Data Class is converted
-   to a dict of its fields, as name:value pairs.  Data Classes, dicts,
+   to a dict of its fields, as ``name: value`` pairs.  Data Classes, dicts,
    lists, and tuples are recursed into.  For example::
 
      @dataclass
