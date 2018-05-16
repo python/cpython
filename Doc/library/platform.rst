@@ -243,33 +243,6 @@ Mac OS Platform
 Unix Platforms
 --------------
 
-
-.. function:: dist(distname='', version='', id='', supported_dists=('SuSE','debian','redhat','mandrake',...))
-
-   This is another name for :func:`linux_distribution`.
-
-   .. deprecated-removed:: 3.5 3.8
-      See alternative like the `distro <https://pypi.org/project/distro>`_ package.
-
-.. function:: linux_distribution(distname='', version='', id='', supported_dists=('SuSE','debian','redhat','mandrake',...), full_distribution_name=1)
-
-   Tries to determine the name of the Linux OS distribution name.
-
-   ``supported_dists`` may be given to define the set of Linux distributions to
-   look for. It defaults to a list of currently supported Linux distributions
-   identified by their release file name.
-
-   If ``full_distribution_name`` is true (default), the full distribution read
-   from the OS is returned. Otherwise the short name taken from
-   ``supported_dists`` is used.
-
-   Returns a tuple ``(distname,version,id)`` which defaults to the args given as
-   parameters.  ``id`` is the item in parentheses after the version number.  It
-   is usually the version codename.
-
-   .. deprecated-removed:: 3.5 3.8
-      See alternative like the `distro <https://pypi.org/project/distro>`_ package.
-
 .. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=2048)
 
    Tries to determine the libc version against which the file executable (defaults
