@@ -37,9 +37,23 @@ steps:
 
 - script: echo ##vso[task.prependpath]$(OPENSSL_DIR)
   displayName: 'Add $(OPENSSL_DIR) to PATH'
-- script: sudo apt-get -yq build-dep python3.5
-  displayName: 'apt-get build-dep python3.5'
-- script: sudo apt-get -yq install uuid-dev
+- script: >
+    sudo apt-get -yq install
+    build-essential
+    zlib1g-dev
+    libbz2-dev
+    liblzma-dev
+    libncurses5-dev
+    libreadline6-dev
+    libsqlite3-dev
+    libssl-dev
+    libgdbm-dev
+    tk-dev
+    lzma
+    lzma-dev
+    liblzma-dev
+    libffi-dev
+    uuid-dev
   displayName: 'apt-get install uuid-dev'
 - script: python Tools/ssl/multissltests.py --steps=library --base-directory $HOME/multissl --openssl $(OPENSSL)
   displayName: 'python multissltests.py'
