@@ -1,0 +1,37 @@
+# Current docs for the syntax of this file are at:
+#  https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted.md
+
+name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
+
+queue:
+  name: Hosted macOS Preview
+
+trigger:
+  branches:
+    include:
+    - master
+    - 3.7
+    - 3.6
+  paths:
+    exclude:
+    - Doc/*
+    - Tools/*
+
+#variables:
+
+steps:
+- checkout: self
+  clean: true
+  fetchDepth: 5
+
+- script: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl
+  displayName: 'Configure CPython (debug)'
+
+- script: make -s -j4
+  displayName: 'Build CPython'
+
+- script: make pythoninfo
+  displayName: 'Display build info'
+
+- script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+  displayName: 'Tests'
