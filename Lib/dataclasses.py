@@ -3,6 +3,7 @@ import sys
 import copy
 import types
 import inspect
+import keyword
 
 __all__ = ['dataclass',
            'field',
@@ -1100,6 +1101,9 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         # Copy namespace since we're going to mutate it.
         namespace = namespace.copy()
 
+    # While we're looking through the field names, validate that they
+    # are identifiers, are not keywords, and not duplicates.
+    seen = set()
     anns = {}
     for item in fields:
         if isinstance(item, str):
@@ -1110,6 +1114,17 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         elif len(item) == 3:
             name, tp, spec = item
             namespace[name] = spec
+        else:
+            raise TypeError(f'Invalid field: {item!r}')
+
+        if not isinstance(name, str) or not name.isidentifier():
+            raise TypeError(f'Field names must be valid identifers: {name!r}')
+        if keyword.iskeyword(name):
+            raise TypeError(f'Field names must not be keywords: {name!r}')
+        if name in seen:
+            raise TypeError(f'Field name duplicated: {name!r}')
+
+        seen.add(name)
         anns[name] = tp
 
     namespace['__annotations__'] = anns
