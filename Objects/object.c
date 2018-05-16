@@ -316,9 +316,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     _Py_NewReference(self);
     self->ob_refcnt = refcnt;
 
-    if (PyType_IS_GC(Py_TYPE(self))) {
-        assert(_PyObject_GC_IS_TRACKED(self));
-    }
+    assert(!PyType_IS_GC(Py_TYPE(self)) || _PyObject_GC_IS_TRACKED(self));
     /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
      * we need to undo that. */
     _Py_DEC_REFTOTAL;
