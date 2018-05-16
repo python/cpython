@@ -1846,14 +1846,22 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
         return self.loop.run_until_complete(coro)
 
     def prepare(self):
+        # Make 10 attempts to connect before failing
+        for _ in range(10):
+            try:
+                return self._prepare()
+            except ConnectionRefusedError:
+                pass
+        return self._prepare()
+    
+    def _prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
         af = socket.AF_UNSPEC if support.IPV6_ENABLED else socket.AF_INET
         server = self.run_loop(self.loop.create_server(
             lambda: proto, support.HOST, 0, family=af))
         port = server.sockets[0].getsockname()[1]
-        self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
-
+        
         def cleanup():
             server.close()
             self.run_loop(server.wait_closed())
@@ -1861,6 +1869,12 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
             if proto.transport is not None:
                 proto.transport.close()
                 self.run_loop(proto.wait_closed())
+
+        try:
+            self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+        except:
+            cleanup()
+            raise
 
         self.addCleanup(cleanup)
 
