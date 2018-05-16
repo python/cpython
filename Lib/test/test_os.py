@@ -2439,6 +2439,14 @@ class SpawnTests(unittest.TestCase):
     def _test_invalid_env(self, spawn):
         args = [sys.executable, '-c', 'pass']
 
+        # env is None
+        env = None
+        self.assertRaises(TypeError, spawn, os.P_WAIT, args[0], args, env)
+
+        # env is not a mapping object
+        env = 1
+        self.assertRaises(TypeError, spawn, os.P_WAIT, args[0], args, env)
+
         # null character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT\0VEGETABLE"] = "cabbage"
