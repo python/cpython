@@ -2,7 +2,7 @@
 ==========================================
 
 .. module:: dataclasses
-    :synopsis: Container datatypes
+    :synopsis: Generate special methods and add to user-defined classes.
 
 .. moduleauthor:: Eric V. Smith <eric@trueblade.com>
 .. sectionauthor:: Eric V. Smith <eric@trueblade.com>
