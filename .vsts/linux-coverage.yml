@@ -22,7 +22,7 @@ variables:
   # Copy-pasted from linux-deps.yml until template support arrives
   OPENSSL: 1.1.0g
   OPENSSL_DIR: "$HOME/multissl/openssl/$(OPENSSL)"
-  PATH: "$(OPENSSL_DIR)/bin:$(PATH)"
+  PATH: "$(OPENSSL_DIR)/bin:$PATH"
   # Use -O3 because we don't use debugger on Travis-CI
   CFLAGS: "-I$(OPENSSL_DIR)/include -O3"
   LDFLAGS: "-L$(OPENSSL_DIR)/lib"
