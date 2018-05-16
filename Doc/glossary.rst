@@ -47,21 +47,7 @@ Glossary
       Annotations are stored in the :attr:`__annotations__` special attribute
       of a module (when annotating a global variable), class (when annotating
       one of its attributes) or function or method (when annotating a parameter or a
-      return value).
-
-      The annotation of a local variable is not stored, but a variable will
-      become local when annotated::
-
-         def f():
-             a: int
-             print(a)  # raises UnboundLocalError
-                       # Commenting out the a: int makes it a NameError.
-
-      as if the code were::
-
-         def f():
-             if False: a = 0
-             print(a)  # raises UnboundLocalError
+      return value). Annotations of local variables are not stored.
 
       Annotations can be used to specify :term:`type hints <type hint>`. These
       hints can be accessed using :func:`typing.get_type_hints`.
@@ -1072,6 +1058,19 @@ Glossary
 
    variable annotation
       An :term:`annotation` of a variable, or a class attribute.
+
+      Annotating a variable will make it local::
+
+         def f():
+             a: 'annotation'
+             print(a)  # raises UnboundLocalError
+                       # Commenting out the a: 'annotation' makes it a NameError.
+
+      as if the code were::
+
+         def f():
+             if False: a = 0
+             print(a)  # raises UnboundLocalError
 
       Variable annotations can be used to specify
       :term:`type hints <type hint>`: this variable is expected to take
