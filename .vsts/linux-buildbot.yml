@@ -18,14 +18,35 @@ trigger:
     - Doc/*
     - Tools/*
 
-#variables:
+variables:
+  # Copy-pasted from linux-deps.yml until template support arrives
+  OPENSSL=1.1.0g
+  OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
+  PATH="${OPENSSL_DIR}/bin:$PATH"
+  # Use -O3 because we don't use debugger on Travis-CI
+  CFLAGS="-I${OPENSSL_DIR}/include -O3"
+  LDFLAGS="-L${OPENSSL_DIR}/lib"
+  # Set rpath with env var instead of -Wl,-rpath linker flag
+  # OpenSSL ignores LDFLAGS when linking bin/openssl
+  LD_RUN_PATH="${OPENSSL_DIR}/lib"
+
 
 steps:
 - checkout: self
   clean: true
   fetchDepth: 5
 
-- template: linux-deps.yml
+#- template: linux-deps.yml
+
+# See https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted-templates.md
+# For now, we copy/paste the steps
+- script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
+  displayName: 'Update apt-get lists'
+
+- script: sudo apt-get -yq build-dep python3.5
+- script: sudo apt-get -yq install uuid-dev
+- script: python Tools/ssl/multissltests.py --steps=library --base-directory $HOME/multissl --openssl $(OPENSSL) >/dev/null 2>&1
+
 
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'
