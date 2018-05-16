@@ -1852,7 +1852,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
         server = self.run_loop(self.loop.create_server(
             lambda: proto, support.HOST, 0, family=af))
         port = server.sockets[0].getsockname()[1]
-        
+
         for _ in range(10):
             try:
                 self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
