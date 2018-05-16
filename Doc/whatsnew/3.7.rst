@@ -1205,6 +1205,18 @@ by default.
 (Contributed by Christian Heimes in :issue:`28134`.)
 
 
+socketserver
+------------
+
+:meth:`socketserver.ThreadingMixIn.server_close` now waits until all non-daemon
+threads complete. :meth:`socketserver.ForkingMixIn.server_close` now waits
+until all child processes complete.
+
+Add a new :attr:`socketserver.ForkingMixIn.block_on_close` class attribute to
+:class:`socketserver.ForkingMixIn` and :class:`socketserver.ThreadingMixIn`
+classes. Set the class attribute to ``False`` to get the old behaviour.
+
+
 sqlite3
 -------
 
@@ -2141,10 +2153,17 @@ Changes in the Python API
   and module are affected by this change. (Contributed by INADA Naoki and
   Eugene Toder in :issue:`29463`.)
 
-* :meth:`~socketserver.BaseServer.server_close` in
-  :class:`socketserver.ThreadingMixIn` and :class:`socketserver.ForkingMixIn`
-  now waits until all non-daemon threads complete.
-  (Contributed by Victor Stinner in :issue:`31233` and :issue:`31151`.)
+* :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
+  non-daemon threads complete.  Set the new
+  :attr:`socketserver.ThreadingMixIn.block_on_close` class attribute to
+  ``False`` to get the old behaviour.
+  (Contributed by Victor Stinner in :issue:`31233` and :issue:`33540`.)
+
+* :meth:`socketserver.ForkingMixIn.server_close` now waits until all
+  child processes complete. Set the new
+  :attr:`socketserver.ForkingMixIn.block_on_close` class attribute to ``False``
+  to get the old behaviour.
+  (Contributed by Victor Stinner in :issue:`31151` and :issue:`33540`.)
 
 * The :func:`locale.localeconv` function now temporarily sets the ``LC_CTYPE``
   locale to the value of ``LC_NUMERIC`` in some cases.
