@@ -1038,7 +1038,7 @@ Glossary
       ``type(obj)``.
 
    type hint
-      A specification about the expected type for a global variable, class
+      A specification about the expected type for a variable, class
       variable, function or method parameter or return value.
 
       Type hints are optional and are not enforced by Python but
