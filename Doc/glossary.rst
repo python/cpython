@@ -1064,7 +1064,8 @@ Glossary
          class C:
              field: 'annotation'
 
-      Annotating a variable will make it local::
+      Annotating a local variable will cause the interpreter to always make it a
+      local::
 
          def f():
              a: 'annotation'
