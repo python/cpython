@@ -254,16 +254,13 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         if (cls != NULL && PyType_Check(cls) && PyCell_Check(cell)) {
             PyObject *cell_cls = PyCell_GET(cell);
             if (cell_cls != cls) {
-                /* TODO: In 3.7, DeprecationWarning will become RuntimeError.
-                 *       At that point, cell_error won't be needed.
-                 */
                 int cell_error;
                 if (cell_cls == NULL) {
                     const char *msg =
                         "__class__ not set defining %.200R as %.200R. "
                         "Was __classcell__ propagated to type.__new__?";
                     cell_error = PyErr_WarnFormat(
-                        PyExc_DeprecationWarning, 1, msg, name, cls);
+                        PyExc_RuntimeWarning, 1, msg, name, cls);
                 } else {
                     const char *msg =
                         "__class__ set to %.200R defining %.200R as %.200R";

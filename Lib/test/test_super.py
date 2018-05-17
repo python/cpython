@@ -175,7 +175,7 @@ class TestSuper(unittest.TestCase):
 
         # This case shouldn't trigger the __classcell__ deprecation warning
         with check_warnings() as w:
-            warnings.simplefilter("always", DeprecationWarning)
+            warnings.simplefilter("always", Warning)
             class A(metaclass=Meta):
                 @staticmethod
                 def f():
@@ -246,22 +246,21 @@ class TestSuper(unittest.TestCase):
 
         # The default case should continue to work without any warnings
         with check_warnings() as w:
-            warnings.simplefilter("always", DeprecationWarning)
+            warnings.simplefilter("always", Warning)
             class WithoutClassRef(metaclass=Meta):
                 pass
         self.assertEqual(w.warnings, [])
 
         # With zero-arg super() or an explicit __class__ reference, we expect
-        # __build_class__ to emit a DeprecationWarning complaining that
+        # __build_class__ to emit a RuntimeWarning complaining that
         # __class__ was not set, and asking if __classcell__ was propagated
         # to type.__new__.
-        # In Python 3.7, that warning will become a RuntimeError.
         expected_warning = (
             '__class__ not set.*__classcell__ propagated',
-            DeprecationWarning
+            RuntimeWarning
         )
         with check_warnings(expected_warning):
-            warnings.simplefilter("always", DeprecationWarning)
+            warnings.simplefilter("always", Warning)
             class WithClassRef(metaclass=Meta):
                 def f(self):
                     return __class__
@@ -270,8 +269,8 @@ class TestSuper(unittest.TestCase):
 
         # Check the warning is turned into an error as expected
         with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            with self.assertRaises(DeprecationWarning):
+            warnings.simplefilter("error", RuntimeWarning)
+            with self.assertRaises(RuntimeWarning):
                 class WithClassRef(metaclass=Meta):
                     def f(self):
                         return __class__
