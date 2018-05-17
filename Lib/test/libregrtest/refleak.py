@@ -5,6 +5,13 @@ import sys
 import warnings
 from inspect import isabstract
 from test import support
+try:
+    from _abc import _get_dump
+except ImportError:
+    def _get_dump(cls):
+        # For legacy Python version
+        return (cls._abc_registry, cls._abc_cache,
+                cls._abc_negative_cache, cls._abc_negative_cache_version)
 
 
 def dash_R(the_module, test, indirect_test, huntrleaks):
@@ -36,7 +43,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         if not isabstract(abc):
             continue
         for obj in abc.__subclasses__() + [abc]:
-            abcs[obj] = obj._abc_registry.copy()
+            abcs[obj] = _get_dump(obj)[0]
 
     # bpo-31217: Integer pool to get a single integer object for the same
     # value. The pool is used to prevent false alarm when checking for memory
@@ -113,7 +120,6 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     import gc, copyreg
     import collections.abc
-    from weakref import WeakSet
 
     # Restore some original values.
     warnings.filters[:] = fs
@@ -137,9 +143,10 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:
-            obj._abc_registry = abcs.get(obj, WeakSet()).copy()
-            obj._abc_cache.clear()
-            obj._abc_negative_cache.clear()
+            for ref in abcs.get(obj, set()):
+                if ref() is not None:
+                    obj.register(ref())
+            obj._abc_caches_clear()
 
     clear_caches()
 

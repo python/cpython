@@ -1130,21 +1130,6 @@ binascii_hexlify_impl(PyObject *module, Py_buffer *data)
     return _Py_strhex_bytes((const char *)data->buf, data->len);
 }
 
-static int
-to_int(int c)
-{
-    if (Py_ISDIGIT(c))
-        return c - '0';
-    else {
-        if (Py_ISUPPER(c))
-            c = Py_TOLOWER(c);
-        if (c >= 'a' && c <= 'f')
-            return c - 'a' + 10;
-    }
-    return -1;
-}
-
-
 /*[clinic input]
 binascii.a2b_hex
 
@@ -1187,9 +1172,9 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
     retbuf = PyBytes_AS_STRING(retval);
 
     for (i=j=0; i < arglen; i += 2) {
-        int top = to_int(Py_CHARMASK(argbuf[i]));
-        int bot = to_int(Py_CHARMASK(argbuf[i+1]));
-        if (top == -1 || bot == -1) {
+        unsigned int top = _PyLong_DigitValue[Py_CHARMASK(argbuf[i])];
+        unsigned int bot = _PyLong_DigitValue[Py_CHARMASK(argbuf[i+1])];
+        if (top >= 16 || bot >= 16) {
             PyErr_SetString(Error,
                             "Non-hexadecimal digit found");
             goto finally;
@@ -1217,19 +1202,6 @@ binascii_unhexlify_impl(PyObject *module, Py_buffer *hexstr)
 {
     return binascii_a2b_hex_impl(module, hexstr);
 }
-
-static const int table_hex[128] = {
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-   0, 1, 2, 3,  4, 5, 6, 7,  8, 9,-1,-1, -1,-1,-1,-1,
-  -1,10,11,12, 13,14,15,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,10,11,12, 13,14,15,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1
-};
-
-#define hexval(c) table_hex[(unsigned int)(c)]
 
 #define MAXLINESIZE 76
 
@@ -1293,9 +1265,9 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
                       (ascii_data[in+1] >= 'a' && ascii_data[in+1] <= 'f') ||
                       (ascii_data[in+1] >= '0' && ascii_data[in+1] <= '9'))) {
                 /* hexval */
-                ch = hexval(ascii_data[in]) << 4;
+                ch = _PyLong_DigitValue[ascii_data[in]] << 4;
                 in++;
-                ch |= hexval(ascii_data[in]);
+                ch |= _PyLong_DigitValue[ascii_data[in]];
                 in++;
                 odata[out++] = ch;
             }

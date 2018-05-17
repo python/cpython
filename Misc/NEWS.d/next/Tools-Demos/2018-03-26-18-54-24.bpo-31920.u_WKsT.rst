@@ -1,0 +1,2 @@
+Fixed handling directories as arguments in the ``pygettext`` script. Based
+on patch by Oleg Krasnikov.

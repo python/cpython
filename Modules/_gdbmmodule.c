@@ -527,7 +527,7 @@ static PyTypeObject Dbmtype = {
 
 /*[clinic input]
 _gdbm.open as dbmopen
-    filename as name: str
+    filename: unicode
     flags: str="r"
     mode: int(py_default="0o666") = 0o666
     /
@@ -557,8 +557,9 @@ when the database has to be created.  It defaults to octal 0o666.
 [clinic start generated code]*/
 
 static PyObject *
-dbmopen_impl(PyObject *module, const char *name, const char *flags, int mode)
-/*[clinic end generated code: output=31aa1bafdf5da688 input=55563cd60e51984a]*/
+dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
+             int mode)
+/*[clinic end generated code: output=9527750f5df90764 input=3be0b0875974b928]*/
 {
     int iflags;
 
@@ -606,7 +607,19 @@ dbmopen_impl(PyObject *module, const char *name, const char *flags, int mode)
         }
     }
 
-    return newdbmobject(name, iflags, mode);
+    PyObject *filenamebytes = PyUnicode_EncodeFSDefault(filename);
+    if (filenamebytes == NULL) {
+        return NULL;
+    }
+    const char *name = PyBytes_AS_STRING(filenamebytes);
+    if (strlen(name) != (size_t)PyBytes_GET_SIZE(filenamebytes)) {
+        Py_DECREF(filenamebytes);
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
+    PyObject *self = newdbmobject(name, iflags, mode);
+    Py_DECREF(filenamebytes);
+    return self;
 }
 
 static const char dbmmodule_open_flags[] = "rwcn"

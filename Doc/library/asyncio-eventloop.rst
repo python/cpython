@@ -393,6 +393,9 @@ Creating connections
    See :ref:`UDP echo client protocol <asyncio-udp-echo-client-protocol>` and
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
+   .. versionchanged:: 3.4.4
+      The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
+      *allow_broadcast*, and *sock* parameters were added.
 
 .. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path=None, \*, ssl=None, sock=None, server_hostname=None, ssl_handshake_timeout=None)
 
@@ -1043,7 +1046,7 @@ Server
           async def main(host, port):
               srv = await asyncio.start_server(
                   client_connected, host, port)
-              await loop.serve_forever()
+              await srv.serve_forever()
 
           asyncio.run(main('127.0.0.1', 0))
 
@@ -1114,7 +1117,7 @@ SendfileNotAvailableError
 
    Sendfile syscall is not available, subclass of :exc:`RuntimeError`.
 
-   Raised if the OS does not support senfile syscall for
+   Raised if the OS does not support sendfile syscall for
    given socket or file type.
 
 

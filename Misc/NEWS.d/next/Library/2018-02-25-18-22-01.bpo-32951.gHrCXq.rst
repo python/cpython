@@ -1,0 +1,3 @@
+Direct instantiation of SSLSocket and SSLObject objects is now prohibited.
+The constructors were never documented, tested, or designed as public
+constructors. Users were suppose to use ssl.wrap_socket() or SSLContext.

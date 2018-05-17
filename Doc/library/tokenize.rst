@@ -218,7 +218,7 @@ will be tokenized to the following output where the first column is the range
 of the line/column coordinates where the token is found, the second column is
 the name of the token, and the final column is the value of the token (if any)
 
-.. code-block:: sh
+.. code-block:: shell-session
 
     $ python -m tokenize hello.py
     0,0-0,0:            ENCODING       'utf-8'
@@ -244,7 +244,7 @@ the name of the token, and the final column is the value of the token (if any)
 
 The exact token type names can be displayed using the :option:`-e` option:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
     $ python -m tokenize -e hello.py
     0,0-0,0:            ENCODING       'utf-8'

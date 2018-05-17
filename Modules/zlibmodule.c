@@ -1361,18 +1361,33 @@ PyInit_zlib(void)
     PyModule_AddIntMacro(m, DEFLATED);
     PyModule_AddIntMacro(m, DEF_MEM_LEVEL);
     PyModule_AddIntMacro(m, DEF_BUF_SIZE);
+    // compression levels
+    PyModule_AddIntMacro(m, Z_NO_COMPRESSION);
     PyModule_AddIntMacro(m, Z_BEST_SPEED);
     PyModule_AddIntMacro(m, Z_BEST_COMPRESSION);
     PyModule_AddIntMacro(m, Z_DEFAULT_COMPRESSION);
+    // compression strategies
     PyModule_AddIntMacro(m, Z_FILTERED);
     PyModule_AddIntMacro(m, Z_HUFFMAN_ONLY);
+#ifdef Z_RLE // 1.2.0.1
+    PyModule_AddIntMacro(m, Z_RLE);
+#endif
+#ifdef Z_FIXED // 1.2.2.2
+    PyModule_AddIntMacro(m, Z_FIXED);
+#endif
     PyModule_AddIntMacro(m, Z_DEFAULT_STRATEGY);
-
-    PyModule_AddIntMacro(m, Z_FINISH);
+    // allowed flush values
     PyModule_AddIntMacro(m, Z_NO_FLUSH);
+    PyModule_AddIntMacro(m, Z_PARTIAL_FLUSH);
     PyModule_AddIntMacro(m, Z_SYNC_FLUSH);
     PyModule_AddIntMacro(m, Z_FULL_FLUSH);
-
+    PyModule_AddIntMacro(m, Z_FINISH);
+#ifdef Z_BLOCK // 1.2.0.5 for inflate, 1.2.3.4 for deflate
+    PyModule_AddIntMacro(m, Z_BLOCK);
+#endif
+#ifdef Z_TREES // 1.2.3.4, only for inflate
+    PyModule_AddIntMacro(m, Z_TREES);
+#endif
     ver = PyUnicode_FromString(ZLIB_VERSION);
     if (ver != NULL)
         PyModule_AddObject(m, "ZLIB_VERSION", ver);

@@ -10,7 +10,8 @@
 
 
 static PyObject *
-py_uuid_generate_time_safe(void)
+py_uuid_generate_time_safe(PyObject *Py_UNUSED(context),
+                           PyObject *Py_UNUSED(ignored))
 {
     uuid_t uuid;
 #ifdef HAVE_UUID_GENERATE_TIME_SAFE
@@ -30,7 +31,7 @@ py_uuid_generate_time_safe(void)
 
 
 static PyMethodDef uuid_methods[] = {
-    {"generate_time_safe", (PyCFunction) py_uuid_generate_time_safe, METH_NOARGS, NULL},
+    {"generate_time_safe", py_uuid_generate_time_safe, METH_NOARGS, NULL},
     {NULL, NULL, 0, NULL}           /* sentinel */
 };
 

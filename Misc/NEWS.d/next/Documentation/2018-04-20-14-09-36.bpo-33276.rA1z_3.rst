@@ -1,0 +1,1 @@
+Clarify that the ``__path__`` attribute on modules cannot be just any value.

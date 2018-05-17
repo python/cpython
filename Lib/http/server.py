@@ -83,7 +83,7 @@ XXX To do:
 __version__ = "0.6"
 
 __all__ = [
-    "HTTPServer", "BaseHTTPRequestHandler",
+    "HTTPServer", "ThreadedHTTPServer", "BaseHTTPRequestHandler",
     "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
 ]
 
@@ -138,6 +138,10 @@ class HTTPServer(socketserver.TCPServer):
         host, port = self.server_address[:2]
         self.server_name = socket.getfqdn(host)
         self.server_port = port
+
+
+class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
+    daemon_threads = True
 
 
 class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
@@ -1213,7 +1217,8 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
 
 
 def test(HandlerClass=BaseHTTPRequestHandler,
-         ServerClass=HTTPServer, protocol="HTTP/1.0", port=8000, bind=""):
+         ServerClass=ThreadedHTTPServer,
+         protocol="HTTP/1.0", port=8000, bind=""):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).

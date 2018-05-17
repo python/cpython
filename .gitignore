@@ -113,3 +113,5 @@ Tools/ssl/amd64
 Tools/ssl/win32
 .vs/
 .vscode/
+gmon.out
+.mypy_cache/

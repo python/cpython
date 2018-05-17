@@ -100,7 +100,7 @@ Here are two ways to write a table of squares and cubes::
    10 100 1000
 
 (Note that in the first example, one space between each column was added by the
-way :func:`print` works: it always adds spaces between its arguments.)
+way :func:`print` works: by default it adds spaces between its arguments.)
 
 This example demonstrates the :meth:`str.rjust` method of string
 objects, which right-justifies a string in a field of a given width by padding

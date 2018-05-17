@@ -163,6 +163,7 @@ class HashLibTestCase(unittest.TestCase):
         return itertools.chain.from_iterable(constructors)
 
     @support.refcount_test
+    @unittest.skipIf(c_hashlib is None, 'Require _hashlib module')
     def test_refleaks_in_hash___init__(self):
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
         sha1_hash = c_hashlib.new('sha1')

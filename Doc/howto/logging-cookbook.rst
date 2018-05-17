@@ -72,7 +72,9 @@ Here is the auxiliary module::
     def some_function():
         module_logger.info('received a call to "some_function"')
 
-The output looks like this::
+The output looks like this:
+
+.. code-block:: none
 
     2005-03-23 23:47:11,663 - spam_application - INFO -
        creating an instance of auxiliary_module.Auxiliary
@@ -127,7 +129,9 @@ shows logging from the main (initial) thread and another thread::
     if __name__ == '__main__':
         main()
 
-When run, the script should print something like the following::
+When run, the script should print something like the following:
+
+.. code-block:: none
 
      0 Thread-1 Hi from myfunc
      3 MainThread Hello from main
@@ -240,14 +244,18 @@ messages should not. Here's how you can achieve this::
    logger2.warning('Jail zesty vixen who grabbed pay from quack.')
    logger2.error('The five boxing wizards jump quickly.')
 
-When you run this, on the console you will see ::
+When you run this, on the console you will see
+
+.. code-block:: none
 
    root        : INFO     Jackdaws love my big sphinx of quartz.
    myapp.area1 : INFO     How quickly daft jumping zebras vex.
    myapp.area2 : WARNING  Jail zesty vixen who grabbed pay from quack.
    myapp.area2 : ERROR    The five boxing wizards jump quickly.
 
-and in the file you will see something like ::
+and in the file you will see something like
+
+.. code-block:: none
 
    10-22 22:19 root         INFO     Jackdaws love my big sphinx of quartz.
    10-22 22:19 myapp.area1  DEBUG    Quick zephyrs blow, vexing daft Jim.
@@ -515,7 +523,9 @@ module. Here is a basic working example::
        main()
 
 First run the server, and then the client. On the client side, nothing is
-printed on the console; on the server side, you should see something like::
+printed on the console; on the server side, you should see something like:
+
+.. code-block:: none
 
    About to start TCP server...
       59 root            INFO     Jackdaws love my big sphinx of quartz.
@@ -675,7 +685,9 @@ script::
             lvlname = logging.getLevelName(lvl)
             a2.log(lvl, 'A message at %s level with %d %s', lvlname, 2, 'parameters')
 
-which, when run, produces something like::
+which, when run, produces something like:
+
+.. code-block:: none
 
     2010-09-06 22:38:15,292 a.b.c DEBUG    IP: 123.231.231.123 User: fred     A debug message
     2010-09-06 22:38:15,300 a.b.c INFO     IP: 192.168.0.1     User: sheila   An info message with some parameters
@@ -976,7 +988,9 @@ logging package provides a :class:`~handlers.RotatingFileHandler`::
        print(filename)
 
 The result should be 6 separate files, each with part of the log history for the
-application::
+application:
+
+.. code-block:: none
 
    logging_rotatingfile_example.out
    logging_rotatingfile_example.out.1
@@ -1706,7 +1720,9 @@ which uses JSON to serialise the event in a machine-parseable manner::
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     logging.info(_('message 1', foo='bar', bar='baz', num=123, fnum=123.456))
 
-If the above script is run, it prints::
+If the above script is run, it prints:
+
+.. code-block:: none
 
     message 1 >>> {"fnum": 123.456, "num": 123, "bar": "baz", "foo": "bar"}
 
@@ -1753,7 +1769,9 @@ as in the following complete example::
     if __name__ == '__main__':
         main()
 
-When the above script is run, it prints::
+When the above script is run, it prints:
+
+.. code-block:: none
 
     message 1 >>> {"snowman": "\u2603", "set_value": [1, 2, 3]}
 
@@ -2083,7 +2101,9 @@ most obvious, but you can provide any callable which returns a
 
 This example shows how you can pass configuration data to the callable which
 constructs the instance, in the form of keyword parameters. When run, the above
-script will print::
+script will print:
+
+.. code-block:: none
 
     changed: hello
 
@@ -2150,7 +2170,9 @@ class, as shown in the following example::
     if __name__ == '__main__':
         main()
 
-When run, this produces a file with exactly two lines::
+When run, this produces a file with exactly two lines:
+
+.. code-block:: none
 
     28/01/2015 07:21:23|INFO|Sample message|
     28/01/2015 07:21:23|ERROR|ZeroDivisionError: integer division or modulo by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: integer division or modulo by zero'|
@@ -2312,7 +2334,9 @@ Here's the script::
         write_line('Calling decorated foo with True')
         assert decorated_foo(True)
 
-When this script is run, the following output should be observed::
+When this script is run, the following output should be observed:
+
+.. code-block:: none
 
     Calling undecorated foo with False
     about to log at DEBUG ...
@@ -2408,7 +2432,9 @@ the following complete example::
         logging.config.dictConfig(LOGGING)
         logging.warning('The local time is %s', time.asctime())
 
-When this script is run, it should print something like::
+When this script is run, it should print something like:
+
+.. code-block:: none
 
     2015-10-17 12:53:29,501 The local time is Sat Oct 17 13:53:29 2015
     2015-10-17 13:53:29,501 The local time is Sat Oct 17 13:53:29 2015

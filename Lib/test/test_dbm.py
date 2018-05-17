@@ -38,8 +38,7 @@ def delete_files():
 
 
 class AnyDBMTestCase:
-    _dict = {'0': b'',
-             'a': b'Python:',
+    _dict = {'a': b'Python:',
              'b': b'Programming',
              'c': b'the',
              'd': b'way',
@@ -86,18 +85,41 @@ class AnyDBMTestCase:
         f = dbm.open(_fname, 'c')
         self._dict['g'] = f[b'g'] = b"indented"
         self.read_helper(f)
+        # setdefault() works as in the dict interface
+        self.assertEqual(f.setdefault(b'xxx', b'foo'), b'foo')
+        self.assertEqual(f[b'xxx'], b'foo')
         f.close()
 
     def test_anydbm_read(self):
         self.init_db()
         f = dbm.open(_fname, 'r')
         self.read_helper(f)
+        # get() works as in the dict interface
+        self.assertEqual(f.get(b'a'), self._dict['a'])
+        self.assertEqual(f.get(b'xxx', b'foo'), b'foo')
+        self.assertIsNone(f.get(b'xxx'))
+        with self.assertRaises(KeyError):
+            f[b'xxx']
         f.close()
 
     def test_anydbm_keys(self):
         self.init_db()
         f = dbm.open(_fname, 'r')
         keys = self.keys_helper(f)
+        f.close()
+
+    def test_empty_value(self):
+        if getattr(dbm._defaultmod, 'library', None) == 'Berkeley DB':
+            self.skipTest("Berkeley DB doesn't distinguish the empty value "
+                          "from the absent one")
+        f = dbm.open(_fname, 'c')
+        self.assertEqual(f.keys(), [])
+        f[b'empty'] = b''
+        self.assertEqual(f.keys(), [b'empty'])
+        self.assertIn(b'empty', f)
+        self.assertEqual(f[b'empty'], b'')
+        self.assertEqual(f.get(b'empty'), b'')
+        self.assertEqual(f.setdefault(b'empty'), b'')
         f.close()
 
     def test_anydbm_access(self):

@@ -1,0 +1,1 @@
+Fix potential use of uninitialized memory in nt._getfinalpathname

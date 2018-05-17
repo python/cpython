@@ -203,7 +203,7 @@ Number-theoretic and representation functions
 
    Return the :class:`~numbers.Real` value *x* truncated to an
    :class:`~numbers.Integral` (usually an integer). Delegates to
-   ``x.__trunc__()``.
+   :meth:`x.__trunc__() <object.__trunc__>`.
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern

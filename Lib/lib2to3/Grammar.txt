@@ -1,26 +1,7 @@
 # Grammar for 2to3. This grammar supports Python 2.x and 3.x.
 
-# Note:  Changing the grammar specified in this file will most likely
-#        require corresponding changes in the parser module
-#        (../Modules/parsermodule.c).  If you can't make the changes to
-#        that module yourself, please co-ordinate the required changes
-#        with someone who can; ask around on python-dev for help.  Fred
-#        Drake <fdrake@acm.org> will probably be listening there.
-
-# NOTE WELL: You should also follow all the steps listed in PEP 306,
-# "How to Change Python's Grammar"
-
-# Commands for Kees Blom's railroad program
-#diagram:token NAME
-#diagram:token NUMBER
-#diagram:token STRING
-#diagram:token NEWLINE
-#diagram:token ENDMARKER
-#diagram:token INDENT
-#diagram:output\input python.bla
-#diagram:token DEDENT
-#diagram:output\textwidth 20.04cm\oddsidemargin  0.0cm\evensidemargin 0.0cm
-#diagram:rules
+# NOTE WELL: You should also follow all the steps listed at
+# https://devguide.python.org/grammar/
 
 # Start symbols for the grammar:
 #	file_input is a module or sequence of commands read from an input file;
@@ -34,17 +15,17 @@ eval_input: testlist NEWLINE* ENDMARKER
 decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
 decorators: decorator+
 decorated: decorators (classdef | funcdef | async_funcdef)
-async_funcdef: 'async' funcdef
+async_funcdef: ASYNC funcdef
 funcdef: 'def' NAME parameters ['->' test] ':' suite
 parameters: '(' [typedargslist] ')'
 typedargslist: ((tfpdef ['=' test] ',')*
-                ('*' [tname] (',' tname ['=' test])* [',' '**' tname] | '**' tname)
+                ('*' [tname] (',' tname ['=' test])* [',' ['**' tname [',']]] | '**' tname [','])
                 | tfpdef ['=' test] (',' tfpdef ['=' test])* [','])
 tname: NAME [':' test]
 tfpdef: tname | '(' tfplist ')'
 tfplist: tfpdef (',' tfpdef)* [',']
 varargslist: ((vfpdef ['=' test] ',')*
-              ('*' [vname] (',' vname ['=' test])*  [',' '**' vname] | '**' vname)
+              ('*' [vname] (',' vname ['=' test])*  [',' ['**' vname [',']]] | '**' vname [','])
               | vfpdef ['=' test] (',' vfpdef ['=' test])* [','])
 vname: NAME
 vfpdef: vname | '(' vfplist ')'
@@ -85,7 +66,7 @@ exec_stmt: 'exec' expr ['in' test [',' test]]
 assert_stmt: 'assert' test [',' test]
 
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated | async_stmt
-async_stmt: 'async' (funcdef | with_stmt | for_stmt)
+async_stmt: ASYNC (funcdef | with_stmt | for_stmt)
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
 while_stmt: 'while' test ':' suite ['else' ':' suite]
 for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
@@ -124,7 +105,7 @@ shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'@'|'/'|'%'|'//') factor)*
 factor: ('+'|'-'|'~') factor | power
-power: ['await'] atom trailer* ['**' factor]
+power: [AWAIT] atom trailer* ['**' factor]
 atom: ('(' [yield_expr|testlist_gexp] ')' |
        '[' [listmaker] ']' |
        '{' [dictsetmaker] '}' |
@@ -161,7 +142,7 @@ argument: ( test [comp_for] |
 	    star_expr )
 
 comp_iter: comp_for | comp_if
-comp_for: ['async'] 'for' exprlist 'in' or_test [comp_iter]
+comp_for: [ASYNC] 'for' exprlist 'in' or_test [comp_iter]
 comp_if: 'if' old_test [comp_iter]
 
 # As noted above, testlist_safe extends the syntax allowed in list
@@ -180,7 +161,7 @@ comp_if: 'if' old_test [comp_iter]
 #
 # See https://bugs.python.org/issue27494
 old_comp_iter: old_comp_for | old_comp_if
-old_comp_for: ['async'] 'for' exprlist 'in' testlist_safe [old_comp_iter]
+old_comp_for: [ASYNC] 'for' exprlist 'in' testlist_safe [old_comp_iter]
 old_comp_if: 'if' old_test [old_comp_iter]
 
 testlist1: test (',' test)*

@@ -312,6 +312,8 @@ if ssl is not None:
 
         def secure_connection(self):
             context = ssl.SSLContext()
+            # TODO: fix TLSv1.3 support
+            context.options |= ssl.OP_NO_TLSv1_3
             context.load_cert_chain(CERTFILE)
             socket = context.wrap_socket(self.socket,
                                          suppress_ragged_eofs=False,
@@ -908,6 +910,8 @@ class TestTLS_FTPClass(TestCase):
     def test_context(self):
         self.client.quit()
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        # TODO: fix TLSv1.3 support
+        ctx.options |= ssl.OP_NO_TLSv1_3
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
         self.assertRaises(ValueError, ftplib.FTP_TLS, keyfile=CERTFILE,
@@ -940,6 +944,8 @@ class TestTLS_FTPClass(TestCase):
     def test_check_hostname(self):
         self.client.quit()
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        # TODO: fix TLSv1.3 support
+        ctx.options |= ssl.OP_NO_TLSv1_3
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self.assertEqual(ctx.check_hostname, True)
         ctx.load_verify_locations(CAFILE)
