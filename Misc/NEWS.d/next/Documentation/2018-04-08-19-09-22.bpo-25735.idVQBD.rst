@@ -1,1 +1,1 @@
-Added documentations for :func:`fabs`, to take only integer input values.
+Added documentation for func factorial to indicate that returns integer values
