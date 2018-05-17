@@ -187,6 +187,8 @@ library/profile,,:lineno,filename:lineno(function)
 library/pyexpat,,:elem1,<py:elem1 />
 library/pyexpat,,:py,"xmlns:py = ""http://www.python.org/ns/"">"
 library/random,,:len,new_diff = mean(combined[:len(drug)]) - mean(combined[len(drug):])
+library/readline,,:bind,"python:bind -v"
+library/readline,,:bind,"python:bind ^I rl_complete"
 library/smtplib,,:port,method must support that as well as a regular host:port
 library/socket,,::,'5aef:2b::8'
 library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
