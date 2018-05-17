@@ -334,7 +334,6 @@ class _ZipImportResourceReader(resources_abc.ResourceReader):
 
 
 # Called from zipimport.c
-
 def _zipimport_get_resource_reader(zipimporter, fullname):
     try:
         if not zipimporter.is_package(fullname):
