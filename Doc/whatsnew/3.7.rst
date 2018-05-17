@@ -1238,6 +1238,9 @@ Changes in the Python API
   :func:`socket.fromshare` a socket :func:`~socket.socket.share`-ed in older
   Python versions.
 
+* ``repr`` for :exc:`BaseException` has changed not to include trailing comma
+  in the output. Mind that most exceptions are affected by this change.
+
 * ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
 
