@@ -37,6 +37,7 @@ steps:
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish build'
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   inputs:
     PathToPublish: '$(build.sourcesDirectory)/Doc/build'
     ArtifactName: build
