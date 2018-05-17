@@ -215,7 +215,7 @@ static PyThreadState *tcl_tstate = NULL;
 
 
 #define ACQUIRE_TCL_LOCK \
-if (tcl_lock) {\
+if (tcl_lock) { \
     if (tcl_lock_thread_ident == PyThread_get_thread_ident()) { \
         tcl_lock_reentry_count++; \
         if(!tcl_lock_reentry_count) \
@@ -223,17 +223,17 @@ if (tcl_lock) {\
     } else { \
         PyThread_acquire_lock(tcl_lock, 1); \
         tcl_lock_thread_ident = PyThread_get_thread_ident(); \
-    }\
+    } \
 }
 
 #define RELEASE_TCL_LOCK \
-if (tcl_lock){\
+if (tcl_lock) { \
     if (tcl_lock_reentry_count) { \
         tcl_lock_reentry_count--; \
     } else { \
         tcl_lock_thread_ident = 0; \
         PyThread_release_lock(tcl_lock); \
-    }\
+    } \
 }
 
 
@@ -242,8 +242,9 @@ if (tcl_lock){\
         ENTER_TCL_CUSTOM_TSTATE(tstate)
 
 #define ENTER_TCL_CUSTOM_TSTATE(tstate) \
-        Py_BEGIN_ALLOW_THREADS \
-        ACQUIRE_TCL_LOCK; tcl_tstate = tstate;
+    Py_BEGIN_ALLOW_THREADS \
+    ACQUIRE_TCL_LOCK \
+    tcl_tstate = tstate;
 
 #define LEAVE_TCL \
     tcl_tstate = NULL; \
@@ -251,9 +252,9 @@ if (tcl_lock){\
 
 #define LEAVE_TCL_WITH_BUSYWAIT(result) \
     tcl_tstate = NULL; \
-    RELEASE_TCL_LOCK;\
-    if (result == 0)\
-        Sleep(Tkinter_busywaitinterval);\
+    RELEASE_TCL_LOCK \
+    if (result == 0) \
+        Sleep(Tkinter_busywaitinterval); \
     Py_END_ALLOW_THREADS
 
 
@@ -264,7 +265,7 @@ if (tcl_lock){\
     Py_BEGIN_ALLOW_THREADS
 
 #define LEAVE_OVERLAP_TCL \
-    tcl_tstate = NULL; RELEASE_TCL_LOCK; }
+    tcl_tstate = NULL; RELEASE_TCL_LOCK }
 
 #define ENTER_PYTHON \
 { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; PyEval_RestoreThread((tstate)); }
@@ -2015,7 +2016,7 @@ SetVar(PyObject *self, PyObject *args, int flags)
         if (newval) {
             LEAVE_OVERLAP
             ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, NULL,
-            newval, flags);
+                               newval, flags);
             ENTER_OVERLAP
             if (!ok)
                 Tkinter_Error(self);
@@ -2038,7 +2039,7 @@ SetVar(PyObject *self, PyObject *args, int flags)
         if (newval) {
             LEAVE_OVERLAP
             ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, name2,
-            newval, flags);
+                               newval, flags);
             ENTER_OVERLAP
             if (!ok)
                 Tkinter_Error(self);
@@ -2517,8 +2518,8 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
     ENTER_PYTHON
 
     /* TBD: no error checking here since we know, via the
-    * Tkapp_CreateCommand() that the client data is a two-tuple
-    */
+     * Tkapp_CreateCommand() that the client data is a two-tuple
+     */
     func = data->func;
 
     /* Create argument list (argv1, ..., argvN) */
@@ -2539,13 +2540,13 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
         return PythonCmd_Error();
 
     obj_res = AsObj(res);
-    if (obj_res) {
-        Tcl_SetObjResult(interp, obj_res);
-        rv = TCL_OK;
-    }
     if (obj_res == NULL) {
         Py_DECREF(res);
         return PythonCmd_Error();
+    }
+    else {
+        Tcl_SetObjResult(interp, obj_res);
+        rv = TCL_OK;
     }
 
     Py_DECREF(res);
