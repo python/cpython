@@ -1822,7 +1822,7 @@ error:
 static int
 compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 {
-    ADDOP_LOAD_CONST_NEW(c, _PyAST_ExprAsUnicode(annotation, 1));
+    ADDOP_LOAD_CONST_NEW(c, _PyAST_ExprAsUnicode(annotation));
     return 1;
 }
 
