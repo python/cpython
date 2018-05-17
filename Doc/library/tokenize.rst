@@ -57,6 +57,16 @@ The primary entry point is a :term:`generator`:
    :func:`.tokenize` determines the source encoding of the file by looking for a
    UTF-8 BOM or encoding cookie, according to :pep:`263`.
 
+.. function:: generate_tokens(readline)
+
+   Tokenize a source reading unicode strings instead of bytes.
+
+   Like :func:`.tokenize`, the *readline* argument is a callable returning
+   a single line of input. However, :func:`generate_tokens` expects *readline*
+   to return a str object rather than bytes.
+
+   The result is an iterator yielding named tuples, exactly like
+   :func:`.tokenize`.
 
 All constants from the :mod:`token` module are also exported from
 :mod:`tokenize`.

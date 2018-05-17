@@ -653,9 +653,12 @@ def _tokenize(readline, encoding):
     yield TokenInfo(ENDMARKER, '', (lnum, 0), (lnum, 0), '')
 
 
-# An undocumented, backwards compatible, API for all the places in the standard
-# library that expect to be able to use tokenize with strings
 def generate_tokens(readline):
+    """Tokenize a source reading Python code as unicode strings.
+
+    This has the same API as tokenize(), except that it expects the *readline*
+    callable to return str objects instead of bytes.
+    """
     return _tokenize(readline, None)
 
 def main():
