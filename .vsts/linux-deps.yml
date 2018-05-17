@@ -4,16 +4,12 @@
 # Current docs for the syntax of this file are at:
 #  https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted.md
 
-parameters:
-  OPENSSL: 1.1.0g
-  OPENSSL_DIR: "$(build.sourcesDirectory)/multissl/openssl/$(OPENSSL)"
+#parameters:
 
 steps:
 - script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
   displayName: 'Update apt-get lists'
 
-- script: echo ##vso[task.prependpath]$(OPENSSL_DIR)
-  displayName: 'Add $(OPENSSL_DIR) to PATH'
 - script: >
     sudo apt-get -yq install
     build-essential
@@ -32,5 +28,3 @@ steps:
     libffi-dev
     uuid-dev
   displayName: 'Install dependencies'
-- script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $(build.sourcesDirectory)/multissl --openssl $(OPENSSL) --system Linux
-  displayName: 'python multissltests.py'
