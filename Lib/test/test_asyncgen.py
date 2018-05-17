@@ -322,14 +322,13 @@ class AsyncGenTest(unittest.TestCase):
 class AsyncGenAsyncioTest(unittest.TestCase):
 
     def setUp(self):
-        self.old_loop = asyncio.get_event_loop()
+        self.addCleanup(asyncio.set_event_loop, asyncio.get_event_loop())
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(None)
 
     def tearDown(self):
         self.loop.close()
-        asyncio.set_event_loop(self.old_loop)
-        self.old_loop = self.loop = None
+        self.loop = None
 
     async def to_list(self, gen):
         res = []

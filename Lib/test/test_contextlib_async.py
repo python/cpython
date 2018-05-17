@@ -293,13 +293,10 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
     exit_stack = SyncAsyncExitStack
 
     def setUp(self):
-        self.old_loop = asyncio.get_event_loop()
+        self.addCleanup(asyncio.set_event_loop, asyncio.get_event_loop())
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.addCleanup(self.loop.close)
-
-    def tearDown(self):
-        asyncio.set_event_loop(self.old_loop)
 
     @_async_test
     async def test_async_callback(self):
