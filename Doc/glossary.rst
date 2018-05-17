@@ -829,6 +829,21 @@ Glossary
       :class:`str` or :class:`bytes` result instead, respectively. Introduced
       by :pep:`519`.
 
+   PEP
+      Python Enhancement Proposal. A PEP is a design document
+      providing information to the Python community, or describing a new
+      feature for Python or its processes or environment. PEPs should
+      provide a concise technical specification and a rationale for proposed
+      features.
+
+      PEPs are intended to be the primary mechanisms for proposing major new
+      features, for collecting community input on an issue, and for documenting
+      the design decisions that have gone into Python. The PEP author is
+      responsible for building consensus within the community and documenting
+      dissenting opinions.
+
+      See :pep:`1`.
+
    portion
       A set of files in a single directory (possibly stored in a zip file)
       that contribute to a namespace package, as defined in :pep:`420`.
