@@ -489,6 +489,7 @@ def ProcessingInstruction(target, text=None):
         element.text = element.text + " " + text
     return element
 
+
 PI = ProcessingInstruction
 
 
@@ -510,28 +511,36 @@ class QName:
         if tag:
             text_or_uri = "{%s}%s" % (text_or_uri, tag)
         self.text = text_or_uri
+
     def __str__(self):
         return self.text
+
     def __repr__(self):
         return '<%s %r>' % (self.__class__.__name__, self.text)
+
     def __hash__(self):
         return hash(self.text)
+
     def __le__(self, other):
         if isinstance(other, QName):
             return self.text <= other.text
         return self.text <= other
+
     def __lt__(self, other):
         if isinstance(other, QName):
             return self.text < other.text
         return self.text < other
+
     def __ge__(self, other):
         if isinstance(other, QName):
             return self.text >= other.text
         return self.text >= other
+
     def __gt__(self, other):
         if isinstance(other, QName):
             return self.text > other.text
         return self.text > other
+
     def __eq__(self, other):
         if isinstance(other, QName):
             return self.text == other.text
@@ -835,6 +844,7 @@ def _get_writer(file_or_filename, encoding):
                 stack.callback(file.detach)
                 yield file.write
 
+
 def _namespaces(elem, default_namespace=None):
     # identify namespaces used in this tree
 
@@ -896,6 +906,7 @@ def _namespaces(elem, default_namespace=None):
             add_qname(text.text)
     return qnames, namespaces
 
+
 def _serialize_xml(write, elem, qnames, namespaces,
                    short_empty_elements, **kwargs):
     tag = elem.tag
@@ -946,6 +957,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
     if elem.tail:
         write(_escape_cdata(elem.tail))
 
+
 HTML_EMPTY = ("area", "base", "basefont", "br", "col", "frame", "hr",
               "img", "input", "isindex", "link", "meta", "param")
 
@@ -953,6 +965,7 @@ try:
     HTML_EMPTY = set(HTML_EMPTY)
 except NameError:
     pass
+
 
 def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     tag = elem.tag
@@ -1004,18 +1017,20 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     if elem.tail:
         write(_escape_cdata(elem.tail))
 
+
 def _serialize_text(write, elem):
     for part in elem.itertext():
         write(part)
     if elem.tail:
         write(elem.tail)
 
+
 _serialize = {
     "xml": _serialize_xml,
     "html": _serialize_html,
     "text": _serialize_text,
-# this optional method is imported at the end of the module
-#   "c14n": _serialize_c14n,
+    # this optional method is imported at the end of the module
+    #   "c14n": _serialize_c14n,
 }
 
 
@@ -1038,6 +1053,7 @@ def register_namespace(prefix, uri):
             del _namespace_map[k]
     _namespace_map[uri] = prefix
 
+
 _namespace_map = {
     # "well-known" namespace prefixes
     "http://www.w3.org/XML/1998/namespace": "xml",
@@ -1053,10 +1069,12 @@ _namespace_map = {
 # For tests and troubleshooting
 register_namespace._namespace_map = _namespace_map
 
+
 def _raise_serialization_error(text):
     raise TypeError(
         "cannot serialize %r (type %s)" % (text, type(text).__name__)
         )
+
 
 def _escape_cdata(text):
     # escape character data
@@ -1073,6 +1091,7 @@ def _escape_cdata(text):
         return text
     except (TypeError, AttributeError):
         _raise_serialization_error(text)
+
 
 def _escape_attrib(text):
     # escape attribute value
@@ -1102,6 +1121,7 @@ def _escape_attrib(text):
     except (TypeError, AttributeError):
         _raise_serialization_error(text)
 
+
 def _escape_attrib_html(text):
     # escape attribute value
     try:
@@ -1116,6 +1136,7 @@ def _escape_attrib_html(text):
         _raise_serialization_error(text)
 
 # --------------------------------------------------------------------
+
 
 def tostring(element, encoding=None, method=None, *,
              short_empty_elements=True):
@@ -1136,6 +1157,7 @@ def tostring(element, encoding=None, method=None, *,
                                short_empty_elements=short_empty_elements)
     return stream.getvalue()
 
+
 class _ListDataStream(io.BufferedIOBase):
     """An auxiliary stream accumulating into a list reference."""
     def __init__(self, lst):
@@ -1152,6 +1174,7 @@ class _ListDataStream(io.BufferedIOBase):
 
     def tell(self):
         return len(self.lst)
+
 
 def tostringlist(element, encoding=None, method=None, *,
                  short_empty_elements=True):
@@ -1216,6 +1239,7 @@ def iterparse(source, events=None, parser=None):
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
+
     def iterator():
         try:
             while True:
@@ -1337,8 +1361,10 @@ def XMLID(text, parser=None):
             ids[id] = elem
     return tree, ids
 
+
 # Parse XML document from string constant.  Alias for XML().
 fromstring = XML
+
 
 def fromstringlist(sequence, parser=None):
     """Parse XML document from sequence of string fragments.
@@ -1431,7 +1457,9 @@ class TreeBuilder:
         self._tail = 1
         return self._last
 
+
 _sentinel = ['sentinel']
+
 
 # also see ElementTree and TreeBuilder
 class XMLParser:
@@ -1571,7 +1599,7 @@ class XMLParser:
                 err = expat.error(
                     "undefined entity %s: line %d, column %d" %
                     (text, self.parser.ErrorLineNumber,
-                    self.parser.ErrorColumnNumber)
+                     self.parser.ErrorColumnNumber)
                     )
                 err.code = 11 # XML_ERROR_UNDEFINED_ENTITY
                 err.lineno = self.parser.ErrorLineNumber
