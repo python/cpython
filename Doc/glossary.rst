@@ -1039,7 +1039,7 @@ Glossary
 
    type hint
       A specification about the expected type for a variable, class
-      variable, function or method parameter or return value.
+      attribute, function or method parameter or return value.
 
       Type hints are optional and are not enforced by Python but
       they are useful to static type analysis tools, and aid IDEs on code
