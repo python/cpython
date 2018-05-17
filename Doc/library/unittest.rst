@@ -342,8 +342,9 @@ testing code::
 
 Note that in order to test something, we use one of the :meth:`assert\*`
 methods provided by the :class:`TestCase` base class.  If the test fails, an
-exception will be raised, and :mod:`unittest` will identify the test case as a
-:dfn:`failure`.  Any other exceptions will be treated as :dfn:`errors`.
+exception will be raised with an explanatory message, and :mod:`unittest`
+will identify the test case as a :dfn:`failure`.  Any other exceptions will be
+treated as :dfn:`errors`.
 
 Tests can be numerous, and their set-up can be repetitive.  Luckily, we
 can factor out set-up code by implementing a method called
@@ -389,13 +390,18 @@ after the test method has been run::
 If :meth:`~TestCase.setUp` succeeded, :meth:`~TestCase.tearDown` will be
 run whether the test method succeeded or not.
 
-Such a working environment for the testing code is called a :dfn:`fixture`.
+Such a working environment for the testing code is called a
+:dfn:`test fixture`.  A new TestCase instance is created as a unique
+test fixture used to execute each individual test method.  Thus
+`~TestCase.setUp`, `~TestCase.tearDown`, and `~TestCase.__init__`
+will be called once per test.
 
-Test case instances are grouped together according to the features they test.
-:mod:`unittest` provides a mechanism for this: the :dfn:`test suite`,
-represented by :mod:`unittest`'s :class:`TestSuite` class.  In most cases,
-calling :func:`unittest.main` will do the right thing and collect all the
-module's test cases for you, and then execute them.
+It is recommended that you use TestCase implementations to group tests together
+according to the features they test.  :mod:`unittest` provides a mechanism for
+this: the :dfn:`test suite`, represented by :mod:`unittest`'s
+:class:`TestSuite` class.  In most cases, calling :func:`unittest.main` will do
+the right thing and collect all the module's test cases for you and execute
+them.
 
 However, should you want to customize the building of your test suite,
 you can do it yourself::
