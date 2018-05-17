@@ -21,7 +21,8 @@ testcfg = {
     'keys': config.IdleUserConfParser(''),
     'extensions': config.IdleUserConfParser(''),
 }
-code_sample = """
+code_sample = """\
+
 class C1():
     # Class comment.
     def __init__(self, a, b):
@@ -51,6 +52,7 @@ class CodeContextTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         root = cls.root = Tk()
+        root.withdraw()
         frame = cls.frame = Frame(root)
         text = cls.text = Text(frame)
         text.insert('1.0', code_sample)
@@ -90,8 +92,8 @@ class CodeContextTest(unittest.TestCase):
         self.assertIsNone(cc.label)
         eq(cc.info, [(0, -1, '', False)])
         eq(cc.topvisible, 1)
-        self.root.tk.call('after', 'info', self.cc.t1)
-        self.root.tk.call('after', 'info', self.cc.t2)
+        eq(self.root.tk.call('after', 'info', self.cc.t1)[1], 'timer')
+        eq(self.root.tk.call('after', 'info', self.cc.t2)[1], 'timer')
 
     def test_del(self):
         self.root.tk.call('after', 'info', self.cc.t1)

@@ -37,18 +37,17 @@ class CodeContext:
     def __init__(self, editwin):
         """Initialize settings for context block.
 
-        Args:
-            editwin: Editor window for the context block.
-
+        editwin is the Editor window for the context block.
         self.text is the editor window text widget.
-
         self.textfont is the editor window font.
 
-        self.label displays the code context text at the top of the
-        editor.  It is initialized to None to not display the code context
-        and it is toggled via <<toggle-code-context>>.  If code context is
-        not suitable for an editor window, then unbind the text from
-        <<toggle-code-context>>.
+        self.label displays the code context text above the editor text.
+          Initially None it is toggled via <<toggle-code-context>>.
+        self.topvisible is the number of the top text line displayed.
+        self.info is a list of (line number, indent level, line text,
+          block keyword) tuples for the block structure above topvisible.
+          s self.info[0] is initialized a 'dummy' line which
+        # starts the toplevel 'block' of the module.
 
         self.t1 and self.t2 are two timer events on the editor text widget to
         monitor for changes to the context text or editor font.
@@ -57,13 +56,8 @@ class CodeContext:
         self.text = editwin.text
         self.textfont = self.text["font"]
         self.label = None
-        # self.info is a list of (line number, indent level, line text, block
-        # keyword) tuples providing the block structure associated with
-        # self.topvisible (the linenumber of the line displayed at the top of
-        # the edit window). self.info[0] is initialized as a 'dummy' line which
-        # starts the toplevel 'block' of the module.
-        self.info = [(0, -1, "", False)]
         self.topvisible = 1
+        self.info = [(0, -1, "", False)]
         # Start two update cycles, one for context lines, one for font changes.
         self.t1 = self.text.after(UPDATEINTERVAL, self.timer_event)
         self.t2 = self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
@@ -140,10 +134,13 @@ class CodeContext:
         return indent, text, opener
 
     def get_context(self, new_topvisible, stopline=1, stopindent=0):
-        """Get context lines, starting at new_topvisible and working backwards.
+        """Return a list of block line tuples and the 'last' indent.
 
-        Stop when stopline or stopindent is reached. Return a tuple of context
-        data and the indent level at the top of the region inspected.
+        The tuple fields are (linenum, indent, text, opener).
+        The list represents header lines from new_topvisible back to
+        stopline with successively shorter indents > stopindent.
+        The list is returned ordered by line number.
+        Last indent returned is the smallest indent observed.
         """
         assert stopline > 0
         lines = []
@@ -184,7 +181,7 @@ class CodeContext:
             # between topvisible and new_topvisible:
             while self.info[-1][1] >= lastindent:
                 del self.info[-1]
-        elif self.topvisible > new_topvisible:     # scroll up
+        else:  # self.topvisible > new_topvisible:     # scroll up
             stopindent = self.info[-1][1] + 1
             # retain only context info associated
             # with lines above new_topvisible:
