@@ -634,6 +634,7 @@ def no_jump_without_trace_function():
 
 class JumpTestCase(unittest.TestCase):
     def setUp(self):
+        self.addCleanup(asyncio.set_event_loop, asyncio.get_event_loop())
         self.addCleanup(sys.settrace, sys.gettrace())
         sys.settrace(None)
 
