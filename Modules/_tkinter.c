@@ -180,8 +180,8 @@ _get_tcl_lib_path()
 
    Sometimes, it is necessary to have both the Python lock and the Tcl lock.
    (For example, when transferring data between the Tcl interpreter and/or
-   objects and Python objects.) To avoid deadlocks, when acquiring, we always
-   acquire the Tcl lock first, then the Python lock. The additional macros for
+   objects and Python objects.)  To avoid deadlocks, when acquiring, we always
+   acquire the Tcl lock first, then the Python lock.  The additional macros for
    finer lock control are: ENTER_OVERLAP acquires the Python lock (and restores
    the thread state) when already holding the Tcl lock; LEAVE_OVERLAP releases
    the Python lock and keeps the Tcl lock; and LEAVE_OVERLAP_TCL releases the
@@ -222,6 +222,7 @@ static PyThread_type_lock tcl_lock = 0;
 static unsigned long tcl_lock_thread_ident = 0;
 static unsigned int tcl_lock_reentry_count = 0;
 
+
 #ifdef TCL_THREADS
 static Tcl_ThreadDataKey state_key;
 typedef PyThreadState *ThreadSpecificData;
@@ -231,9 +232,10 @@ typedef PyThreadState *ThreadSpecificData;
 static PyThreadState *tcl_tstate = NULL;
 #endif
 
+
 #define ACQUIRE_TCL_LOCK \
 if (tcl_lock) {\
-    if (tcl_lock_thread_ident == PyThread_get_thread_ident()) {\
+    if (tcl_lock_thread_ident == PyThread_get_thread_ident()) { \
         tcl_lock_reentry_count++; \
         if(!tcl_lock_reentry_count) \
             Py_FatalError("Tcl lock reentry count overflow"); \
@@ -253,12 +255,13 @@ if (tcl_lock){\
     }\
 }
 
+
 #define ENTER_TCL \
-    { PyThreadState *tstate = PyThreadState_Get();\
+    { PyThreadState *tstate = PyThreadState_Get(); \
         ENTER_TCL_CUSTOM_TSTATE(tstate)
 
 #define ENTER_TCL_CUSTOM_TSTATE(tstate) \
-        Py_BEGIN_ALLOW_THREADS\
+        Py_BEGIN_ALLOW_THREADS \
         ACQUIRE_TCL_LOCK; tcl_tstate = tstate;
 
 #define LEAVE_TCL \
