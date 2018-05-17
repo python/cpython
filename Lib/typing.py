@@ -202,7 +202,7 @@ def _check_generic(cls, parameters):
 
 
 def _remove_dups_flatten(parameters):
-    """An internal helper for Union creation and substitution: flatten Union's
+    """An internal helper for Union creation and substitution: flatten Unions
     among parameters, then remove duplicates.
     """
     # Flatten out Union[Union[...], ...].
@@ -224,8 +224,7 @@ def _remove_dups_flatten(parameters):
                 all_params.remove(t)
         params = new_params
         assert not all_params, all_params
-    all_params = set(params)
-    return tuple(t for t in params if t in all_params)
+    return tuple(params)
 
 
 _cleanups = []

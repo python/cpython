@@ -256,6 +256,8 @@ class UnionTests(BaseTestCase):
         u1 = Union[int, object]
         u2 = Union[object, int]
         self.assertEqual(u1, u2)
+        self.assertNotEqual(u1, object)
+        self.assertNotEqual(u2, object)
 
     def test_unordered(self):
         u1 = Union[int, float]
@@ -268,7 +270,9 @@ class UnionTests(BaseTestCase):
 
     def test_base_class_kept(self):
         u = Union[Employee, Manager]
-        self.assertIsNot(u, Employee)
+        self.assertNotEqual(u, Employee)
+        self.assertIn(Employee, u.__args__)
+        self.assertIn(Manager, u.__args__)
 
     def test_union_union(self):
         u = Union[int, float]
@@ -312,6 +316,8 @@ class UnionTests(BaseTestCase):
     def test_union_generalization(self):
         self.assertFalse(Union[str, typing.Iterable[int]] == str)
         self.assertFalse(Union[str, typing.Iterable[int]] == typing.Iterable[int])
+        self.assertIn(str, Union[str, typing.Iterable[int]].__args__)
+        self.assertIn(typing.Iterable[int], Union[str, typing.Iterable[int]].__args__)
 
     def test_union_compare_other(self):
         self.assertNotEqual(Union, object)
