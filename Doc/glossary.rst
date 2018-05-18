@@ -45,8 +45,8 @@ Glossary
 
       Annotations of local variables cannot be accesed at runtime, but
       annotations of global variables, class attributes and function or method
-      parameters or return values are stored in the :attr:`__annotations__`
-      special attribute of modules, classes, and functions or methods,
+      parameters and return values are stored in the :attr:`__annotations__`
+      special attribute of modules, classes, functions and methods,
       respectively.
 
       Annotations can be :term:`type hints <type hint>`.
