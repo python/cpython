@@ -961,15 +961,14 @@ The module defines the following classes, functions and decorators:
 
        Union[int, str] == Union[str, int]
 
-   * When a class and its subclass are present, the latter is skipped, e.g.::
-
-       Union[int, object] == object
-
    * You cannot subclass or instantiate a union.
 
    * You cannot write ``Union[X][Y]``.
 
    * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
+
+   .. versionchanged:: 3.7
+      Don't remove explicit subclasses from unions at runtime.
 
 .. data:: Optional
 
