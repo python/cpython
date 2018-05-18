@@ -192,7 +192,7 @@ PyCapsule_SetContext(PyObject *o, void *context)
 
 
 void *
-PyCapsule_Import(const char *name, int no_block)
+PyCapsule_Import(const char *name, int Py_UNUSED(no_block))
 {
     PyObject *object = NULL;
     void *return_value = NULL;
@@ -210,47 +210,32 @@ PyCapsule_Import(const char *name, int no_block)
             *dot = '\0';
         }
         if (object) {
-            PyObject *object2 = PyObject_GetAttrString(object, trace);
-            Py_DECREF(object);
-            object = object2;
+            Py_SETREF(object, PyObject_GetAttrString(object, trace));
         }
         if (!dot) {
             break;
         }
         if (!object) {
-            if (no_block) {
-                object = PyImport_ImportModuleNoBlock(name_dup);
-            } else {
-                object = PyImport_ImportModule(name_dup);
-                if (!object) {
-                    PyErr_Format(PyExc_ImportError,
-                                 "PyCapsule_Import could not import "
-                                 "module \"%s\"",
-                                 name_dup);
-                }
-            }
+            object = PyImport_ImportModule(name_dup);
             if (!object) {
-                goto EXIT;
+                break;
             }
         }
         *dot = '.';
         trace = dot + 1;
-    }
-    if (!object && trace != name_dup) {
-        goto EXIT;
     }
 
     /* compare attribute name to module.name by hand */
     if (PyCapsule_IsValid(object, name)) {
         PyCapsule *capsule = (PyCapsule *)object;
         return_value = capsule->pointer;
-    } else {
+    }
+    else if (object || trace == name_dup) {
         PyErr_Format(PyExc_AttributeError,
             "PyCapsule_Import \"%s\" is not valid",
             name);
     }
 
-EXIT:
     Py_XDECREF(object);
     PyMem_Free(name_dup);
     return return_value;
