@@ -9,7 +9,7 @@ Capsules
 
 Refer to :ref:`using-capsules` for more information on using these objects.
 
-.. versionadded:: 3.1
+.. versionadded:: 2.7
 
 
 .. c:type:: PyCapsule
