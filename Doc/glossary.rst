@@ -41,16 +41,15 @@ Glossary
 
    annotation
       A metadata value associated with a variable, a class attribute or a
-      function or method parameter or return value, that has no specific
-      purpouse (i.e. it's up to the user to use it as they see fit).
+      function or method parameter or return value, with no defined semantics.
 
-      Annotations are stored in the :attr:`__annotations__` special attribute
-      of a module (when annotating a global variable), class (when annotating
-      one of its attributes) or function or method (when annotating a parameter or a
-      return value). Annotations of local variables are not stored.
+      Annotations of local variables cannot be accesed at runtime, but
+      annotations of global variables, class attributes and function or method
+      parameters or return values are stored in the :attr:`__annotations__`
+      special attribute of modules, classes, and functions or methods,
+      respectively.
 
-      Annotations can be used to specify :term:`type hints <type hint>`. These
-      hints can be accessed using :func:`typing.get_type_hints`.
+      Annotations can be :term:`type hints <type hint>`.
 
       See :pep:`484` and :pep:`526` which describe this functionality.
 
@@ -393,7 +392,7 @@ Glossary
    function annotation
       An :term:`annotation` of a function, or a method.
 
-      Function annotations can be used to specify
+      Function annotations can be
       :term:`type hints <type hint>`: this function is expected to take two
       :class:`int` arguments and is also expected to have an :class:`int`
       return value::
@@ -403,7 +402,7 @@ Glossary
 
       Function annotation syntax is explained in section :ref:`function`.
 
-      See also the :term:`variable annotation` glossary entry, and :pep:`484`,
+      See also :term:`variable annotation`, and :pep:`484`,
       which describes this functionality.
 
    __future__
@@ -1038,16 +1037,18 @@ Glossary
       ``type(obj)``.
 
    type hint
-      A specification about the expected type for a variable, class
+      An :term:`annotation` that specifies the expected type for a variable, class
       attribute, function or method parameter or return value.
 
       Type hints are optional and are not enforced by Python but
       they are useful to static type analysis tools, and aid IDEs on code
       completion and refactoring.
 
-      Type hints are declared via :term:`annotations <annotation>`.
+      Type hints of global variables, class attributes, function or method
+      parameter or return value, but not local variables, can be accessed using
+      :func:`typing.get_type_hints`.
 
-      See also :pep:`483` which describe this functionality.
+      See also :mod:`typing` and :pep:`483` which describe this functionality.
 
    universal newlines
       A manner of interpreting text streams in which all of the following are
@@ -1078,7 +1079,7 @@ Glossary
              if False: a = 0
              print(a)  # raises UnboundLocalError
 
-      Variable annotations can be used to specify
+      Variable annotations can be
       :term:`type hints <type hint>`: this variable is expected to take
       :class:`int` values::
 
@@ -1086,7 +1087,7 @@ Glossary
 
       Variable annotation syntax is explained in section :ref:`annassign`.
 
-      See also the :term:`function annotation` glossary entry, and :pep:`484`
+      See also :term:`function annotation`, :pep:`484`
       and :pep:`526` which describe this functionality.
 
    virtual environment
