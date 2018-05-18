@@ -27,6 +27,7 @@ class RobotFileParser:
 
     def __init__(self, url=''):
         self.entries = []
+        self.sitemaps = []
         self.default_entry = None
         self.disallow_all = False
         self.allow_all = False
@@ -141,6 +142,12 @@ class RobotFileParser:
                             and numbers[1].strip().isdigit()):
                             entry.req_rate = RequestRate(int(numbers[0]), int(numbers[1]))
                         state = 2
+                elif line[0] == "sitemap":
+                    # According to http://www.sitemaps.org/protocol.html
+                    # "This directive is independent of the user-agent line,
+                    #  so it doesn't matter where you place it in your file."
+                    # Therefore we do not change the state of the parser.
+                    self.sitemaps.append(line[1])
         if state == 2:
             self._add_entry(entry)
 
@@ -188,6 +195,11 @@ class RobotFileParser:
             if entry.applies_to(useragent):
                 return entry.req_rate
         return self.default_entry.req_rate
+
+    def site_maps(self):
+        if not self.sitemaps:
+            return None
+        return self.sitemaps
 
     def __str__(self):
         entries = self.entries

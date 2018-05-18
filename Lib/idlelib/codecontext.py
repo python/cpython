@@ -18,7 +18,7 @@ from tkinter.constants import TOP, LEFT, X, W, SUNKEN
 from idlelib.config import idleConf
 
 BLOCKOPENERS = {"class", "def", "elif", "else", "except", "finally", "for",
-                    "if", "try", "while", "with"}
+                "if", "try", "while", "with", "async"}
 UPDATEINTERVAL = 100 # millisec
 FONTUPDATEINTERVAL = 1000 # millisec
 

@@ -9,6 +9,8 @@ Capsules
 
 Refer to :ref:`using-capsules` for more information on using these objects.
 
+.. versionadded:: 3.1
+
 
 .. c:type:: PyCapsule
 
@@ -18,6 +20,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    function pointer defined in one module available to other modules, so the
    regular import mechanism can be used to access C APIs defined in dynamically
    loaded modules.
+
 
 .. c:type:: PyCapsule_Destructor
 
@@ -104,8 +107,8 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    import the module conventionally (using :c:func:`PyImport_ImportModule`).
 
    Return the capsule's internal *pointer* on success.  On failure, set an
-   exception and return *NULL*.  However, if :c:func:`PyCapsule_Import` failed to
-   import the module, and *no_block* was true, no exception is set.
+   exception and return *NULL*.
+
 
    .. versionchanged:: 3.8
       Supported importing submodules as in ``package.module.attribute``.
@@ -125,17 +128,20 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    Return a nonzero value if the object is valid and matches the name passed in.
    Return ``0`` otherwise.  This function will not fail.
 
+
 .. c:function:: int PyCapsule_SetContext(PyObject *capsule, void *context)
 
    Set the context pointer inside *capsule* to *context*.
 
    Return ``0`` on success.  Return nonzero and set an exception on failure.
 
+
 .. c:function:: int PyCapsule_SetDestructor(PyObject *capsule, PyCapsule_Destructor destructor)
 
    Set the destructor inside *capsule* to *destructor*.
 
    Return ``0`` on success.  Return nonzero and set an exception on failure.
+
 
 .. c:function:: int PyCapsule_SetName(PyObject *capsule, const char *name)
 
@@ -144,6 +150,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    *NULL*, no attempt is made to free it.
 
    Return ``0`` on success.  Return nonzero and set an exception on failure.
+
 
 .. c:function:: int PyCapsule_SetPointer(PyObject *capsule, void *pointer)
 
