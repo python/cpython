@@ -44,7 +44,7 @@ Glossary
       function or method parameter or return value, with no defined semantics.
 
       Annotations of local variables cannot be accesed at runtime, but
-      annotations of global variables, class attributes and function or method
+      annotations of global variables, class attributes, function and method
       parameters and return values are stored in the :attr:`__annotations__`
       special attribute of modules, classes, functions and methods,
       respectively.
