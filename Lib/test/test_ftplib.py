@@ -405,7 +405,7 @@ if ssl is not None:
 
         def close(self):
             if (isinstance(self.socket, ssl.SSLSocket) and
-                self.socket._sslobj is not None):
+                    self.socket._sslobj is not None):
                 self._do_ssl_shutdown()
             else:
                 super(SSLConnection, self).close()

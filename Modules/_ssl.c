@@ -376,7 +376,6 @@ enum py_proto_version {
 #endif
 };
 
-
 /* serves as a flag to see whether we've initialized the SSL thread support. */
 /* 0 means no, greater than 0 means yes */
 
@@ -427,7 +426,6 @@ typedef struct {
     PyObject *Socket; /* weakref to socket on which we're layered */
     SSL *ssl;
     PySSLContext *ctx; /* weakref to SSL context */
-    char shutdown_seen_zero;
     enum py_ssl_server_or_client socket_type;
     PyObject *owner; /* Python level "owner" passed to servername callback */
     PyObject *server_hostname;
@@ -891,7 +889,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->Socket = NULL;
     self->ctx = sslctx;
     Py_INCREF(sslctx);
-    self->shutdown_seen_zero = 0;
     self->owner = NULL;
     self->server_hostname = NULL;
     self->ssl_errno = 0;
@@ -2487,7 +2484,8 @@ static PyObject *
 _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
 /*[clinic end generated code: output=ca1aa7ed9d25ca42 input=11d39e69b0a2bf4a]*/
 {
-    int err, sockstate, nonblocking;
+    int sockstate, nonblocking;
+    int err = 0;
     int zeros = 0;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
@@ -2513,7 +2511,8 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
     if (has_timeout)
         deadline = _PyTime_GetMonotonicClock() + timeout;
 
-    while (1) {
+    while (SSL_get_shutdown(self->ssl) != (SSL_SENT_SHUTDOWN | SSL_RECEIVED_SHUTDOWN)) {
+        err = 0;
         PySSL_BEGIN_ALLOW_THREADS
         /* Disable read-ahead so that unwrap can work correctly.
          * Otherwise OpenSSL might read in too much data,
@@ -2523,9 +2522,16 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
          * function is used and the shutdown_seen_zero != 0
          * condition is met.
          */
-        if (self->shutdown_seen_zero)
+        if (SSL_get_shutdown(self->ssl) == SSL_SENT_SHUTDOWN) {
+            char buf[1024];
             SSL_set_read_ahead(self->ssl, 0);
-        err = SSL_shutdown(self->ssl);
+            err = SSL_read(self->ssl, buf, sizeof(buf));
+            if (err <= 0 && SSL_get_error(self->ssl, err) == SSL_ERROR_ZERO_RETURN) {
+            err = SSL_shutdown(self->ssl);
+            }
+        } else {
+            err = SSL_shutdown(self->ssl);
+        }
         _PySSL_UPDATE_ERRNO_IF(err < 0, self, err);
         PySSL_END_ALLOW_THREADS
 
@@ -2539,7 +2545,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
             if (++zeros > 1)
                 break;
             /* Shutdown was sent, now try receiving */
-            self->shutdown_seen_zero = 1;
+            //self->shutdown_seen_zero = 1;
             continue;
         }
 
