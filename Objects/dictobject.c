@@ -1217,7 +1217,7 @@ clear_dummy_keys(PyDictObject *mp)
     second = entries + 1;
     end = entries + numentries;
 
-    for( ;; ) {
+    for (;;) {
         if (first >= end || second >= end) break;
 
         if (first->me_value != NULL) {
@@ -1237,7 +1237,7 @@ clear_dummy_keys(PyDictObject *mp)
     build_indices(mp->ma_keys, entries, numentries);
     mp->ma_keys->dk_usable = USABLE_FRACTION(mp->ma_keys->dk_size) - numentries;
     mp->ma_keys->dk_nentries = numentries;
-
+    mp->ma_keys->dk_lookup = lookdict_unicode_nodummy;
 }
 
 /* Returns NULL if unable to split table.
@@ -1259,7 +1259,7 @@ make_keys_shared(PyObject *op)
             return NULL;
         }
         else if (mp->ma_keys->dk_lookup == lookdict_unicode) {
-	        clear_dummy_keys(mp);
+            clear_dummy_keys(mp);
         }
         assert(mp->ma_keys->dk_lookup == lookdict_unicode_nodummy);
         /* Copy values into a new array */
