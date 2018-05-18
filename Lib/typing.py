@@ -206,8 +206,8 @@ def _check_generic(cls, parameters):
 
 
 def _remove_dups_flatten(parameters):
-    """An internal helper for Union creation and substitution: flatten Union's
-    among parameters, then remove duplicates and strict subclasses.
+    """An internal helper for Union creation and substitution: flatten Unions
+    among parameters, then remove duplicates.
     """
     # Flatten out Union[Union[...], ...].
     params = []
@@ -228,20 +228,7 @@ def _remove_dups_flatten(parameters):
                 all_params.remove(t)
         params = new_params
         assert not all_params, all_params
-    # Weed out subclasses.
-    # E.g. Union[int, Employee, Manager] == Union[int, Employee].
-    # If object is present it will be sole survivor among proper classes.
-    # Never discard type variables.
-    # (In particular, Union[str, AnyStr] != AnyStr.)
-    all_params = set(params)
-    for t1 in params:
-        if not isinstance(t1, type):
-            continue
-        if any((isinstance(t2, type) or
-                isinstance(t2, _GenericAlias) and t2._special) and issubclass(t1, t2)
-               for t2 in all_params - {t1}):
-            all_params.remove(t1)
-    return tuple(t for t in params if t in all_params)
+    return tuple(params)
 
 
 _cleanups = []
@@ -439,19 +426,6 @@ Union = _SpecialForm('Union', doc=
     - When comparing unions, the argument order is ignored, e.g.::
 
         Union[int, str] == Union[str, int]
-
-    - When two arguments have a subclass relationship, the least
-      derived argument is kept, e.g.::
-
-        class Employee: pass
-        class Manager(Employee): pass
-        Union[int, Employee, Manager] == Union[int, Employee]
-        Union[Manager, int, Employee] == Union[int, Employee]
-        Union[Employee, Manager] == Employee
-
-    - Similar for object::
-
-        Union[int, object] == object
 
     - You cannot subclass or instantiate a union.
     - You can use Optional[X] as a shorthand for Union[X, None].
