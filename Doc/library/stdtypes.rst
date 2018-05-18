@@ -1098,7 +1098,7 @@ Notes:
    item is removed and returned.
 
 (3)
-   ``remove`` raises :exc:`ValueError` when *x* is not found in *s*.
+   :meth:`remove` raises :exc:`ValueError` when *x* is not found in *s*.
 
 (4)
    The :meth:`reverse` method modifies the sequence in place for economy of
