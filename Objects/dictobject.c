@@ -1194,6 +1194,51 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
     return 0;
 }
 
+/*
+ * clear dummy keys and reusing keys
+ */
+static void
+clear_dummy_keys(PyDictObject *mp)
+{
+    PyDictKeyEntry *first, *second, *end;
+    Py_ssize_t numentries;
+    PyDictKeyEntry *entries;
+
+    /* No DUMMY */
+    if (mp->ma_keys->dk_nentries == mp->ma_used) {
+        return;
+    }
+
+    numentries = mp->ma_used;
+    entries = DK_ENTRIES(mp->ma_keys);
+
+    first = entries;
+    second = entries + 1;
+    end = entries + numentries;
+
+    for (;;) {
+        if (first >= end || second >= end) break;
+
+        if (first->me_value != NULL) {
+            first++;
+            continue;
+        }
+
+        if (second->me_value == NULL || second < first) {
+            second++;
+            continue;
+        }
+
+        first->me_value = second->me_value;
+        second->me_value = NULL;
+    }
+
+    build_indices(mp->ma_keys, entries, numentries);
+    mp->ma_keys->dk_usable = USABLE_FRACTION(mp->ma_keys->dk_size) - numentries;
+    mp->ma_keys->dk_nentries = numentries;
+    mp->ma_keys->dk_lookup = lookdict_unicode_nodummy;
+}
+
 /* Returns NULL if unable to split table.
  * A NULL return does not necessarily indicate an error */
 static PyDictKeysObject *
@@ -1213,9 +1258,7 @@ make_keys_shared(PyObject *op)
             return NULL;
         }
         else if (mp->ma_keys->dk_lookup == lookdict_unicode) {
-            /* Remove dummy keys */
-            if (dictresize(mp, DK_SIZE(mp->ma_keys)))
-                return NULL;
+            clear_dummy_keys(mp);
         }
         assert(mp->ma_keys->dk_lookup == lookdict_unicode_nodummy);
         /* Copy values into a new array */
