@@ -617,7 +617,7 @@
 /* Define to 1 if you have the `log2' function. */
 #undef HAVE_LOG2
 
-/* Define this if you have the type long double. */
+/* Define to 1 if the system has the type `long double'. */
 #undef HAVE_LONG_DOUBLE
 
 /* Define to 1 if you have the `lstat' function. */
@@ -895,6 +895,9 @@
 
 /* Define to 1 if you have the `sigaltstack' function. */
 #undef HAVE_SIGALTSTACK
+
+/* Define to 1 if you have the `sigfillset' function. */
+#undef HAVE_SIGFILLSET
 
 /* Define to 1 if `si_band' is a member of `siginfo_t'. */
 #undef HAVE_SIGINFO_T_SI_BAND

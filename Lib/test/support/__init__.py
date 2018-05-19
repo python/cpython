@@ -363,6 +363,20 @@ if sys.platform.startswith("win"):
                     _force_run(fullname, os.unlink, fullname)
         _waitfor(_rmtree_inner, path, waitall=True)
         _waitfor(lambda p: _force_run(p, os.rmdir, p), path)
+
+    def _longpath(path):
+        try:
+            import ctypes
+        except ImportError:
+            # No ctypes means we can't expands paths.
+            pass
+        else:
+            buffer = ctypes.create_unicode_buffer(len(path) * 2)
+            length = ctypes.windll.kernel32.GetLongPathNameW(path, buffer,
+                                                             len(buffer))
+            if length:
+                return buffer[:length]
+        return path
 else:
     _unlink = os.unlink
     _rmdir = os.rmdir
@@ -388,6 +402,9 @@ else:
                     _force_run(path, os.unlink, fullname)
         _rmtree_inner(path)
         os.rmdir(path)
+
+    def _longpath(path):
+        return path
 
 def unlink(filename):
     try:
@@ -2381,13 +2398,15 @@ def can_xattr():
     if not hasattr(os, "setxattr"):
         can = False
     else:
-        tmp_fp, tmp_name = tempfile.mkstemp()
+        tmp_dir = tempfile.mkdtemp()
+        tmp_fp, tmp_name = tempfile.mkstemp(dir=tmp_dir)
         try:
             with open(TESTFN, "wb") as fp:
                 try:
                     # TESTFN & tempfile may use different file systems with
                     # different capabilities
                     os.setxattr(tmp_fp, b"user.test", b"")
+                    os.setxattr(tmp_name, b"trusted.foo", b"42")
                     os.setxattr(fp.fileno(), b"user.test", b"")
                     # Kernels < 2.6.39 don't respect setxattr flags.
                     kernel_version = platform.release()
@@ -2398,6 +2417,7 @@ def can_xattr():
         finally:
             unlink(TESTFN)
             unlink(tmp_name)
+            rmdir(tmp_dir)
     _can_xattr = can
     return can
 
@@ -2810,7 +2830,7 @@ class SaveSignals:
     def __init__(self):
         import signal
         self.signal = signal
-        self.signals = list(range(1, signal.NSIG))
+        self.signals = signal.valid_signals()
         # SIGKILL and SIGSTOP signals cannot be ignored nor caught
         for signame in ('SIGKILL', 'SIGSTOP'):
             try:

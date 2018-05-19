@@ -106,7 +106,7 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _type_check(arg, msg):
+def _type_check(arg, msg, is_argument=False):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
@@ -118,12 +118,16 @@ def _type_check(arg, msg):
 
     We append the repr() of the actual value (truncated to 100 chars).
     """
+    invalid_generic_forms = (Generic, _Protocol)
+    if not is_argument:
+        invalid_generic_forms = invalid_generic_forms + (ClassVar, )
+
     if arg is None:
         return type(None)
     if isinstance(arg, str):
         return ForwardRef(arg)
     if (isinstance(arg, _GenericAlias) and
-            arg.__origin__ in (Generic, _Protocol, ClassVar)):
+            arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
     if (isinstance(arg, _SpecialForm) and arg is not Any or
             arg in (Generic, _Protocol)):
@@ -202,8 +206,8 @@ def _check_generic(cls, parameters):
 
 
 def _remove_dups_flatten(parameters):
-    """An internal helper for Union creation and substitution: flatten Union's
-    among parameters, then remove duplicates and strict subclasses.
+    """An internal helper for Union creation and substitution: flatten Unions
+    among parameters, then remove duplicates.
     """
     # Flatten out Union[Union[...], ...].
     params = []
@@ -224,20 +228,7 @@ def _remove_dups_flatten(parameters):
                 all_params.remove(t)
         params = new_params
         assert not all_params, all_params
-    # Weed out subclasses.
-    # E.g. Union[int, Employee, Manager] == Union[int, Employee].
-    # If object is present it will be sole survivor among proper classes.
-    # Never discard type variables.
-    # (In particular, Union[str, AnyStr] != AnyStr.)
-    all_params = set(params)
-    for t1 in params:
-        if not isinstance(t1, type):
-            continue
-        if any((isinstance(t2, type) or
-                isinstance(t2, _GenericAlias) and t2._special) and issubclass(t1, t2)
-               for t2 in all_params - {t1}):
-            all_params.remove(t1)
-    return tuple(t for t in params if t in all_params)
+    return tuple(params)
 
 
 _cleanups = []
@@ -436,19 +427,6 @@ Union = _SpecialForm('Union', doc=
 
         Union[int, str] == Union[str, int]
 
-    - When two arguments have a subclass relationship, the least
-      derived argument is kept, e.g.::
-
-        class Employee: pass
-        class Manager(Employee): pass
-        Union[int, Employee, Manager] == Union[int, Employee]
-        Union[Manager, int, Employee] == Union[int, Employee]
-        Union[Employee, Manager] == Employee
-
-    - Similar for object::
-
-        Union[int, object] == object
-
     - You cannot subclass or instantiate a union.
     - You can use Optional[X] as a shorthand for Union[X, None].
     """)
@@ -464,9 +442,10 @@ class ForwardRef(_Final, _root=True):
     """Internal wrapper to hold a forward reference."""
 
     __slots__ = ('__forward_arg__', '__forward_code__',
-                 '__forward_evaluated__', '__forward_value__')
+                 '__forward_evaluated__', '__forward_value__',
+                 '__forward_is_argument__')
 
-    def __init__(self, arg):
+    def __init__(self, arg, is_argument=False):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
         try:
@@ -477,6 +456,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_code__ = code
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
+        self.__forward_is_argument__ = is_argument
 
     def _evaluate(self, globalns, localns):
         if not self.__forward_evaluated__ or localns is not globalns:
@@ -488,7 +468,8 @@ class ForwardRef(_Final, _root=True):
                 localns = globalns
             self.__forward_value__ = _type_check(
                 eval(self.__forward_code__, globalns, localns),
-                "Forward references must evaluate to types.")
+                "Forward references must evaluate to types.",
+                is_argument=self.__forward_is_argument__)
             self.__forward_evaluated__ = True
         return self.__forward_value__
 
@@ -607,7 +588,8 @@ class TypeVar(_Final, _Immutable, _root=True):
 # * __parameters__ is a tuple of unique free type parameters of a generic
 #   type, for example, Dict[T, T].__parameters__ == (T,);
 # * __origin__ keeps a reference to a type that was subscripted,
-#   e.g., Union[T, int].__origin__ == Union;
+#   e.g., Union[T, int].__origin__ == Union, or the non-generic version of
+#   the type.
 # * __args__ is a tuple of all arguments used in subscripting,
 #   e.g., Dict[T, int].__args__ == (T, int).
 
@@ -835,7 +817,11 @@ class Generic:
         if cls is Generic:
             raise TypeError("Type Generic cannot be instantiated; "
                             "it can be used only as a base class")
-        return super().__new__(cls)
+        if super().__new__ is object.__new__ and cls.__init__ is not object.__init__:
+            obj = super().__new__(cls)
+        else:
+            obj = super().__new__(cls, *args, **kwds)
+        return obj
 
     @_tp_cache
     def __class_getitem__(cls, params):
@@ -993,7 +979,7 @@ def get_type_hints(obj, globalns=None, localns=None):
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
-                    value = ForwardRef(value)
+                    value = ForwardRef(value, is_argument=True)
                 value = _eval_type(value, base_globals, localns)
                 hints[name] = value
         return hints
@@ -1385,6 +1371,7 @@ class NamedTupleMeta(type):
                                 "follow default field(s) {default_names}"
                                 .format(field_name=field_name,
                                         default_names=', '.join(defaults_dict.keys())))
+        nm_tpl.__new__.__annotations__ = collections.OrderedDict(types)
         nm_tpl.__new__.__defaults__ = tuple(defaults)
         nm_tpl._field_defaults = defaults_dict
         # update from user namespace without overriding special namedtuple attributes

@@ -356,6 +356,25 @@ with the correct context in async/await code.
        PEP written and implemented by Yury Selivanov
 
 
+PEP 560: Core support for typing module and generic types
+---------------------------------------------------------
+
+Initially :pep:`484` was designed in such way that it would not introduce *any*
+changes to the core CPython interpreter. Now type hints and the :mod:`typing`
+module are extensively used by the community, so this restriction is removed.
+The PEP introduces two special methods :meth:`__class_getitem__` and
+``__mro_entries__``, these methods are now used by most classes and special
+constructs in :mod:`typing`. As a result, the speed of various operations
+with types increased up to 7 times, the generic types can be used without
+metaclass conflicts, and several long standing bugs in :mod:`typing` module are
+fixed.
+
+.. seealso::
+
+   :pep:`560` -- Core support for typing module and generic types
+      PEP written and implemented by Ivan Levkivskyi
+
+
 New Development Mode: -X dev
 ----------------------------
 
@@ -1219,6 +1238,10 @@ Changes in the Python API
   :func:`socket.fromshare` a socket :func:`~socket.socket.share`-ed in older
   Python versions.
 
+* ``repr`` for :exc:`BaseException` has changed not to include trailing comma
+  in the output. Mind that most exceptions are affected by this change.
+  (Contributed by Serhiy Storchaka in :issue:`30399`.)
+
 * ``repr`` for :class:`datetime.timedelta` has changed to include keyword arguments
   in the output. (Contributed by Utkarsh Upadhyay in :issue:`30302`.)
 
@@ -1354,13 +1377,16 @@ PEP 545: Python Documentation Translations
 ------------------------------------------
 
 :pep:`545` describes the process to translate Python documentation,
-and two translations have been added:
+and three translations have been added:
 
 - Japanese: https://docs.python.org/ja/ and associated GitHub
   repository: https://github.com/python/python-docs-ja
 
 - French: https://docs.python.org/fr/ and associated GitHub
   repository: https://github.com/python/python-docs-fr
+
+- Korean: https://docs.python.org/ko/ and associated GitHub
+  repository: https://github.com/python/python-docs-ko
 
 (Contributed by Julien Palard, Inada Naoki, and Victor Stinner in
 :issue:`26546`.)

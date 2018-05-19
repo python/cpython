@@ -671,8 +671,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: hex(x)
 
    Convert an integer number to a lowercase hexadecimal string prefixed with
-   "0x". If x is not a Python :class:`int` object, it has to define an
-   __index__() method that returns an integer. Some examples:
+   "0x". If *x* is not a Python :class:`int` object, it has to define an
+   :meth:`__index__` method that returns an integer. Some examples:
 
       >>> hex(255)
       '0xff'
@@ -730,12 +730,10 @@ are always available.  They are listed here in alphabetical order.
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
-   ``0`` if no arguments are given.  If *x* is a number, return
-   :meth:`x.__int__() <object.__int__>`. If *x* defines
-   :meth:`x.__trunc__() <object.__trunc__>` but not
-   :meth:`x.__int__() <object.__int__>`, then return
-   if :meth:`x.__trunc__() <object.__trunc__>`.  For floating point numbers,
-   this truncates towards zero.
+   ``0`` if no arguments are given.  If *x* defines :meth:`__int__`,
+   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__trunc__`,
+   it returns ``x.__trunc__()``.
+   For floating point numbers, this truncates towards zero.
 
    If *x* is not a number or if *base* is given, then *x* must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer

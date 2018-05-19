@@ -218,6 +218,25 @@ class FilterTests(BaseTest):
                                     42)
             self.assertEqual(len(w), 0)
 
+    def test_module_globals(self):
+        with original_warnings.catch_warnings(record=True,
+                module=self.module) as w:
+            # bpo-33509: module_globals=None must not crash
+            self.module.warn_explicit('msg', UserWarning, "filename", 42,
+                                      module_globals=None)
+            self.assertEqual(len(w), 1)
+
+            # Invalid module_globals type
+            with self.assertRaises(TypeError):
+                self.module.warn_explicit('msg', UserWarning, "filename", 42,
+                                          module_globals=True)
+            self.assertEqual(len(w), 1)
+
+            # Empty module_globals
+            self.module.warn_explicit('msg', UserWarning, "filename", 42,
+                                      module_globals={})
+            self.assertEqual(len(w), 2)
+
     def test_inheritance(self):
         with original_warnings.catch_warnings(module=self.module) as w:
             self.module.resetwarnings()

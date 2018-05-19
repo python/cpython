@@ -3,6 +3,27 @@ Released on 2018-06-18?
 ======================================
 
 
+bpo-21474: Update word/identifier definition from ascii to unicode.
+In text and entry boxes, this affects selection by double-click,
+movement left/right by control-left/right, and deletion left/right
+by control-BACKSPACE/DEL.
+
+bpo-33204: Consistently color invalid string prefixes.
+A 'u' string prefix cannot be paired with either 'r' or 'f'.
+IDLE now consistently colors as much of the prefix, starting at the
+right, as is valid.  Revise and extend colorizer test.
+
+bpo-32984: Set __file__ while running a startup file.
+Like Python, IDLE optionally runs 1 startup file in the Shell window
+before presenting the first interactive input prompt.  For IDLE,
+option -s runs a file named in environmental variable IDLESTARTUP or
+PYTHONSTARTUP; -r file runs file.  Python sets __file__ to the startup
+file name before running the file and unsets it before the first
+prompt.  IDLE now does the same when run normally, without the -n
+option.
+
+bpo-32940: Replace StringTranslatePseudoMapping with faster code.
+
 bpo-32916: Change 'str' to 'code' in idlelib.pyparse and users.
 
 bpo-32905: Remove unused code in pyparse module.

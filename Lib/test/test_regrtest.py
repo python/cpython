@@ -594,6 +594,8 @@ class ProgramsTestCase(BaseTestCase):
     def test_pcbuild_rt(self):
         # PCbuild\rt.bat
         script = os.path.join(ROOT_DIR, r'PCbuild\rt.bat')
+        if not os.path.isfile(script):
+            self.skipTest(f'File "{script}" does not exist')
         rt_args = ["-q"]             # Quick, don't run tests twice
         if platform.architecture()[0] == '64bit':
             rt_args.append('-x64')   # 64-bit build

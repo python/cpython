@@ -208,7 +208,7 @@ class EmbeddingTests(unittest.TestCase):
         Checks that sys.warnoptions and sys._xoptions can be set before the
         runtime is initialized (otherwise they won't be effective).
         """
-        env = dict(PYTHONPATH=os.pathsep.join(sys.path))
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
         out, err = self.run_embedded_interpreter(
                         "pre_initialization_sys_options", env=env)
         expected_output = (

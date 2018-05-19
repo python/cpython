@@ -316,9 +316,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     _Py_NewReference(self);
     self->ob_refcnt = refcnt;
 
-    if (PyType_IS_GC(Py_TYPE(self))) {
-        assert(_PyGC_REFS(self) != _PyGC_REFS_UNTRACKED);
-    }
+    assert(!PyType_IS_GC(Py_TYPE(self)) || _PyObject_GC_IS_TRACKED(self));
     /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
      * we need to undo that. */
     _Py_DEC_REFTOTAL;
@@ -1619,13 +1617,13 @@ NotImplemented_repr(PyObject *op)
 }
 
 static PyObject *
-NotImplemented_reduce(PyObject *op)
+NotImplemented_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     return PyUnicode_FromString("NotImplemented");
 }
 
 static PyMethodDef notimplemented_methods[] = {
-    {"__reduce__", (PyCFunction)NotImplemented_reduce, METH_NOARGS, NULL},
+    {"__reduce__", NotImplemented_reduce, METH_NOARGS, NULL},
     {NULL, NULL}
 };
 
@@ -2095,7 +2093,7 @@ void
 _PyTrash_deposit_object(PyObject *op)
 {
     assert(PyObject_IS_GC(op));
-    assert(_PyGC_REFS(op) == _PyGC_REFS_UNTRACKED);
+    assert(!_PyObject_GC_IS_TRACKED(op));
     assert(op->ob_refcnt == 0);
     _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyRuntime.gc.trash_delete_later;
     _PyRuntime.gc.trash_delete_later = op;
@@ -2107,7 +2105,7 @@ _PyTrash_thread_deposit_object(PyObject *op)
 {
     PyThreadState *tstate = PyThreadState_GET();
     assert(PyObject_IS_GC(op));
-    assert(_PyGC_REFS(op) == _PyGC_REFS_UNTRACKED);
+    assert(!_PyObject_GC_IS_TRACKED(op));
     assert(op->ob_refcnt == 0);
     _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *) tstate->trash_delete_later;
     tstate->trash_delete_later = op;
