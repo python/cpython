@@ -22,32 +22,49 @@ BLOCKOPENERS = {"class", "def", "elif", "else", "except", "finally", "for",
 UPDATEINTERVAL = 100 # millisec
 FONTUPDATEINTERVAL = 1000 # millisec
 
+
 def getspacesfirstword(s, c=re.compile(r"^(\s*)(\w*)")):
+    "Extract the beginning whitespace and first word from s."
     return c.match(s).groups()
 
 
 class CodeContext:
+    "Display block context above the edit window."
+
     bgcolor = "LightGray"
     fgcolor = "Black"
 
     def __init__(self, editwin):
+        """Initialize settings for context block.
+
+        editwin is the Editor window for the context block.
+        self.text is the editor window text widget.
+        self.textfont is the editor window font.
+
+        self.label displays the code context text above the editor text.
+          Initially None it is toggled via <<toggle-code-context>>.
+        self.topvisible is the number of the top text line displayed.
+        self.info is a list of (line number, indent level, line text,
+          block keyword) tuples for the block structure above topvisible.
+          s self.info[0] is initialized a 'dummy' line which
+        # starts the toplevel 'block' of the module.
+
+        self.t1 and self.t2 are two timer events on the editor text widget to
+        monitor for changes to the context text or editor font.
+        """
         self.editwin = editwin
         self.text = editwin.text
         self.textfont = self.text["font"]
         self.label = None
-        # self.info is a list of (line number, indent level, line text, block
-        # keyword) tuples providing the block structure associated with
-        # self.topvisible (the linenumber of the line displayed at the top of
-        # the edit window). self.info[0] is initialized as a 'dummy' line which
-        # starts the toplevel 'block' of the module.
-        self.info = [(0, -1, "", False)]
         self.topvisible = 1
+        self.info = [(0, -1, "", False)]
         # Start two update cycles, one for context lines, one for font changes.
         self.t1 = self.text.after(UPDATEINTERVAL, self.timer_event)
         self.t2 = self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
 
     @classmethod
     def reload(cls):
+        "Load class variables from config."
         cls.context_depth = idleConf.GetOption("extensions", "CodeContext",
                                        "numlines", type="int", default=3)
 ##        cls.bgcolor = idleConf.GetOption("extensions", "CodeContext",
@@ -56,6 +73,7 @@ class CodeContext:
 ##                                     "fgcolor", type="str", default="Black")
 
     def __del__(self):
+        "Cancel scheduled events."
         try:
             self.text.after_cancel(self.t1)
             self.text.after_cancel(self.t2)
@@ -63,6 +81,12 @@ class CodeContext:
             pass
 
     def toggle_code_context_event(self, event=None):
+        """Toggle code context display.
+
+        If self.label doesn't exist, create it to match the size of the editor
+        window text (toggle on).  If it does exist, destroy it (toggle off).
+        Return 'break' to complete the processing of the binding.
+        """
         if not self.label:
             # Calculate the border width and horizontal padding required to
             # align the context with the text in the main Text widget.
@@ -95,11 +119,10 @@ class CodeContext:
         return "break"
 
     def get_line_info(self, linenum):
-        """Get the line indent value, text, and any block start keyword
+        """Return tuple of (line indent value, text, and block start keyword).
 
         If the line does not start a block, the keyword value is False.
         The indentation of empty lines (or comment lines) is INFINITY.
-
         """
         text = self.text.get("%d.0" % linenum, "%d.end" % linenum)
         spaces, firstword = getspacesfirstword(text)
@@ -111,11 +134,13 @@ class CodeContext:
         return indent, text, opener
 
     def get_context(self, new_topvisible, stopline=1, stopindent=0):
-        """Get context lines, starting at new_topvisible and working backwards.
+        """Return a list of block line tuples and the 'last' indent.
 
-        Stop when stopline or stopindent is reached. Return a tuple of context
-        data and the indent level at the top of the region inspected.
-
+        The tuple fields are (linenum, indent, text, opener).
+        The list represents header lines from new_topvisible back to
+        stopline with successively shorter indents > stopindent.
+        The list is returned ordered by line number.
+        Last indent returned is the smallest indent observed.
         """
         assert stopline > 0
         lines = []
@@ -140,6 +165,11 @@ class CodeContext:
     def update_code_context(self):
         """Update context information and lines visible in the context pane.
 
+        No update is done if the text hasn't been scrolled.  If the text
+        was scrolled, the lines that should be shown in the context will
+        be retrieved and the label widget will be updated with the code,
+        padded with blank lines so that the code appears on the bottom of
+        the context label.
         """
         new_topvisible = int(self.text.index("@0,0").split('.')[0])
         if self.topvisible == new_topvisible:      # haven't scrolled
@@ -151,7 +181,7 @@ class CodeContext:
             # between topvisible and new_topvisible:
             while self.info[-1][1] >= lastindent:
                 del self.info[-1]
-        elif self.topvisible > new_topvisible:     # scroll up
+        else:  # self.topvisible > new_topvisible:     # scroll up
             stopindent = self.info[-1][1] + 1
             # retain only context info associated
             # with lines above new_topvisible:
@@ -170,11 +200,13 @@ class CodeContext:
         self.label["text"] = '\n'.join(context_strings)
 
     def timer_event(self):
+        "Event on editor text widget triggered every UPDATEINTERVAL ms."
         if self.label:
             self.update_code_context()
         self.t1 = self.text.after(UPDATEINTERVAL, self.timer_event)
 
     def font_timer_event(self):
+        "Event on editor text widget triggered every FONTUPDATEINTERVAL ms."
         newtextfont = self.text["font"]
         if self.label and newtextfont != self.textfont:
             self.textfont = newtextfont
@@ -183,3 +215,8 @@ class CodeContext:
 
 
 CodeContext.reload()
+
+
+if __name__ == "__main__":  # pragma: no cover
+    import unittest
+    unittest.main('idlelib.idle_test.test_codecontext', verbosity=2, exit=False)
