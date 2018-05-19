@@ -11,58 +11,13 @@
 --------------
 
 The :mod:`tkinter` package ("Tk interface") is the standard Python interface to
-the Tk GUI toolkit.  Both Tk and :mod:`tkinter` are available on most Unix
-platforms, as well as on Windows systems.  (Tk itself is not part of Python; it
-is maintained at ActiveState.)
+the Tcl/Tk GUI toolkit. Tcl/Tk and :mod:`tkinter` are available on most Unix
+platforms, as well as on Windows systems.
 
 Running ``python -m tkinter`` from the command line should open a window
 demonstrating a simple Tk interface, letting you know that :mod:`tkinter` is
 properly installed on your system, and also showing what version of Tcl/Tk is
 installed, so you can read the Tcl/Tk documentation specific to that version.
-
-.. seealso::
-
-   Tkinter documentation:
-
-   `Python Tkinter Resources <https://wiki.python.org/moin/TkInter>`_
-      The Python Tkinter Topic Guide provides a great deal of information on using Tk
-      from Python and links to other sources of information on Tk.
-
-   `TKDocs <http://www.tkdocs.com/>`_
-      Extensive tutorial plus friendlier widget pages for some of the widgets.
-
-   `Tkinter reference: a GUI for Python <https://infohost.nmt.edu/tcc/help/pubs/tkinter/web/index.html>`_
-      On-line reference material.
-
-   `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_
-      Online reference for tkinter supported by effbot.org.
-
-   `Programming Python <http://learning-python.com/about-pp4e.html>`_
-      Book by Mark Lutz, has excellent coverage of Tkinter.
-
-   `Modern Tkinter for Busy Python Developers <https://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
-      Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
-
-   `Python and Tkinter Programming <https://www.manning.com/books/python-and-tkinter-programming>`_
-      Book by John Grayson (ISBN 1-884777-81-3).
-
-   Tcl/Tk documentation:
-
-   `Tk commands <https://www.tcl.tk/man/tcl8.6/TkCmd/contents.htm>`_
-      Most commands are available as :mod:`tkinter` or :mod:`tkinter.ttk` classes.
-      Change '8.6' to match the version of your Tcl/Tk installation.
-
-   `Tcl/Tk recent man pages <https://www.tcl.tk/doc/>`_
-      Recent Tcl/Tk manuals on www.tcl.tk.
-
-   `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_
-      The Tk/Tcl development is largely taking place at ActiveState.
-
-   `Tcl and the Tk Toolkit <https://www.amazon.com/exec/obidos/ASIN/020163337X>`_
-      Book by John Ousterhout, the inventor of Tcl.
-
-   `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_
-      Brent Welch's encyclopedic book.
 
 
 Tkinter Modules
@@ -858,3 +813,48 @@ use raw reads or ``os.read(file.fileno(), maxbytecount)``.
           EXCEPTION
 
    Constants used in the *mask* arguments.
+
+.. seealso::
+
+   Tkinter documentation:
+
+   `Python Tkinter Resources <https://wiki.python.org/moin/TkInter>`_
+      The Python Tkinter Topic Guide provides a great deal of information on using Tk
+      from Python and links to other sources of information on Tk.
+
+   `TKDocs <http://www.tkdocs.com/>`_
+      Extensive tutorial plus friendlier widget pages for some of the widgets.
+
+   `Tkinter reference: a GUI for Python <https://infohost.nmt.edu/tcc/help/pubs/tkinter/web/index.html>`_
+      On-line reference material.
+
+   `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_
+      Online reference for tkinter supported by effbot.org.
+
+   `Programming Python <http://learning-python.com/about-pp4e.html>`_
+      Book by Mark Lutz, has excellent coverage of Tkinter.
+
+   `Modern Tkinter for Busy Python Developers <https://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
+      Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
+
+   `Python and Tkinter Programming <https://www.manning.com/books/python-and-tkinter-programming>`_
+      Book by John Grayson (ISBN 1-884777-81-3).
+
+   Tcl/Tk documentation:
+
+   `Tk commands <https://www.tcl.tk/man/tcl8.6/TkCmd/contents.htm>`_
+      Most commands are available as :mod:`tkinter` or :mod:`tkinter.ttk` classes.
+      Change '8.6' to match the version of your Tcl/Tk installation.
+
+   `Tcl/Tk recent man pages <https://www.tcl.tk/doc/>`_
+      Recent Tcl/Tk manuals on www.tcl.tk.
+
+   `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_
+      The Tk/Tcl development is largely taking place at ActiveState.
+
+   `Tcl and the Tk Toolkit <https://www.amazon.com/exec/obidos/ASIN/020163337X>`_
+      Book by John Ousterhout, the inventor of Tcl.
+
+   `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_
+      Brent Welch's encyclopedic book.
+
