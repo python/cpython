@@ -48,12 +48,6 @@ This article explains the new features in Python 3.7, compared to 3.6.
 
 For full details, see the :ref:`changelog <changelog>`.
 
-.. note::
-
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.7 moves towards release,
-   so it's worth checking back even after reading earlier versions.
-
 
 Summary -- Release Highlights
 =============================
@@ -113,6 +107,16 @@ CPython implementation improvements:
 C API improvements:
 
 * :ref:`PEP 539 <whatsnew37-pep539>`, new C API for thread-local storage
+
+Documentation improvements:
+
+* :ref:`PEP 545 <whatsnew37-pep545>`, Python documentation translations
+* New documentation translations: `Japanese <https://docs.python.org/ja/>`_,
+  `French <https://docs.python.org/fr/>`_, and
+  `Korean <https://docs.python.org/ko/>`_.
+
+This release features notable performance improvements in many areas.
+The :ref:`whatsnew37-perf` section lists them in detail.
 
 For a list of changes that may affect compatibility with previous Python
 releases please refer to the :ref:`porting-to-python-37` section.
@@ -244,7 +248,7 @@ PEP 553: Built-in ``breakpoint()``
 Python 3.7 includes the new built-in :func:`breakpoint` function as
 an easy and consistent way to enter the Python debugger.
 
-Built-in ``breakpoint()`` calls :func:`sys.breakpointhook`.  By default, this
+Built-in ``breakpoint()`` calls :func:`sys.breakpointhook`.  By default, the
 latter imports :mod:`pdb` and then calls ``pdb.set_trace()``, but by binding
 ``sys.breakpointhook()`` to the function of your choosing, ``breakpoint()`` can
 enter any debugger. Additionally, the environment variable
@@ -296,10 +300,10 @@ PEP 562: Customization of Access to Module Attributes
 -----------------------------------------------------
 
 Python 3.7 allows defining :meth:`__getattr__` on modules and will call
-it whenever a module attribute is accessed.
+it whenever a module attribute is otherwise not found.
 
-A typical example of where this may be useful is attribute access deprecation
-warnings and lazy loading.
+A typical example of where this may be useful is module attribute deprecation
+and lazy loading.
 
 .. seealso::
 
@@ -323,8 +327,8 @@ to the :mod:`time` module:
 * :func:`time.time_ns`
 
 The new functions are similar in function to the existing functions
-without the ``_ns`` suffix, but instead of returning fractional seconds,
-they return nanoseconds as integers.
+without the ``_ns`` suffix.  They differ by returning nanoseconds as
+integers instead of fractional seconds.
 
 On Linux and Windows the resolution of :func:`time.time_ns` is 3 times
 better than that of :func:`time.time`.
@@ -435,6 +439,27 @@ where a system external to Python (e.g., the build system) is responsible for
 keeping ``.pyc`` files up-to-date.
 
 See :ref:`pyc-invalidation` for more information.
+
+
+.. _whatsnew37-pep545:
+
+PEP 545: Python Documentation Translations
+------------------------------------------
+
+:pep:`545` describes the process of creating and maintaining Python
+documentation translations.
+
+Three new translations have been added:
+
+- Japanese: https://docs.python.org/ja/
+- French: https://docs.python.org/fr/
+- Korean: https://docs.python.org/ko/
+
+.. seealso::
+
+   :pep:`545` -- Python Documentation Translations
+      PEP written and implemented by Julien Palard, Inada Naoki, and
+      Victor Stinner.
 
 
 Other Language Changes
@@ -559,43 +584,13 @@ Improved Modules
 ================
 
 
-abc
----
-
-Improved conistency of exceptions raised by :func:`issubclass` when called
-with a non-class and an abstract base class as the first and second
-arguments, respectively.  (Contributed by Josh Bronson in :issue:`33018`.)
-
-
-aifc
-----
-
-Improved exceptions raised for invalid number of channels and sample
-width when read an audio file in modules :mod:`aifc`, :mod:`wave` and
-:mod:`sunau`.  (Contributed by Serhiy Storchaka in :issue:`32056`.)
-
-
 argparse
 --------
 
-The new :meth:`ArgumentParser.parse_intermixed_args() \
-<argparse.ArgumentParser.parse_intermixed_args>` method allows
-intermixing options and positional arguments.
+The new :meth:`ArgumentParser.parse_intermixed_args()
+<argparse.ArgumentParser.parse_intermixed_args>`
+method allows intermixing options and positional arguments.
 (Contributed by paul.j3 in :issue:`14191`.)
-
-:mod:`argparse` subparsers are now required by default.  This matches the
-behaviour in Python 2.  To add an optional subparser, pass
-``required=False`` to
-:meth:`ArgumentParser.add_subparsers() <argparse.ArgumentParser.add_subparsers>`.
-(Contributed by Anthony Sottile in :issue:`26510`.)
-
-
-ast
----
-
-:meth:`ast.literal_eval()` is now more strict.  Addition and subtraction of
-arbitrary numbers are no longer allowed.
-(Contributed by Serhiy Storchaka in :issue:`31778`.)
 
 
 .. _whatsnew37_asyncio:
@@ -603,176 +598,131 @@ arbitrary numbers are no longer allowed.
 asyncio
 -------
 
-The new :term:`provisional <provisional api>` :func:`asyncio.run` function can
-be used to run a coroutine from synchronous code by automatically creating and
-destroying the event loop.
-(Contributed by Yury Selivanov in :issue:`32314`.)
+The :mod:`asyncio` module has received many new features, usability and
+:ref:`performance improvements <whatsnew37-asyncio-perf>`.  Notable changes
+include:
 
-The new :func:`asyncio.create_task` function has been added as a shortcut
-to ``asyncio.get_event_loop().create_task()``.
-(Contributed by Andrew Svetlov in :issue:`32311`.)
+* The new :term:`provisional <provisional api>` :func:`asyncio.run` function can
+  be used to run a coroutine from synchronous code by automatically creating and
+  destroying the event loop.
+  (Contributed by Yury Selivanov in :issue:`32314`.)
 
-The new :meth:`loop.start_tls() <asyncio.AbstractEventLoop.start_tls>`
-method can be used to upgrade an existing connection to TLS.
-(Contributed by Yury Selivanov in :issue:`23749`.)
+* The new :func:`asyncio.create_task` function has been added as a shortcut
+  to ``asyncio.get_event_loop().create_task()``.
+  (Contributed by Andrew Svetlov in :issue:`32311`.)
 
-The new :meth:`loop.sock_recv_into() <asyncio.AbstractEventLoop.sock_recv_into>`
-method allows reading data from a socket directly into a provided buffer making
-it possible to reduce data copies.
-(Contributed by Antoine Pitrou in :issue:`31819`.)
+* The new :meth:`loop.start_tls() <asyncio.AbstractEventLoop.start_tls>`
+  method can be used to upgrade an existing connection to TLS.
+  (Contributed by Yury Selivanov in :issue:`23749`.)
 
-The new :func:`asyncio.current_task` function returns the currently running
-:class:`~asyncio.Task` instance, and the new :func:`asyncio.all_tasks`
-function returns a set of all existing ``Task`` instances in a given loop.
-The :meth:`Task.current_task() <asyncio.Task.current_task>` and
-:meth:`Task.all_tasks() <asyncio.Task.all_tasks>` methods have been deprecated.
-(Contributed by Andrew Svetlov in :issue:`32250`.)
+* The new :meth:`loop.sock_recv_into() <asyncio.AbstractEventLoop.sock_recv_into>`
+  method allows reading data from a socket directly into a provided buffer making
+  it possible to reduce data copies.
+  (Contributed by Antoine Pitrou in :issue:`31819`.)
 
-The new *provisional* :class:`~asyncio.BufferedProtocol` class allows
-implementing streaming protocols with manual control over the receive buffer.
-(Contributed by Yury Selivanov in :issue:`32251`.)
+* The new :func:`asyncio.current_task` function returns the currently running
+  :class:`~asyncio.Task` instance, and the new :func:`asyncio.all_tasks`
+  function returns a set of all existing ``Task`` instances in a given loop.
+  The :meth:`Task.current_task() <asyncio.Task.current_task>` and
+  :meth:`Task.all_tasks() <asyncio.Task.all_tasks>` methods have been deprecated.
+  (Contributed by Andrew Svetlov in :issue:`32250`.)
 
-The new :func:`asyncio.get_running_loop` function returns the currently
-running loop, or ``None`` if no loop is running.  This is in contrast with
-:func:`asyncio.get_event_loop`, which will *create* a new event loop if none
-is running.
-(Contributed by Yury Selivanov in :issue:`32269`.)
+* The new *provisional* :class:`~asyncio.BufferedProtocol` class allows
+  implementing streaming protocols with manual control over the receive buffer.
+  (Contributed by Yury Selivanov in :issue:`32251`.)
 
-The new :meth:`StreamWriter.wait_closed() <asyncio.StreamWriter.wait_closed>`
-coroutine method allows waiting until the stream writer is closed.  The new
-:meth:`StreamWriter.is_closing() <asyncio.StreamWriter.is_closing>` method
-can be used to determine if the writer is closing.
-(Contributed by Andrew Svetlov in :issue:`32391`.)
+* The new :func:`asyncio.get_running_loop` function returns the currently
+  running loop, and raises a :exc:`RuntimeError` if no loop is running.
+  This is in contrast with :func:`asyncio.get_event_loop`, which will *create*
+  a new event loop if none is running.
+  (Contributed by Yury Selivanov in :issue:`32269`.)
 
-The new :meth:`loop.sock_sendfile() <asyncio.AbstractEventLoop.sock_sendfile>`
-coroutine method allows sending files using :mod:`os.sendfile` when possible.
-(Contributed by Andrew Svetlov in :issue:`32410`.)
+* The new :meth:`StreamWriter.wait_closed() <asyncio.StreamWriter.wait_closed>`
+  coroutine method allows waiting until the stream writer is closed.  The new
+  :meth:`StreamWriter.is_closing() <asyncio.StreamWriter.is_closing>` method
+  can be used to determine if the writer is closing.
+  (Contributed by Andrew Svetlov in :issue:`32391`.)
 
-The new :meth:`Task.get_loop() <asyncio.Task.get_loop>` and
-:meth:`Future.get_loop() <asyncio.Future.get_loop>` methods
-return the instance of the loop on which a task or a future were created.
-(Contributed by Yury Selivanov in :issue:`32415`.)
-:meth:`Server.get_loop() <asyncio.Server.get_loop>` allows to do the same for
-:class:`asyncio.Server` objects.
-(Contributed by Srinivas Reddy Thatiparthy in :issue:`32418`.)
+* The new :meth:`loop.sock_sendfile() <asyncio.AbstractEventLoop.sock_sendfile>`
+  coroutine method allows sending files using :mod:`os.sendfile` when possible.
+  (Contributed by Andrew Svetlov in :issue:`32410`.)
 
-It is now possible to control how instances of :class:`asyncio.Server` begin
-serving.  Previously, the server would start serving immediately when created.
-The new *start_serving* keyword argument to
-:meth:`loop.create_server() <asyncio.AbstractEventLoop.create_server>` and
-:meth:`loop.create_unix_server() <asyncio.AbstractEventLoop.create_unix_server>`,
-as well as :meth:`Server.start_serving() <asyncio.Server.start_serving>`, and
-:meth:`Server.serve_forever() <asyncio.Server.serve_forever>`
-can be used to decouple server instantiaion and serving.  The new
-:meth:`Server.is_serving() <asyncio.Server.is_serving>` method returns ``True``
-if the server is serving.  :class:`~asyncio.Server` objects are now
-asynchronous context managers::
+* The new :meth:`Task.get_loop() <asyncio.Task.get_loop>` and
+  :meth:`Future.get_loop() <asyncio.Future.get_loop>` methods
+  return the instance of the loop on which a task or a future were created.
+  :meth:`Server.get_loop() <asyncio.Server.get_loop>` allows doing the same for
+  :class:`asyncio.Server` objects.
+  (Contributed by Yury Selivanov in :issue:`32415` and
+  Srinivas Reddy Thatiparthy in :issue:`32418`.)
 
-    srv = await loop.create_server(...)
+* It is now possible to control how instances of :class:`asyncio.Server` begin
+  serving.  Previously, the server would start serving immediately when created.
+  The new *start_serving* keyword argument to
+  :meth:`loop.create_server() <asyncio.AbstractEventLoop.create_server>` and
+  :meth:`loop.create_unix_server() <asyncio.AbstractEventLoop.create_unix_server>`,
+  as well as :meth:`Server.start_serving() <asyncio.Server.start_serving>`, and
+  :meth:`Server.serve_forever() <asyncio.Server.serve_forever>`
+  can be used to decouple server instantiation and serving.  The new
+  :meth:`Server.is_serving() <asyncio.Server.is_serving>` method returns ``True``
+  if the server is serving.  :class:`~asyncio.Server` objects are now
+  asynchronous context managers::
 
-    async with srv:
-        # some code
+      srv = await loop.create_server(...)
 
-    # At this point, srv is closed and no longer accepts new connections.
+      async with srv:
+          # some code
 
-(Contributed by Yury Selivanov in :issue:`32662`.)
+      # At this point, srv is closed and no longer accepts new connections.
 
-Callback objects returned by
-:func:`loop.call_later() <asyncio.AbstractEventLoop.call_later>`
-gained the new :meth:`when() <asyncio.TimerHandle.when>` method which
-returns an absolute scheduled callback timestamp.
-(Contributed by Andrew Svetlov in :issue:`32741`.)
+  (Contributed by Yury Selivanov in :issue:`32662`.)
 
-TCP sockets on Linux are now created with ``TCP_NODELAY`` flag set by default.
-(Contributed by Yury Selivanov and Victor Stinner in :issue:`27456`.)
+* Callback objects returned by
+  :func:`loop.call_later() <asyncio.AbstractEventLoop.call_later>`
+  gained the new :meth:`when() <asyncio.TimerHandle.when>` method which
+  returns an absolute scheduled callback timestamp.
+  (Contributed by Andrew Svetlov in :issue:`32741`.)
 
-The :meth:`loop.create_datagram_endpoint() \
-<asyncio.AbstractEventLoop.create_datagram_endpoint>` method
-gained support for Unix sockets.
-(Contributed by Quentin Dawans in :issue:`31245`.)
+* The :meth:`loop.create_datagram_endpoint() \
+  <asyncio.AbstractEventLoop.create_datagram_endpoint>` method
+  gained support for Unix sockets.
+  (Contributed by Quentin Dawans in :issue:`31245`.)
 
-The :meth:`loop.create_connection() <asyncio.AbstractEventLoop.create_connection>`,
-:meth:`loop.create_server() <asyncio.AbstractEventLoop.create_server>`,
-:meth:`loop.create_unix_server() <asyncio.AbstractEventLoop.create_unix_server>`, and
-:meth:`loop.create_accepted_socket() <asyncio.BaseEventLoop.connect_accepted_socket>`
-now accept the *ssl_handshake_timeout* keyword argument.
-(Contributed by Neil Aspinall in :issue:`29970`.)
+* The :meth:`loop.create_connection() <asyncio.AbstractEventLoop.create_connection>`,
+  :meth:`loop.create_server() <asyncio.AbstractEventLoop.create_server>`,
+  :meth:`loop.create_unix_server() <asyncio.AbstractEventLoop.create_unix_server>`, and
+  :meth:`loop.create_accepted_socket() <asyncio.BaseEventLoop.connect_accepted_socket>`
+  now accept the *ssl_handshake_timeout* keyword argument.
+  (Contributed by Neil Aspinall in :issue:`29970`.)
 
-The new :meth:`Handle.cancelled() <asyncio.Handle.cancelled>` method returns
-``True`` if the callback was cancelled.
-(Contributed by Marat Sharafutdinov. in :issue:`31943`.)
+* The new :meth:`Handle.cancelled() <asyncio.Handle.cancelled>` method returns
+  ``True`` if the callback was cancelled.
+  (Contributed by Marat Sharafutdinov in :issue:`31943`.)
 
-The :meth:`loop.create_unix_connection() <asyncio.AbstractEventLoop.create_unix_connection>`
-method now supports now supports passing a :term:`path-like objects <path-like object>`
-as a socket path.  (Contributed by Yury Selivanov in :issue:`32066`.)
+* The asyncio source has been converted to use the
+  :keyword:`async`/:keyword:`await` syntax.
+  (Contributed by Andrew Svetlov in :issue:`32193`.)
 
-The :func:`asyncio.windows_utils.socketpair`` function has been removed,
-:func:`socket.socketpair` should be used instead.
-(Contributed by Victor Stinner in :issue:`32154`.)
+* The new :meth:`ReadTransport.is_reading() <asyncio.ReadTransport.is_reading>`
+  method can be used to determine the reading state of the transport.
+  Additionally, calls to
+  :meth:`ReadTransport.resume_reading() <asyncio.ReadTransport.resume_reading>`
+  and :meth:`ReadTransport.pause_reading() <asyncio.ReadTransport.pause_reading>`
+  are now idempotent.
+  (Contributed by Yury Selivanov in :issue:`32356`.)
 
-The asyncio source has been converted to use the
-:keyword:`async`/:keyword:`await` syntax.
-(Contributed by Andrew Svetlov in :issue:`32193`.)
+* Loop methods which accept socket paths now support passing
+  :term:`path-like objects <path-like object>`.
+  (Contributed by Yury Selivanov in :issue:`32066`.)
 
-Support for directly ``await``-ing instances of :class:`asyncio.Lock` and
-other asyncio synchronization primitives has been deprecated.  An
-asynchronous context manager has to be used in order to acquire and release
-the synchronization resource.  See :ref:`async-with-locks` for more
-information.
-(Contributed by Andrew Svetlov in :issue:`32253`.)
+* In :mod:`asyncio` TCP sockets on Linux are now created with ``TCP_NODELAY``
+  flag set by default.
+  (Contributed by Yury Selivanov and Victor Stinner in :issue:`27456`.)
 
-The :meth:`ReadTransport.resume_reading() <asyncio.ReadTransport.resume_reading>`
-and :meth:`ReadTransport.pause_reading() <asyncio.ReadTransport.pause_reading>`
-are now idempotent.
-The new :meth:`ReadTransport.is_reading() <asyncio.ReadTransport.is_reading>`
-method can be used to determine the reading state of the transport.
-(Contributed by Yury Selivanov in :issue:`32356`.)
+* Exceptions occurring in cancelled tasks are no longer logged.
+  (Contributed by Yury Selivanov in :issue:`30508`.)
 
-Exceptions occurring in cancelled tasks are no longer logged.
-(Contributed by Yury Selivanov in :issue:`30508`.)
-
-
-.. _whatsnew37-asyncio-optimizations:
-
-Optimizations
-~~~~~~~~~~~~~
-
-The :func:`asyncio.get_event_loop` function has been reimplemented in C to
-make it up to 15 times faster.
-(Contributed by Yury Selivanov in :issue:`32296`.)
-
-:class:`asyncio.Future` callback management has been optimized.
-(Contributed by Yury Selivanov in :issue:`32348`.)
-
-:func:`asyncio.gather` is now up to 15% faster.
-(Contributed by Yury Selivanov in :issue:`32355`.)
-
-:func:`asyncio.sleep` is now up to 2 times faster when the *delay*
-argument is zero or negative.
-(Contributed by Andrew Svetlov in :issue:`32351`.)
-
-The performance overhead of asyncio debug mode has been reduced.
-(Contributed by Antoine Pitrou in :issue:`31970`.)
-
-
-atexit
-------
-
-The :func:`~atexit.atexit` callbacks are now correctly tracked and called for
-subinterpreters.
-(Contributed by Marcel Plch in :issue:`31901`.)
-
-The traceback for :exc:`SystemExit` raised in an ``atexit`` callback
-is no longer displayed.
-(Contributed by Serhiy Storchaka in :issue:`28994`.)
-
-
-bdb
----
-
-Pdb and other debuggers dependent on :mod:`bdb` will correctly step over
-(next command) native coroutines.
-(Contributed by Pablo Galindo. in :issue:`32650`.)
+Several ``asyncio`` APIs have been
+:ref:`deprecated <whatsnew37-asyncio-deprecated>`.
 
 
 binascii
@@ -786,43 +736,16 @@ instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 calendar
 --------
 
-The class :class:`~calendar.HTMLCalendar` has new class attributes which ease
-the customisation of the CSS classes in the produced HTML calendar.
+The :class:`~calendar.HTMLCalendar` class has new class attributes which ease
+the customization of CSS classes in the produced HTML calendar.
 (Contributed by Oz Tiram in :issue:`30095`.)
-
-The :func:`~calendar.weekday` function now accepts any value for its *year*
-argument (previously only values from ``1`` to ``9999`` were accepted).
-(Contributed by Mark Gollahon in :issue:`28281`.)
-
-:meth:`Calendar.itermonthdates <calendar.Calendar.itermonthdates>`
-will now consistently raise an exception when a date falls outside of the
-``0001-01-01`` through ``9999-12-31`` range.  To support applications that
-cannot tolerate such exceptions, the new
-:meth:`Calendar.itermonthdays3 <calendar.Calendar.itermonthdays3>` and
-:meth:`Calendar.itermonthdays4 <calendar.Calendar.itermonthdays4>` can be used.
-The new methods return tuples and are not restricted by the range supported by
-:class:`datetime.date`.
-(Contributed by Alexander Belopolsky in :issue:`28292`.)
 
 
 collections
 -----------
 
-The :func:`collections.namedtuple` factory has been reimplemented to rely
-on precomputed methods to substantially reduce the use of :func:`exec`.
-As a result, the *verbose* parameter and the *_source* attribute of the
-named tuple are not longer supported.  The benefits include:
-1) having a smaller memory footprint for applications using multiple named
-tuples, 2) faster creation of the named tuple class (approx 4x to 6x depending
-on how it is measured), and 3) minor speed-ups for instance creation.
-(Jelle Zijlstra with further improvements by INADA Naoki, Serhiy Storchaka,
-and Raymond Hettinger in :issue:`28638`.)
-
-Additionally, ``collections.namedtuple()`` now supports default values.
+``collections.namedtuple()`` now supports default values.
 (Contributed by Raymond Hettinger in :issue:`32320`.)
-
-:class:`collections.ChainMap` now preserves the order of the underlying
-mappings.  (Contributed by Raymond Hettinger in :issue:`32792`.)
 
 
 compileall
@@ -848,119 +771,76 @@ The :class:`ProcessPoolExecutor <concurrent.futures.ProcessPoolExecutor>`
 can now take the multiprocessing context via the new *mp_context* argument.
 (Contributed by Thomas Moreau in :issue:`31540`.)
 
-``executor.submit()`` now raises a :exc:`RuntimeError` if called during
-interpreter shutdown.
-(Contributed by Mark Nemec in :issue:`33097`.)
-
-
-configparser
-------------
-
-The :class:`~configparser.ConfigParser`` constructor now uses ``read_dict()``
-to process the default values, making its behavior consistent with the
-rest of the parser.  Non-string keys and values in the defaults
-dictionary are now being implicitly converted to strings.
-(Contributed by James Tocknell. in :issue:`23835`.)
-
-The *filename* parameter of the
-:meth:`ConfigParser.read() <configparser.ConfigParser.read>` method now
-accepts bytes objects.
-(Contributed by Vincent Michel. in :issue:`31307`.)
-
 
 contextlib
 ----------
 
-The new :func:`~contextlib.nullcontext` is a simpler and faster alternative
-to :class:`~contextlib.ExitStack` for handling simple context managers.
+The new :func:`~contextlib.nullcontext` is a simpler and faster no-op
+context manager than :class:`~contextlib.ExitStack`.
 (Contributed by Jesse-Bakker in :issue:`10049`.)
 
-The new :func:`~contextlib.asynccontextmanager` and
-:class:`~contextlib.AbstractAsyncContextManager` have been added to
+The new :func:`~contextlib.asynccontextmanager`,
+:class:`~contextlib.AbstractAsyncContextManager`, and
+:class:`~contextlib.AsyncExitStack` have been added to
 complement their synchronous counterparts.  (Contributed
-by Jelle Zijlstra in :issue:`29679` and :issue:`30241`.)
-
-The new :class:`contextlib.AsyncExitStack` class has been added as an
-asynchronous equivalent to :class:`contextlib.ExitStack`.  (Contributed by
-Alexander Mohr and Ilya Kulakov in :issue:`29302`.)
+by Jelle Zijlstra in :issue:`29679` and :issue:`30241`,
+and by Alexander Mohr and Ilya Kulakov in :issue:`29302`.)
 
 
 cProfile
 --------
 
-:mod:`cProfile` command line now accepts ``-m module_name`` as an alternative
-to script path.  (Contributed by Sanyam Khurana in :issue:`21862`.)
+The :mod:`cProfile` command line now accepts ``-m module_name`` as an
+alternative to script path.  (Contributed by Sanyam Khurana in :issue:`21862`.)
 
 
 crypt
 -----
 
-Added support for the Blowfish hashing method.
+The :mod:`crypt` module now supports the Blowfish hashing method.
 (Contributed by Serhiy Storchaka in :issue:`31664`.)
 
-The :func:`~crypt.mksalt` function now allows to specify the number of rounds
+The :func:`~crypt.mksalt` function now allows specifying the number of rounds
 for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
-
-
-csv
----
-
-A single empty field is now always quoted when written into a CSV
-file.  This allows to distinguish an empty row from a row consisting of
-a single empty field.
-(Contributed by Licht Takeuchi. in :issue:`32255`.)
 
 
 datetime
 --------
 
-Added the :meth:`datetime.fromisoformat() <datetime.datetime.fromisoformat>`
-method, which constructs a :class:`~datetime.datetime` object from a string
+The new :meth:`datetime.fromisoformat() <datetime.datetime.fromisoformat>`
+method constructs a :class:`~datetime.datetime` object from a string
 in one of the formats output by
 :meth:`datetime.isoformat() <datetime.datetime.isoformat>`.
 (Contributed by Paul Ganssle in :issue:`15873`.)
 
-The :class:`tzinfo <datetime.tzinfo>` objects now supprt sub-minute offsets.
+The :class:`tzinfo <datetime.tzinfo>` class now supports sub-minute offsets.
 (Contributed by Alexander Belopolsky in :issue:`5288`.)
 
 
 dbm
 ---
 
-:func:`dbm.dumb` now supports reading read-only files and no longer writes the
-index file when it is not changed.  A deprecation warning is now emitted
-if the index file is missing and recreated in the ``'r'`` and ``'w'``
-modes (this will be an error in future Python releases).
-(Contributed by Serhiy Storchaka in :issue:`28847`.)
-
-
-:func:`dbm.open` now encodes filenames using the filesystem encoding rather
-than default encoding.
-(Contributed by Serhiy Storchaka in :issue:`32922`.)
+:mod:`dbm.dumb` now supports reading read-only files and no longer writes the
+index file when it is not changed.
 
 
 decimal
 -------
 
-The :mod:`decimal` now uses :ref:`context variables <whatsnew37-pep567>` to
-store the decimal context.
+The :mod:`decimal` module now uses :ref:`context variables <whatsnew37-pep567>`
+to store the decimal context.
 (Contributed by Yury Selivanov in :issue:`32630`.)
 
 
 dis
 ---
 
-The :func:`~dis.dis` function now is able to
+The :func:`~dis.dis` function is now able to
 disassemble nested code objects (the code of comprehensions, generator
 expressions and nested functions, and the code used for building nested
 classes).  The maximum depth of disassembly recursion is controlled by
 the new *depth* parameter.
 (Contributed by Serhiy Storchaka in :issue:`11822`.)
-
-Functions in the :mod:`dis` module now works with asynchronous generators and
-coroutine objects.
-(Contributed by George Collins based on diagnosis by Luciano Ramalho
-in :issue:`31183`.)
 
 
 distutils
@@ -969,18 +849,6 @@ distutils
 ``README.rst`` is now included in the list of distutils standard READMEs and
 therefore included in source distributions.
 (Contributed by Ryan Gonzalez in :issue:`11913`.)
-
-:class:`distutils.core.setup` now warns if the ``classifiers``, ``keywords``
-and ``platforms`` fields are not specified as a list or a string.
-(Contributed by Berker Peksag in :issue:`19610`.)
-
-The ``upload`` command no longer tries to change CR end-of-line characters
-to CRLF.  This fixes a corruption issue with sdists that ended with a byte
-equivalent to CR.
-(Contributed by Bo Bayles in :issue:`32304`.)
-
-The unused ``install_misc`` command has been removed.
-(Contributed by Eric N. Vander Weele. in :issue:`29218`.)
 
 
 enum
@@ -999,15 +867,6 @@ return :const:`False` instead and are deprecated.
 (Contributed by Ethan Furman in :issue:`33217`.)
 
 
-fpectl
-------
-
-The ``fpectl`` module has been removed.  It was never enabled by
-default, never worked correctly on x86-64, and it changed the Python
-ABI in ways that caused unexpected breakage of C extensions.
-(Contributed by Nathaniel J. Smith in :issue:`29137`.)
-
-
 functools
 ---------
 
@@ -1019,8 +878,8 @@ using type annotations.
 gc
 --
 
-The new :func:`gc.freeze`` function allows freezing all objects tracked
-by the garbage collector and exclude them from future collections.
+The new :func:`gc.freeze` function allows freezing all objects tracked
+by the garbage collector and excluding them from future collections.
 This can be used before a POSIX ``fork()`` call to make the GC copy-on-write
 friendly or to speed up collection.  The new :func:`gc.unfreeze` functions
 reverses this operation.  Additionally, :func:`gc.get_freeze_count` can
@@ -1064,13 +923,6 @@ It is used when ``http.server`` is run with ``-m``.
 (Contributed by Julien Palard in :issue:`31639`.)
 
 
-idlelib and IDLE
-----------------
-
-IDLE module browser now shows nested classes and functions.
-(Contributed by Guilherme Polo and Cheryl Sabella in :issue:`1612262`.)
-
-
 importlib
 ---------
 
@@ -1105,10 +957,10 @@ INADA Naoki in :issue:`15216`.)
 ipaddress
 ---------
 
-The new ``subnet_of`` and ``superset_of`` methods of
+The new ``subnet_of()`` and ``supernet_of()`` methods of
 :class:`ipaddress.IPv6Network` and :class:`ipaddress.IPv4Network` can
 be used for network containment tests.
-(Contributed by Michel Albert and Cheryl Sabella. in :issue:`20825`.)
+(Contributed by Michel Albert and Cheryl Sabella in :issue:`20825`.)
 
 
 itertools
@@ -1127,8 +979,6 @@ The new *monetary* argument to :func:`locale.format_string` can be used
 to make the conversion use monetary thousands separators and
 grouping strings.  (Contributed by Garvit in :issue:`10379`.)
 
-The :func:`locale.format` function is deprecated.
-
 The :func:`locale.getpreferredencoding` function now always returns ``'UTF-8'``
 on Android or when in the :ref:`forced UTF-8 mode <whatsnew37-pep540>`.
 
@@ -1139,21 +989,13 @@ logging
 :class:`~logging.Logger` instances can now be pickled.
 (Contributed by Vinay Sajip in :issue:`30520`.)
 
-The new :meth:`StreamHandler.setStream() <logging.StreamHandler.setStream>``
+The new :meth:`StreamHandler.setStream() <logging.StreamHandler.setStream>`
 method can be used to replace the logger stream after handler creation.
 (Contributed by Vinay Sajip in :issue:`30522`.)
 
-It is now possible to specify keyword arguments to handler constructor in
+It is now possible to specify keyword arguments to handler constructors in
 configuration passed to :func:`logging.config.fileConfig`.
 (Contributed by Preston Landers in :issue:`31080`.)
-
-
-macpath
--------
-
-The :mod:`macpath` is now deprecated and will be removed in Python
-3.8.
-(Contributed by Chi Hsuan Yen in :issue:`9850`.)
 
 
 math
@@ -1207,7 +1049,7 @@ os
 (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
 The new :func:`~os.register_at_fork` function allows registering Python
-callbacks to be executed on a process fork.
+callbacks to be executed at process fork.
 (Contributed by Antoine Pitrou in :issue:`16500`.)
 
 Exposed the *preadv*, *preadv2*, *pwritev* and *pwritev2* system calls through
@@ -1234,10 +1076,6 @@ The new :meth:`Path.is_mount() <pathlib.Path.is_mount>` method is now available
 on POSIX systems and can be used to determine whether a path is a mount point.
 (Contributed by Cooper Ry Lees in :issue:`30897`.)
 
-
-Exposed the system call *posix_spawn* through the new function
-:func:`~os.posix_spawn`. (Contributed by Pablo Galindo, Serhiy Storchaka and
-Gregory P. Smith in :issue:`20104`.)
 
 pdb
 ---
@@ -1319,7 +1157,7 @@ The new :func:`socket.getblocking() <socket.socket.getblocking>` method
 returns ``True`` if the socket is in blocking mode and ``False`` otherwise.
 (Contributed by Yury Selivanov in :issue:`32373`.)
 
-The new :func:`socket.close` function closes a passed socket file descriptor.
+The new :func:`socket.close` function closes the passed socket file descriptor.
 This function should be used instead of :func:`os.close` for better
 compatibility across platforms.
 (Contributed by Christian Heimes in :issue:`32454`.)
@@ -1327,8 +1165,8 @@ compatibility across platforms.
 The :mod:`socket` module now exposes the :data:`socket.TCP_CONGESTION`
 (Linux 2.6.13), :data:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37), and
 :data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constants.
-(Contributed by Omar Sandoval. in :issue:`26273` and
-Nathaniel J. Smith. in :issue:`29728`.)
+(Contributed by Omar Sandoval in :issue:`26273` and
+Nathaniel J. Smith in :issue:`29728`.)
 
 Support for :data:`socket.AF_VSOCK` sockets has been added to allow
 communication between virtual machines and their hosts.
@@ -1365,9 +1203,10 @@ Host name validation can be customized with
 (Contributed by Christian Heimes in :issue:`31399`.)
 
 .. note::
-   The improved host name check requires OpenSSL 1.0.2 or 1.1 compatible
-   libssl.  OpenSSL 0.9.8 and 1.0.1 are no longer supported.  LibreSSL is
-   temporarily not supported until it gains the necessary OpenSSL 1.0.2 APIs.
+   The improved host name check requires a *libssl* implementation compatible
+   with OpenSSL 1.0.2 or 1.1.  Consequently, OpenSSL 0.9.8 and 1.0.1 are no
+   longer supported and LibreSSL is temporarily not supported until it gains
+   the necessary OpenSSL 1.0.2 APIs.
 
 The ``ssl`` module no longer sends IP addresses in SNI TLS extension.
 (Contributed by Christian Heimes in :issue:`32185`.)
@@ -1421,7 +1260,7 @@ subprocess
 ----------
 
 The :func:`subprocess.run` function accepts the new *capture_output*
-keyword argument.  When ``True``, stdout and stderr will be captured.
+keyword argument.  When true, stdout and stderr will be captured.
 This is equivalent to passing :data:`subprocess.PIPE` as *stdout* and
 *stderr* arguments.
 (Contributed by Bo Bayles in :issue:`32102`.)
@@ -1433,7 +1272,7 @@ to *universal_newlines*.
 
 On Windows the default for *close_fds* was changed from ``False`` to
 ``True`` when redirecting the standard handles.  It's now possible to set
-*close_fds* to ``True`` when redirecting the standard handles.  See
+*close_fds* to true when redirecting the standard handles.  See
 :class:`subprocess.Popen`.  This means that *close_fds* now defaults to
 ``True`` on all supported platforms.
 (Contributed by Segev Finer in :issue:`19764`.)
@@ -1450,8 +1289,6 @@ exception.
 sys
 ---
 
-Added :attr:`sys.flags.dev_mode` flag for the new development mode.
-
 The new :func:`sys.breakpointhook` hook function is called by the
 built-in :func:`breakpoint`.
 (Contributed by Barry Warsaw in :issue:`31353`.)
@@ -1462,7 +1299,9 @@ Android API version.
 
 The new :func:`sys.get_coroutine_origin_tracking_depth` function returns
 the current coroutine origin tracking depth, as set by
-the new :func:`sys.set_coroutine_origin_tracking_depth`.
+the new :func:`sys.set_coroutine_origin_tracking_depth`.  :mod:`asyncio`
+has been converted to use this new API instead of
+the deprecated :func:`sys.set_coroutine_wrapper`.
 (Contributed by Nathaniel J. Smith in :issue:`32591`.)
 
 
@@ -1485,10 +1324,10 @@ New clock identifiers have been added:
   :data:`time.CLOCK_MONOTONIC`, except it also includes any time that the
   system is suspended.
 * :data:`time.CLOCK_PROF` (FreeBSD, NetBSD and OpenBSD): High-resolution
-  per-process timer from the CPU.
+  per-process CPU timer.
 * :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
   the time the system has been running and not suspended, providing accurate
-  uptime measurement, both absolute and interval.
+  uptime measurement.
 
 The new :func:`time.thread_time` and :func:`time.thread_time_ns` functions
 can be used to get per-thread CPU time measurements.
@@ -1496,16 +1335,6 @@ can be used to get per-thread CPU time measurements.
 
 The new :func:`time.pthread_getcpuclockid` function returns the clock ID
 of the thread-specific CPU-time clock.
-
-
-timeit
-------
-
-:func:`timeit.timeit` autorange now uses a single loop iteration if
-the benchmark takes less than 10 seconds, instead of 10 iterations.
-``python3 -m timeit -s 'import time' 'time.sleep(1)'`` now takes 4 seconds
-instead of 40 seconds.
-(Contributed by Victor Stinner in :issue:`28240`.)
 
 
 tkinter
@@ -1524,20 +1353,17 @@ sorting the frames from oldest to most recent.
 now accepts negative *limit*, truncating the result to the
 ``abs(limit)`` oldest frames.  To get the old behaviour, use
 the new *most_recent_first* argument to ``Traceback.format()``.
-(Contributed by Jesse Bakker. in :issue:`32121`.)
+(Contributed by Jesse Bakker in :issue:`32121`.)
 
 
 types
 -----
 
 The new :class:`~types.WrapperDescriptorType`,
-:class:`~types.MethodWrapperType`, and :class:`~types.MethodDescriptorType`
-classes are now available.
-(Contributed by Manuel Krebber and Guido van Rossum in :issue:`29377`.)
-
-The new :class:`~types.ClassMethodDescriptorType` is used to describe
-class and static methods of builtin types.
-(Contributed by Serhiy Storchaka in :issue:`32265`.)
+:class:`~types.MethodWrapperType`, :class:`~types.MethodDescriptorType`,
+and :class:`~types.ClassMethodDescriptorType` classes are now available.
+(Contributed by Manuel Krebber and Guido van Rossum in :issue:`29377`,
+and Serhiy Storchaka in :issue:`32265`.)
 
 The new :func:`types.resolve_bases` function resolves MRO entries
 dynamically as specified by :pep:`560`.
@@ -1555,9 +1381,10 @@ Peterson.)
 unittest
 --------
 
-Added new command-line option ``-k`` to filter tests to run with a substring or
-Unix shell-like pattern.  For example, ``python -m unittest -k foo`` runs the
-tests ``foo_tests.SomeTest.test_something``, ``bar_tests.SomeTest.test_foo``,
+The new ``-k`` command-line option allows filtering tests by a name
+substring or a Unix shell-like pattern.
+For example, ``python -m unittest -k foo`` runs
+``foo_tests.SomeTest.test_something``, ``bar_tests.SomeTest.test_foo``,
 but not ``bar_tests.FooTest.test_something``.
 (Contributed by Jonas Haag in :issue:`32071`.)
 
@@ -1569,24 +1396,25 @@ The :const:`~unittest.mock.sentinel` attributes now preserve their identity
 when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`. (Contributed by
 Serhiy Storchaka in :issue:`20804`.)
 
-New function :func:`~unittest.mock.seal` will disable the creation of mock
-children by preventing to get or set any new attribute on the sealed mock.
-The sealing process is performed recursively. (Contributed by Mario Corchero
-in :issue:`30541`.)
+The new :func:`~unittest.mock.seal` function allows sealing
+:class:`~unittest.mock.Mock` instances, which will disallow further creation
+of attribute mocks.  The seal is applied recursively to all attributes that
+are themselves mocks.
+(Contributed by Mario Corchero in :issue:`30541`.)
 
 
 urllib.parse
 ------------
 
 :func:`urllib.parse.quote` has been updated from :rfc:`2396` to :rfc:`3986`,
-adding ``~`` to the set of characters that is never quoted by default.
+adding ``~`` to the set of characters that are never quoted by default.
 (Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
 
 
 uu
 --
 
-Function :func:`~uu.encode` now accepts an optional *backtick*
+The :func:`uu.encode` function now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
@@ -1613,27 +1441,28 @@ warnings
 The initialization of the default warnings filters has changed as follows:
 
 * warnings enabled via command line options (including those for :option:`-b`
-  and the new CPython-specific ``-X dev`` option) are always passed to the
-  warnings machinery via the ``sys.warnoptions`` attribute.
+  and the new CPython-specific :option:`-X` ``dev`` option) are always passed
+  to the warnings machinery via the :data:`sys.warnoptions` attribute.
+
 * warnings filters enabled via the command line or the environment now have the
-  following precedence order:
+  following order of precedence:
 
      * the ``BytesWarning`` filter for :option:`-b` (or ``-bb``)
-     * any filters specified with :option:`-W`
-     * any filters specified with :envvar:`PYTHONWARNINGS`
+     * any filters specified with the :option:`-W` option
+     * any filters specified with the :envvar:`PYTHONWARNINGS` environment
+       variable
      * any other CPython specific filters (e.g. the ``default`` filter added
        for the new ``-X dev`` mode)
      * any implicit filters defined directly by the warnings machinery
+
 * in CPython debug builds, all warnings are now displayed by default (the
   implicit filter list is empty)
 
 (Contributed by Nick Coghlan and Victor Stinner in :issue:`20361`,
-:issue:`32043`, and :issue:`32230`)
+:issue:`32043`, and :issue:`32230`.)
 
-The default warning filter list now starts with a
-``"default::DeprecationWarning:__main__"`` entry, so deprecation warnings
-are once again shown by default in single-file scripts and at the
-interactive prompt.  See :ref:`whatsnew37-pep565` for details.
+Deprecation warnings are once again shown by default in single-file scripts and
+at the interactive prompt.  See :ref:`whatsnew37-pep565` for details.
 (Contributed by Nick Coghlan in :issue:`31975`.)
 
 
@@ -1672,7 +1501,7 @@ zipfile
 
 :class:`~zipfile.ZipFile` now accepts the new *compresslevel* parameter to
 control the compression level.
-(Contributed by Stephen J. Turnbull. in :issue:`28102`.)
+(Contributed by Bo Bayles in :issue:`21417`.)
 
 Subdirectories in archives created by ``ZipFile`` are now stored in
 alphabetical order.
@@ -1772,7 +1601,7 @@ now use the current locale encoding for ``surrogateescape`` error handler.
 (Contributed by Victor Stinner in :issue:`29240`.)
 
 The *start* and *end* parameters of :c:func:`PyUnicode_FindChar` are
-now adjusted to behave like ``str[start:end]``.
+now adjusted to behave like string slices.
 (Contributed by Xiang Zhang in :issue:`28822`.)
 
 
@@ -1800,6 +1629,8 @@ supported. LibreSSL is temporarily not supported as well. LibreSSL releases
 up to version 2.6.4 are missing required OpenSSL 1.0.2 APIs.
 
 
+.. _whatsnew37-perf:
+
 Optimizations
 =============
 
@@ -1809,18 +1640,41 @@ to use the ``METH_FASTCALL`` convention.
 (Contributed by Victor Stinner in :issue:`29300`, :issue:`29507`,
 :issue:`29452`, and :issue:`29286`.)
 
-Various optimizations have reduced Python startup time by 5% on Linux and
+Various optimizations have reduced Python startup time by 10% on Linux and
 up to 30% on macOS.
-(Contributed by Victor Stinner, INADA Naoki in :issue:`29585`.)
+(Contributed by Victor Stinner, INADA Naoki in :issue:`29585`, and
+Ivan Levkivskyi in :issue:`31333`.)
 
 Method calls are now up to 20% faster due to the bytecode changes which
 avoid creating bound method instances.
 (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
-The :mod:`asyncio` received a number of notable optimizations for commonly
-used functions.
-See :ref:`optimizations in asyncio <whatsnew37-asyncio-optimizations>` for
-details.
+.. _whatsnew37-asyncio-perf:
+
+The :mod:`asyncio` module received a number of notable optimizations for
+commonly used functions:
+
+* The :func:`asyncio.get_event_loop` function has been reimplemented in C to
+  make it up to 15 times faster.
+  (Contributed by Yury Selivanov in :issue:`32296`.)
+
+* :class:`asyncio.Future` callback management has been optimized.
+  (Contributed by Yury Selivanov in :issue:`32348`.)
+
+* :func:`asyncio.gather` is now up to 15% faster.
+  (Contributed by Yury Selivanov in :issue:`32355`.)
+
+* :func:`asyncio.sleep` is now up to 2 times faster when the *delay*
+  argument is zero or negative.
+  (Contributed by Andrew Svetlov in :issue:`32351`.)
+
+* The performance overhead of asyncio debug mode has been reduced.
+  (Contributed by Antoine Pitrou in :issue:`31970`.)
+
+As a result of :ref:`PEP 560 work <whatsnew37-pep560>`, the import time
+of :mod:`typing` has been reduced by a factor of 7, and many typing operations
+are now faster.
+(Contributed by Ivan Levkivskyi in :issue:`32226`.)
 
 :func:`sorted` and :meth:`list.sort` have been optimized for common cases
 to be up to 40-75% faster.
@@ -1829,7 +1683,7 @@ to be up to 40-75% faster.
 :meth:`dict.copy` is now up to 5.5 times faster.
 (Contributed by Yury Selivanov in :issue:`31179`.)
 
-:func:`hasattr` and :func:`getattr`` are now about 4 times faster when
+:func:`hasattr` and :func:`getattr` are now about 4 times faster when
 *name* is not found and *obj* does not override :meth:`object.__getattr__`
 or :meth:`object.__getattribute__`.
 (Contributed by INADA Naoki in :issue:`32544`.)
@@ -1847,10 +1701,6 @@ Serhiy Storchaka, and Raymond Hettinger in :issue:`28638`.)
 :meth:`date.fromordinal` and :meth:`date.fromtimestamp` are now up to
 30% faster in the common case.
 (Contributed by Paul Ganssle in :issue:`32403`.)
-
-Fast implementation from standard C library is now used for the
-:func:`math.erf` and :func:`math.erfc` functions.
-(Contributed by Serhiy Storchaka in :issue:`26121`.)
 
 The :func:`os.fwalk` function is now up to 2 times faster thanks to
 the use of :func:`os.scandir`.
@@ -1903,10 +1753,10 @@ C library implementation on most platforms.
 Other CPython Implementation Changes
 ====================================
 
-* Trace hooks may now opt out of receiving the ``line`` and ``opcode`` events
-  from the interpreter by setting the corresponding new ``f_trace_lines`` and
-  ``f_trace_opcodes`` attributes to :const:`False` on the frame
-  being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
+* Trace hooks may now opt out of receiving the ``line`` and opt into receiving
+  the ``opcode`` events from the interpreter by setting the corresponding new
+  ``f_trace_lines`` and ``f_trace_opcodes`` attributes on the
+  frame being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
 
 * Fixed some consistency problems with namespace package module attributes.
   Namespace module objects now have an ``__file__`` that is set to ``None``
@@ -1917,8 +1767,13 @@ Other CPython Implementation Changes
   :issue:`32303`.
 
 * The :func:`locals` dictionary now displays in the lexical order that
-  variables were defined.  Previously, the order was reversed.
+  variables were defined.  Previously, the order was undefined.
   (Contributed by Raymond Hettinger in :issue:`32690`.)
+
+* The :mod:`distutils` ``upload`` command no longer tries to change CR
+  end-of-line characters to CRLF.  This fixes a corruption issue with sdists
+  that ended with a byte equivalent to CR.
+  (Contributed by Bo Bayles in :issue:`32304`.)
 
 
 Deprecated Python Behavior
@@ -1954,12 +1809,14 @@ Use :func:`aifc.open` instead.
 (Contributed by Brian Curtin in :issue:`31985`.)
 
 
+.. _whatsnew37-asyncio-deprecated:
+
 asyncio
 -------
 
 Support for directly ``await``-ing instances of :class:`asyncio.Lock` and
 other asyncio synchronization primitives has been deprecated.  An
-asynchronous context manager has to be used in order to acquire and release
+asynchronous context manager must be used in order to acquire and release
 the synchronization resource.  See :ref:`async-with-locks` for more
 information.
 (Contributed by Andrew Svetlov in :issue:`32253`.)
@@ -1977,6 +1834,16 @@ longer be exposed in the regular :mod:`collections` module.  This will help
 create a clearer distinction between the concrete classes and the abstract
 base classes.
 (Contributed by Serhiy Storchaka in :issue:`25988`.)
+
+
+dbm
+---
+
+:mod:`dbm.dumb` now supports reading read-only files and no longer writes the
+index file when it is not changed.  A deprecation warning is now emitted
+if the index file is missing and recreated in the ``'r'`` and ``'w'``
+modes (this will be an error in future Python releases).
+(Contributed by Serhiy Storchaka in :issue:`28847`.)
 
 
 enum
@@ -2027,6 +1894,7 @@ macpath
 -------
 
 The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
+(Contributed by Chi Hsuan Yen in :issue:`9850`.)
 
 
 threading
@@ -2086,9 +1954,9 @@ Deprecated functions and types of the C API
 ===========================================
 
 Function :c:func:`PySlice_GetIndicesEx` is deprecated and replaced with
-a macro if ``Py_LIMITED_API`` is not set or set to the value between
-``0x03050400`` and ``0x03060000`` (not including) or ``0x03060100`` or
-higher.  (Contributed by Serhiy Storchaka in :issue:`27867`.)
+a macro if ``Py_LIMITED_API`` is not set or set to a value in the range
+between ``0x03050400`` and ``0x03060000`` (not inclusive), or is ``0x03060100``
+or higher.  (Contributed by Serhiy Storchaka in :issue:`27867`.)
 
 :c:func:`PyOS_AfterFork` has been deprecated.  Use :c:func:`PyOS_BeforeFork`,
 :c:func:`PyOS_AfterFork_Parent` or :c:func:`PyOS_AfterFork_Child()` instead.
@@ -2103,6 +1971,8 @@ FreeBSD 9 and older are no longer officially supported.
 
 API and Feature Removals
 ========================
+
+The following features and APIs have been removed from Python 3.7:
 
 * The ``os.stat_float_times()`` function has been removed. It was introduced in
   Python 2.3 for backward compatibility with Python 2.2, and was deprecated
@@ -2148,9 +2018,21 @@ API and Feature Removals
 
 * Direct instantiation of :class:`ssl.SSLSocket` and :class:`ssl.SSLObject`
   objects is now prohibited. The constructors were never documented, tested,
-  or designed as public constructors. Users were suppose to use
+  or designed as public constructors.  Users were supposed to use
   :func:`ssl.wrap_socket` or :class:`ssl.SSLContext`.
   (Contributed by Christian Heimes in :issue:`32951`.)
+
+* The unused :mod:`distutils` ``install_misc`` command has been removed.
+  (Contributed by Eric N. Vander Weele in :issue:`29218`.)
+
+
+Module Removals
+===============
+
+The ``fpectl`` module has been removed.  It was never enabled by
+default, never worked correctly on x86-64, and it changed the Python
+ABI in ways that caused unexpected breakage of C extensions.
+(Contributed by Nathaniel J. Smith in :issue:`29137`.)
 
 
 Windows-only Changes
@@ -2182,15 +2064,15 @@ that may require changes to your code.
 Changes in Python Behavior
 --------------------------
 
+* :keyword:`async` and :keyword:`await` names are now reserved keywords.
+  Code using these names as identifiers will now raise a :exc:`SyntaxError`.
+  (Contributed by Jelle Zijlstra in :issue:`30406`.)
+
 * :pep:`479` is enabled for all code in Python 3.7, meaning that
   :exc:`StopIteration` exceptions raised directly or indirectly in
   coroutines and generators are transformed into :exc:`RuntimeError`
   exceptions.
   (Contributed by Yury Selivanov in :issue:`32670`.)
-
-* :keyword:`async` and :keyword:`await` names are now reserved keywords.
-  Code using these names as identifiers will now raise a :exc:`SyntaxError`.
-  (Contributed by Jelle Zijlstra in :issue:`30406`.)
 
 * :meth:`object.__aiter__` methods can no longer be declared as
   asynchronous.  (Contributed by Yury Selivanov in :issue:`31709`.)
@@ -2221,6 +2103,13 @@ Changes in Python Behavior
 Changes in the Python API
 -------------------------
 
+* ``Module``, ``FunctionDef``, ``AsyncFunctionDef``, and
+  ``ClassDef`` AST nodes now have the new ``docstring`` attribute.
+  The first statement in their body is not considered as a docstring
+  anymore.  ``co_firstlineno`` and ``co_lnotab`` of code object for class
+  and module are affected by this change. (Contributed by INADA Naoki and
+  Eugene Toder in :issue:`29463`.)
+
 * :meth:`~socketserver.BaseServer.server_close` in
   :class:`socketserver.ThreadingMixIn` and :class:`socketserver.ForkingMixIn`
   now waits until all non-daemon threads complete.
@@ -2247,13 +2136,6 @@ Changes in the Python API
   Use the :meth:`~http.cookies.Morsel.set` method for setting them.
   (Contributed by Serhiy Storchaka in :issue:`29192`.)
 
-* ``Module``, ``FunctionDef``, ``AsyncFunctionDef``, and
-  ``ClassDef`` AST nodes now have the new ``docstring`` attribute.
-  The first statement in their body is not considered as a docstring
-  anymore.  ``co_firstlineno`` and ``co_lnotab`` of code object for class
-  and module are affected by this change. (Contributed by INADA Naoki and
-  Eugene Toder in :issue:`29463`.)
-
 * The *mode* argument of :func:`os.makedirs` no longer affects the file
   permission bits of newly-created intermediate-level directories.
   To set their file permission bits you can set the umask before invoking
@@ -2269,11 +2151,11 @@ Changes in the Python API
   is a list of strings, not bytes.
   (Contributed by Pierre Quentel in :issue:`29979`.)
 
-* Due to internal changes in :mod:`socket` calling :func:`socket.fromshare`
+* Due to internal changes in :mod:`socket`, calling :func:`socket.fromshare`
   on a socket created by :func:`socket.share <socket.socket.share>` in older
   Python versions is not supported.
 
-* ``repr`` for :exc:`BaseException` has changed not to include the trailing
+* ``repr`` for :exc:`BaseException` has changed to not include the trailing
   comma.  Most exceptions are affected by this change.
   (Contributed by Serhiy Storchaka in :issue:`30399`.)
 
@@ -2324,10 +2206,6 @@ Changes in the Python API
   of escaping all characters other than ASCII letters, numbers, and ``'_'``.
   (Contributed by Serhiy Storchaka in :issue:`29995`.)
 
-* :func:`os.listdir` and :func:`os.scandir` now emit file name as bytes when
-  called with a bytes-like argument.
-  (Contributed by Serhiy Storchaka in :issue:`30879`.)
-
 * :class:`tracemalloc.Traceback` frames are now sorted from oldest to most
   recent to be more consistent with :mod:`traceback`.
   (Contributed by Jesse Bakker in :issue:`32121`.)
@@ -2370,6 +2248,40 @@ Changes in the Python API
 * :attr:`Struct.format <struct.Struct.format>` is now a :class:`str` instance
   instead of a :class:`bytes` instance.
   (Contributed by Victor Stinner in :issue:`21071`.)
+
+* :mod:`argparse` subparsers are now required by default.  This matches the
+  behaviour in Python 2.  To add an optional subparser, pass
+  ``required=False`` to
+  :meth:`ArgumentParser.add_subparsers() <argparse.ArgumentParser.add_subparsers>`.
+  (Contributed by Anthony Sottile in :issue:`26510`.)
+
+* :meth:`ast.literal_eval()` is now stricter.  Addition and subtraction of
+  arbitrary numbers are no longer allowed.
+  (Contributed by Serhiy Storchaka in :issue:`31778`.)
+
+* :meth:`Calendar.itermonthdates <calendar.Calendar.itermonthdates>`
+  will now consistently raise an exception when a date falls outside of the
+  ``0001-01-01`` through ``9999-12-31`` range.  To support applications that
+  cannot tolerate such exceptions, the new
+  :meth:`Calendar.itermonthdays3 <calendar.Calendar.itermonthdays3>` and
+  :meth:`Calendar.itermonthdays4 <calendar.Calendar.itermonthdays4>` can be used.
+  The new methods return tuples and are not restricted by the range supported by
+  :class:`datetime.date`.
+  (Contributed by Alexander Belopolsky in :issue:`28292`.)
+
+* :class:`collections.ChainMap` now preserves the order of the underlying
+  mappings.  (Contributed by Raymond Hettinger in :issue:`32792`.)
+
+* The ``submit()`` method of :class:`concurrent.futures.ThreadPoolExecutor`
+  and :class:`concurrent.futures.ProcessPoolExecutor` now raises
+  a :exc:`RuntimeError` if called during interpreter shutdown.
+  (Contributed by Mark Nemec in :issue:`33097`.)
+
+* The :class:`configparser.ConfigParser` constructor now uses ``read_dict()``
+  to process the default values, making its behavior consistent with the
+  rest of the parser.  Non-string keys and values in the defaults
+  dictionary are now being implicitly converted to strings.
+  (Contributed by James Tocknell in :issue:`23835`.)
 
 
 Changes in the C API
@@ -2434,28 +2346,3 @@ sufficient to both emit :exc:`BytesWarning` messages and have them converted
 to exceptions.  Instead, the flag must be set (to cause the warnings to be
 emitted in the first place), and an explicit ``error::BytesWarning``
 warnings filter added to convert them to exceptions.
-
-
-
-Documentation
-=============
-
-.. _whatsnew37-pep545:
-
-PEP 545: Python Documentation Translations
-------------------------------------------
-
-:pep:`545` describes the process to translate Python documentation,
-and three translations have been added:
-
-- Japanese: https://docs.python.org/ja/ and associated GitHub
-  repository: https://github.com/python/python-docs-ja
-
-- French: https://docs.python.org/fr/ and associated GitHub
-  repository: https://github.com/python/python-docs-fr
-
-- Korean: https://docs.python.org/ko/ and associated GitHub
-  repository: https://github.com/python/python-docs-ko
-
-(Contributed by Julien Palard, Inada Naoki, and Victor Stinner in
-:issue:`26546`.)
