@@ -2313,5 +2313,89 @@ class TestSingleDispatch(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             f()
 
+class CachedCostItem:
+    _cost = 1
+
+    def __init__(self):
+        self.lock = py_functools.RLock()
+
+    @py_functools.cached_property
+    def cost(self):
+        """The cost of the item."""
+        with self.lock:
+            self._cost += 1
+        return self._cost
+
+
+class CachedCostItemWait:
+    _cost = 1
+
+    def __init__(self, event):
+        self._cost = 1
+        self.lock = py_functools.RLock()
+        self.event = event
+
+    @py_functools.cached_property
+    def cost(self):
+        self.event.wait(1)
+        with self.lock:
+            self._cost += 1
+        return self._cost
+
+
+class CachedCostItemWithSlots:
+    __slots__ = ('_cost')
+
+    def __init__(self):
+        self._cost = 1
+
+    @py_functools.cached_property
+    def cost(self):
+        """The cost of the item."""
+        return self._cost
+
+
+class TestCachedProperty(unittest.TestCase):
+    def test_cached(self):
+        item = CachedCostItem()
+        self.assertEqual(item.cost, 2)
+        self.assertEqual(item.cost, 2) # not 3
+
+    def test_threaded(self):
+        go = threading.Event()
+        item = CachedCostItemWait(go)
+
+        num_threads = 3
+
+        orig_si = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)
+        try:
+            threads = [
+                threading.Thread(target=lambda: item.cost)
+                for k in range(num_threads)
+            ]
+            with support.start_threads(threads):
+                go.set()
+        finally:
+            sys.setswitchinterval(orig_si)
+
+        self.assertEqual(item.cost, 2)
+
+
+    def test_object_with_slots(self):
+        item = CachedCostItemWithSlots()
+        with self.assertRaisesRegex(
+                TypeError,
+                "No '__dict__' attribute on 'CachedCostItemWithSlots' instance to cache 'cost' property.",
+        ):
+            item.cost
+
+    def test_access_from_class(self):
+        self.assertIsInstance(CachedCostItem.cost, py_functools.cached_property)
+
+    def test_doc(self):
+        self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
+
+
 if __name__ == '__main__':
     unittest.main()
