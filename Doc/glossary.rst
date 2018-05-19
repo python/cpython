@@ -148,8 +148,7 @@ Glossary
       :data:`sys.stdout.buffer`, and instances of :class:`io.BytesIO` and
       :class:`gzip.GzipFile`.
 
-      .. seealso::
-         A :term:`text file` reads and writes :class:`str` objects.
+      See also :term:`text file`.
 
    bytes-like object
       An object that supports the :ref:`bufferobjects` and can
@@ -1030,8 +1029,7 @@ Glossary
       :data:`sys.stdin`, :data:`sys.stdout`, and instances of
       :class:`io.StringIO`.
 
-      .. seealso::
-         A :term:`binary file` reads and write :class:`bytes` objects.
+      See also :term:`binary file`.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark
