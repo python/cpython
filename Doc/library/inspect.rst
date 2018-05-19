@@ -511,9 +511,24 @@ Retrieving source code
    returned as a single string.  An :exc:`OSError` is raised if the source code
    cannot be retrieved.
 
+   If *object* is a wrapper function (that is to say has a :attr:`__wrapped__`
+   field, :func:`getsource` will follows the chain of :attr:`__wrapped__`
+   attributes returning the last object in the chain using :func:`unwrap`
+
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
       former.
+
+.. function:: findsource(object)
+
+   Return the entire source file and starting line number for an object.
+
+   The argument may be a module, class, method, function, traceback, frame,
+   or code object.  The source code is returned as a list of all the lines
+   in the file and the line number indexes a line in that list.  An OSError
+   is raised if the source code cannot be retrieved.
+
+   Prefer the use of :func:`getsource` if possible.
 
 
 .. function:: cleandoc(doc)
