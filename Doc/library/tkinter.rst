@@ -30,6 +30,45 @@ added and changed logic and refer to the official Tcl/Tk documentation for
 details that are unchanged.
 
 
+Architecture
+------------
+
+Unlike most other GUI toolkits, Tcl/Tk is not a monolithic product providing a
+consolidated API. Instead, it's a bundle of libraries, each with its
+separate functionality and documentation.
+
+Tcl
+   Tcl is a dynamic interpreted programming language. Though it can be used
+   as a general-purpose programming language, it's primary developed to be and
+   used as an embedded scripting engine for applications (same as Lua) and as
+   an interface to the Tk toolkit. The Tcl engine library has a C interface to
+   create and operate interpreter instances, run Tcl commands and scripts with
+   them and add custom commands that can be implemented in either Tcl or C.
+   It also implements a per-interpreter event queue. An interpreter
+   instance has a single stream of execution. Each :class:`Tk` object embeds
+   its own interpreter instance. Though :mod:`_tkinter` allows to
+   execute entire Tcl scripts, the Python bindings typically only invoke single
+   commands.
+   
+Tk
+   Tk is a Tcl module implemented in C that adds custom commands to create and
+   manipulate GUI widgets. The interpreter's event queue is used to generate
+   and process events for all widgets created by it.
+   Tcl can be used without Tk (and Tk needs to be explicitly loaded to make it
+   available; :mod:`tkinter` does this automatically), though they are
+   typically provided together, "Tcl/Tk" being the name for the bundle.
+   Tk also implements the Themed Tk (Ttk) family of widgets, though `tkinter`
+   provides Python bindings for them in a separate module, :mod:`tkinter.ttk`.
+   Tk has its own C interface that duplicates the custom Tcl commands though
+   `tkinter` mostly uses the latter.
+
+Tix
+   `Tix`<https://core.tcl.tk/jenglish/gutter/packages/tix.html> is a
+   third-party Tcl module, an addon for Tk that adds several new widgets.
+   `tkinter.tix` provides bindings for it, and official Python binary releases
+   come with it bundled. It's deprecated in favor of Ttk.
+
+
 Tkinter Modules
 ---------------
 
