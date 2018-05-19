@@ -209,6 +209,18 @@ always available.
    yourself to control bytecode file generation.
 
 
+.. data:: bytecode_path
+
+   If this is set (not ``None``), Python will write ``.pyc`` files to (and read
+   them from) this directory, rather than from the source code tree. This value
+   is initially set based on the value of the :option:`-X`
+   ``bytecode_path=PATH`` command-line option or the
+   :envvar:`PYTHONBYTECODEPATH` environment variable. If neither are set, it is
+   ``None``.
+
+   .. versionadded:: 3.8
+
+
 .. function:: excepthook(type, value, traceback)
 
    This function prints out a given traceback and exception to ``sys.stderr``.

@@ -760,20 +760,12 @@ class PEP3147Tests:
 
     @contextlib.contextmanager
     def bytecode_path(self, path):
-        # Patch directly in globals of the functions under test, because we have
-        # no direct access to the right _bootstrap_external module to patch.
-
-        # cache_from_source and source_from_cache come from the same module,
-        # thus they share the same globals dict, so we only have to patch it
-        # once.
-        _globals = self.util.cache_from_source.__globals__
-
-        _orig_path = _globals['BYTECODE_BASE_PATH']
-        _globals['BYTECODE_BASE_PATH'] = path
+        _orig_path = sys.bytecode_path
+        sys.bytecode_path = path
         try:
             yield
         finally:
-            _globals['BYTECODE_BASE_PATH'] = _orig_path
+            sys.bytecode_path = _orig_path
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag to not be None')

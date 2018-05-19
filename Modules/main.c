@@ -1676,6 +1676,34 @@ pymain_init_tracemalloc(_PyCoreConfig *config)
 }
 
 
+static _PyInitError
+pymain_init_bytecode_path(_PyCoreConfig *config)
+{
+    wchar_t *env;
+
+    int res = config_get_env_var_dup(
+        &env, L"PYTHONBYTECODEPATH", "PYTHONBYTECODEPATH");
+    if (res < 0) {
+        return DECODE_LOCALE_ERR("PYTHONBYTECODEPATH", res);
+    } else if (env) {
+        config->bytecode_path = env;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"bytecode_path");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (sep) {
+            config->bytecode_path = _PyMem_RawWcsdup(sep + 1);
+            if (config->bytecode_path == NULL) {
+                return _Py_INIT_NO_MEMORY();
+            }
+        }
+    }
+
+    return _Py_INIT_OK();
+}
+
+
 static void
 get_env_flag(int *flag, const char *name)
 {
@@ -1869,6 +1897,12 @@ config_read_complex_options(_PyCoreConfig *config)
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
+
+    err = pymain_init_bytecode_path(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     return _Py_INIT_OK();
 }
 
@@ -2238,6 +2272,7 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
         LIST = NULL; \
     } while (0)
 
+    CLEAR(config->bytecode_path);
     CLEAR(config->module_search_path_env);
     CLEAR(config->home);
     CLEAR(config->program_name);
@@ -2302,6 +2337,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(malloc_stats);
     COPY_ATTR(utf8_mode);
 
+    COPY_STR_ATTR(bytecode_path);
     COPY_STR_ATTR(module_search_path_env);
     COPY_STR_ATTR(home);
     COPY_STR_ATTR(program_name);
@@ -2337,6 +2373,7 @@ _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
     Py_CLEAR(config->warnoptions);
     Py_CLEAR(config->xoptions);
     Py_CLEAR(config->module_search_path);
+    Py_CLEAR(config->bytecode_path);
 }
 
 
@@ -2389,6 +2426,7 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
     COPY_ATTR(warnoptions);
     COPY_ATTR(xoptions);
     COPY_ATTR(module_search_path);
+    COPY_ATTR(bytecode_path);
 #undef COPY_ATTR
     return 0;
 }
@@ -2446,6 +2484,13 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
 
         COPY_WSTRLIST(main_config->module_search_path,
                       config->nmodule_search_path, config->module_search_paths);
+
+        if (config->bytecode_path != NULL) {
+            COPY_WSTR(bytecode_path);
+        } else {
+            main_config->bytecode_path = NULL;
+        }
+
     }
 
     return _Py_INIT_OK();

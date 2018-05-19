@@ -323,11 +323,11 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
             raise ValueError('{!r} is not alphanumeric'.format(optimization))
         almost_filename = '{}.{}{}'.format(almost_filename, _OPT, optimization)
     filename = almost_filename + BYTECODE_SUFFIXES[0]
-    if BYTECODE_BASE_PATH is not None:
+    if sys.bytecode_path is not None:
         # We need an absolute path to the py file to avoid the possibility of
-        # collisions within BYTECODE_BASE_PATH, if someone has two different
+        # collisions within sys.bytecode_path, if someone has two different
         # `foo/bar.py` on their system and they import both of them using the
-        # same BYTECODE_BASE_PATH. Let's say BYTECODE_BASE_PATH is
+        # same sys.bytecode_path. Let's say sys.bytecode_path is
         # `C:\Bytecode`; the idea here is that if we get `Foo\Bar`, we first
         # make it absolute (`C:\Somewhere\Foo\Bar`), then make it root-relative
         # (`Somewhere\Foo\Bar`), so we end up placing the bytecode file in
@@ -344,7 +344,7 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
         # Strip initial path separator from `head` to complete the conversion
         # back to a root-relative path before joining.
         return _path_join(
-            BYTECODE_BASE_PATH,
+            sys.bytecode_path,
             head.lstrip(path_separators),
             filename,
         )
@@ -364,10 +364,13 @@ def source_from_cache(path):
         raise NotImplementedError('sys.implementation.cache_tag is None')
     path = _os.fspath(path)
     head, pycache_filename = _path_split(path)
-    if BYTECODE_BASE_PATH is not None and head.startswith(
-            BYTECODE_BASE_PATH + path_sep):
-        head = head[len(BYTECODE_BASE_PATH):]
-    else:
+    found_in_bytecode_path = False
+    if sys.bytecode_path is not None:
+        stripped_path = sys.bytecode_path.rstrip(path_separators)
+        if head.startswith(stripped_path + path_sep):
+            head = head[len(stripped_path):]
+            found_in_bytecode_path = True
+    if not found_in_bytecode_path:
         head, pycache = _path_split(head)
         if pycache != _PYCACHE:
             raise ValueError(f'{_PYCACHE} not bottom-level directory in '
@@ -1593,10 +1596,6 @@ def _setup(_bootstrap_module):
         SOURCE_SUFFIXES.append('.pyw')
         if '_d.pyd' in EXTENSION_SUFFIXES:
             WindowsRegistryFinder.DEBUG_BUILD = True
-    bytecode_base_path = _os.environ.get(b'PYTHONBYTECODEPATH') or None
-    if bytecode_base_path is not None:
-        bytecode_base_path = bytecode_base_path.decode().rstrip(path_separators)
-    setattr(self_module, 'BYTECODE_BASE_PATH', bytecode_base_path)
 
 
 def _install(_bootstrap_module):
