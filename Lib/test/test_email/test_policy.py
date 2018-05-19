@@ -134,6 +134,35 @@ class PolicyAPITests(unittest.TestCase):
         for attr, value in expected.items():
             self.assertEqual(getattr(added, attr), value)
 
+    def test_fold_utf8(self):
+        expected_ascii = 'Subject: =?utf-8?q?=C3=A1?=\n'
+        expected_utf8 = 'Subject: á\n'
+
+        msg = email.message.EmailMessage()
+        s = 'á'
+        msg['Subject'] = s
+
+        p_ascii = email.policy.default.clone()
+        p_utf8 = email.policy.default.clone(utf8=True)
+
+        self.assertEqual(
+            p_ascii.fold('Subject', msg['Subject']),
+            expected_ascii
+        )
+        self.assertEqual(
+            p_utf8.fold('Subject', msg['Subject']),
+            expected_utf8
+        )
+
+        self.assertEqual(
+            p_ascii.fold('Subject', s),
+            expected_ascii
+        )
+        self.assertEqual(
+            p_utf8.fold('Subject', s),
+            expected_utf8
+        )
+
     def test_register_defect(self):
         class Dummy:
             def __init__(self):
