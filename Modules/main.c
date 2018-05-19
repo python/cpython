@@ -1831,7 +1831,7 @@ config_read_env_vars(_PyCoreConfig *config)
     wchar_t *path;
     int res = config_get_env_var_dup(&path, L"PYTHONPATH", "PYTHONPATH");
     if (res < 0) {
-        return DECODE_LOCALE_ERR("PYTHONHOME", res);
+        return DECODE_LOCALE_ERR("PYTHONPATH", res);
     }
     config->module_search_path_env = path;
 
