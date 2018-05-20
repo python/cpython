@@ -874,26 +874,32 @@ class singledispatchmethod:
 ### cached_property() - computed once per instance, cached as attribute
 ################################################################################
 
+_NOT_FOUND = object()
+
+
 class cached_property:
     def __init__(self, func):
         self.func = func
         self.__doc__ = func.__doc__
         self.lock = RLock()
 
-    def __get__(self, instance, cls=None):
-        if instance is None:
+    def __get__(self, obj, objtype=None):
+        if obj is None:
             return self
         attrname = self.func.__name__
         try:
-            cache = instance.__dict__
+            cache = obj.__dict__
         except AttributeError:  # objects with __slots__ have no __dict__
             msg = (
-                f"No '__dict__' attribute on {type(instance).__name__!r} "
+                f"No '__dict__' attribute on {type(obj).__name__!r} "
                 f"instance to cache {attrname!r} property."
             )
             raise TypeError(msg) from None
-        with self.lock:
-            # check if another thread filled cache while we awaited lock
-            if attrname not in cache:
-                cache[attrname] = self.func(instance)
-        return cache[attrname]
+        val = cache.get(attrname, _NOT_FOUND)
+        if val is _NOT_FOUND:
+            with self.lock:
+                # check if another thread filled cache while we awaited lock
+                val = cache.get(attrname, _NOT_FOUND)
+                if val is _NOT_FOUND:
+                    val = cache[attrname] = self.func(obj)
+        return val
