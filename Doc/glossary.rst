@@ -51,7 +51,7 @@ Glossary
 
       Annotations can be :term:`type hints <type hint>`.
 
-      See :pep:`484` and :pep:`526` which describe this functionality.
+      See :pep:`484` and :pep:`526`, which describe this functionality.
 
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
@@ -402,8 +402,8 @@ Glossary
 
       Function annotation syntax is explained in section :ref:`function`.
 
-      See also :term:`variable annotation`, and :pep:`484`,
-      which describes this functionality.
+      See :term:`variable annotation` and :pep:`484`,
+      which describe this functionality.
 
    __future__
       A pseudo-module which programmers can use to enable new language features
@@ -1036,6 +1036,30 @@ Glossary
       :attr:`~instance.__class__` attribute or can be retrieved with
       ``type(obj)``.
 
+   type alias
+      A synonym for a type, created by assigning the type to an identifier.
+
+      Type aliases are useful for simplifying complex
+      :term:`type hints <type hint>`. For example::
+
+         from typing import Dict, Tuple, List
+
+         ConnectionOptions = Dict[str, str]
+         Address = Tuple[str, int]
+         Server = Tuple[Address, ConnectionOptions]
+
+         def broadcast_message(message: str, servers: List[Server]) -> None:
+             ...
+
+      is equivalent to::
+
+         def broadcast_message(
+                 message: str,
+                 servers: List[Tuple[Tuple[str, int], Dict[str, str]]]) -> None:
+             ...
+
+      See :mod:`typing` and :pep:`484`, which describe this functionality.
+
    type hint
       An :term:`annotation` that specifies the expected type for a variable, class
       attribute, function or method parameter or return value.
@@ -1048,7 +1072,7 @@ Glossary
       parameter or return value, but not local variables, can be accessed using
       :func:`typing.get_type_hints`.
 
-      See also :mod:`typing` and :pep:`483` which describe this functionality.
+      See :mod:`typing` and :pep:`483`, which describe this functionality.
 
    universal newlines
       A manner of interpreting text streams in which all of the following are
@@ -1087,8 +1111,8 @@ Glossary
 
       Variable annotation syntax is explained in section :ref:`annassign`.
 
-      See also :term:`function annotation`, :pep:`484`
-      and :pep:`526` which describe this functionality.
+      See :term:`function annotation`, :pep:`484`
+      and :pep:`526`, which describe this functionality.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users
