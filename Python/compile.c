@@ -1705,7 +1705,7 @@ static int
 compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 {
     PyObject *ann_as_str;
-    ann_as_str = _PyAST_ExprAsUnicode(annotation, 1);
+    ann_as_str = _PyAST_ExprAsUnicode(annotation);
     if (!ann_as_str) {
         return 0;
     }
