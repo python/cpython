@@ -702,12 +702,7 @@ class SpooledTemporaryFile:
 
     @property
     def errors(self):
-        try:
-            return self._file.errors
-        except AttributeError:
-            if 'b' in self._TemporaryFileArgs['mode']:
-                raise
-            return self._TemporaryFileArgs['errors']
+        return self._file.errors
 
     def fileno(self):
         self.rollover()
