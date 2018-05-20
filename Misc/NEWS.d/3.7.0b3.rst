@@ -483,8 +483,8 @@ to a UNC path.
 Build and link with private copy of Tcl/Tk 8.6 for the macOS 10.6+
 installer. The 10.9+ installer variant already does this.  This means that
 the Python 3.7 provided by the python.org macOS installers no longer need or
-use any external versions of Tcl/Tk, either system-provided or user-
-installed, such as ActiveTcl.
+use any external versions of Tcl/Tk, either system-provided or
+user-installed, such as ActiveTcl.
 
 ..
 
