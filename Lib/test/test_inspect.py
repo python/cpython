@@ -1134,6 +1134,61 @@ class TestClassesAndFunctions(unittest.TestCase):
         attrs = [a[0] for a in inspect.getmembers(C)]
         self.assertNotIn('missing', attrs)
 
+class TestIsDataDescriptor(unittest.TestCase):
+
+    def test_custom_descriptors(self):
+        class NonDataDescriptor:
+            def __get__(self, value, type=None): pass
+        class DataDescriptor0:
+            def __set__(self, name, value): pass
+        class DataDescriptor1:
+            def __delete__(self, name): pass
+        class DataDescriptor2:
+            __set__ = None
+        self.assertFalse(inspect.isdatadescriptor(NonDataDescriptor()),
+                         'class with only __get__ not a data descriptor')
+        self.assertTrue(inspect.isdatadescriptor(DataDescriptor0()),
+                        'class with __set__ is a data descriptor')
+        self.assertTrue(inspect.isdatadescriptor(DataDescriptor1()),
+                        'class with __delete__ is a data descriptor')
+        self.assertTrue(inspect.isdatadescriptor(DataDescriptor2()),
+                        'class with __set__ = None is a data descriptor')
+
+    def test_slot(self):
+        class Slotted:
+            __slots__ = 'foo',
+        self.assertTrue(inspect.isdatadescriptor(Slotted.foo),
+                        'a slot is a data descriptor')
+
+    def test_property(self):
+        class Propertied:
+            @property
+            def a_property(self):
+                pass
+        self.assertTrue(inspect.isdatadescriptor(Propertied.a_property),
+                        'a property is a data descriptor')
+
+    def test_functions(self):
+        class Test(object):
+            def instance_method(self): pass
+            @classmethod
+            def class_method(cls): pass
+            @staticmethod
+            def static_method(): pass
+        def function():
+            pass
+        a_lambda = lambda: None
+        self.assertFalse(inspect.isdatadescriptor(Test().instance_method),
+                         'a instance method is not a data descriptor')
+        self.assertFalse(inspect.isdatadescriptor(Test().class_method),
+                         'a class method is not a data descriptor')
+        self.assertFalse(inspect.isdatadescriptor(Test().static_method),
+                         'a static method is not a data descriptor')
+        self.assertFalse(inspect.isdatadescriptor(function),
+                         'a function is not a data descriptor')
+        self.assertFalse(inspect.isdatadescriptor(a_lambda),
+                         'a lambda is not a data descriptor')
+
 
 _global_ref = object()
 class TestGetClosureVars(unittest.TestCase):
@@ -3792,7 +3847,7 @@ def test_main():
         TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
         TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,
         TestBoundArguments, TestSignaturePrivateHelpers,
-        TestSignatureDefinitions,
+        TestSignatureDefinitions, TestIsDataDescriptor,
         TestGetClosureVars, TestUnwrap, TestMain, TestReload,
         TestGetCoroutineState
     )
