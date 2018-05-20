@@ -22,8 +22,8 @@ Argument Clinic How-To
   compatibility for future versions.  In other words: if you
   maintain an external C extension for CPython, you're welcome
   to experiment with Argument Clinic in your own code.  But the
-  version of Argument Clinic that ships with CPython 3.5 *could*
-  be totally incompatible and break all your code.
+  version of Argument Clinic that ships with the next version
+  of CPython *could* be totally incompatible and break all your code.
 
 The Goals Of Argument Clinic
 ============================
