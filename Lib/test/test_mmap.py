@@ -37,6 +37,7 @@ class MmapTests(unittest.TestCase):
             f.write(b'\0'* (PAGESIZE-3) )
             f.flush()
             m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
+            self.assertEqual(f.tell(), 2 * PAGESIZE)
         finally:
             f.close()
 

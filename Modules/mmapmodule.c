@@ -1280,8 +1280,6 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
         }
-        /* Win9x appears to need us seeked to zero */
-        lseek(fileno, 0, SEEK_SET);
     }
 
     m_obj = (mmap_object *)type->tp_alloc(type, 0);
