@@ -74,8 +74,8 @@ terminated by a semi-colon instead of a newline. Patch by Nitish Chandra.
 .. nonce: Fh3fau
 .. section: Core and Builtins
 
-Fix possible crashing in builtin Unicode decoders caused by write out-of-
-bound errors when using customized decode error handlers.
+Fix possible crashing in builtin Unicode decoders caused by write
+out-of-bound errors when using customized decode error handlers.
 
 ..
 

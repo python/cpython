@@ -81,8 +81,8 @@ astral characters.  Patch by Xiang Zhang.
 .. nonce: RYbEGH
 .. section: Core and Builtins
 
-Extra slash no longer added to sys.path components in case of empty compile-
-time PYTHONPATH components.
+Extra slash no longer added to sys.path components in case of empty
+compile-time PYTHONPATH components.
 
 ..
 
@@ -349,8 +349,8 @@ Patch written by Xiang Zhang.
 .. section: Core and Builtins
 
 Standard __import__() no longer look up "__import__" in globals or builtins
-for importing submodules or "from import".  Fixed handling an error of non-
-string package name.
+for importing submodules or "from import".  Fixed handling an error of
+non-string package name.
 
 ..
 
@@ -2070,9 +2070,9 @@ Update message in validate_ucrtbase.py
 .. section: Build
 
 Cause lack of llvm-profdata tool when using clang as required for PGO
-linking to be a configure time error rather than make time when --with-
-optimizations is enabled.  Also improve our ability to find the llvm-
-profdata tool on MacOS and some Linuxes.
+linking to be a configure time error rather than make time when
+``--with-optimizations`` is enabled.  Also improve our ability to find the
+llvm-profdata tool on MacOS and some Linuxes.
 
 ..
 

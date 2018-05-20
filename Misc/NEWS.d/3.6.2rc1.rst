@@ -492,8 +492,8 @@ is received.
 .. section: Library
 
 Various updates to typing module: add typing.NoReturn type, use
-WrapperDescriptorType, minor bug-fixes.  Original PRs by Jim Fasarakis-
-Hilliard and Ivan Levkivskyi.
+WrapperDescriptorType, minor bug-fixes.  Original PRs by Jim
+Fasarakis-Hilliard and Ivan Levkivskyi.
 
 ..
 
@@ -830,8 +830,8 @@ Fix out-of-tree builds of Python when configured with ``--with--dtrace``.
 .. section: Build
 
 Prevent unnecessary rebuilding of Python during ``make test``, ``make
-install`` and some other make targets when configured with ``--enable-
-optimizations``.
+install`` and some other make targets when configured with
+``--enable-optimizations``.
 
 ..
 

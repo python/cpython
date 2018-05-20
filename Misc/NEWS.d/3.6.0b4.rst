@@ -54,8 +54,8 @@ astral characters.  Patch by Xiang Zhang.
 .. nonce: RYbEGH
 .. section: Core and Builtins
 
-Extra slash no longer added to sys.path components in case of empty compile-
-time PYTHONPATH components.
+Extra slash no longer added to sys.path components in case of empty
+compile-time PYTHONPATH components.
 
 ..
 
