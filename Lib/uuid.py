@@ -419,7 +419,7 @@ def _ipconfig_getnode():
         with pipe:
             for line in pipe:
                 value = line.split(':')[-1].strip().lower()
-                if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
+                if re.match('(?:[0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]$', value):
                     return int(value.replace('-', ''), 16)
 
 def _netbios_getnode():
