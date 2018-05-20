@@ -44,10 +44,9 @@ Tcl
    an interface to the Tk toolkit. The Tcl engine library has a C interface to
    create and operate interpreter instances, run Tcl commands and scripts with
    them and add custom commands that can be implemented in either Tcl or C.
-   It also implements a per-interpreter event queue. An interpreter
-   instance has a single stream of execution. Each :class:`Tk` object embeds
-   its own interpreter instance. Though :mod:`_tkinter` allows to
-   execute entire Tcl scripts, the Python bindings typically only invoke single
+   It also implements a per-interpreter event queue. Each :class:`Tk` object
+   embeds its own interpreter instance. Though :mod:`_tkinter` allows to
+   execute entire Tcl scripts, the Python bindings typically only run single
    commands.
    
 Tk
@@ -70,12 +69,20 @@ Tix
 
 
 Tkinter Modules
----------------
+^^^^^^^^^^^^^^^
 
-Most of the time, :mod:`tkinter` is all you really need, but a number of
-additional modules are available as well.  The Tk interface is located in a
-binary module named :mod:`_tkinter`. This module contains the low-level
-interface to Tk, and should never be used directly by application programmers.
+:mod:`tkinter` has the core functionality and the regular Tk widgets.
+Unless you're using the additional widgets, this will be all
+that you really need.
+
+:mod:`tkinter.ttk` and :mod:`tkinter.tix` have classes for extra
+widgets from those families. Ttk is intended to be the new standard widget
+set with a more modern look, but as of this writing, it doesn't yet have
+replacements for all the classical widgets. 
+
+The Tk interface is located in a C module named :mod:`_tkinter`.
+This module directly interfaces with Tcl/Tk via their C interfaces and
+shouldn't be used directly by application programmers save for a few functions.
 It is usually a shared library (or DLL), but might in some cases be statically
 linked with the Python interpreter.
 
@@ -90,6 +97,9 @@ Or, more often::
 
    from tkinter import *
 
+   
+Module contents
+---------------
 
 .. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=1)
 
