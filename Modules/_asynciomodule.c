@@ -2248,19 +2248,19 @@ set_exception:
     }
     if (res == 1) {
         /* `result` is a generator */
-        PyObject *ret;
-        ret = task_set_error_soon(
+        o = task_set_error_soon(
             task, PyExc_RuntimeError,
             "yield was used instead of yield from for "
-            "generator in task %R with %S", task, result);
+            "generator in task %R with %R", task, result);
         Py_DECREF(result);
-        return ret;
+        return o;
     }
 
     /* The `result` is none of the above */
-    Py_DECREF(result);
-    return task_set_error_soon(
+    o = task_set_error_soon(
         task, PyExc_RuntimeError, "Task got bad yield: %R", result);
+    Py_DECREF(result);
+    return o;
 
 self_await:
     o = task_set_error_soon(

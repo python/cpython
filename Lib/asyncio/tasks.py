@@ -233,7 +233,7 @@ class Task(futures.Future):
                     self._step,
                     RuntimeError(
                         'yield was used instead of yield from for '
-                        'generator in task {!r} with {}'.format(
+                        'generator in task {!r} with {!r}'.format(
                             self, result)))
             else:
                 # Yielding something else is an error.
