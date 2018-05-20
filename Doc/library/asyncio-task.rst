@@ -92,7 +92,7 @@ Coroutines (and tasks) can only run when the event loop is running.
     used in a callback-style code, wrap its result with :func:`ensure_future`.
 
 
-.. function:: asyncio.run(coro, \*, debug=False)
+.. function:: run(coro, \*, debug=False)
 
     This function runs the passed coroutine, taking care of
     managing the asyncio event loop and finalizing asynchronous
@@ -108,6 +108,8 @@ Coroutines (and tasks) can only run when the event loop is running.
     programs, and should ideally only be called once.
 
     .. versionadded:: 3.7
+       **Important:** this has been been added to asyncio in Python 3.7
+       on a :term:`provisional basis <provisional api>`.
 
 
 .. _asyncio-hello-world-coroutine:
