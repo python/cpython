@@ -568,9 +568,9 @@ string.  Original fix by Ján Janech.
 .. section: Library
 
 The "urllib.request" module now percent-encodes non-ASCII bytes found in
-redirect target URLs.  Some servers send Location header fields with non-
-ASCII bytes, but "http.client" requires the request target to be ASCII-
-encodable, otherwise a UnicodeEncodeError is raised.  Based on patch by
+redirect target URLs.  Some servers send Location header fields with
+non-ASCII bytes, but "http.client" requires the request target to be
+ASCII-encodable, otherwise a UnicodeEncodeError is raised.  Based on patch by
 Christian Heimes.
 
 ..
@@ -1952,8 +1952,8 @@ Fix linking extension modules for cross builds. Patch by Xavier de Gaye.
 .. nonce: HDjM4s
 .. section: Build
 
-Disable the rules for running _freeze_importlib and pgen when cross-
-compiling.  The output of these programs is normally saved with the source
+Disable the rules for running _freeze_importlib and pgen when
+cross-compiling.  The output of these programs is normally saved with the source
 code anyway, and is still regenerated when doing a native build. Patch by
 Xavier de Gaye.
 

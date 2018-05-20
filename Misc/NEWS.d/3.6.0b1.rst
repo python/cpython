@@ -507,8 +507,8 @@ expression.
 .. nonce: TJ779X
 .. section: Library
 
-xmlrpc now supports unmarshalling additional data types used by Apache XML-
-RPC implementation for numerics and None.
+xmlrpc now supports unmarshalling additional data types used by Apache
+XML-RPC implementation for numerics and None.
 
 ..
 
@@ -1416,9 +1416,9 @@ platforms.
 .. section: Build
 
 Cause lack of llvm-profdata tool when using clang as required for PGO
-linking to be a configure time error rather than make time when --with-
-optimizations is enabled.  Also improve our ability to find the llvm-
-profdata tool on MacOS and some Linuxes.
+linking to be a configure time error rather than make time when
+``--with-optimizations`` is enabled.  Also improve our ability to find the
+llvm-profdata tool on MacOS and some Linuxes.
 
 ..
 
