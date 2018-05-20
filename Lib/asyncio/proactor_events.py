@@ -161,6 +161,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                  extra=None, server=None):
         super().__init__(loop, sock, protocol, waiter, extra, server)
         self._paused = False
+        self._reschedule_on_resume = False
 
         if protocols._is_buffered_protocol(protocol):
             self._loop_reading = self._loop_reading__get_buffer
@@ -180,6 +181,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if self._read_fut is not None and not self._read_fut.done():
             self._read_fut.cancel()
             self._read_fut = None
+            self._reschedule_on_resume = True
 
         if self._loop.get_debug():
             logger.debug("%r pauses reading", self)
@@ -188,7 +190,9 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if self._closing or not self._paused:
             return
         self._paused = False
-        self._loop.call_soon(self._loop_reading, self._read_fut)
+        if self._reschedule_on_resume:
+            self._loop.call_soon(self._loop_reading, self._read_fut)
+            self._reschedule_on_resume = False
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
 
@@ -208,6 +212,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
     def _loop_reading__data_received(self, fut=None):
         if self._paused:
+            self._reschedule_on_resume = True
             return
 
         data = None
@@ -257,6 +262,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
     def _loop_reading__get_buffer(self, fut=None):
         if self._paused:
+            self._reschedule_on_resume = True
             return
 
         nbytes = None

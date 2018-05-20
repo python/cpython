@@ -334,7 +334,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
     def test_pause_resume_reading(self):
         tr = self.socket_transport()
         futures = []
-        for msg in [b'data1', b'data2', b'data3', b'data4', b'']:
+        for msg in [b'data1', b'data2', b'data3', b'data4', b'data5', b'']:
             f = asyncio.Future(loop=self.loop)
             f.set_result(msg)
             futures.append(f)
@@ -364,6 +364,13 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.protocol.data_received.assert_called_with(b'data3')
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data4')
+
+        tr.pause_reading()
+        tr.resume_reading()
+        self.loop.call_exception_handler = mock.Mock()
+        self.loop._run_once()
+        self.loop.call_exception_handler.assert_not_called()
+        self.protocol.data_received.assert_called_with(b'data5')
         tr.close()
 
         self.assertFalse(tr.is_reading())
