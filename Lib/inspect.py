@@ -111,7 +111,7 @@ def ismethoddescriptor(object):
 def isdatadescriptor(object):
     """Return true if the object is a data descriptor.
 
-    Data descriptors have a __set__ and/or a __delete__ attribute.  Examples are
+    Data descriptors have a __set__ or a __delete__ attribute.  Examples are
     properties (defined in Python) and getsets and members (defined in C).
     Typically, data descriptors will also have __name__ and __doc__ attributes
     (properties, getsets, and members have both of these attributes), but this
