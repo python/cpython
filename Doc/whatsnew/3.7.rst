@@ -1157,6 +1157,16 @@ Changes in Python behavior
   exceptions.
   (Contributed by Yury Selivanov in :issue:`32670`.)
 
+* :pep:`492` is fully implemented in Python 3.7, meaning that the old
+  :meth:`__aiter__` protocol is no longer supported: a
+  :exc:`RuntimeError` will be raised if :meth:`__aiter__` returns anything
+  but an asynchronous iterator.
+
+  Since Python 3.7, :keyword:`async` and :keyword:`await` names are proper
+  keywords. If you use them for variable names, you need to rename them in
+  order to make the code work on Python 3.7. Trying to use a keyword as
+  a variable name will raise a :exc:`SyntaxError`.
+
 * Due to an oversight, earlier Python versions erroneously accepted the
   following syntax::
 
