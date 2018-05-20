@@ -2706,8 +2706,8 @@ Added support for the "xztar" format in the shutil module.
 .. nonce: ZLsRil
 .. section: Library
 
-Don't force 3rd party C extensions to be built with -Werror=declaration-
-after-statement.
+Don't force 3rd party C extensions to be built with
+``-Werror=declaration-after-statement``.
 
 ..
 
@@ -4464,8 +4464,8 @@ Improve repr of inspect.Signature and inspect.Parameter.
 .. nonce: DFMEgN
 .. section: Library
 
-Fix inspect.getcallargs() to raise correct TypeError for missing keyword-
-only arguments. Patch by Jeremiah Lowin.
+Fix inspect.getcallargs() to raise correct TypeError for missing
+keyword-only arguments. Patch by Jeremiah Lowin.
 
 ..
 
@@ -5059,8 +5059,8 @@ Anticipated fixes to support OS X versions > 10.9.
 .. nonce: KAl7aO
 .. section: Build
 
-Prevent possible segfaults and other random failures of python --generate-
-posix-vars in pybuilddir.txt build target.
+Prevent possible segfaults and other random failures of python
+``--generate-posix-vars`` in pybuilddir.txt build target.
 
 ..
 
