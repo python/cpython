@@ -1967,8 +1967,7 @@ current call is identified based on the first argument passed to the method.
    as a ``__classcell__`` entry in the class namespace. If present, this must
    be propagated up to the ``type.__new__`` call in order for the class to be
    initialised correctly.
-   Failing to do so will result in a :exc:`DeprecationWarning` in Python 3.6,
-   and a :exc:`RuntimeError` in Python 3.8.
+   Failing to do so will result in a :exc:`RuntimeError` in Python 3.8.
 
 When using the default metaclass :class:`type`, or any metaclass that ultimately
 calls ``type.__new__``, the following additional customisation steps are
