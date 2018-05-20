@@ -12872,6 +12872,45 @@ error:
 }
 #endif   /* HAVE_GETRANDOM_SYSCALL */
 
+#ifdef HAVE_GETENTROPY
+/*[clinic input]
+os.getentropy
+
+    size: Py_ssize_t
+
+Obtain a series of random bytes.
+[clinic start generated code]*/
+
+static PyObject *
+os_getentropy_impl(PyObject *module, Py_ssize_t size)
+/*[clinic end generated code: output=c28ebc48bcfc2ffe input=9474e2a144a7cd75]*/
+{
+    PyObject *bytes;
+    int r;
+
+    if (size < 0 || size > 256) {
+        errno = EIO;
+        return posix_error();
+    }
+
+    bytes = PyBytes_FromStringAndSize(NULL, size);
+    if (bytes == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    r = getentropy(PyBytes_AS_STRING(bytes),
+                   PyBytes_GET_SIZE(bytes));
+    if (r == -1) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(bytes);
+        return NULL;
+    }
+
+    return bytes;
+}
+#endif   /* HAVE_GETENTROPY */
+
 
 static PyMethodDef posix_methods[] = {
 
@@ -13067,6 +13106,7 @@ static PyMethodDef posix_methods[] = {
     OS_SCANDIR_METHODDEF
     OS_FSPATH_METHODDEF
     OS_GETRANDOM_METHODDEF
+    OS_GETENTROPY_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
