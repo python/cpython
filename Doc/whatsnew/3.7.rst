@@ -923,6 +923,33 @@ It is used when ``http.server`` is run with ``-m``.
 (Contributed by Julien Palard in :issue:`31639`.)
 
 
+idlelib and IDLE
+----------------
+
+Module Browser (on the File menu, formerly called Class Browser),
+now displays nested functions and classed in addition to top-level
+functions and classes.
+(Contributed by Guilherme Polo, Cheryl Sabella, and Terry Jan Reedy
+in :issue:`1612262`.)
+
+The Settings dialog (Options, Configure IDLE) has been partly rewritten
+to improve both appearance and function.
+(Contributed by Cheryl Sabella and Terry Jan Reedy in multiple issues.)
+
+The font sample now includes a selection of non-Latin characters so that
+users can better see the effect of selecting a particular font.
+(Contributed by Terry Jan Reedy in :issue:`13802`.)
+The sample can be edited to test other characters.
+(Contributed by Serhiy Storchaka in :issue:`31860`.)
+
+The IDLE features formerly implemented as extensions have been reimplemented
+as normal features.  Their settings have been moved from the Extensions tab
+to other dialog tabs.
+(Contributed by Charles Wohlganger and Terry Jan Reedy in :issue:`27099`.)
+
+The changes above have been backported to 3.6 maintenance releases.
+
+
 importlib
 ---------
 
