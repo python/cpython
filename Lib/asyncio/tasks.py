@@ -261,7 +261,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 # Yielding a generator is just wrong.
                 new_exc = RuntimeError(
                     f'yield was used instead of yield from for '
-                    f'generator in task {self!r} with {result}')
+                    f'generator in task {self!r} with {result!r}')
                 self._loop.call_soon(
                     self.__step, new_exc, context=self._context)
             else:
