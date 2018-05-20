@@ -156,6 +156,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                  extra=None, server=None):
         super().__init__(loop, sock, protocol, waiter, extra, server)
         self._paused = False
+        self._reschedule_on_resume = False
         self._loop.call_soon(self._loop_reading)
 
     def pause_reading(self):
@@ -173,12 +174,15 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         self._paused = False
         if self._closing:
             return
-        self._loop.call_soon(self._loop_reading, self._read_fut)
+        if self._reschedule_on_resume:
+            self._loop.call_soon(self._loop_reading, self._read_fut)
+            self._reschedule_on_resume = False
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
 
     def _loop_reading(self, fut=None):
         if self._paused:
+            self._reschedule_on_resume = True
             return
         data = None
 
