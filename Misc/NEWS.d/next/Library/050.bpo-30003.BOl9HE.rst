@@ -1,0 +1,1 @@
+Fix handling escape characters in HZ codec.  Based on patch by Ma Lin.

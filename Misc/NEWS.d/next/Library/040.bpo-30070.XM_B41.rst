@@ -1,0 +1,1 @@
+Fixed leaks and crashes in errors handling in the parser module.

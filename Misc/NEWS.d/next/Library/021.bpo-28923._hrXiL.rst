@@ -1,0 +1,2 @@
+Remove editor artifacts from Tix.py, including encoding not recognized by
+codecs.lookup.

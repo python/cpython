@@ -1,0 +1,5 @@
+To simplify backports from Python 3, the test.test_support module was
+converted into a package and renamed to test.support.  The
+test.script_helper module was moved into the test.support package. Names
+test.test_support and test.script_helper are left as aliases to test.support
+and test.support.script_helper.

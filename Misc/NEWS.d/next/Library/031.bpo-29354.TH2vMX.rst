@@ -1,0 +1,1 @@
+Fixed inspect.getargs() for parameters which are cell variables.
