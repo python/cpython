@@ -1855,9 +1855,10 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
 
         for _ in range(10):
             try:
-                self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+                self.run_loop(self.loop.sock_connect(sock,
+                                                     (support.HOST, port)))
             except OSError:
-                time.sleep(0.5)
+                self.run_loop(asyncio.sleep(0.5))
                 continue
             else:
                 break
