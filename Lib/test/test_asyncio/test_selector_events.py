@@ -871,6 +871,21 @@ class SelectorTransportTests(test_utils.TestCase):
         self.assertIsNone(tr._protocol)
         self.assertIsNone(tr._loop)
 
+    def test__add_reader(self):
+        tr = self.create_transport()
+        tr._buffer.extend(b'1')
+        tr._add_reader(7, mock.sentinel)
+        self.assertTrue(self.loop.readers)
+
+        tr._force_close(None)
+
+        self.assertTrue(tr.is_closing())
+        self.assertFalse(self.loop.readers)
+
+        # can not add readers after closing
+        tr._add_reader(7, mock.sentinel)
+        self.assertFalse(self.loop.readers)
+
 
 class SelectorSocketTransportTests(test_utils.TestCase):
 
