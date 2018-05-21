@@ -673,6 +673,12 @@ class _SelectorTransport(transports._FlowControlMixin,
     def get_write_buffer_size(self):
         return len(self._buffer)
 
+    def _add_reader(self, fd, callback, *args):
+        if self._closing:
+            return
+
+        self._loop._add_reader(fd, callback, *args)
+
 
 class _SelectorSocketTransport(_SelectorTransport):
 
@@ -689,7 +695,7 @@ class _SelectorSocketTransport(_SelectorTransport):
 
         self._loop.call_soon(self._protocol.connection_made, self)
         # only start reading when connection_made() has been called
-        self._loop.call_soon(self._loop._add_reader,
+        self._loop.call_soon(self._add_reader,
                              self._sock_fd, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
@@ -710,9 +716,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         if not self._paused:
             raise RuntimeError('Not paused')
         self._paused = False
-        if self._closing:
-            return
-        self._loop._add_reader(self._sock_fd, self._read_ready)
+        self._add_reader(self._sock_fd, self._read_ready)
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
 
@@ -1052,7 +1056,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
         self._address = address
         self._loop.call_soon(self._protocol.connection_made, self)
         # only start reading when connection_made() has been called
-        self._loop.call_soon(self._loop._add_reader,
+        self._loop.call_soon(self._add_reader,
                              self._sock_fd, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
