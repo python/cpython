@@ -1848,15 +1848,13 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     def prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
-        af = socket.AF_UNSPEC if support.IPV6_ENABLED else socket.AF_INET
         server = self.run_loop(self.loop.create_server(
-            lambda: proto, support.HOST, 0, family=af))
-        port = server.sockets[0].getsockname()[1]
+            lambda: proto, support.HOST, 0, family=socket.AF_INET))
+        addr = server.sockets[0].getsockname()
 
         for _ in range(10):
             try:
-                self.run_loop(self.loop.sock_connect(sock,
-                                                     (support.HOST, port)))
+                self.run_loop(self.loop.sock_connect(sock, addr))
             except OSError:
                 self.run_loop(asyncio.sleep(0.5))
                 continue
@@ -1864,7 +1862,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
                 break
         else:
             # One last try, so we get the exception
-            self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+            self.run_loop(self.loop.sock_connect(sock, addr))
 
         def cleanup():
             server.close()
