@@ -95,6 +95,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblzma", "liblzma.vcxproj"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_distutils_findvs", "_distutils_findvs.vcxproj", "{41ADEDF9-11D8-474E-B4D7-BB82332C878E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_xxsubinterpreters", "_xxsubinterpreters.vcxproj", "{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -711,6 +713,22 @@ Global
 		{41ADEDF9-11D8-474E-B4D7-BB82332C878E}.Release|Win32.Build.0 = Release|Win32
 		{41ADEDF9-11D8-474E-B4D7-BB82332C878E}.Release|x64.ActiveCfg = Release|x64
 		{41ADEDF9-11D8-474E-B4D7-BB82332C878E}.Release|x64.Build.0 = Release|x64
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.Debug|Win32.ActiveCfg = Debug|Win32
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.Debug|Win32.Build.0 = Debug|Win32
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.Debug|x64.ActiveCfg = Debug|x64
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.Debug|x64.Build.0 = Debug|x64
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.PGInstrument|Win32.ActiveCfg = PGInstrument|Win32
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.PGInstrument|Win32.Build.0 = PGInstrument|Win32
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.PGInstrument|x64.ActiveCfg = PGInstrument|x64
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.PGInstrument|x64.Build.0 = PGInstrument|x64
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.PGUpdate|Win32.ActiveCfg = PGUpdate|Win32
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.PGUpdate|Win32.Build.0 = PGUpdate|Win32
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.PGUpdate|x64.ActiveCfg = PGUpdate|x64
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.PGUpdate|x64.Build.0 = PGUpdate|x64
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.Release|Win32.ActiveCfg = Release|Win32
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.Release|Win32.Build.0 = Release|Win32
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.Release|x64.ActiveCfg = Release|x64
+		{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
