@@ -1752,6 +1752,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
     PyGC_Head *g = AS_GC(op);
+    assert(!IS_TRACKED(op));
     if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head))
         return (PyVarObject *)PyErr_NoMemory();
     g = (PyGC_Head *)PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
