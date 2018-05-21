@@ -332,7 +332,7 @@ class CDLL(object):
     def __init__(self, name, mode=DEFAULT_MODE, handle=None,
                  use_errno=False,
                  use_last_error=False):
-        self._name = name
+        self._name = _os.fspath(name) if name is not None else None
         flags = self._func_flags_
         if use_errno:
             flags |= _FUNCFLAG_USE_ERRNO

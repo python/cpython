@@ -1,0 +1,2 @@
+os.CDLL (And os.WinDLL, os.OleDLL, ...) accepts now PathLike objects like
+pathlib.Path() as library path (up to now only 'str' objects were accepted).
