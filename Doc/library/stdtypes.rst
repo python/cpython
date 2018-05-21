@@ -3883,14 +3883,16 @@ another set.  The :class:`frozenset` type is immutable and :term:`hashable` ---
 its contents cannot be altered after it is created; it can therefore be used as
 a dictionary key or as an element of another set.
 
-Non-empty sets (not frozensets) can be created by placing a comma-separated list
-of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to the
-:class:`set` constructor.
-
 The constructors for both classes work the same:
 
 .. class:: set([iterable])
            frozenset([iterable])
+
+   Sets can be created by several ways:
+
+   * Using a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
+   * Using a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
+   * Using the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
 
    Return a new set or frozenset object whose elements are taken from
    *iterable*.  The elements of a set must be :term:`hashable`.  To
@@ -4079,13 +4081,17 @@ then they can be used interchangeably to index the same dictionary entry.  (Note
 however, that since computers store floating-point numbers as approximations it
 is usually unwise to use them as dictionary keys.)
 
-Dictionaries can be created by placing a comma-separated list of ``key: value``
-pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
-'jack', 4127: 'sjoerd'}``, or by the :class:`dict` constructor.
-
 .. class:: dict(**kwarg)
            dict(mapping, **kwarg)
            dict(iterable, **kwarg)
+
+   Dictionaries can be created in several ways:
+
+   * Using a comma-separated list of ``key: value`` pairs within braces:
+     ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098: 'jack', 4127: 'sjoerd'}``
+   * Using a dict comprehension: ``{}``, ``{x: x ** 2 for x in range(10)}``
+   * Using the type constructor: ``dict()``,
+     ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
 
    Return a new dictionary initialized from an optional positional argument
    and a possibly empty set of keyword arguments.

@@ -160,6 +160,8 @@ ambiguities and allow common typos to pass uncaught.
 Displays for lists, sets and dictionaries
 -----------------------------------------
 
+.. index:: single: comprehensions
+
 For constructing a list, a set or a dictionary Python provides special syntax
 called "displays", each of them in two flavors:
 
@@ -246,8 +248,10 @@ the list is constructed from the elements resulting from the comprehension.
 Set displays
 ------------
 
-.. index:: pair: set; display
-           object: set
+.. index::
+   pair: set; display
+   pair: set; comprehensions
+   object: set
 
 A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
@@ -270,9 +274,11 @@ dictionary.
 Dictionary displays
 -------------------
 
-.. index:: pair: dictionary; display
-           key, datum, key/datum pair
-           object: dictionary
+.. index::
+   pair: dictionary; display
+   pair: dictionary; comprehensions
+   key, datum, key/datum pair
+   object: dictionary
 
 A dictionary display is a possibly empty series of key/datum pairs enclosed in
 curly braces:
@@ -321,8 +327,10 @@ prevails.
 Generator expressions
 ---------------------
 
-.. index:: pair: generator; expression
-           object: generator
+.. index::
+   pair: generator; expression
+   pair: generator; comprehensions
+   object: generator
 
 A generator expression is a compact generator notation in parentheses:
 
