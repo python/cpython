@@ -515,7 +515,8 @@ New Modules
 contextvars
 -----------
 
-The new :mod:`contextvars` module and a set of new C APIs introduce
+The new :mod:`contextvars` module and a set of
+:ref:`new C APIs <contextvarsobjects>` introduce
 support for *context variables*.  Context variables are conceptually
 similar to thread-local variables.  Unlike TLS, context variables
 support asynchronous code correctly.
@@ -1542,6 +1543,9 @@ A new API for thread-local storage has been implemented.  See
 :ref:`whatsnew37-pep539` for an overview and
 :ref:`thread-specific-storage-api` for a complete reference.
 (Contributed by Masayuki Yamamoto in :issue:`25658`.)
+
+The new :ref:`context variables <whatsnew37-pep567>` functionality
+exposes a number of :ref:`new C APIs <contextvarsobjects>`.
 
 The new :c:func:`PyImport_GetModule` function returns the previously
 imported module with the given name.
