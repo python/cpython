@@ -181,8 +181,8 @@ longer raises ``RecursionError``; OrderedDict similarly.  Instead, use
 .. section: Core and Builtins
 
 Py_Initialize() now creates the GIL. The GIL is no longer created "on
-demand" to fix a race condition when PyGILState_Ensure() is called in a non-
-Python thread.
+demand" to fix a race condition when PyGILState_Ensure() is called in a
+non-Python thread.
 
 ..
 

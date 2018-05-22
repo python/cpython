@@ -62,8 +62,8 @@ Fix the warning messages for Python/ast_unparse.c. Patch by Stéphane Wirtel
 .. nonce: Fh3fau
 .. section: Core and Builtins
 
-Fix possible crashing in builtin Unicode decoders caused by write out-of-
-bound errors when using customized decode error handlers.
+Fix possible crashing in builtin Unicode decoders caused by write
+out-of-bound errors when using customized decode error handlers.
 
 ..
 
