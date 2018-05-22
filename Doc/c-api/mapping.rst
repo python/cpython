@@ -8,8 +8,9 @@ Mapping Protocol
 
 .. c:function:: int PyMapping_Check(PyObject *o)
 
-   Return ``1`` if the object provides mapping protocol, and ``0`` otherwise.  This
-   function always succeeds.
+   **Not recommended.** Return ``1`` if the object provides the C-API mapping
+   protocol, and ``0`` otherwise.  This function always succeeds.  PyMapping_Check()
+   also returns 1 for sequences that support slicing.
 
 
 .. c:function:: Py_ssize_t PyMapping_Size(PyObject *o)
