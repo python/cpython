@@ -693,12 +693,7 @@ class SpooledTemporaryFile:
 
     @property
     def encoding(self):
-        try:
-            return self._file.encoding
-        except AttributeError:
-            if 'b' in self._TemporaryFileArgs['mode']:
-                raise
-            return self._TemporaryFileArgs['encoding']
+        return self._file.encoding
 
     @property
     def errors(self):
@@ -730,12 +725,7 @@ class SpooledTemporaryFile:
 
     @property
     def newlines(self):
-        try:
-            return self._file.newlines
-        except AttributeError:
-            if 'b' in self._TemporaryFileArgs['mode']:
-                raise
-            return self._TemporaryFileArgs['newline']
+        return self._file.newlines
 
     def read(self, *args):
         return self._file.read(*args)
