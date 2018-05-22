@@ -1,3 +1,4 @@
+import math
 import unittest
 import sys
 from unittest.mock import Mock, MagicMock, _magics
@@ -280,6 +281,10 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(hash(mock), object.__hash__(mock))
         self.assertEqual(str(mock), object.__str__(mock))
         self.assertTrue(bool(mock))
+        self.assertEqual(round(mock), mock.__round__())
+        self.assertEqual(math.trunc(mock), mock.__trunc__())
+        self.assertEqual(math.floor(mock), mock.__floor__())
+        self.assertEqual(math.ceil(mock), mock.__ceil__())
 
         # in Python 3 oct and hex use __index__
         # so these tests are for __index__ in py3k
