@@ -2695,10 +2695,7 @@ class ThreadedTests(unittest.TestCase):
     def test_ecc_cert(self):
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         client_context.load_verify_locations(SIGNING_CA)
-        client_context.set_ciphers(
-            'TLS13-AES-128-GCM-SHA256:TLS13-CHACHA20-POLY1305-SHA256:'
-            'ECDHE:ECDSA:!NULL:!aRSA'
-        )
+        client_context.set_ciphers('ECDHE:ECDSA:!NULL:!aRSA')
         hostname = SIGNED_CERTFILE_ECC_HOSTNAME
 
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -3439,17 +3436,16 @@ class ThreadedTests(unittest.TestCase):
                 sock.do_handshake()
             self.assertEqual(cm.exception.errno, errno.ENOTCONN)
 
-    def test_default_ciphers(self):
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-        try:
-            # Force a set of weak ciphers on our client context
-            context.set_ciphers("DES")
-        except ssl.SSLError:
-            self.skipTest("no DES cipher available")
-        with ThreadedEchoServer(CERTFILE,
-                                ssl_version=ssl.PROTOCOL_TLS,
-                                chatty=False) as server:
-            with context.wrap_socket(socket.socket()) as s:
+    def test_no_shared_ciphers(self):
+        client_context, server_context, hostname = testing_context()
+        # OpenSSL enables all TLS 1.3 ciphers, enforce TLS 1.2 for test
+        client_context.options |= ssl.OP_NO_TLSv1_3
+        # Force different suites on client and master
+        client_context.set_ciphers("AES128")
+        server_context.set_ciphers("AES256")
+        with ThreadedEchoServer(context=server_context) as server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
                 with self.assertRaises(OSError):
                     s.connect((HOST, server.port))
         self.assertIn("no shared cipher", server.conn_errors[0])
@@ -3490,9 +3486,9 @@ class ThreadedTests(unittest.TestCase):
             with context.wrap_socket(socket.socket()) as s:
                 s.connect((HOST, server.port))
                 self.assertIn(s.cipher()[0], {
-                    'TLS13-AES-256-GCM-SHA384',
-                    'TLS13-CHACHA20-POLY1305-SHA256',
-                    'TLS13-AES-128-GCM-SHA256',
+                    'TLS_AES_256_GCM_SHA384',
+                    'TLS_CHACHA20_POLY1305_SHA256',
+                    'TLS_AES_128_GCM_SHA256',
                 })
                 self.assertEqual(s.version(), 'TLSv1.3')
 
@@ -3898,23 +3894,20 @@ class ThreadedTests(unittest.TestCase):
 
     def test_shared_ciphers(self):
         client_context, server_context, hostname = testing_context()
-        if ssl.OPENSSL_VERSION_INFO >= (1, 0, 2):
-            client_context.set_ciphers("AES128:AES256")
-            server_context.set_ciphers("AES256")
-            alg1 = "AES256"
-            alg2 = "AES-256"
-        else:
-            client_context.set_ciphers("AES:3DES")
-            server_context.set_ciphers("3DES")
-            alg1 = "3DES"
-            alg2 = "DES-CBC3"
+        client_context.set_ciphers("AES128:AES256")
+        server_context.set_ciphers("AES256")
+        expected_algs = [
+            "AES256", "AES-256",
+            # TLS 1.3 ciphers are always enabled
+            "TLS_CHACHA20", "TLS_AES",
+        ]
 
         stats = server_params_test(client_context, server_context,
                                    sni_name=hostname)
         ciphers = stats['server_shared_ciphers'][0]
         self.assertGreater(len(ciphers), 0)
         for name, tls_version, bits in ciphers:
-            if not alg1 in name.split("-") and alg2 not in name:
+            if not any(alg in name for alg in expected_algs):
                 self.fail(name)
 
     def test_read_write_after_close_raises_valuerror(self):
