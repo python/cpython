@@ -1888,6 +1888,14 @@ class TestCopyFileObjSendfile(unittest.TestCase):
         with open(TESTFN2, "rb") as f:
             self.assertEqual(f.read(), self.FILEDATA)
 
+    def test_start_offset(self):
+        # Modify src file position.
+        with self.get_files() as (src, dst):
+            src.seek(666)
+            shutil._copyfileobj_sendfile(src, dst)
+        with open(TESTFN2, "rb") as f:
+            self.assertEqual(f.read(), self.FILEDATA[666:])
+
     def test_unhandled_exception(self):
         with unittest.mock.patch('os.sendfile',
                                  side_effect=ZeroDivisionError):
@@ -1895,7 +1903,20 @@ class TestCopyFileObjSendfile(unittest.TestCase):
                 self.assertRaises(ZeroDivisionError,
                                   shutil.copyfileobj, src, dst)
 
+    def test_exception_on_first_call(self):
+        # Emulate a case where the first call to sendfile() raises
+        # an exception in which case the function is supposed to
+        # give up immediately.
+        with unittest.mock.patch('os.sendfile',
+                                 side_effect=OSError):
+            with self.get_files() as (src, dst):
+                with self.assertRaises(_GiveupOnSendfile):
+                    shutil._copyfileobj_sendfile(src, dst)
+
     def test_cant_get_size(self):
+        # Emulate a case where src file size cannot be determined.
+        # Internally bufsize will be set to a small value and
+        # sendfile() will be called repeatedly.
         with unittest.mock.patch('os.fstat', side_effect=OSError) as m:
             with self.get_files() as (src, dst):
                 shutil._copyfileobj_sendfile(src, dst)
