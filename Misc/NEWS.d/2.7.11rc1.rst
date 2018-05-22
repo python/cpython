@@ -522,8 +522,8 @@ tarfile now tolerates number fields consisting of only whitespace.
 .. nonce: aAbWbQ
 .. section: Library
 
-Restore semantic round-trip correctness in tokenize/untokenize for tab-
-indented blocks.
+Restore semantic round-trip correctness in tokenize/untokenize for
+tab-indented blocks.
 
 ..
 
@@ -866,8 +866,8 @@ them a 'sheet'.  Patch by Mark Roseman.
 .. section: IDLE
 
 Enhance the initial html viewer now used for Idle Help. * Properly indent
-fixed-pitch text (patch by Mark Roseman). * Give code snippet a very Sphinx-
-like light blueish-gray background. * Re-use initial width and height set by
+fixed-pitch text (patch by Mark Roseman). * Give code snippet a very
+Sphinx-like light blueish-gray background. * Re-use initial width and height set by
 users for shell and editor. * When the Table of Contents (TOC) menu is used,
 put the section header at the top of the screen.
 

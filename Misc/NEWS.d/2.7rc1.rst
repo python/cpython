@@ -98,8 +98,8 @@ in a framework build on MacOSX 10.5 or earlier.
 
 A new C API function, :cfunc:`PySys_SetArgvEx`, allows embedders of the
 interpreter to set sys.argv without also modifying sys.path.  This helps fix
-`CVE-2008-5983 <http://cve.mitre.org/cgi-
-bin/cvename.cgi?name=CVE-2008-5983>`_.
+`CVE-2008-5983
+<http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_.
 
 ..
 

@@ -56,8 +56,8 @@ Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes of multiple security
 vulnerabilities including: CVE-2017-9233 (External entity infinite loop
 DoS), CVE-2016-9063 (Integer overflow, re-fix), CVE-2016-0718 (Fix
 regression bugs from 2.2.0's fix to CVE-2016-0718) and CVE-2012-0876
-(Counter hash flooding with SipHash). Note: the CVE-2016-5300 (Use os-
-specific entropy sources like getrandom) doesn't impact Python, since Python
+(Counter hash flooding with SipHash). Note: the CVE-2016-5300 (Use
+os-specific entropy sources like getrandom) doesn't impact Python, since Python
 already gets entropy from the OS to set the expat secret using
 ``XML_SetHashSalt()``.
 
@@ -1329,8 +1329,8 @@ documentation. Patch by Matthias Bussonnier.
 
 Rewrite Comparisons section in the Expressions chapter of the language
 reference. Some of the details of comparing mixed types were incorrect or
-ambiguous. Added default behaviour and consistency suggestions for user-
-defined classes. Based on patch from Andy Maier.
+ambiguous. Added default behaviour and consistency suggestions for
+user-defined classes. Based on patch from Andy Maier.
 
 ..
 
@@ -1493,8 +1493,8 @@ Fix -Wint-in-bool-context warnings in PyMem_MALLOC and PyMem_REALLOC macros
 .. section: Build
 
 Prevent unnecessary rebuilding of Python during ``make test``, ``make
-install`` and some other make targets when configured with ``--enable-
-optimizations``.
+install`` and some other make targets when configured with
+``--enable-optimizations``.
 
 ..
 

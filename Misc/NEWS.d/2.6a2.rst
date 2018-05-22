@@ -83,8 +83,8 @@ add Py3k warning for buffer().
 With narrow Unicode builds, the unicode escape sequence \Uxxxxxxxx did not
 accept values outside the Basic Multilingual Plane.  This affected raw
 unicode literals and the 'raw-unicode-escape' codec.  Now UTF-16 surrogates
-are generated in this case, like normal unicode literals and the 'unicode-
-escape' codec.
+are generated in this case, like normal unicode literals and the
+'unicode-escape' codec.
 
 ..
 
@@ -370,8 +370,8 @@ Add triangular distribution to the random module
 .. nonce: pMUClw
 .. section: Library
 
-urllib2's auth handler now allows single-quoted realms in the WWW-
-Authenticate header.
+urllib2's auth handler now allows single-quoted realms in the
+WWW-Authenticate header.
 
 ..
 
