@@ -1396,8 +1396,8 @@ subprocess.Popen.wait().
 .. nonce: 9Mn07O
 .. section: Library
 
-Fix a bug where zlib.decompressobj().flush() might try to access previously-
-freed memory. Patch by Serhiy Storchaka.
+Fix a bug where zlib.decompressobj().flush() might try to access
+previously-freed memory. Patch by Serhiy Storchaka.
 
 ..
 
@@ -1678,8 +1678,8 @@ Bohuslav Kabrda.
 .. nonce: 9gGqPw
 .. section: Library
 
-In cmath and math modules, add workaround for platforms whose system-
-supplied log1p function doesn't respect signs of zeros.
+In cmath and math modules, add workaround for platforms whose
+system-supplied log1p function doesn't respect signs of zeros.
 
 ..
 
@@ -2441,8 +2441,8 @@ require an argument again.
 .. section: Library
 
 OS X Xcode 4 - improve support for universal extension modules In
-particular, fix extension module build failures when trying to use 32-bit-
-only installer Pythons on systems with Xcode 4 (currently OS X 10.8, 10.7,
+particular, fix extension module build failures when trying to use
+32-bit-only installer Pythons on systems with Xcode 4 (currently OS X 10.8, 10.7,
 and optionally 10.6). * Backport 3.3.0 fixes to 2.7 branch (for release in
 2.7.4) * Since Xcode 4 removes ppc support, extension module builds now
 check for ppc compiler support and by default remove ppc and   ppc64 archs
