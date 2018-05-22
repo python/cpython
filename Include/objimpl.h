@@ -303,9 +303,10 @@ extern PyGC_Head *_PyGC_generation0;
  */
 #define _PyObject_GC_UNTRACK(o) do { \
     PyGC_Head *g = _Py_AS_GC(o); \
+    PyGC_Head *prev = _PyGCHead_PREV(g); \
     assert(g->gc.gc_next != NULL); \
-    _PyGCHead_PREV(g)->gc.gc_next = g->gc.gc_next; \
-    _PyGCHead_SET_PREV(g->gc.gc_next, _PyGCHead_PREV(g)); \
+    prev->gc.gc_next = g->gc.gc_next; \
+    _PyGCHead_SET_PREV(g->gc.gc_next, prev); \
     g->gc.gc_next = NULL; \
     g->gc.gc_prev &= _PyGC_PREV_MASK_FINALIZED; \
     } while (0);
