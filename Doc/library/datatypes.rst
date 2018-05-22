@@ -5,7 +5,7 @@ Data Types
 **********
 
 The modules described in this chapter provide a variety of specialized data
-types such as dates and times, fixed-type arrays, heap and double-ended
+types such as dates and times, fixed-type arrays, heap queues, double-ended
 queues and enumerations.
 
 Python also provides some built-in data types, in particular,
