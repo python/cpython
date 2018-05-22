@@ -1892,6 +1892,12 @@ class TestCopyFileObjSendfile(unittest.TestCase):
                 self.assertRaises(ZeroDivisionError,
                                   shutil.copyfileobj, src, dst)
 
+    def test_cant_get_size(self):
+        with unittest.mock.patch('os.fstat', side_effect=OSError) as m:
+            with self.get_files() as (src, dst):
+                shutil.copyfileobj(src, dst)
+                assert m.called
+
 
 class TermsizeTests(unittest.TestCase):
     def test_does_not_crash(self):
