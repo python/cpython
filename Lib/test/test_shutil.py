@@ -1888,8 +1888,22 @@ class TestCopyFileObjSendfile(unittest.TestCase):
         with open(TESTFN2, "rb") as f:
             self.assertEqual(f.read(), self.FILEDATA)
 
-    def test_start_offset(self):
-        # Modify src file position.
+    def test_empty_file(self):
+        srcname = TESTFN + 'src'
+        dstname = TESTFN + 'dst'
+        self.addCleanup(lambda: support.unlink(srcname))
+        self.addCleanup(lambda: support.unlink(dstname))
+        with open(srcname, "wb"):
+            pass
+
+        with open(srcname, "rb") as src:
+            with open(dstname, "wb") as dst:
+                shutil._copyfileobj_sendfile(src, dst)
+
+        with open(dstname, "rb") as f:
+            self.assertEqual(f.read(), b"")
+
+    def test_start_position(self):
         with self.get_files() as (src, dst):
             src.seek(666)
             shutil._copyfileobj_sendfile(src, dst)
