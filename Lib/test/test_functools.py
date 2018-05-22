@@ -2351,8 +2351,7 @@ class CachedCostItemWithSlots:
 
     @py_functools.cached_property
     def cost(self):
-        """The cost of the item."""
-        return self._cost
+        raise RuntimeError('never called, slots not supported')
 
 
 class TestCachedProperty(unittest.TestCase):
