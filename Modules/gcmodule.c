@@ -33,7 +33,7 @@
 
 #define GC_DEBUG (0)  /* More asserts */
 
-// Bit 0 is used for _PyGC_PREV_MASK_FINALIZED in objimpl.h
+// Bit 0 of gc_prev is used for _PyGC_PREV_MASK_FINALIZED in objimpl.h
 #define MASK_COLLECTING              (1 << 1)
 #define MASK_TENTATIVELY_UNREACHABLE (1 << 2)
 
@@ -130,25 +130,17 @@ _PyGC_Initialize(struct _gc_runtime_state *state)
 }
 
 /*--------------------------------------------------------------------------
-TODO: Rewrite this section.
+gc_prev values.
 
-gc_refs values.
+Between collections, gc_prev is used for doubly linked list.
 
-Between collections, every gc'ed object has one of two gc_refs values:
+Lowest three bits of gc_prev are used for flags.
+MASK_COLLECTING and MASK_TENTATIVELY_UNREACHABLE are used only while collecting.
 
-GC_UNTRACKED
-    The initial state; objects returned by PyObject_GC_Malloc are in this
-    state.  The object doesn't live in any generation list, and its
-    tp_traverse slot must not be called.
+During a collection, gc_prev is temporary used for gc_refs, and the gc list
+is singly linked until gc_prev is restored.
 
-GC_REACHABLE
-    The object lives in some generation list, and its tp_traverse is safe to
-    call.  An object transitions to GC_REACHABLE when PyObject_GC_Track
-    is called.
-
-During a collection, gc_refs can temporarily take on other states:
-
->= 0
+gc_refs
     At the start of a collection, update_refs() copies the true refcount
     to gc_refs, for each object in the generation being collected.
     subtract_refs() then adjusts gc_refs so that it equals the number of
@@ -156,18 +148,17 @@ During a collection, gc_refs can temporarily take on other states:
     being collected.
     gc_refs remains >= 0 throughout these steps.
 
-GC_TENTATIVELY_UNREACHABLE
+MASK_TENTATIVELY_UNREACHABLE
     move_unreachable() then moves objects not reachable (whether directly or
-    indirectly) from outside the generation into an "unreachable" set.
-    Objects that are found to be reachable have gc_refs set to GC_REACHABLE
-    again.  Objects that are found to be unreachable have gc_refs set to
-    GC_TENTATIVELY_UNREACHABLE.  It's "tentatively" because the pass doing
-    this can't be sure until it ends, and GC_TENTATIVELY_UNREACHABLE may
-    transition back to GC_REACHABLE.
+    indirectly) from outside the generation into an "unreachable" set and
+    set MASK_TENTATIVELY_UNREACHABLE flag.
 
-    Only objects with GC_TENTATIVELY_UNREACHABLE still set are candidates
-    for collection.  If it's decided not to collect such an object (e.g.,
-    it has a __del__ method), its gc_refs is restored to GC_REACHABLE again.
+    Objects that are found to be reachable have gc_refs set to 1.
+    When MASK_TENTATIVELY_UNREACHABLE flag is set for the reachable object,
+    the flag is unset and the object is moved back to "reachable" set.
+
+    Only objects with MASK_TENTATIVELY_UNREACHABLE still set are candidates
+    for collection.
 ----------------------------------------------------------------------------
 */
 
@@ -992,7 +983,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
     }
 
     /* Clear weakrefs and invoke callbacks as necessary. */
-    m += handle_weakrefs(&unreachable, old);  // clears masks
+    m += handle_weakrefs(&unreachable, old);
 
     validate_list(old, 0);
     validate_list(&unreachable, MASK_COLLECTING | MASK_TENTATIVELY_UNREACHABLE);
