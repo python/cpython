@@ -15,6 +15,7 @@ import subprocess
 import random
 import string
 import contextlib
+import io
 from shutil import (make_archive,
                     register_archive_format, unregister_archive_format,
                     get_archive_formats, Error, unpack_archive,
@@ -1874,6 +1875,13 @@ class TestCopyFileObjSendfile(unittest.TestCase):
     def test_regular_copy(self):
         with self.get_files() as (src, dst):
             shutil.copyfileobj(src, dst)
+        with open(TESTFN2, "rb") as f:
+            self.assertEqual(f.read(), self.FILEDATA)
+
+    def test_non_regular_file(self):
+        with io.BytesIO(self.FILEDATA) as src:
+            with open(TESTFN2, "wb") as dst:
+                shutil.copyfileobj(src, dst)
         with open(TESTFN2, "rb") as f:
             self.assertEqual(f.read(), self.FILEDATA)
 
