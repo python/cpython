@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+import io
 
 try:
     import zlib
@@ -42,6 +43,9 @@ try:
 except ImportError:
     getgrnam = None
 
+_HAS_SENDFILE = hasattr(os, "sendfile")
+COPY_BUFSIZE = 16 * 1024
+
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
            "ExecError", "make_archive", "get_archive_formats",
@@ -72,9 +76,60 @@ class RegistryError(Exception):
     """Raised when a registry operation with the archiving
     and unpacking registries fails"""
 
+class _GiveupOnSendfile(Exception):
+    """Raised when os.sendfile() cannot be used"""
 
-def copyfileobj(fsrc, fdst, length=16*1024):
+
+def _copyfileobj_sendfile(fsrc, fdst):
+    """Copy data from one file object to another one by using
+    zero-copy sendfile() method (faster).
+    """
+    try:
+        infd = fsrc.fileno()
+        outfd = fdst.fileno()
+    except (AttributeError, io.UnsupportedOperation) as err:
+        raise _GiveupOnSendfile(err)  # not a regular file
+
+    try:
+        blocksize = os.fstat(infd).st_size
+    except OSError:
+        blocksize = COPY_BUFSIZE
+    else:
+        if blocksize <= 0:
+            blocksize = COPY_BUFSIZE
+
+    try:
+        offset = fsrc.tell()
+    except (AttributeError, io.UnsupportedOperation) as err:
+        offset = 0
+
+    total_sent = 0
+    while True:
+        try:
+            sent = os.sendfile(outfd, infd, offset, blocksize)
+        except OSError as err:
+            if total_sent == 0:
+                # We can get here for different reasons, the main
+                # one being a fd is not a regular mmap(2)-like
+                # fd, in which case we'll fall back on using plain
+                # read()/write() copy.
+                raise _GiveupOnSendfile(err)
+            else:
+                raise err from None
+        else:
+            if sent == 0:
+                break  # EOF
+            offset += sent
+            total_sent += sent
+
+def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
     """copy data from file-like object fsrc to file-like object fdst"""
+    if _HAS_SENDFILE:
+        try:
+            return _copyfileobj_sendfile(fsrc, fdst)
+        except _GiveupOnSendfile:
+            pass
+
     while 1:
         buf = fsrc.read(length)
         if not buf:

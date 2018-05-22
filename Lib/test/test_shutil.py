@@ -12,6 +12,8 @@ import errno
 import functools
 import pathlib
 import subprocess
+import random
+import string
 from shutil import (make_archive,
                     register_archive_format, unregister_archive_format,
                     get_archive_formats, Error, unpack_archive,
@@ -1828,6 +1830,59 @@ class TestCopyFile(unittest.TestCase):
             self.assertTrue(os.path.isdir(dst_dir))
         finally:
             os.rmdir(dst_dir)
+
+
+@unittest.skipIf(not hasattr(os, "sendfile"), 'needs os.sendfile()')
+class TestCopyFileObjSendfile(unittest.TestCase):
+    FILESIZE = (10 * 1024 * 1024)  # 10 MiB
+    BUFSIZE = 8192
+    FILEDATA = b""
+
+    @classmethod
+    def setUpClass(cls):
+        def chunks(total, step):
+            assert total >= step
+            while total > step:
+                yield step
+                total -= step
+            if total:
+                yield total
+
+        chunk = b"".join([random.choice(string.ascii_letters).encode()
+                          for i in range(cls.BUFSIZE)])
+        with open(TESTFN, 'wb') as f:
+            for csize in chunks(cls.FILESIZE, cls.BUFSIZE):
+                f.write(chunk)
+        with open(TESTFN, 'rb') as f:
+            cls.FILEDATA = f.read()
+            assert len(cls.FILEDATA) == cls.FILESIZE
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(TESTFN)
+
+    def tearDown(self):
+        support.unlink(TESTFN2)
+
+    def get_files(self):
+        src = open(TESTFN, "rb")
+        self.addCleanup(src.close)
+        dst = open(TESTFN2, "wb")
+        self.addCleanup(dst.close)
+        return src, dst
+
+    def test_regular_copy(self):
+        src, dst = self.get_files()
+        shutil.copyfileobj(src, dst)
+        with open(TESTFN2, "rb") as f:
+            self.assertEqual(f.read(), self.FILEDATA)
+
+    def test_unhandled_exception(self):
+        src, dst = self.get_files()
+        with unittest.mock.patch('os.sendfile',
+                                 side_effect=ZeroDivisionError):
+            self.assertRaises(ZeroDivisionError, shutil.copyfileobj, src, dst)
+
 
 class TermsizeTests(unittest.TestCase):
     def test_does_not_crash(self):
