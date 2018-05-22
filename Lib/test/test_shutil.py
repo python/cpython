@@ -1878,7 +1878,7 @@ class TestCopyFileObjSendfile(unittest.TestCase):
         with open(TESTFN2, "rb") as f:
             self.assertEqual(f.read(), self.FILEDATA)
 
-    def test_non_regular_file(self):
+    def test_non_regular_file_src(self):
         with io.BytesIO(self.FILEDATA) as src:
             with open(TESTFN2, "wb") as dst:
                 with self.assertRaises(_GiveupOnSendfile):
@@ -1887,6 +1887,15 @@ class TestCopyFileObjSendfile(unittest.TestCase):
 
         with open(TESTFN2, "rb") as f:
             self.assertEqual(f.read(), self.FILEDATA)
+
+    def test_non_regular_file_dst(self):
+        with open(TESTFN, "rb") as src:
+            with io.BytesIO() as dst:
+                with self.assertRaises(_GiveupOnSendfile):
+                    shutil._copyfileobj_sendfile(src, dst)
+                shutil.copyfileobj(src, dst)
+                dst.seek(0)
+                self.assertEqual(dst.read(), self.FILEDATA)
 
     def test_empty_file(self):
         srcname = TESTFN + 'src'
