@@ -1206,6 +1206,26 @@ class FutureTests(BaseTestCase):
         self.assertTrue(isinstance(f1.exception(timeout=5), OSError))
         t.join()
 
+    def test_multiple_set_result(self):
+        f = create_future(state=PENDING)
+        f.set_result(1)
+
+        with self.assertRaises(futures.InvalidStateError):
+            f.set_result(2)
+
+        self.assertTrue(f.done())
+        self.assertEqual(f.result(), 1)
+
+    def test_multiple_set_exception(self):
+        f = create_future(state=PENDING)
+        e = ValueError()
+        f.set_exception(e)
+
+        with self.assertRaises(futures.InvalidStateError):
+            f.set_exception(Exception())
+
+        self.assertEqual(f.exception(), e)
+
 
 @test.support.reap_threads
 def test_main():
