@@ -1571,12 +1571,12 @@ Lambdas
    lambda_expr_nocond: "lambda" [`parameter_list`]: `expression_nocond`
 
 Lambda expressions (sometimes called lambda forms) are used to create anonymous
-functions. The expression ``lambda arguments: expression`` yields a function
+functions. The expression ``lambda parameters: expression`` yields a function
 object.  The unnamed object behaves like a function object defined with:
 
 .. code-block:: none
 
-   def <lambda>(arguments):
+   def <lambda>(parameters):
        return expression
 
 See section :ref:`function` for the syntax of parameter lists.  Note that

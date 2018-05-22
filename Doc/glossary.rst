@@ -595,7 +595,7 @@ Glossary
    lambda
       An anonymous inline function consisting of a single :term:`expression`
       which is evaluated when the function is called.  The syntax to create
-      a lambda function is ``lambda [arguments]: expression``
+      a lambda function is ``lambda [parameters]: expression``
 
    LBYL
       Look before you leap.  This coding style explicitly tests for
