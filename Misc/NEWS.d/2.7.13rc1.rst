@@ -44,8 +44,8 @@ C-inherited Cython classes).
 .. nonce: RYbEGH
 .. section: Core and Builtins
 
-Extra slash no longer added to sys.path components in case of empty compile-
-time PYTHONPATH components.
+Extra slash no longer added to sys.path components in case of empty
+compile-time PYTHONPATH components.
 
 ..
 
@@ -373,8 +373,8 @@ Fixed support of default root window in the Tix module.
 
 When parsing HTTP header fields, if an invalid line is encountered, skip it
 and continue parsing.  Previously, no more header fields were parsed, which
-could lead to fields for HTTP framing like Content-Length and Transfer-
-Encoding being overlooked.
+could lead to fields for HTTP framing like Content-Length and
+Transfer-Encoding being overlooked.
 
 ..
 
@@ -935,9 +935,9 @@ Fix clean target in freeze makefile (patch by Lisa Roach)
 .. section: Build
 
 Cause lack of llvm-profdata tool when using clang as required for PGO
-linking to be a configure time error rather than make time when --with-
-optimizations is enabled.  Also improve our ability to find the llvm-
-profdata tool on MacOS and some Linuxes.
+linking to be a configure time error rather than make time when
+``--with-optimizations`` is enabled.  Also improve our ability to find the
+llvm-profdata tool on MacOS and some Linuxes.
 
 ..
 
