@@ -14,6 +14,7 @@ import pathlib
 import subprocess
 import random
 import string
+import contextlib
 from shutil import (make_archive,
                     register_archive_format, unregister_archive_format,
                     get_archive_formats, Error, unpack_archive,
@@ -1864,24 +1865,24 @@ class TestCopyFileObjSendfile(unittest.TestCase):
     def tearDown(self):
         support.unlink(TESTFN2)
 
+    @contextlib.contextmanager
     def get_files(self):
-        src = open(TESTFN, "rb")
-        self.addCleanup(src.close)
-        dst = open(TESTFN2, "wb")
-        self.addCleanup(dst.close)
-        return src, dst
+        with open(TESTFN, "rb") as src:
+            with open(TESTFN2, "wb") as dst:
+                yield (src, dst)
 
     def test_regular_copy(self):
-        src, dst = self.get_files()
-        shutil.copyfileobj(src, dst)
+        with self.get_files() as (src, dst):
+            shutil.copyfileobj(src, dst)
         with open(TESTFN2, "rb") as f:
             self.assertEqual(f.read(), self.FILEDATA)
 
     def test_unhandled_exception(self):
-        src, dst = self.get_files()
         with unittest.mock.patch('os.sendfile',
                                  side_effect=ZeroDivisionError):
-            self.assertRaises(ZeroDivisionError, shutil.copyfileobj, src, dst)
+            with self.get_files() as (src, dst):
+                self.assertRaises(ZeroDivisionError,
+                                  shutil.copyfileobj, src, dst)
 
 
 class TermsizeTests(unittest.TestCase):
