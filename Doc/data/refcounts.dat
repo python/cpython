@@ -1383,6 +1383,27 @@ PyThreadState_New:PyInterpreterState*:interp::
 PyThreadState_Swap:PyThreadState*:::
 PyThreadState_Swap:PyThreadState*:tstate::
 
+PyThread_tss_alloc:Py_tss_t*:::
+
+PyThread_tss_create:int:::
+PyThread_tss_create:Py_tss_t*:key::
+
+PyThread_tss_delete:void:::
+PyThread_tss_delete:Py_tss_t*:key::
+
+PyThread_tss_free:void:::
+PyThread_tss_free:Py_tss_t*:key::
+
+PyThread_tss_get:void*:::
+PyThread_tss_get:Py_tss_t*:key::
+
+PyThread_tss_is_created:int:::
+PyThread_tss_is_created:Py_tss_t*:key::
+
+PyThread_tss_set:int:::
+PyThread_tss_set:Py_tss_t*:key::
+PyThread_tss_set:void*:value::
+
 PyTime_FromTime:PyObject*::+1:
 PyTime_FromTime:int:hour::
 PyTime_FromTime:int:minute::
