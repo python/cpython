@@ -169,11 +169,6 @@ purposes.
 
      3DES was dropped from the default cipher string.
 
-   .. versionchanged:: 3.7
-
-     TLS 1.3 cipher suites TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384,
-     and TLS_CHACHA20_POLY1305_SHA256 were added to the default cipher string.
-
 
 Exceptions
 ^^^^^^^^^^
@@ -1600,6 +1595,9 @@ to speed up repeated connections from the same clients.
    .. note::
       when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       give the currently selected cipher.
+
+      OpenSSL 1.1.1 has TLS 1.3 cipher suites enabled by default. The suites
+      cannot be disabled with :meth:`~SSLContext.set_ciphers`.
 
 .. method:: SSLContext.set_alpn_protocols(protocols)
 
