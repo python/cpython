@@ -97,6 +97,49 @@ Or, more often::
 
    from tkinter import *
 
+
+Threading model
+---------------
+
+A Tcl interpreter has one stream of execution and, unlike most other GUI
+toolkits, doesn't provide a blocking event loop.
+Instead, Tcl code is supposed to pump the event queue regularly at strategic
+moments -- after an action that triggers an event, before a later action that
+needs the result of that event. As such, all Tcl commands are designed to work
+without an event loop running, only event handlers will not be executed
+until the queue is processed. This allows to work completely in one thread,
+i.e. even in environments that have no thread support at all.
+
+This is in stark constrast to the execution model for most other GUI toolkits:
+a dedicated OS thread (usually called the "UI thread") runs the GUI event loop
+constantly, and other threads send work items to it -- either complete with
+payload reference, or as agreed-upon "events" which result in it executing a
+predefined "event handler".
+Likewise, for any lengthy tasks, the UI thread can launch worker threads that
+report back on their progress via the same event queue.
+
+Tkinter gives the best of both worlds. It presents the "modern" multithreaded
+GUI model as the primary mode of execution while retaining the freedom and
+flexibility of Tcl's one. Any calls can be made from any threads, only
+subject to Tcl's architectural restictions:
+
+* For nonthreaded Tcl, all Tcl calls are wrapped with a global lock. So,
+  any calls can be made from any threads, but under the hood, only one
+  is active at a time.
+  
+* A threaded Tcl interpreter instance, when created, becomes tied to the
+  creating OS thread ("the interpreter thread"). Tcl mandates that all calls
+  to the instance must come from this thread, except special inter-thread
+  communication APIs. Tkinter implements calls from outside the interpreter
+  thread by posting an event to the interpreter's queue that would run the
+  necessary commands, then waits for result. As such:
+  
+    * To make calls from outside the interpreter queue, :func:`mainloop`
+      must be running in the interpreter queue. Otherwise, a
+      :class:`RuntimeError` is raised.
+      
+    * A few select functions can only be called from the interpreter thread.
+
    
 Module contents
 ---------------
