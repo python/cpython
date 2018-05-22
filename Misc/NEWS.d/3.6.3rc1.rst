@@ -197,10 +197,10 @@ ImportError rather than SystemError.
 
 Improve signal delivery.
 
-Avoid using Py_AddPendingCall from signal handler, to avoid calling signal-
-unsafe functions. The tests I'm adding here fail without the rest of the
-patch, on Linux and OS X. This means our signal delivery logic had defects
-(some signals could be lost).
+Avoid using Py_AddPendingCall from signal handler, to avoid calling
+signal-unsafe functions. The tests I'm adding here fail without the rest of
+the patch, on Linux and OS X. This means our signal delivery logic had
+defects (some signals could be lost).
 
 ..
 
@@ -516,9 +516,9 @@ LF. Patch by Dong-hee Na.
 .. nonce: -zJ7d8
 .. section: Library
 
-multiprocessing.Queue.get() with a timeout now polls its reader in non-
-blocking mode if it succeeded to aquire the lock but the acquire took longer
-than the timeout.
+multiprocessing.Queue.get() with a timeout now polls its reader in
+non-blocking mode if it succeeded to aquire the lock but the acquire took
+longer than the timeout.
 
 ..
 
@@ -627,8 +627,8 @@ Fix email header value parser dropping folding white space in certain cases.
 .. nonce: N3KI-o
 .. section: Library
 
-os.listdir() and os.scandir() now emit bytes names when called with bytes-
-like argument.
+os.listdir() and os.scandir() now emit bytes names when called with
+bytes-like argument.
 
 ..
 
@@ -881,8 +881,8 @@ All custom keysets are saved as a whole in config- extension.cfg.  All take
 effect as soon as one clicks Apply or Ok.
 
 The affected events are '<<force-open-completions>>', '<<expand-word>>',
-'<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>', '<<run-
-module>>', '<<check-module>>', and '<<zoom-height>>'.  Any (global)
+'<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
+'<<run-module>>', '<<check-module>>', and '<<zoom-height>>'.  Any (global)
 customizations made before 3.6.3 will not affect their keyset- specific
 customization after 3.6.3. and vice versa.
 
