@@ -1875,8 +1875,7 @@ class TestCopyFileObjSendfile(unittest.TestCase):
     def test_regular_copy(self):
         with self.get_files() as (src, dst):
             shutil._copyfileobj_sendfile(src, dst)
-        with open(TESTFN2, "rb") as f:
-            self.assertEqual(f.read(), self.FILEDATA)
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_non_regular_file_src(self):
         with io.BytesIO(self.FILEDATA) as src:
@@ -1885,8 +1884,7 @@ class TestCopyFileObjSendfile(unittest.TestCase):
                     shutil._copyfileobj_sendfile(src, dst)
                 shutil.copyfileobj(src, dst)
 
-        with open(TESTFN2, "rb") as f:
-            self.assertEqual(f.read(), self.FILEDATA)
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_non_regular_file_dst(self):
         with open(TESTFN, "rb") as src:
@@ -1916,8 +1914,7 @@ class TestCopyFileObjSendfile(unittest.TestCase):
         with self.get_files() as (src, dst):
             src.seek(666)
             shutil._copyfileobj_sendfile(src, dst)
-        with open(TESTFN2, "rb") as f:
-            self.assertEqual(f.read(), self.FILEDATA[666:])
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA[666:])
 
     def test_unhandled_exception(self):
         with unittest.mock.patch('os.sendfile',

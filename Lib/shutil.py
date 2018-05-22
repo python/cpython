@@ -81,8 +81,8 @@ class _GiveupOnSendfile(Exception):
 
 
 def _copyfileobj_sendfile(fsrc, fdst):
-    """Copy data from one file object to another one by using
-    zero-copy sendfile() method (faster).
+    """Copy data from one file object to another by using zero-copy
+    sendfile() method (faster).
     """
     try:
         infd = fsrc.fileno()
