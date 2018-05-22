@@ -1,0 +1,1 @@
+Update HMAC DeprecationWarning, bump removal to 3.8
