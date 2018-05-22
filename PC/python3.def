@@ -284,6 +284,7 @@ EXPORTS
   PyImport_GetImporter=python37.PyImport_GetImporter
   PyImport_GetMagicNumber=python37.PyImport_GetMagicNumber
   PyImport_GetMagicTag=python37.PyImport_GetMagicTag
+  PyImport_GetModule=python37.PyImport_GetModule
   PyImport_GetModuleDict=python37.PyImport_GetModuleDict
   PyImport_Import=python37.PyImport_Import
   PyImport_ImportFrozenModule=python37.PyImport_ImportFrozenModule
@@ -757,6 +758,7 @@ EXPORTS
   Py_SetPythonHome=python37.Py_SetPythonHome
   Py_SetRecursionLimit=python37.Py_SetRecursionLimit
   Py_SymtableString=python37.Py_SymtableString
+  Py_UTF8Mode=python37.Py_UTF8Mode DATA
   Py_VaBuildValue=python37.Py_VaBuildValue
   _PyArg_ParseTupleAndKeywords_SizeT=python37._PyArg_ParseTupleAndKeywords_SizeT
   _PyArg_ParseTuple_SizeT=python37._PyArg_ParseTuple_SizeT
