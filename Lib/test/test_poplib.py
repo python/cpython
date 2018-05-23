@@ -153,8 +153,6 @@ class DummyPOP3Handler(asynchat.async_chat):
             if self.tls_active is False:
                 self.push('+OK Begin TLS negotiation')
                 context = ssl.SSLContext()
-                # TODO: fix TLSv1.3 support
-                context.options |= ssl.OP_NO_TLSv1_3
                 context.load_cert_chain(CERTFILE)
                 tls_sock = context.wrap_socket(self.socket,
                                                server_side=True,
@@ -206,6 +204,7 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
     def __init__(self, address, af=socket.AF_INET):
         threading.Thread.__init__(self)
         asyncore.dispatcher.__init__(self)
+        self.daemon = True
         self.create_socket(af, socket.SOCK_STREAM)
         self.bind(address)
         self.listen(5)
@@ -370,8 +369,6 @@ class TestPOP3Class(TestCase):
     def test_stls_context(self):
         expected = b'+OK Begin TLS negotiation'
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        # TODO: fix TLSv1.3 support
-        ctx.options |= ssl.OP_NO_TLSv1_3
         ctx.load_verify_locations(CAFILE)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self.assertEqual(ctx.check_hostname, True)
@@ -412,8 +409,6 @@ class TestPOP3_SSLClass(TestPOP3Class):
 
     def test_context(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        # TODO: fix TLSv1.3 support
-        ctx.options |= ssl.OP_NO_TLSv1_3
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
         self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
@@ -482,7 +477,7 @@ class TestTimeouts(TestCase):
         self.sock.settimeout(60)  # Safety net. Look issue 11812
         self.port = test_support.bind_port(self.sock)
         self.thread = threading.Thread(target=self.server, args=(self.evt,self.sock))
-        self.thread.setDaemon(True)
+        self.thread.daemon = True
         self.thread.start()
         self.evt.wait()
 

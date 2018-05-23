@@ -251,6 +251,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
+        # TODO: fix TLSv1.3 support
+        client_context.options |= ssl.OP_NO_TLSv1_3
 
         def client(sock, addr):
             time.sleep(0.5)
