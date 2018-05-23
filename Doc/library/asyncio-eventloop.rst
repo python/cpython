@@ -124,7 +124,7 @@ keywords to your callback, use :func:`functools.partial`. For example,
    parameters in debug mode, whereas ``lambda`` functions have a poor
    representation.
 
-.. method:: AbstractEventLoop.call_soon(callback, \*args)
+.. method:: AbstractEventLoop.call_soon(callback, *args, context=None)
 
    Arrange for a callback to be called as soon as possible.  The callback is
    called after :meth:`call_soon` returns, when control returns to the event
@@ -137,18 +137,30 @@ keywords to your callback, use :func:`functools.partial`. For example,
    Any positional arguments after the callback will be passed to the
    callback when it is called.
 
+   An optional keyword-only *context* parameter allows to specify a custom
+   :class:`contextvars.Context` for the *callback* to run in.  The current
+   context is used when no *context* is provided.
+
    An instance of :class:`asyncio.Handle` is returned, which can be
    used to cancel the callback.
 
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
 
-.. method:: AbstractEventLoop.call_soon_threadsafe(callback, \*args)
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
+
+.. method:: AbstractEventLoop.call_soon_threadsafe(callback, *args, context=None)
 
    Like :meth:`call_soon`, but thread safe.
 
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
+
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
 
 
 .. _asyncio-delayed-calls:
@@ -166,7 +178,7 @@ a different clock than :func:`time.time`.
    Timeouts (relative *delay* or absolute *when*) should not exceed one day.
 
 
-.. method:: AbstractEventLoop.call_later(delay, callback, *args)
+.. method:: AbstractEventLoop.call_later(delay, callback, *args, context=None)
 
    Arrange for the *callback* to be called after the given *delay*
    seconds (either an int or float).
@@ -182,10 +194,18 @@ a different clock than :func:`time.time`.
    is called. If you want the callback to be called with some named
    arguments, use a closure or :func:`functools.partial`.
 
+   An optional keyword-only *context* parameter allows to specify a custom
+   :class:`contextvars.Context` for the *callback* to run in.  The current
+   context is used when no *context* is provided.
+
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
 
-.. method:: AbstractEventLoop.call_at(when, callback, *args)
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
+
+.. method:: AbstractEventLoop.call_at(when, callback, *args, context=None)
 
    Arrange for the *callback* to be called at the given absolute timestamp
    *when* (an int or float), using the same time reference as
@@ -198,6 +218,10 @@ a different clock than :func:`time.time`.
 
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
+
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
 
 .. method:: AbstractEventLoop.time()
 

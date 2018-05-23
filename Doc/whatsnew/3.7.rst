@@ -608,6 +608,17 @@ include:
   destroying the event loop.
   (Contributed by Yury Selivanov in :issue:`32314`.)
 
+* asyncio gains support for :mod:`contextvars`.
+  :meth:`loop.call_soon() <asyncio.AbstractEventLoop.call_soon>`,
+  :meth:`loop.call_soon_threadsafe() <asyncio.AbstractEventLoop.call_soon_threadsafe>`,
+  :meth:`loop.call_later() <asyncio.AbstractEventLoop.call_later>`,
+  :meth:`loop.call_at() <asyncio.AbstractEventLoop.call_at>`, and
+  :meth:`Future.add_done_callback() <asyncio.Future.add_done_callback>`
+  have a new optional keyword-only *context* parameter.
+  :class:`Tasks <asyncio.Task>` now track their context automatically.
+  See :pep:`567` for more details.
+  (Contributed by Yury Selivanov in :issue:`32436`.)
+
 * The new :func:`asyncio.create_task` function has been added as a shortcut
   to ``asyncio.get_event_loop().create_task()``.
   (Contributed by Andrew Svetlov in :issue:`32311`.)

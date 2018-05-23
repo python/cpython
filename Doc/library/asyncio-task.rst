@@ -275,18 +275,26 @@ Future
       :exc:`CancelledError`. If the future isn't done yet, raises
       :exc:`InvalidStateError`.
 
-   .. method:: add_done_callback(fn)
+   .. method:: add_done_callback(callback, *, context=None)
 
       Add a callback to be run when the future becomes done.
 
-      The callback is called with a single argument - the future object. If the
+      The *callback* is called with a single argument - the future object. If the
       future is already done when this is called, the callback is scheduled
       with :meth:`~AbstractEventLoop.call_soon`.
+
+      An optional keyword-only *context* parameter allows to specify a custom
+      :class:`contextvars.Context` for the *callback* to run in.  The current
+      context is used when no *context* is provided.
 
       :ref:`Use functools.partial to pass parameters to the callback
       <asyncio-pass-keywords>`. For example,
       ``fut.add_done_callback(functools.partial(print, "Future:",
       flush=True))`` will call ``print("Future:", fut, flush=True)``.
+
+      .. versionchanged:: 3.7
+         The *context* keyword-only parameter was added. See :pep:`567`
+         for more details.
 
    .. method:: remove_done_callback(fn)
 
@@ -421,7 +429,14 @@ Task
    Don't directly create :class:`Task` instances: use the :func:`create_task`
    function or the :meth:`AbstractEventLoop.create_task` method.
 
+   Tasks support the :mod:`contextvars` module.  When a Task
+   is created it copies the current context and later runs its coroutine
+   in the copied context.  See :pep:`567` for more details.
+
    This class is :ref:`not thread safe <asyncio-multithreading>`.
+
+   .. versionchanged:: 3.7
+      Added support for the :mod:`contextvars` module.
 
    .. classmethod:: all_tasks(loop=None)
 
