@@ -2095,7 +2095,7 @@ class SubprocessTestsMixin:
 
 class SendfileBase:
 
-    DATA = b"12345abcde" * 160 * 1024  # 160 KiB
+    DATA = b"12345abcde" * 16 * 1024  # 160 KiB
 
     @classmethod
     def setUpClass(cls):
@@ -2208,7 +2208,7 @@ class SockSendfileMixin(SendfileBase):
         self.assertEqual(self.file.tell(), 0)
 
     def test_sock_sendfile_mix_with_regular_send(self):
-        buf = b'1234567890' * 1024 * 1024  # 10 MB
+        buf = b"X" * 160 * 1024  # 160 KiB
         sock, proto = self.prepare_socksendfile()
         self.run_loop(self.loop.sock_sendall(sock, buf))
         ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
