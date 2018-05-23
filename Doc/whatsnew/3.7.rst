@@ -608,7 +608,7 @@ include:
   destroying the event loop.
   (Contributed by Yury Selivanov in :issue:`32314`.)
 
-* asyncio gains support for :mod:`contextvars`.
+* asyncio gained support for :mod:`contextvars`.
   :meth:`loop.call_soon() <asyncio.AbstractEventLoop.call_soon>`,
   :meth:`loop.call_soon_threadsafe() <asyncio.AbstractEventLoop.call_soon_threadsafe>`,
   :meth:`loop.call_later() <asyncio.AbstractEventLoop.call_later>`,

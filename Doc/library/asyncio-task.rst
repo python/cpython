@@ -283,7 +283,7 @@ Future
       future is already done when this is called, the callback is scheduled
       with :meth:`~AbstractEventLoop.call_soon`.
 
-      An optional keyword-only *context* parameter allows to specify a custom
+      An optional keyword-only *context* argument allows specifying a custom
       :class:`contextvars.Context` for the *callback* to run in.  The current
       context is used when no *context* is provided.
 

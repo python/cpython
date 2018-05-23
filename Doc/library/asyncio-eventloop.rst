@@ -137,7 +137,7 @@ keywords to your callback, use :func:`functools.partial`. For example,
    Any positional arguments after the callback will be passed to the
    callback when it is called.
 
-   An optional keyword-only *context* parameter allows to specify a custom
+   An optional keyword-only *context* argument allows specifying a custom
    :class:`contextvars.Context` for the *callback* to run in.  The current
    context is used when no *context* is provided.
 
@@ -194,7 +194,7 @@ a different clock than :func:`time.time`.
    is called. If you want the callback to be called with some named
    arguments, use a closure or :func:`functools.partial`.
 
-   An optional keyword-only *context* parameter allows to specify a custom
+   An optional keyword-only *context* argument allows specifying a custom
    :class:`contextvars.Context` for the *callback* to run in.  The current
    context is used when no *context* is provided.
 
