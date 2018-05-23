@@ -1,0 +1,2 @@
+Release GIL on `grp.getgrnam`, `grp.getgrgid`, `pwd.getpwnam` and
+`pwd.getpwuid`. Patch by William Grzybowski.

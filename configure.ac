@@ -4145,6 +4145,60 @@ AC_SUBST(HAVE_GETHOSTBYNAME_R_3_ARG)
 AC_SUBST(HAVE_GETHOSTBYNAME_R)
 AC_SUBST(HAVE_GETHOSTBYNAME)
 
+# checks for re-entrant nss functions
+AC_CHECK_FUNCS(getpwnam_r,
+  [
+    AC_DEFINE(HAVE_GETPWNAM_R, 1,
+    [Define to 1 if your system has getpwnam_r.])
+  ]
+)
+
+AC_CHECK_FUNCS(getpwuid_r,
+  [
+    AC_DEFINE(HAVE_GETPWUID_R, 1,
+    [Define to 1 if your system has getpwuid_r.])
+  ]
+)
+
+AC_CHECK_FUNCS(getgrnam_r,
+  [
+    AC_DEFINE(HAVE_GETGRNAM_R, 1,
+    [Define to 1 if your system has getgrnam_r.])
+  ]
+)
+
+AC_CHECK_FUNCS(getgrgid_r,
+  [
+    AC_DEFINE(HAVE_GETGRGID_R, 1,
+    [Define to 1 if your system has getgrgid_r.])
+  ]
+)
+
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <pwd.h>
+int main(int argc, char*argv[])
+{
+#ifdef NSS_BUFLEN_PASSWD
+    return 0;
+#else
+    return 1;
+#endif
+}
+]])], [], [AC_DEFINE(NSS_BUFLEN_PASSWD, 1024, [Define default buflen for reentrant pwd functions])])
+
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <grp.h>
+int main(int argc, char*argv[])
+{
+#ifdef NSS_BUFLEN_GROUP
+    return 0;
+#else
+    return 1;
+#endif
+}
+]])], [], [AC_DEFINE(NSS_BUFLEN_GROUP, 1024, [Define default buflen for reentrant grp functions])])
+
+
 # checks for system services
 # (none yet)
 
