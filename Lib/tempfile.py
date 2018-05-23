@@ -519,7 +519,7 @@ class _TemporaryFileWrapper:
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
-                       dir=None, delete=True):
+                       dir=None, delete=True, *, errors=None):
     """Create and return a temporary file.
     Arguments:
     'prefix', 'suffix', 'dir' -- as for mkstemp.
@@ -528,6 +528,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     'encoding' -- the encoding argument to io.open (default None)
     'newline' -- the newline argument to io.open (default None)
     'delete' -- whether the file is deleted on close (default True).
+    'errors' -- the errors argument to io.open (default None)
     The file is created as mkstemp() would do it.
 
     Returns an object with a file-like interface; the name of the file
@@ -547,7 +548,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
     try:
         file = _io.open(fd, mode, buffering=buffering,
-                        newline=newline, encoding=encoding)
+                        newline=newline, encoding=encoding, errors=errors)
 
         return _TemporaryFileWrapper(file, name, delete)
     except BaseException:
@@ -568,7 +569,7 @@ else:
 
     def TemporaryFile(mode='w+b', buffering=-1, encoding=None,
                       newline=None, suffix=None, prefix=None,
-                      dir=None):
+                      dir=None, *, errors=None):
         """Create and return a temporary file.
         Arguments:
         'prefix', 'suffix', 'dir' -- as for mkstemp.
@@ -576,6 +577,7 @@ else:
         'buffering' -- the buffer size argument to io.open (default -1).
         'encoding' -- the encoding argument to io.open (default None)
         'newline' -- the newline argument to io.open (default None)
+        'errors' -- the errors argument to io.open (default None)
         The file is created as mkstemp() would do it.
 
         Returns an object with a file-like interface.  The file has no
@@ -609,7 +611,8 @@ else:
             else:
                 try:
                     return _io.open(fd, mode, buffering=buffering,
-                                    newline=newline, encoding=encoding)
+                                    newline=newline, encoding=encoding,
+                                    errors=errors)
                 except:
                     _os.close(fd)
                     raise
@@ -619,7 +622,7 @@ else:
         try:
             _os.unlink(name)
             return _io.open(fd, mode, buffering=buffering,
-                            newline=newline, encoding=encoding)
+                            newline=newline, encoding=encoding, errors=errors)
         except:
             _os.close(fd)
             raise
@@ -633,7 +636,7 @@ class SpooledTemporaryFile:
 
     def __init__(self, max_size=0, mode='w+b', buffering=-1,
                  encoding=None, newline=None,
-                 suffix=None, prefix=None, dir=None):
+                 suffix=None, prefix=None, dir=None, *, errors=None):
         if 'b' in mode:
             self._file = _io.BytesIO()
         else:
@@ -646,7 +649,7 @@ class SpooledTemporaryFile:
         self._TemporaryFileArgs = {'mode': mode, 'buffering': buffering,
                                    'suffix': suffix, 'prefix': prefix,
                                    'encoding': encoding, 'newline': newline,
-                                   'dir': dir}
+                                   'dir': dir, 'errors': errors}
 
     def _check(self, file):
         if self._rolled: return
@@ -692,12 +695,11 @@ class SpooledTemporaryFile:
 
     @property
     def encoding(self):
-        try:
-            return self._file.encoding
-        except AttributeError:
-            if 'b' in self._TemporaryFileArgs['mode']:
-                raise
-            return self._TemporaryFileArgs['encoding']
+        return self._file.encoding
+
+    @property
+    def errors(self):
+        return self._file.errors
 
     def fileno(self):
         self.rollover()
@@ -725,12 +727,7 @@ class SpooledTemporaryFile:
 
     @property
     def newlines(self):
-        try:
-            return self._file.newlines
-        except AttributeError:
-            if 'b' in self._TemporaryFileArgs['mode']:
-                raise
-            return self._TemporaryFileArgs['newline']
+        return self._file.newlines
 
     def read(self, *args):
         return self._file.read(*args)
