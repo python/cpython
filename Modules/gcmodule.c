@@ -1595,6 +1595,7 @@ _PyGC_CollectNoFail(void)
        during interpreter shutdown (and then never finish it).
        See http://bugs.python.org/issue8713#msg195178 for an example.
        */
+    assert(!PyErr_Occurred());
     if (_PyRuntime.gc.collecting)
         n = 0;
     else {
@@ -1602,6 +1603,7 @@ _PyGC_CollectNoFail(void)
         n = collect(NUM_GENERATIONS - 1, NULL, NULL, 1);
         _PyRuntime.gc.collecting = 0;
     }
+    assert(!PyErr_Occurred());
     return n;
 }
 

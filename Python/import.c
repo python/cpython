@@ -396,15 +396,18 @@ static const char * const sys_files[] = {
 void
 PyImport_Cleanup(void)
 {
+    assert(!PyErr_Occurred());
+
     Py_ssize_t pos;
     PyObject *key, *value, *dict;
     PyInterpreterState *interp = PyThreadState_GET()->interp;
-    PyObject *modules = PyImport_GetModuleDict();
     PyObject *weaklist = NULL;
     const char * const *p;
 
-    if (modules == NULL)
+    PyObject *modules = interp->modules;
+    if (modules == NULL) {
         return; /* Already done */
+    }
 
     /* Delete some special variables first.  These are common
        places where user values hide and people complain when their
@@ -437,6 +440,7 @@ PyImport_Cleanup(void)
             PyErr_WriteUnraisable(NULL);
         }
     }
+    assert(!PyErr_Occurred());
 
     /* We prepare a list which will receive (name, weakref) tuples of
        modules when they are removed from sys.modules.  The name is used
@@ -477,6 +481,7 @@ PyImport_Cleanup(void)
     if (PyDict_CheckExact(modules)) {
         pos = 0;
         while (PyDict_Next(modules, &pos, &key, &value)) {
+            assert(!PyErr_Occurred());
             CLEAR_MODULE(key, value);
         }
     }
@@ -492,6 +497,7 @@ PyImport_Cleanup(void)
                     PyErr_WriteUnraisable(NULL);
                     continue;
                 }
+                assert(!PyErr_Occurred());
                 CLEAR_MODULE(key, value);
                 Py_DECREF(value);
                 Py_DECREF(key);
@@ -502,6 +508,7 @@ PyImport_Cleanup(void)
             Py_DECREF(iterator);
         }
     }
+    assert(!PyErr_Occurred());
 
     /* Clear the modules dict. */
     if (PyDict_CheckExact(modules)) {
@@ -524,6 +531,8 @@ PyImport_Cleanup(void)
         PyErr_Clear();
     }
     Py_XDECREF(dict);
+    assert(!PyErr_Occurred());
+
     /* Clear module dict copies stored in the interpreter state */
     _PyState_ClearModules();
     /* Collect references */
@@ -543,6 +552,7 @@ PyImport_Cleanup(void)
        references left to it), we need to delete the "builtins"
        module last.  Likewise, we don't delete sys until the very
        end because it is implicitly referenced (e.g. by print). */
+    assert(!PyErr_Occurred());
     if (weaklist != NULL) {
         Py_ssize_t i, n;
         n = PyList_GET_SIZE(weaklist);
@@ -559,6 +569,7 @@ PyImport_Cleanup(void)
             Py_INCREF(mod);
             if (Py_VerboseFlag && PyUnicode_Check(name))
                 PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
+            assert(!PyErr_Occurred());
             _PyModule_Clear(mod);
             Py_DECREF(mod);
         }
