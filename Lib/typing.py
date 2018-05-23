@@ -106,7 +106,7 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _type_check(arg, msg, is_argument=False):
+def _type_check(arg, msg, is_argument=True):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
@@ -119,7 +119,7 @@ def _type_check(arg, msg, is_argument=False):
     We append the repr() of the actual value (truncated to 100 chars).
     """
     invalid_generic_forms = (Generic, _Protocol)
-    if not is_argument:
+    if is_argument:
         invalid_generic_forms = invalid_generic_forms + (ClassVar, )
 
     if arg is None:
@@ -445,7 +445,7 @@ class ForwardRef(_Final, _root=True):
                  '__forward_evaluated__', '__forward_value__',
                  '__forward_is_argument__')
 
-    def __init__(self, arg, is_argument=False):
+    def __init__(self, arg, is_argument=True):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
         try:
@@ -979,7 +979,7 @@ def get_type_hints(obj, globalns=None, localns=None):
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
-                    value = ForwardRef(value, is_argument=True)
+                    value = ForwardRef(value, is_argument=False)
                 value = _eval_type(value, base_globals, localns)
                 hints[name] = value
         return hints
