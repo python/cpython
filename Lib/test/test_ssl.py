@@ -1842,7 +1842,7 @@ class SimpleBackgroundTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         ctx.verify_mode = ssl.CERT_REQUIRED
         # TODO: fix TLSv1.3 support
-        ctx.options |= ssl.OP_NO_TLSv1_3
+        # ctx.options |= ssl.OP_NO_TLSv1_3
         ctx.load_verify_locations(cadata=pem)
         with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
             s.connect(self.server_addr)
@@ -1853,7 +1853,7 @@ class SimpleBackgroundTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         ctx.verify_mode = ssl.CERT_REQUIRED
         # TODO: fix TLSv1.3 support
-        ctx.options |= ssl.OP_NO_TLSv1_3
+        # ctx.options |= ssl.OP_NO_TLSv1_3
         ctx.load_verify_locations(cadata=der)
         with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
             s.connect(self.server_addr)
@@ -2746,7 +2746,7 @@ class ThreadedTests(unittest.TestCase):
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         server_context.load_cert_chain(IDNSANSFILE)
         # TODO: fix TLSv1.3 support
-        server_context.options |= ssl.OP_NO_TLSv1_3
+        # server_context.options |= ssl.OP_NO_TLSv1_3
 
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.verify_mode = ssl.CERT_REQUIRED
@@ -2810,7 +2810,7 @@ class ThreadedTests(unittest.TestCase):
         server_context.verify_mode = ssl.CERT_REQUIRED
         # TODO: fix TLSv1.3 support
         # With TLS 1.3, test fails with exception in server thread
-        server_context.options |= ssl.OP_NO_TLSv1_3
+        # server_context.options |= ssl.OP_NO_TLSv1_3
 
         server = ThreadedEchoServer(
             context=server_context, chatty=True, connectionchatty=True,
@@ -3575,7 +3575,7 @@ class ThreadedTests(unittest.TestCase):
 
         client_context, server_context, hostname = testing_context()
         # TODO: fix TLSv1.3 support
-        client_context.options |= ssl.OP_NO_TLSv1_3
+        # client_context.options |= ssl.OP_NO_TLSv1_3
 
         server = ThreadedEchoServer(context=server_context,
                                     chatty=True,
