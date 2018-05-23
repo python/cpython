@@ -9,6 +9,7 @@ installp/
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
 /python
 !/Python/
+*.bak
 *.cover
 *.iml
 *.o
@@ -24,6 +25,7 @@ installp/
 *.profraw
 *.dyn
 .gdb_history
+C.tom
 Doc/build/
 Doc/venv/
 Doc/.venv/
