@@ -1,0 +1,1 @@
+Allow b64encode() and b64decode() (and derived urlsafe_* methods) from base64 module to produce or accept unpadded input or output.
