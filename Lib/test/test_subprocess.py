@@ -18,6 +18,7 @@ import shutil
 import threading
 import gc
 import textwrap
+import pathlib
 from test.support import FakePath
 
 try:
@@ -117,6 +118,19 @@ class ProcessTestCase(BaseTestCase):
             p.stdout.close()
             p.stderr.close()
             p.wait()
+
+    def test_pathlib_executable(self):
+        p = subprocess.Popen([pathlib.Path(sys.executable), "-c",
+                              "import sys; sys.exit(47)"])
+        p.wait()
+        self.assertEqual(p.returncode, 47)
+
+    def test_pathlib_argument(self):
+        path = pathlib.Path(sys.executable)
+        output = subprocess.check_output([path, "-c",
+                                         "import sys; sys.stdout.write(sys.argv[1])",
+                                          path])
+        self.assertEqual(output, os.fspath(path).encode())
 
     def test_call_seq(self):
         # call() function with sequence argument

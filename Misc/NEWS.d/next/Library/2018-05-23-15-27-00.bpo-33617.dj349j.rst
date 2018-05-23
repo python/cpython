@@ -1,0 +1,1 @@
+Use os.fspath() on elements of sequences passed to subprocess.Popen() on Windows.

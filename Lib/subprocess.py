@@ -502,6 +502,7 @@ def list2cmdline(seq):
     result = []
     needquote = False
     for arg in seq:
+        arg = os.fspath(arg)
         bs_buf = []
 
         # Add a space to separate this argument from the others
