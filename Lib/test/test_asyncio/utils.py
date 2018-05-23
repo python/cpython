@@ -74,8 +74,6 @@ def simple_server_sslcontext():
     server_context.load_cert_chain(ONLYCERT, ONLYKEY)
     server_context.check_hostname = False
     server_context.verify_mode = ssl.CERT_NONE
-    # TODO: fix TLSv1.3 support
-    server_context.options |= ssl.OP_NO_TLSv1_3
     return server_context
 
 
