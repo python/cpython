@@ -3662,8 +3662,9 @@ dictreviter_iternextkey(dictiterobject *di)
     PyDictKeysObject *k;
     PyDictObject *d = di->di_dict;
 
-    if (d == NULL)
+    if (d == NULL) {
         return NULL;
+    }
     assert (PyDict_Check(d));
 
     if (di->di_used != d->ma_used) {
@@ -3677,8 +3678,9 @@ dictreviter_iternextkey(dictiterobject *di)
     k = d->ma_keys;
 
     if (d->ma_values) {
-        if (i < 0)
+        if (i < 0) {
             goto fail;
+        }
         key = DK_ENTRIES(k)[i].me_key;
         assert(d->ma_values[i] != NULL);
     } else {
@@ -3687,8 +3689,9 @@ dictreviter_iternextkey(dictiterobject *di)
             entry_ptr--;
             i--;
         }
-        if (i < 0)
+        if (i < 0) {
             goto fail;
+        }
         key = entry_ptr->me_key;
     }
     di->di_pos = i-1;
@@ -3706,33 +3709,14 @@ PyTypeObject PyDictRevIterKey_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "dict_reversekeyiterator",
     sizeof(dictiterobject),
-    0,
     /* methods */
-    (destructor)dictiter_dealloc,               /* tp_dealloc */
-    0,                                          /* tp_print */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    (traverseproc)dictiter_traverse,            /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)dictreviter_iternextkey,      /* tp_iternext */
-    dictiter_methods,                           /* tp_methods */
-    0,
+    .tp_dealloc = (destructor)dictiter_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)dictiter_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)dictreviter_iternextkey,
+    .tp_methods = dictiter_methods
 };
 
 
@@ -3750,12 +3734,15 @@ dict___reversed___impl(PyDictObject *self)
     PyObject *di = dictiter_new(self, &PyDictRevIterKey_Type);
 
     /* We need to start the iteration from the end of the dictionnary */
-    if (self->ma_used)
+    if (self->ma_used) {
         ((dictiterobject *) di)->di_pos = self->ma_used - 1;
-    else if (self->ma_keys->dk_nentries)
+    }
+    else if (self->ma_keys->dk_nentries) {
         ((dictiterobject *) di)->di_pos = self->ma_keys->dk_nentries - 1;
-    else
+    }
+    else {
         ((dictiterobject *) di)->di_pos = 0;
+    }
     return di;
 }
 
