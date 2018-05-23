@@ -327,19 +327,15 @@ class HelpFormatter(object):
             if len(prefix) + len(usage) > text_width:
 
                 # break usage into wrappable parts
-                part_regexp = '|'.join([
-                    r'\(.*?\)+\s',
-                    r'\[.*?\]+\s',
-                    r'\(.*?\)+$',
-                    r'\[.*?\]+$',
-                    r'\S+',
-                ])
+                part_regexp = (
+                    r'\(.*?\)+(?=\s|$)|'
+                    r'\[.*?\]+(?=\s|$)|'
+                    r'\S+'
+                )
                 opt_usage = format(optionals, groups)
                 pos_usage = format(positionals, groups)
                 opt_parts = _re.findall(part_regexp, opt_usage)
                 pos_parts = _re.findall(part_regexp, pos_usage)
-                opt_parts = [part.strip() for part in opt_parts]
-                pos_parts = [part.strip() for part in pos_parts]
                 assert ' '.join(opt_parts) == opt_usage
                 assert ' '.join(pos_parts) == pos_usage
 
