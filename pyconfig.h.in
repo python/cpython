@@ -1212,6 +1212,9 @@
 /* Define if uuid_create() exists. */
 #undef HAVE_UUID_CREATE
 
+/* Define if uuid_enc_be() exists. */
+#undef HAVE_UUID_ENC_BE
+
 /* Define if uuid_generate_time_safe() exists. */
 #undef HAVE_UUID_GENERATE_TIME_SAFE
 
