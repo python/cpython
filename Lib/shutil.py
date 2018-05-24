@@ -98,7 +98,7 @@ def _copyfileobj_sendfile(fsrc, fdst):
     try:
         infd = fsrc.fileno()
         outfd = fdst.fileno()
-    except (AttributeError, io.UnsupportedOperation) as err:
+    except Exception as err:
         raise _GiveupOnZeroCopy(err)  # not a regular file
 
     try:
@@ -107,7 +107,7 @@ def _copyfileobj_sendfile(fsrc, fdst):
         # so a bufsize smaller than the actual file size should be OK
         # also in case the src file content changes while being copied.
         blocksize = os.fstat(infd).st_size
-    except OSError:
+    except Exception:
         blocksize = COPY_BUFSIZE
     else:
         if blocksize <= 0:
