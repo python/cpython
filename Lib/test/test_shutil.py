@@ -89,23 +89,32 @@ def rlistdir(path):
     return res
 
 def supports_file2file_sendfile():
+    # ...apparently Linux is the only one.
     if not hasattr(os, "sendfile"):
         return False
+    srcname = None
+    dstname = None
     try:
-        with open(TESTFN, "wb") as f:
+        with tempfile.NamedTemporaryFile("wb", delete=False) as f:
+            srcname = f.name
             f.write(b"0123456789")
-        with open(TESTFN, "rb") as src, open(TESTFN2, "wb") as dst:
-            infd = src.fileno()
-            outfd = dst.fileno()
-            try:
-                os.sendfile(outfd, infd, 0, 1024)
-            except OSError:
-                return False
-            else:
-                return True
+
+        with open(srcname, "rb") as src:
+            with tempfile.NamedTemporaryFile("wb", delete=False) as dst:
+                dstname = f.name
+                infd = src.fileno()
+                outfd = dst.fileno()
+                try:
+                    os.sendfile(outfd, infd, 0, 2)
+                except OSError:
+                    return False
+                else:
+                    return True
     finally:
-        support.unlink(TESTFN)
-        support.unlink(TESTFN2)
+        if srcname is not None:
+            support.unlink(srcname)
+        if dstname is not None:
+            support.unlink(dstname)
 
 
 SUPPORTS_SENDFILE = supports_file2file_sendfile()
@@ -2055,4 +2064,4 @@ class PublicAPITests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
