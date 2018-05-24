@@ -1,0 +1,1 @@
+Fixed :func:`uuid.uuid1` on FreeBSD.
