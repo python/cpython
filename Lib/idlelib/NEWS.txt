@@ -3,6 +3,8 @@ Released on 2018-06-15?
 ======================================
 
 
+bpo-33628: Cleanup codecontext.py and its test.
+
 bpo-32831: Add docstrings and tests for codecontext.py.
 Coverage is 100%.  Patch by Cheryl Sabella.
 
