@@ -98,6 +98,10 @@ Optimizations
   first introduced in Python 3.4.  It offers better performance and smaller
   size compared to Protocol 3 available since Python 3.0.
 
+* :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2` use
+  high-performance :func:`os.sendfile` if available resulting in roughly a
+  20% speedup.
+
 Build and C API Changes
 =======================
 
