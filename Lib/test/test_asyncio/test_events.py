@@ -2142,11 +2142,15 @@ class SockSendfileMixin(SendfileBase):
         async def wait_closed(self):
             await self.fut
 
+    def set_socket_opts(self, sock):
+        # On macOS, SO_SNDBUF is reset by connect(). So this method
+        # should be called after the socket is connected.
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024)
+
     def make_socket(self, cleanup=True):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setblocking(False)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024)
         if cleanup:
             self.addCleanup(sock.close)
         return sock
@@ -2159,7 +2163,9 @@ class SockSendfileMixin(SendfileBase):
         srv_sock.bind((support.HOST, port))
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
+        self.set_socket_opts(srv_sock)
         self.run_loop(self.loop.sock_connect(sock, ('127.0.0.1', port)))
+        self.set_socket_opts(sock)
 
         def cleanup():
             if proto.transport is not None:
@@ -2264,9 +2270,9 @@ class SendfileMixin(SendfileBase):
         else:
             server_hostname = None
         cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        cli_sock.connect((support.HOST, port))
         # reduce send socket buffer size to test on relative small data sets
         cli_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
-        cli_sock.connect((support.HOST, port))
         cli_proto = self.MySendfileProto(loop=self.loop)
         tr, pr = self.run_loop(self.loop.create_connection(
             lambda: cli_proto, sock=cli_sock,
