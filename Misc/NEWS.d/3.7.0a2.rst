@@ -477,6 +477,8 @@ module now requires sqlite version at least 3.3.9.
 argparse subparsers are now required by default.  This matches behaviour in
 Python 2. For optional subparsers, use the new parameter
 ``add_subparsers(required=False)``. Patch by Anthony Sottile.
+(As of 3.7.0rc1, the default was changed to not required as had been the case
+since Python 3.3.)
 
 ..
 

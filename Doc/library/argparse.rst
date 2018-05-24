@@ -1577,7 +1577,7 @@ Sub-commands
      stored; by default ``None`` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default
-     ``True``.
+     ``False``.
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
