@@ -4249,7 +4249,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    :exc:`TypeError`.
 
    Dict preserves insertion order.  Note that updating key doesn't affects the
-   order. ::
+   order.  On the other hand, keys added after deletion are inserted to the
+   last. ::
 
       >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
       >>> d
