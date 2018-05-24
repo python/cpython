@@ -1938,8 +1938,7 @@ class TestCopyFileObjSendfile(unittest.TestCase):
             with open(dstname, "wb") as dst:
                 shutil._copyfileobj_sendfile(src, dst)
 
-        with open(dstname, "rb") as f:
-            self.assertEqual(f.read(), b"")
+        self.assertEqual(read_file(dstname, binary=True), b"")
 
     def test_unhandled_exception(self):
         with unittest.mock.patch('os.sendfile',
@@ -1957,6 +1956,25 @@ class TestCopyFileObjSendfile(unittest.TestCase):
                 with self.assertRaises(_GiveupOnZeroCopy):
                     shutil._copyfileobj_sendfile(src, dst)
 
+    def test_exception_on_second_call(self):
+        # ...but on subsequent calls we expect the exception to bubble up.
+        def sendfile(*args, **kwargs):
+            if not flag:
+                flag.append(None)
+                return orig_sendfile(*args, **kwargs)
+            else:
+                raise OSError(errno.EBADF, "yo")
+
+        flag = []
+        orig_sendfile = os.sendfile
+        with unittest.mock.patch('os.sendfile', create=True,
+                                 side_effect=sendfile):
+            with self.get_files() as (src, dst):
+                with self.assertRaises(OSError) as cm:
+                    shutil._copyfileobj_sendfile(src, dst)
+        assert flag
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
     def test_cant_get_size(self):
         # Emulate a case where src file size cannot be determined.
         # Internally bufsize will be set to a small value and
@@ -1965,6 +1983,7 @@ class TestCopyFileObjSendfile(unittest.TestCase):
             with self.get_files() as (src, dst):
                 shutil._copyfileobj_sendfile(src, dst)
                 assert m.called
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_small_chunks(self):
         # Force internal file size detection to be smaller than the
@@ -2083,7 +2102,7 @@ class PublicAPITests(unittest.TestCase):
                       'unregister_archive_format', 'get_unpack_formats',
                       'register_unpack_format', 'unregister_unpack_format',
                       'unpack_archive', 'ignore_patterns', 'chown', 'which',
-                      'get_terminal_size', 'SameFileError']
+                      'get_terminal_size', 'SameFileError', 'COPY_BUFSIZE']
         if hasattr(os, 'statvfs') or os.name == 'nt':
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))
