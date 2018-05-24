@@ -77,7 +77,7 @@ class RegistryError(Exception):
     and unpacking registries fails"""
 
 class _GiveupOnZeroCopy(Exception):
-    """Raised when os.sendfile() cannot be used"""
+    """Raised when os.sendfile() cannot be used for copying files."""
 
 
 def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
@@ -92,6 +92,7 @@ def _copyfileobj_sendfile(fsrc, fdst):
     """Copy data from one file object to another by using zero-copy
     sendfile() method (faster).
     """
+    global _HAS_SENDFILE
     try:
         infd = fsrc.fileno()
         outfd = fdst.fileno()
@@ -112,11 +113,13 @@ def _copyfileobj_sendfile(fsrc, fdst):
         try:
             sent = os.sendfile(outfd, infd, offset, blocksize)
         except OSError as err:
+            if err.errno == errno.ENOTSOCK:
+                # sendfile() on this platform does not support copies
+                # between regular files (only sockets).
+                _HAS_SENDFILE = False
             if total_copied == 0:
-                # We can get here for different reasons, the main
-                # one being a fd is not a regular mmap(2)-like
-                # fd, in which case we'll fall back on using plain
-                # read()/write() copy.
+                # Immediately give up on first call.
+                # Probably one of the fds is not regular mmap(2)-like fd.
                 raise _GiveupOnZeroCopy(err)
             else:
                 raise err from None
