@@ -285,7 +285,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertEqual(base64.b64decode(b'++[[//]]', b'[]'), res)
         self.assertEqual(base64.urlsafe_b64decode(b'++--//__'), res)
         
-        def test_b64decode_unpadded_invalid_chars(self):
+    def test_b64decode_unpadded_invalid_chars(self):
         # issue 1466065: Test some invalid characters.
         tests = ((b'%3d', b'\xdd'),
                  (b'$3d', b'\xdd'),
