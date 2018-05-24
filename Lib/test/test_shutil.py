@@ -1966,6 +1966,17 @@ class TestCopyFileObjSendfile(unittest.TestCase):
                 shutil._copyfileobj_sendfile(src, dst)
                 assert m.called
 
+    def test_smaller_chunks(self):
+        # Force file size detection to be smaller than the actual file
+        # size, resulting in multiple calls to sendfile().
+        mock = unittest.mock.Mock()
+        mock.st_size = 65536 + 1
+        with unittest.mock.patch('os.fstat', return_value=mock) as m:
+            with self.get_files() as (src, dst):
+                shutil._copyfileobj_sendfile(src, dst)
+                assert m.called
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
+
 
 class TermsizeTests(unittest.TestCase):
     def test_does_not_crash(self):
