@@ -117,11 +117,11 @@ server classes.
 
    :meth:`socketserver.ForkingMixIn.server_close` waits until all child
    processes complete, except if
-   :attr:`socketserver.ForkingMixIn.block_on_close` attribute if false.
+   :attr:`socketserver.ForkingMixIn.block_on_close` attribute is false.
 
    :meth:`socketserver.ThreadingMixIn.server_close` waits until all non-daemon
    threads complete, except if
-   :attr:`socketserver.ThreadingMixIn.block_on_close` attribute if false. Use
+   :attr:`socketserver.ThreadingMixIn.block_on_close` attribute is false. Use
    daemonic threads by setting
    :data:`ThreadingMixIn.daemon_threads` to ``True`` to not wait until threads
    complete.
