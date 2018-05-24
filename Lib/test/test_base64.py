@@ -248,6 +248,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertEqual(base64.b64decode(b'abc', padded=False), b'i\xb7')
         self.assertEqual(base64.b64decode('abc', padded=False), b'i\xb7')
         self.assertEqual(base64.urlsafe_b64decode('abcd_-', padded=False), b'i\xb7\x1d\xff')
+        self.assertEquals(base64.b64decode(b'ab=', padded=False), b'i')
 
     def test_b64decode_padding_error(self):
         self.assertRaises(binascii.Error, base64.b64decode, b'abc')
@@ -278,6 +279,36 @@ class BaseXYTestCase(unittest.TestCase):
                 base64.b64decode(bstr, validate=True)
             with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr.decode('ascii'), validate=True)
+
+        # Normal alphabet characters not discarded when alternative given
+        res = b'\xFB\xEF\xBE\xFF\xFF\xFF'
+        self.assertEqual(base64.b64decode(b'++[[//]]', b'[]'), res)
+        self.assertEqual(base64.urlsafe_b64decode(b'++--//__'), res)
+        
+        def test_b64decode_unpadded_invalid_chars(self):
+        # issue 1466065: Test some invalid characters.
+        tests = ((b'%3d', b'\xdd'),
+                 (b'$3d', b'\xdd'),
+                 (b'[', b''),
+                 (b'YW]3', b'am'),
+                 (b'3{d', b'\xdd'),
+                 (b'3d}', b'\xdd'),
+                 (b'@@', b''),
+                 (b'!', b''),
+                 (b'YWJj\nYWI', b'abcab'))
+        funcs = (
+            base64.b64decode,
+            base64.urlsafe_b64decode,
+        )
+        for bstr, res in tests:
+            for func in funcs:
+                with self.subTest(bstr=bstr, func=func):
+                    self.assertEqual(func(bstr, padded=False), res)
+                    self.assertEqual(func(bstr.decode('ascii'), padded=False), res)
+            with self.assertRaises(binascii.Error):
+                base64.b64decode(bstr, validate=True, padded=False)
+            with self.assertRaises(binascii.Error):
+                base64.b64decode(bstr.decode('ascii'), validate=True, padded=False)
 
         # Normal alphabet characters not discarded when alternative given
         res = b'\xFB\xEF\xBE\xFF\xFF\xFF'
