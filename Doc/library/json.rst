@@ -718,7 +718,7 @@ Command line options
 
 .. rubric:: Footnotes
 
-.. [#rfc-errata] As noted in `the errata for RFC 7159
+.. [#rfc-errata] As noted in `the errata for :rfc:`7159`
    <https://www.rfc-editor.org/errata_search.php?rfc=7159>`_,
    JSON permits literal U+2028 (LINE SEPARATOR) and
    U+2029 (PARAGRAPH SEPARATOR) characters in strings, whereas JavaScript

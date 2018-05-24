@@ -1,8 +1,8 @@
-:mod:`uuid` --- UUID objects according to RFC 4122
-==================================================
+:mod:`uuid` --- UUID objects according to :rfc:`4122`
+=====================================================
 
 .. module:: uuid
-   :synopsis: UUID objects (universally unique identifiers) according to RFC 4122
+   :synopsis: UUID objects (universally unique identifiers) according to :rfc:`4122`
 .. moduleauthor:: Ka-Ping Yee <ping@zesty.ca>
 .. sectionauthor:: George Yoshida <quiver@users.sourceforge.net>
 
@@ -64,7 +64,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
    Exactly one of *hex*, *bytes*, *bytes_le*, *fields*, or *int* must be given.
    The *version* argument is optional; if given, the resulting UUID will have its
-   variant and version number set according to RFC 4122, overriding bits in the
+   variant and version number set according to :rfc:`4122`, overriding bits in the
    given *hex*, *bytes*, *bytes_le*, *fields*, or *int*.
 
    Comparison of UUID objects are made by way of comparing their
@@ -127,7 +127,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.urn
 
-   The UUID as a URN as specified in RFC 4122.
+   The UUID as a URN as specified in :rfc:`4122`.
 
 
 .. attribute:: UUID.variant
@@ -158,7 +158,7 @@ The :mod:`uuid` module defines the following functions:
    runs, it may launch a separate program, which could be quite slow.  If all
    attempts to obtain the hardware address fail, we choose a random 48-bit
    number with the multicast bit (least significant bit of the first octet)
-   set to 1 as recommended in RFC 4122.  "Hardware address" means the MAC
+   set to 1 as recommended in :rfc:`4122`.  "Hardware address" means the MAC
    address of a network interface.  On a machine with multiple network
    interfaces, universally administered MAC addresses (i.e. where the second
    least significant bit of the first octet is *unset*) will be preferred over

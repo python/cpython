@@ -342,7 +342,7 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.namespace()
 
-   Returns IMAP namespaces as defined in RFC2342.
+   Returns IMAP namespaces as defined in :rfc:`2342`.
 
 
 .. method:: IMAP4.noop()
@@ -602,7 +602,7 @@ retrieves and prints all messages::
    M.select()
    typ, data = M.search(None, 'ALL')
    for num in data[0].split():
-       typ, data = M.fetch(num, '(RFC822)')
+       typ, data = M.fetch(num, '(:rfc:`822`)')
        print('Message %s\n%s\n' % (num, data[0][1]))
    M.close()
    M.logout()

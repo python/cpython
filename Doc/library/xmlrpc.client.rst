@@ -328,7 +328,7 @@ Binary Objects
       Write the XML-RPC base 64 encoding of this binary item to the *out* stream object.
 
       The encoded data will have newlines every 76 characters as per
-      `RFC 2045 section 6.8 <https://tools.ietf.org/html/rfc2045#section-6.8>`_,
+      `:rfc:`2045` section 6.8 <https://tools.ietf.org/html/rfc2045#section-6.8>`_,
       which was the de facto standard base64 specification when the
       XML-RPC spec was written.
 

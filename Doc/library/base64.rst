@@ -2,7 +2,7 @@
 ===============================================================
 
 .. module:: base64
-   :synopsis: RFC 3548: Base16, Base32, Base64 Data Encodings;
+   :synopsis: :rfc:`3548`: Base16, Base32, Base64 Data Encodings;
               Base85 and Ascii85
 
 **Source code:** :source:`Lib/base64.py`

@@ -2638,25 +2638,25 @@ with LibreSSL.
    `SSL/TLS Strong Encryption: An Introduction <https://httpd.apache.org/docs/trunk/en/ssl/ssl_intro.html>`_
        Intro from the Apache HTTP Server documentation
 
-   `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <https://www.ietf.org/rfc/rfc1422>`_
+   `:rfc:`1422`: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <https://www.ietf.org/rfc/rfc1422>`_
        Steve Kent
 
-   `RFC 4086: Randomness Requirements for Security <https://datatracker.ietf.org/doc/rfc4086/>`_
+   `:rfc:`4086`: Randomness Requirements for Security <https://datatracker.ietf.org/doc/rfc4086/>`_
        Donald E., Jeffrey I. Schiller
 
-   `RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <https://datatracker.ietf.org/doc/rfc5280/>`_
+   `:rfc:`5280`: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <https://datatracker.ietf.org/doc/rfc5280/>`_
        D. Cooper
 
-   `RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <https://tools.ietf.org/html/rfc5246>`_
+   `:rfc:`5246`: The Transport Layer Security (TLS) Protocol Version 1.2 <https://tools.ietf.org/html/rfc5246>`_
        T. Dierks et. al.
 
-   `RFC 6066: Transport Layer Security (TLS) Extensions <https://tools.ietf.org/html/rfc6066>`_
+   `:rfc:`6066`: Transport Layer Security (TLS) Extensions <https://tools.ietf.org/html/rfc6066>`_
        D. Eastlake
 
    `IANA TLS: Transport Layer Security (TLS) Parameters <https://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
        IANA
 
-   `RFC 7525: Recommendations for Secure Use of Transport Layer Security (TLS) and Datagram Transport Layer Security (DTLS) <https://tools.ietf.org/html/rfc7525>`_
+   `:rfc:`7525`: Recommendations for Secure Use of Transport Layer Security (TLS) and Datagram Transport Layer Security (DTLS) <https://tools.ietf.org/html/rfc7525>`_
        IETF
 
    `Mozilla's Server Side TLS recommendations <https://wiki.mozilla.org/Security/Server_Side_TLS>`_
