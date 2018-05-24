@@ -103,7 +103,8 @@ def _copyfileobj_sendfile(fsrc, fdst):
     # Hopefully the whole file will be copied in a single call.
     # sendfile() is called in a loop 'till EOF is reached (0 return)
     # so a bufsize smaller or bigger than the actual file size
-    # should not make any difference.
+    # should not make any difference, also in case the file content
+    # changes while being copied.
     try:
         blocksize = max(os.fstat(infd).st_size, COPY_BUFSIZE, 16 * 1024)
     except Exception:
