@@ -19,7 +19,7 @@ py_uuid_generate_time_safe(PyObject *Py_UNUSED(context),
 
     res = uuid_generate_time_safe(uuid);
     return Py_BuildValue("y#i", (const char *) uuid, sizeof(uuid), res);
-#elif HAVE_UUID_CREATE
+#elif defined(HAVE_UUID_CREATE)
     uint32_t status;
     uuid_create(&uuid, &status);
     return Py_BuildValue("y#i", (const char *) &uuid, sizeof(uuid), (int) status);
@@ -52,12 +52,23 @@ PyInit__uuid(void)
 #else
     int has_uuid_generate_time_safe = 0;
 #endif
+    /* uuid_create() creates bytes with platform-depending endianess */
+#if !defined(HAVE_UUID_GENERATE_TIME_SAFE) && defined(HAVE_UUID_CREATE)
+    int little_endian = PY_LITTLE_ENDIAN;
+#else
+    int little_endian = 0;
+#endif
     mod = PyModule_Create(&uuidmodule);
     if (mod == NULL) {
         return NULL;
     }
     if (PyModule_AddIntConstant(mod, "has_uuid_generate_time_safe",
                                 has_uuid_generate_time_safe) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(mod, "little_endian", little_endian) < 0) {
+        Py_DECREF(mod);
         return NULL;
     }
 

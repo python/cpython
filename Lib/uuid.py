@@ -533,6 +533,7 @@ def _netbios_getnode():
 
 _generate_time_safe = _UuidCreate = None
 _has_uuid_generate_time_safe = None
+_little_endian = None
 
 # Import optional C extension at toplevel, to help disabling it when testing
 try:
@@ -545,7 +546,7 @@ def _load_system_functions():
     """
     Try to load platform-specific functions for generating uuids.
     """
-    global _generate_time_safe, _UuidCreate, _has_uuid_generate_time_safe
+    global _generate_time_safe, _UuidCreate, _has_uuid_generate_time_safe, _little_endian
 
     if _has_uuid_generate_time_safe is not None:
         return
@@ -564,6 +565,7 @@ def _load_system_functions():
     elif _uuid is not None:
         _generate_time_safe = _uuid.generate_time_safe
         _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
+        _little_endian = _uuid.little_endian
         return
 
     try:
@@ -592,6 +594,7 @@ def _load_system_functions():
                     res = _uuid_generate_time_safe(_buffer)
                     return bytes(_buffer.raw), res
                 _has_uuid_generate_time_safe = True
+                _little_endian = False
                 break
 
             elif hasattr(lib, 'uuid_generate_time'):    # pragma: nocover
@@ -602,6 +605,7 @@ def _load_system_functions():
                     _buffer = ctypes.create_string_buffer(16)
                     _uuid_generate_time(_buffer)
                     return bytes(_buffer.raw), None
+                _little_endian = False
                 break
 
         # On Windows prior to 2000, UuidCreate gives a UUID containing the
@@ -630,7 +634,10 @@ def _unix_getnode():
     or ctypes."""
     _load_system_functions()
     uuid_time, _ = _generate_time_safe()
-    return UUID(bytes=uuid_time).node
+    if _little_endian:
+        return UUID(bytes_le=uuid_time).node
+    else:
+        return UUID(bytes=uuid_time).node
 
 def _windll_getnode():
     """Get the hardware address on Windows using ctypes."""
@@ -707,7 +714,10 @@ def uuid1(node=None, clock_seq=None):
             is_safe = SafeUUID(safely_generated)
         except ValueError:
             is_safe = SafeUUID.unknown
-        return UUID(bytes=uuid_time, is_safe=is_safe)
+        if _little_endian:
+            return UUID(bytes_le=uuid_time, is_safe=is_safe)
+        else:
+            return UUID(bytes=uuid_time, is_safe=is_safe)
 
     global _last_timestamp
     import time
