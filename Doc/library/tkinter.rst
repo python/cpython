@@ -106,7 +106,7 @@ toolkits, doesn't provide a blocking event loop.
 Instead, Tcl code is supposed to pump the event queue regularly at strategic
 moments -- after an action that triggers an event, before a later action that
 needs the result of that event. As such, all Tcl commands are designed to work
-without an event loop running, only event handlers will not be executed
+without an event loop running -- only event handlers will not be executed
 until the queue is processed. This allows to work completely in one thread,
 i.e. even in environments that have no thread support at all.
 
@@ -118,21 +118,22 @@ predefined "event handler".
 Likewise, for any lengthy tasks, the UI thread can launch worker threads that
 report back on their progress via the same event queue.
 
-Tkinter gives the best of both worlds. It presents the "modern" multithreaded
-GUI model as the primary mode of execution while retaining the freedom and
-flexibility of Tcl's one. Any calls can be made from any threads, only
-subject to Tcl's architectural restictions:
+Tkinter strives to provide the best of both worlds. The "moderm" multithreaded
+GUI model is the primary mode of execution, but pumping messages manually
+instead is also supported. What is more important, any Tkinter calls can be
+made from any Python threads, only subject to Tcl's architectural restictions:
 
-* For nonthreaded Tcl, all Tcl calls are wrapped with a global lock. So,
-  any calls can be made from any threads, but under the hood, only one
-  is active at a time.
+* A nonthreaded Tcl doesn't know anything about threads, so all Tcl calls are
+  wrapped with a global lock to enforce sequential access.
+  Any Tkinter calls can be made from any threads, but under the hood, only one
+  is active at any moment.
   
 * A threaded Tcl interpreter instance, when created, becomes tied to the
   creating OS thread ("the interpreter thread"). Tcl mandates that all calls
-  to the instance must come from this thread, except special inter-thread
+  to the instance must come from this thread, save for special inter-thread
   communication APIs. Tkinter implements calls from outside the interpreter
-  thread by posting an event to the interpreter's queue that would run the
-  necessary commands, then waits for result. As such:
+  thread by posting an event to the interpreter's queue, then waits for the
+  result of its processing. As such:
   
     * To make calls from outside the interpreter queue, :func:`mainloop`
       must be running in the interpreter queue. Otherwise, a
@@ -144,24 +145,140 @@ subject to Tcl's architectural restictions:
 Module contents
 ---------------
 
+
+.. attribute:: TclVersion
+.. attribute:: TkVersion
+
+   Tcl and Tk library versions used, as floating-point numbers
+   
+   
+.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
+
+   A factory function which creates an instance of the :class:`Tk` class,
+   except that it sets `useTk` to `0` by default, thus not creating a top-level
+   widget. This is useful when driving the Tcl interpreter in an
+   environment where one doesn't want to create extraneous toplevel windows, or
+   where one cannot (such as Unix/Linux systems without an X server).  An object
+   created by the :func:`Tcl` object can have a Toplevel window created (and the Tk
+   subsystem initialized) by calling its :meth:`loadtk` method.
+   All arguments are the same as in `Tk` constructor.
+
+
+.. class:: TclError
+
+   An exception raised for an error returned by a Tcl interpreter.
+
+   
+.. attribute:: wantobjects = 1
+
+   Whether Tcl call results in new Tk objects should be converted from Tcl
+   types to Python types. An integer, any nonzero value means "true".
+   If not set, string representations of Tcl objects are returned.
+   
+
+.. attribute:: READABLE
+.. attribute:: WRITABLE
+.. attribute:: EXCEPTION
+
+   Constants used for the *mask* parameter of :func:`createfilehandler`.
+
+
+.. class:: EventType
+
+   A enumeration of known
+   `Tk event types <https://www.tcl.tk/man/tcl8.6/TkCmd/bind.htm#M7>`_,
+   used for :attr:`Event`'s *type* attribute.
+
+   
+.. class:: Event
+
+   Container for the properties of a Tcl event.
+
+   If a callback function is registered using :func:`bind`,
+   :func:`bind_all`, :func:`bind_class`, or :func:`tag_bind`,
+   the callback is called with an :class:`Event` as the first argument.
+   
+   Will have the same fields as the corresponding
+   `Tk event`<https://www.tcl.tk/man/tcl8.6/TkCmd/event.htm#M9>`_
+   plus a *type* field that will contain an :class:`EventType`
+   or a string with a number as returned by Tcl if the event type is unknown.
+
+
+.. function:: NoDefaultRoot()
+
+   Unset the current default root widget and do not use newly-created
+   :class:`Tk` instances to set it.
+   
+   By default, the first :class:`Tk` created when the default root is unset
+   becomes the default root, and stays it until it's destroyed. Whenever a
+   :class:`Widget` or other entity that requires a parent/master widget
+   is created, and that parent is not specified, the default root is used.
+   If the default root is not set, such a call will fail.
+
+   
+.. class:: Variable(master=None, value=None, name=None)
+
+   Represent a Tcl global variable bound to *master* widget's value via the
+   `textVariable option 
+   <https://www.tcl.tk/man/tcl8.6/TkCmd/options.htm#M-textvariable>`_.
+   
+   *master* is the widget to bind the variable to.
+   *value* is an optional initial value
+   
+StringVar
+IntVar
+DoubleVar
+BooleanVar
+mainloop
+getint
+getdouble
+getboolean
+Misc
+CallWrapper
+XView
+YView
+Wm
+Tk
+Tcl
+Pack
+Place
+Grid
+BaseWidget
+Widget
+Toplevel
+Button
+Canvas
+Checkbutton
+Entry
+Frame
+Label
+Listbox
+Menu
+Menubutton
+Message
+Radiobutton
+Scale
+Scrollbar
+Text
+OptionMenu
+Image
+PhotoImage
+BitmapImage
+image_names
+image_types
+Spinbox
+LabelFrame
+PanedWindow
+   
 .. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=1)
 
-   The :class:`Tk` class is instantiated without arguments. This creates a toplevel
+   The :class:`Tk` class encapsulates is instantiated without arguments. This creates a toplevel
    widget of Tk which usually is the main window of an application. Each instance
    has its own associated Tcl interpreter.
 
    .. FIXME: The following keyword arguments are currently recognized:
 
 
-.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
-
-   The :func:`Tcl` function is a factory function which creates an object much like
-   that created by the :class:`Tk` class, except that it does not initialize the Tk
-   subsystem.  This is most often useful when driving the Tcl interpreter in an
-   environment where one doesn't want to create extraneous toplevel windows, or
-   where one cannot (such as Unix/Linux systems without an X server).  An object
-   created by the :func:`Tcl` object can have a Toplevel window created (and the Tk
-   subsystem initialized) by calling its :meth:`loadtk` method.
 
 
 Other modules that provide Tk support include:
