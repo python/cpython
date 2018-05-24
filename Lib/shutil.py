@@ -141,7 +141,7 @@ def _copyfileobj2(fsrc, fdst):
     to leave copyfileobj() alone and not introduce any backward
     incompatibility.
     Possible incompatibilities by using sendfile() are:
-    - fdst cannot be opened in "a"(ppend) mode
+    - fdst cannot be open in "a"(ppend) mode
     - fdst offset doesn't get updated
     - fsrc and fdst may be opened in text mode
     - fsrc may be a BufferedReader (which hides unread data in a buffer),
