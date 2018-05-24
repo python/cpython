@@ -135,18 +135,17 @@ def _copyfileobj_sendfile(fsrc, fdst):
             total_copied += sent
 
 def _copyfileobj2(fsrc, fdst):
-    """Copies 2 filesystem files by using zero-copy sendfile(2) syscall
-    (faster). This is used by copyfile(), copy() and copy2() in order
-    to leave copyfileobj() alone and not introduce any backward
-    incompatibility.
-    Possible incompatibilities by using sendfile() are:
-    - fdst cannot be open in "a"(ppend) mode
-    - fdst offset doesn't get updated
-    - fsrc and fdst may be opened in text mode
-    - fsrc may be a BufferedReader (which hides unread data in a buffer),
-      GzipFile (which decompresses data), HTTPResponse (which decodes
-      chunks), ...
-    """
+    # Copies 2 filesystem files by using zero-copy sendfile(2) syscall
+    # (faster).  This is used by copyfile(), copy() and copy2() in order
+    # to leave copyfileobj() alone and not introduce any unexpected
+    # breakage. Possible risks by using sendfile() in copyfileobj() are:
+    # - fdst cannot be open in "a"(ppend) mode
+    # - fsrc and fdst may be opened in text mode
+    # - fdst offset doesn't get updated
+    # - fsrc may be a BufferedReader (which hides unread data in a buffer),
+    #   GzipFile (which decompresses data), HTTPResponse (which decodes
+    #   chunks).
+    # - possibly others...
     if _HAS_SENDFILE:
         try:
             return _copyfileobj_sendfile(fsrc, fdst)
