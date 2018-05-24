@@ -116,10 +116,13 @@ server classes.
    only available on POSIX platforms that support :func:`~os.fork`.
 
    :meth:`socketserver.ForkingMixIn.server_close` waits until all child
-   processes complete.
+   processes complete, except if
+   :attr:`socketserver.ForkingMixIn.block_on_close` attribute is false.
 
    :meth:`socketserver.ThreadingMixIn.server_close` waits until all non-daemon
-   threads complete. Use daemonic threads by setting
+   threads complete, except if
+   :attr:`socketserver.ThreadingMixIn.block_on_close` attribute is false. Use
+   daemonic threads by setting
    :data:`ThreadingMixIn.daemon_threads` to ``True`` to not wait until threads
    complete.
 
@@ -128,6 +131,8 @@ server classes.
       :meth:`socketserver.ForkingMixIn.server_close` and
       :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
       child processes and non-daemonic threads complete.
+      Add a new :attr:`socketserver.ForkingMixIn.block_on_close` class
+      attribute to opt-in for the pre-3.7 behaviour.
 
 
 .. class:: ForkingTCPServer
