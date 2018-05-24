@@ -53,7 +53,7 @@ __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "get_unpack_formats", "register_unpack_format",
            "unregister_unpack_format", "unpack_archive",
            "ignore_patterns", "chown", "which", "get_terminal_size",
-           "SameFileError"]
+           "SameFileError", "COPY_BUFSIZE"]
            # disk_usage is added later, if available on the platform
 
 class Error(OSError):
@@ -80,8 +80,10 @@ class _GiveupOnZeroCopy(Exception):
     """Raised when os.sendfile() cannot be used for copying files."""
 
 
-def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
+def copyfileobj(fsrc, fdst, length=None):
     """copy data from file-like object fsrc to file-like object fdst"""
+    if length is None:
+        length = COPY_BUFSIZE
     while 1:
         buf = fsrc.read(length)
         if not buf:
@@ -100,6 +102,10 @@ def _copyfileobj_sendfile(fsrc, fdst):
         raise _GiveupOnZeroCopy(err)  # not a regular file
 
     try:
+        # Hopefully the whole file will be copied in a single call.
+        # sendfile() is called in a loop 'till EOF is reached (0 return)
+        # so a bufsize smaller than the actual file size should be OK
+        # also in case the src file content changes while being copied.
         blocksize = os.fstat(infd).st_size
     except OSError:
         blocksize = COPY_BUFSIZE
@@ -118,8 +124,8 @@ def _copyfileobj_sendfile(fsrc, fdst):
                 # between regular files (only sockets).
                 _HAS_SENDFILE = False
             if total_copied == 0:
-                # Immediately give up on first call.
-                # Probably one of the fds is not regular mmap(2)-like fd.
+                # Immediately give up on first call. Probably one of the
+                # fds is not regular mmap(2)-like fd.
                 raise _GiveupOnZeroCopy(err)
             else:
                 raise err from None
