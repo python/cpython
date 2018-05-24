@@ -161,7 +161,7 @@ class TestReversed(unittest.TestCase, PickleTest):
             def __len__(self):
                 return 5
         for data in ('abc', range(5), tuple(enumerate('abc')), A(),
-                    range(1,17,5), {i: i for i in range(20)}):
+                    range(1,17,5), dict.fromkeys('abcde')):
             self.assertEqual(list(data)[::-1], list(reversed(data)))
         # don't allow keyword arguments
         self.assertRaises(TypeError, reversed, [], a=1)
