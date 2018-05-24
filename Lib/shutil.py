@@ -90,8 +90,8 @@ def copyfileobj(fsrc, fdst, length=None):
         fdst.write(buf)
 
 def _copyfileobj_sendfile(fsrc, fdst):
-    """Copy data from one file object to another by using zero-copy
-    sendfile() method (faster).
+    """Copy data from one file object to another by using
+    high-performance sendfile() method.
     """
     global _HAS_SENDFILE
     try:
@@ -100,20 +100,17 @@ def _copyfileobj_sendfile(fsrc, fdst):
     except Exception as err:
         raise _GiveupOnZeroCopy(err)  # not a regular file
 
+    # Hopefully the whole file will be copied in a single call.
+    # sendfile() is called in a loop 'till EOF is reached (0 return)
+    # so a bufsize smaller or bigger than the actual file size
+    # should not make any difference.
     try:
-        # Hopefully the whole file will be copied in a single call.
-        # sendfile() is called in a loop 'till EOF is reached (0 return)
-        # so a bufsize smaller than the actual file size should be OK
-        # also in case the src file content changes while being copied.
-        blocksize = os.fstat(infd).st_size
+        blocksize = max(os.fstat(infd).st_size, COPY_BUFSIZE, 16 * 1024)
     except Exception:
-        blocksize = COPY_BUFSIZE
-    else:
-        if blocksize <= 0:
-            blocksize = COPY_BUFSIZE
+        blocksize = max(COPY_BUFSIZE, 16 * 1024)
 
     offset = 0
-    total_copied = 0
+    total = 0
     while True:
         try:
             sent = os.sendfile(outfd, infd, offset, blocksize)
@@ -122,9 +119,9 @@ def _copyfileobj_sendfile(fsrc, fdst):
                 # sendfile() on this platform does not support copies
                 # between regular files (only sockets).
                 _HAS_SENDFILE = False
-            if total_copied == 0:
+            if total == 0:
                 # Immediately give up on first call. Probably one of the
-                # fds is not regular mmap(2)-like fd.
+                # fds is not a regular mmap(2)-like fd.
                 raise _GiveupOnZeroCopy(err)
             else:
                 raise err from None
@@ -132,7 +129,7 @@ def _copyfileobj_sendfile(fsrc, fdst):
             if sent == 0:
                 break  # EOF
             offset += sent
-            total_copied += sent
+            total += sent
 
 def _copyfileobj2(fsrc, fdst):
     # Copies 2 filesystem files by using zero-copy sendfile(2) syscall

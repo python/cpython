@@ -2011,6 +2011,24 @@ class TestCopyFileObjSendfile(unittest.TestCase):
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
+    def test_blocksize_arg(self):
+        with unittest.mock.patch('os.sendfile',
+                                 side_effect=ZeroDivisionError) as m:
+            self.assertRaises(ZeroDivisionError,
+                              shutil.copyfile, TESTFN, TESTFN2)
+            blocksize = m.call_args[0][3]
+            # Make sure file size and the block size arg passed to
+            # sendfile() are the same.
+            self.assertEqual(blocksize, os.path.getsize(TESTFN))
+            # ...unless we're dealing with a small file.
+            support.unlink(TESTFN2)
+            write_file(TESTFN2, b"hello", binary=True)
+            self.addCleanup(support.unlink, TESTFN2 + '3')
+            self.assertRaises(ZeroDivisionError,
+                              shutil.copyfile, TESTFN2, TESTFN2 + '3')
+            blocksize = m.call_args[0][3]
+            self.assertEqual(blocksize, shutil.COPY_BUFSIZE)
+
 
 class TermsizeTests(unittest.TestCase):
     def test_does_not_crash(self):
