@@ -129,10 +129,11 @@ def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
 def _copyfileobj2(fsrc, fdst):
     """Same as above but tries to use zero-copy sendfile(2) syscall
     (faster). This is used by copyfile(), copy() and copy2() in order
-    to leave copyfileobj() alone and not introduce backward
-    incompatibilities.
+    to leave copyfileobj() alone and not introduce any backward
+    incompatibility.
     E.g. by using sendfile() fdst cannot be opened in "a"(ppend) mode
-    and its offset doesn't get updated.
+    and its offset doesn't get updated. Also, fsrc and fdst may be
+    opened in text mode.
     """
     if _HAS_SENDFILE:
         try:
