@@ -1652,11 +1652,11 @@ works::
 Inserting a BOM into messages sent to a SysLogHandler
 -----------------------------------------------------
 
-`:rfc:`5424` <https://tools.ietf.org/html/rfc5424>`_ requires that a
+:rfc:`5424` requires that a
 Unicode message be sent to a syslog daemon as a set of bytes which have the
 following structure: an optional pure-ASCII component, followed by a UTF-8 Byte
-Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the `relevant
-section of the specification <https://tools.ietf.org/html/rfc5424#section-6>`_.)
+Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the :rfc:`relevant
+section of the specification <5424#section-6>`.)
 
 In Python 3.1, code was added to
 :class:`~logging.handlers.SysLogHandler` to insert a BOM into the message, but
