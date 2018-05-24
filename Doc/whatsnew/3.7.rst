@@ -1225,7 +1225,7 @@ until all child processes complete.
 
 Add a new :attr:`socketserver.ForkingMixIn.block_on_close` class attribute to
 :class:`socketserver.ForkingMixIn` and :class:`socketserver.ThreadingMixIn`
-classes. Set the class attribute to ``False`` to get the old behaviour.
+classes. Set the class attribute to ``False`` to get the pre-3.7 behaviour.
 
 
 sqlite3
@@ -2171,13 +2171,13 @@ Changes in the Python API
 * :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
   non-daemon threads complete.  Set the new
   :attr:`socketserver.ThreadingMixIn.block_on_close` class attribute to
-  ``False`` to get the old behaviour.
+  ``False`` to get the pre-3.7 behaviour.
   (Contributed by Victor Stinner in :issue:`31233` and :issue:`33540`.)
 
 * :meth:`socketserver.ForkingMixIn.server_close` now waits until all
   child processes complete. Set the new
   :attr:`socketserver.ForkingMixIn.block_on_close` class attribute to ``False``
-  to get the old behaviour.
+  to get the pre-3.7 behaviour.
   (Contributed by Victor Stinner in :issue:`31151` and :issue:`33540`.)
 
 * The :func:`locale.localeconv` function now temporarily sets the ``LC_CTYPE``

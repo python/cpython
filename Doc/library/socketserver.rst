@@ -131,9 +131,8 @@ server classes.
       :meth:`socketserver.ForkingMixIn.server_close` and
       :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
       child processes and non-daemonic threads complete.
-
       Add a new :attr:`socketserver.ForkingMixIn.block_on_close` class
-      attribute to opt-in for the old behaviour.
+      attribute to opt-in for the pre-3.7 behaviour.
 
 
 .. class:: ForkingTCPServer
