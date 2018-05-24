@@ -608,6 +608,17 @@ include:
   destroying the event loop.
   (Contributed by Yury Selivanov in :issue:`32314`.)
 
+* asyncio gained support for :mod:`contextvars`.
+  :meth:`loop.call_soon() <asyncio.AbstractEventLoop.call_soon>`,
+  :meth:`loop.call_soon_threadsafe() <asyncio.AbstractEventLoop.call_soon_threadsafe>`,
+  :meth:`loop.call_later() <asyncio.AbstractEventLoop.call_later>`,
+  :meth:`loop.call_at() <asyncio.AbstractEventLoop.call_at>`, and
+  :meth:`Future.add_done_callback() <asyncio.Future.add_done_callback>`
+  have a new optional keyword-only *context* parameter.
+  :class:`Tasks <asyncio.Task>` now track their context automatically.
+  See :pep:`567` for more details.
+  (Contributed by Yury Selivanov in :issue:`32436`.)
+
 * The new :func:`asyncio.create_task` function has been added as a shortcut
   to ``asyncio.get_event_loop().create_task()``.
   (Contributed by Andrew Svetlov in :issue:`32311`.)
@@ -1245,8 +1256,8 @@ Host name validation can be customized with
 .. note::
    The improved host name check requires a *libssl* implementation compatible
    with OpenSSL 1.0.2 or 1.1.  Consequently, OpenSSL 0.9.8 and 1.0.1 are no
-   longer supported and LibreSSL is temporarily not supported until it gains
-   the necessary OpenSSL 1.0.2 APIs.
+   longer supported.  The ssl module is mostly compatible with LibreSSL 2.7.2
+   and newer.
 
 The ``ssl`` module no longer sends IP addresses in SNI TLS extension.
 (Contributed by Christian Heimes in :issue:`32185`.)
@@ -1271,8 +1282,12 @@ rather than the U-label form (``"pythön.org"``).  (Contributed by
 Nathaniel J. Smith and Christian Heimes in :issue:`28414`.)
 
 The ``ssl`` module has preliminary and experimental support for TLS 1.3 and
-OpenSSL 1.1.1.  (Contributed by Christian Heimes in :issue:`32947`,
-:issue:`20995`, :issue:`29136`, and :issue:`30622`)
+OpenSSL 1.1.1.  At the time of Python 3.7.0 release, OpenSSL 1.1.1 is still
+under development and TLS 1.3 hasn't been finalized yet.  The TLS 1.3
+handshake and protocol behaves slightly differently than TLS 1.2 and earlier,
+see :ref:`ssl-tlsv1_3`.
+(Contributed by Christian Heimes in :issue:`32947`, :issue:`20995`,
+:issue:`29136`, :issue:`30622` and :issue:`33618`)
 
 :class:`~ssl.SSLSocket` and :class:`~ssl.SSLObject` no longer have a public
 constructor.  Direct instantiation was never a documented and supported
