@@ -517,7 +517,7 @@ class Future(object):
         Should only be used by Executor implementations and unit tests.
         """
         with self._condition:
-            if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]:
+            if self._state in {CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED}:
                 raise InvalidStateError('{}: {!r}'.format(self._state, self))
             self._result = result
             self._state = FINISHED
@@ -532,7 +532,7 @@ class Future(object):
         Should only be used by Executor implementations and unit tests.
         """
         with self._condition:
-            if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]:
+            if self._state in {CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED}:
                 raise InvalidStateError('{}: {!r}'.format(self._state, self))
             self._exception = exception
             self._state = FINISHED

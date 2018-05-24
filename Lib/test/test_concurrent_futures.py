@@ -1210,7 +1210,11 @@ class FutureTests(BaseTestCase):
         f = create_future(state=PENDING)
         f.set_result(1)
 
-        with self.assertRaises(futures.InvalidStateError):
+        with self.assertRaisesRegex(
+                futures.InvalidStateError,
+                'FINISHED: <Future at 0x[0-9a-f]+ '
+                'state=finished returned int>'
+        ):
             f.set_result(2)
 
         self.assertTrue(f.done())
@@ -1221,7 +1225,11 @@ class FutureTests(BaseTestCase):
         e = ValueError()
         f.set_exception(e)
 
-        with self.assertRaises(futures.InvalidStateError):
+        with self.assertRaisesRegex(
+                futures.InvalidStateError,
+                'FINISHED: <Future at 0x[0-9a-f]+ '
+                'state=finished raised ValueError>'
+        ):
             f.set_exception(Exception())
 
         self.assertEqual(f.exception(), e)
