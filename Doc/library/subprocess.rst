@@ -32,7 +32,7 @@ functions can be found in the subprocess-replacements_ section.
 
    :pep:`324` -- PEP proposing the subprocess module
 
-.. _subprocess32: https://pypi.python.org/pypi/subprocess32/
+.. _subprocess32: https://pypi.org/project/subprocess32/
 
 Using the :mod:`subprocess` Module
 ----------------------------------

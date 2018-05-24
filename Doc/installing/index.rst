@@ -39,9 +39,8 @@ Key terms
   being installed system wide
 * ``virtualenv`` is a third party tools for creating virtual environments, it
   is defaults to installing ``pip`` into all created virtual environments.
-* the `Python Packaging Index <https://pypi.python.org/pypi>`__ is a public
-  repository of open source licensed packages made available for use by
-  other Python users
+* the `Python Packaging Index <https://pypi.org>`__ is a public repository of
+  open source licensed packages made available for use by other Python users
 * the `Python Packaging Authority
   <https://www.pypa.io/en/latest/>`__ are the group of
   developers and documentation authors responsible for the maintenance and

@@ -1,0 +1,2 @@
+gzip.GzipFile no longer produces an AttributeError exception when used with
+a file object with a non-string name attribute. Patch by Bo Bayles.

@@ -809,7 +809,7 @@ Text I/O
      the given string.
 
    If *line_buffering* is ``True``, :meth:`flush` is implied when a call to
-   write contains a newline character.
+   write contains a newline character or a carriage return.
 
    :class:`TextIOWrapper` provides one attribute in addition to those of
    :class:`TextIOBase` and its parents:

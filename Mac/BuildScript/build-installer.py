@@ -1530,6 +1530,10 @@ def buildDMG():
             shellQuote(os.path.join(WORKDIR, 'installer')),
             shellQuote(imagepath + ".tmp.dmg" )))
 
+    # Try to mitigate race condition in certain versions of macOS, e.g. 10.9,
+    # when hdiutil fails with  "Resource busy"
+
+    time.sleep(10)
 
     if not os.path.exists(os.path.join(WORKDIR, "mnt")):
         os.mkdir(os.path.join(WORKDIR, "mnt"))

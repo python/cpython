@@ -78,7 +78,7 @@ need to derive from a specific class.
    Module :mod:`doctest`
       Another test-support module with a very different flavor.
 
-   `unittest2: A backport of new unittest features for Python 2.4-2.6 <https://pypi.python.org/pypi/unittest2>`_
+   `unittest2: A backport of new unittest features for Python 2.4-2.6 <https://pypi.org/project/unittest2>`_
       Many new features were added to unittest in Python 2.7, including test
       discovery. unittest2 allows you to use these features with earlier
       versions of Python.

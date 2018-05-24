@@ -803,10 +803,13 @@ Miscellaneous
 Connection Objects
 ~~~~~~~~~~~~~~~~~~
 
+.. currentmodule:: None
+
 Connection objects allow the sending and receiving of picklable objects or
 strings.  They can be thought of as message oriented connected sockets.
 
-Connection objects are usually created using :func:`Pipe` -- see also
+Connection objects are usually created using
+:func:`Pipe <multiprocessing.Pipe>` -- see also
 :ref:`multiprocessing-listeners-clients`.
 
 .. class:: Connection
@@ -925,6 +928,8 @@ For example:
 
 Synchronization primitives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: multiprocessing
 
 Generally synchronization primitives are not as necessary in a multiprocess
 program as they are in a multithreaded program.  See the documentation for
@@ -1943,8 +1948,7 @@ Listeners and Clients
    :synopsis: API for dealing with sockets.
 
 Usually message passing between processes is done using queues or by using
-:class:`~multiprocessing.Connection` objects returned by
-:func:`~multiprocessing.Pipe`.
+:class:`Connection` objects returned by :func:`~multiprocessing.Pipe`.
 
 However, the :mod:`multiprocessing.connection` module allows some extra
 flexibility.  It basically gives a high level message oriented API for dealing
@@ -1972,7 +1976,7 @@ authentication* using the :mod:`hmac` module.
 .. function:: Client(address[, family[, authenticate[, authkey]]])
 
    Attempt to set up a connection to the listener which is using address
-   *address*, returning a :class:`~multiprocessing.Connection`.
+   *address*, returning a :class:`Connection`.
 
    The type of the connection is determined by *family* argument, but this can
    generally be omitted since it can usually be inferred from the format of
@@ -2028,8 +2032,8 @@ authentication* using the :mod:`hmac` module.
    .. method:: accept()
 
       Accept a connection on the bound socket or named pipe of the listener
-      object and return a :class:`~multiprocessing.Connection` object.  If
-      authentication is attempted and fails, then
+      object and return a :class:`Connection` object.
+      If authentication is attempted and fails, then
       :exc:`~multiprocessing.AuthenticationError` is raised.
 
    .. method:: close()
@@ -2139,7 +2143,7 @@ an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.
 Authentication keys
 ~~~~~~~~~~~~~~~~~~~
 
-When one uses :meth:`Connection.recv <multiprocessing.Connection.recv>`, the
+When one uses :meth:`Connection.recv`, the
 data received is automatically
 unpickled.  Unfortunately unpickling data from an untrusted source is a security
 risk.  Therefore :class:`Listener` and :func:`Client` use the :mod:`hmac` module

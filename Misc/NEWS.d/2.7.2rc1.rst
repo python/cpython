@@ -26,8 +26,8 @@ propagated.
 .. nonce: rUvlec
 .. section: Core and Builtins
 
-Fix input() if it is interrupted by CTRL+d and then CTRL+c, clear the end-
-of-file indicator after CTRL+d.
+Fix input() if it is interrupted by CTRL+d and then CTRL+c, clear the
+end-of-file indicator after CTRL+d.
 
 ..
 
@@ -799,8 +799,8 @@ Allow mmap() to work on file sizes and offsets larger than 4GB, even on
 .. nonce: JAYw4l
 .. section: Library
 
-In WeakSet, do not raise TypeErrors when testing for membership of non-
-weakrefable objects.
+In WeakSet, do not raise TypeErrors when testing for membership of
+non-weakrefable objects.
 
 ..
 
@@ -886,8 +886,8 @@ FSTAT.
 .. nonce: xpdEg8
 .. section: Library
 
-mmap should not segfault when a file is mapped using 0 as length and a non-
-zero offset, and an attempt to read past the end of file is made (IndexError
+mmap should not segfault when a file is mapped using 0 as length and a
+non-zero offset, and an attempt to read past the end of file is made (IndexError
 is raised instead).  Patch by Ross Lagerwall.
 
 ..
@@ -1480,8 +1480,8 @@ includes a link to the installed documentation.
 .. nonce: BN3sYU
 .. section: Build
 
-Allow Mac OS X installer builds to again work on 10.5 with the system-
-provided Python.
+Allow Mac OS X installer builds to again work on 10.5 with the
+system-provided Python.
 
 ..
 
