@@ -98,17 +98,13 @@ def _copyfileobj_sendfile(fsrc, fdst):
         if blocksize <= 0:
             blocksize = COPY_BUFSIZE
 
-    try:
-        offset = fsrc.tell()
-    except (AttributeError, io.UnsupportedOperation) as err:
-        offset = 0
-
-    total_sent = 0
+    offset = 0
+    total_copied = 0
     while True:
         try:
             sent = os.sendfile(outfd, infd, offset, blocksize)
         except OSError as err:
-            if total_sent == 0:
+            if total_copied == 0:
                 # We can get here for different reasons, the main
                 # one being a fd is not a regular mmap(2)-like
                 # fd, in which case we'll fall back on using plain
@@ -120,7 +116,7 @@ def _copyfileobj_sendfile(fsrc, fdst):
             if sent == 0:
                 break  # EOF
             offset += sent
-            total_sent += sent
+            total_copied += sent
 
 def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
     """copy data from file-like object fsrc to file-like object fdst"""
@@ -135,8 +131,8 @@ def _copyfileobj2(fsrc, fdst):
     (faster). This is used by copyfile(), copy() and copy2() in order
     to leave copyfileobj() alone and not introduce backward
     incompatibilities.
-    E.g. by using sendfile() fdst.tell() is not updated() and fdst
-    cannot be opened in "a" mode.
+    E.g. by using sendfile() fdst cannot be opened in "a"(ppend) mode
+    and its offset doesn't get updated.
     """
     if _HAS_SENDFILE:
         try:
