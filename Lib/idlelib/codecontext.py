@@ -23,9 +23,23 @@ UPDATEINTERVAL = 100 # millisec
 FONTUPDATEINTERVAL = 1000 # millisec
 
 
-def getspacesfirstword(s, c=re.compile(r"^(\s*)(\w*)")):
-    "Extract the beginning whitespace and first word from s."
-    return c.match(s).groups()
+def get_spaces_firstword(codeline, c=re.compile(r"^(\s*)(\w*)")):
+    "Extract the beginning whitespace and first word from codeline."
+    return c.match(codeline).groups()
+
+
+def get_line_info(codeline):
+    """Return tuple of (line indent value, codeline, block start keyword).
+
+    The indentation of empty lines (or comment lines) is INFINITY.
+    If the line does not start a block, the keyword value is False.
+    """
+    spaces, firstword = get_spaces_firstword(codeline)
+    indent = len(spaces)
+    if len(codeline) == indent or codeline[indent] == '#':
+        indent = INFINITY
+    opener = firstword in BLOCKOPENERS and firstword
+    return indent, codeline, opener
 
 
 class CodeContext:
@@ -42,15 +56,15 @@ class CodeContext:
         self.textfont is the editor window font.
 
         self.label displays the code context text above the editor text.
-          Initially None it is toggled via <<toggle-code-context>>.
+          Initially None, it is toggled via <<toggle-code-context>>.
         self.topvisible is the number of the top text line displayed.
         self.info is a list of (line number, indent level, line text,
           block keyword) tuples for the block structure above topvisible.
-          s self.info[0] is initialized a 'dummy' line which
-        # starts the toplevel 'block' of the module.
+          self.info[0] is initialized with a 'dummy' line which
+          starts the toplevel 'block' of the module.
 
         self.t1 and self.t2 are two timer events on the editor text widget to
-        monitor for changes to the context text or editor font.
+          monitor for changes to the context text or editor font.
         """
         self.editwin = editwin
         self.text = editwin.text
@@ -94,44 +108,27 @@ class CodeContext:
             # All values are passed through getint(), since some
             # values may be pixel objects, which can't simply be added to ints.
             widgets = self.editwin.text, self.editwin.text_frame
-            # Calculate the required vertical padding
+            # Calculate the required horizontal padding and border width.
             padx = 0
+            border = 0
             for widget in widgets:
                 padx += widget.tk.getint(widget.pack_info()['padx'])
                 padx += widget.tk.getint(widget.cget('padx'))
-            # Calculate the required border width
-            border = 0
-            for widget in widgets:
                 border += widget.tk.getint(widget.cget('border'))
             self.label = tkinter.Label(
                     self.editwin.top, text="\n" * (self.context_depth - 1),
                     anchor=W, justify=LEFT, font=self.textfont,
                     bg=self.bgcolor, fg=self.fgcolor,
-                    width=1, #don't request more than we get
+                    width=1,  # Don't request more than we get.
                     padx=padx, border=border, relief=SUNKEN)
             # Pack the label widget before and above the text_frame widget,
-            # thus ensuring that it will appear directly above text_frame
+            # thus ensuring that it will appear directly above text_frame.
             self.label.pack(side=TOP, fill=X, expand=False,
                             before=self.editwin.text_frame)
         else:
             self.label.destroy()
             self.label = None
         return "break"
-
-    def get_line_info(self, linenum):
-        """Return tuple of (line indent value, text, and block start keyword).
-
-        If the line does not start a block, the keyword value is False.
-        The indentation of empty lines (or comment lines) is INFINITY.
-        """
-        text = self.text.get("%d.0" % linenum, "%d.end" % linenum)
-        spaces, firstword = getspacesfirstword(text)
-        opener = firstword in BLOCKOPENERS and firstword
-        if len(text) == len(spaces) or text[len(spaces)] == '#':
-            indent = INFINITY
-        else:
-            indent = len(spaces)
-        return indent, text, opener
 
     def get_context(self, new_topvisible, stopline=1, stopindent=0):
         """Return a list of block line tuples and the 'last' indent.
@@ -144,16 +141,17 @@ class CodeContext:
         """
         assert stopline > 0
         lines = []
-        # The indentation level we are currently in:
+        # The indentation level we are currently in.
         lastindent = INFINITY
         # For a line to be interesting, it must begin with a block opening
         # keyword, and have less indentation than lastindent.
         for linenum in range(new_topvisible, stopline-1, -1):
-            indent, text, opener = self.get_line_info(linenum)
+            codeline = self.text.get(f'{linenum}.0', f'{linenum}.end')
+            indent, text, opener = get_line_info(codeline)
             if indent < lastindent:
                 lastindent = indent
                 if opener in ("else", "elif"):
-                    # We also show the if statement
+                    # Also show the if statement.
                     lastindent += 1
                 if opener and linenum < new_topvisible and indent >= stopindent:
                     lines.append((linenum, indent, text, opener))
@@ -172,19 +170,19 @@ class CodeContext:
         the context label.
         """
         new_topvisible = int(self.text.index("@0,0").split('.')[0])
-        if self.topvisible == new_topvisible:      # haven't scrolled
+        if self.topvisible == new_topvisible:      # Haven't scrolled.
             return
-        if self.topvisible < new_topvisible:       # scroll down
+        if self.topvisible < new_topvisible:       # Scroll down.
             lines, lastindent = self.get_context(new_topvisible,
                                                  self.topvisible)
-            # retain only context info applicable to the region
-            # between topvisible and new_topvisible:
+            # Retain only context info applicable to the region
+            # between topvisible and new_topvisible.
             while self.info[-1][1] >= lastindent:
                 del self.info[-1]
-        else:  # self.topvisible > new_topvisible:     # scroll up
+        else:  # self.topvisible > new_topvisible: # Scroll up.
             stopindent = self.info[-1][1] + 1
-            # retain only context info associated
-            # with lines above new_topvisible:
+            # Retain only context info associated
+            # with lines above new_topvisible.
             while self.info[-1][0] >= new_topvisible:
                 stopindent = self.info[-1][1]
                 del self.info[-1]
@@ -193,9 +191,9 @@ class CodeContext:
                                                  stopindent)
         self.info.extend(lines)
         self.topvisible = new_topvisible
-        # empty lines in context pane:
+        # Empty lines in context pane.
         context_strings = [""] * max(0, self.context_depth - len(self.info))
-        # followed by the context hint lines:
+        # Followed by the context hint lines.
         context_strings += [x[2] for x in self.info[-self.context_depth:]]
         self.label["text"] = '\n'.join(context_strings)
 
