@@ -1,1 +1,2 @@
-Code cleanup in codecontext.
+IDLE: Cleanup codecontext.py and its test.
+

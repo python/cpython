@@ -31,15 +31,14 @@ def get_spaces_firstword(codeline, c=re.compile(r"^(\s*)(\w*)")):
 def get_line_info(codeline):
     """Return tuple of (line indent value, codeline, block start keyword).
 
-    If the line does not start a block, the keyword value is False.
     The indentation of empty lines (or comment lines) is INFINITY.
+    If the line does not start a block, the keyword value is False.
     """
     spaces, firstword = get_spaces_firstword(codeline)
-    opener = firstword in BLOCKOPENERS and firstword
-    if len(codeline) == len(spaces) or codeline[len(spaces)] == '#':
+    indent = len(spaces)
+    if len(codeline) == indent or codeline[indent] == '#':
         indent = INFINITY
-    else:
-        indent = len(spaces)
+    opener = firstword in BLOCKOPENERS and firstword
     return indent, codeline, opener
 
 
@@ -109,7 +108,7 @@ class CodeContext:
             # All values are passed through getint(), since some
             # values may be pixel objects, which can't simply be added to ints.
             widgets = self.editwin.text, self.editwin.text_frame
-            # Calculate the required vertical padding and border width.
+            # Calculate the required horizontal padding and border width.
             padx = 0
             border = 0
             for widget in widgets:
@@ -180,7 +179,7 @@ class CodeContext:
             # between topvisible and new_topvisible.
             while self.info[-1][1] >= lastindent:
                 del self.info[-1]
-        else:  # self.topvisible > new_topvisible:     # Scroll up.
+        else:  # self.topvisible > new_topvisible: # Scroll up.
             stopindent = self.info[-1][1] + 1
             # Retain only context info associated
             # with lines above new_topvisible.
