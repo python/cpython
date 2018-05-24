@@ -543,6 +543,8 @@ if hasattr(os, "fork"):
         timeout = 300
         active_children = None
         max_children = 40
+        # If true, server_close() waits until all child processes complete.
+        block_on_close = True
 
         def collect_children(self, *, blocking=False):
             """Internal routine to wait for children that have exited."""
@@ -620,7 +622,7 @@ if hasattr(os, "fork"):
 
         def server_close(self):
             super().server_close()
-            self.collect_children(blocking=True)
+            self.collect_children(blocking=self.block_on_close)
 
 
 class ThreadingMixIn:
@@ -629,6 +631,8 @@ class ThreadingMixIn:
     # Decides how threads will act upon termination of the
     # main process
     daemon_threads = False
+    # If true, server_close() waits until all non-daemonic threads terminate.
+    block_on_close = True
     # For non-daemonic threads, list of threading.Threading objects
     # used by server_close() to wait for all threads completion.
     _threads = None
@@ -659,11 +663,12 @@ class ThreadingMixIn:
 
     def server_close(self):
         super().server_close()
-        threads = self._threads
-        self._threads = None
-        if threads:
-            for thread in threads:
-                thread.join()
+        if self.block_on_close:
+            threads = self._threads
+            self._threads = None
+            if threads:
+                for thread in threads:
+                    thread.join()
 
 
 if hasattr(os, "fork"):
