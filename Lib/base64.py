@@ -82,8 +82,9 @@ def b64decode(s, altchars=None, validate=False, padded=True):
     in the input result in a binascii.Error.
 
     If padded is True (the default), a binascii.Error is raised if s is
-    incorrectly padded. If padded is False, no exception will be thrown if s
-    is missing padding.
+    incorrectly padded. If padded is False and validate is True, a
+    binascii.Error will be raised if s contains padding. If both padded and
+    validate are False, any eventual padding will be ignored.
     """
     s = _bytes_from_decode_data(s)
     if altchars is not None:
@@ -92,8 +93,10 @@ def b64decode(s, altchars=None, validate=False, padded=True):
         s = s.translate(bytes.maketrans(altchars, b'+/'))
     if validate and not re.match(b'^[A-Za-z0-9+/]*={0,2}$', s):
         raise binascii.Error('Non-base64 digit found')
-    if not padded and len(s) % 4:
-        s = s.ljust(4 * (len(s)//4 + 1), b'=')
+    if not padded:
+        if validate and not re.match(b'^[A-Za-z0-9+/]*$', s):
+            raise binascii.Error('Padding found in supposedly non-padded input')
+        s += b'=='
     return binascii.a2b_base64(s)
 
 
@@ -118,14 +121,14 @@ def standard_b64decode(s):
 _urlsafe_encode_translation = bytes.maketrans(b'+/', b'-_')
 _urlsafe_decode_translation = bytes.maketrans(b'-_', b'+/')
 
-def urlsafe_b64encode(s, padded=True):
+def urlsafe_b64encode(s, validate=False, padded=True):
     """Encode bytes using the URL- and filesystem-safe Base64 alphabet.
 
     Argument s is a bytes-like object to encode.  The result is returned as a
     bytes object.  The alphabet uses '-' instead of '+' and '_' instead of
     '/'.
 
-    If padded is True (the default), the result is left padded. If padded
+    If padded is True (the default), the result is padded. If padded
     is False, the result will be left unpadded.
     """
     return b64encode(s, padded=padded).translate(_urlsafe_encode_translation)
@@ -140,9 +143,7 @@ def urlsafe_b64decode(s, padded=True):
 
     The alphabet uses '-' instead of '+' and '_' instead of '/'.
 
-    If padded is True (the default), a binascii.Error is raised if the input
-    is incorrectly padded. If padded is False, a missing padding will not
-    raise an exception.
+    Arguments padded and validate behave the same as in b64decode().
     """
     s = _bytes_from_decode_data(s)
     s = s.translate(_urlsafe_decode_translation)
