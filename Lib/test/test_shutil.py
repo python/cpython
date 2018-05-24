@@ -1966,11 +1966,26 @@ class TestCopyFileObjSendfile(unittest.TestCase):
                 shutil._copyfileobj_sendfile(src, dst)
                 assert m.called
 
-    def test_smaller_chunks(self):
-        # Force file size detection to be smaller than the actual file
-        # size, resulting in multiple calls to sendfile().
+    def test_small_chunks(self):
+        # Force internal file size detection to be smaller than the
+        # actual file size. We want to force sendfile() to be called
+        # multiple times, also in order to emulate a src fd which gets
+        # bigger while it is being copied.
         mock = unittest.mock.Mock()
         mock.st_size = 65536 + 1
+        with unittest.mock.patch('os.fstat', return_value=mock) as m:
+            with self.get_files() as (src, dst):
+                shutil._copyfileobj_sendfile(src, dst)
+                assert m.called
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
+
+    def test_big_chunk(self):
+        # Force internal file size detection to be +100MB bigger than
+        # the actual file size. Make sure sendfile() does not rely on
+        # file size value except for (maybe) a better throughput /
+        # performance.
+        mock = unittest.mock.Mock()
+        mock.st_size = self.FILESIZE + (100 * 1024 * 1024)
         with unittest.mock.patch('os.fstat', return_value=mock) as m:
             with self.get_files() as (src, dst):
                 shutil._copyfileobj_sendfile(src, dst)
