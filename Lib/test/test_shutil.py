@@ -88,6 +88,28 @@ def rlistdir(path):
             res.append(name)
     return res
 
+def supports_file2file_sendfile():
+    if not hasattr(os, "sendfile"):
+        return False
+    try:
+        with open(TESTFN, "wb") as f:
+            f.write(b"0123456789")
+        with open(TESTFN, "rb") as src, open(TESTFN2, "wb") as dst:
+            infd = src.fileno()
+            outfd = dst.fileno()
+            try:
+                os.sendfile(outfd, infd, 0, 1024)
+            except OSError:
+                return False
+            else:
+                return True
+    finally:
+        support.unlink(TESTFN)
+        support.unlink(TESTFN2)
+
+
+SUPPORTS_SENDFILE = supports_file2file_sendfile()
+
 
 class TestShutil(unittest.TestCase):
 
@@ -1834,7 +1856,7 @@ class TestCopyFile(unittest.TestCase):
             os.rmdir(dst_dir)
 
 
-@unittest.skipIf(not hasattr(os, "sendfile"), 'needs os.sendfile()')
+@unittest.skipIf(not SUPPORTS_SENDFILE, 'os.sendfile() not supported')
 class TestCopyFileObjSendfile(unittest.TestCase):
     FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     BUFSIZE = 8192
