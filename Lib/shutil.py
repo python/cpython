@@ -124,17 +124,27 @@ def _copyfileobj_sendfile(fsrc, fdst):
 
 def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
     """copy data from file-like object fsrc to file-like object fdst"""
+    while 1:
+        buf = fsrc.read(length)
+        if not buf:
+            break
+        fdst.write(buf)
+
+def _copyfileobj2(fsrc, fdst):
+    """Same as above but tries to use zero-copy sendfile(2) syscall
+    (faster). This is used by copyfile(), copy() and copy2() in order
+    to leave copyfileobj() alone and not introduce backward
+    incompatibilities.
+    E.g. by using sendfile() fdst.tell() is not updated() and fdst
+    cannot be opened in "a" mode.
+    """
     if _HAS_SENDFILE:
         try:
             return _copyfileobj_sendfile(fsrc, fdst)
         except _GiveupOnSendfile:
             pass
 
-    while 1:
-        buf = fsrc.read(length)
-        if not buf:
-            break
-        fdst.write(buf)
+    return copyfileobj(fsrc, fdst)
 
 def _samefile(src, dst):
     # Macintosh, Unix.
@@ -174,7 +184,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
     else:
         with open(src, 'rb') as fsrc:
             with open(dst, 'wb') as fdst:
-                copyfileobj(fsrc, fdst)
+                _copyfileobj2(fsrc, fdst)
     return dst
 
 def copymode(src, dst, *, follow_symlinks=True):

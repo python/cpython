@@ -1919,9 +1919,8 @@ class TestCopyFileObjSendfile(unittest.TestCase):
     def test_unhandled_exception(self):
         with unittest.mock.patch('os.sendfile',
                                  side_effect=ZeroDivisionError):
-            with self.get_files() as (src, dst):
-                self.assertRaises(ZeroDivisionError,
-                                  shutil.copyfileobj, src, dst)
+            self.assertRaises(ZeroDivisionError,
+                              shutil.copyfile, TESTFN, TESTFN2)
 
     def test_exception_on_first_call(self):
         # Emulate a case where the first call to sendfile() raises
