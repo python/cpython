@@ -1910,12 +1910,6 @@ class TestCopyFileObjSendfile(unittest.TestCase):
         with open(dstname, "rb") as f:
             self.assertEqual(f.read(), b"")
 
-    def test_start_position(self):
-        with self.get_files() as (src, dst):
-            src.seek(666)
-            shutil._copyfileobj_sendfile(src, dst)
-        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA[666:])
-
     def test_unhandled_exception(self):
         with unittest.mock.patch('os.sendfile',
                                  side_effect=ZeroDivisionError):
