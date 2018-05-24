@@ -76,9 +76,17 @@ class RegistryError(Exception):
     """Raised when a registry operation with the archiving
     and unpacking registries fails"""
 
-class _GiveupOnSendfile(Exception):
+class _GiveupOnZeroCopy(Exception):
     """Raised when os.sendfile() cannot be used"""
 
+
+def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
+    """copy data from file-like object fsrc to file-like object fdst"""
+    while 1:
+        buf = fsrc.read(length)
+        if not buf:
+            break
+        fdst.write(buf)
 
 def _copyfileobj_sendfile(fsrc, fdst):
     """Copy data from one file object to another by using zero-copy
@@ -88,7 +96,7 @@ def _copyfileobj_sendfile(fsrc, fdst):
         infd = fsrc.fileno()
         outfd = fdst.fileno()
     except (AttributeError, io.UnsupportedOperation) as err:
-        raise _GiveupOnSendfile(err)  # not a regular file
+        raise _GiveupOnZeroCopy(err)  # not a regular file
 
     try:
         blocksize = os.fstat(infd).st_size
@@ -109,7 +117,7 @@ def _copyfileobj_sendfile(fsrc, fdst):
                 # one being a fd is not a regular mmap(2)-like
                 # fd, in which case we'll fall back on using plain
                 # read()/write() copy.
-                raise _GiveupOnSendfile(err)
+                raise _GiveupOnZeroCopy(err)
             else:
                 raise err from None
         else:
@@ -118,27 +126,23 @@ def _copyfileobj_sendfile(fsrc, fdst):
             offset += sent
             total_copied += sent
 
-def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
-    """copy data from file-like object fsrc to file-like object fdst"""
-    while 1:
-        buf = fsrc.read(length)
-        if not buf:
-            break
-        fdst.write(buf)
-
 def _copyfileobj2(fsrc, fdst):
-    """Same as above but tries to use zero-copy sendfile(2) syscall
+    """Copies 2 filesystem files by using zero-copy sendfile(2) syscall
     (faster). This is used by copyfile(), copy() and copy2() in order
     to leave copyfileobj() alone and not introduce any backward
     incompatibility.
-    E.g. by using sendfile() fdst cannot be opened in "a"(ppend) mode
-    and its offset doesn't get updated. Also, fsrc and fdst may be
-    opened in text mode.
+    Possible incompatibilities by using sendfile() are:
+    - fdst cannot be opened in "a"(ppend) mode
+    - fdst offset doesn't get updated
+    - fsrc and fdst may be opened in text mode
+    - fsrc may be a BufferedReader (which hides unread data in a buffer),
+      GzipFile (which decompresses data), HTTPResponse (which decodes
+      chunks), ...
     """
     if _HAS_SENDFILE:
         try:
             return _copyfileobj_sendfile(fsrc, fdst)
-        except _GiveupOnSendfile:
+        except _GiveupOnZeroCopy:
             pass
 
     return copyfileobj(fsrc, fdst)

@@ -21,7 +21,7 @@ from shutil import (make_archive,
                     get_archive_formats, Error, unpack_archive,
                     register_unpack_format, RegistryError,
                     unregister_unpack_format, get_unpack_formats,
-                    SameFileError, _GiveupOnSendfile)
+                    SameFileError, _GiveupOnZeroCopy)
 import tarfile
 import zipfile
 
@@ -1880,7 +1880,7 @@ class TestCopyFileObjSendfile(unittest.TestCase):
     def test_non_regular_file_src(self):
         with io.BytesIO(self.FILEDATA) as src:
             with open(TESTFN2, "wb") as dst:
-                with self.assertRaises(_GiveupOnSendfile):
+                with self.assertRaises(_GiveupOnZeroCopy):
                     shutil._copyfileobj_sendfile(src, dst)
                 shutil.copyfileobj(src, dst)
 
@@ -1889,7 +1889,7 @@ class TestCopyFileObjSendfile(unittest.TestCase):
     def test_non_regular_file_dst(self):
         with open(TESTFN, "rb") as src:
             with io.BytesIO() as dst:
-                with self.assertRaises(_GiveupOnSendfile):
+                with self.assertRaises(_GiveupOnZeroCopy):
                     shutil._copyfileobj_sendfile(src, dst)
                 shutil.copyfileobj(src, dst)
                 dst.seek(0)
@@ -1923,7 +1923,7 @@ class TestCopyFileObjSendfile(unittest.TestCase):
         with unittest.mock.patch('os.sendfile',
                                  side_effect=OSError):
             with self.get_files() as (src, dst):
-                with self.assertRaises(_GiveupOnSendfile):
+                with self.assertRaises(_GiveupOnZeroCopy):
                     shutil._copyfileobj_sendfile(src, dst)
 
     def test_cant_get_size(self):
