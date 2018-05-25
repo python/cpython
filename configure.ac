@@ -1666,6 +1666,26 @@ yes)
       CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
     fi
 
+    AC_MSG_CHECKING(if we can turn off $CC invalid function cast warning)
+     ac_save_cc="$CC"
+     CC="$CC -Wcast-function-type -Werror"
+     AC_CACHE_VAL(ac_cv_disable_cast_function_type,
+       AC_COMPILE_IFELSE(
+         [
+           AC_LANG_PROGRAM([[]], [[]])
+         ],[
+           ac_cv_disable_cast_function_type=yes
+         ],[
+           ac_cv_disable_cast_function_type=no
+         ]))
+     CC="$ac_save_cc"
+    AC_MSG_RESULT($ac_cv_disable_cast_function_type)
+
+    if test $ac_cv_disable_cast_function_type = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-cast-function-type"
+    fi
+
     AC_MSG_CHECKING(if we can turn on $CC mixed sign comparison warning)
      ac_save_cc="$CC"
      CC="$CC -Wsign-compare"
