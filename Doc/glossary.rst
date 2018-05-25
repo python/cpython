@@ -40,8 +40,8 @@ Glossary
       ABCs with the :mod:`abc` module.
 
    annotation
-      A metadata value associated with a variable, a class attribute or a
-      function or method parameter or return value, with no defined semantics.
+      A label with no defined semantics associated with a variable, a class
+      attribute or a function or method parameter or return value.
 
       Annotations of local variables cannot be accesed at runtime, but
       annotations of global variables, class attributes, function and method
@@ -395,7 +395,7 @@ Glossary
       Function annotations can be
       :term:`type hints <type hint>`: this function is expected to take two
       :class:`int` arguments and is also expected to have an :class:`int`
-      return value::
+      return value ::
 
          def sum_two_numbers(a: int, b: int) -> int:
             return a + b
@@ -1040,23 +1040,20 @@ Glossary
       A synonym for a type, created by assigning the type to an identifier.
 
       Type aliases are useful for simplifying complex
-      :term:`type hints <type hint>`. For example::
+      :term:`type hints <type hint>`.  For example ::
 
-         from typing import Dict, Tuple, List
+         from typing import List, Tuple
 
-         ConnectionOptions = Dict[str, str]
-         Address = Tuple[str, int]
-         Server = Tuple[Address, ConnectionOptions]
+         Color = Tuple[int, int, int]
 
-         def broadcast_message(message: str, servers: List[Server]) -> None:
-             ...
+         def remove_gray_shades(colors: List[Color]) -> List[Color]:
+             pass
 
-      is equivalent to::
+      is equivalent to ::
 
-         def broadcast_message(
-                 message: str,
-                 servers: List[Tuple[Tuple[str, int], Dict[str, str]]]) -> None:
-             ...
+         def remove_gray_shades(
+                 colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
+             pass
 
       See :mod:`typing` and :pep:`484`, which describe this functionality.
 
@@ -1084,28 +1081,14 @@ Glossary
    variable annotation
       An :term:`annotation` of a variable, or a class attribute.
 
-      When annotating variables, assignment is optional::
+      When annotating variables, assignment is optional ::
 
          class C:
              field: 'annotation'
 
-      Annotating local variables will cause the interpreter to always make them
-      locals::
-
-         def f():
-             a: 'annotation'
-             print(a)  # raises UnboundLocalError
-                       # Commenting out the a: 'annotation' makes it a NameError.
-
-      as if the code were::
-
-         def f():
-             if False: a = 0
-             print(a)  # raises UnboundLocalError
-
       Variable annotations can be
       :term:`type hints <type hint>`: this variable is expected to take
-      :class:`int` values::
+      :class:`int` values ::
 
          count: int = 0
 
