@@ -40,18 +40,17 @@ Glossary
       ABCs with the :mod:`abc` module.
 
    annotation
-      A label with no defined semantics associated with a variable, a class
-      attribute or a function or method parameter or return value.
+      A label associated with a variable, a class
+      attribute or a function parameter or return value,
+      used, by convention, for :term:`type hints <type hint>`.
 
       Annotations of local variables cannot be accesed at runtime, but
-      annotations of global variables, class attributes, functions and methods
-      parameters and return values are stored in the :attr:`__annotations__`
-      special attribute of modules, classes, functions and methods,
+      annotations of global variables, class attributes, and functions
+      are stored in the :attr:`__annotations__`
+      special attribute of modules, classes, and functions,
       respectively.
 
-      Annotations can be :term:`type hints <type hint>`.
-
-      See :pep:`484` and :pep:`526`, which describe this functionality.
+      See :term:`variable annotation`, :term:`function annotation`, :pep:`484` and :pep:`526`, which describe this functionality.
 
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
@@ -192,11 +191,6 @@ Glossary
    class variable
       A variable defined in a class and intended to be modified only at
       class level (i.e., not in an instance of the class).
-
-      Variables can be specified as expected to be class variables through
-      :term:`type hints <type hint>`.
-
-      See :pep:`526` which describes class variable annotations.
 
    coercion
       The implicit conversion of an instance of one type to another during an
@@ -390,11 +384,10 @@ Glossary
       and the :ref:`function` section.
 
    function annotation
-      An :term:`annotation` of a function, or a method parameters and return
-      value.
+      An :term:`annotation` of a function parameter or return value.
 
-      Function annotations can be
-      :term:`type hints <type hint>`: this function is expected to take two
+      Function annotations are usually used for
+      :term:`type hints <type hint>`: for example this function is expected to take two
       :class:`int` arguments and is also expected to have an :class:`int`
       return value ::
 
@@ -1045,32 +1038,34 @@ Glossary
 
          from typing import List, Tuple
 
+         def remove_gray_shades(
+                 colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
+             pass
+
+      could be made more readable like this ::
+
+         from typing import List, Tuple
+
          Color = Tuple[int, int, int]
 
          def remove_gray_shades(colors: List[Color]) -> List[Color]:
              pass
 
-      is equivalent to ::
-
-         def remove_gray_shades(
-                 colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
-             pass
-
       See :mod:`typing` and :pep:`484`, which describe this functionality.
 
    type hint
-      An :term:`annotation` that specifies the expected type for a variable, class
-      attribute, function or method parameter or return value.
+      An :term:`annotation` that specifies the expected type for a variable, a class
+      attribute, or a function parameter or return value.
 
       Type hints are optional and are not enforced by Python but
-      they are useful to static type analysis tools, and aid IDEs on code
+      they are useful to static type analysis tools, and aid IDEs with code
       completion and refactoring.
 
-      Type hints of global variables, class attributes, functions and methods
-      parameters and return values, but not local variables, can be accessed using
+      Type hints of global variables, class attributes, and functions
+      , but not local variables, can be accessed using
       :func:`typing.get_type_hints`.
 
-      See :mod:`typing` and :pep:`483`, which describe this functionality.
+      See :mod:`typing` and :pep:`484`, which describe this functionality.
 
    universal newlines
       A manner of interpreting text streams in which all of the following are
@@ -1080,14 +1075,14 @@ Glossary
       :func:`bytes.splitlines` for an additional use.
 
    variable annotation
-      An :term:`annotation` of a variable, or a class attribute.
+      An :term:`annotation` of a variable or a class attribute.
 
-      When annotating variables or class attributes, assignment is optional ::
+      When annotating a variable or a class attribute, assignment is optional ::
 
          class C:
              field: 'annotation'
 
-      Variable annotations can be
+      Variable annotations are usually used for
       :term:`type hints <type hint>`: this variable is expected to take
       :class:`int` values ::
 
