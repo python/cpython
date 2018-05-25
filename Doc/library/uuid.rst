@@ -2,7 +2,7 @@
 =====================================================
 
 .. module:: uuid
-   :synopsis: UUID objects (universally unique identifiers) according to :rfc:`4122`
+   :synopsis: UUID objects (universally unique identifiers) according to RFC 4122
 .. moduleauthor:: Ka-Ping Yee <ping@zesty.ca>
 .. sectionauthor:: George Yoshida <quiver@users.sourceforge.net>
 

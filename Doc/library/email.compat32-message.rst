@@ -541,7 +541,7 @@ Here are the methods of the :class:`Message` class:
       unless optional *requote* is ``False`` (the default is ``True``).
 
       If optional *charset* is specified, the parameter will be encoded
-      according to :rfc:`2231`. Optional *language* specifies the :rfc:`2231`
+      according to :rfc:`2231`. Optional *language* specifies the RFC 2231
       language, defaulting to the empty string.  Both *charset* and *language*
       should be strings.
 

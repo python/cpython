@@ -17,14 +17,14 @@ cookies.  It is useful for accessing web sites that require small pieces of data
 web server, and then returned to the server in later HTTP requests.
 
 Both the regular Netscape cookie protocol and the protocol defined by
-:rfc:`2965` are handled.  :rfc:`2965` handling is switched off by default.
+:rfc:`2965` are handled.  RFC 2965 handling is switched off by default.
 :rfc:`2109` cookies are parsed as Netscape cookies and subsequently treated
-either as Netscape or :rfc:`2965` cookies according to the 'policy' in effect.
+either as Netscape or RFC 2965 cookies according to the 'policy' in effect.
 Note that the great majority of cookies on the Internet are Netscape cookies.
 :mod:`http.cookiejar` attempts to follow the de-facto Netscape cookie protocol (which
 differs substantially from that set out in the original Netscape specification),
 including taking note of the ``max-age`` and ``port`` cookie-attributes
-introduced with :rfc:`2965`.
+introduced with RFC 2965.
 
 .. note::
 
@@ -90,8 +90,8 @@ The following classes are provided:
    :class:`DefaultCookiePolicy` implements the standard accept / reject rules for
    Netscape and :rfc:`2965` cookies.  By default, :rfc:`2109` cookies (ie. cookies
    received in a :mailheader:`Set-Cookie` header with a version cookie-attribute of
-   1) are treated according to the :rfc:`2965` rules.  However, if :rfc:`2965` handling
-   is turned off or :attr:`rfc2109_as_netscape` is ``True``, :rfc:`2109` cookies are
+   1) are treated according to the RFC 2965 rules.  However, if RFC 2965 handling
+   is turned off or :attr:`rfc2109_as_netscape` is ``True``, RFC 2109 cookies are
    'downgraded' by the :class:`CookieJar` instance to Netscape cookies, by
    setting the :attr:`version` attribute of the :class:`Cookie` instance to 0.
    :class:`DefaultCookiePolicy` also provides some parameters to allow some
@@ -431,7 +431,7 @@ DefaultCookiePolicy Objects
 
 Implements the standard rules for accepting and returning cookies.
 
-Both :rfc:`2965` and Netscape cookies are covered.  :rfc:`2965` handling is switched
+Both :rfc:`2965` and Netscape cookies are covered.  RFC 2965 handling is switched
 off by default.
 
 The easiest way to provide your own policy is to override this class and call
@@ -514,8 +514,8 @@ all be assigned to.
    (ie. cookies received in a :mailheader:`Set-Cookie` header with a version
    cookie-attribute of 1) to Netscape cookies by setting the version attribute of
    the :class:`Cookie` instance to 0.  The default value is :const:`None`, in which
-   case :rfc:`2109` cookies are downgraded if and only if :rfc:`2965` handling is turned
-   off.  Therefore, :rfc:`2109` cookies are downgraded by default.
+   case RFC 2109 cookies are downgraded if and only if :rfc:`2965` handling is turned
+   off.  Therefore, RFC 2109 cookies are downgraded by default.
 
 
 General strictness switches:
@@ -618,7 +618,7 @@ internal consistency, so you should know what you're doing if you do that.
 
    Integer or :const:`None`.  Netscape cookies have :attr:`version` 0. :rfc:`2965` and
    :rfc:`2109` cookies have a ``version`` cookie-attribute of 1.  However, note that
-   :mod:`http.cookiejar` may 'downgrade' :rfc:`2109` cookies to Netscape cookies, in which
+   :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
    case :attr:`version` is 0.
 
 
@@ -676,7 +676,7 @@ internal consistency, so you should know what you're doing if you do that.
    ``True`` if this cookie was received as an :rfc:`2109` cookie (ie. the cookie
    arrived in a :mailheader:`Set-Cookie` header, and the value of the Version
    cookie-attribute in that header was 1).  This attribute is provided because
-   :mod:`http.cookiejar` may 'downgrade' :rfc:`2109` cookies to Netscape cookies, in
+   :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
    which case :attr:`version` is 0.
 
 

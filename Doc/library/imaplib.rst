@@ -602,7 +602,7 @@ retrieves and prints all messages::
    M.select()
    typ, data = M.search(None, 'ALL')
    for num in data[0].split():
-       typ, data = M.fetch(num, '(:rfc:`822`)')
+       typ, data = M.fetch(num, '(RFC822)')
        print('Message %s\n%s\n' % (num, data[0][1]))
    M.close()
    M.logout()

@@ -599,7 +599,7 @@ supports sending logging messages to a remote or local Unix syslog.
          though it's not in the relevant specification (:rfc:`5424`). More recent
          versions of these daemons don't expect the NUL byte but strip it off
          if it's there, and even more recent daemons (which adhere more closely
-         to :rfc:`5424`) pass the NUL byte on as part of the message.
+         to RFC 5424) pass the NUL byte on as part of the message.
 
          To enable easier handling of syslog messages in the face of all these
          differing daemon behaviours, the appending of the NUL byte has been
