@@ -157,11 +157,6 @@ class DictWriter:
     def writerows(self, rowdicts):
         return self.writer.writerows(map(self._dict_to_list, rowdicts))
 
-# Guard Sniffer's type checking against builds that exclude complex()
-try:
-    complex
-except NameError:
-    complex = float
 
 class Sniffer:
     '''
