@@ -2027,7 +2027,7 @@ class TestCopyFileObjSendfile(unittest.TestCase):
             self.assertRaises(ZeroDivisionError,
                               shutil.copyfile, TESTFN2, TESTFN2 + '3')
             blocksize = m.call_args[0][3]
-            self.assertEqual(blocksize, shutil.COPY_BUFSIZE)
+            self.assertEqual(blocksize, 10 * 1024)
 
 
 class TermsizeTests(unittest.TestCase):
@@ -2120,7 +2120,7 @@ class PublicAPITests(unittest.TestCase):
                       'unregister_archive_format', 'get_unpack_formats',
                       'register_unpack_format', 'unregister_unpack_format',
                       'unpack_archive', 'ignore_patterns', 'chown', 'which',
-                      'get_terminal_size', 'SameFileError', 'COPY_BUFSIZE']
+                      'get_terminal_size', 'SameFileError']
         if hasattr(os, 'statvfs') or os.name == 'nt':
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))

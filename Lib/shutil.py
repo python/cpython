@@ -43,7 +43,6 @@ except ImportError:
     getgrnam = None
 
 _HAS_SENDFILE = hasattr(os, "sendfile")
-COPY_BUFSIZE = 16 * 1024
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
@@ -52,7 +51,7 @@ __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "get_unpack_formats", "register_unpack_format",
            "unregister_unpack_format", "unpack_archive",
            "ignore_patterns", "chown", "which", "get_terminal_size",
-           "SameFileError", "COPY_BUFSIZE"]
+           "SameFileError"]
            # disk_usage is added later, if available on the platform
 
 class Error(OSError):
@@ -79,10 +78,8 @@ class _GiveupOnZeroCopy(Exception):
     """Raised when os.sendfile() cannot be used for copying files."""
 
 
-def copyfileobj(fsrc, fdst, length=None):
+def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""
-    if length is None:
-        length = COPY_BUFSIZE
     while 1:
         buf = fsrc.read(length)
         if not buf:
@@ -106,9 +103,9 @@ def _copyfileobj_sendfile(fsrc, fdst):
     # should not make any difference, also in case the file content
     # changes while being copied.
     try:
-        blocksize = max(os.fstat(infd).st_size, COPY_BUFSIZE, 16 * 1024)
+        blocksize = max(os.fstat(infd).st_size, 10 * 1024)
     except Exception:
-        blocksize = max(COPY_BUFSIZE, 16 * 1024)
+        blocksize = 100 * 1024
 
     offset = 0
     total = 0
