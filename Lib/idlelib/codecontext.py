@@ -80,7 +80,7 @@ class CodeContext:
     def reload(cls):
         "Load class variables from config."
         cls.context_depth = idleConf.GetOption("extensions", "CodeContext",
-                                       "numlines", type="int", default=3)
+                                       "numlines", type="int", default=15)
 ##        cls.bgcolor = idleConf.GetOption("extensions", "CodeContext",
 ##                                     "bgcolor", type="str", default="LightGray")
 ##        cls.fgcolor = idleConf.GetOption("extensions", "CodeContext",
@@ -116,7 +116,7 @@ class CodeContext:
                 padx += widget.tk.getint(widget.cget('padx'))
                 border += widget.tk.getint(widget.cget('border'))
             self.label = tkinter.Label(
-                    self.editwin.top, text="\n" * (self.context_depth - 1),
+                    self.editwin.top, text="",
                     anchor=W, justify=LEFT, font=self.textfont,
                     bg=self.bgcolor, fg=self.fgcolor,
                     width=1,  # Don't request more than we get.
@@ -191,10 +191,8 @@ class CodeContext:
                                                  stopindent)
         self.info.extend(lines)
         self.topvisible = new_topvisible
-        # Empty lines in context pane.
-        context_strings = [""] * max(0, self.context_depth - len(self.info))
-        # Followed by the context hint lines.
-        context_strings += [x[2] for x in self.info[-self.context_depth:]]
+        # Last context_depth context lines.
+        context_strings = [x[2] for x in self.info[-self.context_depth:]]
         self.label["text"] = '\n'.join(context_strings)
 
     def timer_event(self):

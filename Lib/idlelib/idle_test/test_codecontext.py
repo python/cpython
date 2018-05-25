@@ -110,7 +110,7 @@ class CodeContextTest(unittest.TestCase):
 
     def test_reload(self):
         codecontext.CodeContext.reload()
-        self.assertEqual(self.cc.context_depth, 3)
+        self.assertEqual(self.cc.context_depth, 15)
 
     def test_toggle_code_context_event(self):
         eq = self.assertEqual
@@ -127,7 +127,7 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.label['font'], cc.textfont)
         eq(cc.label['fg'], cc.fgcolor)
         eq(cc.label['bg'], cc.bgcolor)
-        eq(cc.label['text'], '\n' * 2)
+        eq(cc.label['text'], '')
 
         # Toggle off.
         eq(toggle(), 'break')
@@ -200,7 +200,6 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.topvisible, 3)
         # context_depth is 3 so it pads with blank lines.
         eq(cc.label['text'], '\n'
-                             '\n'
                              'class C1():')
 
         # Scroll down to line 3.  Since it's a comment, nothing changes.
@@ -209,7 +208,6 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.info, [(0, -1, '', False), (2, 0, 'class C1():', 'class')])
         eq(cc.topvisible, 4)
         eq(cc.label['text'], '\n'
-                             '\n'
                              'class C1():')
 
         # Scroll down to line 4.
@@ -232,7 +230,9 @@ class CodeContextTest(unittest.TestCase):
                      (8, 8, '        if a > b:', 'if'),
                      (10, 8, '        elif a < b:', 'elif')])
         eq(cc.topvisible, 12)
-        eq(cc.label['text'], '    def compare(self):\n'
+        eq(cc.label['text'], '\n'
+                             'class C1():\n'
+                             '    def compare(self):\n'
                              '        if a > b:\n'
                              '        elif a < b:')
 
@@ -245,7 +245,9 @@ class CodeContextTest(unittest.TestCase):
                      (8, 8, '        if a > b:', 'if'),
                      (10, 8, '        elif a < b:', 'elif')])
         eq(cc.topvisible, 12)
-        eq(cc.label['text'], '    def compare(self):\n'
+        eq(cc.label['text'], '\n'
+                             'class C1():\n'
+                             '    def compare(self):\n'
                              '        if a > b:\n'
                              '        elif a < b:')
 

@@ -7,7 +7,7 @@
 popupwait= 2000
 
 [CodeContext]
-numlines= 3
+numlines= 15
 visible= False
 bgcolor= LightGray
 fgcolor= Black

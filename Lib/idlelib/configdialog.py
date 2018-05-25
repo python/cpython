@@ -1910,7 +1910,7 @@ class GenPage(Frame):
                 frame_format, textvariable=self.format_width, width=4)
 
         frame_context = Frame(frame_editor, borderwidth=0)
-        context_title = Label(frame_context, text='Context Lines :')
+        context_title = Label(frame_context, text='Max Context Lines :')
         self.context_int = Entry(
                 frame_context, textvariable=self.context_lines, width=3)
 
