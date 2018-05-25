@@ -42,7 +42,7 @@ Glossary
    annotation
       A label associated with a variable, a class
       attribute or a function parameter or return value,
-      used, by convention, as a :term:`type hint`.
+      used by convention as a :term:`type hint`.
 
       Annotations of local variables cannot be accesed at runtime, but
       annotations of global variables, class attributes, and functions
@@ -50,7 +50,8 @@ Glossary
       special attribute of modules, classes, and functions,
       respectively.
 
-      See :term:`variable annotation`, :term:`function annotation`, :pep:`484` and :pep:`526`, which describe this functionality.
+      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
+      and :pep:`526`, which describe this functionality.
 
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
@@ -389,7 +390,7 @@ Glossary
       Function annotations are usually used for
       :term:`type hints <type hint>`: for example this function is expected to take two
       :class:`int` arguments and is also expected to have an :class:`int`
-      return value ::
+      return value::
 
          def sum_two_numbers(a: int, b: int) -> int:
             return a + b
@@ -1034,7 +1035,7 @@ Glossary
       A synonym for a type, created by assigning the type to an identifier.
 
       Type aliases are useful for simplifying :term:`type hints <type hint>`.
-      For example ::
+      For example::
 
          from typing import List, Tuple
 
@@ -1042,7 +1043,7 @@ Glossary
                  colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
              pass
 
-      could be made more readable like this ::
+      could be made more readable like this::
 
          from typing import List, Tuple
 
@@ -1061,8 +1062,8 @@ Glossary
       they are useful to static type analysis tools, and aid IDEs with code
       completion and refactoring.
 
-      Type hints of global variables, class attributes, and functions
-      , but not local variables, can be accessed using
+      Type hints of global variables, class attributes, and functions,
+      but not local variables, can be accessed using
       :func:`typing.get_type_hints`.
 
       See :mod:`typing` and :pep:`484`, which describe this functionality.
@@ -1077,14 +1078,14 @@ Glossary
    variable annotation
       An :term:`annotation` of a variable or a class attribute.
 
-      When annotating a variable or a class attribute, assignment is optional ::
+      When annotating a variable or a class attribute, assignment is optional::
 
          class C:
              field: 'annotation'
 
       Variable annotations are usually used for
       :term:`type hints <type hint>`: for example this variable is expected to take
-      :class:`int` values ::
+      :class:`int` values::
 
          count: int = 0
 
