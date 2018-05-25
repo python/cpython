@@ -44,7 +44,7 @@ Glossary
       attribute or a function or method parameter or return value.
 
       Annotations of local variables cannot be accesed at runtime, but
-      annotations of global variables, class attributes, function and method
+      annotations of global variables, class attributes, functions and methods
       parameters and return values are stored in the :attr:`__annotations__`
       special attribute of modules, classes, functions and methods,
       respectively.
@@ -390,7 +390,8 @@ Glossary
       and the :ref:`function` section.
 
    function annotation
-      An :term:`annotation` of a function, or a method.
+      An :term:`annotation` of a function, or a method parameters and return
+      value.
 
       Function annotations can be
       :term:`type hints <type hint>`: this function is expected to take two
@@ -1039,8 +1040,8 @@ Glossary
    type alias
       A synonym for a type, created by assigning the type to an identifier.
 
-      Type aliases are useful for simplifying complex
-      :term:`type hints <type hint>`.  For example ::
+      Type aliases are useful for simplifying :term:`type hints <type hint>`.
+      For example ::
 
          from typing import List, Tuple
 
@@ -1065,8 +1066,8 @@ Glossary
       they are useful to static type analysis tools, and aid IDEs on code
       completion and refactoring.
 
-      Type hints of global variables, class attributes, function or method
-      parameter or return value, but not local variables, can be accessed using
+      Type hints of global variables, class attributes, functions and methods
+      parameters and return values, but not local variables, can be accessed using
       :func:`typing.get_type_hints`.
 
       See :mod:`typing` and :pep:`483`, which describe this functionality.
@@ -1081,7 +1082,7 @@ Glossary
    variable annotation
       An :term:`annotation` of a variable, or a class attribute.
 
-      When annotating variables, assignment is optional ::
+      When annotating variables or class attributes, assignment is optional ::
 
          class C:
              field: 'annotation'
