@@ -7186,6 +7186,47 @@ $as_echo "$ac_cv_disable_missing_field_initializers" >&6; }
       CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn off $CC invalid function cast warning" >&5
+$as_echo_n "checking if we can turn off $CC invalid function cast warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Wcast-function-type -Werror"
+     if ${ac_cv_disable_cast_function_type+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_disable_cast_function_type=yes
+
+else
+
+           ac_cv_disable_cast_function_type=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_cast_function_type" >&5
+$as_echo "$ac_cv_disable_cast_function_type" >&6; }
+
+    if test $ac_cv_disable_cast_function_type = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-cast-function-type"
+    fi
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC mixed sign comparison warning" >&5
 $as_echo_n "checking if we can turn on $CC mixed sign comparison warning... " >&6; }
      ac_save_cc="$CC"
