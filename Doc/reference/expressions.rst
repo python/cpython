@@ -1390,10 +1390,10 @@ Lambdas
 
 Lambda expressions (sometimes called lambda forms) have the same syntactic position as
 expressions.  They are a shorthand to create anonymous functions; the expression
-``lambda arguments: expression`` yields a function object.  The unnamed object
+``lambda parameters: expression`` yields a function object.  The unnamed object
 behaves like a function object defined with ::
 
-   def name(arguments):
+   def <lambda>(parameters):
        return expression
 
 See section :ref:`function` for the syntax of parameter lists.  Note that
