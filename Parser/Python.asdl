@@ -50,7 +50,6 @@ module Python
           | Nonlocal(identifier* names)
           | Expr(expr value)
           | Pass | Break | Continue
-          | DocString(string s)
 
           -- XXX Jython will be different
           -- col_offset is the byte offset in the utf8 string the parser uses

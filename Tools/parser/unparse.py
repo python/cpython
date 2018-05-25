@@ -79,9 +79,6 @@ class Unparser:
         self.fill()
         self.dispatch(tree.value)
 
-    def _DocString(self, t):
-        self.fill(repr(t.s))
-
     def _Import(self, t):
         self.fill("import ")
         interleave(lambda: self.write(", "), self.dispatch, t.names)

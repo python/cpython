@@ -185,11 +185,6 @@ static char *Expr_fields[]={
 static PyTypeObject *Pass_type;
 static PyTypeObject *Break_type;
 static PyTypeObject *Continue_type;
-static PyTypeObject *DocString_type;
-_Py_IDENTIFIER(s);
-static char *DocString_fields[]={
-    "s",
-};
 static PyTypeObject *expr_type;
 static char *expr_attributes[] = {
     "lineno",
@@ -295,6 +290,7 @@ static char *Num_fields[]={
     "n",
 };
 static PyTypeObject *Str_type;
+_Py_IDENTIFIER(s);
 static char *Str_fields[]={
     "s",
 };
@@ -910,8 +906,6 @@ static int init_types(void)
     if (!Break_type) return 0;
     Continue_type = make_type("Continue", stmt_type, NULL, 0);
     if (!Continue_type) return 0;
-    DocString_type = make_type("DocString", stmt_type, DocString_fields, 1);
-    if (!DocString_type) return 0;
     expr_type = make_type("expr", &AST_type, NULL, 0);
     if (!expr_type) return 0;
     if (!add_attributes(expr_type, expr_attributes, 2)) return 0;
@@ -1736,25 +1730,6 @@ Continue(int lineno, int col_offset, PyArena *arena)
     if (!p)
         return NULL;
     p->kind = Continue_kind;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
-    return p;
-}
-
-stmt_ty
-DocString(string s, int lineno, int col_offset, PyArena *arena)
-{
-    stmt_ty p;
-    if (!s) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field s is required for DocString");
-        return NULL;
-    }
-    p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = DocString_kind;
-    p->v.DocString.s = s;
     p->lineno = lineno;
     p->col_offset = col_offset;
     return p;
@@ -3048,15 +3023,6 @@ ast2obj_stmt(void* _o)
     case Continue_kind:
         result = PyType_GenericNew(Continue_type, NULL, NULL);
         if (!result) goto failed;
-        break;
-    case DocString_kind:
-        result = PyType_GenericNew(DocString_type, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_string(o->v.DocString.s);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_s, value) == -1)
-            goto failed;
-        Py_DECREF(value);
         break;
     }
     value = ast2obj_int(o->lineno);
@@ -5767,30 +5733,6 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         if (*out == NULL) goto failed;
         return 0;
     }
-    isinstance = PyObject_IsInstance(obj, (PyObject*)DocString_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        string s;
-
-        if (_PyObject_LookupAttrId(obj, &PyId_s, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"s\" missing from DocString");
-            return 1;
-        }
-        else {
-            int res;
-            res = obj2ast_string(tmp, &s, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = DocString(s, lineno, col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of stmt, but got %R", obj);
     failed:
@@ -8270,8 +8212,6 @@ PyInit__ast(void)
     if (PyDict_SetItemString(d, "Break", (PyObject*)Break_type) < 0) return
         NULL;
     if (PyDict_SetItemString(d, "Continue", (PyObject*)Continue_type) < 0)
-        return NULL;
-    if (PyDict_SetItemString(d, "DocString", (PyObject*)DocString_type) < 0)
         return NULL;
     if (PyDict_SetItemString(d, "expr", (PyObject*)expr_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "BoolOp", (PyObject*)BoolOp_type) < 0) return

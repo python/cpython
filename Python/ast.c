@@ -507,7 +507,6 @@ validate_stmt(stmt_ty stmt)
     case Pass_kind:
     case Break_kind:
     case Continue_kind:
-    case DocString_kind:
         return 1;
     default:
         PyErr_SetString(PyExc_SystemError, "unexpected statement");
@@ -595,8 +594,7 @@ struct compiling {
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
 static expr_ty ast_for_expr(struct compiling *, const node *);
 static stmt_ty ast_for_stmt(struct compiling *, const node *);
-static asdl_seq *ast_for_body(struct compiling *c, const node *n);
-static int docstring_from_stmts(asdl_seq *stmts, PyArena *arena);
+static asdl_seq *ast_for_suite(struct compiling *c, const node *n);
 static asdl_seq *ast_for_exprlist(struct compiling *, const node *,
                                   expr_context_ty);
 static expr_ty ast_for_testlist(struct compiling *, const node *);
@@ -813,9 +811,6 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                         asdl_seq_SET(stmts, k++, s);
                     }
                 }
-            }
-            if (!docstring_from_stmts(stmts, arena)) {
-                goto out;
             }
             res = Module(stmts, arena);
             break;
@@ -1600,7 +1595,7 @@ ast_for_funcdef_impl(struct compiling *c, const node *n,
             return NULL;
         name_i += 2;
     }
-    body = ast_for_body(c, CHILD(n, name_i + 3));
+    body = ast_for_suite(c, CHILD(n, name_i + 3));
     if (!body)
         return NULL;
 
@@ -3522,41 +3517,6 @@ ast_for_suite(struct compiling *c, const node *n)
     return seq;
 }
 
-/* When first element of the stmts is string literal,
- * convert it to DocString
- */
-static int
-docstring_from_stmts(asdl_seq *stmts, PyArena *arena)
-{
-    if (stmts && stmts->size) {
-        stmt_ty s = (stmt_ty)asdl_seq_GET(stmts, 0);
-        /* If first statement is a literal string, it's the doc string. */
-        if (s->kind == Expr_kind && s->v.Expr.value->kind == Str_kind) {
-            stmt_ty doc = DocString(s->v.Expr.value->v.Str.s,
-                                    s->v.Expr.value->lineno,
-                                    s->v.Expr.value->col_offset, arena);
-            if (doc == NULL) {
-                return 0;
-            }
-            asdl_seq_SET(stmts, 0, doc);
-        }
-    }
-    return 1;
-}
-
-static asdl_seq *
-ast_for_body(struct compiling *c, const node *n)
-{
-    asdl_seq *stmts = ast_for_suite(c, n);
-    if (stmts == NULL) {
-        return NULL;
-    }
-    if (!docstring_from_stmts(stmts, c->c_arena)) {
-        return NULL;
-    }
-    return stmts;
-}
-
 static stmt_ty
 ast_for_if_stmt(struct compiling *c, const node *n)
 {
@@ -3946,7 +3906,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     REQ(n, classdef);
 
     if (NCH(n) == 4) { /* class NAME ':' suite */
-        s = ast_for_body(c, CHILD(n, 3));
+        s = ast_for_suite(c, CHILD(n, 3));
         if (!s)
             return NULL;
         classname = NEW_IDENTIFIER(CHILD(n, 1));
@@ -3959,7 +3919,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     }
 
     if (TYPE(CHILD(n, 3)) == RPAR) { /* class NAME '(' ')' ':' suite */
-        s = ast_for_body(c, CHILD(n, 5));
+        s = ast_for_suite(c, CHILD(n, 5));
         if (!s)
             return NULL;
         classname = NEW_IDENTIFIER(CHILD(n, 1));
@@ -3984,7 +3944,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         if (!call)
             return NULL;
     }
-    s = ast_for_body(c, CHILD(n, 6));
+    s = ast_for_suite(c, CHILD(n, 6));
     if (!s)
         return NULL;
     classname = NEW_IDENTIFIER(CHILD(n, 1));

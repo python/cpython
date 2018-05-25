@@ -151,11 +151,6 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.5
       :class:`AsyncFunctionDef` is now supported.
 
-   .. versionchanged:: 3.7
-      ``Str`` and ``Constant`` are not treated as docstring anymore.
-      The new AST node named ``DocString`` is added and only it is
-      considered as docstring.
-
 
 .. function:: fix_missing_locations(node)
 

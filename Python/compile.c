@@ -1365,6 +1365,18 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 }
 
 static int
+compiler_isdocstring(stmt_ty s)
+{
+    if (s->kind != Expr_kind)
+        return 0;
+    if (s->v.Expr.value->kind == Str_kind)
+        return 1;
+    if (s->v.Expr.value->kind == Constant_kind)
+        return PyUnicode_CheckExact(s->v.Expr.value->v.Constant.value);
+    return 0;
+}
+
+static int
 is_const(expr_ty e)
 {
     switch (e->kind) {
@@ -1464,6 +1476,7 @@ find_ann(asdl_seq *stmts)
 static int
 compiler_body(struct compiler *c, asdl_seq *stmts)
 {
+    int i = 0;
     stmt_ty st;
 
     /* Set current line number to the line number of first statement.
@@ -1483,11 +1496,15 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
         return 1;
     st = (stmt_ty)asdl_seq_GET(stmts, 0);
     /* if not -OO mode, set docstring */
-    if (st->kind == DocString_kind && c->c_optimize < 2) {
-        ADDOP_O(c, LOAD_CONST, st->v.DocString.s, consts);
-        ADDOP_NAME(c, STORE_NAME, __doc__, names);
+    if (compiler_isdocstring(st) && c->c_optimize < 2) {
+        /* don't generate docstrings if -OO */
+        i = 1;
+        VISIT(c, expr, st->v.Expr.value);
+        if (!compiler_nameop(c, __doc__, Store))
+            return 0;
     }
-    VISIT_SEQ(c, stmt, stmts);
+    for (; i < asdl_seq_LEN(stmts); i++)
+        VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
     return 1;
 }
 
@@ -1860,6 +1877,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     asdl_seq *body;
     stmt_ty st;
     Py_ssize_t i, funcflags;
+    int docstring;
     int annotations;
     int scope_type;
 
@@ -1906,8 +1924,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     st = (stmt_ty)asdl_seq_GET(body, 0);
-    if (st->kind == DocString_kind && c->c_optimize < 2) {
-        first_const = st->v.DocString.s;
+    docstring = compiler_isdocstring(st);
+    if (docstring && c->c_optimize < 2) {
+        if (st->v.Expr.value->kind == Constant_kind)
+            first_const = st->v.Expr.value->v.Constant.value;
+        else
+            first_const = st->v.Expr.value->v.Str.s;
     }
     if (compiler_add_o(c, c->u->u_consts, first_const) < 0) {
         compiler_exit_scope(c);
@@ -3020,8 +3042,6 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case Expr_kind:
         return compiler_visit_stmt_expr(c, s->v.Expr.value);
     case Pass_kind:
-        break;
-    case DocString_kind:
         break;
     case Break_kind:
         if (!compiler_in_loop(c))

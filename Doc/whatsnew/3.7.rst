@@ -2161,11 +2161,6 @@ Changes in Python Behavior
 Changes in the Python API
 -------------------------
 
-* Add new AST node ``DocString``.  Only it is considered as docstring.
-  ``Str`` and ``Const`` are not considered as docstring anymore.
-  (Contributed by INADA Naoki and Eugene Toder in :issue:`29463` and
-  :issue:`32911`.)
-
 * :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
   non-daemon threads complete.  Set the new
   :attr:`socketserver.ThreadingMixIn.block_on_close` class attribute to
