@@ -21,7 +21,7 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
 
 Tkinter supports a range of Tcl/Tk versions, built either with or
 without thread support. The official Python binary release bundles Tcl/Tk 8.6
-threaded. See the source code for the underlying :mode:`_tkinter` C module
+threaded. See the source code for the :mode:`_tkinter` module
 for more information about supported versions.
 
 Tkinter is not a thin wrapper, it adds a fair amount of own logic to
@@ -35,7 +35,7 @@ Architecture
 
 Unlike most other GUI toolkits, Tcl/Tk is not a monolithic product providing a
 consolidated API. Instead, it's a bundle of libraries, each with its
-separate functionality and documentation.
+distinct functionality and separate documentation.
 
 Tcl
    Tcl is a dynamic interpreted programming language. Though it can be used
@@ -44,10 +44,11 @@ Tcl
    an interface to the Tk toolkit. The Tcl engine library has a C interface to
    create and operate interpreter instances, run Tcl commands and scripts with
    them and add custom commands that can be implemented in either Tcl or C.
-   It also implements a per-interpreter event queue. Each :class:`Tk` object
-   embeds its own interpreter instance. Though :mod:`_tkinter` allows to
-   execute entire Tcl scripts, the Python bindings typically only run single
-   commands.
+   It also implements a per-thread event queue (see `Threading model`_ for
+   details).
+   Each :class:`Tk` object embeds its own interpreter instance.
+   Though :mod:`_tkinter` allows to execute entire Tcl scripts, the Python
+   bindings typically only run single commands.
    
 Tk
    Tk is a Tcl module implemented in C that adds custom commands to create and
@@ -62,7 +63,7 @@ Tk
    `tkinter` mostly uses the latter.
 
 Tix
-   `Tix`<https://core.tcl.tk/jenglish/gutter/packages/tix.html> is a
+   `Tix`<https://core.tcl.tk/jenglish/gutter/packages/tix.html>_ is a
    third-party Tcl module, an addon for Tk that adds several new widgets.
    `tkinter.tix` provides bindings for it, and official Python binary releases
    come with it bundled. It's deprecated in favor of Ttk.
@@ -71,8 +72,8 @@ Tix
 Tkinter Modules
 ^^^^^^^^^^^^^^^
 
-:mod:`tkinter` has the core functionality and the regular Tk widgets.
-Unless you're using the additional widgets, this will be all
+:mod:`tkinter` has the core functionality and the bindings for regular Tk
+widgets. Unless you're using the additional widgets, this will be all
 that you really need.
 
 :mod:`tkinter.ttk` and :mod:`tkinter.tix` have classes for extra
@@ -80,22 +81,11 @@ widgets from those families. Ttk is intended to be the new standard widget
 set with a more modern look, but as of this writing, it doesn't yet have
 replacements for all the classical widgets. 
 
-The Tk interface is located in a C module named :mod:`_tkinter`.
+The core Tcl/Tk interface is located in a C module named :mod:`_tkinter`.
 This module directly interfaces with Tcl/Tk via their C interfaces and
 shouldn't be used directly by application programmers save for a few functions.
 It is usually a shared library (or DLL), but might in some cases be statically
 linked with the Python interpreter.
-
-In addition to the Tk interface module, :mod:`tkinter` includes a number of
-Python modules, :mod:`tkinter.constants` being one of the most important.
-Importing :mod:`tkinter` will automatically import :mod:`tkinter.constants`,
-so, usually, to use Tkinter all you need is a simple import statement::
-
-   import tkinter
-
-Or, more often::
-
-   from tkinter import *
 
 
 Threading model
@@ -118,7 +108,7 @@ predefined "event handler".
 Likewise, for any lengthy tasks, the UI thread can launch worker threads that
 report back on their progress via the same event queue.
 
-Tkinter strives to provide the best of both worlds. The "moderm" multithreaded
+Tkinter strives to provide the best of both worlds. The "modern" multithreaded
 GUI model is the primary mode of execution, but pumping messages manually
 instead is also supported. What is more important, any Tkinter calls can be
 made from any Python threads, only subject to Tcl's architectural restictions:
@@ -141,7 +131,21 @@ made from any Python threads, only subject to Tcl's architectural restictions:
       
     * A few select functions can only be called from the interpreter thread.
 
-   
+Tcl event queue is per-thread rather than per-interpreter. For nonthreaded Tcl,
+there's only one global queue shared by all interpreters; for threaded Tcl,
+one queue per OS thread that's shared by all interpreters bound to that thread.
+So, when an event processing function like :func:`Tk.mainloop` is called, it
+will process events not only for the calling :class:`Tk` instance
+but for all whose interpreters share the queue.
+Events handlers will be called within the same Tcl interpreter that they were
+bound to as per the `bind <https://www.tcl.tk/man/tcl8.6/TkCmd/bind.htm>`_ man
+page, but any exceptions will be raised from the event processing function.
+There's no harm in calling :func:`mainloop` for two :class:`Tk`s at the same
+time: with nonthreaded Tcl, they will take turns handling events, and with
+threaded Tcl, this is only allowed if the :class:`Tk`s are associated with
+different threads anyway.
+
+
 Module contents
 ---------------
 
@@ -218,7 +222,7 @@ Module contents
    
 .. class:: Variable(master=None, value=None, name=None)
 
-   Represent a Tcl global variable bound to *master* widget's value via the
+   Represents a Tcl global variable bound to *master* widget's value via the
    `textVariable option 
    <https://www.tcl.tk/man/tcl8.6/TkCmd/options.htm#M-textvariable>`_.
    
