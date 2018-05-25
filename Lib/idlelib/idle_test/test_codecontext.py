@@ -96,8 +96,6 @@ class CodeContextTest(unittest.TestCase):
         eq(self.root.tk.call('after', 'info', self.cc.t2)[1], 'timer')
 
     def test_del(self):
-        self.root.tk.call('after', 'info', self.cc.t1)
-        self.root.tk.call('after', 'info', self.cc.t2)
         self.cc.__del__()
         with self.assertRaises(TclError) as msg:
             self.root.tk.call('after', 'info', self.cc.t1)
@@ -134,21 +132,6 @@ class CodeContextTest(unittest.TestCase):
         # Toggle off.
         eq(toggle(), 'break')
         self.assertIsNone(cc.label)
-
-    def test_get_line_info(self):
-        eq = self.assertEqual
-        gli = self.cc.get_line_info
-
-        # Line 1 is not a BLOCKOPENER.
-        eq(gli(1), (codecontext.INFINITY, '', False))
-        # Line 2 is a BLOCKOPENER without an indent.
-        eq(gli(2), (0, 'class C1():', 'class'))
-        # Line 3 is not a BLOCKOPENER and does not return the indent level.
-        eq(gli(3), (codecontext.INFINITY, '    # Class comment.', False))
-        # Line 4 is a BLOCKOPENER and is indented.
-        eq(gli(4), (4, '    def __init__(self, a, b):', 'def'))
-        # Line 8 is a different BLOCKOPENER and is indented.
-        eq(gli(8), (8, '        if a > b:', 'if'))
 
     def test_get_context(self):
         eq = self.assertEqual
@@ -323,8 +306,8 @@ class CodeContextTest(unittest.TestCase):
 
 class HelperFunctionText(unittest.TestCase):
 
-    def test_getspacesfirstword(self):
-        get = codecontext.getspacesfirstword
+    def test_get_spaces_firstword(self):
+        get = codecontext.get_spaces_firstword
         test_lines = (
             ('    first word', ('    ', 'first')),
             ('\tfirst word', ('\t', 'first')),
@@ -341,6 +324,24 @@ class HelperFunctionText(unittest.TestCase):
         self.assertEqual(get('    (continuation)',
                              c=re.compile(r'^(\s*)([^\s]*)')),
                          ('    ', '(continuation)'))
+
+    def test_get_line_info(self):
+        eq = self.assertEqual
+        gli = codecontext.get_line_info
+        lines = code_sample.splitlines()
+
+        # Line 1 is not a BLOCKOPENER.
+        eq(gli(lines[0]), (codecontext.INFINITY, '', False))
+        # Line 2 is a BLOCKOPENER without an indent.
+        eq(gli(lines[1]), (0, 'class C1():', 'class'))
+        # Line 3 is not a BLOCKOPENER and does not return the indent level.
+        eq(gli(lines[2]), (codecontext.INFINITY, '    # Class comment.', False))
+        # Line 4 is a BLOCKOPENER and is indented.
+        eq(gli(lines[3]), (4, '    def __init__(self, a, b):', 'def'))
+        # Line 8 is a different BLOCKOPENER and is indented.
+        eq(gli(lines[7]), (8, '        if a > b:', 'if'))
+        # Test tab.
+        eq(gli('\tif a == b:'), (1, '\tif a == b:', 'if'))
 
 
 if __name__ == '__main__':
