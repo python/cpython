@@ -75,7 +75,8 @@ Directory and files operations
       a subclass of the latter, this change is backward compatible.
 
    .. versionchanged:: 3.8
-      Uses high-performance :func:`os.sendfile` if available.
+      Uses high-performance :func:`os.sendfile` if available and supports
+      file-to-file copy (namely Linux).
 
 .. exception:: SameFileError
 
@@ -166,7 +167,8 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Uses high-performance :func:`os.sendfile` if available.
+      Uses high-performance :func:`os.sendfile` if available and supports
+      file-to-file copy (namely Linux).
 
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
@@ -191,7 +193,8 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Uses high-performance :func:`os.sendfile` if available.
+      Uses high-performance :func:`os.sendfile` if available and supports
+      file-to-file copy (namely Linux).
 
 .. function:: ignore_patterns(\*patterns)
 
