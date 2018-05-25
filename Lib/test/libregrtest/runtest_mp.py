@@ -183,7 +183,7 @@ def run_tests_multiprocess(regrtest):
             except queue.Empty:
                 running = get_running(workers)
                 if running and not regrtest.ns.pgo:
-                    print('running: %s' % ', '.join(running))
+                    print('running: %s' % ', '.join(running), flush=True)
                 continue
 
             test, stdout, stderr, result = item
@@ -235,6 +235,6 @@ def run_tests_multiprocess(regrtest):
         line = "Waiting for %s (%s tests)" % (', '.join(running), len(running))
         if dt >= WAIT_PROGRESS:
             line = "%s since %.0f sec" % (line, dt)
-        print(line)
+        print(line, flush=True)
         for worker in workers:
             worker.join(WAIT_PROGRESS)
