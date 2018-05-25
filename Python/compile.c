@@ -1462,24 +1462,29 @@ find_ann(asdl_seq *stmts)
    and for annotations. */
 
 static int
-compiler_body(struct compiler *c, asdl_seq *stmts, string docstring)
+compiler_body(struct compiler *c, asdl_seq *stmts)
 {
+    stmt_ty st;
+
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
        coincide with the line number of first "real" statement in module.
        If body is empy, then lineno will be set later in assemble. */
     if (c->u->u_scope_type == COMPILER_SCOPE_MODULE &&
         !c->u->u_lineno && asdl_seq_LEN(stmts)) {
-        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+        st = (stmt_ty)asdl_seq_GET(stmts, 0);
         c->u->u_lineno = st->lineno;
     }
     /* Every annotated class and module should have __annotations__. */
     if (find_ann(stmts)) {
         ADDOP(c, SETUP_ANNOTATIONS);
     }
+    if (!asdl_seq_LEN(stmts))
+        return 1;
+    st = (stmt_ty)asdl_seq_GET(stmts, 0);
     /* if not -OO mode, set docstring */
-    if (c->c_optimize < 2 && docstring) {
-        ADDOP_O(c, LOAD_CONST, docstring, consts);
+    if (st->kind == DocString_kind && c->c_optimize < 2) {
+        ADDOP_O(c, LOAD_CONST, st->v.DocString.s, consts);
         ADDOP_NAME(c, STORE_NAME, __doc__, names);
     }
     VISIT_SEQ(c, stmt, stmts);
@@ -1502,7 +1507,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
         return NULL;
     switch (mod->kind) {
     case Module_kind:
-        if (!compiler_body(c, mod->v.Module.body, mod->v.Module.docstring)) {
+        if (!compiler_body(c, mod->v.Module.body)) {
             compiler_exit_scope(c);
             return 0;
         }
@@ -1847,12 +1852,13 @@ static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
-    PyObject *qualname, *docstring = Py_None;
+    PyObject *qualname, *first_const = Py_None;
     arguments_ty args;
     expr_ty returns;
     identifier name;
     asdl_seq* decos;
     asdl_seq *body;
+    stmt_ty st;
     Py_ssize_t i, funcflags;
     int annotations;
     int scope_type;
@@ -1899,17 +1905,17 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    /* if not -OO mode, add docstring */
-    if (c->c_optimize < 2 && s->v.FunctionDef.docstring)
-        docstring = s->v.FunctionDef.docstring;
-    if (compiler_add_o(c, c->u->u_consts, docstring) < 0) {
+    st = (stmt_ty)asdl_seq_GET(body, 0);
+    if (st->kind == DocString_kind && c->c_optimize < 2) {
+        first_const = st->v.DocString.s;
+    }
+    if (compiler_add_o(c, c->u->u_consts, first_const) < 0) {
         compiler_exit_scope(c);
         return 0;
     }
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
-    /* if there was a docstring, we need to skip the first statement */
     VISIT_SEQ_IN_SCOPE(c, stmt, body);
     co = assemble(c, 1);
     qualname = c->u->u_qualname;
@@ -1991,7 +1997,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         Py_DECREF(str);
         /* compile the body proper */
-        if (!compiler_body(c, s->v.ClassDef.body, s->v.ClassDef.docstring)) {
+        if (!compiler_body(c, s->v.ClassDef.body)) {
             compiler_exit_scope(c);
             return 0;
         }
@@ -3014,6 +3020,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case Expr_kind:
         return compiler_visit_stmt_expr(c, s->v.Expr.value);
     case Pass_kind:
+        break;
+    case DocString_kind:
         break;
     case Break_kind:
         if (!compiler_in_loop(c))
