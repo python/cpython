@@ -989,6 +989,13 @@ class ContextTests(unittest.TestCase):
 
 
     def test_load_dh_params(self):
+        filename = u'dhpäräm.pem'
+        fs_encoding = sys.getfilesystemencoding()
+        try:
+            filename.encode(fs_encoding)
+        except UnicodeEncodeError:
+            self.skipTest("filename %r cannot be encoded to the filesystem encoding %r" % (filename, fs_encoding))
+
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.load_dh_params(DHFILE)
         if os.name != 'nt':
@@ -1001,7 +1008,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ssl.SSLError) as cm:
             ctx.load_dh_params(CERTFILE)
         with support.temp_dir() as d:
-            fname = os.path.join(d, u'dhpäräm.pem')
+            fname = os.path.join(d, filename)
             shutil.copy(DHFILE, fname)
             ctx.load_dh_params(fname)
 

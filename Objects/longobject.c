@@ -1722,7 +1722,7 @@ PyLong_FromString(char *str, char **pend, int base)
 
     if ((base != 0 && base < 2) || base > 36) {
         PyErr_SetString(PyExc_ValueError,
-                        "long() arg 2 must be >= 2 and <= 36");
+                        "long() base must be >= 2 and <= 36, or 0");
         return NULL;
     }
     while (*str != '\0' && isspace(Py_CHARMASK(*str)))
