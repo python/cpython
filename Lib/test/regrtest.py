@@ -782,6 +782,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     running = get_running(workers)
                     if running and not pgo:
                         print('running: %s' % ', '.join(running))
+                        sys.stdout.flush()
                     continue
 
                 test, stdout, stderr, result = item
@@ -802,7 +803,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     display_progress(test_index, text)
 
                 if stdout:
-                    print stdout
+                    print(stdout)
                 sys.stdout.flush()
                 if stderr and not pgo:
                     print >>sys.stderr, stderr
