@@ -42,7 +42,7 @@ Glossary
    annotation
       A label associated with a variable, a class
       attribute or a function parameter or return value,
-      used, by convention, for :term:`type hints <type hint>`.
+      used, by convention, as a :term:`type hint`.
 
       Annotations of local variables cannot be accesed at runtime, but
       annotations of global variables, class attributes, and functions
