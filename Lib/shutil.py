@@ -103,9 +103,9 @@ def _copyfileobj_sendfile(fsrc, fdst):
     # should not make any difference, also in case the file content
     # changes while being copied.
     try:
-        blocksize = max(os.fstat(infd).st_size, 10 * 1024)
+        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MB
     except Exception:
-        blocksize = 100 * 1024
+        blocksize = 2 ** 27  # 128MB
 
     offset = 0
     total = 0
