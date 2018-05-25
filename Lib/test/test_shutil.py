@@ -2027,7 +2027,7 @@ class TestCopyFileObjSendfile(unittest.TestCase):
             self.assertRaises(ZeroDivisionError,
                               shutil.copyfile, TESTFN2, TESTFN2 + '3')
             blocksize = m.call_args[0][3]
-            self.assertEqual(blocksize, 10 * 1024)
+            self.assertEqual(blocksize, 2 ** 23)
 
 
 class TermsizeTests(unittest.TestCase):
