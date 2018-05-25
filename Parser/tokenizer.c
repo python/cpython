@@ -1636,6 +1636,8 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
                                    "<> not supported in 3.x; use !=",
                                    tok->filename, tok->lineno,
                                    NULL, NULL)) {
+                tok->done = E_ERROR;
+                tok->cur = tok->inp;
                 return ERRORTOKEN;
             }
         }

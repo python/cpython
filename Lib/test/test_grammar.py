@@ -5,6 +5,7 @@ from test.test_support import run_unittest, check_syntax_error, \
                               check_py3k_warnings
 import unittest
 import sys
+import warnings
 # testing import *
 from sys import *
 
@@ -628,7 +629,6 @@ hello world
             with check_py3k_warnings((warntext, DeprecationWarning)):
                 compile(code, '<test string>', 'exec')
             if sys.py3kwarning:
-                import warnings
                 with warnings.catch_warnings():
                     warnings.filterwarnings('error', category=DeprecationWarning)
                     with self.assertRaises(SyntaxError) as cm:
@@ -883,6 +883,13 @@ hello world
         with check_py3k_warnings(('<> not supported in 3.x; use !=',
                                   DeprecationWarning)):
             if eval('1 < 1 > 1 == 1 >= 1 <= 1 <> 1 != 1 in 1 not in 1 is 1 is not 1'): pass
+        if sys.py3kwarning:
+            with warnings.catch_warnings():
+                warnings.filterwarnings('error', category=DeprecationWarning)
+                with self.assertRaises(DeprecationWarning) as cm:
+                    compile('1 <> 1', '<test string>', 'eval')
+                self.assertIn('<> not supported in 3.x; use !=',
+                              str(cm.exception))
 
     def test_binary_mask_ops(self):
         x = 1 & 1
