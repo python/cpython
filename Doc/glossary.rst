@@ -1083,7 +1083,7 @@ Glossary
              field: 'annotation'
 
       Variable annotations are usually used for
-      :term:`type hints <type hint>`: this variable is expected to take
+      :term:`type hints <type hint>`: for example this variable is expected to take
       :class:`int` values ::
 
          count: int = 0
