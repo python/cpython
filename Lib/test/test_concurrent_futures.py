@@ -447,8 +447,8 @@ class WaitTests:
         future2 = self.executor.submit(time.sleep, 1.5)
 
         done, not_done = futures.wait(
-                [CANCELLED_FUTURE, future1, future2],
-                 return_when=futures.FIRST_COMPLETED)
+            [CANCELLED_FUTURE, future1, future2],
+            return_when=futures.FIRST_COMPLETED)
 
         self.assertEqual(set([future1]), done)
         self.assertEqual(set([CANCELLED_FUTURE, future2]), not_done)
@@ -457,12 +457,12 @@ class WaitTests:
         future1 = self.executor.submit(time.sleep, 1.5)
 
         finished, pending = futures.wait(
-                 [CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE, future1],
-                 return_when=futures.FIRST_COMPLETED)
+            [CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE, future1],
+            return_when=futures.FIRST_COMPLETED)
 
         self.assertEqual(
-                set([CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE]),
-                finished)
+            set([CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE]),
+            finished)
         self.assertEqual(set([future1]), pending)
 
     def test_first_exception(self):
@@ -471,8 +471,8 @@ class WaitTests:
         future3 = self.executor.submit(time.sleep, 3)
 
         finished, pending = futures.wait(
-                [future1, future2, future3],
-                return_when=futures.FIRST_EXCEPTION)
+            [future1, future2, future3],
+            return_when=futures.FIRST_EXCEPTION)
 
         self.assertEqual(set([future1, future2]), finished)
         self.assertEqual(set([future3]), pending)
@@ -482,11 +482,11 @@ class WaitTests:
         future2 = self.executor.submit(time.sleep, 1.5)
 
         finished, pending = futures.wait(
-                [SUCCESSFUL_FUTURE,
-                 CANCELLED_FUTURE,
-                 CANCELLED_AND_NOTIFIED_FUTURE,
-                 future1, future2],
-                return_when=futures.FIRST_EXCEPTION)
+            [SUCCESSFUL_FUTURE,
+             CANCELLED_FUTURE,
+             CANCELLED_AND_NOTIFIED_FUTURE,
+             future1, future2],
+            return_when=futures.FIRST_EXCEPTION)
 
         self.assertEqual(set([SUCCESSFUL_FUTURE,
                               CANCELLED_AND_NOTIFIED_FUTURE,
@@ -497,8 +497,8 @@ class WaitTests:
         future1 = self.executor.submit(time.sleep, 2)
 
         finished, pending = futures.wait(
-                 [EXCEPTION_FUTURE, future1],
-                 return_when=futures.FIRST_EXCEPTION)
+            [EXCEPTION_FUTURE, future1],
+            return_when=futures.FIRST_EXCEPTION)
 
         self.assertEqual(set([EXCEPTION_FUTURE]), finished)
         self.assertEqual(set([future1]), pending)
@@ -508,12 +508,12 @@ class WaitTests:
         future2 = self.executor.submit(mul, 2, 21)
 
         finished, pending = futures.wait(
-                [SUCCESSFUL_FUTURE,
-                 CANCELLED_AND_NOTIFIED_FUTURE,
-                 EXCEPTION_FUTURE,
-                 future1,
-                 future2],
-                return_when=futures.ALL_COMPLETED)
+            [SUCCESSFUL_FUTURE,
+             CANCELLED_AND_NOTIFIED_FUTURE,
+             EXCEPTION_FUTURE,
+             future1,
+             future2],
+            return_when=futures.ALL_COMPLETED)
 
         self.assertEqual(set([SUCCESSFUL_FUTURE,
                               CANCELLED_AND_NOTIFIED_FUTURE,
@@ -527,12 +527,12 @@ class WaitTests:
         future2 = self.executor.submit(time.sleep, 6)
 
         finished, pending = futures.wait(
-                [CANCELLED_AND_NOTIFIED_FUTURE,
-                 EXCEPTION_FUTURE,
-                 SUCCESSFUL_FUTURE,
-                 future1, future2],
-                timeout=5,
-                return_when=futures.ALL_COMPLETED)
+            [CANCELLED_AND_NOTIFIED_FUTURE,
+             EXCEPTION_FUTURE,
+             SUCCESSFUL_FUTURE,
+             future1, future2],
+            timeout=5,
+            return_when=futures.ALL_COMPLETED)
 
         self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
                               EXCEPTION_FUTURE,
@@ -572,16 +572,16 @@ class AsCompletedTests:
         future2 = self.executor.submit(mul, 7, 6)
 
         completed = set(futures.as_completed(
-                [CANCELLED_AND_NOTIFIED_FUTURE,
-                 EXCEPTION_FUTURE,
-                 SUCCESSFUL_FUTURE,
-                 future1, future2]))
+            [CANCELLED_AND_NOTIFIED_FUTURE,
+             EXCEPTION_FUTURE,
+             SUCCESSFUL_FUTURE,
+             future1, future2]))
         self.assertEqual(set(
-                [CANCELLED_AND_NOTIFIED_FUTURE,
-                 EXCEPTION_FUTURE,
-                 SUCCESSFUL_FUTURE,
-                 future1, future2]),
-                completed)
+            [CANCELLED_AND_NOTIFIED_FUTURE,
+             EXCEPTION_FUTURE,
+             SUCCESSFUL_FUTURE,
+             future1, future2]),
+            completed)
 
     def test_zero_timeout(self):
         future1 = self.executor.submit(time.sleep, 2)
@@ -648,6 +648,99 @@ class AsCompletedTests:
 create_executor_tests(AsCompletedTests)
 
 
+class FutureThenTest:
+    class _OnceExecutor(futures.Executor):
+        should_fail = False
+        fn = None
+        args = None
+        kwargs = None
+        fut = None
+
+        def execute(self):
+            if self.should_fail:
+                raise Exception("$$$$$")
+
+            self.should_fail = True
+
+            res = self.fn(*self.args, **self.kwargs)
+
+            self.fut.set_result(res)
+
+        def submit(self, fn, *args, **kwargs):
+            self.fn = fn
+            self.args = args
+            self.kwargs = kwargs
+            self.fut = Future()
+            return self.fut
+
+    def test_submit_then(self):
+        _once_executor = self._OnceExecutor()
+
+        future = Future()
+
+        def _return_one(fut):
+            return 1
+
+        then_future = future.then(_return_one, _once_executor)
+
+        future.set_result(True)
+
+        self.assertEqual(_once_executor.fn, _return_one)
+
+        _once_executor.execute()
+
+        self.assertEqual(1, then_future.result(0))
+
+    def test_submit_chained_then(self):
+        _once_executor = self._OnceExecutor()
+
+        future = Future()
+
+        def _return_one(fut):
+            return 1
+
+        def _return_two(fut):
+            return 2
+
+        then_future = future.then(_return_one, _once_executor)
+        then_then_future = then_future.then(_return_two, _once_executor)
+
+        future.set_result(True)
+
+        self.assertEqual(_once_executor.fn, _return_one)
+
+        _once_executor.execute()
+
+        self.assertEqual(1, then_future.result(0))
+        self.assertEqual(_once_executor.fn, _return_two)
+
+        self.assertRaises(Exception, lambda: _once_executor.execute())
+
+    def test_submit_cancelled_then(self):
+        _once_executor = self._OnceExecutor()
+
+        future = Future()
+
+        def _one_if_cancelled(fut):
+            if fut.cancelled():
+                return 1
+            else:
+                return 0
+
+        then_future = future.then(_one_if_cancelled, _once_executor)
+
+        future.cancel()
+
+        self.assertEqual(_once_executor.fn, _one_if_cancelled)
+
+        _once_executor.execute()
+
+        self.assertEqual(1, then_future.result(0))
+
+
+create_executor_tests(FutureThenTest)
+
+
 class ExecutorTest:
     # Executor.shutdown() and context manager usage is tested by
     # ExecutorShutdownTest.
@@ -661,12 +754,12 @@ class ExecutorTest:
 
     def test_map(self):
         self.assertEqual(
-                list(self.executor.map(pow, range(10), range(10))),
-                list(map(pow, range(10), range(10))))
+            list(self.executor.map(pow, range(10), range(10))),
+            list(map(pow, range(10), range(10))))
 
         self.assertEqual(
-                list(self.executor.map(pow, range(10), range(10), chunksize=3)),
-                list(map(pow, range(10), range(10))))
+            list(self.executor.map(pow, range(10), range(10), chunksize=3)),
+            list(map(pow, range(10), range(10))))
 
     def test_map_exception(self):
         i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
@@ -1080,11 +1173,11 @@ class FutureTests(BaseTestCase):
         self.assertRegex(repr(CANCELLED_AND_NOTIFIED_FUTURE),
                          '<Future at 0x[0-9a-f]+ state=cancelled>')
         self.assertRegex(
-                repr(EXCEPTION_FUTURE),
-                '<Future at 0x[0-9a-f]+ state=finished raised OSError>')
+            repr(EXCEPTION_FUTURE),
+            '<Future at 0x[0-9a-f]+ state=finished raised OSError>')
         self.assertRegex(
-                repr(SUCCESSFUL_FUTURE),
-                '<Future at 0x[0-9a-f]+ state=finished returned int>')
+            repr(SUCCESSFUL_FUTURE),
+            '<Future at 0x[0-9a-f]+ state=finished returned int>')
 
 
     def test_cancel(self):
