@@ -938,6 +938,18 @@ The module defines the following classes, functions and decorators:
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
 
+.. data:: NoReturn
+
+   Special type indicating that a function never returns.
+   For example::
+
+      from typing import NoReturn
+
+      def stop() -> NoReturn:
+          raise RuntimeError('no way')
+
+   .. versionadded:: 3.6.5
+
 .. data:: Union
 
    Union type; ``Union[X, Y]`` means either X or Y.
