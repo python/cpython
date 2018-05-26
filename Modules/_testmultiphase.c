@@ -23,11 +23,10 @@ Example_traverse(ExampleObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static int
+static void
 Example_finalize(ExampleObject *self)
 {
     Py_CLEAR(self->x_attr);
-    return 0;
 }
 
 static PyObject *
