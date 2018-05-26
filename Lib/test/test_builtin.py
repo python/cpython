@@ -12,6 +12,7 @@ import pickle
 import platform
 import random
 import re
+import subprocess
 import sys
 import traceback
 import types
@@ -1665,18 +1666,7 @@ class PtyTests(unittest.TestCase):
         # Check the result was got and corresponds to the user's terminal input
         if len(lines) != 2:
             # Something went wrong, try to get at stderr
-            # Beware of Linux raising EIO when the slave is closed
-            child_output = bytearray()
-            while True:
-                try:
-                    chunk = os.read(fd, 3000)
-                except OSError:  # Assume EIO
-                    break
-                if not chunk:
-                    break
-                child_output.extend(chunk)
-            os.close(fd)
-            child_output = child_output.decode("ascii", "ignore")
+            child_output = final_output(fd)
             self.fail("got %d lines in pipe but expected 2, child output was:\n%s"
                       % (len(lines), child_output))
         os.close(fd)
@@ -1686,31 +1676,66 @@ class PtyTests(unittest.TestCase):
 
         return lines
 
+    def final_output(self, fd):
+        # Beware of Linux raising EIO when the slave is closed
+        child_output = bytearray()
+        while True:
+            try:
+                chunk = os.read(fd, 3000)
+            except OSError:  # Assume EIO
+                break
+            if not chunk:
+                break
+            child_output.extend(chunk)
+        os.close(fd)
+        return child_output.decode("ascii", "backslashreplace")
+
     def check_input_tty(self, prompt, terminal_input, stdio_encoding=None):
-        if not sys.stdin.isatty() or not sys.stdout.isatty():
-            self.skipTest("stdin and stdout must be ttys")
-        def child(wpipe):
-            # Check the error handlers are accounted for
-            if stdio_encoding:
-                sys.stdin = io.TextIOWrapper(sys.stdin.detach(),
-                                             encoding=stdio_encoding,
-                                             errors='surrogateescape')
-                sys.stdout = io.TextIOWrapper(sys.stdout.detach(),
-                                              encoding=stdio_encoding,
-                                              errors='replace')
-            print("tty =", sys.stdin.isatty() and sys.stdout.isatty(), file=wpipe)
-            print(ascii(input(prompt)), file=wpipe)
-        lines = self.run_child(child, terminal_input + b"\r\n")
-        # Check we did exercise the GNU readline path
-        self.assertIn(lines[0], {'tty = True', 'tty = False'})
-        if lines[0] != 'tty = True':
-            self.skipTest("standard IO in should have been a tty")
-        input_result = eval(lines[1])   # ascii() -> eval() roundtrip
+        template = (
+            'import sys, io\n'
+            '# Check the error handlers are accounted for\n'
+            'stdio_encoding = {stdio_encoding!a}\n'
+            'if stdio_encoding:\n'
+            '    sys.stdin = io.TextIOWrapper(sys.stdin.detach(),\n'
+            '                                 encoding=stdio_encoding,\n'
+            "                                 errors='surrogateescape')\n"
+            '    sys.stdout = io.TextIOWrapper(sys.stdout.detach(),\n'
+            '                                  encoding=stdio_encoding,\n'
+            "                                  errors='replace')\n"
+            '# Check we exercise the PyOS_Readline() path\n'
+            'if not sys.stdin.isatty() or not sys.stdout.isatty():\n'
+            '    raise AssertionError("standard IO should be a tty")\n'
+            'result = input({prompt!a})\n'
+            'if result != {expected!a}:\n'
+            '    raise AssertionError("unexpected input " + ascii(result))\n'
+        )
         if stdio_encoding:
             expected = terminal_input.decode(stdio_encoding, 'surrogateescape')
         else:
             expected = terminal_input.decode(sys.stdin.encoding)  # what else?
-        self.assertEqual(input_result, expected)
+        code = template.format(
+            stdio_encoding=stdio_encoding, prompt=prompt, expected=expected)
+
+        self.assert_script(code, terminal_input)  # Without Readline module
+
+        readline_encoding = locale.getpreferredencoding()
+        try:
+            terminal_input.decode(readline_encoding)
+        except UnicodeDecodeError:
+            # Readline may handle undecodable bytes differently to Python
+            # (e.g. by its convert-meta setting)
+            pass
+        else:
+            self.assert_script('import readline\n' + code, terminal_input)
+
+    def assert_script(self, code, terminal_input):
+        cmd = (sys.executable, '-s', '-c', code)
+        [master, slave] = pty.openpty()
+        proc = subprocess.Popen(cmd, stdin=slave, stdout=slave, stderr=slave)
+        os.close(slave)
+        with proc, os.fdopen(master, "wb", closefd=False) as writer:
+            writer.write(terminal_input + b"\r\n")
+        self.assertEqual(proc.returncode, 0, self.final_output(master))
 
     def test_input_tty(self):
         # Test input() functionality when wired to a tty (the code path
@@ -1718,11 +1743,11 @@ class PtyTests(unittest.TestCase):
         self.check_input_tty("prompt", b"quux")
 
     def test_input_tty_non_ascii(self):
-        # Check stdin/stdout encoding is used when invoking GNU readline
-        self.check_input_tty("prompté", b"quux\xe9", "utf-8")
+        # Check stdin/stdout encoding is used when invoking PyOS_Readline()
+        self.check_input_tty("prompté", "quuxé".encode("utf-8"), "utf-8")
 
     def test_input_tty_non_ascii_unicode_errors(self):
-        # Check stdin/stdout error handler is used when invoking GNU readline
+        # Check stdin/stdout error handler used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xe9", "ascii")
 
     def test_input_no_stdout_fileno(self):

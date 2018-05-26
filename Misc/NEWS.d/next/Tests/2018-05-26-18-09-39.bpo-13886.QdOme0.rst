@@ -1,0 +1,1 @@
+Fix test_builtin.PtyTests tests when readline is loaded.
