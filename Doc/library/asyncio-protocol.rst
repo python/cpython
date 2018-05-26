@@ -469,10 +469,16 @@ the buffer only once at creation time.
 The following callbacks are called on :class:`BufferedProtocol`
 instances:
 
-.. method:: BufferedProtocol.get_buffer()
+.. method:: BufferedProtocol.get_buffer(sizehint)
 
-   Called to allocate a new receive buffer.  Must return an object
-   that implements the :ref:`buffer protocol <bufferobjects>`.
+   Called to allocate a new receive buffer.
+
+   *sizehint* is a recommended minimal size for the returned
+   buffer.  When set to -1, the buffer size can be arbitrary.
+
+   Must return an object that implements the
+   :ref:`buffer protocol <bufferobjects>`.
+   It is an error to return a zero-sized buffer.
 
 .. method:: BufferedProtocol.buffer_updated(nbytes)
 

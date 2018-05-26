@@ -1279,8 +1279,8 @@ class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
         self.loop = self.new_test_loop()
 
         self.protocol = test_utils.make_test_protocol(asyncio.BufferedProtocol)
-        self.buf = mock.Mock()
-        self.protocol.get_buffer.side_effect = lambda: self.buf
+        self.buf = bytearray(1)
+        self.protocol.get_buffer.side_effect = lambda hint: self.buf
 
         self.sock = mock.Mock(socket.socket)
         self.sock_fd = self.sock.fileno.return_value = 7
@@ -1312,6 +1312,42 @@ class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
         self.assertTrue(transport._fatal_error.called)
         self.assertTrue(self.protocol.get_buffer.called)
         self.assertFalse(self.protocol.buffer_updated.called)
+
+    def test_get_buffer_zerosized(self):
+        transport = self.socket_transport()
+        transport._fatal_error = mock.Mock()
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.protocol.get_buffer.side_effect = lambda hint: bytearray(0)
+
+        transport._read_ready()
+
+        self.assertTrue(transport._fatal_error.called)
+        self.assertTrue(self.protocol.get_buffer.called)
+        self.assertFalse(self.protocol.buffer_updated.called)
+
+    def test_proto_type_switch(self):
+        self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
+        transport = self.socket_transport()
+
+        self.sock.recv.return_value = b'data'
+        transport._read_ready()
+
+        self.protocol.data_received.assert_called_with(b'data')
+
+        # switch protocol to a BufferedProtocol
+
+        buf_proto = test_utils.make_test_protocol(asyncio.BufferedProtocol)
+        buf = bytearray(4)
+        buf_proto.get_buffer.side_effect = lambda hint: buf
+
+        transport.set_protocol(buf_proto)
+
+        self.sock.recv_into.return_value = 10
+        transport._read_ready()
+
+        buf_proto.get_buffer.assert_called_with(-1)
+        buf_proto.buffer_updated.assert_called_with(10)
 
     def test_buffer_updated_error(self):
         transport = self.socket_transport()
@@ -1348,7 +1384,7 @@ class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
         self.sock.recv_into.return_value = 10
         transport._read_ready()
 
-        self.protocol.get_buffer.assert_called_with()
+        self.protocol.get_buffer.assert_called_with(-1)
         self.protocol.buffer_updated.assert_called_with(10)
 
     def test_read_ready_eof(self):

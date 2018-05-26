@@ -188,7 +188,54 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
     def new_loop(self):
         raise NotImplementedError
 
-    def test_start_tls_client_1(self):
+    def test_buf_feed_data(self):
+
+        class Proto(asyncio.BufferedProtocol):
+
+            def __init__(self, bufsize, usemv):
+                self.buf = bytearray(bufsize)
+                self.mv = memoryview(self.buf)
+                self.data = b''
+                self.usemv = usemv
+
+            def get_buffer(self, sizehint):
+                if self.usemv:
+                    return self.mv
+                else:
+                    return self.buf
+
+            def buffer_updated(self, nsize):
+                if self.usemv:
+                    self.data += self.mv[:nsize]
+                else:
+                    self.data += self.buf[:nsize]
+
+        for usemv in [False, True]:
+            proto = Proto(1, usemv)
+            sslproto._feed_data_to_bufferred_proto(proto, b'12345')
+            self.assertEqual(proto.data, b'12345')
+
+            proto = Proto(2, usemv)
+            sslproto._feed_data_to_bufferred_proto(proto, b'12345')
+            self.assertEqual(proto.data, b'12345')
+
+            proto = Proto(2, usemv)
+            sslproto._feed_data_to_bufferred_proto(proto, b'1234')
+            self.assertEqual(proto.data, b'1234')
+
+            proto = Proto(4, usemv)
+            sslproto._feed_data_to_bufferred_proto(proto, b'1234')
+            self.assertEqual(proto.data, b'1234')
+
+            proto = Proto(100, usemv)
+            sslproto._feed_data_to_bufferred_proto(proto, b'12345')
+            self.assertEqual(proto.data, b'12345')
+
+            proto = Proto(0, usemv)
+            with self.assertRaisesRegex(RuntimeError, 'empty buffer'):
+                sslproto._feed_data_to_bufferred_proto(proto, b'12345')
+
+    def test_start_tls_client_reg_proto_1(self):
         HELLO_MSG = b'1' * 1024 * 1024
 
         server_context = test_utils.simple_server_sslcontext()
@@ -220,6 +267,69 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
             def data_received(self, data):
                 self.on_data.set_result(data)
+
+            def eof_received(self):
+                self.on_eof.set_result(True)
+
+        async def client(addr):
+            await asyncio.sleep(0.5, loop=self.loop)
+
+            on_data = self.loop.create_future()
+            on_eof = self.loop.create_future()
+
+            tr, proto = await self.loop.create_connection(
+                lambda: ClientProto(on_data, on_eof), *addr)
+
+            tr.write(HELLO_MSG)
+            new_tr = await self.loop.start_tls(tr, proto, client_context)
+
+            self.assertEqual(await on_data, b'O')
+            new_tr.write(HELLO_MSG)
+            await on_eof
+
+            new_tr.close()
+
+        with self.tcp_server(serve) as srv:
+            self.loop.run_until_complete(
+                asyncio.wait_for(client(srv.addr), loop=self.loop, timeout=10))
+
+    def test_start_tls_client_buf_proto_1(self):
+        HELLO_MSG = b'1' * 1024 * 1024
+
+        server_context = test_utils.simple_server_sslcontext()
+        client_context = test_utils.simple_client_sslcontext()
+
+        def serve(sock):
+            sock.settimeout(5)
+
+            data = sock.recv_all(len(HELLO_MSG))
+            self.assertEqual(len(data), len(HELLO_MSG))
+
+            sock.start_tls(server_context, server_side=True)
+
+            sock.sendall(b'O')
+            data = sock.recv_all(len(HELLO_MSG))
+            self.assertEqual(len(data), len(HELLO_MSG))
+            sock.close()
+
+        class ClientProto(asyncio.BufferedProtocol):
+            def __init__(self, on_data, on_eof):
+                self.on_data = on_data
+                self.on_eof = on_eof
+                self.con_made_cnt = 0
+                self.buf = bytearray(1)
+
+            def connection_made(proto, tr):
+                proto.con_made_cnt += 1
+                # Ensure connection_made gets called only once.
+                self.assertEqual(proto.con_made_cnt, 1)
+
+            def get_buffer(self, sizehint):
+                return self.buf
+
+            def buffer_updated(self, nsize):
+                assert nsize == 1
+                self.on_data.set_result(bytes(self.buf[:nsize]))
 
             def eof_received(self):
                 self.on_eof.set_result(True)

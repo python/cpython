@@ -30,7 +30,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         super().__init__(extra, loop)
         self._set_extra(sock)
         self._sock = sock
-        self._protocol = protocol
+        self.set_protocol(protocol)
         self._server = server
         self._buffer = None  # None or bytearray.
         self._read_fut = None
@@ -159,16 +159,27 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None):
+        self._loop_reading_cb = None
+        self._paused = True
         super().__init__(loop, sock, protocol, waiter, extra, server)
-        self._paused = False
+
         self._reschedule_on_resume = False
-
-        if protocols._is_buffered_protocol(protocol):
-            self._loop_reading = self._loop_reading__get_buffer
-        else:
-            self._loop_reading = self._loop_reading__data_received
-
         self._loop.call_soon(self._loop_reading)
+        self._paused = False
+
+    def set_protocol(self, protocol):
+        if isinstance(protocol, protocols.BufferedProtocol):
+            self._loop_reading_cb = self._loop_reading__get_buffer
+        else:
+            self._loop_reading_cb = self._loop_reading__data_received
+
+        super().set_protocol(protocol)
+
+        if not self._paused:
+            # reset reading callback / buffers / self._read_fut
+            self.pause_reading()
+            self._reschedule_on_resume = True
+            self.resume_reading()
 
     def is_reading(self):
         return not self._paused and not self._closing
@@ -210,7 +221,10 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if not keep_open:
             self.close()
 
-    def _loop_reading__data_received(self, fut=None):
+    def _loop_reading(self, fut=None):
+        self._loop_reading_cb(fut)
+
+    def _loop_reading__data_received(self, fut):
         if self._paused:
             self._reschedule_on_resume = True
             return
@@ -260,7 +274,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             elif data == b'':
                 self._loop_reading__on_eof()
 
-    def _loop_reading__get_buffer(self, fut=None):
+    def _loop_reading__get_buffer(self, fut):
         if self._paused:
             self._reschedule_on_resume = True
             return
@@ -310,7 +324,9 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             return
 
         try:
-            buf = self._protocol.get_buffer()
+            buf = self._protocol.get_buffer(-1)
+            if not len(buf):
+                raise RuntimeError('get_buffer() returned an empty buffer')
         except Exception as exc:
             self._fatal_error(
                 exc, 'Fatal error: protocol.get_buffer() call failed.')
