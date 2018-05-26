@@ -772,7 +772,8 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
             accept2_mock.return_value = None
             with mock_obj(self.loop, 'create_task') as task_mock:
                 task_mock.return_value = None
-                self.loop._accept_connection(mock.Mock(), sock, backlog=backlog)
+                self.loop._accept_connection(
+                    mock.Mock(), sock, backlog=backlog)
         self.assertEqual(sock.accept.call_count, backlog)
 
 
