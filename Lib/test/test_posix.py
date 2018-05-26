@@ -343,7 +343,12 @@ class PosixTester(unittest.TestCase):
         except OSError as inst:
             # issue10812, ZFS doesn't appear to support posix_fallocate,
             # so skip Solaris-based since they are likely to have ZFS.
-            if inst.errno != errno.EINVAL or not sys.platform.startswith("sunos"):
+            # issue33655: Also ignore EINVAL on *BSD since ZFS is also
+            # often used there.
+            if inst.errno == errno.EINVAL and sys.platform.startswith(
+                ('sunos', 'freebsd', 'netbsd', 'openbsd', 'gnukfreebsd')):
+                raise unittest.SkipTest("test may fail on ZFS filesystems")
+            else:
                 raise
         finally:
             os.close(fd)

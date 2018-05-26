@@ -1,0 +1,2 @@
+Ignore test_posix_fallocate failures on BSD platforms that might be due to
+running on ZFS.
