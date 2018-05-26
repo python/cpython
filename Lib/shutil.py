@@ -121,14 +121,12 @@ def _copyfileobj_sendfile(fsrc, fdst):
                 # sockets).
                 _HAS_LINUX_SENDFILE = False
             if total == 0:
-                if err.errno == errno.ENOSPC:
-                    # Filesystem is full.
-                    raise
+                if err.errno == errno.ENOSPC:  # filesystem is full
+                    raise err from None
                 # Immediately give up on first call. Probably one
                 # of the fds is not a regular mmap(2)-like fd.
                 raise _GiveupOnZeroCopy(err)
-            else:
-                raise err from None
+            raise err from None
         else:
             if sent == 0:
                 break  # EOF
