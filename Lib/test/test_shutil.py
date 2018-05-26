@@ -2029,6 +2029,13 @@ class TestCopyFileObjSendfile(unittest.TestCase):
             blocksize = m.call_args[0][3]
             self.assertEqual(blocksize, 2 ** 23)
 
+    def test_filesystem_full(self):
+        # Emulate a case where filesystem is full and sendfile() fails
+        # on first call.
+        with unittest.mock.patch('os.sendfile',
+                                 side_effect=OSError(errno.ENOSPC, "yo")):
+            self.assertRaises(OSError, shutil.copyfile, TESTFN, TESTFN2)
+
 
 class TermsizeTests(unittest.TestCase):
     def test_does_not_crash(self):

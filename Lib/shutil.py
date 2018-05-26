@@ -118,8 +118,11 @@ def _copyfileobj_sendfile(fsrc, fdst):
                 # between regular files (only sockets).
                 _HAS_SENDFILE = False
             if total == 0:
-                # Immediately give up on first call. Probably one of the
-                # fds is not a regular mmap(2)-like fd.
+                if err.errno == errno.ENOSPC:
+                    # Filesystem is full.
+                    raise
+                # Immediately give up on first call. Probably one
+                # of the fds is not a regular mmap(2)-like fd.
                 raise _GiveupOnZeroCopy(err)
             else:
                 raise err from None
