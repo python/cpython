@@ -42,7 +42,8 @@ try:
 except ImportError:
     getgrnam = None
 
-_HAS_SENDFILE = hasattr(os, "sendfile")
+_HAS_LINUX_SENDFILE = hasattr(os, "sendfile") and \
+    sys.platform.startswith("linux")
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
@@ -87,10 +88,11 @@ def copyfileobj(fsrc, fdst, length=16*1024):
         fdst.write(buf)
 
 def _copyfileobj_sendfile(fsrc, fdst):
-    """Copy data from one file object to another by using
-    high-performance sendfile() method.
+    """Copy data from one regular file object to another by using
+    high-performance sendfile() method. Linux >= 2.6.33 is apparently
+    the only platform able to do this.
     """
-    global _HAS_SENDFILE
+    global _HAS_LINUX_SENDFILE
     try:
         infd = fsrc.fileno()
         outfd = fdst.fileno()
@@ -114,9 +116,10 @@ def _copyfileobj_sendfile(fsrc, fdst):
             sent = os.sendfile(outfd, infd, offset, blocksize)
         except OSError as err:
             if err.errno == errno.ENOTSOCK:
-                # sendfile() on this platform does not support copies
-                # between regular files (only sockets).
-                _HAS_SENDFILE = False
+                # sendfile() on this platform (probably Linux < 2.6.33)
+                # does not support copies between regular files (only
+                # sockets).
+                _HAS_LINUX_SENDFILE = False
             if total == 0:
                 if err.errno == errno.ENOSPC:
                     # Filesystem is full.
@@ -144,7 +147,7 @@ def _copyfileobj2(fsrc, fdst):
     #   GzipFile (which decompresses data), HTTPResponse (which decodes
     #   chunks).
     # - possibly others...
-    if _HAS_SENDFILE:
+    if _HAS_LINUX_SENDFILE:
         try:
             return _copyfileobj_sendfile(fsrc, fdst)
         except _GiveupOnZeroCopy:
