@@ -44,7 +44,7 @@ Glossary
       attribute or a function parameter or return value,
       used by convention as a :term:`type hint`.
 
-      Annotations of local variables cannot be accesed at runtime, but
+      Annotations of local variables cannot be accessed at runtime, but
       annotations of global variables, class attributes, and functions
       are stored in the :attr:`__annotations__`
       special attribute of modules, classes, and functions,
