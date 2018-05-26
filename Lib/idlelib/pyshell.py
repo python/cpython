@@ -8,6 +8,13 @@ except ImportError:
     print("** IDLE can't import Tkinter.\n"
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     raise SystemExit(1)
+
+import ctypes
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(True)
+except AttributeError:
+    pass
+
 import tkinter.messagebox as tkMessageBox
 if TkVersion < 8.5:
     root = Tk()  # otherwise create root in main
