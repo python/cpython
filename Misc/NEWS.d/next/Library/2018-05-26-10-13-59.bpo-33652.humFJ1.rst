@@ -1,0 +1,2 @@
+Pickles of type variables and subscripted generics are now future-proof and
+compatible with older Python versions.

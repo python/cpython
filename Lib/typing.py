@@ -24,6 +24,7 @@ import collections
 import collections.abc
 import contextlib
 import functools
+import operator
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
 import types
@@ -486,10 +487,6 @@ class ForwardRef(_Final, _root=True):
         return f'ForwardRef({self.__forward_arg__!r})'
 
 
-def _find_name(mod, name):
-    return getattr(sys.modules[mod], name)
-
-
 class TypeVar(_Final, _Immutable, _root=True):
     """Type variable.
 
@@ -535,7 +532,7 @@ class TypeVar(_Final, _Immutable, _root=True):
     """
 
     __slots__ = ('__name__', '__bound__', '__constraints__',
-                 '__covariant__', '__contravariant__', '_def_mod')
+                 '__covariant__', '__contravariant__')
 
     def __init__(self, name, *constraints, bound=None,
                  covariant=False, contravariant=False):
@@ -554,7 +551,9 @@ class TypeVar(_Final, _Immutable, _root=True):
             self.__bound__ = _type_check(bound, "Bound must be a type.")
         else:
             self.__bound__ = None
-        self._def_mod = sys._getframe(1).f_globals['__name__']  # for pickling
+        def_mod = sys._getframe(1).f_globals['__name__']  # for pickling
+        if def_mod != 'typing':
+            self.__module__ = def_mod
 
     def __getstate__(self):
         return {'name': self.__name__,
@@ -580,7 +579,7 @@ class TypeVar(_Final, _Immutable, _root=True):
         return prefix + self.__name__
 
     def __reduce__(self):
-        return (_find_name, (self._def_mod, self.__name__))
+        return self.__name__
 
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
@@ -741,7 +740,19 @@ class _GenericAlias(_Final, _root=True):
     def __reduce__(self):
         if self._special:
             return self._name
-        return super().__reduce__()
+
+        if self._name:
+            origin = globals()[self._name]
+        else:
+            origin = self.__origin__
+        if (origin is Callable and
+            not (len(self.__args__) == 2 and self.__args__[0] is Ellipsis)):
+            args = list(self.__args__[:-1]), self.__args__[-1]
+        else:
+            args = tuple(self.__args__)
+            if len(args) == 1 and not isinstance(args[0], tuple):
+                args, = args
+        return operator.getitem, (origin, args)
 
 
 class _VariadicGenericAlias(_GenericAlias, _root=True):
