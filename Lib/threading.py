@@ -35,7 +35,7 @@ _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
 ThreadError = _thread.error
 try:
-    _CRLock = _thread.RLock
+    _CRLock = _thread.CRLock
 except AttributeError:
     _CRLock = None
 TIMEOUT_MAX = _thread.TIMEOUT_MAX
