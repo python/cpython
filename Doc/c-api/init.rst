@@ -207,6 +207,20 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
    environment variable.
 
+.. c:var:: Py_UTF8Mode
+
+   Enable Cpython utf-8 mode, which ignores the locale settings, and
+   uses the UTF-8 encoding by default; changes `sys.stdin` and
+   `sys.stdout` error handlers to ``surrogateescape``. By default,
+   it is enabled in the POSIX locale.
+
+   Set by the :option:`-X` ``utf8`` option and the :envvar:`PYTHONUTF8`
+   environment variable.
+
+   See :pep:`540` for more details.
+
+   .. versionadded:: 3.7
+
 .. c:var:: Py_VerboseFlag
 
    Print a message each time a module is initialized, showing the place
