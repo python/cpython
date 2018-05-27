@@ -1885,7 +1885,6 @@ class TestCopyFile(unittest.TestCase):
 
 class _CopyFileTest(object):
     FILESIZE = (10 * 1024 * 1024)  # 10 MiB
-    BUFSIZE = 8192
     FILEDATA = b""
 
     @classmethod
