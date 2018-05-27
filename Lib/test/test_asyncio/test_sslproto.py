@@ -2,6 +2,7 @@
 
 import os
 import logging
+import socket
 import time
 import unittest
 from unittest import mock
@@ -252,6 +253,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             sock.sendall(b'O')
             data = sock.recv_all(len(HELLO_MSG))
             self.assertEqual(len(data), len(HELLO_MSG))
+
+            sock.shutdown(socket.SHUT_RDWR)
             sock.close()
 
         class ClientProto(asyncio.Protocol):
@@ -310,6 +313,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             sock.sendall(b'O')
             data = sock.recv_all(len(HELLO_MSG))
             self.assertEqual(len(data), len(HELLO_MSG))
+
+            sock.shutdown(socket.SHUT_RDWR)
             sock.close()
 
         class ClientProto(asyncio.BufferedProtocol):
@@ -361,8 +366,6 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
-        # TODO: fix TLSv1.3 support
-        client_context.options |= ssl.OP_NO_TLSv1_3
 
         def client(sock, addr):
             time.sleep(0.5)
@@ -374,12 +377,15 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
             sock.start_tls(client_context)
             sock.sendall(HELLO_MSG)
+
+            sock.shutdown(socket.SHUT_RDWR)
             sock.close()
 
         class ServerProto(asyncio.Protocol):
-            def __init__(self, on_con, on_eof):
+            def __init__(self, on_con, on_eof, on_con_lost):
                 self.on_con = on_con
                 self.on_eof = on_eof
+                self.on_con_lost = on_con_lost
                 self.data = b''
 
             def connection_made(self, tr):
@@ -390,6 +396,12 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
             def eof_received(self):
                 self.on_eof.set_result(1)
+
+            def connection_lost(self, exc):
+                if exc is None:
+                    self.on_con_lost.set_result(None)
+                else:
+                    self.on_con_lost.set_exception(exc)
 
         async def main():
             tr = await on_con
@@ -402,6 +414,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 server_side=True)
 
             await on_eof
+            await on_con_lost
             self.assertEqual(proto.data, HELLO_MSG)
             new_tr.close()
 
@@ -410,7 +423,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         on_con = self.loop.create_future()
         on_eof = self.loop.create_future()
-        proto = ServerProto(on_con, on_eof)
+        on_con_lost = self.loop.create_future()
+        proto = ServerProto(on_con, on_eof, on_con_lost)
 
         server = self.loop.run_until_complete(
             self.loop.create_server(
