@@ -97,6 +97,10 @@ corresponding Unix manual entries for more information on calls.");
 #include <sys/sendfile.h>
 #endif
 
+#if defined(__APPLE__)
+#include <copyfile.h>
+#endif
+
 #ifdef HAVE_SCHED_H
 #include <sched.h>
 #endif
@@ -8760,6 +8764,15 @@ static PyObject *
 os__fcopyfile_impl(PyObject *module, int infd, int outfd)
 /*[clinic end generated code: output=3e629d5c50b33d04 input=565c8d0191b573b8]*/
 {
+    // copyfile() source code:
+    // https://opensource.apple.com/source/copyfile/copyfile-42/copyfile.c
+    int ret;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = fcopyfile(infd, outfd, NULL, COPYFILE_DATA);
+    Py_END_ALLOW_THREADS
+    if (ret < 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
 #endif

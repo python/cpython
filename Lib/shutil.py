@@ -42,8 +42,14 @@ try:
 except ImportError:
     getgrnam = None
 
+try:
+    import posix
+except ImportError:
+    posix = None
+
 _HAS_LINUX_SENDFILE = hasattr(os, "sendfile") and \
     sys.platform.startswith("linux")
+_HAS_FCOPYFILE = hasattr(posix, "_fcopyfile")
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
@@ -86,6 +92,24 @@ def copyfileobj(fsrc, fdst, length=16*1024):
         if not buf:
             break
         fdst.write(buf)
+
+def _copyfileobj_fcopyfile(fsrc, fdst):
+    """Copy data from one regular file object to another by using
+    high-performance fcopyfile() syscall (OSX only).
+    """
+    try:
+        infd = fsrc.fileno()
+        outfd = fdst.fileno()
+    except Exception as err:
+        raise _GiveupOnZeroCopy(err)  # not a regular file
+
+    try:
+        posix._fcopyfile(infd, outfd)
+    except OSError as err:
+        if err.errno in {errno.EINVAL, errno.ENOTSUP}:
+            raise _GiveupOnZeroCopy(err)
+        else:
+            raise err from None
 
 def _copyfileobj_sendfile(fsrc, fdst):
     """Copy data from one regular file object to another by using
@@ -148,6 +172,12 @@ def _copyfileobj2(fsrc, fdst):
     if _HAS_LINUX_SENDFILE:
         try:
             return _copyfileobj_sendfile(fsrc, fdst)
+        except _GiveupOnZeroCopy:
+            pass
+
+    if _HAS_FCOPYFILE:
+        try:
+            return _copyfileobj_fcopyfile(fsrc, fdst)
         except _GiveupOnZeroCopy:
             pass
 

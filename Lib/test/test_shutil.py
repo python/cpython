@@ -24,11 +24,16 @@ from shutil import (make_archive,
                     SameFileError, _GiveupOnZeroCopy)
 import tarfile
 import zipfile
+try:
+    import posix
+except ImportError:
+    posix = None
 
 from test import support
 from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
+SUPPORTS_FCOPYFILE = hasattr(posix, "_fcopyfile")
 
 try:
     import grp
@@ -1883,9 +1888,11 @@ class TestCopyFile(unittest.TestCase):
             os.rmdir(dst_dir)
 
 
-class _CopyFileTest(object):
+class _ZeroCopyFileTest(object):
+    """Tests common to all zero-copy APIs."""
     FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     FILEDATA = b""
+    PATCHPOINT = ""
 
     @classmethod
     def setUpClass(cls):
@@ -1907,20 +1914,21 @@ class _CopyFileTest(object):
             with open(TESTFN2, "wb") as dst:
                 yield (src, dst)
 
+    def zerocopy_fun(self, *args, **kwargs):
+        raise NotImplementedError("must be implemented in subclass")
 
-@unittest.skipIf(not SUPPORTS_SENDFILE, 'os.sendfile() not supported')
-class TestCopyFileObjSendfile(_CopyFileTest, unittest.TestCase):
+    # ---
 
     def test_regular_copy(self):
         with self.get_files() as (src, dst):
-            shutil._copyfileobj_sendfile(src, dst)
+            self.zerocopy_fun(src, dst)
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_non_regular_file_src(self):
         with io.BytesIO(self.FILEDATA) as src:
             with open(TESTFN2, "wb") as dst:
                 with self.assertRaises(_GiveupOnZeroCopy):
-                    shutil._copyfileobj_sendfile(src, dst)
+                    self.zerocopy_fun(src, dst)
                 shutil.copyfileobj(src, dst)
 
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
@@ -1929,7 +1937,7 @@ class TestCopyFileObjSendfile(_CopyFileTest, unittest.TestCase):
         with open(TESTFN, "rb") as src:
             with io.BytesIO() as dst:
                 with self.assertRaises(_GiveupOnZeroCopy):
-                    shutil._copyfileobj_sendfile(src, dst)
+                    self.zerocopy_fun(src, dst)
                 shutil.copyfileobj(src, dst)
                 dst.seek(0)
                 self.assertEqual(dst.read(), self.FILEDATA)
@@ -1944,28 +1952,43 @@ class TestCopyFileObjSendfile(_CopyFileTest, unittest.TestCase):
 
         with open(srcname, "rb") as src:
             with open(dstname, "wb") as dst:
-                shutil._copyfileobj_sendfile(src, dst)
+                self.zerocopy_fun(src, dst)
 
         self.assertEqual(read_file(dstname, binary=True), b"")
 
     def test_unhandled_exception(self):
-        with unittest.mock.patch('os.sendfile',
+        with unittest.mock.patch(self.PATCHPOINT,
                                  side_effect=ZeroDivisionError):
             self.assertRaises(ZeroDivisionError,
                               shutil.copyfile, TESTFN, TESTFN2)
 
     def test_exception_on_first_call(self):
-        # Emulate a case where the first call to sendfile() raises
-        # an exception in which case the function is supposed to
-        # give up immediately.
-        with unittest.mock.patch('os.sendfile',
-                                 side_effect=OSError):
+        # Emulate a case where the first call to the zero-copy
+        # function raises an exception in which case the function is
+        # supposed to give up immediately.
+        with unittest.mock.patch(self.PATCHPOINT,
+                                 side_effect=OSError(errno.EINVAL, "yo")):
             with self.get_files() as (src, dst):
                 with self.assertRaises(_GiveupOnZeroCopy):
-                    shutil._copyfileobj_sendfile(src, dst)
+                    self.zerocopy_fun(src, dst)
+
+    def test_filesystem_full(self):
+        # Emulate a case where filesystem is full and sendfile() fails
+        # on first call.
+        with unittest.mock.patch(self.PATCHPOINT,
+                                 side_effect=OSError(errno.ENOSPC, "yo")):
+            with self.get_files() as (src, dst):
+                self.assertRaises(OSError, self.zerocopy_fun, src, dst)
+
+
+@unittest.skipIf(not SUPPORTS_SENDFILE, 'os.sendfile() not supported')
+class TestCopyFileObjSendfile(_ZeroCopyFileTest, unittest.TestCase):
+    PATCHPOINT = "os.sendfile"
+
+    def zerocopy_fun(self, *args, **kwargs):
+        return shutil._copyfileobj_sendfile(*args, **kwargs)
 
     def test_exception_on_second_call(self):
-        # ...but on subsequent calls we expect the exception to bubble up.
         def sendfile(*args, **kwargs):
             if not flag:
                 flag.append(None)
@@ -2037,12 +2060,14 @@ class TestCopyFileObjSendfile(_CopyFileTest, unittest.TestCase):
             blocksize = m.call_args[0][3]
             self.assertEqual(blocksize, 2 ** 23)
 
-    def test_filesystem_full(self):
-        # Emulate a case where filesystem is full and sendfile() fails
-        # on first call.
-        with unittest.mock.patch('os.sendfile',
-                                 side_effect=OSError(errno.ENOSPC, "yo")):
-            self.assertRaises(OSError, shutil.copyfile, TESTFN, TESTFN2)
+
+@unittest.skipIf(not SUPPORTS_FCOPYFILE,
+                 'os._fcopyfile() not supported (OSX only)')
+class TestCopyFileFCopyFile(_ZeroCopyFileTest, unittest.TestCase):
+    PATCHPOINT = "posix._fcopyfile"
+
+    def zerocopy_fun(self, *args, **kwargs):
+        return shutil._copyfileobj_fcopyfile(*args, **kwargs)
 
 
 class TermsizeTests(unittest.TestCase):
