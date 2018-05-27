@@ -169,11 +169,6 @@ purposes.
 
      3DES was dropped from the default cipher string.
 
-   .. versionchanged:: 3.7
-
-     TLS 1.3 cipher suites TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384,
-     and TLS_CHACHA20_POLY1305_SHA256 were added to the default cipher string.
-
 
 Exceptions
 ^^^^^^^^^^
@@ -1601,6 +1596,9 @@ to speed up repeated connections from the same clients.
       when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       give the currently selected cipher.
 
+      OpenSSL 1.1.1 has TLS 1.3 cipher suites enabled by default. The suites
+      cannot be disabled with :meth:`~SSLContext.set_ciphers`.
+
 .. method:: SSLContext.set_alpn_protocols(protocols)
 
    Specify which protocols the socket should advertise during the SSL/TLS
@@ -2589,7 +2587,33 @@ successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
 :func:`~ssl.RAND_pseudo_bytes` is sufficient.
 
 
-.. ssl-libressl:
+.. _ssl-tlsv1_3:
+
+TLS 1.3
+-------
+
+.. versionadded:: 3.7
+
+Python has provisional and experimental support for TLS 1.3 with OpenSSL
+1.1.1.  The new protocol behaves slightly differently than previous version
+of TLS/SSL.  Some new TLS 1.3 features are not yet available.
+
+- TLS 1.3 uses a disjunct set of cipher suites. All AES-GCM and
+  ChaCha20 cipher suites are enabled by default.  The method
+  :meth:`SSLContext.set_ciphers` cannot enable or disable any TLS 1.3
+  ciphers yet, but :meth:`SSLContext.get_cipers` returns them.
+- Session tickets are no longer sent as part of the initial handshake and
+  are handled differently.  :attr:`SSLSocket.session` and :class:`SSLSession`
+  are not compatible with TLS 1.3.
+- Client-side certificates are also no longer verified during the initial
+  handshake.  A server can request a certificate at any time.  Clients
+  process certificate requests while they send or receive application data
+  from the server.
+- TLS 1.3 features like early data, deferred TLS client cert request,
+  signature algorithm configuration, and rekeying are not supported yet.
+
+
+.. _ssl-libressl:
 
 LibreSSL support
 ----------------
