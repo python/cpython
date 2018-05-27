@@ -24,6 +24,8 @@ class EventTest(AbstractTkTest, unittest.TestCase):
             self.assertIsInstance(e.user_data, str)
             if EventTest.test_data is not None:
                 self.assertEqual(e.user_data, EventTest.test_data)
+            else:
+                self.assertEqual(e.user_data, '')
         self.pump_events()
         EventTest.called = False
         b = self.root.bind('<<TEST>>', lambda e:receive(e))
