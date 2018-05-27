@@ -47,6 +47,8 @@ def module_path_to_dotted_name(path):
     return path.replace(os.sep, '.')
 
 NOW = time.time()
+NOW_Z = time.localtime(NOW)[:6]
+
 test_pyc = make_pyc(test_co, NOW, len(test_src))
 
 
@@ -56,8 +58,30 @@ TESTPACK2 = "ziptestpackage2"
 TEMP_DIR = os.path.abspath("junk95142")
 TEMP_ZIP = os.path.abspath("junk95142.zip")
 
+TEST_CODE_OBJECT_PATH_INIT = """\
+from .ztst import get_co_filename
+"""
+
+TEST_CODE_OBJECT_PATH_SRC = """\
+import sys
+def get_co_filename():
+    return sys._getframe().f_code.co_filename
+"""
+
 pyc_file = importlib.util.cache_from_source(TESTMOD + '.py')
 pyc_ext = '.pyc'
+
+
+def make_codeobject_test_zip(zpath, compression, keep_src, keep_code):
+    with ZipFile(zpath, "w", compression) as z:
+        if keep_src:
+            z.writestr(ZipInfo('co_path_test/__init__.py', NOW_Z), TEST_CODE_OBJECT_PATH_INIT)
+            z.writestr(ZipInfo('co_path_test/ztst.py', NOW_Z), TEST_CODE_OBJECT_PATH_SRC)
+        if keep_code:
+            z.writestr(ZipInfo('co_path_test/__init__.pyc', NOW_Z),
+               make_pyc(compile(TEST_CODE_OBJECT_PATH_INIT, 'co_path_test/__init__.py', 'exec'), NOW, len(TEST_CODE_OBJECT_PATH_INIT)))
+            z.writestr(ZipInfo('co_path_test/ztst.pyc', NOW_Z),
+               make_pyc(compile(TEST_CODE_OBJECT_PATH_SRC, 'co_path_test/ztst.py', 'exec'), NOW, len(TEST_CODE_OBJECT_PATH_SRC)))
 
 
 class ImportHooksBaseTestCase(unittest.TestCase):
@@ -652,6 +676,32 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
     def testTraceback(self):
         files = {TESTMOD + ".py": (NOW, raise_src)}
         self.doTest(None, files, TESTMOD, call=self.doTraceback)
+
+    def doCodeObjectPathTest(self, keep_src, keep_code):
+        path_inserted = False
+        try:
+            make_codeobject_test_zip(TEMP_ZIP, self.compression, keep_src, keep_code)
+            sys.path.insert(0, TEMP_ZIP)
+            path_inserted = True
+            import co_path_test
+            co_path = co_path_test.get_co_filename()
+            self.assertTrue(co_path.startswith(TEMP_ZIP))
+        finally:
+            if path_inserted:
+                del sys.path[0]
+            if os.path.exists(TEMP_ZIP):
+                os.remove(TEMP_ZIP)
+            if 'co_path_test' in sys.modules:
+                del sys.modules['co_path_test']
+
+    def testCodeObjectPathPy(self):
+        self.doCodeObjectPathTest(keep_src=True, keep_code=False)
+
+    def testCodeObjectPathPyc(self):
+        self.doCodeObjectPathTest(keep_src=False, keep_code=True)
+
+    def testCodeObjectPathBoth(self):
+        self.doCodeObjectPathTest(keep_src=True, keep_code=True)
 
     @unittest.skipIf(support.TESTFN_UNENCODABLE is None,
                      "need an unencodable filename")
