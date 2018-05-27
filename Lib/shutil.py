@@ -110,7 +110,6 @@ def _copyfileobj_sendfile(fsrc, fdst):
         blocksize = 2 ** 27  # 128MB
 
     offset = 0
-    total = 0
     while True:
         try:
             sent = os.sendfile(outfd, infd, offset, blocksize)
@@ -120,7 +119,7 @@ def _copyfileobj_sendfile(fsrc, fdst):
                 # does not support copies between regular files (only
                 # sockets).
                 _HAS_LINUX_SENDFILE = False
-            if total == 0:
+            if offset == 0:
                 if err.errno == errno.ENOSPC:  # filesystem is full
                     raise err from None
                 # Immediately give up on first call. Probably one
@@ -131,7 +130,6 @@ def _copyfileobj_sendfile(fsrc, fdst):
             if sent == 0:
                 break  # EOF
             offset += sent
-            total += sent
 
 def _copyfileobj2(fsrc, fdst):
     # Copies 2 filesystem files by using zero-copy sendfile(2) syscall
