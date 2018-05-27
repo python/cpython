@@ -64,6 +64,24 @@ def write_file(path, content, binary=False):
     with open(path, 'wb' if binary else 'w') as fp:
         fp.write(content)
 
+def write_test_file(path, size):
+    """Create a test file with an arbitrary size and random text content."""
+    def chunks(total, step):
+        assert total >= step
+        while total > step:
+            yield step
+            total -= step
+        if total:
+            yield total
+
+    bufsize = min(size, 8192)
+    chunk = b"".join([random.choice(string.ascii_letters).encode()
+                      for i in range(bufsize)])
+    with open(path, 'wb') as f:
+        for csize in chunks(size, bufsize):
+            f.write(chunk)
+    assert os.path.getsize(path) == size
+
 def read_file(path, binary=False):
     """Return contents from a file located at *path*.
 
@@ -1865,27 +1883,13 @@ class TestCopyFile(unittest.TestCase):
             os.rmdir(dst_dir)
 
 
-@unittest.skipIf(not SUPPORTS_SENDFILE, 'os.sendfile() not supported')
-class TestCopyFileObjSendfile(unittest.TestCase):
+class _CopyFileTest(object):
     FILESIZE = (10 * 1024 * 1024)  # 10 MiB
-    BUFSIZE = 8192
     FILEDATA = b""
 
     @classmethod
     def setUpClass(cls):
-        def chunks(total, step):
-            assert total >= step
-            while total > step:
-                yield step
-                total -= step
-            if total:
-                yield total
-
-        chunk = b"".join([random.choice(string.ascii_letters).encode()
-                          for i in range(cls.BUFSIZE)])
-        with open(TESTFN, 'wb') as f:
-            for csize in chunks(cls.FILESIZE, cls.BUFSIZE):
-                f.write(chunk)
+        write_test_file(TESTFN, cls.FILESIZE)
         with open(TESTFN, 'rb') as f:
             cls.FILEDATA = f.read()
             assert len(cls.FILEDATA) == cls.FILESIZE
@@ -1902,6 +1906,10 @@ class TestCopyFileObjSendfile(unittest.TestCase):
         with open(TESTFN, "rb") as src:
             with open(TESTFN2, "wb") as dst:
                 yield (src, dst)
+
+
+@unittest.skipIf(not SUPPORTS_SENDFILE, 'os.sendfile() not supported')
+class TestCopyFileObjSendfile(_CopyFileTest, unittest.TestCase):
 
     def test_regular_copy(self):
         with self.get_files() as (src, dst):
