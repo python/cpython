@@ -42,7 +42,8 @@ try:
 except ImportError:
     getgrnam = None
 
-_HAS_SENDFILE = hasattr(os, "sendfile")
+_HAS_LINUX_SENDFILE = hasattr(os, "sendfile") and \
+    sys.platform.startswith("linux")
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
@@ -87,10 +88,11 @@ def copyfileobj(fsrc, fdst, length=16*1024):
         fdst.write(buf)
 
 def _copyfileobj_sendfile(fsrc, fdst):
-    """Copy data from one file object to another by using
-    high-performance sendfile() method.
+    """Copy data from one regular file object to another by using
+    high-performance sendfile() method. Linux >= 2.6.33 is apparently
+    the only platform able to do this.
     """
-    global _HAS_SENDFILE
+    global _HAS_LINUX_SENDFILE
     try:
         infd = fsrc.fileno()
         outfd = fdst.fileno()
@@ -103,31 +105,33 @@ def _copyfileobj_sendfile(fsrc, fdst):
     # should not make any difference, also in case the file content
     # changes while being copied.
     try:
-        blocksize = max(os.fstat(infd).st_size, 10 * 1024)
+        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MB
     except Exception:
-        blocksize = 100 * 1024
+        blocksize = 2 ** 27  # 128MB
 
     offset = 0
-    total = 0
     while True:
         try:
             sent = os.sendfile(outfd, infd, offset, blocksize)
         except OSError as err:
             if err.errno == errno.ENOTSOCK:
-                # sendfile() on this platform does not support copies
-                # between regular files (only sockets).
-                _HAS_SENDFILE = False
-            if total == 0:
-                # Immediately give up on first call. Probably one of the
-                # fds is not a regular mmap(2)-like fd.
-                raise _GiveupOnZeroCopy(err)
-            else:
+                # sendfile() on this platform (probably Linux < 2.6.33)
+                # does not support copies between regular files (only
+                # sockets).
+                _HAS_LINUX_SENDFILE = False
+
+            if err.errno == errno.ENOSPC:  # filesystem is full
                 raise err from None
+
+            # Give up on first call and if no data was copied.
+            if offset == 0 and os.lseek(outfd, 0, os.SEEK_CUR) == 0:
+                raise _GiveupOnZeroCopy(err)
+
+            raise err from None
         else:
             if sent == 0:
                 break  # EOF
             offset += sent
-            total += sent
 
 def _copyfileobj2(fsrc, fdst):
     # Copies 2 filesystem files by using zero-copy sendfile(2) syscall
@@ -141,7 +145,7 @@ def _copyfileobj2(fsrc, fdst):
     #   GzipFile (which decompresses data), HTTPResponse (which decodes
     #   chunks).
     # - possibly others...
-    if _HAS_SENDFILE:
+    if _HAS_LINUX_SENDFILE:
         try:
             return _copyfileobj_sendfile(fsrc, fdst)
         except _GiveupOnZeroCopy:
