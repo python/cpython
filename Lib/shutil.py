@@ -119,16 +119,15 @@ def _copyfileobj_sendfile(fsrc, fdst):
                 # does not support copies between regular files (only
                 # sockets).
                 _HAS_LINUX_SENDFILE = False
-            # Try hard to determine if no data was copied and give
-            # up only in that case.
-            if offset == 0 or os.lseek(outfd, 0, os.SEEK_CUR) == 0:
-                if err.errno == errno.ENOSPC:  # filesystem is full
-                    raise err from None
-                # Immediately give up on first call. Probably one
-                # of the fds is not a regular mmap(2)-like fd.
-                raise _GiveupOnZeroCopy(err)
-            else:
+
+            if err.errno == errno.ENOSPC:  # filesystem is full
                 raise err from None
+
+            # Give up on first call and if no data was copied.
+            if offset == 0 and os.lseek(outfd, 0, os.SEEK_CUR) == 0:
+                raise _GiveupOnZeroCopy(err)
+
+            raise err from None
         else:
             if sent == 0:
                 break  # EOF
