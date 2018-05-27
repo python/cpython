@@ -80,6 +80,7 @@ def write_test_file(path, size):
     with open(path, 'wb') as f:
         for csize in chunks(size, bufsize):
             f.write(chunk)
+    assert os.path.getsize(path) == size
 
 def read_file(path, binary=False):
     """Return contents from a file located at *path*.
