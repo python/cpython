@@ -8745,6 +8745,26 @@ done:
 #endif /* HAVE_SENDFILE */
 
 
+#if defined(__APPLE__)
+/*[clinic input]
+os._fcopyfile
+
+    infd: int
+    outfd: int
+    /
+
+Efficiently copy 2 file descriptors (OSX only).
+[clinic start generated code]*/
+
+static PyObject *
+os__fcopyfile_impl(PyObject *module, int infd, int outfd)
+/*[clinic end generated code: output=3e629d5c50b33d04 input=565c8d0191b573b8]*/
+{
+    Py_RETURN_NONE;
+}
+#endif
+
+
 /*[clinic input]
 os.fstat
 
@@ -12921,6 +12941,7 @@ static PyMethodDef posix_methods[] = {
     OS_UTIME_METHODDEF
     OS_TIMES_METHODDEF
     OS__EXIT_METHODDEF
+    OS__FCOPYFILE_METHODDEF
     OS_EXECV_METHODDEF
     OS_EXECVE_METHODDEF
     OS_SPAWNV_METHODDEF

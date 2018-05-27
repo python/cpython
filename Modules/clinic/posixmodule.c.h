@@ -3853,6 +3853,37 @@ exit:
     return return_value;
 }
 
+#if defined(__APPLE__)
+PyDoc_STRVAR(os__fcopyfile__doc__,
+"_fcopyfile($module, infd, outfd, /)\n"
+"--\n"
+"\n"
+"Efficiently copy 2 file descriptors (OSX only).");
+
+#define OS__FCOPYFILE_METHODDEF    \
+    {"_fcopyfile", (PyCFunction)os__fcopyfile, METH_FASTCALL, os__fcopyfile__doc__},
+
+static PyObject *
+os__fcopyfile_impl(PyObject *module, int infd, int outfd);
+
+static PyObject *
+os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int infd;
+    int outfd;
+
+    if (!_PyArg_ParseStack(args, nargs, "ii:_fcopyfile",
+        &infd, &outfd)) {
+        goto exit;
+    }
+    return_value = os__fcopyfile_impl(module, infd, outfd);
+
+exit:
+    return return_value;
+}
+#endif /* defined(__APPLE__) */
+
 PyDoc_STRVAR(os_fstat__doc__,
 "fstat($module, /, fd)\n"
 "--\n"
@@ -6414,6 +6445,10 @@ exit:
     #define OS_PREADV_METHODDEF
 #endif /* !defined(OS_PREADV_METHODDEF) */
 
+#ifndef OS__FCOPYFILE_METHODDEF
+    #define OS__FCOPYFILE_METHODDEF
+#endif /* !defined(OS__FCOPYFILE_METHODDEF) */
+
 #ifndef OS_PIPE_METHODDEF
     #define OS_PIPE_METHODDEF
 #endif /* !defined(OS_PIPE_METHODDEF) */
@@ -6589,4 +6624,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=8d3d9dddf254c3c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b2a03113a42546f5 input=a9049054013a1b77]*/
