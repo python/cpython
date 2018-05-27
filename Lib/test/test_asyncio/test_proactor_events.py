@@ -538,6 +538,7 @@ class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
         buf_proto.get_buffer.side_effect = lambda hint: buf
 
         tr.set_protocol(buf_proto)
+        test_utils.run_briefly(self.loop)
         res = asyncio.Future(loop=self.loop)
         res.set_result(4)
 
@@ -556,6 +557,7 @@ class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
         buf_proto = test_utils.make_test_protocol(asyncio.BufferedProtocol)
         buf = bytearray(4)
         buf_proto.get_buffer.side_effect = lambda hint: buf
+        tr._read_fut.done.side_effect = lambda: False
         tr.set_protocol(buf_proto)
         self.assertFalse(buf_proto.get_buffer.called)
         test_utils.run_briefly(self.loop)
