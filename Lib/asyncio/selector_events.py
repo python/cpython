@@ -804,7 +804,7 @@ class _SelectorSocketTransport(_SelectorTransport):
                     self._sock.shutdown(socket.SHUT_WR)
 
     def write_eof(self):
-        if self._eof:
+        if self._closing or self._eof:
             return
         self._eof = True
         if not self._buffer:
