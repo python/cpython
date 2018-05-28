@@ -2,7 +2,6 @@
 
 import logging
 import socket
-import time
 import unittest
 from unittest import mock
 try:
@@ -371,7 +370,6 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         client_context = test_utils.simple_client_sslcontext()
 
         def client(sock, addr):
-            time.sleep(0.5)
             sock.settimeout(self.TIMEOUT)
 
             sock.connect(addr)
@@ -406,7 +404,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 else:
                     self.on_con_lost.set_exception(exc)
 
-        async def main():
+        async def main(proto, on_con, on_eof, on_con_lost):
             tr = await on_con
             tr.write(HELLO_MSG)
 
@@ -421,23 +419,25 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             self.assertEqual(proto.data, HELLO_MSG)
             new_tr.close()
 
+        async def run_main():
+            on_con = self.loop.create_future()
+            on_eof = self.loop.create_future()
+            on_con_lost = self.loop.create_future()
+            proto = ServerProto(on_con, on_eof, on_con_lost)
+
+            server = await self.loop.create_server(
+                lambda: proto, '127.0.0.1', 0)
+            addr = server.sockets[0].getsockname()
+
+            with self.tcp_client(lambda sock: client(sock, addr)):
+                await asyncio.wait_for(
+                    main(proto, on_con, on_eof, on_con_lost),
+                    loop=self.loop, timeout=self.TIMEOUT)
+
             server.close()
             await server.wait_closed()
 
-        on_con = self.loop.create_future()
-        on_eof = self.loop.create_future()
-        on_con_lost = self.loop.create_future()
-        proto = ServerProto(on_con, on_eof, on_con_lost)
-
-        server = self.loop.run_until_complete(
-            self.loop.create_server(
-                lambda: proto, '127.0.0.1', 0))
-        addr = server.sockets[0].getsockname()
-
-        with self.tcp_client(lambda sock: client(sock, addr)):
-            self.loop.run_until_complete(
-                asyncio.wait_for(main(),
-                                 loop=self.loop, timeout=self.TIMEOUT))
+        self.loop.run_until_complete(run_main())
 
     def test_start_tls_wrong_args(self):
         async def main():
