@@ -294,13 +294,6 @@ class _SpecialForm(_Final, _Immutable, _root=True):
 
     __slots__ = ('_name', '_doc')
 
-    def __getstate__(self):
-        return {'name': self._name, 'doc': self._doc}
-
-    def __setstate__(self, state):
-        self._name = state['name']
-        self._doc = state['doc']
-
     def __new__(cls, *args, **kwds):
         """Constructor.
 
@@ -554,20 +547,6 @@ class TypeVar(_Final, _Immutable, _root=True):
         def_mod = sys._getframe(1).f_globals['__name__']  # for pickling
         if def_mod != 'typing':
             self.__module__ = def_mod
-
-    def __getstate__(self):
-        return {'name': self.__name__,
-                'bound': self.__bound__,
-                'constraints': self.__constraints__,
-                'co': self.__covariant__,
-                'contra': self.__contravariant__}
-
-    def __setstate__(self, state):
-        self.__name__ = state['name']
-        self.__bound__ = state['bound']
-        self.__constraints__ = state['constraints']
-        self.__covariant__ = state['co']
-        self.__contravariant__ = state['contra']
 
     def __repr__(self):
         if self.__covariant__:
