@@ -1455,7 +1455,7 @@ class MockTest(unittest.TestCase):
         f1 = mocked_open('a-name')
         lines = [line for line in f1]
         self.assertEqual(lines[0], 'Remarkable\n')
-        self.assertEqual(lines[1], 'Norwegian Blue\n')
+        self.assertEqual(lines[1], 'Norwegian Blue')
 
     def test_mock_open_write(self):
         # Test exception in file writing write()
