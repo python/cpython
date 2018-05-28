@@ -142,8 +142,8 @@
       <_Lines Include="@(_Symbols->'%(Symbol)')" />
     </ItemGroup>
     <MakeDir Directories="$(IntDir)" />
-    <Message Text="Updating python3stub.def" Condition="@(_OriginalLines) != @(_Lines)" Importance="high" />
+    <Message Text="Updating python3stub.def" Condition="@(_Lines) != @(_OriginalLines)" Importance="high" />
     <WriteLinesToFile File="$(IntDir)python3stub.def" Lines="@(_Lines)" Overwrite="true"
-                      Condition="@(_DefLines) != @(_Lines)" />
+                      Condition="@(_Lines) != @(_OriginalLines)" />
   </Target>
 </Project>
