@@ -1,6 +1,5 @@
 """Tests for asyncio/sslproto.py."""
 
-import os
 import logging
 import socket
 import time
@@ -187,7 +186,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
     PAYLOAD_SIZE = 1024 * 100
-    TIMEOUT = 10
+    TIMEOUT = 60
 
     def new_loop(self):
         raise NotImplementedError
