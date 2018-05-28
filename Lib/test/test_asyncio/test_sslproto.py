@@ -293,7 +293,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
             new_tr.close()
 
-        with self.tcp_server(serve) as srv:
+        with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
                 asyncio.wait_for(client(srv.addr), loop=self.loop, timeout=10))
 
@@ -358,7 +358,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
             new_tr.close()
 
-        with self.tcp_server(serve) as srv:
+        with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
                 asyncio.wait_for(client(srv.addr),
                                  loop=self.loop, timeout=self.TIMEOUT))
@@ -412,7 +412,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
             new_tr = await self.loop.start_tls(
                 tr, proto, server_context,
-                server_side=True)
+                server_side=True,
+                ssl_handshake_timeout=self.TIMEOUT)
 
             await on_eof
             await on_con_lost
@@ -429,7 +430,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 lambda: proto, '127.0.0.1', 0)
             addr = server.sockets[0].getsockname()
 
-            with self.tcp_client(lambda sock: client(sock, addr)):
+            with self.tcp_client(lambda sock: client(sock, addr),
+                                 timeout=self.TIMEOUT):
                 await asyncio.wait_for(
                     main(proto, on_con, on_eof, on_con_lost),
                     loop=self.loop, timeout=self.TIMEOUT)
