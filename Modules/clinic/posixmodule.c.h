@@ -3854,6 +3854,7 @@ exit:
 }
 
 #if defined(__APPLE__)
+
 PyDoc_STRVAR(os__fcopyfile__doc__,
 "_fcopyfile($module, infd, outfd, /)\n"
 "--\n"
@@ -3882,7 +3883,41 @@ os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
+
 #endif /* defined(__APPLE__) */
+
+#if (defined MS_WINDOWS)
+
+PyDoc_STRVAR(os__win32copyfile__doc__,
+"_win32copyfile($module, src, dst, /)\n"
+"--\n"
+"\n"
+"Efficiently copy 2 files (Windows only).");
+
+#define OS__WIN32COPYFILE_METHODDEF    \
+    {"_win32copyfile", (PyCFunction)os__win32copyfile, METH_FASTCALL, os__win32copyfile__doc__},
+
+static PyObject *
+os__win32copyfile_impl(PyObject *module, const char *src, const char *dst);
+
+static PyObject *
+os__win32copyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *src;
+    const char *dst;
+
+    if (!_PyArg_ParseStack(args, nargs, "ss:_win32copyfile",
+        &src, &dst)) {
+        goto exit;
+    }
+    return_value = os__win32copyfile_impl(module, src, dst);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined MS_WINDOWS) */
 
 PyDoc_STRVAR(os_fstat__doc__,
 "fstat($module, /, fd)\n"
@@ -6449,6 +6484,10 @@ exit:
     #define OS__FCOPYFILE_METHODDEF
 #endif /* !defined(OS__FCOPYFILE_METHODDEF) */
 
+#ifndef OS__WIN32COPYFILE_METHODDEF
+    #define OS__WIN32COPYFILE_METHODDEF
+#endif /* !defined(OS__WIN32COPYFILE_METHODDEF) */
+
 #ifndef OS_PIPE_METHODDEF
     #define OS_PIPE_METHODDEF
 #endif /* !defined(OS_PIPE_METHODDEF) */
@@ -6624,4 +6663,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=b2a03113a42546f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=38eb73468965ae35 input=a9049054013a1b77]*/
