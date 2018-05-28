@@ -11,7 +11,7 @@ module _asyncio
 /* identifiers used from some functions */
 _Py_IDENTIFIER(__asyncio_running_event_loop__);
 _Py_IDENTIFIER(add_done_callback);
-_Py_IDENTIFIER(all_tasks);
+_Py_IDENTIFIER(_all_tasks_compat);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
 _Py_IDENTIFIER(current_task);
@@ -2125,7 +2125,7 @@ _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
         return NULL;
     }
 
-    all_tasks_func = _PyObject_GetAttrId(asyncio_mod, &PyId_all_tasks);
+    all_tasks_func = _PyObject_GetAttrId(asyncio_mod, &PyId__all_tasks_compat);
     if (all_tasks_func == NULL) {
         return NULL;
     }
