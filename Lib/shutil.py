@@ -48,7 +48,7 @@ if os.name == 'posix':
 elif os.name == 'nt':
     import nt
 
-_HAS_SENDFILE = hasattr(os, "sendfile")
+_HAS_SENDFILE = posix and hasattr(os, "sendfile")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
