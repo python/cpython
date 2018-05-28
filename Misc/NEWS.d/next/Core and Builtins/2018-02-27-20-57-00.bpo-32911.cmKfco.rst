@@ -1,0 +1,4 @@
+Reverted :issue:`29463`. ``docstring`` field is removed from Module, ClassDef,
+FunctionDef, and AsyncFunctionDef ast nodes which is added in 3.7a1.  Docstring
+expression is restored as a first statement in their body.  Based on patch by
+Inada Naoki.
