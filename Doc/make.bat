@@ -13,7 +13,7 @@ if not defined SPHINXBUILD if defined PYTHON (
         %PYTHON% -m pip install sphinx
         if errorlevel 1 exit /B
     )
-    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sphinx.main()"
+    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sys.exit(sphinx.main())"
 )
 
 if not defined PYTHON set PYTHON=py
