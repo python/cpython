@@ -166,13 +166,13 @@ def _win32_copyfile(src, dst):
     nt._win32copyfile(src, dst)
 
 def _copyfileobj2(fsrc, fdst):
-    # Copies 2 filesystem files by using zero-copy sendfile(2) syscall
-    # (faster).  This is used by copyfile(), copy() and copy2() in order
-    # to leave copyfileobj() alone and not introduce any unexpected
-    # breakage. Possible risks by using sendfile() in copyfileobj() are:
+    # Copies 2 filesystem files by using zero-copy sendfile(2) (Linux)
+    # or fcopyfile(2) (OSX).  This is used by copyfile(), copy() and
+    # copy2() in order to leave copyfileobj() alone and not introduce
+    # any unexpected breakage. Possible risks by using zero-copy calls
+    # in copyfileobj() are:
     # - fdst cannot be open in "a"(ppend) mode
     # - fsrc and fdst may be opened in text mode
-    # - fdst offset doesn't get updated
     # - fsrc may be a BufferedReader (which hides unread data in a buffer),
     #   GzipFile (which decompresses data), HTTPResponse (which decodes
     #   chunks).
