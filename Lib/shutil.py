@@ -52,8 +52,7 @@ try:
 except ImportError:
     nt = None
 
-_HAS_LINUX_SENDFILE = hasattr(os, "sendfile") and \
-    sys.platform.startswith("linux")
+_HAS_SENDFILE = hasattr(os, "sendfile")
 _HAS_FCOPYFILE = hasattr(posix, "_fcopyfile")
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
@@ -118,10 +117,10 @@ def _copyfileobj_fcopyfile(fsrc, fdst):
 
 def _copyfileobj_sendfile(fsrc, fdst):
     """Copy data from one regular file object to another by using
-    high-performance sendfile() method. Linux >= 2.6.33 is apparently
-    the only platform able to do this.
+    high-performance sendfile() method.
+    This should work on Linux >= 2.6.33 and Solaris only.
     """
-    global _HAS_LINUX_SENDFILE
+    global _HAS_SENDFILE
     try:
         infd = fsrc.fileno()
         outfd = fdst.fileno()
@@ -147,7 +146,8 @@ def _copyfileobj_sendfile(fsrc, fdst):
                 # sendfile() on this platform (probably Linux < 2.6.33)
                 # does not support copies between regular files (only
                 # sockets).
-                _HAS_LINUX_SENDFILE = False
+                _HAS_SENDFILE = False
+                raise _GiveupOnZeroCopy(err)
 
             if err.errno == errno.ENOSPC:  # filesystem is full
                 raise err from None
@@ -163,21 +163,24 @@ def _copyfileobj_sendfile(fsrc, fdst):
             offset += sent
 
 def _win32_copyfile(src, dst):
+    """Uses zero-copy CopyFileW."""
     nt._win32copyfile(src, dst)
 
 def _copyfileobj2(fsrc, fdst):
-    # Copies 2 filesystem files by using zero-copy sendfile(2) (Linux)
-    # or fcopyfile(2) (OSX).  This is used by copyfile(), copy() and
-    # copy2() in order to leave copyfileobj() alone and not introduce
-    # any unexpected breakage. Possible risks by using zero-copy calls
+    """Copies 2 regular mmap-like fds by using zero-copy sendfile(2)
+    (Linux) and fcopyfile(2) (OSX). Fallback on using plain read()/write()
+    copy on error and in case no data was written.
+    """
+    # Note: copyfileobj() is left alone in order to not introduce any
+    # unexpected breakage. Possible risks by using zero-copy calls
     # in copyfileobj() are:
     # - fdst cannot be open in "a"(ppend) mode
     # - fsrc and fdst may be opened in text mode
     # - fsrc may be a BufferedReader (which hides unread data in a buffer),
     #   GzipFile (which decompresses data), HTTPResponse (which decodes
     #   chunks).
-    # - possibly others...
-    if _HAS_LINUX_SENDFILE:
+    # - possibly others
+    if _HAS_SENDFILE:
         try:
             return _copyfileobj_sendfile(fsrc, fdst)
         except _GiveupOnZeroCopy:
