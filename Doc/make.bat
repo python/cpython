@@ -22,7 +22,7 @@ if not defined SPHINXBUILD (
         %PYTHON% -m pip install python-docs-theme
         if errorlevel 1 exit /B
     )
-    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sphinx.main()"
+    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sys.exit(sphinx.main())"
 )
 
 if not defined BLURB (
