@@ -333,7 +333,6 @@ class SelectorStartTLSTests(BaseStartTLS, unittest.TestCase):
 
 @unittest.skipIf(ssl is None, 'No ssl module')
 @unittest.skipUnless(hasattr(asyncio, 'ProactorEventLoop'), 'Windows only')
-@unittest.skipIf(os.environ.get('APPVEYOR'), 'XXX: issue 32458')
 class ProactorStartTLSTests(BaseStartTLS, unittest.TestCase):
 
     def new_loop(self):
