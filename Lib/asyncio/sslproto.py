@@ -592,7 +592,7 @@ class SSLProtocol(protocols.Protocol):
         # (b'', 1) is a special value in _process_write_backlog() to do
         # the SSL handshake
         self._write_backlog.append((b'', 1))
-        self._loop.call_soon(self._process_write_backlog)
+        self._process_write_backlog()
         self._handshake_timeout_handle = \
             self._loop.call_later(self._ssl_handshake_timeout,
                                   self._check_handshake_timeout)
