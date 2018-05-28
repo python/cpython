@@ -42,15 +42,10 @@ try:
 except ImportError:
     getgrnam = None
 
-try:
+if os.name == 'posix':
     import posix
-except ImportError:
-    posix = None
-
-try:
+elif os.name == 'nt':
     import nt
-except ImportError:
-    nt = None
 
 _HAS_SENDFILE = hasattr(os, "sendfile")
 _HAS_FCOPYFILE = hasattr(posix, "_fcopyfile")
@@ -1134,7 +1129,6 @@ if hasattr(os, 'statvfs'):
 
 elif os.name == 'nt':
 
-    import nt
     __all__.append('disk_usage')
     _ntuple_diskusage = collections.namedtuple('usage', 'total used free')
 

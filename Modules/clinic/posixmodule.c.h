@@ -3886,7 +3886,7 @@ exit:
 
 #endif /* defined(__APPLE__) */
 
-#if (defined MS_WINDOWS)
+#if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__win32copyfile__doc__,
 "_win32copyfile($module, src, dst, /)\n"

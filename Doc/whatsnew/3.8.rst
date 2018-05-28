@@ -96,8 +96,9 @@ Optimizations
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform specific
   zero-copy syscalls on Linux, OSX and Windows in order to copy the file more
-  efficiently. The average speedup for copying a 512MB file is +24% on Linux,
+  efficiently. The speedup for copying a 512MB file is about +26% on Linux,
   +50% on OSX and +48% on Windows.
+  (Contributed by Giampaolo Rodola' in :issue:`25427`.)
 
 * The default protocol in the :mod:`pickle` module is now Protocol 4,
   first introduced in Python 3.4.  It offers better performance and smaller
