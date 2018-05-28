@@ -3,13 +3,12 @@ from .. import util
 
 machinery = util.import_importlib('importlib.machinery')
 
+import importlib.util
 import os.path
+import subprocess
 import sys
 import types
 import unittest
-import importlib.util
-import importlib
-from test.support.script_helper import assert_python_failure
 
 class LoaderTests(abc.LoaderTests):
 
@@ -282,7 +281,11 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
 
                 with support.SuppressCrashReport():
                     m = spec.loader.create_module(spec)"""
-        assert_python_failure("-c", script)
+
+        proc = subprocess.run([sys.executable, "-c", script])
+        # Expect a crash: exit code different than 0 (success)
+        # and 1 (generic Python error).
+        self.assertNotIn(proc.returncode, [0, 1])
 
 
 (Frozen_MultiPhaseExtensionModuleTests,
