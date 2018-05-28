@@ -209,15 +209,13 @@ def _format_coroutine(coro):
         return f'{coro_name}()'
 
     def is_running(coro):
-        running = False
         try:
-            running = coro.cr_running
+            return coro.cr_running
         except AttributeError:
             try:
-                running = coro.gi_running
+                return coro.gi_running
             except AttributeError:
-                pass
-        return bool(running)
+                return False
 
     coro_code = None
     if hasattr(coro, 'cr_code') and coro.cr_code:
