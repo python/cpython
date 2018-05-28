@@ -88,6 +88,7 @@ class Regrtest:
         self.skipped = []
         self.resource_denieds = []
         self.environment_changed = []
+        self.rerun = []
         self.interrupted = False
 
         # used by --slow
@@ -282,8 +283,10 @@ class Regrtest:
         self.ns.verbose3 = False
         self.ns.match_tests = None
 
+        print()
         print("Re-running failed tests in verbose mode")
-        for test in self.bad[:]:
+        self.rerun = self.bad[:]
+        for test in self.rerun:
             print("Re-running test %r in verbose mode" % test, flush=True)
             try:
                 self.ns.verbose = True
@@ -301,22 +304,32 @@ class Regrtest:
                 print(count(len(self.bad), 'test'), "failed again:")
                 printlist(self.bad)
 
+        self.display_result()
+
     def display_result(self):
+        # If running the test suite for PGO then no one cares about results.
+        if self.ns.pgo:
+            return
+
+        print()
+        print("== Tests result ==")
+
         if self.interrupted:
-            # print a newline after ^C
             print()
+            # print a newline after ^C
             print("Test suite interrupted by signal SIGINT.")
             executed = set(self.good) | set(self.bad) | set(self.skipped)
             omitted = set(self.selected) - executed
             print(count(len(omitted), "test"), "omitted:")
             printlist(omitted)
 
-        # If running the test suite for PGO then no one cares about
-        # results.
-        if self.ns.pgo:
-            return
+        if self.rerun:
+            print()
+            print(count(len(self.rerun), "test"), "re-run tests:")
+            printlist(self.rerun)
 
         if self.good and not self.ns.quiet:
+            print()
             if (not self.bad
                 and not self.skipped
                 and not self.interrupted
