@@ -8757,12 +8757,12 @@ os._fcopyfile
     outfd: int
     /
 
-Efficiently copy 2 file descriptors (OSX only).
+Efficiently copy the content of 2 file descriptors (OSX only).
 [clinic start generated code]*/
 
 static PyObject *
 os__fcopyfile_impl(PyObject *module, int infd, int outfd)
-/*[clinic end generated code: output=3e629d5c50b33d04 input=565c8d0191b573b8]*/
+/*[clinic end generated code: output=3e629d5c50b33d04 input=ef4f7667f63d3e42]*/
 {
     // copyfile() source code:
     // https://opensource.apple.com/source/copyfile/copyfile-42/copyfile.c

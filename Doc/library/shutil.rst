@@ -684,10 +684,3 @@ Querying the size of the output terminal
 
 .. _`Other Environment Variables`:
    http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003
-
-.. _`fcopyfile`:
-   http://www.manpagez.com/man/3/fcopyfile/osx-10.5.php
-
-.. _`CopyFile`:
-   https://msdn.microsoft.com/en-us/library/windows/desktop/aa363851(v=vs.85).aspx
-

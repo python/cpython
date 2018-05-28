@@ -177,7 +177,7 @@ def _copyfileobj2(fsrc, fdst):
     # unexpected breakage. Possible risks by using zero-copy calls
     # in copyfileobj() are:
     # - fdst cannot be open in "a"(ppend) mode
-    # - fsrc and fdst may be opened in text mode
+    # - fsrc and fdst may be open in "t"(ext) mode
     # - fsrc may be a BufferedReader (which hides unread data in a buffer),
     #   GzipFile (which decompresses data), HTTPResponse (which decodes
     #   chunks).

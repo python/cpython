@@ -1807,7 +1807,7 @@ class TestCopyFile(unittest.TestCase):
 
         self.assertRaises(OSError, shutil.copyfile, 'srcfile', 'destfile')
 
-    @unittest.skipIf(os.name == 'nt', "skipped on Windows")
+    @unittest.skipIf(os.name == 'nt', "not POSIX")
     def test_w_dest_open_fails(self):
 
         srcfile = self.Faux()
@@ -1827,7 +1827,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot open "destfile"',))
 
-    @unittest.skipIf(os.name == 'nt', "skipped on Windows")
+    @unittest.skipIf(os.name == 'nt', "not POSIX")
     def test_w_dest_close_fails(self):
 
         srcfile = self.Faux()
@@ -1850,7 +1850,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot close',))
 
-    @unittest.skipIf(os.name == 'nt', "skipped on Windows")
+    @unittest.skipIf(os.name == 'nt', "not POSIX")
     def test_w_source_close_fails(self):
 
         srcfile = self.Faux(True)
@@ -2073,8 +2073,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
             self.assertEqual(blocksize, 2 ** 23)
 
 
-@unittest.skipIf(not HAS_OSX_ZEROCOPY,
-                 'os._fcopyfile() not supported (OSX only)')
+@unittest.skipIf(not HAS_OSX_ZEROCOPY, 'OSX only')
 class TestZeroCopyOSX(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "posix._fcopyfile"
 
