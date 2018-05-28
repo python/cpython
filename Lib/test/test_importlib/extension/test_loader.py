@@ -275,13 +275,18 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             (Multiphase initialization modules only)
         '''
         script = """if True:
-                from test import support
-                import importlib.util as util
-                spec = util.find_spec('_testmultiphase')
-                spec.name = '_testmultiphase_with_bad_traverse'
+                #  This try block will prevent exceptions from ending the
+                #  process with non-zero status
+                try:
+                    from test import support
+                    import importlib.util as util
+                    spec = util.find_spec('_testmultiphase')
+                    spec.name = '_testmultiphase_with_bad_traverse'
 
-                with support.SuppressCrashReport():
-                    m = spec.loader.create_module(spec)"""
+                    with support.SuppressCrashReport():
+                        m = spec.loader.create_module(spec)
+                except:
+                    pass"""
         assert_python_failure("-c", script)
 
 
