@@ -192,7 +192,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             # TODO: This is an ugly hack to cancel the current read future
             # *and* avoid potential race conditions, as read cancellation
             # goes through `future.cancel()` and `loop.call_soon()`.
-            # We then this special attribute in the reader callback to
+            # We then use this special attribute in the reader callback to
             # exit *immediately* without doing any cleanup/rescheduling.
             self._read_fut.__asyncio_cancelled_on_pause__ = True
 
