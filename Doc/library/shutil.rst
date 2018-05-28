@@ -75,8 +75,10 @@ Directory and files operations
       a subclass of the latter, this change is backward compatible.
 
    .. versionchanged:: 3.8
-      Uses high-performance :func:`os.sendfile` if available and supports
-      file-to-file copy (namely Linux).
+      Use high-performance zero-copy syscalls to copy the file:
+      :func:`os.sendfile` on Linux, `fcopyfile`_ on OSX and `CopyFile`_ on
+      Windows. If the copy fails and no data was copied fallback on using
+      :func:`copyfileobj`.
 
 .. exception:: SameFileError
 
@@ -167,8 +169,10 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Uses high-performance :func:`os.sendfile` if available and supports
-      file-to-file copy (namely Linux).
+      Use high-performance zero-copy syscalls to copy the file:
+      :func:`os.sendfile` on Linux, `fcopyfile`_ on OSX and `CopyFile`_ on
+      Windows. If the copy fails and no data was copied fallback on using
+      :func:`copyfileobj`.
 
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
@@ -193,8 +197,11 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Uses high-performance :func:`os.sendfile` if available and supports
-      file-to-file copy (namely Linux).
+      Use high-performance zero-copy syscalls to copy the file:
+      :func:`os.sendfile` on Linux, `fcopyfile`_ on OSX and `CopyFile`_ on
+      Windows. If the copy fails and no data was copied fallback on using
+      :func:`copyfileobj`.
+
 
 .. function:: ignore_patterns(\*patterns)
 
@@ -667,4 +674,10 @@ Querying the size of the output terminal
 
 .. _`Other Environment Variables`:
    http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003
+
+.. _`fcopyfile`:
+   http://www.manpagez.com/man/3/fcopyfile/osx-10.5.php
+
+.. _`CopyFile`:
+   https://msdn.microsoft.com/en-us/library/windows/desktop/aa363851(v=vs.85).aspx
 
