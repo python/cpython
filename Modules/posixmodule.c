@@ -8793,7 +8793,12 @@ static PyObject *
 os__win32copyfile_impl(PyObject *module, path_t *src, path_t *dst)
 /*[clinic end generated code: output=9df245926c468843 input=00817871f5770bdc]*/
 {
-    if (CopyFileW(src->wide, dst->wide, FALSE) == 0) {
+    int ret;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = CopyFileW(src->wide, dst->wide, FALSE);
+    Py_END_ALLOW_THREADS
+    if (ret == 0) {
         win32_error_object("_win32copyfile", src->object);
         return NULL;
     }
