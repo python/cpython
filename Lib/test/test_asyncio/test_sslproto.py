@@ -186,6 +186,9 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 
 class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
+    PAYLOAD_SIZE = 1024 * 100
+    TIMEOUT = 10
+
     def new_loop(self):
         raise NotImplementedError
 
@@ -237,13 +240,13 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sslproto._feed_data_to_bufferred_proto(proto, b'12345')
 
     def test_start_tls_client_reg_proto_1(self):
-        HELLO_MSG = b'1' * 1024 * 1024
+        HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
 
         def serve(sock):
-            sock.settimeout(5)
+            sock.settimeout(self.TIMEOUT)
 
             data = sock.recv_all(len(HELLO_MSG))
             self.assertEqual(len(data), len(HELLO_MSG))
@@ -297,13 +300,13 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 asyncio.wait_for(client(srv.addr), loop=self.loop, timeout=10))
 
     def test_start_tls_client_buf_proto_1(self):
-        HELLO_MSG = b'1' * 1024 * 1024
+        HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
 
         def serve(sock):
-            sock.settimeout(5)
+            sock.settimeout(self.TIMEOUT)
 
             data = sock.recv_all(len(HELLO_MSG))
             self.assertEqual(len(data), len(HELLO_MSG))
@@ -359,17 +362,18 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), loop=self.loop, timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 loop=self.loop, timeout=self.TIMEOUT))
 
     def test_start_tls_server_1(self):
-        HELLO_MSG = b'1' * 1024 * 1024
+        HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
 
         def client(sock, addr):
             time.sleep(0.5)
-            sock.settimeout(5)
+            sock.settimeout(self.TIMEOUT)
 
             sock.connect(addr)
             data = sock.recv_all(len(HELLO_MSG))
@@ -433,7 +437,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_client(lambda sock: client(sock, addr)):
             self.loop.run_until_complete(
-                asyncio.wait_for(main(), loop=self.loop, timeout=10))
+                asyncio.wait_for(main(),
+                                 loop=self.loop, timeout=self.TIMEOUT))
 
     def test_start_tls_wrong_args(self):
         async def main():
