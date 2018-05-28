@@ -1196,13 +1196,66 @@ get_mtime_of_source(ZipImporter *self, char *path)
     return mtime;
 }
 
+static PyObject *
+normalize_zip_path(PyObject *name)
+{
+    PyObject *sep1 = NULL, *sep2 = NULL, *nameobj = NULL;
+    sep1 = PyUnicode_FromFormat("%c", (int)'/');
+    if (sep1 == NULL)
+        goto exit;
+    sep2 = PyUnicode_FromFormat("%c", SEP);
+    if (sep2 == NULL)
+        goto exit;
+    nameobj = PyUnicode_Replace(name, sep1, sep2, -1);
+exit:
+    Py_XDECREF(sep1);
+    Py_XDECREF(sep2);
+    return nameobj;
+}
+
+/* Select code origin for unmarshalled code.
+   Return borrowed reference or NULL if lookup failed. */
+static PyObject *
+select_code_origin(ZipImporter *self, PyCodeObject *code, PyObject *toc_entry)
+{
+    PyObject *nameobj, *toc_origin;
+    nameobj = normalize_zip_path(code->co_filename);
+    if (nameobj == NULL)
+        return NULL;
+    toc_origin = PyDict_GetItem(self->files, nameobj);
+    Py_DECREF(nameobj);
+    if (toc_origin == NULL)
+        return PyTuple_GetItem(toc_entry, 0);
+    return PyTuple_GetItem(toc_origin, 0);
+}
+
+static void
+overwrite_code_origin(PyCodeObject *code, PyObject *code_origin)
+{
+    Py_ssize_t pos, len;
+    PyObject *item;
+
+    Py_INCREF(code_origin);
+    Py_DECREF(code->co_filename);
+    code->co_filename = code_origin;
+
+    if (PyTuple_Check(code->co_consts)) {
+        len = PyTuple_Size(code->co_consts);
+        for (pos = 0; pos < len; ++pos) {
+            item = PyTuple_GetItem(code->co_consts, pos);
+            if (PyCode_Check(item))
+                overwrite_code_origin((PyCodeObject*)item, code_origin);
+        }
+    }
+}
+
 /* Return the code object for the module named by 'fullname' from the
    Zip archive as a new reference. */
 static PyObject *
 get_code_from_data(ZipImporter *self, int ispackage, int isbytecode,
                    time_t mtime, PyObject *toc_entry)
 {
-    PyObject *data, *code;
+    PyObject *data, *code, *code_origin;
     char *modpath;
     char *archive = PyString_AsString(self->archive);
 
@@ -1217,6 +1270,11 @@ get_code_from_data(ZipImporter *self, int ispackage, int isbytecode,
 
     if (isbytecode) {
         code = unmarshal_code(modpath, data, mtime);
+        if (PyCode_Check(code)) {
+            code_origin = select_code_origin(self, (PyCodeObject*)code, toc_entry);
+            if (code_origin != NULL)
+                overwrite_code_origin((PyCodeObject*)code, code_origin);
+        }
     }
     else {
         code = compile_source(modpath, data);
