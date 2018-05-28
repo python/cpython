@@ -2095,7 +2095,7 @@ class SubprocessTestsMixin:
 
 class SendfileBase:
 
-    DATA = b"12345abcde" * 16 * 1024  # 160 KiB
+    DATA = b"12345abcde" * 64 * 1024  # 64 KiB (don't use smaller sizes)
 
     @classmethod
     def setUpClass(cls):
@@ -2452,7 +2452,7 @@ class SendfileMixin(SendfileBase):
         self.assertEqual(srv_proto.data, self.DATA)
         self.assertEqual(self.file.tell(), len(self.DATA))
 
-    def test_sendfile_close_peer_in_middle_of_receiving(self):
+    def test_sendfile_close_peer_in_the_middle_of_receiving(self):
         srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
         with self.assertRaises(ConnectionError):
             self.run_loop(
@@ -2465,7 +2465,7 @@ class SendfileMixin(SendfileBase):
                         self.file.tell())
         self.assertTrue(cli_proto.transport.is_closing())
 
-    def test_sendfile_fallback_close_peer_in_middle_of_receiving(self):
+    def test_sendfile_fallback_close_peer_in_the_middle_of_receiving(self):
 
         def sendfile_native(transp, file, offset, count):
             # to raise SendfileNotAvailableError

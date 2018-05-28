@@ -463,16 +463,23 @@ The idea of BufferedProtocol is that it allows to manually allocate
 and control the receive buffer.  Event loops can then use the buffer
 provided by the protocol to avoid unnecessary data copies.  This
 can result in noticeable performance improvement for protocols that
-receive big amounts of data.  Sophisticated protocols can allocate
-the buffer only once at creation time.
+receive big amounts of data.  Sophisticated protocols implementations
+can allocate the buffer only once at creation time.
 
 The following callbacks are called on :class:`BufferedProtocol`
 instances:
 
-.. method:: BufferedProtocol.get_buffer()
+.. method:: BufferedProtocol.get_buffer(sizehint)
 
-   Called to allocate a new receive buffer.  Must return an object
-   that implements the :ref:`buffer protocol <bufferobjects>`.
+   Called to allocate a new receive buffer.
+
+   *sizehint* is a recommended minimal size for the returned
+   buffer.  It is acceptable to return smaller or bigger buffers
+   than what *sizehint* suggests.  When set to -1, the buffer size
+   can be arbitrary. It is an error to return a zero-sized buffer.
+
+   Must return an object that implements the
+   :ref:`buffer protocol <bufferobjects>`.
 
 .. method:: BufferedProtocol.buffer_updated(nbytes)
 

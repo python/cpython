@@ -9,7 +9,7 @@ class ReceiveStuffProto(asyncio.BufferedProtocol):
         self.cb = cb
         self.con_lost_fut = con_lost_fut
 
-    def get_buffer(self):
+    def get_buffer(self, sizehint):
         self.buffer = bytearray(100)
         return self.buffer
 
