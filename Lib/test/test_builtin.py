@@ -1705,6 +1705,7 @@ class PtyTests(unittest.TestCase):
             '# Check we exercise the PyOS_Readline() path\n'
             'if not sys.stdin.isatty() or not sys.stdout.isatty():\n'
             '    raise AssertionError("standard IO should be a tty")\n'
+            'print("{sentinel}", end="")\n'
             'result = input({prompt!a})\n'
             'if result != {expected!a}:\n'
             '    raise AssertionError("unexpected input " + ascii(result))\n'
@@ -1714,9 +1715,11 @@ class PtyTests(unittest.TestCase):
         else:
             expected = terminal_input.decode(sys.stdin.encoding)  # what else?
         code = template.format(
-            stdio_encoding=stdio_encoding, prompt=prompt, expected=expected)
+            stdio_encoding=stdio_encoding, prompt=prompt, expected=expected,
+            sentinel='sentinel')
 
-        self.assert_script(code, terminal_input)  # Without Readline module
+        # Without Readline module
+        self.assert_script(code, terminal_input, b'sentinel')
 
         readline_encoding = locale.getpreferredencoding()
         try:
@@ -1726,15 +1729,21 @@ class PtyTests(unittest.TestCase):
             # (e.g. by its convert-meta setting)
             pass
         else:
-            self.assert_script('import readline\n' + code, terminal_input)
+            self.assert_script('import readline\n' + code, terminal_input,
+                               b'sentinel')
 
-    def assert_script(self, code, terminal_input):
+    def assert_script(self, code, terminal_input, expected):
         cmd = (sys.executable, '-c', code)
         [master, slave] = pty.openpty()
         proc = subprocess.Popen(cmd, stdin=slave, stdout=slave, stderr=slave)
         os.close(slave)
         with proc, os.fdopen(master, "wb", closefd=False) as writer:
+            # Wait for the process to be fully started.
+            sentinel = os.read(master, len(expected))
             writer.write(terminal_input + b"\r\n")
+            # Assert after writing to the process to avoid a deadlock if the
+            # assertion fails.
+            self.assertEqual(sentinel, expected)
         self.assertEqual(proc.returncode, 0, self.final_output(master))
 
     def test_input_tty(self):
