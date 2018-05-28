@@ -110,7 +110,7 @@ def ismethoddescriptor(object):
 def isdatadescriptor(object):
     """Return true if the object is a data descriptor.
 
-    Data descriptors have both a __get__ and a __set__ attribute.  Examples are
+    Data descriptors have a __set__ or a __delete__ attribute.  Examples are
     properties (defined in Python) and getsets and members (defined in C).
     Typically, data descriptors will also have __name__ and __doc__ attributes
     (properties, getsets, and members have both of these attributes), but this
@@ -119,7 +119,7 @@ def isdatadescriptor(object):
         # mutual exclusion
         return False
     tp = type(object)
-    return hasattr(tp, "__set__") and hasattr(tp, "__get__")
+    return hasattr(tp, "__set__") or hasattr(tp, "__delete__")
 
 if hasattr(types, 'MemberDescriptorType'):
     # CPython and equivalent
@@ -642,13 +642,13 @@ def cleandoc(doc):
 def getfile(object):
     """Work out which source or compiled file an object was defined in."""
     if ismodule(object):
-        if hasattr(object, '__file__'):
+        if getattr(object, '__file__', None):
             return object.__file__
         raise TypeError('{!r} is a built-in module'.format(object))
     if isclass(object):
         if hasattr(object, '__module__'):
             object = sys.modules.get(object.__module__)
-            if hasattr(object, '__file__'):
+            if getattr(object, '__file__', None):
                 return object.__file__
         raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
@@ -2254,7 +2254,8 @@ def _signature_from_callable(obj, *,
                 return sig
             else:
                 sig_params = tuple(sig.parameters.values())
-                assert first_wrapped_param is not sig_params[0]
+                assert (not sig_params or
+                        first_wrapped_param is not sig_params[0])
                 new_params = (first_wrapped_param,) + sig_params
                 return sig.replace(parameters=new_params)
 

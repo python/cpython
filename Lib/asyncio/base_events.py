@@ -157,7 +157,6 @@ def _run_until_complete_cb(fut):
     futures._get_loop(fut).stop()
 
 
-
 class _SendfileFallbackProtocol(protocols.Protocol):
     def __init__(self, transp):
         if not isinstance(transp, transports._FlowControlMixin):
@@ -304,6 +303,9 @@ class Server(events.AbstractServer):
 
     async def start_serving(self):
         self._start_serving()
+        # Skip one loop iteration so that all 'loop.add_reader'
+        # go through.
+        await tasks.sleep(0, loop=self._loop)
 
     async def serve_forever(self):
         if self._serving_forever_fut is not None:
@@ -1363,6 +1365,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                         ssl, backlog, ssl_handshake_timeout)
         if start_serving:
             server._start_serving()
+            # Skip one loop iteration so that all 'loop.add_reader'
+            # go through.
+            await tasks.sleep(0, loop=self)
 
         if self._debug:
             logger.info("%r is serving", server)

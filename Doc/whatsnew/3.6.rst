@@ -2196,7 +2196,9 @@ Changes in the Python API
   platform-specific selection is made.
   In environments where distributions are
   built on Windows and zip distributions are required, configure
-  the project with a ``setup.cfg`` file containing the following::
+  the project with a ``setup.cfg`` file containing the following:
+
+  .. code-block:: ini
 
     [sdist]
     formats=zip
@@ -2259,7 +2261,8 @@ Changes in the Python API
   direct references from methods to the implicit ``__class__`` closure
   variable, the implicit ``__classcell__`` namespace entry must now be passed
   up to ``type.__new__`` for initialisation. Failing to do so will result in
-  a :exc:`DeprecationWarning` in 3.6 and a :exc:`RuntimeWarning` in the future.
+  a :exc:`DeprecationWarning` in Python 3.6 and a :exc:`RuntimeError` in
+  Python 3.8.
 
 Changes in the C API
 --------------------

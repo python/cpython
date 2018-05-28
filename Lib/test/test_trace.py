@@ -2,6 +2,7 @@ import os
 import sys
 from test.support import TESTFN, rmtree, unlink, captured_stdout
 from test.support.script_helper import assert_python_ok, assert_python_failure
+import textwrap
 import unittest
 
 import trace
@@ -364,6 +365,46 @@ class Test_Ignore(unittest.TestCase):
         self.assertFalse(ignore.names(jn('bar', 'z.py'), 'z'))
         # Matched before.
         self.assertTrue(ignore.names(jn('bar', 'baz.py'), 'baz'))
+
+# Created for Issue 31908 -- CLI utility not writing cover files
+class TestCoverageCommandLineOutput(unittest.TestCase):
+
+    codefile = 'tmp.py'
+    coverfile = 'tmp.cover'
+
+    def setUp(self):
+        with open(self.codefile, 'w') as f:
+            f.write(textwrap.dedent('''\
+                x = 42
+                if []:
+                    print('unreachable')
+            '''))
+
+    def tearDown(self):
+        unlink(self.codefile)
+        unlink(self.coverfile)
+
+    def test_cover_files_written_no_highlight(self):
+        argv = '-m trace --count'.split() + [self.codefile]
+        status, stdout, stderr = assert_python_ok(*argv)
+        self.assertTrue(os.path.exists(self.coverfile))
+        with open(self.coverfile) as f:
+            self.assertEqual(f.read(),
+                "    1: x = 42\n"
+                "    1: if []:\n"
+                "           print('unreachable')\n"
+            )
+
+    def test_cover_files_written_with_highlight(self):
+        argv = '-m trace --count --missing'.split() + [self.codefile]
+        status, stdout, stderr = assert_python_ok(*argv)
+        self.assertTrue(os.path.exists(self.coverfile))
+        with open(self.coverfile) as f:
+            self.assertEqual(f.read(), textwrap.dedent('''\
+                    1: x = 42
+                    1: if []:
+                >>>>>>     print('unreachable')
+            '''))
 
 class TestCommandLine(unittest.TestCase):
 

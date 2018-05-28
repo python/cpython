@@ -2,9 +2,6 @@
   What's New In Python 3.8
 ****************************
 
-:Release: |release|
-:Date: |today|
-
 .. Rules for maintenance:
 
    * Anyone can add text to this document.  Do not spend very much time
@@ -47,7 +44,7 @@
 
 This article explains the new features in Python 3.8, compared to 3.7.
 
-For full details, see the :source:`Misc/NEWS` file.
+For full details, see the :ref:`changelog <changelog>`.
 
 .. note::
 
@@ -75,6 +72,11 @@ New Features
 Other Language Changes
 ======================
 
+* A :keyword:`continue` statement was illegal in the :keyword:`finally` clause
+  due to a problem with the implementation.  In Python 3.8 this restriction
+  was lifted.
+  (Contributed by Serhiy Storchaka in :issue:`32489`.)
+
 * Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
@@ -92,6 +94,9 @@ Improved Modules
 Optimizations
 =============
 
+* The default protocol in the :mod:`pickle` module is now Protocol 4,
+  first introduced in Python 3.4.  It offers better performance and smaller
+  size compared to Protocol 3 available since Python 3.0.
 
 Build and C API Changes
 =======================
@@ -106,6 +111,9 @@ Deprecated
 Removed
 =======
 
+* The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
+  to help eliminate confusion as to what Python interpreter the ``pyvenv``
+  script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
 
 Porting to Python 3.8
@@ -137,3 +145,30 @@ Changes in the Python API
   :func:`dbm.dumb.open` with flags ``'r'`` and ``'w'`` no longer creates
   a database if it does not exist.
   (Contributed by Serhiy Storchaka in :issue:`32749`.)
+
+* A :exc:`RuntimeError` is now raised when the custom metaclass doesn't
+  provide the ``__classcell__`` entry in the namespace passed to
+  ``type.__new__``.  A :exc:`DeprecationWarning` was emitted in Python
+  3.6--3.7.  (Contributed by Serhiy Storchaka in :issue:`23722`.)
+
+
+CPython bytecode changes
+------------------------
+
+* The interpreter loop  has been simplified by moving the logic of unrolling
+  the stack of blocks into the compiler.  The compiler emits now explicit
+  instructions for adjusting the stack of values and calling the cleaning
+  up code for :keyword:`break`, :keyword:`continue` and :keyword:`return`.
+
+  Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,
+  :opcode:`SETUP_LOOP` and :opcode:`SETUP_EXCEPT`.  Added new opcodes
+  :opcode:`ROT_FOUR`, :opcode:`BEGIN_FINALLY`, :opcode:`CALL_FINALLY` and
+  :opcode:`POP_FINALLY`.  Changed the behavior of :opcode:`END_FINALLY`
+  and :opcode:`WITH_CLEANUP_START`.
+
+  (Contributed by Mark Shannon, Antoine Pitrou and Serhiy Storchaka in
+  :issue:`17611`.)
+
+* Added new opcode :opcode:`END_ASYNC_FOR` for handling exceptions raised
+  when awaiting a next item in an :keyword:`async for` loop.
+  (Contributed by Serhiy Storchaka in :issue:`33041`.)

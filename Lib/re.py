@@ -128,12 +128,6 @@ try:
 except ImportError:
     _locale = None
 
-# try _collections first to reduce startup cost
-try:
-    from _collections import OrderedDict
-except ImportError:
-    from collections import OrderedDict
-
 
 # public symbols
 __all__ = [
@@ -271,7 +265,7 @@ Match = type(sre_compile.compile('', 0).match(''))
 # --------------------------------------------------------------------
 # internals
 
-_cache = OrderedDict()
+_cache = {}  # ordered!
 
 _MAXCACHE = 512
 def _compile(pattern, flags):
@@ -292,9 +286,10 @@ def _compile(pattern, flags):
     p = sre_compile.compile(pattern, flags)
     if not (flags & DEBUG):
         if len(_cache) >= _MAXCACHE:
+            # Drop the oldest item
             try:
-                _cache.popitem(last=False)
-            except KeyError:
+                del _cache[next(iter(_cache))]
+            except (StopIteration, RuntimeError, KeyError):
                 pass
         _cache[type(pattern), pattern, flags] = p
     return p

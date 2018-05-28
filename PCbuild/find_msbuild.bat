@@ -29,14 +29,6 @@
 @where msbuild > "%TEMP%\msbuild.loc" 2> nul && set /P MSBUILD= < "%TEMP%\msbuild.loc" & del "%TEMP%\msbuild.loc"
 @if exist "%MSBUILD%" set MSBUILD="%MSBUILD%" & (set _Py_MSBuild_Source=PATH) & goto :found
 
-@rem VS 2015 and earlier register MSBuild separately, so we can find it.
-@rem Prefer MSBuild 14.0 over MSBuild 15.0, since the latter may not be able to find a VC14 install.
-@reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0" /v MSBuildToolsPath /reg:32 >nul 2>nul
-@if NOT ERRORLEVEL 1 @for /F "tokens=1,2*" %%i in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0" /v MSBuildToolsPath /reg:32') DO @(
-    @if "%%i"=="MSBuildToolsPath" @if exist "%%k\msbuild.exe" @(set MSBUILD="%%k\msbuild.exe")
-)
-@if exist %MSBUILD% (set _Py_MSBuild_Source=registry) & goto :found
-
 @rem VS 2017 sets exactly one install as the "main" install, so we may find MSBuild in there.
 @reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" /v 15.0 /reg:32 >nul 2>nul
 @if NOT ERRORLEVEL 1 @for /F "tokens=1,2*" %%i in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" /v 15.0 /reg:32') DO @(
@@ -44,9 +36,24 @@
 )
 @if exist %MSBUILD% (set _Py_MSBuild_Source=Visual Studio 2017 registry) & goto :found
 
+@rem VS 2015 and earlier register MSBuild separately, so we can find it.
+@reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0" /v MSBuildToolsPath /reg:32 >nul 2>nul
+@if NOT ERRORLEVEL 1 @for /F "tokens=1,2*" %%i in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0" /v MSBuildToolsPath /reg:32') DO @(
+    @if "%%i"=="MSBuildToolsPath" @if exist "%%k\msbuild.exe" @(set MSBUILD="%%k\msbuild.exe")
+)
+@if exist %MSBUILD% (set _Py_MSBuild_Source=registry) & goto :found
+
 
 @exit /b 1
 
 :found
-@echo Using %MSBUILD% (found in the %_Py_MSBuild_Source%)
+@pushd %MSBUILD% >nul 2>nul
+@if not ERRORLEVEL 1 @(
+  @if exist msbuild.exe @(set MSBUILD="%CD%\msbuild.exe") else @(set MSBUILD=)
+  @popd
+)
+
+@if defined MSBUILD @echo Using %MSBUILD% (found in the %_Py_MSBuild_Source%)
+@if not defined MSBUILD @echo Failed to find MSBuild
 @set _Py_MSBuild_Source=
+@if not defined MSBUILD @exit /b 1

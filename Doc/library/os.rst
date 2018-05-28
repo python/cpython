@@ -1126,17 +1126,23 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionadded:: 3.7
 
-.. data:: RWF_DSYNC (since Linux 4.7)
+.. data:: RWF_DSYNC
+
    Provide a per-write equivalent of the O_DSYNC open(2) flag. This flag
    is meaningful only for pwritev2(), and its effect applies only to the
    data range written by the system call.
 
+   Availability: Linux (version 4.7).
+
    .. versionadded:: 3.7
 
-.. data:: RWF_SYNC (since Linux 4.7)
+.. data:: RWF_SYNC
+
    Provide a per-write equivalent of the O_SYNC open(2) flag. This flag is
    meaningful only for pwritev2(), and its effect applies only to the data
    range written by the system call.
+
+   Availability: Linux (version 4.7).
 
    .. versionadded:: 3.7
 
@@ -1260,22 +1266,28 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.7
 
 
-.. data:: RWF_HIPRI (since Linux 4.6)
+.. data:: RWF_HIPRI
+
    High priority read/write. Allows block-based filesystems to use polling
    of the device, which provides lower latency, but may use additional
    resources. (Currently, this feature is usable only on a file descriptor
    opened using the O_DIRECT flag.)
 
+   Availability: Linux (version 4.6).
+
    .. versionadded:: 3.7
 
 
-.. data:: RWF_NOWAIT (since Linux 4.14)
+.. data:: RWF_NOWAIT
+
    Do not wait for data which is not immediately available. If this flag
    is  specified, the preadv2() system call will return instantly
    if it would have to read data from the backing storage or wait for a lock.
    If some data was successfully read, it will return the number of bytes
    read. If no bytes were read, it will return -1 and set errno to EAGAIN.
    Currently, this flag is meaningful only for preadv2().
+
+   Availability: Linux (version 4.14).
 
    .. versionadded:: 3.7
 
@@ -2760,14 +2772,12 @@ features:
 
    It is an error to specify tuples for both *times* and *ns*.
 
-   Whether a directory can be given for *path*
-   depends on whether the operating system implements directories as files
-   (for example, Windows does not).  Note that the exact times you set here may
-   not be returned by a subsequent :func:`~os.stat` call, depending on the
-   resolution with which your operating system records access and modification
-   times; see :func:`~os.stat`.  The best way to preserve exact times is to
-   use the *st_atime_ns* and *st_mtime_ns* fields from the :func:`os.stat`
-   result object with the *ns* parameter to `utime`.
+   Note that the exact times you set here may not be returned by a subsequent
+   :func:`~os.stat` call, depending on the resolution with which your operating
+   system records access and modification times; see :func:`~os.stat`. The best
+   way to preserve exact times is to use the *st_atime_ns* and *st_mtime_ns*
+   fields from the :func:`os.stat` result object with the *ns* parameter to
+   `utime`.
 
    This function can support :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>` and :ref:`not
@@ -2816,7 +2826,7 @@ features:
    no effect on the behavior of the walk, because in bottom-up mode the directories
    in *dirnames* are generated before *dirpath* itself is generated.
 
-   By default, errors from the :func:`listdir` call are ignored.  If optional
+   By default, errors from the :func:`scandir` call are ignored.  If optional
    argument *onerror* is specified, it should be a function; it will be called with
    one argument, an :exc:`OSError` instance.  It can report the error to continue
    with the walk, or raise the exception to abort the walk.  Note that the filename
@@ -3355,6 +3365,47 @@ written in Python, such as a mail server's external command delivery program.
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
+
+
+.. function:: posix_spawn(path, argv, env, file_actions=None)
+
+   Wraps the :c:func:`posix_spawn` C library API for use from Python.
+
+   Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
+
+   The *path*, *args*, and *env* arguments are similar to :func:`execve`.
+
+   The *file_actions* argument may be a sequence of tuples describing actions
+   to take on specific file descriptors in the child process between the C
+   library implementation's :c:func:`fork` and :c:func:`exec` steps.
+   The first item in each tuple must be one of the three type indicator
+   listed below describing the remaining tuple elements:
+
+   .. data:: POSIX_SPAWN_OPEN
+
+      (``os.POSIX_SPAWN_OPEN``, *fd*, *path*, *flags*, *mode*)
+
+      Performs ``os.dup2(os.open(path, flags, mode), fd)``.
+
+   .. data:: POSIX_SPAWN_CLOSE
+
+      (``os.POSIX_SPAWN_CLOSE``, *fd*)
+
+      Performs ``os.close(fd)``.
+
+   .. data:: POSIX_SPAWN_DUP2
+
+      (``os.POSIX_SPAWN_DUP2``, *fd*, *new_fd*)
+
+      Performs ``os.dup2(fd, new_fd)``.
+
+   These tuples correspond to the C library
+   :c:func:`posix_spawn_file_actions_addopen`,
+   :c:func:`posix_spawn_file_actions_addclose`, and
+   :c:func:`posix_spawn_file_actions_adddup2` API calls used to prepare
+   for the :c:func:`posix_spawn` call itself.
+
+   .. versionadded:: 3.7
 
 
 .. function:: register_at_fork(*, before=None, after_in_parent=None, \

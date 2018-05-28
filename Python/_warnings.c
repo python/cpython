@@ -951,7 +951,14 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
                 &registry, &module_globals, &sourceobj))
         return NULL;
 
-    if (module_globals) {
+    if (module_globals && module_globals != Py_None) {
+        if (!PyDict_Check(module_globals)) {
+            PyErr_Format(PyExc_TypeError,
+                         "module_globals must be a dict, not '%.200s'",
+                         Py_TYPE(module_globals)->tp_name);
+            return NULL;
+        }
+
         source_line = get_source_line(module_globals, lineno);
         if (source_line == NULL && PyErr_Occurred()) {
             return NULL;

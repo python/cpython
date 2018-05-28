@@ -261,7 +261,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 # Yielding a generator is just wrong.
                 new_exc = RuntimeError(
                     f'yield was used instead of yield from for '
-                    f'generator in task {self!r} with {result}')
+                    f'generator in task {self!r} with {result!r}')
                 self._loop.call_soon(
                     self.__step, new_exc, context=self._context)
             else:
@@ -542,17 +542,17 @@ def ensure_future(coro_or_future, *, loop=None):
 
     If the argument is a Future, it is returned directly.
     """
-    if futures.isfuture(coro_or_future):
-        if loop is not None and loop is not futures._get_loop(coro_or_future):
-            raise ValueError('loop argument must agree with Future')
-        return coro_or_future
-    elif coroutines.iscoroutine(coro_or_future):
+    if coroutines.iscoroutine(coro_or_future):
         if loop is None:
             loop = events.get_event_loop()
         task = loop.create_task(coro_or_future)
         if task._source_traceback:
             del task._source_traceback[-1]
         return task
+    elif futures.isfuture(coro_or_future):
+        if loop is not None and loop is not futures._get_loop(coro_or_future):
+            raise ValueError('loop argument must agree with Future')
+        return coro_or_future
     elif inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
     else:

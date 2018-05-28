@@ -105,7 +105,7 @@ class Protocol(BaseProtocol):
 class BufferedProtocol(BaseProtocol):
     """Interface for stream protocol with manual buffer control.
 
-    Important: this has been been added to asyncio in Python 3.7
+    Important: this has been added to asyncio in Python 3.7
     *on a provisional basis*!  Consider it as an experimental API that
     might be changed or removed in Python 3.8.
 
@@ -130,11 +130,15 @@ class BufferedProtocol(BaseProtocol):
     * CL: connection_lost()
     """
 
-    def get_buffer(self):
+    def get_buffer(self, sizehint):
         """Called to allocate a new receive buffer.
+
+        *sizehint* is a recommended minimal size for the returned
+        buffer.  When set to -1, the buffer size can be arbitrary.
 
         Must return an object that implements the
         :ref:`buffer protocol <bufferobjects>`.
+        It is an error to return a zero-sized buffer.
         """
 
     def buffer_updated(self, nbytes):
@@ -185,7 +189,3 @@ class SubprocessProtocol(BaseProtocol):
 
     def process_exited(self):
         """Called when subprocess has exited."""
-
-
-def _is_buffered_protocol(proto):
-    return hasattr(proto, 'get_buffer') and not hasattr(proto, 'data_received')

@@ -648,10 +648,8 @@ debug_cycle(const char *msg, PyObject *op)
  * garbage list (a Python list), else only the objects in finalizers with
  * __del__ methods are appended to garbage.  All objects in finalizers are
  * merged into the old list regardless.
- * Returns 0 if all OK, <0 on error (out of memory to grow the garbage list).
- * The finalizers list is made empty on a successful return.
  */
-static int
+static void
 handle_legacy_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 {
     PyGC_Head *gc = finalizers->gc.gc_next;
@@ -666,12 +664,11 @@ handle_legacy_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 
         if ((_PyRuntime.gc.debug & DEBUG_SAVEALL) || has_legacy_finalizer(op)) {
             if (PyList_Append(_PyRuntime.gc.garbage, op) < 0)
-                return -1;
+                break;
         }
     }
 
     gc_list_merge(finalizers, old);
-    return 0;
 }
 
 /* Run first-time finalizers (if any) on all the objects in collectable.
@@ -945,7 +942,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
      * reachable list of garbage.  The programmer has to deal with
      * this if they insist on creating this type of structure.
      */
-    (void)handle_legacy_finalizers(&finalizers, old);
+    handle_legacy_finalizers(&finalizers, old);
 
     /* Clear free list only during the collection of the highest
      * generation */
@@ -1009,9 +1006,12 @@ invoke_gc_callback(const char *phase, int generation,
         PyObject *r, *cb = PyList_GET_ITEM(_PyRuntime.gc.callbacks, i);
         Py_INCREF(cb); /* make sure cb doesn't go away */
         r = PyObject_CallFunction(cb, "sO", phase, info);
-        Py_XDECREF(r);
-        if (r == NULL)
+        if (r == NULL) {
             PyErr_WriteUnraisable(cb);
+        }
+        else {
+            Py_DECREF(r);
+        }
         Py_DECREF(cb);
     }
     Py_XDECREF(info);
@@ -1567,8 +1567,11 @@ PyGC_Collect(void)
     if (_PyRuntime.gc.collecting)
         n = 0; /* already collecting, don't do anything */
     else {
+        PyObject *exc, *value, *tb;
         _PyRuntime.gc.collecting = 1;
+        PyErr_Fetch(&exc, &value, &tb);
         n = collect_with_callback(NUM_GENERATIONS - 1);
+        PyErr_Restore(exc, value, tb);
         _PyRuntime.gc.collecting = 0;
     }
 
@@ -1752,6 +1755,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
     PyGC_Head *g = AS_GC(op);
+    assert(!IS_TRACKED(op));
     if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head))
         return (PyVarObject *)PyErr_NoMemory();
     g = (PyGC_Head *)PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);

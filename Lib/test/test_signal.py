@@ -43,6 +43,8 @@ class PosixTests(unittest.TestCase):
         self.assertRaises(ValueError, signal.signal, 4242,
                           self.trivial_signal_handler)
 
+        self.assertRaises(ValueError, signal.strsignal, 4242)
+
     def test_setting_signal_handler_to_none_raises_error(self):
         self.assertRaises(TypeError, signal.signal,
                           signal.SIGUSR1, None)
@@ -55,15 +57,38 @@ class PosixTests(unittest.TestCase):
         signal.signal(signal.SIGHUP, hup)
         self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
 
+    def test_strsignal(self):
+        self.assertIn("Interrupt", signal.strsignal(signal.SIGINT))
+        self.assertIn("Terminated", signal.strsignal(signal.SIGTERM))
+
     # Issue 3864, unknown if this affects earlier versions of freebsd also
     def test_interprocess_signal(self):
         dirname = os.path.dirname(__file__)
         script = os.path.join(dirname, 'signalinterproctester.py')
         assert_python_ok(script)
 
+    def test_valid_signals(self):
+        s = signal.valid_signals()
+        self.assertIsInstance(s, set)
+        self.assertIn(signal.Signals.SIGINT, s)
+        self.assertIn(signal.Signals.SIGALRM, s)
+        self.assertNotIn(0, s)
+        self.assertNotIn(signal.NSIG, s)
+        self.assertLess(len(s), signal.NSIG)
+
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
 class WindowsSignalTests(unittest.TestCase):
+
+    def test_valid_signals(self):
+        s = signal.valid_signals()
+        self.assertIsInstance(s, set)
+        self.assertGreaterEqual(len(s), 6)
+        self.assertIn(signal.Signals.SIGINT, s)
+        self.assertNotIn(0, s)
+        self.assertNotIn(signal.NSIG, s)
+        self.assertLess(len(s), signal.NSIG)
+
     def test_issue9324(self):
         # Updated for issue #10003, adding SIGBREAK
         handler = lambda x, y: None
@@ -916,6 +941,21 @@ class PendingSignalsTests(unittest.TestCase):
         self.assertRaises(TypeError, signal.pthread_sigmask, 1)
         self.assertRaises(TypeError, signal.pthread_sigmask, 1, 2, 3)
         self.assertRaises(OSError, signal.pthread_sigmask, 1700, [])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [signal.NSIG])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [0])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [1<<1000])
+
+    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                         'need signal.pthread_sigmask()')
+    def test_pthread_sigmask_valid_signals(self):
+        s = signal.pthread_sigmask(signal.SIG_BLOCK, signal.valid_signals())
+        self.addCleanup(signal.pthread_sigmask, signal.SIG_SETMASK, s)
+        # Get current blocked set
+        s = signal.pthread_sigmask(signal.SIG_UNBLOCK, signal.valid_signals())
+        self.assertLessEqual(s, signal.valid_signals())
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')

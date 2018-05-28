@@ -377,7 +377,7 @@ class EnumMeta(type):
             raise AttributeError('Cannot reassign members.')
         super().__setattr__(name, value)
 
-    def _create_(cls, class_name, names=None, *, module=None, qualname=None, type=None, start=1):
+    def _create_(cls, class_name, names, *, module=None, qualname=None, type=None, start=1):
         """Convenience method to create a new Enum class.
 
         `names` can be:

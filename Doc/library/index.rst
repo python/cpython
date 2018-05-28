@@ -30,7 +30,7 @@ optional components.
 In addition to the standard library, there is a growing collection of
 several thousand components (from individual programs and modules to
 packages and entire application development frameworks), available from
-the `Python Package Index <https://pypi.python.org/pypi>`_.
+the `Python Package Index <https://pypi.org>`_.
 
 
 .. toctree::

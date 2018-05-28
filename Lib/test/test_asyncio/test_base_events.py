@@ -1848,10 +1848,21 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     def prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
-        port = support.find_unused_port()
         server = self.run_loop(self.loop.create_server(
-            lambda: proto, support.HOST, port))
-        self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+            lambda: proto, support.HOST, 0, family=socket.AF_INET))
+        addr = server.sockets[0].getsockname()
+
+        for _ in range(10):
+            try:
+                self.run_loop(self.loop.sock_connect(sock, addr))
+            except OSError:
+                self.run_loop(asyncio.sleep(0.5))
+                continue
+            else:
+                break
+        else:
+            # One last try, so we get the exception
+            self.run_loop(self.loop.sock_connect(sock, addr))
 
         def cleanup():
             server.close()

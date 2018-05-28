@@ -110,8 +110,8 @@ by Martin Panter.
 .. nonce: aAbWbQ
 .. section: Library
 
-Restore semantic round-trip correctness in tokenize/untokenize for tab-
-indented blocks.
+Restore semantic round-trip correctness in tokenize/untokenize for
+tab-indented blocks.
 
 ..
 

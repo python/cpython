@@ -434,7 +434,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_flushes(self):
         # Test flush() with the various options, using all the
         # different levels in order to provide more variations.
-        sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH']
+        sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH',
+                    'Z_PARTIAL_FLUSH', 'Z_BLOCK']
         sync_opt = [getattr(zlib, opt) for opt in sync_opt
                     if hasattr(zlib, opt)]
         data = HAMLET_SCENE * 8

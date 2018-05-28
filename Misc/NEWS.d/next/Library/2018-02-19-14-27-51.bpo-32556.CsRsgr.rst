@@ -1,0 +1,2 @@
+nt._getfinalpathname, nt._getvolumepathname and nt._getdiskusage now
+correctly convert from bytes.

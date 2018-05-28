@@ -807,8 +807,6 @@ enable_universalsdk
 with_universal_archs
 with_framework_name
 enable_framework
-with_gcc
-with_icc
 with_cxx_main
 with_suffix
 enable_shared
@@ -1494,8 +1492,6 @@ Optional Packages:
   --with-framework-name=FRAMEWORK
                           specify an alternate name of the framework built
                           with --enable-framework
-  --without-gcc           never use gcc
-  --with-icc              build with icc
   --with-cxx-main=<compiler>
                           compile main() and link python executable with C++
                           compiler
@@ -3442,57 +3438,6 @@ EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 # when running configure or make.  The build should not break if they do.
 # BASECFLAGS should generally not be messed with, however.
 
-# XXX shouldn't some/most/all of this code be merged with the stuff later
-# on that fiddles with OPT and BASECFLAGS?
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --without-gcc" >&5
-$as_echo_n "checking for --without-gcc... " >&6; }
-
-# Check whether --with-gcc was given.
-if test "${with_gcc+set}" = set; then :
-  withval=$with_gcc;
-	case $withval in
-	no)	CC=${CC:-cc}
-		without_gcc=yes;;
-	yes)	CC=gcc
-		without_gcc=no;;
-	*)	CC=$withval
-		without_gcc=$withval;;
-	esac
-else
-
-	case $ac_sys_system in
-	AIX*)   CC=${CC:-xlc_r}
-		without_gcc=;;
-	*)	without_gcc=no;;
-	esac
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $without_gcc" >&5
-$as_echo "$without_gcc" >&6; }
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-icc" >&5
-$as_echo_n "checking for --with-icc... " >&6; }
-
-# Check whether --with-icc was given.
-if test "${with_icc+set}" = set; then :
-  withval=$with_icc;
-	case $withval in
-	no)	CC=${CC:-cc}
-		with_icc=no;;
-	yes)	CC=icc
-		CXX=icpc
-		with_icc=yes;;
-	*)	CC=$withval
-		with_icc=$withval;;
-	esac
-else
-
-	with_icc=no
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_icc" >&5
-$as_echo "$with_icc" >&6; }
-
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
 then
@@ -5238,6 +5183,26 @@ cat >> conftest.c <<EOF
         ia64-linux-gnu
 # elif defined(__m68k__) && !defined(__mcoldfire__)
         m68k-linux-gnu
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6el-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6el-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6el-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
 # elif defined(__mips_hard_float) && defined(_MIPSEL)
 #  if _MIPS_SIM == _ABIO32
         mipsel-linux-gnu
@@ -5280,6 +5245,14 @@ cat >> conftest.c <<EOF
         sparc64-linux-gnu
 # elif defined(__sparc__)
         sparc-linux-gnu
+# elif defined(__riscv)
+#  if __riscv_xlen == 32
+        riscv32-linux-gnu
+#  elif __riscv_xlen == 64
+        riscv64-linux-gnu
+#  else
+#   error unknown platform triplet
+#  endif
 # else
 #   error unknown platform triplet
 # endif
@@ -7176,7 +7149,6 @@ $as_echo "$ac_cv_enable_implicit_function_declaration_error" >&6; }
 	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
 	    ;;
 
-    # is there any other compiler on Darwin besides gcc?
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
@@ -8629,32 +8601,48 @@ _ACEOF
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for long double support" >&5
-$as_echo_n "checking for long double support... " >&6; }
-have_long_double=no
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for long double" >&5
+$as_echo_n "checking for long double... " >&6; }
+if ${ac_cv_type_long_double+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$GCC" = yes; then
+       ac_cv_type_long_double=yes
+     else
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+/* The Stardent Vistra knows sizeof (long double), but does
+		 not support it.  */
+	      long double foo = 0.0L;
 int
 main ()
 {
-long double x; x = (long double)0;
+static int test_array [1 - 2 * !(/* On Ultrix 4.3 cc, long double is 4 and double is 8.  */
+	      sizeof (double) <= sizeof (long double))];
+test_array [0] = 0;
+return test_array [0];
+
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
+  ac_cv_type_long_double=yes
+else
+  ac_cv_type_long_double=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+     fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_long_double" >&5
+$as_echo "$ac_cv_type_long_double" >&6; }
+  if test $ac_cv_type_long_double = yes; then
 
 $as_echo "#define HAVE_LONG_DOUBLE 1" >>confdefs.h
 
-  have_long_double=yes
+  fi
 
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_long_double" >&5
-$as_echo "$have_long_double" >&6; }
-if test "$have_long_double" = yes ; then
 # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
 # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
@@ -8688,7 +8676,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-fi
 
 # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
@@ -9587,6 +9574,40 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_UUID_CREATE 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+# Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
+# stream in big-endian byte-order
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_enc_be" >&5
+$as_echo_n "checking for uuid_enc_be... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <uuid.h>
+int
+main ()
+{
+
+#ifndef uuid_enc_be
+uuid_t uuid;
+unsigned char buf[sizeof(uuid)];
+uuid_enc_be(buf, &uuid);
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_UUID_ENC_BE 1" >>confdefs.h
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -11219,7 +11240,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
  sched_rr_get_interval \
- sigaction sigaltstack siginterrupt sigpending sigrelse \
+ sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
  sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \

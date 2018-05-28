@@ -17,6 +17,15 @@ _have_code = (types.MethodType, types.FunctionType, types.CodeType,
               classmethod, staticmethod, type)
 
 FORMAT_VALUE = opmap['FORMAT_VALUE']
+FORMAT_VALUE_CONVERTERS = (
+    (None, ''),
+    (str, 'str'),
+    (repr, 'repr'),
+    (ascii, 'ascii'),
+)
+MAKE_FUNCTION = opmap['MAKE_FUNCTION']
+MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
+
 
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
@@ -339,12 +348,15 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
             elif op in hasfree:
                 argval, argrepr = _get_name_info(arg, cells)
             elif op == FORMAT_VALUE:
-                argval = ((None, str, repr, ascii)[arg & 0x3], bool(arg & 0x4))
-                argrepr = ('', 'str', 'repr', 'ascii')[arg & 0x3]
+                argval, argrepr = FORMAT_VALUE_CONVERTERS[arg & 0x3]
+                argval = (argval, bool(arg & 0x4))
                 if argval[1]:
                     if argrepr:
                         argrepr += ', '
                     argrepr += 'with format'
+            elif op == MAKE_FUNCTION:
+                argrepr = ', '.join(s for i, s in enumerate(MAKE_FUNCTION_FLAGS)
+                                    if arg & (1<<i))
         yield Instruction(opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target)

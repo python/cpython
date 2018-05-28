@@ -92,7 +92,7 @@ Coroutines (and tasks) can only run when the event loop is running.
     used in a callback-style code, wrap its result with :func:`ensure_future`.
 
 
-.. function:: asyncio.run(coro, \*, debug=False)
+.. function:: run(coro, \*, debug=False)
 
     This function runs the passed coroutine, taking care of
     managing the asyncio event loop and finalizing asynchronous
@@ -108,6 +108,8 @@ Coroutines (and tasks) can only run when the event loop is running.
     programs, and should ideally only be called once.
 
     .. versionadded:: 3.7
+       **Important:** this has been been added to asyncio in Python 3.7
+       on a :term:`provisional basis <provisional api>`.
 
 
 .. _asyncio-hello-world-coroutine:
@@ -273,18 +275,26 @@ Future
       :exc:`CancelledError`. If the future isn't done yet, raises
       :exc:`InvalidStateError`.
 
-   .. method:: add_done_callback(fn)
+   .. method:: add_done_callback(callback, *, context=None)
 
       Add a callback to be run when the future becomes done.
 
-      The callback is called with a single argument - the future object. If the
+      The *callback* is called with a single argument - the future object. If the
       future is already done when this is called, the callback is scheduled
       with :meth:`~AbstractEventLoop.call_soon`.
+
+      An optional keyword-only *context* argument allows specifying a custom
+      :class:`contextvars.Context` for the *callback* to run in.  The current
+      context is used when no *context* is provided.
 
       :ref:`Use functools.partial to pass parameters to the callback
       <asyncio-pass-keywords>`. For example,
       ``fut.add_done_callback(functools.partial(print, "Future:",
       flush=True))`` will call ``print("Future:", fut, flush=True)``.
+
+      .. versionchanged:: 3.7
+         The *context* keyword-only parameter was added. See :pep:`567`
+         for more details.
 
    .. method:: remove_done_callback(fn)
 
@@ -419,7 +429,14 @@ Task
    Don't directly create :class:`Task` instances: use the :func:`create_task`
    function or the :meth:`AbstractEventLoop.create_task` method.
 
+   Tasks support the :mod:`contextvars` module.  When a Task
+   is created it copies the current context and later runs its coroutine
+   in the copied context.  See :pep:`567` for more details.
+
    This class is :ref:`not thread safe <asyncio-multithreading>`.
+
+   .. versionchanged:: 3.7
+      Added support for the :mod:`contextvars` module.
 
    .. classmethod:: all_tasks(loop=None)
 
@@ -535,7 +552,7 @@ Task functions
    not provided, the default event loop is used.
 
 
-.. function:: current_task(loop=None):
+.. function:: current_task(loop=None)
 
    Return the current running :class:`Task` instance or ``None``, if
    no task is running.
@@ -546,7 +563,7 @@ Task functions
    .. versionadded:: 3.7
 
 
-.. function:: all_tasks(loop=None):
+.. function:: all_tasks(loop=None)
 
    Return a set of :class:`Task` objects created for the loop.
 
@@ -682,7 +699,7 @@ Task functions
 
    This function is a :ref:`coroutine <coroutine>`.
 
-.. function:: shield(arg, \*, loop=None)
+.. coroutinefunction:: shield(arg, \*, loop=None)
 
    Wait for a future, shielding it from cancellation.
 

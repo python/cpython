@@ -12,7 +12,7 @@ cache:
 
 env:
   global:
-    - OPENSSL=1.1.0g
+    - OPENSSL=1.1.0h
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
     # Use -O3 because we don't use debugger on Travis-CI
@@ -49,9 +49,19 @@ matrix:
         - cd Doc
         # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
         # (Updating the version is fine as long as no warnings are raised by doing so.)
-        - python -m pip install sphinx~=1.6.1 blurb
+        # The theme used by the docs is stored seperately, so we need to install that as well.
+        - python -m pip install sphinx~=1.6.1 blurb python-docs-theme
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
+    - os: osx
+      language: c
+      compiler: clang
+      # Testing under macOS is optional until testing stability has been demonstrated.
+      env: OPTIONAL=true
+      before_install:
+        # Python 3 is needed for Argument Clinic and multissl
+        - brew install xz python3
+        - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
     - os: linux
       language: c
       compiler: gcc
@@ -76,9 +86,9 @@ before_install:
   - set -e
   - |
       # Check short-circuit conditions
-      if [ "${TESTING}" != "docs" ]
+      if [[ "${TESTING}" != "docs" ]]
       then
-        if [ "$TRAVIS_PULL_REQUEST" = "false" ]
+        if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]
         then
           echo "Not a PR, doing full build."
         else
@@ -101,7 +111,7 @@ before_install:
 install:
   - |
       # Install OpenSSL as necessary
-      if [ "${TESTING}" != "docs" ]
+      if [[ "${TESTING}" != "docs" ]]
       then
         # clang complains about unused-parameter a lot, redirect stderr
         python3 Tools/ssl/multissltests.py --steps=library \
@@ -139,6 +149,11 @@ script:
 
 notifications:
   email: false
+  webhooks:
+    urls:
+      - https://python.zulipchat.com/api/v1/external/travis?api_key=QTP4LAknlFml0NuPQmAetvH4KQaokiQE&stream=core%2Ftest+runs
+    on_success: change
+    on_failure: always
   irc:
     channels:
       # This is set to a secure variable to prevent forks from notifying the

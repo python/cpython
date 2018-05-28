@@ -266,6 +266,41 @@ join(wchar_t *buffer, const wchar_t *stuff)
     }
 }
 
+static int _PathCchCanonicalizeEx_Initialized = 0;
+typedef HRESULT(__stdcall *PPathCchCanonicalizeEx) (PWSTR pszPathOut, size_t cchPathOut,
+    PCWSTR pszPathIn, unsigned long dwFlags);
+static PPathCchCanonicalizeEx _PathCchCanonicalizeEx;
+
+static _PyInitError canonicalize(wchar_t *buffer, const wchar_t *path)
+{
+    if (buffer == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    if (_PathCchCanonicalizeEx_Initialized == 0) {
+        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
+        if (pathapi) {
+            _PathCchCanonicalizeEx = (PPathCchCanonicalizeEx)GetProcAddress(pathapi, "PathCchCanonicalizeEx");
+        }
+        else {
+            _PathCchCanonicalizeEx = NULL;
+        }
+        _PathCchCanonicalizeEx_Initialized = 1;
+    }
+
+    if (_PathCchCanonicalizeEx) {
+        if (FAILED(_PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, path, 0))) {
+            return _Py_INIT_ERR("buffer overflow in getpathp.c's canonicalize()");
+        }
+    }
+    else {
+        if (!PathCanonicalizeW(buffer, path)) {
+            return _Py_INIT_ERR("buffer overflow in getpathp.c's canonicalize()");
+        }
+    }
+    return _Py_INIT_OK();
+}
+
 
 /* gotlandmark only called by search_for_prefix, which ensures
    'prefix' is null terminated in bounds.  join() ensures
@@ -504,63 +539,16 @@ get_program_full_path(const _PyCoreConfig *core_config,
     wchar_t program_full_path[MAXPATHLEN+1];
     memset(program_full_path, 0, sizeof(program_full_path));
 
-    if (GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
-        goto done;
+    if (!GetModuleFileNameW(NULL, program_full_path, MAXPATHLEN)) {
+        /* GetModuleFileName should never fail when passed NULL */
+        return _Py_INIT_ERR("Cannot determine program path");
     }
 
-    /* If there is no slash in the argv0 path, then we have to
-     * assume python is on the user's $PATH, since there's no
-     * other way to find a directory to start the search from.  If
-     * $PATH isn't exported, you lose.
-     */
-#ifdef ALTSEP
-    if (wcschr(core_config->program_name, SEP) ||
-        wcschr(core_config->program_name, ALTSEP))
-#else
-    if (wcschr(core_config->program_name, SEP))
-#endif
-    {
-        wcsncpy(program_full_path, core_config->program_name, MAXPATHLEN);
-    }
-    else if (calculate->path_env) {
-        const wchar_t *path = calculate->path_env;
-        while (1) {
-            const wchar_t *delim = wcschr(path, DELIM);
+    config->program_full_path = PyMem_RawMalloc(
+        sizeof(wchar_t) * (MAXPATHLEN + 1));
 
-            if (delim) {
-                size_t len = delim - path;
-                /* ensure we can't overwrite buffer */
-                len = min(MAXPATHLEN,len);
-                wcsncpy(program_full_path, path, len);
-                program_full_path[len] = '\0';
-            }
-            else {
-                wcsncpy(program_full_path, path, MAXPATHLEN);
-            }
-
-            /* join() is safe for MAXPATHLEN+1 size buffer */
-            join(program_full_path, core_config->program_name);
-            if (exists(program_full_path)) {
-                break;
-            }
-
-            if (!delim) {
-                program_full_path[0] = '\0';
-                break;
-            }
-            path = delim + 1;
-        }
-    }
-    else {
-        program_full_path[0] = '\0';
-    }
-
-done:
-    config->program_full_path = _PyMem_RawWcsdup(program_full_path);
-    if (config->program_full_path == NULL) {
-        return _Py_INIT_NO_MEMORY();
-    }
-    return _Py_INIT_OK();
+    return canonicalize(config->program_full_path,
+                        program_full_path);
 }
 
 

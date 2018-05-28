@@ -1,0 +1,2 @@
+Fix trailing quotation marks getting deleted when looking up byte/string
+literals on pydoc. Patch by Andrés Delfino.

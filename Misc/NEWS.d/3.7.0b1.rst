@@ -180,8 +180,8 @@ longer raises ``RecursionError``; OrderedDict similarly.  Instead, use
 .. section: Core and Builtins
 
 Py_Initialize() now creates the GIL. The GIL is no longer created "on
-demand" to fix a race condition when PyGILState_Ensure() is called in a non-
-Python thread.
+demand" to fix a race condition when PyGILState_Ensure() is called in a
+non-Python thread.
 
 ..
 
@@ -630,6 +630,7 @@ Add contextlib.AsyncExitStack. Patch by Alexander Mohr and Ilya Kulakov.
 .. nonce: x5Sv0R
 .. section: Library
 
+*Removed in Python 3.7.0b2.*
 The *args* argument of subprocess.Popen can now be a :term:`path-like
 object`. If *args* is given as a sequence, it's first element can now be a
 :term:`path-like object` as well.

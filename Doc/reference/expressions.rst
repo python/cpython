@@ -172,7 +172,7 @@ Common syntax elements for comprehensions are:
 
 .. productionlist::
    comprehension: `expression` `comp_for`
-   comp_for: [ASYNC] "for" `target_list` "in" `or_test` [`comp_iter`]
+   comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
    comp_if: "if" `expression_nocond` [`comp_iter`]
 
@@ -1608,12 +1608,12 @@ Lambdas
    lambda_expr_nocond: "lambda" [`parameter_list`]: `expression_nocond`
 
 Lambda expressions (sometimes called lambda forms) are used to create anonymous
-functions. The expression ``lambda arguments: expression`` yields a function
+functions. The expression ``lambda parameters: expression`` yields a function
 object.  The unnamed object behaves like a function object defined with:
 
 .. code-block:: none
 
-   def <lambda>(arguments):
+   def <lambda>(parameters):
        return expression
 
 See section :ref:`function` for the syntax of parameter lists.  Note that
