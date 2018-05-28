@@ -86,8 +86,9 @@ class RegistryError(Exception):
     and unpacking registries fails"""
 
 class _GiveupOnZeroCopy(Exception):
-    """Raised when os.sendfile() cannot be used for copying files."""
-
+    """Raised as a signal to fallback on using raw file copy
+    when zero-copy functions fail to do so.
+    """
 
 def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""
@@ -97,9 +98,9 @@ def copyfileobj(fsrc, fdst, length=16*1024):
             break
         fdst.write(buf)
 
-def _copyfileobj_fcopyfile(fsrc, fdst):
-    """Copy data from one regular file object to another by using
-    high-performance fcopyfile() syscall (OSX only).
+def _zerocopy_osx(fsrc, fdst):
+    """Copy 2 regular mmap-like files another by using high-performance
+    fcopyfile() syscall (OSX only).
     """
     try:
         infd = fsrc.fileno()
@@ -115,8 +116,12 @@ def _copyfileobj_fcopyfile(fsrc, fdst):
         else:
             raise err from None
 
-def _copyfileobj_sendfile(fsrc, fdst):
-    """Copy data from one regular file object to another by using
+def _zerocopy_win(src, dst):
+    """Copy 2 files by using high-performance CopyFileW (Windows only)."""
+    nt._win32copyfile(src, dst)
+
+def _zerocopy_sendfile(fsrc, fdst):
+    """Copy data from one regular mmap-like fd to another by using
     high-performance sendfile() method.
     This should work on Linux >= 2.6.33 and Solaris only.
     """
@@ -162,10 +167,6 @@ def _copyfileobj_sendfile(fsrc, fdst):
                 break  # EOF
             offset += sent
 
-def _win32_copyfile(src, dst):
-    """Uses zero-copy CopyFileW."""
-    nt._win32copyfile(src, dst)
-
 def _copyfileobj2(fsrc, fdst):
     """Copies 2 regular mmap-like fds by using zero-copy sendfile(2)
     (Linux) and fcopyfile(2) (OSX). Fallback on using plain read()/write()
@@ -182,13 +183,13 @@ def _copyfileobj2(fsrc, fdst):
     # - possibly others
     if _HAS_SENDFILE:
         try:
-            return _copyfileobj_sendfile(fsrc, fdst)
+            return _zerocopy_sendfile(fsrc, fdst)
         except _GiveupOnZeroCopy:
             pass
 
     if _HAS_FCOPYFILE:
         try:
-            return _copyfileobj_fcopyfile(fsrc, fdst)
+            return _zerocopy_osx(fsrc, fdst)
         except _GiveupOnZeroCopy:
             pass
 
@@ -231,7 +232,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
         os.symlink(os.readlink(src), dst)
     else:
         if os.name == 'nt':
-            _win32_copyfile(src, dst)
+            _zerocopy_win(src, dst)
             return dst
 
         with open(src, 'rb') as fsrc:

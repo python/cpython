@@ -1998,7 +1998,7 @@ class TestCopyFileObjSendfile(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "os.sendfile"
 
     def zerocopy_fun(self, *args, **kwargs):
-        return shutil._copyfileobj_sendfile(*args, **kwargs)
+        return shutil._zerocopy_sendfile(*args, **kwargs)
 
     def test_exception_on_second_call(self):
         def sendfile(*args, **kwargs):
@@ -2014,7 +2014,7 @@ class TestCopyFileObjSendfile(_ZeroCopyFileTest, unittest.TestCase):
                                  side_effect=sendfile):
             with self.get_files() as (src, dst):
                 with self.assertRaises(OSError) as cm:
-                    shutil._copyfileobj_sendfile(src, dst)
+                    shutil._zerocopy_sendfile(src, dst)
         assert flag
         self.assertEqual(cm.exception.errno, errno.EBADF)
 
@@ -2024,7 +2024,7 @@ class TestCopyFileObjSendfile(_ZeroCopyFileTest, unittest.TestCase):
         # sendfile() will be called repeatedly.
         with unittest.mock.patch('os.fstat', side_effect=OSError) as m:
             with self.get_files() as (src, dst):
-                shutil._copyfileobj_sendfile(src, dst)
+                shutil._zerocopy_sendfile(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
@@ -2037,7 +2037,7 @@ class TestCopyFileObjSendfile(_ZeroCopyFileTest, unittest.TestCase):
         mock.st_size = 65536 + 1
         with unittest.mock.patch('os.fstat', return_value=mock) as m:
             with self.get_files() as (src, dst):
-                shutil._copyfileobj_sendfile(src, dst)
+                shutil._zerocopy_sendfile(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
@@ -2050,7 +2050,7 @@ class TestCopyFileObjSendfile(_ZeroCopyFileTest, unittest.TestCase):
         mock.st_size = self.FILESIZE + (100 * 1024 * 1024)
         with unittest.mock.patch('os.fstat', return_value=mock) as m:
             with self.get_files() as (src, dst):
-                shutil._copyfileobj_sendfile(src, dst)
+                shutil._zerocopy_sendfile(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
@@ -2079,7 +2079,7 @@ class TestCopyFileFCopyFile(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "posix._fcopyfile"
 
     def zerocopy_fun(self, *args, **kwargs):
-        return shutil._copyfileobj_fcopyfile(*args, **kwargs)
+        return shutil._zerocopy_osx(*args, **kwargs)
 
 
 @unittest.skipIf(not os.name == 'nt', 'Windows only')
@@ -2087,7 +2087,7 @@ class TestWindowsCopyFile(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "nt._win32copyfile"
 
     def zerocopy_fun(self, src, dst):
-        return shutil._win32_copyfile(src.name, dst.name)
+        return shutil._zerocopy_win(src.name, dst.name)
 
 
 class TermsizeTests(unittest.TestCase):
