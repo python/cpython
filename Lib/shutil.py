@@ -42,13 +42,14 @@ try:
 except ImportError:
     getgrnam = None
 
+posix = nt = None
 if os.name == 'posix':
     import posix
 elif os.name == 'nt':
     import nt
 
 _HAS_SENDFILE = hasattr(os, "sendfile")
-_HAS_FCOPYFILE = hasattr(posix, "_fcopyfile")
+_HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
