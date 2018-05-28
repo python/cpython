@@ -99,7 +99,7 @@ def copyfileobj(fsrc, fdst, length=16*1024):
         fdst.write(buf)
 
 def _zerocopy_osx(fsrc, fdst):
-    """Copy 2 regular mmap-like files another by using high-performance
+    """Copy 2 regular mmap-like files by using high-performance
     fcopyfile() syscall (OSX only).
     """
     try:
@@ -116,9 +116,9 @@ def _zerocopy_osx(fsrc, fdst):
         else:
             raise err from None
 
-def _zerocopy_win(src, dst):
+def _zerocopy_win(fsrc, fdst):
     """Copy 2 files by using high-performance CopyFileW (Windows only)."""
-    nt._win32copyfile(src, dst)
+    nt._win32copyfile(fsrc, fdst)
 
 def _zerocopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
@@ -168,9 +168,10 @@ def _zerocopy_sendfile(fsrc, fdst):
             offset += sent
 
 def _copyfileobj2(fsrc, fdst):
-    """Copies 2 regular mmap-like fds by using zero-copy sendfile(2)
-    (Linux) and fcopyfile(2) (OSX). Fallback on using plain read()/write()
-    copy on error and in case no data was written.
+    """Copy 2 regular mmap-like fds by using zero-copy sendfile(2)
+    (Linux) and fcopyfile(2) (OSX) syscalls.
+    In case of error fallback on using plain read()/write() if no
+    data was copied.
     """
     # Note: copyfileobj() is left alone in order to not introduce any
     # unexpected breakage. Possible risks by using zero-copy calls

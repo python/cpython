@@ -75,10 +75,10 @@ Directory and files operations
       a subclass of the latter, this change is backward compatible.
 
    .. versionchanged:: 3.8
-      Use high-performance zero-copy syscalls to copy the file:
-      :func:`os.sendfile` on Linux, `fcopyfile`_ on OSX and `CopyFile`_ on
-      Windows. If the copy fails and no data was copied fallback on using
-      :func:`copyfileobj`.
+      Use platform-specific zero-copy syscalls on Linux, OSX and Windows in
+      order to copy the file more efficiently.
+      If the zero-copy operation fails and no data was written in *dst*
+      silently fallback on using less efficient :func:`copyfileobj` internally.
 
 .. exception:: SameFileError
 
@@ -169,10 +169,10 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Use high-performance zero-copy syscalls to copy the file:
-      :func:`os.sendfile` on Linux, `fcopyfile`_ on OSX and `CopyFile`_ on
-      Windows. If the copy fails and no data was copied fallback on using
-      :func:`copyfileobj`.
+      Use platform-specific zero-copy syscalls on Linux, OSX and Windows in
+      order to copy the file more efficiently.
+      If the zero-copy operation fails and no data was written in *dst*
+      silently fallback on using less efficient :func:`copyfileobj` internally.
 
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
@@ -197,11 +197,10 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Use high-performance zero-copy syscalls to copy the file:
-      :func:`os.sendfile` on Linux, `fcopyfile`_ on OSX and `CopyFile`_ on
-      Windows. If the copy fails and no data was copied fallback on using
-      :func:`copyfileobj`.
-
+      Use platform-specific zero-copy syscalls on Linux, OSX and Windows in
+      order to copy the file more efficiently.
+      If the zero-copy operation fails and no data was written in *dst*
+      silently fallback on using less efficient :func:`copyfileobj` internally.
 
 .. function:: ignore_patterns(\*patterns)
 
@@ -259,6 +258,11 @@ Directory and files operations
       Added the *ignore_dangling_symlinks* argument to silent dangling symlinks
       errors when *symlinks* is false.
 
+   .. versionchanged:: 3.8
+      Use platform-specific zero-copy syscalls on Linux, OSX and Windows in
+      order to copy the file more efficiently.
+      If the zero-copy operation fails and no data was written in *dst*
+      silently fallback on using less efficient :func:`copyfileobj` internally.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
@@ -331,6 +335,12 @@ Directory and files operations
 
    .. versionchanged:: 3.5
       Added the *copy_function* keyword argument.
+
+   .. versionchanged:: 3.8
+      Use platform-specific zero-copy syscalls on Linux, OSX and Windows in
+      order to copy the file more efficiently.
+      If the zero-copy operation fails and no data was written in *dst*
+      silently fallback on using less efficient :func:`copyfileobj` internally.
 
 .. function:: disk_usage(path)
 
