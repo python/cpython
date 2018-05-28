@@ -4,7 +4,7 @@ Once code has scrolled off the top of a window, it can be difficult to
 determine which block you are in.  This extension implements a pane at the top
 of each IDLE edit window which provides block structure hints.  These hints are
 the lines which contain the block opening keywords, e.g. 'if', for the
-enclosing block.  The number of hint lines is determined by the numlines
+enclosing block.  The number of hint lines is determined by the maxlines
 variable in the codecontext section of config-extensions.def. Lines which do
 not open blocks are not shown in the context hints pane.
 
@@ -80,7 +80,7 @@ class CodeContext:
     def reload(cls):
         "Load class variables from config."
         cls.context_depth = idleConf.GetOption("extensions", "CodeContext",
-                                       "numlines", type="int", default=15)
+                                       "maxlines", type="int", default=15)
 ##        cls.bgcolor = idleConf.GetOption("extensions", "CodeContext",
 ##                                     "bgcolor", type="str", default="LightGray")
 ##        cls.fgcolor = idleConf.GetOption("extensions", "CodeContext",
@@ -193,7 +193,8 @@ class CodeContext:
         self.topvisible = new_topvisible
         # Last context_depth context lines.
         context_strings = [x[2] for x in self.info[-self.context_depth:]]
-        self.label["text"] = '\n'.join(context_strings)
+        showfirst = 0 if context_strings[0] else 1
+        self.label["text"] = '\n'.join(context_strings[showfirst:])
 
     def timer_event(self):
         "Event on editor text widget triggered every UPDATEINTERVAL ms."

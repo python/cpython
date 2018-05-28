@@ -1843,7 +1843,7 @@ class GenPage(Frame):
         self.format_width = tracers.add(
                 StringVar(self), ('extensions', 'FormatParagraph', 'max-width'))
         self.context_lines = tracers.add(
-                StringVar(self), ('extensions', 'CodeContext', 'numlines'))
+                StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
 
         # Create widgets:
         # Section frames.
@@ -2012,7 +2012,7 @@ class GenPage(Frame):
         self.format_width.set(idleConf.GetOption(
                 'extensions', 'FormatParagraph', 'max-width', type='int'))
         self.context_lines.set(idleConf.GetOption(
-                'extensions', 'CodeContext', 'numlines', type='int'))
+                'extensions', 'CodeContext', 'maxlines', type='int'))
 
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
