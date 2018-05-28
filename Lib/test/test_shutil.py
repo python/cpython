@@ -33,7 +33,7 @@ from test import support
 from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
-SUPPORTS_FCOPYFILE = hasattr(posix, "_fcopyfile")
+HAS_OSX_ZEROCOPY = hasattr(posix, "_fcopyfile")
 
 try:
     import grp
@@ -1994,7 +1994,7 @@ class _ZeroCopyFileTest(object):
 
 
 @unittest.skipIf(not SUPPORTS_SENDFILE, 'os.sendfile() not supported')
-class TestCopyFileObjSendfile(_ZeroCopyFileTest, unittest.TestCase):
+class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "os.sendfile"
 
     def zerocopy_fun(self, *args, **kwargs):
@@ -2073,9 +2073,9 @@ class TestCopyFileObjSendfile(_ZeroCopyFileTest, unittest.TestCase):
             self.assertEqual(blocksize, 2 ** 23)
 
 
-@unittest.skipIf(not SUPPORTS_FCOPYFILE,
+@unittest.skipIf(not HAS_OSX_ZEROCOPY,
                  'os._fcopyfile() not supported (OSX only)')
-class TestCopyFileFCopyFile(_ZeroCopyFileTest, unittest.TestCase):
+class TestZeroCopyOSX(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "posix._fcopyfile"
 
     def zerocopy_fun(self, *args, **kwargs):
@@ -2083,7 +2083,7 @@ class TestCopyFileFCopyFile(_ZeroCopyFileTest, unittest.TestCase):
 
 
 @unittest.skipIf(not os.name == 'nt', 'Windows only')
-class TestWindowsCopyFile(_ZeroCopyFileTest, unittest.TestCase):
+class TestZeroCopyWindows(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "nt._win32copyfile"
 
     def zerocopy_fun(self, src, dst):
