@@ -74,6 +74,8 @@ Directory and files operations
       Raise :exc:`SameFileError` instead of :exc:`Error`.  Since the former is
       a subclass of the latter, this change is backward compatible.
 
+   .. versionchanged:: 3.8
+      Uses high-performance :func:`os.sendfile` (Linux only).
 
 .. exception:: SameFileError
 
@@ -163,6 +165,9 @@ Directory and files operations
       Added *follow_symlinks* argument.
       Now returns path to the newly created file.
 
+   .. versionchanged:: 3.8
+      Uses high-performance :func:`os.sendfile` (Linux only).
+
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
@@ -184,6 +189,9 @@ Directory and files operations
       Added *follow_symlinks* argument, try to copy extended
       file system attributes too (currently Linux only).
       Now returns path to the newly created file.
+
+   .. versionchanged:: 3.8
+      Uses high-performance :func:`os.sendfile` (Linux only).
 
 .. function:: ignore_patterns(\*patterns)
 

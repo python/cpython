@@ -1,0 +1,4 @@
+shutil.copyfile(), shutil.copy() and shutil.copy2() use high-performance
+os.sendfile() on Linux resulting in roughly a 20-25% speedup of the copying
+operation and a considerably lower CPU cycles consumption.
+(Contributed by Giampaolo Rodola' and desbma in 33639)

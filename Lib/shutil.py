@@ -42,6 +42,9 @@ try:
 except ImportError:
     getgrnam = None
 
+_HAS_LINUX_SENDFILE = hasattr(os, "sendfile") and \
+    sys.platform.startswith("linux")
+
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
            "ExecError", "make_archive", "get_archive_formats",
@@ -72,6 +75,9 @@ class RegistryError(Exception):
     """Raised when a registry operation with the archiving
     and unpacking registries fails"""
 
+class _GiveupOnZeroCopy(Exception):
+    """Raised when os.sendfile() cannot be used for copying files."""
+
 
 def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""
@@ -80,6 +86,72 @@ def copyfileobj(fsrc, fdst, length=16*1024):
         if not buf:
             break
         fdst.write(buf)
+
+def _copyfileobj_sendfile(fsrc, fdst):
+    """Copy data from one regular file object to another by using
+    high-performance sendfile() method. Linux >= 2.6.33 is apparently
+    the only platform able to do this.
+    """
+    global _HAS_LINUX_SENDFILE
+    try:
+        infd = fsrc.fileno()
+        outfd = fdst.fileno()
+    except Exception as err:
+        raise _GiveupOnZeroCopy(err)  # not a regular file
+
+    # Hopefully the whole file will be copied in a single call.
+    # sendfile() is called in a loop 'till EOF is reached (0 return)
+    # so a bufsize smaller or bigger than the actual file size
+    # should not make any difference, also in case the file content
+    # changes while being copied.
+    try:
+        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MB
+    except Exception:
+        blocksize = 2 ** 27  # 128MB
+
+    offset = 0
+    while True:
+        try:
+            sent = os.sendfile(outfd, infd, offset, blocksize)
+        except OSError as err:
+            if err.errno == errno.ENOTSOCK:
+                # sendfile() on this platform (probably Linux < 2.6.33)
+                # does not support copies between regular files (only
+                # sockets).
+                _HAS_LINUX_SENDFILE = False
+
+            if err.errno == errno.ENOSPC:  # filesystem is full
+                raise err from None
+
+            # Give up on first call and if no data was copied.
+            if offset == 0 and os.lseek(outfd, 0, os.SEEK_CUR) == 0:
+                raise _GiveupOnZeroCopy(err)
+
+            raise err from None
+        else:
+            if sent == 0:
+                break  # EOF
+            offset += sent
+
+def _copyfileobj2(fsrc, fdst):
+    # Copies 2 filesystem files by using zero-copy sendfile(2) syscall
+    # (faster).  This is used by copyfile(), copy() and copy2() in order
+    # to leave copyfileobj() alone and not introduce any unexpected
+    # breakage. Possible risks by using sendfile() in copyfileobj() are:
+    # - fdst cannot be open in "a"(ppend) mode
+    # - fsrc and fdst may be opened in text mode
+    # - fdst offset doesn't get updated
+    # - fsrc may be a BufferedReader (which hides unread data in a buffer),
+    #   GzipFile (which decompresses data), HTTPResponse (which decodes
+    #   chunks).
+    # - possibly others...
+    if _HAS_LINUX_SENDFILE:
+        try:
+            return _copyfileobj_sendfile(fsrc, fdst)
+        except _GiveupOnZeroCopy:
+            pass
+
+    return copyfileobj(fsrc, fdst)
 
 def _samefile(src, dst):
     # Macintosh, Unix.
@@ -119,7 +191,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
     else:
         with open(src, 'rb') as fsrc:
             with open(dst, 'wb') as fdst:
-                copyfileobj(fsrc, fdst)
+                _copyfileobj2(fsrc, fdst)
     return dst
 
 def copymode(src, dst, *, follow_symlinks=True):

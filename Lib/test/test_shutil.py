@@ -12,12 +12,16 @@ import errno
 import functools
 import pathlib
 import subprocess
+import random
+import string
+import contextlib
+import io
 from shutil import (make_archive,
                     register_archive_format, unregister_archive_format,
                     get_archive_formats, Error, unpack_archive,
                     register_unpack_format, RegistryError,
                     unregister_unpack_format, get_unpack_formats,
-                    SameFileError)
+                    SameFileError, _GiveupOnZeroCopy)
 import tarfile
 import zipfile
 
@@ -60,6 +64,24 @@ def write_file(path, content, binary=False):
     with open(path, 'wb' if binary else 'w') as fp:
         fp.write(content)
 
+def write_test_file(path, size):
+    """Create a test file with an arbitrary size and random text content."""
+    def chunks(total, step):
+        assert total >= step
+        while total > step:
+            yield step
+            total -= step
+        if total:
+            yield total
+
+    bufsize = min(size, 8192)
+    chunk = b"".join([random.choice(string.ascii_letters).encode()
+                      for i in range(bufsize)])
+    with open(path, 'wb') as f:
+        for csize in chunks(size, bufsize):
+            f.write(chunk)
+    assert os.path.getsize(path) == size
+
 def read_file(path, binary=False):
     """Return contents from a file located at *path*.
 
@@ -83,6 +105,37 @@ def rlistdir(path):
         else:
             res.append(name)
     return res
+
+def supports_file2file_sendfile():
+    # ...apparently Linux is the only one.
+    if not hasattr(os, "sendfile"):
+        return False
+    srcname = None
+    dstname = None
+    try:
+        with tempfile.NamedTemporaryFile("wb", delete=False) as f:
+            srcname = f.name
+            f.write(b"0123456789")
+
+        with open(srcname, "rb") as src:
+            with tempfile.NamedTemporaryFile("wb", delete=False) as dst:
+                dstname = f.name
+                infd = src.fileno()
+                outfd = dst.fileno()
+                try:
+                    os.sendfile(outfd, infd, 0, 2)
+                except OSError:
+                    return False
+                else:
+                    return True
+    finally:
+        if srcname is not None:
+            support.unlink(srcname)
+        if dstname is not None:
+            support.unlink(dstname)
+
+
+SUPPORTS_SENDFILE = supports_file2file_sendfile()
 
 
 class TestShutil(unittest.TestCase):
@@ -1828,6 +1881,169 @@ class TestCopyFile(unittest.TestCase):
             self.assertTrue(os.path.isdir(dst_dir))
         finally:
             os.rmdir(dst_dir)
+
+
+class _CopyFileTest(object):
+    FILESIZE = (10 * 1024 * 1024)  # 10 MiB
+    FILEDATA = b""
+
+    @classmethod
+    def setUpClass(cls):
+        write_test_file(TESTFN, cls.FILESIZE)
+        with open(TESTFN, 'rb') as f:
+            cls.FILEDATA = f.read()
+            assert len(cls.FILEDATA) == cls.FILESIZE
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(TESTFN)
+
+    def tearDown(self):
+        support.unlink(TESTFN2)
+
+    @contextlib.contextmanager
+    def get_files(self):
+        with open(TESTFN, "rb") as src:
+            with open(TESTFN2, "wb") as dst:
+                yield (src, dst)
+
+
+@unittest.skipIf(not SUPPORTS_SENDFILE, 'os.sendfile() not supported')
+class TestCopyFileObjSendfile(_CopyFileTest, unittest.TestCase):
+
+    def test_regular_copy(self):
+        with self.get_files() as (src, dst):
+            shutil._copyfileobj_sendfile(src, dst)
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
+
+    def test_non_regular_file_src(self):
+        with io.BytesIO(self.FILEDATA) as src:
+            with open(TESTFN2, "wb") as dst:
+                with self.assertRaises(_GiveupOnZeroCopy):
+                    shutil._copyfileobj_sendfile(src, dst)
+                shutil.copyfileobj(src, dst)
+
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
+
+    def test_non_regular_file_dst(self):
+        with open(TESTFN, "rb") as src:
+            with io.BytesIO() as dst:
+                with self.assertRaises(_GiveupOnZeroCopy):
+                    shutil._copyfileobj_sendfile(src, dst)
+                shutil.copyfileobj(src, dst)
+                dst.seek(0)
+                self.assertEqual(dst.read(), self.FILEDATA)
+
+    def test_empty_file(self):
+        srcname = TESTFN + 'src'
+        dstname = TESTFN + 'dst'
+        self.addCleanup(lambda: support.unlink(srcname))
+        self.addCleanup(lambda: support.unlink(dstname))
+        with open(srcname, "wb"):
+            pass
+
+        with open(srcname, "rb") as src:
+            with open(dstname, "wb") as dst:
+                shutil._copyfileobj_sendfile(src, dst)
+
+        self.assertEqual(read_file(dstname, binary=True), b"")
+
+    def test_unhandled_exception(self):
+        with unittest.mock.patch('os.sendfile',
+                                 side_effect=ZeroDivisionError):
+            self.assertRaises(ZeroDivisionError,
+                              shutil.copyfile, TESTFN, TESTFN2)
+
+    def test_exception_on_first_call(self):
+        # Emulate a case where the first call to sendfile() raises
+        # an exception in which case the function is supposed to
+        # give up immediately.
+        with unittest.mock.patch('os.sendfile',
+                                 side_effect=OSError):
+            with self.get_files() as (src, dst):
+                with self.assertRaises(_GiveupOnZeroCopy):
+                    shutil._copyfileobj_sendfile(src, dst)
+
+    def test_exception_on_second_call(self):
+        # ...but on subsequent calls we expect the exception to bubble up.
+        def sendfile(*args, **kwargs):
+            if not flag:
+                flag.append(None)
+                return orig_sendfile(*args, **kwargs)
+            else:
+                raise OSError(errno.EBADF, "yo")
+
+        flag = []
+        orig_sendfile = os.sendfile
+        with unittest.mock.patch('os.sendfile', create=True,
+                                 side_effect=sendfile):
+            with self.get_files() as (src, dst):
+                with self.assertRaises(OSError) as cm:
+                    shutil._copyfileobj_sendfile(src, dst)
+        assert flag
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
+    def test_cant_get_size(self):
+        # Emulate a case where src file size cannot be determined.
+        # Internally bufsize will be set to a small value and
+        # sendfile() will be called repeatedly.
+        with unittest.mock.patch('os.fstat', side_effect=OSError) as m:
+            with self.get_files() as (src, dst):
+                shutil._copyfileobj_sendfile(src, dst)
+                assert m.called
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
+
+    def test_small_chunks(self):
+        # Force internal file size detection to be smaller than the
+        # actual file size. We want to force sendfile() to be called
+        # multiple times, also in order to emulate a src fd which gets
+        # bigger while it is being copied.
+        mock = unittest.mock.Mock()
+        mock.st_size = 65536 + 1
+        with unittest.mock.patch('os.fstat', return_value=mock) as m:
+            with self.get_files() as (src, dst):
+                shutil._copyfileobj_sendfile(src, dst)
+                assert m.called
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
+
+    def test_big_chunk(self):
+        # Force internal file size detection to be +100MB bigger than
+        # the actual file size. Make sure sendfile() does not rely on
+        # file size value except for (maybe) a better throughput /
+        # performance.
+        mock = unittest.mock.Mock()
+        mock.st_size = self.FILESIZE + (100 * 1024 * 1024)
+        with unittest.mock.patch('os.fstat', return_value=mock) as m:
+            with self.get_files() as (src, dst):
+                shutil._copyfileobj_sendfile(src, dst)
+                assert m.called
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
+
+    def test_blocksize_arg(self):
+        with unittest.mock.patch('os.sendfile',
+                                 side_effect=ZeroDivisionError) as m:
+            self.assertRaises(ZeroDivisionError,
+                              shutil.copyfile, TESTFN, TESTFN2)
+            blocksize = m.call_args[0][3]
+            # Make sure file size and the block size arg passed to
+            # sendfile() are the same.
+            self.assertEqual(blocksize, os.path.getsize(TESTFN))
+            # ...unless we're dealing with a small file.
+            support.unlink(TESTFN2)
+            write_file(TESTFN2, b"hello", binary=True)
+            self.addCleanup(support.unlink, TESTFN2 + '3')
+            self.assertRaises(ZeroDivisionError,
+                              shutil.copyfile, TESTFN2, TESTFN2 + '3')
+            blocksize = m.call_args[0][3]
+            self.assertEqual(blocksize, 2 ** 23)
+
+    def test_filesystem_full(self):
+        # Emulate a case where filesystem is full and sendfile() fails
+        # on first call.
+        with unittest.mock.patch('os.sendfile',
+                                 side_effect=OSError(errno.ENOSPC, "yo")):
+            self.assertRaises(OSError, shutil.copyfile, TESTFN, TESTFN2)
+
 
 class TermsizeTests(unittest.TestCase):
     def test_does_not_crash(self):
