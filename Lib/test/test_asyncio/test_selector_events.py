@@ -1263,6 +1263,12 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.sock.shutdown.assert_called_with(socket.SHUT_WR)
         tr.close()
 
+    def test_write_eof_after_close(self):
+        tr = self.socket_transport()
+        tr.close()
+        self.loop.run_until_complete(asyncio.sleep(0))
+        tr.write_eof()
+
     @mock.patch('asyncio.base_events.logger')
     def test_transport_close_remove_writer(self, m_log):
         remove_writer = self.loop._remove_writer = mock.Mock()
