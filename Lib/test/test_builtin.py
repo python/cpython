@@ -1729,7 +1729,7 @@ class PtyTests(unittest.TestCase):
             self.assert_script('import readline\n' + code, terminal_input)
 
     def assert_script(self, code, terminal_input):
-        cmd = (sys.executable, '-s', '-c', code)
+        cmd = (sys.executable, '-c', code)
         [master, slave] = pty.openpty()
         proc = subprocess.Popen(cmd, stdin=slave, stdout=slave, stderr=slave)
         os.close(slave)
@@ -1748,7 +1748,7 @@ class PtyTests(unittest.TestCase):
 
     def test_input_tty_non_ascii_unicode_errors(self):
         # Check stdin/stdout error handler used when invoking PyOS_Readline()
-        self.check_input_tty("prompté", b"quux\xe9", "ascii")
+        self.check_input_tty("prompté", "quuxé".encode("utf-8"), "ascii")
 
     def test_input_no_stdout_fileno(self):
         # Issue #24402: If stdin is the original terminal but stdout.fileno()
