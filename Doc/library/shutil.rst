@@ -51,7 +51,8 @@ Directory and files operations
 .. function:: copyfile(src, dst, *, follow_symlinks=True)
 
    Copy the contents (no metadata) of the file named *src* to a file named
-   *dst* and return *dst*.  *src* and *dst* are path names given as strings.
+   *dst* and return *dst*.  *src* and *dst* are path names given as strings
+   in the most efficient way possible.
    *dst* must be the complete target file name; look at :func:`shutil.copy`
    for a copy that accepts a target directory path.  If *src* and *dst*
    specify the same file, :exc:`SameFileError` is raised.
@@ -64,6 +65,13 @@ Directory and files operations
    If *follow_symlinks* is false and *src* is a symbolic link,
    a new symbolic link will be created instead of copying the
    file *src* points to.
+
+   .. note::
+      Internally platform-specific zero-copy syscalls are used on Linux, OSX
+      and Windows in order to copy the file more efficiently.
+      If the zero-copy operation fails and no data was written in *dst*
+      it will silently fallback on using less efficient :func:`copyfileobj`
+      internally.
 
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
