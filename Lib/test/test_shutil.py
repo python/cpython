@@ -1807,6 +1807,7 @@ class TestCopyFile(unittest.TestCase):
 
         self.assertRaises(OSError, shutil.copyfile, 'srcfile', 'destfile')
 
+    @unittest.skipIf(os.name == 'nt', "skipped on Windows")
     def test_w_dest_open_fails(self):
 
         srcfile = self.Faux()
@@ -1826,6 +1827,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot open "destfile"',))
 
+    @unittest.skipIf(os.name == 'nt', "skipped on Windows")
     def test_w_dest_close_fails(self):
 
         srcfile = self.Faux()
@@ -1848,6 +1850,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot close',))
 
+    @unittest.skipIf(os.name == 'nt', "skipped on Windows")
     def test_w_source_close_fails(self):
 
         srcfile = self.Faux(True)
@@ -1924,6 +1927,7 @@ class _ZeroCopyFileTest(object):
             self.zerocopy_fun(src, dst)
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
+    @unittest.skipIf(os.name == 'nt', 'POSIX only')
     def test_non_regular_file_src(self):
         with io.BytesIO(self.FILEDATA) as src:
             with open(TESTFN2, "wb") as dst:
@@ -1933,6 +1937,7 @@ class _ZeroCopyFileTest(object):
 
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
+    @unittest.skipIf(os.name == 'nt', 'POSIX only')
     def test_non_regular_file_dst(self):
         with open(TESTFN, "rb") as src:
             with io.BytesIO() as dst:
@@ -1941,6 +1946,12 @@ class _ZeroCopyFileTest(object):
                 shutil.copyfileobj(src, dst)
                 dst.seek(0)
                 self.assertEqual(dst.read(), self.FILEDATA)
+
+    def test_non_existent_src(self):
+        name = tempfile.mktemp()
+        with self.assertRaises(FileNotFoundError) as cm:
+            shutil.copyfile(name, "new")
+        self.assertEqual(cm.exception.filename, name)
 
     def test_empty_file(self):
         srcname = TESTFN + 'src'
@@ -1962,6 +1973,7 @@ class _ZeroCopyFileTest(object):
             self.assertRaises(ZeroDivisionError,
                               shutil.copyfile, TESTFN, TESTFN2)
 
+    @unittest.skipIf(os.name == 'nt', 'POSIX only')
     def test_exception_on_first_call(self):
         # Emulate a case where the first call to the zero-copy
         # function raises an exception in which case the function is
@@ -2068,6 +2080,14 @@ class TestCopyFileFCopyFile(_ZeroCopyFileTest, unittest.TestCase):
 
     def zerocopy_fun(self, *args, **kwargs):
         return shutil._copyfileobj_fcopyfile(*args, **kwargs)
+
+
+@unittest.skipIf(not os.name == 'nt', 'Windows only')
+class TestWindowsCopyFile(_ZeroCopyFileTest, unittest.TestCase):
+    PATCHPOINT = "nt._win32copyfile"
+
+    def zerocopy_fun(self, src, dst):
+        return shutil._win32_copyfile(src.name, dst.name)
 
 
 class TermsizeTests(unittest.TestCase):

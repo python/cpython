@@ -47,6 +47,11 @@ try:
 except ImportError:
     posix = None
 
+try:
+    import nt
+except ImportError:
+    nt = None
+
 _HAS_LINUX_SENDFILE = hasattr(os, "sendfile") and \
     sys.platform.startswith("linux")
 _HAS_FCOPYFILE = hasattr(posix, "_fcopyfile")
@@ -157,6 +162,9 @@ def _copyfileobj_sendfile(fsrc, fdst):
                 break  # EOF
             offset += sent
 
+def _win32_copyfile(src, dst):
+    nt._win32copyfile(src, dst)
+
 def _copyfileobj2(fsrc, fdst):
     # Copies 2 filesystem files by using zero-copy sendfile(2) syscall
     # (faster).  This is used by copyfile(), copy() and copy2() in order
@@ -219,6 +227,10 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if not follow_symlinks and os.path.islink(src):
         os.symlink(os.readlink(src), dst)
     else:
+        if os.name == 'nt':
+            _win32_copyfile(src, dst)
+            return dst
+
         with open(src, 'rb') as fsrc:
             with open(dst, 'wb') as fdst:
                 _copyfileobj2(fsrc, fdst)
