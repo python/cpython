@@ -248,6 +248,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
     def test_start_tls_server_1(self):
         HELLO_MSG = b'1' * 1024 * 1024
+        TIMEOUT = 60  # seconds
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
@@ -256,7 +257,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         def client(sock, addr):
             time.sleep(0.5)
-            sock.settimeout(5)
+            sock.settimeout(TIMEOUT)
 
             sock.connect(addr)
             data = sock.recv_all(len(HELLO_MSG))
@@ -309,7 +310,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_client(lambda sock: client(sock, addr)):
             self.loop.run_until_complete(
-                asyncio.wait_for(main(), loop=self.loop, timeout=10))
+                asyncio.wait_for(main(), loop=self.loop, timeout=TIMEOUT * 2))
 
     def test_start_tls_wrong_args(self):
         async def main():
@@ -332,7 +333,6 @@ class SelectorStartTLSTests(BaseStartTLS, unittest.TestCase):
 
 @unittest.skipIf(ssl is None, 'No ssl module')
 @unittest.skipUnless(hasattr(asyncio, 'ProactorEventLoop'), 'Windows only')
-@unittest.skipIf(os.environ.get('APPVEYOR'), 'XXX: issue 32458')
 class ProactorStartTLSTests(BaseStartTLS, unittest.TestCase):
 
     def new_loop(self):
