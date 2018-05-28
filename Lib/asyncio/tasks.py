@@ -35,6 +35,16 @@ def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_event_loop()
+    return {t for t in _all_tasks
+            if futures._get_loop(t) is loop and not t.done()}
+
+
+def _all_tasks_compat(loop=None):
+    # Different from "all_task()" by returning *all* Tasks, including
+    # the completed ones.  Used to implement deprecated "Tasks.all_task()"
+    # method.
+    if loop is None:
+        loop = events.get_event_loop()
     return {t for t in _all_tasks if futures._get_loop(t) is loop}
 
 
@@ -82,7 +92,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                       "use asyncio.all_tasks() instead",
                       PendingDeprecationWarning,
                       stacklevel=2)
-        return all_tasks(loop)
+        return _all_tasks_compat(loop)
 
     def __init__(self, coro, *, loop=None):
         super().__init__(loop=loop)
