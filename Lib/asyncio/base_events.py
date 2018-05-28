@@ -800,7 +800,10 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
         if offset:
             file.seek(offset)
-        blocksize = min(count, 16384) if count else 16384
+        blocksize = (
+            min(count, constants.SENDFILE_FALLBACK_READBUFFER_SIZE)
+            if count else constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        )
         buf = bytearray(blocksize)
         total_sent = 0
         try:
@@ -810,7 +813,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if blocksize <= 0:
                         break
                 view = memoryview(buf)[:blocksize]
-                read = file.readinto(view)
+                read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     break  # EOF
                 await self.sock_sendall(sock, view)

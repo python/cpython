@@ -2160,6 +2160,17 @@ class SockSendfileMixin(SendfileBase):
         async def wait_closed(self):
             await self.fut
 
+    @classmethod
+    def setUpClass(cls):
+        cls.__old_bufsize = constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 16
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = cls.__old_bufsize
+        super().tearDownClass()
+
     def set_socket_opts(self, sock):
         # On macOS, SO_SNDBUF is reset by connect(). So this method
         # should be called after the socket is connected.

@@ -1818,12 +1818,15 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.__old_bufsize = constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 16
         with open(support.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = cls.__old_bufsize
         support.unlink(support.TESTFN)
         super().tearDownClass()
 

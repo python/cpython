@@ -14,6 +14,10 @@ DEBUG_STACK_DEPTH = 10
 # Number of seconds to wait for SSL handshake to complete
 SSL_HANDSHAKE_TIMEOUT = 10.0
 
+# Used in sendfile fallback code.  We use fallback for platforms
+# that don't support sendfile, or for TLS connections.
+SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 256
+
 # The enum should be here to break circular dependencies between
 # base_events and sslproto
 class _SendfileMode(enum.Enum):
