@@ -3898,22 +3898,27 @@ PyDoc_STRVAR(os__win32copyfile__doc__,
     {"_win32copyfile", (PyCFunction)os__win32copyfile, METH_FASTCALL, os__win32copyfile__doc__},
 
 static PyObject *
-os__win32copyfile_impl(PyObject *module, const char *src, const char *dst);
+os__win32copyfile_impl(PyObject *module, path_t *src, path_t *dst);
 
 static PyObject *
 os__win32copyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const char *src;
-    const char *dst;
+    path_t src = PATH_T_INITIALIZE("_win32copyfile", "src", 0, 0);
+    path_t dst = PATH_T_INITIALIZE("_win32copyfile", "dst", 0, 0);
 
-    if (!_PyArg_ParseStack(args, nargs, "ss:_win32copyfile",
-        &src, &dst)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&O&:_win32copyfile",
+        path_converter, &src, path_converter, &dst)) {
         goto exit;
     }
-    return_value = os__win32copyfile_impl(module, src, dst);
+    return_value = os__win32copyfile_impl(module, &src, &dst);
 
 exit:
+    /* Cleanup for src */
+    path_cleanup(&src);
+    /* Cleanup for dst */
+    path_cleanup(&dst);
+
     return return_value;
 }
 
@@ -6663,4 +6668,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=38eb73468965ae35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=14b6048140cfc105 input=a9049054013a1b77]*/

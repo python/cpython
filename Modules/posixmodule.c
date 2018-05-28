@@ -8782,16 +8782,16 @@ os__fcopyfile_impl(PyObject *module, int infd, int outfd)
 /*[clinic input]
 os._win32copyfile
 
-    src: str
-    dst: str
+    src: path_t
+    dst: path_t
     /
 
 Efficiently copy 2 files (Windows only).
 [clinic start generated code]*/
 
 static PyObject *
-os__win32copyfile_impl(PyObject *module, const char *src, const char *dst)
-/*[clinic end generated code: output=029c1ab7b3f166be input=38732bd67889b557]*/
+os__win32copyfile_impl(PyObject *module, path_t *src, path_t *dst)
+/*[clinic end generated code: output=9df245926c468843 input=00817871f5770bdc]*/
 #endif
 
 
