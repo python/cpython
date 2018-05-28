@@ -275,8 +275,6 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             (Multiphase initialization modules only)
         '''
         script = """if True:
-                #  This try block will prevent exceptions from ending the
-                #  process with non-zero status
                 try:
                     from test import support
                     import importlib.util as util
@@ -286,6 +284,9 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                     with support.SuppressCrashReport():
                         m = spec.loader.create_module(spec)
                 except:
+                    # Prevent Python-level exceptions from
+                    # ending the process with non-zero status
+                    # (We are testing for a crash in C-code)
                     pass"""
         assert_python_failure("-c", script)
 
