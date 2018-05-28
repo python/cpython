@@ -654,6 +654,7 @@ handle_legacy_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 {
     PyGC_Head *gc = finalizers->gc.gc_next;
 
+    assert(!PyErr_Occurred());
     if (_PyRuntime.gc.garbage == NULL) {
         _PyRuntime.gc.garbage = PyList_New(0);
         if (_PyRuntime.gc.garbage == NULL)
@@ -751,6 +752,7 @@ delete_garbage(PyGC_Head *collectable, PyGC_Head *old)
 {
     inquiry clear;
 
+    assert(!PyErr_Occurred());
     while (!gc_list_is_empty(collectable)) {
         PyGC_Head *gc = collectable->gc.gc_next;
         PyObject *op = FROM_GC(gc);
@@ -1034,9 +1036,11 @@ static Py_ssize_t
 collect_with_callback(int generation)
 {
     Py_ssize_t result, collected, uncollectable;
+    assert(!PyErr_Occurred());
     invoke_gc_callback("start", generation, 0, 0);
     result = collect(generation, &collected, &uncollectable, 0);
     invoke_gc_callback("stop", generation, collected, uncollectable);
+    assert(!PyErr_Occurred());
     return result;
 }
 
@@ -1137,7 +1141,6 @@ gc_collect_impl(PyObject *module, int generation)
         n = 0; /* already collecting, don't do anything */
     else {
         _PyRuntime.gc.collecting = 1;
-        assert(!PyErr_Occurred());
         n = collect_with_callback(generation);
         _PyRuntime.gc.collecting = 0;
     }
