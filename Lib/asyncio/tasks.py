@@ -34,7 +34,7 @@ def current_task(loop=None):
 def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events.get_running_loop()
     return {t for t in _all_tasks
             if futures._get_loop(t) is loop and not t.done()}
 

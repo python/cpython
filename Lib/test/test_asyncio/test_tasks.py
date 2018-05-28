@@ -1897,8 +1897,10 @@ class BaseTaskTests:
         # See http://bugs.python.org/issue29271 for details:
         asyncio.set_event_loop(self.loop)
         try:
-            self.assertEqual(asyncio.all_tasks(), {task})
-            self.assertEqual(asyncio.all_tasks(None), {task})
+            with self.assertWarns(PendingDeprecationWarning):
+                self.assertEqual(Task.all_tasks(), {task})
+            with self.assertWarns(PendingDeprecationWarning):
+                self.assertEqual(Task.all_tasks(None), {task})
         finally:
             asyncio.set_event_loop(None)
 
