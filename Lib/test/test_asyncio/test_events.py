@@ -2784,10 +2784,20 @@ class HandleTests(test_utils.TestCase):
         coro.cr_running = True
         self.assertEqual(coroutines._format_coroutine(coro), 'BBB() running')
 
+        coro.__name__ = coro.__qualname__ = None
+        self.assertEqual(coroutines._format_coroutine(coro),
+                         '<CoroLike without __name__>() running')
+
         coro = CoroLike()
+        coro.__qualname__ = 'CoroLike'
         # Some coroutines might not have '__name__', such as
         # built-in async_gen.asend().
         self.assertEqual(coroutines._format_coroutine(coro), 'CoroLike()')
+
+        coro = CoroLike()
+        coro.__qualname__ = 'AAA'
+        coro.cr_code = None
+        self.assertEqual(coroutines._format_coroutine(coro), 'AAA()')
 
 
 class TimerTests(unittest.TestCase):
