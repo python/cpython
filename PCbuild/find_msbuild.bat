@@ -57,3 +57,4 @@
 @if not defined MSBUILD @echo Failed to find MSBuild
 @set _Py_MSBuild_Source=
 @if not defined MSBUILD @exit /b 1
+@exit /b 0
