@@ -1,7 +1,5 @@
-import os
 import signal
 import sys
-import time
 import unittest
 import warnings
 from unittest import mock
