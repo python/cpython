@@ -16,6 +16,7 @@ to modify the meaning of the API call itself.
 import collections
 import collections.abc
 import concurrent.futures
+import errno
 import heapq
 import itertools
 import logging
@@ -1349,9 +1350,22 @@ class BaseEventLoop(events.AbstractEventLoop):
                     try:
                         sock.bind(sa)
                     except OSError as err:
-                        raise OSError(err.errno, 'error while attempting '
-                                      'to bind on address %r: %s'
-                                      % (sa, err.strerror.lower())) from None
+                        msg = f'error while attempting to bind on address' \
+                              f'{sa!r}: {err.strerror.lower()}'
+                        if err.errno == errno.EADDRNOTAVAIL:
+                            # Assume the family is not enabled (bpo-30945)
+                            sockets.pop()
+                            sock.close()
+                            logger.warning(msg)
+                            continue
+                        raise OSError(err.errno, msg) from err
+
+                if not sockets:
+                    failed_addrs = [info[4] for info in infos]
+                    raise OSError(
+                        f'could not bind on any address out of '
+                        f'{failed_addrs!r}')
+
                 completed = True
             finally:
                 if not completed:
