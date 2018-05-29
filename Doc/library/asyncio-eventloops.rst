@@ -169,11 +169,14 @@ An event loop policy must implement the following interface:
       Get the event loop for the current context.
 
       Returns an event loop object implementing the :class:`AbstractEventLoop`
-      interface.
+      interface. In case called from coroutine, it returns the currently
+      running event loop.
 
       Raises an exception in case no event loop has been set for the current
       context and the current policy does not specify to create one. It must
       never return ``None``.
+
+      .. versionchanged:: 3.6
 
    .. method:: set_event_loop(loop)
 
