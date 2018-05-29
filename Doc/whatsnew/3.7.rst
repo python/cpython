@@ -929,7 +929,7 @@ With this parameter, the server serves the specified directory, by default it
 uses the current working directory.
 (Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
 
-The new :class:`ThreadedHTTPServer <http.server.ThreadedHTTPServer>` class
+The new :class:`ThreadingHTTPServer <http.server.ThreadingHTTPServer>` class
 uses threads to handle requests using :class:`~socketserver.ThreadingMixin`.
 It is used when ``http.server`` is run with ``-m``.
 (Contributed by Julien Palard in :issue:`31639`.)
