@@ -548,6 +548,7 @@ class _GatheringFuture(futures.Future):
     def __init__(self, children, *, loop=None):
         super().__init__(loop=loop)
         self._children = children
+        self._cancel_requested = False
 
     def cancel(self):
         if self.done():
@@ -556,6 +557,11 @@ class _GatheringFuture(futures.Future):
         for child in self._children:
             if child.cancel():
                 ret = True
+        if ret:
+            # If any child tasks were actually cancelled, we should
+            # propagate the cancellation request regardless of
+            # *return_exceptions* argument.  See issue 32684.
+            self._cancel_requested = True
         return ret
 
 
@@ -636,7 +642,10 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
         results[i] = res
         nfinished += 1
         if nfinished == nchildren:
-            outer.set_result(results)
+            if outer._cancel_requested:
+                outer.set_exception(futures.CancelledError())
+            else:
+                outer.set_result(results)
 
     for i, fut in enumerate(children):
         fut.add_done_callback(functools.partial(_done_callback, i))
