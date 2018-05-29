@@ -1897,8 +1897,10 @@ class BaseTaskTests:
         # See http://bugs.python.org/issue29271 for details:
         asyncio.set_event_loop(self.loop)
         try:
-            self.assertEqual(asyncio.all_tasks(), {task})
-            self.assertEqual(asyncio.all_tasks(None), {task})
+            with self.assertWarns(PendingDeprecationWarning):
+                self.assertEqual(Task.all_tasks(), {task})
+            with self.assertWarns(PendingDeprecationWarning):
+                self.assertEqual(Task.all_tasks(None), {task})
         finally:
             asyncio.set_event_loop(None)
 
@@ -2483,6 +2485,9 @@ class BaseTaskIntrospectionTests:
             def _loop(self):
                 return loop
 
+            def done(self):
+                return False
+
         task = TaskLike()
         loop = mock.Mock()
 
@@ -2496,12 +2501,32 @@ class BaseTaskIntrospectionTests:
             def get_loop(self):
                 return loop
 
+            def done(self):
+                return False
+
         task = TaskLike()
         loop = mock.Mock()
 
         self.assertEqual(asyncio.all_tasks(loop), set())
         self._register_task(task)
         self.assertEqual(asyncio.all_tasks(loop), {task})
+        self._unregister_task(task)
+
+    def test__register_task_3(self):
+        class TaskLike:
+            def get_loop(self):
+                return loop
+
+            def done(self):
+                return True
+
+        task = TaskLike()
+        loop = mock.Mock()
+
+        self.assertEqual(asyncio.all_tasks(loop), set())
+        self._register_task(task)
+        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(asyncio.Task.all_tasks(loop), {task})
         self._unregister_task(task)
 
     def test__enter_task(self):

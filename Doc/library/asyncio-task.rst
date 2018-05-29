@@ -443,6 +443,8 @@ Task
       Return a set of all tasks for an event loop.
 
       By default all tasks for the current event loop are returned.
+      If *loop* is ``None``, :func:`get_event_loop` function
+      is used to get the current loop.
 
    .. classmethod:: current_task(loop=None)
 
@@ -567,8 +569,9 @@ Task functions
 
    Return a set of :class:`Task` objects created for the loop.
 
-   If *loop* is ``None`` :func:`get_event_loop` is used for getting
-   current loop.
+   If *loop* is ``None``, :func:`get_running_loop` is used for getting
+   current loop (contrary to the deprecated :meth:`Task.all_tasks` method
+   that uses :func:`get_event_loop`.)
 
    .. versionadded:: 3.7
 
