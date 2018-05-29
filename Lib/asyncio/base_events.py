@@ -39,9 +39,9 @@ from . import constants
 from . import coroutines
 from . import events
 from . import futures
-from . import helpers
 from . import protocols
 from . import sslproto
+from . import staggered
 from . import tasks
 from . import transports
 from .log import logger
@@ -997,7 +997,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:  # using happy eyeballs
                 if interleave:
                     infos = _interleave_addrinfos(infos, interleave)
-                sock, _, _ = await helpers.staggered_race(
+                sock, _, _ = await staggered.staggered_race(
                     (functools.partial(self._connect_sock,
                                        exceptions, addrinfo, laddr_infos)
                      for addrinfo in infos),
