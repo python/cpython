@@ -2467,6 +2467,28 @@ class HandleTests(test_utils.TestCase):
         # built-in async_gen.asend().
         self.assertEqual(coroutines._format_coroutine(coro), 'Coro()')
 
+        coro = Coro()
+        coro.__qualname__ = 'AAA'
+        coro.cr_code = None
+        self.assertEqual(coroutines._format_coroutine(coro), 'AAA()')
+
+        coro = Coro()
+        coro.__qualname__ = 'AAA'
+        coro.cr_code = None
+        coro.cr_frame = None
+        self.assertEqual(coroutines._format_coroutine(coro), 'AAA()')
+
+        coro = Coro()
+        coro.__qualname__ = None
+        coro.cr_code = None
+        coro.cr_frame = None
+        self.assertEqual(coroutines._format_coroutine(coro), f'{repr(coro)}()')
+
+        coro = Coro()
+        coro.cr_code = None
+        coro.cr_frame = None
+        self.assertEqual(coroutines._format_coroutine(coro), f'{repr(coro)}()')
+
 
 class TimerTests(unittest.TestCase):
 

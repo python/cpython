@@ -310,18 +310,25 @@ def _format_coroutine(coro):
     if coro_name is None:
         coro_name = events._format_callback(func, (), {})
 
-    try:
-        coro_code = coro.gi_code
-    except AttributeError:
+    coro_code = None
+    if hasattr(coro, 'cr_code') and coro.cr_code:
         coro_code = coro.cr_code
+    elif hasattr(coro, 'gi_code') and coro.gi_code:
+        coro_code = coro.gi_code
 
-    try:
-        coro_frame = coro.gi_frame
-    except AttributeError:
+    coro_frame = None
+    if hasattr(coro, 'cr_frame') and coro.cr_frame:
         coro_frame = coro.cr_frame
+    elif hasattr(coro, 'gi_frame') and coro.gi_frame:
+        coro_frame = coro.gi_frame
 
-    filename = coro_code.co_filename
+    filename = '<empty co_filename>'
+    if coro_code and coro_code.co_filename:
+        filename = coro_code.co_filename
+
     lineno = 0
+    coro_repr = coro_name
+
     if (isinstance(coro, CoroWrapper) and
             not inspect.isgeneratorfunction(coro.func) and
             coro.func is not None):
@@ -338,7 +345,7 @@ def _format_coroutine(coro):
         lineno = coro_frame.f_lineno
         coro_repr = ('%s running at %s:%s'
                      % (coro_name, filename, lineno))
-    else:
+    elif coro_code:
         lineno = coro_code.co_firstlineno
         coro_repr = ('%s done, defined at %s:%s'
                      % (coro_name, filename, lineno))
