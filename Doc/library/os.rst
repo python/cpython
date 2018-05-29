@@ -2378,7 +2378,13 @@ features:
 
    .. attribute:: st_ino
 
-      Inode number.
+      Platform dependent, but if non-zero, uniquely identifies the
+      file for a given value of ``st_dev``. Typically:
+
+      * the inode number on Unix,
+      * the `file index
+        <https://msdn.microsoft.com/en-us/library/aa363788>`_ on
+        Windows
 
    .. attribute:: st_dev
 
@@ -2536,6 +2542,10 @@ features:
 
    .. versionadded:: 3.5
       Added the :attr:`st_file_attributes` member on Windows.
+
+   .. versionchanged:: 3.5
+      Windows now returns the file index as :attr:`st_ino` when
+      available.
 
    .. versionadded:: 3.7
       Added the :attr:`st_fstype` member to Solaris/derivatives.
