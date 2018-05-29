@@ -228,6 +228,7 @@ class SubprocessMixin:
         proc, large_data = self.prepare_broken_pipe_test()
 
         async def write_stdin(proc, data):
+            await asyncio.sleep(0.5, loop=self.loop)
             proc.stdin.write(data)
             await proc.stdin.drain()
 
