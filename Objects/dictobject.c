@@ -3315,6 +3315,7 @@ typedef struct {
     Py_ssize_t di_pos;
     PyObject* di_result; /* reusable result tuple for iteritems */
     Py_ssize_t len;
+    Py_ssize_t* shuffled_index;
 } dictiterobject;
 
 static PyObject *
@@ -3329,6 +3330,12 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     di->di_used = dict->ma_used;
     di->di_pos = 0;
     di->len = dict->ma_used;
+    Py_ssize_t shuffled_index_len;
+    if (dict->ma_values)
+        shuffled_index_len = di->len;
+    else
+        shuffled_index_len = dict->ma_keys->dk_nentries;
+    di->shuffled_index = (Py_ssize_t*)calloc(shuffled_index_len + 1,sizeof(Py_ssize_t));
     if (itertype == &PyDictIterItem_Type) {
         di->di_result = PyTuple_Pack(2, Py_None, Py_None);
         if (di->di_result == NULL) {
@@ -3338,6 +3345,18 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     }
     else
         di->di_result = NULL;
+    Py_ssize_t i;
+    for (i = 0; i < shuffled_index_len + 1; i++) {
+        di->shuffled_index[i] = i;
+    }
+    if (shuffled_index_len > 1) {
+        for (i = 0; i < shuffled_index_len-1; i++) {
+            Py_ssize_t j = i + rand() / (RAND_MAX / (shuffled_index_len - i) + 1);
+            Py_ssize_t t = di->shuffled_index[j];
+            di->shuffled_index[j] = di->shuffled_index[i];
+            di->shuffled_index[i] = t;
+        }
+    }
     _PyObject_GC_TRACK(di);
     return (PyObject *)di;
 }
@@ -3410,15 +3429,18 @@ dictiter_iternextkey(dictiterobject *di)
     if (d->ma_values) {
         if (i >= d->ma_used)
             goto fail;
-        key = DK_ENTRIES(k)[i].me_key;
-        assert(d->ma_values[i] != NULL);
+        key = DK_ENTRIES(k)[di->shuffled_index[i]].me_key;
+        assert(key != NULL);
     }
     else {
         Py_ssize_t n = k->dk_nentries;
-        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
+        Py_ssize_t tmpi = di->shuffled_index[i];
+        PyDictKeyEntry *entry_ptr;
+        entry_ptr = &DK_ENTRIES(k)[tmpi];
         while (i < n && entry_ptr->me_value == NULL) {
-            entry_ptr++;
             i++;
+            tmpi = di->shuffled_index[i];
+            entry_ptr = &DK_ENTRIES(k)[tmpi];
         }
         if (i >= n)
             goto fail;
@@ -3491,15 +3513,17 @@ dictiter_iternextvalue(dictiterobject *di)
     if (d->ma_values) {
         if (i >= d->ma_used)
             goto fail;
-        value = d->ma_values[i];
+        value = d->ma_values[di->shuffled_index[i]];
         assert(value != NULL);
     }
     else {
         Py_ssize_t n = d->ma_keys->dk_nentries;
-        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
+        Py_ssize_t tmpi = di->shuffled_index[i];
+        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[tmpi];
         while (i < n && entry_ptr->me_value == NULL) {
-            entry_ptr++;
             i++;
+            tmpi = di->shuffled_index[i];
+            entry_ptr = &DK_ENTRIES(d->ma_keys)[tmpi];
         }
         if (i >= n)
             goto fail;
@@ -3572,16 +3596,18 @@ dictiter_iternextitem(dictiterobject *di)
     if (d->ma_values) {
         if (i >= d->ma_used)
             goto fail;
-        key = DK_ENTRIES(d->ma_keys)[i].me_key;
-        value = d->ma_values[i];
+        key = DK_ENTRIES(d->ma_keys)[di->shuffled_index[i]].me_key;
+        value = d->ma_values[di->shuffled_index[i]];
         assert(value != NULL);
     }
     else {
         Py_ssize_t n = d->ma_keys->dk_nentries;
-        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
+        Py_ssize_t tmpi = di->shuffled_index[i];
+        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[tmpi];
         while (i < n && entry_ptr->me_value == NULL) {
-            entry_ptr++;
             i++;
+            tmpi = di->shuffled_index[i];
+            entry_ptr = &DK_ENTRIES(d->ma_keys)[tmpi];
         }
         if (i >= n)
             goto fail;

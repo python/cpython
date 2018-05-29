@@ -816,6 +816,7 @@ static struct PyModuleDef _abcmodule = {
 PyMODINIT_FUNC
 PyInit__abc(void)
 {
+    srand(time(0));
     if (PyType_Ready(&_abc_data_type) < 0) {
         return NULL;
     }
