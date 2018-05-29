@@ -1874,8 +1874,11 @@ class PolicyTests(unittest.TestCase):
         loop.close()
 
     def test_get_child_watcher_thread(self):
+        success = False
 
         def f():
+            nonlocal success
+
             policy.set_event_loop(policy.new_event_loop())
 
             self.assertIsInstance(policy.get_event_loop(),
@@ -1886,12 +1889,14 @@ class PolicyTests(unittest.TestCase):
             self.assertIsNone(watcher._loop)
 
             policy.get_event_loop().close()
+            success = True
 
         policy = self.create_policy()
 
         th = threading.Thread(target=f)
         th.start()
         th.join()
+        self.assertTrue(success)
 
     def test_child_watcher_replace_mainloop_existing(self):
         policy = self.create_policy()
