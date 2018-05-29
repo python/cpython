@@ -1106,10 +1106,13 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl_handshake_timeout=ssl_handshake_timeout,
             call_connection_made=False)
 
+        # Pause early so that "ssl_protocol.data_received()" doesn't
+        # have a chance to get called before "ssl_protocol.connection_made()".
+        transport.pause_reading()
+
         transport.set_protocol(ssl_protocol)
         self.call_soon(ssl_protocol.connection_made, transport)
-        if not transport.is_reading():
-            self.call_soon(transport.resume_reading)
+        self.call_soon(transport.resume_reading)
 
         await waiter
         return ssl_protocol._app_transport
