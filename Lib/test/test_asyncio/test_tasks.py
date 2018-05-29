@@ -1991,7 +1991,7 @@ class BaseTaskTests:
     def test_cancel_wait_for(self):
         self._test_cancel_wait_for(60.0)
 
-    def test_cancel_gather(self):
+    def test_cancel_gather_1(self):
         """Ensure that a gathering future refuses to be cancelled once all
         children are done"""
         loop = asyncio.new_event_loop()
@@ -2020,6 +2020,33 @@ class BaseTaskTests:
         self.assertEqual(cancel_result, False)
         self.assertFalse(gather_task.cancelled())
         self.assertEqual(gather_task.result(), [42])
+
+    def test_cancel_gather_2(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        async def test():
+            time = 0
+            while True:
+                time += 0.05
+                await asyncio.gather(asyncio.sleep(0.05, loop=loop),
+                                     return_exceptions=True,
+                                     loop=loop)
+                if time > 1:
+                    return
+
+        async def main():
+            qwe = self.new_task(loop, test())
+            await asyncio.sleep(0.2, loop=loop)
+            qwe.cancel()
+            try:
+                await qwe
+            except asyncio.CancelledError:
+                pass
+            else:
+                self.fail('gather did not propagate the cancellation request')
+
+        loop.run_until_complete(main())
 
     def test_exception_traceback(self):
         # See http://bugs.python.org/issue28843

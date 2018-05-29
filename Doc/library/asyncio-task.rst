@@ -568,6 +568,10 @@ Task functions
    outer Future is *not* cancelled in this case.  (This is to prevent the
    cancellation of one child to cause other children to be cancelled.)
 
+   .. versionchanged:: 3.6.6
+      If the *gather* itself is cancelled, the cancellation is propagated
+      regardless of *return_exceptions*.
+
 .. function:: iscoroutine(obj)
 
    Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`,
