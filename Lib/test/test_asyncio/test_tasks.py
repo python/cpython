@@ -2131,15 +2131,15 @@ class BaseTaskTests:
             time = 0
             while True:
                 time += 0.05
-                await asyncio.gather(asyncio.sleep(0.05),
+                await asyncio.gather(asyncio.sleep(0.05, loop=loop),
                                      return_exceptions=True,
                                      loop=loop)
                 if time > 1:
                     return
 
         async def main():
-            qwe = asyncio.Task(test())
-            await asyncio.sleep(0.2)
+            qwe = self.new_task(loop, test())
+            await asyncio.sleep(0.2, loop=loop)
             qwe.cancel()
             try:
                 await qwe
