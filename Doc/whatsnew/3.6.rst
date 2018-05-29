@@ -818,7 +818,7 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
 (all backported to 3.5.x due to the provisional status):
 
 * The :func:`~asyncio.get_event_loop` function has been changed to
-  always return the currently running loop when called from couroutines
+  always return the currently running loop when called from coroutines
   and callbacks.
   (Contributed by Yury Selivanov in :issue:`28613`.)
 
