@@ -1737,14 +1737,17 @@ class PtyTests(unittest.TestCase):
         [master, slave] = pty.openpty()
         proc = subprocess.Popen(cmd, stdin=slave, stdout=slave, stderr=slave)
         os.close(slave)
+        output = "could not read process output"
         with proc, os.fdopen(master, "wb", closefd=False) as writer:
             # Wait for the process to be fully started.
             sentinel = os.read(master, len(expected))
             writer.write(terminal_input + b"\r\n")
+            writer.flush()
             # Assert after writing to the process to avoid a deadlock if the
             # assertion fails.
             self.assertEqual(sentinel, expected)
-        self.assertEqual(proc.returncode, 0, self.final_output(master))
+            output = self.final_output(master)
+        self.assertEqual(proc.returncode, 0, output)
 
     def test_input_tty(self):
         # Test input() functionality when wired to a tty (the code path
