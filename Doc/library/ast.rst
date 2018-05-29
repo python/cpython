@@ -151,10 +151,6 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.5
       :class:`AsyncFunctionDef` is now supported.
 
-   .. versionchanged:: 3.7
-      The docstring is now exported from the node docstring field, instead of
-      the first body statement.
-
 
 .. function:: fix_missing_locations(node)
 
