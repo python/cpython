@@ -412,14 +412,17 @@ async def wait_for(fut, timeout, *, loop=None):
             return fut.result()
         else:
             fut.remove_done_callback(cb)
-            fut.cancel()
+            # We must ensure that the task is not running
+            # after wait_for() returns.
+            # See https://bugs.python.org/issue32751
+            await _cancel_and_wait(fut, loop=loop)
             raise futures.TimeoutError()
     finally:
         timeout_handle.cancel()
 
 
 async def _wait(fs, timeout, return_when, loop):
-    """Internal helper for wait() and wait_for().
+    """Internal helper for wait().
 
     The fs argument must be a collection of Futures.
     """
@@ -459,6 +462,27 @@ async def _wait(fs, timeout, return_when, loop):
         else:
             pending.add(f)
     return done, pending
+
+
+async def _cancel_and_wait(fut, loop):
+    """Cancel the *fut* future or task and wait until it completes."""
+
+    waiter = loop.create_future()
+    cb = functools.partial(_release_waiter, waiter)
+    fut.add_done_callback(cb)
+    fut.cancel()
+
+    try:
+        # We cannot wait on *fut* directly to make
+        # sure _cancel_and_wait itself is reliably cancellable.
+        await waiter
+    except futures.CancelledError:
+        if not fut.done():
+            # Task still alive, but cancellation itself is being
+            # cancelled.
+            raise
+    finally:
+        fut.remove_done_callback(cb)
 
 
 # This is *not* a @coroutine!  It is just an iterator (yielding Futures).
