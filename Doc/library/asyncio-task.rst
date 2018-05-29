@@ -786,7 +786,9 @@ Task functions
 
    Returns result of the Future or coroutine.  When a timeout occurs, it
    cancels the task and raises :exc:`asyncio.TimeoutError`. To avoid the task
-   cancellation, wrap it in :func:`shield`.
+   cancellation, wrap it in :func:`shield`.  The function will wait until
+   the future is actually cancelled, so the total wait time may exceed
+   the *timeout*.
 
    If the wait is cancelled, the future *fut* is also cancelled.
 
@@ -796,3 +798,8 @@ Task functions
 
    .. versionchanged:: 3.4.3
       If the wait is cancelled, the future *fut* is now also cancelled.
+
+   .. versionchanged:: 3.7
+      When *fut* is cancelled due to a timeout, ``wait_for`` now waits
+      for *fut* to be cancelled.  Previously,
+      it raised :exc:`~asyncio.TimeoutError` immediately.

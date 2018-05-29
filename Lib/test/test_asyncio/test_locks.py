@@ -807,6 +807,19 @@ class ConditionTests(test_utils.TestCase):
         with self.assertRaises(ValueError):
             asyncio.Condition(lock, loop=loop)
 
+    def test_timeout_in_block(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        async def task_timeout():
+            condition = asyncio.Condition(loop=loop)
+            async with condition:
+                with self.assertRaises(asyncio.TimeoutError):
+                    await asyncio.wait_for(condition.wait(), timeout=0.5,
+                                           loop=loop)
+
+        loop.run_until_complete(task_timeout())
+
 
 class SemaphoreTests(test_utils.TestCase):
 
