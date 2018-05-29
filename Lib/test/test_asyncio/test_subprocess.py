@@ -210,6 +210,7 @@ class SubprocessMixin:
 
         @asyncio.coroutine
         def write_stdin(proc, data):
+            yield from asyncio.sleep(0.5, loop=self.loop)
             proc.stdin.write(data)
             yield from proc.stdin.drain()
 
