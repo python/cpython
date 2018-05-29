@@ -812,6 +812,7 @@ class HighPage(Frame):
             'Shell Error Text': ('error', '11'),
             'Shell Stdout Text': ('stdout', '12'),
             'Shell Stderr Text': ('stderr', '13'),
+            'Code Context': ('context', '14'),
             }
         self.builtin_name = tracers.add(
                 StringVar(self), self.var_changed_builtin_name)
@@ -842,6 +843,7 @@ class HighPage(Frame):
             ('\n', 'normal'),
             ('#you can click here', 'comment'), ('\n', 'normal'),
             ('#to choose items', 'comment'), ('\n', 'normal'),
+            ('code context section', 'context'), ('\n\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
             ('func', 'definition'), ('(param):\n  ', 'normal'),
             ('"""string"""', 'string'), ('\n  var0 = ', 'normal'),

@@ -20,7 +20,7 @@ from idlelib.config import idleConf
 BLOCKOPENERS = {"class", "def", "elif", "else", "except", "finally", "for",
                 "if", "try", "while", "with", "async"}
 UPDATEINTERVAL = 100 # millisec
-FONTUPDATEINTERVAL = 1000 # millisec
+CONFIGUPDATEINTERVAL = 1000 # millisec
 
 
 def get_spaces_firstword(codeline, c=re.compile(r"^(\s*)(\w*)")):
@@ -45,9 +45,6 @@ def get_line_info(codeline):
 class CodeContext:
     "Display block context above the edit window."
 
-    bgcolor = "LightGray"
-    fgcolor = "Black"
-
     def __init__(self, editwin):
         """Initialize settings for context block.
 
@@ -69,22 +66,20 @@ class CodeContext:
         self.editwin = editwin
         self.text = editwin.text
         self.textfont = self.text["font"]
+        self.contextcolors = CodeContext.colors
         self.label = None
         self.topvisible = 1
         self.info = [(0, -1, "", False)]
         # Start two update cycles, one for context lines, one for font changes.
         self.t1 = self.text.after(UPDATEINTERVAL, self.timer_event)
-        self.t2 = self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
+        self.t2 = self.text.after(CONFIGUPDATEINTERVAL, self.config_timer_event)
 
     @classmethod
     def reload(cls):
         "Load class variables from config."
         cls.context_depth = idleConf.GetOption("extensions", "CodeContext",
                                        "numlines", type="int", default=3)
-##        cls.bgcolor = idleConf.GetOption("extensions", "CodeContext",
-##                                     "bgcolor", type="str", default="LightGray")
-##        cls.fgcolor = idleConf.GetOption("extensions", "CodeContext",
-##                                     "fgcolor", type="str", default="Black")
+        cls.colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'context')
 
     def __del__(self):
         "Cancel scheduled events."
@@ -118,7 +113,8 @@ class CodeContext:
             self.label = tkinter.Label(
                     self.editwin.top, text="\n" * (self.context_depth - 1),
                     anchor=W, justify=LEFT, font=self.textfont,
-                    bg=self.bgcolor, fg=self.fgcolor,
+                    bg=self.contextcolors['background'],
+                    fg=self.contextcolors['foreground'],
                     width=1,  # Don't request more than we get.
                     padx=padx, border=border, relief=SUNKEN)
             # Pack the label widget before and above the text_frame widget,
@@ -203,13 +199,17 @@ class CodeContext:
             self.update_code_context()
         self.t1 = self.text.after(UPDATEINTERVAL, self.timer_event)
 
-    def font_timer_event(self):
-        "Event on editor text widget triggered every FONTUPDATEINTERVAL ms."
+    def config_timer_event(self):
+        "Event on editor text widget triggered every CONFIGUPDATEINTERVAL ms."
         newtextfont = self.text["font"]
-        if self.label and newtextfont != self.textfont:
+        if (self.label and (newtextfont != self.textfont or
+                            CodeContext.colors != self.contextcolors)):
             self.textfont = newtextfont
+            self.contextcolors = CodeContext.colors
             self.label["font"] = self.textfont
-        self.t2 = self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
+            self.label['background'] = self.contextcolors['background']
+            self.label['foreground'] = self.contextcolors['foreground']
+        self.t2 = self.text.after(CONFIGUPDATEINTERVAL, self.config_timer_event)
 
 
 CodeContext.reload()
