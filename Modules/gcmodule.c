@@ -654,6 +654,7 @@ handle_legacy_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 {
     PyGC_Head *gc = finalizers->gc.gc_next;
 
+    assert(!PyErr_Occurred());
     if (_PyRuntime.gc.garbage == NULL) {
         _PyRuntime.gc.garbage = PyList_New(0);
         if (_PyRuntime.gc.garbage == NULL)
@@ -663,8 +664,10 @@ handle_legacy_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
         PyObject *op = FROM_GC(gc);
 
         if ((_PyRuntime.gc.debug & DEBUG_SAVEALL) || has_legacy_finalizer(op)) {
-            if (PyList_Append(_PyRuntime.gc.garbage, op) < 0)
+            if (PyList_Append(_PyRuntime.gc.garbage, op) < 0) {
+                PyErr_Clear();
                 break;
+            }
         }
     }
 
@@ -701,6 +704,7 @@ finalize_garbage(PyGC_Head *collectable)
             _PyGCHead_SET_FINALIZED(gc, 1);
             Py_INCREF(op);
             finalize(op);
+            assert(!PyErr_Occurred());
             Py_DECREF(op);
         }
     }
@@ -748,17 +752,26 @@ delete_garbage(PyGC_Head *collectable, PyGC_Head *old)
 {
     inquiry clear;
 
+    assert(!PyErr_Occurred());
     while (!gc_list_is_empty(collectable)) {
         PyGC_Head *gc = collectable->gc.gc_next;
         PyObject *op = FROM_GC(gc);
 
         if (_PyRuntime.gc.debug & DEBUG_SAVEALL) {
-            PyList_Append(_PyRuntime.gc.garbage, op);
+            assert(_PyRuntime.gc.garbage != NULL);
+            if (PyList_Append(_PyRuntime.gc.garbage, op) < 0) {
+                PyErr_Clear();
+            }
         }
         else {
             if ((clear = Py_TYPE(op)->tp_clear) != NULL) {
                 Py_INCREF(op);
-                clear(op);
+                (void) clear(op);
+                if (PyErr_Occurred()) {
+                    PySys_WriteStderr("Exception ignored in tp_clear of "
+                                      "%.50s\n", Py_TYPE(op)->tp_name);
+                    PyErr_WriteUnraisable(NULL);
+                }
                 Py_DECREF(op);
             }
         }
@@ -974,6 +987,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
     if (PyDTrace_GC_DONE_ENABLED())
         PyDTrace_GC_DONE(n+m);
 
+    assert(!PyErr_Occurred());
     return n+m;
 }
 
@@ -987,11 +1001,12 @@ invoke_gc_callback(const char *phase, int generation,
     Py_ssize_t i;
     PyObject *info = NULL;
 
+    assert(!PyErr_Occurred());
     /* we may get called very early */
     if (_PyRuntime.gc.callbacks == NULL)
         return;
     /* The local variable cannot be rebound, check it for sanity */
-    assert(_PyRuntime.gc.callbacks != NULL && PyList_CheckExact(_PyRuntime.gc.callbacks));
+    assert(PyList_CheckExact(_PyRuntime.gc.callbacks));
     if (PyList_GET_SIZE(_PyRuntime.gc.callbacks) != 0) {
         info = Py_BuildValue("{sisnsn}",
             "generation", generation,
@@ -1015,6 +1030,7 @@ invoke_gc_callback(const char *phase, int generation,
         Py_DECREF(cb);
     }
     Py_XDECREF(info);
+    assert(!PyErr_Occurred());
 }
 
 /* Perform garbage collection of a generation and invoke
@@ -1024,9 +1040,11 @@ static Py_ssize_t
 collect_with_callback(int generation)
 {
     Py_ssize_t result, collected, uncollectable;
+    assert(!PyErr_Occurred());
     invoke_gc_callback("start", generation, 0, 0);
     result = collect(generation, &collected, &uncollectable, 0);
     invoke_gc_callback("stop", generation, collected, uncollectable);
+    assert(!PyErr_Occurred());
     return result;
 }
 
@@ -1592,6 +1610,7 @@ _PyGC_CollectNoFail(void)
 {
     Py_ssize_t n;
 
+    assert(!PyErr_Occurred());
     /* Ideally, this function is only called on interpreter shutdown,
        and therefore not recursively.  Unfortunately, when there are daemon
        threads, a daemon thread can start a cyclic garbage collection

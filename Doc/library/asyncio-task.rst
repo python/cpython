@@ -443,6 +443,8 @@ Task
       Return a set of all tasks for an event loop.
 
       By default all tasks for the current event loop are returned.
+      If *loop* is ``None``, :func:`get_event_loop` function
+      is used to get the current loop.
 
    .. classmethod:: current_task(loop=None)
 
@@ -567,8 +569,9 @@ Task functions
 
    Return a set of :class:`Task` objects created for the loop.
 
-   If *loop* is ``None`` :func:`get_event_loop` is used for getting
-   current loop.
+   If *loop* is ``None``, :func:`get_running_loop` is used for getting
+   current loop (contrary to the deprecated :meth:`Task.all_tasks` method
+   that uses :func:`get_event_loop`.)
 
    .. versionadded:: 3.7
 
@@ -636,6 +639,10 @@ Task functions
    treated as if it raised :exc:`~concurrent.futures.CancelledError` -- the
    outer Future is *not* cancelled in this case.  (This is to prevent the
    cancellation of one child to cause other children to be cancelled.)
+
+   .. versionchanged:: 3.7.0
+      If the *gather* itself is cancelled, the cancellation is propagated
+      regardless of *return_exceptions*.
 
 .. function:: iscoroutine(obj)
 
@@ -761,6 +768,9 @@ Task functions
    |                             | futures finish or are cancelled.       |
    +-----------------------------+----------------------------------------+
 
+   Unlike :func:`~asyncio.wait_for`, ``wait()`` will not cancel the futures
+   when a timeout accurs.
+
    This function is a :ref:`coroutine <coroutine>`.
 
    Usage::
@@ -783,7 +793,9 @@ Task functions
 
    Returns result of the Future or coroutine.  When a timeout occurs, it
    cancels the task and raises :exc:`asyncio.TimeoutError`. To avoid the task
-   cancellation, wrap it in :func:`shield`.
+   cancellation, wrap it in :func:`shield`.  The function will wait until
+   the future is actually cancelled, so the total wait time may exceed
+   the *timeout*.
 
    If the wait is cancelled, the future *fut* is also cancelled.
 
@@ -793,3 +805,8 @@ Task functions
 
    .. versionchanged:: 3.4.3
       If the wait is cancelled, the future *fut* is now also cancelled.
+
+   .. versionchanged:: 3.7
+      When *fut* is cancelled due to a timeout, ``wait_for`` now waits
+      for *fut* to be cancelled.  Previously,
+      it raised :exc:`~asyncio.TimeoutError` immediately.
