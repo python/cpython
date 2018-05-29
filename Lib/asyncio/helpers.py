@@ -1,5 +1,5 @@
-from contextlib import suppress
-from typing import Iterable, Callable, Any, Tuple, List, Optional, Awaitable
+import contextlib
+import typing
 
 from . import events
 from . import futures
@@ -8,14 +8,14 @@ from . import tasks
 
 
 async def staggered_race(
-        coro_fns: Iterable[Callable[[], Awaitable]],
-        delay: Optional[float],
+        coro_fns: typing.Iterable[typing.Callable[[], typing.Awaitable]],
+        delay: typing.Optional[float],
         *,
         loop: events.AbstractEventLoop = None,
-) -> Tuple[
-    Any,
-    Optional[int],
-    List[Optional[Exception]]
+) -> typing.Tuple[
+    typing.Any,
+    typing.Optional[int],
+    typing.List[typing.Optional[Exception]]
 ]:
     """Run coroutines with staggered start times and take the first to finish.
 
@@ -75,10 +75,11 @@ async def staggered_race(
     exceptions = []
     running_tasks = []
 
-    async def run_one_coro(previous_failed: Optional[locks.Event]) -> None:
+    async def run_one_coro(
+            previous_failed: typing.Optional[locks.Event]) -> None:
         # Wait for the previous task to finish, or for delay seconds
         if previous_failed is not None:
-            with suppress(futures.TimeoutError):
+            with contextlib.suppress(futures.TimeoutError):
                 # Use asyncio.wait_for() instead of asyncio.wait() here, so
                 # that if we get cancelled at this point, Event.wait() is also
                 # cancelled, otherwise there will be a "Task destroyed but it is
