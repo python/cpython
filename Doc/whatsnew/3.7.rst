@@ -2161,13 +2161,6 @@ Changes in Python Behavior
 Changes in the Python API
 -------------------------
 
-* ``Module``, ``FunctionDef``, ``AsyncFunctionDef``, and
-  ``ClassDef`` AST nodes now have the new ``docstring`` attribute.
-  The first statement in their body is not considered as a docstring
-  anymore.  ``co_firstlineno`` and ``co_lnotab`` of code object for class
-  and module are affected by this change. (Contributed by INADA Naoki and
-  Eugene Toder in :issue:`29463`.)
-
 * :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
   non-daemon threads complete.  Set the new
   :attr:`socketserver.ThreadingMixIn.block_on_close` class attribute to
