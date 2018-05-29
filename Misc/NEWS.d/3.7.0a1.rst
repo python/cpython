@@ -788,7 +788,7 @@ objects.
 Add ``docstring`` field to Module, ClassDef, FunctionDef, and
 AsyncFunctionDef ast nodes.  docstring is not first stmt in their body
 anymore.  It affects ``co_firstlineno`` and ``co_lnotab`` of code object for
-module and class.
+module and class. (Reverted in :issue:`32911`.)
 
 ..
 

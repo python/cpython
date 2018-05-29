@@ -6,7 +6,7 @@
 
 module Python
 {
-    mod = Module(stmt* body, string? docstring)
+    mod = Module(stmt* body)
         | Interactive(stmt* body)
         | Expression(expr body)
 
@@ -14,18 +14,15 @@ module Python
         | Suite(stmt* body)
 
     stmt = FunctionDef(identifier name, arguments args,
-                       stmt* body, expr* decorator_list, expr? returns,
-                       string? docstring)
+                       stmt* body, expr* decorator_list, expr? returns)
           | AsyncFunctionDef(identifier name, arguments args,
-                             stmt* body, expr* decorator_list, expr? returns,
-                             string? docstring)
+                             stmt* body, expr* decorator_list, expr? returns)
 
           | ClassDef(identifier name,
              expr* bases,
              keyword* keywords,
              stmt* body,
-             expr* decorator_list,
-             string? docstring)
+             expr* decorator_list)
           | Return(expr? value)
 
           | Delete(expr* targets)
