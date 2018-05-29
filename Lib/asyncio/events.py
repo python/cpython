@@ -583,16 +583,29 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
     class _Local(threading.local):
         _loop = None
+        _pid = None
         _set_called = False
+
+        def __init__(self):
+            super().__init__()
+            self._pid = os.getpid()
 
     def __init__(self):
         self._local = self._Local()
+
+    def _check_pid(self):
+        if self._local._pid != os.getpid():
+            # If we detect we're in a child process forked by multiprocessing,
+            # we reset self._local so that we'll get a new event loop.
+            self._local = self._Local()
 
     def get_event_loop(self):
         """Get the event loop.
 
         This may be None or an instance of EventLoop.
         """
+        self._check_pid()
+
         if (self._local._loop is None and
             not self._local._set_called and
             isinstance(threading.current_thread(), threading._MainThread)):
@@ -604,6 +617,7 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
     def set_event_loop(self, loop):
         """Set the event loop."""
+        self._check_pid()
         self._local._set_called = True
         assert loop is None or isinstance(loop, AbstractEventLoop)
         self._local._loop = loop
