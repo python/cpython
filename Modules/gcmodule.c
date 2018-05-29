@@ -767,7 +767,11 @@ delete_garbage(PyGC_Head *collectable, PyGC_Head *old)
             if ((clear = Py_TYPE(op)->tp_clear) != NULL) {
                 Py_INCREF(op);
                 (void) clear(op);
-                assert(!PyErr_Occurred());
+                if (PyErr_Occurred()) {
+                    PySys_WriteStderr("Exception ignored in tp_clear of "
+                                      "%.50s\n", Py_TYPE(op)->tp_name);
+                    PyErr_WriteUnraisable(NULL);
+                }
                 Py_DECREF(op);
             }
         }
