@@ -2113,10 +2113,10 @@ class SubprocessTestsMixin:
 
 class SendfileBase:
 
-    DATA = b"SendfileBaseData" * (1024 * 4)  # 64 KiB
+    DATA = b"SendfileBaseData" * (1024 * 8)  # 128 KiB
 
     # Reduce socket buffer size to test on relative small data sets.
-    BUF_SIZE = 1024   # 1 KiB
+    BUF_SIZE = 4 * 1024   # 4 KiB
 
     @classmethod
     def setUpClass(cls):
