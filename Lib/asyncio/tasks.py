@@ -470,9 +470,9 @@ async def _cancel_and_wait(fut, loop):
     waiter = loop.create_future()
     cb = functools.partial(_release_waiter, waiter)
     fut.add_done_callback(cb)
-    fut.cancel()
 
     try:
+        fut.cancel()
         # We cannot wait on *fut* directly to make
         # sure _cancel_and_wait itself is reliably cancellable.
         await waiter
