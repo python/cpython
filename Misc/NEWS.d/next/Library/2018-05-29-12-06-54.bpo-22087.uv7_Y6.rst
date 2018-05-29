@@ -1,3 +1,0 @@
-Fix Policy.get_event_loop() to detect fork and return a new loop.
-
-Original patch by Dan O'Reilly.
