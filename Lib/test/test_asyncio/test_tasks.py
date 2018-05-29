@@ -789,6 +789,62 @@ class BaseTaskTests:
         res = loop.run_until_complete(task)
         self.assertEqual(res, "ok")
 
+    def test_wait_for_waits_for_task_cancellation(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        task_done = False
+
+        async def foo():
+            async def inner():
+                nonlocal task_done
+                try:
+                    await asyncio.sleep(0.2, loop=loop)
+                finally:
+                    task_done = True
+
+            inner_task = self.new_task(loop, inner())
+
+            with self.assertRaises(asyncio.TimeoutError):
+                await asyncio.wait_for(inner_task, timeout=0.1, loop=loop)
+
+            self.assertTrue(task_done)
+
+        loop.run_until_complete(foo())
+
+    def test_wait_for_self_cancellation(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        async def foo():
+            async def inner():
+                try:
+                    await asyncio.sleep(0.3, loop=loop)
+                except asyncio.CancelledError:
+                    try:
+                        await asyncio.sleep(0.3, loop=loop)
+                    except asyncio.CancelledError:
+                        await asyncio.sleep(0.3, loop=loop)
+
+                return 42
+
+            inner_task = self.new_task(loop, inner())
+
+            wait = asyncio.wait_for(inner_task, timeout=0.1, loop=loop)
+
+            # Test that wait_for itself is properly cancellable
+            # even when the initial task holds up the initial cancellation.
+            task = self.new_task(loop, wait)
+            await asyncio.sleep(0.2, loop=loop)
+            task.cancel()
+
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+
+            self.assertEqual(await inner_task, 42)
+
+        loop.run_until_complete(foo())
+
     def test_wait(self):
 
         def gen():
