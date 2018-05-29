@@ -13,6 +13,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import multiprocessing
 from unittest import mock
 from test import support
 
@@ -1802,6 +1803,37 @@ class SafeChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):
 class FastChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):
     def create_watcher(self):
         return asyncio.FastChildWatcher()
+
+
+class ForkedProcessTests(unittest.TestCase):
+    def setUp(self):
+        self.parent_loop = asyncio.SelectorEventLoop()
+        asyncio.set_event_loop(self.parent_loop)
+        self.ctx = multiprocessing.get_context("fork")
+
+    def tearDown(self):
+        self.parent_loop.close()
+
+    def _check_loops_not_equal(self, old_loop):
+        loop = asyncio.get_event_loop()
+        if loop is old_loop:
+            raise RuntimeError("Child process inherited parent's event loop")
+
+        try:
+            val = loop.run_until_complete(asyncio.sleep(0.05, result=42))
+            if val != 42:
+                raise RuntimeError("new event loop does not work")
+        finally:
+            loop.close()
+
+        sys.exit(loop is old_loop)
+
+    def test_new_loop_in_child(self):
+        p = self.ctx.Process(target=self._check_loops_not_equal,
+                             args=(self.parent_loop,))
+        p.start()
+        p.join()
+        self.assertEqual(p.exitcode, 0)
 
 
 class PolicyTests(unittest.TestCase):
