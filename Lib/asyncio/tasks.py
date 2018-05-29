@@ -476,11 +476,6 @@ async def _cancel_and_wait(fut, loop):
         # We cannot wait on *fut* directly to make
         # sure _cancel_and_wait itself is reliably cancellable.
         await waiter
-    except futures.CancelledError:
-        if not fut.done():
-            # Task still alive, but cancellation itself is being
-            # cancelled.
-            raise
     finally:
         fut.remove_done_callback(cb)
 
