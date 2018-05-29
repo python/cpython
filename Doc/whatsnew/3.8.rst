@@ -95,9 +95,13 @@ Optimizations
 
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform specific
-  zero-copy syscalls on Linux, OSX and Windows in order to copy the file more
-  efficiently. The speedup for copying a 512MB file is about +26% on Linux,
-  +50% on OSX and +48% on Windows. Also, much less CPU cycles are consumed.
+  "zero-copy" syscalls such as :func:`os.sendfile` in order to copy the file
+  more efficiently.
+  "zero-copy" means that the copying operation occurs within the kernel,
+  avoiding the use of userspace buffers as in "``outfd.write(infd.read())``".
+  The speedup for copying a 512MB file within the same partition is about +26%
+  on Linux, +50% on OSX and +48% on Windows. Also, much less CPU cycles are
+  consumed.
   (Contributed by Giampaolo Rodola' in :issue:`25427`.)
 
 * The default protocol in the :mod:`pickle` module is now Protocol 4,

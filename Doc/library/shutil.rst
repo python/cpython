@@ -51,8 +51,9 @@ Directory and files operations
 .. function:: copyfile(src, dst, *, follow_symlinks=True)
 
    Copy the contents (no metadata) of the file named *src* to a file named
-   *dst* and return *dst*.  *src* and *dst* are path names given as strings
-   in the most efficient way possible.
+   *dst* and return *dst* in the most efficient way possible.
+   *src* and *dst* are path names given as strings.
+
    *dst* must be the complete target file name; look at :func:`shutil.copy`
    for a copy that accepts a target directory path.  If *src* and *dst*
    specify the same file, :exc:`SameFileError` is raised.
@@ -66,13 +67,6 @@ Directory and files operations
    a new symbolic link will be created instead of copying the
    file *src* points to.
 
-   .. note::
-      Internally platform-specific zero-copy syscalls are used on Linux, OSX
-      and Windows in order to copy the file more efficiently.
-      If the zero-copy operation fails and no data was written in *dst*
-      it will silently fallback on using less efficient :func:`copyfileobj`
-      internally.
-
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
       Added *follow_symlinks* argument.
@@ -83,10 +77,9 @@ Directory and files operations
       a subclass of the latter, this change is backward compatible.
 
    .. versionchanged:: 3.8
-      Use platform-specific zero-copy syscalls on Linux, OSX and Windows in
-      order to copy the file more efficiently.
-      If the zero-copy operation fails and no data was written in *dst*
-      silently fallback on using less efficient :func:`copyfileobj` internally.
+      Platform-specific zero-copy syscalls are used internally in order to copy
+      the file more efficiently. See
+      `platform-dependent efficient copy operations`_ section.
 
 .. exception:: SameFileError
 
@@ -177,10 +170,9 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Use platform-specific zero-copy syscalls on Linux, OSX and Windows in
-      order to copy the file more efficiently.
-      If the zero-copy operation fails and no data was written in *dst*
-      silently fallback on using less efficient :func:`copyfileobj` internally.
+      Platform-specific zero-copy syscalls are used internally in order to copy
+      the file more efficiently. See
+      `platform-dependent efficient copy operations`_ section.
 
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
@@ -205,10 +197,9 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Use platform-specific zero-copy syscalls on Linux, OSX and Windows in
-      order to copy the file more efficiently.
-      If the zero-copy operation fails and no data was written in *dst*
-      silently fallback on using less efficient :func:`copyfileobj` internally.
+      Platform-specific zero-copy syscalls are used internally in order to copy
+      the file more efficiently. See
+      `platform-dependent efficient copy operations`_ section.
 
 .. function:: ignore_patterns(\*patterns)
 
@@ -267,10 +258,9 @@ Directory and files operations
       errors when *symlinks* is false.
 
    .. versionchanged:: 3.8
-      Use platform-specific zero-copy syscalls on Linux, OSX and Windows in
-      order to copy the file more efficiently.
-      If the zero-copy operation fails and no data was written in *dst*
-      silently fallback on using less efficient :func:`copyfileobj` internally.
+      Platform-specific zero-copy syscalls are used internally in order to copy
+      the file more efficiently. See
+      `platform-dependent efficient copy operations`_ section.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
@@ -345,10 +335,9 @@ Directory and files operations
       Added the *copy_function* keyword argument.
 
    .. versionchanged:: 3.8
-      Use platform-specific zero-copy syscalls on Linux, OSX and Windows in
-      order to copy the file more efficiently.
-      If the zero-copy operation fails and no data was written in *dst*
-      silently fallback on using less efficient :func:`copyfileobj` internally.
+      Platform-specific zero-copy syscalls are used internally in order to copy
+      the file more efficiently. See
+      `platform-dependent efficient copy operations`_ section.
 
 .. function:: disk_usage(path)
 
@@ -406,6 +395,26 @@ Directory and files operations
    operation. For :func:`copytree`, the exception argument is a list of 3-tuples
    (*srcname*, *dstname*, *exception*).
 
+.. _shutil-platform-dependent-efficient-copy-operations:
+
+Platform-dependent efficient copy operations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting from Python 3.8 :func:`copyfile` uses platform-specific "zero-copy"
+syscalls such as :func:`os.sendfile` in order to copy the file more efficiently
+(see `bpo-33671 <https://bugs.python.org/issue33671>`_).
+"zero-copy" means that the copying operation occurs within the kernel, avoiding
+the use of userspace buffers as in "``outfd.write(infd.read())``".
+Such platforms are OSX, Windows and POSIX systems where :func:`os.sendfile`
+accepts 2 regular fds (namely Linux and Solaris).
+If the zero-copy operation fails and no data was written in the destination
+file then :func:`copyfile` will silently fallback on using less efficient
+:func:`copyfileobj` function internally.
+All functions relying on :func:`copyfile` will benefit from the same speedup.
+These are :func:`shutil.copy`, :func:`shutil.copy2`, :func:`shutil.copytree`
+and :func:`shutil.move`.
+
+.. versionadded:: 3.8
 
 .. _shutil-copytree-example:
 
@@ -692,3 +701,6 @@ Querying the size of the output terminal
 
 .. _`Other Environment Variables`:
    http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003
+
+.. _`platform-dependent efficient copy operations`:
+   shutil-platform-dependent-efficient-copy-operations_
