@@ -764,6 +764,9 @@ Task functions
    |                             | futures finish or are cancelled.       |
    +-----------------------------+----------------------------------------+
 
+   Unlike :func:`~asyncio.wait_for`, ``wait()`` will not cancel the futures
+   when a timeout accurs.
+
    This function is a :ref:`coroutine <coroutine>`.
 
    Usage::
