@@ -453,11 +453,50 @@ static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, int opti
 }
 
 static int
+isdocstring(stmt_ty s)
+{
+    if (s->kind != Expr_kind)
+        return 0;
+    if (s->v.Expr.value->kind == Str_kind)
+        return 1;
+    if (s->v.Expr.value->kind == Constant_kind)
+        return PyUnicode_CheckExact(s->v.Expr.value->v.Constant.value);
+    return 0;
+}
+
+static int
+astfold_body(asdl_seq *stmts, PyArena *ctx_, int optimize_)
+{
+    if (!asdl_seq_LEN(stmts)) {
+        return 1;
+    }
+    int docstring = isdocstring((stmt_ty)asdl_seq_GET(stmts, 0));
+    CALL_SEQ(astfold_stmt, stmt_ty, stmts);
+    if (docstring) {
+        return 1;
+    }
+    stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+    if (isdocstring(st)) {
+        asdl_seq *values = _Py_asdl_seq_new(1, ctx_);
+        if (!values) {
+            return 0;
+        }
+        asdl_seq_SET(values, 0, st->v.Expr.value);
+        expr_ty expr = _Py_JoinedStr(values, st->lineno, st->col_offset, ctx_);
+        if (!expr) {
+            return 0;
+        }
+        st->v.Expr.value = expr;
+    }
+    return 1;
+}
+
+static int
 astfold_mod(mod_ty node_, PyArena *ctx_, int optimize_)
 {
     switch (node_->kind) {
     case Module_kind:
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Module.body);
+        CALL(astfold_body, asdl_seq, node_->v.Module.body);
         break;
     case Interactive_kind:
         CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Interactive.body);
@@ -642,20 +681,20 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, int optimize_)
     switch (node_->kind) {
     case FunctionDef_kind:
         CALL(astfold_arguments, arguments_ty, node_->v.FunctionDef.args);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.FunctionDef.body);
+        CALL(astfold_body, asdl_seq, node_->v.FunctionDef.body);
         CALL_SEQ(astfold_expr, expr_ty, node_->v.FunctionDef.decorator_list);
         CALL_OPT(astfold_expr, expr_ty, node_->v.FunctionDef.returns);
         break;
     case AsyncFunctionDef_kind:
         CALL(astfold_arguments, arguments_ty, node_->v.AsyncFunctionDef.args);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.AsyncFunctionDef.body);
+        CALL(astfold_body, asdl_seq, node_->v.AsyncFunctionDef.body);
         CALL_SEQ(astfold_expr, expr_ty, node_->v.AsyncFunctionDef.decorator_list);
         CALL_OPT(astfold_expr, expr_ty, node_->v.AsyncFunctionDef.returns);
         break;
     case ClassDef_kind:
         CALL_SEQ(astfold_expr, expr_ty, node_->v.ClassDef.bases);
         CALL_SEQ(astfold_keyword, keyword_ty, node_->v.ClassDef.keywords);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.ClassDef.body);
+        CALL(astfold_body, asdl_seq, node_->v.ClassDef.body);
         CALL_SEQ(astfold_expr, expr_ty, node_->v.ClassDef.decorator_list);
         break;
     case Return_kind:
