@@ -1,0 +1,2 @@
+Pause the transport as early as possible to further reduce the risk of
+data_received() being called before connection_made().
