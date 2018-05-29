@@ -295,7 +295,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         return self._ssl_protocol._get_extra_info(name, default)
 
     def set_protocol(self, protocol):
-        self._ssl_protocol._app_protocol = protocol
+        self._ssl_protocol._set_app_protocol(protocol)
 
     def get_protocol(self):
         return self._ssl_protocol._app_protocol
@@ -440,9 +440,7 @@ class SSLProtocol(protocols.Protocol):
 
         self._waiter = waiter
         self._loop = loop
-        self._app_protocol = app_protocol
-        self._app_protocol_is_buffer = \
-            isinstance(app_protocol, protocols.BufferedProtocol)
+        self._set_app_protocol(app_protocol)
         self._app_transport = _SSLProtocolTransport(self._loop, self)
         # _SSLPipe instance (None until the connection is made)
         self._sslpipe = None
@@ -453,6 +451,11 @@ class SSLProtocol(protocols.Protocol):
         self._transport = None
         self._call_connection_made = call_connection_made
         self._ssl_handshake_timeout = ssl_handshake_timeout
+
+    def _set_app_protocol(self, app_protocol):
+        self._app_protocol = app_protocol
+        self._app_protocol_is_buffer = \
+            isinstance(app_protocol, protocols.BufferedProtocol)
 
     def _wakeup_waiter(self, exc=None):
         if self._waiter is None:
