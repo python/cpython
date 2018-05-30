@@ -1,6 +1,8 @@
 /* AST Optimizer */
 #include "Python.h"
 #include "Python-ast.h"
+#include "node.h"
+#include "ast.h"
 
 
 /* TODO: is_const and get_const_value are copied from Python/compile.c.
@@ -468,36 +470,18 @@ static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, int opti
 }
 
 static int
-isdocstring(stmt_ty s)
-{
-    if (s->kind != Expr_kind)
-        return 0;
-    if (s->v.Expr.value->kind == Str_kind)
-        return 1;
-    if (s->v.Expr.value->kind == Constant_kind)
-        return PyUnicode_CheckExact(s->v.Expr.value->v.Constant.value);
-    return 0;
-}
-
-static int
 astfold_body(asdl_seq *stmts, PyArena *ctx_, int optimize_)
 {
-    if (!asdl_seq_LEN(stmts)) {
-        return 1;
-    }
-    int docstring = isdocstring((stmt_ty)asdl_seq_GET(stmts, 0));
+    int docstring = _PyAST_GetDocString(stmts) != NULL;
     CALL_SEQ(astfold_stmt, stmt_ty, stmts);
-    if (docstring) {
-        return 1;
-    }
-    stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
-    if (isdocstring(st)) {
+    if (!docstring && _PyAST_GetDocString(stmts) != NULL) {
+        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
         asdl_seq *values = _Py_asdl_seq_new(1, ctx_);
         if (!values) {
             return 0;
         }
         asdl_seq_SET(values, 0, st->v.Expr.value);
-        expr_ty expr = _Py_JoinedStr(values, st->lineno, st->col_offset, ctx_);
+        expr_ty expr = JoinedStr(values, st->lineno, st->col_offset, ctx_);
         if (!expr) {
             return 0;
         }
