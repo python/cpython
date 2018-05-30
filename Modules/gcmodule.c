@@ -772,7 +772,7 @@ finalize_garbage(PyGC_Head *collectable)
         if (!_PyGCHead_FINALIZED(gc) &&
                 PyType_HasFeature(Py_TYPE(op), Py_TPFLAGS_HAVE_FINALIZE) &&
                 (finalize = Py_TYPE(op)->tp_finalize) != NULL) {
-            _PyGCHead_SET_FINALIZED(gc, 1);
+            _PyGCHead_SET_FINALIZED(gc);
             Py_INCREF(op);
             finalize(op);
             Py_DECREF(op);

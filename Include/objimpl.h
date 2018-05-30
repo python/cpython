@@ -261,6 +261,7 @@ extern PyGC_Head *_PyGC_generation0;
 
 #define _Py_AS_GC(o) ((PyGC_Head *)(o)-1)
 
+/* Bit flags for gc_prev */
 /* Bit 0 is set when tp_finalize is called */
 #define _PyGC_PREV_MASK_FINALIZED  (1 << 0)
 /* Bit 1 and 2 is used in gcmodule.c */
@@ -276,13 +277,10 @@ extern PyGC_Head *_PyGC_generation0;
     } while (0)
 
 #define _PyGCHead_FINALIZED(g) (((g)->gc.gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0)
-#define _PyGCHead_SET_FINALIZED(g, v) do {  \
-    (g)->gc.gc_prev = ((g)->gc.gc_prev & ~_PyGC_PREV_MASK_FINALIZED) \
-        | (v != 0); \
-    } while (0)
+#define _PyGCHead_SET_FINALIZED(g) ((g)->gc.gc_prev |= _PyGC_PREV_MASK_FINALIZED)
 
 #define _PyGC_FINALIZED(o) _PyGCHead_FINALIZED(_Py_AS_GC(o))
-#define _PyGC_SET_FINALIZED(o, v) _PyGCHead_SET_FINALIZED(_Py_AS_GC(o), v)
+#define _PyGC_SET_FINALIZED(o) _PyGCHead_SET_FINALIZED(_Py_AS_GC(o))
 
 /* Tell the GC to track this object.  NB: While the object is tracked the
  * collector it must be safe to call the ob_traverse method. */
