@@ -31,7 +31,6 @@ def main(regrtest_args):
     args.extend(test.support.args_from_interpreter_flags())
 
     args.extend(['-m', 'test',    # Run the test suite
-                 '-r',            # Randomize test order
                  '-w',            # Re-run failed tests in verbose mode
                  ])
     if sys.platform == 'win32':
