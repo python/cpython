@@ -147,7 +147,7 @@ Security improvements:
 
 Windows improvements:
 
-* :ref:`PEP 528 <whatsnew36-pep529>` and :ref:`PEP 529 <whatsnew36-pep529>`,
+* :ref:`PEP 528 <whatsnew36-pep528>` and :ref:`PEP 529 <whatsnew36-pep529>`,
   Windows filesystem and console encoding changed to UTF-8.
 
 * The ``py.exe`` launcher, when used interactively, no longer prefers
