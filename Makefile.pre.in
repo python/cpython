@@ -1041,7 +1041,7 @@ $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 
 ######################################################################
 
-TESTOPTS=	$(EXTRATESTOPTS)
+TESTOPTS=	$(EXTRATESTOPTS) -v -m test_ignore test_multiprocessing_forkserver test_multiprocessing_forkserver test_multiprocessing_forkserver test_multiprocessing_forkserver test_multiprocessing_forkserver test_multiprocessing_forkserver test_multiprocessing_forkserver test_multiprocessing_forkserver test_multiprocessing_forkserver test_multiprocessing_forkserver test_multiprocessing_forkserver test_multiprocessing_forkserver
 TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) $(TESTPYTHONOPTS)
 TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
 TESTTIMEOUT=	1200
@@ -1084,7 +1084,7 @@ buildbottest:	build_all platform
 		-@if which pybuildbot.identify >/dev/null 2>&1; then \
 			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
 		fi
-		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+		$(TESTRUNNER) -j 1 -u all --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 pythoninfo: build_all
 		$(RUNSHARED) ./$(BUILDPYTHON) -m test.pythoninfo
