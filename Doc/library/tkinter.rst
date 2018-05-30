@@ -1058,7 +1058,7 @@ use raw reads or ``os.read(file.fileno(), maxbytecount)``.
       Book by Mark Lutz, has excellent coverage of Tkinter.
 
    `Modern Tkinter for Busy Python Developers <https://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
-      Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
+      Book by Mark Roseman about building attractive and modern graphical user interfaces with Python and Tkinter.
 
    `Python and Tkinter Programming <https://www.manning.com/books/python-and-tkinter-programming>`_
       Book by John Grayson (ISBN 1-884777-81-3).
@@ -1070,12 +1070,12 @@ use raw reads or ``os.read(file.fileno(), maxbytecount)``.
       Change '8.6' to match the version of your Tcl/Tk installation.
 
    `Tcl/Tk recent man pages <https://www.tcl.tk/doc/>`_
-      Recent Tcl/Tk manuals on www.tcl.tk.
+      Recent Tcl/Tk manuals on www.tcl.tk, which also hosts core development.
 
-   `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_
-      The Tk/Tcl development is largely taking place at ActiveState.
+   `ActiveState Tcl Home Page <https://www.activestate.com/tcl/>`_
+      Precompiled binaries of current versions of Tcl/Tk.
 
-   `Tcl and the Tk Toolkit <https://www.amazon.com/exec/obidos/ASIN/020163337X>`_
+   `Tcl and the Tk Toolkit <https://www.tcltk-book.com/>`_
       Book by John Ousterhout, the inventor of Tcl.
 
    `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_
