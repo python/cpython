@@ -275,6 +275,14 @@ def collect_readline(info_add):
     copy_attributes(info_add, readline, 'readline.%s', attributes,
                     formatter=format_attr)
 
+    if not hasattr(readline, "_READLINE_LIBRARY_VERSION"):
+        # _READLINE_LIBRARY_VERSION has been added to CPython 3.7
+        doc = getattr(readline, '__doc__', '')
+        if 'libedit readline' in doc:
+            info_add('readline.library', 'libedit readline')
+        elif 'GNU readline' in doc:
+            info_add('readline.library', 'GNU readline')
+
 
 def collect_gdb(info_add):
     import subprocess
