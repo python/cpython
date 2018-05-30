@@ -79,7 +79,7 @@ Directory and files operations
    .. versionchanged:: 3.8
       Platform-specific zero-copy syscalls are used internally in order to copy
       the file more efficiently. See
-      `platform-dependent efficient copy operations`_ section.
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. exception:: SameFileError
 
@@ -172,7 +172,7 @@ Directory and files operations
    .. versionchanged:: 3.8
       Platform-specific zero-copy syscalls are used internally in order to copy
       the file more efficiently. See
-      `platform-dependent efficient copy operations`_ section.
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
@@ -199,7 +199,7 @@ Directory and files operations
    .. versionchanged:: 3.8
       Platform-specific zero-copy syscalls are used internally in order to copy
       the file more efficiently. See
-      `platform-dependent efficient copy operations`_ section.
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. function:: ignore_patterns(\*patterns)
 
@@ -260,7 +260,7 @@ Directory and files operations
    .. versionchanged:: 3.8
       Platform-specific zero-copy syscalls are used internally in order to copy
       the file more efficiently. See
-      `platform-dependent efficient copy operations`_ section.
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
@@ -337,7 +337,7 @@ Directory and files operations
    .. versionchanged:: 3.8
       Platform-specific zero-copy syscalls are used internally in order to copy
       the file more efficiently. See
-      `platform-dependent efficient copy operations`_ section.
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. function:: disk_usage(path)
 
