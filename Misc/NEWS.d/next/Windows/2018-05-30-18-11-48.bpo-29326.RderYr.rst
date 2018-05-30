@@ -1,0 +1,1 @@
+Fixed an issue with empty path in sys.path not coming from `_pth`.

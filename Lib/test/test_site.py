@@ -521,9 +521,12 @@ class _pthFileTests(unittest.TestCase):
     def _calc_sys_path_for_underpth_nosite(self, sys_prefix, lines):
         sys_path = []
         for line in lines:
-            if not line or line[0] == '#':
-                continue
-            abs_path = os.path.abspath(os.path.join(sys_prefix, line))
+            if line:
+                if line[0] == '#':
+                    continue
+                abs_path = os.path.abspath(os.path.join(sys_prefix, line))
+            else:
+                abs_path = ''
             sys_path.append(abs_path)
         return sys_path
 
@@ -535,6 +538,7 @@ class _pthFileTests(unittest.TestCase):
             *[libpath for _ in range(200)],
             '',
             '# comment',
+            '#import site',
         ]
         exe_file = self._create_underpth_exe(pth_lines)
         sys_path = self._calc_sys_path_for_underpth_nosite(
@@ -545,9 +549,9 @@ class _pthFileTests(unittest.TestCase):
         env['PYTHONPATH'] = 'from-env'
         env['PATH'] = '{};{}'.format(exe_prefix, os.getenv('PATH'))
         output = subprocess.check_output([exe_file, '-c',
-            'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
+            'import sys; print(";".join(sys.path) if sys.flags.no_site else "")'
         ], env=env, encoding='ansi')
-        actual_sys_path = output.rstrip().split('\n')
+        actual_sys_path = output.rstrip().split(';')
         self.assertTrue(actual_sys_path, "sys.flags.no_site was False")
         self.assertEqual(
             actual_sys_path,

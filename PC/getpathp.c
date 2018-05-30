@@ -578,14 +578,15 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
         if (!p) {
             break;
         }
-        if (*p == '\0' || *p == '\r' || *p == '\n' || *p == '#') {
+        if (*p == '\0' || *p == '#') {
             continue;
         }
-        while (*++p) {
+        while (*p) {
             if (*p == '\r' || *p == '\n') {
                 *p = '\0';
                 break;
             }
+            ++p;
         }
 
         if (strcmp(line, "import site") == 0) {
@@ -615,17 +616,19 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
             usedsiz += 1;
         }
 
-        errno_t result;
-        _Py_BEGIN_SUPPRESS_IPH
-        result = wcscat_s(buf, bufsiz, prefix);
-        _Py_END_SUPPRESS_IPH
-        if (result == EINVAL) {
-            Py_FatalError("invalid argument during ._pth processing");
-        } else if (result == ERANGE) {
-            Py_FatalError("buffer overflow during ._pth processing");
+        if (line[0] != '\0') {
+            errno_t result;
+            _Py_BEGIN_SUPPRESS_IPH
+            result = wcscat_s(buf, bufsiz, prefix);
+            _Py_END_SUPPRESS_IPH
+            if (result == EINVAL) {
+                Py_FatalError("invalid argument during ._pth processing");
+            } else if (result == ERANGE) {
+                Py_FatalError("buffer overflow during ._pth processing");
+            }
+            wchar_t *b = &buf[usedsiz];
+            join(b, wline);
         }
-        wchar_t *b = &buf[usedsiz];
-        join(b, wline);
 
         PyMem_RawFree(wline);
     }
