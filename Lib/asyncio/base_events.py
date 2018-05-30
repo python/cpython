@@ -157,7 +157,6 @@ def _run_until_complete_cb(fut):
     futures._get_loop(fut).stop()
 
 
-
 class _SendfileFallbackProtocol(protocols.Protocol):
     def __init__(self, transp):
         if not isinstance(transp, transports._FlowControlMixin):
@@ -304,6 +303,9 @@ class Server(events.AbstractServer):
 
     async def start_serving(self):
         self._start_serving()
+        # Skip one loop iteration so that all 'loop.add_reader'
+        # go through.
+        await tasks.sleep(0, loop=self._loop)
 
     async def serve_forever(self):
         if self._serving_forever_fut is not None:
@@ -798,7 +800,10 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
         if offset:
             file.seek(offset)
-        blocksize = min(count, 16384) if count else 16384
+        blocksize = (
+            min(count, constants.SENDFILE_FALLBACK_READBUFFER_SIZE)
+            if count else constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        )
         buf = bytearray(blocksize)
         total_sent = 0
         try:
@@ -808,7 +813,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if blocksize <= 0:
                         break
                 view = memoryview(buf)[:blocksize]
-                read = file.readinto(view)
+                read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     break  # EOF
                 await self.sock_sendall(sock, view)
@@ -1101,10 +1106,13 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl_handshake_timeout=ssl_handshake_timeout,
             call_connection_made=False)
 
+        # Pause early so that "ssl_protocol.data_received()" doesn't
+        # have a chance to get called before "ssl_protocol.connection_made()".
+        transport.pause_reading()
+
         transport.set_protocol(ssl_protocol)
         self.call_soon(ssl_protocol.connection_made, transport)
-        if not transport.is_reading():
-            self.call_soon(transport.resume_reading)
+        self.call_soon(transport.resume_reading)
 
         await waiter
         return ssl_protocol._app_transport
@@ -1363,6 +1371,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                         ssl, backlog, ssl_handshake_timeout)
         if start_serving:
             server._start_serving()
+            # Skip one loop iteration so that all 'loop.add_reader'
+            # go through.
+            await tasks.sleep(0, loop=self)
 
         if self._debug:
             logger.info("%r is serving", server)

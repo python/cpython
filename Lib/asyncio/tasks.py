@@ -34,6 +34,16 @@ def current_task(loop=None):
 def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
+        loop = events.get_running_loop()
+    return {t for t in _all_tasks
+            if futures._get_loop(t) is loop and not t.done()}
+
+
+def _all_tasks_compat(loop=None):
+    # Different from "all_task()" by returning *all* Tasks, including
+    # the completed ones.  Used to implement deprecated "Tasks.all_task()"
+    # method.
+    if loop is None:
         loop = events.get_event_loop()
     return {t for t in _all_tasks if futures._get_loop(t) is loop}
 
@@ -82,7 +92,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                       "use asyncio.all_tasks() instead",
                       PendingDeprecationWarning,
                       stacklevel=2)
-        return all_tasks(loop)
+        return _all_tasks_compat(loop)
 
     def __init__(self, coro, *, loop=None):
         super().__init__(loop=loop)
@@ -542,17 +552,17 @@ def ensure_future(coro_or_future, *, loop=None):
 
     If the argument is a Future, it is returned directly.
     """
-    if futures.isfuture(coro_or_future):
-        if loop is not None and loop is not futures._get_loop(coro_or_future):
-            raise ValueError('loop argument must agree with Future')
-        return coro_or_future
-    elif coroutines.iscoroutine(coro_or_future):
+    if coroutines.iscoroutine(coro_or_future):
         if loop is None:
             loop = events.get_event_loop()
         task = loop.create_task(coro_or_future)
         if task._source_traceback:
             del task._source_traceback[-1]
         return task
+    elif futures.isfuture(coro_or_future):
+        if loop is not None and loop is not futures._get_loop(coro_or_future):
+            raise ValueError('loop argument must agree with Future')
+        return coro_or_future
     elif inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
     else:
