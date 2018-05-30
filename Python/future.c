@@ -5,6 +5,7 @@
 #include "graminit.h"
 #include "code.h"
 #include "symtable.h"
+#include "ast.h"
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
 #define ERR_LATE_FUTURE \
@@ -63,7 +64,6 @@ static int
 future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 {
     int i, done = 0, prev_line = 0;
-    stmt_ty first;
 
     if (!(mod->kind == Module_kind || mod->kind == Interactive_kind))
         return 1;
@@ -80,11 +80,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
     */
 
     i = 0;
-    first = (stmt_ty)asdl_seq_GET(mod->v.Module.body, i);
-    if (first->kind == Expr_kind
-        && (first->v.Expr.value->kind == Str_kind
-            || (first->v.Expr.value->kind == Constant_kind
-                && PyUnicode_CheckExact(first->v.Expr.value->v.Constant.value))))
+    if (_PyAST_GetDocString(mod->v.Module.body) != NULL)
         i++;
 
     for (; i < asdl_seq_LEN(mod->v.Module.body); i++) {
