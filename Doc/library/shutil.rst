@@ -400,19 +400,20 @@ Directory and files operations
 Platform-dependent efficient copy operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting from Python 3.8 `shutil.copy*` functions use platform-specific
-"fast-copy" syscalls in order to copy the file more efficiently (see
-:issue:`33671`).
+Starting from Python 3.8 all functions involving a file copy (:func:`copyfile`,
+:func:`copy`, :func:`copy2`, :func:`copytree`, and :func:`move`) use
+platform-specific "fast-copy" syscalls in order to copy the file more
+efficiently (see :issue:`33671`).
 "fast-copy" means that the copying operation occurs within the kernel, avoiding
 the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
 
 On OSX `fcopyfile`_ is used to copy the file content (not metadata).
-On Linux and Solaris or other POSIX platforms
-where :func:`os.sendfile` allows copies between regular file descriptors
+On Linux, Solaris and other POSIX platforms
+where :func:`os.sendfile` supports copies between 2 regular file descriptors
 :func:`os.sendfile` is used.
 On Windows `CopyFile`_ is used by all copy functions except :func:`copyfile`.
 
-If the zero-copy operation fails and no data was written in the destination
+If the fast-copy operation fails and no data was written in the destination
 file then shutil will silently fallback on using less efficient
 :func:`copyfileobj` function internally.
 
