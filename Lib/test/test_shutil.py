@@ -2104,7 +2104,7 @@ class TestZeroCopyOSX(_ZeroCopyFileTest, unittest.TestCase):
 
 @unittest.skipIf(not os.name == 'nt', 'Windows only')
 class TestZeroCopyWindows(_ZeroCopyFileTest, unittest.TestCase):
-    PATCHPOINT = "nt._win32copyfile"
+    PATCHPOINT = "_winapi.CopyFileExW"
 
     def zerocopy_fun(self, src, dst):
         return shutil._fastcopy_win(src.name, dst.name)

@@ -8778,33 +8778,6 @@ os__fcopyfile_impl(PyObject *module, int infd, int outfd)
 #endif
 
 
-#if defined MS_WINDOWS
-/*[clinic input]
-os._win32copyfile
-
-    src: path_t
-    dst: path_t
-    /
-
-Efficiently copy 2 files (Windows only).
-[clinic start generated code]*/
-
-static PyObject *
-os__win32copyfile_impl(PyObject *module, path_t *src, path_t *dst)
-/*[clinic end generated code: output=9df245926c468843 input=00817871f5770bdc]*/
-{
-    int ret;
-
-    Py_BEGIN_ALLOW_THREADS
-    ret = CopyFileW(src->wide, dst->wide, FALSE);
-    Py_END_ALLOW_THREADS
-    if (ret == 0)
-        return win32_error_object("_win32copyfile", src->object);
-    Py_RETURN_NONE;
-}
-#endif
-
-
 /*[clinic input]
 os.fstat
 
@@ -12982,7 +12955,6 @@ static PyMethodDef posix_methods[] = {
     OS_TIMES_METHODDEF
     OS__EXIT_METHODDEF
     OS__FCOPYFILE_METHODDEF
-    OS__WIN32COPYFILE_METHODDEF
     OS_EXECV_METHODDEF
     OS_EXECVE_METHODDEF
     OS_SPAWNV_METHODDEF

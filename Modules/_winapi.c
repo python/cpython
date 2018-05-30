@@ -78,6 +78,19 @@ check_CancelIoEx()
     return has_CancelIoEx;
 }
 
+static PyObject *
+win32_error_object(const char* function, PyObject* filename)
+{
+    errno = GetLastError();
+    if (filename)
+        return PyErr_SetExcFromWindowsErrWithFilenameObject(
+            PyExc_OSError,
+            errno,
+            filename);
+    else
+        return PyErr_SetFromWindowsErr(errno);
+}
+
 
 /*
  * A Python object wrapping an OVERLAPPED structure and other useful data
@@ -163,6 +176,7 @@ create_converter('LPSECURITY_ATTRIBUTES', '" F_POINTER "')
 create_converter('BOOL', 'i') # F_BOOL used previously (always 'i')
 create_converter('DWORD', 'k') # F_DWORD is always "k" (which is much shorter)
 create_converter('LPCTSTR', 's')
+create_converter('LPCWSTR', 'u')
 create_converter('LPWSTR', 'u')
 create_converter('UINT', 'I') # F_UINT used previously (always 'I')
 
@@ -186,7 +200,7 @@ class DWORD_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = Py_BuildValue("k", _return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=4527052fe06e5823]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=27456f8555228b62]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -1699,6 +1713,37 @@ _winapi_GetFileType_impl(PyObject *module, HANDLE handle)
 }
 
 
+/*[clinic input]
+_winapi.CopyFileExW
+
+    src: LPCWSTR
+    dst: LPCWSTR
+    flags: DWORD
+    /
+
+Efficiently copy 2 files.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_CopyFileExW_impl(PyObject *module, LPCWSTR src, LPCWSTR dst,
+                         DWORD flags)
+/*[clinic end generated code: output=715613c8834b35f5 input=bea3e5c545b755be]*/
+{
+    int ret;
+    PyObject *py_srcname;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = CopyFileExW(src, dst, NULL, NULL, NULL, flags);
+    Py_END_ALLOW_THREADS
+    if (ret == 0) {
+        py_srcname = Py_BuildValue("u", src);
+        win32_error_object("CopyFileExW", py_srcname);
+        Py_CLEAR(py_srcname);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
     _WINAPI_CONNECTNAMEDPIPE_METHODDEF
@@ -1726,6 +1771,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_WRITEFILE_METHODDEF
     _WINAPI_GETACP_METHODDEF
     _WINAPI_GETFILETYPE_METHODDEF
+    _WINAPI_COPYFILEEXW_METHODDEF
     {NULL, NULL}
 };
 

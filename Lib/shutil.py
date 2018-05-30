@@ -47,6 +47,7 @@ if os.name == 'posix':
     import posix
 elif os.name == 'nt':
     import nt
+    import _winapi
 
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")
@@ -114,7 +115,7 @@ def _fastcopy_osx(fsrc, fdst):
 
 def _fastcopy_win(fsrc, fdst):
     """Copy 2 files by using high-performance CopyFileW (Windows only)."""
-    nt._win32copyfile(fsrc, fdst)
+    _winapi.CopyFileExW(fsrc, fdst, 0)
 
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using

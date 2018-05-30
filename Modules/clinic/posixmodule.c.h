@@ -3886,43 +3886,6 @@ exit:
 
 #endif /* defined(__APPLE__) */
 
-#if defined(MS_WINDOWS)
-
-PyDoc_STRVAR(os__win32copyfile__doc__,
-"_win32copyfile($module, src, dst, /)\n"
-"--\n"
-"\n"
-"Efficiently copy 2 files (Windows only).");
-
-#define OS__WIN32COPYFILE_METHODDEF    \
-    {"_win32copyfile", (PyCFunction)os__win32copyfile, METH_FASTCALL, os__win32copyfile__doc__},
-
-static PyObject *
-os__win32copyfile_impl(PyObject *module, path_t *src, path_t *dst);
-
-static PyObject *
-os__win32copyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    path_t src = PATH_T_INITIALIZE("_win32copyfile", "src", 0, 0);
-    path_t dst = PATH_T_INITIALIZE("_win32copyfile", "dst", 0, 0);
-
-    if (!_PyArg_ParseStack(args, nargs, "O&O&:_win32copyfile",
-        path_converter, &src, path_converter, &dst)) {
-        goto exit;
-    }
-    return_value = os__win32copyfile_impl(module, &src, &dst);
-
-exit:
-    /* Cleanup for src */
-    path_cleanup(&src);
-    /* Cleanup for dst */
-    path_cleanup(&dst);
-
-    return return_value;
-}
-
-#endif /* (defined MS_WINDOWS) */
 
 PyDoc_STRVAR(os_fstat__doc__,
 "fstat($module, /, fd)\n"
@@ -6488,10 +6451,6 @@ exit:
 #ifndef OS__FCOPYFILE_METHODDEF
     #define OS__FCOPYFILE_METHODDEF
 #endif /* !defined(OS__FCOPYFILE_METHODDEF) */
-
-#ifndef OS__WIN32COPYFILE_METHODDEF
-    #define OS__WIN32COPYFILE_METHODDEF
-#endif /* !defined(OS__WIN32COPYFILE_METHODDEF) */
 
 #ifndef OS_PIPE_METHODDEF
     #define OS_PIPE_METHODDEF

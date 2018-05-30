@@ -941,4 +941,35 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ec7f36eb7efc9d00 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_CopyFileExW__doc__,
+"CopyFileExW($module, src, dst, flags, /)\n"
+"--\n"
+"\n"
+"Efficiently copy 2 files.");
+
+#define _WINAPI_COPYFILEEXW_METHODDEF    \
+    {"CopyFileExW", (PyCFunction)_winapi_CopyFileExW, METH_FASTCALL, _winapi_CopyFileExW__doc__},
+
+static PyObject *
+_winapi_CopyFileExW_impl(PyObject *module, LPCWSTR src, LPCWSTR dst,
+                         DWORD flags);
+
+static PyObject *
+_winapi_CopyFileExW(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    LPCWSTR src;
+    LPCWSTR dst;
+    DWORD flags;
+
+    if (!_PyArg_ParseStack(args, nargs, "uuk:CopyFileExW",
+        &src, &dst, &flags)) {
+        goto exit;
+    }
+    return_value = _winapi_CopyFileExW_impl(module, src, dst, flags);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=1f3c6672a1f704d3 input=a9049054013a1b77]*/
