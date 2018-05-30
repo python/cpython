@@ -61,7 +61,7 @@ before_script:
   - make pythoninfo
 
 script:
-  - make buildbottest TESTOPTS="-j4 -uall,-cpu"
+  - make buildbottest
 
 notifications:
   email: false
