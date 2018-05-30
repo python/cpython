@@ -91,7 +91,7 @@ The :keyword:`if` statement is used for conditional execution:
 
 .. productionlist::
    if_stmt: "if" `expression` ":" `suite`
-          : ( "elif" `expression` ":" `suite` )*
+          : ("elif" `expression` ":" `suite`)*
           : ["else" ":" `suite`]
 
 It selects exactly one of the suites by evaluating the expressions one by one

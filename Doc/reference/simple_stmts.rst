@@ -707,11 +707,11 @@ The :keyword:`import` statement
    keyword: from
 
 .. productionlist::
-   import_stmt: "import" `module` ["as" `identifier`] ( "," `module` ["as" `identifier`] )*
+   import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
               : | "from" `relative_module` "import" `identifier` ["as" `identifier`]
-              : ( "," `identifier` ["as" `identifier`] )*
+              : ("," `identifier` ["as" `identifier`])*
               : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
-              : ( "," `identifier` ["as" `identifier`] )* [","] ")"
+              : ("," `identifier` ["as" `identifier`])* [","] ")"
               : | "from" `module` "import" "*"
    module: (`identifier` ".")* `identifier`
    relative_module: "."* `module` | "."+

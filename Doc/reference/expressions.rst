@@ -816,7 +816,7 @@ or list).  Slicings may be used as expressions or as targets in assignment or
    slicing: `primary` "[" `slice_list` "]"
    slice_list: `slice_item` ("," `slice_item`)* [","]
    slice_item: `expression` | `proper_slice`
-   proper_slice: [`lower_bound`] ":" [`upper_bound`] [ ":" [`stride`] ]
+   proper_slice: [`lower_bound`] ":" [`upper_bound`] [":" [`stride`]]
    lower_bound: `expression`
    upper_bound: `expression`
    stride: `expression`
@@ -1055,7 +1055,7 @@ The power operator binds more tightly than unary operators on its left; it binds
 less tightly than unary operators on its right.  The syntax is:
 
 .. productionlist::
-   power: ( `await_expr` | `primary` ) ["**" `u_expr`]
+   power: (`await_expr` | `primary`) ["**" `u_expr`]
 
 Thus, in an unparenthesized sequence of power and unary operators, the operators
 are evaluated from right to left (this does not constrain the evaluation order
@@ -1205,7 +1205,7 @@ Shifting operations
 The shifting operations have lower priority than the arithmetic operations:
 
 .. productionlist::
-   shift_expr: `a_expr` | `shift_expr` ( "<<" | ">>" ) `a_expr`
+   shift_expr: `a_expr` | `shift_expr` ("<<" | ">>") `a_expr`
 
 These operators accept integers as arguments.  They shift the first argument to
 the left or right by the number of bits given by the second argument.
@@ -1265,7 +1265,7 @@ C, expressions like ``a < b < c`` have the interpretation that is conventional
 in mathematics:
 
 .. productionlist::
-   comparison: `or_expr` ( `comp_operator` `or_expr` )*
+   comparison: `or_expr` (`comp_operator` `or_expr`)*
    comp_operator: "<" | ">" | "==" | ">=" | "<=" | "!="
                 : | "is" ["not"] | ["not"] "in"
 
@@ -1629,9 +1629,9 @@ Expression lists
 .. index:: pair: expression; list
 
 .. productionlist::
-   expression_list: `expression` ( "," `expression` )* [","]
-   starred_list: `starred_item` ( "," `starred_item` )* [","]
-   starred_expression: `expression` | ( `starred_item` "," )* [`starred_item`]
+   expression_list: `expression` ("," `expression`)* [","]
+   starred_list: `starred_item` ("," `starred_item`)* [","]
+   starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
    starred_item: `expression` | "*" `or_expr`
 
 .. index:: object: tuple
