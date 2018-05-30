@@ -1091,9 +1091,10 @@ The new :func:`~os.register_at_fork` function allows registering Python
 callbacks to be executed at process fork.
 (Contributed by Antoine Pitrou in :issue:`16500`.)
 
-Exposed the *preadv*, *preadv2*, *pwritev* and *pwritev2* system calls through
-the new :func:`~os.preadv` and :func:`~os.pwritev` functions.
-(Contributed by Pablo Galindo in :issue:`31368`.)
+Added :func:`os.preadv` (combine the functionality of :func:`os.readv` and
+:func:`os.pread`) and :func:`os.pwritev` functions (combine the functionality
+of :func:`os.writev` and :func:`os.pwrite`). (Contributed by Pablo Galindo in
+:issue:`31368`.)
 
 The mode argument of :func:`os.makedirs` no longer affects the file
 permission bits of newly-created intermediate-level directories.
