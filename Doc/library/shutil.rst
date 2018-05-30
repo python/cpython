@@ -400,17 +400,18 @@ Directory and files operations
 Platform-dependent efficient copy operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting from Python 3.8 :func:`copyfile` uses platform-specific "zero-copy"
-syscalls such as :func:`os.sendfile` in order to copy the file more efficiently
-(see :issue:`33671`).
-"zero-copy" means that the copying operation occurs within the kernel, avoiding
-the use of userspace buffers as in "``outfd.write(infd.read())``".
-Such platforms are OSX, Windows and POSIX systems where :func:`os.sendfile`
-accepts 2 regular fds (namely Linux and Solaris).
+Starting from Python 3.8 :func:`copyfile` uses platform-specific "fast-copy"
+syscalls in order to copy the file more efficiently (see :issue:`33671`).
+"fast-copy" means that the copying operation occurs within the kernel, avoiding
+the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
+On Linux and Solaris or other POSIX platforms where :func:`os.sendfile` allows
+copies between regular file descriptors :func:`os.sendfile` is used.
+On Windows and OSX `CopyFile`_ and `fcopyfile`_ are used respectively.
 If the zero-copy operation fails and no data was written in the destination
 file then :func:`copyfile` will silently fallback on using less efficient
 :func:`copyfileobj` function internally.
-All functions relying on :func:`copyfile` will benefit from the same speedup.
+All functions relying on :func:`copyfile` internally will benefit from the same
+speedup.
 These are :func:`shutil.copy`, :func:`shutil.copy2`, :func:`shutil.copytree`
 and :func:`shutil.move`.
 
@@ -699,8 +700,11 @@ Querying the size of the output terminal
 
    .. versionadded:: 3.3
 
+.. _`CopyFile`:
+   https://msdn.microsoft.com/en-us/library/windows/desktop/aa363851(v=vs.85).aspx
+
+.. _`fcopyfile`:
+   http://www.manpagez.com/man/3/fcopyfile/
+
 .. _`Other Environment Variables`:
    http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003
-
-.. _`platform-dependent efficient copy operations`:
-   shutil-platform-dependent-efficient-copy-operations_
