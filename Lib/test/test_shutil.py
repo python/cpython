@@ -2072,6 +2072,27 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
             blocksize = m.call_args[0][3]
             self.assertEqual(blocksize, 2 ** 23)
 
+    def test_file2file_not_supported(self):
+        # Emulate a case where sendfile() only support file->socket
+        # fds. In such a case copyfile() is supposed to skip the
+        # fast-copy attempt from then on.
+        assert shutil._HAS_SENDFILE
+        try:
+            with unittest.mock.patch(
+                    self.PATCHPOINT,
+                    side_effect=OSError(errno.ENOTSOCK, "yo")) as m:
+                with self.get_files() as (src, dst):
+                    with self.assertRaises(_GiveupOnFastCopy):
+                        shutil._fastcopy_sendfile(src, dst)
+                assert m.called
+            assert not shutil._HAS_SENDFILE
+
+            with unittest.mock.patch(self.PATCHPOINT) as m:
+                shutil.copyfile(TESTFN, TESTFN2)
+                assert not m.called
+        finally:
+            shutil._HAS_SENDFILE = True
+
 
 @unittest.skipIf(not HAS_OSX_ZEROCOPY, 'OSX only')
 class TestZeroCopyOSX(_ZeroCopyFileTest, unittest.TestCase):
