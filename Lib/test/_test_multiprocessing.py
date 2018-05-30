@@ -4339,7 +4339,11 @@ class TestIgnoreEINTR(unittest.TestCase):
         faulthandler.register(signal.SIGUSR1)
 
         def handler(signum, frame):
-            print("handler")
+            try:
+                print("child: Python signal handler", flush=True)
+            except:
+                # ignore reentrancy error
+                pass
 
         signal.signal(signal.SIGUSR1, handler)
         print("child: initialized", flush=True)
