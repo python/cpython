@@ -1127,7 +1127,7 @@ operators and one for additive operators:
 
 .. productionlist::
    m_expr: `u_expr` | `m_expr` "*" `u_expr` | `m_expr` "@" `m_expr` |
-         : `m_expr` "//" `u_expr`| `m_expr` "/" `u_expr` |
+         : `m_expr` "//" `u_expr` | `m_expr` "/" `u_expr` |
          : `m_expr` "%" `u_expr`
    a_expr: `m_expr` | `a_expr` "+" `m_expr` | `a_expr` "-" `m_expr`
 
