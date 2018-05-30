@@ -47,6 +47,12 @@ gc_is_collecting(PyGC_Head *g)
     return (g->gc.gc_prev & MASK_COLLECTING) != 0;
 }
 
+static inline void
+gc_clear_masks(PyGC_Head *g)
+{
+    g->gc.gc_prev &= ~(MASK_COLLECTING | MASK_TENTATIVELY_UNREACHABLE);
+}
+
 static inline Py_ssize_t
 gc_get_refs(PyGC_Head *g)
 {
@@ -146,7 +152,6 @@ gc_refs
     subtract_refs() then adjusts gc_refs so that it equals the number of
     times an object is referenced directly from outside the generation
     being collected.
-    gc_refs remains >= 0 throughout these steps.
 
 MASK_TENTATIVELY_UNREACHABLE
     move_unreachable() then moves objects not reachable (whether directly or
@@ -517,7 +522,7 @@ move_legacy_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 
         if (has_legacy_finalizer(op)) {
             gc_list_move(gc, finalizers);
-            gc->gc.gc_prev &= ~(MASK_TENTATIVELY_UNREACHABLE | MASK_COLLECTING);
+            gc_clear_masks(gc);
         }
     }
 }
@@ -530,7 +535,7 @@ visit_move(PyObject *op, PyGC_Head *tolist)
         if (IS_TENTATIVELY_UNREACHABLE(op)) {
             PyGC_Head *gc = AS_GC(op);
             gc_list_move(gc, tolist);
-            gc->gc.gc_prev &= ~(MASK_TENTATIVELY_UNREACHABLE | MASK_COLLECTING);
+            gc_clear_masks(gc);
         }
     }
     return 0;
@@ -798,20 +803,10 @@ check_garbage(PyGC_Head *collectable)
             ret = -1;
         }
         _PyGCHead_SET_PREV(gc, prev);
-        gc->gc.gc_prev &= ~(MASK_TENTATIVELY_UNREACHABLE | MASK_COLLECTING);
+        gc_clear_masks(gc);
         prev = gc;
     }
     return ret;
-}
-
-static void
-revive_garbage(PyGC_Head *collectable)
-{
-    PyGC_Head *gc;
-    for (gc = collectable->gc.gc_next; gc != collectable;
-         gc = gc->gc.gc_next) {
-        gc->gc.gc_prev &= ~(MASK_TENTATIVELY_UNREACHABLE | MASK_COLLECTING);
-    }
 }
 
 /* Break reference cycles by clearing the containers involved.  This is
@@ -992,7 +987,6 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
     finalize_garbage(&unreachable);
 
     if (check_garbage(&unreachable)) { // clears MASKs
-        revive_garbage(&unreachable);
         gc_list_merge(&unreachable, old);
     }
     else {
