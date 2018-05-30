@@ -77,7 +77,7 @@ Directory and files operations
       a subclass of the latter, this change is backward compatible.
 
    .. versionchanged:: 3.8
-      Platform-specific zero-copy syscalls are used internally in order to copy
+      Platform-specific fast-copy syscalls are used internally in order to copy
       the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
@@ -170,7 +170,7 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Platform-specific zero-copy syscalls are used internally in order to copy
+      Platform-specific fast-copy syscalls are used internally in order to copy
       the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
@@ -197,7 +197,7 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Platform-specific zero-copy syscalls are used internally in order to copy
+      Platform-specific fast-copy syscalls are used internally in order to copy
       the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
@@ -258,7 +258,7 @@ Directory and files operations
       errors when *symlinks* is false.
 
    .. versionchanged:: 3.8
-      Platform-specific zero-copy syscalls are used internally in order to copy
+      Platform-specific fast-copy syscalls are used internally in order to copy
       the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
@@ -335,7 +335,7 @@ Directory and files operations
       Added the *copy_function* keyword argument.
 
    .. versionchanged:: 3.8
-      Platform-specific zero-copy syscalls are used internally in order to copy
+      Platform-specific fast-copy syscalls are used internally in order to copy
       the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
@@ -400,20 +400,21 @@ Directory and files operations
 Platform-dependent efficient copy operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting from Python 3.8 :func:`copyfile` uses platform-specific "fast-copy"
-syscalls in order to copy the file more efficiently (see :issue:`33671`).
+Starting from Python 3.8 `shutil.copy*` functions use platform-specific
+"fast-copy" syscalls in order to copy the file more efficiently (see
+:issue:`33671`).
 "fast-copy" means that the copying operation occurs within the kernel, avoiding
 the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
-On Linux and Solaris or other POSIX platforms where :func:`os.sendfile` allows
-copies between regular file descriptors :func:`os.sendfile` is used.
-On Windows and OSX `CopyFile`_ and `fcopyfile`_ are used respectively.
+
+On OSX `fcopyfile`_ is used to copy the file content (not metadata).
+On Linux and Solaris or other POSIX platforms
+where :func:`os.sendfile` allows copies between regular file descriptors
+:func:`os.sendfile` is used.
+On Windows `CopyFile`_ is used by all copy functions except :func:`copyfile`.
+
 If the zero-copy operation fails and no data was written in the destination
-file then :func:`copyfile` will silently fallback on using less efficient
+file then shutil will silently fallback on using less efficient
 :func:`copyfileobj` function internally.
-All functions relying on :func:`copyfile` internally will benefit from the same
-speedup.
-These are :func:`shutil.copy`, :func:`shutil.copy2`, :func:`shutil.copytree`
-and :func:`shutil.move`.
 
 .. versionadded:: 3.8
 
