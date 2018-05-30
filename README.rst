@@ -1,5 +1,5 @@
-This is Python version 3.7.0 beta 4+
-====================================
+This is Python version 3.7.0 beta 5
+===================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI

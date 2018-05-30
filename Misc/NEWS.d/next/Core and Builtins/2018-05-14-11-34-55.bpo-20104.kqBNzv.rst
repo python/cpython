@@ -1,2 +1,0 @@
-The new `os.posix_spawn` added in 3.7.0b1 was removed as we are still
-working on what the API should look like.  Expect this in 3.8 instead.

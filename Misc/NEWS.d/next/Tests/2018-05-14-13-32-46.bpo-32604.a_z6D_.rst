@@ -1,2 +1,0 @@
-Remove the _xxsubinterpreters module (meant for testing) and associated
-helpers.  This module was originally added recently in 3.7b1.
