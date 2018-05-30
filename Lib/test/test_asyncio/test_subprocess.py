@@ -218,8 +218,10 @@ class SubprocessMixin:
 
         # the program ends before the stdin can be feeded
         create = asyncio.create_subprocess_exec(
-                             sys.executable, '-c', 'pass',
+                             sys.executable,
+                             '-c', 'print("hello", flush=True)',
                              stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
                              loop=self.loop)
         proc = self.loop.run_until_complete(create)
         return (proc, large_data)
@@ -228,7 +230,7 @@ class SubprocessMixin:
         proc, large_data = self.prepare_broken_pipe_test()
 
         async def write_stdin(proc, data):
-            await asyncio.sleep(0.5, loop=self.loop)
+            await proc.stdout.readline()
             proc.stdin.write(data)
             await proc.stdin.drain()
 
