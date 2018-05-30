@@ -2189,6 +2189,7 @@ class TermsizeTests(unittest.TestCase):
 
 
 class TestModeBits(unittest.TestCase):
+    """Make sure all copy* functions update dst file mode."""
 
     def setUp(self):
         # /a
