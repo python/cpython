@@ -41,15 +41,15 @@ Tcl
    interface to the Tk toolkit. The Tcl library has a C interface to
    create and manage one or more instances of a Tcl interpreter, run Tcl
    commands and scripts in those instances, and add custom commands
-   implemented in either Tcl or C. Each interpreter instance also provides
-   an event queue, used for I/O, timers, and by modules.
+   implemented in either Tcl or C. Tcl provides for an event queue, used
+   for I/O, timers, and by modules.
    
 Tk
    Tk is a module that can be loaded into a Tcl interpreter instance. It adds
    Tcl commands (implemented in C) to create and manipulate GUI widgets. Each
    :class:`Tk` object embeds its own Tcl interpreter instance with Tk loaded into
    it. Tk's widgets are very customizable, though at the cost of a dated appearance.
-   Tk uses the interpreter's event queue to generate and process GUI events. Note
+   Tk uses Tcl's event queue to generate and process GUI events. Note
    that unlike some GUI libraries, each interpreter uses only a single thread,
    which has implications for :mod:`tkinter` users (see `Threading model`_).
 
@@ -85,59 +85,54 @@ Python interpreter.
 Threading model
 ---------------
 
-A Tcl interpreter has one stream of execution and, unlike most other GUI
-toolkits, doesn't provide a blocking event loop.
-Instead, Tcl code is supposed to pump the event queue regularly at strategic
-moments -- after an action that triggers an event, before a later action that
-needs the result of that event. As such, all Tcl commands are designed to work
-without an event loop running -- only event handlers will not be executed
-until the queue is processed. This allows to work completely in one thread,
-i.e. even in environments that have no thread support at all.
+Python and Tcl/Tk have very different threading models, which :mod:`tkinter`
+tries to bridge. If you use threads, you may need to be aware of this.
 
-This is in stark constrast to the execution model for most other GUI toolkits:
-a dedicated OS thread (usually called the "UI thread") runs the GUI event loop
-constantly, and other threads send work items to it -- either complete with
-payload reference, or as agreed-upon "events" which result in it executing a
-predefined "event handler".
-Likewise, for any lengthy tasks, the UI thread can launch worker threads that
-report back on their progress via the same event queue.
+A Python interpreter may have many threads associated with it. In Tcl, multiple
+threads can be created, but each thread has a separate Tcl interpreter instance
+associated with it. Threads can also create more than one interpreter instance,
+though each interpreter instance can be used only by the one thread that created it.
 
-Tkinter strives to provide the best of both worlds. The "modern" multithreaded
-GUI model is the primary mode of execution, but pumping messages manually
-instead is also supported. What is more important, any Tkinter calls can be
-made from any Python threads, only subject to Tcl's architectural restictions:
+Each :class:`Tk` object created by :mod:`tkinter` contains a Tcl interpreter.
+It also keeps track of which thread created that interpreter. Calls to
+:mod:`tkinter` can be made from any Python thread. Internally, if a call comes
+from a thread other than the one that created the :class:`Tk` object, an event
+is posted to the interpreter's event queue, and when executed, the result is
+returned to the calling Python thread.
 
-* A nonthreaded Tcl doesn't know anything about threads, so all Tcl calls are
-  wrapped with a global lock to enforce sequential access.
-  Any Tkinter calls can be made from any threads, but under the hood, only one
-  is active at any moment.
-  
-* A threaded Tcl interpreter instance, when created, becomes tied to the
-  creating OS thread ("the interpreter thread"). Tcl mandates that all calls
-  to the instance must come from this thread, save for special inter-thread
-  communication APIs. Tkinter implements calls from outside the interpreter
-  thread by posting an event to the interpreter's queue, then waits for the
-  result of its processing. As such:
-  
-    * To make calls from outside the interpreter queue, :func:`mainloop`
-      must be running in the interpreter queue. Otherwise, a
-      :class:`RuntimeError` is raised.
-      
-    * A few select functions can only be called from the interpreter thread.
+Tcl/Tk applications are normally event-driven, meaning that after initialization,
+the interpreter runs an event loop (i.e. :func:`Tk.mainloop`) and responds to events.
+Because it is single-threaded, event handlers must respond quickly, otherwise they
+will block other events from being processed. To avoid this, any long-running
+computations should not run in an event handler, but are either broken into smaller
+pieces using timers, or run in another thread. This is different from many GUI
+toolkits where the GUI runs in a completely separate thread from all application
+code including event handlers.
 
-Tcl event queue is per-thread rather than per-interpreter. For nonthreaded Tcl,
-there's only one global queue shared by all interpreters; for threaded Tcl,
-one queue per OS thread that's shared by all interpreters bound to that thread.
-So, when an event processing function like :func:`Tk.mainloop` is called, it
-will process events not only for the calling :class:`Tk` instance
-but for all whose interpreters share the queue.
-Events handlers will be called within the same Tcl interpreter that they were
-bound to as per the `bind <https://www.tcl.tk/man/tcl8.6/TkCmd/bind.htm>`_ man
-page, but any exceptions will be raised from the event processing function.
-There's no harm in calling :func:`mainloop` for two :class:`Tk`s at the same
-time: with nonthreaded Tcl, they will take turns handling events, and with
-threaded Tcl, this is only allowed if the :class:`Tk`s are associated with
-different threads anyway.
+If the Tcl interpreter is not running the event loop and processing events, any
+:mod:`tkinter` calls made from threads other than the one running the Tcl
+interpreter will fail.
+
+A number of special cases exist:
+
+  * Tcl/Tk libraries can be built so they are not thread-aware. In this case,
+    :mod:`tkinter` calls the library from the originating Python thread, even
+    if this is different than the thread that created the Tcl interpreter. A global
+    lock ensures only one call occurs at a time.
+
+  * While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
+    object (with it's own interpreter), all interpreters that are part of the same
+    thread share a common event queue, which gets ugly fast. In practice, don't create
+    more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
+    them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
+
+  * Blocking event handlers are not the only way to prevent the Tcl interpreter from
+    reentering the event loop. It is even possible to run multiple nested event loops
+    or abandon the event loop entirely. If you're doing anything tricky when it comes
+    to events or threads, be aware of these possibilities.
+
+  * There are a few select :mod:`tkinter` functions that presently work only when
+    called from the thread that created the Tcl interpreter.
 
 
 Module contents
