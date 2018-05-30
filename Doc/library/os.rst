@@ -1082,20 +1082,81 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: pread(fd, buffersize, offset)
+.. function:: pread(fd, n, offset)
 
-   Read from a file descriptor, *fd*, at a position of *offset*. It will read up
-   to *buffersize* number of bytes. The file offset remains unchanged.
+   Read at most *n* bytes from file descriptor *fd* at a position of *offset*,
+   leaving the file offset unchanged.
+
+   Return a bytestring containing the bytes read. If the end of the file
+   referred to by *fd* has been reached, an empty bytes object is returned.
 
    Availability: Unix.
 
    .. versionadded:: 3.3
 
 
+.. function:: preadv(fd, buffers, offset, flags=0)
+
+   Read from a file descriptor *fd* at a position of *offset* into mutable
+   :term:`bytes-like objects <bytes-like object>` *buffers*, leaving the file
+   offset unchanged.  Transfer data into each buffer until it is full and then
+   move on to the next buffer in the sequence to hold the rest of the data.
+
+   The flags argument contains a bitwise OR of zero or more of the following
+   flags:
+
+   - :data:`RWF_HIPRI`
+   - :data:`RWF_NOWAIT`
+
+   Return the total number of bytes actually read which can be less than the
+   total capacity of all the objects.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
+
+   Combine the functionality of :func:`os.readv` and :func:`os.pread`.
+
+   Availability: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
+   OpenBSD 2.7 and newer. Using flags requires Linux 4.6 or newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_NOWAIT
+
+   Do not wait for data which is not immediately available. If this flag is
+   specified, the system call will return instantly if it would have to read
+   data from the backing storage or wait for a lock.
+
+   If some data was successfully read, it will return the number of bytes read.
+   If no bytes were read, it will return ``-1`` and set errno to
+   :data:`errno.EAGAIN`.
+
+   Availability: Linux 4.14 and newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_HIPRI
+
+   High priority read/write. Allows block-based filesystems to use polling
+   of the device, which provides lower latency, but may use additional
+   resources.
+
+   Currently, on Linux, this feature is usable only on a file descriptor opened
+   using the :data:`O_DIRECT` flag.
+
+   Availability: Linux 4.6 and newer.
+
+   .. versionadded:: 3.7
+
+
 .. function:: pwrite(fd, str, offset)
 
-   Write *bytestring* to a file descriptor, *fd*, from *offset*,
-   leaving the file offset unchanged.
+   Write the bytestring in *str* to file descriptor *fd* at position of
+   *offset*, leaving the file offset unchanged.
+
+   Return the number of bytes actually written.
 
    Availability: Unix.
 
@@ -1104,54 +1165,57 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: pwritev(fd, buffers, offset, flags=0)
 
-   Combines the functionality of :func:`os.writev` and :func:`os.pwrite`. It
-   writes the contents of *buffers* to file descriptor *fd* at offset *offset*.
-   *buffers* must be a sequence of :term:`bytes-like objects <bytes-like object>`.
-   Buffers are processed in array order. Entire contents of first buffer is written
-   before proceeding to second, and so on. The operating system may set a limit
-   (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
-   :func:`~os.pwritev` writes the contents of each object to the file descriptor
-   and returns the total number of bytes written.
+   Write the *buffers* contents to file descriptor *fd* at a offset *offset*,
+   leaving the file offset unchanged.  *buffers* must be a sequence of
+   :term:`bytes-like objects <bytes-like object>`. Buffers are processed in
+   array order. Entire contents of the first buffer is written before
+   proceeding to the second, and so on.
 
-   The *flags* argument contains a bitwise OR of zero or more of the following
+   The flags argument contains a bitwise OR of zero or more of the following
    flags:
 
-   - RWF_DSYNC
-   - RWF_SYNC
+   - :data:`RWF_DSYNC`
+   - :data:`RWF_SYNC`
 
-   Using non-zero flags requires Linux 4.7 or newer.
+   Return the total number of bytes actually written.
 
-   Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
-   OpenBSD (version 2.7 and newer).
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
+
+   Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
+
+   Availability: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
+   OpenBSD 2.7 and newer. Using flags requires Linux 4.7 or newer.
 
    .. versionadded:: 3.7
+
 
 .. data:: RWF_DSYNC
 
-   Provide a per-write equivalent of the O_DSYNC open(2) flag. This flag
-   is meaningful only for pwritev2(), and its effect applies only to the
-   data range written by the system call.
+   Provide a per-write equivalent of the :data:`O_DSYNC` ``open(2)`` flag. This
+   flag effect applies only to the data range written by the system call.
 
-   Availability: Linux (version 4.7).
+   Availability: Linux 4.7 and newer.
 
    .. versionadded:: 3.7
 
+
 .. data:: RWF_SYNC
 
-   Provide a per-write equivalent of the O_SYNC open(2) flag. This flag is
-   meaningful only for pwritev2(), and its effect applies only to the data
-   range written by the system call.
+   Provide a per-write equivalent of the :data:`O_SYNC` ``open(2)`` flag. This
+   flag effect applies only to the data range written by the system call.
 
-   Availability: Linux (version 4.7).
+   Availability: Linux 4.7 and newer.
 
    .. versionadded:: 3.7
 
 
 .. function:: read(fd, n)
 
-   Read at most *n* bytes from file descriptor *fd*. Return a bytestring containing the
-   bytes read.  If the end of the file referred to by *fd* has been reached, an
-   empty bytes object is returned.
+   Read at most *n* bytes from file descriptor *fd*.
+
+   Return a bytestring containing the bytes read. If the end of the file
+   referred to by *fd* has been reached, an empty bytes object is returned.
 
    .. note::
 
@@ -1230,66 +1294,19 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 .. function:: readv(fd, buffers)
 
    Read from a file descriptor *fd* into a number of mutable :term:`bytes-like
-   objects <bytes-like object>` *buffers*. :func:`~os.readv` will transfer data
-   into each buffer until it is full and then move on to the next buffer in the
-   sequence to hold the rest of the data. :func:`~os.readv` returns the total
-   number of bytes read (which may be less than the total capacity of all the
-   objects).
+   objects <bytes-like object>` *buffers*. Transfer data into each buffer until
+   it is full and then move on to the next buffer in the sequence to hold the
+   rest of the data.
+
+   Return the total number of bytes actually read which can be less than the
+   total capacity of all the objects.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
    Availability: Unix.
 
    .. versionadded:: 3.3
-
-
-.. function:: preadv(fd, buffers, offset, flags=0)
-
-   Combines the functionality of :func:`os.readv` and :func:`os.pread`. It
-   reads from a file descriptor *fd* into a number of mutable :term:`bytes-like
-   objects <bytes-like object>` *buffers*. As :func:`os.readv`, it will transfer
-   data into each buffer until it is full and then move on to the next buffer in
-   the sequence to hold the rest of the data. Its fourth argument, *offset*,
-   specifies the file offset at which the input operation is to be performed.
-   :func:`~os.preadv` return the total number of bytes read (which can be less than
-   the total capacity of all the objects).
-
-   The flags argument contains a bitwise OR of zero or more of the following
-   flags:
-
-   - RWF_HIPRI
-   - RWF_NOWAIT
-
-   Using non-zero flags requires Linux 4.6 or newer.
-
-   Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
-   OpenBSD (version 2.7 and newer).
-
-   .. versionadded:: 3.7
-
-
-.. data:: RWF_HIPRI
-
-   High priority read/write. Allows block-based filesystems to use polling
-   of the device, which provides lower latency, but may use additional
-   resources. (Currently, this feature is usable only on a file descriptor
-   opened using the O_DIRECT flag.)
-
-   Availability: Linux (version 4.6).
-
-   .. versionadded:: 3.7
-
-
-.. data:: RWF_NOWAIT
-
-   Do not wait for data which is not immediately available. If this flag
-   is  specified, the preadv2() system call will return instantly
-   if it would have to read data from the backing storage or wait for a lock.
-   If some data was successfully read, it will return the number of bytes
-   read. If no bytes were read, it will return -1 and set errno to EAGAIN.
-   Currently, this flag is meaningful only for preadv2().
-
-   Availability: Linux (version 4.14).
-
-   .. versionadded:: 3.7
 
 
 .. function:: tcgetpgrp(fd)
@@ -1319,8 +1336,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: write(fd, str)
 
-   Write the bytestring in *str* to file descriptor *fd*. Return the number of
-   bytes actually written.
+   Write the bytestring in *str* to file descriptor *fd*.
+
+   Return the number of bytes actually written.
 
    .. note::
 
@@ -1338,14 +1356,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: writev(fd, buffers)
 
-   Write the contents of *buffers* to file descriptor *fd*. *buffers* must be a
-   sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
-   processed in array order. Entire contents of first buffer is written before
-   proceeding to second, and so on. The operating system may set a limit
-   (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
+   Write the contents of *buffers* to file descriptor *fd*. *buffers* must be
+   a sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
+   processed in array order. Entire contents of the first buffer is written
+   before proceeding to the second, and so on.
 
-   :func:`~os.writev` writes the contents of each object to the file descriptor
-   and returns the total number of bytes written.
+   Returns the total number of bytes actually written.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
    Availability: Unix.
 
