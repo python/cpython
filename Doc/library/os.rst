@@ -1144,7 +1144,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    resources.
 
    Currently, on Linux, this feature is usable only on a file descriptor opened
-   using the :data:`O_DIRECT`flag.
+   using the :data:`O_DIRECT` flag.
 
    Availability: Linux 4.6 and newer.
 
