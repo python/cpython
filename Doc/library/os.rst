@@ -1144,7 +1144,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    resources.
 
    Currently, on Linux, this feature is usable only on a file descriptor opened
-   using the O_DIRECT flag.
+   using the :data:`O_DIRECT`flag.
 
    Availability: Linux 4.6 and newer.
 
@@ -1170,6 +1170,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    :term:`bytes-like objects <bytes-like object>`. Buffers are processed in
    array order. Entire contents of the first buffer is written before
    proceeding to the second, and so on.
+
+   The flags argument contains a bitwise OR of zero or more of the following
+   flags:
 
    - :data:`RWF_DSYNC`
    - :data:`RWF_SYNC`
