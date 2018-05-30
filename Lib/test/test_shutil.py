@@ -2188,66 +2188,6 @@ class TermsizeTests(unittest.TestCase):
             self.assertEqual(size.lines, 40)
 
 
-class TestModeBits(unittest.TestCase):
-    """Make sure all copy* functions update dst file mode."""
-
-    def setUp(self):
-        # /a
-        self.src = TESTFN
-        # /b
-        self.dst = TESTFN2
-        # /dir-a
-        self.srcdir = TESTFN + '-dir'
-        # /dir-b
-        self.dstdir = TESTFN2 + '-dir'
-        # /dir-a/a
-        self.subfile_src = os.path.join(self.srcdir, TESTFN)
-        # /dir-a/b
-        self.subfile_dst = os.path.join(self.dstdir, TESTFN)
-
-        # Create src tree /a, /dir-a/a.
-        self.tearDown()
-        write_file(self.src, 'foo')
-        os.mkdir(self.srcdir)
-        write_file(self.subfile_src, 'foo')
-
-        # Set non-standard permission bits for the 2 files.
-        os.chmod(self.src, stat.S_IRWXU | stat.S_IRWXG)
-        os.chmod(self.subfile_src, stat.S_IRWXU | stat.S_IRWXG)
-
-    def tearDown(self):
-        support.unlink(self.src)
-        support.unlink(self.dst)
-        shutil.rmtree(self.srcdir, ignore_errors=True)
-        shutil.rmtree(self.dstdir, ignore_errors=True)
-
-    def assert_mode_equal(self, src, dst):
-        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
-
-    def assert_mode_not_equal(self, src, dst):
-        self.assertNotEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
-
-    # ---
-
-    def test_copyfile_and_copymode(self):
-        shutil.copyfile(self.src, self.dst)
-        self.assert_mode_not_equal(self.src, self.dst)
-        shutil.copymode(self.src, self.dst)
-        self.assert_mode_equal(self.src, self.dst)
-
-    def test_copy(self):
-        shutil.copy(self.src, self.dst)
-        self.assert_mode_equal(self.src, self.dst)
-
-    def test_copy2(self):
-        shutil.copy2(self.src, self.dst)
-        self.assert_mode_equal(self.src, self.dst)
-
-    def test_copytree(self):
-        shutil.copytree(self.srcdir, self.dstdir)
-        self.assert_mode_equal(self.subfile_src, self.subfile_dst)
-
-
 class PublicAPITests(unittest.TestCase):
     """Ensures that the correct values are exposed in the public API."""
 
