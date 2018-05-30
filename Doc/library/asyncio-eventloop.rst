@@ -340,9 +340,23 @@ Creating connections
      If given, these should all be integers from the corresponding
      :mod:`socket` module constants.
 
+   * *delay*, if given, enables Happy Eyeballs for this connection. It should
+     be a floating-point number representing the amount of time in seconds
+     to wait for a connection attempt to complete, before starting the next
+     attempt in parallel. This is the "Connection Attempt Delay" as defined
+     in RFC 8305.
+
+   * *interleave*, only for use together with *delay*, controls address
+     reordering. If ``0`` is specified, no reordering is done, and addresses are
+     tried in the order returned by :meth:`getaddrinfo`. If a positive integer
+     is specified, the addresses are interleaved by address family, and the
+     given integer is interpreted as "First Address Family Count" as defined
+     in RFC 8305. The default is ``1``.
+
    * *sock*, if given, should be an existing, already connected
      :class:`socket.socket` object to be used by the transport.
-     If *sock* is given, none of *host*, *port*, *family*, *proto*, *flags*
+     If *sock* is given, none of *host*, *port*, *family*, *proto*, *flags*,
+     *delay*, *interleave*
      and *local_addr* should be specified.
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
@@ -352,6 +366,10 @@ Creating connections
    * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds
      to wait for the SSL handshake to complete before aborting the connection.
      ``10.0`` seconds if ``None`` (default).
+
+   .. versionadded:: 3.8
+
+      The *delay* and *interleave* parameters.
 
    .. versionadded:: 3.7
 
