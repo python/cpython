@@ -81,9 +81,9 @@ class RegistryError(Exception):
     """Raised when a registry operation with the archiving
     and unpacking registries fails"""
 
-class _GiveupOnZeroCopy(Exception):
-    """Raised as a signal to fallback on using raw file copy
-    when zero-copy functions fail to do so.
+class _GiveupOnFastCopy(Exception):
+    """Raised as a signal to fallback on using raw read()/write()
+    file copy when fast-copy functions fail to do so.
     """
 
 def copyfileobj(fsrc, fdst, length=16*1024):
@@ -94,7 +94,7 @@ def copyfileobj(fsrc, fdst, length=16*1024):
             break
         fdst.write(buf)
 
-def _zerocopy_osx(fsrc, fdst):
+def _fastcopy_osx(fsrc, fdst):
     """Copy 2 regular mmap-like files by using high-performance
     fcopyfile() syscall (OSX only).
     """
@@ -102,21 +102,21 @@ def _zerocopy_osx(fsrc, fdst):
         infd = fsrc.fileno()
         outfd = fdst.fileno()
     except Exception as err:
-        raise _GiveupOnZeroCopy(err)  # not a regular file
+        raise _GiveupOnFastCopy(err)  # not a regular file
 
     try:
         posix._fcopyfile(infd, outfd)
     except OSError as err:
         if err.errno in {errno.EINVAL, errno.ENOTSUP}:
-            raise _GiveupOnZeroCopy(err)
+            raise _GiveupOnFastCopy(err)
         else:
             raise err from None
 
-def _zerocopy_win(fsrc, fdst):
+def _fastcopy_win(fsrc, fdst):
     """Copy 2 files by using high-performance CopyFileW (Windows only)."""
     nt._win32copyfile(fsrc, fdst)
 
-def _zerocopy_sendfile(fsrc, fdst):
+def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
     high-performance sendfile() method.
     This should work on Linux >= 2.6.33 and Solaris only.
@@ -126,7 +126,7 @@ def _zerocopy_sendfile(fsrc, fdst):
         infd = fsrc.fileno()
         outfd = fdst.fileno()
     except Exception as err:
-        raise _GiveupOnZeroCopy(err)  # not a regular file
+        raise _GiveupOnFastCopy(err)  # not a regular file
 
     # Hopefully the whole file will be copied in a single call.
     # sendfile() is called in a loop 'till EOF is reached (0 return)
@@ -148,14 +148,14 @@ def _zerocopy_sendfile(fsrc, fdst):
                 # does not support copies between regular files (only
                 # sockets).
                 _HAS_SENDFILE = False
-                raise _GiveupOnZeroCopy(err)
+                raise _GiveupOnFastCopy(err)
 
             if err.errno == errno.ENOSPC:  # filesystem is full
                 raise err from None
 
             # Give up on first call and if no data was copied.
             if offset == 0 and os.lseek(outfd, 0, os.SEEK_CUR) == 0:
-                raise _GiveupOnZeroCopy(err)
+                raise _GiveupOnFastCopy(err)
 
             raise err from None
         else:
@@ -163,7 +163,7 @@ def _zerocopy_sendfile(fsrc, fdst):
                 break  # EOF
             offset += sent
 
-def _copyfileobj2(fsrc, fdst):
+def _fastcopy_fileobj(fsrc, fdst):
     """Copy 2 regular mmap-like fds by using zero-copy sendfile(2)
     (Linux) and fcopyfile(2) (OSX) syscalls.
     In case of error fallback on using plain read()/write() if no
@@ -180,14 +180,14 @@ def _copyfileobj2(fsrc, fdst):
     # - possibly others
     if _HAS_SENDFILE:
         try:
-            return _zerocopy_sendfile(fsrc, fdst)
-        except _GiveupOnZeroCopy:
+            return _fastcopy_sendfile(fsrc, fdst)
+        except _GiveupOnFastCopy:
             pass
 
     if _HAS_FCOPYFILE:
         try:
-            return _zerocopy_osx(fsrc, fdst)
-        except _GiveupOnZeroCopy:
+            return _fastcopy_osx(fsrc, fdst)
+        except _GiveupOnFastCopy:
             pass
 
     return copyfileobj(fsrc, fdst)
@@ -229,12 +229,12 @@ def copyfile(src, dst, *, follow_symlinks=True):
         os.symlink(os.readlink(src), dst)
     else:
         if os.name == 'nt':
-            _zerocopy_win(src, dst)
+            _fastcopy_win(src, dst)
             return dst
 
         with open(src, 'rb') as fsrc:
             with open(dst, 'wb') as fdst:
-                _copyfileobj2(fsrc, fdst)
+                _fastcopy_fileobj(fsrc, fdst)
     return dst
 
 def copymode(src, dst, *, follow_symlinks=True):

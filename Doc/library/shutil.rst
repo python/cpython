@@ -402,7 +402,7 @@ Platform-dependent efficient copy operations
 
 Starting from Python 3.8 :func:`copyfile` uses platform-specific "zero-copy"
 syscalls such as :func:`os.sendfile` in order to copy the file more efficiently
-(see `bpo-33671 <https://bugs.python.org/issue33671>`_).
+(see :issue:`33671`).
 "zero-copy" means that the copying operation occurs within the kernel, avoiding
 the use of userspace buffers as in "``outfd.write(infd.read())``".
 Such platforms are OSX, Windows and POSIX systems where :func:`os.sendfile`

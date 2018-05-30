@@ -21,7 +21,7 @@ from shutil import (make_archive,
                     get_archive_formats, Error, unpack_archive,
                     register_unpack_format, RegistryError,
                     unregister_unpack_format, get_unpack_formats,
-                    SameFileError, _GiveupOnZeroCopy)
+                    SameFileError, _GiveupOnFastCopy)
 import tarfile
 import zipfile
 try:
@@ -1931,7 +1931,7 @@ class _ZeroCopyFileTest(object):
     def test_non_regular_file_src(self):
         with io.BytesIO(self.FILEDATA) as src:
             with open(TESTFN2, "wb") as dst:
-                with self.assertRaises(_GiveupOnZeroCopy):
+                with self.assertRaises(_GiveupOnFastCopy):
                     self.zerocopy_fun(src, dst)
                 shutil.copyfileobj(src, dst)
 
@@ -1941,7 +1941,7 @@ class _ZeroCopyFileTest(object):
     def test_non_regular_file_dst(self):
         with open(TESTFN, "rb") as src:
             with io.BytesIO() as dst:
-                with self.assertRaises(_GiveupOnZeroCopy):
+                with self.assertRaises(_GiveupOnFastCopy):
                     self.zerocopy_fun(src, dst)
                 shutil.copyfileobj(src, dst)
                 dst.seek(0)
@@ -1981,7 +1981,7 @@ class _ZeroCopyFileTest(object):
         with unittest.mock.patch(self.PATCHPOINT,
                                  side_effect=OSError(errno.EINVAL, "yo")):
             with self.get_files() as (src, dst):
-                with self.assertRaises(_GiveupOnZeroCopy):
+                with self.assertRaises(_GiveupOnFastCopy):
                     self.zerocopy_fun(src, dst)
 
     def test_filesystem_full(self):
@@ -1998,7 +1998,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "os.sendfile"
 
     def zerocopy_fun(self, *args, **kwargs):
-        return shutil._zerocopy_sendfile(*args, **kwargs)
+        return shutil._fastcopy_sendfile(*args, **kwargs)
 
     def test_exception_on_second_call(self):
         def sendfile(*args, **kwargs):
@@ -2014,7 +2014,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
                                  side_effect=sendfile):
             with self.get_files() as (src, dst):
                 with self.assertRaises(OSError) as cm:
-                    shutil._zerocopy_sendfile(src, dst)
+                    shutil._fastcopy_sendfile(src, dst)
         assert flag
         self.assertEqual(cm.exception.errno, errno.EBADF)
 
@@ -2024,7 +2024,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
         # sendfile() will be called repeatedly.
         with unittest.mock.patch('os.fstat', side_effect=OSError) as m:
             with self.get_files() as (src, dst):
-                shutil._zerocopy_sendfile(src, dst)
+                shutil._fastcopy_sendfile(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
@@ -2037,7 +2037,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
         mock.st_size = 65536 + 1
         with unittest.mock.patch('os.fstat', return_value=mock) as m:
             with self.get_files() as (src, dst):
-                shutil._zerocopy_sendfile(src, dst)
+                shutil._fastcopy_sendfile(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
@@ -2050,7 +2050,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
         mock.st_size = self.FILESIZE + (100 * 1024 * 1024)
         with unittest.mock.patch('os.fstat', return_value=mock) as m:
             with self.get_files() as (src, dst):
-                shutil._zerocopy_sendfile(src, dst)
+                shutil._fastcopy_sendfile(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
@@ -2078,7 +2078,7 @@ class TestZeroCopyOSX(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "posix._fcopyfile"
 
     def zerocopy_fun(self, *args, **kwargs):
-        return shutil._zerocopy_osx(*args, **kwargs)
+        return shutil._fastcopy_osx(*args, **kwargs)
 
 
 @unittest.skipIf(not os.name == 'nt', 'Windows only')
@@ -2086,7 +2086,7 @@ class TestZeroCopyWindows(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "nt._win32copyfile"
 
     def zerocopy_fun(self, src, dst):
-        return shutil._zerocopy_win(src.name, dst.name)
+        return shutil._fastcopy_win(src.name, dst.name)
 
 
 class TermsizeTests(unittest.TestCase):
