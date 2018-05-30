@@ -4339,25 +4339,26 @@ class TestIgnoreEINTR(unittest.TestCase):
         faulthandler.register(signal.SIGUSR1)
 
         def handler(signum, frame):
-            try:
-                print("child: Python signal handler", flush=True)
-            except:
-                # ignore reentrancy error
-                pass
+            pass
+            #try:
+            #    print("child: Python signal handler", flush=True)
+            #except:
+            #    # ignore reentrancy error
+            #    pass
 
         signal.signal(signal.SIGUSR1, handler)
         print("child: initialized", flush=True)
 
         conn.send('ready')
-        print("child: ready sent", flush=True)
+        #print("child: ready sent", flush=True)
 
         x = conn.recv()
         conn.send(x)
-        print("child: echo sent; now block on send()", flush=True)
+        #print("child: echo sent; now block on send()", flush=True)
 
         conn.send_bytes(b'x' * (1024 * 1024))   # sending 1 MiB should block
 
-        print("child: blocking send() unblocked", flush=True)
+        #print("child: blocking send() unblocked", flush=True)
 
     @classmethod
     def _test_ignore(cls, conn):
@@ -4380,27 +4381,27 @@ class TestIgnoreEINTR(unittest.TestCase):
             p.start()
             child_conn.close()
             self.assertEqual(conn.recv(), 'ready')
-            print("parent: ready received", flush=True)
+            #print("parent: ready received", flush=True)
 
             time.sleep(0.1)
 
-            print("parent: send first SIGUSR1", flush=True)
+            #print("parent: send first SIGUSR1", flush=True)
             os.kill(p.pid, signal.SIGUSR1)
             time.sleep(0.1)
 
-            print("parent: send 1234", flush=True)
+            #print("parent: send 1234", flush=True)
             conn.send(1234)
 
-            print("parent: block on recv", flush=True)
+            #print("parent: block on recv", flush=True)
             self.assertEqual(conn.recv(), 1234)
-            print("parent: echoed 1234 received", flush=True)
+            #print("parent: echoed 1234 received", flush=True)
 
             time.sleep(0.1)
 
-            print("parent: send second SIGUSR1", flush=True)
+            #print("parent: send second SIGUSR1", flush=True)
             os.kill(p.pid, signal.SIGUSR1)
 
-            print("parent: 3rd recv, longest one", flush=True)
+            #print("parent: 3rd recv, longest one", flush=True)
             self.assertEqual(conn.recv_bytes(), b'x'*(1024*1024))
             time.sleep(0.1)
 
