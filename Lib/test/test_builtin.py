@@ -1710,16 +1710,19 @@ class PtyTests(unittest.TestCase):
             'if result != {expected!a}:\n'
             '    raise AssertionError("unexpected input " + ascii(result))\n'
         )
+        sentinel = 'Hé, this is before calling input()'
         if stdio_encoding:
             expected = terminal_input.decode(stdio_encoding, 'surrogateescape')
+            exp_sentinel = sentinel.encode(stdio_encoding, errors='replace')
         else:
             expected = terminal_input.decode(sys.stdin.encoding)  # what else?
+            exp_sentinel = sentinel.encode(sys.stdout.encoding)
         code = template.format(
             stdio_encoding=stdio_encoding, prompt=prompt, expected=expected,
-            sentinel='sentinel')
+            sentinel=sentinel)
 
         # Without Readline module
-        self.assert_script(code, terminal_input, b'sentinel')
+        self.assert_script(code, terminal_input, exp_sentinel)
 
         readline_encoding = locale.getpreferredencoding()
         try:
@@ -1730,7 +1733,7 @@ class PtyTests(unittest.TestCase):
             pass
         else:
             self.assert_script('import readline\n' + code, terminal_input,
-                               b'sentinel')
+                               exp_sentinel)
 
     def assert_script(self, code, terminal_input, expected):
         cmd = (sys.executable, '-c', code)
