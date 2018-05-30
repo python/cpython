@@ -1205,7 +1205,6 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     }
 
     // Fill in the blanks and validate the result.
-    Py_XINCREF(data->obj);
     data->interp = interp->id;
     if (_check_xidata(data) != 0) {
         _PyCrossInterpreterData_Release(data);
@@ -1355,6 +1354,7 @@ _bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
         return -1;
     }
     data->data = (void *)shared;
+    Py_INCREF(obj);
     data->obj = obj;  // Will be "released" (decref'ed) when data released.
     data->new_object = _new_bytes_object;
     data->free = PyMem_Free;
@@ -1382,6 +1382,7 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
     shared->buffer = PyUnicode_DATA(obj);
     shared->len = PyUnicode_GET_LENGTH(obj) - 1;
     data->data = (void *)shared;
+    Py_INCREF(obj);
     data->obj = obj;  // Will be "released" (decref'ed) when data released.
     data->new_object = _new_str_object;
     data->free = PyMem_Free;
