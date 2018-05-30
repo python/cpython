@@ -1393,18 +1393,6 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 }
 
 static int
-compiler_isdocstring(stmt_ty s)
-{
-    if (s->kind != Expr_kind)
-        return 0;
-    if (s->v.Expr.value->kind == Str_kind)
-        return 1;
-    if (s->v.Expr.value->kind == Constant_kind)
-        return PyUnicode_CheckExact(s->v.Expr.value->v.Constant.value);
-    return 0;
-}
-
-static int
 is_const(expr_ty e)
 {
     switch (e->kind) {
@@ -1603,6 +1591,7 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
 {
     int i = 0;
     stmt_ty st;
+    PyObject *docstring;
 
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
@@ -1619,14 +1608,17 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
     }
     if (!asdl_seq_LEN(stmts))
         return 1;
-    st = (stmt_ty)asdl_seq_GET(stmts, 0);
     /* if not -OO mode, set docstring */
-    if (compiler_isdocstring(st) && c->c_optimize < 2) {
-        /* don't generate docstrings if -OO */
-        i = 1;
-        VISIT(c, expr, st->v.Expr.value);
-        if (!compiler_nameop(c, __doc__, Store))
-            return 0;
+    if (c->c_optimize < 2) {
+        docstring = _PyAST_GetDocString(stmts);
+        if (docstring) {
+            i = 1;
+            st = (stmt_ty)asdl_seq_GET(stmts, 0);
+            assert(st->kind == Expr_kind);
+            VISIT(c, expr, st->v.Expr.value);
+            if (!compiler_nameop(c, __doc__, Store))
+                return 0;
+        }
     }
     for (; i < asdl_seq_LEN(stmts); i++)
         VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
@@ -1979,15 +1971,13 @@ static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
-    PyObject *qualname, *first_const = Py_None;
+    PyObject *qualname, *docstring = NULL;
     arguments_ty args;
     expr_ty returns;
     identifier name;
     asdl_seq* decos;
     asdl_seq *body;
-    stmt_ty st;
     Py_ssize_t i, funcflags;
-    int docstring;
     int annotations;
     int scope_type;
 
@@ -2034,15 +2024,10 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     /* if not -OO mode, add docstring */
-    st = (stmt_ty)asdl_seq_GET(body, 0);
-    docstring = compiler_isdocstring(st);
-    if (docstring && c->c_optimize < 2) {
-        if (st->v.Expr.value->kind == Constant_kind)
-            first_const = st->v.Expr.value->v.Constant.value;
-        else
-            first_const = st->v.Expr.value->v.Str.s;
+    if (c->c_optimize < 2) {
+        docstring = _PyAST_GetDocString(body);
     }
-    if (compiler_add_const(c, first_const) < 0) {
+    if (compiler_add_const(c, docstring ? docstring : Py_None) < 0) {
         compiler_exit_scope(c);
         return 0;
     }
