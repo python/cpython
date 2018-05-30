@@ -49,8 +49,9 @@ class-based API instead.
 .. function:: bind_textdomain_codeset(domain, codeset=None)
 
    Bind the *domain* to *codeset*, changing the encoding of byte strings
-   returned by the :func:`lgettext`, :func:`ldgettext`, :func:`lngettext`
-   and :func:`ldngettext` functions.
+   returned by the :func:`lgettext`, :func:`ldgettext`, :func:`lngettext`,
+   :func:`ldngettext`, :func:`lpgettext`, :func:`ldpgettext`,
+   :func:`lnpgettext`, and :func:`ldnpgettext` functions.
    If *codeset* is omitted, then the current binding is returned.
 
    .. deprecated-removed:: 3.8 3.10
@@ -96,16 +97,33 @@ class-based API instead.
    Like :func:`ngettext`, but look the message up in the specified *domain*.
 
 
+.. function:: pgettext(context, message)
+.. function:: dpgettext(domain, context, message)
+.. function:: npgettext(context, singular, plural, n)
+.. function:: dnpgettext(domain, context, singular, plural, n)
+
+   Similar to the corresponding functions without the ``p`` in the prefix (that
+   is, :func:`gettext`, :func:`dgettext`, :func:`ngettext`, :func:`dngettext`),
+   but the translation is restricted to the given message *context*.
+
+   .. versionadded:: 3.8
+
+
 .. function:: lgettext(message)
 .. function:: ldgettext(domain, message)
 .. function:: lngettext(singular, plural, n)
 .. function:: ldngettext(domain, singular, plural, n)
+.. function:: lpgettext(context, message)
+.. function:: ldpgettext(domain, context, message)
+.. function:: lnpgettext(context, singular, plural, n)
+.. function:: ldnpgettext(domain, context, singular, plural, n)
 
    Equivalent to the corresponding functions without the ``l`` prefix
-   (:func:`.gettext`, :func:`dgettext`, :func:`ngettext` and :func:`dngettext`),
-   but the translation is returned as a byte string encoded in the preferred
-   system encoding if no other encoding was explicitly set with
-   :func:`bind_textdomain_codeset`.
+   (:func:`.gettext`, :func:`dgettext`, :func:`ngettext`, :func:`dngettext`,
+   :func:`pgettext`, :func:`dpgettext`, :func:`npgettext`, and
+   :func:`dnpgettext`), but the translation is returned as a byte string
+   encoded in the preferred system encoding if no other encoding was
+   explicitly set with :func:`bind_textdomain_codeset`.
 
    .. warning::
 
@@ -267,12 +285,31 @@ are the methods of :class:`!NullTranslations`:
       Overridden in derived classes.
 
 
+   .. method:: pgettext(context, message)
+
+      If a fallback has been set, forward :meth:`pgettext` to the fallback.
+      Otherwise, return the translated message.  Overridden in derived classes.
+
+      .. versionadded:: 3.8
+
+
+   .. method:: npgettext(context, singular, plural, n)
+
+      If a fallback has been set, forward :meth:`npgettext` to the fallback.
+      Otherwise, return the translated message.  Overridden in derived classes.
+
+      .. versionadded:: 3.8
+
+
    .. method:: lgettext(message)
    .. method:: lngettext(singular, plural, n)
+   .. method:: lpgettext(context, message)
+   .. method:: lnpgettext(context, singular, plural, n)
 
-      Equivalent to :meth:`.gettext` and :meth:`.ngettext`, but the translation
-      is returned as a byte string encoded in the preferred system encoding
-      if no encoding was explicitly set with :meth:`set_output_charset`.
+      Equivalent to :meth:`.gettext`, :meth:`.ngettext`, :meth:`.pgettext`,
+      and :meth:`npgettext`, but the translation is returned as a byte string
+      encoded in the preferred system encoding if no encoding was explicitly
+      set with :meth:`set_output_charset`.
       Overridden in derived classes.
 
       .. warning::
@@ -295,8 +332,9 @@ are the methods of :class:`!NullTranslations`:
 
    .. method:: output_charset()
 
-      Return the encoding used to return translated messages in :meth:`.lgettext`
-      and :meth:`.lngettext`.
+      Return the encoding used to return translated messages in
+      :meth:`.lgettext`, :meth:`.lngettext`, :meth:`.lpgettext`, and
+      :meth:`.lnpgettext`.
 
       .. deprecated-removed:: 3.8 3.10
 
@@ -316,7 +354,8 @@ are the methods of :class:`!NullTranslations`:
       If the *names* parameter is given, it must be a sequence containing the
       names of functions you want to install in the builtins namespace in
       addition to :func:`_`.  Supported names are ``'gettext'``, ``'ngettext'``,
-      ``'lgettext'`` and ``'lngettext'``.
+      ``'pgettext'``, ``'lgettext'``, ``'lngettext'``, ``'lpgettext'``,  and
+      ``'lnpgettext'``.
 
       Note that this is only one way, albeit the most convenient way, to make
       the :func:`_` function available to your application.  Because it affects
@@ -394,8 +433,37 @@ unexpected, or if other problems occur while reading the file, instantiating a
              n) % {'num': n}
 
 
+   .. method:: pgettext(context, message)
+
+      Look up the *context* and *message* id in the catalog and return the
+      corresponding message string, as an 8-bit string encoded with the
+      catalog's encoding, if known.  If there is no entry in the catalog
+      for the *message* id and *context*, and a fallback has been set, the
+      look up is forwarded to the fallback's :meth:`pgettext` method.
+      Otherwise, the *message* id is returned.
+
+      .. versionadded:: 3.8
+
+
+   .. method:: npgettext(context, singular, plural, n)
+
+      Do a plural-forms lookup of a message id.  *singular* is used as the
+      message id for purposes of lookup in the catalog, while *n* is used to
+      determine which  plural form to use.  The returned message string is an
+      8-bit string encoded with the catalog's encoding, if known.
+
+      If the message id for *context* is not found in the catalog, and a
+      fallback is specified, the request is forwarded to the fallback's
+      :meth:`npgettext` method.  Otherwise, when *n* is 1 *singular* is
+      returned, and *plural* is returned in all other cases.
+
+      .. versionadded:: 3.8
+
+
    .. method:: lgettext(message)
    .. method:: lngettext(singular, plural, n)
+   .. method:: lpgettext(context, message)
+   .. method:: lnpgettext(context, singular, plural, n)
 
       Equivalent to :meth:`.gettext` and :meth:`.ngettext`, but the translation
       is returned as a byte string encoded in the preferred system encoding

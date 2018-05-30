@@ -5,7 +5,6 @@ This list is not complete and not in any useful order, but I would
 like to thank everybody who contributed in any way, with code, hints,
 bug reports, ideas, moral support, endorsement, or even complaints....
 Without you, I would've stopped working on Python long ago!
-
 	--Guido
 
 PS: In the standard Python distribution, this file is encoded in UTF-8
@@ -559,6 +558,7 @@ Julian Gindi
 Yannick Gingras
 Neil Girdhar
 Matt Giuca
+Franz Glasner
 Wim Glenn
 Michael Goderbauer
 Karan Goel
