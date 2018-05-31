@@ -1,0 +1,2 @@
+when strings or files are encode with utf8 without bom, auto detect encoding
+will fail. set default decoded type with utf-8 for most time
