@@ -363,19 +363,27 @@ def copy(src, dst, *, follow_symlinks=True):
 
 def copy2(src, dst, *, follow_symlinks=True):
     """Copy data and all stat info ("cp -p src dst"). Return the file's
-    destination."
+    destination.
 
     The destination may be a directory.
 
     If follow_symlinks is false, symlinks won't be followed. This
     resembles GNU's "cp -P src dst".
 
+    On Windows this function uses CopyFileEx which preserves extended
+    attributes, OLE structured storage, NTFS file system alternate
+    data streams, security resource attributes and file attributes.
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
+
     if os.name == 'nt':
-        _fastcopy_win(src, dst)
+        if not follow_symlinks and os.path.islink(src):
+            os.symlink(os.readlink(src), dst)
+        else:
+            _fastcopy_win(src, dst)
         return dst
+
     copyfile(src, dst, follow_symlinks=follow_symlinks)
     copystat(src, dst, follow_symlinks=follow_symlinks)
     return dst
