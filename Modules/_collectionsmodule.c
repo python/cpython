@@ -575,7 +575,7 @@ deque_concat(dequeobject *deque, PyObject *other)
     return new_deque;
 }
 
-static void
+static int
 deque_clear(dequeobject *deque)
 {
     block *b;
@@ -587,7 +587,7 @@ deque_clear(dequeobject *deque)
     PyObject **itemptr, **limit;
 
     if (Py_SIZE(deque) == 0)
-        return;
+        return 0;
 
     /* During the process of clearing a deque, decrefs can cause the
        deque to mutate.  To avoid fatal confusion, we have to make the
@@ -648,7 +648,7 @@ deque_clear(dequeobject *deque)
     }
     CHECK_END(leftblock->rightlink);
     freeblock(leftblock);
-    return;
+    return 0;
 
   alternate_method:
     while (Py_SIZE(deque)) {
@@ -656,6 +656,7 @@ deque_clear(dequeobject *deque)
         assert (item != NULL);
         Py_DECREF(item);
     }
+    return 0;
 }
 
 static PyObject *

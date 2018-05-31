@@ -528,10 +528,11 @@ ast_traverse(AST_object *self, visitproc visit, void *arg)
     return 0;
 }
 
-static void
+static int
 ast_clear(AST_object *self)
 {
     Py_CLEAR(self->dict);
+    return 0;
 }
 
 static int
