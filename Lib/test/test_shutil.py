@@ -1919,6 +1919,12 @@ class _ZeroCopyFileTest(object):
     def zerocopy_fun(self, *args, **kwargs):
         raise NotImplementedError("must be implemented in subclass")
 
+    def reset(self):
+        self.tearDown()
+        self.tearDownClass()
+        self.setUpClass()
+        self.setUp()
+
     # ---
 
     def test_regular_copy(self):
@@ -1931,6 +1937,14 @@ class _ZeroCopyFileTest(object):
             with unittest.mock.patch('shutil.copyfileobj') as m:
                 fun(TESTFN, TESTFN2)
             assert not m.called
+
+    def test_same_file(self):
+        self.addCleanup(self.reset)
+        with self.get_files() as (src, dst):
+            with self.assertRaises(_GiveupOnFastCopy):
+                self.zerocopy_fun(src, src)
+        with self.assertRaises(shutil.SameFileError):
+            shutil.copyfile(TESTFN, TESTFN)
 
     def test_non_existent_src(self):
         name = tempfile.mktemp()
