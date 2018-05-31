@@ -4340,20 +4340,21 @@ class TestIgnoreEINTR(unittest.TestCase):
         faulthandler.register(signal.SIGUSR1, chain=True)
 
         def handler(signum, frame):
-            print("child: got SIGUSR1", flush=True)
+            #print("child: got SIGUSR1", flush=True)
+            pass
 
         signal.signal(signal.SIGUSR1, handler)
         print("child: register SIGUSR1 handler, send ready", flush=True)
 
         conn.send('ready')
 
-        print("child: wait 1234", flush=True)
+        #print("child: wait 1234", flush=True)
         x = conn.recv()
 
-        print("child: send back 1234", flush=True)
+        #print("child: send back 1234", flush=True)
         conn.send(x)
 
-        print("child: big blocking send", flush=True)
+        #print("child: send BIG", flush=True)
         conn.send_bytes(b'x' * (1024 * 1024))   # sending 1 MiB should block
 
         print("child: done", flush=True)
@@ -4390,27 +4391,28 @@ class TestIgnoreEINTR(unittest.TestCase):
             child_conn.close()
 
             self.assertEqual(conn.recv(), 'ready')
-            print(f"parent: ready received", flush=True)
+            #print(f"parent: ready received", flush=True)
 
             time.sleep(0.1)
 
-            print(f"parent: first SIGUSR1", flush=True)
+            #print(f"parent: first SIGUSR1", flush=True)
             os.kill(p.pid, signal.SIGUSR1)
 
             time.sleep(0.1)
 
-            print(f"parent: send 1234", flush=True)
+            #print(f"parent: send 1234", flush=True)
             conn.send(1234)
 
-            print(f"parent: wait 1234", flush=True)
+            #print(f"parent: wait 1234", flush=True)
             self.assertEqual(conn.recv(), 1234)
             time.sleep(0.1)
 
-            print(f"parent: second SIGUSR1", flush=True)
+            #print(f"parent: second SIGUSR1", flush=True)
             os.kill(p.pid, signal.SIGUSR1)
 
-            print(f"parent: wait bytes", flush=True)
+            #print(f"parent: wait BIG", flush=True)
             self.assertEqual(conn.recv_bytes(), b'x'*(1024*1024))
+            print(f"parent: received BIG", flush=True)
             time.sleep(0.1)
 
             print(f"parent: join child", flush=True)
