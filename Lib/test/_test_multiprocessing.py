@@ -4330,6 +4330,12 @@ class TestCloseFds(unittest.TestCase):
 # Issue #17097: EINTR should be ignored by recv(), send(), accept() etc
 #
 
+def DEBUG(msg):
+    try:
+        print(msg, file=sys.__stdout__, flush=True)
+    except:
+        pass
+
 class TestIgnoreEINTR(unittest.TestCase):
 
     @classmethod
@@ -4340,87 +4346,87 @@ class TestIgnoreEINTR(unittest.TestCase):
         faulthandler.register(signal.SIGUSR1, chain=True)
 
         def handler(signum, frame):
-            #print("child: got SIGUSR1", flush=True)
+            #DEBUG("child: got SIGUSR1", flush=True)
             pass
 
         signal.signal(signal.SIGUSR1, handler)
-        print("child: register SIGUSR1 handler, send ready", flush=True)
+        DEBUG("child: register SIGUSR1 handler, send ready", flush=True)
 
         conn.send('ready')
 
-        #print("child: wait 1234", flush=True)
+        #DEBUG("child: wait 1234", flush=True)
         x = conn.recv()
 
-        #print("child: send back 1234", flush=True)
+        #DEBUG("child: send back 1234", flush=True)
         conn.send(x)
 
-        #print("child: send BIG", flush=True)
+        #DEBUG("child: send BIG", flush=True)
         conn.send_bytes(b'x' * (1024 * 1024))   # sending 1 MiB should block
 
-        print("child: done", flush=True)
+        DEBUG("child: done", flush=True)
 
     @classmethod
     def _test_ignore(cls, conn):
-        print(f"child: pid={os.getpid()} ppid={os.getppid()}", flush=True)
+        DEBUG(f"child: pid={os.getpid()} ppid={os.getppid()}", flush=True)
         try:
             cls._test_ignore_impl(conn)
         except Exception as exc:
-            print("child: ERR", flush=True)
-            print("child: ERR: %s" % exc, flush=True)
-            print("child: ERR: %r" % exc, flush=True)
+            DEBUG("child: ERR", flush=True)
+            DEBUG("child: ERR: %s" % exc, flush=True)
+            DEBUG("child: ERR: %r" % exc, flush=True)
             raise
 
 
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore(self):
-        print(f"parent: pid={os.getpid()}", flush=True)
+        DEBUG(f"parent: pid={os.getpid()}", flush=True)
 
         is_forkserver = (multiprocessing.get_start_method() == 'forkserver')
         if is_forkserver:
-            print(f"parent: fork server pid={multiprocessing.forkserver._forkserver._forkserver_pid!r}", flush=True)
+            DEBUG(f"parent: fork server pid={multiprocessing.forkserver._forkserver._forkserver_pid!r}", flush=True)
 
         conn, child_conn = multiprocessing.Pipe()
         try:
             p = multiprocessing.Process(target=self._test_ignore,
                                         args=(child_conn,))
             p.daemon = True
-            print(f"parent: start child", flush=True)
+            DEBUG(f"parent: start child", flush=True)
             p.start()
-            print(f"parent: p={p}", flush=True)
-            print(f"parent: p.ident={p.ident}", flush=True)
+            DEBUG(f"parent: p={p}", flush=True)
+            DEBUG(f"parent: p.ident={p.ident}", flush=True)
             child_conn.close()
 
             self.assertEqual(conn.recv(), 'ready')
-            #print(f"parent: ready received", flush=True)
+            #DEBUG(f"parent: ready received", flush=True)
 
             time.sleep(0.1)
 
-            #print(f"parent: first SIGUSR1", flush=True)
+            #DEBUG(f"parent: first SIGUSR1", flush=True)
             os.kill(p.pid, signal.SIGUSR1)
 
             time.sleep(0.1)
 
-            #print(f"parent: send 1234", flush=True)
+            #DEBUG(f"parent: send 1234", flush=True)
             conn.send(1234)
 
-            #print(f"parent: wait 1234", flush=True)
+            #DEBUG(f"parent: wait 1234", flush=True)
             self.assertEqual(conn.recv(), 1234)
             time.sleep(0.1)
 
-            #print(f"parent: second SIGUSR1", flush=True)
+            #DEBUG(f"parent: second SIGUSR1", flush=True)
             os.kill(p.pid, signal.SIGUSR1)
 
-            #print(f"parent: wait BIG", flush=True)
+            #DEBUG(f"parent: wait BIG", flush=True)
             self.assertEqual(conn.recv_bytes(), b'x'*(1024*1024))
-            print(f"parent: received BIG", flush=True)
+            DEBUG(f"parent: received BIG", flush=True)
             time.sleep(0.1)
 
-            print(f"parent: join child", flush=True)
+            DEBUG(f"parent: join child", flush=True)
             p.join()
 
             if is_forkserver:
-                print(f"parent: fork server pid={multiprocessing.forkserver._forkserver._forkserver_pid!r}")
-            print(f"parent: done", flush=True)
+                DEBUG(f"parent: fork server pid={multiprocessing.forkserver._forkserver._forkserver_pid!r}")
+            DEBUG(f"parent: done", flush=True)
         finally:
             conn.close()
 

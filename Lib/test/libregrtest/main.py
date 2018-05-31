@@ -549,8 +549,9 @@ class Regrtest:
         self.run_tests()
         self.display_result()
 
-        if not self.bad:
+        if 'test_multiprocessing_forkserver' not in self.bad:
             self.bad.append('test_multiprocessing_forkserver')
+        if 'test_multiprocessing_fork' not in self.bad:
             self.bad.append('test_multiprocessing_fork')
         if self.bad:
             self.rerun_failed_tests()
