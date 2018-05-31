@@ -549,7 +549,10 @@ class Regrtest:
         self.run_tests()
         self.display_result()
 
-        if self.ns.verbose2 and self.bad:
+        if not self.bad:
+            self.bad.append('test_multiprocessing_forkserver')
+            self.bad.append('test_multiprocessing_fork')
+        if self.bad:
             self.rerun_failed_tests()
 
         self.finalize()
