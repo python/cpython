@@ -63,6 +63,13 @@ get_warnings_attr(const char *attr, int try_import)
         }
     }
     else {
+        /* if we're so late into Python finalization that the module dict is
+           gone, then we can't even use PyImport_GetModule without triggering
+           an interpreter abort.
+        */
+        if (!PyThreadState_GET()->interp->modules) {
+            return NULL;
+        }
         all_modules = PyImport_GetModuleDict();
 
         warnings_module = PyDict_GetItem(all_modules, warnings_str);
