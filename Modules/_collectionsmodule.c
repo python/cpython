@@ -639,7 +639,7 @@ deque_remove(dequeobject *deque, PyObject *value)
 PyDoc_STRVAR(remove_doc,
 "D.remove(value) -- remove first occurrence of value.");
 
-static void
+static int
 deque_clear(dequeobject *deque)
 {
     block *b;
@@ -650,7 +650,7 @@ deque_clear(dequeobject *deque)
     PyObject *item;
 
     if (deque->len == 0)
-        return;
+        return 0;
 
     /* During the process of clearing a deque, decrefs can cause the
        deque to mutate.  To avoid fatal confusion, we have to make the
@@ -701,7 +701,7 @@ deque_clear(dequeobject *deque)
     }
     assert(leftblock->rightlink == NULL);
     freeblock(leftblock);
-    return;
+    return 0;
 
   alternate_method:
     while (deque->len) {
@@ -709,6 +709,7 @@ deque_clear(dequeobject *deque)
         assert (item != NULL);
         Py_DECREF(item);
     }
+    return 0;
 }
 
 static PyObject *
