@@ -232,7 +232,7 @@ The following classes are provided:
    containing the image.
 
    *unverifiable* should indicate whether the request is unverifiable,
-   as defined by RFC 2965.  It defaults to ``False``.  An unverifiable
+   as defined by :rfc:`2965`.  It defaults to ``False``.  An unverifiable
    request is one whose URL the user did not have the option to
    approve.  For example, if the request is for an image in an HTML
    document, and the user had no option to approve the automatic
@@ -504,7 +504,7 @@ request.
 .. attribute:: Request.unverifiable
 
    boolean, indicates whether the request is unverifiable as defined
-   by RFC 2965.
+   by :rfc:`2965`.
 
 .. attribute:: Request.method
 

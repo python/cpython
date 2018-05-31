@@ -12,7 +12,7 @@ text content and the addresses may contain unicode characters):
 .. literalinclude:: ../includes/email-simple.py
 
 
-Parsing RFC822 headers can easily be done by the using the classes
+Parsing :rfc:`822` headers can easily be done by the using the classes
 from the :mod:`~email.parser` module:
 
 .. literalinclude:: ../includes/email-headers.py

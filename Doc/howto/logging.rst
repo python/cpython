@@ -297,7 +297,7 @@ which should print something like this:
    2010-12-12 11:41:42,612 is when this event was logged.
 
 The default format for date/time display (shown above) is like ISO8601 or
-RFC 3339. If you need more control over the formatting of the date/time, provide
+:rfc:`3339`. If you need more control over the formatting of the date/time, provide
 a *datefmt* argument to ``basicConfig``, as in this example::
 
    import logging

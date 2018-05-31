@@ -516,7 +516,7 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
    initialized with a format string for the message as a whole, as well as a
    format string for the date/time portion of a message.  If no *fmt* is
    specified, ``'%(message)s'`` is used.  If no *datefmt* is specified, an
-   ISO8601-like (or RFC3339-like) date format is used. See the
+   ISO8601-like (or :rfc:`3339`-like) date format is used. See the
    :meth:`formatTime` documentation for more details.
 
    The *style* parameter can be one of '%', '{' or '$' and determines how
