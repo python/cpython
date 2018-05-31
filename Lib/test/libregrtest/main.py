@@ -282,7 +282,6 @@ class Regrtest:
         self.ns.verbose = True
         self.ns.failfast = False
         self.ns.verbose3 = False
-        self.ns.match_tests = None
 
         print()
         print("Re-running failed tests in verbose mode")
@@ -313,7 +312,7 @@ class Regrtest:
             return
 
         print()
-        print("== Tests result ==")
+        print("== Tests result: %s ==" % self.get_tests_result())
 
         if self.interrupted:
             print()
@@ -323,11 +322,6 @@ class Regrtest:
             omitted = set(self.selected) - executed
             print(count(len(omitted), "test"), "omitted:")
             printlist(omitted)
-
-        if self.rerun:
-            print()
-            print(count(len(self.rerun), "test"), "re-run tests:")
-            printlist(self.rerun)
 
         if self.good and not self.ns.quiet:
             print()
@@ -360,6 +354,11 @@ class Regrtest:
             print()
             print(count(len(self.skipped), "test"), "skipped:")
             printlist(self.skipped)
+
+        if self.rerun:
+            print()
+            print("%s:" % count(len(self.rerun), "re-run test"))
+            printlist(self.rerun)
 
     def run_tests_sequential(self):
         if self.ns.trace:
@@ -445,6 +444,21 @@ class Regrtest:
               % (locale.getpreferredencoding(False),
                  sys.getfilesystemencoding()))
 
+    def get_tests_result(self):
+        result = []
+        if self.bad:
+            result.append("FAILURE")
+        elif self.ns.fail_env_changed and self.environment_changed:
+            result.append("ENV CHANGED")
+
+        if self.interrupted:
+            result.append("INTERRUPTED")
+
+        if not result:
+            result.append("SUCCESS")
+
+        return ', '.join(result)
+
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
         if (self.ns.header
@@ -486,16 +500,7 @@ class Regrtest:
         print()
         duration = time.monotonic() - self.start_time
         print("Total duration: %s" % format_duration(duration))
-
-        if self.bad:
-            result = "FAILURE"
-        elif self.interrupted:
-            result = "INTERRUPTED"
-        elif self.ns.fail_env_changed and self.environment_changed:
-            result = "ENV CHANGED"
-        else:
-            result = "SUCCESS"
-        print("Tests result: %s" % result)
+        print("Tests result: %s" % self.get_tests_result())
 
         if self.ns.runleaks:
             os.system("leaks %d" % os.getpid())
