@@ -4337,8 +4337,6 @@ class TestIgnoreEINTR(unittest.TestCase):
         faulthandler.register(signal.SIGTERM, chain=True)
         faulthandler.register(signal.SIGUSR1, chain=True)
 
-        multiprocessing.util.log_to_stderr(logging.INFO)
-
         def handler(signum, frame):
             print("child: got SIGUSR1", flush=True)
 
@@ -4372,8 +4370,6 @@ class TestIgnoreEINTR(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore(self):
-        multiprocessing.util.log_to_stderr(logging.INFO)
-
         print(f"parent: pid={os.getpid()}", flush=True)
         conn, child_conn = multiprocessing.Pipe()
         try:
@@ -4416,8 +4412,6 @@ class TestIgnoreEINTR(unittest.TestCase):
             print(f"parent: done", flush=True)
         finally:
             conn.close()
-
-        del multiprocessing.util._logger.handlers[-1]
 
     @classmethod
     def _test_ignore_listener(cls, conn):
