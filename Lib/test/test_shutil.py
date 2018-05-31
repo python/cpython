@@ -1998,8 +1998,8 @@ class _ZeroCopyFileTest(object):
 class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "os.sendfile"
 
-    def zerocopy_fun(self, *args, **kwargs):
-        return shutil._fastcopy_sendfile(*args, **kwargs)
+    def zerocopy_fun(self, fsrc, fdst):
+        return shutil._fastcopy_sendfile(fsrc, fdst)
 
     @unittest.skipIf(os.name == 'nt', 'POSIX only')
     def test_non_regular_file_src(self):
