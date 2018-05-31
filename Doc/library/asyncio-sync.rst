@@ -164,8 +164,8 @@ Condition
 
       .. note::
 
-         An awakened coroutine does not actually return from its :meth:`wait`
-         call until it can reacquire the lock. Since :meth:`notify` does not
+         An awakened coroutine does not actually return from its :meth:`.wait`
+         call until it can reacquire the lock. Since :meth:`.notify` does not
          release the lock, its caller should.
 
    .. method:: locked()
