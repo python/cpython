@@ -761,7 +761,7 @@ pymain_parse_cmdline_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
                 pymain->err = _Py_INIT_NO_MEMORY();
                 return -1;
             }
-            memcpy(command, _PyOS_optarg, len * sizeof(wchar_t));
+            memcpy(command, _PyOS_optarg, (len - 2) * sizeof(wchar_t));
             command[len - 2] = '\n';
             command[len - 1] = 0;
             pymain->command = command;
