@@ -621,7 +621,7 @@ for the contents of the string is:
    f_string: (`literal_char` | "{{" | "}}" | `replacement_field`)*
    replacement_field: "{" `f_expression` ["!" `conversion`] [":" `format_spec`] "}"
    f_expression: (`conditional_expression` | "*" `or_expr`)
-               :   ("," `conditional_expression` | "," "*" `or_expr`)* [","]
+               : ("," `conditional_expression` | "," "*" `or_expr`)* [","]
                : | `yield_expression`
    conversion: "s" | "r" | "a"
    format_spec: (`literal_char` | NULL | `replacement_field`)*
