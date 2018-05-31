@@ -96,12 +96,13 @@ def copyfileobj(fsrc, fdst, length=16*1024):
         fdst.write(buf)
 
 def _fastcopy_osx(src, dst, flags):
-    """Copy 2 regular mmap-like files content or metadata by using
-    high-performance copyfile(3) syscall (OSX only).
+    """Copy a regular file content or metadata by using high-performance
+    copyfile(3) syscall (OSX only).
     """
     if _samefile(src, dst):
-        # ...or else copyfile() returns immediately and deletes src
-        # file content.
+        # ...or else copyfile() would return success and delete src
+        # file content. This is stupid as it forces us to do 2 extra
+        # stat() calls.
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
     try:
         posix._copyfile(src, dst, flags)
@@ -118,7 +119,8 @@ def _fastcopy_win(src, dst):
     try:
         _winapi.CopyFileExW(src, dst, 0)
     except PermissionError as err:
-        if _samefile(src, dst):
+        if err.winerror == _winapi.ERROR_SHARING_VIOLATION and \
+                _samefile(src, dst):
             raise SameFileError(
                 "{!r} and {!r} are the same file".format(src, dst))
         raise err from None
