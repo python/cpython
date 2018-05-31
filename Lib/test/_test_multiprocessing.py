@@ -4332,16 +4332,27 @@ class TestIgnoreEINTR(unittest.TestCase):
 
     @classmethod
     def _test_ignore(cls, conn):
-        def handler(signum, frame):
-            pass
-        signal.signal(signal.SIGUSR1, handler)
-        conn.send('ready')
-        x = conn.recv()
-        conn.send(x)
-        conn.send_bytes(b'x' * (1024 * 1024))   # sending 1 MiB should block
+        print(f"child: pid={os.getpid()} ppid={os.getppid()}", flush=True)
+        try:
+            def handler(signum, frame):
+                pass
+            signal.signal(signal.SIGUSR1, handler)
+            conn.send('ready')
+            x = conn.recv()
+            conn.send(x)
+
+            print(f"child: send BIG", flush=True)
+            conn.send_bytes(b'x' * (1024 * 1024))   # sending 1 MiB should block
+            print(f"child: done", flush=True)
+        except Exception as exc:
+            print(f"child: ERR", flush=True)
+            print(f"child: ERR: {exc}", flush=True)
+            print(f"child: ERR: {type(exc)}", flush=True)
+            raise
 
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore(self):
+        print(f"parent: pid={os.getpid()}", flush=True)
         conn, child_conn = multiprocessing.Pipe()
         try:
             p = multiprocessing.Process(target=self._test_ignore,
@@ -4351,15 +4362,19 @@ class TestIgnoreEINTR(unittest.TestCase):
             child_conn.close()
             self.assertEqual(conn.recv(), 'ready')
             time.sleep(0.1)
+
             os.kill(p.pid, signal.SIGUSR1)
             time.sleep(0.1)
             conn.send(1234)
             self.assertEqual(conn.recv(), 1234)
             time.sleep(0.1)
+
+            print(f"parent: second SIGUSR1", flush=True)
             os.kill(p.pid, signal.SIGUSR1)
             self.assertEqual(conn.recv_bytes(), b'x'*(1024*1024))
             time.sleep(0.1)
             p.join()
+            print(f"parent: done", flush=True)
         finally:
             conn.close()
 
