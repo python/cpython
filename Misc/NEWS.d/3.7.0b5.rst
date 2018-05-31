@@ -406,7 +406,7 @@ literals on pydoc. Patch by Andrés Delfino.
 .. nonce: 7FwDfN
 .. section: Library
 
-The function ``platform.linux_ditribution`` and ``platform.dist`` now
+The function ``platform.linux_distribution`` and ``platform.dist`` now
 trigger a ``DeprecationWarning`` and have been marked for removal in Python
 3.8
 
