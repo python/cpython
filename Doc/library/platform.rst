@@ -270,6 +270,10 @@ Unix Platforms
    parameters.  ``id`` is the item in parentheses after the version number.  It
    is usually the version codename.
 
+   .. note::
+      This function is deprecated since Python 3.5 and removed in Python 3.8.
+      See alternative like the `distro <https://pypi.org/project/distro>`_ package.
+
    .. versionadded:: 2.6
 
 .. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=2048)
