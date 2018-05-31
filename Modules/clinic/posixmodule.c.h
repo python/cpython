@@ -3886,7 +3886,6 @@ exit:
 
 #endif /* defined(__APPLE__) */
 
-
 PyDoc_STRVAR(os_fstat__doc__,
 "fstat($module, /, fd)\n"
 "--\n"
@@ -6627,4 +6626,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=6e1b458924d141ed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9071e1a8268b2f33 input=a9049054013a1b77]*/
