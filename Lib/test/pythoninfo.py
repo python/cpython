@@ -489,6 +489,34 @@ def collect_test_support(info_add):
     call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
 
 
+def collect_cc(info_add):
+    import subprocess
+    import sysconfig
+
+    CC = sysconfig.get_config_var('CC')
+    if not CC:
+        return
+
+    try:
+        import shlex
+        args = shlex.split(CC)
+    except ImportError:
+        args = CC.split()
+    args.append('--version')
+    proc = subprocess.Popen(args,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            universal_newlines=True)
+    stdout = proc.communicate()[0]
+    if proc.returncode:
+        # CC --version failed: ignore error
+        return
+
+    text = stdout.splitlines()[0]
+    text = normalize_text(text)
+    info_add('CC.version', text)
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -515,6 +543,7 @@ def collect_info(info):
         collect_decimal,
         collect_testcapi,
         collect_resource,
+        collect_cc,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
