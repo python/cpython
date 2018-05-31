@@ -4331,37 +4331,93 @@ class TestCloseFds(unittest.TestCase):
 class TestIgnoreEINTR(unittest.TestCase):
 
     @classmethod
-    def _test_ignore(cls, conn):
+    def _test_ignore_impl(cls, conn):
+        import faulthandler
+        faulthandler.enable()
+        faulthandler.register(signal.SIGTERM, chain=True)
+        faulthandler.register(signal.SIGUSR1, chain=True)
+
+        multiprocessing.util.log_to_stderr(logging.INFO)
+
         def handler(signum, frame):
-            pass
+            print("child: got SIGUSR1", flush=True)
+
         signal.signal(signal.SIGUSR1, handler)
+        print("child: register SIGUSR1 handler, send ready", flush=True)
+
         conn.send('ready')
+
+        print("child: wait 1234", flush=True)
         x = conn.recv()
+
+        print("child: send back 1234", flush=True)
         conn.send(x)
+
+        print("child: big blocking send", flush=True)
         conn.send_bytes(b'x' * (1024 * 1024))   # sending 1 MiB should block
+
+        print("child: done", flush=True)
+
+    @classmethod
+    def _test_ignore(cls, conn):
+        print(f"child: pid={os.getpid()}", flush=True)
+        try:
+            cls._test_ignore_impl(conn)
+        except Exception as exc:
+            print("child: ERR", flush=True)
+            print("child: ERR: %s" % exc, flush=True)
+            print("child: ERR: %r" % exc, flush=True)
+            raise
+
 
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore(self):
+        multiprocessing.util.log_to_stderr(logging.INFO)
+
+        print(f"parent: pid={os.getpid()}", flush=True)
         conn, child_conn = multiprocessing.Pipe()
         try:
             p = multiprocessing.Process(target=self._test_ignore,
                                         args=(child_conn,))
             p.daemon = True
+            print(f"parent: start child", flush=True)
             p.start()
+            print(f"parent: p={p}", flush=True)
+            print(f"parent: p.ident={p.ident}", flush=True)
             child_conn.close()
+
             self.assertEqual(conn.recv(), 'ready')
+            print(f"parent: ready received", flush=True)
+
             time.sleep(0.1)
+
+            print(f"parent: first SIGUSR1", flush=True)
             os.kill(p.pid, signal.SIGUSR1)
+
             time.sleep(0.1)
+
+            print(f"parent: send 1234", flush=True)
             conn.send(1234)
+
+            print(f"parent: wait 1234", flush=True)
             self.assertEqual(conn.recv(), 1234)
             time.sleep(0.1)
+
+            print(f"parent: second SIGUSR1", flush=True)
             os.kill(p.pid, signal.SIGUSR1)
+
+            print(f"parent: wait bytes", flush=True)
             self.assertEqual(conn.recv_bytes(), b'x'*(1024*1024))
             time.sleep(0.1)
+
+            print(f"parent: join child", flush=True)
             p.join()
+
+            print(f"parent: done", flush=True)
         finally:
             conn.close()
+
+        del multiprocessing.util._logger.handlers[-1]
 
     @classmethod
     def _test_ignore_listener(cls, conn):
