@@ -862,7 +862,7 @@ series of :term:`arguments <argument>`:
 .. productionlist::
    call: `primary` "(" [`argument_list` [","] | `comprehension`] ")"
    argument_list: `positional_arguments` ["," `starred_and_keywords`]
-                :   ["," `keywords_arguments`]
+                : ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
    positional_arguments: ["*"] `expression` ("," ["*"] `expression`)*
