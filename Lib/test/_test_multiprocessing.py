@@ -4340,11 +4340,6 @@ class TestIgnoreEINTR(unittest.TestCase):
 
     @classmethod
     def _test_ignore_impl(cls, conn):
-        import faulthandler
-        faulthandler.enable()
-        faulthandler.register(signal.SIGTERM, chain=True)
-        faulthandler.register(signal.SIGUSR1, chain=True)
-
         def handler(signum, frame):
             #DEBUG("child: got SIGUSR1")
             pass
