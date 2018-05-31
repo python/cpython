@@ -408,10 +408,9 @@ efficiently (see :issue:`33671`).
 the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
 
 On OSX `fcopyfile`_ is used to copy the file content (not metadata).
-On Linux, Solaris and other POSIX platforms
-where :func:`os.sendfile` supports copies between 2 regular file descriptors
-:func:`os.sendfile` is used.
-On Windows `CopyFile`_ is used by all copy functions except :func:`copyfile`.
+On Linux,  Solaris and other POSIX platforms where :func:`os.sendfile` supports
+copies between 2 regular file descriptors :func:`os.sendfile` is used.
+On Windows `CopyFileEx`_ is used by all copy functions except :func:`copyfile`.
 
 If the fast-copy operation fails and no data was written in the destination
 file then shutil will silently fallback on using less efficient
@@ -702,8 +701,8 @@ Querying the size of the output terminal
 
    .. versionadded:: 3.3
 
-.. _`CopyFile`:
-   https://msdn.microsoft.com/en-us/library/windows/desktop/aa363851(v=vs.85).aspx
+.. _`CopyFileEx`:
+   https://msdn.microsoft.com/en-us/library/windows/desktop/aa363852(v=vs.85).aspx
 
 .. _`fcopyfile`:
    http://www.manpagez.com/man/3/fcopyfile/
