@@ -1926,6 +1926,12 @@ class _ZeroCopyFileTest(object):
         with self.get_files() as (src, dst):
             self.zerocopy_fun(src, dst)
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
+        # Make sure the fallback function is not called.
+        with self.get_files() as (src, dst):
+            fun = shutil.copy2 if os.name == 'nt' else shutil.copyfile
+            with unittest.mock.patch('shutil.copyfileobj') as m:
+                fun(TESTFN, TESTFN2)
+            assert not m.called
 
     @unittest.skipIf(os.name == 'nt', 'POSIX only')
     def test_non_regular_file_src(self):
@@ -1970,8 +1976,8 @@ class _ZeroCopyFileTest(object):
     def test_unhandled_exception(self):
         with unittest.mock.patch(self.PATCHPOINT,
                                  side_effect=ZeroDivisionError):
-            self.assertRaises(ZeroDivisionError,
-                              shutil.copyfile, TESTFN, TESTFN2)
+            fun = shutil.copy2 if os.name == 'nt' else shutil.copyfile
+            self.assertRaises(ZeroDivisionError, fun, TESTFN, TESTFN2)
 
     @unittest.skipIf(os.name == 'nt', 'POSIX only')
     def test_exception_on_first_call(self):

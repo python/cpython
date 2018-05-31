@@ -229,10 +229,6 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if not follow_symlinks and os.path.islink(src):
         os.symlink(os.readlink(src), dst)
     else:
-        if os.name == 'nt':
-            _fastcopy_win(src, dst)
-            return dst
-
         with open(src, 'rb') as fsrc:
             with open(dst, 'wb') as fdst:
                 _fastcopy_fileobj(fsrc, fdst)
@@ -370,6 +366,9 @@ def copy2(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
+    if os.name == 'nt':
+        _fastcopy_win(src, dst)
+        return dst
     copyfile(src, dst, follow_symlinks=follow_symlinks)
     copystat(src, dst, follow_symlinks=follow_symlinks)
     return dst
