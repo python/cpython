@@ -1,0 +1,4 @@
+Fix the call to ``os.chmod()`` for ``uu.decode()`` if a mode is given or
+decoded.
+
+Patch by Timo Furrer.
