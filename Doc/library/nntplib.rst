@@ -542,7 +542,7 @@ them have been superseded by newer commands in :rfc:`3977`.
       is supplied, then the returned *list* is an empty list. This is an optional NNTP
       extension, and may not be supported by all servers.
 
-      RFC2980 says "It is suggested that this extension be deprecated".  Use
+      :rfc:`2980` says "It is suggested that this extension be deprecated".  Use
       :meth:`descriptions` or :meth:`description` instead.
 
 
