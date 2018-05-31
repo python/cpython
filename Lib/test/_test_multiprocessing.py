@@ -24,6 +24,8 @@ import test.support
 import test.support.script_helper
 from test import support
 
+import multiprocessing.forkserver
+
 
 # Skip tests if _multiprocessing wasn't built.
 _multiprocessing = test.support.import_module('_multiprocessing')
@@ -4358,7 +4360,7 @@ class TestIgnoreEINTR(unittest.TestCase):
 
     @classmethod
     def _test_ignore(cls, conn):
-        print(f"child: pid={os.getpid()}", flush=True)
+        print(f"child: pid={os.getpid()} ppid={os.getppid()}", flush=True)
         try:
             cls._test_ignore_impl(conn)
         except Exception as exc:
@@ -4371,6 +4373,11 @@ class TestIgnoreEINTR(unittest.TestCase):
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore(self):
         print(f"parent: pid={os.getpid()}", flush=True)
+
+        is_forkserver = (multiprocessing.get_start_method() == 'forkserver')
+        if is_forkserver:
+            print(f"parent: fork server pid={multiprocessing.forkserver._forkserver._forkserver_pid!r}", flush=True)
+
         conn, child_conn = multiprocessing.Pipe()
         try:
             p = multiprocessing.Process(target=self._test_ignore,
@@ -4409,6 +4416,8 @@ class TestIgnoreEINTR(unittest.TestCase):
             print(f"parent: join child", flush=True)
             p.join()
 
+            if is_forkserver:
+                print(f"parent: fork server pid={multiprocessing.forkserver._forkserver._forkserver_pid!r}")
             print(f"parent: done", flush=True)
         finally:
             conn.close()
@@ -4425,6 +4434,11 @@ class TestIgnoreEINTR(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore_listener(self):
+        is_forkserver = (multiprocessing.get_start_method() == 'forkserver')
+        if is_forkserver:
+            print(flush=True)
+            print(f"test_ignore_listener parent: fork server pid={multiprocessing.forkserver._forkserver._forkserver_pid!r}", flush=True)
+
         conn, child_conn = multiprocessing.Pipe()
         try:
             p = multiprocessing.Process(target=self._test_ignore_listener,
