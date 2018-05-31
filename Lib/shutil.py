@@ -50,7 +50,7 @@ elif os.name == 'nt':
     import _winapi
 
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
-_HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")
+_HAS_COPYFILE = posix and hasattr(posix, "_copyfile")  # OSX
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
@@ -95,18 +95,12 @@ def copyfileobj(fsrc, fdst, length=16*1024):
             break
         fdst.write(buf)
 
-def _fastcopy_osx(fsrc, fdst):
-    """Copy 2 regular mmap-like files by using high-performance
-    fcopyfile() syscall (OSX only).
+def _fastcopy_osx(src, dst, flags):
+    """Copy 2 regular mmap-like files content or metadata by using
+    high-performance copyfile(3) syscall (OSX only).
     """
     try:
-        infd = fsrc.fileno()
-        outfd = fdst.fileno()
-    except Exception as err:
-        raise _GiveupOnFastCopy(err)  # not a regular file
-
-    try:
-        posix._fcopyfile(infd, outfd)
+        posix._copyfile(src, dst, flags)
     except OSError as err:
         if err.errno in {errno.EINVAL, errno.ENOTSUP}:
             raise _GiveupOnFastCopy(err)
@@ -114,12 +108,14 @@ def _fastcopy_osx(fsrc, fdst):
             raise err from None
 
 def _fastcopy_win(fsrc, fdst):
-    """Copy 2 files by using high-performance CopyFileW (Windows only)."""
+    """Copy 2 files by using high-performance CopyFileExW (Windows only).
+    Note: this will also copy file metadata.
+    """
     _winapi.CopyFileExW(fsrc, fdst, 0)
 
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
-    high-performance sendfile() method.
+    high-performance sendfile(2) syscall.
     This should work on Linux >= 2.6.33 and Solaris only.
     """
     global _HAS_SENDFILE
@@ -165,10 +161,9 @@ def _fastcopy_sendfile(fsrc, fdst):
             offset += sent
 
 def _fastcopy_fileobj(fsrc, fdst):
-    """Copy 2 regular mmap-like fds by using zero-copy sendfile(2)
-    (Linux) and fcopyfile(2) (OSX) syscalls.
-    In case of error fallback on using plain read()/write() if no
-    data was copied.
+    """Copy 2 regular mmap-like files by using zero-copy sendfile(2)
+    syscall first. In case of error and no data was written in fdst
+    fallback on using plain read()/write() method.
     """
     # Note: copyfileobj() is left alone in order to not introduce any
     # unexpected breakage. Possible risks by using zero-copy calls
@@ -178,19 +173,12 @@ def _fastcopy_fileobj(fsrc, fdst):
     # - fsrc may be a BufferedReader (which hides unread data in a buffer),
     #   GzipFile (which decompresses data), HTTPResponse (which decodes
     #   chunks).
-    # - possibly others
+    # - possibly others (e.g. encrypted fs/partition?)
     if _HAS_SENDFILE:
         try:
             return _fastcopy_sendfile(fsrc, fdst)
         except _GiveupOnFastCopy:
             pass
-
-    if _HAS_FCOPYFILE:
-        try:
-            return _fastcopy_osx(fsrc, fdst)
-        except _GiveupOnFastCopy:
-            pass
-
     return copyfileobj(fsrc, fdst)
 
 def _samefile(src, dst):
@@ -229,6 +217,13 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if not follow_symlinks and os.path.islink(src):
         os.symlink(os.readlink(src), dst)
     else:
+        if _HAS_COPYFILE:
+            try:
+                _fastcopy_osx(src, dst, posix._COPYFILE_DATA)
+                return dst
+            except _GiveupOnFastCopy:
+                pass
+
         with open(src, 'rb') as fsrc:
             with open(dst, 'wb') as fdst:
                 _fastcopy_fileobj(fsrc, fdst)

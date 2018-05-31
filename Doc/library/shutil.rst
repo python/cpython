@@ -407,7 +407,7 @@ efficiently (see :issue:`33671`).
 "fast-copy" means that the copying operation occurs within the kernel, avoiding
 the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
 
-On OSX `fcopyfile`_ is used to copy the file content (not metadata).
+On OSX `copyfile`_ is used to copy the file content (not metadata).
 On Linux,  Solaris and other POSIX platforms where :func:`os.sendfile` supports
 copies between 2 regular file descriptors :func:`os.sendfile` is used.
 On Windows `CopyFileEx`_ is used by all copy functions except :func:`copyfile`.
@@ -704,8 +704,8 @@ Querying the size of the output terminal
 .. _`CopyFileEx`:
    https://msdn.microsoft.com/en-us/library/windows/desktop/aa363852(v=vs.85).aspx
 
-.. _`fcopyfile`:
-   http://www.manpagez.com/man/3/fcopyfile/
+.. _`copyfile`:
+   http://www.manpagez.com/man/3/copyfile/
 
 .. _`Other Environment Variables`:
    http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003

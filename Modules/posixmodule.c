@@ -8751,25 +8751,25 @@ done:
 
 #if defined(__APPLE__)
 /*[clinic input]
-os._fcopyfile
+os._copyfile
 
-    infd: int
-    outfd: int
+    src: str
+    dst: str
+    flags: int
     /
 
 Efficiently copy the content of 2 file descriptors (OSX only).
 [clinic start generated code]*/
 
 static PyObject *
-os__fcopyfile_impl(PyObject *module, int infd, int outfd)
-/*[clinic end generated code: output=3e629d5c50b33d04 input=ef4f7667f63d3e42]*/
+os__copyfile_impl(PyObject *module, const char *src, const char *dst,
+                  int flags)
+/*[clinic end generated code: output=c046031d7856e1e3 input=ef9a191e17624373]*/
 {
-    // copyfile() source code:
-    // https://opensource.apple.com/source/copyfile/copyfile-42/copyfile.c
     int ret;
 
     Py_BEGIN_ALLOW_THREADS
-    ret = fcopyfile(infd, outfd, NULL, COPYFILE_DATA);
+    ret = copyfile(src, dst, NULL, flags);
     Py_END_ALLOW_THREADS
     if (ret < 0)
         return PyErr_SetFromErrno(PyExc_OSError);
@@ -12954,7 +12954,7 @@ static PyMethodDef posix_methods[] = {
     OS_UTIME_METHODDEF
     OS_TIMES_METHODDEF
     OS__EXIT_METHODDEF
-    OS__FCOPYFILE_METHODDEF
+    OS__COPYFILE_METHODDEF
     OS_EXECV_METHODDEF
     OS_EXECVE_METHODDEF
     OS_SPAWNV_METHODDEF
@@ -13572,6 +13572,10 @@ all_ins(PyObject *m)
 #ifdef HAVE_GETRANDOM_SYSCALL
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
+#endif
+
+#if defined(__APPLE__)
+    if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
 #endif
 
     return 0;

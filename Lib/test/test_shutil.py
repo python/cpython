@@ -33,7 +33,7 @@ from test import support
 from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
-HAS_OSX_ZEROCOPY = hasattr(posix, "_fcopyfile")
+HAS_OSX_ZEROCOPY = hasattr(posix, "_copyfile")
 
 try:
     import grp
@@ -1807,7 +1807,7 @@ class TestCopyFile(unittest.TestCase):
 
         self.assertRaises(OSError, shutil.copyfile, 'srcfile', 'destfile')
 
-    @unittest.skipIf(os.name == 'nt', "not POSIX")
+    @unittest.skipIf(HAS_OSX_ZEROCOPY, "skipped on OSX")
     def test_w_dest_open_fails(self):
 
         srcfile = self.Faux()
@@ -1827,7 +1827,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot open "destfile"',))
 
-    @unittest.skipIf(os.name == 'nt', "not POSIX")
+    @unittest.skipIf(HAS_OSX_ZEROCOPY, "skipped on OSX")
     def test_w_dest_close_fails(self):
 
         srcfile = self.Faux()
@@ -1850,7 +1850,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot close',))
 
-    @unittest.skipIf(os.name == 'nt', "not POSIX")
+    @unittest.skipIf(HAS_OSX_ZEROCOPY, "skipped on OSX")
     def test_w_source_close_fails(self):
 
         srcfile = self.Faux(True)
@@ -1933,26 +1933,6 @@ class _ZeroCopyFileTest(object):
                 fun(TESTFN, TESTFN2)
             assert not m.called
 
-    @unittest.skipIf(os.name == 'nt', 'POSIX only')
-    def test_non_regular_file_src(self):
-        with io.BytesIO(self.FILEDATA) as src:
-            with open(TESTFN2, "wb") as dst:
-                with self.assertRaises(_GiveupOnFastCopy):
-                    self.zerocopy_fun(src, dst)
-                shutil.copyfileobj(src, dst)
-
-        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
-
-    @unittest.skipIf(os.name == 'nt', 'POSIX only')
-    def test_non_regular_file_dst(self):
-        with open(TESTFN, "rb") as src:
-            with io.BytesIO() as dst:
-                with self.assertRaises(_GiveupOnFastCopy):
-                    self.zerocopy_fun(src, dst)
-                shutil.copyfileobj(src, dst)
-                dst.seek(0)
-                self.assertEqual(dst.read(), self.FILEDATA)
-
     def test_non_existent_src(self):
         name = tempfile.mktemp()
         with self.assertRaises(FileNotFoundError) as cm:
@@ -2005,6 +1985,26 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
 
     def zerocopy_fun(self, *args, **kwargs):
         return shutil._fastcopy_sendfile(*args, **kwargs)
+
+    @unittest.skipIf(os.name == 'nt', 'POSIX only')
+    def test_non_regular_file_src(self):
+        with io.BytesIO(self.FILEDATA) as src:
+            with open(TESTFN2, "wb") as dst:
+                with self.assertRaises(_GiveupOnFastCopy):
+                    self.zerocopy_fun(src, dst)
+                shutil.copyfileobj(src, dst)
+
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
+
+    @unittest.skipIf(os.name == 'nt', 'POSIX only')
+    def test_non_regular_file_dst(self):
+        with open(TESTFN, "rb") as src:
+            with io.BytesIO() as dst:
+                with self.assertRaises(_GiveupOnFastCopy):
+                    self.zerocopy_fun(src, dst)
+                shutil.copyfileobj(src, dst)
+                dst.seek(0)
+                self.assertEqual(dst.read(), self.FILEDATA)
 
     def test_exception_on_second_call(self):
         def sendfile(*args, **kwargs):
@@ -2102,10 +2102,10 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
 
 @unittest.skipIf(not HAS_OSX_ZEROCOPY, 'OSX only')
 class TestZeroCopyOSX(_ZeroCopyFileTest, unittest.TestCase):
-    PATCHPOINT = "posix._fcopyfile"
+    PATCHPOINT = "posix._copyfile"
 
-    def zerocopy_fun(self, *args, **kwargs):
-        return shutil._fastcopy_osx(*args, **kwargs)
+    def zerocopy_fun(self, src, dst):
+        return shutil._fastcopy_osx(src.name, dst.name, posix._COPYFILE_DATA)
 
 
 @unittest.skipIf(not os.name == 'nt', 'Windows only')

@@ -3855,30 +3855,32 @@ exit:
 
 #if defined(__APPLE__)
 
-PyDoc_STRVAR(os__fcopyfile__doc__,
-"_fcopyfile($module, infd, outfd, /)\n"
+PyDoc_STRVAR(os__copyfile__doc__,
+"_copyfile($module, src, dst, flags, /)\n"
 "--\n"
 "\n"
 "Efficiently copy the content of 2 file descriptors (OSX only).");
 
-#define OS__FCOPYFILE_METHODDEF    \
-    {"_fcopyfile", (PyCFunction)os__fcopyfile, METH_FASTCALL, os__fcopyfile__doc__},
+#define OS__COPYFILE_METHODDEF    \
+    {"_copyfile", (PyCFunction)os__copyfile, METH_FASTCALL, os__copyfile__doc__},
 
 static PyObject *
-os__fcopyfile_impl(PyObject *module, int infd, int outfd);
+os__copyfile_impl(PyObject *module, const char *src, const char *dst,
+                  int flags);
 
 static PyObject *
-os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+os__copyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int infd;
-    int outfd;
+    const char *src;
+    const char *dst;
+    int flags;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:_fcopyfile",
-        &infd, &outfd)) {
+    if (!_PyArg_ParseStack(args, nargs, "ssi:_copyfile",
+        &src, &dst, &flags)) {
         goto exit;
     }
-    return_value = os__fcopyfile_impl(module, infd, outfd);
+    return_value = os__copyfile_impl(module, src, dst, flags);
 
 exit:
     return return_value;
@@ -6447,9 +6449,9 @@ exit:
     #define OS_PREADV_METHODDEF
 #endif /* !defined(OS_PREADV_METHODDEF) */
 
-#ifndef OS__FCOPYFILE_METHODDEF
-    #define OS__FCOPYFILE_METHODDEF
-#endif /* !defined(OS__FCOPYFILE_METHODDEF) */
+#ifndef OS__COPYFILE_METHODDEF
+    #define OS__COPYFILE_METHODDEF
+#endif /* !defined(OS__COPYFILE_METHODDEF) */
 
 #ifndef OS_PIPE_METHODDEF
     #define OS_PIPE_METHODDEF
@@ -6626,4 +6628,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=9071e1a8268b2f33 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7be32965983d4fd3 input=a9049054013a1b77]*/
