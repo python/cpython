@@ -1458,6 +1458,8 @@ class TestShutil(unittest.TestCase):
         self.assertRaises(SameFileError, shutil.copyfile, src_file, src_file)
         # But Error should work too, to stay backward compatible.
         self.assertRaises(Error, shutil.copyfile, src_file, src_file)
+        # Make sure file is not corrupted.
+        self.assertEqual(read_file(src_file), 'foo')
 
     def test_copytree_return_value(self):
         # copytree returns its destination path.
@@ -1941,10 +1943,10 @@ class _ZeroCopyFileTest(object):
     def test_same_file(self):
         self.addCleanup(self.reset)
         with self.get_files() as (src, dst):
-            with self.assertRaises(_GiveupOnFastCopy):
+            with self.assertRaises(Exception):
                 self.zerocopy_fun(src, src)
-        with self.assertRaises(shutil.SameFileError):
-            shutil.copyfile(TESTFN, TESTFN)
+        # Make sure src file is not corrupted.
+        self.assertEqual(read_file(TESTFN, binary=True), self.FILEDATA)
 
     def test_non_existent_src(self):
         name = tempfile.mktemp()
