@@ -317,7 +317,7 @@ sophisticated and robust capabilities of its larger packages. For example:
   names, no direct knowledge or handling of XML is needed.
 
 * The :mod:`email` package is a library for managing email messages, including
-  MIME and other RFC 2822-based message documents. Unlike :mod:`smtplib` and
+  MIME and other :rfc:`2822`-based message documents. Unlike :mod:`smtplib` and
   :mod:`poplib` which actually send and receive messages, the email package has
   a complete toolset for building or decoding complex message structures
   (including attachments) and for implementing internet encoding and header
