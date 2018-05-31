@@ -90,8 +90,8 @@ Event
    An Event implementation, asynchronous equivalent to :class:`threading.Event`.
 
    Class implementing event objects. An event manages a flag that can be set to
-   true with the :meth:`set` method and reset to false with the :meth:`clear`
-   method.  The :meth:`wait` method blocks until the flag is true. The flag is
+   true with the :meth:`.set` method and reset to false with the :meth:`.clear`
+   method.  The :meth:`.wait` method blocks until the flag is true. The flag is
    initially false.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
@@ -99,7 +99,7 @@ Event
    .. method:: clear()
 
       Reset the internal flag to false. Subsequently, coroutines calling
-      :meth:`wait` will block until :meth:`set` is called to set the internal
+      :meth:`.wait` will block until :meth:`.set` is called to set the internal
       flag to true again.
 
    .. method:: is_set()
@@ -109,7 +109,7 @@ Event
    .. method:: set()
 
       Set the internal flag to true. All coroutines waiting for it to become
-      true are awakened. Coroutine that call :meth:`wait` once the flag is true
+      true are awakened. Coroutine that call :meth:`.wait` once the flag is true
       will not block at all.
 
    .. coroutinemethod:: wait()
@@ -117,7 +117,7 @@ Event
       Block until the internal flag is true.
 
       If the internal flag is true on entry, return ``True`` immediately.
-      Otherwise, block until another coroutine calls :meth:`set` to set the
+      Otherwise, block until another coroutine calls :meth:`.set` to set the
       flag to true, then return ``True``.
 
       This method is a :ref:`coroutine <coroutine>`.
