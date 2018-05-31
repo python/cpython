@@ -844,7 +844,8 @@ for character in (
     '\u20AC',
 ):
     try:
-        os.fsdecode(os.fsencode(character))
+        if os.fsdecode(os.fsencode(character)) != character:
+            raise UnicodeError
     except UnicodeError:
         pass
     else:
