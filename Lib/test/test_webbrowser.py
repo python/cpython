@@ -302,7 +302,7 @@ class ImportTest(unittest.TestCase):
         webbrowser = support.import_fresh_module('webbrowser')
         try:
             browser = webbrowser.get().name
-        except webbrowser.Error as err:
+        except (webbrowser.Error, AttributeError) as err:
             self.skipTest(str(err))
         with support.EnvironmentVarGuard() as env:
             env["BROWSER"] = browser
