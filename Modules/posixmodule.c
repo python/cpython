@@ -8771,7 +8771,7 @@ os__copyfile_impl(PyObject *module, path_t *src, path_t *dst, int flags)
     ret = copyfile(src->narrow, dst->narrow, NULL, flags);
     Py_END_ALLOW_THREADS
     if (ret < 0)
-        return path_error2(src, dst);
+        return path_error(src);
     Py_RETURN_NONE;
 }
 #endif

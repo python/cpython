@@ -33,9 +33,7 @@ from test import support
 from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
-WINDOWS = os.name == "nt"
 OSX = sys.platform.startswith("darwin")
-
 try:
     import grp
     import pwd
@@ -1939,8 +1937,6 @@ class _ZeroCopyFileTest(object):
         with self.assertRaises(FileNotFoundError) as cm:
             shutil.copyfile(name, "new")
         self.assertEqual(cm.exception.filename, name)
-        if OSX or WINDOWS:
-            self.assertEqual(cm.exception.filename2, "new")
 
     def test_empty_file(self):
         srcname = TESTFN + 'src'
