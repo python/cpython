@@ -145,7 +145,7 @@ script:
   # Check that all symbols exported by libpython start with "Py" or "_Py"
   - make smelly
   # `-r -w` implicitly provided through `make buildbottest`.
-  - make buildbottest TESTOPTS="-j4 -uall,-cpu"
+  - make buildbottest TESTOPTS="-j4 -uall,-cpu --randseed=7474929"
 
 notifications:
   email: false
