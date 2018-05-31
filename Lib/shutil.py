@@ -99,6 +99,10 @@ def _fastcopy_osx(src, dst, flags):
     """Copy 2 regular mmap-like files content or metadata by using
     high-performance copyfile(3) syscall (OSX only).
     """
+    if _samefile(src, dst):
+        # ...or else copyfile() returns immediately and deletes src
+        # file content.
+        raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
     try:
         posix._copyfile(src, dst, flags)
     except OSError as err:
