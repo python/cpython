@@ -24,6 +24,8 @@ import test.support
 import test.support.script_helper
 from test import support
 
+import multiprocessing.forkserver
+
 
 # Skip tests if _multiprocessing wasn't built.
 _multiprocessing = test.support.import_module('_multiprocessing')
@@ -4328,38 +4330,98 @@ class TestCloseFds(unittest.TestCase):
 # Issue #17097: EINTR should be ignored by recv(), send(), accept() etc
 #
 
+def DEBUG(msg):
+    try:
+        print(msg, file=sys.__stdout__, flush=True)
+    except:
+        pass
+
 class TestIgnoreEINTR(unittest.TestCase):
 
     @classmethod
-    def _test_ignore(cls, conn):
+    def _test_ignore_impl(cls, conn):
         def handler(signum, frame):
+            #DEBUG("child: got SIGUSR1")
             pass
+
         signal.signal(signal.SIGUSR1, handler)
+        DEBUG("child: register SIGUSR1 handler, send ready")
+
         conn.send('ready')
+
+        #DEBUG("child: wait 1234")
         x = conn.recv()
+
+        #DEBUG("child: send back 1234")
         conn.send(x)
+
+        #DEBUG("child: send BIG")
         conn.send_bytes(b'x' * (1024 * 1024))   # sending 1 MiB should block
+
+        DEBUG("child: done")
+
+    @classmethod
+    def _test_ignore(cls, conn):
+        DEBUG(f"child: pid={os.getpid()} ppid={os.getppid()}")
+        try:
+            cls._test_ignore_impl(conn)
+        except Exception as exc:
+            DEBUG("child: ERR")
+            DEBUG("child: ERR: %s" % exc)
+            DEBUG("child: ERR: %r" % exc)
+            raise
+
 
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore(self):
+        DEBUG(f"parent: pid={os.getpid()}")
+
+        is_forkserver = (multiprocessing.get_start_method() == 'forkserver')
+        if is_forkserver:
+            DEBUG(f"parent: fork server pid={multiprocessing.forkserver._forkserver._forkserver_pid!r}")
+
         conn, child_conn = multiprocessing.Pipe()
         try:
             p = multiprocessing.Process(target=self._test_ignore,
                                         args=(child_conn,))
             p.daemon = True
+            DEBUG(f"parent: start child")
             p.start()
+            DEBUG(f"parent: p={p}")
+            DEBUG(f"parent: p.ident={p.ident}")
             child_conn.close()
+
             self.assertEqual(conn.recv(), 'ready')
+            #DEBUG(f"parent: ready received")
+
             time.sleep(0.1)
+
+            #DEBUG(f"parent: first SIGUSR1")
             os.kill(p.pid, signal.SIGUSR1)
+
             time.sleep(0.1)
+
+            #DEBUG(f"parent: send 1234")
             conn.send(1234)
+
+            #DEBUG(f"parent: wait 1234")
             self.assertEqual(conn.recv(), 1234)
             time.sleep(0.1)
+
+            #DEBUG(f"parent: second SIGUSR1")
             os.kill(p.pid, signal.SIGUSR1)
+
+            #DEBUG(f"parent: wait BIG")
             self.assertEqual(conn.recv_bytes(), b'x'*(1024*1024))
+            DEBUG(f"parent: received BIG")
             time.sleep(0.1)
+
+            DEBUG(f"parent: join child")
             p.join()
+
+            if is_forkserver:
+                DEBUG(f"parent: fork server pid={multiprocessing.forkserver._forkserver._forkserver_pid!r}")
+            DEBUG(f"parent: done")
         finally:
             conn.close()
 
@@ -4375,6 +4437,11 @@ class TestIgnoreEINTR(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore_listener(self):
+        is_forkserver = (multiprocessing.get_start_method() == 'forkserver')
+        if is_forkserver:
+            print(flush=True)
+            print(f"test_ignore_listener parent: fork server pid={multiprocessing.forkserver._forkserver._forkserver_pid!r}", flush=True)
+
         conn, child_conn = multiprocessing.Pipe()
         try:
             p = multiprocessing.Process(target=self._test_ignore_listener,
