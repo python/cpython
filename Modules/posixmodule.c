@@ -8753,8 +8753,8 @@ done:
 /*[clinic input]
 os._copyfile
 
-    src: str
-    dst: str
+    src: path_t
+    dst: path_t
     flags: int
     /
 
@@ -8762,17 +8762,16 @@ Efficiently copy the content of 2 file descriptors (OSX only).
 [clinic start generated code]*/
 
 static PyObject *
-os__copyfile_impl(PyObject *module, const char *src, const char *dst,
-                  int flags)
-/*[clinic end generated code: output=c046031d7856e1e3 input=ef9a191e17624373]*/
+os__copyfile_impl(PyObject *module, path_t *src, path_t *dst, int flags)
+/*[clinic end generated code: output=d9f64f7425e4174b input=7e0bf8e81908f871]*/
 {
     int ret;
 
     Py_BEGIN_ALLOW_THREADS
-    ret = copyfile(src, dst, NULL, flags);
+    ret = copyfile(src->narrow, dst->narrow, NULL, flags);
     Py_END_ALLOW_THREADS
     if (ret < 0)
-        return PyErr_SetFromErrno(PyExc_OSError);
+        return path_error2(src, dst);
     Py_RETURN_NONE;
 }
 #endif

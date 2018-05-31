@@ -33,7 +33,8 @@ from test import support
 from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
-HAS_OSX_ZEROCOPY = hasattr(posix, "_copyfile")
+WINDOWS = os.name == "nt"
+OSX = sys.platform.startswith("darwin")
 
 try:
     import grp
@@ -1807,7 +1808,7 @@ class TestCopyFile(unittest.TestCase):
 
         self.assertRaises(OSError, shutil.copyfile, 'srcfile', 'destfile')
 
-    @unittest.skipIf(HAS_OSX_ZEROCOPY, "skipped on OSX")
+    @unittest.skipIf(OSX, "skipped on OSX")
     def test_w_dest_open_fails(self):
 
         srcfile = self.Faux()
@@ -1827,7 +1828,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot open "destfile"',))
 
-    @unittest.skipIf(HAS_OSX_ZEROCOPY, "skipped on OSX")
+    @unittest.skipIf(OSX, "skipped on OSX")
     def test_w_dest_close_fails(self):
 
         srcfile = self.Faux()
@@ -1850,7 +1851,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot close',))
 
-    @unittest.skipIf(HAS_OSX_ZEROCOPY, "skipped on OSX")
+    @unittest.skipIf(OSX, "skipped on OSX")
     def test_w_source_close_fails(self):
 
         srcfile = self.Faux(True)
@@ -1938,6 +1939,8 @@ class _ZeroCopyFileTest(object):
         with self.assertRaises(FileNotFoundError) as cm:
             shutil.copyfile(name, "new")
         self.assertEqual(cm.exception.filename, name)
+        if OSX or WINDOWS:
+            self.assertEqual(cm.exception.filename2, "new")
 
     def test_empty_file(self):
         srcname = TESTFN + 'src'
@@ -2100,7 +2103,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
             shutil._HAS_SENDFILE = True
 
 
-@unittest.skipIf(not HAS_OSX_ZEROCOPY, 'OSX only')
+@unittest.skipIf(not OSX, 'OSX only')
 class TestZeroCopyOSX(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "posix._copyfile"
 
