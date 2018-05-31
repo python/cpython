@@ -111,11 +111,17 @@ def _fastcopy_osx(src, dst, flags):
         else:
             raise err from None
 
-def _fastcopy_win(fsrc, fdst):
+def _fastcopy_win(src, dst):
     """Copy 2 files by using high-performance CopyFileExW (Windows only).
     Note: this will also copy file metadata.
     """
-    _winapi.CopyFileExW(fsrc, fdst, 0)
+    try:
+        _winapi.CopyFileExW(src, dst, 0)
+    except PermissionError as err:
+        if _samefile(src, dst):
+            raise SameFileError(
+                "{!r} and {!r} are the same file".format(src, dst))
+        raise err from None
 
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
