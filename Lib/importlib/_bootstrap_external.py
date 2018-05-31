@@ -246,7 +246,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.7a2  3391 (update GET_AITER #31709)
 #     Python 3.7a4  3392 (PEP 552: Deterministic pycs #31650)
 #     Python 3.7b1  3393 (remove STORE_ANNOTATION opcode #32550)
-#     Python 3.7rc1 3394 (restored docstring as the firts stmt in the body;
+#     Python 3.7b5  3394 (restored docstring as the firts stmt in the body;
 #                         this might affected the first line number #32911)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
