@@ -7,6 +7,7 @@ except ImportError:  # pragma: no cover
 
 from . import base_events
 from . import constants
+from . import futures
 from . import protocols
 from . import transports
 from .log import logger
@@ -490,6 +491,12 @@ class SSLProtocol(protocols.Protocol):
         if self._session_established:
             self._session_established = False
             self._loop.call_soon(self._app_protocol.connection_lost, exc)
+        else:
+            # Most likely an exception occurred while in SSL handshake.
+            # Just mark the app transport as closed so that its __del__
+            # doesn't complain.
+            if self._app_transport is not None:
+                self._app_transport._closed = True
         self._transport = None
         self._app_transport = None
         self._wakeup_waiter(exc)
@@ -605,10 +612,12 @@ class SSLProtocol(protocols.Protocol):
 
     def _check_handshake_timeout(self):
         if self._in_handshake is True:
-            logger.warning(
-                "SSL handshake for %r is taking longer than %r seconds: "
-                "aborting the connection", self, self._ssl_handshake_timeout)
-            self._abort()
+            msg = (
+                f"SSL handshake for {self} is taking longer than "
+                f"{self._ssl_handshake_timeout} seconds: "
+                f"aborting the connection"
+            )
+            self._fatal_error(ConnectionAbortedError(msg))
 
     def _on_handshake_complete(self, handshake_exc):
         self._in_handshake = False
@@ -620,21 +629,16 @@ class SSLProtocol(protocols.Protocol):
                 raise handshake_exc
 
             peercert = sslobj.getpeercert()
-        except BaseException as exc:
-            if self._loop.get_debug():
-                if isinstance(exc, ssl.CertificateError):
-                    logger.warning("%r: SSL handshake failed "
-                                   "on verifying the certificate",
-                                   self, exc_info=True)
-                else:
-                    logger.warning("%r: SSL handshake failed",
-                                   self, exc_info=True)
-            self._transport.close()
-            if isinstance(exc, Exception):
-                self._wakeup_waiter(exc)
-                return
+        except Exception as exc:
+            if isinstance(exc, ssl.CertificateError):
+                msg = (
+                    f'{self}: SSL handshake failed on verifying '
+                    f'the certificate'
+                )
             else:
-                raise
+                msg = f'{self}: SSL handshake failed'
+            self._fatal_error(exc, msg)
+            return
 
         if self._loop.get_debug():
             dt = self._loop.time() - self._handshake_start_time
@@ -702,19 +706,19 @@ class SSLProtocol(protocols.Protocol):
                 raise
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
-        # Should be called from exception handler only.
+        if self._transport:
+            self._transport._force_close(exc)
+
         if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
             if self._loop.get_debug():
                 logger.debug("%r: %s", self, message, exc_info=True)
-        else:
+        elif not isinstance(exc, futures.CancelledError):
             self._loop.call_exception_handler({
                 'message': message,
                 'exception': exc,
                 'transport': self._transport,
                 'protocol': self,
             })
-        if self._transport:
-            self._transport._force_close(exc)
 
     def _finalize(self):
         self._sslpipe = None

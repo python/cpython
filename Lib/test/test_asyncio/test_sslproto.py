@@ -49,35 +49,6 @@ class SslProtoHandshakeTests(test_utils.TestCase):
             ssl_proto.connection_made(transport)
         return transport
 
-    def test_cancel_handshake(self):
-        # Python issue #23197: cancelling a handshake must not raise an
-        # exception or log an error, even if the handshake failed
-        waiter = asyncio.Future(loop=self.loop)
-        ssl_proto = self.ssl_protocol(waiter=waiter)
-        handshake_fut = asyncio.Future(loop=self.loop)
-
-        def do_handshake(callback):
-            exc = Exception()
-            callback(exc)
-            handshake_fut.set_result(None)
-            return []
-
-        waiter.cancel()
-        self.connection_made(ssl_proto, do_handshake=do_handshake)
-
-        with test_utils.disable_logger():
-            self.loop.run_until_complete(handshake_fut)
-
-    def test_handshake_timeout(self):
-        # bpo-29970: Check that a connection is aborted if handshake is not
-        # completed in timeout period, instead of remaining open indefinitely
-        ssl_proto = self.ssl_protocol()
-        transport = self.connection_made(ssl_proto)
-
-        with test_utils.disable_logger():
-            self.loop.run_until_complete(tasks.sleep(0.2, loop=self.loop))
-        self.assertTrue(transport.abort.called)
-
     def test_handshake_timeout_zero(self):
         sslcontext = test_utils.dummy_ssl_context()
         app_proto = mock.Mock()
@@ -476,6 +447,116 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 await self.loop.start_tls(None, None, sslctx)
 
         self.loop.run_until_complete(main())
+
+    def test_handshake_timeout(self):
+        # bpo-29970: Check that a connection is aborted if handshake is not
+        # completed in timeout period, instead of remaining open indefinitely
+        client_sslctx = test_utils.simple_client_sslcontext()
+
+        # silence error logger
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        server_side_aborted = False
+
+        def server(sock):
+            nonlocal server_side_aborted
+            try:
+                sock.recv_all(1024 * 1024)
+            except ConnectionAbortedError:
+                server_side_aborted = True
+            finally:
+                sock.close()
+
+        async def client(addr):
+            await asyncio.wait_for(
+                self.loop.create_connection(
+                    asyncio.Protocol,
+                    *addr,
+                    ssl=client_sslctx,
+                    server_hostname='',
+                    ssl_handshake_timeout=10.0),
+                0.5,
+                loop=self.loop)
+
+        with self.tcp_server(server,
+                             max_clients=1,
+                             backlog=1) as srv:
+
+            with self.assertRaises(asyncio.TimeoutError):
+                self.loop.run_until_complete(client(srv.addr))
+
+        self.assertTrue(server_side_aborted)
+
+        # Python issue #23197: cancelling a handshake must not raise an
+        # exception or log an error, even if the handshake failed
+        self.assertEqual(messages, [])
+
+    def test_create_connection_ssl_slow_handshake(self):
+        client_sslctx = test_utils.simple_client_sslcontext()
+
+        # silence error logger
+        self.loop.set_exception_handler(lambda *args: None)
+
+        def server(sock):
+            try:
+                sock.recv_all(1024 * 1024)
+            except ConnectionAbortedError:
+                pass
+            finally:
+                sock.close()
+
+        async def client(addr):
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='',
+                loop=self.loop,
+                ssl_handshake_timeout=1.0)
+
+        with self.tcp_server(server,
+                             max_clients=1,
+                             backlog=1) as srv:
+
+            with self.assertRaisesRegex(
+                    ConnectionAbortedError,
+                    r'SSL handshake.*is taking longer'):
+
+                self.loop.run_until_complete(client(srv.addr))
+
+    def test_create_connection_ssl_failed_certificate(self):
+        # silence error logger
+        self.loop.set_exception_handler(lambda *args: None)
+
+        sslctx = test_utils.simple_server_sslcontext()
+        client_sslctx = test_utils.simple_client_sslcontext(
+            disable_verify=False)
+
+        def server(sock):
+            try:
+                sock.start_tls(
+                    sslctx,
+                    server_side=True)
+                sock.connect()
+            except ssl.SSLError:
+                pass
+            finally:
+                sock.close()
+
+        async def client(addr):
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='',
+                loop=self.loop,
+                ssl_handshake_timeout=1.0)
+
+        with self.tcp_server(server,
+                             max_clients=1,
+                             backlog=1) as srv:
+
+            with self.assertRaises(ssl.SSLCertVerificationError):
+                self.loop.run_until_complete(client(srv.addr))
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')
