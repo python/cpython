@@ -10,6 +10,7 @@ if sys.platform != 'win32':
 import _overlapped
 import _winapi
 
+import asyncio
 from asyncio import windows_utils
 from test import support
 
