@@ -835,22 +835,10 @@ class ArgsTestCase(BaseTestCase):
             import os
             import unittest
 
-            # Issue #25306: Disable popups and logs to stderr on assertion
-            # failures in MSCRT
-            try:
-                import msvcrt
-                msvcrt.CrtSetReportMode
-            except (ImportError, AttributeError):
-                # no Windows, o release build
-                pass
-            else:
-                for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-                    msvcrt.CrtSetReportMode(m, 0)
-
             class FDLeakTest(unittest.TestCase):
                 def test_leak(self):
                     fd = os.open(__file__, os.O_RDONLY)
-                    # bug: never cloes the file descriptor
+                    # bug: never close the file descriptor
         """)
         self.check_leak(code, 'file descriptors')
 
