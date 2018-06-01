@@ -519,8 +519,9 @@ class SSLProtocol(protocols.Protocol):
             ssldata, appdata = self._sslpipe.feed_ssldata(data)
         except ssl.SSLError as e:
             if self._loop.get_debug():
-                logger.warning('%r: SSL error errno: %s (reason %s)',
-                               self, getattr(e, 'errno', None), e.reason)
+                logger.warning('%r: SSL error errno:%s (reason %s)',
+                               self, getattr(e, 'errno', 'missing'),
+                               e.reason)
             self._abort()
             return
 
