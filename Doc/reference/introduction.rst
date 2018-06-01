@@ -22,7 +22,7 @@ language, maybe you could volunteer your time --- or invent a cloning machine
 
 It is dangerous to add too many implementation details to a language reference
 document --- the implementation may change, and other implementations of the
-same language may work differently.  On the other hand, CPython is the one
+same language may work differently. On the other hand, CPython is the one
 Python implementation in widespread use (although alternate implementations
 continue to gain support), and its particular quirks are sometimes worth being
 mentioned, especially where the implementation imposes additional limitations.
@@ -30,7 +30,7 @@ Therefore, you'll find short "implementation notes" sprinkled throughout the
 text.
 
 Every Python implementation comes with a number of built-in and standard
-modules.  These are documented in :ref:`library-index`.  A few built-in modules
+modules. These are documented in :ref:`library-index`. A few built-in modules
 are mentioned when they interact in a significant way with the language
 definition.
 
@@ -51,15 +51,15 @@ CPython
    New language features generally appear here first.
 
 Jython
-   Python implemented in Java.  This implementation can be used as a scripting
+   Python implemented in Java. This implementation can be used as a scripting
    language for Java applications, or can be used to create applications using the
-   Java class libraries.  It is also often used to create tests for Java libraries.
+   Java class libraries. It is also often used to create tests for Java libraries.
    More information can be found at `the Jython website <http://www.jython.org/>`_.
 
 Python for .NET
    This implementation actually uses the CPython implementation, but is a managed
-   .NET application and makes .NET libraries available.  It was created by Brian
-   Lloyd.  For more information, see the `Python for .NET home page
+   .NET application and makes .NET libraries available. It was created by Brian
+   Lloyd. For more information, see the `Python for .NET home page
    <https://pythonnet.github.io/>`_.
 
 IronPython
@@ -73,12 +73,12 @@ PyPy
    advanced features not found in other implementations like stackless support
    and a Just in Time compiler. One of the goals of the project is to encourage
    experimentation with the language itself by making it easier to modify the
-   interpreter (since it is written in Python).  Additional information is
+   interpreter (since it is written in Python). Additional information is
    available on `the PyPy project's home page <http://pypy.org/>`_.
 
 Each of these implementations varies in some way from the language as documented
 in this manual, or introduces specific information beyond what's covered in the
-standard Python documentation.  Please refer to the implementation-specific
+standard Python documentation. Please refer to the implementation-specific
 documentation to determine what else you need to know about the specific
 implementation you're using.
 
@@ -91,25 +91,25 @@ Notation
 .. index:: BNF, grammar, syntax, notation
 
 The descriptions of lexical analysis and syntax use a modified BNF grammar
-notation.  This uses the following style of definition:
+notation. This uses the following style of definition:
 
 .. productionlist:: *
    name: `lc_letter` (`lc_letter` | "_")*
    lc_letter: "a"..."z"
 
 The first line says that a ``name`` is an ``lc_letter`` followed by a sequence
-of zero or more ``lc_letter``\ s and underscores.  An ``lc_letter`` in turn is
-any of the single characters ``'a'`` through ``'z'``.  (This rule is actually
+of zero or more ``lc_letter``\ s and underscores. An ``lc_letter`` in turn is
+any of the single characters ``'a'`` through ``'z'``. (This rule is actually
 adhered to for the names defined in lexical and grammar rules in this document.)
 
 Each rule begins with a name (which is the name defined by the rule) and
-``::=``.  A vertical bar (``|``) is used to separate alternatives; it is the
-least binding operator in this notation.  A star (``*``) means zero or more
+``::=``. A vertical bar (``|``) is used to separate alternatives; it is the
+least binding operator in this notation. A star (``*``) means zero or more
 repetitions of the preceding item; likewise, a plus (``+``) means one or more
 repetitions, and a phrase enclosed in square brackets (``[ ]``) means zero or
-one occurrences (in other words, the enclosed phrase is optional).  The ``*``
+one occurrences (in other words, the enclosed phrase is optional). The ``*``
 and ``+`` operators bind as tightly as possible; parentheses are used for
-grouping.  Literal strings are enclosed in quotes.  White space is only
+grouping.  Literal strings are enclosed in quotes. White space is only
 meaningful to separate tokens. Rules are normally contained on a single line;
 rules with many alternatives may be formatted alternatively with each line after
 the first beginning with a vertical bar.
@@ -118,7 +118,7 @@ the first beginning with a vertical bar.
 
 In lexical definitions (as the example above), two more conventions are used:
 Two literal characters separated by three dots mean a choice of any single
-character in the given (inclusive) range of ASCII characters.  A phrase between
+character in the given (inclusive) range of ASCII characters. A phrase between
 angular brackets (``<...>``) gives an informal description of the symbol
 defined; e.g., this could be used to describe the notion of 'control character'
 if needed.
@@ -129,4 +129,3 @@ operates on the individual characters of the input source, while a syntax
 definition operates on the stream of tokens generated by the lexical analysis.
 All uses of BNF in the next chapter ("Lexical Analysis") are lexical
 definitions; uses in subsequent chapters are syntactic definitions.
-
