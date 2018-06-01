@@ -272,6 +272,8 @@ functions:
 
       pr.print_stats()
 
+   .. versionadded:: 3.8
+
    .. method:: enable()
 
       Start collecting profiling data.
