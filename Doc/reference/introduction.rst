@@ -47,26 +47,27 @@ different audiences.
 Known implementations include:
 
 CPython
-   This is the original and most-maintained implementation of Python, written in C.
-   New language features generally appear here first.
+   This is the original and most-maintained implementation of Python, written in
+   C. New language features generally appear here first.
 
 Jython
-   Python implemented in Java.  This implementation can be used as a scripting
-   language for Java applications, or can be used to create applications using the
-   Java class libraries.  It is also often used to create tests for Java libraries.
-   More information can be found at `the Jython website <http://www.jython.org/>`_.
+   Python implemented in Java. This implementation can be used as a scripting
+   language for Java applications, or can be used to create applications using
+   the Java class libraries. It is also often used to create tests for Java
+   libraries. More information can be found at `the Jython website
+   <http://www.jython.org/>`_.
 
 Python for .NET
-   This implementation actually uses the CPython implementation, but is a managed
-   .NET application and makes .NET libraries available.  It was created by Brian
-   Lloyd.  For more information, see the `Python for .NET home page
+   This implementation actually uses the CPython implementation, but is a
+   managed .NET application and makes .NET libraries available.  It was created
+   by Brian Lloyd.  For more information, see the `Python for .NET home page
    <https://pythonnet.github.io/>`_.
 
 IronPython
-   An alternate Python for .NET.  Unlike Python.NET, this is a complete Python
+   An alternate Python for .NET. Unlike Python.NET, this is a complete Python
    implementation that generates IL, and compiles Python code directly to .NET
-   assemblies.  It was created by Jim Hugunin, the original creator of Jython.  For
-   more information, see `the IronPython website <http://ironpython.net/>`_.
+   assemblies. It was created by Jim Hugunin, the original creator of Jython.
+   For more information, see `the IronPython website <http://ironpython.net/>`_.
 
 PyPy
    An implementation of Python written completely in Python. It supports several
