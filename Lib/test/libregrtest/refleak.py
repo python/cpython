@@ -13,30 +13,6 @@ except Exception:
     MAXFD = 256
 
 
-def fd_count():
-    """Count the number of open file descriptors"""
-    if sys.platform.startswith(('linux', 'freebsd')):
-        try:
-            names = os.listdir("/proc/self/fd")
-            return len(names)
-        except FileNotFoundError:
-            pass
-
-    count = 0
-    for fd in range(MAXFD):
-        try:
-            # Prefer dup() over fstat(). fstat() can require input/output
-            # whereas dup() doesn't.
-            fd2 = os.dup(fd)
-        except OSError as e:
-            if e.errno != errno.EBADF:
-                raise
-        else:
-            os.close(fd2)
-            count += 1
-    return count
-
-
 def dash_R(the_module, test, indirect_test, huntrleaks):
     """Run a test multiple times, looking for reference leaks.
 
@@ -182,7 +158,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     func1 = sys.getallocatedblocks
     func2 = sys.gettotalrefcount
     gc.collect()
-    return func1(), func2(), fd_count()
+    return func1(), func2(), support.fd_count()
 
 
 def clear_caches():
