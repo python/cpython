@@ -436,11 +436,10 @@ unexpected, or if other problems occur while reading the file, instantiating a
    .. method:: pgettext(context, message)
 
       Look up the *context* and *message* id in the catalog and return the
-      corresponding message string, as an 8-bit string encoded with the
-      catalog's encoding, if known.  If there is no entry in the catalog
-      for the *message* id and *context*, and a fallback has been set, the
-      look up is forwarded to the fallback's :meth:`pgettext` method.
-      Otherwise, the *message* id is returned.
+      corresponding message string, as a Unicode string.  If there is no
+      entry in the catalog for the *message* id and *context*, and a fallback
+      has been set, the look up is forwarded to the fallback's
+      :meth:`pgettext` method.  Otherwise, the *message* id is returned.
 
       .. versionadded:: 3.8
 
@@ -449,8 +448,8 @@ unexpected, or if other problems occur while reading the file, instantiating a
 
       Do a plural-forms lookup of a message id.  *singular* is used as the
       message id for purposes of lookup in the catalog, while *n* is used to
-      determine which  plural form to use.  The returned message string is an
-      8-bit string encoded with the catalog's encoding, if known.
+      determine which  plural form to use.  The returned message string is a
+      Unicode string.
 
       If the message id for *context* is not found in the catalog, and a
       fallback is specified, the request is forwarded to the fallback's
