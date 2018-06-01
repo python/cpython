@@ -7,11 +7,7 @@
 popupwait= 2000
 
 [CodeContext]
-numlines= 3
 maxlines= 15
-visible= False
-bgcolor= LightGray
-fgcolor= Black
 
 [FormatParagraph]
 max-width= 72
