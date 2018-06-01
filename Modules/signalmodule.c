@@ -118,13 +118,6 @@ static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
 static PyObject *IntHandler;
 
-/* On Solaris 8, gcc will produce a warning that the function
-   declaration is not a prototype. This is caused by the definition of
-   SIG_DFL as (void (*)())0; the correct declaration would have been
-   (void (*)(int))0. */
-
-static PyOS_sighandler_t old_siginthandler = SIG_DFL;
-
 #ifdef MS_WINDOWS
 static HANDLE sigint_event = NULL;
 #endif
@@ -1291,7 +1284,7 @@ PyInit__signal(void)
         /* Install default int handler */
         Py_INCREF(IntHandler);
         Py_SETREF(Handlers[SIGINT].func, IntHandler);
-        old_siginthandler = PyOS_setsig(SIGINT, signal_handler);
+        PyOS_setsig(SIGINT, signal_handler);
     }
 
 #ifdef SIGHUP
@@ -1497,14 +1490,11 @@ finisignal(void)
     int i;
     PyObject *func;
 
-    PyOS_setsig(SIGINT, old_siginthandler);
-    old_siginthandler = SIG_DFL;
-
     for (i = 1; i < NSIG; i++) {
         func = Handlers[i].func;
         _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
         Handlers[i].func = NULL;
-        if (i != SIGINT && func != NULL && func != Py_None &&
+        if (func != NULL && func != Py_None &&
             func != DefaultHandler && func != IgnoreHandler)
             PyOS_setsig(i, SIG_DFL);
         Py_XDECREF(func);
