@@ -113,7 +113,7 @@ script:
   # Check that all symbols exported by libpython start with "Py" or "_Py"
   - make smelly
   # `-r -w` implicitly provided through `make buildbottest`.
-  - make buildbottest TESTOPTS="-j4 -uall,-cpu"
+  - make buildbottest TESTOPTS="-uall,-cpu test_multiprocessing_forkserver -v"
 
 notifications:
   email: false

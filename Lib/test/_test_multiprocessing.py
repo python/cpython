@@ -4034,6 +4034,7 @@ class TestIgnoreEINTR(unittest.TestCase):
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore(self):
         conn, child_conn = multiprocessing.Pipe()
+        print("test_ignore: PIPE_MAX_SIZE = %s" % test.support.PIPE_MAX_SIZE, file=sys.stderr, flush=True)
         try:
             p = multiprocessing.Process(target=self._test_ignore,
                                         args=(child_conn,))
