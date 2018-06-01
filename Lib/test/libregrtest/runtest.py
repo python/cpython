@@ -103,6 +103,9 @@ def runtest(ns, test):
         faulthandler.dump_traceback_later(ns.timeout, exit=True)
     try:
         support.set_match_tests(ns.match_tests)
+        # reset the environment_altered flag to detect if a test altered
+        # the environment
+        support.environment_altered = False
         if ns.failfast:
             support.failfast = True
         if output_on_failure:
