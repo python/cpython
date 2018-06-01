@@ -4097,6 +4097,18 @@ class LoggerTest(BaseTest):
         self.addCleanup(setattr, self.logger.manager, 'disable', old_disable)
         self.assertFalse(self.logger.isEnabledFor(22))
 
+    def test_is_enabled_for_disabled_logger(self):
+        old_disabled = self.logger.disabled
+        old_disable = self.logger.manager.disable
+
+        self.logger.disabled = True
+        self.logger.manager.disable = 21
+
+        self.addCleanup(setattr, self.logger, 'disabled', old_disabled)
+        self.addCleanup(setattr, self.logger.manager, 'disable', old_disable)
+
+        self.assertFalse(self.logger.isEnabledFor(22))
+
     def test_root_logger_aliases(self):
         root = logging.getLogger()
         self.assertIs(root, logging.root)

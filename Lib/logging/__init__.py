@@ -1569,6 +1569,9 @@ class Logger(Filterer):
         """
         Is this logger enabled for level 'level'?
         """
+        if self.disabled:
+            return False
+
         try:
             return self._cache[level]
         except KeyError:
