@@ -1,1 +1,6 @@
 IDLE: Enable color configuration for Code Context.
+When one starts IDLE from a console and loads a custom theme without
+definitions for 'context', one will see a warning message on the console.
+To stop the warning, go to Options => Configure IDLE => Highlights,
+select the custom theme if not selected already, select 'Code Context',
+and select foreground and background colors.
