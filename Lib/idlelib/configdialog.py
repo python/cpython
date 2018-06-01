@@ -1845,7 +1845,7 @@ class GenPage(Frame):
         self.format_width = tracers.add(
                 StringVar(self), ('extensions', 'FormatParagraph', 'max-width'))
         self.context_lines = tracers.add(
-                StringVar(self), ('extensions', 'CodeContext', 'numlines'))
+                StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
 
         # Create widgets:
         # Section frames.
@@ -1912,7 +1912,7 @@ class GenPage(Frame):
                 frame_format, textvariable=self.format_width, width=4)
 
         frame_context = Frame(frame_editor, borderwidth=0)
-        context_title = Label(frame_context, text='Context Lines :')
+        context_title = Label(frame_context, text='Max Context Lines :')
         self.context_int = Entry(
                 frame_context, textvariable=self.context_lines, width=3)
 
@@ -2014,7 +2014,7 @@ class GenPage(Frame):
         self.format_width.set(idleConf.GetOption(
                 'extensions', 'FormatParagraph', 'max-width', type='int'))
         self.context_lines.set(idleConf.GetOption(
-                'extensions', 'CodeContext', 'numlines', type='int'))
+                'extensions', 'CodeContext', 'maxlines', type='int'))
 
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
@@ -2206,6 +2206,9 @@ ParenMatch: Style indicates what is highlighted when closer is entered:
 'opener' - opener '({[' corresponding to closer; 'parens' - both chars;
 'expression' (default) - also everything in between.  Flash-delay is how
 long to highlight if cursor is not moved (0 means forever).
+
+CodeContext: Maxlines is the maximum number of code context lines to
+display when Code Context is turned on for an editor window.
 '''
 }
 
