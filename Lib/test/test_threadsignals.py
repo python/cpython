@@ -52,9 +52,11 @@ class ThreadSignals(unittest.TestCase):
         # wait for it return.
         if signal_blackboard[signal.SIGUSR1]['tripped'] == 0 \
            or signal_blackboard[signal.SIGUSR2]['tripped'] == 0:
-            signal.alarm(1)
-            signal.pause()
-            signal.alarm(0)
+            try:
+                signal.alarm(1)
+                signal.pause()
+            finally:
+                signal.alarm(0)
 
         self.assertEqual( signal_blackboard[signal.SIGUSR1]['tripped'], 1)
         self.assertEqual( signal_blackboard[signal.SIGUSR1]['tripped_by'],
