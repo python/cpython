@@ -214,13 +214,14 @@ class _SSLPipe(object):
                 # Drain possible plaintext data after close_notify.
                 appdata.append(self._incoming.read())
         except (ssl.SSLError, ssl.CertificateError) as exc:
-            if getattr(exc, 'errno', None) not in (
+            exc_errno = getattr(exc, 'errno', None)
+            if exc_errno not in (
                     ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE,
                     ssl.SSL_ERROR_SYSCALL):
                 if self._state == _DO_HANDSHAKE and self._handshake_cb:
                     self._handshake_cb(exc)
                 raise
-            self._need_ssldata = (exc.errno == ssl.SSL_ERROR_WANT_READ)
+            self._need_ssldata = (exc_errno == ssl.SSL_ERROR_WANT_READ)
 
         # Check for record level data that needs to be sent back.
         # Happens for the initial handshake and renegotiations.
@@ -263,13 +264,14 @@ class _SSLPipe(object):
                 # It is not allowed to call write() after unwrap() until the
                 # close_notify is acknowledged. We return the condition to the
                 # caller as a short write.
+                exc_errno = getattr(exc, 'errno', None)
                 if exc.reason == 'PROTOCOL_IS_SHUTDOWN':
-                    exc.errno = ssl.SSL_ERROR_WANT_READ
-                if exc.errno not in (ssl.SSL_ERROR_WANT_READ,
+                    exc_errno = exc.errno = ssl.SSL_ERROR_WANT_READ
+                if exc_errno not in (ssl.SSL_ERROR_WANT_READ,
                                      ssl.SSL_ERROR_WANT_WRITE,
                                      ssl.SSL_ERROR_SYSCALL):
                     raise
-                self._need_ssldata = (exc.errno == ssl.SSL_ERROR_WANT_READ)
+                self._need_ssldata = (exc_errno == ssl.SSL_ERROR_WANT_READ)
 
             # See if there's any record level data back for us.
             if self._outgoing.pending:
@@ -517,8 +519,8 @@ class SSLProtocol(protocols.Protocol):
             ssldata, appdata = self._sslpipe.feed_ssldata(data)
         except ssl.SSLError as e:
             if self._loop.get_debug():
-                logger.warning('%r: SSL error %s (reason %s)',
-                               self, e.errno, e.reason)
+                logger.warning('%r: SSL error errno: %s (reason %s)',
+                               self, getattr(e, 'errno', None), e.reason)
             self._abort()
             return
 
@@ -602,7 +604,9 @@ class SSLProtocol(protocols.Protocol):
 
     def _check_handshake_timeout(self):
         if self._in_handshake is True:
-            logger.warning("%r stalled during handshake", self)
+            logger.warning(
+                "SSL handshake for %r is taking longer than %r seconds: "
+                "aborting the connection", self, self._ssl_handshake_timeout)
             self._abort()
 
     def _on_handshake_complete(self, handshake_exc):
