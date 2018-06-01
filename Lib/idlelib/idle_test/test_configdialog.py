@@ -1170,7 +1170,7 @@ class GenPageTest(unittest.TestCase):
     def test_context(self):
         self.page.context_int.delete(0, 'end')
         self.page.context_int.insert(0, '1')
-        self.assertEqual(extpage, {'CodeContext': {'numlines': '1'}})
+        self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
 
     def test_source_selected(self):
         d = self.page

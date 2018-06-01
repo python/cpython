@@ -1,0 +1,9 @@
+IDLE: Only display actual code context lines.
+Instead of displaying a fixed number of lines, some blank, Code Context
+now displays the variable number of actual context lines.  When there
+are no context lines, it shows a single blank line to indicate that the
+feature is turned on.
+
+The Code Context configuration option is changed from 'numlines'
+(default 3) to 'maxlines' (default 15) to avoid possible interference
+between user settings for the old and new versions of Code Context.
