@@ -13,6 +13,7 @@ from test.libregrtest.runtest import (
     runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME,
     format_test_result)
 from test.libregrtest.setup import setup_tests
+from test.libregrtest.utils import format_duration
 
 
 # Display the running tests if nothing happened last N seconds
@@ -167,7 +168,8 @@ def run_tests_multiprocess(regrtest):
                 continue
             dt = time.monotonic() - worker.start_time
             if dt >= PROGRESS_MIN_TIME:
-                running.append('%s (%.0f sec)' % (current_test, dt))
+                text = '%s (%s)' % (current_test, format_duration(dt))
+                running.append(text)
         return running
 
     finished = 0

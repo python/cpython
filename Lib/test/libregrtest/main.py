@@ -8,7 +8,6 @@ import re
 import sys
 import sysconfig
 import tempfile
-import textwrap
 import time
 import unittest
 from test.libregrtest.cmdline import _parse_args
@@ -18,6 +17,7 @@ from test.libregrtest.runtest import (
     INTERRUPTED, CHILD_ERROR,
     PROGRESS_MIN_TIME, format_test_result)
 from test.libregrtest.setup import setup_tests
+from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
 try:
     import gc
@@ -39,16 +39,6 @@ if sysconfig.is_python_build():
 else:
     TEMPDIR = tempfile.gettempdir()
 TEMPDIR = os.path.abspath(TEMPDIR)
-
-
-def format_duration(seconds):
-    if seconds < 1.0:
-        return '%.0f ms' % (seconds * 1e3)
-    if seconds < 60.0:
-        return '%.0f sec' % seconds
-
-    minutes, seconds = divmod(seconds, 60.0)
-    return '%.0f min %.0f sec' % (minutes, seconds)
 
 
 class Regrtest:
@@ -565,37 +555,6 @@ class Regrtest:
         if self.ns.fail_env_changed and self.environment_changed:
             sys.exit(3)
         sys.exit(0)
-
-
-def removepy(names):
-    if not names:
-        return
-    for idx, name in enumerate(names):
-        basename, ext = os.path.splitext(name)
-        if ext == '.py':
-            names[idx] = basename
-
-
-def count(n, word):
-    if n == 1:
-        return "%d %s" % (n, word)
-    else:
-        return "%d %ss" % (n, word)
-
-
-def printlist(x, width=70, indent=4, file=None):
-    """Print the elements of iterable x to stdout.
-
-    Optional arg width (default 70) is the maximum line length.
-    Optional arg indent (default 4) is the number of blanks with which to
-    begin each line.
-    """
-
-    blanks = ' ' * indent
-    # Print the sorted list: 'x' may be a '--random' list or a set()
-    print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
-                        initial_indent=blanks, subsequent_indent=blanks),
-          file=file)
 
 
 def main(tests=None, **kwargs):
