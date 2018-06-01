@@ -14,6 +14,10 @@ from asyncio import windows_utils
 from test import support
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class PipeTests(unittest.TestCase):
 
     def test_pipe_overlapped(self):

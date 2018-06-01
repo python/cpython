@@ -328,6 +328,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
     def tearDown(self):
         self.loop.close()
         self.loop = None
+        asyncio.set_event_loop_policy(None)
 
     async def to_list(self, gen):
         res = []
