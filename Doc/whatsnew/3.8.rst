@@ -151,6 +151,8 @@ Changes in the Python API
   ``type.__new__``.  A :exc:`DeprecationWarning` was emitted in Python
   3.6--3.7.  (Contributed by Serhiy Storchaka in :issue:`23722`.)
 
+* The :class:`cProfile.Profile` class can now be used as a context
+  manager. (Contributed by Scott Sanderson :issue:`29235`.)
 
 CPython bytecode changes
 ------------------------
