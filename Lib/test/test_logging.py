@@ -883,6 +883,7 @@ if threading:
         """
 
         allow_reuse_address = True
+        _block_on_close = True
 
         def __init__(self, addr, handler, poll_interval=0.5,
                      bind_and_activate=True):
@@ -915,6 +916,8 @@ if threading:
                             before calling :meth:`start`, so that the server will
                             set up the socket and listen on it.
         """
+        _block_on_close = True
+
         def __init__(self, addr, handler, poll_interval=0.5,
                      bind_and_activate=True):
             class DelegatingUDPRequestHandler(DatagramRequestHandler):
@@ -1474,11 +1477,11 @@ class SocketHandlerTest(BaseTest):
     def tearDown(self):
         """Shutdown the TCP server."""
         try:
-            if self.server:
-                self.server.stop(2.0)
             if self.sock_hdlr:
                 self.root_logger.removeHandler(self.sock_hdlr)
                 self.sock_hdlr.close()
+            if self.server:
+                self.server.stop(2.0)
         finally:
             BaseTest.tearDown(self)
 
