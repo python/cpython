@@ -504,6 +504,11 @@ if sys.platform != 'win32':
         '''
         if duplex:
             s1, s2 = socket.socketpair()
+            for sock in s1, s2:
+                print(f"socket[fd={sock.fileno()}].SO_RCVBUF {sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)}",
+                      file=sys.stderr, flush=True)
+                print(f"socket[fd={sock.fileno()}].SO_SNDBUF {sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)}",
+                      file=sys.stderr, flush=True)
             s1.setblocking(True)
             s2.setblocking(True)
             c1 = Connection(s1.detach())
