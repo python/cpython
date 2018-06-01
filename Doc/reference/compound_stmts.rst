@@ -680,8 +680,13 @@ can be used to create instance variables with different implementation details.
 
 .. seealso::
 
-   :pep:`3115` - Metaclasses in Python 3
+   :pep:`3115` - Metaclasses in Python 3000
+      The proposal that introduced the current syntax for declaring metaclasses,
+      and the semantics for how classes with metaclasses are constructed.
+
    :pep:`3129` - Class Decorators
+      The proposal that added syntax for class decorators, as an extension to
+      the function and method decorators introduced in :pep:`318`.
 
 
 .. _async:
@@ -807,6 +812,8 @@ It is a :exc:`SyntaxError` to use ``async with`` statement outside of an
 .. seealso::
 
    :pep:`492` - Coroutines with async and await syntax
+      The proposal that made coroutines a proper standalone concept in Python,
+      adding supporting syntax.
 
 
 .. rubric:: Footnotes

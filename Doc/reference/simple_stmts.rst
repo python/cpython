@@ -353,8 +353,13 @@ target, then the interpreter evaluates the target except for the last
 
 .. seealso::
 
-   :pep:`526` - Variable and attribute annotation syntax
+   :pep:`526` - Syntax for Variable Annotations
+      The proposal that added syntax for annotating variables and class
+      attributes.
+
    :pep:`484` - Type hints
+      The proposal that added the :mod:`typing` module to ease the use of
+      annotations as type hints for static type analysis tools.
 
 
 .. _assert:
