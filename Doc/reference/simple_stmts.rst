@@ -359,7 +359,7 @@ target, then the interpreter evaluates the target except for the last
 
    :pep:`484` - Type hints
       The proposal that added the :mod:`typing` module to ease the use of
-      annotations as type hints for static type analysis tools.
+      annotations as type hints for static type analysis tools and IDEs.
 
 
 .. _assert:
