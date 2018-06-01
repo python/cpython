@@ -2204,6 +2204,9 @@ ParenMatch: Style indicates what is highlighted when closer is entered:
 'opener' - opener '({[' corresponding to closer; 'parens' - both chars;
 'expression' (default) - also everything in between.  Flash-delay is how
 long to highlight if cursor is not moved (0 means forever).
+
+CodeContext: Maxlines is the maximum number of code context lines to
+display when Code Context is turned on for an editor window.
 '''
 }
 
