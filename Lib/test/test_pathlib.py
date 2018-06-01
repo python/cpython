@@ -239,6 +239,13 @@ class _BasePurePathTest(object):
         p = P('a/b')
         pp = p / 'c'
         self.assertEqual(pp, P('a/b/c'))
+        self.assertEqual(pp / ..., p)
+        self.assertEqual(pp / ... / 'c', pp)
+        self.assertEqual(pp / ... / ... / 'b' / 'c', pp)
+        self.assertEqual(pp / ... / ..., p / ...)
+        self.assertEqual(pp / ... / ..., P('a'))
+        self.assertEqual(pp / ... / ... / ..., P())
+        self.assertEqual(pp / ... / ... / ... / ..., P())
         self.assertIs(type(pp), type(p))
         pp = p / 'c/d'
         self.assertEqual(pp, P('a/b/c/d'))

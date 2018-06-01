@@ -1,0 +1,1 @@
+pathlib: Allow ellipsis to appear after "/" to navigate to parent path
