@@ -262,6 +262,16 @@ functions:
       ps.print_stats()
       print(s.getvalue())
 
+   The :class:`Profile` class can also be used as a context manager (see
+   :ref:`typecontextmanager`)::
+
+      import cProfile
+
+      with cProfile.Profile() as pr:
+          # ... do something ...
+
+      pr.print_stats()
+
    .. method:: enable()
 
       Start collecting profiling data.
