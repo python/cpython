@@ -7,12 +7,6 @@ from inspect import isabstract
 from test import support
 
 
-try:
-    MAXFD = os.sysconf("SC_OPEN_MAX")
-except Exception:
-    MAXFD = 256
-
-
 def dash_R(the_module, test, indirect_test, huntrleaks):
     """Run a test multiple times, looking for reference leaks.
 
