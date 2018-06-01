@@ -1,0 +1,1 @@
+Compile with latest Windows 10 SDK on Windows if installed.

@@ -32,13 +32,13 @@
     <PySourcePath Condition="!HasTrailingSlash($(PySourcePath))">$(PySourcePath)\</PySourcePath>
     
     <!-- Directory where build outputs are put -->
-    <BuildPath32 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCBuild\win32\</BuildPath32>
+    <BuildPath32 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\win32\</BuildPath32>
     <BuildPath32 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\win32\</BuildPath32>
-    <BuildPath64 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCBuild\amd64\</BuildPath64>
+    <BuildPath64 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\amd64\</BuildPath64>
     <BuildPath64 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\amd64\</BuildPath64>
     <BuildPath Condition="'$(ArchName)' == 'win32'">$(BuildPath32)</BuildPath>
     <BuildPath Condition="'$(ArchName)' == 'amd64'">$(BuildPath64)</BuildPath>
-    <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCBuild\$(ArchName)\</BuildPath>
+    <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCbuild\$(ArchName)\</BuildPath>
     <BuildPath Condition="!HasTrailingSlash($(BuildPath))">$(BuildPath)\</BuildPath>
     <BuildPath Condition="$(Configuration) == 'PGInstrument'">$(BuildPath)instrumented\</BuildPath>
     
@@ -66,7 +66,7 @@
     <!-- Full path of the resulting python.exe binary -->
     <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)python$(PyDebugExt).exe</PythonExe>
   </PropertyGroup>
-
+  
   <PropertyGroup Condition="$(DefaultWindowsSDKVersion) == ''">
     <!--
     Attempt to select the latest installed WinSDK. If we don't find any, then we will
@@ -76,12 +76,13 @@
     -->
     <_RegistryVersion>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
     <_RegistryVersion Condition="$(_RegistryVersion) == ''">$(Registry:HKEY_LOCAL_MACHINE\WOW6432Node\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
-    <DefaultWindowsSDKVersion>10.0.15063.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion>10.0.16299.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
     <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
     <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
     <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
   </PropertyGroup>
-
+  
   <PropertyGroup Condition="'$(OverrideVersion)' == ''">
     <!--
     Read version information from Include\patchlevel.h. The following properties are set:
@@ -117,11 +118,11 @@
     Override the version number when building by specifying OverrideVersion.
     For example:
     
-        PCBuild\build.bat "/p:OverrideVersion=3.5.2a1"
+        PCbuild\build.bat "/p:OverrideVersion=3.5.2a1"
     
     Use the -V option to check your version is valid:
     
-        PCBuild\build.bat -V "/p:OverrideVersion=3.5.2a1"
+        PCbuild\build.bat -V "/p:OverrideVersion=3.5.2a1"
           PythonVersionNumber: 3.5.2
           PythonVersion:       3.5.2a1
           PythonVersionHex:    0x030502A1
