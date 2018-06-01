@@ -33,35 +33,35 @@ _get_current(void)
 }
 
 static int64_t
-_coerce_id(PyObject *id)
+_coerce_id(PyObject *orig)
 {
-    id = PyNumber_Long(id);
-    if (id == NULL) {
+    PyObject *pyid = PyNumber_Long(orig);
+    if (pyid == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "'id' must be a non-negative int");
+            PyErr_Format(PyExc_TypeError,
+                         "'id' must be a non-negative int, got %R", orig);
         }
         else {
-            PyErr_SetString(PyExc_ValueError,
-                            "'id' must be a non-negative int");
+            PyErr_Format(PyExc_ValueError,
+                         "'id' must be a non-negative int, got %R", orig);
         }
         return -1;
     }
-    int64_t cid = PyLong_AsLongLong(id);
-    Py_DECREF(id);
-    if (cid == -1 && PyErr_Occurred() != NULL) {
+    int64_t id = PyLong_AsLongLong(pyid);
+    Py_DECREF(pyid);
+    if (id == -1 && PyErr_Occurred() != NULL) {
         if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {
-            PyErr_SetString(PyExc_ValueError,
-                            "'id' must be a non-negative int");
+            PyErr_Format(PyExc_ValueError,
+                         "'id' must be a non-negative int, got %R", orig);
         }
         return -1;
     }
-    if (cid < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "'id' must be a non-negative int");
+    if (id < 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "'id' must be a non-negative int, got %R", orig);
         return -1;
     }
-    return cid;
+    return id;
 }
 
 
