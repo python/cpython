@@ -1,3 +1,4 @@
+import asyncio
 import builtins
 import locale
 import logging
@@ -65,7 +66,39 @@ class saved_test_environment:
                  'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
                  'files', 'locale', 'warnings.showwarning',
                  'shutil_archive_formats', 'shutil_unpack_formats',
+                 'asyncio.get_event_loop_policy', 'asyncio.get_event_loop',
+                 'asyncio_get_exception_handler', 'asyncio_get_debug',
+                 'asyncio_get_child_watcher',
                 )
+
+    def get_asyncio_get_event_loop_policy(self):
+        return asyncio.get_event_loop_policy()
+    def restore_asyncio_get_event_loop_policy(self, policy):
+        asyncio.set_event_loop_policy(policy)
+
+    def get_asyncio_get_event_loop(self):
+        return asyncio.get_event_loop()
+    def restore_asyncio_get_event_loop(self, loop):
+        asyncio.set_event_loop(loop)
+
+    def get_asyncio_get_exception_handler(self):
+        return asyncio.get_event_loop().get_exception_handler()
+    def restore_asyncio_get_exception_handler(self, handler):
+        asyncio.get_event_loop().set_exception_handler(handler)
+
+    def get_asyncio_get_debug(self):
+        return asyncio.get_event_loop().get_debug()
+    def restore_asyncio_get_debug(self, enabled):
+        asyncio.get_event_loop().set_debug(enabled)
+
+    def get_asyncio_get_child_watcher(self):
+        try:
+            return asyncio.get_event_loop_policy().get_child_watcher()
+        except NotImplementedError:
+            return NotImplemented
+    def restore_asyncio_get_child_watcher(self, watcher):
+        if watcher is not NotImplemented:
+            asyncio.get_event_loop_policy().set_child_watcher(watcher)
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]

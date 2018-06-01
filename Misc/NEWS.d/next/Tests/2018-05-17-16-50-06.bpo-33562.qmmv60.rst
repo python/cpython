@@ -1,0 +1,1 @@
+Verify that tests are not modifying global settings for asyncio.

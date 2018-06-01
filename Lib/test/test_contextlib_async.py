@@ -11,6 +11,7 @@ def _async_test(func):
     """Decorator to turn an async function into a test case."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        old_loop = asyncio.get_event_loop()
         coro = func(*args, **kwargs)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -18,7 +19,7 @@ def _async_test(func):
             return loop.run_until_complete(coro)
         finally:
             loop.close()
-            asyncio.set_event_loop(None)
+            asyncio.set_event_loop(old_loop)
     return wrapper
 
 
@@ -292,6 +293,7 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
     exit_stack = SyncAsyncExitStack
 
     def setUp(self):
+        self.addCleanup(asyncio.set_event_loop, asyncio.get_event_loop())
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.addCleanup(self.loop.close)

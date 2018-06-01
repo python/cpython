@@ -1,37 +1,37 @@
 import unittest
 from test import support
 
-import errno
-import io
-import itertools
-import socket
-import select
-import tempfile
-import time
-import traceback
-import queue
-import sys
-import os
+import _thread as thread
 import array
 import contextlib
-from weakref import proxy
-import signal
-import math
-import pickle
-import struct
-import random
-import shutil
-import string
-import _thread as thread
-import threading
-try:
-    import multiprocessing
-except ImportError:
-    multiprocessing = False
+import errno
 try:
     import fcntl
 except ImportError:
     fcntl = None
+import io
+import itertools
+import math
+try:
+    import multiprocessing
+except ImportError:
+    multiprocessing = False
+import os
+import pickle
+import queue
+import random
+import select
+import shutil
+import signal
+import socket
+import string
+import struct
+import sys
+import tempfile
+import threading
+import time
+import traceback
+from weakref import proxy
 
 HOST = support.HOST
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8') ## test unicode string and carriage return
