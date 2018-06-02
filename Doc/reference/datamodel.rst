@@ -768,7 +768,7 @@ Custom classes
 
    When a class attribute reference (for class :class:`C`, say) would yield a
    class method object, it is transformed into an instance method object whose
-   :attr:`__self__` attributes is :class:`C`.  When it would yield a static
+   :attr:`__self__` attribute is :class:`C`.  When it would yield a static
    method object, it is transformed into the object wrapped by the static method
    object. See section :ref:`descriptors` for another way in which attributes
    retrieved from a class may differ from those actually contained in its
