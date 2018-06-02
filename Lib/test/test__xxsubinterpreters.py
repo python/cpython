@@ -1315,8 +1315,6 @@ class ChannelTests(TestBase):
         self.assertEqual(obj, b'spam')
         self.assertEqual(out.strip(), 'send')
 
-    # XXX Fix the crashes.
-    @unittest.skip('bpo-33615: triggering crashes so temporarily disabled')
     def test_run_string_arg_resolved(self):
         cid = interpreters.channel_create()
         cid = interpreters._channel_id(cid, _resolve=True)

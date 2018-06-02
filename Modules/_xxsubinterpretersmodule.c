@@ -1712,6 +1712,7 @@ _channelid_shared(PyObject *obj, _PyCrossInterpreterData *data)
     xid->resolve = ((channelid *)obj)->resolve;
 
     data->data = xid;
+    Py_INCREF(obj);
     data->obj = obj;
     data->new_object = _channelid_from_xid;
     data->free = PyMem_Free;
