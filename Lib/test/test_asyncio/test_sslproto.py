@@ -599,7 +599,6 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.start_tls(
                     sslctx,
                     server_side=True)
-                sock.connect()
             except ssl.SSLError:
                 pass
             finally:
@@ -620,6 +619,49 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             with self.assertRaises(ssl.SSLCertVerificationError):
                 self.loop.run_until_complete(client(srv.addr))
 
+        self.assertEqual(messages, [])
+
+    def test_start_tls_client_corrupted_ssl(self):
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        sslctx = test_utils.simple_server_sslcontext()
+        client_sslctx = test_utils.simple_client_sslcontext()
+
+        def server(sock):
+            orig_sock = sock.dup()
+            try:
+                sock.start_tls(
+                    sslctx,
+                    server_side=True)
+                sock.sendall(b'A\n')
+                sock.recv_all(1)
+                orig_sock.send(b'please corrupt the SSL connection')
+            except ssl.SSLError:
+                pass
+            finally:
+                sock.close()
+
+        async def client(addr):
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='',
+                loop=self.loop)
+
+            self.assertEqual(await reader.readline(), b'A\n')
+            writer.write(b'B')
+            with self.assertRaises(ssl.SSLError):
+                await reader.readline()
+            return 'OK'
+
+        with self.tcp_server(server,
+                             max_clients=1,
+                             backlog=1) as srv:
+
+            res = self.loop.run_until_complete(client(srv.addr))
+
+        self.assertEqual(res, 'OK')
         self.assertEqual(messages, [])
 
 

@@ -524,12 +524,8 @@ class SSLProtocol(protocols.Protocol):
 
         try:
             ssldata, appdata = self._sslpipe.feed_ssldata(data)
-        except ssl.SSLError as e:
-            if self._loop.get_debug():
-                logger.warning('%r: SSL error errno:%s (reason %s)',
-                               self, getattr(e, 'errno', 'missing'),
-                               e.reason)
-            self._abort()
+        except Exception as e:
+            self._fatal_error(e, 'SSL error in data received')
             return
 
         for chunk in ssldata:
