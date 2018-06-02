@@ -474,12 +474,10 @@ class PosixPathTest(unittest.TestCase):
         finally:
             os.getcwd = real_getcwd
 
-    @test_support.requires_unicode
+    @unittest.skipUnless(test_support.FS_NONASCII, 'need test_support.FS_NONASCII')
     def test_expandvars_nonascii_word(self):
         encoding = sys.getfilesystemencoding()
-        # Non-ASCII word characters
-        letters = test_support.u(r'\xe6\u0130\u0141\u03c6\u041a\u05d0\u062a\u0e01')
-        uwnonascii = letters.encode(encoding, 'ignore').decode(encoding)[:3]
+        uwnonascii = test_support.FS_NONASCII
         swnonascii = uwnonascii.encode(encoding)
         if not swnonascii:
             self.skipTest('Needs non-ASCII word characters')
