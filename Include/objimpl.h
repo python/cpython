@@ -252,7 +252,8 @@ PyAPI_FUNC(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, Py_ssize_t);
 typedef union _gc_head {
     struct {
         union _gc_head *gc_next;  // NULL means the object is not tracked
-        uintptr_t gc_prev;
+        uintptr_t gc_prev;  // Pointer to previous object in the list.
+                            // Lowest three bits are used for flags.
     } gc;
     double dummy;  /* force worst-case alignment */
 } PyGC_Head;

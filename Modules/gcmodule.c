@@ -408,6 +408,9 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
  * All objects in young after this are directly or indirectly reachable
  * from outside the original young; and all objects in unreachable are
  * not.
+ *
+ * This function restores gc_prev pointer.  young and unreachable are
+ * doubly linked list after this function.
  */
 static void
 move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
@@ -442,6 +445,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             (void) traverse(op,
                     (visitproc)visit_reachable,
                     (void *)young);
+            // gc is not COLLECTING state aftere here.
             _PyGCHead_SET_PREV(gc, prev);
             gc->gc.gc_prev &= ~MASK_COLLECTING;
             prev = gc;
