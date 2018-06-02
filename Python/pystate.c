@@ -1205,7 +1205,6 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     }
 
     // Fill in the blanks and validate the result.
-    Py_XINCREF(data->obj);
     data->interp = interp->id;
     if (_check_xidata(data) != 0) {
         _PyCrossInterpreterData_Release(data);
@@ -1213,6 +1212,40 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     }
 
     return 0;
+}
+
+static void
+_release_xidata(void *arg)
+{
+    _PyCrossInterpreterData *data = (_PyCrossInterpreterData *)arg;
+    if (data->free != NULL) {
+        data->free(data->data);
+    }
+    Py_XDECREF(data->obj);
+}
+
+static void
+_call_in_interpreter(PyInterpreterState *interp,
+                     void (*func)(void *), void *arg)
+{
+    /* We would use Py_AddPendingCall() if it weren't specific to the
+     * main interpreter (see bpo-33608).  In the meantime we take a
+     * naive approach.
+     */
+    PyThreadState *save_tstate = NULL;
+    if (interp != PyThreadState_Get()->interp) {
+        // XXX Using the "head" thread isn't strictly correct.
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        // XXX Possible GILState issues?
+        save_tstate = PyThreadState_Swap(tstate);
+    }
+
+    func(arg);
+
+    // Switch back.
+    if (save_tstate != NULL) {
+        PyThreadState_Swap(save_tstate);
+    }
 }
 
 void
@@ -1233,24 +1266,8 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         return;
     }
 
-    PyThreadState *save_tstate = NULL;
-    if (interp != PyThreadState_Get()->interp) {
-        // XXX Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        // XXX Possible GILState issues?
-        save_tstate = PyThreadState_Swap(tstate);
-    }
-
     // "Release" the data and/or the object.
-    if (data->free != NULL) {
-        data->free(data->data);
-    }
-    Py_XDECREF(data->obj);
-
-    // Switch back.
-    if (save_tstate != NULL) {
-        PyThreadState_Swap(save_tstate);
-    }
+    _call_in_interpreter(interp, _release_xidata, data);
 }
 
 PyObject *
@@ -1355,6 +1372,7 @@ _bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
         return -1;
     }
     data->data = (void *)shared;
+    Py_INCREF(obj);
     data->obj = obj;  // Will be "released" (decref'ed) when data released.
     data->new_object = _new_bytes_object;
     data->free = PyMem_Free;
@@ -1382,6 +1400,7 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
     shared->buffer = PyUnicode_DATA(obj);
     shared->len = PyUnicode_GET_LENGTH(obj) - 1;
     data->data = (void *)shared;
+    Py_INCREF(obj);
     data->obj = obj;  // Will be "released" (decref'ed) when data released.
     data->new_object = _new_str_object;
     data->free = PyMem_Free;
