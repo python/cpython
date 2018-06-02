@@ -4,7 +4,7 @@ Once code has scrolled off the top of a window, it can be difficult to
 determine which block you are in.  This extension implements a pane at the top
 of each IDLE edit window which provides block structure hints.  These hints are
 the lines which contain the block opening keywords, e.g. 'if', for the
-enclosing block.  The number of hint lines is determined by the numlines
+enclosing block.  The number of hint lines is determined by the maxlines
 variable in the codecontext section of config-extensions.def. Lines which do
 not open blocks are not shown in the context hints pane.
 
@@ -20,7 +20,7 @@ from idlelib.config import idleConf
 BLOCKOPENERS = {"class", "def", "elif", "else", "except", "finally", "for",
                 "if", "try", "while", "with", "async"}
 UPDATEINTERVAL = 100 # millisec
-FONTUPDATEINTERVAL = 1000 # millisec
+CONFIGUPDATEINTERVAL = 1000 # millisec
 
 
 def get_spaces_firstword(codeline, c=re.compile(r"^(\s*)(\w*)")):
@@ -45,9 +45,6 @@ def get_line_info(codeline):
 class CodeContext:
     "Display block context above the edit window."
 
-    bgcolor = "LightGray"
-    fgcolor = "Black"
-
     def __init__(self, editwin):
         """Initialize settings for context block.
 
@@ -69,22 +66,20 @@ class CodeContext:
         self.editwin = editwin
         self.text = editwin.text
         self.textfont = self.text["font"]
+        self.contextcolors = CodeContext.colors
         self.label = None
         self.topvisible = 1
         self.info = [(0, -1, "", False)]
         # Start two update cycles, one for context lines, one for font changes.
         self.t1 = self.text.after(UPDATEINTERVAL, self.timer_event)
-        self.t2 = self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
+        self.t2 = self.text.after(CONFIGUPDATEINTERVAL, self.config_timer_event)
 
     @classmethod
     def reload(cls):
         "Load class variables from config."
         cls.context_depth = idleConf.GetOption("extensions", "CodeContext",
-                                       "numlines", type="int", default=3)
-##        cls.bgcolor = idleConf.GetOption("extensions", "CodeContext",
-##                                     "bgcolor", type="str", default="LightGray")
-##        cls.fgcolor = idleConf.GetOption("extensions", "CodeContext",
-##                                     "fgcolor", type="str", default="Black")
+                                       "maxlines", type="int", default=15)
+        cls.colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'context')
 
     def __del__(self):
         "Cancel scheduled events."
@@ -116,9 +111,10 @@ class CodeContext:
                 padx += widget.tk.getint(widget.cget('padx'))
                 border += widget.tk.getint(widget.cget('border'))
             self.label = tkinter.Label(
-                    self.editwin.top, text="\n" * (self.context_depth - 1),
+                    self.editwin.top, text="",
                     anchor=W, justify=LEFT, font=self.textfont,
-                    bg=self.bgcolor, fg=self.fgcolor,
+                    bg=self.contextcolors['background'],
+                    fg=self.contextcolors['foreground'],
                     width=1,  # Don't request more than we get.
                     padx=padx, border=border, relief=SUNKEN)
             # Pack the label widget before and above the text_frame widget,
@@ -191,11 +187,10 @@ class CodeContext:
                                                  stopindent)
         self.info.extend(lines)
         self.topvisible = new_topvisible
-        # Empty lines in context pane.
-        context_strings = [""] * max(0, self.context_depth - len(self.info))
-        # Followed by the context hint lines.
-        context_strings += [x[2] for x in self.info[-self.context_depth:]]
-        self.label["text"] = '\n'.join(context_strings)
+        # Last context_depth context lines.
+        context_strings = [x[2] for x in self.info[-self.context_depth:]]
+        showfirst = 0 if context_strings[0] else 1
+        self.label["text"] = '\n'.join(context_strings[showfirst:])
 
     def timer_event(self):
         "Event on editor text widget triggered every UPDATEINTERVAL ms."
@@ -203,13 +198,17 @@ class CodeContext:
             self.update_code_context()
         self.t1 = self.text.after(UPDATEINTERVAL, self.timer_event)
 
-    def font_timer_event(self):
-        "Event on editor text widget triggered every FONTUPDATEINTERVAL ms."
+    def config_timer_event(self):
+        "Event on editor text widget triggered every CONFIGUPDATEINTERVAL ms."
         newtextfont = self.text["font"]
-        if self.label and newtextfont != self.textfont:
+        if (self.label and (newtextfont != self.textfont or
+                            CodeContext.colors != self.contextcolors)):
             self.textfont = newtextfont
+            self.contextcolors = CodeContext.colors
             self.label["font"] = self.textfont
-        self.t2 = self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
+            self.label['background'] = self.contextcolors['background']
+            self.label['foreground'] = self.contextcolors['foreground']
+        self.t2 = self.text.after(CONFIGUPDATEINTERVAL, self.config_timer_event)
 
 
 CodeContext.reload()

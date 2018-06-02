@@ -37,6 +37,10 @@ from test.test_asyncio import utils as test_utils
 from test import support
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 def osx_tiger():
     """Return True if the platform is Mac OS 10.4 or older."""
     if sys.platform != 'darwin':

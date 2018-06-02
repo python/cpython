@@ -22,6 +22,10 @@ from test.test_asyncio import utils as test_utils
 MOCK_ANY = mock.ANY
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class TestBaseSelectorEventLoop(BaseSelectorEventLoop):
 
     def _make_self_pipe(self):
