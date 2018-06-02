@@ -31,6 +31,8 @@ stderr-foreground= red
 stderr-background= #ffffff
 console-foreground= #770000
 console-background= #ffffff
+context-foreground= #000000
+context-background= lightgray
 
 [IDLE New]
 normal-foreground= #000000
@@ -62,6 +64,8 @@ stderr-foreground= red
 stderr-background= #ffffff
 console-foreground= #770000
 console-background= #ffffff
+context-foreground= #000000
+context-background= lightgray
 
 [IDLE Dark]
 comment-foreground = #dd0000
@@ -91,3 +95,5 @@ stdout-background = #002240
 hit-foreground = #002240
 comment-background = #002240
 break-foreground = #FFFFFF
+context-foreground= #ffffff
+context-background= #454545
