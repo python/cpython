@@ -709,16 +709,9 @@ class SSLProtocol(protocols.Protocol):
         if self._transport:
             self._transport._force_close(exc)
 
-        if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
-            if self._loop.get_debug():
-                logger.debug("%r: %s", self, message, exc_info=True)
-        elif not isinstance(exc, futures.CancelledError):
-            self._loop.call_exception_handler({
-                'message': message,
-                'exception': exc,
-                'transport': self._transport,
-                'protocol': self,
-            })
+        if (self._loop.get_debug() and
+                isinstance(exc, base_events._FATAL_ERROR_IGNORE)):
+            logger.debug("%r: %s", self, message, exc_info=True)
 
     def _finalize(self):
         self._sslpipe = None

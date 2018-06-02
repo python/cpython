@@ -514,7 +514,6 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         # completed in timeout period, instead of remaining open indefinitely
         client_sslctx = test_utils.simple_client_sslcontext()
 
-        # silence error logger
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
@@ -556,8 +555,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
     def test_create_connection_ssl_slow_handshake(self):
         client_sslctx = test_utils.simple_client_sslcontext()
 
-        # silence error logger
-        self.loop.set_exception_handler(lambda *args: None)
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
         def server(sock):
             try:
@@ -585,9 +584,11 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
                 self.loop.run_until_complete(client(srv.addr))
 
+        self.assertEqual(messages, [])
+
     def test_create_connection_ssl_failed_certificate(self):
-        # silence error logger
-        self.loop.set_exception_handler(lambda *args: None)
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
         sslctx = test_utils.simple_server_sslcontext()
         client_sslctx = test_utils.simple_client_sslcontext(
@@ -618,6 +619,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
             with self.assertRaises(ssl.SSLCertVerificationError):
                 self.loop.run_until_complete(client(srv.addr))
+
+        self.assertEqual(messages, [])
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')
