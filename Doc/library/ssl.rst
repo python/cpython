@@ -24,6 +24,9 @@ sockets, both client-side and server-side.  This module uses the OpenSSL
 library. It is available on all modern Unix systems, Windows, Mac OS X, and
 probably additional platforms, as long as OpenSSL is installed on that platform.
 
+.. versionchanged:: 2.7.13
+   Updated to support linking with OpenSSL 1.1.0
+
 .. note::
 
    Some behavior may be platform dependent, since calls are made to the
