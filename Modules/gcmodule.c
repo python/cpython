@@ -415,6 +415,7 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
 static void
 move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 {
+    // previous elem in the young list, used for restore gc_prev.
     PyGC_Head *prev = young;
     PyGC_Head *gc = young->gc.gc_next;
 
@@ -428,8 +429,6 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
      */
 
     while (gc != young) {
-        PyGC_Head *next;
-
         if (gc_get_refs(gc)) {
             /* gc is definitely reachable from outside the
              * original 'young'.  Mark it as such, and traverse
@@ -442,14 +441,16 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             PyObject *op = FROM_GC(gc);
             traverseproc traverse = Py_TYPE(op)->tp_traverse;
             assert(gc_get_refs(gc) > 0);
+            // NOTE: visit_reachable may change gc->gc.gc_next when
+            // young->gc.gc_prev == gc.
             (void) traverse(op,
                     (visitproc)visit_reachable,
                     (void *)young);
-            // gc is not COLLECTING state aftere here.
+            // relink gc_prev to prev element.
             _PyGCHead_SET_PREV(gc, prev);
+            // gc is not COLLECTING state aftere here.
             gc->gc.gc_prev &= ~MASK_COLLECTING;
             prev = gc;
-            next = gc->gc.gc_next;
         }
         else {
             /* This *may* be unreachable.  To make progress,
@@ -460,11 +461,14 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
              * young if that's so, and we'll see it again.
              */
             gc->gc.gc_prev |= MASK_TENTATIVELY_UNREACHABLE;
-            prev->gc.gc_next = next = gc->gc.gc_next;
+            // Move gc to unreachable.
+            // No need to gc->next->prev = prev because next is single linked.
+            prev->gc.gc_next = gc->gc.gc_next;
             gc_list_append(gc, unreachable);
         }
-        gc = next;
+        gc = prev->gc.gc_next;
     }
+    // young->gc.gc_prev must be last element remained in the list.
     young->gc.gc_prev = (uintptr_t)prev;
 }
 
@@ -793,6 +797,7 @@ check_garbage(PyGC_Head *collectable)
     PyGC_Head *gc;
     for (gc = collectable->gc.gc_next; gc != collectable;
          gc = gc->gc.gc_next) {
+        // Use gc_refs and break gc_prev again.
         gc_set_refs(gc, Py_REFCNT(FROM_GC(gc)));
         assert(gc_get_refs(gc) != 0);
     }
@@ -804,6 +809,7 @@ check_garbage(PyGC_Head *collectable)
         if (gc_get_refs(gc) != 0) {
             ret = -1;
         }
+        // Restore gc_prev here.
         _PyGCHead_SET_PREV(gc, prev);
         gc_clear_masks(gc);
         prev = gc;
@@ -1838,7 +1844,6 @@ PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
-    assert(!_PyObject_GC_IS_TRACKED(op));
     PyGC_Head *g = AS_GC(op);
     assert(!IS_TRACKED(op));
     if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head))
