@@ -52,7 +52,7 @@ dnl can cause trouble.
 dnl Last slash shouldn't be stripped if prefix=/
 if test "$prefix" != "/"; then
     prefix=`echo "$prefix" | sed -e 's/\/$//g'`
-fi    
+fi
 
 dnl This is for stuff that absolutely must end up in pyconfig.h.
 dnl Please use pyport.h instead, if possible.
@@ -117,7 +117,7 @@ AC_ARG_ENABLE(universalsdk,
 [
 	case $enableval in
 	yes)
-		# Locate the best usable SDK, see Mac/README.txt for more
+		# Locate the best usable SDK, see Mac/README for more
 		# information
 		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
 		if ! ( echo $enableval | grep -E '\.sdk' 1>/dev/null )
@@ -210,7 +210,7 @@ AC_ARG_ENABLE(framework,
               AS_HELP_STRING([--enable-framework@<:@=INSTALLDIR@:>@], [Build (MacOSX|Darwin) framework]),
 [
 	case $enableval in
-	yes) 
+	yes)
 		enableval=/Library/Frameworks
 	esac
 	case $enableval in
@@ -265,7 +265,7 @@ AC_ARG_ENABLE(framework,
 			FRAMEWORKINSTALLAPPSPREFIX="${MDIR}/Applications"
 
 			if test "${prefix}" = "NONE"; then
-				# User hasn't specified the 
+				# User hasn't specified the
 				# --prefix option, but wants to install
 				# the framework in a non-default location,
 				# ensure that the compatibility links get
@@ -393,7 +393,7 @@ if test "$cross_compiling" = yes; then
 	esac
 	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
 fi
-	
+
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
 # disable features if it is defined, without any means to access these
 # features as extensions. For these systems, we skip the definition of
@@ -410,7 +410,7 @@ case $ac_sys_system/$ac_sys_release in
   # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
   # In addition, Stefan Krah confirms that issue #1244610 exists through
   # OpenBSD 4.6, but is fixed in 4.7.
-  OpenBSD/2.* | OpenBSD/3.* | OpenBSD/4.@<:@0123456@:>@) 
+  OpenBSD/2.* | OpenBSD/3.* | OpenBSD/4.@<:@0123456@:>@)
     define_xopen_source=no
     # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
     # also defined. This can be overridden by defining _BSD_SOURCE
@@ -448,12 +448,12 @@ case $ac_sys_system/$ac_sys_release in
   # with _XOPEN_SOURCE and __BSD_VISIBLE does not re-enable them.
   FreeBSD/4.*)
     define_xopen_source=no;;
-  # On MacOS X 10.2, a bug in ncurses.h means that it craps out if 
+  # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
   # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
   # identifies itself as Darwin/7.*
   # On Mac OS X 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
   # disables platform specific features beyond repair.
-  # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE 
+  # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
   # has no effect, don't bother defining them
   Darwin/@<:@6789@:>@.*)
     define_xopen_source=no;;
@@ -479,7 +479,7 @@ esac
 
 if test $define_xopen_source = yes
 then
-  AC_DEFINE(_XOPEN_SOURCE, 600, 
+  AC_DEFINE(_XOPEN_SOURCE, 600,
             Define to the level of X/Open that your system supports)
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
@@ -490,7 +490,7 @@ then
    	    Define to activate Unix95-and-earlier features)
 
   AC_DEFINE(_POSIX_C_SOURCE, 200112L, Define to activate features from IEEE Stds 1003.1-2001)
-  
+
 fi
 
 #
@@ -521,11 +521,11 @@ AC_MSG_CHECKING(EXTRAPLATDIR)
 if test -z "$EXTRAPLATDIR"
 then
 	case $MACHDEP in
-	darwin)	
+	darwin)
 		EXTRAPLATDIR="\$(PLATMACDIRS)"
 		EXTRAMACHDEPPATH="\$(PLATMACPATH)"
 		;;
-	*) 
+	*)
 		EXTRAPLATDIR=""
 		EXTRAMACHDEPPATH=""
 		;;
@@ -663,7 +663,7 @@ AC_ARG_WITH(cxx_main,
             AS_HELP_STRING([--with-cxx-main=<compiler>],
                            [compile main() and link python executable with C++ compiler]),
 [
-	
+
 	case $withval in
 	no)	with_cxx_main=no
 		MAINCC='$(CC)';;
@@ -790,7 +790,7 @@ AC_MSG_RESULT($LIBRARY)
 # systems without shared libraries, LDLIBRARY is the same as LIBRARY
 # (defined in the Makefiles). On Cygwin LDLIBRARY is the import library,
 # DLLLIBRARY is the shared (i.e., DLL) library.
-# 
+#
 # RUNSHARED is used to run shared python without installed libraries
 #
 # INSTSONAME is the name of the shared library that will be use to install
@@ -812,7 +812,7 @@ RUNSHARED=''
 # If CXX is set, and if it is needed to link a main function that was
 # compiled with CXX, LINKCC is CXX instead. Always using CXX is undesirable:
 # python might then depend on the C++ runtime
-# This is altered for AIX in order to build the export list before 
+# This is altered for AIX in order to build the export list before
 # linking.
 AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
@@ -859,7 +859,7 @@ AC_ARG_ENABLE(shared,
               AS_HELP_STRING([--enable-shared], [disable/enable building shared python library]))
 
 if test -z "$enable_shared"
-then 
+then
   case $ac_sys_system in
   CYGWIN* | atheos*)
     enable_shared="yes";;
@@ -904,7 +904,7 @@ then
   BLDLIBRARY=''
 else
   BLDLIBRARY='$(LDLIBRARY)'
-fi  
+fi
 
 # Other platforms follow
 if test $enable_shared = "yes"; then
@@ -1038,14 +1038,14 @@ fi
 
 # Check for --with-pydebug
 AC_MSG_CHECKING(for --with-pydebug)
-AC_ARG_WITH(pydebug, 
+AC_ARG_WITH(pydebug,
             AS_HELP_STRING([--with-pydebug], [build with Py_DEBUG defined]),
 [
 if test "$withval" != no
-then 
-  AC_DEFINE(Py_DEBUG, 1, 
-  [Define if you want to build an interpreter with many run-time checks.]) 
-  AC_MSG_RESULT(yes); 
+then
+  AC_DEFINE(Py_DEBUG, 1,
+  [Define if you want to build an interpreter with many run-time checks.])
+  AC_MSG_RESULT(yes);
   Py_DEBUG='true'
 else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
@@ -1582,7 +1582,7 @@ int main(){
 AC_MSG_RESULT($ac_cv_pthread_is_default)
 
 
-if test $ac_cv_pthread_is_default = yes 
+if test $ac_cv_pthread_is_default = yes
 then
   ac_cv_kpthread=no
 else
@@ -1681,14 +1681,14 @@ ac_save_cxx="$CXX"
 
 if test "$ac_cv_kpthread" = "yes"
 then
-  CXX="$CXX -Kpthread"  
+  CXX="$CXX -Kpthread"
   ac_cv_cxx_thread=yes
 elif test "$ac_cv_kthread" = "yes"
 then
   CXX="$CXX -Kthread"
   ac_cv_cxx_thread=yes
 elif test "$ac_cv_pthread" = "yes"
-then 
+then
   CXX="$CXX -pthread"
   ac_cv_cxx_thread=yes
 fi
@@ -1807,11 +1807,11 @@ if test "$use_lfs" = "yes"; then
 # These may affect some typedefs
 case $ac_sys_system/$ac_sys_release in
 AIX*)
-    AC_DEFINE(_LARGE_FILES, 1, 
+    AC_DEFINE(_LARGE_FILES, 1,
     [This must be defined on AIX systems to enable large file support.])
     ;;
 esac
-AC_DEFINE(_LARGEFILE_SOURCE, 1, 
+AC_DEFINE(_LARGEFILE_SOURCE, 1,
 [This must be defined on some systems to enable large file support.])
 AC_DEFINE(_FILE_OFFSET_BITS, 64,
 [This must be set to 64 on some systems to enable large file support.])
@@ -1873,7 +1873,7 @@ AC_CHECK_SIZEOF(pid_t, 4)
 AC_MSG_CHECKING(for long long support)
 have_long_long=no
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[long long x; x = (long long)0;]])],[
-  AC_DEFINE(HAVE_LONG_LONG, 1, [Define this if you have the type long long.]) 
+  AC_DEFINE(HAVE_LONG_LONG, 1, [Define this if you have the type long long.])
   have_long_long=yes
 ],[])
 AC_MSG_RESULT($have_long_long)
@@ -1895,7 +1895,7 @@ fi
 AC_MSG_CHECKING(for _Bool support)
 have_c99_bool=no
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[_Bool x; x = (_Bool)0;]])],[
-  AC_DEFINE(HAVE_C99_BOOL, 1, [Define this if you have the type _Bool.]) 
+  AC_DEFINE(HAVE_C99_BOOL, 1, [Define this if you have the type _Bool.])
   have_c99_bool=yes
 ],[])
 AC_MSG_RESULT($have_c99_bool)
@@ -1903,8 +1903,8 @@ if test "$have_c99_bool" = yes ; then
 AC_CHECK_SIZEOF(_Bool, 1)
 fi
 
-AC_CHECK_TYPES(uintptr_t, 
-   [AC_CHECK_SIZEOF(uintptr_t, 4)], 
+AC_CHECK_TYPES(uintptr_t,
+   [AC_CHECK_SIZEOF(uintptr_t, 4)],
    [], [#ifdef HAVE_STDINT_H
         #include <stdint.h>
         #endif
@@ -1923,7 +1923,7 @@ if test "$have_long_long" = yes
 then
 if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
-  AC_DEFINE(HAVE_LARGEFILE_SUPPORT, 1, 
+  AC_DEFINE(HAVE_LARGEFILE_SUPPORT, 1,
   [Defined to enable large file support when an off_t is bigger than a long
    and long long is available and at least as big as an off_t. You may need
    to add some flags for configuration and compilation to enable this mode.
@@ -1974,7 +1974,7 @@ AC_ARG_ENABLE(toolbox-glue,
               AS_HELP_STRING([--enable-toolbox-glue], [disable/enable MacOSX glue code for extensions]))
 
 if test -z "$enable_toolbox_glue"
-then 
+then
 	case $ac_sys_system/$ac_sys_release in
 	Darwin/*)
 		enable_toolbox_glue="yes";;
@@ -1999,7 +1999,7 @@ AC_MSG_RESULT($enable_toolbox_glue)
 
 AC_SUBST(OTHER_LIBTOOL_OPT)
 case $ac_sys_system/$ac_sys_release in
-  Darwin/@<:@01567@:>@\..*) 
+  Darwin/@<:@01567@:>@\..*)
     OTHER_LIBTOOL_OPT="-prebind -seg1addr 0x10000000"
     ;;
   Darwin/*)
@@ -2010,7 +2010,7 @@ esac
 
 AC_SUBST(LIBTOOL_CRUFT)
 case $ac_sys_system/$ac_sys_release in
-  Darwin/@<:@01567@:>@\..*) 
+  Darwin/@<:@01567@:>@\..*)
     LIBTOOL_CRUFT="-framework System -lcc_dynamic"
     if test "${enable_universalsdk}"; then
 	    :
@@ -2024,7 +2024,7 @@ case $ac_sys_system/$ac_sys_release in
     if test ${gcc_version} '<' 4.0
         then
             LIBTOOL_CRUFT="-lcc_dynamic"
-        else 
+        else
             LIBTOOL_CRUFT=""
     fi
     AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -2038,14 +2038,14 @@ case $ac_sys_system/$ac_sys_release in
       }
     }
     ]])],[ac_osx_32bit=yes],[ac_osx_32bit=no],[ac_osx_32bit=yes])
-    
+
     if test "${ac_osx_32bit}" = "yes"; then
     	case `/usr/bin/arch` in
-    	i386) 
-    		MACOSX_DEFAULT_ARCH="i386" 
+    	i386)
+    		MACOSX_DEFAULT_ARCH="i386"
     		;;
-    	ppc) 
-    		MACOSX_DEFAULT_ARCH="ppc" 
+    	ppc)
+    		MACOSX_DEFAULT_ARCH="ppc"
     		;;
     	*)
     		AC_MSG_ERROR([Unexpected output of 'arch' on OSX])
@@ -2053,11 +2053,11 @@ case $ac_sys_system/$ac_sys_release in
     	esac
     else
     	case `/usr/bin/arch` in
-    	i386) 
-    		MACOSX_DEFAULT_ARCH="x86_64" 
+    	i386)
+    		MACOSX_DEFAULT_ARCH="x86_64"
     		;;
-    	ppc) 
-    		MACOSX_DEFAULT_ARCH="ppc64" 
+    	ppc)
+    		MACOSX_DEFAULT_ARCH="ppc64"
     		;;
     	*)
     		AC_MSG_ERROR([Unexpected output of 'arch' on OSX])
@@ -2075,9 +2075,9 @@ AC_MSG_CHECKING(for --enable-framework)
 if test "$enable_framework"
 then
 	BASECFLAGS="$BASECFLAGS -fno-common -dynamic"
-	# -F. is needed to allow linking to the framework while 
+	# -F. is needed to allow linking to the framework while
 	# in the build location.
-	AC_DEFINE(WITH_NEXT_FRAMEWORK, 1, 
+	AC_DEFINE(WITH_NEXT_FRAMEWORK, 1,
          [Define if you want to produce an OpenStep/Rhapsody framework
          (shared library plus accessory files).])
 	AC_MSG_RESULT(yes)
@@ -2092,7 +2092,7 @@ fi
 AC_MSG_CHECKING(for dyld)
 case $ac_sys_system/$ac_sys_release in
   Darwin/*)
-  	AC_DEFINE(WITH_DYLD, 1, 
+  	AC_DEFINE(WITH_DYLD, 1,
         [Define if you want to use the new-style (Openstep, Rhapsody, MacOS)
          dynamic linker (dyld) instead of the old-style (NextStep) dynamic
          linker (rld). Dyld is necessary to support frameworks.])
@@ -2158,7 +2158,7 @@ then
 		;;
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
-	SunOS/5*) 
+	SunOS/5*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
@@ -2339,7 +2339,7 @@ then
 	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
-	Darwin/*) 
+	Darwin/*)
 		# -u _PyMac_Error is needed to pull in the mac toolbox glue,
 		# which is
 		# not used by the core itself but which needs to be in the core so
@@ -2357,7 +2357,7 @@ then
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
-	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) 
+	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
@@ -2614,7 +2614,7 @@ then
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     AC_DEFINE(_REENTRANT)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"    
+    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
@@ -2738,7 +2738,7 @@ pthread_create (NULL, NULL, start_routine, NULL)]])],[
     THREADOBJ="Python/thread.o"
     USE_THREAD_MODULE=""])
 
-    if test "$posix_threads" != "yes"; then     
+    if test "$posix_threads" != "yes"; then
       AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
       LIBS="$LIBS -lthread"
       THREADOBJ="Python/thread.o"
@@ -2758,7 +2758,7 @@ fi
 if test "$posix_threads" = "yes"; then
       if test "$unistd_defines_pthreads" = "no"; then
          AC_DEFINE(_POSIX_THREADS, 1,
-         [Define if you have POSIX threads, 
+         [Define if you have POSIX threads,
           and your system does not define that.])
       fi
 
@@ -3003,9 +3003,9 @@ AC_MSG_CHECKING(for --with-tsc)
 AC_ARG_WITH(tsc,
 	    AS_HELP_STRING([--with(out)-tsc],[enable/disable timestamp counter profile]),[
 if test "$withval" != no
-then 
-  AC_DEFINE(WITH_TSC, 1, 
-    [Define to profile with the Pentium timestamp counter]) 
+then
+  AC_DEFINE(WITH_TSC, 1,
+    [Define to profile with the Pentium timestamp counter])
     AC_MSG_RESULT(yes)
 else AC_MSG_RESULT(no)
 fi],
@@ -3021,7 +3021,7 @@ then with_pymalloc="yes"
 fi
 if test "$with_pymalloc" != "no"
 then
-    AC_DEFINE(WITH_PYMALLOC, 1, 
+    AC_DEFINE(WITH_PYMALLOC, 1,
      [Define if you want to compile in Python-specific mallocs])
 fi
 AC_MSG_RESULT($with_pymalloc)
@@ -3041,14 +3041,14 @@ fi
 
 # Check for --with-wctype-functions
 AC_MSG_CHECKING(for --with-wctype-functions)
-AC_ARG_WITH(wctype-functions, 
+AC_ARG_WITH(wctype-functions,
             AS_HELP_STRING([--with-wctype-functions], [use wctype.h functions]),
 [
 if test "$withval" != no
-then 
+then
   AC_DEFINE(WANT_WCTYPE_FUNCTIONS, 1,
   [Define if you want wctype.h functions to be used instead of the
-   one supplied by Python itself. (see Include/unicodectype.h).]) 
+   one supplied by Python itself. (see Include/unicodectype.h).])
   AC_MSG_RESULT(yes)
 else AC_MSG_RESULT(no)
 fi],
@@ -3291,12 +3291,12 @@ dnl before searching for static libraries. setup.py adds -Wl,-search_paths_first
 dnl to revert to a more traditional unix behaviour and make it possible to
 dnl override the system libz with a local static library of libz. Temporarily
 dnl add that flag to our CFLAGS as well to ensure that we check the version
-dnl of libz that will be used by setup.py. 
-dnl The -L/usr/local/lib is needed as wel to get the same compilation 
+dnl of libz that will be used by setup.py.
+dnl The -L/usr/local/lib is needed as wel to get the same compilation
 dnl environment as setup.py (and leaving it out can cause configure to use the
 dnl wrong version of the library)
 case $ac_sys_system/$ac_sys_release in
-Darwin/*) 
+Darwin/*)
 	_CUR_CFLAGS="${CFLAGS}"
 	_CUR_LDFLAGS="${LDFLAGS}"
 	CFLAGS="${CFLAGS} -Wl,-search_paths_first"
@@ -3307,7 +3307,7 @@ esac
 AC_CHECK_LIB(z, inflateCopy, AC_DEFINE(HAVE_ZLIB_COPY, 1, [Define if the zlib library has inflateCopy]))
 
 case $ac_sys_system/$ac_sys_release in
-Darwin/*) 
+Darwin/*)
 	CFLAGS="${_CUR_CFLAGS}"
 	LDFLAGS="${_CUR_LDFLAGS}"
 	;;
@@ -3361,14 +3361,14 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 
 # check for openpty and forkpty
 
-AC_CHECK_FUNCS(openpty,, 
+AC_CHECK_FUNCS(openpty,,
    AC_CHECK_LIB(util,openpty,
      [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lutil"],
      AC_CHECK_LIB(bsd,openpty, [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lbsd"])
    )
 )
-AC_CHECK_FUNCS(forkpty,, 
-   AC_CHECK_LIB(util,forkpty, 
+AC_CHECK_FUNCS(forkpty,,
+   AC_CHECK_LIB(util,forkpty,
      [AC_DEFINE(HAVE_FORKPTY) LIBS="$LIBS -lutil"],
      AC_CHECK_LIB(bsd,forkpty, [AC_DEFINE(HAVE_FORKPTY) LIBS="$LIBS -lbsd"])
    )
@@ -3381,7 +3381,7 @@ AC_CHECK_FUNCS(memmove)
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
 
 AC_REPLACE_FUNCS(dup2 getcwd strdup)
-AC_CHECK_FUNCS(getpgrp, 
+AC_CHECK_FUNCS(getpgrp,
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[getpgrp(0);]])],
     [AC_DEFINE(GETPGRP_HAVE_ARG, 1, [Define if getpgrp() must be called as getpgrp(0).])],
     [])
@@ -3391,7 +3391,7 @@ AC_CHECK_FUNCS(setpgrp,
     [AC_DEFINE(SETPGRP_HAVE_ARG, 1, [Define if setpgrp() must be called as setpgrp(0, 0).])],
     [])
 )
-AC_CHECK_FUNCS(gettimeofday, 
+AC_CHECK_FUNCS(gettimeofday,
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/time.h>]],
   				     [[gettimeofday((struct timeval*)0,(struct timezone*)0);]])],
     [],
@@ -3421,7 +3421,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 ])
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
-# for [no]getaddrinfo in netdb.h. 
+# for [no]getaddrinfo in netdb.h.
 AC_MSG_CHECKING(for getaddrinfo)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
@@ -3583,7 +3583,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[;]])],[
   AC_DEFINE(SYS_SELECT_WITH_SYS_TIME, 1,
   [Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0).]) 
+   (which you can't on SCO ODT 3.0).])
   was_it_defined=yes
 ],[])
 AC_MSG_RESULT($was_it_defined)
@@ -3634,8 +3634,8 @@ AC_MSG_RESULT($works)
 have_prototypes=no
 AC_MSG_CHECKING(for prototypes)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int foo(int x) { return 0; }]], [[return foo(10);]])],
-  [AC_DEFINE(HAVE_PROTOTYPES, 1, 
-     [Define if your compiler supports function prototype]) 
+  [AC_DEFINE(HAVE_PROTOTYPES, 1,
+     [Define if your compiler supports function prototype])
    have_prototypes=yes],
   []
 )
@@ -3656,7 +3656,7 @@ int foo(int x, ...) {
 ]], [[return foo(10, "", 3.14);]])],[
   AC_DEFINE(HAVE_STDARG_PROTOTYPES, 1,
    [Define if your compiler supports variable length function prototypes
-   (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h>]) 
+   (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h>])
   works=yes
 ],[])
 AC_MSG_RESULT($works)
@@ -3691,7 +3691,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <varargs.h>
 #endif
 ]], [[va_list list1, list2; list1 = list2;]])],[],[
- AC_DEFINE(VA_LIST_IS_ARRAY, 1, [Define if a va_list is an array of some kind]) 
+ AC_DEFINE(VA_LIST_IS_ARRAY, 1, [Define if a va_list is an array of some kind])
  va_list_is_array=yes
 ])
 AC_MSG_RESULT($va_list_is_array)
@@ -3786,9 +3786,9 @@ AC_ARG_WITH(fpectl,
             AS_HELP_STRING([--with-fpectl], [enable SIGFPE catching]),
 [
 if test "$withval" != no
-then 
+then
   AC_DEFINE(WANT_SIGFPE_HANDLER, 1,
-  [Define if you want SIGFPE handled (see Include/pyfpe.h).]) 
+  [Define if you want SIGFPE handled (see Include/pyfpe.h).])
   AC_MSG_RESULT(yes)
 else AC_MSG_RESULT(no)
 fi],
@@ -4103,8 +4103,8 @@ AC_DEFINE_UNQUOTED(PYLONG_BITS_IN_DIGIT, $enable_big_digits, [Define as the pref
 
 # check for wchar.h
 AC_CHECK_HEADER(wchar.h, [
-  AC_DEFINE(HAVE_WCHAR_H, 1, 
-  [Define if the compiler provides a wchar.h header file.]) 
+  AC_DEFINE(HAVE_WCHAR_H, 1,
+  [Define if the compiler provides a wchar.h header file.])
   wchar_h="yes"
 ],
 wchar_h="no"
@@ -4147,10 +4147,10 @@ then
   [ac_cv_wchar_t_signed=yes])])
   AC_MSG_RESULT($ac_cv_wchar_t_signed)
 fi
-  
+
 AC_MSG_CHECKING(what type to use for unicode)
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
-AC_ARG_ENABLE(unicode, 
+AC_ARG_ENABLE(unicode,
               AS_HELP_STRING([--enable-unicode@<:@=ucs@<:@24@:>@@:>@], [Enable Unicode strings (default is ucs2)]),
               [],
               [enable_unicode=yes])
@@ -4399,7 +4399,7 @@ then
       [Define if poll() sets errno on invalid file descriptors.])
 fi
 
-# Before we can test tzset, we need to check if struct tm has a tm_zone 
+# Before we can test tzset, we need to check if struct tm has a tm_zone
 # (which is not required by ISO C or UNIX spec) and/or if we support
 # tzname[]
 AC_STRUCT_TIMEZONE
@@ -4425,7 +4425,7 @@ int main()
 	   tm->tm_zone does not exist since it is the alternative way
 	   of getting timezone info.
 
-	   Red Hat 6.2 doesn't understand the southern hemisphere 
+	   Red Hat 6.2 doesn't understand the southern hemisphere
 	   after New Year's Day.
 	*/
 
@@ -4438,7 +4438,7 @@ int main()
 	    exit(1);
 #if HAVE_TZNAME
 	/* For UTC, tzname[1] is sometimes "", sometimes "   " */
-	if (strcmp(tzname[0], "UTC") || 
+	if (strcmp(tzname[0], "UTC") ||
 		(tzname[1][0] != 0 && tzname[1][0] != ' '))
 	    exit(1);
 #endif
@@ -4563,7 +4563,7 @@ AC_MSG_RESULT($ac_cv_window_has_flags)
 
 if test "$ac_cv_window_has_flags" = yes
 then
-  AC_DEFINE(WINDOW_HAS_FLAGS, 1, 
+  AC_DEFINE(WINDOW_HAS_FLAGS, 1,
   [Define if WINDOW in curses.h offers a field _flags.])
 fi
 
@@ -4854,7 +4854,7 @@ for dir in $SRCDIRS; do
     fi
 done
 
-# BEGIN_COMPUTED_GOTO 
+# BEGIN_COMPUTED_GOTO
 # Check for --with-computed-gotos
 AC_MSG_CHECKING(for --with-computed-gotos)
 AC_ARG_WITH(computed-gotos,
@@ -4862,15 +4862,15 @@ AC_ARG_WITH(computed-gotos,
                            [Use computed gotos in evaluation loop (enabled by default on supported compilers)]),
 [
 if test "$withval" = yes
-then 
+then
   AC_DEFINE(USE_COMPUTED_GOTOS, 1,
-  [Define if you want to use computed gotos in ceval.c.]) 
+  [Define if you want to use computed gotos in ceval.c.])
   AC_MSG_RESULT(yes)
 fi
 if test "$withval" = no
-then 
+then
   AC_DEFINE(USE_COMPUTED_GOTOS, 0,
-  [Define if you want to use computed gotos in ceval.c.]) 
+  [Define if you want to use computed gotos in ceval.c.])
   AC_MSG_RESULT(no)
 fi
 ],
