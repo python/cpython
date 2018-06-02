@@ -134,7 +134,8 @@ gc_prev values.
 Between collections, gc_prev is used for doubly linked list.
 
 Lowest three bits of gc_prev are used for flags.
-MASK_COLLECTING and MASK_TENTATIVELY_UNREACHABLE are used only while collecting.
+MASK_COLLECTING and MASK_TENTATIVELY_UNREACHABLE are used only while
+collecting and cleared before GC ends or _PyObject_GC_UNTRACK() is called.
 
 During a collection, gc_prev is temporary used for gc_refs, and the gc list
 is singly linked until gc_prev is restored.
@@ -145,6 +146,10 @@ gc_refs
     subtract_refs() then adjusts gc_refs so that it equals the number of
     times an object is referenced directly from outside the generation
     being collected.
+
+MASK_COLLECTING
+    Objects in generation being collected are marked MASK_COLLECTING in
+    update_refs().
 
 MASK_TENTATIVELY_UNREACHABLE
     move_unreachable() then moves objects not reachable (whether directly or
