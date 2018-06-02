@@ -8,15 +8,16 @@ import re
 import sys
 import sysconfig
 import tempfile
-import textwrap
 import time
+import unittest
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
-    findtests, runtest,
+    findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
     INTERRUPTED, CHILD_ERROR,
     PROGRESS_MIN_TIME, format_test_result)
 from test.libregrtest.setup import setup_tests
+from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
 try:
     import gc
@@ -28,20 +29,16 @@ except ImportError:
 # to keep the test files in a subfolder.  This eases the cleanup of leftover
 # files using the "make distclean" command.
 if sysconfig.is_python_build():
-    TEMPDIR = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
+    TEMPDIR = sysconfig.get_config_var('abs_builddir')
+    if TEMPDIR is None:
+        # bpo-30284: On Windows, only srcdir is available. Using abs_builddir
+        # mostly matters on UNIX when building Python out of the source tree,
+        # especially when the source tree is read only.
+        TEMPDIR = sysconfig.get_config_var('srcdir')
+    TEMPDIR = os.path.join(TEMPDIR, 'build')
 else:
     TEMPDIR = tempfile.gettempdir()
 TEMPDIR = os.path.abspath(TEMPDIR)
-
-
-def format_duration(seconds):
-    if seconds < 1.0:
-        return '%.0f ms' % (seconds * 1e3)
-    if seconds < 60.0:
-        return '%.0f sec' % seconds
-
-    minutes, seconds = divmod(seconds, 60.0)
-    return '%.0f min %.0f sec' % (minutes, seconds)
 
 
 class Regrtest:
@@ -81,6 +78,7 @@ class Regrtest:
         self.skipped = []
         self.resource_denieds = []
         self.environment_changed = []
+        self.rerun = []
         self.interrupted = False
 
         # used by --slow
@@ -125,8 +123,9 @@ class Regrtest:
 
         # "[ 51/405/1] test_tcl passed"
         line = f"{test_index:{self.test_count_width}}{self.test_count}"
-        if self.bad and not self.ns.pgo:
-            line = f"{line}/{len(self.bad)}"
+        fails = len(self.bad) + len(self.environment_changed)
+        if fails and not self.ns.pgo:
+            line = f"{line}/{fails}"
         line = f"[{line}] {test}"
 
         # add the system load prefix: "load avg: 1.80 "
@@ -242,14 +241,42 @@ class Regrtest:
         for name in self.selected:
             print(name)
 
+    def _list_cases(self, suite):
+        for test in suite:
+            if isinstance(test, unittest.loader._FailedTest):
+                continue
+            if isinstance(test, unittest.TestSuite):
+                self._list_cases(test)
+            elif isinstance(test, unittest.TestCase):
+                if support.match_test(test):
+                    print(test.id())
+
+    def list_cases(self):
+        support.verbose = False
+        support.set_match_tests(self.ns.match_tests)
+
+        for test in self.selected:
+            abstest = get_abs_module(self.ns, test)
+            try:
+                suite = unittest.defaultTestLoader.loadTestsFromName(abstest)
+                self._list_cases(suite)
+            except unittest.SkipTest:
+                self.skipped.append(test)
+
+        if self.skipped:
+            print(file=sys.stderr)
+            print(count(len(self.skipped), "test"), "skipped:", file=sys.stderr)
+            printlist(self.skipped, file=sys.stderr)
+
     def rerun_failed_tests(self):
         self.ns.verbose = True
         self.ns.failfast = False
         self.ns.verbose3 = False
-        self.ns.match_tests = None
 
+        print()
         print("Re-running failed tests in verbose mode")
-        for test in self.bad[:]:
+        self.rerun = self.bad[:]
+        for test in self.rerun:
             print("Re-running test %r in verbose mode" % test, flush=True)
             try:
                 self.ns.verbose = True
@@ -267,22 +294,27 @@ class Regrtest:
                 print(count(len(self.bad), 'test'), "failed again:")
                 printlist(self.bad)
 
+        self.display_result()
+
     def display_result(self):
+        # If running the test suite for PGO then no one cares about results.
+        if self.ns.pgo:
+            return
+
+        print()
+        print("== Tests result: %s ==" % self.get_tests_result())
+
         if self.interrupted:
-            # print a newline after ^C
             print()
+            # print a newline after ^C
             print("Test suite interrupted by signal SIGINT.")
             executed = set(self.good) | set(self.bad) | set(self.skipped)
             omitted = set(self.selected) - executed
             print(count(len(omitted), "test"), "omitted:")
             printlist(omitted)
 
-        # If running the test suite for PGO then no one cares about
-        # results.
-        if self.ns.pgo:
-            return
-
         if self.good and not self.ns.quiet:
+            print()
             if (not self.bad
                 and not self.skipped
                 and not self.interrupted
@@ -312,6 +344,11 @@ class Regrtest:
             print()
             print(count(len(self.skipped), "test"), "skipped:")
             printlist(self.skipped)
+
+        if self.rerun:
+            print()
+            print("%s:" % count(len(self.rerun), "re-run test"))
+            printlist(self.rerun)
 
     def run_tests_sequential(self):
         if self.ns.trace:
@@ -381,14 +418,14 @@ class Regrtest:
                 yield test
                 if self.bad:
                     return
+                if self.ns.fail_env_changed and self.environment_changed:
+                    return
 
     def display_header(self):
         # Print basic platform information
         print("==", platform.python_implementation(), *sys.version.split())
         print("==", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
-        print("== hash algorithm:", sys.hash_info.algorithm,
-              "64bit" if sys.maxsize > 2**32 else "32bit")
         print("== cwd:", os.getcwd())
         cpu_count = os.cpu_count()
         if cpu_count:
@@ -396,7 +433,21 @@ class Regrtest:
         print("== encodings: locale=%s, FS=%s"
               % (locale.getpreferredencoding(False),
                  sys.getfilesystemencoding()))
-        print("Testing with flags:", sys.flags)
+
+    def get_tests_result(self):
+        result = []
+        if self.bad:
+            result.append("FAILURE")
+        elif self.ns.fail_env_changed and self.environment_changed:
+            result.append("ENV CHANGED")
+
+        if self.interrupted:
+            result.append("INTERRUPTED")
+
+        if not result:
+            result.append("SUCCESS")
+
+        return ', '.join(result)
 
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
@@ -439,14 +490,7 @@ class Regrtest:
         print()
         duration = time.monotonic() - self.start_time
         print("Total duration: %s" % format_duration(duration))
-
-        if self.bad:
-            result = "FAILURE"
-        elif self.interrupted:
-            result = "INTERRUPTED"
-        else:
-            result = "SUCCESS"
-        print("Tests result: %s" % result)
+        print("Tests result: %s" % self.get_tests_result())
 
         if self.ns.runleaks:
             os.system("leaks %d" % os.getpid())
@@ -493,6 +537,10 @@ class Regrtest:
             self.list_tests()
             sys.exit(0)
 
+        if self.ns.list_cases:
+            self.list_cases()
+            sys.exit(0)
+
         self.run_tests()
         self.display_result()
 
@@ -500,37 +548,13 @@ class Regrtest:
             self.rerun_failed_tests()
 
         self.finalize()
-        sys.exit(len(self.bad) > 0 or self.interrupted)
-
-
-def removepy(names):
-    if not names:
-        return
-    for idx, name in enumerate(names):
-        basename, ext = os.path.splitext(name)
-        if ext == '.py':
-            names[idx] = basename
-
-
-def count(n, word):
-    if n == 1:
-        return "%d %s" % (n, word)
-    else:
-        return "%d %ss" % (n, word)
-
-
-def printlist(x, width=70, indent=4):
-    """Print the elements of iterable x to stdout.
-
-    Optional arg width (default 70) is the maximum line length.
-    Optional arg indent (default 4) is the number of blanks with which to
-    begin each line.
-    """
-
-    blanks = ' ' * indent
-    # Print the sorted list: 'x' may be a '--random' list or a set()
-    print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
-                        initial_indent=blanks, subsequent_indent=blanks))
+        if self.bad:
+            sys.exit(2)
+        if self.interrupted:
+            sys.exit(130)
+        if self.ns.fail_env_changed and self.environment_changed:
+            sys.exit(3)
+        sys.exit(0)
 
 
 def main(tests=None, **kwargs):

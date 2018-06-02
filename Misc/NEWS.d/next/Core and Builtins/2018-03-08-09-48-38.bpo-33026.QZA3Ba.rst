@@ -1,0 +1,1 @@
+Fixed jumping out of "with" block by setting f_lineno.

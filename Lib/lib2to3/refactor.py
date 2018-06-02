@@ -12,12 +12,12 @@ __author__ = "Guido van Rossum <guido@python.org>"
 
 
 # Python imports
+import io
 import os
 import sys
 import logging
 import operator
 import collections
-import io
 from itertools import chain
 
 # Local imports
@@ -106,22 +106,6 @@ def get_fixers_from_package(pkg_name):
 
 def _identity(obj):
     return obj
-
-if sys.version_info < (3, 0):
-    import codecs
-    _open_with_encoding = codecs.open
-    # codecs.open doesn't translate newlines sadly.
-    def _from_system_newlines(input):
-        return input.replace("\r\n", "\n")
-    def _to_system_newlines(input):
-        if os.linesep != "\n":
-            return input.replace("\n", os.linesep)
-        else:
-            return input
-else:
-    _open_with_encoding = open
-    _from_system_newlines = _identity
-    _to_system_newlines = _identity
 
 
 def _detect_future_features(source):
@@ -330,8 +314,8 @@ class RefactoringTool(object):
             encoding = tokenize.detect_encoding(f.readline)[0]
         finally:
             f.close()
-        with _open_with_encoding(filename, "r", encoding=encoding) as f:
-            return _from_system_newlines(f.read()), encoding
+        with io.open(filename, "r", encoding=encoding, newline='') as f:
+            return f.read(), encoding
 
     def refactor_file(self, filename, write=False, doctests_only=False):
         """Refactors a file."""
@@ -530,16 +514,16 @@ class RefactoringTool(object):
         set.
         """
         try:
-            f = _open_with_encoding(filename, "w", encoding=encoding)
+            fp = io.open(filename, "w", encoding=encoding)
         except OSError as err:
             self.log_error("Can't create %s: %s", filename, err)
             return
-        try:
-            f.write(_to_system_newlines(new_text))
-        except OSError as err:
-            self.log_error("Can't write %s: %s", filename, err)
-        finally:
-            f.close()
+
+        with fp:
+            try:
+                fp.write(new_text)
+            except OSError as err:
+                self.log_error("Can't write %s: %s", filename, err)
         self.log_debug("Wrote changes to %s", filename)
         self.wrote = True
 

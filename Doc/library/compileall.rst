@@ -83,6 +83,16 @@ compile Python sources.
    If ``0`` is used, then the result of :func:`os.cpu_count()`
    will be used.
 
+.. cmdoption:: --invalidation-mode [timestamp|checked-hash|unchecked-hash]
+
+   Control how the generated pycs will be invalidated at runtime. The default
+   setting, ``timestamp``, means that ``.pyc`` files with the source timestamp
+   and size embedded will be generated. The ``checked-hash`` and
+   ``unchecked-hash`` values cause hash-based pycs to be generated. Hash-based
+   pycs embed a hash of the source file contents rather than a timestamp. See
+   :ref:`pyc-invalidation` for more information on how Python validates bytecode
+   cache files at runtime.
+
 .. versionchanged:: 3.2
    Added the ``-i``, ``-b`` and ``-h`` options.
 
@@ -90,6 +100,9 @@ compile Python sources.
    Added the  ``-j``, ``-r``, and ``-qq`` options.  ``-q`` option
    was changed to a multilevel value.  ``-b`` will always produce a
    byte-code file ending in ``.pyc``, never ``.pyo``.
+
+.. versionchanged:: 3.7
+   Added the ``--invalidation-mode`` parameter.
 
 
 There is no command-line option to control the optimization level used by the
@@ -99,7 +112,7 @@ provides the option: :program:`python -O -m compileall`.
 Public functions
 ----------------
 
-.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, workers=1)
+.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, workers=1, invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
 
    Recursively descend the directory tree named by *dir*, compiling all :file:`.py`
    files along the way. Return a true value if all the files compiled successfully,
@@ -140,6 +153,10 @@ Public functions
    then sequential compilation will be used as a fallback.  If *workers* is
    lower than ``0``, a :exc:`ValueError` will be raised.
 
+   *invalidation_mode* should be a member of the
+   :class:`py_compile.PycInvalidationMode` enum and controls how the generated
+   pycs are invalidated at runtime.
+
    .. versionchanged:: 3.2
       Added the *legacy* and *optimize* parameter.
 
@@ -156,7 +173,10 @@ Public functions
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-.. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1)
+   .. versionchanged:: 3.7
+      The *invalidation_mode* parameter was added.
+
+.. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
 
    Compile the file with path *fullname*. Return a true value if the file
    compiled successfully, and a false value otherwise.
@@ -184,6 +204,10 @@ Public functions
    *optimize* specifies the optimization level for the compiler.  It is passed to
    the built-in :func:`compile` function.
 
+   *invalidation_mode* should be a member of the
+   :class:`py_compile.PycInvalidationMode` enum and controls how the generated
+   pycs are invalidated at runtime.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.5
@@ -193,7 +217,10 @@ Public functions
       The *legacy* parameter only writes out ``.pyc`` files, not ``.pyo`` files
       no matter what the value of *optimize* is.
 
-.. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, quiet=0, legacy=False, optimize=-1)
+   .. versionchanged:: 3.7
+      The *invalidation_mode* parameter was added.
+
+.. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, quiet=0, legacy=False, optimize=-1, invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
 
    Byte-compile all the :file:`.py` files found along ``sys.path``. Return a
    true value if all the files compiled successfully, and a false value otherwise.
@@ -212,6 +239,9 @@ Public functions
    .. versionchanged:: 3.5
       The *legacy* parameter only writes out ``.pyc`` files, not ``.pyo`` files
       no matter what the value of *optimize* is.
+
+   .. versionchanged:: 3.7
+      The *invalidation_mode* parameter was added.
 
 To force a recompile of all the :file:`.py` files in the :file:`Lib/`
 subdirectory and all its subdirectories::

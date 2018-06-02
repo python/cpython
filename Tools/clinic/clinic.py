@@ -710,7 +710,12 @@ class CLanguage(Language):
 
         parser_prototype_fastcall = normalize_snippet("""
             static PyObject *
-            {c_basename}({self_type}{self_name}, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+            {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs)
+            """)
+
+        parser_prototype_fastcall_keywords = normalize_snippet("""
+            static PyObject *
+            {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
             """)
 
         # parser_body_fields remembers the fields passed in to the
@@ -833,10 +838,6 @@ class CLanguage(Language):
                         {parse_arguments})) {{
                         goto exit;
                     }}
-
-                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
-                        goto exit;
-                    }}
                     """, indent=4))
             else:
                 flags = "METH_VARARGS"
@@ -863,10 +864,6 @@ class CLanguage(Language):
                         {parse_arguments})) {{
                         goto exit;
                     }}
-
-                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
-                        goto exit;
-                    }}
                     """, indent=4))
             else:
                 # positional-only, but no option groups
@@ -883,9 +880,9 @@ class CLanguage(Language):
                     """, indent=4))
 
         elif not new_or_init:
-            flags = "METH_FASTCALL"
+            flags = "METH_FASTCALL|METH_KEYWORDS"
 
-            parser_prototype = parser_prototype_fastcall
+            parser_prototype = parser_prototype_fastcall_keywords
 
             body = normalize_snippet("""
                 if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
@@ -960,8 +957,8 @@ class CLanguage(Language):
             cpp_if = "#if " + conditional
             cpp_endif = "#endif /* " + conditional + " */"
 
-            if methoddef_define and f.name not in clinic.ifndef_symbols:
-                clinic.ifndef_symbols.add(f.name)
+            if methoddef_define and f.full_name not in clinic.ifndef_symbols:
+                clinic.ifndef_symbols.add(f.full_name)
                 methoddef_ifndef = normalize_snippet("""
                     #ifndef {methoddef_name}
                         #define {methoddef_name}

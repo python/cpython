@@ -5,6 +5,18 @@ Instead of importing this module directly, import os and refer to this
 module as os.path.
 """
 
+# strings representing various path-related bits and pieces
+# These are primarily for export; internally, they are hardcoded.
+# Should be set before imports for resolving cyclic dependency.
+curdir = '.'
+pardir = '..'
+extsep = '.'
+sep = '\\'
+pathsep = ';'
+altsep = '/'
+defpath = '.;C:\\bin'
+devnull = 'nul'
+
 import os
 import sys
 import stat
@@ -18,17 +30,6 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
            "samefile", "sameopenfile", "samestat", "commonpath"]
-
-# strings representing various path-related bits and pieces
-# These are primarily for export; internally, they are hardcoded.
-curdir = '.'
-pardir = '..'
-extsep = '.'
-sep = '\\'
-pathsep = ';'
-altsep = '/'
-defpath = '.;C:\\bin'
-devnull = 'nul'
 
 def _get_bothseps(path):
     if isinstance(path, bytes):

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    <title>25.5. IDLE &mdash; Python 3.5.2 documentation</title>
+    <title>25.5. IDLE &mdash; Python 3.7.0a0 documentation</title>
 
     <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '3.5.2',
+        VERSION:     '3.7.0a0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,16 +25,19 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/sidebar.js"></script>
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.5.2 documentation"
+          title="Search within Python 3.7.0a0 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="copyright" title="Copyright" href="../copyright.html" />
-    <link rel="top" title="Python 3.5.2 documentation" href="../contents.html" />
+    <link rel="top" title="Python 3.7.0a0 documentation" href="../contents.html" />
     <link rel="up" title="25. Graphical User Interfaces with Tk" href="tk.html" />
     <link rel="next" title="25.6. Other Graphical User Interface Packages" href="othergui.html" />
     <link rel="prev" title="25.4. tkinter.scrolledtext — Scrolled Text Widget" href="tkinter.scrolledtext.html" />
     <link rel="shortcut icon" type="image/png" href="../_static/py.png" />
+    <link rel="canonical" href="https://docs.python.org/3/library/idle.html" />
+
     <script type="text/javascript" src="../_static/copybutton.js"></script>
+
 
 
 
@@ -60,7 +63,7 @@
                  style="vertical-align: middle; margin-top: -1px"/></li>
         <li><a href="https://www.python.org/">Python</a> &raquo;</li>
         <li>
-          <a href="../index.html">3.5.2 Documentation</a> &raquo;
+          <a href="../index.html">3.7.0a0 Documentation</a> &raquo;
         </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &raquo;</li>
@@ -90,7 +93,7 @@
 
   <div class="section" id="idle">
 <span id="id1"></span><h1>25.5. IDLE<a class="headerlink" href="#idle" title="Permalink to this headline">¶</a></h1>
-<p><strong>Source code:</strong> <a class="reference external" href="https://github.com/python/cpython/tree/3.5/Lib/idlelib">Lib/idlelib/</a></p>
+<p><strong>Source code:</strong> <a class="reference external" href="https://github.com/python/cpython/tree/master/Lib/idlelib/">Lib/idlelib/</a></p>
 <hr class="docutils" id="index-0" />
 <p>IDLE is Python&#8217;s Integrated Development and Learning Environment.</p>
 <p>IDLE has the following features:</p>
@@ -224,7 +227,9 @@ community is 4 spaces.</dd>
 multiline string or selected line in a string.  All lines in the
 paragraph will be formatted to less than N columns, where N defaults to 72.</dd>
 <dt>Strip trailing whitespace</dt>
-<dd>Remove any space characters after the last non-space character of a line.</dd>
+<dd>Remove trailing space and other whitespace characters after the last
+non-whitespace character of a line by applying str.rstrip to each line,
+including lines within multiline strings.</dd>
 </dl>
 </div>
 <div class="section" id="run-menu-editor-window-only">
@@ -271,7 +276,7 @@ the Shell window and Output windows.</dd>
 </dl>
 <dl class="docutils" id="index-3">
 <dt>Debugger (toggle)</dt>
-<dd>When actived, code entered in the Shell or run from an Editor will run
+<dd>When activated, code entered in the Shell or run from an Editor will run
 under the debugger.  In the Editor, breakpoints can be set with the context
 menu.  This feature is still incomplete and somewhat experimental.</dd>
 <dt>Stack Viewer</dt>
@@ -380,7 +385,7 @@ the <code class="kbd docutils literal"><span class="pre">Command</span></code> k
 <li><code class="kbd docutils literal"><span class="pre">C-e</span></code> end of line</li>
 <li><code class="kbd docutils literal"><span class="pre">C-k</span></code> kill line (but doesn&#8217;t put it in clipboard)</li>
 <li><code class="kbd docutils literal"><span class="pre">C-l</span></code> center window around the insertion point</li>
-<li><code class="kbd docutils literal"><span class="pre">C-b</span></code> go backwards one character without deleting (usually you can
+<li><code class="kbd docutils literal"><span class="pre">C-b</span></code> go backward one character without deleting (usually you can
 also use the cursor key for this)</li>
 <li><code class="kbd docutils literal"><span class="pre">C-f</span></code> go forward one character without deleting (usually you can
 also use the cursor key for this)</li>
@@ -399,7 +404,7 @@ may work.  Keybindings are selected in the Configure IDLE dialog.</p>
 Python Shell window by one tab).  After certain keywords (break, return etc.)
 the next line is dedented.  In leading indentation, <code class="kbd docutils literal"><span class="pre">Backspace</span></code> deletes up
 to 4 spaces if they are there. <code class="kbd docutils literal"><span class="pre">Tab</span></code> inserts spaces (in the Python
-Shell window one tab), number depends on Indent width. Currently tabs
+Shell window one tab), number depends on Indent width. Currently, tabs
 are restricted to four spaces due to Tcl/Tk limitations.</p>
 <p>See also the indent/dedent region commands in the edit menu.</p>
 </div>
@@ -418,7 +423,7 @@ the ACW will open immediately if a possible continuation is found.</p>
 <code class="kbd docutils literal"><span class="pre">C-space</span></code> will open a completions window. In an empty
 string, this will contain the files in the current directory. On a
 blank line, it will contain the built-in and user-defined functions and
-classes in the current name spaces, plus any modules imported. If some
+classes in the current namespaces, plus any modules imported. If some
 characters have been entered, the ACW will attempt to be more specific.</p>
 <p>If a string of characters is typed, the ACW selection will jump to the
 entry most closely matching those characters.  Entering a <code class="kbd docutils literal"><span class="pre">tab</span></code> will
@@ -440,7 +445,7 @@ longer or disable the extension.</p>
 </div>
 <div class="section" id="calltips">
 <h3>25.5.2.3. Calltips<a class="headerlink" href="#calltips" title="Permalink to this headline">¶</a></h3>
-<p>A calltip is shown when one types <code class="kbd docutils literal"><span class="pre">(</span></code> after the name of an <em>acccessible</em>
+<p>A calltip is shown when one types <code class="kbd docutils literal"><span class="pre">(</span></code> after the name of an <em>accessible</em>
 function.  A name expression may include dots and subscripts.  A calltip
 remains until it is clicked, the cursor is moved out of the argument area,
 or <code class="kbd docutils literal"><span class="pre">)</span></code> is typed.  When the cursor is in the argument part of a definition,
@@ -532,16 +537,52 @@ set in the Options dialog.</li>
 <code class="docutils literal"><span class="pre">sys.argv</span></code> reflects the arguments passed to IDLE itself.</li>
 </ul>
 </div>
+<div class="section" id="startup-failure">
+<h3>25.5.3.2. Startup failure<a class="headerlink" href="#startup-failure" title="Permalink to this headline">¶</a></h3>
+<p>IDLE uses a socket to communicate between the IDLE GUI process and the user
+code execution process.  A connection must be established whenever the Shell
+starts or restarts.  (The latter is indicated by a divider line that says
+&#8216;RESTART&#8217;). If the user process fails to connect to the GUI process, it
+displays a <code class="docutils literal"><span class="pre">Tk</span></code> error box with a &#8216;cannot connect&#8217; message that directs the
+user here.  It then exits.</p>
+<p>A common cause of failure is a user-written file with the same name as a
+standard library module, such as <em>random.py</em> and <em>tkinter.py</em>. When such a
+file is located in the same directory as a file that is about to be run,
+IDLE cannot import the stdlib file.  The current fix is to rename the
+user file.</p>
+<p>Though less common than in the past, an antivirus or firewall program may
+stop the connection.  If the program cannot be taught to allow the
+connection, then it must be turned off for IDLE to work.  It is safe to
+allow this internal connection because no data is visible on external
+ports.  A similar problem is a network mis-configuration that blocks
+connections.</p>
+<p>Python installation issues occasionally stop IDLE: multiple versions can
+clash, or a single installation might need admin access.  If one undo the
+clash, or cannot or does not want to run as admin, it might be easiest to
+completely remove Python and start over.</p>
+<p>A zombie pythonw.exe process could be a problem.  On Windows, use Task
+Manager to detect and stop one.  Sometimes a restart initiated by a program
+crash or Keyboard Interrupt (control-C) may fail to connect.  Dismissing
+the error box or Restart Shell on the Shell menu may fix a temporary problem.</p>
+<p>When IDLE first starts, it attempts to read user configuration files in
+~/.idlerc/ (~ is one&#8217;s home directory).  If there is a problem, an error
+message should be displayed.  Leaving aside random disk glitches, this can
+be prevented by never editing the files by hand, using the configuration
+dialog, under Options, instead Options.  Once it happens, the solution may
+be to delete one or more of the configuration files.</p>
+<p>If IDLE quits with no message, and it was not started from a console, try
+starting from a console (<code class="docutils literal"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">idlelib)</span></code> and see if a message appears.</p>
+</div>
 <div class="section" id="idle-console-differences">
-<h3>25.5.3.2. IDLE-console differences<a class="headerlink" href="#idle-console-differences" title="Permalink to this headline">¶</a></h3>
-<p>As much as possible, the result of executing Python code with IDLE is the
-same as executing the same code in a console window.  However, the different
-interface and operation occasionally affects visible results.  For instance,
-<code class="docutils literal"><span class="pre">sys.modules</span></code> starts with more entries.</p>
+<h3>25.5.3.3. IDLE-console differences<a class="headerlink" href="#idle-console-differences" title="Permalink to this headline">¶</a></h3>
+<p>With rare exceptions, the result of executing Python code with IDLE is
+intended to be the same as executing the same code in a console window.
+However, the different interface and operation occasionally affect
+visible results.  For instance, <code class="docutils literal"><span class="pre">sys.modules</span></code> starts with more entries.</p>
 <p>IDLE also replaces <code class="docutils literal"><span class="pre">sys.stdin</span></code>, <code class="docutils literal"><span class="pre">sys.stdout</span></code>, and <code class="docutils literal"><span class="pre">sys.stderr</span></code> with
 objects that get input from and send output to the Shell window.
-When this window has the focus, it controls the keyboard and screen.
-This is normally transparent, but functions that directly access the keyboard
+When Shell has the focus, it controls the keyboard and screen.  This is
+normally transparent, but functions that directly access the keyboard
 and screen will not work.  If <code class="docutils literal"><span class="pre">sys</span></code> is reset with <code class="docutils literal"><span class="pre">importlib.reload(sys)</span></code>,
 IDLE&#8217;s changes are lost and things like <code class="docutils literal"><span class="pre">input</span></code>, <code class="docutils literal"><span class="pre">raw_input</span></code>, and
 <code class="docutils literal"><span class="pre">print</span></code> will not work correctly.</p>
@@ -550,15 +591,35 @@ Some consoles only work with a single physical line at a time.  IDLE uses
 <code class="docutils literal"><span class="pre">exec</span></code> to run each statement.  As a result, <code class="docutils literal"><span class="pre">'__builtins__'</span></code> is always
 defined for each statement.</p>
 </div>
+<div class="section" id="developing-tkinter-applications">
+<h3>25.5.3.4. Developing tkinter applications<a class="headerlink" href="#developing-tkinter-applications" title="Permalink to this headline">¶</a></h3>
+<p>IDLE is intentionally different from standard Python in order to
+facilitate development of tkinter programs.  Enter <code class="docutils literal"><span class="pre">import</span> <span class="pre">tkinter</span> <span class="pre">as</span> <span class="pre">tk;</span>
+<span class="pre">root</span> <span class="pre">=</span> <span class="pre">tk.Tk()</span></code> in standard Python and nothing appears.  Enter the same
+in IDLE and a tk window appears.  In standard Python, one must also enter
+<code class="docutils literal"><span class="pre">root.update()</span></code> to see the window.  IDLE does the equivalent in the
+background, about 20 times a second, which is about every 50 milleseconds.
+Next enter <code class="docutils literal"><span class="pre">b</span> <span class="pre">=</span> <span class="pre">tk.Button(root,</span> <span class="pre">text='button');</span> <span class="pre">b.pack()</span></code>.  Again,
+nothing visibly changes in standard Python until one enters <code class="docutils literal"><span class="pre">root.update()</span></code>.</p>
+<p>Most tkinter programs run <code class="docutils literal"><span class="pre">root.mainloop()</span></code>, which usually does not
+return until the tk app is destroyed.  If the program is run with
+<code class="docutils literal"><span class="pre">python</span> <span class="pre">-i</span></code> or from an IDLE editor, a <code class="docutils literal"><span class="pre">&gt;&gt;&gt;</span></code> shell prompt does not
+appear until <code class="docutils literal"><span class="pre">mainloop()</span></code> returns, at which time there is nothing left
+to interact with.</p>
+<p>When running a tkinter program from an IDLE editor, one can comment out
+the mainloop call.  One then gets a shell prompt immediately and can
+interact with the live application.  One just has to remember to
+re-enable the mainloop call when running in standard Python.</p>
+</div>
 <div class="section" id="running-without-a-subprocess">
-<h3>25.5.3.3. Running without a subprocess<a class="headerlink" href="#running-without-a-subprocess" title="Permalink to this headline">¶</a></h3>
+<h3>25.5.3.5. Running without a subprocess<a class="headerlink" href="#running-without-a-subprocess" title="Permalink to this headline">¶</a></h3>
 <p>By default, IDLE executes user code in a separate subprocess via a socket,
 which uses the internal loopback interface.  This connection is not
 externally visible and no data is sent to or received from the Internet.
 If firewall software complains anyway, you can ignore it.</p>
 <p>If the attempt to make the socket connection fails, Idle will notify you.
 Such failures are sometimes transient, but if persistent, the problem
-may be either a firewall blocking the connecton or misconfiguration of
+may be either a firewall blocking the connection or misconfiguration of
 a particular system.  Until the problem is fixed, one can run Idle with
 the -n command line switch.</p>
 <p>If IDLE is started with the -n command line switch it will run in a
@@ -590,26 +651,16 @@ more information.</p>
 <h3>25.5.4.2. Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this headline">¶</a></h3>
 <p>The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.  Keys can be user defined;
-IDLE ships with four built in key sets. In addition a user can create a
+IDLE ships with four built-in key sets. In addition, a user can create a
 custom key set in the Configure IDLE dialog under the keys tab.</p>
 </div>
 <div class="section" id="extensions">
 <h3>25.5.4.3. Extensions<a class="headerlink" href="#extensions" title="Permalink to this headline">¶</a></h3>
-<p>IDLE contains an extension facility.  Peferences for extensions can be
-changed with Configure Extensions. See the beginning of config-extensions.def
-in the idlelib directory for further information.  The default extensions
-are currently:</p>
-<ul class="simple">
-<li>FormatParagraph</li>
-<li>AutoExpand</li>
-<li>ZoomHeight</li>
-<li>ScriptBinding</li>
-<li>CallTips</li>
-<li>ParenMatch</li>
-<li>AutoComplete</li>
-<li>CodeContext</li>
-<li>RstripExtension</li>
-</ul>
+<p>IDLE contains an extension facility.  Preferences for extensions can be
+changed with the Extensions tab of the preferences dialog. See the
+beginning of config-extensions.def in the idlelib directory for further
+information.  The only current default extension is zzdummy, an example
+also used for testing.</p>
 </div>
 </div>
 </div>
@@ -646,8 +697,10 @@ are currently:</p>
 </li>
 <li><a class="reference internal" href="#startup-and-code-execution">25.5.3. Startup and code execution</a><ul>
 <li><a class="reference internal" href="#command-line-usage">25.5.3.1. Command line usage</a></li>
-<li><a class="reference internal" href="#idle-console-differences">25.5.3.2. IDLE-console differences</a></li>
-<li><a class="reference internal" href="#running-without-a-subprocess">25.5.3.3. Running without a subprocess</a></li>
+<li><a class="reference internal" href="#startup-failure">25.5.3.2. Startup failure</a></li>
+<li><a class="reference internal" href="#idle-console-differences">25.5.3.3. IDLE-console differences</a></li>
+<li><a class="reference internal" href="#developing-tkinter-applications">25.5.3.4. Developing tkinter applications</a></li>
+<li><a class="reference internal" href="#running-without-a-subprocess">25.5.3.5. Running without a subprocess</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#help-and-preferences">25.5.4. Help and preferences</a><ul>
@@ -670,8 +723,11 @@ are currently:</p>
     <h3>This Page</h3>
     <ul class="this-page-menu">
       <li><a href="../bugs.html">Report a Bug</a></li>
-      <li><a href="../_sources/library/idle.txt"
-            rel="nofollow">Show Source</a></li>
+      <li>
+        <a href="https://github.com/python/cpython/blob/master/Doc/library/idle.txt"
+            rel="nofollow">Show Source
+        </a>
+      </li>
     </ul>
   </div>
         </div>
@@ -697,7 +753,7 @@ are currently:</p>
                  style="vertical-align: middle; margin-top: -1px"/></li>
         <li><a href="https://www.python.org/">Python</a> &raquo;</li>
         <li>
-          <a href="../index.html">3.5.2 Documentation</a> &raquo;
+          <a href="../index.html">3.7.0a0 Documentation</a> &raquo;
         </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &raquo;</li>
@@ -720,12 +776,12 @@ are currently:</p>
       </ul>
     </div>
     <div class="footer">
-    &copy; <a href="../copyright.html">Copyright</a> 2001-2016, Python Software Foundation.
+    &copy; <a href="../copyright.html">Copyright</a> 2001-2017, Python Software Foundation.
     <br />
     The Python Software Foundation is a non-profit corporation.
     <a href="https://www.python.org/psf/donations/">Please donate.</a>
     <br />
-    Last updated on Sep 12, 2016.
+    Last updated on Sep 15, 2017.
     <a href="../bugs.html">Found a bug</a>?
     <br />
     Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.3.6.

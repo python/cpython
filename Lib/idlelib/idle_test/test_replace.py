@@ -74,14 +74,14 @@ class ReplaceDialogTest(unittest.TestCase):
         replace()
         equal(text.get('1.8', '1.12'), 'asdf')
 
-        # dont "match word" case
+        # don't "match word" case
         text.mark_set('insert', '1.0')
         pv.set('is')
         rv.set('hello')
         replace()
         equal(text.get('1.2', '1.7'), 'hello')
 
-        # dont "match case" case
+        # don't "match case" case
         pv.set('string')
         rv.set('world')
         replace()

@@ -3,6 +3,8 @@
 Event loops
 ===========
 
+**Source code:** :source:`Lib/asyncio/events.py`
+
 Event loop functions
 --------------------
 
@@ -22,6 +24,13 @@ the execution of the process.
 .. function:: new_event_loop()
 
    Equivalent to calling ``get_event_loop_policy().new_event_loop()``.
+
+.. function:: get_running_loop()
+
+   Return the running event loop in the current OS thread.  If there
+   is no running event loop a :exc:`RuntimeError` is raised.
+
+   .. versionadded:: 3.7
 
 
 .. _asyncio-event-loops:
@@ -146,10 +155,9 @@ process based on the calling context. A policy is an object implementing the
 :class:`AbstractEventLoopPolicy` interface.
 
 For most users of :mod:`asyncio`, policies never have to be dealt with
-explicitly, since the default global policy is sufficient.
+explicitly, since the default global policy is sufficient (see below).
 
-The default policy defines context as the current thread, and manages an event
-loop per thread that interacts with :mod:`asyncio`. The module-level functions
+The module-level functions
 :func:`get_event_loop` and :func:`set_event_loop` provide convenient access to
 event loops managed by the default policy.
 
@@ -168,11 +176,14 @@ An event loop policy must implement the following interface:
       Get the event loop for the current context.
 
       Returns an event loop object implementing the :class:`AbstractEventLoop`
-      interface.
+      interface. In case called from coroutine, it returns the currently
+      running event loop.
 
       Raises an exception in case no event loop has been set for the current
       context and the current policy does not specify to create one. It must
       never return ``None``.
+
+      .. versionchanged:: 3.6
 
    .. method:: set_event_loop(loop)
 
@@ -187,6 +198,18 @@ An event loop policy must implement the following interface:
       context, :meth:`set_event_loop` must be called explicitly.
 
 
+The default policy defines context as the current thread, and manages an event
+loop per thread that interacts with :mod:`asyncio`. An exception to this rule
+happens when :meth:`~AbstractEventLoopPolicy.get_event_loop` is called from a
+running future/coroutine, in which case it will return the current loop
+running that future/coroutine.
+
+If the current thread doesn't already have an event loop associated with it,
+the default policy's :meth:`~AbstractEventLoopPolicy.get_event_loop` method
+creates one when called from the main thread, but raises :exc:`RuntimeError`
+otherwise.
+
+
 Access to the global loop policy
 --------------------------------
 
@@ -198,3 +221,24 @@ Access to the global loop policy
 
    Set the current event loop policy. If *policy* is ``None``, the default
    policy is restored.
+
+
+Customizing the event loop policy
+---------------------------------
+
+To implement a new event loop policy, it is recommended you subclass the
+concrete default event loop policy :class:`DefaultEventLoopPolicy`
+and override the methods for which you want to change behavior, for example::
+
+    class MyEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
+
+        def get_event_loop(self):
+            """Get the event loop.
+
+            This may be None or an instance of EventLoop.
+            """
+            loop = super().get_event_loop()
+            # Do something with loop ...
+            return loop
+
+    asyncio.set_event_loop_policy(MyEventLoopPolicy())

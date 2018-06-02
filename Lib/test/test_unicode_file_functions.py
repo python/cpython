@@ -17,7 +17,7 @@ filenames = [
     '7_\u05d4\u05e9\u05e7\u05e6\u05e5\u05e1',
     '8_\u66e8\u66e9\u66eb',
     '9_\u66e8\u05e9\u3093\u0434\u0393\xdf',
-    # Specific code points: fn, NFC(fn) and NFKC(fn) all differents
+    # Specific code points: fn, NFC(fn) and NFKC(fn) all different
     '10_\u1fee\u1ffd',
     ]
 
@@ -29,13 +29,13 @@ filenames = [
 # U+2FAFF are not decomposed."
 if sys.platform != 'darwin':
     filenames.extend([
-        # Specific code points: NFC(fn), NFD(fn), NFKC(fn) and NFKD(fn) all differents
+        # Specific code points: NFC(fn), NFD(fn), NFKC(fn) and NFKD(fn) all different
         '11_\u0385\u03d3\u03d4',
         '12_\u00a8\u0301\u03d2\u0301\u03d2\u0308', # == NFD('\u0385\u03d3\u03d4')
         '13_\u0020\u0308\u0301\u038e\u03ab',       # == NFKC('\u0385\u03d3\u03d4')
         '14_\u1e9b\u1fc1\u1fcd\u1fce\u1fcf\u1fdd\u1fde\u1fdf\u1fed',
 
-        # Specific code points: fn, NFC(fn) and NFKC(fn) all differents
+        # Specific code points: fn, NFC(fn) and NFKC(fn) all different
         '15_\u1fee\u1ffd\ufad1',
         '16_\u2000\u2000\u2000A',
         '17_\u2001\u2001\u2001A',

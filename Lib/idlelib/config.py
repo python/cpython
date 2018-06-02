@@ -7,7 +7,7 @@ which duplicate the defaults will be removed from the user's
 configuration files, and if a user file becomes empty, it will be
 deleted.
 
-The configuration database maps options to values.  Comceptually, the
+The configuration database maps options to values.  Conceptually, the
 database keys are tuples (config-type, section, item).  As implemented,
 there are  separate dicts for default and user values.  Each has
 config-type keys 'main', 'extensions', 'highlight', and 'keys'.  The
@@ -30,6 +30,7 @@ import os
 import sys
 
 from tkinter.font import Font
+import idlelib
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
@@ -44,7 +45,7 @@ class IdleConfParser(ConfigParser):
         """
         cfgFile - string, fully specified configuration file name
         """
-        self.file = cfgFile
+        self.file = cfgFile  # This is currently '' when testing.
         ConfigParser.__init__(self, defaults=cfgDefaults, strict=False)
 
     def Get(self, section, option, type=None, default=None, raw=False):
@@ -73,37 +74,13 @@ class IdleConfParser(ConfigParser):
 
     def Load(self):
         "Load the configuration file from disk."
-        self.read(self.file)
+        if self.file:
+            self.read(self.file)
 
 class IdleUserConfParser(IdleConfParser):
     """
     IdleConfigParser specialised for user configuration handling.
     """
-
-    def AddSection(self, section):
-        "If section doesn't exist, add it."
-        if not self.has_section(section):
-            self.add_section(section)
-
-    def RemoveEmptySections(self):
-        "Remove any sections that have no options."
-        for section in self.sections():
-            if not self.GetOptionList(section):
-                self.remove_section(section)
-
-    def IsEmpty(self):
-        "Return True if no sections after removing empty sections."
-        self.RemoveEmptySections()
-        return not self.sections()
-
-    def RemoveOption(self, section, option):
-        """Return True if option is removed from section, else False.
-
-        False if either section does not exist or did not have option.
-        """
-        if self.has_section(section):
-            return self.remove_option(section, option)
-        return False
 
     def SetOption(self, section, option, value):
         """Return True if option is added or changed to value, else False.
@@ -122,6 +99,31 @@ class IdleUserConfParser(IdleConfParser):
             self.set(section, option, value)
             return True
 
+    def RemoveOption(self, section, option):
+        """Return True if option is removed from section, else False.
+
+        False if either section does not exist or did not have option.
+        """
+        if self.has_section(section):
+            return self.remove_option(section, option)
+        return False
+
+    def AddSection(self, section):
+        "If section doesn't exist, add it."
+        if not self.has_section(section):
+            self.add_section(section)
+
+    def RemoveEmptySections(self):
+        "Remove any sections that have no options."
+        for section in self.sections():
+            if not self.GetOptionList(section):
+                self.remove_section(section)
+
+    def IsEmpty(self):
+        "Return True if no sections after removing empty sections."
+        self.RemoveEmptySections()
+        return not self.sections()
+
     def RemoveFile(self):
         "Remove user config file self.file from disk if it exists."
         if os.path.exists(self.file):
@@ -130,21 +132,22 @@ class IdleUserConfParser(IdleConfParser):
     def Save(self):
         """Update user configuration file.
 
-        Remove empty sections. If resulting config isn't empty, write the file
-        to disk. If config is empty, remove the file from disk if it exists.
+        If self not empty after removing empty sections, write the file
+        to disk. Otherwise, remove the file from disk if it exists.
 
         """
-        if not self.IsEmpty():
-            fname = self.file
-            try:
-                cfgFile = open(fname, 'w')
-            except OSError:
-                os.unlink(fname)
-                cfgFile = open(fname, 'w')
-            with cfgFile:
-                self.write(cfgFile)
-        else:
-            self.RemoveFile()
+        fname = self.file
+        if fname:
+            if not self.IsEmpty():
+                try:
+                    cfgFile = open(fname, 'w')
+                except OSError:
+                    os.unlink(fname)
+                    cfgFile = open(fname, 'w')
+                with cfgFile:
+                    self.write(cfgFile)
+            else:
+                self.RemoveFile()
 
 class IdleConf:
     """Hold config parsers for all idle config files in singleton instance.
@@ -157,23 +160,24 @@ class IdleConf:
         for config_type in self.config_types:
         (user home dir)/.idlerc/config-{config-type}.cfg
     """
-    def __init__(self):
-        self.config_types = ('main', 'extensions', 'highlight', 'keys')
+    def __init__(self, _utest=False):
+        self.config_types = ('main', 'highlight', 'keys', 'extensions')
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
-        self.CreateConfigHandlers()
-        self.LoadCfgFiles()
 
+        if not _utest:
+            self.CreateConfigHandlers()
+            self.LoadCfgFiles()
 
     def CreateConfigHandlers(self):
         "Populate default and user config parser dictionaries."
         #build idle install path
         if __name__ != '__main__': # we were imported
-            idleDir=os.path.dirname(__file__)
+            idleDir = os.path.dirname(__file__)
         else: # we were exec'ed (for testing only)
-            idleDir=os.path.abspath(sys.path[0])
-        userDir=self.GetUserCfgDir()
+            idleDir = os.path.abspath(sys.path[0])
+        self.userdir = userDir = self.GetUserCfgDir()
 
         defCfgFiles = {}
         usrCfgFiles = {}
@@ -213,7 +217,8 @@ class IdleConf:
             except OSError:
                 warn = ('\n Warning: unable to create user config directory\n' +
                         userDir + '\n Check path and permissions.\n Exiting!\n')
-                print(warn, file=sys.stderr)
+                if not idlelib.testing:
+                    print(warn, file=sys.stderr)
                 raise SystemExit
         # TODO continue without userDIr instead of exit
         return userDir
@@ -354,7 +359,10 @@ class IdleConf:
                 'stderr-foreground':'#000000',
                 'stderr-background':'#ffffff',
                 'console-foreground':'#000000',
-                'console-background':'#ffffff' }
+                'console-background':'#ffffff',
+                'context-foreground':'#000000',
+                'context-background':'#ffffff',
+                }
         for element in theme:
             if not cfgParser.has_option(themeName, element):
                 # Print warning that will return a default color
@@ -438,6 +446,11 @@ class IdleConf:
         for extn in userExtns:
             if extn not in extns: #user has added own extension
                 extns.append(extn)
+        for extn in ('AutoComplete','CodeContext',
+                     'FormatParagraph','ParenMatch'):
+            extns.remove(extn)
+            # specific exclusions because we are storing config for mainlined old
+            # extensions in config-extensions.def for backward compatibility
         if active_only:
             activeExtns = []
             for extn in extns:
@@ -461,16 +474,7 @@ class IdleConf:
 
     def RemoveKeyBindNames(self, extnNameList):
         "Return extnNameList with keybinding section names removed."
-        # TODO Easier to return filtered copy with list comp
-        names = extnNameList
-        kbNameIndicies = []
-        for name in names:
-            if name.endswith(('_bindings', '_cfgBindings')):
-                kbNameIndicies.append(names.index(name))
-        kbNameIndicies.sort(reverse=True)
-        for index in kbNameIndicies: #delete each keybinding section name
-            del(names[index])
-        return names
+        return [n for n in extnNameList if not n.endswith(('_bindings', '_cfgBindings'))]
 
     def GetExtnNameForEvent(self, virtualEvent):
         """Return the name of the extension binding virtualEvent, or None.
@@ -598,7 +602,12 @@ class IdleConf:
         return ('<<'+virtualEvent+'>>') in self.GetCoreKeys()
 
 # TODO make keyBindins a file or class attribute used for test above
-# and copied in function below
+# and copied in function below.
+
+    former_extension_events = {  #  Those with user-configurable keys.
+        '<<force-open-completions>>', '<<expand-word>>',
+        '<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
+         '<<run-module>>', '<<check-module>>', '<<zoom-height>>'}
 
     def GetCoreKeys(self, keySetName=None):
         """Return dict of core virtual-key keybindings for keySetName.
@@ -658,8 +667,17 @@ class IdleConf:
             '<<toggle-tabs>>': ['<Alt-Key-t>'],
             '<<change-indentwidth>>': ['<Alt-Key-u>'],
             '<<del-word-left>>': ['<Control-Key-BackSpace>'],
-            '<<del-word-right>>': ['<Control-Key-Delete>']
+            '<<del-word-right>>': ['<Control-Key-Delete>'],
+            '<<force-open-completions>>': ['<Control-Key-space>'],
+            '<<expand-word>>': ['<Alt-Key-slash>'],
+            '<<force-open-calltip>>': ['<Control-Key-backslash>'],
+            '<<flash-paren>>': ['<Control-Key-0>'],
+            '<<format-paragraph>>': ['<Alt-Key-q>'],
+            '<<run-module>>': ['<Key-F5>'],
+            '<<check-module>>': ['<Alt-Key-x>'],
+            '<<zoom-height>>': ['<Alt-Key-2>'],
             }
+
         if keySetName:
             if not (self.userCfg['keys'].has_section(keySetName) or
                     self.defaultCfg['keys'].has_section(keySetName)):
@@ -674,7 +692,8 @@ class IdleConf:
                     binding = self.GetKeyBinding(keySetName, event)
                     if binding:
                         keyBindings[event] = binding
-                    else: #we are going to return a default, print warning
+                    # Otherwise return default in keyBindings.
+                    elif event not in self.former_extension_events:
                         warning = (
                             '\n Warning: config.py - IdleConf.GetCoreKeys -\n'
                             ' problem retrieving key binding for event %r\n'
@@ -766,7 +785,6 @@ class IdleConf:
 
 idleConf = IdleConf()
 
-
 _warned = set()
 def _warn(msg, *key):
     key = (msg,) + key
@@ -778,9 +796,106 @@ def _warn(msg, *key):
         _warned.add(key)
 
 
+class ConfigChanges(dict):
+    """Manage a user's proposed configuration option changes.
+
+    Names used across multiple methods:
+        page -- one of the 4 top-level dicts representing a
+                .idlerc/config-x.cfg file.
+        config_type -- name of a page.
+        section -- a section within a page/file.
+        option -- name of an option within a section.
+        value -- value for the option.
+
+    Methods
+        add_option: Add option and value to changes.
+        save_option: Save option and value to config parser.
+        save_all: Save all the changes to the config parser and file.
+        delete_section: If section exists,
+                        delete from changes, userCfg, and file.
+        clear: Clear all changes by clearing each page.
+    """
+    def __init__(self):
+        "Create a page for each configuration file"
+        self.pages = []  # List of unhashable dicts.
+        for config_type in idleConf.config_types:
+            self[config_type] = {}
+            self.pages.append(self[config_type])
+
+    def add_option(self, config_type, section, item, value):
+        "Add item/value pair for config_type and section."
+        page = self[config_type]
+        value = str(value)  # Make sure we use a string.
+        if section not in page:
+            page[section] = {}
+        page[section][item] = value
+
+    @staticmethod
+    def save_option(config_type, section, item, value):
+        """Return True if the configuration value was added or changed.
+
+        Helper for save_all.
+        """
+        if idleConf.defaultCfg[config_type].has_option(section, item):
+            if idleConf.defaultCfg[config_type].Get(section, item) == value:
+                # The setting equals a default setting, remove it from user cfg.
+                return idleConf.userCfg[config_type].RemoveOption(section, item)
+        # If we got here, set the option.
+        return idleConf.userCfg[config_type].SetOption(section, item, value)
+
+    def save_all(self):
+        """Save configuration changes to the user config file.
+
+        Clear self in preparation for additional changes.
+        Return changed for testing.
+        """
+        idleConf.userCfg['main'].Save()
+
+        changed = False
+        for config_type in self:
+            cfg_type_changed = False
+            page = self[config_type]
+            for section in page:
+                if section == 'HelpFiles':  # Remove it for replacement.
+                    idleConf.userCfg['main'].remove_section('HelpFiles')
+                    cfg_type_changed = True
+                for item, value in page[section].items():
+                    if self.save_option(config_type, section, item, value):
+                        cfg_type_changed = True
+            if cfg_type_changed:
+                idleConf.userCfg[config_type].Save()
+                changed = True
+        for config_type in ['keys', 'highlight']:
+            # Save these even if unchanged!
+            idleConf.userCfg[config_type].Save()
+        self.clear()
+        # ConfigDialog caller must add the following call
+        # self.save_all_changed_extensions()  # Uses a different mechanism.
+        return changed
+
+    def delete_section(self, config_type, section):
+        """Delete a section from self, userCfg, and file.
+
+        Used to delete custom themes and keysets.
+        """
+        if section in self[config_type]:
+            del self[config_type][section]
+        configpage = idleConf.userCfg[config_type]
+        configpage.remove_section(section)
+        configpage.Save()
+
+    def clear(self):
+        """Clear all 4 pages.
+
+        Called in save_all after saving to idleConf.
+        XXX Mark window *title* when there are changes; unmark here.
+        """
+        for page in self.pages:
+            page.clear()
+
+
 # TODO Revise test output, write expanded unittest
-#
-if __name__ == '__main__':
+def _dump():  # htest # (not really, but ignore in coverage)
     from zlib import crc32
     line, crc = 0, 0
 
@@ -790,10 +905,10 @@ if __name__ == '__main__':
         line += 1
         crc = crc32(txt.encode(encoding='utf-8'), crc)
         print(txt)
-        #print('***', line, crc, '***')  # uncomment for diagnosis
+        #print('***', line, crc, '***')  # Uncomment for diagnosis.
 
     def dumpCfg(cfg):
-        print('\n', cfg, '\n')  # has variable '0xnnnnnnnn' addresses
+        print('\n', cfg, '\n')  # Cfg has variable '0xnnnnnnnn' address.
         for key in sorted(cfg.keys()):
             sections = cfg[key].sections()
             sprint(key)
@@ -808,3 +923,9 @@ if __name__ == '__main__':
     dumpCfg(idleConf.defaultCfg)
     dumpCfg(idleConf.userCfg)
     print('\nlines = ', line, ', crc = ', crc, sep='')
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main('idlelib.idle_test.test_config',
+                  verbosity=2, exit=False)
+    #_dump()

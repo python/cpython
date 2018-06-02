@@ -10,18 +10,17 @@
 */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #ifdef MS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include "windows.h"
 #endif /* MS_WINDOWS */
 
 
-PyThreadState* _PyOS_ReadlineTState;
+PyThreadState* _PyOS_ReadlineTState = NULL;
 
-#ifdef WITH_THREAD
 #include "pythread.h"
 static PyThread_type_lock _PyOS_ReadlineLock = NULL;
-#endif
 
 int (*PyOS_InputHook)(void) = NULL;
 
@@ -77,13 +76,9 @@ my_fgets(char *buf, int len, FILE *fp)
 #ifdef EINTR
         if (err == EINTR) {
             int s;
-#ifdef WITH_THREAD
             PyEval_RestoreThread(_PyOS_ReadlineTState);
-#endif
             s = PyErr_CheckSignals();
-#ifdef WITH_THREAD
             PyEval_SaveThread();
-#endif
             if (s < 0)
                     return 1;
         /* try again */
@@ -133,13 +128,9 @@ _PyOS_WindowsConsoleReadline(HANDLE hStdIn)
             if (WaitForSingleObjectEx(hInterruptEvent, 100, FALSE)
                     == WAIT_OBJECT_0) {
                 ResetEvent(hInterruptEvent);
-#ifdef WITH_THREAD
                 PyEval_RestoreThread(_PyOS_ReadlineTState);
-#endif
                 s = PyErr_CheckSignals();
-#ifdef WITH_THREAD
                 PyEval_SaveThread();
-#endif
                 if (s < 0)
                     goto exit;
             }
@@ -178,13 +169,9 @@ exit:
         PyMem_RawFree(wbuf);
 
     if (err) {
-#ifdef WITH_THREAD
         PyEval_RestoreThread(_PyOS_ReadlineTState);
-#endif
         PyErr_SetFromWindowsErr(err);
-#ifdef WITH_THREAD
         PyEval_SaveThread();
-#endif
     }
 
     return buf;
@@ -297,7 +284,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
    Note: Python expects in return a buffer allocated with PyMem_Malloc. */
 
-char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);
+char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *) = NULL;
 
 
 /* Interface used by tokenizer.c and bltinmodule.c */
@@ -319,17 +306,13 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
         PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
     }
 
-#ifdef WITH_THREAD
     if (_PyOS_ReadlineLock == NULL) {
         _PyOS_ReadlineLock = PyThread_allocate_lock();
     }
-#endif
 
     _PyOS_ReadlineTState = PyThreadState_GET();
     Py_BEGIN_ALLOW_THREADS
-#ifdef WITH_THREAD
     PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
-#endif
 
     /* This is needed to handle the unlikely case that the
      * interpreter is in interactive mode *and* stdin/out are not
@@ -343,9 +326,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
                                              prompt);
     Py_END_ALLOW_THREADS
 
-#ifdef WITH_THREAD
     PyThread_release_lock(_PyOS_ReadlineLock);
-#endif
 
     _PyOS_ReadlineTState = NULL;
 

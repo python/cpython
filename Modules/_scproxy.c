@@ -53,7 +53,7 @@ cfstring_to_pystring(CFStringRef ref)
 
 
 static PyObject*
-get_proxy_settings(PyObject* mod __attribute__((__unused__)))
+get_proxy_settings(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
 {
     CFDictionaryRef proxyDict = NULL;
     CFNumberRef aNum = NULL;
@@ -166,7 +166,7 @@ set_proxy(PyObject* proxies, const char* proto, CFDictionaryRef proxyDict,
 
 
 static PyObject*
-get_proxies(PyObject* mod __attribute__((__unused__)))
+get_proxies(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
 {
     PyObject* result = NULL;
     int r;
@@ -212,13 +212,13 @@ error:
 static PyMethodDef mod_methods[] = {
     {
         "_get_proxy_settings",
-        (PyCFunction)get_proxy_settings,
+        get_proxy_settings,
         METH_NOARGS,
         NULL,
     },
     {
         "_get_proxies",
-        (PyCFunction)get_proxies,
+        get_proxies,
         METH_NOARGS,
         NULL,
     },

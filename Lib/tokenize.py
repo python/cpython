@@ -28,7 +28,6 @@ from builtins import open as _builtin_open
 from codecs import lookup, BOM_UTF8
 import collections
 from io import TextIOWrapper
-from itertools import chain
 import itertools as _itertools
 import re
 import sys
@@ -278,13 +277,13 @@ class Untokenizer:
         startline = token[0] in (NEWLINE, NL)
         prevstring = False
 
-        for tok in chain([token], iterable):
+        for tok in _itertools.chain([token], iterable):
             toknum, tokval = tok[:2]
             if toknum == ENCODING:
                 self.encoding = tokval
                 continue
 
-            if toknum in (NAME, NUMBER, ASYNC, AWAIT):
+            if toknum in (NAME, NUMBER):
                 tokval += ' '
 
             # Insert a space between two consecutive strings
@@ -475,13 +474,10 @@ def tokenize(readline):
     The first token sequence will always be an ENCODING token
     which tells you which encoding was used to decode the bytes stream.
     """
-    # This import is here to avoid problems when the itertools module is not
-    # built yet and tokenize is imported.
-    from itertools import chain, repeat
     encoding, consumed = detect_encoding(readline)
-    rl_gen = iter(readline, b"")
-    empty = repeat(b"")
-    return _tokenize(chain(consumed, rl_gen, empty).__next__, encoding)
+    empty = _itertools.repeat(b"")
+    rl_gen = _itertools.chain(consumed, iter(readline, b""), empty)
+    return _tokenize(rl_gen.__next__, encoding)
 
 
 def _tokenize(readline, encoding):
@@ -491,18 +487,12 @@ def _tokenize(readline, encoding):
     contline = None
     indents = [0]
 
-    # 'stashed' and 'async_*' are used for async/await parsing
-    stashed = None
-    async_def = False
-    async_def_indent = 0
-    async_def_nl = False
-
     if encoding is not None:
         if encoding == "utf-8-sig":
             # BOM will already have been stripped.
             encoding = "utf-8"
         yield TokenInfo(ENCODING, encoding, (0, 0), (0, 0), '')
-    while True:             # loop over lines in stream
+    while True:                                # loop over lines in stream
         try:
             line = readline()
         except StopIteration:
@@ -571,17 +561,7 @@ def _tokenize(readline, encoding):
                         ("<tokenize>", lnum, pos, line))
                 indents = indents[:-1]
 
-                if async_def and async_def_indent >= indents[-1]:
-                    async_def = False
-                    async_def_nl = False
-                    async_def_indent = 0
-
                 yield TokenInfo(DEDENT, '', (lnum, pos), (lnum, pos), line)
-
-            if async_def and async_def_nl and async_def_indent >= indents[-1]:
-                async_def = False
-                async_def_nl = False
-                async_def_indent = 0
 
         else:                                  # continued statement
             if not line:
@@ -597,25 +577,17 @@ def _tokenize(readline, encoding):
                     continue
                 token, initial = line[start:end], line[start]
 
-                if (initial in numchars or                  # ordinary number
+                if (initial in numchars or                 # ordinary number
                     (initial == '.' and token != '.' and token != '...')):
                     yield TokenInfo(NUMBER, token, spos, epos, line)
                 elif initial in '\r\n':
-                    if stashed:
-                        yield stashed
-                        stashed = None
                     if parenlev > 0:
                         yield TokenInfo(NL, token, spos, epos, line)
                     else:
                         yield TokenInfo(NEWLINE, token, spos, epos, line)
-                        if async_def:
-                            async_def_nl = True
 
                 elif initial == '#':
                     assert not token.endswith("\n")
-                    if stashed:
-                        yield stashed
-                        stashed = None
                     yield TokenInfo(COMMENT, token, spos, epos, line)
 
                 elif token in triple_quoted:
@@ -662,36 +634,7 @@ def _tokenize(readline, encoding):
                         yield TokenInfo(STRING, token, spos, epos, line)
 
                 elif initial.isidentifier():               # ordinary name
-                    if token in ('async', 'await'):
-                        if async_def:
-                            yield TokenInfo(
-                                ASYNC if token == 'async' else AWAIT,
-                                token, spos, epos, line)
-                            continue
-
-                    tok = TokenInfo(NAME, token, spos, epos, line)
-                    if token == 'async' and not stashed:
-                        stashed = tok
-                        continue
-
-                    if token == 'def':
-                        if (stashed
-                                and stashed.type == NAME
-                                and stashed.string == 'async'):
-
-                            async_def = True
-                            async_def_indent = indents[-1]
-
-                            yield TokenInfo(ASYNC, stashed.string,
-                                            stashed.start, stashed.end,
-                                            stashed.line)
-                            stashed = None
-
-                    if stashed:
-                        yield stashed
-                        stashed = None
-
-                    yield tok
+                    yield TokenInfo(NAME, token, spos, epos, line)
                 elif initial == '\\':                      # continued stmt
                     continued = 1
                 else:
@@ -699,18 +642,11 @@ def _tokenize(readline, encoding):
                         parenlev += 1
                     elif initial in ')]}':
                         parenlev -= 1
-                    if stashed:
-                        yield stashed
-                        stashed = None
                     yield TokenInfo(OP, token, spos, epos, line)
             else:
                 yield TokenInfo(ERRORTOKEN, line[pos],
                            (lnum, pos), (lnum, pos+1), line)
                 pos += 1
-
-    if stashed:
-        yield stashed
-        stashed = None
 
     for indent in indents[1:]:                 # pop remaining indent levels
         yield TokenInfo(DEDENT, '', (lnum, 0), (lnum, 0), '')
@@ -727,7 +663,8 @@ def main():
 
     # Helper error handling routines
     def perror(message):
-        print(message, file=sys.stderr)
+        sys.stderr.write(message)
+        sys.stderr.write('\n')
 
     def error(message, filename=None, location=None):
         if location:

@@ -147,6 +147,16 @@ The :mod:`locale` module defines the following exception and functions:
    | ``CHAR_MAX`` | Nothing is specified in this locale.    |
    +--------------+-----------------------------------------+
 
+   The function sets temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
+   locale to decode ``decimal_point`` and ``thousands_sep`` byte strings if
+   they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC`` locale is
+   different than the ``LC_CTYPE`` locale. This temporary change affects other
+   threads.
+
+   .. versionchanged:: 3.7
+      The function now sets temporarily the ``LC_CTYPE`` locale to the
+      ``LC_NUMERIC`` locale in some cases.
+
 
 .. function:: nl_langinfo(option)
 
@@ -316,6 +326,13 @@ The :mod:`locale` module defines the following exception and functions:
    preferences, so this function is not thread-safe. If invoking setlocale is not
    necessary or desired, *do_setlocale* should be set to ``False``.
 
+   On Android or in the UTF-8 mode (:option:`-X` ``utf8`` option), always
+   return ``'UTF-8'``, the locale and the *do_setlocale* argument are ignored.
+
+   .. versionchanged:: 3.7
+      The function now always returns ``UTF-8`` on Android or if the UTF-8 mode
+      is enabled.
+
 
 .. function:: normalize(localename)
 
@@ -373,7 +390,7 @@ The :mod:`locale` module defines the following exception and functions:
 
    Please note that this function works like :meth:`format_string` but will
    only work for exactly one ``%char`` specifier.  For example, ``'%f'`` and
-   ``'%.0f'`` are both valid specifiers, but ``'%f kB'`` is not.
+   ``'%.0f'`` are both valid specifiers, but ``'%f KiB'`` is not.
 
    For whole format strings, use :func:`format_string`.
 
@@ -551,17 +568,23 @@ library.
 Access to message catalogs
 --------------------------
 
+.. function:: gettext(msg)
+.. function:: dgettext(domain, msg)
+.. function:: dcgettext(domain, msg, category)
+.. function:: textdomain(domain)
+.. function:: bindtextdomain(domain, dir)
+
 The locale module exposes the C library's gettext interface on systems that
-provide this interface.  It consists of the functions :func:`gettext`,
-:func:`dgettext`, :func:`dcgettext`, :func:`textdomain`, :func:`bindtextdomain`,
-and :func:`bind_textdomain_codeset`.  These are similar to the same functions in
+provide this interface.  It consists of the functions :func:`!gettext`,
+:func:`!dgettext`, :func:`!dcgettext`, :func:`!textdomain`, :func:`!bindtextdomain`,
+and :func:`!bind_textdomain_codeset`.  These are similar to the same functions in
 the :mod:`gettext` module, but use the C library's binary format for message
 catalogs, and the C library's search algorithms for locating message catalogs.
 
 Python applications should normally find no need to invoke these functions, and
 should use :mod:`gettext` instead.  A known exception to this rule are
 applications that link with additional C libraries which internally invoke
-:c:func:`gettext` or :func:`dcgettext`.  For these applications, it may be
+:c:func:`gettext` or :c:func:`dcgettext`.  For these applications, it may be
 necessary to bind the text domain, so that the libraries can properly locate
 their message catalogs.
 

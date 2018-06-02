@@ -6,6 +6,7 @@ import weakref
 import operator
 import contextlib
 import copy
+import threading
 import time
 
 from test import support
@@ -78,7 +79,6 @@ def collect_in_thread(period=0.0001):
     """
     Ensure GC collections happen in a different thread, at a high frequency.
     """
-    threading = support.import_module('threading')
     please_stop = False
 
     def collect():
@@ -1637,7 +1637,7 @@ class MappingTestCase(TestBase):
         # has to keep looping to find the first object we delete.
         objs.reverse()
 
-        # Turn on mutation in C.__eq__.  The first time thru the loop,
+        # Turn on mutation in C.__eq__.  The first time through the loop,
         # under the iterkeys() business the first comparison will delete
         # the last item iterkeys() would see, and that causes a
         #     RuntimeError: dictionary changed size during iteration

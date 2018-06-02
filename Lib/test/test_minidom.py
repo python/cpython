@@ -60,17 +60,7 @@ class MinidomTest(unittest.TestCase):
     def testDocumentAsyncAttr(self):
         doc = Document()
         self.assertFalse(doc.async_)
-        with self.assertWarns(DeprecationWarning):
-            self.assertFalse(getattr(doc, 'async', True))
-        with self.assertWarns(DeprecationWarning):
-            setattr(doc, 'async', True)
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(getattr(doc, 'async', False))
-        self.assertTrue(doc.async_)
-
         self.assertFalse(Document.async_)
-        with self.assertWarns(DeprecationWarning):
-            self.assertFalse(getattr(Document, 'async', True))
 
     def testParseFromBinaryFile(self):
         with open(tstfile, 'rb') as file:

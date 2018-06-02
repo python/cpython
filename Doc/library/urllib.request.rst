@@ -62,7 +62,7 @@ The :mod:`urllib.request` module defines the following functions:
 
    * :meth:`~urllib.response.addinfourl.info` --- return the meta-information of the page, such as headers,
      in the form of an :func:`email.message_from_string` instance (see
-     `Quick Reference to HTTP Headers <https://www.cs.tut.fi/~jkorpela/http.html>`_)
+     `Quick Reference to HTTP Headers <http://jkorpela.fi/http.html>`_)
 
    * :meth:`~urllib.response.addinfourl.getcode` -- return the HTTP status code of the response.
 
@@ -232,7 +232,7 @@ The following classes are provided:
    containing the image.
 
    *unverifiable* should indicate whether the request is unverifiable,
-   as defined by RFC 2965.  It defaults to ``False``.  An unverifiable
+   as defined by :rfc:`2965`.  It defaults to ``False``.  An unverifiable
    request is one whose URL the user did not have the option to
    approve.  For example, if the request is for an image in an HTML
    document, and the user had no option to approve the automatic
@@ -504,7 +504,7 @@ request.
 .. attribute:: Request.unverifiable
 
    boolean, indicates whether the request is unverifiable as defined
-   by RFC 2965.
+   by :rfc:`2965`.
 
 .. attribute:: Request.method
 

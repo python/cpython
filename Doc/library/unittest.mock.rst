@@ -35,7 +35,7 @@ is based on the 'action -> assertion' pattern instead of 'record -> replay'
 used by many mocking frameworks.
 
 There is a backport of :mod:`unittest.mock` for earlier versions of Python,
-available as `mock on PyPI <https://pypi.python.org/pypi/mock>`_.
+available as `mock on PyPI <https://pypi.org/project/mock>`_.
 
 
 Quick Guide
@@ -1660,7 +1660,7 @@ The full list of supported magic methods is:
 
 * ``__hash__``, ``__sizeof__``, ``__repr__`` and ``__str__``
 * ``__dir__``, ``__format__`` and ``__subclasses__``
-* ``__floor__``, ``__trunc__`` and ``__ceil__``
+* ``__round__``, ``__floor__``, ``__trunc__`` and ``__ceil__``
 * Comparisons: ``__lt__``, ``__gt__``, ``__le__``, ``__ge__``,
   ``__eq__`` and ``__ne__``
 * Container methods: ``__getitem__``, ``__setitem__``, ``__delitem__``,
@@ -2085,7 +2085,7 @@ mock_open
     the start.  If you need more control over the data that you are feeding to
     the tested code you will need to customize this mock for yourself.  When that
     is insufficient, one of the in-memory filesystem packages on `PyPI
-    <https://pypi.python.org/pypi>`_ can offer a realistic filesystem for testing.
+    <https://pypi.org>`_ can offer a realistic filesystem for testing.
 
    .. versionchanged:: 3.4
       Added :meth:`~io.IOBase.readline` and :meth:`~io.IOBase.readlines` support.
@@ -2365,3 +2365,23 @@ alternative object as the *autospec* argument:
    a mocked class to create a mock instance *does not* create a real instance.
    It is only attribute lookups - along with calls to :func:`dir` - that are done.
 
+Sealing mocks
+~~~~~~~~~~~~~
+
+.. function:: seal(mock)
+
+    Seal will disable the creation of mock children by preventing getting or setting
+    of any new attribute on the sealed mock. The sealing process is performed recursively.
+
+    If a mock instance is assigned to an attribute instead of being dynamically created
+    it won't be considered in the sealing chain. This allows one to prevent seal from
+    fixing part of the mock object.
+
+        >>> mock = Mock()
+        >>> mock.submock.attribute1 = 2
+        >>> mock.not_submock = mock.Mock()
+        >>> seal(mock)
+        >>> mock.submock.attribute2  # This will raise AttributeError.
+        >>> mock.not_submock.attribute2  # This won't raise.
+
+    .. versionadded:: 3.7

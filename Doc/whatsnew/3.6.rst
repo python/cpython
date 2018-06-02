@@ -148,7 +148,7 @@ Security improvements:
 
 Windows improvements:
 
-* :ref:`PEP 528 <whatsnew36-pep529>` and :ref:`PEP 529 <whatsnew36-pep529>`,
+* :ref:`PEP 528 <whatsnew36-pep528>` and :ref:`PEP 529 <whatsnew36-pep529>`,
   Windows filesystem and console encoding changed to UTF-8.
 
 * The ``py.exe`` launcher, when used interactively, no longer prefers
@@ -238,8 +238,8 @@ and the ``__annotations__`` attribute.
       and Guido van Rossum. Implemented by Ivan Levkivskyi.
 
    Tools that use or will use the new syntax:
-   `mypy <http://github.com/python/mypy>`_,
-   `pytype <http://github.com/google/pytype>`_, PyCharm, etc.
+   `mypy <http://www.mypy-lang.org/>`_,
+   `pytype <https://github.com/google/pytype>`_, PyCharm, etc.
 
 
 .. _whatsnew36-pep515:
@@ -819,7 +819,7 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
 (all backported to 3.5.x due to the provisional status):
 
 * The :func:`~asyncio.get_event_loop` function has been changed to
-  always return the currently running loop when called from couroutines
+  always return the currently running loop when called from coroutines
   and callbacks.
   (Contributed by Yury Selivanov in :issue:`28613`.)
 
@@ -1568,7 +1568,7 @@ mark class variables.  As introduced in :pep:`526`, a variable annotation
 wrapped in ClassVar indicates that a given attribute is intended to be used as
 a class variable and should not be set on instances of that class.
 (Contributed by Ivan Levkivskyi in `Github #280
-<https://github.com/python/typing/issues/280>`_.)
+<https://github.com/python/typing/pull/280>`_.)
 
 A new :const:`~typing.TYPE_CHECKING` constant that is assumed to be
 ``True`` by the static type chekers, but is ``False`` at runtime.
@@ -2196,7 +2196,9 @@ Changes in the Python API
   platform-specific selection is made.
   In environments where distributions are
   built on Windows and zip distributions are required, configure
-  the project with a ``setup.cfg`` file containing the following::
+  the project with a ``setup.cfg`` file containing the following:
+
+  .. code-block:: ini
 
     [sdist]
     formats=zip
@@ -2259,7 +2261,8 @@ Changes in the Python API
   direct references from methods to the implicit ``__class__`` closure
   variable, the implicit ``__classcell__`` namespace entry must now be passed
   up to ``type.__new__`` for initialisation. Failing to do so will result in
-  a :exc:`DeprecationWarning` in 3.6 and a :exc:`RuntimeWarning` in the future.
+  a :exc:`DeprecationWarning` in Python 3.6 and a :exc:`RuntimeError` in
+  Python 3.8.
 
 Changes in the C API
 --------------------

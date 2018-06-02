@@ -83,7 +83,7 @@ XXX To do:
 __version__ = "0.6"
 
 __all__ = [
-    "HTTPServer", "BaseHTTPRequestHandler",
+    "HTTPServer", "ThreadingHTTPServer", "BaseHTTPRequestHandler",
     "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
 ]
 
@@ -138,6 +138,10 @@ class HTTPServer(socketserver.TCPServer):
         host, port = self.server_address[:2]
         self.server_name = socket.getfqdn(host)
         self.server_port = port
+
+
+class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
+    daemon_threads = True
 
 
 class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
@@ -717,7 +721,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                             fs.st_mtime, datetime.timezone.utc)
                         # remove microseconds, like in If-Modified-Since
                         last_modif = last_modif.replace(microsecond=0)
-                        
+
                         if last_modif <= ims:
                             self.send_response(HTTPStatus.NOT_MODIFIED)
                             self.end_headers()
@@ -727,7 +731,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", ctype)
             self.send_header("Content-Length", str(fs[6]))
-            self.send_header("Last-Modified", 
+            self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
             self.end_headers()
             return f
@@ -1213,7 +1217,8 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
 
 
 def test(HandlerClass=BaseHTTPRequestHandler,
-         ServerClass=HTTPServer, protocol="HTTP/1.0", port=8000, bind=""):
+         ServerClass=ThreadingHTTPServer,
+         protocol="HTTP/1.0", port=8000, bind=""):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).

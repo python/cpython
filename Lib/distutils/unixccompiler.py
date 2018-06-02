@@ -233,8 +233,6 @@ class UnixCCompiler(CCompiler):
             if self._is_gcc(compiler):
                 return ["-Wl,+s", "-L" + dir]
             return ["+s", "-L" + dir]
-        elif sys.platform[:7] == "irix646" or sys.platform[:6] == "osf1V5":
-            return ["-rpath", dir]
         else:
             if self._is_gcc(compiler):
                 # gcc on non-GNU systems does not need -Wl, but can

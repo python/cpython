@@ -202,9 +202,9 @@ The grammar for a replacement field is as follows:
    .. productionlist:: sf
       replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
       field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
-      arg_name: [`identifier` | `integer`]
+      arg_name: [`identifier` | `digit`+]
       attribute_name: `identifier`
-      element_index: `integer` | `index_string`
+      element_index: `digit`+ | `index_string`
       index_string: <any source character except "]"> +
       conversion: "r" | "s" | "a"
       format_spec: <described in the next section>
@@ -304,9 +304,9 @@ The general form of a *standard format specifier* is:
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
-   width: `integer`
+   width: `digit`+
    grouping_option: "_" | ","
-   precision: `integer`
+   precision: `digit`+
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
 If a valid *align* value is specified, it can be preceded by a *fill*
@@ -754,9 +754,27 @@ attributes:
   be set in the subclass's class namespace).
 
 * *idpattern* -- This is the regular expression describing the pattern for
-  non-braced placeholders (the braces will be added automatically as
-  appropriate).  The default value is the regular expression
-  ``[_a-z][_a-z0-9]*``.
+  non-braced placeholders.  The default value is the regular expression
+  ``(?a:[_a-z][_a-z0-9]*)``.  If this is given and *braceidpattern* is
+  ``None`` this pattern will also apply to braced placeholders.
+
+  .. note::
+
+     Since default *flags* is ``re.IGNORECASE``, pattern ``[a-z]`` can match
+     with some non-ASCII characters. That's why we use the local ``a`` flag
+     here.
+
+  .. versionchanged:: 3.7
+     *braceidpattern* can be used to define separate patterns used inside and
+     outside the braces.
+
+* *braceidpattern* -- This is like *idpattern* but describes the pattern for
+  braced placeholders.  Defaults to ``None`` which means to fall back to
+  *idpattern* (i.e. the same pattern is used both inside and outside braces).
+  If given, this allows you to define different patterns for braced and
+  unbraced placeholders.
+
+  .. versionadded:: 3.7
 
 * *flags* -- The regular expression flags that will be applied when compiling
   the regular expression used for recognizing substitutions.  The default value

@@ -2,103 +2,111 @@
 setlocal
 rem Simple script to fetch source for external libraries
 
-if not exist "%~dp0..\externals" mkdir "%~dp0..\externals"
-pushd "%~dp0..\externals"
+if "%PCBUILD%"=="" (set PCBUILD=%~dp0)
+if "%EXTERNALS_DIR%"=="" (set EXTERNALS_DIR=%PCBUILD%\..\externals)
 
-if "%SVNROOT%"=="" set SVNROOT=http://svn.python.org/projects/external/
+set DO_FETCH=true
+set DO_CLEAN=false
+set IncludeTkinterSrc=false
+set IncludeSSLSrc=false
 
-rem Optionally clean up first.  Be warned that this can be very destructive!
-if not "%1"=="" (
-    for %%c in (-c --clean --clean-only) do (
-        if "%1"=="%%c" goto clean
-    )
-    goto usage
-)
-goto fetch
+:CheckOpts
+if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
+if "%~1"=="--no-openssl" (set IncludeSSL=false) & shift & goto CheckOpts
+if "%~1"=="--tkinter-src" (set IncludeTkinterSrc=true) & shift & goto CheckOpts
+if "%~1"=="--openssl-src" (set IncludeSSLSrc=true) & shift & goto CheckOpts
+if "%~1"=="--python" (set PYTHON=%2) & shift & shift & goto CheckOpts
+if "%~1"=="--organization" (set ORG=%2) & shift & shift & goto CheckOpts
+if "%~1"=="-c" (set DO_CLEAN=true) & shift & goto CheckOpts
+if "%~1"=="--clean" (set DO_CLEAN=true) & shift & goto CheckOpts
+if "%~1"=="--clean-only" (set DO_FETCH=false) & goto clean
 
+rem Include old options for compatibility
+if "%~1"=="--no-tkinter" shift & goto CheckOpts
+if "%~1"=="--no-openssl" shift & goto CheckOpts
+
+if "x%~1" NEQ "x" goto usage
+
+if "%DO_CLEAN%"=="false" goto fetch
 :clean
 echo.Cleaning up external libraries.
-for /D %%d in (
-               bzip2-*
-               db-*
-               nasm-*
-               openssl-*
-               tcl-*
-               tcltk*
-               tk-*
-               tix-*
-               sqlite-*
-               xz-*
-               ) do (
-    echo.Removing %%d
-    rmdir /s /q %%d
-)
-if "%1"=="--clean-only" (
-    goto end
+if exist "%EXTERNALS_DIR%" (
+    rem Sometimes this fails the first time; try it twice
+    rmdir /s /q "%EXTERNALS_DIR%" || rmdir /s /q "%EXTERNALS_DIR%"
 )
 
+if "%DO_FETCH%"=="false" goto end
 :fetch
-rem Fetch current versions
 
-svn --version > nul 2>&1
-if ERRORLEVEL 9009 (
-    echo.svn.exe must be on your PATH.
-    echo.Try TortoiseSVN (http://tortoisesvn.net/^) and be sure to check the
-    echo.command line tools option.
-    popd
-    exit /b 1
+if "%ORG%"=="" (set ORG=python)
+call "%PCBUILD%\find_python.bat" "%PYTHON%"
+
+if "%PYTHON%"=="" (
+    where /Q git || echo Python 3.6 could not be found or installed, and git.exe is not on your PATH && exit /B 1
 )
 
 echo.Fetching external libraries...
 
 set libraries=
-set libraries=%libraries%                                    bzip2-1.0.6
-if NOT "%IncludeSSL%"=="false" set libraries=%libraries%     nasm-2.11.06
-if NOT "%IncludeSSL%"=="false" set libraries=%libraries%     openssl-1.0.2k
-set libraries=%libraries%                                    sqlite-3.14.2.0
-if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tcl-core-8.6.6.0
-if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tk-8.6.6.0
-if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tix-8.4.3.6
-set libraries=%libraries%                                    xz-5.2.2
+set libraries=%libraries%                                       bzip2-1.0.6
+if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-1.1.0h
+set libraries=%libraries%                                       sqlite-3.21.0.0
+if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.8.0
+if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-8.6.8.0
+if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tix-8.4.3.6
+set libraries=%libraries%                                       xz-5.2.2
+set libraries=%libraries%                                       zlib-1.2.11
 
 for %%e in (%libraries%) do (
-    if exist %%e (
+    if exist "%EXTERNALS_DIR%\%%e" (
         echo.%%e already exists, skipping.
+    ) else if "%PYTHON%"=="" (
+        echo.Fetching %%e with git...
+        git clone --depth 1 https://github.com/%ORG%/cpython-source-deps --branch %%e "%EXTERNALS_DIR%\%%e"
     ) else (
         echo.Fetching %%e...
-        svn export -q %SVNROOT%%%e
+        %PYTHON% -E "%PCBUILD%\get_external.py" -O %ORG% -e "%EXTERNALS_DIR%" %%e
     )
 )
 
+echo.Fetching external binaries...
+
+set binaries=
+if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.1.0h
+if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.8.0
+if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
+
+for %%b in (%binaries%) do (
+    if exist "%EXTERNALS_DIR%\%%b" (
+        echo.%%b already exists, skipping.
+    ) else if "%PYTHON%"=="" (
+        echo.Fetching %%b with git...
+        git clone --depth 1 https://github.com/%ORG%/cpython-bin-deps --branch %%b "%EXTERNALS_DIR%\%%b"
+    ) else (
+        echo.Fetching %%b...
+        %PYTHON% -E "%PCBUILD%\get_external.py" -b -O %ORG% -e "%EXTERNALS_DIR%" %%b
+    )
+)
+
+echo Finished.
 goto end
 
 :usage
-echo.invalid argument: %1
-echo.usage: %~n0 [[ -c ^| --clean ] ^| --clean-only ]
+echo.Valid options: -c, --clean, --clean-only, --organization, --python,
+echo.--no-tkinter, --no-openssl
 echo.
-echo.Pull all sources necessary for compiling optional extension modules
-echo.that rely on external libraries.  Requires svn.exe to be on your PATH
-echo.and pulls sources from %SVNROOT%.
+echo.Pull all sources and binaries necessary for compiling optional extension
+echo.modules that rely on external libraries.
 echo.
-echo.Use the -c or --clean option to clean up all external library sources
-echo.before pulling in the current versions.
+echo.The --organization option determines which github organization to download
+echo.from, the --python option determines which Python 3.6+ interpreter to use
+echo.with PCbuild\get_external.py.
+echo.
+echo.Use the -c or --clean option to remove the entire externals directory.
 echo.
 echo.Use the --clean-only option to do the same cleaning, without pulling in
 echo.anything new.
 echo.
-echo.Only the first argument is checked, all others are ignored.
-echo.
-echo.**WARNING**: the cleaning options unconditionally remove any directory
-echo.that is a child of
-echo.   %CD%
-echo.and matches wildcard patterns beginning with bzip2-, db-, nasm-, openssl-,
-echo.tcl-, tcltk, tk-, tix-, sqlite-, or xz-, and as such has the potential
-echo.to be very destructive if you are not aware of what it is doing.  Use with
-echo.caution!
-popd
 exit /b -1
 
-
 :end
-echo Finished.
-popd

@@ -944,6 +944,11 @@ ConfigParser Objects
    .. versionchanged:: 3.5
       The *converters* argument was added.
 
+   .. versionchanged:: 3.7
+      The *defaults* argument is read with :meth:`read_dict()`,
+      providing consistent behavior across the parser: non-string
+      keys and values are implicitly converted to strings.
+
 
    .. method:: defaults()
 
@@ -990,7 +995,8 @@ ConfigParser Objects
       Attempt to read and parse a list of filenames, returning a list of
       filenames which were successfully parsed.
 
-      If *filenames* is a string or :term:`path-like object`, it is treated as
+      If *filenames* is a string, a :class:`bytes` object or a
+      :term:`path-like object`, it is treated as
       a single filename.  If a file named in *filenames* cannot be opened, that
       file will be ignored.  This is designed so that you can specify a list of
       potential configuration file locations (for example, the current
@@ -1016,6 +1022,9 @@ ConfigParser Objects
 
       .. versionadded:: 3.6.1
          The *filenames* parameter accepts a :term:`path-like object`.
+
+      .. versionadded:: 3.7
+         The *filenames* parameter accepts a :class:`bytes` object.
 
 
    .. method:: read_file(f, source=None)
@@ -1111,10 +1120,11 @@ ConfigParser Objects
       given *section*.  Optional arguments have the same meaning as for the
       :meth:`get` method.
 
-      .. versionchanged:: 3.2
-         Items present in *vars* no longer appear in the result.  The previous
-         behaviour mixed actual parser options with variables provided for
-         interpolation.
+   .. versionchanged:: 3.8
+      Items present in *vars* no longer appear in the result.  The previous
+      behaviour mixed actual parser options with variables provided for
+      interpolation.
+
 
    .. method:: set(section, option, value)
 
@@ -1208,8 +1218,10 @@ RawConfigParser Objects
                            default_section=configparser.DEFAULTSECT[, \
                            interpolation])
 
-   Legacy variant of the :class:`ConfigParser` with interpolation disabled
-   by default and unsafe ``add_section`` and ``set`` methods.
+   Legacy variant of the :class:`ConfigParser`.  It has interpolation
+   disabled by default and allows for non-string section names, option
+   names, and values via its unsafe ``add_section`` and ``set`` methods,
+   as well as the legacy ``defaults=`` keyword argument handling.
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of
@@ -1325,4 +1337,3 @@ Exceptions
 .. [1] Config parsers allow for heavy customization.  If you are interested in
        changing the behaviour outlined by the footnote reference, consult the
        `Customizing Parser Behaviour`_ section.
-

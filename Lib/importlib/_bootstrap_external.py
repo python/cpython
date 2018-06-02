@@ -6,12 +6,11 @@ such it requires the injection of specific modules and attributes in order to
 work. One should use importlib as the public-facing version of this module.
 
 """
-#
-# IMPORTANT: Whenever making changes to this module, be sure to run
-# a top-level make in order to get the frozen version of the module
-# updated. Not doing so will result in the Makefile to fail for
-# all others who don't have a ./python around to freeze the module
-# in the early stages of compilation.
+# IMPORTANT: Whenever making changes to this module, be sure to run a top-level
+# `make regen-importlib` followed by `make` in order to get the frozen version
+# of the module updated. Not doing so will result in the Makefile to fail for
+# all others who don't have a ./python around to freeze the module in the early
+# stages of compilation.
 #
 
 # See importlib._setup() for what is injected into the global namespace.
@@ -198,49 +197,59 @@ _code_type = type(_write_atomic.__code__)
 #                    3101 (merge from 2.6a0, see 62151)
 #                    3103 (__file__ points to source file)
 #     Python 3.0a4: 3111 (WITH_CLEANUP optimization).
-#     Python 3.0a5: 3131 (lexical exception stacking, including POP_EXCEPT)
-#     Python 3.1a0: 3141 (optimize list, set and dict comprehensions:
-#             change LIST_APPEND and SET_ADD, add MAP_ADD)
-#     Python 3.1a0: 3151 (optimize conditional branches:
-#             introduce POP_JUMP_IF_FALSE and POP_JUMP_IF_TRUE)
-#     Python 3.2a0: 3160 (add SETUP_WITH)
+#     Python 3.0b1: 3131 (lexical exception stacking, including POP_EXCEPT
+                          #3021)
+#     Python 3.1a1: 3141 (optimize list, set and dict comprehensions:
+#                         change LIST_APPEND and SET_ADD, add MAP_ADD #2183)
+#     Python 3.1a1: 3151 (optimize conditional branches:
+#                         introduce POP_JUMP_IF_FALSE and POP_JUMP_IF_TRUE
+                          #4715)
+#     Python 3.2a1: 3160 (add SETUP_WITH #6101)
 #                   tag: cpython-32
-#     Python 3.2a1: 3170 (add DUP_TOP_TWO, remove DUP_TOPX and ROT_FOUR)
+#     Python 3.2a2: 3170 (add DUP_TOP_TWO, remove DUP_TOPX and ROT_FOUR #9225)
 #                   tag: cpython-32
-#     Python 3.2a2  3180 (add DELETE_DEREF)
-#     Python 3.3a0  3190 __class__ super closure changed
-#     Python 3.3a0  3200 (__qualname__ added)
-#                      3210 (added size modulo 2**32 to the pyc header)
-#     Python 3.3a1  3220 (changed PEP 380 implementation)
-#     Python 3.3a4  3230 (revert changes to implicit __class__ closure)
+#     Python 3.2a3  3180 (add DELETE_DEREF #4617)
+#     Python 3.3a1  3190 (__class__ super closure changed)
+#     Python 3.3a1  3200 (PEP 3155 __qualname__ added #13448)
+#     Python 3.3a1  3210 (added size modulo 2**32 to the pyc header #13645)
+#     Python 3.3a2  3220 (changed PEP 380 implementation #14230)
+#     Python 3.3a4  3230 (revert changes to implicit __class__ closure #14857)
 #     Python 3.4a1  3250 (evaluate positional default arguments before
-#                        keyword-only defaults)
+#                        keyword-only defaults #16967)
 #     Python 3.4a1  3260 (add LOAD_CLASSDEREF; allow locals of class to override
-#                        free vars)
-#     Python 3.4a1  3270 (various tweaks to the __class__ closure)
+#                        free vars #17853)
+#     Python 3.4a1  3270 (various tweaks to the __class__ closure #12370)
 #     Python 3.4a1  3280 (remove implicit class argument)
-#     Python 3.4a4  3290 (changes to __qualname__ computation)
-#     Python 3.4a4  3300 (more changes to __qualname__ computation)
-#     Python 3.4rc2 3310 (alter __qualname__ computation)
-#     Python 3.5a0  3320 (matrix multiplication operator)
-#     Python 3.5b1  3330 (PEP 448: Additional Unpacking Generalizations)
+#     Python 3.4a4  3290 (changes to __qualname__ computation #19301)
+#     Python 3.4a4  3300 (more changes to __qualname__ computation #19301)
+#     Python 3.4rc2 3310 (alter __qualname__ computation #20625)
+#     Python 3.5a1  3320 (PEP 465: Matrix multiplication operator #21176)
+#     Python 3.5b1  3330 (PEP 448: Additional Unpacking Generalizations #2292)
 #     Python 3.5b2  3340 (fix dictionary display evaluation order #11205)
-#     Python 3.5b2  3350 (add GET_YIELD_FROM_ITER opcode #24400)
+#     Python 3.5b3  3350 (add GET_YIELD_FROM_ITER opcode #24400)
 #     Python 3.5.2  3351 (fix BUILD_MAP_UNPACK_WITH_CALL opcode #27286)
-#     Python 3.6a0  3360 (add FORMAT_VALUE opcode #25483
-#     Python 3.6a0  3361 (lineno delta of code.co_lnotab becomes signed)
-#     Python 3.6a1  3370 (16 bit wordcode)
-#     Python 3.6a1  3371 (add BUILD_CONST_KEY_MAP opcode #27140)
-#     Python 3.6a1  3372 (MAKE_FUNCTION simplification, remove MAKE_CLOSURE
+#     Python 3.6a0  3360 (add FORMAT_VALUE opcode #25483)
+#     Python 3.6a1  3361 (lineno delta of code.co_lnotab becomes signed #26107)
+#     Python 3.6a2  3370 (16 bit wordcode #26647)
+#     Python 3.6a2  3371 (add BUILD_CONST_KEY_MAP opcode #27140)
+#     Python 3.6a2  3372 (MAKE_FUNCTION simplification, remove MAKE_CLOSURE
 #                         #27095)
 #     Python 3.6b1  3373 (add BUILD_STRING opcode #27078)
 #     Python 3.6b1  3375 (add SETUP_ANNOTATIONS and STORE_ANNOTATION opcodes
 #                         #27985)
-#     Python 3.6b1  3376 (simplify CALL_FUNCTIONs & BUILD_MAP_UNPACK_WITH_CALL)
+#     Python 3.6b1  3376 (simplify CALL_FUNCTIONs & BUILD_MAP_UNPACK_WITH_CALL
+                          #27213)
 #     Python 3.6b1  3377 (set __class__ cell from type.__new__ #23722)
 #     Python 3.6b2  3378 (add BUILD_TUPLE_UNPACK_WITH_CALL #28257)
 #     Python 3.6rc1 3379 (more thorough __class__ validation #23722)
-#     Python 3.7a0  3390 (add LOAD_METHOD and CALL_METHOD opcodes)
+#     Python 3.7a1  3390 (add LOAD_METHOD and CALL_METHOD opcodes #26110)
+#     Python 3.7a2  3391 (update GET_AITER #31709)
+#     Python 3.7a4  3392 (PEP 552: Deterministic pycs #31650)
+#     Python 3.7b1  3393 (remove STORE_ANNOTATION opcode #32550)
+#     Python 3.7b5  3394 (restored docstring as the firts stmt in the body;
+#                         this might affected the first line number #32911)
+#     Python 3.8a1  3400 (move frame block handling to compiler #17611)
+#     Python 3.8a1  3401 (add END_ASYNC_FOR #33041)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -249,7 +258,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3390).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3401).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -428,63 +437,93 @@ def _find_module_shim(self, fullname):
     return loader
 
 
-def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
-    """Validate the header of the passed-in bytecode against source_stats (if
-    given) and returning the bytecode that can be compiled by compile().
+def _classify_pyc(data, name, exc_details):
+    """Perform basic validity checking of a pyc header and return the flags field,
+    which determines how the pyc should be further validated against the source.
 
-    All other arguments are used to enhance error reporting.
+    *data* is the contents of the pyc file. (Only the first 16 bytes are
+    required, though.)
 
-    ImportError is raised when the magic number is incorrect or the bytecode is
-    found to be stale. EOFError is raised when the data is found to be
-    truncated.
+    *name* is the name of the module being imported. It is used for logging.
+
+    *exc_details* is a dictionary passed to ImportError if it raised for
+    improved debugging.
+
+    ImportError is raised when the magic number is incorrect or when the flags
+    field is invalid. EOFError is raised when the data is found to be truncated.
 
     """
-    exc_details = {}
-    if name is not None:
-        exc_details['name'] = name
-    else:
-        # To prevent having to make all messages have a conditional name.
-        name = '<bytecode>'
-    if path is not None:
-        exc_details['path'] = path
     magic = data[:4]
-    raw_timestamp = data[4:8]
-    raw_size = data[8:12]
     if magic != MAGIC_NUMBER:
-        message = 'bad magic number in {!r}: {!r}'.format(name, magic)
+        message = f'bad magic number in {name!r}: {magic!r}'
         _bootstrap._verbose_message('{}', message)
         raise ImportError(message, **exc_details)
-    elif len(raw_timestamp) != 4:
-        message = 'reached EOF while reading timestamp in {!r}'.format(name)
+    if len(data) < 16:
+        message = f'reached EOF while reading pyc header of {name!r}'
         _bootstrap._verbose_message('{}', message)
         raise EOFError(message)
-    elif len(raw_size) != 4:
-        message = 'reached EOF while reading size of source in {!r}'.format(name)
+    flags = _r_long(data[4:8])
+    # Only the first two flags are defined.
+    if flags & ~0b11:
+        message = f'invalid flags {flags!r} in {name!r}'
+        raise ImportError(message, **exc_details)
+    return flags
+
+
+def _validate_timestamp_pyc(data, source_mtime, source_size, name,
+                            exc_details):
+    """Validate a pyc against the source last-modified time.
+
+    *data* is the contents of the pyc file. (Only the first 16 bytes are
+    required.)
+
+    *source_mtime* is the last modified timestamp of the source file.
+
+    *source_size* is None or the size of the source file in bytes.
+
+    *name* is the name of the module being imported. It is used for logging.
+
+    *exc_details* is a dictionary passed to ImportError if it raised for
+    improved debugging.
+
+    An ImportError is raised if the bytecode is stale.
+
+    """
+    if _r_long(data[8:12]) != (source_mtime & 0xFFFFFFFF):
+        message = f'bytecode is stale for {name!r}'
         _bootstrap._verbose_message('{}', message)
-        raise EOFError(message)
-    if source_stats is not None:
-        try:
-            source_mtime = int(source_stats['mtime'])
-        except KeyError:
-            pass
-        else:
-            if _r_long(raw_timestamp) != source_mtime:
-                message = 'bytecode is stale for {!r}'.format(name)
-                _bootstrap._verbose_message('{}', message)
-                raise ImportError(message, **exc_details)
-        try:
-            source_size = source_stats['size'] & 0xFFFFFFFF
-        except KeyError:
-            pass
-        else:
-            if _r_long(raw_size) != source_size:
-                raise ImportError('bytecode is stale for {!r}'.format(name),
-                                  **exc_details)
-    return data[12:]
+        raise ImportError(message, **exc_details)
+    if (source_size is not None and
+        _r_long(data[12:16]) != (source_size & 0xFFFFFFFF)):
+        raise ImportError(f'bytecode is stale for {name!r}', **exc_details)
+
+
+def _validate_hash_pyc(data, source_hash, name, exc_details):
+    """Validate a hash-based pyc by checking the real source hash against the one in
+    the pyc header.
+
+    *data* is the contents of the pyc file. (Only the first 16 bytes are
+    required.)
+
+    *source_hash* is the importlib.util.source_hash() of the source file.
+
+    *name* is the name of the module being imported. It is used for logging.
+
+    *exc_details* is a dictionary passed to ImportError if it raised for
+    improved debugging.
+
+    An ImportError is raised if the bytecode is stale.
+
+    """
+    if data[8:16] != source_hash:
+        raise ImportError(
+            f'hash in bytecode doesn\'t match hash of source {name!r}',
+            **exc_details,
+        )
 
 
 def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
-    """Compile bytecode as returned by _validate_bytecode_header()."""
+    """Compile bytecode as found in a pyc."""
     code = marshal.loads(data)
     if isinstance(code, _code_type):
         _bootstrap._verbose_message('code object from {!r}', bytecode_path)
@@ -495,12 +534,24 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
         raise ImportError('Non-code object in {!r}'.format(bytecode_path),
                           name=name, path=bytecode_path)
 
-def _code_to_bytecode(code, mtime=0, source_size=0):
-    """Compile a code object into bytecode for writing out to a byte-compiled
-    file."""
+
+def _code_to_timestamp_pyc(code, mtime=0, source_size=0):
+    "Produce the data for a timestamp-based pyc."
     data = bytearray(MAGIC_NUMBER)
+    data.extend(_w_long(0))
     data.extend(_w_long(mtime))
     data.extend(_w_long(source_size))
+    data.extend(marshal.dumps(code))
+    return data
+
+
+def _code_to_hash_pyc(code, source_hash, checked=True):
+    "Produce the data for a hash-based pyc."
+    data = bytearray(MAGIC_NUMBER)
+    flags = 0b1 | checked << 1
+    data.extend(_w_long(flags))
+    assert len(source_hash) == 8
+    data.extend(source_hash)
     data.extend(marshal.dumps(code))
     return data
 
@@ -750,6 +801,10 @@ class SourceLoader(_LoaderBasics):
         """
         source_path = self.get_filename(fullname)
         source_mtime = None
+        source_bytes = None
+        source_hash = None
+        hash_based = False
+        check_source = True
         try:
             bytecode_path = cache_from_source(source_path)
         except NotImplementedError:
@@ -766,10 +821,34 @@ class SourceLoader(_LoaderBasics):
                 except OSError:
                     pass
                 else:
+                    exc_details = {
+                        'name': fullname,
+                        'path': bytecode_path,
+                    }
                     try:
-                        bytes_data = _validate_bytecode_header(data,
-                                source_stats=st, name=fullname,
-                                path=bytecode_path)
+                        flags = _classify_pyc(data, fullname, exc_details)
+                        bytes_data = memoryview(data)[16:]
+                        hash_based = flags & 0b1 != 0
+                        if hash_based:
+                            check_source = flags & 0b10 != 0
+                            if (_imp.check_hash_based_pycs != 'never' and
+                                (check_source or
+                                 _imp.check_hash_based_pycs == 'always')):
+                                source_bytes = self.get_data(source_path)
+                                source_hash = _imp.source_hash(
+                                    _RAW_MAGIC_NUMBER,
+                                    source_bytes,
+                                )
+                                _validate_hash_pyc(data, source_hash, fullname,
+                                                   exc_details)
+                        else:
+                            _validate_timestamp_pyc(
+                                data,
+                                source_mtime,
+                                st['size'],
+                                fullname,
+                                exc_details,
+                            )
                     except (ImportError, EOFError):
                         pass
                     else:
@@ -778,13 +857,19 @@ class SourceLoader(_LoaderBasics):
                         return _compile_bytecode(bytes_data, name=fullname,
                                                  bytecode_path=bytecode_path,
                                                  source_path=source_path)
-        source_bytes = self.get_data(source_path)
+        if source_bytes is None:
+            source_bytes = self.get_data(source_path)
         code_object = self.source_to_code(source_bytes, source_path)
         _bootstrap._verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
                 source_mtime is not None):
-            data = _code_to_bytecode(code_object, source_mtime,
-                    len(source_bytes))
+            if hash_based:
+                if source_hash is None:
+                    source_hash = _imp.source_hash(source_bytes)
+                data = _code_to_hash_pyc(code_object, source_hash, check_source)
+            else:
+                data = _code_to_timestamp_pyc(code_object, source_mtime,
+                                              len(source_bytes))
             try:
                 self._cache_bytecode(source_path, bytecode_path, data)
                 _bootstrap._verbose_message('wrote {!r}', bytecode_path)
@@ -832,6 +917,33 @@ class FileLoader:
         """Return the data from path as raw bytes."""
         with _io.FileIO(path, 'r') as file:
             return file.read()
+
+    # ResourceReader ABC API.
+
+    @_check_name
+    def get_resource_reader(self, module):
+        if self.is_package(module):
+            return self
+        return None
+
+    def open_resource(self, resource):
+        path = _path_join(_path_split(self.path)[0], resource)
+        return _io.FileIO(path, 'r')
+
+    def resource_path(self, resource):
+        if not self.is_resource(resource):
+            raise FileNotFoundError
+        path = _path_join(_path_split(self.path)[0], resource)
+        return path
+
+    def is_resource(self, name):
+        if path_sep in name:
+            return False
+        path = _path_join(_path_split(self.path)[0], name)
+        return _path_isfile(path)
+
+    def contents(self):
+        return iter(_os.listdir(_path_split(self.path)[0]))
 
 
 class SourceFileLoader(FileLoader, SourceLoader):
@@ -886,8 +998,18 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
     def get_code(self, fullname):
         path = self.get_filename(fullname)
         data = self.get_data(path)
-        bytes_data = _validate_bytecode_header(data, name=fullname, path=path)
-        return _compile_bytecode(bytes_data, name=fullname, bytecode_path=path)
+        # Call _classify_pyc to do basic validation of the pyc but ignore the
+        # result. There's no source to check against.
+        exc_details = {
+            'name': fullname,
+            'path': path,
+        }
+        _classify_pyc(data, fullname, exc_details)
+        return _compile_bytecode(
+            memoryview(data)[16:],
+            name=fullname,
+            bytecode_path=path,
+        )
 
     def get_source(self, fullname):
         """Return None as there is no source code."""
@@ -1061,8 +1183,10 @@ class PathFinder:
     def invalidate_caches(cls):
         """Call the invalidate_caches() method on all path entry finders
         stored in sys.path_importer_caches (where implemented)."""
-        for finder in sys.path_importer_cache.values():
-            if hasattr(finder, 'invalidate_caches'):
+        for name, finder in list(sys.path_importer_cache.items()):
+            if finder is None:
+                del sys.path_importer_cache[name]
+            elif hasattr(finder, 'invalidate_caches'):
                 finder.invalidate_caches()
 
     @classmethod
@@ -1161,9 +1285,9 @@ class PathFinder:
         elif spec.loader is None:
             namespace_path = spec.submodule_search_locations
             if namespace_path:
-                # We found at least one namespace path.  Return a
-                #  spec which can create the namespace package.
-                spec.origin = 'namespace'
+                # We found at least one namespace path.  Return a spec which
+                # can create the namespace package.
+                spec.origin = None
                 spec.submodule_search_locations = _NamespacePath(fullname, namespace_path, cls._get_spec)
                 return spec
             else:
@@ -1411,11 +1535,7 @@ def _setup(_bootstrap_module):
     setattr(self_module, 'path_separators', ''.join(path_separators))
 
     # Directly load the _thread module (needed during bootstrap).
-    try:
-        thread_module = _bootstrap._builtin_from_name('_thread')
-    except ImportError:
-        # Python was built without threads
-        thread_module = None
+    thread_module = _bootstrap._builtin_from_name('_thread')
     setattr(self_module, '_thread', thread_module)
 
     # Directly load the _weakref module (needed during bootstrap).

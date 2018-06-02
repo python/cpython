@@ -338,6 +338,16 @@ class _AssertLogsContext(_BaseTestCaseContext):
                 .format(logging.getLevelName(self.level), self.logger.name))
 
 
+class _OrderedChainMap(collections.ChainMap):
+    def __iter__(self):
+        seen = set()
+        for mapping in self.maps:
+            for k in mapping:
+                if k not in seen:
+                    seen.add(k)
+                    yield k
+
+
 class TestCase(object):
     """A class whose instances are single test cases.
 
@@ -514,7 +524,7 @@ class TestCase(object):
             return
         parent = self._subtest
         if parent is None:
-            params_map = collections.ChainMap(params)
+            params_map = _OrderedChainMap(params)
         else:
             params_map = parent.params.new_child(params)
         self._subtest = _SubTest(self, msg, params_map)
@@ -842,7 +852,8 @@ class TestCase(object):
         """Fail if the two objects are unequal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero, or by comparing that the
-           between the two objects is more than the given delta.
+           difference between the two objects is more than the given
+           delta.
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most significant digit).
@@ -886,7 +897,7 @@ class TestCase(object):
         """Fail if the two objects are equal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero, or by comparing that the
-           between the two objects is less than the given delta.
+           difference between the two objects is less than the given delta.
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most significant digit).
@@ -1263,7 +1274,7 @@ class TestCase(object):
 
         Args:
             expected_exception: Exception class expected to be raised.
-            expected_regex: Regex (re pattern object or string) expected
+            expected_regex: Regex (re.Pattern object or string) expected
                     to be found in error message.
             args: Function to be called and extra positional args.
             kwargs: Extra kwargs.
@@ -1282,7 +1293,7 @@ class TestCase(object):
 
         Args:
             expected_warning: Warning class expected to be triggered.
-            expected_regex: Regex (re pattern object or string) expected
+            expected_regex: Regex (re.Pattern object or string) expected
                     to be found in error message.
             args: Function to be called and extra positional args.
             kwargs: Extra kwargs.
@@ -1418,7 +1429,7 @@ class _SubTest(TestCase):
         if self.params:
             params_desc = ', '.join(
                 "{}={!r}".format(k, v)
-                for (k, v) in sorted(self.params.items()))
+                for (k, v) in self.params.items())
             parts.append("({})".format(params_desc))
         return " ".join(parts) or '(<subtest>)'
 

@@ -610,9 +610,6 @@ class RawConfigParser(MutableMapping):
         self._converters = ConverterMapping(self)
         self._proxies = self._dict()
         self._proxies[default_section] = SectionProxy(self, default_section)
-        if defaults:
-            for key, value in defaults.items():
-                self._defaults[self.optionxform(key)] = value
         self._delimiters = tuple(delimiters)
         if delimiters == ('=', ':'):
             self._optcre = self.OPTCRE_NV if allow_no_value else self.OPTCRE
@@ -637,6 +634,8 @@ class RawConfigParser(MutableMapping):
             self._interpolation = Interpolation()
         if converters is not _UNSET:
             self._converters.update(converters)
+        if defaults:
+            self._read_defaults(defaults)
 
     def defaults(self):
         return self._defaults
@@ -688,7 +687,7 @@ class RawConfigParser(MutableMapping):
 
         Return list of successfully read files.
         """
-        if isinstance(filenames, (str, os.PathLike)):
+        if isinstance(filenames, (str, bytes, os.PathLike)):
             filenames = [filenames]
         read_ok = []
         for filename in filenames:
@@ -847,6 +846,7 @@ class RawConfigParser(MutableMapping):
         except KeyError:
             if section != self.default_section:
                 raise NoSectionError(section)
+        orig_keys = list(d.keys())
         # Update with the entry specific variables
         if vars:
             for key, value in vars.items():
@@ -855,7 +855,7 @@ class RawConfigParser(MutableMapping):
             section, option, d[option], d)
         if raw:
             value_getter = lambda option: d[option]
-        return [(option, value_getter(option)) for option in d.keys()]
+        return [(option, value_getter(option)) for option in orig_keys]
 
     def popitem(self):
         """Remove a section from the parser and return it as
@@ -1122,6 +1122,12 @@ class RawConfigParser(MutableMapping):
                                                                 section,
                                                                 name, val)
 
+    def _read_defaults(self, defaults):
+        """Read the defaults passed in the initializer.
+        Note: values can be non-string."""
+        for key, value in defaults.items():
+            self._defaults[self.optionxform(key)] = value
+
     def _handle_error(self, exc, fpname, lineno, line):
         if not exc:
             exc = ParsingError(fpname)
@@ -1198,6 +1204,11 @@ class ConfigParser(RawConfigParser):
         a string."""
         self._validate_value_types(section=section)
         super().add_section(section)
+
+    def _read_defaults(self, defaults):
+        """Reads the defaults passed in the initializer, implicitly converting
+        values to strings like the rest of the API."""
+        self.read_dict({self.default_section: defaults})
 
 
 class SafeConfigParser(ConfigParser):

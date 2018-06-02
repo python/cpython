@@ -41,7 +41,7 @@ pysqlite_row_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
     assert(type != NULL && type->tp_alloc != NULL);
 
-    if (!_PyArg_NoKeywords("Row()", kwargs))
+    if (!_PyArg_NoKeywords("Row", kwargs))
         return NULL;
     if (!PyArg_ParseTuple(args, "OO", &cursor, &data))
         return NULL;
@@ -155,7 +155,7 @@ Py_ssize_t pysqlite_row_length(pysqlite_Row* self, PyObject* args, PyObject* kwa
     return PyTuple_GET_SIZE(self->data);
 }
 
-PyObject* pysqlite_row_keys(pysqlite_Row* self, PyObject* args, PyObject* kwargs)
+PyObject* pysqlite_row_keys(pysqlite_Row* self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* list;
     Py_ssize_t nitems, i;

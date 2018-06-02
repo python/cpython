@@ -405,6 +405,10 @@ class TestAudioop(unittest.TestCase):
             self.assertEqual(audioop.ratecv(datas[w], w, 1, 8000, 8000, None, 30, 10)[0],
                              expected[w])
 
+        self.assertRaises(TypeError, audioop.ratecv, b'', 1, 1, 8000, 8000, 42)
+        self.assertRaises(TypeError, audioop.ratecv,
+                          b'', 1, 1, 8000, 8000, (1, (42,)))
+
     def test_reverse(self):
         for w in 1, 2, 3, 4:
             self.assertEqual(audioop.reverse(b'', w), b'')

@@ -134,7 +134,7 @@ class SlicesTestCase(unittest.TestCase):
         dll.my_wcsdup.restype = POINTER(c_wchar)
         dll.my_wcsdup.argtypes = POINTER(c_wchar),
         dll.my_free.restype = None
-        res = dll.my_wcsdup(s)
+        res = dll.my_wcsdup(s[:-1])
         self.assertEqual(res[:len(s)], s)
         self.assertEqual(res[:len(s):], s)
         self.assertEqual(res[len(s)-1:-1:-1], s[::-1])
@@ -153,7 +153,7 @@ class SlicesTestCase(unittest.TestCase):
             dll.my_wcsdup.restype = POINTER(c_long)
         else:
             self.skipTest('Pointers to c_wchar are not supported')
-        res = dll.my_wcsdup(s)
+        res = dll.my_wcsdup(s[:-1])
         tmpl = list(range(ord("a"), ord("z")+1))
         self.assertEqual(res[:len(s)-1], tmpl)
         self.assertEqual(res[:len(s)-1:], tmpl)

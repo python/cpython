@@ -281,10 +281,6 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         case ID_INSTALL_BUTTON:
             SavePageSettings();
 
-            if (!WillElevate() && !QueryElevateForCrtInstall()) {
-                break;
-            }
-
             hr = BalGetNumericVariable(L"InstallAllUsers", &installAllUsers);
             ExitOnFailure(hr, L"Failed to get install scope");
 
@@ -330,10 +326,6 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             if (SUCCEEDED(hr)) {
                 // TODO: Check whether directory exists and contains another installation
                 ReleaseStr(targetDir);
-            }
-
-            if (!WillElevate() && !QueryElevateForCrtInstall()) {
-                break;
             }
 
             OnPlan(_command.action);
@@ -2640,30 +2632,6 @@ private:
         free(pData);
         _crtInstalledToken = result ? 1 : 0;
         return result;
-    }
-
-    BOOL QueryElevateForCrtInstall() {
-        // Called to prompt the user that even though they think they won't need
-        // to elevate, they actually will because of the CRT install.
-        if (IsCrtInstalled()) {
-            // CRT is already installed - no need to prompt
-            return TRUE;
-        }
-        
-        LONGLONG elevated;
-        HRESULT hr = BalGetNumericVariable(L"WixBundleElevated", &elevated);
-        if (SUCCEEDED(hr) && elevated) {
-            // Already elevated - no need to prompt
-            return TRUE;
-        }
-
-        LOC_STRING *locStr;
-        hr = LocGetString(_wixLoc, L"#(loc.ElevateForCRTInstall)", &locStr);
-        if (FAILED(hr)) {
-            BalLogError(hr, "Failed to get ElevateForCRTInstall string");
-            return FALSE;
-        }
-        return ::MessageBoxW(_hWnd, locStr->wzText, _theme->sczCaption, MB_YESNO) != IDNO;
     }
 
     HRESULT EvaluateConditions() {

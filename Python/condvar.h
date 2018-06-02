@@ -37,27 +37,16 @@
  *    Condition Variable.
  */
 
-#ifndef _CONDVAR_H_
-#define _CONDVAR_H_
+#ifndef _CONDVAR_IMPL_H_
+#define _CONDVAR_IMPL_H_
 
 #include "Python.h"
-
-#ifndef _POSIX_THREADS
-/* This means pthreads are not implemented in libc headers, hence the macro
-   not present in unistd.h. But they still can be implemented as an external
-   library (e.g. gnu pth in pthread emulation) */
-# ifdef HAVE_PTHREAD_H
-#  include <pthread.h> /* _POSIX_THREADS */
-# endif
-#endif
+#include "internal/condvar.h"
 
 #ifdef _POSIX_THREADS
 /*
  * POSIX support
  */
-#define Py_HAVE_CONDVAR
-
-#include <pthread.h>
 
 #define PyCOND_ADD_MICROSECONDS(tv, interval) \
 do { /* TODO: add overflow and truncation checks */ \
@@ -74,13 +63,11 @@ do { /* TODO: add overflow and truncation checks */ \
 #endif
 
 /* The following functions return 0 on success, nonzero on error */
-#define PyMUTEX_T pthread_mutex_t
 #define PyMUTEX_INIT(mut)       pthread_mutex_init((mut), NULL)
 #define PyMUTEX_FINI(mut)       pthread_mutex_destroy(mut)
 #define PyMUTEX_LOCK(mut)       pthread_mutex_lock(mut)
 #define PyMUTEX_UNLOCK(mut)     pthread_mutex_unlock(mut)
 
-#define PyCOND_T pthread_cond_t
 #define PyCOND_INIT(cond)       pthread_cond_init((cond), NULL)
 #define PyCOND_FINI(cond)       pthread_cond_destroy(cond)
 #define PyCOND_SIGNAL(cond)     pthread_cond_signal(cond)
@@ -116,45 +103,11 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
  * Emulated condition variables ones that work with XP and later, plus
  * example native support on VISTA and onwards.
  */
-#define Py_HAVE_CONDVAR
-
-
-/* include windows if it hasn't been done before */
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
-/* options */
-/* non-emulated condition variables are provided for those that want
- * to target Windows Vista.  Modify this macro to enable them.
- */
-#ifndef _PY_EMULATED_WIN_CV
-#define _PY_EMULATED_WIN_CV 1  /* use emulated condition variables */
-#endif
-
-/* fall back to emulation if not targeting Vista */
-#if !defined NTDDI_VISTA || NTDDI_VERSION < NTDDI_VISTA
-#undef _PY_EMULATED_WIN_CV
-#define _PY_EMULATED_WIN_CV 1
-#endif
-
 
 #if _PY_EMULATED_WIN_CV
 
 /* The mutex is a CriticalSection object and
    The condition variables is emulated with the help of a semaphore.
-   Semaphores are available on Windows XP (2003 server) and later.
-   We use a Semaphore rather than an auto-reset event, because although
-   an auto-resent event might appear to solve the lost-wakeup bug (race
-   condition between releasing the outer lock and waiting) because it
-   maintains state even though a wait hasn't happened, there is still
-   a lost wakeup problem if more than one thread are interrupted in the
-   critical place.  A semaphore solves that, because its state is counted,
-   not Boolean.
-   Because it is ok to signal a condition variable with no one
-   waiting, we need to keep track of the number of
-   waiting threads.  Otherwise, the semaphore's state could rise
-   without bound.  This also helps reduce the number of "spurious wakeups"
-   that would otherwise happen.
 
    This implementation still has the problem that the threads woken
    with a "signal" aren't necessarily those that are already
@@ -167,8 +120,6 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
    but the implementations are all broken in some way.
    http://www.cse.wustl.edu/~schmidt/win32-cv-1.html
 */
-
-typedef CRITICAL_SECTION PyMUTEX_T;
 
 Py_LOCAL_INLINE(int)
 PyMUTEX_INIT(PyMUTEX_T *cs)
@@ -198,15 +149,6 @@ PyMUTEX_UNLOCK(PyMUTEX_T *cs)
     return 0;
 }
 
-/* The ConditionVariable object.  From XP onwards it is easily emulated with
- * a Semaphore
- */
-
-typedef struct _PyCOND_T
-{
-    HANDLE sem;
-    int waiting; /* to allow PyCOND_SIGNAL to be a no-op */
-} PyCOND_T;
 
 Py_LOCAL_INLINE(int)
 PyCOND_INIT(PyCOND_T *cv)
@@ -304,12 +246,7 @@ PyCOND_BROADCAST(PyCOND_T *cv)
     return 0;
 }
 
-#else
-
-/* Use native Win7 primitives if build target is Win7 or higher */
-
-/* SRWLOCK is faster and better than CriticalSection */
-typedef SRWLOCK PyMUTEX_T;
+#else /* !_PY_EMULATED_WIN_CV */
 
 Py_LOCAL_INLINE(int)
 PyMUTEX_INIT(PyMUTEX_T *cs)
@@ -338,8 +275,6 @@ PyMUTEX_UNLOCK(PyMUTEX_T *cs)
     return 0;
 }
 
-
-typedef CONDITION_VARIABLE  PyCOND_T;
 
 Py_LOCAL_INLINE(int)
 PyCOND_INIT(PyCOND_T *cv)
@@ -387,4 +322,4 @@ PyCOND_BROADCAST(PyCOND_T *cv)
 
 #endif /* _POSIX_THREADS, NT_THREADS */
 
-#endif /* _CONDVAR_H_ */
+#endif /* _CONDVAR_IMPL_H_ */

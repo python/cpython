@@ -1,13 +1,19 @@
-import importlib
-import shutil
-import stat
-import sys
-import os
-import unittest
-import socket
-import tempfile
+import contextlib
 import errno
+import importlib
+import io
+import os
+import shutil
+import socket
+import stat
+import subprocess
+import sys
+import tempfile
+import textwrap
+import time
+import unittest
 from test import support
+from test.support import script_helper
 
 TESTFN = support.TESTFN
 
@@ -160,6 +166,33 @@ class TestSupport(unittest.TestCase):
         self.assertTrue(warn.startswith(f'tests may fail, unable to create '
                                         f'temporary directory {path!r}: '),
                         warn)
+
+    @unittest.skipUnless(hasattr(os, "fork"), "test requires os.fork")
+    def test_temp_dir__forked_child(self):
+        """Test that a forked child process does not remove the directory."""
+        # See bpo-30028 for details.
+        # Run the test as an external script, because it uses fork.
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            import os
+            from test import support
+            with support.temp_cwd() as temp_path:
+                pid = os.fork()
+                if pid != 0:
+                    # parent process (child has pid == 0)
+
+                    # wait for the child to terminate
+                    (pid, status) = os.waitpid(pid, 0)
+                    if status != 0:
+                        raise AssertionError(f"Child process failed with exit "
+                                             f"status indication 0x{status:x}.")
+
+                    # Make sure that temp_path is still present. When the child
+                    # process leaves the 'temp_cwd'-context, the __exit__()-
+                    # method of the context must not remove the temporary
+                    # directory.
+                    if not os.path.isdir(temp_path):
+                        raise AssertionError("Child removed temp_path.")
+        """))
 
     # Tests for change_cwd()
 
@@ -378,6 +411,165 @@ class TestSupport(unittest.TestCase):
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 
+    @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG'),
+                         'need os.waitpid() and os.WNOHANG')
+    def test_reap_children(self):
+        # Make sure that there is no other pending child process
+        support.reap_children()
+
+        # Create a child process
+        pid = os.fork()
+        if pid == 0:
+            # child process: do nothing, just exit
+            os._exit(0)
+
+        t0 = time.monotonic()
+        deadline = time.monotonic() + 60.0
+
+        was_altered = support.environment_altered
+        try:
+            support.environment_altered = False
+            stderr = io.StringIO()
+
+            while True:
+                if time.monotonic() > deadline:
+                    self.fail("timeout")
+
+                with contextlib.redirect_stderr(stderr):
+                    support.reap_children()
+
+                # Use environment_altered to check if reap_children() found
+                # the child process
+                if support.environment_altered:
+                    break
+
+                # loop until the child process completed
+                time.sleep(0.100)
+
+            msg = "Warning -- reap_children() reaped child process %s" % pid
+            self.assertIn(msg, stderr.getvalue())
+            self.assertTrue(support.environment_altered)
+        finally:
+            support.environment_altered = was_altered
+
+        # Just in case, check again that there is no other
+        # pending child process
+        support.reap_children()
+
+    def check_options(self, args, func):
+        code = f'from test.support import {func}; print(repr({func}()))'
+        cmd = [sys.executable, *args, '-c', code]
+        env = {key: value for key, value in os.environ.items()
+               if not key.startswith('PYTHON')}
+        proc = subprocess.run(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL,
+                              universal_newlines=True,
+                              env=env)
+        self.assertEqual(proc.stdout.rstrip(), repr(args))
+        self.assertEqual(proc.returncode, 0)
+
+    def test_args_from_interpreter_flags(self):
+        # Test test.support.args_from_interpreter_flags()
+        for opts in (
+            # no option
+            [],
+            # single option
+            ['-B'],
+            ['-s'],
+            ['-S'],
+            ['-E'],
+            ['-v'],
+            ['-b'],
+            ['-q'],
+            # same option multiple times
+            ['-bb'],
+            ['-vvv'],
+            # -W options
+            ['-Wignore'],
+            # -X options
+            ['-X', 'dev'],
+            ['-Wignore', '-X', 'dev'],
+            ['-X', 'faulthandler'],
+            ['-X', 'importtime'],
+            ['-X', 'showalloccount'],
+            ['-X', 'showrefcount'],
+            ['-X', 'tracemalloc'],
+            ['-X', 'tracemalloc=3'],
+        ):
+            with self.subTest(opts=opts):
+                self.check_options(opts, 'args_from_interpreter_flags')
+
+    def test_optim_args_from_interpreter_flags(self):
+        # Test test.support.optim_args_from_interpreter_flags()
+        for opts in (
+            # no option
+            [],
+            ['-O'],
+            ['-OO'],
+            ['-OOOO'],
+        ):
+            with self.subTest(opts=opts):
+                self.check_options(opts, 'optim_args_from_interpreter_flags')
+
+    def test_match_test(self):
+        class Test:
+            def __init__(self, test_id):
+                self.test_id = test_id
+
+            def id(self):
+                return self.test_id
+
+        test_access = Test('test.test_os.FileTests.test_access')
+        test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
+
+        with support.swap_attr(support, '_match_test_func', None):
+            # match all
+            support.set_match_tests([])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match all using None
+            support.set_match_tests(None)
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match the full test identifier
+            support.set_match_tests([test_access.id()])
+            self.assertTrue(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+            # match the module name
+            support.set_match_tests(['test_os'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # Test '*' pattern
+            support.set_match_tests(['test_*'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # Test case sensitivity
+            support.set_match_tests(['filetests'])
+            self.assertFalse(support.match_test(test_access))
+            support.set_match_tests(['FileTests'])
+            self.assertTrue(support.match_test(test_access))
+
+            # Test pattern containing '.' and a '*' metacharacter
+            support.set_match_tests(['*test_os.*.test_*'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # Multiple patterns
+            support.set_match_tests([test_access.id(), test_chdir.id()])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            support.set_match_tests(['test_access', 'DONTMATCH'])
+            self.assertTrue(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
@@ -398,9 +590,7 @@ class TestSupport(unittest.TestCase):
     # run_doctest
     # threading_cleanup
     # reap_threads
-    # reap_children
     # strip_python_stderr
-    # args_from_interpreter_flags
     # can_symlink
     # skip_unless_symlink
     # SuppressCrashReport

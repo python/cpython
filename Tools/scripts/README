@@ -61,9 +61,7 @@ rgrep.py                  Reverse grep through a file (useful for big logfiles)
 run_tests.py              Run the test suite with more sensible default options
 serve.py                  Small wsgiref-based web server, used in make serve in Doc
 suff.py                   Sort a list of files by suffix
-svneol.py                 Set svn:eol-style on all files in directory
 texi2html.py              Convert GNU texinfo files into HTML
-treesync.py               Synchronize source trees (very idiosyncratic)
 untabify.py               Replace tabs with spaces in argument files
 which.py                  Find a program in $PATH
 win_add2path.py           Add Python to the search path on Windows

@@ -12,6 +12,8 @@ import tkinter.messagebox as tkMessageBox
 if TkVersion < 8.5:
     root = Tk()  # otherwise create root in main
     root.withdraw()
+    from idlelib.run import fix_scaling
+    fix_scaling(root)
     tkMessageBox.showerror("Idle Cannot Start",
             "Idle requires tcl/tk 8.5+, not %s." % TkVersion,
             parent=root)
@@ -117,8 +119,8 @@ class PyShellEditorWindow(EditorWindow):
         self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
-        self.breakpointPath = os.path.join(idleConf.GetUserCfgDir(),
-                                           'breakpoints.lst')
+        self.breakpointPath = os.path.join(
+                idleConf.userdir, 'breakpoints.lst')
         # whenever a file is changed, restore breakpoints
         def filename_changed_hook(old_hook=self.io.filename_change_hook,
                                   self=self):
@@ -633,6 +635,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if source is None:
             with tokenize.open(filename) as fp:
                 source = fp.read()
+                if use_subprocess:
+                    source = (f"__file__ = r'''{os.path.abspath(filename)}'''\n"
+                              + source + "\ndel __file__")
         try:
             code = compile(source, filename, "exec")
         except (OverflowError, SyntaxError):
@@ -855,15 +860,17 @@ class PyShell(OutputWindow):
             fixwordbreaks(root)
             root.withdraw()
             flist = PyShellFileList(root)
-        #
+
         OutputWindow.__init__(self, flist, None, None)
-        #
-##        self.config(usetabs=1, indentwidth=8, context_use_ps1=1)
+
         self.usetabs = True
         # indentwidth must be 8 when using tabs.  See note in EditorWindow:
         self.indentwidth = 8
-        self.context_use_ps1 = True
-        #
+
+        self.sys_ps1 = sys.ps1 if hasattr(sys, 'ps1') else '>>> '
+        self.prompt_last_line = self.sys_ps1.split('\n')[-1]
+        self.prompt = self.sys_ps1  # Changes when debug active
+
         text = self.text
         text.configure(wrap="char")
         text.bind("<<newline-and-indent>>", self.enter_callback)
@@ -876,7 +883,7 @@ class PyShell(OutputWindow):
         if use_subprocess:
             text.bind("<<view-restart>>", self.view_restart_mark)
             text.bind("<<restart-shell>>", self.restart_shell)
-        #
+
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
@@ -892,7 +899,7 @@ class PyShell(OutputWindow):
         try:
             # page help() text to shell.
             import pydoc # import must be done here to capture i/o rebinding.
-            # XXX KBK 27Dec07 use TextViewer someday, but must work w/o subproc
+            # XXX KBK 27Dec07 use text viewer someday, but must work w/o subproc
             pydoc.pager = pydoc.plainpager
         except:
             sys.stderr = sys.__stderr__
@@ -949,7 +956,7 @@ class PyShell(OutputWindow):
                 debugger_r.close_remote_debugger(self.interp.rpcclt)
             self.resetoutput()
             self.console.write("[DEBUG OFF]\n")
-            sys.ps1 = ">>> "
+            self.prompt = self.sys_ps1
             self.showprompt()
         self.set_debugger_indicator()
 
@@ -961,7 +968,7 @@ class PyShell(OutputWindow):
             dbg_gui = debugger.Debugger(self)
         self.interp.setdebugger(dbg_gui)
         dbg_gui.load_breakpoints()
-        sys.ps1 = "[DEBUG ON]\n>>> "
+        self.prompt = "[DEBUG ON]\n" + self.sys_ps1
         self.showprompt()
         self.set_debugger_indicator()
 
@@ -1246,11 +1253,7 @@ class PyShell(OutputWindow):
 
     def showprompt(self):
         self.resetoutput()
-        try:
-            s = str(sys.ps1)
-        except:
-            s = ""
-        self.console.write(s)
+        self.console.write(self.prompt)
         self.text.mark_set("insert", "end-1c")
         self.set_line_and_column()
         self.io.reset_undo()
@@ -1457,6 +1460,8 @@ def main():
         NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
+    from idlelib.run import fix_scaling
+    fix_scaling(root)
 
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')

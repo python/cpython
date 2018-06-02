@@ -207,7 +207,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
                                   PyObject *global_name);
 
 static PyObject *
-_pickle_Unpickler_find_class(UnpicklerObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_Unpickler_find_class(UnpicklerObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *module_name;
@@ -216,10 +216,6 @@ _pickle_Unpickler_find_class(UnpicklerObject *self, PyObject **args, Py_ssize_t 
     if (!_PyArg_UnpackStack(args, nargs, "find_class",
         2, 2,
         &module_name, &global_name)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("find_class", kwnames)) {
         goto exit;
     }
     return_value = _pickle_Unpickler_find_class_impl(self, module_name, global_name);
@@ -371,8 +367,9 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "be more efficient.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
-"protocol supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 3; a backward-incompatible protocol designed for Python 3.\n"
+"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
+"protocol is 4. It was introduced in Python 3.4, it is incompatible\n"
+"with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
 "version supported.  The higher the protocol used, the more recent the\n"
@@ -388,14 +385,14 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "2, so that the pickle data stream is readable with Python 2.");
 
 #define _PICKLE_DUMP_METHODDEF    \
-    {"dump", (PyCFunction)_pickle_dump, METH_FASTCALL, _pickle_dump__doc__},
+    {"dump", (PyCFunction)_pickle_dump, METH_FASTCALL|METH_KEYWORDS, _pickle_dump__doc__},
 
 static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports);
 
 static PyObject *
-_pickle_dump(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "file", "protocol", "fix_imports", NULL};
@@ -423,7 +420,8 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
 "protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 3; a backward-incompatible protocol designed for Python 3.\n"
+"protocol is 4. It was introduced in Python 3.4, it is incompatible\n"
+"with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
 "version supported.  The higher the protocol used, the more recent the\n"
@@ -434,14 +432,14 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "Python 2, so that the pickle data stream is readable with Python 2.");
 
 #define _PICKLE_DUMPS_METHODDEF    \
-    {"dumps", (PyCFunction)_pickle_dumps, METH_FASTCALL, _pickle_dumps__doc__},
+    {"dumps", (PyCFunction)_pickle_dumps, METH_FASTCALL|METH_KEYWORDS, _pickle_dumps__doc__},
 
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports);
 
 static PyObject *
-_pickle_dumps(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "protocol", "fix_imports", NULL};
@@ -490,14 +488,14 @@ PyDoc_STRVAR(_pickle_load__doc__,
 "string instances as bytes objects.");
 
 #define _PICKLE_LOAD_METHODDEF    \
-    {"load", (PyCFunction)_pickle_load, METH_FASTCALL, _pickle_load__doc__},
+    {"load", (PyCFunction)_pickle_load, METH_FASTCALL|METH_KEYWORDS, _pickle_load__doc__},
 
 static PyObject *
 _pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
                   const char *encoding, const char *errors);
 
 static PyObject *
-_pickle_load(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
@@ -538,14 +536,14 @@ PyDoc_STRVAR(_pickle_loads__doc__,
 "string instances as bytes objects.");
 
 #define _PICKLE_LOADS_METHODDEF    \
-    {"loads", (PyCFunction)_pickle_loads, METH_FASTCALL, _pickle_loads__doc__},
+    {"loads", (PyCFunction)_pickle_loads, METH_FASTCALL|METH_KEYWORDS, _pickle_loads__doc__},
 
 static PyObject *
 _pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
                    const char *encoding, const char *errors);
 
 static PyObject *
-_pickle_loads(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "fix_imports", "encoding", "errors", NULL};
@@ -564,4 +562,4 @@ _pickle_loads(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b921d325b2f7a096 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6fc104b8299c82dd input=a9049054013a1b77]*/

@@ -24,7 +24,7 @@ class TestBasicOps:
         self.gen.seed()
         state1 = self.gen.getstate()
         time.sleep(0.1)
-        self.gen.seed()      # diffent seeds at different times
+        self.gen.seed()      # different seeds at different times
         state2 = self.gen.getstate()
         self.assertNotEqual(state1, state2)
 
@@ -430,6 +430,44 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             ['0x1.b0580f98a7dbep-1', '0x1.84129978f9c1ap-1',
              '0x1.aeaa51052e978p-2', '0x1.092178fb945a6p-2'])
 
+    def test_bug_31478(self):
+        # There shouldn't be an assertion failure in _random.Random.seed() in
+        # case the argument has a bad __abs__() method.
+        class BadInt(int):
+            def __abs__(self):
+                return None
+        try:
+            self.gen.seed(BadInt())
+        except TypeError:
+            pass
+
+    def test_bug_31482(self):
+        # Verify that version 1 seeds are unaffected by hash randomization
+        # when the seeds are expressed as bytes rather than strings.
+        # The hash(b) values listed are the Python2.7 hash() values
+        # which were used for seeding.
+
+        self.gen.seed(b'nofar', version=1)   # hash('nofar') == 5990528763808513177
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.8645314505ad7p-1', '0x1.afb1f82e40a40p-5',
+             '0x1.2a59d2285e971p-1', '0x1.56977142a7880p-6'])
+
+        self.gen.seed(b'rachel', version=1)  # hash('rachel') == -9091735575445484789
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.0b294cc856fcdp-1', '0x1.2ad22d79e77b8p-3',
+             '0x1.3052b9c072678p-2', '0x1.578f332106574p-3'])
+
+        self.gen.seed(b'', version=1)        # hash('') == 0
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.b0580f98a7dbep-1', '0x1.84129978f9c1ap-1',
+             '0x1.aeaa51052e978p-2', '0x1.092178fb945a6p-2'])
+
+        b = b'\x00\x20\x40\x60\x80\xA0\xC0\xE0\xF0'
+        self.gen.seed(b, version=1)         # hash(b) == 5015594239749365497
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.52c2fde444d23p-1', '0x1.875174f0daea4p-2',
+             '0x1.9e9b2c50e5cd2p-1', '0x1.fa57768bd321cp-2'])
+
     def test_setstate_first_arg(self):
         self.assertRaises(ValueError, self.gen.setstate, (1, None, None))
 
@@ -581,6 +619,16 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertRaises(ValueError, self.gen.getrandbits, 0)
         self.assertRaises(ValueError, self.gen.getrandbits, -1)
 
+    def test_randrange_uses_getrandbits(self):
+        # Verify use of getrandbits by randrange
+        # Use same seed as in the cross-platform repeatability test
+        # in test_genrandbits above.
+        self.gen.seed(1234567)
+        # If randrange uses getrandbits, it should pick getrandbits(100)
+        # when called with a 100-bits stop argument.
+        self.assertEqual(self.gen.randrange(2**99),
+                         97904845777343510404718956115)
+
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1
         # show that: k = int(1.001 + _log(n, 2))
@@ -602,17 +650,21 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             self.assertEqual(k, numbits)        # note the stronger assertion
             self.assertTrue(2**k > n > 2**(k-1))   # note the stronger assertion
 
-    @unittest.mock.patch('random.Random.random')
-    def test_randbelow_overridden_random(self, random_mock):
+    def test_randbelow_without_getrandbits(self):
         # Random._randbelow() can only use random() when the built-in one
         # has been overridden but no new getrandbits() method was supplied.
-        random_mock.side_effect = random.SystemRandom().random
         maxsize = 1<<random.BPF
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             # Population range too large (n >= maxsize)
-            self.gen._randbelow(maxsize+1, maxsize = maxsize)
-        self.gen._randbelow(5640, maxsize = maxsize)
+            self.gen._randbelow_without_getrandbits(
+                maxsize+1, maxsize=maxsize
+            )
+        self.gen._randbelow_without_getrandbits(5640, maxsize=maxsize)
+        # issue 33203: test that _randbelow raises ValueError on
+        # n == 0 also in its getrandbits-independent branch.
+        with self.assertRaises(ValueError):
+            self.gen._randbelow_without_getrandbits(0, maxsize=maxsize)
 
         # This might be going too far to test a single line, but because of our
         # noble aim of achieving 100% test coverage we need to write a case in
@@ -631,8 +683,10 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         n = 42
         epsilon = 0.01
         limit = (maxsize - (maxsize % n)) / maxsize
-        random_mock.side_effect = [limit + epsilon, limit - epsilon]
-        self.gen._randbelow(n, maxsize = maxsize)
+        with unittest.mock.patch.object(random.Random, 'random') as random_mock:
+            random_mock.side_effect = [limit + epsilon, limit - epsilon]
+            self.gen._randbelow_without_getrandbits(n, maxsize=maxsize)
+            self.assertEqual(random_mock.call_count, 2)
 
     def test_randrange_bug_1590891(self):
         start = 1000000000000
@@ -885,6 +939,100 @@ class TestDistributions(unittest.TestCase):
         gammavariate_mock.return_value = 0.0
         self.assertEqual(0.0, random.betavariate(2.71828, 3.14159))
 
+
+class TestRandomSubclassing(unittest.TestCase):
+    def test_random_subclass_with_kwargs(self):
+        # SF bug #1486663 -- this used to erroneously raise a TypeError
+        class Subclass(random.Random):
+            def __init__(self, newarg=None):
+                random.Random.__init__(self)
+        Subclass(newarg=1)
+
+    def test_subclasses_overriding_methods(self):
+        # Subclasses with an overridden random, but only the original
+        # getrandbits method should not rely on getrandbits in for randrange,
+        # but should use a getrandbits-independent implementation instead.
+
+        # subclass providing its own random **and** getrandbits methods
+        # like random.SystemRandom does => keep relying on getrandbits for
+        # randrange
+        class SubClass1(random.Random):
+            def random(self):
+                called.add('SubClass1.random')
+                return random.Random.random(self)
+
+            def getrandbits(self, n):
+                called.add('SubClass1.getrandbits')
+                return random.Random.getrandbits(self, n)
+        called = set()
+        SubClass1().randrange(42)
+        self.assertEqual(called, {'SubClass1.getrandbits'})
+
+        # subclass providing only random => can only use random for randrange
+        class SubClass2(random.Random):
+            def random(self):
+                called.add('SubClass2.random')
+                return random.Random.random(self)
+        called = set()
+        SubClass2().randrange(42)
+        self.assertEqual(called, {'SubClass2.random'})
+
+        # subclass defining getrandbits to complement its inherited random
+        # => can now rely on getrandbits for randrange again
+        class SubClass3(SubClass2):
+            def getrandbits(self, n):
+                called.add('SubClass3.getrandbits')
+                return random.Random.getrandbits(self, n)
+        called = set()
+        SubClass3().randrange(42)
+        self.assertEqual(called, {'SubClass3.getrandbits'})
+
+        # subclass providing only random and inherited getrandbits
+        # => random takes precedence
+        class SubClass4(SubClass3):
+            def random(self):
+                called.add('SubClass4.random')
+                return random.Random.random(self)
+        called = set()
+        SubClass4().randrange(42)
+        self.assertEqual(called, {'SubClass4.random'})
+
+        # Following subclasses don't define random or getrandbits directly,
+        # but inherit them from classes which are not subclasses of Random
+        class Mixin1:
+            def random(self):
+                called.add('Mixin1.random')
+                return random.Random.random(self)
+        class Mixin2:
+            def getrandbits(self, n):
+                called.add('Mixin2.getrandbits')
+                return random.Random.getrandbits(self, n)
+
+        class SubClass5(Mixin1, random.Random):
+            pass
+        called = set()
+        SubClass5().randrange(42)
+        self.assertEqual(called, {'Mixin1.random'})
+
+        class SubClass6(Mixin2, random.Random):
+            pass
+        called = set()
+        SubClass6().randrange(42)
+        self.assertEqual(called, {'Mixin2.getrandbits'})
+
+        class SubClass7(Mixin1, Mixin2, random.Random):
+            pass
+        called = set()
+        SubClass7().randrange(42)
+        self.assertEqual(called, {'Mixin1.random'})
+
+        class SubClass8(Mixin2, Mixin1, random.Random):
+            pass
+        called = set()
+        SubClass8().randrange(42)
+        self.assertEqual(called, {'Mixin2.getrandbits'})
+
+
 class TestModule(unittest.TestCase):
     def testMagicConstants(self):
         self.assertAlmostEqual(random.NV_MAGICCONST, 1.71552776992141)
@@ -896,18 +1044,13 @@ class TestModule(unittest.TestCase):
         # tests validity but not completeness of the __all__ list
         self.assertTrue(set(random.__all__) <= set(dir(random)))
 
-    def test_random_subclass_with_kwargs(self):
-        # SF bug #1486663 -- this used to erroneously raise a TypeError
-        class Subclass(random.Random):
-            def __init__(self, newarg=None):
-                random.Random.__init__(self)
-        Subclass(newarg=1)
-
     @unittest.skipUnless(hasattr(os, "fork"), "fork() required")
     def test_after_fork(self):
         # Test the global Random instance gets reseeded in child
         r, w = os.pipe()
-        if os.fork() == 0:
+        pid = os.fork()
+        if pid == 0:
+            # child process
             try:
                 val = random.getrandbits(128)
                 with open(w, "w") as f:
@@ -915,11 +1058,15 @@ class TestModule(unittest.TestCase):
             finally:
                 os._exit(0)
         else:
+            # parent process
             os.close(w)
             val = random.getrandbits(128)
             with open(r, "r") as f:
                 child_val = eval(f.read())
             self.assertNotEqual(val, child_val)
+
+            pid, status = os.waitpid(pid, 0)
+            self.assertEqual(status, 0)
 
 
 if __name__ == "__main__":

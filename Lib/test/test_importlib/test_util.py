@@ -522,6 +522,12 @@ class FindSpecTests:
             self.assertNotIn(name, sorted(sys.modules))
             self.assertNotIn(fullname, sorted(sys.modules))
 
+    def test_find_submodule_in_module(self):
+        # ModuleNotFoundError raised when a module is specified as
+        # a parent instead of a package.
+        with self.assertRaises(ModuleNotFoundError):
+            self.util.find_spec('module.name')
+
 
 (Frozen_FindSpecTests,
  Source_FindSpecTests
@@ -783,7 +789,7 @@ class MagicNumberTests(unittest.TestCase):
         in advance. Such exceptional releases will then require an
         adjustment to this test case.
         """
-        EXPECTED_MAGIC_NUMBER = 3379
+        EXPECTED_MAGIC_NUMBER = 3400
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 
         msg = (

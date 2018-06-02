@@ -49,6 +49,9 @@
   </ImportGroup>
   <PropertyGroup>
     <KillPython>true</KillPython>
+    <RequirePGCFiles>true</RequirePGCFiles>
+    <IncludeExternals Condition="$(IncludeExternals) == '' and Exists('$(zlibDir)\zlib.h')">true</IncludeExternals>
+    <IncludeExternals Condition="$(IncludeExternals) == ''">false</IncludeExternals>
   </PropertyGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -65,12 +68,13 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>/Zm200  %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(PySourcePath)Python;$(PySourcePath)Modules\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PySourcePath)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;shlwapi.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <BaseAddress>0x1e000000</BaseAddress>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -90,6 +94,7 @@
     <ClInclude Include="..\Include\codecs.h" />
     <ClInclude Include="..\Include\compile.h" />
     <ClInclude Include="..\Include\complexobject.h" />
+    <ClInclude Include="..\Include\context.h" />
     <ClInclude Include="..\Include\datetime.h" />
     <ClInclude Include="..\Include\descrobject.h" />
     <ClInclude Include="..\Include\dictobject.h" />
@@ -106,6 +111,14 @@
     <ClInclude Include="..\Include\graminit.h" />
     <ClInclude Include="..\Include\grammar.h" />
     <ClInclude Include="..\Include\import.h" />
+    <ClInclude Include="..\Include\internal\ceval.h" />
+    <ClInclude Include="..\Include\internal\condvar.h" />
+    <ClInclude Include="..\Include\internal\context.h" />
+    <ClInclude Include="..\Include\internal\gil.h" />
+    <ClInclude Include="..\Include\internal\hamt.h" />
+    <ClInclude Include="..\Include\internal\mem.h" />
+    <ClInclude Include="..\Include\internal\pystate.h" />
+    <ClInclude Include="..\Include\internal\warnings.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
     <ClInclude Include="..\Include\listobject.h" />
@@ -138,7 +151,7 @@
     <ClInclude Include="..\Include\pyerrors.h" />
     <ClInclude Include="..\Include\pyexpat.h" />
     <ClInclude Include="..\Include\pyfpe.h" />
-    <ClInclude Include="..\Include\pygetopt.h" />
+    <ClInclude Include="..\Include\internal\pygetopt.h" />
     <ClInclude Include="..\Include\pylifecycle.h" />
     <ClInclude Include="..\Include\pymath.h" />
     <ClInclude Include="..\Include\pytime.h" />
@@ -174,17 +187,6 @@
     <ClInclude Include="..\Modules\sre_constants.h" />
     <ClInclude Include="..\Modules\sre_lib.h" />
     <ClInclude Include="..\Modules\_io\_iomodule.h" />
-    <ClInclude Include="..\Modules\zlib\crc32.h" />
-    <ClInclude Include="..\Modules\zlib\deflate.h" />
-    <ClInclude Include="..\Modules\zlib\inffast.h" />
-    <ClInclude Include="..\Modules\zlib\inffixed.h" />
-    <ClInclude Include="..\Modules\zlib\inflate.h" />
-    <ClInclude Include="..\Modules\zlib\inftrees.h" />
-    <ClInclude Include="..\Modules\zlib\trees.h" />
-    <ClInclude Include="..\Modules\zlib\zconf.h" />
-    <ClInclude Include="..\Modules\zlib\zconf.in.h" />
-    <ClInclude Include="..\Modules\zlib\zlib.h" />
-    <ClInclude Include="..\Modules\zlib\zutil.h" />
     <ClInclude Include="..\Modules\cjkcodecs\alg_jisx0201.h" />
     <ClInclude Include="..\Modules\cjkcodecs\cjkcodecs.h" />
     <ClInclude Include="..\Modules\cjkcodecs\emu_jisx0213_2000.h" />
@@ -212,13 +214,29 @@
     <ClInclude Include="..\Python\thread_nt.h" />
     <ClInclude Include="..\Python\wordcode_helpers.h" />
   </ItemGroup>
+  <ItemGroup Condition="$(IncludeExternals)">
+    <ClInclude Include="$(zlibDir)\crc32.h" />
+    <ClInclude Include="$(zlibDir)\deflate.h" />
+    <ClInclude Include="$(zlibDir)\inffast.h" />
+    <ClInclude Include="$(zlibDir)\inffixed.h" />
+    <ClInclude Include="$(zlibDir)\inflate.h" />
+    <ClInclude Include="$(zlibDir)\inftrees.h" />
+    <ClInclude Include="$(zlibDir)\trees.h" />
+    <ClInclude Include="$(zlibDir)\zconf.h" />
+    <ClInclude Include="$(zlibDir)\zconf.in.h" />
+    <ClInclude Include="$(zlibDir)\zlib.h" />
+    <ClInclude Include="$(zlibDir)\zutil.h" />
+  </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Modules\_abc.c" />
+    <ClCompile Include="..\Modules\_asynciomodule.c" />
     <ClCompile Include="..\Modules\_bisectmodule.c" />
     <ClCompile Include="..\Modules\_blake2\blake2module.c" />
     <ClCompile Include="..\Modules\_blake2\blake2b_impl.c" />
     <ClCompile Include="..\Modules\_blake2\blake2s_impl.c" />
     <ClCompile Include="..\Modules\_codecsmodule.c" />
     <ClCompile Include="..\Modules\_collectionsmodule.c" />
+    <ClCompile Include="..\Modules\_contextvarsmodule.c" />
     <ClCompile Include="..\Modules\_csv.c" />
     <ClCompile Include="..\Modules\_functoolsmodule.c" />
     <ClCompile Include="..\Modules\_heapqmodule.c" />
@@ -262,8 +280,8 @@
     <ClCompile Include="..\Modules\_tracemalloc.c" />
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
+    <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />
     <ClCompile Include="..\Modules\zipimport.c" />
-    <ClCompile Include="..\Modules\zlibmodule.c" />
     <ClCompile Include="..\Modules\_io\fileio.c" />
     <ClCompile Include="..\Modules\_io\bytesio.c" />
     <ClCompile Include="..\Modules\_io\stringio.c" />
@@ -272,17 +290,6 @@
     <ClCompile Include="..\Modules\_io\textio.c" />
     <ClCompile Include="..\Modules\_io\winconsoleio.c" />
     <ClCompile Include="..\Modules\_io\_iomodule.c" />
-    <ClCompile Include="..\Modules\zlib\adler32.c" />
-    <ClCompile Include="..\Modules\zlib\compress.c" />
-    <ClCompile Include="..\Modules\zlib\crc32.c" />
-    <ClCompile Include="..\Modules\zlib\deflate.c" />
-    <ClCompile Include="..\Modules\zlib\infback.c" />
-    <ClCompile Include="..\Modules\zlib\inffast.c" />
-    <ClCompile Include="..\Modules\zlib\inflate.c" />
-    <ClCompile Include="..\Modules\zlib\inftrees.c" />
-    <ClCompile Include="..\Modules\zlib\trees.c" />
-    <ClCompile Include="..\Modules\zlib\uncompr.c" />
-    <ClCompile Include="..\Modules\zlib\zutil.c" />
     <ClCompile Include="..\Modules\cjkcodecs\_codecs_cn.c" />
     <ClCompile Include="..\Modules\cjkcodecs\_codecs_hk.c" />
     <ClCompile Include="..\Modules\cjkcodecs\_codecs_iso2022.c" />
@@ -352,11 +359,14 @@
     <ClCompile Include="..\Python\_warnings.c" />
     <ClCompile Include="..\Python\asdl.c" />
     <ClCompile Include="..\Python\ast.c" />
+    <ClCompile Include="..\Python\ast_opt.c" />
+    <ClCompile Include="..\Python\ast_unparse.c" />
     <ClCompile Include="..\Python\bltinmodule.c" />
     <ClCompile Include="..\Python\bootstrap_hash.c" />
     <ClCompile Include="..\Python\ceval.c" />
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\compile.c" />
+    <ClCompile Include="..\Python\context.c" />
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />
@@ -371,12 +381,14 @@
     <ClCompile Include="..\Python\getplatform.c" />
     <ClCompile Include="..\Python\getversion.c" />
     <ClCompile Include="..\Python\graminit.c" />
+    <ClCompile Include="..\Python\hamt.c" />
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
     <ClCompile Include="..\Python\marshal.c" />
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
+    <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\peephole.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />
@@ -396,6 +408,20 @@
     <ClCompile Include="..\Python\sysmodule.c" />
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
+  </ItemGroup>
+  <ItemGroup Condition="$(IncludeExternals)">
+    <ClCompile Include="..\Modules\zlibmodule.c" />
+    <ClCompile Include="$(zlibDir)\adler32.c" />
+    <ClCompile Include="$(zlibDir)\compress.c" />
+    <ClCompile Include="$(zlibDir)\crc32.c" />
+    <ClCompile Include="$(zlibDir)\deflate.c" />
+    <ClCompile Include="$(zlibDir)\infback.c" />
+    <ClCompile Include="$(zlibDir)\inffast.c" />
+    <ClCompile Include="$(zlibDir)\inflate.c" />
+    <ClCompile Include="$(zlibDir)\inftrees.c" />
+    <ClCompile Include="$(zlibDir)\trees.c" />
+    <ClCompile Include="$(zlibDir)\uncompr.c" />
+    <ClCompile Include="$(zlibDir)\zutil.c" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\PC\dl_nt.c" />
@@ -429,7 +455,10 @@
       </ClCompile>
     </ItemGroup>
   </Target>
-  <Target Name="_WarnAboutToolset" BeforeTargets="PrepareForBuild" Condition="$(PlatformToolset) != 'v140'">
+  <Target Name="_WarnAboutToolset" BeforeTargets="PrepareForBuild" Condition="$(PlatformToolset) != 'v140' and $(PlatformToolset) != 'v141'">
     <Warning Text="Toolset $(PlatformToolset) is not used for official builds. Your build may have errors or incompatibilities." />
+  </Target>
+  <Target Name="_WarnAboutZlib" BeforeTargets="PrepareForBuild" Condition="!$(IncludeExternals)">
+    <Warning Text="Not including zlib is not a supported configuration." />
   </Target>
 </Project>

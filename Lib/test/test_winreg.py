@@ -4,7 +4,7 @@
 import os, sys, errno
 import unittest
 from test import support
-threading = support.import_module("threading")
+import threading
 from platform import machine
 
 # Do this first so test will be skipped if module doesn't exist

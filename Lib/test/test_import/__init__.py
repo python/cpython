@@ -10,6 +10,8 @@ import py_compile
 import random
 import stat
 import sys
+import threading
+import time
 import unittest
 import unittest.mock as mock
 import textwrap
@@ -21,8 +23,9 @@ from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
     unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
-    temp_dir)
+    temp_dir, DirsOnSysPath)
 from test.support import script_helper
+from test.test_importlib.util import uncache
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(
@@ -87,13 +90,14 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(cm.exception.path, os.__file__)
         self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'os' \(.*os.py\)")
 
+    @cpython_only
     def test_from_import_missing_attr_has_name_and_so_path(self):
-        import select
+        import _testcapi
         with self.assertRaises(ImportError) as cm:
-            from select import i_dont_exist
-        self.assertEqual(cm.exception.name, 'select')
-        self.assertEqual(cm.exception.path, select.__file__)
-        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'select' \(.*\.(so|pyd)\)")
+            from _testcapi import i_dont_exist
+        self.assertEqual(cm.exception.name, '_testcapi')
+        self.assertEqual(cm.exception.path, _testcapi.__file__)
+        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)")
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
@@ -107,6 +111,27 @@ class ImportTests(unittest.TestCase):
             from os.path import i_dont_exist
         self.assertIn(cm.exception.name, {'posixpath', 'ntpath'})
         self.assertIsNotNone(cm.exception)
+
+    def test_from_import_star_invalid_type(self):
+        import re
+        with _ready_to_import() as (name, path):
+            with open(path, 'w') as f:
+                f.write("__all__ = [b'invalid_type']")
+            globals = {}
+            with self.assertRaisesRegex(
+                TypeError, f"{re.escape(name)}\\.__all__ must be str"
+            ):
+                exec(f"from {name} import *", globals)
+            self.assertNotIn(b"invalid_type", globals)
+        with _ready_to_import() as (name, path):
+            with open(path, 'w') as f:
+                f.write("globals()[b'invalid_type'] = object()")
+            globals = {}
+            with self.assertRaisesRegex(
+                TypeError, f"{re.escape(name)}\\.__dict__ must be str"
+            ):
+                exec(f"from {name} import *", globals)
+            self.assertNotIn(b"invalid_type", globals)
 
     def test_case_sensitivity(self):
         # Brief digression to test that import is case-sensitive:  if we got
@@ -233,6 +258,23 @@ class ImportTests(unittest.TestCase):
         # import x.y.z as w binds z as w
         import test.support as y
         self.assertIs(y, test.support, y.__name__)
+
+    def test_issue31286(self):
+        # import in a 'finally' block resulted in SystemError
+        try:
+            x = ...
+        finally:
+            import test.support.script_helper as x
+
+        # import in a 'while' loop resulted in stack overflow
+        i = 0
+        while i < 10:
+            import test.support.script_helper as x
+            i += 1
+
+        # import in a 'for' loop resulted in segmentation fault
+        for i in range(2):
+            import test.support.script_helper as x
 
     def test_failing_reload(self):
         # A failing reload should leave the module object in sys.modules.
@@ -379,6 +421,44 @@ class ImportTests(unittest.TestCase):
 
         self.assertEqual(str(cm.exception),
             "cannot import name 'does_not_exist' from '<unknown module name>' (unknown location)")
+
+    @cpython_only
+    def test_issue31492(self):
+        # There shouldn't be an assertion failure in case of failing to import
+        # from a module with a bad __name__ attribute, or in case of failing
+        # to access an attribute of such a module.
+        with swap_attr(os, '__name__', None):
+            with self.assertRaises(ImportError):
+                from os import does_not_exist
+
+            with self.assertRaises(AttributeError):
+                os.does_not_exist
+
+    def test_concurrency(self):
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
+        try:
+            exc = None
+            def run():
+                event.wait()
+                try:
+                    import package
+                except BaseException as e:
+                    nonlocal exc
+                    exc = e
+
+            for i in range(10):
+                event = threading.Event()
+                threads = [threading.Thread(target=run) for x in range(2)]
+                try:
+                    with test.support.start_threads(threads, event.set):
+                        time.sleep(0)
+                finally:
+                    sys.modules.pop('package', None)
+                    sys.modules.pop('package.submodule', None)
+                if exc is not None:
+                    raise exc
+        finally:
+            del sys.path[0]
 
 
 @skip_if_dont_write_bytecode
@@ -540,7 +620,7 @@ func_filename = func.__code__.co_filename
     def test_foreign_code(self):
         py_compile.compile(self.file_name)
         with open(self.compiled_name, "rb") as f:
-            header = f.read(12)
+            header = f.read(16)
             code = marshal.load(f)
         constants = list(code.co_consts)
         foreign_code = importlib.import_module.__code__
@@ -597,7 +677,7 @@ class PathsTests(unittest.TestCase):
         try:
             os.listdir(unc)
         except OSError as e:
-            if e.errno in (errno.EPERM, errno.EACCES):
+            if e.errno in (errno.EPERM, errno.EACCES, errno.ENOENT):
                 # See issue #15338
                 self.skipTest("cannot access administrative share %r" % (unc,))
             raise
@@ -642,11 +722,11 @@ class RelativeImportTests(unittest.TestCase):
 
         # Check relative import fails with only __package__ wrong
         ns = dict(__package__='foo', __name__='test.notarealmodule')
-        self.assertRaises(SystemError, check_relative)
+        self.assertRaises(ModuleNotFoundError, check_relative)
 
         # Check relative import fails with __package__ and __name__ wrong
         ns = dict(__package__='foo', __name__='notarealpkg.notarealmodule')
-        self.assertRaises(SystemError, check_relative)
+        self.assertRaises(ModuleNotFoundError, check_relative)
 
         # Check relative import fails with package set to a non-string
         ns = dict(__package__=object())
@@ -660,6 +740,20 @@ class RelativeImportTests(unittest.TestCase):
             from .os import sep
             self.fail("explicit relative import triggered an "
                       "implicit absolute import")
+
+    def test_import_from_non_package(self):
+        path = os.path.join(os.path.dirname(__file__), 'data', 'package2')
+        with uncache('submodule1', 'submodule2'), DirsOnSysPath(path):
+            with self.assertRaises(ImportError):
+                import submodule1
+            self.assertNotIn('submodule1', sys.modules)
+            self.assertNotIn('submodule2', sys.modules)
+
+    def test_import_from_unloaded_package(self):
+        with uncache('package2', 'package2.submodule1', 'package2.submodule2'), \
+             DirsOnSysPath(os.path.join(os.path.dirname(__file__), 'data')):
+            import package2.submodule1
+            package2.submodule1.submodule2
 
 
 class OverridingImportBuiltinTests(unittest.TestCase):
@@ -754,8 +848,11 @@ class PycacheTests(unittest.TestCase):
         unload(TESTFN)
         importlib.invalidate_caches()
         m = __import__(TESTFN)
-        self.assertEqual(m.__file__,
-                         os.path.join(os.curdir, os.path.relpath(pyc_file)))
+        try:
+            self.assertEqual(m.__file__,
+                             os.path.join(os.curdir, os.path.relpath(pyc_file)))
+        finally:
+            os.remove(pyc_file)
 
     def test___cached__(self):
         # Modules now also have an __cached__ that points to the pyc file.

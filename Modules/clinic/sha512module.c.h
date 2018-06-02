@@ -72,13 +72,13 @@ PyDoc_STRVAR(_sha512_sha512__doc__,
 "Return a new SHA-512 hash object; optionally initialized with a string.");
 
 #define _SHA512_SHA512_METHODDEF    \
-    {"sha512", (PyCFunction)_sha512_sha512, METH_FASTCALL, _sha512_sha512__doc__},
+    {"sha512", (PyCFunction)_sha512_sha512, METH_FASTCALL|METH_KEYWORDS, _sha512_sha512__doc__},
 
 static PyObject *
 _sha512_sha512_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha512_sha512(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha512_sha512(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -102,13 +102,13 @@ PyDoc_STRVAR(_sha512_sha384__doc__,
 "Return a new SHA-384 hash object; optionally initialized with a string.");
 
 #define _SHA512_SHA384_METHODDEF    \
-    {"sha384", (PyCFunction)_sha512_sha384, METH_FASTCALL, _sha512_sha384__doc__},
+    {"sha384", (PyCFunction)_sha512_sha384, METH_FASTCALL|METH_KEYWORDS, _sha512_sha384__doc__},
 
 static PyObject *
 _sha512_sha384_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha512_sha384(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sha512_sha384(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
@@ -124,4 +124,4 @@ _sha512_sha384(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7bb7a49159e9b469 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f963a543bf3c72e8 input=a9049054013a1b77]*/

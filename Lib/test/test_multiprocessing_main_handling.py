@@ -1,7 +1,6 @@
 # tests __main__ module handling in multiprocessing
 from test import support
-# Skip tests if _thread or _multiprocessing wasn't built.
-support.import_module('_thread')
+# Skip tests if _multiprocessing wasn't built.
 support.import_module('_multiprocessing')
 
 import importlib

@@ -740,6 +740,23 @@ boolean {0[0]} NO
         parsed_files = cf.read([])
         self.assertEqual(parsed_files, [])
 
+    def test_read_returns_file_list_with_bytestring_path(self):
+        if self.delimiters[0] != '=':
+            self.skipTest('incompatible format')
+        file1_bytestring = support.findfile("cfgparser.1").encode()
+        # check when passing an existing bytestring path
+        cf = self.newconfig()
+        parsed_files = cf.read(file1_bytestring)
+        self.assertEqual(parsed_files, [file1_bytestring])
+        # check when passing an non-existing bytestring path
+        cf = self.newconfig()
+        parsed_files = cf.read(b'nonexistent-file')
+        self.assertEqual(parsed_files, [])
+        # check when passing both an existing and non-existing bytestring path
+        cf = self.newconfig()
+        parsed_files = cf.read([file1_bytestring, b'nonexistent-file'])
+        self.assertEqual(parsed_files, [file1_bytestring])
+
     # shared by subclasses
     def get_interpolation_config(self):
         return self.fromstring(
@@ -898,8 +915,7 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         self.check_items_config([('default', '<default>'),
                                  ('getdefault', '|<default>|'),
                                  ('key', '|value|'),
-                                 ('name', 'value'),
-                                 ('value', 'value')])
+                                 ('name', 'value')])
 
     def test_safe_interpolation(self):
         # See http://www.python.org/sf/511737
@@ -949,6 +965,15 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
     def test_add_section_default(self):
         cf = self.newconfig()
         self.assertRaises(ValueError, cf.add_section, self.default_section)
+
+    def test_defaults_keyword(self):
+        """bpo-23835 fix for ConfigParser"""
+        cf = self.newconfig(defaults={1: 2.4})
+        self.assertEqual(cf[self.default_section]['1'], '2.4')
+        self.assertAlmostEqual(cf[self.default_section].getfloat('1'), 2.4)
+        cf = self.newconfig(defaults={"A": 5.2})
+        self.assertEqual(cf[self.default_section]['a'], '5.2')
+        self.assertAlmostEqual(cf[self.default_section].getfloat('a'), 5.2)
 
 
 class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
@@ -1067,8 +1092,7 @@ class RawConfigParserTestCase(BasicTestCase, unittest.TestCase):
         self.check_items_config([('default', '<default>'),
                                  ('getdefault', '|%(default)s|'),
                                  ('key', '|%(name)s|'),
-                                 ('name', '%(value)s'),
-                                 ('value', 'value')])
+                                 ('name', '%(value)s')])
 
     def test_set_nonstring_types(self):
         cf = self.newconfig()
@@ -1089,6 +1113,15 @@ class RawConfigParserTestCase(BasicTestCase, unittest.TestCase):
             cf.optionxform = lambda x: x
             cf.set('non-string', 1, 1)
             self.assertEqual(cf.get('non-string', 1), 1)
+
+    def test_defaults_keyword(self):
+        """bpo-23835 legacy behavior for RawConfigParser"""
+        with self.assertRaises(AttributeError) as ctx:
+            self.newconfig(defaults={1: 2.4})
+        err = ctx.exception
+        self.assertEqual(str(err), "'int' object has no attribute 'lower'")
+        cf = self.newconfig(defaults={"A": 5.2})
+        self.assertAlmostEqual(cf[self.default_section]['a'], 5.2)
 
 
 class RawConfigParserTestCaseNonStandardDelimiters(RawConfigParserTestCase):

@@ -64,7 +64,6 @@
       <AdditionalIncludeDirectories>..\Modules\_ctypes\libffi_msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <BaseAddress>0x1D1A0000</BaseAddress>
       <AdditionalOptions>/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -83,7 +82,9 @@
     <ClCompile Include="..\Modules\_ctypes\cfield.c" />
     <ClCompile Include="..\Modules\_ctypes\libffi_msvc\ffi.c" />
     <ClCompile Include="..\Modules\_ctypes\malloc_closure.c" />
-    <ClCompile Include="..\Modules\_ctypes\libffi_msvc\prep_cif.c" />
+    <ClCompile Include="..\Modules\_ctypes\libffi_msvc\prep_cif.c">
+      <DisableSpecificWarnings Condition="'$(Platform)'=='x64'">4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
     <ClCompile Include="..\Modules\_ctypes\stgdict.c" />
     <ClCompile Include="..\Modules\_ctypes\libffi_msvc\win32.c">
       <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>

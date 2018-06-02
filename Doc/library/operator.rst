@@ -17,9 +17,10 @@
 
 The :mod:`operator` module exports a set of efficient functions corresponding to
 the intrinsic operators of Python.  For example, ``operator.add(x, y)`` is
-equivalent to the expression ``x+y``.  The function names are those used for
-special class methods; variants without leading and trailing ``__`` are also
-provided for convenience.
+equivalent to the expression ``x+y``. Many function names are those used for
+special methods, without the double underscores.  For backward compatibility,
+many of these have a variant with the double underscores kept. The variants
+without the double underscores are preferred for clarity.
 
 The functions fall into categories that perform object comparisons, logical
 operations, mathematical operations and sequence operations.
@@ -314,6 +315,8 @@ expect a function argument.
    method.  Dictionaries accept any hashable value.  Lists, tuples, and
    strings accept an index or a slice:
 
+      >>> itemgetter('name')({'name': 'tu', 'age': 18})
+      'tu'
       >>> itemgetter(1)('ABCDEFG')
       'B'
       >>> itemgetter(1,3,5)('ABCDEFG')
@@ -321,6 +324,9 @@ expect a function argument.
       >>> itemgetter(slice(2,None))('ABCDEFG')
       'CDEFG'
 
+      >>> soldier = dict(rank='captain', name='dotterbart')
+      >>> itemgetter('rank')(soldier)
+      'captain'
 
    Example of using :func:`itemgetter` to retrieve specific fields from a
    tuple record:

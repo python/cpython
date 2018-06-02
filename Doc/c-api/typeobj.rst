@@ -623,6 +623,22 @@ type objects) *must* have the :attr:`ob_size` field.
    | :const:`Py_GE` | ``>=``     |
    +----------------+------------+
 
+   The following macro is defined to ease writing rich comparison functions:
+
+   .. c:function:: PyObject *Py_RETURN_RICHCOMPARE(VAL_A, VAL_B, int op)
+
+      Return ``Py_True`` or ``Py_False`` from the function, depending on the
+      result of a comparison.
+      VAL_A and VAL_B must be orderable by C comparison operators (for example,
+      they may be C ints or floats). The third argument specifies the requested
+      operation, as for :c:func:`PyObject_RichCompare`.
+
+      The return value's reference count is properly incremented.
+
+      On error, sets an exception and returns NULL from the function.
+
+      .. versionadded:: 3.7
+
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_weaklistoffset
 
@@ -718,21 +734,6 @@ type objects) *must* have the :attr:`ob_size` field.
 
    This field is not inherited by subtypes (computed attributes are inherited
    through a different mechanism).
-
-   .. XXX belongs elsewhere
-
-   Docs for PyGetSetDef::
-
-      typedef PyObject *(*getter)(PyObject *, void *);
-      typedef int (*setter)(PyObject *, PyObject *, void *);
-
-      typedef struct PyGetSetDef {
-          const char *name; /* attribute name */
-          getter get;       /* C function to get the attribute */
-          setter set;       /* C function to set or delete the attribute */
-          const char *doc;  /* optional doc string */
-          void *closure;    /* optional additional data for getter and setter */
-      } PyGetSetDef;
 
 
 .. c:member:: PyTypeObject* PyTypeObject.tp_base
@@ -1166,21 +1167,24 @@ Mapping Object Structures
 
 .. c:member:: lenfunc PyMappingMethods.mp_length
 
-   This function is used by :c:func:`PyMapping_Length` and
+   This function is used by :c:func:`PyMapping_Size` and
    :c:func:`PyObject_Size`, and has the same signature.  This slot may be set to
    *NULL* if the object has no defined length.
 
 .. c:member:: binaryfunc PyMappingMethods.mp_subscript
 
-   This function is used by :c:func:`PyObject_GetItem` and has the same
-   signature.  This slot must be filled for the :c:func:`PyMapping_Check`
-   function to return ``1``, it can be *NULL* otherwise.
+   This function is used by :c:func:`PyObject_GetItem` and
+   :c:func:`PySequence_GetSlice`, and has the same signature as
+   :c:func:`!PyObject_GetItem`.  This slot must be filled for the
+   :c:func:`PyMapping_Check` function to return ``1``, it can be *NULL*
+   otherwise.
 
 .. c:member:: objobjargproc PyMappingMethods.mp_ass_subscript
 
-   This function is used by :c:func:`PyObject_SetItem` and
-   :c:func:`PyObject_DelItem`.  It has the same signature as
-   :c:func:`PyObject_SetItem`, but *v* can also be set to *NULL* to delete
+   This function is used by :c:func:`PyObject_SetItem`,
+   :c:func:`PyObject_DelItem`, :c:func:`PyObject_SetSlice` and
+   :c:func:`PyObject_DelSlice`.  It has the same signature as
+   :c:func:`!PyObject_SetItem`, but *v* can also be set to *NULL* to delete
    an item.  If this slot is *NULL*, the object does not support item
    assignment and deletion.
 
@@ -1200,26 +1204,29 @@ Sequence Object Structures
 
 .. c:member:: lenfunc PySequenceMethods.sq_length
 
-   This function is used by :c:func:`PySequence_Size` and :c:func:`PyObject_Size`,
-   and has the same signature.
+   This function is used by :c:func:`PySequence_Size` and
+   :c:func:`PyObject_Size`, and has the same signature.  It is also used for
+   handling negative indices via the :c:member:`~PySequenceMethods.sq_item`
+   and the :c:member:`~PySequenceMethods.sq_ass_item` slots.
 
 .. c:member:: binaryfunc PySequenceMethods.sq_concat
 
    This function is used by :c:func:`PySequence_Concat` and has the same
    signature.  It is also used by the ``+`` operator, after trying the numeric
-   addition via the :c:member:`~PyTypeObject.tp_as_number.nb_add` slot.
+   addition via the :c:member:`~PyNumberMethods.nb_add` slot.
 
 .. c:member:: ssizeargfunc PySequenceMethods.sq_repeat
 
    This function is used by :c:func:`PySequence_Repeat` and has the same
    signature.  It is also used by the ``*`` operator, after trying numeric
-   multiplication via the :c:member:`~PyTypeObject.tp_as_number.nb_multiply`
-   slot.
+   multiplication via the :c:member:`~PyNumberMethods.nb_multiply` slot.
 
 .. c:member:: ssizeargfunc PySequenceMethods.sq_item
 
    This function is used by :c:func:`PySequence_GetItem` and has the same
-   signature.  This slot must be filled for the :c:func:`PySequence_Check`
+   signature.  It is also used by :c:func:`PyObject_GetItem`, after trying
+   the subscription via the :c:member:`~PyMappingMethods.mp_subscript` slot.
+   This slot must be filled for the :c:func:`PySequence_Check`
    function to return ``1``, it can be *NULL* otherwise.
 
    Negative indexes are handled as follows: if the :attr:`sq_length` slot is
@@ -1230,28 +1237,36 @@ Sequence Object Structures
 .. c:member:: ssizeobjargproc PySequenceMethods.sq_ass_item
 
    This function is used by :c:func:`PySequence_SetItem` and has the same
-   signature.  This slot may be left to *NULL* if the object does not support
+   signature.  It is also used by :c:func:`PyObject_SetItem` and
+   :c:func:`PyObject_DelItem`, after trying the item assignment and deletion
+   via the :c:member:`~PyMappingMethods.mp_ass_subscript` slot.
+   This slot may be left to *NULL* if the object does not support
    item assignment and deletion.
 
 .. c:member:: objobjproc PySequenceMethods.sq_contains
 
    This function may be used by :c:func:`PySequence_Contains` and has the same
    signature.  This slot may be left to *NULL*, in this case
-   :c:func:`PySequence_Contains` simply traverses the sequence until it finds a
-   match.
+   :c:func:`!PySequence_Contains` simply traverses the sequence until it
+   finds a match.
 
 .. c:member:: binaryfunc PySequenceMethods.sq_inplace_concat
 
    This function is used by :c:func:`PySequence_InPlaceConcat` and has the same
-   signature.  It should modify its first operand, and return it.
+   signature.  It should modify its first operand, and return it.  This slot
+   may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceConcat`
+   will fall back to :c:func:`PySequence_Concat`.  It is also used by the
+   augmented assignment ``+=``, after trying numeric inplace addition
+   via the :c:member:`~PyNumberMethods.nb_inplace_add` slot.
 
 .. c:member:: ssizeargfunc PySequenceMethods.sq_inplace_repeat
 
    This function is used by :c:func:`PySequence_InPlaceRepeat` and has the same
-   signature.  It should modify its first operand, and return it.
-
-.. XXX need to explain precedence between mapping and sequence
-.. XXX explains when to implement the sq_inplace_* slots
+   signature.  It should modify its first operand, and return it.  This slot
+   may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceRepeat`
+   will fall back to :c:func:`PySequence_Repeat`.  It is also used by the
+   augmented assignment ``*=``, after trying numeric inplace multiplication
+   via the :c:member:`~PyNumberMethods.nb_inplace_multiply` slot.
 
 
 .. _buffer-structs:

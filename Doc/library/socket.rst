@@ -77,6 +77,11 @@ created.  Socket addresses are represented as follows:
   backward compatibility.  Note, however, omission of *scopeid* can cause problems
   in manipulating scoped IPv6 addresses.
 
+  .. versionchanged:: 3.7
+     For multicast addresses (with *scopeid* meaningful) *address* may not contain
+     ``%scope`` (or ``zone id``) part. This information is superfluous and may
+     be safely omitted (recommended).
+
 - :const:`AF_NETLINK` sockets are represented as pairs ``(pid, groups)``.
 
 - Linux-only support for TIPC is available using the :const:`AF_TIPC`
@@ -102,6 +107,10 @@ created.  Socket addresses are represented as follows:
   where *interface* is a string representing a network interface name like
   ``'can0'``. The network interface name ``''`` can be used to receive packets
   from all network interfaces of this family.
+
+  - :const:`CAN_ISOTP` protocol require a tuple ``(interface, rx_addr, tx_addr)``
+    where both additional parameters are unsigned long integer that represent a
+    CAN identifier (standard or extended).
 
 - A string or a tuple ``(id, unit)`` is used for the :const:`SYSPROTO_CONTROL`
   protocol of the :const:`PF_SYSTEM` family. The string is the name of a
@@ -148,6 +157,14 @@ created.  Socket addresses are represented as follows:
   Availability Linux 2.6.38, some algorithm types require more recent Kernels.
 
   .. versionadded:: 3.6
+
+- :const:`AF_VSOCK` allows communication between virtual machines and
+  their hosts. The sockets are represented as a ``(CID, port)`` tuple
+  where the context ID or CID and port are integers.
+
+  Availability: Linux >= 4.8 QEMU >= 2.8 ESX >= 4.0 ESX Workstation >= 6.5
+
+  .. versionadded:: 3.7
 
 - Certain other address families (:const:`AF_PACKET`, :const:`AF_CAN`)
   support specific representations.
@@ -303,8 +320,15 @@ Constants
       ``SO_DOMAIN``, ``SO_PROTOCOL``, ``SO_PEERSEC``, ``SO_PASSSEC``,
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
 
+   .. versionchanged:: 3.6.5
+      On Windows, ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` appear if run-time Windows
+      supports.
+
    .. versionchanged:: 3.7
       ``TCP_NOTSENT_LOWAT`` was added.
+
+      On Windows, ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` appear if run-time Windows
+      supports.
 
 .. data:: AF_CAN
           PF_CAN
@@ -340,6 +364,16 @@ Constants
    Availability: Linux >= 3.6.
 
    .. versionadded:: 3.5
+
+.. data:: CAN_ISOTP
+
+   CAN_ISOTP, in the CAN protocol family, is the ISO-TP (ISO 15765-2) protocol.
+   ISO-TP constants, documented in the Linux documentation.
+
+   Availability: Linux >= 2.6.25
+
+   .. versionadded:: 3.7
+
 
 .. data:: AF_RDS
           PF_RDS
@@ -380,6 +414,18 @@ Constants
    Availability: Linux >= 2.6.38.
 
    .. versionadded:: 3.6
+
+
+.. data:: AF_VSOCK
+          IOCTL_VM_SOCKETS_GET_LOCAL_CID
+          VMADDR*
+          SO_VM*
+
+   Constants for Linux host/guest communication.
+
+   Availability: Linux >= 4.8.
+
+   .. versionadded:: 3.7
 
 .. data:: AF_LINK
 
@@ -427,10 +473,15 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
    constants. The protocol number is usually zero and may be omitted or in the
    case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW` or :const:`CAN_BCM`.  If *fileno* is specified, the other
-   arguments are ignored, causing the socket with the specified file descriptor
-   to return.  Unlike :func:`socket.fromfd`, *fileno* will return the same
-   socket and not a duplicate. This may help close a detached socket using
+   of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`
+
+   If *fileno* is specified, the values for *family*, *type*, and *proto* are
+   auto-detected from the specified file descriptor.  Auto-detection can be
+   overruled by calling the function with explicit *family*, *type*, or *proto*
+   arguments.  This only affects how Python represents e.g. the return value
+   of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
+   :func:`socket.fromfd`, *fileno* will return the same socket and not a
+   duplicate. This may help close a detached socket using
    :meth:`socket.close()`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
@@ -445,6 +496,22 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.4
       The returned socket is now non-inheritable.
 
+   .. versionchanged:: 3.7
+       The CAN_ISOTP protocol was added.
+
+   .. versionchanged:: 3.7
+      When :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
+      bit flags are applied to *type* they are cleared, and
+      :attr:`socket.type` will not reflect them.  They are still passed
+      to the underlying system `socket()` call.  Therefore::
+
+          sock = socket.socket(
+              socket.AF_INET,
+              socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+
+      will still create a non-blocking socket on OSes that support
+      ``SOCK_NONBLOCK``, but ``sock.type`` will be set to
+      ``socket.SOCK_STREAM``.
 
 .. function:: socketpair([family[, type[, proto]]])
 
@@ -528,6 +595,14 @@ Other functions
 The :mod:`socket` module also offers various network-related services:
 
 
+.. function:: close(fd)
+
+   Close a socket file descriptor. This is like :func:`os.close`, but for
+   sockets. On some platforms (most noticeable Windows) :func:`os.close`
+   does not work for socket file descriptors.
+
+   .. versionadded:: 3.7
+
 .. function:: getaddrinfo(host, port, family=0, type=0, proto=0, flags=0)
 
    Translate the *host*/*port* argument into a sequence of 5-tuples that contain
@@ -571,6 +646,10 @@ The :mod:`socket` module also offers various network-related services:
 
    .. versionchanged:: 3.2
       parameters can now be passed using keyword arguments.
+
+   .. versionchanged:: 3.7
+      for IPv6 multicast addresses, string representing an address will not
+      contain ``%scope`` part.
 
 .. function:: getfqdn([name])
 
@@ -630,6 +709,8 @@ The :mod:`socket` module also offers various network-related services:
    or numeric address representation in *host*.  Similarly, *port* can contain a
    string port name or a numeric port number.
 
+   For IPv6 addresses, ``%scope`` is appended to the host part if *sockaddr*
+   contains meaningful *scopeid*. Usually this happens for multicast addresses.
 
 .. function:: getprotobyname(protocolname)
 
@@ -1029,6 +1110,16 @@ to sockets.
    to decode C structures encoded as byte strings).
 
 
+.. method:: socket.getblocking()
+
+   Return ``True`` if socket is in blocking mode, ``False`` if in
+   non-blocking.
+
+   This is equivalent to checking ``socket.gettimeout() == 0``.
+
+   .. versionadded:: 3.7
+
+
 .. method:: socket.gettimeout()
 
    Return the timeout in seconds (float) associated with socket operations,
@@ -1120,6 +1211,10 @@ to sockets.
       an exception, the method now retries the system call instead of raising
       an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
+   .. versionchanged:: 3.7
+      For multicast IPv6 address, first item of *address* does not contain
+      ``%scope`` part anymore. In order to get full IPv6 address use
+      :func:`getnameinfo`.
 
 .. method:: socket.recvmsg(bufsize[, ancbufsize[, flags]])
 
@@ -1381,6 +1476,10 @@ to sockets.
 
    * ``sock.setblocking(False)`` is equivalent to ``sock.settimeout(0.0)``
 
+   .. versionchanged:: 3.7
+      The method no longer applies :const:`SOCK_NONBLOCK` flag on
+      :attr:`socket.type`.
+
 
 .. method:: socket.settimeout(value)
 
@@ -1392,6 +1491,10 @@ to sockets.
    non-blocking mode. If ``None`` is given, the socket is put in blocking mode.
 
    For further information, please consult the :ref:`notes on socket timeouts <socket-timeouts>`.
+
+   .. versionchanged:: 3.7
+      The method no longer toggles :const:`SOCK_NONBLOCK` flag on
+      :attr:`socket.type`.
 
 
 .. method:: socket.setsockopt(level, optname, value: int)
@@ -1661,7 +1764,7 @@ the interface::
    # disabled promiscuous mode
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
 
-The last example shows how to use the socket interface to communicate to a CAN
+The next example shows how to use the socket interface to communicate to a CAN
 network using the raw socket protocol. To use CAN with the broadcast
 manager protocol instead, open a socket with::
 
@@ -1671,7 +1774,7 @@ After binding (:const:`CAN_RAW`) or connecting (:const:`CAN_BCM`) the socket, yo
 can use the :meth:`socket.send`, and the :meth:`socket.recv` operations (and
 their counterparts) on the socket object as usual.
 
-This example might require special privileges::
+This last example might require special privileges::
 
    import socket
    import struct

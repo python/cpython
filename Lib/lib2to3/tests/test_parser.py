@@ -8,17 +8,19 @@ test_grammar.py files from both Python 2 and Python 3.
 
 # Testing imports
 from . import support
-from .support import driver
-from test.support import verbose
+from .support import driver, driver_no_print_statement
 
 # Python imports
+import difflib
+import importlib
+import operator
 import os
+import pickle
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
-import warnings
 
 # Local imports
 from lib2to3.pgen2 import driver as pgen2_driver
@@ -99,6 +101,18 @@ pgen2_driver.load_grammar(%r, save=True, force=True)
         finally:
             shutil.rmtree(tmpdir)
 
+    def test_load_packaged_grammar(self):
+        modname = __name__ + '.load_test'
+        class MyLoader:
+            def get_data(self, where):
+                return pickle.dumps({'elephant': 19})
+        class MyModule:
+            __file__ = 'parsertestmodule'
+            __spec__ = importlib.util.spec_from_loader(modname, MyLoader())
+        sys.modules[modname] = MyModule()
+        self.addCleanup(operator.delitem, sys.modules, modname)
+        g = pgen2_driver.load_packaged_grammar(modname, 'Grammar.txt')
+        self.assertEqual(g.elephant, 19)
 
 
 class GrammarTest(support.TestCase):
@@ -260,6 +274,78 @@ class TestUnpackingGeneralizations(GrammarTest):
     def test_argument_unpacking_3(self):
         self.validate("""f(2, *a, *b, **b, **c, **d)""")
 
+    def test_trailing_commas_1(self):
+        self.validate("def f(a, b): call(a, b)")
+        self.validate("def f(a, b,): call(a, b,)")
+
+    def test_trailing_commas_2(self):
+        self.validate("def f(a, *b): call(a, *b)")
+        self.validate("def f(a, *b,): call(a, *b,)")
+
+    def test_trailing_commas_3(self):
+        self.validate("def f(a, b=1): call(a, b=1)")
+        self.validate("def f(a, b=1,): call(a, b=1,)")
+
+    def test_trailing_commas_4(self):
+        self.validate("def f(a, **b): call(a, **b)")
+        self.validate("def f(a, **b,): call(a, **b,)")
+
+    def test_trailing_commas_5(self):
+        self.validate("def f(*a, b=1): call(*a, b=1)")
+        self.validate("def f(*a, b=1,): call(*a, b=1,)")
+
+    def test_trailing_commas_6(self):
+        self.validate("def f(*a, **b): call(*a, **b)")
+        self.validate("def f(*a, **b,): call(*a, **b,)")
+
+    def test_trailing_commas_7(self):
+        self.validate("def f(*, b=1): call(*b)")
+        self.validate("def f(*, b=1,): call(*b,)")
+
+    def test_trailing_commas_8(self):
+        self.validate("def f(a=1, b=2): call(a=1, b=2)")
+        self.validate("def f(a=1, b=2,): call(a=1, b=2,)")
+
+    def test_trailing_commas_9(self):
+        self.validate("def f(a=1, **b): call(a=1, **b)")
+        self.validate("def f(a=1, **b,): call(a=1, **b,)")
+
+    def test_trailing_commas_lambda_1(self):
+        self.validate("f = lambda a, b: call(a, b)")
+        self.validate("f = lambda a, b,: call(a, b,)")
+
+    def test_trailing_commas_lambda_2(self):
+        self.validate("f = lambda a, *b: call(a, *b)")
+        self.validate("f = lambda a, *b,: call(a, *b,)")
+
+    def test_trailing_commas_lambda_3(self):
+        self.validate("f = lambda a, b=1: call(a, b=1)")
+        self.validate("f = lambda a, b=1,: call(a, b=1,)")
+
+    def test_trailing_commas_lambda_4(self):
+        self.validate("f = lambda a, **b: call(a, **b)")
+        self.validate("f = lambda a, **b,: call(a, **b,)")
+
+    def test_trailing_commas_lambda_5(self):
+        self.validate("f = lambda *a, b=1: call(*a, b=1)")
+        self.validate("f = lambda *a, b=1,: call(*a, b=1,)")
+
+    def test_trailing_commas_lambda_6(self):
+        self.validate("f = lambda *a, **b: call(*a, **b)")
+        self.validate("f = lambda *a, **b,: call(*a, **b,)")
+
+    def test_trailing_commas_lambda_7(self):
+        self.validate("f = lambda *, b=1: call(*b)")
+        self.validate("f = lambda *, b=1,: call(*b,)")
+
+    def test_trailing_commas_lambda_8(self):
+        self.validate("f = lambda a=1, b=2: call(a=1, b=2)")
+        self.validate("f = lambda a=1, b=2,: call(a=1, b=2,)")
+
+    def test_trailing_commas_lambda_9(self):
+        self.validate("f = lambda a=1, **b: call(a=1, **b)")
+        self.validate("f = lambda a=1, **b,: call(a=1, **b,)")
+
 
 # Adapted from Python 3's Lib/test/test_grammar.py:GrammarTests.testFuncdef
 class TestFunctionAnnotations(GrammarTest):
@@ -288,6 +374,74 @@ class TestFunctionAnnotations(GrammarTest):
         s = """def f(a, (b:1, c:2, d), e:3=4, f=5,
                         *g:6, h:7, i=8, j:9=10, **k:11) -> 12: pass"""
         self.validate(s)
+
+    def test_9(self):
+        s = """def f(
+          a: str,
+          b: int,
+          *,
+          c: bool = False,
+          **kwargs,
+        ) -> None:
+            call(c=c, **kwargs,)"""
+        self.validate(s)
+
+    def test_10(self):
+        s = """def f(
+          a: str,
+        ) -> None:
+            call(a,)"""
+        self.validate(s)
+
+    def test_11(self):
+        s = """def f(
+          a: str = '',
+        ) -> None:
+            call(a=a,)"""
+        self.validate(s)
+
+    def test_12(self):
+        s = """def f(
+          *args: str,
+        ) -> None:
+            call(*args,)"""
+        self.validate(s)
+
+    def test_13(self):
+        self.validate("def f(a: str, b: int) -> None: call(a, b)")
+        self.validate("def f(a: str, b: int,) -> None: call(a, b,)")
+
+    def test_14(self):
+        self.validate("def f(a: str, *b: int) -> None: call(a, *b)")
+        self.validate("def f(a: str, *b: int,) -> None: call(a, *b,)")
+
+    def test_15(self):
+        self.validate("def f(a: str, b: int=1) -> None: call(a, b=1)")
+        self.validate("def f(a: str, b: int=1,) -> None: call(a, b=1,)")
+
+    def test_16(self):
+        self.validate("def f(a: str, **b: int) -> None: call(a, **b)")
+        self.validate("def f(a: str, **b: int,) -> None: call(a, **b,)")
+
+    def test_17(self):
+        self.validate("def f(*a: str, b: int=1) -> None: call(*a, b=1)")
+        self.validate("def f(*a: str, b: int=1,) -> None: call(*a, b=1,)")
+
+    def test_18(self):
+        self.validate("def f(*a: str, **b: int) -> None: call(*a, **b)")
+        self.validate("def f(*a: str, **b: int,) -> None: call(*a, **b,)")
+
+    def test_19(self):
+        self.validate("def f(*, b: int=1) -> None: call(*b)")
+        self.validate("def f(*, b: int=1,) -> None: call(*b,)")
+
+    def test_20(self):
+        self.validate("def f(a: str='', b: int=2) -> None: call(a=a, b=2)")
+        self.validate("def f(a: str='', b: int=2,) -> None: call(a=a, b=2,)")
+
+    def test_21(self):
+        self.validate("def f(a: str='', **b: int) -> None: call(a=a, **b)")
+        self.validate("def f(a: str='', **b: int,) -> None: call(a=a, **b,)")
 
 
 # Adapted from Python 3's Lib/test/test_grammar.py:GrammarTests.test_var_annot
@@ -391,15 +545,13 @@ class TestClassDef(GrammarTest):
         self.validate("class B(t, *args): pass")
         self.validate("class B(t, **kwargs): pass")
         self.validate("class B(t, *args, **kwargs): pass")
-        self.validate("class B(t, y=9, *args, **kwargs): pass")
+        self.validate("class B(t, y=9, *args, **kwargs,): pass")
 
 
 class TestParserIdempotency(support.TestCase):
 
     """A cut-down version of pytree_idempotency.py."""
 
-    # Issue 13125
-    @unittest.expectedFailure
     def test_all_project_files(self):
         for filepath in support.all_project_files():
             with open(filepath, "rb") as fp:
@@ -410,13 +562,14 @@ class TestParserIdempotency(support.TestCase):
                 source = fp.read()
             try:
                 tree = driver.parse_string(source)
-            except ParseError as err:
-                if verbose > 0:
-                    warnings.warn('ParseError on file %s (%s)' % (filepath, err))
-                continue
+            except ParseError:
+                try:
+                    tree = driver_no_print_statement.parse_string(source)
+                except ParseError as err:
+                    self.fail('ParseError on file %s (%s)' % (filepath, err))
             new = str(tree)
-            x = diff(filepath, new)
-            if x:
+            if new != source:
+                print(diff_texts(source, new, filepath))
                 self.fail("Idempotency failed: %s" % filepath)
 
     def test_extended_unpacking(self):
@@ -459,14 +612,20 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
-def diff(fn, result):
-    try:
-        with open('@', 'w') as f:
-            f.write(str(result))
-        fn = fn.replace('"', '\\"')
-        return subprocess.call(['diff', '-u', fn, '@'], stdout=(subprocess.DEVNULL if verbose < 1 else None))
-    finally:
-        try:
-            os.remove("@")
-        except OSError:
-            pass
+class TestGeneratorExpressions(GrammarTest):
+
+    def test_trailing_comma_after_generator_expression_argument_works(self):
+        # BPO issue 27494
+        self.validate("set(x for x in [],)")
+
+
+def diff_texts(a, b, filename):
+    a = a.splitlines()
+    b = b.splitlines()
+    return difflib.unified_diff(a, b, filename, filename,
+                                "(original)", "(reserialized)",
+                                lineterm="")
+
+
+if __name__ == '__main__':
+    unittest.main()

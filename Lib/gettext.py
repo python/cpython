@@ -46,13 +46,10 @@ internationalized, to the local language and cultural habits.
 #   find this format documented anywhere.
 
 
-import copy
 import locale
 import os
 import re
-import struct
 import sys
-from errno import ENOENT
 
 
 __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
@@ -279,7 +276,9 @@ class NullTranslations:
     def lgettext(self, message):
         if self._fallback:
             return self._fallback.lgettext(message)
-        return message
+        if self._output_charset:
+            return message.encode(self._output_charset)
+        return message.encode(locale.getpreferredencoding())
 
     def ngettext(self, msgid1, msgid2, n):
         if self._fallback:
@@ -293,9 +292,12 @@ class NullTranslations:
         if self._fallback:
             return self._fallback.lngettext(msgid1, msgid2, n)
         if n == 1:
-            return msgid1
+            tmsg = msgid1
         else:
-            return msgid2
+            tmsg = msgid2
+        if self._output_charset:
+            return tmsg.encode(self._output_charset)
+        return tmsg.encode(locale.getpreferredencoding())
 
     def info(self):
         return self._info
@@ -337,7 +339,9 @@ class GNUTranslations(NullTranslations):
 
     def _parse(self, fp):
         """Override this method to support alternative .mo formats."""
-        unpack = struct.unpack
+        # Delay struct import for speeding up gettext import when .mo files
+        # are not used.
+        from struct import unpack
         filename = getattr(fp, 'name', '')
         # Parse the .mo file header, which consists of 5 little endian 32
         # bit words.
@@ -377,7 +381,7 @@ class GNUTranslations(NullTranslations):
             if mlen == 0:
                 # Catalog description
                 lastk = None
-                for b_item in tmsg.split('\n'.encode("ascii")):
+                for b_item in tmsg.split(b'\n'):
                     item = b_item.decode().strip()
                     if not item:
                         continue
@@ -425,7 +429,7 @@ class GNUTranslations(NullTranslations):
         if tmsg is missing:
             if self._fallback:
                 return self._fallback.lgettext(message)
-            return message
+            tmsg = message
         if self._output_charset:
             return tmsg.encode(self._output_charset)
         return tmsg.encode(locale.getpreferredencoding())
@@ -433,16 +437,16 @@ class GNUTranslations(NullTranslations):
     def lngettext(self, msgid1, msgid2, n):
         try:
             tmsg = self._catalog[(msgid1, self.plural(n))]
-            if self._output_charset:
-                return tmsg.encode(self._output_charset)
-            return tmsg.encode(locale.getpreferredencoding())
         except KeyError:
             if self._fallback:
                 return self._fallback.lngettext(msgid1, msgid2, n)
             if n == 1:
-                return msgid1
+                tmsg = msgid1
             else:
-                return msgid2
+                tmsg = msgid2
+        if self._output_charset:
+            return tmsg.encode(self._output_charset)
+        return tmsg.encode(locale.getpreferredencoding())
 
     def gettext(self, message):
         missing = object()
@@ -515,7 +519,9 @@ def translation(domain, localedir=None, languages=None,
     if not mofiles:
         if fallback:
             return NullTranslations()
-        raise OSError(ENOENT, 'No translation file found for domain', domain)
+        from errno import ENOENT
+        raise FileNotFoundError(ENOENT,
+                                'No translation file found for domain', domain)
     # Avoid opening, reading, and parsing the .mo file after it's been done
     # once.
     result = None
@@ -528,6 +534,9 @@ def translation(domain, localedir=None, languages=None,
         # Copy the translation object to allow setting fallbacks and
         # output charset. All other instance data is shared with the
         # cached object.
+        # Delay copy import for speeding up gettext import when .mo files
+        # are not used.
+        import copy
         t = copy.copy(t)
         if codeset:
             t.set_output_charset(codeset)
@@ -582,11 +591,11 @@ def dgettext(domain, message):
     return t.gettext(message)
 
 def ldgettext(domain, message):
+    codeset = _localecodesets.get(domain)
     try:
-        t = translation(domain, _localedirs.get(domain, None),
-                        codeset=_localecodesets.get(domain))
+        t = translation(domain, _localedirs.get(domain, None), codeset=codeset)
     except OSError:
-        return message
+        return message.encode(codeset or locale.getpreferredencoding())
     return t.lgettext(message)
 
 def dngettext(domain, msgid1, msgid2, n):
@@ -601,14 +610,15 @@ def dngettext(domain, msgid1, msgid2, n):
     return t.ngettext(msgid1, msgid2, n)
 
 def ldngettext(domain, msgid1, msgid2, n):
+    codeset = _localecodesets.get(domain)
     try:
-        t = translation(domain, _localedirs.get(domain, None),
-                        codeset=_localecodesets.get(domain))
+        t = translation(domain, _localedirs.get(domain, None), codeset=codeset)
     except OSError:
         if n == 1:
-            return msgid1
+            tmsg = msgid1
         else:
-            return msgid2
+            tmsg = msgid2
+        return tmsg.encode(codeset or locale.getpreferredencoding())
     return t.lngettext(msgid1, msgid2, n)
 
 def gettext(message):
