@@ -127,7 +127,6 @@ class CodeContextTest(unittest.TestCase):
         eq(toggle(), 'break')
         self.assertIsNotNone(cc.label)
         eq(cc.label['font'], cc.textfont)
-
         eq(cc.label['fg'], cc.colors['foreground'])
         eq(cc.label['bg'], cc.colors['background'])
         eq(cc.label['text'], '')
@@ -326,7 +325,6 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.label['font'], save_font)
         eq(cc.label['background'], test_colors['background'])
         eq(cc.label['foreground'], test_colors['foreground'])
-
         codecontext.CodeContext.colors = save_colors
         cc.config_timer_event()
 
