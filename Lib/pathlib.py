@@ -878,6 +878,8 @@ class PurePath(object):
         return self._make_child(args)
 
     def __truediv__(self, key):
+        if key is ...:
+            return self.parent
         return self._make_child((key,))
 
     def __rtruediv__(self, key):
