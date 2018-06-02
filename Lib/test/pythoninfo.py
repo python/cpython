@@ -275,6 +275,14 @@ def collect_readline(info_add):
     copy_attributes(info_add, readline, 'readline.%s', attributes,
                     formatter=format_attr)
 
+    if not hasattr(readline, "_READLINE_LIBRARY_VERSION"):
+        # _READLINE_LIBRARY_VERSION has been added to CPython 3.7
+        doc = getattr(readline, '__doc__', '')
+        if 'libedit readline' in doc:
+            info_add('readline.library', 'libedit readline')
+        elif 'GNU readline' in doc:
+            info_add('readline.library', 'GNU readline')
+
 
 def collect_gdb(info_add):
     import subprocess
@@ -489,6 +497,34 @@ def collect_test_support(info_add):
     call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
 
 
+def collect_cc(info_add):
+    import subprocess
+    import sysconfig
+
+    CC = sysconfig.get_config_var('CC')
+    if not CC:
+        return
+
+    try:
+        import shlex
+        args = shlex.split(CC)
+    except ImportError:
+        args = CC.split()
+    args.append('--version')
+    proc = subprocess.Popen(args,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            universal_newlines=True)
+    stdout = proc.communicate()[0]
+    if proc.returncode:
+        # CC --version failed: ignore error
+        return
+
+    text = stdout.splitlines()[0]
+    text = normalize_text(text)
+    info_add('CC.version', text)
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -515,6 +551,7 @@ def collect_info(info):
         collect_decimal,
         collect_testcapi,
         collect_resource,
+        collect_cc,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,

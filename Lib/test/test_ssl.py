@@ -1826,6 +1826,7 @@ class SimpleBackgroundTests(unittest.TestCase):
             s.connect(self.server_addr)
             cert = s.getpeercert()
             self.assertTrue(cert)
+
         # Same with a bytes `capath` argument
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         ctx.verify_mode = ssl.CERT_REQUIRED
@@ -1841,8 +1842,6 @@ class SimpleBackgroundTests(unittest.TestCase):
         der = ssl.PEM_cert_to_DER_cert(pem)
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         ctx.verify_mode = ssl.CERT_REQUIRED
-        # TODO: fix TLSv1.3 support
-        ctx.options |= ssl.OP_NO_TLSv1_3
         ctx.load_verify_locations(cadata=pem)
         with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
             s.connect(self.server_addr)
@@ -1852,8 +1851,6 @@ class SimpleBackgroundTests(unittest.TestCase):
         # same with DER
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         ctx.verify_mode = ssl.CERT_REQUIRED
-        # TODO: fix TLSv1.3 support
-        ctx.options |= ssl.OP_NO_TLSv1_3
         ctx.load_verify_locations(cadata=der)
         with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
             s.connect(self.server_addr)
@@ -2109,11 +2106,21 @@ class ThreadedEchoServer(threading.Thread):
                     self.sock, server_side=True)
                 self.server.selected_npn_protocols.append(self.sslconn.selected_npn_protocol())
                 self.server.selected_alpn_protocols.append(self.sslconn.selected_alpn_protocol())
-            except (ssl.SSLError, ConnectionResetError, OSError) as e:
+            except (ConnectionResetError, BrokenPipeError) as e:
                 # We treat ConnectionResetError as though it were an
                 # SSLError - OpenSSL on Ubuntu abruptly closes the
                 # connection when asked to use an unsupported protocol.
                 #
+                # BrokenPipeError is raised in TLS 1.3 mode, when OpenSSL
+                # tries to send session tickets after handshake.
+                # https://github.com/openssl/openssl/issues/6342
+                self.server.conn_errors.append(str(e))
+                if self.server.chatty:
+                    handle_error("\n server:  bad connection attempt from " + repr(self.addr) + ":\n")
+                self.running = False
+                self.close()
+                return False
+            except (ssl.SSLError, OSError) as e:
                 # OSError may occur with wrong protocols, e.g. both
                 # sides use PROTOCOL_TLS_SERVER.
                 #
@@ -2220,11 +2227,22 @@ class ThreadedEchoServer(threading.Thread):
                             sys.stdout.write(" server: read %r (%s), sending back %r (%s)...\n"
                                              % (msg, ctype, msg.lower(), ctype))
                         self.write(msg.lower())
+                except ConnectionResetError:
+                    # XXX: OpenSSL 1.1.1 sometimes raises ConnectionResetError
+                    # when connection is not shut down gracefully.
+                    if self.server.chatty and support.verbose:
+                        sys.stdout.write(
+                            " Connection reset by peer: {}\n".format(
+                                self.addr)
+                        )
+                    self.close()
+                    self.running = False
                 except OSError:
                     if self.server.chatty:
                         handle_error("Test server failure:\n")
                     self.close()
                     self.running = False
+
                     # normally, we'd just stop here, but for the test
                     # harness, we want to stop the server
                     self.server.stop()
@@ -2299,6 +2317,11 @@ class ThreadedEchoServer(threading.Thread):
                 pass
             except KeyboardInterrupt:
                 self.stop()
+            except BaseException as e:
+                if support.verbose and self.chatty:
+                    sys.stdout.write(
+                        ' connection handling failed: ' + repr(e) + '\n')
+
         self.sock.close()
 
     def stop(self):
@@ -2695,10 +2718,7 @@ class ThreadedTests(unittest.TestCase):
     def test_ecc_cert(self):
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         client_context.load_verify_locations(SIGNING_CA)
-        client_context.set_ciphers(
-            'TLS13-AES-128-GCM-SHA256:TLS13-CHACHA20-POLY1305-SHA256:'
-            'ECDHE:ECDSA:!NULL:!aRSA'
-        )
+        client_context.set_ciphers('ECDHE:ECDSA:!NULL:!aRSA')
         hostname = SIGNED_CERTFILE_ECC_HOSTNAME
 
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -2748,8 +2768,6 @@ class ThreadedTests(unittest.TestCase):
 
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         server_context.load_cert_chain(IDNSANSFILE)
-        # TODO: fix TLSv1.3 support
-        server_context.options |= ssl.OP_NO_TLSv1_3
 
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.verify_mode = ssl.CERT_REQUIRED
@@ -2800,7 +2818,7 @@ class ThreadedTests(unittest.TestCase):
                 with self.assertRaises(ssl.CertificateError):
                     s.connect((HOST, server.port))
 
-    def test_wrong_cert(self):
+    def test_wrong_cert_tls12(self):
         """Connecting when the server rejects the client's certificate
 
         Launch a server with CERT_REQUIRED, and check that trying to
@@ -2811,9 +2829,8 @@ class ThreadedTests(unittest.TestCase):
         client_context.load_cert_chain(WRONG_CERT)
         # require TLS client authentication
         server_context.verify_mode = ssl.CERT_REQUIRED
-        # TODO: fix TLSv1.3 support
-        # With TLS 1.3, test fails with exception in server thread
-        server_context.options |= ssl.OP_NO_TLSv1_3
+        # TLS 1.3 has different handshake
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
 
         server = ThreadedEchoServer(
             context=server_context, chatty=True, connectionchatty=True,
@@ -2827,6 +2844,36 @@ class ThreadedTests(unittest.TestCase):
                 # the connection, or a low-level connection reset (which
                 # sometimes happens on Windows)
                 s.connect((HOST, server.port))
+            except ssl.SSLError as e:
+                if support.verbose:
+                    sys.stdout.write("\nSSLError is %r\n" % e)
+            except OSError as e:
+                if e.errno != errno.ECONNRESET:
+                    raise
+                if support.verbose:
+                    sys.stdout.write("\nsocket.error is %r\n" % e)
+            else:
+                self.fail("Use of invalid cert should have failed!")
+
+    @unittest.skipUnless(ssl.HAS_TLSv1_3, "Test needs TLS 1.3")
+    def test_wrong_cert_tls13(self):
+        client_context, server_context, hostname = testing_context()
+        client_context.load_cert_chain(WRONG_CERT)
+        server_context.verify_mode = ssl.CERT_REQUIRED
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        client_context.minimum_version = ssl.TLSVersion.TLSv1_3
+
+        server = ThreadedEchoServer(
+            context=server_context, chatty=True, connectionchatty=True,
+        )
+        with server, \
+             client_context.wrap_socket(socket.socket(),
+                                        server_hostname=hostname) as s:
+            # TLS 1.3 perform client cert exchange after handshake
+            s.connect((HOST, server.port))
+            try:
+                s.write(b'data')
+                s.read(4)
             except ssl.SSLError as e:
                 if support.verbose:
                     sys.stdout.write("\nSSLError is %r\n" % e)
@@ -3408,7 +3455,7 @@ class ThreadedTests(unittest.TestCase):
             # Block on the accept and wait on the connection to close.
             evt.set()
             remote, peer = server.accept()
-            remote.recv(1)
+            remote.send(remote.recv(4))
 
         t = threading.Thread(target=serve)
         t.start()
@@ -3416,6 +3463,8 @@ class ThreadedTests(unittest.TestCase):
         evt.wait()
         client = context.wrap_socket(socket.socket())
         client.connect((host, port))
+        client.send(b'data')
+        client.recv()
         client_addr = client.getsockname()
         client.close()
         t.join()
@@ -3439,17 +3488,16 @@ class ThreadedTests(unittest.TestCase):
                 sock.do_handshake()
             self.assertEqual(cm.exception.errno, errno.ENOTCONN)
 
-    def test_default_ciphers(self):
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-        try:
-            # Force a set of weak ciphers on our client context
-            context.set_ciphers("DES")
-        except ssl.SSLError:
-            self.skipTest("no DES cipher available")
-        with ThreadedEchoServer(CERTFILE,
-                                ssl_version=ssl.PROTOCOL_TLS,
-                                chatty=False) as server:
-            with context.wrap_socket(socket.socket()) as s:
+    def test_no_shared_ciphers(self):
+        client_context, server_context, hostname = testing_context()
+        # OpenSSL enables all TLS 1.3 ciphers, enforce TLS 1.2 for test
+        client_context.options |= ssl.OP_NO_TLSv1_3
+        # Force different suites on client and master
+        client_context.set_ciphers("AES128")
+        server_context.set_ciphers("AES256")
+        with ThreadedEchoServer(context=server_context) as server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
                 with self.assertRaises(OSError):
                     s.connect((HOST, server.port))
         self.assertIn("no shared cipher", server.conn_errors[0])
@@ -3469,7 +3517,7 @@ class ThreadedTests(unittest.TestCase):
                 self.assertIs(s.version(), None)
                 self.assertIs(s._sslobj, None)
                 s.connect((HOST, server.port))
-                if ssl.OPENSSL_VERSION_INFO >= (1, 1, 1):
+                if IS_OPENSSL_1_1_1 and ssl.HAS_TLSv1_3:
                     self.assertEqual(s.version(), 'TLSv1.3')
                 elif ssl.OPENSSL_VERSION_INFO >= (1, 0, 2):
                     self.assertEqual(s.version(), 'TLSv1.2')
@@ -3490,9 +3538,9 @@ class ThreadedTests(unittest.TestCase):
             with context.wrap_socket(socket.socket()) as s:
                 s.connect((HOST, server.port))
                 self.assertIn(s.cipher()[0], {
-                    'TLS13-AES-256-GCM-SHA384',
-                    'TLS13-CHACHA20-POLY1305-SHA256',
-                    'TLS13-AES-128-GCM-SHA256',
+                    'TLS_AES_256_GCM_SHA384',
+                    'TLS_CHACHA20_POLY1305_SHA256',
+                    'TLS_AES_128_GCM_SHA256',
                 })
                 self.assertEqual(s.version(), 'TLSv1.3')
 
@@ -3578,8 +3626,6 @@ class ThreadedTests(unittest.TestCase):
             sys.stdout.write("\n")
 
         client_context, server_context, hostname = testing_context()
-        # TODO: fix TLSv1.3 support
-        client_context.options |= ssl.OP_NO_TLSv1_3
 
         server = ThreadedEchoServer(context=server_context,
                                     chatty=True,
@@ -3598,7 +3644,10 @@ class ThreadedTests(unittest.TestCase):
 
                 # check if it is sane
                 self.assertIsNotNone(cb_data)
-                self.assertEqual(len(cb_data), 12) # True for TLSv1
+                if s.version() == 'TLSv1.3':
+                    self.assertEqual(len(cb_data), 48)
+                else:
+                    self.assertEqual(len(cb_data), 12)  # True for TLSv1
 
                 # and compare with the peers version
                 s.write(b"CB tls-unique\n")
@@ -3620,7 +3669,10 @@ class ThreadedTests(unittest.TestCase):
                 # is it really unique
                 self.assertNotEqual(cb_data, new_cb_data)
                 self.assertIsNotNone(cb_data)
-                self.assertEqual(len(cb_data), 12) # True for TLSv1
+                if s.version() == 'TLSv1.3':
+                    self.assertEqual(len(cb_data), 48)
+                else:
+                    self.assertEqual(len(cb_data), 12)  # True for TLSv1
                 s.write(b"CB tls-unique\n")
                 peer_data_repr = s.read().strip()
                 self.assertEqual(peer_data_repr,
@@ -3898,23 +3950,20 @@ class ThreadedTests(unittest.TestCase):
 
     def test_shared_ciphers(self):
         client_context, server_context, hostname = testing_context()
-        if ssl.OPENSSL_VERSION_INFO >= (1, 0, 2):
-            client_context.set_ciphers("AES128:AES256")
-            server_context.set_ciphers("AES256")
-            alg1 = "AES256"
-            alg2 = "AES-256"
-        else:
-            client_context.set_ciphers("AES:3DES")
-            server_context.set_ciphers("3DES")
-            alg1 = "3DES"
-            alg2 = "DES-CBC3"
+        client_context.set_ciphers("AES128:AES256")
+        server_context.set_ciphers("AES256")
+        expected_algs = [
+            "AES256", "AES-256",
+            # TLS 1.3 ciphers are always enabled
+            "TLS_CHACHA20", "TLS_AES",
+        ]
 
         stats = server_params_test(client_context, server_context,
                                    sni_name=hostname)
         ciphers = stats['server_shared_ciphers'][0]
         self.assertGreater(len(ciphers), 0)
         for name, tls_version, bits in ciphers:
-            if not alg1 in name.split("-") and alg2 not in name:
+            if not any(alg in name for alg in expected_algs):
                 self.fail(name)
 
     def test_read_write_after_close_raises_valuerror(self):

@@ -169,11 +169,6 @@ purposes.
 
      3DES was dropped from the default cipher string.
 
-   .. versionchanged:: 3.7
-
-     TLS 1.3 cipher suites TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384,
-     and TLS_CHACHA20_POLY1305_SHA256 were added to the default cipher string.
-
 
 Exceptions
 ^^^^^^^^^^
@@ -1601,6 +1596,9 @@ to speed up repeated connections from the same clients.
       when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       give the currently selected cipher.
 
+      OpenSSL 1.1.1 has TLS 1.3 cipher suites enabled by default. The suites
+      cannot be disabled with :meth:`~SSLContext.set_ciphers`.
+
 .. method:: SSLContext.set_alpn_protocols(protocols)
 
    Specify which protocols the socket should advertise during the SSL/TLS
@@ -2589,7 +2587,33 @@ successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
 :func:`~ssl.RAND_pseudo_bytes` is sufficient.
 
 
-.. ssl-libressl:
+.. _ssl-tlsv1_3:
+
+TLS 1.3
+-------
+
+.. versionadded:: 3.7
+
+Python has provisional and experimental support for TLS 1.3 with OpenSSL
+1.1.1.  The new protocol behaves slightly differently than previous version
+of TLS/SSL.  Some new TLS 1.3 features are not yet available.
+
+- TLS 1.3 uses a disjunct set of cipher suites. All AES-GCM and
+  ChaCha20 cipher suites are enabled by default.  The method
+  :meth:`SSLContext.set_ciphers` cannot enable or disable any TLS 1.3
+  ciphers yet, but :meth:`SSLContext.get_cipers` returns them.
+- Session tickets are no longer sent as part of the initial handshake and
+  are handled differently.  :attr:`SSLSocket.session` and :class:`SSLSession`
+  are not compatible with TLS 1.3.
+- Client-side certificates are also no longer verified during the initial
+  handshake.  A server can request a certificate at any time.  Clients
+  process certificate requests while they send or receive application data
+  from the server.
+- TLS 1.3 features like early data, deferred TLS client cert request,
+  signature algorithm configuration, and rekeying are not supported yet.
+
+
+.. _ssl-libressl:
 
 LibreSSL support
 ----------------
@@ -2614,25 +2638,25 @@ with LibreSSL.
    `SSL/TLS Strong Encryption: An Introduction <https://httpd.apache.org/docs/trunk/en/ssl/ssl_intro.html>`_
        Intro from the Apache HTTP Server documentation
 
-   `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <https://www.ietf.org/rfc/rfc1422>`_
+   :rfc:`RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <1422>`
        Steve Kent
 
-   `RFC 4086: Randomness Requirements for Security <https://datatracker.ietf.org/doc/rfc4086/>`_
+   :rfc:`RFC 4086: Randomness Requirements for Security <4086>`
        Donald E., Jeffrey I. Schiller
 
-   `RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <https://datatracker.ietf.org/doc/rfc5280/>`_
+   :rfc:`RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <5280>`
        D. Cooper
 
-   `RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <https://tools.ietf.org/html/rfc5246>`_
+   :rfc:`RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <5246>`
        T. Dierks et. al.
 
-   `RFC 6066: Transport Layer Security (TLS) Extensions <https://tools.ietf.org/html/rfc6066>`_
+   :rfc:`RFC 6066: Transport Layer Security (TLS) Extensions <6066>`
        D. Eastlake
 
    `IANA TLS: Transport Layer Security (TLS) Parameters <https://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
        IANA
 
-   `RFC 7525: Recommendations for Secure Use of Transport Layer Security (TLS) and Datagram Transport Layer Security (DTLS) <https://tools.ietf.org/html/rfc7525>`_
+   :rfc:`RFC 7525: Recommendations for Secure Use of Transport Layer Security (TLS) and Datagram Transport Layer Security (DTLS) <7525>`
        IETF
 
    `Mozilla's Server Side TLS recommendations <https://wiki.mozilla.org/Security/Server_Side_TLS>`_

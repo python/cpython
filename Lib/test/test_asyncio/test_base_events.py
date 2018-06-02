@@ -1818,12 +1818,15 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.__old_bufsize = constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 16
         with open(support.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = cls.__old_bufsize
         support.unlink(support.TESTFN)
         super().tearDownClass()
 
@@ -1848,22 +1851,21 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     def prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
-        af = socket.AF_UNSPEC if support.IPV6_ENABLED else socket.AF_INET
         server = self.run_loop(self.loop.create_server(
-            lambda: proto, support.HOST, 0, family=af))
-        port = server.sockets[0].getsockname()[1]
+            lambda: proto, support.HOST, 0, family=socket.AF_INET))
+        addr = server.sockets[0].getsockname()
 
         for _ in range(10):
             try:
-                self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+                self.run_loop(self.loop.sock_connect(sock, addr))
             except OSError:
-                time.sleep(0.5)
+                self.run_loop(asyncio.sleep(0.5))
                 continue
             else:
                 break
         else:
             # One last try, so we get the exception
-            self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+            self.run_loop(self.loop.sock_connect(sock, addr))
 
         def cleanup():
             server.close()
