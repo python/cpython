@@ -263,8 +263,9 @@ extern PyGC_Head *_PyGC_generation0;
 
 /* Bit flags for gc_prev */
 /* Bit 0 is set when tp_finalize is called */
-#define _PyGC_PREV_MASK_FINALIZED  (1 << 0)
+#define _PyGC_PREV_MASK_FINALIZED  (1)
 /* Bit 1 and 2 is used in gcmodule.c */
+#define _PyGC_PREV_MASK_INTERNAL   (2 | 4)
 /* The (N-3) most significant bits contain the real address. */
 #define _PyGC_PREV_SHIFT           (3)
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
@@ -288,7 +289,7 @@ extern PyGC_Head *_PyGC_generation0;
     PyGC_Head *g = _Py_AS_GC(o); \
     if (g->gc.gc_next != NULL) \
         Py_FatalError("GC object already tracked"); \
-    assert((g->gc.gc_prev & 6) == 0); \
+    assert((g->gc.gc_prev & _PyGC_PREV_MASK_INTERNAL) == 0); \
     g->gc.gc_next = _PyGC_generation0; \
     _PyGCHead_SET_PREV(g, _PyGC_generation0->gc.gc_prev); \
     _PyGCHead_PREV(_PyGC_generation0)->gc.gc_next = g; \
@@ -296,8 +297,8 @@ extern PyGC_Head *_PyGC_generation0;
     } while (0);
 
 /* Tell the GC to stop tracking this object.
- * gc_next doesn't need to be set to NULL, but doing so is a good
- * way to provoke memory errors if calling code is confused.
+ * NOTE: This may be called while GC.  So _PyGC_PREV_MASK_INTERNAL must be
+ * cleared.
  */
 #define _PyObject_GC_UNTRACK(o) do { \
     PyGC_Head *g = _Py_AS_GC(o); \
