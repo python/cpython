@@ -4,6 +4,10 @@ import unittest
 from test.test_asyncio import functional as func_tests
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class ReceiveStuffProto(asyncio.BufferedProtocol):
     def __init__(self, cb, con_lost_fut):
         self.cb = cb
