@@ -75,13 +75,6 @@ gc_reset_refs(PyGC_Head *g, Py_ssize_t v)
 }
 
 static inline void
-gc_set_prev(PyGC_Head *g, PyGC_Head *v)
-{
-    g->gc.gc_prev = (g->gc.gc_prev & ~_PyGC_PREV_MASK)
-        | ((uintptr_t)(v) & _PyGC_PREV_MASK);
-}
-
-static inline void
 gc_decref(PyGC_Head *g)
 {
     assert(gc_get_refs(g) > 0);
@@ -444,7 +437,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             (void) traverse(op,
                     (visitproc)visit_reachable,
                     (void *)young);
-            gc_set_prev(gc, prev);
+            _PyGCHead_SET_PREV(gc, prev);
             gc->gc.gc_prev &= ~MASK_COLLECTING;
             prev = gc;
             next = gc->gc.gc_next;
