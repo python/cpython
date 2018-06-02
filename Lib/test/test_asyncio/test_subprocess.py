@@ -23,6 +23,11 @@ PROGRAM_CAT = [
               'data = sys.stdin.buffer.read()',
               'sys.stdout.buffer.write(data)'))]
 
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
     def _start(self, *args, **kwargs):
         self._proc = mock.Mock()
