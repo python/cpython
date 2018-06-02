@@ -78,7 +78,7 @@ class CodeContext:
     def reload(cls):
         "Load class variables from config."
         cls.context_depth = idleConf.GetOption("extensions", "CodeContext",
-                                       "maxlines", type="int", default=3)
+                                       "maxlines", type="int", default=15)
         cls.colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'context')
 
     def __del__(self):
