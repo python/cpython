@@ -16,6 +16,10 @@ from test import support
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 def close_transport(transport):
     # Don't call transport.close() because the event loop and the IOCP proactor
     # are mocked

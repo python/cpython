@@ -31,6 +31,10 @@ from test.test_asyncio import utils as test_utils
 MOCK_ANY = mock.ANY
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 def close_pipe_transport(transport):
     # Don't call transport.close() because the event loop and the selector
     # are mocked

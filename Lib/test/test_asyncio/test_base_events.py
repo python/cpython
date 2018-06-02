@@ -24,6 +24,10 @@ MOCK_ANY = mock.ANY
 PY34 = sys.version_info >= (3, 4)
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 def mock_socket_module():
     m_socket = mock.MagicMock(spec=socket)
     for name in (

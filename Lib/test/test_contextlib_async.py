@@ -18,7 +18,7 @@ def _async_test(func):
             return loop.run_until_complete(coro)
         finally:
             loop.close()
-            asyncio.set_event_loop(None)
+            asyncio.set_event_loop_policy(None)
     return wrapper
 
 
@@ -295,6 +295,7 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.addCleanup(self.loop.close)
+        self.addCleanup(asyncio.set_event_loop_policy, None)
 
     @_async_test
     async def test_async_callback(self):

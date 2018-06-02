@@ -24,6 +24,10 @@ from test import support
 from test.support.script_helper import assert_python_ok
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 @asyncio.coroutine
 def coroutine_function():
     pass

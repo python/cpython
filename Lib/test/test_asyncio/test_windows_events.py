@@ -15,6 +15,10 @@ from asyncio import windows_events
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class UpperProto(asyncio.Protocol):
     def __init__(self):
         self.buf = []

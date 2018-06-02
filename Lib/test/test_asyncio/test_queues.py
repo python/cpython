@@ -7,6 +7,10 @@ import asyncio
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class _QueueTestBase(test_utils.TestCase):
 
     def setUp(self):
