@@ -110,6 +110,8 @@ class CodeContextTest(unittest.TestCase):
 
     def test_reload(self):
         codecontext.CodeContext.reload()
+        self.assertEqual(self.cc.colors, {'background': 'lightgray',
+                                          'foreground': '#000000'})
         self.assertEqual(self.cc.context_depth, 15)
 
     def test_toggle_code_context_event(self):
@@ -125,8 +127,8 @@ class CodeContextTest(unittest.TestCase):
         eq(toggle(), 'break')
         self.assertIsNotNone(cc.label)
         eq(cc.label['font'], cc.textfont)
-        eq(cc.label['fg'], cc.fgcolor)
-        eq(cc.label['bg'], cc.bgcolor)
+        eq(cc.label['fg'], cc.colors['foreground'])
+        eq(cc.label['bg'], cc.colors['background'])
         eq(cc.label['text'], '')
 
         # Toggle off.
@@ -275,11 +277,13 @@ class CodeContextTest(unittest.TestCase):
         self.cc.timer_event()
         mock_update.assert_called()
 
-    def test_font_timer_event(self):
+    def test_config_timer_event(self):
         eq = self.assertEqual
         cc = self.cc
         save_font = cc.text['font']
+        save_colors = codecontext.CodeContext.colors
         test_font = 'FakeFont'
+        test_colors = {'background': '#222222', 'foreground': '#ffff00'}
 
         # Ensure code context is not active.
         if cc.label:
@@ -287,24 +291,42 @@ class CodeContextTest(unittest.TestCase):
 
         # Nothing updates on inactive code context.
         cc.text['font'] = test_font
-        cc.font_timer_event()
+        codecontext.CodeContext.colors = test_colors
+        cc.config_timer_event()
         eq(cc.textfont, save_font)
+        eq(cc.contextcolors, save_colors)
 
-        # Activate code context, but no change to font.
+        # Activate code context, but no change to font or color.
         cc.toggle_code_context_event()
         cc.text['font'] = save_font
-        cc.font_timer_event()
+        codecontext.CodeContext.colors = save_colors
+        cc.config_timer_event()
         eq(cc.textfont, save_font)
+        eq(cc.contextcolors, save_colors)
         eq(cc.label['font'], save_font)
+        eq(cc.label['background'], save_colors['background'])
+        eq(cc.label['foreground'], save_colors['foreground'])
 
         # Active code context, change font.
         cc.text['font'] = test_font
-        cc.font_timer_event()
+        cc.config_timer_event()
         eq(cc.textfont, test_font)
+        eq(cc.contextcolors, save_colors)
         eq(cc.label['font'], test_font)
+        eq(cc.label['background'], save_colors['background'])
+        eq(cc.label['foreground'], save_colors['foreground'])
 
+        # Active code context, change color.
         cc.text['font'] = save_font
-        cc.font_timer_event()
+        codecontext.CodeContext.colors = test_colors
+        cc.config_timer_event()
+        eq(cc.textfont, save_font)
+        eq(cc.contextcolors, test_colors)
+        eq(cc.label['font'], save_font)
+        eq(cc.label['background'], test_colors['background'])
+        eq(cc.label['foreground'], test_colors['foreground'])
+        codecontext.CodeContext.colors = save_colors
+        cc.config_timer_event()
 
 
 class HelperFunctionText(unittest.TestCase):
