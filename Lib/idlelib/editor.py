@@ -182,6 +182,7 @@ class EditorWindow(object):
         text.bind("<<change-indentwidth>>",self.change_indentwidth_event)
         text.bind("<Left>", self.move_at_edge_if_selection(0))
         text.bind("<Right>", self.move_at_edge_if_selection(1))
+        text.bind("<<del-word-left>>", self.del_word_left)
         text.bind("<<del-word-right>>", self.del_word_right)
         text.bind("<<beginning-of-line>>", self.home_callback)
 
