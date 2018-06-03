@@ -149,20 +149,6 @@ def _ipaddr_info(host, port, family, type, proto):
     return None
 
 
-def _roundrobin(*iterables):
-    """roundrobin('ABC', 'D', 'EF') --> A D E B F C"""
-    # Copied from Python docs, Recipe credited to George Sakkis
-    pending = len(iterables)
-    nexts = itertools.cycle(iter(it).__next__ for it in iterables)
-    while pending:
-        try:
-            for next in nexts:
-                yield next()
-        except StopIteration:
-            pending -= 1
-            nexts = itertools.cycle(itertools.islice(nexts, pending))
-
-
 def _interleave_addrinfos(addrinfos, first_address_family_count=1):
     """Interleave list of addrinfo tuples by family."""
     # Group addresses by family
@@ -178,7 +164,10 @@ def _interleave_addrinfos(addrinfos, first_address_family_count=1):
     if first_address_family_count > 1:
         reordered.extend(addrinfos_lists[0][:first_address_family_count - 1])
         del addrinfos_lists[0][:first_address_family_count - 1]
-    reordered.extend(_roundrobin(*addrinfos_lists))
+    reordered.extend(
+        a for a in itertools.chain.from_iterable(
+            itertools.zip_longest(*addrinfos_lists)
+        ) if a is not None)
     return reordered
 
 
