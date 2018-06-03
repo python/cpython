@@ -35,7 +35,7 @@ Architecture
 
 Tcl/Tk is not a single library but rather consists of a few distinct
  modules, each with a separate functionality and its own official
-documentation.
+documentation. Python binary release also ships an add-on module with it.
 
 Tcl
    Like Python, Tcl is a dynamic interpreted programming language. It is most
