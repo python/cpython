@@ -274,7 +274,7 @@ functions:
 
    .. versionchanged:: 3.8
       Added context manager support.
-   
+
    .. method:: enable()
 
       Start collecting profiling data.
