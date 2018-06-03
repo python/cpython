@@ -41,8 +41,10 @@ Tcl
    interface to the Tk toolkit. The Tcl library has a C interface to
    create and manage one or more instances of a Tcl interpreter, run Tcl
    commands and scripts in those instances, and add custom commands
-   implemented in either Tcl or C. Tcl provides for an event queue, used
-   for I/O, timers, and by modules.
+   implemented in either Tcl or C. Each interpreter has an event queue,
+   and there are facilities to send events to it and process them.
+   Unlike Python, a Tcl interpreter instance only has one
+   stream of execution (see `Threading model`_ for details).
    
 Tk
    Tk is a module that can be loaded into a Tcl interpreter instance. It adds
