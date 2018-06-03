@@ -687,15 +687,12 @@ class SSLProtocol(protocols.Protocol):
                 # delete it and reduce the outstanding buffer size.
                 del self._write_backlog[0]
                 self._write_buffer_size -= len(data)
-        except BaseException as exc:
+        except Exception as exc:
             if self._in_handshake:
-                # BaseExceptions will be re-raised in _on_handshake_complete.
+                # Exceptions will be re-raised in _on_handshake_complete.
                 self._on_handshake_complete(exc)
             else:
                 self._fatal_error(exc, 'Fatal error on SSL transport')
-            if not isinstance(exc, Exception):
-                # BaseException
-                raise
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
