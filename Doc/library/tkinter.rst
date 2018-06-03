@@ -39,8 +39,9 @@ documentation. Python's binary releases also ship an add-on module
 together with it.
 
 Tcl
-   Like Python, Tcl is a dynamic interpreted programming language. It is most
-   commonly used by C applications to embed a scripting language, or as an
+   Tcl is a dynamic interpreted programming language, just like Python. Though
+   it can be used on its own as a general-purpose programming language, it is
+   most commonly embedded into C applications as a scripting engine or an
    interface to the Tk toolkit. The Tcl library has a C interface to
    create and manage one or more instances of a Tcl interpreter, run Tcl
    commands and scripts in those instances, and add custom commands
