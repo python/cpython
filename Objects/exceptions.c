@@ -342,6 +342,13 @@ PyException_SetContext(PyObject *self, PyObject *context)
     Py_XSETREF(((PyBaseExceptionObject *)self)->context, context);
 }
 
+#ifdef Py_LIMITED_API
+char *
+PyExceptionClass_Name(PyObject *ob)
+{
+    return ((PyTypeObject*)ob)->tp_name;
+}
+#endif
 
 static struct PyMemberDef BaseException_members[] = {
     {"__suppress_context__", T_BOOL,
