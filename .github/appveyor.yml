@@ -31,7 +31,7 @@ build_script:
   - cmd: PCbuild\build.bat -e
   - cmd: PCbuild\win32\python.exe -m test.pythoninfo
 test_script:
-  - cmd: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 --fail-env-changed -j0
+  - cmd: PCbuild\rt.bat -q -uall -u-cpu -u-largefile -rwW --slowest --timeout=1200 --fail-env-changed -j0
 environment:
   HOST_PYTHON: C:\Python36\python.exe
 image:
