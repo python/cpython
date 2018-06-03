@@ -910,7 +910,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             proto=0, flags=0, sock=None,
             local_addr=None, server_hostname=None,
             ssl_handshake_timeout=None,
-            delay=None, interleave=None):
+            happy_eyeballs_delay=None, interleave=None):
         """Connect to a TCP server.
 
         Create a streaming transport connection to a given Internet host and
@@ -945,10 +945,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
 
-        if interleave is not None and delay is None:
-            raise ValueError('interleave is only meaningful with delay')
-
-        if delay is not None and interleave is None:
+        if happy_eyeballs_delay is not None and interleave is None:
             # If using happy eyeballs, default to interleave addresses by family
             interleave = 1
 
@@ -973,8 +970,11 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 laddr_infos = None
 
+            if interleave:
+                infos = _interleave_addrinfos(infos, interleave)
+
             exceptions = []
-            if delay is None:
+            if happy_eyeballs_delay is None:
                 # not using happy eyeballs
                 for addrinfo in infos:
                     try:
@@ -984,13 +984,11 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError:
                         continue
             else:  # using happy eyeballs
-                if interleave:
-                    infos = _interleave_addrinfos(infos, interleave)
                 sock, _, _ = await staggered.staggered_race(
                     (functools.partial(self._connect_sock,
                                        exceptions, addrinfo, laddr_infos)
                      for addrinfo in infos),
-                    delay, loop=self)
+                    happy_eyeballs_delay, loop=self)
 
             if sock is None:
                 exceptions = [exc for sub in exceptions for exc in sub]
