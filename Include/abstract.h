@@ -724,7 +724,7 @@ PyAPI_FUNC(PyObject *) PyNumber_Or(PyObject *o1, PyObject *o2);
     ((obj)->ob_type->tp_as_number != NULL &&            \
      (obj)->ob_type->tp_as_number->nb_index != NULL)
 #else
-PyAPI_FUNC(int) PyIndex_Check(PyObject*);
+PyAPI_FUNC(int) PyIndex_Check(PyObject *);
 #endif
 
 /* Returns the object 'o' converted to a Python int, or NULL with an exception
