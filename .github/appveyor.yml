@@ -20,9 +20,10 @@ before_build:
         If (!$changes) {
           echo 'Only docs were updated, stopping build process.'
           Exit-AppveyorBuild
+        } else {
+          echo 'Doing full build due to non-doc changes in these files:'
+          echo $changes
         }
-        echo 'Doing full build due to non-doc changes in these files:'
-        echo $changes
       }
 
 
