@@ -35,7 +35,7 @@ Architecture
 
 Tcl/Tk is not a single library but rather consists of a few distinct
  modules, each with a separate functionality and its own official
-documentation. Python binary release also ships an add-on module 
+documentation. Python's binary releases also ship an add-on module 
 together with it.
 
 Tcl
