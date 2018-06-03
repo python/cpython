@@ -3,15 +3,17 @@
 
 .. module:: tkinter.messagebox
    :platform: Tk
-   :synopsis: Various types of message prompts
+   :synopsis: Various types of alert dialogs
 
 **Source code:** :source:`Lib/tkinter/messagebox.py`
 
 --------------
 
 The :mod:`tkinter.messagebox` module provides a template base class as well as
-a variety of convenience methods for commonly used configurations.
-Common message box styles and layouts include but are not limited to:
+a variety of convenience methods for commonly used configurations. The message
+boxes are modal and will return a subset of (True, False, OK, None) based on
+the user's selection. Common message box styles and layouts include but are not
+limited to:
 
 .. figure:: tk_msg.png
 

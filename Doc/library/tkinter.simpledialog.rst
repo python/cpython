@@ -9,8 +9,16 @@
 
 --------------
 
-The :mod:`tkinter.simpledialog` module contains the standard classes and
-functions for handling dialogs, including custom dialog windows.
+The :mod:`tkinter.simpledialog` module contains convenience classes and
+functions for creating simple modal dialogs to get a value from the user.
+
+
+.. function:: askfloat(title, prompt, **kw)
+              askinteger(title, prompt, **kw)
+              askstring(title, prompt, **kw)
+
+   The above three functions provide dialogs that prompt the user to enter a value
+   of the desired type.
 
 .. class:: Dialog(parent, title=None)
 
@@ -25,14 +33,3 @@ functions for handling dialogs, including custom dialog windows.
 
        Default behaviour adds OK and Cancel buttons. Override for custom button
        layouts.
-
-
-.. Static factory function
-
-
-.. function:: askfloat(title, prompt, **kw)
-              askinteger(title, prompt, **kw)
-              askstring(title, prompt, **kw)
-
-   The above three functions provide dialogs that prompt the user to enter a value
-   of the desired type.

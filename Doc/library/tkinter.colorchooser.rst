@@ -20,7 +20,9 @@ class.
 .. function:: askcolor(color=None, **options)
 
    The *askcolor* method is a factory method that creates a color choosing
-   dialog.
+   dialog. A call to this method will show the window, wait for the user to
+   make a selection, and return the selected color (or None) to the caller.
+
 
 .. seealso::
 
