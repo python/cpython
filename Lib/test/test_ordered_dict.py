@@ -697,9 +697,9 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         nodesize = calcsize('Pn2P')
 
         od = OrderedDict()
-        check(od, basicsize + 8*p + 8 + 5*entrysize)  # 8byte indices + 8*2//3 * entry table
+        check(od, basicsize + 8 + 5*entrysize)  # 8byte indices + 8*2//3 * entry table
         od.x = 1
-        check(od, basicsize + 8*p + 8 + 5*entrysize)
+        check(od, basicsize + 8 + 5*entrysize)
         od.update([(i, i) for i in range(3)])
         check(od, basicsize + 8*p + 8 + 5*entrysize + 3*nodesize)
         od.update([(i, i) for i in range(3, 10)])

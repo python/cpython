@@ -101,10 +101,6 @@ Others:
 * _odict_find_node(od, key)
 * _odict_keys_equal(od1, od2)
 
-Used, but specific to the linked-list implementation:
-
-* _odict_free_fast_nodes(od)
-
 And here's a look at how the linked-list relates to the OrderedDict API:
 
 ============ === === ==== ==== ==== === ==== ===== ==== ==== === ==== === ===
@@ -378,7 +374,6 @@ tp_iter           odict_iter
 tp_dictoffset     (offset)
 tp_init           odict_init
 tp_alloc          (repeated)
-tp_new            odict_new
 ================= ================
 
 ================= ================
@@ -530,15 +525,6 @@ struct _odictnode {
 #define _odict_FOREACH(od, node) \
     for (node = _odict_FIRST(od); node != NULL; node = _odictnode_NEXT(node))
 
-#define _odict_FAST_SIZE(od) ((PyDictObject *)od)->ma_keys->dk_size
-
-static void
-_odict_free_fast_nodes(PyODictObject *od) {
-    if (od->od_fast_nodes) {
-        PyMem_FREE(od->od_fast_nodes);
-    }
-}
-
 /* Return the index into the hash table, regardless of a valid node. */
 static Py_ssize_t
 _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
@@ -559,7 +545,8 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
 
 /* Replace od->od_fast_nodes with a new table matching the size of dict's. */
 static int
-_odict_resize(PyODictObject *od) {
+_odict_resize(PyODictObject *od)
+{
     Py_ssize_t size, i;
     _ODictNode **fast_nodes, *node;
 
@@ -585,7 +572,7 @@ _odict_resize(PyODictObject *od) {
     }
 
     /* Replace the old fast nodes table. */
-    _odict_free_fast_nodes(od);
+    PyMem_FREE(od->od_fast_nodes);
     od->od_fast_nodes = fast_nodes;
     od->od_fast_nodes_size = size;
     od->od_resize_sentinel = ((PyDictObject *)od)->ma_keys;
@@ -623,6 +610,7 @@ _odict_find_node_hash(PyODictObject *od, PyObject *key, Py_hash_t hash)
     index = _odict_get_index(od, key, hash);
     if (index < 0)
         return NULL;
+    assert(od->od_fast_nodes != NULL);
     return od->od_fast_nodes[index];
 }
 
@@ -640,6 +628,7 @@ _odict_find_node(PyODictObject *od, PyObject *key)
     index = _odict_get_index(od, key, hash);
     if (index < 0)
         return NULL;
+    assert(od->od_fast_nodes != NULL);
     return od->od_fast_nodes[index];
 }
 
@@ -684,7 +673,8 @@ _odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
         Py_DECREF(key);
         return -1;
     }
-    else if (od->od_fast_nodes[i] != NULL) {
+    assert(od->od_fast_nodes != NULL);
+    if (od->od_fast_nodes[i] != NULL) {
         /* We already have a node for the key so there's no need to add one. */
         Py_DECREF(key);
         return 0;
@@ -763,6 +753,7 @@ _odict_clear_node(PyODictObject *od, _ODictNode *node, PyObject *key,
     if (i < 0)
         return PyErr_Occurred() ? -1 : 0;
 
+    assert(od->od_fast_nodes != NULL);
     if (node == NULL)
         node = od->od_fast_nodes[i];
     assert(node == od->od_fast_nodes[i]);
@@ -783,8 +774,10 @@ _odict_clear_nodes(PyODictObject *od)
 {
     _ODictNode *node, *next;
 
-    _odict_free_fast_nodes(od);
+    PyMem_FREE(od->od_fast_nodes);
     od->od_fast_nodes = NULL;
+    od->od_fast_nodes_size = 0;
+    od->od_resize_sentinel = NULL;
 
     node = _odict_FIRST(od);
     _odict_FIRST(od) = NULL;
@@ -887,7 +880,7 @@ static PyObject *
 odict_sizeof(PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res = _PyDict_SizeOf((PyDictObject *)od);
-    res += sizeof(_ODictNode *) * _odict_FAST_SIZE(od);  /* od_fast_nodes */
+    res += sizeof(_ODictNode *) * od->od_fast_nodes_size;  /* od_fast_nodes */
     if (!_odict_EMPTY(od)) {
         res += sizeof(_ODictNode) * PyODict_SIZE(od);  /* linked-list */
     }
@@ -1179,8 +1172,6 @@ odict_clear(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
     PyDict_Clear((PyObject *)od);
     _odict_clear_nodes(od);
-    if (_odict_resize(od) < 0)
-        return NULL;
     Py_RETURN_NONE;
 }
 
@@ -1484,13 +1475,10 @@ odict_traverse(PyODictObject *od, visitproc visit, void *arg)
 static int
 odict_tp_clear(PyODictObject *od)
 {
-    PyObject *res;
     Py_CLEAR(od->od_inst_dict);
     Py_CLEAR(od->od_weakreflist);
-    res = odict_clear(od, NULL);
-    if (res == NULL)
-        return -1;
-    Py_DECREF(res);
+    PyDict_Clear((PyObject *)od);
+    _odict_clear_nodes(od);
     return 0;
 }
 
@@ -1565,27 +1553,6 @@ odict_init(PyObject *self, PyObject *args, PyObject *kwds)
     }
 }
 
-/* tp_new */
-
-static PyObject *
-odict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyODictObject *od;
-
-    od = (PyODictObject *)PyDict_Type.tp_new(type, args, kwds);
-    if (od == NULL)
-        return NULL;
-
-    /* type constructor fills the memory with zeros (see
-       PyType_GenericAlloc()), there is no need to set them to zero again */
-    if (_odict_resize(od) < 0) {
-        Py_DECREF(od);
-        return NULL;
-    }
-
-    return (PyObject*)od;
-}
-
 /* PyODict_Type */
 
 PyTypeObject PyODict_Type = {
@@ -1626,7 +1593,7 @@ PyTypeObject PyODict_Type = {
     offsetof(PyODictObject, od_inst_dict),      /* tp_dictoffset */
     (initproc)odict_init,                       /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    (newfunc)odict_new,                         /* tp_new */
+    0,                                          /* tp_new */
     0,                                          /* tp_free */
 };
 
@@ -1636,8 +1603,9 @@ PyTypeObject PyODict_Type = {
  */
 
 PyObject *
-PyODict_New(void) {
-    return odict_new(&PyODict_Type, NULL, NULL);
+PyODict_New(void)
+{
+    return PyDict_Type.tp_new(&PyODict_Type, NULL, NULL);
 }
 
 static int
