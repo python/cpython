@@ -1,0 +1,2 @@
+IDLE: Scroll editor by lines instead of pixels for mousewheel and button
+events.
