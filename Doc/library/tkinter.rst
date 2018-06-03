@@ -33,7 +33,10 @@ details that are unchanged.
 Architecture
 ------------
 
-Tkinter provides a unified interface to several separate and distinct libraries.
+Tcl/Tk is not a single library but rather consists of a few distinct
+ modules, each with a separate functionality and its own official
+documentation. Python's binary releases also ship an add-on module 
+together with it.
 
 Tcl
    Like Python, Tcl is a dynamic interpreted programming language. It is most
