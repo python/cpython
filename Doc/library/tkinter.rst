@@ -27,7 +27,7 @@ for more information about supported versions.
 Tkinter is not a thin wrapper, but adds a fair amount of its own logic to
 make the experience more pythonic. This documentation will concentrate on these
 additions and changes, and refer to the official Tcl/Tk documentation for
-descriptions of underlying features.
+details that are unchanged.
 
 
 Architecture
