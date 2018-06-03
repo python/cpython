@@ -60,9 +60,10 @@ Ttk
    bindings are provided in a separate module, :mod:`tkinter.ttk`.
 
 Tix
-   `Tix`<https://core.tcl.tk/jenglish/gutter/packages/tix.html>_ is an older
-   third-party Tcl module, adding several new widgets to Tk. Python bindings
-   are found in :mod:`tkinter.tix`. It has been deprecated in favor of Ttk.
+   `Tix`<https://core.tcl.tk/jenglish/gutter/packages/tix.html>_ is a
+   third-party Tcl package, an add-on for Tk that adds several new widgets.
+   Python bindings are found in the :mod:`tkinter.tix` module.
+   It's deprecated in favor of Ttk.
 
 
 Tkinter Modules
