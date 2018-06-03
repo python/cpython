@@ -49,9 +49,7 @@ Tk
    Tcl commands (implemented in C) to create and manipulate GUI widgets. Each
    :class:`Tk` object embeds its own Tcl interpreter instance with Tk loaded into
    it. Tk's widgets are very customizable, though at the cost of a dated appearance.
-   Tk uses Tcl's event queue to generate and process GUI events. Note
-   that unlike some GUI libraries, each interpreter uses only a single thread,
-   which has implications for :mod:`tkinter` users (see `Threading model`_).
+   Tk uses Tcl's event queue to generate and process GUI events.
 
 Ttk
    Themed Tk (Ttk) is a newer family of Tk widgets that provide a much better
