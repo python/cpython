@@ -1244,6 +1244,15 @@ PyNumber_Absolute(PyObject *o)
     return type_error("bad operand type for abs(): '%.200s'", o);
 }
 
+#ifdef Py_LIMITED_API
+int
+PyIndex_Check(PyObject *obj)
+{
+    return obj->ob_type->tp_as_number != NULL &&
+           obj->ob_type->tp_as_number->nb_index != NULL;
+}
+#endif
+
 /* Return a Python int from the object item.
    Raise TypeError if the result is not an int
    or if the object cannot be interpreted as an index.
@@ -2534,6 +2543,14 @@ PyObject_GetIter(PyObject *o)
         return res;
     }
 }
+
+#ifdef Py_LIMITED_API
+int PyIter_Check(PyObject *obj)
+{
+    return obj->ob_type->tp_iternext != NULL &&
+           obj->ob_type->tp_iternext != &_PyObject_NextNotImplemented;
+}
+#endif
 
 /* Return next item.
  * If an error occurs, return NULL.  PyErr_Occurred() will be true.
