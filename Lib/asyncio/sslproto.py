@@ -7,7 +7,6 @@ except ImportError:  # pragma: no cover
 
 from . import base_events
 from . import constants
-from . import futures
 from . import protocols
 from . import transports
 from .log import logger
@@ -609,7 +608,7 @@ class SSLProtocol(protocols.Protocol):
     def _check_handshake_timeout(self):
         if self._in_handshake is True:
             msg = (
-                f"SSL handshake for {self} is taking longer than "
+                f"SSL handshake is taking longer than "
                 f"{self._ssl_handshake_timeout} seconds: "
                 f"aborting the connection"
             )
@@ -627,12 +626,9 @@ class SSLProtocol(protocols.Protocol):
             peercert = sslobj.getpeercert()
         except Exception as exc:
             if isinstance(exc, ssl.CertificateError):
-                msg = (
-                    f'{self}: SSL handshake failed on verifying '
-                    f'the certificate'
-                )
+                msg = 'SSL handshake failed on verifying the certificate'
             else:
-                msg = f'{self}: SSL handshake failed'
+                msg = 'SSL handshake failed'
             self._fatal_error(exc, msg)
             return
 
@@ -702,12 +698,18 @@ class SSLProtocol(protocols.Protocol):
                 raise
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
+        if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
+            if self._loop.get_debug():
+                logger.debug("%r: %s", self, message, exc_info=True)
+        else:
+            self._loop.call_exception_handler({
+                'message': message,
+                'exception': exc,
+                'transport': self._transport,
+                'protocol': self,
+            })
         if self._transport:
             self._transport._force_close(exc)
-
-        if (self._loop.get_debug() and
-                isinstance(exc, base_events._FATAL_ERROR_IGNORE)):
-            logger.debug("%r: %s", self, message, exc_info=True)
 
     def _finalize(self):
         self._sslpipe = None
