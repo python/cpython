@@ -35,4 +35,4 @@ test_script:
 environment:
   HOST_PYTHON: C:\Python36\python.exe
 image:
-- Visual Studio 2017
+  - Visual Studio 2017
