@@ -272,8 +272,9 @@ functions:
 
       pr.print_stats()
 
-   .. versionadded:: 3.8
-
+   .. versionchanged:: 3.8
+      Added context manager support.
+   
    .. method:: enable()
 
       Start collecting profiling data.
