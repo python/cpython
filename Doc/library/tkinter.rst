@@ -43,8 +43,9 @@ Tcl
    commands and scripts in those instances, and add custom commands
    implemented in either Tcl or C. Each interpreter has an event queue,
    and there are facilities to send events to it and process them.
-   Unlike Python, a Tcl interpreter instance only has one
-   stream of execution (see `Threading model`_ for details).
+   Unlike Python, Tcl's execution model is designed around cooperative
+   multitasking, and Tkinter bridges this difference
+   (see `Threading model`_ for details).
    
 Tk
    Tk is a module that can be loaded into a Tcl interpreter instance. It adds
