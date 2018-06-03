@@ -12,7 +12,7 @@
 
 The :mod:`tkinter` package ("Tk interface") is the standard Python interface to
 the Tcl/Tk GUI toolkit. Tcl/Tk and :mod:`tkinter` are available on most Unix
-platforms (including macOS), as well as on Windows systems.
+platforms, including macOS, as well as on Windows systems.
 
 Running ``python -m tkinter`` from the command line should open a window
 demonstrating a simple Tk interface, letting you know that :mod:`tkinter` is
