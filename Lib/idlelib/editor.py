@@ -30,6 +30,7 @@ from idlelib import windows
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
 _py_version = ' (%s)' % platform.python_version()
+darwin = sys.platform == 'darwin'
 
 def _sphinx_version():
     "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
@@ -49,7 +50,7 @@ class EditorWindow(object):
     from idlelib.undo import UndoDelegator
     from idlelib.iomenu import IOBinding, encoding
     from idlelib import mainmenu
-    from tkinter import Toplevel
+    from tkinter import Toplevel, EventType
     from idlelib.statusbar import MultiStatusBar
     from idlelib.autocomplete import AutoComplete
     from idlelib.autoexpand import AutoExpand
@@ -147,6 +148,9 @@ class EditorWindow(object):
         else:
             # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
+        text.bind('<MouseWheel>', self.mousescroll)
+        text.bind('<Button-4>', self.mousescroll)
+        text.bind('<Button-5>', self.mousescroll)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
         text.bind("<<paste>>", self.paste)
@@ -193,7 +197,7 @@ class EditorWindow(object):
             text.bind("<<open-turtle-demo>>", self.open_turtle_demo)
 
         self.set_status_bar()
-        vbar['command'] = text.yview
+        vbar['command'] = self.handle_yview
         vbar.pack(side=RIGHT, fill=Y)
         text['yscrollcommand'] = vbar.set
         text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
@@ -440,6 +444,27 @@ class EditorWindow(object):
         if end > self.wmenu_end:
             menu.delete(self.wmenu_end+1, end)
         windows.add_windows_to_menu(menu)
+
+    def handle_yview(self, event, *args):
+        "Handle scrollbar."
+        if event == 'moveto':
+            fraction = float(args[0])
+            lines = (round(self.getlineno('end') * fraction) -
+                     self.getlineno('@0,0'))
+            event = 'scroll'
+            args = (lines, 'units')
+        self.text.yview(event, *args)
+        return 'break'
+
+    def mousescroll(self, event):
+        "Handle scroll wheel."
+        up = {EventType.MouseWheel: event.delta >= 0 == darwin,
+              EventType.Button: event.num == 4}
+        lines = 5
+        if up[event.type]:
+            lines = -lines
+        self.text.yview_scroll(lines, 'units')
+        return 'break'
 
     rmenu = None
 
