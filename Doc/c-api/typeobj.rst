@@ -20,10 +20,63 @@ functionality.  The fields of the type object are examined in detail in this
 section.  The fields will be described in the order in which they occur in the
 structure.
 
-Typedefs: unaryfunc, binaryfunc, ternaryfunc, inquiry, intargfunc,
-intintargfunc, intobjargproc, intintobjargproc, objobjargproc, destructor,
-freefunc, printfunc, getattrfunc, getattrofunc, setattrfunc, setattrofunc,
-reprfunc, hashfunc
+Quick Reference
+---------------
+
+=========================================== ================= ======================
+PyTypeObject Slot [#slots]_                 Inherited [#inh]_ Type
+=========================================== ================= ======================
+:c:member:`~PyTypeObject.tp_name`           ..                char *
+:c:member:`~PyTypeObject.tp_basicsize`      X                 int
+:c:member:`~PyTypeObject.tp_itemsize`       ?                 int
+:c:member:`~PyTypeObject.tp_dealloc`        X                 :c:type:`destructor`
+(:c:member:`~PyTypeObject.tp_print`)        X                 :c:type:`printfunc`
+(:c:member:`~PyTypeObject.tp_getattr`)      X                 :c:type:`getattrfunc`
+(:c:member:`~PyTypeObject.tp_setattr`)      X                 :c:type:`setattrfunc`
+(:c:member:`~PyTypeObject.tp_reserved`)     ..                void*
+:c:member:`~PyTypeObject.tp_repr`           X                 :c:type:`reprfunc`
+:c:member:`~PyTypeObject.tp_as_number`      \*                PyNumberMethods *
+:c:member:`~PyTypeObject.tp_as_sequence`    \*                PySequenceMethods *
+:c:member:`~PyTypeObject.tp_as_mapping`     \*                PyMappingMethods *
+:c:member:`~PyTypeObject.tp_hash`           X                 :c:type:`hashfunc`
+:c:member:`~PyTypeObject.tp_call`           X                 :c:type:`ternaryfunc`
+:c:member:`~PyTypeObject.tp_str`            X                 :c:type:`reprfunc`
+:c:member:`~PyTypeObject.tp_getattro`       X                 :c:type:`getattrofunc`
+:c:member:`~PyTypeObject.tp_setattro`       X                 :c:type:`setattrofunc`
+:c:member:`~PyTypeObject.tp_as_buffer`      \*                PyBufferProcs *
+:c:member:`~PyTypeObject.tp_flags`          ?                 long
+:c:member:`~PyTypeObject.tp_doc`            ..                char *
+:c:member:`~PyTypeObject.tp_traverse`       X                 traverseproc
+:c:member:`~PyTypeObject.tp_clear`          X                 inquiry
+:c:member:`~PyTypeObject.tp_richcompare`    X                 :c:type:`richcmpfunc`
+:c:member:`~PyTypeObject.tp_weaklistoffset` X                 long
+:c:member:`~PyTypeObject.tp_iter`           X                 :c:type:`getiterfunc`
+:c:member:`~PyTypeObject.tp_iternext`       X                 :c:type:`iternextfunc`
+:c:member:`~PyTypeObject.tp_methods`        L                 PyMethodDef[]
+:c:member:`~PyTypeObject.tp_members`        L                 PyMemberDef[]
+:c:member:`~PyTypeObject.tp_getset`         L                 PyGetSetDef[]
+:c:member:`~PyTypeObject.tp_base`           ..                PyTypeObject *
+:c:member:`~PyTypeObject.tp_dict`           L                 PyObject *
+:c:member:`~PyTypeObject.tp_descr_get`      X                 :c:type:`descrgetfunc`
+:c:member:`~PyTypeObject.tp_descr_set`      X                 :c:type:`descrsetfunc`
+:c:member:`~PyTypeObject.tp_dictoffset`     X                 long
+:c:member:`~PyTypeObject.tp_init`           X                 initproc
+:c:member:`~PyTypeObject.tp_alloc`          ?                 :c:type:`allocfunc`
+:c:member:`~PyTypeObject.tp_new`            ?                 :c:type:`newfunc`
+:c:member:`~PyTypeObject.tp_free`           ?                 :c:type:`freefunc`
+:c:member:`~PyTypeObject.tp_is_gc`          X                 inquiry
+[:c:member:`~PyTypeObject.tp_bases`]        ..                PyObject *
+[:c:member:`~PyTypeObject.tp_mro`]          ..                PyObject *
+[:c:member:`~PyTypeObject.tp_cache`]        ..                PyObject *
+[:c:member:`~PyTypeObject.tp_subclasses`]   ..                PyObject *
+[:c:member:`~PyTypeObject.tp_weaklist`]     ..                PyObject *
+=========================================== ================= ======================
+
+.. XXX add tp_del?
+
+
+PyTypeObject Definition
+-----------------------
 
 The structure definition for :c:type:`PyTypeObject` can be found in
 :file:`Include/object.h`.  For convenience of reference, this repeats the
@@ -31,6 +84,9 @@ definition found there:
 
 .. literalinclude:: ../includes/typestruct.h
 
+
+PyObject Slots
+--------------
 
 The type object structure extends the :c:type:`PyVarObject` structure. The
 :attr:`ob_size` field is used for dynamic types (created by  :func:`type_new`,
@@ -51,6 +107,8 @@ type objects) *must* have the :attr:`ob_size` field.
    that are still alive at the end of a run when the environment variable
    :envvar:`PYTHONDUMPREFS` is set.
 
+   **Inheritance:**
+
    These fields are not inherited by subtypes.
 
 
@@ -61,6 +119,8 @@ type objects) *must* have the :attr:`ob_size` field.
    the type's instances (objects whose :attr:`ob_type` points back to the type) do
    *not* count as references.  But for dynamically allocated type objects, the
    instances *do* count as references.
+
+   **Inheritance:**
 
    This field is not inherited by subtypes.
 
@@ -83,16 +143,30 @@ type objects) *must* have the :attr:`ob_size` field.
    initializes it to the :attr:`ob_type` field of the base class.
    :c:func:`PyType_Ready` will not change this field if it is non-zero.
 
+   **Inheritance:**
+
    This field is inherited by subtypes.
 
+
+PyVarObject Slots
+-----------------
 
 .. c:member:: Py_ssize_t PyVarObject.ob_size
 
    For statically allocated type objects, this should be initialized to zero.  For
    dynamically allocated type objects, this field has a special internal meaning.
 
+   **Inheritance:**
+
    This field is not inherited by subtypes.
 
+
+PyTypeObject Slots
+------------------
+
+Each slot has a section describing inheritance and one for the default
+value.  If a slot does not have any information about the default
+value, that section is omitted.
 
 .. c:member:: const char* PyTypeObject.tp_name
 
@@ -119,7 +193,14 @@ type objects) *must* have the :attr:`ob_size` field.
    type will be impossible to pickle.  Additionally, it will not be listed in
    module documentations created with pydoc.
 
+   **Inheritance:**
+
    This field is not inherited by subtypes.
+
+   **Default:**
+
+   This field does not have a default.  It is the only required
+   field in :c:func:`PyTypeObject`.
 
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_basicsize
@@ -151,17 +232,25 @@ type objects) *must* have the :attr:`ob_size` field.
    ``sizeof`` operator on the struct used to declare the instance layout.
    The basic size does not include the GC header size.
 
-   These fields are inherited separately by subtypes.  If the base type has a
-   non-zero :c:member:`~PyTypeObject.tp_itemsize`, it is generally not safe to set
-   :c:member:`~PyTypeObject.tp_itemsize` to a different non-zero value in a subtype (though this
-   depends on the implementation of the base type).
-
    A note about alignment: if the variable items require a particular alignment,
    this should be taken care of by the value of :c:member:`~PyTypeObject.tp_basicsize`.  Example:
    suppose a type implements an array of ``double``. :c:member:`~PyTypeObject.tp_itemsize` is
    ``sizeof(double)``. It is the programmer's responsibility that
    :c:member:`~PyTypeObject.tp_basicsize` is a multiple of ``sizeof(double)`` (assuming this is the
    alignment requirement for ``double``).
+
+   **Inheritance:**
+
+   These fields are inherited separately by subtypes.  If the base type has a
+   non-zero :c:member:`~PyTypeObject.tp_itemsize`, it is generally not safe to set
+   :c:member:`~PyTypeObject.tp_itemsize` to a different non-zero value in a subtype (though this
+   depends on the implementation of the base type).
+
+   **Default:**
+
+   :c:type:`PyBaseObject_Type` uses ``sizeof(PyObject)`` for
+   :attr:`tp_basicsize`, However, :attr:`tp_itemsize` does not have
+   a default.
 
 
 .. c:member:: destructor PyTypeObject.tp_dealloc
@@ -185,7 +274,13 @@ type objects) *must* have the :attr:`ob_size` field.
    :c:func:`PyObject_GC_Del` if the instance was allocated using
    :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`.
 
+   **Inheritance:**
+
    This field is inherited by subtypes.
+
+   **Default:**
+
+   :c:type:`PyBaseObject_Type` provides a simple function.
 
 
 .. c:member:: printfunc PyTypeObject.tp_print
@@ -203,9 +298,17 @@ type objects) *must* have the :attr:`ob_size` field.
 
       PyObject * tp_getattr(PyObject *o, char *attr_name);
 
+   **Inheritance:**
+
+   Group: :attr:`tp_getattr`, :attr:`tp_getattro`
+
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_getattro`: a subtype
    inherits both :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` from its base type when
    the subtype's :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` are both *NULL*.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: setattrfunc PyTypeObject.tp_setattr
@@ -219,9 +322,18 @@ type objects) *must* have the :attr:`ob_size` field.
       PyObject * tp_setattr(PyObject *o, char *attr_name, PyObject *v);
 
    The *v* argument is set to *NULL* to delete the attribute.
+
+   **Inheritance:**
+
+   Group: :attr:`tp_setattr`, :attr:`tp_setattro`
+
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_setattro`: a subtype
    inherits both :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` from its base type when
    the subtype's :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` are both *NULL*.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: PyAsyncMethods* tp_as_async
@@ -232,6 +344,14 @@ type objects) *must* have the :attr:`ob_size` field.
 
    .. versionadded:: 3.5
       Formerly known as ``tp_compare`` and ``tp_reserved``.
+
+   **Inheritance:**
+
+   This field is inherited by subtypes.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: reprfunc PyTypeObject.tp_repr
@@ -252,36 +372,61 @@ type objects) *must* have the :attr:`ob_size` field.
    returned, where ``%s`` is replaced by the type name, and ``%p`` by the object's
    memory address.
 
+   **Inheritance:**
+
    This field is inherited by subtypes.
 
-.. c:member:: PyNumberMethods* tp_as_number
+   **Default:**
+
+   :c:type:`PyBaseObject_Type` provides a simple function.
+
+
+.. c:member:: PyNumberMethods* PyTypeObject.tp_as_number
 
    Pointer to an additional structure that contains fields relevant only to
    objects which implement the number protocol.  These fields are documented in
    :ref:`number-structs`.
 
+   **Inheritance:**
+
    The :c:member:`~PyTypeObject.tp_as_number` field is not inherited, but the contained fields are
    inherited individually.
 
+   **Default:**
 
-.. c:member:: PySequenceMethods* tp_as_sequence
+   This field does not have a default.
+
+
+.. c:member:: PySequenceMethods* PyTypeObject.tp_as_sequence
 
    Pointer to an additional structure that contains fields relevant only to
    objects which implement the sequence protocol.  These fields are documented
    in :ref:`sequence-structs`.
 
+   **Inheritance:**
+
    The :c:member:`~PyTypeObject.tp_as_sequence` field is not inherited, but the contained fields
    are inherited individually.
 
+   **Default:**
 
-.. c:member:: PyMappingMethods* tp_as_mapping
+   This field does not have a default.
+
+
+.. c:member:: PyMappingMethods* PyTypeObject.tp_as_mapping
 
    Pointer to an additional structure that contains fields relevant only to
    objects which implement the mapping protocol.  These fields are documented in
    :ref:`mapping-structs`.
 
+   **Inheritance:**
+
    The :c:member:`~PyTypeObject.tp_as_mapping` field is not inherited, but the contained fields
    are inherited individually.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: hashfunc PyTypeObject.tp_hash
@@ -296,6 +441,9 @@ type objects) *must* have the :attr:`ob_size` field.
    normal return value; when an error occurs during the computation of the hash
    value, the function should set an exception and return ``-1``.
 
+   When this field is not set, an attempt to take the hash of the
+   object raises :exc:`TypeError`.
+
    This field can be set explicitly to :c:func:`PyObject_HashNotImplemented` to
    block inheritance of the hash method from a parent type. This is interpreted
    as the equivalent of ``__hash__ = None`` at the Python level, causing
@@ -304,13 +452,18 @@ type objects) *must* have the :attr:`ob_size` field.
    the Python level will result in the ``tp_hash`` slot being set to
    :c:func:`PyObject_HashNotImplemented`.
 
-   When this field is not set, an attempt to take the hash of the
-   object raises :exc:`TypeError`.
+   **Inheritance:**
+
+   Group: :attr:`tp_hash`, :attr:`tp_richcompare`
 
    This field is inherited by subtypes together with
    :c:member:`~PyTypeObject.tp_richcompare`: a subtype inherits both of
    :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash`, when the subtype's
    :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both *NULL*.
+
+   **Default:**
+
+   :c:type:`PyBaseObject_Type` uses :c:func:`_Py_HashPointer`.
 
 
 .. c:member:: ternaryfunc PyTypeObject.tp_call
@@ -319,7 +472,13 @@ type objects) *must* have the :attr:`ob_size` field.
    should be *NULL* if the object is not callable.  The signature is the same as
    for :c:func:`PyObject_Call`.
 
+   **Inheritance:**
+
    This field is inherited by subtypes.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: reprfunc PyTypeObject.tp_str
@@ -337,7 +496,13 @@ type objects) *must* have the :attr:`ob_size` field.
    When this field is not set, :c:func:`PyObject_Repr` is called to return a string
    representation.
 
+   **Inheritance:**
+
    This field is inherited by subtypes.
+
+   **Default:**
+
+   :c:type:`PyBaseObject_Type` provides a simple function.
 
 
 .. c:member:: getattrofunc PyTypeObject.tp_getattro
@@ -348,9 +513,17 @@ type objects) *must* have the :attr:`ob_size` field.
    convenient to set this field to :c:func:`PyObject_GenericGetAttr`, which
    implements the normal way of looking for object attributes.
 
+   **Inheritance:**
+
+   Group: :attr:`tp_getattr`, :attr:`tp_getattro`
+
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_getattr`: a subtype
    inherits both :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` from its base type when
    the subtype's :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` are both *NULL*.
+
+   **Default:**
+
+   :c:type:`PyBaseObject_Type` uses :c:func:`PyObject_GenericGetAttr`.
 
 
 .. c:member:: setattrofunc PyTypeObject.tp_setattro
@@ -362,9 +535,17 @@ type objects) *must* have the :attr:`ob_size` field.
    convenient to set this field to :c:func:`PyObject_GenericSetAttr`, which
    implements the normal way of setting object attributes.
 
+   **Inheritance:**
+
+   Group: :attr:`tp_setattr`, :attr:`tp_setattro`
+
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_setattr`: a subtype
    inherits both :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` from its base type when
-   the subtype's :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` are both *NULL*.
+   THE SUBTYpe's :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` are both *NULL*.
+
+   **Default:**
+
+   :c:type:`PyBaseObject_Type` uses :c:func:`PyObject_GenericSetAttr`.
 
 
 .. c:member:: PyBufferProcs* PyTypeObject.tp_as_buffer
@@ -373,8 +554,14 @@ type objects) *must* have the :attr:`ob_size` field.
    which implement the buffer interface.  These fields are documented in
    :ref:`buffer-structs`.
 
-   The :c:member:`~PyTypeObject.tp_as_buffer` field is not inherited, but the contained fields are
-   inherited individually.
+   **Inheritance:**
+
+   The :c:member:`~PyTypeObject.tp_as_buffer` field is not inherited,
+   but the contained fields are inherited individually.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: unsigned long PyTypeObject.tp_flags
@@ -387,6 +574,8 @@ type objects) *must* have the :attr:`ob_size` field.
    such a flag bit is clear, the type fields it guards must not be accessed and
    must be considered to have a zero or *NULL* value instead.
 
+   **Inheritance:**
+
    Inheritance of this field is complicated.  Most flag bits are inherited
    individually, i.e. if the base type has a flag bit set, the subtype inherits
    this flag bit.  The flag bits that pertain to extension structures are strictly
@@ -398,11 +587,19 @@ type objects) *must* have the :attr:`ob_size` field.
    :c:member:`~PyTypeObject.tp_traverse` and :c:member:`~PyTypeObject.tp_clear` fields in the subtype exist and have
    *NULL* values.
 
+   .. XXX are most flag bits *really* inherited individually?
+
+   **Default:**
+
+   :c:type:`PyBaseObject_Type` uses
+   ``Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE``.
+
+   **Bit Masks:**
+
    The following bit masks are currently defined; these can be ORed together using
    the ``|`` operator to form the value of the :c:member:`~PyTypeObject.tp_flags` field.  The macro
    :c:func:`PyType_HasFeature` takes a type and a flags value, *tp* and *f*, and
    checks whether ``tp->tp_flags & f`` is non-zero.
-
 
    .. data:: Py_TPFLAGS_HEAPTYPE
 
@@ -413,6 +610,10 @@ type objects) *must* have the :attr:`ob_size` field.
       subtypes; only the type referenced by the instance's ob_type gets INCREF'ed or
       DECREF'ed).
 
+      **Inheritance:**
+
+      ???
+
 
    .. data:: Py_TPFLAGS_BASETYPE
 
@@ -420,17 +621,29 @@ type objects) *must* have the :attr:`ob_size` field.
       this bit is clear, the type cannot be subtyped (similar to a "final" class in
       Java).
 
+      **Inheritance:**
+
+      ???
+
 
    .. data:: Py_TPFLAGS_READY
 
       This bit is set when the type object has been fully initialized by
       :c:func:`PyType_Ready`.
 
+      **Inheritance:**
+
+      ???
+
 
    .. data:: Py_TPFLAGS_READYING
 
       This bit is set while :c:func:`PyType_Ready` is in the process of initializing
       the type object.
+
+      **Inheritance:**
+
+      ???
 
 
    .. data:: Py_TPFLAGS_HAVE_GC
@@ -442,6 +655,17 @@ type objects) *must* have the :attr:`ob_size` field.
       GC-related fields :c:member:`~PyTypeObject.tp_traverse` and :c:member:`~PyTypeObject.tp_clear` are present in
       the type object.
 
+      **Inheritance:**
+
+      Group: :const:`Py_TPFLAGS_HAVE_GC`, :attr:`tp_traverse`, :attr:`tp_clear`
+
+      The :const:`Py_TPFLAGS_HAVE_GC` flag bit is inherited
+      together with the :attr:`tp_traverse` and :attr:`tp_clear`
+      fields, i.e.  if the :const:`Py_TPFLAGS_HAVE_GC` flag bit is
+      clear in the subtype and the :attr:`tp_traverse` and
+      :attr:`tp_clear` fields in the subtype exist and have *NULL*
+      values.
+
 
    .. data:: Py_TPFLAGS_DEFAULT
 
@@ -449,6 +673,12 @@ type objects) *must* have the :attr:`ob_size` field.
       fields in the type object and its extension structures. Currently, it includes
       the following bits: :const:`Py_TPFLAGS_HAVE_STACKLESS_EXTENSION`,
       :const:`Py_TPFLAGS_HAVE_VERSION_TAG`.
+
+      **Inheritance:**
+
+      ???
+
+   .. XXX Document more flags here?
 
 
    .. data:: Py_TPFLAGS_LONG_SUBCLASS
@@ -483,7 +713,13 @@ type objects) *must* have the :attr:`ob_size` field.
    type object.  This is exposed as the :attr:`__doc__` attribute on the type and
    instances of the type.
 
+   **Inheritance:**
+
    This field is *not* inherited by subtypes.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: traverseproc PyTypeObject.tp_traverse
@@ -520,10 +756,18 @@ type objects) *must* have the :attr:`ob_size` field.
    :c:func:`local_traverse` to have these specific names; don't name them just
    anything.
 
+   **Inheritance:**
+
+   Group: :const:`Py_TPFLAGS_HAVE_GC`, :attr:`tp_traverse`, :attr:`tp_clear`
+
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_clear` and the
    :const:`Py_TPFLAGS_HAVE_GC` flag bit: the flag bit, :c:member:`~PyTypeObject.tp_traverse`, and
    :c:member:`~PyTypeObject.tp_clear` are all inherited from the base type if they are all zero in
    the subtype.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: inquiry PyTypeObject.tp_clear
@@ -575,10 +819,18 @@ type objects) *must* have the :attr:`ob_size` field.
    More information about Python's garbage collection scheme can be found in
    section :ref:`supporting-cycle-detection`.
 
+   **Inheritance:**
+
+   Group: :const:`Py_TPFLAGS_HAVE_GC`, :attr:`tp_traverse`, :attr:`tp_clear`
+
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_traverse` and the
    :const:`Py_TPFLAGS_HAVE_GC` flag bit: the flag bit, :c:member:`~PyTypeObject.tp_traverse`, and
    :c:member:`~PyTypeObject.tp_clear` are all inherited from the base type if they are all zero in
    the subtype.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: richcmpfunc PyTypeObject.tp_richcompare
@@ -599,11 +851,6 @@ type objects) *must* have the :attr:`ob_size` field.
       comparisons makes sense (e.g. ``==`` and ``!=``, but not ``<`` and
       friends), directly raise :exc:`TypeError` in the rich comparison function.
 
-   This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_hash`:
-   a subtype inherits :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` when
-   the subtype's :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both
-   *NULL*.
-
    The following constants are defined to be used as the third argument for
    :c:member:`~PyTypeObject.tp_richcompare` and for :c:func:`PyObject_RichCompare`:
 
@@ -622,6 +869,21 @@ type objects) *must* have the :attr:`ob_size` field.
    +----------------+------------+
    | :const:`Py_GE` | ``>=``     |
    +----------------+------------+
+
+   **Inheritance:**
+
+   Group: :attr:`tp_hash`, :attr:`tp_richcompare`
+
+   This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_hash`:
+   a subtype inherits :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` when
+   the subtype's :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both
+   *NULL*.
+
+   **Default:**
+
+   PyBaseObject_Type provides a tp_richcompare.  However, if only
+   :attr:`tp_hash` is defined, not even this is used and instances
+   of the type will not be able to participate in any comparisons.
 
    The following macro is defined to ease writing rich comparison functions:
 
@@ -652,6 +914,8 @@ type objects) *must* have the :attr:`ob_size` field.
    Do not confuse this field with :c:member:`~PyTypeObject.tp_weaklist`; that is the list head for
    weak references to the type object itself.
 
+   **Inheritance:**
+
    This field is inherited by subtypes, but see the rules listed below. A subtype
    may override this offset; this means that the subtype uses a different weak
    reference list head than the base type.  Since the list head is always found via
@@ -671,6 +935,11 @@ type objects) *must* have the :attr:`ob_size` field.
    :attr:`__weakref__`, the type inherits its :c:member:`~PyTypeObject.tp_weaklistoffset` from its
    base type.
 
+   **Default:**
+
+   This field does not have a default.
+
+
 .. c:member:: getiterfunc PyTypeObject.tp_iter
 
    An optional pointer to a function that returns an iterator for the object.  Its
@@ -679,7 +948,13 @@ type objects) *must* have the :attr:`ob_size` field.
 
    This function has the same signature as :c:func:`PyObject_GetIter`.
 
+   **Inheritance:**
+
    This field is inherited by subtypes.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: iternextfunc PyTypeObject.tp_iternext
@@ -696,7 +971,13 @@ type objects) *must* have the :attr:`ob_size` field.
 
    This function has the same signature as :c:func:`PyIter_Next`.
 
+   **Inheritance:**
+
    This field is inherited by subtypes.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: struct PyMethodDef* PyTypeObject.tp_methods
@@ -707,8 +988,14 @@ type objects) *must* have the :attr:`ob_size` field.
    For each entry in the array, an entry is added to the type's dictionary (see
    :c:member:`~PyTypeObject.tp_dict` below) containing a method descriptor.
 
+   **Inheritance:**
+
    This field is not inherited by subtypes (methods are inherited through a
    different mechanism).
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: struct PyMemberDef* PyTypeObject.tp_members
@@ -720,8 +1007,14 @@ type objects) *must* have the :attr:`ob_size` field.
    For each entry in the array, an entry is added to the type's dictionary (see
    :c:member:`~PyTypeObject.tp_dict` below) containing a member descriptor.
 
+   **Inheritance:**
+
    This field is not inherited by subtypes (members are inherited through a
    different mechanism).
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: struct PyGetSetDef* PyTypeObject.tp_getset
@@ -732,8 +1025,29 @@ type objects) *must* have the :attr:`ob_size` field.
    For each entry in the array, an entry is added to the type's dictionary (see
    :c:member:`~PyTypeObject.tp_dict` below) containing a getset descriptor.
 
+   .. XXX belongs elsewhere
+
+   Docs for PyGetSetDef::
+
+      typedef PyObject *(*getter)(PyObject *, void *);
+      typedef int (*setter)(PyObject *, PyObject *, void *);
+
+      typedef struct PyGetSetDef {
+          char *name;    /* attribute name */
+          getter get;    /* C function to get the attribute */
+          setter set;    /* C function to set the attribute */
+          char *doc;     /* optional doc string */
+          void *closure; /* optional additional data for getter and setter */
+      } PyGetSetDef;
+
+   **Inheritance:**
+
    This field is not inherited by subtypes (computed attributes are inherited
    through a different mechanism).
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: PyTypeObject* PyTypeObject.tp_base
@@ -742,9 +1056,14 @@ type objects) *must* have the :attr:`ob_size` field.
    this level, only single inheritance is supported; multiple inheritance require
    dynamically creating a type object by calling the metatype.
 
-   This field is not inherited by subtypes (obviously), but it defaults to
-   ``&PyBaseObject_Type`` (which to Python programmers is known as the type
-   :class:`object`).
+   **Inheritance:**
+
+   This field is not inherited by subtypes (obviously).
+
+   **Default:**
+
+   This field defaults to ``&PyBaseObject_Type`` (which to Python
+   programmers is known as the type :class:`object`).
 
 
 .. c:member:: PyObject* PyTypeObject.tp_dict
@@ -757,8 +1076,15 @@ type objects) *must* have the :attr:`ob_size` field.
    attributes for the type may be added to this dictionary only if they don't
    correspond to overloaded operations (like :meth:`__add__`).
 
+   **Inheritance:**
+
    This field is not inherited by subtypes (though the attributes defined in here
    are inherited through a different mechanism).
+
+   **Default:**
+
+   If this field is NULL, :c:func:`PyType_Ready` will assign a new
+   dictionary to it.
 
    .. warning::
 
@@ -776,7 +1102,13 @@ type objects) *must* have the :attr:`ob_size` field.
 
    .. XXX explain.
 
+   **Inheritance:**
+
    This field is inherited by subtypes.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: descrsetfunc PyTypeObject.tp_descr_set
@@ -789,9 +1121,16 @@ type objects) *must* have the :attr:`ob_size` field.
       int tp_descr_set(PyObject *self, PyObject *obj, PyObject *value);
 
    The *value* argument is set to *NULL* to delete the value.
-   This field is inherited by subtypes.
 
    .. XXX explain.
+
+   **Inheritance:**
+
+   This field is inherited by subtypes.
+
+   **Default:**
+
+   This field does not have a default.
 
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_dictoffset
@@ -829,6 +1168,8 @@ type objects) *must* have the :attr:`ob_size` field.
    store the sign of the number.  (There's never a need to do this calculation
    yourself; it is done for you by :c:func:`_PyObject_GetDictPtr`.)
 
+   **Inheritance:**
+
    This field is inherited by subtypes, but see the rules listed below. A subtype
    may override this offset; this means that the subtype instances store the
    dictionary at a difference offset than the base type.  Since the dictionary is
@@ -845,6 +1186,11 @@ type objects) *must* have the :attr:`ob_size` field.
    (Adding a slot named :attr:`~object.__dict__` to the :attr:`__slots__` declaration does
    not have the expected effect, it just causes confusion.  Maybe this should be
    added as a feature just like :attr:`__weakref__` though.)
+
+   **Default:**
+
+   This slot has no default.  For static types, if the field is
+   NULL then no __dict__ gets created for instances.
 
 
 .. c:member:: initproc PyTypeObject.tp_init
@@ -871,7 +1217,13 @@ type objects) *must* have the :attr:`ob_size` field.
    :c:member:`~PyTypeObject.tp_init` function is called; if :c:member:`~PyTypeObject.tp_new` returns an instance of a
    subtype of the original type, the subtype's :c:member:`~PyTypeObject.tp_init` is called.
 
+   **Inheritance:**
+
    This field is inherited by subtypes.
+
+   **Default:**
+
+   For static types this field does not have a default.
 
 
 .. c:member:: allocfunc PyTypeObject.tp_alloc
@@ -895,19 +1247,25 @@ type objects) *must* have the :attr:`ob_size` field.
    Do not use this function to do any other instance initialization, not even to
    allocate additional memory; that should be done by :c:member:`~PyTypeObject.tp_new`.
 
-   This field is inherited by static subtypes, but not by dynamic subtypes
-   (subtypes created by a class statement); in the latter, this field is always set
-   to :c:func:`PyType_GenericAlloc`, to force a standard heap allocation strategy.
-   That is also the recommended value for statically defined types.
+   **Inheritance:**
+
+   This field is inherited by static subtypes, but not by dynamic
+   subtypes (subtypes created by a class statement).
+
+   **Default:**
+
+   For dynamic subtypes, this field is always set to
+   :c:func:`PyType_GenericAlloc`, to force a standard heap
+   allocation strategy.
+
+   For static subtypess, PyBaseObject_Type uses
+   :c:func:`PyType_GenericAlloc`.  That is the recommended value
+   for all statically defined types.
 
 
 .. c:member:: newfunc PyTypeObject.tp_new
 
    An optional pointer to an instance creation function.
-
-   If this function is *NULL* for a particular type, that type cannot be called to
-   create new instances; presumably there is some other way to create instances,
-   like a factory function.
 
    The function signature is ::
 
@@ -927,8 +1285,17 @@ type objects) *must* have the :attr:`ob_size` field.
    in :c:member:`~PyTypeObject.tp_new`, while for mutable types, most initialization should be
    deferred to :c:member:`~PyTypeObject.tp_init`.
 
+   **Inheritance:**
+
    This field is inherited by subtypes, except it is not inherited by static types
    whose :c:member:`~PyTypeObject.tp_base` is *NULL* or ``&PyBaseObject_Type``.
+
+   **Default:**
+
+   For static types this field has no default.  This means if the
+   slot is defined as NULL, the type cannot be called to create new
+   instances; presumably there is some other way to create
+   instances, like a factory function.
 
 
 .. c:member:: destructor PyTypeObject.tp_free
@@ -940,10 +1307,18 @@ type objects) *must* have the :attr:`ob_size` field.
 
    An initializer that is compatible with this signature is :c:func:`PyObject_Free`.
 
-   This field is inherited by static subtypes, but not by dynamic subtypes
-   (subtypes created by a class statement); in the latter, this field is set to a
-   deallocator suitable to match :c:func:`PyType_GenericAlloc` and the value of the
+   **Inheritance:**
+
+   This field is inherited by static subtypes, but not by dynamic
+   subtypes (subtypes created by a class statement)
+
+   **Default:**
+
+   In dynamic subtypes, this field is set to a deallocator suitable to
+   match :c:func:`PyType_GenericAlloc` and the value of the
    :const:`Py_TPFLAGS_HAVE_GC` flag bit.
+
+   For static subtypes, :c:type:`PyBaseObject_Type` uses PyObject_Del.
 
 
 .. c:member:: inquiry PyTypeObject.tp_is_gc
@@ -964,7 +1339,14 @@ type objects) *must* have the :attr:`ob_size` field.
    :c:data:`PyType_Type`, defines this function to distinguish between statically
    and dynamically allocated types.)
 
+   **Inheritance:**
+
    This field is inherited by subtypes.
+
+   **Default:**
+
+   This slot has no default.  If this field is NULL,
+   :const:`Py_TPFLAGS_HAVE_GC` is used as the functional equivalent.
 
 
 .. c:member:: PyObject* PyTypeObject.tp_bases
@@ -974,6 +1356,8 @@ type objects) *must* have the :attr:`ob_size` field.
    This is set for types created by a class statement.  It should be *NULL* for
    statically defined types.
 
+   **Inheritance:**
+
    This field is not inherited.
 
 
@@ -982,7 +1366,11 @@ type objects) *must* have the :attr:`ob_size` field.
    Tuple containing the expanded set of base types, starting with the type itself
    and ending with :class:`object`, in Method Resolution Order.
 
-   This field is not inherited; it is calculated fresh by :c:func:`PyType_Ready`.
+
+   **Inheritance:**
+
+   This field is not inherited; it is calculated fresh by
+   :c:func:`PyType_Ready`.
 
 
 .. c:member:: destructor PyTypeObject.tp_finalize
@@ -1028,18 +1416,33 @@ type objects) *must* have the :attr:`ob_size` field.
 
 .. c:member:: PyObject* PyTypeObject.tp_cache
 
-   Unused.  Not inherited.  Internal use only.
+   Unused.  Internal use only.
+
+   **Inheritance:**
+
+   This field is not inherited.
 
 
 .. c:member:: PyObject* PyTypeObject.tp_subclasses
 
    List of weak references to subclasses.  Not inherited.  Internal use only.
 
+   **Inheritance:**
+
+   This field is not inherited.
+
 
 .. c:member:: PyObject* PyTypeObject.tp_weaklist
 
    Weak reference list head, for weak references to this type object.  Not
    inherited.  Internal use only.
+
+   **Inheritance:**
+
+   This field is not inherited.
+
+.. XXX missing tp_del?
+
 
 The remaining fields are only defined if the feature test macro
 :const:`COUNT_ALLOCS` is defined, and are for internal use only. They are
@@ -1416,3 +1819,148 @@ Async Object Structures
 
    Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
    This slot may be set to *NULL*.
+
+
+.. _slot-typedefs:
+
+Slot Type typedefs
+==================
+
++-------------------+--------------------+-------------+
+| typedef           | Parameter Types    | Return Type |
++===================+====================+=============+
+| allocfunc         | .. line-block::    | PyObject *  |
+|                   |                    |             |
+|                   |    PyTypeObject *  |             |
+|                   |    Py_ssize_t      |             |
++-------------------+--------------------+-------------+
+| destructor        | void *             | void        |
++-------------------+--------------------+-------------+
+| freefunc          | void *             | void        |
++-------------------+--------------------+-------------+
+| traverseproc      | .. line-block::    | int         |
+|                   |                    |             |
+|                   |    void *          |             |
+|                   |    "visitproc"     |             |
+|                   |    void *          |             |
++-------------------+--------------------+-------------+
+| newfunc           | .. line-block::    | PyObject *  |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
++-------------------+--------------------+-------------+
+| initproc          | .. line-block::    | int         |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
++-------------------+--------------------+-------------+
+| reprfunc          | PyObject *         | PyObject *  |
++-------------------+--------------------+-------------+
+| printfunc         | .. line-block::    | int         |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    FILE *          |             |
+|                   |    int             |             |
++-------------------+--------------------+-------------+
+| getattrfunc       | .. line-block::    | PyObject *  |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    const char *    |             |
++-------------------+--------------------+-------------+
+| setattrfunc       | .. line-block::    | int         |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    const char *    |             |
+|                   |    PyObject *      |             |
++-------------------+--------------------+-------------+
+| descrgetfunc      | .. line-block::    | PyObject *  |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
++-------------------+--------------------+-------------+
+| descrsetfunc      | .. line-block::    | int         |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
++-------------------+--------------------+-------------+
+| hashfunc          | PyObject *         | Py_hash_t   |
++-------------------+--------------------+-------------+
+| richcmpfunc       | .. line-block::    | PyObject *  |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
+|                   |    int             |             |
++-------------------+--------------------+-------------+
+| getiterfunc       | PyObject *         | PyObject *  |
++-------------------+--------------------+-------------+
+| iternextfunc      | PyObject *         | PyObject *  |
++-------------------+--------------------+-------------+
+| lenfunc           | PyObject *         | Py_ssize_t  |
++-------------------+--------------------+-------------+
+| getbufferproc     | .. line-block::    | int         |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    PyBuffer *      |             |
+|                   |    int             |             |
++-------------------+--------------------+-------------+
+| releasebufferproc | .. line-block::    | void        |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    PyBuffer *      |             |
++-------------------+--------------------+-------------+
+| inquiry           | void *             | int         |
++-------------------+--------------------+-------------+
+| unaryfunc         | .. line-block::    | PyObject *  |
+|                   |                    |             |
+|                   |    PyObject *      |             |
++-------------------+--------------------+-------------+
+| binaryfunc        | .. line-block::    | PyObject *  |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
++-------------------+--------------------+-------------+
+| ternaryfunc       | .. line-block::    | PyObject *  |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
++-------------------+--------------------+-------------+
+| ssizeargfunc      | .. line-block::    | PyObject *  |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    Py_ssize_t      |             |
++-------------------+--------------------+-------------+
+| ssizeobjargproc   | .. line-block::    | int         |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    Py_ssize_t      |             |
++-------------------+--------------------+-------------+
+| objobjproc        | .. line-block::    | int         |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
++-------------------+--------------------+-------------+
+| objobjargproc     | .. line-block::    | int         |
+|                   |                    |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
+|                   |    PyObject *      |             |
++-------------------+--------------------+-------------+
+
+
+.. rubric:: Footnotes
+
+.. [#slots] A slot name in parentheses indicates it is (effectively) deprecated.
+   Names in square brackets are for internal use only.
+.. [#inh]
+   The meaning of the markers in the "Inherited" column::
+
+      X - type slot is inherited via PyType_Ready() if defined with a NULL value.
+      * - the slots of the sub-struct are inherited individually.
+      G - inherited, but only in combination with other slots; see the slot's description.
+      L - not inherited but available through the normal attribute lookup chain.
+      ? - it's complicated; see the slot's description.
