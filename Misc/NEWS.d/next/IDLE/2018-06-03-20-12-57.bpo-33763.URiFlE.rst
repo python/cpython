@@ -1,0 +1,1 @@
+IDLE: Use read-only text widget for code context instead of label widget.
