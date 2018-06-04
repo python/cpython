@@ -276,7 +276,11 @@ def format_duration(seconds):
         return '%.0f sec' % seconds
 
     minutes, seconds = divmod(seconds, 60.0)
-    return '%.0f min %.0f sec' % (minutes, seconds)
+    hours, minutes = divmod(minutes, 60.0)
+    if hours:
+        return '%.0f hour %.0f min' % (hours, minutes)
+    else:
+        return '%.0f min %.0f sec' % (minutes, seconds)
 
 
 _FORMAT_TEST_RESULT = {
@@ -770,7 +774,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     continue
                 dt = time.time() - worker.start_time
                 if dt >= PROGRESS_MIN_TIME:
-                    running.append('%s (%.0f sec)' % (current_test, dt))
+                    running.append('%s (%s)' % (current_test, format_duration(dt)))
             return running
 
         finished = 0
