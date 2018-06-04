@@ -511,6 +511,24 @@ class ArgsTestCase(BaseTestCase):
         """)
         self.check_leak(code, 'references')
 
+    @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    def test_huntrleaks_fd_leak(self):
+        # test --huntrleaks for file descriptor leak
+        code = textwrap.dedent("""
+            import os
+            import unittest
+            from test import support
+
+            class FDLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    fd = os.open(__file__, os.O_RDONLY)
+                    # bug: never close the file descriptor
+
+            def test_main():
+                support.run_unittest(FDLeakTest)
+        """)
+        self.check_leak(code, 'file descriptors')
+
     def test_list_tests(self):
         # test --list-tests
         tests = [self.create_test() for i in range(5)]
