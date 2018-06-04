@@ -12,7 +12,8 @@ ACCEPT_RETRY_DELAY = 1
 DEBUG_STACK_DEPTH = 10
 
 # Number of seconds to wait for SSL handshake to complete
-SSL_HANDSHAKE_TIMEOUT = 10.0
+# The default timeout matches that of Nginx.
+SSL_HANDSHAKE_TIMEOUT = 60.0
 
 # Used in sendfile fallback code.  We use fallback for platforms
 # that don't support sendfile, or for TLS connections.

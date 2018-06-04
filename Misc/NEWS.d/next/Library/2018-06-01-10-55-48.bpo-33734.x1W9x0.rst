@@ -1,0 +1,1 @@
+asyncio/ssl: Fix AttributeError, increase default handshake timeout
