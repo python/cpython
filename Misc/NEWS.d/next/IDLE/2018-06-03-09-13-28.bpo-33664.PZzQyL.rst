@@ -1,0 +1,5 @@
+Scroll IDLE editor text by lines.
+Previously, the mouse wheel and scrollbar slider moved text by a fixed
+number of pixels, resulting in partial lines at the top of the editor
+box.  The change also applies to the shell and grep output windows,
+but not to read-only text views.
