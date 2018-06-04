@@ -816,7 +816,7 @@ static PyObject *
 mmap_concat(mmap_object *self, PyObject *bb)
 {
     CHECK_VALID(NULL);
-    PyErr_SetString(PyExc_SystemError,
+    PyErr_SetString(PyExc_TypeError,
                     "mmaps don't support concatenation");
     return NULL;
 }
@@ -825,7 +825,7 @@ static PyObject *
 mmap_repeat(mmap_object *self, Py_ssize_t n)
 {
     CHECK_VALID(NULL);
-    PyErr_SetString(PyExc_SystemError,
+    PyErr_SetString(PyExc_TypeError,
                     "mmaps don't support repeat operation");
     return NULL;
 }

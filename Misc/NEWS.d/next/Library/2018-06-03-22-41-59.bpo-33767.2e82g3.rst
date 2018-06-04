@@ -1,0 +1,2 @@
+Fix improper use of :exc:`SystemError` by :class:`mmap.mmap` objects.  Patch
+by Zackery Spytz.
