@@ -1730,7 +1730,7 @@ def wait_threads_exit(timeout=60.0):
     statement exit.
 
     Use thread.count() to check if threads exited. Indirectly, wait until
-    threads exit the internal t_bootstrap() C function of the _thread module.
+    threads exit the internal t_bootstrap() C function of the thread module.
 
     threading_setup() and threading_cleanup() are designed to emit a warning
     if a test leaves running threads in the background. This context manager
