@@ -8,6 +8,7 @@ import re
 import fileinput
 import collections
 import builtins
+import tempfile
 import unittest
 
 try:
@@ -36,12 +37,10 @@ from unittest import mock
 class BaseTests:
     # Write a content (str or bytes) to temp file, and return the
     # temp file's name.
-    count = 0
     def writeTmp(self, content, *, mode='w'):  # opening in text mode is the default
-        self.count += 1
-        name = TESTFN + str(self.count)
+        fd, name = tempfile.mkstemp()
         self.addCleanup(support.unlink, name)
-        with open(name, mode) as f:
+        with open(fd, mode) as f:
             f.write(content)
         return name
 
