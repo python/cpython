@@ -23,12 +23,13 @@ random UUID.
 .. class:: UUID(hex=None, bytes=None, bytes_le=None, fields=None, int=None, version=None)
 
    Create a UUID from either a string of 32 hexadecimal digits, a string of 16
-   bytes as the *bytes* argument, a string of 16 bytes in little-endian order as
-   the *bytes_le* argument, a tuple of six integers (32-bit *time_low*, 16-bit
-   *time_mid*, 16-bit *time_hi_version*, 8-bit *clock_seq_hi_variant*, 8-bit
-   *clock_seq_low*, 48-bit *node*) as the *fields* argument, or a single 128-bit
-   integer as the *int* argument.  When a string of hex digits is given, curly
-   braces, hyphens, and a URN prefix are all optional.  For example, these
+   bytes in big-endian order as the *bytes* argument, a string of 16 bytes in
+   little-endian order as the *bytes_le* argument, a tuple of six integers
+   (32-bit *time_low*, 16-bit *time_mid*, 16-bit *time_hi_version*,
+   8-bit *clock_seq_hi_variant*, 8-bit *clock_seq_low*, 48-bit *node*) as the
+   *fields* argument, or a single 128-bit integer as the *int* argument.
+   When a string of hex digits is given, curly braces, hyphens,
+   and a URN prefix are all optional.  For example, these
    expressions all yield the same UUID::
 
       UUID('{12345678-1234-5678-1234-567812345678}')
