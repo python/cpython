@@ -351,7 +351,7 @@ Creating connections
 
    * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds
      to wait for the SSL handshake to complete before aborting the connection.
-     ``10.0`` seconds if ``None`` (default).
+     ``60.0`` seconds if ``None`` (default).
 
    .. versionadded:: 3.7
 
@@ -497,7 +497,7 @@ Creating listening connections
 
    * *ssl_handshake_timeout* is (for an SSL server) the time in seconds to wait
      for the SSL handshake to complete before aborting the connection.
-     ``10.0`` seconds if ``None`` (default).
+     ``60.0`` seconds if ``None`` (default).
 
    * *start_serving* set to ``True`` (the default) causes the created server
      to start accepting connections immediately.  When set to ``False``,
@@ -559,7 +559,7 @@ Creating listening connections
 
    * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds to
      wait for the SSL handshake to complete before aborting the connection.
-     ``10.0`` seconds if ``None`` (default).
+     ``60.0`` seconds if ``None`` (default).
 
    When completed it returns a ``(transport, protocol)`` pair.
 
@@ -628,7 +628,7 @@ TLS Upgrade
 
    * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds to
      wait for the SSL handshake to complete before aborting the connection.
-     ``10.0`` seconds if ``None`` (default).
+     ``60.0`` seconds if ``None`` (default).
 
    .. versionadded:: 3.7
 

@@ -1114,7 +1114,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         self.call_soon(ssl_protocol.connection_made, transport)
         self.call_soon(transport.resume_reading)
 
-        await waiter
+        try:
+            await waiter
+        except Exception:
+            transport.close()
+            raise
+
         return ssl_protocol._app_transport
 
     async def create_datagram_endpoint(self, protocol_factory,
