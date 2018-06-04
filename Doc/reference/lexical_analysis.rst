@@ -53,6 +53,9 @@ form using the ASCII sequence CR LF (return followed by linefeed), or the old
 Macintosh form using the ASCII CR (return) character.  All of these forms can be
 used equally, regardless of platform.
 
+The end of a file may also serve as a terminator for a physical line. This is
+relevant when a file does not end with an end-of-line sequence.
+
 When embedding Python, source code strings should be passed to Python APIs using
 the standard C conventions for newline characters (the ``\n`` character,
 representing ASCII LF, is the line terminator).
