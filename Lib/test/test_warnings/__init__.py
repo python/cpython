@@ -221,6 +221,8 @@ class FilterTests(BaseTest):
     def test_module_globals(self):
         with original_warnings.catch_warnings(record=True,
                 module=self.module) as w:
+            self.module.simplefilter("always", UserWarning)
+
             # bpo-33509: module_globals=None must not crash
             self.module.warn_explicit('msg', UserWarning, "filename", 42,
                                       module_globals=None)
