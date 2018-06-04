@@ -248,7 +248,7 @@ PROGRESS_MIN_TIME = 30.0   # seconds
 # Display the running tests if nothing happened last N seconds
 PROGRESS_UPDATE = 30.0   # seconds
 
-from test import test_support
+from test import support
 
 ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
                  'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui',
@@ -317,7 +317,7 @@ def unload_test_modules(save_modules):
     # Unload the newly imported modules (best effort finalization)
     for module in sys.modules.keys():
         if module not in save_modules and module.startswith("test."):
-            test_support.unload(module)
+            support.unload(module)
 
 
 def main(tests=None, testdir=None, verbose=0, quiet=False,
@@ -350,7 +350,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     """
     regrtest_start_time = time.time()
 
-    test_support.record_original_stdout(sys.stdout)
+    support.record_original_stdout(sys.stdout)
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:j:PGm:',
             ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
@@ -406,7 +406,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif o == '--matchfile':
             if match_tests is None:
                 match_tests = []
-            filename = os.path.join(test_support.SAVEDCWD, a)
+            filename = os.path.join(support.SAVEDCWD, a)
             with open(filename) as fp:
                 for line in fp:
                     match_tests.append(line.strip())
@@ -439,7 +439,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             if len(huntrleaks) == 2 or not huntrleaks[2]:
                 huntrleaks[2:] = ["reflog.txt"]
         elif o in ('-M', '--memlimit'):
-            test_support.set_memlimit(a)
+            support.set_memlimit(a)
         elif o in ('-u', '--use'):
             u = [x.lower() for x in a.split(',')]
             for r in u:
@@ -553,7 +553,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     if fromfile:
         tests = []
-        fp = open(os.path.join(test_support.SAVEDCWD, fromfile))
+        fp = open(os.path.join(support.SAVEDCWD, fromfile))
         for line in fp:
             guts = line.split() # assuming no test has whitespace in its name
             if guts and not guts[0].startswith('#'):
@@ -597,7 +597,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         tracer = trace.Trace(trace=False, count=True)
 
     test_times = []
-    test_support.use_resources = use_resources
+    support.use_resources = use_resources
     save_modules = set(sys.modules)
 
     def accumulate_result(test, result):
@@ -696,7 +696,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 )
                 yield (test, args_tuple)
         pending = tests_and_args()
-        opt_args = test_support.args_from_interpreter_flags()
+        opt_args = support.args_from_interpreter_flags()
         base_cmd = [sys.executable] + opt_args + ['-m', 'test.regrtest']
         # required to spawn a new process with PGO flag on/off
         if pgo:
@@ -970,7 +970,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             print "Re-running test %r in verbose mode" % test
             sys.stdout.flush()
             try:
-                test_support.verbose = True
+                support.verbose = True
                 ok = runtest(test, True, quiet, huntrleaks, None, pgo,
                              match_tests=match_tests, testdir=testdir)
             except KeyboardInterrupt:
@@ -1070,13 +1070,17 @@ def runtest(test, verbose, quiet,
         PASSED           test passed
     """
 
-    test_support.verbose = verbose  # Tell tests to be moderately quiet
+    support.verbose = verbose  # Tell tests to be moderately quiet
     if use_resources is not None:
-        test_support.use_resources = use_resources
+        support.use_resources = use_resources
     try:
-        test_support.set_match_tests(match_tests)
+        support.set_match_tests(match_tests)
+        # reset the environment_altered flag to detect if a test altered
+        # the environment
+        support.environment_altered = False
         if failfast:
-            test_support.failfast = True
+            support.failfast = True
+
         return runtest_inner(test, verbose, quiet, huntrleaks, pgo, testdir)
     finally:
         cleanup_test_droppings(test, verbose)
@@ -1176,31 +1180,31 @@ class saved_test_environment:
             asyncore.close_all(ignore_all=True)
             asyncore.socket_map.update(saved_map)
 
-    def get_test_support_TESTFN(self):
-        if os.path.isfile(test_support.TESTFN):
+    def get_support_TESTFN(self):
+        if os.path.isfile(support.TESTFN):
             result = 'f'
-        elif os.path.isdir(test_support.TESTFN):
+        elif os.path.isdir(support.TESTFN):
             result = 'd'
         else:
             result = None
         return result
-    def restore_test_support_TESTFN(self, saved_value):
+    def restore_support_TESTFN(self, saved_value):
         if saved_value is None:
-            if os.path.isfile(test_support.TESTFN):
-                os.unlink(test_support.TESTFN)
-            elif os.path.isdir(test_support.TESTFN):
-                shutil.rmtree(test_support.TESTFN)
+            if os.path.isfile(support.TESTFN):
+                os.unlink(support.TESTFN)
+            elif os.path.isdir(support.TESTFN):
+                shutil.rmtree(support.TESTFN)
 
     def get_files(self):
         return sorted(fn + ('/' if os.path.isdir(fn) else '')
                       for fn in os.listdir(os.curdir))
     def restore_files(self, saved_value):
-        fn = test_support.TESTFN
+        fn = support.TESTFN
         if fn not in saved_value and (fn + '/') not in saved_value:
             if os.path.isfile(fn):
-                test_support.unlink(fn)
+                support.unlink(fn)
             elif os.path.isdir(fn):
-                test_support.rmtree(fn)
+                support.rmtree(fn)
 
     def resource_info(self):
         for name in self.resources:
@@ -1217,6 +1221,10 @@ class saved_test_environment:
     def __exit__(self, exc_type, exc_val, exc_tb):
         saved_values = self.saved_values
         del self.saved_values
+
+        # Read support.environment_altered, set by support helper functions
+        self.changed |= support.environment_altered
+
         for name, get, restore in self.resource_info():
             current = get()
             original = saved_values.pop(name)
@@ -1239,10 +1247,10 @@ class saved_test_environment:
 
 
 def post_test_cleanup():
-    test_support.reap_children()
+    support.reap_children()
 
 def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=None):
-    test_support.unload(test)
+    support.unload(test)
     if verbose:
         capture_stdout = None
     else:
@@ -1277,7 +1285,7 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=Non
             post_test_cleanup()
         finally:
             sys.stdout = save_stdout
-    except test_support.ResourceDenied, msg:
+    except support.ResourceDenied, msg:
         if not quiet and not pgo:
             print test, "skipped --", msg
             sys.stdout.flush()
@@ -1289,7 +1297,7 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=Non
         return SKIPPED, test_time
     except KeyboardInterrupt:
         raise
-    except test_support.TestFailed, msg:
+    except support.TestFailed, msg:
         if not pgo:
             print >>sys.stderr, "test", test, "failed --", msg
         sys.stderr.flush()
@@ -1334,7 +1342,7 @@ def cleanup_test_droppings(testname, verbose):
     # since if a test leaves a file open, it cannot be deleted by name (while
     # there's nothing we can do about that here either, we can display the
     # name of the offending test, which is a real help).
-    for name in (test_support.TESTFN,
+    for name in (support.TESTFN,
                  "db_home",
                 ):
         if not os.path.exists(name):
@@ -1401,7 +1409,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
 
     deltas = []
     nwarmup, ntracked, fname = huntrleaks
-    fname = os.path.join(test_support.SAVEDCWD, fname)
+    fname = os.path.join(support.SAVEDCWD, fname)
     repcount = nwarmup + ntracked
     print >> sys.stderr, "beginning", repcount, "repetitions"
     print >> sys.stderr, ("1234567890"*(repcount//10 + 1))[:repcount]
@@ -1617,12 +1625,12 @@ def _list_cases(suite):
         if isinstance(test, unittest.TestSuite):
             _list_cases(test)
         elif isinstance(test, unittest.TestCase):
-            if test_support.match_test(test):
+            if support.match_test(test):
                 print(test.id())
 
 def list_cases(testdir, selected, match_tests):
-    test_support.verbose = False
-    test_support.set_match_tests(match_tests)
+    support.verbose = False
+    support.set_match_tests(match_tests)
 
     save_modules = set(sys.modules)
     skipped = []
@@ -2056,8 +2064,8 @@ def main_in_temp_cwd():
     # Run the tests in a context manager that temporary changes the CWD to a
     # temporary and writable directory. If it's not possible to create or
     # change the CWD, the original CWD will be used. The original CWD is
-    # available from test_support.SAVEDCWD.
-    with test_support.temp_cwd(TESTCWD, quiet=True):
+    # available from support.SAVEDCWD.
+    with support.temp_cwd(TESTCWD, quiet=True):
         main()
 
 if __name__ == '__main__':
