@@ -638,8 +638,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     def display_progress(test_index, test):
         # "[ 51/405/1] test_tcl"
         line = "{1:{0}}{2}".format(test_count_width, test_index, test_count)
-        if bad and not pgo:
-            line = '{}/{}'.format(line, len(bad))
+        fails = len(bad) + len(environment_changed)
+        if fails and not pgo:
+            line = '{}/{}'.format(line, fails)
         line = '[{}]'.format(line)
 
         # add the system load prefix: "load avg: 1.80 "
