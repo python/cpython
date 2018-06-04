@@ -71,6 +71,7 @@ class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
 #define DATE_GET_SECOND         PyDateTime_DATE_GET_SECOND
 #define DATE_GET_MICROSECOND    PyDateTime_DATE_GET_MICROSECOND
 #define DATE_GET_FOLD           PyDateTime_DATE_GET_FOLD
+#define DATE_GET_TZIDX          PyDateTime_DATE_GET_TZIDX
 
 /* Date accessors for date and datetime. */
 #define SET_YEAR(o, v)          (((o)->data[0] = ((v) & 0xff00) >> 8), \
@@ -87,6 +88,7 @@ class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
      ((o)->data[8] = ((v) & 0x00ff00) >> 8), \
      ((o)->data[9] = ((v) & 0x0000ff)))
 #define DATE_SET_FOLD(o, v)   (PyDateTime_DATE_GET_FOLD(o) = (v))
+#define DATE_SET_TZIDX(o, v)  (PyDateTime_DATE_GET_TZIDX(o) = (v))
 
 /* Time accessors for time. */
 #define TIME_GET_HOUR           PyDateTime_TIME_GET_HOUR
@@ -94,6 +96,7 @@ class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
 #define TIME_GET_SECOND         PyDateTime_TIME_GET_SECOND
 #define TIME_GET_MICROSECOND    PyDateTime_TIME_GET_MICROSECOND
 #define TIME_GET_FOLD           PyDateTime_TIME_GET_FOLD
+#define TIME_GET_TZIDX          PyDateTime_TIME_GET_TZIDX
 #define TIME_SET_HOUR(o, v)     (PyDateTime_TIME_GET_HOUR(o) = (v))
 #define TIME_SET_MINUTE(o, v)   (PyDateTime_TIME_GET_MINUTE(o) = (v))
 #define TIME_SET_SECOND(o, v)   (PyDateTime_TIME_GET_SECOND(o) = (v))
@@ -102,6 +105,7 @@ class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
      ((o)->data[4] = ((v) & 0x00ff00) >> 8), \
      ((o)->data[5] = ((v) & 0x0000ff)))
 #define TIME_SET_FOLD(o, v)   (PyDateTime_TIME_GET_FOLD(o) = (v))
+#define TIME_SET_TZIDX(o, v)  (PyDateTime_TIME_GET_TZIDX(o) = (v))
 
 /* Delta accessors for timedelta. */
 #define GET_TD_DAYS(o)          (((PyDateTime_Delta *)(o))->days)
@@ -973,6 +977,61 @@ new_datetime_subclass_ex(int year, int month, int day, int hour, int minute,
                                          cls);
 }
 
+
+static PyObject*
+_load_valid_tzidx(PyObject* self, PyObject* callback) {
+
+    if (!PyCallable_Check(callback)) {
+        PyErr_SetString(PyExc_TypeError, "Callback must be callable");
+        return NULL;
+    }
+
+    PyObject *args = PyTuple_New(1);
+    PyTuple_SetItem(args, 0, self);
+    Py_INCREF(self);
+    PyObject *obj = PyEval_CallObject(callback, args);
+
+    Py_XDECREF(args);
+
+    if (!PyLong_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError, "Callback must return an integer");
+        return NULL;
+    }
+
+    return obj;
+}
+
+
+static unsigned char
+pylong_to_tzidx(PyObject* tzidx_obj) {
+    long tzidx = PyLong_AsLong(tzidx_obj);
+    if (tzidx < 0 || tzidx > 0xff || PyErr_Occurred()) {
+        return 255;
+    } else {
+        return (unsigned char)tzidx;
+    }
+}
+
+
+static PyObject*
+datetime_get_tzidx(PyObject* self, PyObject* callback) {
+    unsigned char tzidx = DATE_GET_TZIDX(self);
+
+    if (tzidx != 0xff) {
+        return PyLong_FromLong((long)tzidx);
+    }
+
+    PyObject *obj = _load_valid_tzidx(self, callback);
+
+    if (PyLong_Check(obj)) {
+        tzidx = pylong_to_tzidx(obj);
+        DATE_SET_TZIDX(self, tzidx);
+    };
+
+    return obj;
+}
+
+
 /* Create a time instance with no range checking. */
 static PyObject *
 new_time_ex2(int hour, int minute, int second, int usecond,
@@ -1014,6 +1073,25 @@ new_time_ex(int hour, int minute, int second, int usecond,
 
 #define new_time(hh, mm, ss, us, tzinfo, fold)                       \
     new_time_ex2(hh, mm, ss, us, tzinfo, fold, &PyDateTime_TimeType)
+
+
+static PyObject*
+time_get_tzidx(PyObject* self, PyObject* callback) {
+    unsigned char tzidx = TIME_GET_TZIDX(self);
+
+    if (tzidx != 0xff) {
+        return PyLong_FromLong((long)tzidx);
+    }
+
+    PyObject *obj = _load_valid_tzidx(self, callback);
+
+    if (PyLong_Check(obj)) {
+        tzidx = pylong_to_tzidx(obj);
+        TIME_SET_TZIDX(self, tzidx);
+    };
+
+    return obj;
+}
 
 /* Create a timedelta instance.  Normalize the members iff normalize is
  * true.  Passing false is a speed optimization, if you know for sure
@@ -4556,6 +4634,9 @@ static PyMethodDef time_methods[] = {
     {"dst",             (PyCFunction)time_dst,          METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
 
+    {"get_tzidx",       (PyCFunction)time_get_tzidx,    METH_O,
+     PyDoc_STR("Retrieve the tzidx cache")},
+
     {"replace",     (PyCFunction)(void(*)(void))time_replace,          METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return time with new specified fields.")},
 
@@ -4776,6 +4857,9 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         self = new_datetime_ex2(year, month, day,
                                 hour, minute, second, usecond,
                                 tzinfo, fold, type);
+        if (self != NULL) {
+            DATE_SET_TZIDX(self, 255);
+        }
     }
     return self;
 }
@@ -6258,6 +6342,10 @@ static PyMethodDef datetime_methods[] = {
 
     {"dst",             (PyCFunction)datetime_dst, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
+
+    {"get_tzidx", (PyCFunction)datetime_get_tzidx,    METH_O,
+     PyDoc_STR("Get the cached time zone index")},
+
 
     {"replace",     (PyCFunction)(void(*)(void))datetime_replace,      METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return datetime with new specified fields.")},
