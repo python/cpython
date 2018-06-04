@@ -371,25 +371,25 @@ class HashLibTestCase(unittest.TestCase):
         data = smallest_data*200000
         expected_hash = hashlib.sha1(data*num_threads).hexdigest()
 
-        def hash_in_chunks(chunk_size, event):
+        def hash_in_chunks(chunk_size):
             index = 0
             while index < len(data):
                 hasher.update(data[index:index+chunk_size])
                 index += chunk_size
-            event.set()
 
-        events = []
+        threads = []
         for threadnum in xrange(num_threads):
             chunk_size = len(data) // (10**threadnum)
             assert chunk_size > 0
             assert chunk_size % len(smallest_data) == 0
-            event = threading.Event()
-            events.append(event)
-            threading.Thread(target=hash_in_chunks,
-                             args=(chunk_size, event)).start()
+            thread = threading.Thread(target=hash_in_chunks,
+                                      args=(chunk_size,))
+            threads.append(thread)
 
-        for event in events:
-            event.wait()
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
 
         self.assertEqual(expected_hash, hasher.hexdigest())
 
