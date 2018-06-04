@@ -66,6 +66,7 @@ class TestServerThread(threading.Thread):
 
     def stop(self):
         self.server.shutdown()
+        self.join()
 
 
 class BaseTestCase(unittest.TestCase):
