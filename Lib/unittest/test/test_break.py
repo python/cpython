@@ -6,6 +6,7 @@ import signal
 import weakref
 
 import unittest
+from test import support
 
 
 @unittest.skipUnless(hasattr(os, 'kill'), "Test requires os.kill")
@@ -38,6 +39,12 @@ class TestBreak(unittest.TestCase):
         self.assertTrue(unittest.signals._interrupt_handler.called)
 
     def testRegisterResult(self):
+        if support.verbose:
+            # support._run_suite() uses TextTestRunner in verbose mode,
+            # but TextTestRunner.run() calls registerResult(result) which
+            # make this test fail with "odd object in result set".
+            self.skipTest("cannot test in verbose mode")
+
         result = unittest.TestResult()
         unittest.registerResult(result)
 
