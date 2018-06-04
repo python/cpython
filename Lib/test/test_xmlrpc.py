@@ -1175,7 +1175,9 @@ class GzipUtilTestCase(unittest.TestCase):
 class ServerProxyTestCase(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
-        self.url = URL
+        # Actual value of the URL doesn't matter if it is a string in
+        # the correct format.
+        self.url = 'http://fake.localhost'
 
     def test_close(self):
         p = xmlrpclib.ServerProxy(self.url)
