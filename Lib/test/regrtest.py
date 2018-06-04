@@ -525,6 +525,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     skipped = []
     resource_denieds = []
     environment_changed = []
+    rerun = []
     interrupted = False
 
     if findleaks:
@@ -881,56 +882,97 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
             unload_test_modules(save_modules)
 
-    if interrupted and not pgo:
+
+    def get_tests_result():
+        result = []
+        if bad:
+            result.append("FAILURE")
+        elif fail_env_changed and environment_changed:
+            result.append("ENV CHANGED")
+
+        if interrupted:
+            result.append("INTERRUPTED")
+
+        if not result:
+            result.append("SUCCESS")
+
+        return ', '.join(result)
+
+
+    def display_result():
         # print a newline after ^C
         print
-        print "Test suite interrupted by signal SIGINT."
-        omitted = set(selected) - set(good) - set(bad) - set(skipped)
-        print count(len(omitted), "test"), "omitted:"
-        printlist(omitted)
-    if good and not quiet and not pgo:
-        if not bad and not skipped and not interrupted and len(good) > 1:
-            print "All",
-        print count(len(good), "test"), "OK."
-    if print_slow:
-        test_times.sort(reverse=True)
-        print "10 slowest tests:"
-        for test_time, test in test_times[:10]:
-            print("- %s: %.1fs" % (test, test_time))
-    if bad and not pgo:
-        print count(len(bad), "test"), "failed:"
-        printlist(bad)
-    if environment_changed and not pgo:
-        print "{} altered the execution environment:".format(
-            count(len(environment_changed), "test"))
-        printlist(environment_changed)
-    if skipped and not quiet and not pgo:
-        print count(len(skipped), "test"), "skipped:"
-        printlist(skipped)
+        print("== Tests result: %s ==" % get_tests_result())
 
-        e = _ExpectedSkips()
-        plat = sys.platform
-        if e.isvalid():
-            surprise = set(skipped) - e.getexpected() - set(resource_denieds)
-            if surprise:
-                print count(len(surprise), "skip"), \
-                      "unexpected on", plat + ":"
-                printlist(surprise)
+        if interrupted and not pgo:
+            print
+            print "Test suite interrupted by signal SIGINT."
+            omitted = set(selected) - set(good) - set(bad) - set(skipped)
+            print count(len(omitted), "test"), "omitted:"
+            printlist(omitted)
+
+        if good and not quiet and not pgo:
+            print
+            if not bad and not skipped and not interrupted and len(good) > 1:
+                print "All",
+            print count(len(good), "test"), "OK."
+
+        if print_slow:
+            test_times.sort(reverse=True)
+            print
+            print "10 slowest tests:"
+            for test_time, test in test_times[:10]:
+                print("- %s: %.1fs" % (test, test_time))
+
+        if bad and not pgo:
+            print
+            print count(len(bad), "test"), "failed:"
+            printlist(bad)
+
+        if environment_changed and not pgo:
+            print
+            print "{} altered the execution environment:".format(
+                count(len(environment_changed), "test"))
+            printlist(environment_changed)
+
+        if skipped and not quiet and not pgo:
+            print
+            print count(len(skipped), "test"), "skipped:"
+            printlist(skipped)
+
+            e = _ExpectedSkips()
+            plat = sys.platform
+            if e.isvalid():
+                surprise = set(skipped) - e.getexpected() - set(resource_denieds)
+                if surprise:
+                    print count(len(surprise), "skip"), \
+                          "unexpected on", plat + ":"
+                    printlist(surprise)
+                else:
+                    print "Those skips are all expected on", plat + "."
             else:
-                print "Those skips are all expected on", plat + "."
-        else:
-            print "Ask someone to teach regrtest.py about which tests are"
-            print "expected to get skipped on", plat + "."
+                print "Ask someone to teach regrtest.py about which tests are"
+                print "expected to get skipped on", plat + "."
+
+        if rerun:
+            print
+            print("%s:" % count(len(rerun), "re-run test"))
+            printlist(rerun)
+
+
+    display_result()
 
     if verbose2 and bad:
+        print
         print "Re-running failed tests in verbose mode"
-        for test in bad[:]:
+        rerun = bad[:]
+        for test in rerun:
             print "Re-running test %r in verbose mode" % test
             sys.stdout.flush()
             try:
                 test_support.verbose = True
                 ok = runtest(test, True, quiet, huntrleaks, None, pgo,
-                             testdir=testdir)
+                             match_tests=match_tests, testdir=testdir)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
                 print
@@ -942,6 +984,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             if bad:
                 print count(len(bad), "test"), "failed again:"
                 printlist(bad)
+
+        display_result()
 
     if single:
         if next_single_test:
@@ -961,15 +1005,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     duration = time.time() - regrtest_start_time
     print("Total duration: %s" % format_duration(duration))
 
-    if bad:
-        result = "FAILURE"
-    elif interrupted:
-        result = "INTERRUPTED"
-    elif fail_env_changed and environment_changed:
-        result = "ENV CHANGED"
-    else:
-        result = "SUCCESS"
-    print("Tests result: %s" % result)
+    print("Tests result: %s" % get_tests_result())
 
     if bad:
         sys.exit(2)
