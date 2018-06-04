@@ -52,7 +52,7 @@ class CodeContext:
         self.text is the editor window text widget.
         self.textfont is the editor window font.
 
-        self.label displays the code context text above the editor text.
+        self.context displays the code context text above the editor text.
           Initially None, it is toggled via <<toggle-code-context>>.
         self.topvisible is the number of the top text line displayed.
         self.info is a list of (line number, indent level, line text,
@@ -67,7 +67,7 @@ class CodeContext:
         self.text = editwin.text
         self.textfont = self.text["font"]
         self.contextcolors = CodeContext.colors
-        self.label = None
+        self.context = None
         self.topvisible = 1
         self.info = [(0, -1, "", False)]
         # Start two update cycles, one for context lines, one for font changes.
@@ -92,11 +92,11 @@ class CodeContext:
     def toggle_code_context_event(self, event=None):
         """Toggle code context display.
 
-        If self.label doesn't exist, create it to match the size of the editor
+        If self.context doesn't exist, create it to match the size of the editor
         window text (toggle on).  If it does exist, destroy it (toggle off).
         Return 'break' to complete the processing of the binding.
         """
-        if not self.label:
+        if not self.context:
             # Calculate the border width and horizontal padding required to
             # align the context with the text in the main Text widget.
             #
@@ -110,20 +110,20 @@ class CodeContext:
                 padx += widget.tk.getint(widget.pack_info()['padx'])
                 padx += widget.tk.getint(widget.cget('padx'))
                 border += widget.tk.getint(widget.cget('border'))
-            self.label = tkinter.Label(
-                    self.editwin.top, text="",
-                    anchor=W, justify=LEFT, font=self.textfont,
+            self.context = tkinter.Text(
+                    self.editwin.top, font=self.textfont,
                     bg=self.contextcolors['background'],
                     fg=self.contextcolors['foreground'],
+                    height=1,
                     width=1,  # Don't request more than we get.
-                    padx=padx, border=border, relief=SUNKEN)
-            # Pack the label widget before and above the text_frame widget,
+                    padx=padx, border=border, relief=SUNKEN, state='disabled')
+            # Pack the context widget before and above the text_frame widget,
             # thus ensuring that it will appear directly above text_frame.
-            self.label.pack(side=TOP, fill=X, expand=False,
+            self.context.pack(side=TOP, fill=X, expand=False,
                             before=self.editwin.text_frame)
         else:
-            self.label.destroy()
-            self.label = None
+            self.context.destroy()
+            self.context = None
         return "break"
 
     def get_context(self, new_topvisible, stopline=1, stopindent=0):
@@ -161,9 +161,8 @@ class CodeContext:
 
         No update is done if the text hasn't been scrolled.  If the text
         was scrolled, the lines that should be shown in the context will
-        be retrieved and the label widget will be updated with the code,
-        padded with blank lines so that the code appears on the bottom of
-        the context label.
+        be retrieved and the context area will be updated with the code,
+        up to the number of maxlines.
         """
         new_topvisible = int(self.text.index("@0,0").split('.')[0])
         if self.topvisible == new_topvisible:      # Haven't scrolled.
@@ -190,24 +189,29 @@ class CodeContext:
         # Last context_depth context lines.
         context_strings = [x[2] for x in self.info[-self.context_depth:]]
         showfirst = 0 if context_strings[0] else 1
-        self.label["text"] = '\n'.join(context_strings[showfirst:])
+        # Update widget.
+        self.context['height'] = len(context_strings) - showfirst
+        self.context['state'] = 'normal'
+        self.context.delete('1.0', 'end')
+        self.context.insert('end', '\n'.join(context_strings[showfirst:]))
+        self.context['state'] = 'disabled'
 
     def timer_event(self):
         "Event on editor text widget triggered every UPDATEINTERVAL ms."
-        if self.label:
+        if self.context:
             self.update_code_context()
         self.t1 = self.text.after(UPDATEINTERVAL, self.timer_event)
 
     def config_timer_event(self):
         "Event on editor text widget triggered every CONFIGUPDATEINTERVAL ms."
         newtextfont = self.text["font"]
-        if (self.label and (newtextfont != self.textfont or
+        if (self.context and (newtextfont != self.textfont or
                             CodeContext.colors != self.contextcolors)):
             self.textfont = newtextfont
             self.contextcolors = CodeContext.colors
-            self.label["font"] = self.textfont
-            self.label['background'] = self.contextcolors['background']
-            self.label['foreground'] = self.contextcolors['foreground']
+            self.context["font"] = self.textfont
+            self.context['background'] = self.contextcolors['background']
+            self.context['foreground'] = self.contextcolors['foreground']
         self.t2 = self.text.after(CONFIGUPDATEINTERVAL, self.config_timer_event)
 
 
