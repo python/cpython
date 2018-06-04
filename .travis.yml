@@ -54,14 +54,34 @@ matrix:
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
     - os: osx
+      osx_image: xcode6.4
       language: c
       compiler: clang
       # Testing under macOS is optional until testing stability has been demonstrated.
       env: OPTIONAL=true
       before_install:
-        # Python 3 is needed for Argument Clinic and multissl
-        - brew install xz python3
-        - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
+        # Remove homebrew.
+        - |
+          echo ""
+          echo "Removing homebrew from Travis CI to avoid conflicts."
+          curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/uninstall > ~/uninstall_homebrew
+          chmod +x ~/uninstall_homebrew
+          ~/uninstall_homebrew -fq
+          rm ~/uninstall_homebrew
+          echo "Removed homebrew."
+      before_script:
+        - echo ""
+        - echo "configure and make"
+        - ./configure --with-pydebug
+        - make -s -j4
+        - ./python.exe -m test.pythoninfo
+      script:
+        # Skip tests that re-run the entire test suite.
+        #- python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures
+      after_script: 
+        # Probably should be after_success once test suite updated to run under coverage.py.
+        # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
+        #- source deactivate
     - os: linux
       language: c
       compiler: gcc
