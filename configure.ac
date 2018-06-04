@@ -1421,9 +1421,6 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test "$CC" != 'g++' ; then
-	    STRICT_PROTO="-Wstrict-prototypes"
-	fi
         # For gcc 4.x we need to use -fwrapv so lets check if its supported
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
@@ -1470,7 +1467,7 @@ then
 	    ;;
 	esac
 
-	OPT="$OPT $STRICT_PROTO"
+	OPT="$OPT"
 
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
@@ -1494,7 +1491,10 @@ AC_SUBST(UNIVERSAL_ARCH_FLAGS)
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
+    if test "$CC" != 'g++' ; then
+        STRICT_PROTO="-Wstrict-prototypes"
+    fi
+    CFLAGS_NODIST="$CFLAGS_NODIST $STRICT_PROTO -std=c99"
 
     AC_MSG_CHECKING(for -Wextra)
      ac_save_cc="$CC"
