@@ -56,7 +56,7 @@ class CodeContextTest(unittest.TestCase):
         frame = cls.frame = Frame(root)
         text = cls.text = Text(frame)
         text.insert('1.0', code_sample)
-        # Need to pack for creation of code context label widget.
+        # Need to pack for creation of code context text widget.
         frame.pack(side='left', fill='both', expand=1)
         text.pack(side='top', fill='both', expand=1)
         cls.editor = DummyEditwin(root, frame, text)
@@ -75,11 +75,11 @@ class CodeContextTest(unittest.TestCase):
         self.cc = codecontext.CodeContext(self.editor)
 
     def tearDown(self):
-        if self.cc.label:
-            self.cc.label.destroy()
+        if self.cc.context:
+            self.cc.context.destroy()
         # Explicitly call __del__ to remove scheduled scripts.
         self.cc.__del__()
-        del self.cc.label, self.cc
+        del self.cc.context, self.cc
 
     def test_init(self):
         eq = self.assertEqual
@@ -89,7 +89,7 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.editwin, ed)
         eq(cc.text, ed.text)
         eq(cc.textfont, ed.text['font'])
-        self.assertIsNone(cc.label)
+        self.assertIsNone(cc.context)
         eq(cc.info, [(0, -1, '', False)])
         eq(cc.topvisible, 1)
         eq(self.root.tk.call('after', 'info', self.cc.t1)[1], 'timer')
@@ -120,20 +120,20 @@ class CodeContextTest(unittest.TestCase):
         toggle = cc.toggle_code_context_event
 
         # Make sure code context is off.
-        if cc.label:
+        if cc.context:
             toggle()
 
         # Toggle on.
         eq(toggle(), 'break')
-        self.assertIsNotNone(cc.label)
-        eq(cc.label['font'], cc.textfont)
-        eq(cc.label['fg'], cc.colors['foreground'])
-        eq(cc.label['bg'], cc.colors['background'])
-        eq(cc.label['text'], '')
+        self.assertIsNotNone(cc.context)
+        eq(cc.context['font'], cc.textfont)
+        eq(cc.context['fg'], cc.colors['foreground'])
+        eq(cc.context['bg'], cc.colors['background'])
+        eq(cc.context.get('1.0', 'end-1c'), '')
 
         # Toggle off.
         eq(toggle(), 'break')
-        self.assertIsNone(cc.label)
+        self.assertIsNone(cc.context)
 
     def test_get_context(self):
         eq = self.assertEqual
@@ -187,7 +187,7 @@ class CodeContextTest(unittest.TestCase):
         eq = self.assertEqual
         cc = self.cc
         # Ensure code context is active.
-        if not cc.label:
+        if not cc.context:
             cc.toggle_code_context_event()
 
         # Invoke update_code_context without scrolling - nothing happens.
@@ -200,21 +200,21 @@ class CodeContextTest(unittest.TestCase):
         cc.update_code_context()
         eq(cc.info, [(0, -1, '', False)])
         eq(cc.topvisible, 2)
-        eq(cc.label['text'], '')
+        eq(cc.context.get('1.0', 'end-1c'), '')
 
         # Scroll down to line 2.
         cc.text.yview(2)
         cc.update_code_context()
         eq(cc.info, [(0, -1, '', False), (2, 0, 'class C1():', 'class')])
         eq(cc.topvisible, 3)
-        eq(cc.label['text'], 'class C1():')
+        eq(cc.context.get('1.0', 'end-1c'), 'class C1():')
 
         # Scroll down to line 3.  Since it's a comment, nothing changes.
         cc.text.yview(3)
         cc.update_code_context()
         eq(cc.info, [(0, -1, '', False), (2, 0, 'class C1():', 'class')])
         eq(cc.topvisible, 4)
-        eq(cc.label['text'], 'class C1():')
+        eq(cc.context.get('1.0', 'end-1c'), 'class C1():')
 
         # Scroll down to line 4.
         cc.text.yview(4)
@@ -223,7 +223,7 @@ class CodeContextTest(unittest.TestCase):
                      (2, 0, 'class C1():', 'class'),
                      (4, 4, '    def __init__(self, a, b):', 'def')])
         eq(cc.topvisible, 5)
-        eq(cc.label['text'], 'class C1():\n'
+        eq(cc.context.get('1.0', 'end-1c'), 'class C1():\n'
                              '    def __init__(self, a, b):')
 
         # Scroll down to line 11.  Last 'def' is removed.
@@ -235,7 +235,7 @@ class CodeContextTest(unittest.TestCase):
                      (8, 8, '        if a > b:', 'if'),
                      (10, 8, '        elif a < b:', 'elif')])
         eq(cc.topvisible, 12)
-        eq(cc.label['text'], 'class C1():\n'
+        eq(cc.context.get('1.0', 'end-1c'), 'class C1():\n'
                              '    def compare(self):\n'
                              '        if a > b:\n'
                              '        elif a < b:')
@@ -249,7 +249,7 @@ class CodeContextTest(unittest.TestCase):
                      (8, 8, '        if a > b:', 'if'),
                      (10, 8, '        elif a < b:', 'elif')])
         eq(cc.topvisible, 12)
-        eq(cc.label['text'], 'class C1():\n'
+        eq(cc.context.get('1.0', 'end-1c'), 'class C1():\n'
                              '    def compare(self):\n'
                              '        if a > b:\n'
                              '        elif a < b:')
@@ -262,12 +262,12 @@ class CodeContextTest(unittest.TestCase):
                      (4, 4, '    def __init__(self, a, b):', 'def')])
         eq(cc.topvisible, 6)
         # context_depth is 1.
-        eq(cc.label['text'], '    def __init__(self, a, b):')
+        eq(cc.context.get('1.0', 'end-1c'), '    def __init__(self, a, b):')
 
     @mock.patch.object(codecontext.CodeContext, 'update_code_context')
     def test_timer_event(self, mock_update):
         # Ensure code context is not active.
-        if self.cc.label:
+        if self.cc.context:
             self.cc.toggle_code_context_event()
         self.cc.timer_event()
         mock_update.assert_not_called()
@@ -286,7 +286,7 @@ class CodeContextTest(unittest.TestCase):
         test_colors = {'background': '#222222', 'foreground': '#ffff00'}
 
         # Ensure code context is not active.
-        if cc.label:
+        if cc.context:
             cc.toggle_code_context_event()
 
         # Nothing updates on inactive code context.
@@ -303,18 +303,18 @@ class CodeContextTest(unittest.TestCase):
         cc.config_timer_event()
         eq(cc.textfont, save_font)
         eq(cc.contextcolors, save_colors)
-        eq(cc.label['font'], save_font)
-        eq(cc.label['background'], save_colors['background'])
-        eq(cc.label['foreground'], save_colors['foreground'])
+        eq(cc.context['font'], save_font)
+        eq(cc.context['background'], save_colors['background'])
+        eq(cc.context['foreground'], save_colors['foreground'])
 
         # Active code context, change font.
         cc.text['font'] = test_font
         cc.config_timer_event()
         eq(cc.textfont, test_font)
         eq(cc.contextcolors, save_colors)
-        eq(cc.label['font'], test_font)
-        eq(cc.label['background'], save_colors['background'])
-        eq(cc.label['foreground'], save_colors['foreground'])
+        eq(cc.context['font'], test_font)
+        eq(cc.context['background'], save_colors['background'])
+        eq(cc.context['foreground'], save_colors['foreground'])
 
         # Active code context, change color.
         cc.text['font'] = save_font
@@ -322,9 +322,9 @@ class CodeContextTest(unittest.TestCase):
         cc.config_timer_event()
         eq(cc.textfont, save_font)
         eq(cc.contextcolors, test_colors)
-        eq(cc.label['font'], save_font)
-        eq(cc.label['background'], test_colors['background'])
-        eq(cc.label['foreground'], test_colors['foreground'])
+        eq(cc.context['font'], save_font)
+        eq(cc.context['background'], test_colors['background'])
+        eq(cc.context['foreground'], test_colors['foreground'])
         codecontext.CodeContext.colors = save_colors
         cc.config_timer_event()
 
