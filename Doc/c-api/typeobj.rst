@@ -1885,130 +1885,130 @@ Async Object Structures
 Slot Type typedefs
 ==================
 
-+-------------------+--------------------+-------------+
-| typedef           | Parameter Types    | Return Type |
-+===================+====================+=============+
-| allocfunc         | .. line-block::    | PyObject *  |
-|                   |                    |             |
-|                   |    PyTypeObject *  |             |
-|                   |    Py_ssize_t      |             |
-+-------------------+--------------------+-------------+
-| destructor        | void *             | void        |
-+-------------------+--------------------+-------------+
-| freefunc          | void *             | void        |
-+-------------------+--------------------+-------------+
-| traverseproc      | .. line-block::    | int         |
-|                   |                    |             |
-|                   |    void *          |             |
-|                   |    "visitproc"     |             |
-|                   |    void *          |             |
-+-------------------+--------------------+-------------+
-| newfunc           | .. line-block::    | PyObject *  |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-+-------------------+--------------------+-------------+
-| initproc          | .. line-block::    | int         |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-+-------------------+--------------------+-------------+
-| reprfunc          | PyObject *         | PyObject *  |
-+-------------------+--------------------+-------------+
-| printfunc         | .. line-block::    | int         |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    FILE *          |             |
-|                   |    int             |             |
-+-------------------+--------------------+-------------+
-| getattrfunc       | .. line-block::    | PyObject *  |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    const char *    |             |
-+-------------------+--------------------+-------------+
-| setattrfunc       | .. line-block::    | int         |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    const char *    |             |
-|                   |    PyObject *      |             |
-+-------------------+--------------------+-------------+
-| descrgetfunc      | .. line-block::    | PyObject *  |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-+-------------------+--------------------+-------------+
-| descrsetfunc      | .. line-block::    | int         |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-+-------------------+--------------------+-------------+
-| hashfunc          | PyObject *         | Py_hash_t   |
-+-------------------+--------------------+-------------+
-| richcmpfunc       | .. line-block::    | PyObject *  |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-|                   |    int             |             |
-+-------------------+--------------------+-------------+
-| getiterfunc       | PyObject *         | PyObject *  |
-+-------------------+--------------------+-------------+
-| iternextfunc      | PyObject *         | PyObject *  |
-+-------------------+--------------------+-------------+
-| lenfunc           | PyObject *         | Py_ssize_t  |
-+-------------------+--------------------+-------------+
-| getbufferproc     | .. line-block::    | int         |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    PyBuffer *      |             |
-|                   |    int             |             |
-+-------------------+--------------------+-------------+
-| releasebufferproc | .. line-block::    | void        |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    PyBuffer *      |             |
-+-------------------+--------------------+-------------+
-| inquiry           | void *             | int         |
-+-------------------+--------------------+-------------+
-| unaryfunc         | .. line-block::    | PyObject *  |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-+-------------------+--------------------+-------------+
-| binaryfunc        | .. line-block::    | PyObject *  |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-+-------------------+--------------------+-------------+
-| ternaryfunc       | .. line-block::    | PyObject *  |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-+-------------------+--------------------+-------------+
-| ssizeargfunc      | .. line-block::    | PyObject *  |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    Py_ssize_t      |             |
-+-------------------+--------------------+-------------+
-| ssizeobjargproc   | .. line-block::    | int         |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    Py_ssize_t      |             |
-+-------------------+--------------------+-------------+
-| objobjproc        | .. line-block::    | int         |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-+-------------------+--------------------+-------------+
-| objobjargproc     | .. line-block::    | int         |
-|                   |                    |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-|                   |    PyObject *      |             |
-+-------------------+--------------------+-------------+
++-------------------+-----------------------------+----------------------+
+| typedef           | Parameter Types             | Return Type          |
++===================+=============================+======================+
+| allocfunc         | .. line-block::             | :c:type:`PyObject` * |
+|                   |                             |                      |
+|                   |    :c:type:`PyTypeObject` * |                      |
+|                   |    Py_ssize_t               |                      |
++-------------------+-----------------------------+----------------------+
+| destructor        | void *                      | void                 |
++-------------------+-----------------------------+----------------------+
+| freefunc          | void *                      | void                 |
++-------------------+-----------------------------+----------------------+
+| traverseproc      | .. line-block::             | int                  |
+|                   |                             |                      |
+|                   |    void *                   |                      |
+|                   |    :c:type:`visitproc`      |                      |
+|                   |    void *                   |                      |
++-------------------+-----------------------------+----------------------+
+| newfunc           | .. line-block::             | :c:type:`PyObject` * |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
++-------------------+-----------------------------+----------------------+
+| initproc          | .. line-block::             | int                  |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
++-------------------+-----------------------------+----------------------+
+| reprfunc          | :c:type:`PyObject` *        | :c:type:`PyObject` * |
++-------------------+-----------------------------+----------------------+
+| printfunc         | .. line-block::             | int                  |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    FILE *                   |                      |
+|                   |    int                      |                      |
++-------------------+-----------------------------+----------------------+
+| getattrfunc       | .. line-block::             | :c:type:`PyObject` * |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    const char *             |                      |
++-------------------+-----------------------------+----------------------+
+| setattrfunc       | .. line-block::             | int                  |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    const char *             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
++-------------------+-----------------------------+----------------------+
+| descrgetfunc      | .. line-block::             | :c:type:`PyObject` * |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
++-------------------+-----------------------------+----------------------+
+| descrsetfunc      | .. line-block::             | int                  |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
++-------------------+-----------------------------+----------------------+
+| hashfunc          | :c:type:`PyObject` *        | Py_hash_t            |
++-------------------+-----------------------------+----------------------+
+| richcmpfunc       | .. line-block::             | :c:type:`PyObject` * |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    int                      |                      |
++-------------------+-----------------------------+----------------------+
+| getiterfunc       | :c:type:`PyObject` *        | :c:type:`PyObject` * |
++-------------------+-----------------------------+----------------------+
+| iternextfunc      | :c:type:`PyObject` *        | :c:type:`PyObject` * |
++-------------------+-----------------------------+----------------------+
+| lenfunc           | :c:type:`PyObject` *        | Py_ssize_t           |
++-------------------+-----------------------------+----------------------+
+| getbufferproc     | .. line-block::             | int                  |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:PyBuffer` *      |                      |
+|                   |    int                      |                      |
++-------------------+-----------------------------+----------------------+
+| releasebufferproc | .. line-block::             | void                 |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyBuffer` *     |                      |
++-------------------+-----------------------------+----------------------+
+| inquiry           | void *                      | int                  |
++-------------------+-----------------------------+----------------------+
+| unaryfunc         | .. line-block::             | :c:type:`PyObject` * |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
++-------------------+-----------------------------+----------------------+
+| binaryfunc        | .. line-block::             | :c:type:`PyObject` * |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
++-------------------+-----------------------------+----------------------+
+| ternaryfunc       | .. line-block::             | :c:type:`PyObject` * |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
++-------------------+-----------------------------+----------------------+
+| ssizeargfunc      | .. line-block::             | :c:type:`PyObject` * |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    Py_ssize_t               |                      |
++-------------------+-----------------------------+----------------------+
+| ssizeobjargproc   | .. line-block::             | int                  |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    Py_ssize_t               |                      |
++-------------------+-----------------------------+----------------------+
+| objobjproc        | .. line-block::             | int                  |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
++-------------------+-----------------------------+----------------------+
+| objobjargproc     | .. line-block::             | int                  |
+|                   |                             |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
+|                   |    :c:type:`PyObject` *     |                      |
++-------------------+-----------------------------+----------------------+
 
 
 .. rubric:: Footnotes
