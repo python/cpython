@@ -340,18 +340,21 @@ Creating connections
      If given, these should all be integers from the corresponding
      :mod:`socket` module constants.
 
-   * *delay*, if given, enables Happy Eyeballs for this connection. It should
+   * *happy_eyeballs_delay*, if given, enables Happy Eyeballs for this
+     connection. It should
      be a floating-point number representing the amount of time in seconds
      to wait for a connection attempt to complete, before starting the next
      attempt in parallel. This is the "Connection Attempt Delay" as defined
      in RFC 8305.
 
-   * *interleave*, only for use together with *delay*, controls address
-     reordering. If ``0`` is specified, no reordering is done, and addresses are
+   * *interleave* controls address reordering when a host name resolves to
+     multiple IP addresses.
+     If ``0`` or unspecified, no reordering is done, and addresses are
      tried in the order returned by :meth:`getaddrinfo`. If a positive integer
      is specified, the addresses are interleaved by address family, and the
      given integer is interpreted as "First Address Family Count" as defined
-     in RFC 8305. The default is ``1``.
+     in RFC 8305. The default is ``0`` if *happy_eyeballs_delay* is not
+     specified, and ``1`` if it is.
 
    * *sock*, if given, should be an existing, already connected
      :class:`socket.socket` object to be used by the transport.
