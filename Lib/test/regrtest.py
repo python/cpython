@@ -1416,37 +1416,59 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     nwarmup, ntracked, fname = huntrleaks
     fname = os.path.join(support.SAVEDCWD, fname)
     repcount = nwarmup + ntracked
+    rc_deltas = [0] * ntracked
+    fd_deltas = [0] * ntracked
+
     print >> sys.stderr, "beginning", repcount, "repetitions"
     print >> sys.stderr, ("1234567890"*(repcount//10 + 1))[:repcount]
     dash_R_cleanup(fs, ps, pic, zdc, abcs)
+    # initialize variables to make pyflakes quiet
+    rc_before = fd_before = 0
     for i in range(repcount):
-        rc_before = sys.gettotalrefcount()
         run_the_test()
         sys.stderr.write('.')
         dash_R_cleanup(fs, ps, pic, zdc, abcs)
         rc_after = sys.gettotalrefcount()
+        fd_after = support.fd_count()
         if i >= nwarmup:
-            deltas.append(rc_after - rc_before)
+            rc_deltas[i - nwarmup] = rc_after - rc_before
+            fd_deltas[i - nwarmup] = fd_after - fd_before
+        rc_before = rc_after
+        fd_before = fd_after
     print >> sys.stderr
 
-    # bpo-30776: Try to ignore false positives:
-    #
-    #   [3, 0, 0]
-    #   [0, 1, 0]
-    #   [8, -8, 1]
-    #
-    # Expected leaks:
-    #
-    #   [5, 5, 6]
-    #   [10, 1, 1]
-    if all(delta >= 1 for delta in deltas):
-        msg = '%s leaked %s references, sum=%s' % (test, deltas, sum(deltas))
-        print >> sys.stderr, msg
-        with open(fname, "a") as refrep:
-            print >> refrep, msg
-            refrep.flush()
-        return True
-    return False
+    # These checkers return False on success, True on failure
+    def check_rc_deltas(deltas):
+        # Checker for reference counters and memomry blocks.
+        #
+        # bpo-30776: Try to ignore false positives:
+        #
+        #   [3, 0, 0]
+        #   [0, 1, 0]
+        #   [8, -8, 1]
+        #
+        # Expected leaks:
+        #
+        #   [5, 5, 6]
+        #   [10, 1, 1]
+        return all(delta >= 1 for delta in deltas)
+
+    def check_fd_deltas(deltas):
+        return any(deltas)
+
+    failed = False
+    for deltas, item_name, checker in [
+        (rc_deltas, 'references', check_rc_deltas),
+        (fd_deltas, 'file descriptors', check_fd_deltas)
+    ]:
+        if checker(deltas):
+            msg = '%s leaked %s %s, sum=%s' % (test, deltas, item_name, sum(deltas))
+            print >> sys.stderr, msg
+            with open(fname, "a") as refrep:
+                print >> refrep, msg
+                refrep.flush()
+            failed = True
+    return failed
 
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     import gc, copy_reg
