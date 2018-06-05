@@ -160,8 +160,8 @@ is the module's name in the Python package namespace.
       *msg* using the string formatting operator. (Note that this means that you can
       use keywords in the format string, together with a single dictionary argument.)
 
-      There are three keyword arguments in *kwargs* which are inspected:
-      *exc_info*, *stack_info*, and *extra*.
+      There are four keyword arguments in *kwargs* which are inspected:
+      *exc_info*, *stack_info*, *stacklevel* and *extra*.
 
       If *exc_info* does not evaluate as false, it causes exception information to be
       added to the logging message. If an exception tuple (in the format returned by
@@ -188,11 +188,19 @@ is the module's name in the Python package namespace.
       This mimics the ``Traceback (most recent call last):`` which is used when
       displaying exception frames.
 
-      The third keyword argument is *extra* which can be used to pass a
-      dictionary which is used to populate the __dict__ of the LogRecord created for
-      the logging event with user-defined attributes. These custom attributes can then
-      be used as you like. For example, they could be incorporated into logged
-      messages. For example::
+      The third optional keyword argument is *stacklevel*, which defaults to ``1``.
+      If greater than 1, the corresponding number of stack frames are skipped
+      when computing the line number and function name set in the :class:`LogRecord`
+      created for the logging event. This can be used in logging helpers so that
+      the function name, filename and line number recorded are not the information
+      for the helper function/method, but rather its caller. The name of this
+      parameter mirrors the equivalent one in the :mod:`warnings` module.
+
+      The fourth keyword argument is *extra* which can be used to pass a
+      dictionary which is used to populate the __dict__ of the :class:`LogRecord`
+      created for the logging event with user-defined attributes. These custom
+      attributes can then be used as you like. For example, they could be
+      incorporated into logged messages. For example::
 
          FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
          logging.basicConfig(format=FORMAT)
@@ -213,9 +221,9 @@ is the module's name in the Python package namespace.
       If you choose to use these attributes in logged messages, you need to exercise
       some care. In the above example, for instance, the :class:`Formatter` has been
       set up with a format string which expects 'clientip' and 'user' in the attribute
-      dictionary of the LogRecord. If these are missing, the message will not be
-      logged because a string formatting exception will occur. So in this case, you
-      always need to pass the *extra* dictionary with these keys.
+      dictionary of the :class:`LogRecord`. If these are missing, the message will
+      not be logged because a string formatting exception will occur. So in this case,
+      you always need to pass the *extra* dictionary with these keys.
 
       While this might be annoying, this feature is intended for use in specialized
       circumstances, such as multi-threaded servers where the same code executes in
@@ -229,6 +237,9 @@ is the module's name in the Python package namespace.
 
       .. versionchanged:: 3.5
          The *exc_info* parameter can now accept exception instances.
+
+      .. versionadded:: 3.8
+         The *stacklevel* parameter was added.
 
 
    .. method:: Logger.info(msg, *args, **kwargs)
@@ -300,11 +311,18 @@ is the module's name in the Python package namespace.
       Removes the specified handler *hdlr* from this logger.
 
 
-   .. method:: Logger.findCaller(stack_info=False)
+   .. method:: Logger.findCaller(stack_info=False, stacklevel=1)
 
       Finds the caller's source filename and line number. Returns the filename, line
       number, function name and stack information as a 4-element tuple. The stack
       information is returned as ``None`` unless *stack_info* is ``True``.
+
+      The *stacklevel* parameter is passed from code calling the :meth:`debug`
+      and other APIs. If greater than 1, the excess is used to skip stack frames
+      before determining the values to be returned. This will generally be useful
+      when calling logging APIs from helper/wrapper code, so that the information
+      in the event log refers not to the helper/wrapper code, but to the code that
+      calls it.
 
 
    .. method:: Logger.handle(record)
@@ -646,9 +664,9 @@ sophisticated criteria than levels, they get to see every record which is
 processed by the handler or logger they're attached to: this can be useful if
 you want to do things like counting how many records were processed by a
 particular logger or handler, or adding, changing or removing attributes in
-the LogRecord being processed. Obviously changing the LogRecord needs to be
-done with some care, but it does allow the injection of contextual information
-into logs (see :ref:`filters-contextual`).
+the :class:`LogRecord` being processed. Obviously changing the LogRecord needs
+to be done with some care, but it does allow the injection of contextual
+information into logs (see :ref:`filters-contextual`).
 
 .. _log-record:
 
@@ -702,13 +720,13 @@ wire).
       be used.
 
    .. versionchanged:: 3.2
-      The creation of a ``LogRecord`` has been made more configurable by
+      The creation of a :class:`LogRecord` has been made more configurable by
       providing a factory which is used to create the record. The factory can be
       set using :func:`getLogRecordFactory` and :func:`setLogRecordFactory`
       (see this for the factory's signature).
 
    This functionality can be used to inject your own values into a
-   LogRecord at creation time. You can use the following pattern::
+   :class:`LogRecord` at creation time. You can use the following pattern::
 
       old_factory = logging.getLogRecordFactory()
 
