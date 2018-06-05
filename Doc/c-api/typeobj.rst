@@ -406,7 +406,8 @@ value, that section is omitted.
 
    **Inheritance:**
 
-   This field is inherited by subtypes.
+   The :c:member:`~PyTypeObject.tp_as_async` field is not inherited,
+   but the contained fields are inherited individually.
 
    **Default:**
 
