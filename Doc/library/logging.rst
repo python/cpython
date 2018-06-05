@@ -160,8 +160,8 @@ is the module's name in the Python package namespace.
       *msg* using the string formatting operator. (Note that this means that you can
       use keywords in the format string, together with a single dictionary argument.)
 
-      There are three keyword arguments in *kwargs* which are inspected:
-      *exc_info*, *stack_info*, and *extra*.
+      There are four keyword arguments in *kwargs* which are inspected:
+      *exc_info*, *stack_info*, *stacklevel* and *extra*.
 
       If *exc_info* does not evaluate as false, it causes exception information to be
       added to the logging message. If an exception tuple (in the format returned by
@@ -188,7 +188,15 @@ is the module's name in the Python package namespace.
       This mimics the ``Traceback (most recent call last):`` which is used when
       displaying exception frames.
 
-      The third keyword argument is *extra* which can be used to pass a
+      The third optional keyword argument is *stacklevel*, which defaults to ``1``.
+      If greater than 1, the corresponding number of stack frames are skipped
+      when computing the line number and function name set in the LogRecord
+      created for the logging event. This can be used in logging helpers so that
+      the function name, filename and line number recorded are not the information
+      for the helper function/method, but rather its caller. The name of this
+      parameter mirrors the equivalent one in the :mod:`warnings` module.
+
+      The fourth keyword argument is *extra* which can be used to pass a
       dictionary which is used to populate the __dict__ of the LogRecord created for
       the logging event with user-defined attributes. These custom attributes can then
       be used as you like. For example, they could be incorporated into logged
@@ -229,6 +237,9 @@ is the module's name in the Python package namespace.
 
       .. versionchanged:: 3.5
          The *exc_info* parameter can now accept exception instances.
+
+      .. versionadded:: 3.8
+         The *stacklevel* parameter was added.
 
 
    .. method:: Logger.info(msg, *args, **kwargs)
@@ -300,11 +311,18 @@ is the module's name in the Python package namespace.
       Removes the specified handler *hdlr* from this logger.
 
 
-   .. method:: Logger.findCaller(stack_info=False)
+   .. method:: Logger.findCaller(stack_info=False, stacklevel=1)
 
       Finds the caller's source filename and line number. Returns the filename, line
       number, function name and stack information as a 4-element tuple. The stack
       information is returned as ``None`` unless *stack_info* is ``True``.
+
+      The *stacklevel* parameter is passed from code calling the :meth:`debug`
+      and other APIs. If greater than 1, the excess is used to skip stack frames
+      before determining the values to be returned. This will generally be useful
+      when calling logging APIs from helper/wrapper code, so that the information
+      in the event log refers not to the helper/wrapper code, but to the code that
+      calls it.
 
 
    .. method:: Logger.handle(record)

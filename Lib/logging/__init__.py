@@ -1397,7 +1397,7 @@ class Logger(Filterer):
         if self.isEnabledFor(level):
             self._log(level, msg, args, **kwargs)
 
-    def findCaller(self, stack_info=False):
+    def findCaller(self, stack_info=False, stacklevel=1):
         """
         Find the stack frame of the caller so that we can note the source
         file name, line number and function name.
@@ -1407,6 +1407,12 @@ class Logger(Filterer):
         #IronPython isn't run with -X:Frames.
         if f is not None:
             f = f.f_back
+        orig_f = f
+        while f and stacklevel > 1:
+            f = f.f_back
+            stacklevel -= 1
+        if not f:
+            f = orig_f
         rv = "(unknown file)", 0, "(unknown function)", None
         while hasattr(f, "f_code"):
             co = f.f_code
@@ -1442,7 +1448,8 @@ class Logger(Filterer):
                 rv.__dict__[key] = extra[key]
         return rv
 
-    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
+    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False,
+             stacklevel=1):
         """
         Low-level logging routine which creates a LogRecord and then calls
         all the handlers of this logger to handle the record.
@@ -1453,7 +1460,7 @@ class Logger(Filterer):
             #exception on some versions of IronPython. We trap it here so that
             #IronPython can use logging.
             try:
-                fn, lno, func, sinfo = self.findCaller(stack_info)
+                fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
             except ValueError: # pragma: no cover
                 fn, lno, func = "(unknown file)", 0, "(unknown function)"
         else: # pragma: no cover
