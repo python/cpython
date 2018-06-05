@@ -501,6 +501,10 @@ value, that section is omitted.
    normal return value; when an error occurs during the computation of the hash
    value, the function should set an exception and return ``-1``.
 
+   When this field is not set (*and* :attr:`tp_richcompare` is not set),
+   an attempt to take the hash of the object raises :exc:`TypeError`.
+   This is the same as setting it to :c:func:`PyObject_HashNotImplemented`.
+
    This field can be set explicitly to :c:func:`PyObject_HashNotImplemented` to
    block inheritance of the hash method from a parent type. This is interpreted
    as the equivalent of ``__hash__ = None`` at the Python level, causing
