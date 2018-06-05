@@ -308,7 +308,7 @@ value, that section is omitted.
    **Default:**
 
    :c:type:`PyBaseObject_Type` uses ``sizeof(PyObject)`` for
-   :attr:`tp_basicsize`, However, :attr:`tp_itemsize` does not have
+   :attr:`tp_basicsize`.  However, :attr:`tp_itemsize` does not have
    a default.
 
 
@@ -1317,7 +1317,7 @@ value, that section is omitted.
    :c:func:`PyType_GenericAlloc`, to force a standard heap
    allocation strategy.
 
-   For static subtypess, PyBaseObject_Type uses
+   For static subtypes, PyBaseObject_Type uses
    :c:func:`PyType_GenericAlloc`.  That is the recommended value
    for all statically defined types.
 
