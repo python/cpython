@@ -438,8 +438,14 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     Py_DECREF(v);
     ret = 0;
   done:
-    if (set_file_name && PyDict_DelItemString(d, "__file__"))
-        PyErr_Clear();
+    if (set_file_name) {
+        if (PyDict_DelItemString(d, "__file__")) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(d, "__cached__")) {
+            PyErr_Clear();
+        }
+    }
     Py_DECREF(m);
     return ret;
 }
