@@ -510,7 +510,12 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
     }
 
     if (leftbits != 0) {
-        if (leftbits == 2) {
+        if (leftbits == 6) {
+            /*
+            ** There is exactly one extra valid, non-padding, base64 character.
+            ** This is an invalid length, as there is no possible input that
+            ** could encoded into such a base64 string.
+            */
             PyErr_SetString(Error, "Invalid length");
         } else {
             PyErr_SetString(Error, "Incorrect padding");
