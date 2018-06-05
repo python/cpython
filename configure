@@ -6676,9 +6676,6 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test "$CC" != 'g++' ; then
-	    STRICT_PROTO="-Wstrict-prototypes"
-	fi
         # For gcc 4.x we need to use -fwrapv so lets check if its supported
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
@@ -6724,8 +6721,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	OPT="$OPT $STRICT_PROTO"
 
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
@@ -7093,6 +7088,47 @@ fi
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_unreachable_code_warning" >&5
 $as_echo "$ac_cv_enable_unreachable_code_warning" >&6; }
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC strict-prototypes warning" >&5
+$as_echo_n "checking if we can turn on $CC strict-prototypes warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Werror -Wstrict-prototypes"
+     if ${ac_cv_enable_enable_strict_prototypes_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+       ac_cv_enable_strict_prototypes_warning=yes
+
+else
+
+       ac_cv_enable_strict_prototypes_warning=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_strict_prototypes_warning" >&5
+$as_echo "$ac_cv_enable_strict_prototypes_warning" >&6; }
+
+    if test $ac_cv_enable_strict_prototypes_warning = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
+    fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can make implicit function declaration an error in $CC" >&5
 $as_echo_n "checking if we can make implicit function declaration an error in $CC... " >&6; }
