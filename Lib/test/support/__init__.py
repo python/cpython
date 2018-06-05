@@ -2069,8 +2069,9 @@ def fd_count():
         try:
             names = os.listdir("/proc/self/fd")
             return len(names)
-        except FileNotFoundError:
-            pass
+        except OSError as exc:
+            if exc.errno != errno.ENOENT:
+                raise
 
     old_modes = None
     if sys.platform == 'win32':
