@@ -940,9 +940,10 @@ value, that section is omitted.
 
    **Default:**
 
-   PyBaseObject_Type provides a tp_richcompare.  However, if only
-   :attr:`tp_hash` is defined, not even this is used and instances
-   of the type will not be able to participate in any comparisons.
+   :c:type:`PyBaseObject_Type` provides a :attr:`tp_richcompare`.
+   However, if only :attr:`tp_hash` is defined, not even this is used
+   and instances of the type will not be able to participate in any
+   comparisons.
 
    The following macro is defined to ease writing rich comparison functions:
 
@@ -1317,7 +1318,7 @@ value, that section is omitted.
    :c:func:`PyType_GenericAlloc`, to force a standard heap
    allocation strategy.
 
-   For static subtypes, PyBaseObject_Type uses
+   For static subtypes, :c:type:`PyBaseObject_Type` uses
    :c:func:`PyType_GenericAlloc`.  That is the recommended value
    for all statically defined types.
 
