@@ -1249,7 +1249,7 @@ value, that section is omitted.
    **Default:**
 
    This slot has no default.  For static types, if the field is
-   *NULL* then no __dict__ gets created for instances.
+   *NULL* then no :attr:`__dict__` gets created for instances.
 
 
 .. c:member:: initproc PyTypeObject.tp_init
