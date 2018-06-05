@@ -1501,9 +1501,6 @@ value, that section is omitted.
 
    This field is not inherited.
 
-.. XXX missing tp_del?
-
-
 The remaining fields are only defined if the feature test macro
 :const:`COUNT_ALLOCS` is defined, and are for internal use only. They are
 documented here for completeness.  None of these fields are inherited by
