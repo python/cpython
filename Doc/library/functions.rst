@@ -234,11 +234,14 @@ are always available.  They are listed here in alphabetical order.
    pass some recognizable value if it wasn't read from a file (``'<string>'`` is
    commonly used).
 
-   The *mode* argument specifies what kind of code must be compiled; it can be
-   ``'exec'`` if *source* consists of a sequence of statements, ``'eval'`` if it
-   consists of a single expression, or ``'single'`` if it consists of a single
-   interactive statement (in the latter case, expression statements that
-   evaluate to something other than ``None`` will be printed).
+   The *mode* argument specifies what kind of code must be compiled; it can be:
+    - ``'exec'`` if *source* consists of a sequence of statements. If the first
+      statement is a string literal it will be interpreted as a module
+      docstring.
+    - ``'eval'`` if *source* consists of a single expression.
+    - ``'single'`` if *source* consists of a single interactive statement. In
+      this mode, expression statements that evaluate to something other than ``None``
+      will be printed).
 
    The optional arguments *flags* and *dont_inherit* control which future
    statements (see :pep:`236`) affect the compilation of *source*.  If neither
@@ -287,6 +290,11 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.5
       Previously, :exc:`TypeError` was raised when null bytes were encountered
       in *source*.
+
+   .. versionchanged:: 3.7
+      In ``exec`` **mode**, if the first statement is a string literal it will
+      be interpreted as a module docstring, and assigned to the ``Module``
+      **docstring** field instead of being the first **body** node.
 
 
 .. class:: complex([real[, imag]])
