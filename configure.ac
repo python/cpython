@@ -1675,7 +1675,7 @@ yes)
 
     AC_MSG_CHECKING(if we can turn on $CC strict-prototypes warning)
      ac_save_cc="$CC"
-     CC="$CC -Wstrict-prototypes"
+     CC="$CC -Werror -Wstrict-prototypes"
      AC_CACHE_VAL(ac_cv_enable_enable_strict_prototypes_warning,
        AC_COMPILE_IFELSE(
          [
