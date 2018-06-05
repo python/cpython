@@ -946,7 +946,7 @@ value, that section is omitted.
 
    The following macro is defined to ease writing rich comparison functions:
 
-   .. c:function:: PyObject *Py_RETURN_RICHCOMPARE(VAL_A, VAL_B, int op)
+   .. c:function:: PyObject \*Py_RETURN_RICHCOMPARE(VAL_A, VAL_B, int op)
 
       Return ``Py_True`` or ``Py_False`` from the function, depending on the
       result of a comparison.
