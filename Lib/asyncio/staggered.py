@@ -115,8 +115,8 @@ async def staggered_race(
             # here and CancelledError are usually thrown at one, we will
             # encounter a curious corner case where the current task will end
             # up as done() == True, cancelled() == False, exception() ==
-            # asyncio.CancelledError, which is normally not possible.
-            # https://bugs.python.org/issue33413
+            # asyncio.CancelledError. This behavior is specified in
+            # https://bugs.python.org/issue30048
             for i, t in enumerate(running_tasks):
                 if i != this_index:
                     t.cancel()
