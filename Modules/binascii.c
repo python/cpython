@@ -510,7 +510,11 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
     }
 
     if (leftbits != 0) {
-        PyErr_SetString(Error, "Incorrect padding");
+        if (leftbits == 2) {
+            PyErr_SetString(Error, "Invalid length");
+        } else {
+            PyErr_SetString(Error, "Incorrect padding");
+        }
         _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }

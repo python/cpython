@@ -110,6 +110,36 @@ class BinASCIITest(unittest.TestCase):
         # empty strings. TBD: shouldn't it raise an exception instead ?
         self.assertEqual(binascii.a2b_base64(self.type2test(fillers)), b'')
 
+    def test_base64errors(self):
+        # Test base64 with invalid padding
+        def assertInvalidPadding(data):
+            with self.assertRaises(binascii.Error,
+                                   expected_regexp=r'(?i)Invalid padding'):
+                binascii.a2b_base64(self.type2test(data))
+
+        assertInvalidPadding(b'ab')
+        assertInvalidPadding(b'ab=')
+        assertInvalidPadding(b'abc')
+        assertInvalidPadding(b'abcdef')
+        assertInvalidPadding(b'abcdef=')
+        assertInvalidPadding(b'abcdefg')
+        assertInvalidPadding(b'a=b=')
+        assertInvalidPadding(b'a\nb=')
+
+        # Test base64 with invalid number of valid characters (1 mod 4)
+        def assertInvalidLength(data):
+            with self.assertRaises(binascii.Error,
+                                   expected_regexp=r'(?i)Invalid padding'):
+                binascii.a2b_base64(self.type2test(data))
+
+        assertInvalidLength(b'a')
+        assertInvalidLength(b'a=')
+        assertInvalidLength(b'a==')
+        assertInvalidLength(b'a===')
+        assertInvalidLength(b'a' * 5)
+        assertInvalidLength(b'a' * (4 * 87 + 1))
+        assertInvalidLength(b'A\tB\nC ??DE')  # only 5 valid characters
+
     def test_uu(self):
         MAX_UU = 45
         for backtick in (True, False):
