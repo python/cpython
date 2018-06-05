@@ -735,7 +735,6 @@ class MmapTests(unittest.TestCase):
         self.assertRaises(ValueError, m.write, b'abc')
 
     def test_concat_repeat_exception(self):
-        # A SystemError was raised on two unsupported sequence operations.
         m = mmap.mmap(-1, 16)
         with self.assertRaises(TypeError):
             m + m
