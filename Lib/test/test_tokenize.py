@@ -1,8 +1,8 @@
 from test import support
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
-                     open as tokenize_open, Untokenizer)
-from io import BytesIO
+                     open as tokenize_open, Untokenizer, generate_tokens)
+from io import BytesIO, StringIO
 import unittest
 from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
@@ -918,6 +918,19 @@ async def f():
     NUMBER     '2'           (6, 10) (6, 11)
     DEDENT     ''            (7, 0) (7, 0)
     """)
+
+class GenerateTokensTest(TokenizeTest):
+    def check_tokenize(self, s, expected):
+        # Format the tokens in s in a table format.
+        # The ENDMARKER is omitted.
+        result = []
+        f = StringIO(s)
+        for type, token, start, end, line in generate_tokens(f.readline):
+            if type == ENDMARKER:
+                break
+            type = tok_name[type]
+            result.append(f"    {type:10} {token!r:13} {start} {end}")
+        self.assertEqual(result, expected.rstrip().splitlines())
 
 
 def decistmt(s):
