@@ -113,8 +113,7 @@ class BinASCIITest(unittest.TestCase):
     def test_base64errors(self):
         # Test base64 with invalid padding
         def assertInvalidPadding(data):
-            with self.assertRaises(binascii.Error,
-                                   expected_regexp=r'(?i)Invalid padding'):
+            with self.assertRaisesRegex(binascii.Error, r'(?i)Invalid padding'):
                 binascii.a2b_base64(self.type2test(data))
 
         assertInvalidPadding(b'ab')
@@ -128,8 +127,7 @@ class BinASCIITest(unittest.TestCase):
 
         # Test base64 with invalid number of valid characters (1 mod 4)
         def assertInvalidLength(data):
-            with self.assertRaises(binascii.Error,
-                                   expected_regexp=r'(?i)Invalid padding'):
+            with self.assertRaisesRegex(binascii.Error, r'(?i)Invalid padding'):
                 binascii.a2b_base64(self.type2test(data))
 
         assertInvalidLength(b'a')
