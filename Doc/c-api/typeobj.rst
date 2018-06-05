@@ -901,7 +901,7 @@ value, that section is omitted.
 
    The function should return the result of the comparison (usually ``Py_True``
    or ``Py_False``).  If the comparison is undefined, it must return
-   ``Py_NotImplemented``, if another error occurred it must return ``NULL`` and
+   ``Py_NotImplemented``, if another error occurred it must return *NULL* and
    set an exception condition.
 
    .. note::
@@ -956,7 +956,7 @@ value, that section is omitted.
 
       The return value's reference count is properly incremented.
 
-      On error, sets an exception and returns NULL from the function.
+      On error, sets an exception and returns *NULL* from the function.
 
       .. versionadded:: 3.7
 
@@ -1142,7 +1142,7 @@ value, that section is omitted.
 
    **Default:**
 
-   If this field is NULL, :c:func:`PyType_Ready` will assign a new
+   If this field is *NULL*, :c:func:`PyType_Ready` will assign a new
    dictionary to it.
 
    .. warning::
@@ -1249,7 +1249,7 @@ value, that section is omitted.
    **Default:**
 
    This slot has no default.  For static types, if the field is
-   NULL then no __dict__ gets created for instances.
+   *NULL* then no __dict__ gets created for instances.
 
 
 .. c:member:: initproc PyTypeObject.tp_init
@@ -1352,7 +1352,7 @@ value, that section is omitted.
    **Default:**
 
    For static types this field has no default.  This means if the
-   slot is defined as NULL, the type cannot be called to create new
+   slot is defined as *NULL*, the type cannot be called to create new
    instances; presumably there is some other way to create
    instances, like a factory function.
 
@@ -1404,7 +1404,7 @@ value, that section is omitted.
 
    **Default:**
 
-   This slot has no default.  If this field is NULL,
+   This slot has no default.  If this field is *NULL*,
    :const:`Py_TPFLAGS_HAVE_GC` is used as the functional equivalent.
 
 
@@ -1604,12 +1604,12 @@ Number Object Structures
       and implement the necessary conversions (at least one of the operands is
       an instance of the defined type).  If the operation is not defined for the
       given operands, binary and ternary functions must return
-      ``Py_NotImplemented``, if another error occurred they must return ``NULL``
+      ``Py_NotImplemented``, if another error occurred they must return *NULL*
       and set an exception.
 
    .. note::
 
-      The :c:data:`nb_reserved` field should always be ``NULL``.  It
+      The :c:data:`nb_reserved` field should always be *NULL*.  It
       was previously called :c:data:`nb_long`, and was renamed in
       Python 3.0.1.
 
@@ -2018,7 +2018,7 @@ Slot Type typedefs
 .. [#inh]
    The meaning of the markers in the "Inherited" column::
 
-      X - type slot is inherited via PyType_Ready() if defined with a NULL value.
+      X - type slot is inherited via PyType_Ready() if defined with a *NULL* value.
       * - the slots of the sub-struct are inherited individually.
       G - inherited, but only in combination with other slots; see the slot's description.
       L - not inherited but available through the normal attribute lookup chain.
