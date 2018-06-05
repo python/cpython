@@ -1617,13 +1617,29 @@ class POSIXProcessTestCase(BaseTestCase):
 
         self.assertIn(repr(error_data), str(e.exception))
 
-
+    @unittest.skipIf(not os.path.exists('/proc/self/status'),
+                     "need /proc/self/status")
     def test_restore_signals(self):
-        # Code coverage for both values of restore_signals to make sure it
-        # at least does not blow up.
-        # A test for behavior would be complex.  Contributions welcome.
-        subprocess.call([sys.executable, "-c", ""], restore_signals=True)
-        subprocess.call([sys.executable, "-c", ""], restore_signals=False)
+        # Blindly assume that cat exists on systems with /proc/self/status...
+        default_proc_status = subprocess.check_output(
+                ['cat', '/proc/self/status'],
+                restore_signals=False)
+        for line in default_proc_status.splitlines():
+            if line.startswith(b'SigIgn'):
+                default_sig_ign_mask = line
+                break
+        else:
+            self.skipTest("SigIgn not found in /proc/self/status.")
+        restored_proc_status = subprocess.check_output(
+                ['cat', '/proc/self/status'],
+                restore_signals=True)
+        for line in restored_proc_status.splitlines():
+            if line.startswith(b'SigIgn'):
+                restored_sig_ign_mask = line
+                break
+        self.assertNotEqual(default_sig_ign_mask, restored_sig_ign_mask,
+                            msg="restore_signals=True should've unblocked "
+                            "SIGPIPE and friends.")
 
     def test_start_new_session(self):
         # For code coverage of calling setsid().  We don't care if we get an
