@@ -549,6 +549,10 @@ class ZipSetupBase:
         except AttributeError:
             pass
 
+    def setUp(self):
+        modules = support.modules_setup()
+        self.addCleanup(support.modules_cleanup, *modules)
+
 
 class ZipSetup(ZipSetupBase):
     ZIP_MODULE = zipdata01                          # type: ignore
