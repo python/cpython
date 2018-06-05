@@ -1744,6 +1744,25 @@ _winapi_CopyFileExW_impl(PyObject *module, LPCWSTR src, LPCWSTR dst,
     Py_RETURN_NONE;
 }
 
+
+/*[clinic input]
+_winapi.CreateDirectoryEx
+
+    src: LPCTSTR
+    dst: LPCTSTR
+    /
+
+Creates a new directory with the attributes of a specified template directory.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_CreateDirectoryEx_impl(PyObject *module, LPCTSTR src, LPCTSTR dst)
+/*[clinic end generated code: output=b16d6292dc1e34bc input=cc240e28574b8da7]*/
+{
+    return Py_BuildValue("i", 99);
+}
+
+
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
     _WINAPI_CONNECTNAMEDPIPE_METHODDEF
@@ -1772,6 +1791,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_GETACP_METHODDEF
     _WINAPI_GETFILETYPE_METHODDEF
     _WINAPI_COPYFILEEXW_METHODDEF
+    _WINAPI_CREATEDIRECTORYEX_METHODDEF
     {NULL, NULL}
 };
 

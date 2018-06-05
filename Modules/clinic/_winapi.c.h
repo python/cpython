@@ -972,4 +972,33 @@ _winapi_CopyFileExW(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1f3c6672a1f704d3 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_CreateDirectoryEx__doc__,
+"CreateDirectoryEx($module, src, dst, /)\n"
+"--\n"
+"\n"
+"Creates a new directory with the attributes of a specified template directory.");
+
+#define _WINAPI_CREATEDIRECTORYEX_METHODDEF    \
+    {"CreateDirectoryEx", (PyCFunction)_winapi_CreateDirectoryEx, METH_FASTCALL, _winapi_CreateDirectoryEx__doc__},
+
+static PyObject *
+_winapi_CreateDirectoryEx_impl(PyObject *module, LPCTSTR src, LPCTSTR dst);
+
+static PyObject *
+_winapi_CreateDirectoryEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    LPCTSTR src;
+    LPCTSTR dst;
+
+    if (!_PyArg_ParseStack(args, nargs, "ss:CreateDirectoryEx",
+        &src, &dst)) {
+        goto exit;
+    }
+    return_value = _winapi_CreateDirectoryEx_impl(module, src, dst);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=553d7aa4aa582c05 input=a9049054013a1b77]*/
