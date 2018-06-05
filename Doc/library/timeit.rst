@@ -69,7 +69,7 @@ The module defines three convenience functions and a public class:
       The optional *globals* parameter was added.
 
 
-.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=3, number=1000000, globals=None)
+.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=5, number=1000000, globals=None)
 
    Create a :class:`Timer` instance with the given statement, *setup* code and
    *timer* function and run its :meth:`.repeat` method with the given *repeat*
@@ -78,6 +78,9 @@ The module defines three convenience functions and a public class:
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
+
+   .. versionchanged:: 3.7
+      Default value of *repeat* changed from 3 to 5.
 
 .. function:: default_timer()
 
@@ -150,7 +153,7 @@ The module defines three convenience functions and a public class:
       .. versionadded:: 3.6
 
 
-   .. method:: Timer.repeat(repeat=3, number=1000000)
+   .. method:: Timer.repeat(repeat=5, number=1000000)
 
       Call :meth:`.timeit` a few times.
 
@@ -170,6 +173,9 @@ The module defines three convenience functions and a public class:
          So the :func:`min` of the result is probably the only number you
          should be interested in.  After that, you should look at the entire
          vector and apply common sense rather than statistics.
+
+      .. versionchanged:: 3.7
+         Default value of *repeat* changed from 3 to 5.
 
 
    .. method:: Timer.print_exc(file=None)
