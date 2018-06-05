@@ -1109,7 +1109,7 @@ class RawConfigParserTestCase(BasicTestCase, unittest.TestCase):
         self.assertEqual(cf.get(123, 'this is sick'), True)
         if cf._dict is configparser._default_dict:
             # would not work for SortedDict; only checking for the most common
-            # default dictionary (OrderedDict)
+            # default dictionary (dict)
             cf.optionxform = lambda x: x
             cf.set('non-string', 1, 1)
             self.assertEqual(cf.get('non-string', 1), 1)
