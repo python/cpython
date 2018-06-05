@@ -90,9 +90,9 @@ Or, more often::
       function sets this to ``False``.
    *sync*
       If ``True``, execute all X server commands synchronously, so that errors
-      are reported immediately.
+      are reported immediately.  Can be used for debugging. (X11 only)
    *use*
-      Specifies the *id* of the main window in which to embed the application,
+      Specifies the *id* of the window in which to embed the application,
       instead of it being created as an independent toplevel window. *id* must
       be specified in the same way as the value for the -use option for
       toplevel widgets (that is, it has a form like that returned by
@@ -127,8 +127,9 @@ Or, more often::
 
    .. attribute:: children
 
-      The descendents of this widget as a :class:`dict` with the child widget
-      names as the keys and the child instance objects as the values.
+      The immediate descendants of this widget as a :class:`dict` with the
+      child widget names as the keys and the child instance objects as the
+      values.
 
 
 .. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=False)

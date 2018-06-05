@@ -1855,7 +1855,7 @@ class Wm:
         the bitmap if None is given.
 
         Under Windows, the DEFAULT parameter can be used to set the icon
-        for the widget and any descendents that don't have an icon set
+        for the widget and any descendants that don't have an icon set
         explicitly.  DEFAULT can be the relative path to a .ico file
         (example: root.iconbitmap(default='myicon.ico') ).  See Tk
         documentation for more information."""
