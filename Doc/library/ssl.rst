@@ -49,6 +49,9 @@ For more sophisticated applications, the :class:`ssl.SSLContext` class
 helps manage settings and certificates, which can then be inherited
 by SSL sockets created through the :meth:`SSLContext.wrap_socket` method.
 
+.. versionchanged:: 3.5.3
+   Updated to support linking with OpenSSL 1.1.0
+
 .. versionchanged:: 3.6
 
    OpenSSL 0.9.8, 1.0.0 and 1.0.1 are deprecated and no longer supported.
