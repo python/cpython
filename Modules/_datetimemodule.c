@@ -949,6 +949,9 @@ new_datetime_subclass_ex(int year, int month, int day, int hour, int minute,
                                          cls);
 }
 
+/* Forward declaration */
+static PyObject* datetime_enfold(PyDateTime_DateTime*, int);
+
 /* Create a time instance with no range checking. */
 static PyObject *
 new_time_ex2(int hour, int minute, int second, int usecond,
@@ -3361,6 +3364,7 @@ tzinfo_fromutc(PyDateTime_TZInfo *self, PyObject *dt)
 {
     PyObject *result = NULL;
     PyObject *off = NULL, *dst = NULL;
+    PyObject *dtdst = NULL;
     PyDateTime_Delta *delta = NULL;
 
     if (!PyDateTime_Check(dt)) {
@@ -3399,20 +3403,49 @@ tzinfo_fromutc(PyDateTime_TZInfo *self, PyObject *dt)
     if (result == NULL)
         goto Fail;
 
-    Py_DECREF(dst);
-    dst = call_dst(GET_DT_TZINFO(dt), result);
-    if (dst == NULL)
+    PyObject *folded_result = datetime_enfold((PyDateTime_DateTime *)result, 1);
+    dtdst = call_dst(GET_DT_TZINFO(dt), folded_result);
+    Py_DECREF(folded_result);
+    if (dtdst == NULL)
         goto Fail;
-    if (dst == Py_None)
+    if (dtdst == Py_None)
         goto Inconsistent;
-    if (delta_bool((PyDateTime_Delta *)dst) != 0) {
+    if (delta_bool((PyDateTime_Delta *)dtdst) != 0) {
         Py_SETREF(result, add_datetime_timedelta((PyDateTime_DateTime *)result,
-                                                 (PyDateTime_Delta *)dst, 1));
+                                                 (PyDateTime_Delta *)dtdst, 1));
+
+        if (result == NULL) {
+            goto Fail;
+        }
+
+    } else {
+        PyObject *rf_dt = datetime_enfold((PyDateTime_DateTime *)dt,
+                                          (int)(!DATE_GET_FOLD(dt)));
+        if (rf_dt == NULL) {
+            goto Fail;
+        }
+        PyObject *rf_off = datetime_utcoffset(rf_dt, NULL);
+        if (rf_off == NULL) {
+            goto Fail;
+        }
+
+        if(delta_cmp(off, rf_off) == 0) {
+            Py_SETREF(result,
+                      datetime_enfold((PyDateTime_DateTime *)result, 1));
+        }
+
+        Py_DECREF(rf_dt);
+        Py_DECREF(rf_off);
+
         if (result == NULL)
             goto Fail;
     }
+
+    // Figure out whether or not to set the fold
+
     Py_DECREF(delta);
     Py_DECREF(dst);
+    Py_DECREF(dtdst);
     Py_DECREF(off);
     return result;
 
@@ -5407,6 +5440,32 @@ datetime_hash(PyDateTime_DateTime *self)
     }
     return self->hashcode;
 }
+
+static PyObject *
+datetime_enfold(PyDateTime_DateTime *self, int fold)
+{
+    PyObject *clone;
+    int y = GET_YEAR(self);
+    int m = GET_MONTH(self);
+    int d = GET_DAY(self);
+    int hh = DATE_GET_HOUR(self);
+    int mm = DATE_GET_MINUTE(self);
+    int ss = DATE_GET_SECOND(self);
+    int us = DATE_GET_MICROSECOND(self);
+    PyObject *tzinfo = HASTZINFO(self) ? self->tzinfo : Py_None;
+
+    if (fold != 0 && fold != 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "fold must be either 0 or 1");
+        return NULL;
+    }
+
+    clone = new_datetime_subclass_fold_ex(y, m, d, hh, mm, ss, us, tzinfo,
+                                          fold, (PyObject*)Py_TYPE(self));
+
+    return clone;
+}
+
 
 static PyObject *
 datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
