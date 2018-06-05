@@ -399,6 +399,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         called with None as its argument.
         """
         self._ssl_protocol._abort()
+        self._closed = True
 
 
 class SSLProtocol(protocols.Protocol):
