@@ -1088,21 +1088,6 @@ value, that section is omitted.
    For each entry in the array, an entry is added to the type's dictionary (see
    :c:member:`~PyTypeObject.tp_dict` below) containing a getset descriptor.
 
-   .. XXX belongs elsewhere
-
-   Docs for PyGetSetDef::
-
-      typedef PyObject *(*getter)(PyObject *, void *);
-      typedef int (*setter)(PyObject *, PyObject *, void *);
-
-      typedef struct PyGetSetDef {
-          char *name;    /* attribute name */
-          getter get;    /* C function to get the attribute */
-          setter set;    /* C function to set the attribute */
-          char *doc;     /* optional doc string */
-          void *closure; /* optional additional data for getter and setter */
-      } PyGetSetDef;
-
    **Inheritance:**
 
    This field is not inherited by subtypes (computed attributes are inherited
