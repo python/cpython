@@ -1,0 +1,3 @@
+Move ``-Wstrict-prototypes`` option to ``CFLAGS_NODIST`` from ``OPT``. This
+option emitted annoying warnings when building extension modules written in
+C++.
