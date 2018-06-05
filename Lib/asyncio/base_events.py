@@ -1097,7 +1097,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if not getattr(transport, '_start_tls_compatible', False):
             raise TypeError(
-                f'transport {self!r} is not supported by start_tls()')
+                f'transport {transport!r} is not supported by start_tls()')
 
         waiter = self.create_future()
         ssl_protocol = sslproto.SSLProtocol(
@@ -1111,13 +1111,15 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport.pause_reading()
 
         transport.set_protocol(ssl_protocol)
-        self.call_soon(ssl_protocol.connection_made, transport)
-        self.call_soon(transport.resume_reading)
+        conmade_cb = self.call_soon(ssl_protocol.connection_made, transport)
+        resume_cb = self.call_soon(transport.resume_reading)
 
         try:
             await waiter
         except Exception:
             transport.close()
+            conmade_cb.cancel()
+            resume_cb.cancel()
             raise
 
         return ssl_protocol._app_transport
