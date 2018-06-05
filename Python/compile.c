@@ -4597,7 +4597,6 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
             return compiler_error(c,
                 "can't use starred expression here");
         }
-        break;
     case Name_kind:
         return compiler_nameop(c, e->v.Name.id, e->v.Name.ctx);
     /* child nodes of List and Tuple will have expr_context set */

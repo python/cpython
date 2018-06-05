@@ -1607,12 +1607,10 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
         case Py_GE:
             /* a string is equal to itself */
             Py_RETURN_TRUE;
-            break;
         case Py_NE:
         case Py_LT:
         case Py_GT:
             Py_RETURN_FALSE;
-            break;
         default:
             PyErr_BadArgument();
             return NULL;
