@@ -524,7 +524,8 @@ value, that section is omitted.
 
    **Default:**
 
-   :c:type:`PyBaseObject_Type` uses :c:func:`_Py_HashPointer`.
+   :c:type:`PyBaseObject_Type` uses a :c:type:`hashfunc` that hashes
+   the object's :attr:`id`.
 
 
 .. c:member:: ternaryfunc PyTypeObject.tp_call
