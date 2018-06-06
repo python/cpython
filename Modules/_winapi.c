@@ -79,19 +79,6 @@ check_CancelIoEx()
     return has_CancelIoEx;
 }
 
-static PyObject *
-win32_error_object(const char* function, PyObject* filename)
-{
-    errno = GetLastError();
-    if (filename)
-        return PyErr_SetExcFromWindowsErrWithFilenameObject(
-            PyExc_OSError,
-            errno,
-            filename);
-    else
-        return PyErr_SetFromWindowsErr(errno);
-}
-
 
 /*
  * A Python object wrapping an OVERLAPPED structure and other useful data
@@ -1738,7 +1725,10 @@ _winapi_CopyFileExW_impl(PyObject *module, LPCWSTR src, LPCWSTR dst,
     Py_END_ALLOW_THREADS
     if (ret == 0) {
         py_srcname = Py_BuildValue("u", src);
-        win32_error_object("CopyFileExW", py_srcname);
+        if (!py_srcname)
+            return NULL;
+        PyErr_SetExcFromWindowsErrWithFilenameObject(
+            PyExc_OSError, 0, py_srcname);
         Py_CLEAR(py_srcname);
         return NULL;
     }
@@ -1768,7 +1758,10 @@ _winapi_CreateDirectoryExW_impl(PyObject *module, LPWSTR src, LPWSTR dst)
     Py_END_ALLOW_THREADS
     if (ret == 0) {
         pypath = Py_BuildValue("u", dst);
-        win32_error_object("CreateDirectoryExW", pypath);
+        if (!pypath)
+            return NULL;
+        PyErr_SetExcFromWindowsErrWithFilenameObject(
+            PyExc_OSError, 0, pypath);
         Py_CLEAR(pypath);
         return NULL;
     }
@@ -1791,18 +1784,37 @@ _winapi_copypathsecurityinfo_impl(PyObject *module, LPWSTR src, LPWSTR dst)
 /*[clinic end generated code: output=09045a3ba0244ff5 input=02ebe3bee4d04f75]*/
 {
     int ret;
-    PSECURITY_DESCRIPTOR pSd = NULL;
+    PSECURITY_DESCRIPTOR sacl = NULL;
     PyObject *pypath;
 
     /* Source path */
     Py_BEGIN_ALLOW_THREADS
     ret = GetNamedSecurityInfoW(
         src, SE_FILE_OBJECT, ATTRIBUTE_SECURITY_INFORMATION,
-        NULL, NULL, NULL, NULL, &pSd);
+        NULL, NULL, NULL, NULL, &sacl);
     Py_END_ALLOW_THREADS
 
     if (ret != ERROR_SUCCESS) {
         pypath = Py_BuildValue("u", src);
+        if (!pypath)
+            return NULL;
+        PyErr_SetExcFromWindowsErrWithFilenameObject(
+            PyExc_OSError, ret, pypath);
+        Py_CLEAR(pypath);
+        return NULL;
+    }
+
+    /* Destination path */
+    Py_BEGIN_ALLOW_THREADS
+    ret = SetNamedSecurityInfoW(
+        dst, SE_FILE_OBJECT, ATTRIBUTE_SECURITY_INFORMATION,
+        NULL, NULL, NULL, sacl);
+    Py_END_ALLOW_THREADS
+
+    if (ret != ERROR_SUCCESS) {
+        pypath = Py_BuildValue("u", dst);
+        if (!pypath)
+            return NULL;
         PyErr_SetExcFromWindowsErrWithFilenameObject(
             PyExc_OSError, ret, pypath);
         Py_CLEAR(pypath);
