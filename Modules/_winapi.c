@@ -1718,21 +1718,33 @@ _winapi_CopyFileExW_impl(PyObject *module, LPCWSTR src, LPCWSTR dst,
 /*[clinic end generated code: output=715613c8834b35f5 input=bea3e5c545b755be]*/
 {
     int ret;
-    PyObject *py_srcname;
+    PyObject *pysrc = NULL;
+    PyObject *pydst = NULL;
 
     Py_BEGIN_ALLOW_THREADS
     ret = CopyFileExW(src, dst, NULL, NULL, NULL, flags);
     Py_END_ALLOW_THREADS
+
     if (ret == 0) {
-        py_srcname = Py_BuildValue("u", src);
-        if (!py_srcname)
-            return NULL;
-        PyErr_SetExcFromWindowsErrWithFilenameObject(
-            PyExc_OSError, 0, py_srcname);
-        Py_CLEAR(py_srcname);
+        if (!(pysrc = Py_BuildValue("u", src)))
+            goto error;
+        if (!(pydst = Py_BuildValue("u", dst)))
+            goto error;
+        PyErr_SetExcFromWindowsErrWithFilenameObjects(
+            PyExc_OSError, 0, pysrc, pydst);
+        Py_CLEAR(pysrc);
+        Py_CLEAR(pydst);
         return NULL;
     }
+
     Py_RETURN_NONE;
+
+error:
+    if (pysrc != NULL)
+        Py_CLEAR(pysrc);
+    if (pydst != NULL)
+        Py_CLEAR(pydst);
+    return NULL;
 }
 
 
@@ -1751,21 +1763,32 @@ _winapi_CreateDirectoryExW_impl(PyObject *module, LPWSTR src, LPWSTR dst)
 /*[clinic end generated code: output=f41d941d73b1dac8 input=716a8ef620692466]*/
 {
     int ret;
-    PyObject *pypath;
+    PyObject *pysrc = NULL;
+    PyObject *pydst = NULL;
 
     Py_BEGIN_ALLOW_THREADS
     ret = CreateDirectoryExW(src, dst, NULL);
     Py_END_ALLOW_THREADS
     if (ret == 0) {
-        pypath = Py_BuildValue("u", dst);
-        if (!pypath)
-            return NULL;
-        PyErr_SetExcFromWindowsErrWithFilenameObject(
-            PyExc_OSError, 0, pypath);
-        Py_CLEAR(pypath);
+        if (!(pysrc = Py_BuildValue("u", src)))
+            goto error;
+        if (!(pydst = Py_BuildValue("u", dst)))
+            goto error;
+        PyErr_SetExcFromWindowsErrWithFilenameObjects(
+            PyExc_OSError, 0, pysrc, pydst);
+        Py_CLEAR(pysrc);
+        Py_CLEAR(pydst);
         return NULL;
+
     }
     Py_RETURN_NONE;
+
+error:
+    if (pysrc != NULL)
+        Py_CLEAR(pysrc);
+    if (pydst != NULL)
+        Py_CLEAR(pydst);
+    return NULL;
 }
 
 
