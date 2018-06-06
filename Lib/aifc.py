@@ -461,6 +461,10 @@ class Aifc_read:
             self._adpcmstate = None
         data, self._adpcmstate = audioop.adpcm2lin(data, 2, self._adpcmstate)
         return data
+      
+    def _sowt2lin(self, data):
+        # do nothing for Apple pseudo-compression
+        return data
 
     def _read_comm_chunk(self, chunk):
         self._nchannels = _read_short(chunk)
@@ -493,6 +497,8 @@ class Aifc_read:
                     self._convert = self._ulaw2lin
                 elif self._comptype in (b'alaw', b'ALAW'):
                     self._convert = self._alaw2lin
+                elif self._comptype in (b'sowt', b'SOWT'):
+                    self._convert = self._sowt2lin
                 else:
                     raise Error('unsupported compression type')
                 self._sampwidth = 2
