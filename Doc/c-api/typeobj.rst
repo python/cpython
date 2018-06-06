@@ -150,9 +150,9 @@ fields exist as well:
    An asterisk means the field must be non-*NULL*.
 .. [#cols] Columns:
 
-   **"O"**:  set on :c:type:`PyObject`
+   **"O"**:  set on :c:type:`PyBaseObject_Type`
 
-   **"T"**:  set on :c:type:`PyTypeObject`
+   **"T"**:  set on :c:type:`PyType_Type`
 
    **"D"**:  default (if slot is set to *NULL*)
 
@@ -414,9 +414,10 @@ PyVarObject Slots
 PyTypeObject Slots
 ------------------
 
-Each slot has a section describing inheritance and one for the default
-value.  If a slot does not have any information about the default
-value, that section is omitted.
+Each slot has a section describing inheritance.  If :c:func:`PyType_Ready`
+may set a value when the field is set to *NULL* then there will also be
+a "Default" section.  (Note that many fields set on :c:type:`PyBaseObject_Type`
+and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: const char* PyTypeObject.tp_name
 
@@ -443,14 +444,13 @@ value, that section is omitted.
    type will be impossible to pickle.  Additionally, it will not be listed in
    module documentations created with pydoc.
 
+   This field must not be *NULL*.  It is the only required field
+   in :c:func:`PyTypeObject` (other than potentially
+   :c:member:`~PyTypeObject.tp_itemsize`).
+
    **Inheritance:**
 
    This field is not inherited by subtypes.
-
-   **Default:**
-
-   This field does not have a default.  It is the only required
-   field in :c:func:`PyTypeObject`.
 
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_basicsize
@@ -489,18 +489,14 @@ value, that section is omitted.
    :c:member:`~PyTypeObject.tp_basicsize` is a multiple of ``sizeof(double)`` (assuming this is the
    alignment requirement for ``double``).
 
+   For any type with variable-length instances, this field must not be *NULL*.
+
    **Inheritance:**
 
    These fields are inherited separately by subtypes.  If the base type has a
    non-zero :c:member:`~PyTypeObject.tp_itemsize`, it is generally not safe to set
    :c:member:`~PyTypeObject.tp_itemsize` to a different non-zero value in a subtype (though this
    depends on the implementation of the base type).
-
-   **Default:**
-
-   :c:type:`PyBaseObject_Type` uses ``sizeof(PyObject)`` for
-   :attr:`tp_basicsize`.  However, :attr:`tp_itemsize` does not have
-   a default.
 
 
 .. c:member:: destructor PyTypeObject.tp_dealloc
@@ -528,10 +524,6 @@ value, that section is omitted.
 
    This field is inherited by subtypes.
 
-   **Default:**
-
-   :c:type:`PyBaseObject_Type` provides a simple function.
-
 
 .. c:member:: printfunc PyTypeObject.tp_print
 
@@ -554,10 +546,6 @@ value, that section is omitted.
    inherits both :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` from its base type when
    the subtype's :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` are both *NULL*.
 
-   **Default:**
-
-   This field does not have a default.
-
 
 .. c:member:: setattrfunc PyTypeObject.tp_setattr
 
@@ -575,10 +563,6 @@ value, that section is omitted.
    inherits both :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` from its base type when
    the subtype's :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` are both *NULL*.
 
-   **Default:**
-
-   This field does not have a default.
-
 
 .. c:member:: PyAsyncMethods* PyTypeObject.tp_as_async
 
@@ -593,10 +577,6 @@ value, that section is omitted.
 
    The :c:member:`~PyTypeObject.tp_as_async` field is not inherited,
    but the contained fields are inherited individually.
-
-   **Default:**
-
-   This field does not have a default.
 
 
 .. c:member:: reprfunc PyTypeObject.tp_repr
@@ -621,10 +601,6 @@ value, that section is omitted.
 
    This field is inherited by subtypes.
 
-   **Default:**
-
-   :c:type:`PyBaseObject_Type` provides a simple function.
-
 
 .. c:member:: PyNumberMethods* PyTypeObject.tp_as_number
 
@@ -636,10 +612,6 @@ value, that section is omitted.
 
    The :c:member:`~PyTypeObject.tp_as_number` field is not inherited, but the contained fields are
    inherited individually.
-
-   **Default:**
-
-   This field does not have a default.
 
 
 .. c:member:: PySequenceMethods* PyTypeObject.tp_as_sequence
@@ -653,10 +625,6 @@ value, that section is omitted.
    The :c:member:`~PyTypeObject.tp_as_sequence` field is not inherited, but the contained fields
    are inherited individually.
 
-   **Default:**
-
-   This field does not have a default.
-
 
 .. c:member:: PyMappingMethods* PyTypeObject.tp_as_mapping
 
@@ -668,10 +636,6 @@ value, that section is omitted.
 
    The :c:member:`~PyTypeObject.tp_as_mapping` field is not inherited, but the contained fields
    are inherited individually.
-
-   **Default:**
-
-   This field does not have a default.
 
 
 .. c:member:: hashfunc PyTypeObject.tp_hash
@@ -707,11 +671,6 @@ value, that section is omitted.
    :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash`, when the subtype's
    :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both *NULL*.
 
-   **Default:**
-
-   :c:type:`PyBaseObject_Type` uses a :c:type:`hashfunc` that hashes
-   the object's :attr:`id`.
-
 
 .. c:member:: ternaryfunc PyTypeObject.tp_call
 
@@ -722,10 +681,6 @@ value, that section is omitted.
    **Inheritance:**
 
    This field is inherited by subtypes.
-
-   **Default:**
-
-   This field does not have a default.
 
 
 .. c:member:: reprfunc PyTypeObject.tp_str
@@ -746,10 +701,6 @@ value, that section is omitted.
    **Inheritance:**
 
    This field is inherited by subtypes.
-
-   **Default:**
-
-   :c:type:`PyBaseObject_Type` provides a simple function.
 
 
 .. c:member:: getattrofunc PyTypeObject.tp_getattro
@@ -805,10 +756,6 @@ value, that section is omitted.
 
    The :c:member:`~PyTypeObject.tp_as_buffer` field is not inherited,
    but the contained fields are inherited individually.
-
-   **Default:**
-
-   This field does not have a default.
 
 
 .. c:member:: unsigned long PyTypeObject.tp_flags
@@ -964,10 +911,6 @@ value, that section is omitted.
 
    This field is *not* inherited by subtypes.
 
-   **Default:**
-
-   This field does not have a default.
-
 
 .. c:member:: traverseproc PyTypeObject.tp_traverse
 
@@ -1011,10 +954,6 @@ value, that section is omitted.
    :const:`Py_TPFLAGS_HAVE_GC` flag bit: the flag bit, :c:member:`~PyTypeObject.tp_traverse`, and
    :c:member:`~PyTypeObject.tp_clear` are all inherited from the base type if they are all zero in
    the subtype.
-
-   **Default:**
-
-   This field does not have a default.
 
 
 .. c:member:: inquiry PyTypeObject.tp_clear
@@ -1075,10 +1014,6 @@ value, that section is omitted.
    :c:member:`~PyTypeObject.tp_clear` are all inherited from the base type if they are all zero in
    the subtype.
 
-   **Default:**
-
-   This field does not have a default.
-
 
 .. c:member:: richcmpfunc PyTypeObject.tp_richcompare
 
@@ -1117,22 +1052,6 @@ value, that section is omitted.
    | :const:`Py_GE` | ``>=``     |
    +----------------+------------+
 
-   **Inheritance:**
-
-   Group: :attr:`tp_hash`, :attr:`tp_richcompare`
-
-   This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_hash`:
-   a subtype inherits :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` when
-   the subtype's :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both
-   *NULL*.
-
-   **Default:**
-
-   :c:type:`PyBaseObject_Type` provides a :attr:`tp_richcompare`.
-   However, if only :attr:`tp_hash` is defined, not even this is used
-   and instances of the type will not be able to participate in any
-   comparisons.
-
    The following macro is defined to ease writing rich comparison functions:
 
    .. c:function:: PyObject \*Py_RETURN_RICHCOMPARE(VAL_A, VAL_B, int op)
@@ -1148,6 +1067,22 @@ value, that section is omitted.
       On error, sets an exception and returns *NULL* from the function.
 
       .. versionadded:: 3.7
+
+   **Inheritance:**
+
+   Group: :attr:`tp_hash`, :attr:`tp_richcompare`
+
+   This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_hash`:
+   a subtype inherits :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` when
+   the subtype's :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both
+   *NULL*.
+
+   **Default:**
+
+   :c:type:`PyBaseObject_Type` provides a :attr:`tp_richcompare`.
+   However, if only :attr:`tp_hash` is defined, not even this is used
+   and instances of the type will not be able to participate in any
+   comparisons.
 
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_weaklistoffset
@@ -1183,10 +1118,6 @@ value, that section is omitted.
    :attr:`__weakref__`, the type inherits its :c:member:`~PyTypeObject.tp_weaklistoffset` from its
    base type.
 
-   **Default:**
-
-   This field does not have a default.
-
 
 .. c:member:: getiterfunc PyTypeObject.tp_iter
 
@@ -1199,10 +1130,6 @@ value, that section is omitted.
    **Inheritance:**
 
    This field is inherited by subtypes.
-
-   **Default:**
-
-   This field does not have a default.
 
 
 .. c:member:: iternextfunc PyTypeObject.tp_iternext
@@ -1223,10 +1150,6 @@ value, that section is omitted.
 
    This field is inherited by subtypes.
 
-   **Default:**
-
-   This field does not have a default.
-
 
 .. c:member:: struct PyMethodDef* PyTypeObject.tp_methods
 
@@ -1240,10 +1163,6 @@ value, that section is omitted.
 
    This field is not inherited by subtypes (methods are inherited through a
    different mechanism).
-
-   **Default:**
-
-   This field does not have a default.
 
 
 .. c:member:: struct PyMemberDef* PyTypeObject.tp_members
@@ -1260,10 +1179,6 @@ value, that section is omitted.
    This field is not inherited by subtypes (members are inherited through a
    different mechanism).
 
-   **Default:**
-
-   This field does not have a default.
-
 
 .. c:member:: struct PyGetSetDef* PyTypeObject.tp_getset
 
@@ -1277,10 +1192,6 @@ value, that section is omitted.
 
    This field is not inherited by subtypes (computed attributes are inherited
    through a different mechanism).
-
-   **Default:**
-
-   This field does not have a default.
 
 
 .. c:member:: PyTypeObject* PyTypeObject.tp_base
@@ -1339,10 +1250,6 @@ value, that section is omitted.
 
    This field is inherited by subtypes.
 
-   **Default:**
-
-   This field does not have a default.
-
 
 .. c:member:: descrsetfunc PyTypeObject.tp_descr_set
 
@@ -1360,10 +1267,6 @@ value, that section is omitted.
    **Inheritance:**
 
    This field is inherited by subtypes.
-
-   **Default:**
-
-   This field does not have a default.
 
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_dictoffset
