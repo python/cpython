@@ -1,6 +1,7 @@
 """Tests for distutils.command.check."""
 import textwrap
 import unittest
+from pathlib import Path
 from test.support import run_unittest
 
 from distutils.command.check import check, HAS_DOCUTILS
@@ -11,6 +12,10 @@ try:
     import pygments
 except ImportError:
     pygments = None
+
+
+HERE = Path(__file__).parent
+INCLUDE_TEST_PATH = (HERE / 'includetest.rst').relative_to(Path.cwd())
 
 
 class CheckTestCase(support.LoggingSilencer,
@@ -96,6 +101,11 @@ class CheckTestCase(support.LoggingSilencer,
 
         # and non-broken rest, including a non-ASCII character to test #12114
         metadata['long_description'] = 'title\n=====\n\ntest \u00df'
+        cmd = self._run(metadata, strict=1, restructuredtext=1)
+        self.assertEqual(cmd._warnings, 0)
+
+        # check that includes work to test #31292
+        metadata['long_description'] = 'title\n=====\n\n.. include:: {}'.format(INCLUDE_TEST_PATH)
         cmd = self._run(metadata, strict=1, restructuredtext=1)
         self.assertEqual(cmd._warnings, 0)
 
