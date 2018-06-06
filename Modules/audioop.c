@@ -29,8 +29,9 @@ fbound(double val, double minval, double maxval)
 
     /* Round towards minus infinity (-inf) */
     val = floor(val);
-    int ival = (int)val;
-    return ival;
+
+    /* Cast double to integer: round towards zero */
+    return (int)val;
 }
 
 
