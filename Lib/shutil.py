@@ -400,6 +400,27 @@ def ignore_patterns(*patterns):
         return set(ignored_names)
     return _ignore_patterns
 
+def _win_makedirs(src, dst):
+    """Similar to os.makedirs but uses CreateDirectoryExW instead of
+    CreateDirectoryW which creates a directory with the attributes of
+    a specified template directory.
+    """
+    head, tail = os.path.split(dst)
+    if not tail:
+        head, tail = os.path.split(head)
+    if head and tail and not os.path.exists(head):
+        try:
+            _win_makedirs(src, dst)
+        except FileExistsError:
+            # Defeats race condition when another thread created the path
+            pass
+        cdir = os.curdir
+        if isinstance(tail, bytes):
+            cdir = bytes(os.curdir, 'ASCII')
+        if tail == cdir:           # xxx/newdir/. exists if xxx/newdir exists
+            return
+    _winapi.CreateDirectoryExW(src, dst)
+
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
              ignore_dangling_symlinks=False):
     """Recursively copy a directory tree.
@@ -442,7 +463,11 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     else:
         ignored_names = set()
 
-    os.makedirs(dst)
+    if os.name == 'nt' and copy_function is copy2:
+        _win_makedirs(src, dst)
+    else:
+        os.makedirs(dst)
+
     errors = []
     for name in names:
         if name in ignored_names:
