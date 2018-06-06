@@ -395,7 +395,7 @@ value, that section is omitted.
    This field does not have a default.
 
 
-.. c:member:: PyAsyncMethods* tp_as_async
+.. c:member:: PyAsyncMethods* PyTypeObject.tp_as_async
 
    Pointer to an additional structure that contains fields relevant only to
    objects which implement :term:`awaitable` and :term:`asynchronous iterator`
