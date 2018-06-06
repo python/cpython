@@ -2637,7 +2637,11 @@ static PyMethodDef delta_methods[] = {
 };
 
 static const char delta_doc[] =
-PyDoc_STR("Difference between two datetime values.");
+PyDoc_STR("Difference between two datetime values.\n\n"
+          "timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, "
+          "minutes=0, hours=0, weeks=0)\n\n"
+          "All arguments are optional and default to 0.\n"
+          "Arguments may be integers or floats, and may be positive or negative.");
 
 static PyNumberMethods delta_as_number = {
     delta_add,                                  /* nb_add */
