@@ -41,6 +41,7 @@
 #include "windows.h"
 #include <crtdbg.h>
 #include "winreparse.h"
+#include <Aclapi.h>
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #define HANDLE_TO_PYNUM(handle) \
@@ -1760,15 +1761,15 @@ _winapi_CreateDirectoryExW_impl(PyObject *module, LPWSTR src, LPWSTR dst)
 /*[clinic end generated code: output=f41d941d73b1dac8 input=716a8ef620692466]*/
 {
     int ret;
-    PyObject *py_srcname;
+    PyObject *pypath;
 
     Py_BEGIN_ALLOW_THREADS
     ret = CreateDirectoryExW(src, dst, NULL);
     Py_END_ALLOW_THREADS
     if (ret == 0) {
-        py_srcname = Py_BuildValue("u", src);
-        win32_error_object("CreateDirectoryExW", py_srcname);
-        Py_CLEAR(py_srcname);
+        pypath = Py_BuildValue("u", dst);
+        win32_error_object("CreateDirectoryExW", pypath);
+        Py_CLEAR(pypath);
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1789,6 +1790,25 @@ static PyObject *
 _winapi_copypathsecurityinfo_impl(PyObject *module, LPWSTR src, LPWSTR dst)
 /*[clinic end generated code: output=09045a3ba0244ff5 input=02ebe3bee4d04f75]*/
 {
+    int ret;
+    PSECURITY_DESCRIPTOR pSd = NULL;
+    PyObject *pypath;
+
+    /* Source path */
+    Py_BEGIN_ALLOW_THREADS
+    ret = GetNamedSecurityInfoW(
+        src, SE_FILE_OBJECT, ATTRIBUTE_SECURITY_INFORMATION,
+        NULL, NULL, NULL, NULL, &pSd);
+    Py_END_ALLOW_THREADS
+
+    if (ret != ERROR_SUCCESS) {
+        pypath = Py_BuildValue("u", src);
+        PyErr_SetExcFromWindowsErrWithFilenameObject(
+            PyExc_OSError, ret, pypath);
+        Py_CLEAR(pypath);
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
@@ -1822,7 +1842,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_GETFILETYPE_METHODDEF
     _WINAPI_COPYFILEEXW_METHODDEF
     _WINAPI_CREATEDIRECTORYEXW_METHODDEF
-    _WINAPI_COPYDIRSECURITYINFO_METHODDEF
+    _WINAPI_COPYPATHSECURITYINFO_METHODDEF
     {NULL, NULL}
 };
 

@@ -420,6 +420,7 @@ def _win_makedirs(src, dst):
         if tail == cdir:           # xxx/newdir/. exists if xxx/newdir exists
             return
     _winapi.CreateDirectoryExW(src, dst)
+    _winapi.copypathsecurityinfo(src, dst)
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
              ignore_dangling_symlinks=False):
