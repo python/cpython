@@ -21,10 +21,13 @@ section.  The fields will be described in the order in which they occur in the
 structure.
 
 
-.. _tp-slots-table:
-
 Quick Reference
 ---------------
+
+.. _tp-slots-table:
+
+"tp slots"
+^^^^^^^^^^
 
 +---------------------------------------------+-------------------+-----------------------------------+
 | PyTypeObject Slot [#slots]_                 | Inherited [#inh]_ | :ref:`Type <slot-typedefs-table>` |
@@ -150,7 +153,7 @@ Quick Reference
 
 .. _slot-typedefs-table:
 
-Slot typedefs
+slot typedefs
 ^^^^^^^^^^^^^
 
 +-----------------------------+-----------------------------+----------------------+
