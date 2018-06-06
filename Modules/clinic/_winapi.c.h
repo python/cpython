@@ -973,32 +973,32 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_winapi_CreateDirectoryEx__doc__,
-"CreateDirectoryEx($module, src, dst, /)\n"
+PyDoc_STRVAR(_winapi_CreateDirectoryExW__doc__,
+"CreateDirectoryExW($module, src, dst, /)\n"
 "--\n"
 "\n"
 "Creates a new directory with the attributes of a specified template directory.");
 
-#define _WINAPI_CREATEDIRECTORYEX_METHODDEF    \
-    {"CreateDirectoryEx", (PyCFunction)_winapi_CreateDirectoryEx, METH_FASTCALL, _winapi_CreateDirectoryEx__doc__},
+#define _WINAPI_CREATEDIRECTORYEXW_METHODDEF    \
+    {"CreateDirectoryExW", (PyCFunction)_winapi_CreateDirectoryExW, METH_FASTCALL, _winapi_CreateDirectoryExW__doc__},
 
 static PyObject *
-_winapi_CreateDirectoryEx_impl(PyObject *module, LPCTSTR src, LPCTSTR dst);
+_winapi_CreateDirectoryExW_impl(PyObject *module, LPWSTR src, LPWSTR dst);
 
 static PyObject *
-_winapi_CreateDirectoryEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_winapi_CreateDirectoryExW(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCTSTR src;
-    LPCTSTR dst;
+    LPWSTR src;
+    LPWSTR dst;
 
-    if (!_PyArg_ParseStack(args, nargs, "ss:CreateDirectoryEx",
+    if (!_PyArg_ParseStack(args, nargs, "uu:CreateDirectoryExW",
         &src, &dst)) {
         goto exit;
     }
-    return_value = _winapi_CreateDirectoryEx_impl(module, src, dst);
+    return_value = _winapi_CreateDirectoryExW_impl(module, src, dst);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=553d7aa4aa582c05 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=03a7c7776f3a8587 input=a9049054013a1b77]*/

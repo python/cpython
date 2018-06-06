@@ -1746,18 +1746,18 @@ _winapi_CopyFileExW_impl(PyObject *module, LPCWSTR src, LPCWSTR dst,
 
 
 /*[clinic input]
-_winapi.CreateDirectoryEx
+_winapi.CreateDirectoryExW
 
-    src: LPCTSTR
-    dst: LPCTSTR
+    src: LPWSTR
+    dst: LPWSTR
     /
 
 Creates a new directory with the attributes of a specified template directory.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CreateDirectoryEx_impl(PyObject *module, LPCTSTR src, LPCTSTR dst)
-/*[clinic end generated code: output=b16d6292dc1e34bc input=cc240e28574b8da7]*/
+_winapi_CreateDirectoryExW_impl(PyObject *module, LPWSTR src, LPWSTR dst)
+/*[clinic end generated code: output=f41d941d73b1dac8 input=716a8ef620692466]*/
 {
     return Py_BuildValue("i", 99);
 }
