@@ -306,6 +306,11 @@ slot typedefs
 
 See :ref:`slot-typedefs` below for more detail.
 
+common cases
+^^^^^^^^^^^^
+
+<TBD>
+
 
 PyTypeObject Definition
 -----------------------
