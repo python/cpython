@@ -214,7 +214,7 @@ Where the following options are understood:
 
 .. cmdoption:: -r N, --repeat=N
 
-   how many times to repeat the timer (default 3)
+   how many times to repeat the timer (default 5)
 
 .. cmdoption:: -s S, --setup=S
 
@@ -252,7 +252,7 @@ successive powers of 10 until the total time is at least 0.2 seconds.
 :func:`default_timer` measurements can be affected by other programs running on
 the same machine, so the best thing to do when accurate timing is necessary is
 to repeat the timing a few times and use the best time.  The :option:`-r`
-option is good for this; the default of 3 repetitions is probably enough in
+option is good for this; the default of 5 repetitions is probably enough in
 most cases.  You can use :func:`time.process_time` to measure CPU time.
 
 .. note::
