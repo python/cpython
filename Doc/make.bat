@@ -6,17 +6,27 @@ pushd %~dp0
 set this=%~n0
 
 call ..\PCbuild\find_python.bat %PYTHON%
-if not defined SPHINXBUILD if defined PYTHON (
+
+if not defined PYTHON set PYTHON=py
+
+if not defined SPHINXBUILD (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
         %PYTHON% -m pip install sphinx
         if errorlevel 1 exit /B
     )
-    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sphinx.main()"
+    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sys.exit(sphinx.main())"
 )
 
-if not defined BLURB if defined PYTHON (
+%PYTHON% -c "import python_docs_theme" > nul 2> nul
+if errorlevel 1 (
+    echo Installing python-docs-theme with %PYTHON%
+    %PYTHON% -m pip install python-docs-theme
+    if errorlevel 1 exit /B
+)
+
+if not defined BLURB (
     %PYTHON% -c "import blurb" > nul 2> nul
     if errorlevel 1 (
         echo Installing blurb with %PYTHON%
@@ -25,10 +35,6 @@ if not defined BLURB if defined PYTHON (
     )
     set BLURB=%PYTHON% -m blurb
 )
-
-if not defined PYTHON set PYTHON=py
-if not defined SPHINXBUILD set SPHINXBUILD=sphinx-build
-if not defined BLURB set BLURB=blurb
 
 if "%1" NEQ "htmlhelp" goto :skiphhcsearch
 if exist "%HTMLHELP%" goto :skiphhcsearch

@@ -45,7 +45,7 @@ fine-tuning parameters.
 
 .. seealso::
 
-   The third-party `regex <https://pypi.python.org/pypi/regex/>`_ module,
+   The third-party `regex <https://pypi.org/project/regex/>`_ module,
    which has an API compatible with the standard library :mod:`re` module,
    but offers additional functionality and a more thorough Unicode support.
 

@@ -39,6 +39,20 @@ Glossary
       and loaders (in the :mod:`importlib.abc` module).  You can create your own
       ABCs with the :mod:`abc` module.
 
+   annotation
+      A label associated with a variable, a class
+      attribute or a function parameter or return value,
+      used by convention as a :term:`type hint`.
+
+      Annotations of local variables cannot be accessed at runtime, but
+      annotations of global variables, class attributes, and functions
+      are stored in the :attr:`__annotations__`
+      special attribute of modules, classes, and functions,
+      respectively.
+
+      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
+      and :pep:`526`, which describe this functionality.
+
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
       function.  There are two kinds of argument:
@@ -136,8 +150,8 @@ Glossary
       :data:`sys.stdout.buffer`, and instances of :class:`io.BytesIO` and
       :class:`gzip.GzipFile`.
 
-      .. seealso::
-         A :term:`text file` reads and writes :class:`str` objects.
+      See also :term:`text file` for a file object able to read and write
+      :class:`str` objects.
 
    bytes-like object
       An object that supports the :ref:`bufferobjects` and can
@@ -174,6 +188,10 @@ Glossary
       A template for creating user-defined objects. Class definitions
       normally contain method definitions which operate on instances of the
       class.
+
+   class variable
+      A variable defined in a class and intended to be modified only at
+      class level (i.e., not in an instance of the class).
 
    coercion
       The implicit conversion of an instance of one type to another during an
@@ -367,16 +385,20 @@ Glossary
       and the :ref:`function` section.
 
    function annotation
-      An arbitrary metadata value associated with a function parameter or return
-      value. Its syntax is explained in section :ref:`function`.  Annotations
-      may be accessed via the :attr:`__annotations__` special attribute of a
-      function object.
+      An :term:`annotation` of a function parameter or return value.
 
-      See also the :term:`variable annotation` glossary entry.
+      Function annotations are usually used for
+      :term:`type hints <type hint>`: for example this function is expected to take two
+      :class:`int` arguments and is also expected to have an :class:`int`
+      return value::
 
-      Annotations are meant to provide a standard way for programmers to
-      document types of functions they design.  See :pep:`484`, which
-      describes this functionality.
+         def sum_two_numbers(a: int, b: int) -> int:
+            return a + b
+
+      Function annotation syntax is explained in section :ref:`function`.
+
+      See :term:`variable annotation` and :pep:`484`,
+      which describe this functionality.
 
    __future__
       A pseudo-module which programmers can use to enable new language features
@@ -603,7 +625,7 @@ Glossary
    lambda
       An anonymous inline function consisting of a single :term:`expression`
       which is evaluated when the function is called.  The syntax to create
-      a lambda function is ``lambda [arguments]: expression``
+      a lambda function is ``lambda [parameters]: expression``
 
    LBYL
       Look before you leap.  This coding style explicitly tests for
@@ -837,6 +859,21 @@ Glossary
       :class:`str` or :class:`bytes` result instead, respectively. Introduced
       by :pep:`519`.
 
+   PEP
+      Python Enhancement Proposal. A PEP is a design document
+      providing information to the Python community, or describing a new
+      feature for Python or its processes or environment. PEPs should
+      provide a concise technical specification and a rationale for proposed
+      features.
+
+      PEPs are intended to be the primary mechanisms for proposing major new
+      features, for collecting community input on an issue, and for documenting
+      the design decisions that have gone into Python. The PEP author is
+      responsible for building consensus within the community and documenting
+      dissenting opinions.
+
+      See :pep:`1`.
+
    portion
       A set of files in a single directory (possibly stored in a zip file)
       that contribute to a namespace package, as defined in :pep:`420`.
@@ -991,8 +1028,8 @@ Glossary
       :data:`sys.stdin`, :data:`sys.stdout`, and instances of
       :class:`io.StringIO`.
 
-      .. seealso::
-         A :term:`binary file` reads and write :class:`bytes` objects.
+      See also :term:`binary file` for a file object able to read and write
+      :term:`bytes-like objects <bytes-like object>`.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark
@@ -1009,6 +1046,43 @@ Glossary
       :attr:`~instance.__class__` attribute or can be retrieved with
       ``type(obj)``.
 
+   type alias
+      A synonym for a type, created by assigning the type to an identifier.
+
+      Type aliases are useful for simplifying :term:`type hints <type hint>`.
+      For example::
+
+         from typing import List, Tuple
+
+         def remove_gray_shades(
+                 colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
+             pass
+
+      could be made more readable like this::
+
+         from typing import List, Tuple
+
+         Color = Tuple[int, int, int]
+
+         def remove_gray_shades(colors: List[Color]) -> List[Color]:
+             pass
+
+      See :mod:`typing` and :pep:`484`, which describe this functionality.
+
+   type hint
+      An :term:`annotation` that specifies the expected type for a variable, a class
+      attribute, or a function parameter or return value.
+
+      Type hints are optional and are not enforced by Python but
+      they are useful to static type analysis tools, and aid IDEs with code
+      completion and refactoring.
+
+      Type hints of global variables, class attributes, and functions,
+      but not local variables, can be accessed using
+      :func:`typing.get_type_hints`.
+
+      See :mod:`typing` and :pep:`484`, which describe this functionality.
+
    universal newlines
       A manner of interpreting text streams in which all of the following are
       recognized as ending a line: the Unix end-of-line convention ``'\n'``,
@@ -1017,17 +1091,23 @@ Glossary
       :func:`bytes.splitlines` for an additional use.
 
    variable annotation
-      A type metadata value associated with a module global variable or
-      a class attribute. Its syntax is explained in section :ref:`annassign`.
-      Annotations are stored in the :attr:`__annotations__` special
-      attribute of a class or module object and can be accessed using
-      :func:`typing.get_type_hints`.
+      An :term:`annotation` of a variable or a class attribute.
 
-      See also the :term:`function annotation` glossary entry.
+      When annotating a variable or a class attribute, assignment is optional::
 
-      Annotations are meant to provide a standard way for programmers to
-      document types of functions they design.  See :pep:`484` and :pep:`526`
-      which describe this functionality.
+         class C:
+             field: 'annotation'
+
+      Variable annotations are usually used for
+      :term:`type hints <type hint>`: for example this variable is expected to take
+      :class:`int` values::
+
+         count: int = 0
+
+      Variable annotation syntax is explained in section :ref:`annassign`.
+
+      See :term:`function annotation`, :pep:`484`
+      and :pep:`526`, which describe this functionality.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users

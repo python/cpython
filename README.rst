@@ -92,25 +92,27 @@ below.
 Profile Guided Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-PGO takes advantage of recent versions of the GCC or Clang compilers.  If ran,
-``make profile-opt`` will do several steps.
+PGO takes advantage of recent versions of the GCC or Clang compilers.  If used,
+either via ``configure --enable-optimizations`` or by manually running
+``make profile-opt`` regardless of configure flags, the optimized build
+process will perform the following steps:
 
-First, the entire Python directory is cleaned of temporary files that may have
-resulted in a previous compilation.
+The entire Python directory is cleaned of temporary files that may have
+resulted from a previous compilation.
 
-Then, an instrumented version of the interpreter is built, using suitable
-compiler flags for each flavour. Note that this is just an intermediary step
-and the binary resulted after this step is not good for real life workloads, as
-it has profiling instructions embedded inside.
+An instrumented version of the interpreter is built, using suitable compiler
+flags for each flavour. Note that this is just an intermediary step.  The
+binary resulting from this step is not good for real life workloads as it has
+profiling instructions embedded inside.
 
-After this instrumented version of the interpreter is built, the Makefile will
-automatically run a training workload. This is necessary in order to profile
-the interpreter execution. Note also that any output, both stdout and stderr,
-that may appear at this step is suppressed.
+After the instrumented interpreter is built, the Makefile will run a training
+workload.  This is necessary in order to profile the interpreter execution.
+Note also that any output, both stdout and stderr, that may appear at this step
+is suppressed.
 
-Finally, the last step is to rebuild the interpreter, using the information
-collected in the previous one. The end result will be a Python binary that is
-optimized and suitable for distribution or production installation.
+The final step is to build the actual interpreter, using the information
+collected from the instrumented one.  The end result will be a Python binary
+that is optimized; suitable for distribution or production installation.
 
 
 Link Time Optimization

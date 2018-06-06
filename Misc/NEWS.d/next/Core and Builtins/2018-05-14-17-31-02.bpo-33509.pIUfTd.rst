@@ -1,0 +1,2 @@
+Fix module_globals parameter of warnings.warn_explicit(): don't crash if
+module_globals is not a dict.

@@ -111,6 +111,9 @@ Deprecated
 Removed
 =======
 
+* The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
+  to help eliminate confusion as to what Python interpreter the ``pyvenv``
+  script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
 
 Porting to Python 3.8
@@ -142,6 +145,11 @@ Changes in the Python API
   :func:`dbm.dumb.open` with flags ``'r'`` and ``'w'`` no longer creates
   a database if it does not exist.
   (Contributed by Serhiy Storchaka in :issue:`32749`.)
+
+* A :exc:`RuntimeError` is now raised when the custom metaclass doesn't
+  provide the ``__classcell__`` entry in the namespace passed to
+  ``type.__new__``.  A :exc:`DeprecationWarning` was emitted in Python
+  3.6--3.7.  (Contributed by Serhiy Storchaka in :issue:`23722`.)
 
 
 CPython bytecode changes

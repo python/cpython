@@ -32,9 +32,12 @@ class TestGdbm(unittest.TestCase):
             self.assertIn(key, key_set)
             key_set.remove(key)
             key = self.g.nextkey(key)
-        self.assertRaises(KeyError, lambda: self.g['xxx'])
         # get() and setdefault() work as in the dict interface
+        self.assertEqual(self.g.get(b'a'), b'b')
+        self.assertIsNone(self.g.get(b'xxx'))
         self.assertEqual(self.g.get(b'xxx', b'foo'), b'foo')
+        with self.assertRaises(KeyError):
+            self.g['xxx']
         self.assertEqual(self.g.setdefault(b'xxx', b'foo'), b'foo')
         self.assertEqual(self.g[b'xxx'], b'foo')
 

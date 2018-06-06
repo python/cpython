@@ -12,7 +12,7 @@ cache:
 
 env:
   global:
-    - OPENSSL=1.1.0g
+    - OPENSSL=1.1.0h
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
     # Use -O3 because we don't use debugger on Travis-CI
@@ -60,7 +60,7 @@ matrix:
       env: OPTIONAL=true
       before_install:
         # Python 3 is needed for Argument Clinic and multissl
-        - brew install xz python3
+        - HOMEBREW_NO_AUTO_UPDATE=1 brew install xz python3
         - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
     - os: linux
       language: c

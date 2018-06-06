@@ -34,6 +34,16 @@ def current_task(loop=None):
 def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
+        loop = events.get_running_loop()
+    return {t for t in _all_tasks
+            if futures._get_loop(t) is loop and not t.done()}
+
+
+def _all_tasks_compat(loop=None):
+    # Different from "all_task()" by returning *all* Tasks, including
+    # the completed ones.  Used to implement deprecated "Tasks.all_task()"
+    # method.
+    if loop is None:
         loop = events.get_event_loop()
     return {t for t in _all_tasks if futures._get_loop(t) is loop}
 
@@ -82,7 +92,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                       "use asyncio.all_tasks() instead",
                       PendingDeprecationWarning,
                       stacklevel=2)
-        return all_tasks(loop)
+        return _all_tasks_compat(loop)
 
     def __init__(self, coro, *, loop=None):
         super().__init__(loop=loop)
@@ -261,7 +271,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 # Yielding a generator is just wrong.
                 new_exc = RuntimeError(
                     f'yield was used instead of yield from for '
-                    f'generator in task {self!r} with {result}')
+                    f'generator in task {self!r} with {result!r}')
                 self._loop.call_soon(
                     self.__step, new_exc, context=self._context)
             else:
@@ -402,14 +412,17 @@ async def wait_for(fut, timeout, *, loop=None):
             return fut.result()
         else:
             fut.remove_done_callback(cb)
-            fut.cancel()
+            # We must ensure that the task is not running
+            # after wait_for() returns.
+            # See https://bugs.python.org/issue32751
+            await _cancel_and_wait(fut, loop=loop)
             raise futures.TimeoutError()
     finally:
         timeout_handle.cancel()
 
 
 async def _wait(fs, timeout, return_when, loop):
-    """Internal helper for wait() and wait_for().
+    """Internal helper for wait().
 
     The fs argument must be a collection of Futures.
     """
@@ -449,6 +462,22 @@ async def _wait(fs, timeout, return_when, loop):
         else:
             pending.add(f)
     return done, pending
+
+
+async def _cancel_and_wait(fut, loop):
+    """Cancel the *fut* future or task and wait until it completes."""
+
+    waiter = loop.create_future()
+    cb = functools.partial(_release_waiter, waiter)
+    fut.add_done_callback(cb)
+
+    try:
+        fut.cancel()
+        # We cannot wait on *fut* directly to make
+        # sure _cancel_and_wait itself is reliably cancellable.
+        await waiter
+    finally:
+        fut.remove_done_callback(cb)
 
 
 # This is *not* a @coroutine!  It is just an iterator (yielding Futures).
@@ -542,17 +571,17 @@ def ensure_future(coro_or_future, *, loop=None):
 
     If the argument is a Future, it is returned directly.
     """
-    if futures.isfuture(coro_or_future):
-        if loop is not None and loop is not futures._get_loop(coro_or_future):
-            raise ValueError('loop argument must agree with Future')
-        return coro_or_future
-    elif coroutines.iscoroutine(coro_or_future):
+    if coroutines.iscoroutine(coro_or_future):
         if loop is None:
             loop = events.get_event_loop()
         task = loop.create_task(coro_or_future)
         if task._source_traceback:
             del task._source_traceback[-1]
         return task
+    elif futures.isfuture(coro_or_future):
+        if loop is not None and loop is not futures._get_loop(coro_or_future):
+            raise ValueError('loop argument must agree with Future')
+        return coro_or_future
     elif inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
     else:
@@ -581,6 +610,7 @@ class _GatheringFuture(futures.Future):
     def __init__(self, children, *, loop=None):
         super().__init__(loop=loop)
         self._children = children
+        self._cancel_requested = False
 
     def cancel(self):
         if self.done():
@@ -589,6 +619,11 @@ class _GatheringFuture(futures.Future):
         for child in self._children:
             if child.cancel():
                 ret = True
+        if ret:
+            # If any child tasks were actually cancelled, we should
+            # propagate the cancellation request regardless of
+            # *return_exceptions* argument.  See issue 32684.
+            self._cancel_requested = True
         return ret
 
 
@@ -663,7 +698,13 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                         res = fut.result()
                 results.append(res)
 
-            outer.set_result(results)
+            if outer._cancel_requested:
+                # If gather is being cancelled we must propagate the
+                # cancellation regardless of *return_exceptions* argument.
+                # See issue 32684.
+                outer.set_exception(futures.CancelledError())
+            else:
+                outer.set_result(results)
 
     arg_to_fut = {}
     children = []

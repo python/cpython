@@ -284,6 +284,7 @@ EXPORTS
   PyImport_GetImporter=python38.PyImport_GetImporter
   PyImport_GetMagicNumber=python38.PyImport_GetMagicNumber
   PyImport_GetMagicTag=python38.PyImport_GetMagicTag
+  PyImport_GetModule=python38.PyImport_GetModule
   PyImport_GetModuleDict=python38.PyImport_GetModuleDict
   PyImport_Import=python38.PyImport_Import
   PyImport_ImportFrozenModule=python38.PyImport_ImportFrozenModule
@@ -757,6 +758,7 @@ EXPORTS
   Py_SetPythonHome=python38.Py_SetPythonHome
   Py_SetRecursionLimit=python38.Py_SetRecursionLimit
   Py_SymtableString=python38.Py_SymtableString
+  Py_UTF8Mode=python38.Py_UTF8Mode DATA
   Py_VaBuildValue=python38.Py_VaBuildValue
   _PyArg_ParseTupleAndKeywords_SizeT=python38._PyArg_ParseTupleAndKeywords_SizeT
   _PyArg_ParseTuple_SizeT=python38._PyArg_ParseTuple_SizeT
