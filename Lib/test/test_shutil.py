@@ -2159,12 +2159,16 @@ class TestWindowsMakedirs(unittest.TestCase):
         dst_path = os.path.join(TESTFN2, 'a', 'b', 'c')
         with self.assertRaises(FileNotFoundError):
             shutil._win_makedirs(src_path, dst_path)
+        with self.assertRaises(FileNotFoundError):
+            shutil.copytree(src_path, dst_path)
 
     def test_makedirs_dst_exists(self):
-        src_path = tempfile.mktemp()
         dst_path = os.path.join(TESTFN2, 'a', 'b', 'c')
         os.makedirs(dst_path)
-        shutil._win_makedirs(src_path, dst_path)
+        with self.assertRaises(FileExistsError):
+            shutil._win_makedirs(self.src_path, dst_path)
+        with self.assertRaises(FileExistsError):
+            shutil.copytree(self.src_path, dst_path)
 
     def test_CreateDirectoryExW_src_not_found(self):
         import _winapi

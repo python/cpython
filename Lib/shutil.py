@@ -422,14 +422,8 @@ def _win_makedirs(src, dst):
         if tail == cdir:           # xxx/newdir/. exists if xxx/newdir exists
             return
     # --- </same as os.makedirs()>
-    try:
-        _winapi.CreateDirectoryExW(src, dst)
-        _winapi.copypathsecurityinfo(src, dst)
-    except OSError:
-        # Cannot rely on checking for EEXIST, since the operating system
-        # could give priority to other errors like EACCES or EROFS
-        if not os.path.isdir(dst):
-            raise
+    _winapi.CreateDirectoryExW(src, dst)
+    _winapi.copypathsecurityinfo(src, dst)
 
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
@@ -474,7 +468,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     else:
         ignored_names = set()
 
-    if os.name == 'nt' and copy_function is copy2 and os.path.exists(src):
+    if os.name == 'nt' and copy_function is copy2:
         _win_makedirs(src, dst)
     else:
         os.makedirs(dst)
