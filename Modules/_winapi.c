@@ -1759,7 +1759,19 @@ static PyObject *
 _winapi_CreateDirectoryExW_impl(PyObject *module, LPWSTR src, LPWSTR dst)
 /*[clinic end generated code: output=f41d941d73b1dac8 input=716a8ef620692466]*/
 {
-    return Py_BuildValue("i", 99);
+    int ret;
+    PyObject *py_srcname;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = CreateDirectoryExW(src, dst, NULL);
+    Py_END_ALLOW_THREADS
+    if (ret == 0) {
+        py_srcname = Py_BuildValue("u", src);
+        win32_error_object("CreateDirectoryExW", py_srcname);
+        Py_CLEAR(py_srcname);
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 
