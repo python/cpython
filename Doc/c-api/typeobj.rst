@@ -134,7 +134,7 @@ Quick Reference
    | :c:member:`~PyTypeObject.tp_finalize`       | :c:type:`destructor`              |   |   |   | X |
    +---------------------------------------------+-----------------------------------+---+---+---+---+
 
-If :c:macro:`COUNT_ALLOCS` is defined then the following (internal-only)
+If :const:`COUNT_ALLOCS` is defined then the following (internal-only)
 fields exist as well:
 
 * :c:member:`~PyTypeObject.tp_allocs`
@@ -1593,12 +1593,53 @@ value, that section is omitted.
    :c:func:`PyType_Ready`.
 
 
+.. c:member:: PyObject* PyTypeObject.tp_cache
+
+   Unused.  Internal use only.
+
+   **Inheritance:**
+
+   This field is not inherited.
+
+
+.. c:member:: PyObject* PyTypeObject.tp_subclasses
+
+   List of weak references to subclasses.  Internal use only.
+
+   **Inheritance:**
+
+   This field is not inherited.
+
+
+.. c:member:: PyObject* PyTypeObject.tp_weaklist
+
+   Weak reference list head, for weak references to this type object.  Not
+   inherited.  Internal use only.
+
+   **Inheritance:**
+
+   This field is not inherited.
+
+
+.. c:member:: destructor PyTypeObject.tp_del
+
+   This field is deprecated.  Use :c:member:`~PyTypeObject.tp_finalize` instead.
+
+
+.. c:member:: unsigned int PyTypeObject.tp_version_tag
+
+   Used to index into the method cache.  Internal use only.
+
+   **Inheritance:**
+
+   This field is not inherited.
+
+
 .. c:member:: destructor PyTypeObject.tp_finalize
 
-   An optional pointer to an instance finalization function.  Its signature is
-   :c:type:`destructor`::
+   An optional pointer to an instance finalization function.  Its signature is::
 
-      void tp_finalize(PyObject *)
+      void tp_finalize(PyObject *self)
 
    If :c:member:`~PyTypeObject.tp_finalize` is set, the interpreter calls it once when
    finalizing an instance.  It is called either from the garbage
@@ -1627,39 +1668,14 @@ value, that section is omitted.
    For this field to be taken into account (even through inheritance),
    you must also set the :const:`Py_TPFLAGS_HAVE_FINALIZE` flags bit.
 
+   **Inheritance:**
+
    This field is inherited by subtypes.
 
    .. versionadded:: 3.4
 
    .. seealso:: "Safe object finalization" (:pep:`442`)
 
-
-.. c:member:: PyObject* PyTypeObject.tp_cache
-
-   Unused.  Internal use only.
-
-   **Inheritance:**
-
-   This field is not inherited.
-
-
-.. c:member:: PyObject* PyTypeObject.tp_subclasses
-
-   List of weak references to subclasses.  Not inherited.  Internal use only.
-
-   **Inheritance:**
-
-   This field is not inherited.
-
-
-.. c:member:: PyObject* PyTypeObject.tp_weaklist
-
-   Weak reference list head, for weak references to this type object.  Not
-   inherited.  Internal use only.
-
-   **Inheritance:**
-
-   This field is not inherited.
 
 The remaining fields are only defined if the feature test macro
 :const:`COUNT_ALLOCS` is defined, and are for internal use only. They are
@@ -1681,6 +1697,10 @@ subtypes.
 
    Maximum simultaneously allocated objects.
 
+
+.. c:member:: PyTypeObject* PyTypeObject.tp_prev
+
+   Pointer to the previous type object with a non-zero :c:member:`~PyTypeObject.tp_allocs` field.
 
 .. c:member:: PyTypeObject* PyTypeObject.tp_next
 
