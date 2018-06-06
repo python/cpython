@@ -570,17 +570,16 @@ class TestSupport(unittest.TestCase):
             self.assertFalse(support.match_test(test_chdir))
 
     def test_fd_count(self):
-        code = "from test.support import fd_count; print(fd_count())"
-        proc = script_helper.assert_python_ok("-c", code)
-        out = proc.out.decode("ascii", "replace").strip()
-        # A fresh Python process should have exactly 3 open file descriptors
-        # (stdin, stdout, stderr) even if these standard streams have been
-        # closed in the parent process. assert_python_ok() opens one pipe
-        # per stream, so 3 pipes in total (stdin, stdout, stderr).
-        #
-        # subprocess.Popen(close_fds=True) and PEP 446 ensure that the child
-        # process don't inherit file descriptors from its parent.
-        self.assertEqual(out, "3")
+        # We cannot test the absolute value of fd_count(): on old Linux
+        # kernel or glibc versions, os.urandom() keeps a FD open on
+        # /dev/urandom device and Python has 4 FD opens instead of 3.
+        start = support.fd_count()
+        fd = os.open(__file__, os.O_RDONLY)
+        try:
+            more = support.fd_count()
+        finally:
+            os.close(fd)
+        self.assertEqual(more - start, 1)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc
