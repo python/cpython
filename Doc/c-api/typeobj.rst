@@ -228,6 +228,17 @@ slot typedefs
 |                             |    const char *             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 +-----------------------------+-----------------------------+----------------------+
+| :c:type:`getattrofunc`      | .. line-block::             | :c:type:`PyObject` * |
+|                             |                             |                      |
+|                             |    :c:type:`PyObject` *     |                      |
+|                             |    :c:type:`PyObject` *     |                      |
++-----------------------------+-----------------------------+----------------------+
+| :c:type:`setattrofunc`      | .. line-block::             | int                  |
+|                             |                             |                      |
+|                             |    :c:type:`PyObject` *     |                      |
+|                             |    :c:type:`PyObject` *     |                      |
+|                             |    :c:type:`PyObject` *     |                      |
++-----------------------------+-----------------------------+----------------------+
 | :c:type:`descrgetfunc`      | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
@@ -257,13 +268,13 @@ slot typedefs
 | :c:type:`getbufferproc`     | .. line-block::             | int                  |
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
-|                             |    :c:type:PyBuffer` *      |                      |
+|                             |    :c:type:`Py_buffer` *    |                      |
 |                             |    int                      |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`releasebufferproc` | .. line-block::             | void                 |
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
-|                             |    :c:type:`PyBuffer` *     |                      |
+|                             |    :c:type:`Py_buffer` *    |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`inquiry`           | void *                      | int                  |
 +-----------------------------+-----------------------------+----------------------+
@@ -318,6 +329,8 @@ PyTypeObject Definition
 The structure definition for :c:type:`PyTypeObject` can be found in
 :file:`Include/object.h`.  For convenience of reference, this repeats the
 definition found there:
+
+.. XXX Drop this?
 
 .. literalinclude:: ../includes/typestruct.h
 
@@ -531,9 +544,7 @@ value, that section is omitted.
 
    This field is deprecated.  When it is defined, it should point to a function
    that acts the same as the :c:member:`~PyTypeObject.tp_getattro` function, but taking a C string
-   instead of a Python string object to give the attribute name.  The signature is ::
-
-      PyObject * tp_getattr(PyObject *o, char *attr_name);
+   instead of a Python string object to give the attribute name.
 
    **Inheritance:**
 
@@ -554,11 +565,7 @@ value, that section is omitted.
 
    This field is deprecated.  When it is defined, it should point to a function
    that acts the same as the :c:member:`~PyTypeObject.tp_setattro` function, but taking a C string
-   instead of a Python string object to give the attribute name.  The signature is ::
-
-      PyObject * tp_setattr(PyObject *o, char *attr_name, PyObject *v);
-
-   The *v* argument is set to *NULL* to delete the attribute.
+   instead of a Python string object to give the attribute name.
 
    **Inheritance:**
 
@@ -1460,19 +1467,6 @@ value, that section is omitted.
 
       PyObject *tp_alloc(PyTypeObject *self, Py_ssize_t nitems)
 
-   The purpose of this function is to separate memory allocation from memory
-   initialization.  It should return a pointer to a block of memory of adequate
-   length for the instance, suitably aligned, and initialized to zeros, but with
-   :attr:`ob_refcnt` set to ``1`` and :attr:`ob_type` set to the type argument.  If
-   the type's :c:member:`~PyTypeObject.tp_itemsize` is non-zero, the object's :attr:`ob_size` field
-   should be initialized to *nitems* and the length of the allocated memory block
-   should be ``tp_basicsize + nitems*tp_itemsize``, rounded up to a multiple of
-   ``sizeof(void*)``; otherwise, *nitems* is not used and the length of the block
-   should be :c:member:`~PyTypeObject.tp_basicsize`.
-
-   Do not use this function to do any other instance initialization, not even to
-   allocate additional memory; that should be done by :c:member:`~PyTypeObject.tp_new`.
-
    **Inheritance:**
 
    This field is inherited by static subtypes, but not by dynamic
@@ -2049,6 +2043,80 @@ Async Object Structures
 Slot Type typedefs
 ==================
 
+.. c:type:: PyObject *(*allocfunc)(PyTypeObject *cls, Py_ssize_t nitems)
+
+   The purpose of this function is to separate memory allocation from memory
+   initialization.  It should return a pointer to a block of memory of adequate
+   length for the instance, suitably aligned, and initialized to zeros, but with
+   :attr:`ob_refcnt` set to ``1`` and :attr:`ob_type` set to the type argument.  If
+   the type's :c:member:`~PyTypeObject.tp_itemsize` is non-zero, the object's :attr:`ob_size` field
+   should be initialized to *nitems* and the length of the allocated memory block
+   should be ``tp_basicsize + nitems*tp_itemsize``, rounded up to a multiple of
+   ``sizeof(void*)``; otherwise, *nitems* is not used and the length of the block
+   should be :c:member:`~PyTypeObject.tp_basicsize`.
+
+   This function should not do any other instance initialization, not even to
+   allocate additional memory; that should be done by :c:member:`~PyTypeObject.tp_new`.
 
 .. c:type:: void (*destructor)(PyObject *)
+
+.. c:type:: void (*freefunc)(void)
+
+.. c:type:: PyObject *(*newfunc)(PyObject *, PyObject *, PyObject *)
+
+.. c:type:: int (*initproc)(PyObject *, PyObject *, PyObject *)
+
+.. c:type:: PyObject *(*reprfunc)(PyObject *)
+
+.. c:type:: int (*printfunc)(PyObject *, FILE *, int)
+
+.. c:type:: PyObject *(*getattrfunc)(PyObject *self, char *attr)
+
+   Return the value of the named attribute for the object.
+
+.. c:type:: int (*setattrfunc)(PyObject *self, char *attr, PyObject *value)
+
+   Set the value of the named attribute for the object.
+   The value argument is set to *NULL* to delete the attribute.
+
+.. c:type:: PyObject *(*getattrofunc)(PyObject *self, PyObject *attr)
+
+   Return the value of the named attribute for the object.
+
+.. c:type:: int (*setattrofunc)(PyObject *self, PyObject *attr, PyObject *value)
+
+   Set the value of the named attribute for the object.
+   The value argument is set to *NULL* to delete the attribute.
+
+.. c:type:: PyObject *(*descrgetfunc)(PyObject *, PyObject *, PyObject *)
+
+.. c:type:: int (*descrsetfunc)(PyObject *, PyObject *, PyObject *)
+
+.. c:type:: Py_hash_t (*hashfunc)(PyObject *)
+
+.. c:type:: PyObject *(*richcmpfunc)(PyObject *, PyObject *, int)
+
+.. c:type:: PyObject *(*getiterfunc)(PyObject *)
+
+.. c:type:: PyObject *(*iternextfunc)(PyObject *)
+
+.. c:type:: Py_ssize_t (*lenfunc)(PyObject *)
+
+.. c:type:: int (*getbufferproc)(PyObject *, Py_buffer *, int)
+
+.. c:type:: void (*releasebufferproc)(PyObject *, Py_buffer *)
+
+.. c:type:: PyObject *(*unaryfunc)(PyObject *)
+
+.. c:type:: PyObject *(*binaryfunc)(PyObject *, PyObject *)
+
+.. c:type:: PyObject *(*ternaryfunc)(PyObject *, PyObject *, PyObject *)
+
+.. c:type:: PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t)
+
+.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t)
+
+.. c:type:: int (*objobjproc)(PyObject *, PyObject *)
+
+.. c:type:: int (*objobjargproc)(PyObject *, PyObject *, PyObject *)
 
