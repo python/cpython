@@ -401,16 +401,18 @@ def ignore_patterns(*patterns):
     return _ignore_patterns
 
 def _win_makedirs(src, dst):
-    """Similar to os.makedirs but uses CreateDirectoryExW instead of
-    CreateDirectoryW which creates a directory with the attributes of
-    a specified template directory.
+    """Similar to os.makedirs() but creates a directory tree copying
+    attributes and security info from a template "src" directory.
+    As such "src" directory must exist else this will fail with
+    FileNotFoundError.
     """
+    # --- <same as os.makedirs()>
     head, tail = os.path.split(dst)
     if not tail:
         head, tail = os.path.split(head)
     if head and tail and not os.path.exists(head):
         try:
-            _win_makedirs(src, dst)
+            _win_makedirs(src, head)
         except FileExistsError:
             # Defeats race condition when another thread created the path
             pass
@@ -419,8 +421,16 @@ def _win_makedirs(src, dst):
             cdir = bytes(os.curdir, 'ASCII')
         if tail == cdir:           # xxx/newdir/. exists if xxx/newdir exists
             return
-    _winapi.CreateDirectoryExW(src, dst)
-    _winapi.copypathsecurityinfo(src, dst)
+    # --- </same as os.makedirs()>
+    try:
+        _winapi.CreateDirectoryExW(src, dst)
+        _winapi.copypathsecurityinfo(src, dst)
+    except OSError:
+        # Cannot rely on checking for EEXIST, since the operating system
+        # could give priority to other errors like EACCES or EROFS
+        if not os.path.isdir(dst):
+            raise
+
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
              ignore_dangling_symlinks=False):
@@ -464,7 +474,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     else:
         ignored_names = set()
 
-    if os.name == 'nt' and copy_function is copy2:
+    if os.name == 'nt' and copy_function is copy2 and os.path.exists(src):
         _win_makedirs(src, dst)
     else:
         os.makedirs(dst)

@@ -2131,6 +2131,56 @@ class TestZeroCopyWindows(_ZeroCopyFileTest, unittest.TestCase):
         return shutil._fastcopy_win(src.name, dst.name)
 
 
+@unittest.skipIf(not os.name == 'nt', 'Windows only')
+class TestWindowsMakedirs(unittest.TestCase):
+    """copytree() on Windows uses a dedicated version of os.makedirs()
+    using specific Windows APIs in order to copy directory attributes.
+    """
+
+    def setUp(self):
+        self.tearDown()
+        self.src_path = os.path.join(TESTFN, 'a', 'b', 'c')
+        os.makedirs(self.src_path)
+
+    def tearDown(self):
+        shutil.rmtree(TESTFN, ignore_errors=True)
+        shutil.rmtree(TESTFN2, ignore_errors=True)
+
+    def test_makedirs(self):
+        dst_path = os.path.join(TESTFN2, 'a', 'b', 'c')
+        shutil._win_makedirs(self.src_path, dst_path)
+        assert os.path.isdir(os.path.join(TESTFN2))
+        assert os.path.isdir(os.path.join(TESTFN2, "a"))
+        assert os.path.isdir(os.path.join(TESTFN2, "a", "b"))
+        assert os.path.isdir(os.path.join(TESTFN2, "a", "b", "c"))
+
+    def test_makedirs_src_not_found(self):
+        src_path = tempfile.mktemp()
+        dst_path = os.path.join(TESTFN2, 'a', 'b', 'c')
+        with self.assertRaises(FileNotFoundError):
+            shutil._win_makedirs(src_path, dst_path)
+
+    def test_makedirs_dst_exists(self):
+        src_path = tempfile.mktemp()
+        dst_path = os.path.join(TESTFN2, 'a', 'b', 'c')
+        os.makedirs(dst_path)
+        shutil._win_makedirs(src_path, dst_path)
+
+    def test_CreateDirectoryExW_src_not_found(self):
+        import _winapi
+        src_path = tempfile.mktemp()
+        dst_path = os.path.join(TESTFN2, 'a', 'b', 'c')
+        with self.assertRaises(FileNotFoundError):
+            _winapi.CreateDirectoryExW(src_path, dst_path)
+
+    def test_copypathsecurityinfo_src_not_found(self):
+        import _winapi
+        src_path = tempfile.mktemp()
+        dst_path = os.path.join(TESTFN2, 'a', 'b', 'c')
+        with self.assertRaises(FileNotFoundError):
+            _winapi.copypathsecurityinfo(src_path, dst_path)
+
+
 class TermsizeTests(unittest.TestCase):
     def test_does_not_crash(self):
         """Check if get_terminal_size() returns a meaningful value.
