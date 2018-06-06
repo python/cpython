@@ -2157,32 +2157,36 @@ class TestWindowsMakedirs(unittest.TestCase):
     def test_makedirs_src_not_found(self):
         src_path = tempfile.mktemp()
         dst_path = os.path.join(TESTFN2, 'a', 'b', 'c')
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(FileNotFoundError) as cm:
             shutil._win_makedirs(src_path, dst_path)
-        with self.assertRaises(FileNotFoundError):
-            shutil.copytree(src_path, dst_path)
+        self.assertEqual(cm.exception.filename, src_path)
+        self.assertEqual(cm.exception.filename2, dst_path.split('\\')[0])
 
     def test_makedirs_dst_exists(self):
         dst_path = os.path.join(TESTFN2, 'a', 'b', 'c')
         os.makedirs(dst_path)
-        with self.assertRaises(FileExistsError):
+        with self.assertRaises(FileExistsError) as cm:
             shutil._win_makedirs(self.src_path, dst_path)
-        with self.assertRaises(FileExistsError):
-            shutil.copytree(self.src_path, dst_path)
+        self.assertEqual(cm.exception.filename, self.src_path)
+        self.assertEqual(cm.exception.filename2, dst_path)
 
     def test_CreateDirectoryExW_src_not_found(self):
         import _winapi
         src_path = tempfile.mktemp()
         dst_path = os.path.join(TESTFN2, 'a', 'b', 'c')
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(FileNotFoundError) as cm:
             _winapi.CreateDirectoryExW(src_path, dst_path)
+        self.assertEqual(cm.exception.filename, src_path)
+        self.assertEqual(cm.exception.filename2, dst_path)
 
     def test_copypathsecurityinfo_src_not_found(self):
         import _winapi
         src_path = tempfile.mktemp()
         dst_path = os.path.join(TESTFN2, 'a', 'b', 'c')
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(FileNotFoundError) as cm:
             _winapi.copypathsecurityinfo(src_path, dst_path)
+        self.assertEqual(cm.exception.filename, src_path)
+        self.assertEqual(cm.exception.filename2, dst_path)
 
 
 class TermsizeTests(unittest.TestCase):

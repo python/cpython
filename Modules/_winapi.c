@@ -1779,8 +1779,8 @@ _winapi_CreateDirectoryExW_impl(PyObject *module, LPWSTR src, LPWSTR dst)
         Py_CLEAR(pysrc);
         Py_CLEAR(pydst);
         return NULL;
-
     }
+
     Py_RETURN_NONE;
 
 error:
@@ -1808,7 +1808,8 @@ _winapi_copypathsecurityinfo_impl(PyObject *module, LPWSTR src, LPWSTR dst)
 {
     int ret;
     PSECURITY_DESCRIPTOR sacl = NULL;
-    PyObject *pypath;
+    PyObject *pysrc = NULL;
+    PyObject *pydst = NULL;
 
     /* Source path */
     Py_BEGIN_ALLOW_THREADS
@@ -1816,16 +1817,8 @@ _winapi_copypathsecurityinfo_impl(PyObject *module, LPWSTR src, LPWSTR dst)
         src, SE_FILE_OBJECT, ATTRIBUTE_SECURITY_INFORMATION,
         NULL, NULL, NULL, NULL, &sacl);
     Py_END_ALLOW_THREADS
-
-    if (ret != ERROR_SUCCESS) {
-        pypath = Py_BuildValue("u", src);
-        if (!pypath)
-            return NULL;
-        PyErr_SetExcFromWindowsErrWithFilenameObject(
-            PyExc_OSError, ret, pypath);
-        Py_CLEAR(pypath);
-        return NULL;
-    }
+    if (ret != ERROR_SUCCESS)
+        goto error;
 
     /* Destination path */
     Py_BEGIN_ALLOW_THREADS
@@ -1833,18 +1826,23 @@ _winapi_copypathsecurityinfo_impl(PyObject *module, LPWSTR src, LPWSTR dst)
         dst, SE_FILE_OBJECT, ATTRIBUTE_SECURITY_INFORMATION,
         NULL, NULL, NULL, sacl);
     Py_END_ALLOW_THREADS
-
-    if (ret != ERROR_SUCCESS) {
-        pypath = Py_BuildValue("u", dst);
-        if (!pypath)
-            return NULL;
-        PyErr_SetExcFromWindowsErrWithFilenameObject(
-            PyExc_OSError, ret, pypath);
-        Py_CLEAR(pypath);
-        return NULL;
-    }
+    if (ret != ERROR_SUCCESS)
+        goto error;
 
     Py_RETURN_NONE;
+
+error:
+    if (!(pysrc = Py_BuildValue("u", src)))
+        return NULL;
+    if (!(pydst = Py_BuildValue("u", dst))) {
+        Py_CLEAR(pysrc);
+        return NULL;
+    }
+    PyErr_SetExcFromWindowsErrWithFilenameObjects(
+        PyExc_OSError, 0, pysrc, pydst);
+    Py_CLEAR(pysrc);
+    Py_CLEAR(pydst);
+    return NULL;
 }
 
 
