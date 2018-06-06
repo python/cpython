@@ -2182,7 +2182,11 @@ class BaseTaskTests:
         self.assertFalse(m_log.error.called)
 
         with self.assertRaises(ValueError):
-            self.new_task(self.loop, coro())
+            gen = coro()
+            try:
+                self.new_task(self.loop, gen)
+            finally:
+                gen.close()
 
         self.assertTrue(m_log.error.called)
         message = m_log.error.call_args[0][0]
