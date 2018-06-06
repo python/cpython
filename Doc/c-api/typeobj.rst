@@ -133,6 +133,17 @@ Quick Reference
 | [:c:member:`~PyTypeObject.tp_next`]         | ..                | :c:type:`PyTypeObject` *      |
 +---------------------------------------------+-------------------+-------------------------------+
 
+.. [#slots] A slot name in parentheses indicates it is (effectively) deprecated.
+   Names in square brackets are for internal use only.
+.. [#inh]
+   The meaning of the markers in the "Inherited" column::
+
+      X - type slot is inherited via PyType_Ready() if defined with a *NULL* value.
+      * - the slots of the sub-struct are inherited individually.
+      G - inherited, but only in combination with other slots; see the slot's description.
+      L - not inherited but available through the normal attribute lookup chain.
+      ? - it's complicated; see the slot's description.
+
 
 PyTypeObject Definition
 -----------------------
@@ -1995,17 +2006,3 @@ Slot Type typedefs
 |                   |    :c:type:`PyObject` *     |                      |
 |                   |    :c:type:`PyObject` *     |                      |
 +-------------------+-----------------------------+----------------------+
-
-
-.. rubric:: Footnotes
-
-.. [#slots] A slot name in parentheses indicates it is (effectively) deprecated.
-   Names in square brackets are for internal use only.
-.. [#inh]
-   The meaning of the markers in the "Inherited" column::
-
-      X - type slot is inherited via PyType_Ready() if defined with a *NULL* value.
-      * - the slots of the sub-struct are inherited individually.
-      G - inherited, but only in combination with other slots; see the slot's description.
-      L - not inherited but available through the normal attribute lookup chain.
-      ? - it's complicated; see the slot's description.
