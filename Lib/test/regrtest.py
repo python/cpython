@@ -577,6 +577,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             nottests.add(arg)
         args = []
 
+    if huntrleaks:
+        # FIXME: bpo-31731: test_io hangs with --huntrleaks
+        print("Warning: bpo-31731: test_io hangs with --huntrleaks: "
+              "exclude the test")
+        nottests.add('test_io')
+
     display_header = (verbose or header or not (quiet or single or tests or args)) and (not pgo)
     alltests = findtests(testdir, stdtests, nottests)
     selected = tests or args or alltests
