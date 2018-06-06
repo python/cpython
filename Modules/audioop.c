@@ -25,7 +25,8 @@ typedef short PyInt16;
 #endif
 
 static const int maxvals[] = {0, 0x7F, 0x7FFF, 0x7FFFFF, 0x7FFFFFFF};
-static const int minvals[] = {0, -0x80, -0x8000, -0x800000, -0x80000000};
+/* -1 trick is needed on Windows to support -0x80000000 without a warning */
+static const int minvals[] = {0, -0x80, -0x8000, -0x800000, -0x7FFFFFFF-1};
 static const unsigned int masks[] = {0, 0xFF, 0xFFFF, 0xFFFFFF, 0xFFFFFFFF};
 
 static int
@@ -393,7 +394,9 @@ audioop_minmax(PyObject *self, PyObject *args)
     signed char *cp;
     int len, size, val = 0;
     int i;
-    int min = 0x7fffffff, max = -0x80000000;
+    /* -1 trick below is needed on Windows to support -0x80000000 without
+    a warning */
+    int min = 0x7fffffff, max = -0x7FFFFFFF-1;
 
     if (!PyArg_ParseTuple(args, "s#i:minmax", &cp, &len, &size))
         return NULL;
