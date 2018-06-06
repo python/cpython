@@ -119,7 +119,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     PyObject *retval = NULL;
     uid_t uid;
     struct passwd *p;
-    char *buf;
+    char *buf = NULL;
 
     if (!_Py_Uid_Converter(uidobj, &uid)) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
@@ -129,7 +129,8 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     }
 #ifdef HAVE_GETPWUID_R
     Py_BEGIN_ALLOW_THREADS
-    int status, bufsize = NSS_BUFLEN_PASSWD;
+    int status;
+    long bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
     struct passwd pwd;
 
     buf = PyMem_RawMalloc(bufsize);
@@ -139,16 +140,21 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
         if (p != NULL || status != ERANGE) {
             break;
         }
-        if ((bufsize << 1) > (NSS_BUFLEN_PASSWD << 10)) {
+        if (bufsize > PY_SSIZE_T_MAX) {
+            PyErr_NoMemory();
             status = ERANGE;
             break;
         }
         bufsize <<= 1;
-        buf = PyMem_RawRealloc(buf, bufsize);
+        p = PyMem_RawRealloc(buf, bufsize);
+        if (p == NULL) {
+            PyErr_NoMemory();
+            break;
+        }
+        buf = (char *) p;
     } while (1);
 
-    if (status != 0 || p == NULL) {
-        PyMem_RawFree(buf);
+    if (status != 0) {
         p = NULL;
     }
     Py_END_ALLOW_THREADS
@@ -156,6 +162,9 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     p = getpwuid(uid);
 #endif
     if (p == NULL) {
+        if (buf != NULL) {
+            PyMem_RawFree(buf);
+        }
         PyObject *uid_obj = _PyLong_FromUid(uid);
         if (uid_obj == NULL)
             return NULL;
@@ -186,7 +195,7 @@ static PyObject *
 pwd_getpwnam_impl(PyObject *module, PyObject *arg)
 /*[clinic end generated code: output=6abeee92430e43d2 input=d5f7e700919b02d3]*/
 {
-    char *buf, *name;
+    char *buf = NULL, *name;
     struct passwd *p;
     PyObject *bytes, *retval = NULL;
 
@@ -197,7 +206,8 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
         goto out;
 #ifdef HAVE_GETPWNAM_R
     Py_BEGIN_ALLOW_THREADS
-    int status, bufsize = NSS_BUFLEN_PASSWD;
+    int status;
+    long bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
     struct passwd pwd;
 
     buf = PyMem_RawMalloc(bufsize);
@@ -207,16 +217,21 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
         if (p != NULL || status != ERANGE) {
             break;
         }
-        if ((bufsize << 1) > (NSS_BUFLEN_PASSWD << 10)) {
+        if (bufsize > PY_SSIZE_T_MAX) {
+            PyErr_NoMemory();
             status = ERANGE;
             break;
         }
         bufsize <<= 1;
-        buf = PyMem_RawRealloc(buf, bufsize);
+        p = PyMem_RawRealloc(buf, bufsize);
+        if (p == NULL) {
+            PyErr_NoMemory();
+            break;
+        }
+        buf = (char *) p;
     } while (1);
 
-    if (status != 0 || p == NULL) {
-        PyMem_RawFree(buf);
+    if (status != 0) {
         p = NULL;
     }
     Py_END_ALLOW_THREADS
@@ -229,10 +244,10 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
         goto out;
     }
     retval = mkpwent(p);
-#ifdef HAVE_GETPWNAM_R
-    PyMem_RawFree(buf);
-#endif
 out:
+    if (buf != NULL) {
+        PyMem_RawFree(buf);
+    }
     Py_DECREF(bytes);
     return retval;
 }

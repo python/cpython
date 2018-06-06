@@ -11275,8 +11275,9 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
+ getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
- getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
+ getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
  initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
@@ -13706,139 +13707,6 @@ fi
 
 
 
-
-
-# checks for re-entrant nss functions
-for ac_func in getpwnam_r
-do :
-  ac_fn_c_check_func "$LINENO" "getpwnam_r" "ac_cv_func_getpwnam_r"
-if test "x$ac_cv_func_getpwnam_r" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_GETPWNAM_R 1
-_ACEOF
-
-
-$as_echo "#define HAVE_GETPWNAM_R 1" >>confdefs.h
-
-
-
-fi
-done
-
-
-for ac_func in getpwuid_r
-do :
-  ac_fn_c_check_func "$LINENO" "getpwuid_r" "ac_cv_func_getpwuid_r"
-if test "x$ac_cv_func_getpwuid_r" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_GETPWUID_R 1
-_ACEOF
-
-
-$as_echo "#define HAVE_GETPWUID_R 1" >>confdefs.h
-
-
-
-fi
-done
-
-
-for ac_func in getgrnam_r
-do :
-  ac_fn_c_check_func "$LINENO" "getgrnam_r" "ac_cv_func_getgrnam_r"
-if test "x$ac_cv_func_getgrnam_r" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_GETGRNAM_R 1
-_ACEOF
-
-
-$as_echo "#define HAVE_GETGRNAM_R 1" >>confdefs.h
-
-
-
-fi
-done
-
-
-for ac_func in getgrgid_r
-do :
-  ac_fn_c_check_func "$LINENO" "getgrgid_r" "ac_cv_func_getgrgid_r"
-if test "x$ac_cv_func_getgrgid_r" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_GETGRGID_R 1
-_ACEOF
-
-
-$as_echo "#define HAVE_GETGRGID_R 1" >>confdefs.h
-
-
-
-fi
-done
-
-
-if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <pwd.h>
-int main(int argc, char*argv[])
-{
-#ifdef NSS_BUFLEN_PASSWD
-    return 0;
-#else
-    return 1;
-#endif
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-
-else
-
-$as_echo "#define NSS_BUFLEN_PASSWD 1024" >>confdefs.h
-
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-
-if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <grp.h>
-int main(int argc, char*argv[])
-{
-#ifdef NSS_BUFLEN_GROUP
-    return 0;
-#else
-    return 1;
-#endif
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-
-else
-
-$as_echo "#define NSS_BUFLEN_GROUP 1024" >>confdefs.h
-
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
 
 
 

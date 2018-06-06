@@ -97,7 +97,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 /*[clinic end generated code: output=30797c289504a1ba input=15fa0e2ccf5cda25]*/
 {
     PyObject *py_int_id, *retval = NULL;
-    char *buf;
+    char *buf = NULL;
     gid_t gid;
     struct group *p;
 
@@ -122,26 +122,32 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
     }
 #ifdef HAVE_GETGRGID_R
     Py_BEGIN_ALLOW_THREADS
-    int status, bufsize = NSS_BUFLEN_GROUP;
+    int status;
+    long bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
     struct group grp;
 
     buf = PyMem_RawMalloc(bufsize);
 
-    do {
+    while (1) {
         status = getgrgid_r(gid, &grp, buf, bufsize, &p);
         if (p != NULL || status != ERANGE) {
             break;
         }
-        if ((bufsize << 1) > (NSS_BUFLEN_GROUP << 10)) {
+        if (bufsize > PY_SSIZE_T_MAX) {
+            PyErr_NoMemory();
             status = ERANGE;
             break;
         }
         bufsize <<= 1;
-        buf = PyMem_RawRealloc(buf, bufsize);
-    } while (1);
+        p = PyMem_RawRealloc(buf, bufsize);
+        if (p == NULL) {
+            PyErr_NoMemory();
+            break;
+        }
+        buf = (char *) p;
+    }
 
-    if (status != 0 || p == NULL) {
-        PyMem_RawFree(buf);
+    if (status != 0) {
         p = NULL;
     }
     Py_END_ALLOW_THREADS
@@ -149,6 +155,9 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
     p = getgrgid(gid);
 #endif
     if (p == NULL) {
+        if (buf != NULL) {
+            PyMem_RawFree(buf);
+        }
         PyObject *gid_obj = _PyLong_FromGid(gid);
         if (gid_obj == NULL)
             return NULL;
@@ -177,7 +186,7 @@ static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=67905086f403c21c input=08ded29affa3c863]*/
 {
-    char *buf, *name_chars;
+    char *buf = NULL, *name_chars;
     struct group *p;
     PyObject *bytes, *retval = NULL;
 
@@ -188,26 +197,31 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
         goto out;
 #ifdef HAVE_GETGRNAM_R
     Py_BEGIN_ALLOW_THREADS
-    int status, bufsize = NSS_BUFLEN_GROUP;
+    int status;
+    long bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
     struct group grp;
 
     buf = PyMem_RawMalloc(bufsize);
 
-    do {
+    while(1) {
         status = getgrnam_r(name_chars, &grp, buf, bufsize, &p);
         if (p != NULL || status != ERANGE) {
             break;
         }
-        if ((bufsize << 1) > (NSS_BUFLEN_GROUP << 10)) {
+        if (bufsize > PY_SSIZE_T_MAX) {
             status = ERANGE;
             break;
         }
         bufsize <<= 1;
-        buf = PyMem_RawRealloc(buf, bufsize);
-    } while (1);
+        p = PyMem_RawRealloc(buf, bufsize);
+        if (p == NULL) {
+            PyErr_NoMemory();
+            break;
+        }
+        buf = (char *) p;
+    }
 
-    if (status != 0 || p == NULL) {
-        PyMem_RawFree(buf);
+    if (status != 0) {
         p = NULL;
     }
     Py_END_ALLOW_THREADS
@@ -219,10 +233,10 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
         goto out;
     }
     retval = mkgrent(p);
-#ifdef HAVE_GETGRNAM_R
-    PyMem_RawFree(buf);
-#endif
 out:
+    if (buf != NULL) {
+        PyMem_RawFree(buf);
+    }
     Py_DECREF(bytes);
     return retval;
 }

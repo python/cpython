@@ -403,10 +403,10 @@
 /* Define to 1 if you have the `getentropy' function. */
 #undef HAVE_GETENTROPY
 
-/* Define to 1 if your system has getgrgid_r. */
+/* Define to 1 if you have the `getgrgid_r' function. */
 #undef HAVE_GETGRGID_R
 
-/* Define to 1 if your system has getgrnam_r. */
+/* Define to 1 if you have the `getgrnam_r' function. */
 #undef HAVE_GETGRNAM_R
 
 /* Define to 1 if you have the `getgrouplist' function. */
@@ -463,10 +463,10 @@
 /* Define to 1 if you have the `getpwent' function. */
 #undef HAVE_GETPWENT
 
-/* Define to 1 if your system has getpwnam_r. */
+/* Define to 1 if you have the `getpwnam_r' function. */
 #undef HAVE_GETPWNAM_R
 
-/* Define to 1 if your system has getpwuid_r. */
+/* Define to 1 if you have the `getpwuid_r' function. */
 #undef HAVE_GETPWUID_R
 
 /* Define to 1 if the getrandom() function is available */
@@ -1295,12 +1295,6 @@
 
 /* Define if mvwdelch in curses.h is an expression. */
 #undef MVWDELCH_IS_EXPRESSION
-
-/* Define default buflen for reentrant grp functions */
-#undef NSS_BUFLEN_GROUP
-
-/* Define default buflen for reentrant pwd functions */
-#undef NSS_BUFLEN_PASSWD
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
