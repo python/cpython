@@ -1732,21 +1732,17 @@ The remaining fields are only defined if the feature test macro
 documented here for completeness.  None of these fields are inherited by
 subtypes.
 
-
 .. c:member:: Py_ssize_t PyTypeObject.tp_allocs
 
    Number of allocations.
-
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_frees
 
    Number of frees.
 
-
 .. c:member:: Py_ssize_t PyTypeObject.tp_maxalloc
 
    Maximum simultaneously allocated objects.
-
 
 .. c:member:: PyTypeObject* PyTypeObject.tp_prev
 
@@ -1756,7 +1752,7 @@ subtypes.
 
    Pointer to the next type object with a non-zero :c:member:`~PyTypeObject.tp_allocs` field.
 
-Also, note that, in a garbage collected Python, tp_dealloc may be called from
+Also, note that, in a garbage collected Python, :c:member:`~PyTypeObject.tp_dealloc` may be called from
 any Python thread, not just the thread which created the object (if the object
 becomes part of a refcount cycle, that cycle might be collected by a garbage
 collection on any thread).  This is not a problem for Python API calls, since
