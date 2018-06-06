@@ -139,7 +139,7 @@ ConfigParser -- responsible for parsing a list of
 """
 
 from collections.abc import MutableMapping
-from collections import OrderedDict as _default_dict, ChainMap as _ChainMap
+from collections import ChainMap as _ChainMap
 import functools
 import io
 import itertools
@@ -157,6 +157,7 @@ __all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "LegacyInterpolation", "SectionProxy", "ConverterMapping",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
 
+_default_dict = dict
 DEFAULTSECT = "DEFAULT"
 
 MAX_INTERPOLATION_DEPTH = 10

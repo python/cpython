@@ -283,7 +283,7 @@ BLAKE2
 .. index::
    single: blake2b, blake2s
 
-BLAKE2_ is a cryptographic hash function defined in RFC-7693_ that comes in two
+BLAKE2_ is a cryptographic hash function defined in :rfc:`7693` that comes in two
 flavors:
 
 * **BLAKE2b**, optimized for 64-bit platforms and produces digests of any size
@@ -707,7 +707,6 @@ Domain Dedication 1.0 Universal:
 
 * *Alexandr Sokolovskiy*
 
-.. _RFC-7693: https://tools.ietf.org/html/rfc7693
 .. _BLAKE2: https://blake2.net
 .. _HMAC: https://en.wikipedia.org/wiki/Hash-based_message_authentication_code
 .. _BLAKE: https://131002.net/blake/

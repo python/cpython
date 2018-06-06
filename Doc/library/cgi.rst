@@ -296,7 +296,7 @@ algorithms implemented in this module in other circumstances.
    instead. It is maintained here only for backward compatibility.
 
 
-.. function:: parse_multipart(fp, pdict, encoding="utf-8")
+.. function:: parse_multipart(fp, pdict, encoding="utf-8", errors="replace")
 
    Parse input of type :mimetype:`multipart/form-data` (for  file uploads).
    Arguments are *fp* for the input file, *pdict* for a dictionary containing
@@ -312,8 +312,8 @@ algorithms implemented in this module in other circumstances.
    which is much more flexible.
 
    .. versionchanged:: 3.7
-      Added the *encoding* parameter.  For non-file fields, the value is now
-      a list of strings, not bytes.
+      Added the *encoding* and *errors* parameters.  For non-file fields, the
+      value is now a list of strings, not bytes.
 
 
 .. function:: parse_header(string)

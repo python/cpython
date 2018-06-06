@@ -253,10 +253,11 @@ class UnionTests(BaseTestCase):
     def test_union_object(self):
         u = Union[object]
         self.assertEqual(u, object)
-        u = Union[int, object]
-        self.assertEqual(u, object)
-        u = Union[object, int]
-        self.assertEqual(u, object)
+        u1 = Union[int, object]
+        u2 = Union[object, int]
+        self.assertEqual(u1, u2)
+        self.assertNotEqual(u1, object)
+        self.assertNotEqual(u2, object)
 
     def test_unordered(self):
         u1 = Union[int, float]
@@ -267,13 +268,11 @@ class UnionTests(BaseTestCase):
         t = Union[Employee]
         self.assertIs(t, Employee)
 
-    def test_base_class_disappears(self):
-        u = Union[Employee, Manager, int]
-        self.assertEqual(u, Union[int, Employee])
-        u = Union[Manager, int, Employee]
-        self.assertEqual(u, Union[int, Employee])
+    def test_base_class_kept(self):
         u = Union[Employee, Manager]
-        self.assertIs(u, Employee)
+        self.assertNotEqual(u, Employee)
+        self.assertIn(Employee, u.__args__)
+        self.assertIn(Manager, u.__args__)
 
     def test_union_union(self):
         u = Union[int, float]
@@ -317,7 +316,8 @@ class UnionTests(BaseTestCase):
     def test_union_generalization(self):
         self.assertFalse(Union[str, typing.Iterable[int]] == str)
         self.assertFalse(Union[str, typing.Iterable[int]] == typing.Iterable[int])
-        self.assertTrue(Union[str, typing.Iterable] == typing.Iterable)
+        self.assertIn(str, Union[str, typing.Iterable[int]].__args__)
+        self.assertIn(typing.Iterable[int], Union[str, typing.Iterable[int]].__args__)
 
     def test_union_compare_other(self):
         self.assertNotEqual(Union, object)
@@ -917,7 +917,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Union[T, U][int, Union[int, str]], Union[int, str])
         class Base: ...
         class Derived(Base): ...
-        self.assertEqual(Union[T, Base][Derived], Base)
+        self.assertEqual(Union[T, Base][Union[Base, Derived]], Union[Base, Derived])
         with self.assertRaises(TypeError):
             Union[T, int][1]
 
@@ -1367,6 +1367,9 @@ class GenericTests(BaseTestCase):
         class A(Generic[T]):
             pass
 
+        with self.assertRaises(TypeError):
+            A('foo')
+
         class B:
             def __new__(cls):
                 # call object
@@ -1595,6 +1598,30 @@ class ForwardRefTests(BaseTestCase):
             c = C
         # verify that @no_type_check never affects bases
         self.assertEqual(get_type_hints(C.meth), {'x': int})
+
+    def test_no_type_check_forward_ref_as_string(self):
+        class C:
+            foo: typing.ClassVar[int] = 7
+        class D:
+            foo: ClassVar[int] = 7
+        class E:
+            foo: 'typing.ClassVar[int]' = 7
+        class F:
+            foo: 'ClassVar[int]' = 7
+
+        expected_result = {'foo': typing.ClassVar[int]}
+        for clazz in [C, D, E, F]:
+            self.assertEqual(get_type_hints(clazz), expected_result)
+
+    def test_nested_classvar_fails_forward_ref_check(self):
+        class E:
+            foo: 'typing.ClassVar[typing.ClassVar[int]]' = 7
+        class F:
+            foo: ClassVar['ClassVar[int]'] = 7
+
+        for clazz in [E, F]:
+            with self.assertRaises(TypeError):
+                get_type_hints(clazz)
 
     def test_meta_no_type_check(self):
 

@@ -951,7 +951,7 @@ New :class:`~collections.abc.Awaitable`, :class:`~collections.abc.Coroutine`,
 (Contributed by Yury Selivanov in :issue:`24184`.)
 
 For earlier Python versions, a backport of the new ABCs is available in an
-external `PyPI package <https://pypi.python.org/pypi/backports_abc>`_.
+external `PyPI package <https://pypi.org/project/backports_abc>`_.
 
 
 compileall

@@ -1,0 +1,2 @@
+Switch the default dictionary implementation for :mod:`configparser` from
+:class:`collections.OrderedDict` to the standard :class:`dict` type.

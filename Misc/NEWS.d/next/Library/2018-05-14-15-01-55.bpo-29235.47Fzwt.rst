@@ -1,0 +1,8 @@
+The :class:`cProfile.Profile` class can now be used as a context manager.
+You can profile a block of code by running::
+
+  import cProfile
+  with cProfile.Profile() as profiler:
+      # ... code to be profiled ...
+
+Patch by Scott Sanderson.

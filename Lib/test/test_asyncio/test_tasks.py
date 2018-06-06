@@ -24,6 +24,10 @@ from test import support
 from test.support.script_helper import assert_python_ok
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 @asyncio.coroutine
 def coroutine_function():
     pass
@@ -788,6 +792,62 @@ class BaseTaskTests:
         loop.call_later(0.1, fut.set_result, "ok")
         res = loop.run_until_complete(task)
         self.assertEqual(res, "ok")
+
+    def test_wait_for_waits_for_task_cancellation(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        task_done = False
+
+        async def foo():
+            async def inner():
+                nonlocal task_done
+                try:
+                    await asyncio.sleep(0.2, loop=loop)
+                finally:
+                    task_done = True
+
+            inner_task = self.new_task(loop, inner())
+
+            with self.assertRaises(asyncio.TimeoutError):
+                await asyncio.wait_for(inner_task, timeout=0.1, loop=loop)
+
+            self.assertTrue(task_done)
+
+        loop.run_until_complete(foo())
+
+    def test_wait_for_self_cancellation(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        async def foo():
+            async def inner():
+                try:
+                    await asyncio.sleep(0.3, loop=loop)
+                except asyncio.CancelledError:
+                    try:
+                        await asyncio.sleep(0.3, loop=loop)
+                    except asyncio.CancelledError:
+                        await asyncio.sleep(0.3, loop=loop)
+
+                return 42
+
+            inner_task = self.new_task(loop, inner())
+
+            wait = asyncio.wait_for(inner_task, timeout=0.1, loop=loop)
+
+            # Test that wait_for itself is properly cancellable
+            # even when the initial task holds up the initial cancellation.
+            task = self.new_task(loop, wait)
+            await asyncio.sleep(0.2, loop=loop)
+            task.cancel()
+
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+
+            self.assertEqual(await inner_task, 42)
+
+        loop.run_until_complete(foo())
 
     def test_wait(self):
 
@@ -1897,8 +1957,10 @@ class BaseTaskTests:
         # See http://bugs.python.org/issue29271 for details:
         asyncio.set_event_loop(self.loop)
         try:
-            self.assertEqual(asyncio.all_tasks(), {task})
-            self.assertEqual(asyncio.all_tasks(None), {task})
+            with self.assertWarns(PendingDeprecationWarning):
+                self.assertEqual(Task.all_tasks(), {task})
+            with self.assertWarns(PendingDeprecationWarning):
+                self.assertEqual(Task.all_tasks(None), {task})
         finally:
             asyncio.set_event_loop(None)
 
@@ -2035,7 +2097,7 @@ class BaseTaskTests:
     def test_cancel_wait_for(self):
         self._test_cancel_wait_for(60.0)
 
-    def test_cancel_gather(self):
+    def test_cancel_gather_1(self):
         """Ensure that a gathering future refuses to be cancelled once all
         children are done"""
         loop = asyncio.new_event_loop()
@@ -2064,6 +2126,33 @@ class BaseTaskTests:
         self.assertEqual(cancel_result, False)
         self.assertFalse(gather_task.cancelled())
         self.assertEqual(gather_task.result(), [42])
+
+    def test_cancel_gather_2(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        async def test():
+            time = 0
+            while True:
+                time += 0.05
+                await asyncio.gather(asyncio.sleep(0.05, loop=loop),
+                                     return_exceptions=True,
+                                     loop=loop)
+                if time > 1:
+                    return
+
+        async def main():
+            qwe = self.new_task(loop, test())
+            await asyncio.sleep(0.2, loop=loop)
+            qwe.cancel()
+            try:
+                await qwe
+            except asyncio.CancelledError:
+                pass
+            else:
+                self.fail('gather did not propagate the cancellation request')
+
+        loop.run_until_complete(main())
 
     def test_exception_traceback(self):
         # See http://bugs.python.org/issue28843
@@ -2483,6 +2572,9 @@ class BaseTaskIntrospectionTests:
             def _loop(self):
                 return loop
 
+            def done(self):
+                return False
+
         task = TaskLike()
         loop = mock.Mock()
 
@@ -2496,12 +2588,32 @@ class BaseTaskIntrospectionTests:
             def get_loop(self):
                 return loop
 
+            def done(self):
+                return False
+
         task = TaskLike()
         loop = mock.Mock()
 
         self.assertEqual(asyncio.all_tasks(loop), set())
         self._register_task(task)
         self.assertEqual(asyncio.all_tasks(loop), {task})
+        self._unregister_task(task)
+
+    def test__register_task_3(self):
+        class TaskLike:
+            def get_loop(self):
+                return loop
+
+            def done(self):
+                return True
+
+        task = TaskLike()
+        loop = mock.Mock()
+
+        self.assertEqual(asyncio.all_tasks(loop), set())
+        self._register_task(task)
+        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(asyncio.Task.all_tasks(loop), {task})
         self._unregister_task(task)
 
     def test__enter_task(self):
