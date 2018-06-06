@@ -1460,24 +1460,41 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyTypeObject *result;
     StgDictObject *stgdict;
     StgDictObject *itemdict;
-    PyObject *proto;
+    PyObject *proto, *length_attr;
     PyObject *typedict;
-    long length;
-
+    Py_ssize_t length;
     Py_ssize_t itemsize, itemalign;
 
     typedict = PyTuple_GetItem(args, 2);
     if (!typedict)
         return NULL;
 
-    proto = PyDict_GetItemString(typedict, "_length_"); /* Borrowed ref */
-    if (!proto || !PyInt_Check(proto)) {
+    length_attr = PyDict_GetItemString(typedict, "_length_"); /* Borrowed ref */
+    if (!length_attr ||
+        !(PyInt_Check(length_attr) || PyLong_Check(length_attr)))
+    {
         PyErr_SetString(PyExc_AttributeError,
                         "class must define a '_length_' attribute, "
                         "which must be a positive integer");
+        Py_XDECREF(length_attr);
         return NULL;
     }
-    length = PyInt_AS_LONG(proto);
+    if (PyInt_Check(length_attr)) {
+        length = PyInt_AS_LONG(length_attr);
+        Py_DECREF(length_attr);
+    }
+    else {
+        assert(PyLong_Check(length_attr));
+        length = PyLong_AsSsize_t(length_attr);
+        Py_DECREF(length_attr);
+        if (length == -1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "The '_length_' attribute is too large");
+            }
+            return NULL;
+        }
+    }
 
     proto = PyDict_GetItemString(typedict, "_type_"); /* Borrowed ref */
     if (!proto) {
