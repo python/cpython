@@ -171,7 +171,8 @@ fields exist as well:
       G - inherited, but only in combination with other slots; see the slot's description
       ? - it's complicated; see the slot's description
 
-      L - not inherited but available through the normal attribute lookup chain
+   Note that some slots are effectively inherited through the normal
+   attribute lookup chain.
 
 .. _slot-typedefs-table:
 
