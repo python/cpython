@@ -31,11 +31,18 @@ static const unsigned int masks[] = {0, 0xFF, 0xFFFF, 0xFFFFFF, 0xFFFFFFFF};
 static int
 fbound(double val, double minval, double maxval)
 {
-    if (val > maxval)
+    if (val > maxval) {
         val = maxval;
-    else if (val < minval + 1)
+    }
+    else if (val < minval + 1.0) {
         val = minval;
-    return val;
+    }
+
+    /* Round towards minus infinity (-inf) */
+    val = floor(val);
+
+    /* Cast double to integer: round towards zero */
+    return (int)val;
 }
 
 
@@ -793,8 +800,8 @@ audioop_mul(PyObject *self, PyObject *args)
         if ( size == 1 )      val = (int)*CHARP(cp, i);
         else if ( size == 2 ) val = (int)*SHORTP(cp, i);
         else if ( size == 4 ) val = (int)*LONGP(cp, i);
-        fval = (double)val*factor;
-        val = (int)floor(fbound(fval, minval, maxval));
+        fval = (double)val * factor;
+        val = fbound(fval, minval, maxval);
         if ( size == 1 )      *CHARP(ncp, i) = (signed char)val;
         else if ( size == 2 ) *SHORTP(ncp, i) = (short)val;
         else if ( size == 4 ) *LONGP(ncp, i) = (Py_Int32)val;
@@ -837,8 +844,8 @@ audioop_tomono(PyObject *self, PyObject *args)
         if ( size == 1 )      val2 = (int)*CHARP(cp, i+1);
         else if ( size == 2 ) val2 = (int)*SHORTP(cp, i+2);
         else if ( size == 4 ) val2 = (int)*LONGP(cp, i+4);
-        fval = (double)val1*fac1 + (double)val2*fac2;
-        val1 = (int)floor(fbound(fval, minval, maxval));
+        fval = (double)val1 * fac1 + (double)val2 * fac2;
+        val1 = fbound(fval, minval, maxval);
         if ( size == 1 )      *CHARP(ncp, i/2) = (signed char)val1;
         else if ( size == 2 ) *SHORTP(ncp, i/2) = (short)val1;
         else if ( size == 4 ) *LONGP(ncp, i/2)= (Py_Int32)val1;
@@ -881,11 +888,11 @@ audioop_tostereo(PyObject *self, PyObject *args)
         else if ( size == 2 ) val = (int)*SHORTP(cp, i);
         else if ( size == 4 ) val = (int)*LONGP(cp, i);
 
-        fval = (double)val*fac1;
-        val1 = (int)floor(fbound(fval, minval, maxval));
+        fval = (double)val * fac1;
+        val1 = fbound(fval, minval, maxval);
 
-        fval = (double)val*fac2;
-        val2 = (int)floor(fbound(fval, minval, maxval));
+        fval = (double)val * fac2;
+        val2 = fbound(fval, minval, maxval);
 
         if ( size == 1 )      *CHARP(ncp, i*2) = (signed char)val1;
         else if ( size == 2 ) *SHORTP(ncp, i*2) = (short)val1;
@@ -944,7 +951,7 @@ audioop_add(PyObject *self, PyObject *args)
         else {
             double fval = (double)val1 + (double)val2;
             /* truncate in case of overflow */
-            newval = (int)floor(fbound(fval, minval, maxval));
+            newval = fbound(fval, minval, maxval);
         }
 
         if ( size == 1 )      *CHARP(ncp, i) = (signed char)newval;
