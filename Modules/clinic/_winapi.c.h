@@ -1001,4 +1001,33 @@ _winapi_CreateDirectoryExW(PyObject *module, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=03a7c7776f3a8587 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_copypathsecurityinfo__doc__,
+"copypathsecurityinfo($module, src, dst, /)\n"
+"--\n"
+"\n"
+"Copy the security information of one path to another.");
+
+#define _WINAPI_COPYPATHSECURITYINFO_METHODDEF    \
+    {"copypathsecurityinfo", (PyCFunction)_winapi_copypathsecurityinfo, METH_FASTCALL, _winapi_copypathsecurityinfo__doc__},
+
+static PyObject *
+_winapi_copypathsecurityinfo_impl(PyObject *module, LPWSTR src, LPWSTR dst);
+
+static PyObject *
+_winapi_copypathsecurityinfo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    LPWSTR src;
+    LPWSTR dst;
+
+    if (!_PyArg_ParseStack(args, nargs, "uu:copypathsecurityinfo",
+        &src, &dst)) {
+        goto exit;
+    }
+    return_value = _winapi_copypathsecurityinfo_impl(module, src, dst);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=c1713b770ffdfda1 input=a9049054013a1b77]*/

@@ -1775,6 +1775,24 @@ _winapi_CreateDirectoryExW_impl(PyObject *module, LPWSTR src, LPWSTR dst)
 }
 
 
+/*[clinic input]
+_winapi.copypathsecurityinfo
+
+    src: LPWSTR
+    dst: LPWSTR
+    /
+
+Copy the security information of one path to another.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_copypathsecurityinfo_impl(PyObject *module, LPWSTR src, LPWSTR dst)
+/*[clinic end generated code: output=09045a3ba0244ff5 input=02ebe3bee4d04f75]*/
+{
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
     _WINAPI_CONNECTNAMEDPIPE_METHODDEF
@@ -1804,6 +1822,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_GETFILETYPE_METHODDEF
     _WINAPI_COPYFILEEXW_METHODDEF
     _WINAPI_CREATEDIRECTORYEXW_METHODDEF
+    _WINAPI_COPYDIRSECURITYINFO_METHODDEF
     {NULL, NULL}
 };
 
