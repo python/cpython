@@ -10,6 +10,8 @@ import warnings
 import collections
 import contextlib
 import traceback
+import asyncio
+import inspect
 
 from . import result
 from .util import (strclass, safe_repr, _count_diff_all_purpose,
@@ -598,14 +600,14 @@ class TestCase(object):
             self._outcome = outcome
 
             with outcome.testPartExecutor(self):
-                self.setUp()
+                self.runMethod(self.setUp)
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
+                    self.runMethod(testMethod)
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    self.tearDown()
+                    self.runMethod(self.tearDown)
 
             self.doCleanups()
             for test, reason in outcome.skipped:
@@ -635,6 +637,11 @@ class TestCase(object):
 
             # clear the outcome, no more needed
             self._outcome = None
+
+    @classmethod
+    def runMethod(cls, meth):
+        """Executes a test method."""
+        return meth()
 
     def doCleanups(self):
         """Execute all cleanup functions. Normally called for you after
@@ -1391,6 +1398,34 @@ class FunctionTestCase(TestCase):
             return self._description
         doc = self._testFunc.__doc__
         return doc and doc.split("\n")[0].strip() or None
+
+
+def coro_runner(coro):
+    """Replacement for asyncio.run"""
+    return asyncio.get_event_loop().run_until_complete(coro)
+
+class AsyncTestCase(TestCase):
+    """A class whose instances are single async test cases.
+
+    When subclassing AsyncTestCase, you can set these attributes:
+    * coroutineRunner: Runs test methods which are coroutines by passing them to
+    this function. The function should return the result of the run coroutine.
+    """
+
+    # Function used to run coroutine functions within AsyncTestCase
+    if sys.version_info >= (3, 7):
+        coroutineRunner = asyncio.run
+    else:
+        coroutineRunner = coro_runner
+
+    @classmethod
+    def runMethod(cls, meth):
+        """Executes a function or coroutine function using the
+        coroutineRunner."""
+        if inspect.iscoroutinefunction(meth):
+            return cls.coroutineRunner(meth())
+        else:
+            return super(AsyncTestCase, cls).runMethod(meth)
 
 
 class _SubTest(TestCase):
