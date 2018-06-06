@@ -2613,7 +2613,8 @@ class BaseTaskIntrospectionTests:
         self.assertEqual(asyncio.all_tasks(loop), set())
         self._register_task(task)
         self.assertEqual(asyncio.all_tasks(loop), set())
-        self.assertEqual(asyncio.Task.all_tasks(loop), {task})
+        with self.assertWarns(PendingDeprecationWarning):
+            self.assertEqual(asyncio.Task.all_tasks(loop), {task})
         self._unregister_task(task)
 
     def test__enter_task(self):
