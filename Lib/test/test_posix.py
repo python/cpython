@@ -615,11 +615,6 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, posix.minor)
         self.assertRaises((ValueError, OverflowError), posix.minor, -1)
 
-        # FIXME: reenable these tests on FreeBSD with the kernel fix
-        if sys.platform.startswith('freebsd') and dev >= 0x1_0000_0000:
-            self.skipTest("bpo-31044: on FreeBSD CURRENT, minor() truncates "
-                          "64-bit dev to 32-bit")
-
         self.assertEqual(posix.makedev(major, minor), dev)
         self.assertRaises(TypeError, posix.makedev, float(major), minor)
         self.assertRaises(TypeError, posix.makedev, major, float(minor))
