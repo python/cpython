@@ -7,7 +7,12 @@ ascii_lowercase -- a string containing all ASCII lowercase letters
 ascii_uppercase -- a string containing all ASCII uppercase letters
 ascii_letters -- a string containing all ASCII letters
 digits -- a string containing all ASCII decimal digits
+hex_lowercase -- a string containing all ASCII lowercase hexadecimal letters
+hex_uppercase -- a string containing all ASCII uppercase hexadecimal letters
+hex_letters -- a string containing all ASCII hexadecimal letters
 hexdigits -- a string containing all ASCII hexadecimal digits
+hexdigits_lowercase -- a string containing all ASCII lowercase hexadecimal digits
+hexdigits_uppercase -- a string containing all ASCII uppercase hexadecimal digits
 octdigits -- a string containing all ASCII octal digits
 punctuation -- a string containing all ASCII punctuation characters
 printable -- a string containing all ASCII characters considered printable
@@ -15,8 +20,9 @@ printable -- a string containing all ASCII characters considered printable
 """
 
 __all__ = ["ascii_letters", "ascii_lowercase", "ascii_uppercase", "capwords",
-           "digits", "hexdigits", "octdigits", "printable", "punctuation",
-           "whitespace", "Formatter", "Template"]
+           "digits", "hex_letters", "hex_lowercase", "hex_uppercase", "hexdigits",
+           "hexdigits_lowercase", "hexdigits_uppercase", "octdigits", "printable",
+           "punctuation", "whitespace", "Formatter", "Template"]
 
 import _string
 
@@ -26,7 +32,14 @@ ascii_lowercase = 'abcdefghijklmnopqrstuvwxyz'
 ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 ascii_letters = ascii_lowercase + ascii_uppercase
 digits = '0123456789'
-hexdigits = digits + 'abcdef' + 'ABCDEF'
+
+hex_lowercase = 'abcdef'
+hex_uppercase = 'ABCDEF'
+hex_letters = hex_lowercase + hex_uppercase
+hexdigits = digits + hex_letters
+hexdigits_lowercase = digits + hex_lowercase
+hexdigits_uppercase = digits + hex_uppercase
+
 octdigits = '01234567'
 punctuation = r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 printable = digits + ascii_letters + punctuation + whitespace
