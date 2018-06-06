@@ -118,6 +118,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
 {
     PyObject *retval = NULL;
     uid_t uid;
+    int nomem = 0;
     struct passwd *p;
     char *buf = NULL;
 
@@ -130,9 +131,13 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
 #ifdef HAVE_GETPWUID_R
     Py_BEGIN_ALLOW_THREADS
     int status;
-    long bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+    Py_ssize_t bufsize;
     struct passwd pwd;
 
+    bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (bufsize == -1) {
+        bufsize = 1024;
+    }
     buf = PyMem_RawMalloc(bufsize);
 
     do {
@@ -140,8 +145,9 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
         if (p != NULL || status != ERANGE) {
             break;
         }
-        if (bufsize > PY_SSIZE_T_MAX) {
+        if (bufsize > (PY_SSIZE_T_MAX >> 1)) {
             PyErr_NoMemory();
+            nomem = 1;
             status = ERANGE;
             break;
         }
@@ -149,6 +155,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
         p = PyMem_RawRealloc(buf, bufsize);
         if (p == NULL) {
             PyErr_NoMemory();
+            nomem = 1;
             break;
         }
         buf = (char *) p;
@@ -164,6 +171,11 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     if (p == NULL) {
         if (buf != NULL) {
             PyMem_RawFree(buf);
+        }
+        if (nomem == 1) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "getpwuid(): cannot allocate memory: %d", uid);
+            return NULL;
         }
         PyObject *uid_obj = _PyLong_FromUid(uid);
         if (uid_obj == NULL)
@@ -196,6 +208,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
 /*[clinic end generated code: output=6abeee92430e43d2 input=d5f7e700919b02d3]*/
 {
     char *buf = NULL, *name;
+    int nomem = 0;
     struct passwd *p;
     PyObject *bytes, *retval = NULL;
 
@@ -207,9 +220,13 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
 #ifdef HAVE_GETPWNAM_R
     Py_BEGIN_ALLOW_THREADS
     int status;
-    long bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+    Py_ssize_t bufsize;
     struct passwd pwd;
 
+    bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (bufsize == -1) {
+        bufsize = 1024;
+    }
     buf = PyMem_RawMalloc(bufsize);
 
     do {
@@ -217,8 +234,9 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
         if (p != NULL || status != ERANGE) {
             break;
         }
-        if (bufsize > PY_SSIZE_T_MAX) {
+        if (bufsize > (PY_SSIZE_T_MAX >> 1)) {
             PyErr_NoMemory();
+            nomem = 1;
             status = ERANGE;
             break;
         }
@@ -226,6 +244,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
         p = PyMem_RawRealloc(buf, bufsize);
         if (p == NULL) {
             PyErr_NoMemory();
+            nomem = 1;
             break;
         }
         buf = (char *) p;
@@ -239,8 +258,13 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
     p = getpwnam(name);
 #endif
     if (p == NULL) {
-        PyErr_Format(PyExc_KeyError,
-                     "getpwnam(): name not found: %s", name);
+        if (nomem == 1) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "getpwnam(): cannot allocate memory: %s", name);
+        } else {
+            PyErr_Format(PyExc_KeyError,
+                         "getpwnam(): name not found: %s", name);
+        }
         goto out;
     }
     retval = mkpwent(p);

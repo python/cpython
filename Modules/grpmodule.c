@@ -97,6 +97,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 /*[clinic end generated code: output=30797c289504a1ba input=15fa0e2ccf5cda25]*/
 {
     PyObject *py_int_id, *retval = NULL;
+    int nomem = 0;
     char *buf = NULL;
     gid_t gid;
     struct group *p;
@@ -123,9 +124,13 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 #ifdef HAVE_GETGRGID_R
     Py_BEGIN_ALLOW_THREADS
     int status;
-    long bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+    Py_ssize_t bufsize;
     struct group grp;
 
+    bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+    if (bufsize == -1) {
+        bufsize = 1024;
+    }
     buf = PyMem_RawMalloc(bufsize);
 
     while (1) {
@@ -133,8 +138,9 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
         if (p != NULL || status != ERANGE) {
             break;
         }
-        if (bufsize > PY_SSIZE_T_MAX) {
+        if (bufsize > (PY_SSIZE_T_MAX >> 1)) {
             PyErr_NoMemory();
+            nomem = 1;
             status = ERANGE;
             break;
         }
@@ -142,6 +148,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
         p = PyMem_RawRealloc(buf, bufsize);
         if (p == NULL) {
             PyErr_NoMemory();
+            nomem = 1;
             break;
         }
         buf = (char *) p;
@@ -157,6 +164,11 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
     if (p == NULL) {
         if (buf != NULL) {
             PyMem_RawFree(buf);
+        }
+        if (nomem == 1) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "getgrgid(): cannot allocate memory: %d", gid);
+            return NULL;
         }
         PyObject *gid_obj = _PyLong_FromGid(gid);
         if (gid_obj == NULL)
@@ -187,6 +199,7 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=67905086f403c21c input=08ded29affa3c863]*/
 {
     char *buf = NULL, *name_chars;
+    int nomem = 0;
     struct group *p;
     PyObject *bytes, *retval = NULL;
 
@@ -198,9 +211,13 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
 #ifdef HAVE_GETGRNAM_R
     Py_BEGIN_ALLOW_THREADS
     int status;
-    long bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+    Py_ssize_t bufsize;
     struct group grp;
 
+    bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+    if (bufsize == -1) {
+        bufsize = 1024;
+    }
     buf = PyMem_RawMalloc(bufsize);
 
     while(1) {
@@ -208,7 +225,9 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
         if (p != NULL || status != ERANGE) {
             break;
         }
-        if (bufsize > PY_SSIZE_T_MAX) {
+        if (bufsize > (PY_SSIZE_T_MAX >> 1)) {
+            PyErr_NoMemory();
+            nomem = 1;
             status = ERANGE;
             break;
         }
@@ -216,6 +235,7 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
         p = PyMem_RawRealloc(buf, bufsize);
         if (p == NULL) {
             PyErr_NoMemory();
+            nomem = 1;
             break;
         }
         buf = (char *) p;
@@ -229,7 +249,11 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
     p = getgrnam(name_chars);
 #endif
     if (p == NULL) {
-        PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %s", name_chars);
+        if (nomem == 1) {
+            PyErr_Format(PyExc_RuntimeError, "getgrnam(): cannot allocate memory: %s", name_chars);
+        } else {
+            PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %s", name_chars);
+        }
         goto out;
     }
     retval = mkgrent(p);
