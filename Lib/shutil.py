@@ -152,6 +152,10 @@ def _fastcopy_sendfile(fsrc, fdst):
         try:
             sent = os.sendfile(outfd, infd, offset, blocksize)
         except OSError as err:
+            # ...in oder to have a more informative exception.
+            err.filename = fsrc.name
+            err.filename2 = fdst.name
+
             if err.errno == errno.ENOTSOCK:
                 # sendfile() on this platform (probably Linux < 2.6.33)
                 # does not support copies between regular files (only
@@ -166,7 +170,7 @@ def _fastcopy_sendfile(fsrc, fdst):
             if offset == 0 and os.lseek(outfd, 0, os.SEEK_CUR) == 0:
                 raise _GiveupOnFastCopy(err)
 
-            raise err from None
+            raise err
         else:
             if sent == 0:
                 break  # EOF

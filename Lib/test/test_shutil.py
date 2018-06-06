@@ -34,6 +34,7 @@ from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
 OSX = sys.platform.startswith("darwin")
+WINDOWS = os.name == 'nt'
 try:
     import grp
     import pwd
@@ -1935,7 +1936,7 @@ class _ZeroCopyFileTest(object):
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
         # Make sure the fallback function is not called.
         with self.get_files() as (src, dst):
-            fun = shutil.copy2 if os.name == 'nt' else shutil.copyfile
+            fun = shutil.copy2 if WINDOWS else shutil.copyfile
             with unittest.mock.patch('shutil.copyfileobj') as m:
                 fun(TESTFN, TESTFN2)
             assert not m.called
@@ -1950,11 +1951,11 @@ class _ZeroCopyFileTest(object):
 
     def test_non_existent_src(self):
         name = tempfile.mktemp()
-        fun = shutil.copy2 if os.name == 'nt' else shutil.copyfile
+        fun = shutil.copy2 if WINDOWS else shutil.copyfile
         with self.assertRaises(FileNotFoundError) as cm:
             fun(name, "new")
         self.assertEqual(cm.exception.filename, name)
-        if os.name == 'nt':
+        if OSX or WINDOWS:
             self.assertEqual(cm.exception.filename2, "new")
 
     def test_empty_file(self):
@@ -1974,10 +1975,10 @@ class _ZeroCopyFileTest(object):
     def test_unhandled_exception(self):
         with unittest.mock.patch(self.PATCHPOINT,
                                  side_effect=ZeroDivisionError):
-            fun = shutil.copy2 if os.name == 'nt' else shutil.copyfile
+            fun = shutil.copy2 if WINDOWS else shutil.copyfile
             self.assertRaises(ZeroDivisionError, fun, TESTFN, TESTFN2)
 
-    @unittest.skipIf(os.name == 'nt', 'POSIX only')
+    @unittest.skipIf(WINDOWS, 'POSIX only')
     def test_exception_on_first_call(self):
         # Emulate a case where the first call to the zero-copy
         # function raises an exception in which case the function is
@@ -2004,7 +2005,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
     def zerocopy_fun(self, fsrc, fdst):
         return shutil._fastcopy_sendfile(fsrc, fdst)
 
-    @unittest.skipIf(os.name == 'nt', 'POSIX only')
+    @unittest.skipIf(WINDOWS, 'POSIX only')
     def test_non_regular_file_src(self):
         with io.BytesIO(self.FILEDATA) as src:
             with open(TESTFN2, "wb") as dst:
@@ -2014,7 +2015,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
 
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
-    @unittest.skipIf(os.name == 'nt', 'POSIX only')
+    @unittest.skipIf(WINDOWS, 'POSIX only')
     def test_non_regular_file_dst(self):
         with open(TESTFN, "rb") as src:
             with io.BytesIO() as dst:
@@ -2126,7 +2127,7 @@ class TestZeroCopyOSX(_ZeroCopyFileTest, unittest.TestCase):
         return shutil._fastcopy_osx(src.name, dst.name, posix._COPYFILE_DATA)
 
 
-@unittest.skipIf(not os.name == 'nt', 'Windows only')
+@unittest.skipIf(not WINDOWS, 'Windows only')
 class TestZeroCopyWindows(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "_winapi.CopyFileExW"
 
@@ -2134,7 +2135,7 @@ class TestZeroCopyWindows(_ZeroCopyFileTest, unittest.TestCase):
         return shutil._fastcopy_win(src.name, dst.name)
 
 
-@unittest.skipIf(not os.name == 'nt', 'Windows only')
+@unittest.skipIf(not WINDOWS, 'Windows only')
 class TestWindowsMakedirs(unittest.TestCase):
     """copytree() on Windows uses a dedicated version of os.makedirs()
     using specific Windows APIs in order to copy directory attributes.
