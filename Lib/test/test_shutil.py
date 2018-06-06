@@ -1950,9 +1950,12 @@ class _ZeroCopyFileTest(object):
 
     def test_non_existent_src(self):
         name = tempfile.mktemp()
+        fun = shutil.copy2 if os.name == 'nt' else shutil.copyfile
         with self.assertRaises(FileNotFoundError) as cm:
-            shutil.copyfile(name, "new")
+            fun(name, "new")
         self.assertEqual(cm.exception.filename, name)
+        if os.name == 'nt':
+            self.assertEqual(cm.exception.filename2, "new")
 
     def test_empty_file(self):
         srcname = TESTFN + 'src'
