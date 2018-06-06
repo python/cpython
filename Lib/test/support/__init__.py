@@ -2774,6 +2774,13 @@ def fd_count():
         except FileNotFoundError:
             pass
 
+    MAXFD = 256
+    if hasattr(os, 'sysconf'):
+        try:
+            MAXFD = os.sysconf("SC_OPEN_MAX")
+        except OSError:
+            pass
+
     old_modes = None
     if sys.platform == 'win32':
         # bpo-25306, bpo-31009: Call CrtSetReportMode() to not kill the process
@@ -2790,13 +2797,6 @@ def fd_count():
                                 msvcrt.CRT_ERROR,
                                 msvcrt.CRT_ASSERT):
                 old_modes[report_type] = msvcrt.CrtSetReportMode(report_type, 0)
-
-    MAXFD = 256
-    if hasattr(os, 'sysconf'):
-        try:
-            MAXFD = os.sysconf("SC_OPEN_MAX")
-        except OSError:
-            pass
 
     try:
         count = 0

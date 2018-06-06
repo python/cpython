@@ -569,6 +569,18 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
 
+    def test_fd_count(self):
+        code = "from test.support import fd_count; print(fd_count())"
+        proc = script_helper.assert_python_ok("-c", code)
+        out = proc.out.decode("ascii", "replace").strip()
+        # A fresh Python process should have exactly 3 open file descriptors
+        # (stdin, stdout, stderr) even if these standard streams have been
+        # closed in the parent process. assert_python_ok() opens one pipe
+        # per stream, so 3 pipes in total (stdin, stdout, stderr).
+        #
+        # subprocess.Popen(close_fds=True) and PEP 446 ensure that the child
+        # process don't inherit file descriptors from its parent.
+        self.assertEqual(out, "3")
 
     # XXX -follows a list of untested API
     # make_legacy_pyc
