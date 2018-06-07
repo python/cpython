@@ -408,15 +408,21 @@ efficiently (see :issue:`33671`).
 the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
 
 On OSX `copyfile`_ is used to copy the file content (not metadata).
+
 On Linux, Solaris and other POSIX platforms where :func:`os.sendfile` supports
 copies between 2 regular file descriptors :func:`os.sendfile` is used.
-On Windows `CopyFileEx`_ is used by all copy functions except :func:`copyfile`.
+
+On Windows `CopyFileEx`_ is used by all copy functions except :func:`copyfile`
+preserving file's extended attributes, metadata and security information.
+Also, when creating directories, :func:`copytree` uses `CreateDirectoryEx`_ and
+`SetNamedSecurityInfo`_ preserving source directory attributes and security
+information.
 
 If the fast-copy operation fails and no data was written in the destination
 file then shutil will silently fallback on using less efficient
 :func:`copyfileobj` function internally.
 
-.. versionadded:: 3.8
+.. versionchanged:: 3.8
 
 .. _shutil-copytree-example:
 
@@ -703,6 +709,12 @@ Querying the size of the output terminal
 
 .. _`CopyFileEx`:
    https://msdn.microsoft.com/en-us/library/windows/desktop/aa363852(v=vs.85).aspx
+
+.. _`CreateDirectoryEx`:
+   https://msdn.microsoft.com/en-us/library/windows/desktop/aa363856(v=vs.85).aspx
+
+.. _`SetNamedSecurityInfo`:
+   https://msdn.microsoft.com/en-us/library/windows/desktop/aa379579(v=vs.85).aspx
 
 .. _`copyfile`:
    http://www.manpagez.com/man/3/copyfile/

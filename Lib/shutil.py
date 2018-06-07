@@ -114,7 +114,8 @@ def _fastcopy_osx(src, dst, flags):
 
 def _fastcopy_win(src, dst):
     """Copy 2 files by using high-performance CopyFileExW (Windows only).
-    Note: this will also copy file metadata.
+    Note: this will also copy file's extended attributes, metadata and
+    security information.
     """
     try:
         _winapi.CopyFileExW(src, dst, 0)
@@ -374,9 +375,8 @@ def copy2(src, dst, *, follow_symlinks=True):
     If follow_symlinks is false, symlinks won't be followed. This
     resembles GNU's "cp -P src dst".
 
-    On Windows this function uses CopyFileEx which preserves extended
-    attributes, OLE structured storage, NTFS file system alternate
-    data streams, security resource attributes and file attributes.
+    On Windows this function uses CopyFileEx which preserves file's
+    extended attributes, metadata and security information.
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
@@ -465,6 +465,9 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     destination path as arguments. By default, copy2() is used, but any
     function that supports the same signature (like copy()) can be used.
 
+    On Windows this function uses CreateDirectoryEx and SetNamedSecurityInfo
+    to create directories, preserving source directory attributes and
+    security information.
     """
     names = os.listdir(src)
     if ignore is not None:
