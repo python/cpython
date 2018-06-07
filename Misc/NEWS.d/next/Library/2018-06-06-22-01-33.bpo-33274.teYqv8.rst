@@ -1,0 +1,3 @@
+W3C DOM Level 1 specifies return value of Element.removeAttributeNode() as
+"The Attr node that was removed." xml.dom.minidom now complies with this
+requirement.
