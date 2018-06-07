@@ -200,13 +200,17 @@ def _fastcopy_fileobj(fsrc, fdst):
     # Faster than copyfileobj() as it uses bytearray() and readinto().
     # Cannot use it in copyfileobj() as we're not sure files are
     # open in binary mode.
-    bufsize = 16 * 1024
-    while True:
-        buf = bytearray(bufsize)
-        buflen = fsrc.readinto(buf)
-        if not buflen:
-            break
-        fdst.write(buf[:buflen])
+    length = 1024 * 1024  # 1MB
+    with memoryview(bytearray(length)) as mv:
+        while True:
+            n = fsrc.readinto(mv)
+            if not n:
+                break
+            elif n < length:
+                with mv[:n] as smv:
+                    fdst.write(smv)
+            else:
+                fdst.write(mv)
 
 def _samefile(src, dst):
     # Macintosh, Unix.
