@@ -553,14 +553,30 @@ class StreamTests(test_utils.TestCase):
 
     def test_readexactly_exception(self):
         stream = asyncio.StreamReader(loop=self.loop)
+        stream.set_exception(ValueError())
+        self.assertRaises(
+            ValueError, self.loop.run_until_complete, stream.readexactly(2))
+
+    def test_readexactly_remains_buffer_before_exception(self):
+        stream = asyncio.StreamReader(loop=self.loop)
         stream.feed_data(b'line\n')
+        stream.set_exception(ValueError())
 
         data = self.loop.run_until_complete(stream.readexactly(2))
         self.assertEqual(b'li', data)
 
+        data = self.loop.run_until_complete(stream.readexactly(3))
+        self.assertEqual(b'ne\n', data)
+
+        self.assertRaises(
+            ValueError, self.loop.run_until_complete, stream.readexactly(3))
+
+    def test_readexactly_N_0_exception(self):
+        stream = asyncio.StreamReader(loop=self.loop)
+        stream.feed_data(b'line\n')
         stream.set_exception(ValueError())
         self.assertRaises(
-            ValueError, self.loop.run_until_complete, stream.readexactly(2))
+            ValueError, self.loop.run_until_complete, stream.readexactly(0))
 
     def test_exception(self):
         stream = asyncio.StreamReader(loop=self.loop)
