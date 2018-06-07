@@ -416,7 +416,7 @@ def _field_init(f, frozen, globals, self_name):
     # Only test this now, so that we can create variables for the
     # default.  However, return None to signify that we're not going
     # to actually do the assignment statement for InitVars.
-    if f._field_type == _FIELD_INITVAR:
+    if f._field_type is _FIELD_INITVAR:
         return None
 
     # Now, actually generate the field assignment.
@@ -1160,6 +1160,10 @@ def replace(obj, **changes):
     # If a field is not in 'changes', read its value from the provided obj.
 
     for f in getattr(obj, _FIELDS).values():
+        # Only consider normal fields or InitVars.
+        if f._field_type is _FIELD_CLASSVAR:
+            continue
+
         if not f.init:
             # Error if this field is specified in changes.
             if f.name in changes:
