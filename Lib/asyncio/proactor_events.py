@@ -233,28 +233,12 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             return
 
         if isinstance(self._protocol, protocols.BufferedProtocol):
-            nbytes = len(data)
-            if nbytes:
-                try:
-                    buf = self._protocol.get_buffer(-1)
-                    if not len(buf):
-                        raise RuntimeError('get_buffer() returned '
-                                           'an empty buffer')
-                except Exception as exc:
-                    self._fatal_error(
-                        exc, 'Fatal error: protocol.get_buffer() call failed.')
-                    return
-
-                # Copy data into the buffer
-                buf[:nbytes] = data
-
             try:
-                self._protocol.buffer_updated(nbytes)
+                sslproto._feed_data_to_bufferred_proto(self._protocol, data)
             except Exception as exc:
-                self._fatal_error(
-                    exc,
-                    'Fatal error: '
-                    'protocol.buffer_updated() call failed.')
+                self._fatal_error(exc,
+                                  'Fatal error: protocol.buffer_updated() '
+                                  'call failed.')
                 return
         else:
             self._protocol.data_received(data)
