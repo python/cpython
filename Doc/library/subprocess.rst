@@ -38,7 +38,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
-                  shell=False, timeout=None, check=False, \
+                  shell=False, cwd=None, timeout=None, check=False, \
                   encoding=None, errors=None, env=None)
 
    Run the command described by *args*.  Wait for command to complete, then
