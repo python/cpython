@@ -1,12 +1,3 @@
-IDLE: Re-enable color configuration for Code Context.
-The difference from before is that the settings are now on the
-Highlights tab instead of the Extensions tab and only change one theme
-at a time instead of all themes.  The default for light themes is black
-on light gray, as before.  The default for the IDLE Dark theme is white
-on dark gray, which better fits the dark theme.
-
-When one starts IDLE from a console and loads a custom theme without
-definitions for 'context', one will see a warning message on the console.
-To stop the warning, go to Options => Configure IDLE => Highlights,
-select the custom theme if not selected already, select 'Code Context',
-and select foreground and background colors.
+Enable theme-specific color configuration for Code Context.
+Use the Highlights tab to see the setting for builtin themes
+or add settings to custom themes.
