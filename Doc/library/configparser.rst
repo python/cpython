@@ -855,7 +855,7 @@ interpolation if an option used is not defined elsewhere. ::
 ConfigParser Objects
 --------------------
 
-.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation(), converters={})
+.. class:: ConfigParser(defaults=None, dict_type=dict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation(), converters={})
 
    The main configuration parser.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it
@@ -901,9 +901,6 @@ ConfigParser Objects
    converter gets its own corresponding :meth:`get*()` method on the parser
    object and section proxies.
 
-   .. versionchanged:: 3.1
-      The default *dict_type* is :class:`collections.OrderedDict`.
-
    .. versionchanged:: 3.2
       *allow_no_value*, *delimiters*, *comment_prefixes*, *strict*,
       *empty_lines_in_values*, *default_section* and *interpolation* were
@@ -917,6 +914,8 @@ ConfigParser Objects
       providing consistent behavior across the parser: non-string
       keys and values are implicitly converted to strings.
 
+   .. versionchanged:: 3.7
+      The default *dict_type* is :class:`dict`.
 
    .. method:: defaults()
 
@@ -1088,10 +1087,10 @@ ConfigParser Objects
       given *section*.  Optional arguments have the same meaning as for the
       :meth:`get` method.
 
-   .. versionchanged:: 3.8
-      Items present in *vars* no longer appear in the result.  The previous
-      behaviour mixed actual parser options with variables provided for
-      interpolation.
+      .. versionchanged:: 3.8
+         Items present in *vars* no longer appear in the result.  The previous
+         behaviour mixed actual parser options with variables provided for
+         interpolation.
 
 
    .. method:: set(section, option, value)
@@ -1178,7 +1177,7 @@ ConfigParser Objects
 RawConfigParser Objects
 -----------------------
 
-.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, \
+.. class:: RawConfigParser(defaults=None, dict_type=dict, \
                            allow_no_value=False, *, delimiters=('=', ':'), \
                            comment_prefixes=('#', ';'), \
                            inline_comment_prefixes=None, strict=True, \
@@ -1190,6 +1189,9 @@ RawConfigParser Objects
    disabled by default and allows for non-string section names, option
    names, and values via its unsafe ``add_section`` and ``set`` methods,
    as well as the legacy ``defaults=`` keyword argument handling.
+
+   .. versionchanged:: 3.7
+      The default *dict_type* is :class:`dict`.
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of
