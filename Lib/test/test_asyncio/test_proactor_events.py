@@ -455,6 +455,8 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.assertFalse(self.protocol.pause_writing.called)
 
 
+@unittest.skip('FIXME: bpo-33694: these tests are too close '
+               'to the implementation and should be refactored or removed')
 class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
 
     def setUp(self):
@@ -547,6 +549,8 @@ class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
         self.loop._proactor.recv_into.assert_called_with(self.sock, buf)
         buf_proto.buffer_updated.assert_called_with(4)
 
+    @unittest.skip('FIXME: bpo-33694: this test is too close to the '
+                   'implementation and should be refactored or removed')
     def test_proto_buf_switch(self):
         tr = self.socket_transport()
         test_utils.run_briefly(self.loop)
