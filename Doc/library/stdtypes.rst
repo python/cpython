@@ -4248,7 +4248,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    value)`` pairs. Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.
 
-   Dict preserves insertion order.  Note that updating key doesn't affects the
+   Dict preserves insertion order.  Note that updating a key does not affect the
    order.  On the other hand, keys added after deletion are inserted to the
    last. ::
 
