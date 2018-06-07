@@ -943,6 +943,10 @@ class PendingSignalsTests(unittest.TestCase):
         self.assertRaises(OSError, signal.pthread_sigmask, 1700, [])
         with self.assertRaises(ValueError):
             signal.pthread_sigmask(signal.SIG_BLOCK, [signal.NSIG])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [0])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [1<<1000])
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')

@@ -1,0 +1,3 @@
+Minor fixes in typing module: add annotations to ``NamedTuple.__new__``,
+pass ``*args`` and ``**kwds`` in ``Generic.__new__``.  Original PRs by
+Paulius Šarka and Chad Dombrova.

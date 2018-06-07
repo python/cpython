@@ -417,15 +417,17 @@ class TracerRun():
         self.dry_run = test_case.dry_run
         self.tracer = Tracer(test_case.expect_set, skip=skip,
                              dry_run=self.dry_run, test_case=test_case.id())
+        self._original_tracer = None
 
     def __enter__(self):
         # test_pdb does not reset Breakpoint class attributes on exit :-(
         reset_Breakpoint()
+        self._original_tracer = sys.gettrace()
         return self.tracer
 
     def __exit__(self, type_=None, value=None, traceback=None):
         reset_Breakpoint()
-        sys.settrace(None)
+        sys.settrace(self._original_tracer)
 
         not_empty = ''
         if self.tracer.set_list:

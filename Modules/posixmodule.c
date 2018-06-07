@@ -1267,6 +1267,65 @@ PyLong_FromPy_off_t(Py_off_t offset)
 #endif
 }
 
+#ifdef HAVE_SIGSET_T
+/* Convert an iterable of integers to a sigset.
+   Return 1 on success, return 0 and raise an exception on error. */
+int
+_Py_Sigset_Converter(PyObject *obj, void *addr)
+{
+    sigset_t *mask = (sigset_t *)addr;
+    PyObject *iterator, *item;
+    long signum;
+    int overflow;
+
+    if (sigemptyset(mask)) {
+        /* Probably only if mask == NULL. */
+        PyErr_SetFromErrno(PyExc_OSError);
+        return 0;
+    }
+
+    iterator = PyObject_GetIter(obj);
+    if (iterator == NULL) {
+        return 0;
+    }
+
+    while ((item = PyIter_Next(iterator)) != NULL) {
+        signum = PyLong_AsLongAndOverflow(item, &overflow);
+        Py_DECREF(item);
+        if (signum <= 0 || signum >= NSIG) {
+            if (overflow || signum != -1 || !PyErr_Occurred()) {
+                PyErr_Format(PyExc_ValueError,
+                             "signal number %ld out of range", signum);
+            }
+            goto error;
+        }
+        if (sigaddset(mask, (int)signum)) {
+            if (errno != EINVAL) {
+                /* Probably impossible */
+                PyErr_SetFromErrno(PyExc_OSError);
+                goto error;
+            }
+            /* For backwards compatibility, allow idioms such as
+             * `range(1, NSIG)` but warn about invalid signal numbers
+             */
+            const char msg[] =
+                "invalid signal number %ld, please use valid_signals()";
+            if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1, msg, signum)) {
+                goto error;
+            }
+        }
+    }
+    if (!PyErr_Occurred()) {
+        Py_DECREF(iterator);
+        return 1;
+    }
+
+error:
+    Py_DECREF(iterator);
+    return 0;
+}
+#endif /* HAVE_SIGSET_T */
+
 #ifdef MS_WINDOWS
 
 static int

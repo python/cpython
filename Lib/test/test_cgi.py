@@ -130,6 +130,24 @@ class CgiTests(unittest.TestCase):
                     'file': [b'Testing 123.\n'], 'title': ['']}
         self.assertEqual(result, expected)
 
+    def test_parse_multipart_invalid_encoding(self):
+        BOUNDARY = "JfISa01"
+        POSTDATA = """--JfISa01
+Content-Disposition: form-data; name="submit-name"
+Content-Length: 3
+
+\u2603
+--JfISa01"""
+        fp = BytesIO(POSTDATA.encode('utf8'))
+        env = {'boundary': BOUNDARY.encode('latin1'),
+               'CONTENT-LENGTH': str(len(POSTDATA.encode('utf8')))}
+        result = cgi.parse_multipart(fp, env, encoding="ascii",
+                                     errors="surrogateescape")
+        expected = {'submit-name': ["\udce2\udc98\udc83"]}
+        self.assertEqual(result, expected)
+        self.assertEqual("\u2603".encode('utf8'),
+                         result["submit-name"][0].encode('utf8', 'surrogateescape'))
+
     def test_fieldstorage_properties(self):
         fs = cgi.FieldStorage()
         self.assertFalse(fs)

@@ -44,7 +44,7 @@ Key terms
   ``venv``. It allows virtual environments to be used on versions of
   Python prior to 3.4, which either don't provide ``venv`` at all, or
   aren't able to automatically install ``pip`` into created environments.
-* The `Python Packaging Index <https://pypi.python.org/pypi>`__ is a public
+* The `Python Packaging Index <https://pypi.org>`__ is a public
   repository of open source licensed packages made available for use by
   other Python users.
 * the `Python Packaging Authority

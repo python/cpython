@@ -380,6 +380,11 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        This method should only be used by :class:`Executor` implementations and
        unit tests.
 
+       .. versionchanged:: 3.8
+          This method raises
+          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+          already done.
+
     .. method:: set_exception(exception)
 
        Sets the result of the work associated with the :class:`Future` to the
@@ -388,6 +393,10 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        This method should only be used by :class:`Executor` implementations and
        unit tests.
 
+       .. versionchanged:: 3.8
+          This method raises
+          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+          already done.
 
 Module Functions
 ----------------
@@ -465,6 +474,13 @@ Exception classes
    to submit or execute new tasks.
 
    .. versionadded:: 3.7
+
+.. exception:: InvalidStateError
+
+   Raised when an operation is performed on a future that is not allowed
+   in the current state.
+
+   .. versionadded:: 3.8
 
 .. currentmodule:: concurrent.futures.thread
 
