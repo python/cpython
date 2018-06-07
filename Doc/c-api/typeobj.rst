@@ -650,7 +650,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    A pointer to the instance destructor function.  This function must be defined
    unless the type guarantees that its instances will never be deallocated (as is
-   the case for the singletons ``None`` and ``Ellipsis``).
+   the case for the singletons ``None`` and ``Ellipsis``).  The function signature is::
+
+      void tp_dealloc(PyObject *self);
 
    The destructor function is called by the :c:func:`Py_DECREF` and
    :c:func:`Py_XDECREF` macros when the new reference count is zero.  At this point,
@@ -733,20 +735,26 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    An optional pointer to a function that implements the built-in function
    :func:`repr`.
 
-   The signature is the same as for :c:func:`PyObject_Repr`; it must return a string
-   or a Unicode object.  Ideally, this function should return a string that, when
-   passed to :func:`eval`, given a suitable environment, returns an object with the
+   The signature is the same as for :c:func:`PyObject_Repr`::
+
+      PyObject *tp_repr(PyObject *self);
+
+   The function must return a string or a Unicode object.  Ideally,
+   this function should return a string that, when passed to
+   :func:`eval`, given a suitable environment, returns an object with the
    same value.  If this is not feasible, it should return a string starting with
    ``'<'`` and ending with ``'>'`` from which both the type and the value of the
    object can be deduced.
 
-   When this field is not set, a string of the form ``<%s object at %p>`` is
-   returned, where ``%s`` is replaced by the type name, and ``%p`` by the object's
-   memory address.
-
    **Inheritance:**
 
    This field is inherited by subtypes.
+
+   **Default:**
+
+   When this field is not set, a string of the form ``<%s object at %p>`` is
+   returned, where ``%s`` is replaced by the type name, and ``%p`` by the object's
+   memory address.
 
 
 .. c:member:: PyNumberMethods* PyTypeObject.tp_as_number
@@ -792,8 +800,11 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    An optional pointer to a function that implements the built-in function
    :func:`hash`.
 
-   The signature is the same as for :c:func:`PyObject_Hash`; it must return a
-   value of the type Py_hash_t.  The value ``-1`` should not be returned as a
+   The signature is the same as for :c:func:`PyObject_Hash`::
+
+      Py_hash_t tp_hash(PyObject *);
+
+   The value ``-1`` should not be returned as a
    normal return value; when an error occurs during the computation of the hash
    value, the function should set an exception and return ``-1``.
 
@@ -823,7 +834,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    An optional pointer to a function that implements calling the object.  This
    should be *NULL* if the object is not callable.  The signature is the same as
-   for :c:func:`PyObject_Call`.
+   for :c:func:`PyObject_Call`::
+
+      PyObject *tp_call(PyObject *self, PyObject *args, PyObject *kwargs);
 
    **Inheritance:**
 
@@ -837,26 +850,34 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    constructor for that type.  This constructor calls :c:func:`PyObject_Str` to do
    the actual work, and :c:func:`PyObject_Str` will call this handler.)
 
-   The signature is the same as for :c:func:`PyObject_Str`; it must return a string
-   or a Unicode object.  This function should return a "friendly" string
+   The signature is the same as for :c:func:`PyObject_Str`::
+
+      PyObject *tp_str(PyObject *self);
+
+   The function must return a string or a Unicode object.  It should be a "friendly" string
    representation of the object, as this is the representation that will be used,
    among other things, by the :func:`print` function.
-
-   When this field is not set, :c:func:`PyObject_Repr` is called to return a string
-   representation.
 
    **Inheritance:**
 
    This field is inherited by subtypes.
+
+   **Default:**
+
+   When this field is not set, :c:func:`PyObject_Repr` is called to return a string
+   representation.
 
 
 .. c:member:: getattrofunc PyTypeObject.tp_getattro
 
    An optional pointer to the get-attribute function.
 
-   The signature is the same as for :c:func:`PyObject_GetAttr`.  It is usually
-   convenient to set this field to :c:func:`PyObject_GenericGetAttr`, which
-   implements the normal way of looking for object attributes.
+   The signature is the same as for :c:func:`PyObject_GetAttr`::
+
+      PyObject *tp_getattro(PyObject *self, PyObject *attr);
+
+   It is usually convenient to set this field to :c:func:`PyObject_GenericGetAttr`,
+   which implements the normal way of looking for object attributes.
 
    **Inheritance:**
 
@@ -875,10 +896,14 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    An optional pointer to the function for setting and deleting attributes.
 
-   The signature is the same as for :c:func:`PyObject_SetAttr`, but setting
-   *v* to *NULL* to delete an attribute must be supported.  It is usually
-   convenient to set this field to :c:func:`PyObject_GenericSetAttr`, which
-   implements the normal way of setting object attributes.
+   The signature is the same as for :c:func:`PyObject_SetAttr`::
+
+      PyObject *tp_setattro(PyObject *self, PyObject *attr, PyObject *value);
+
+   In addition, setting *value* to *NULL* to delete an attribute must be
+   supported.  It is usually convenient to set this field to
+   :c:func:`PyObject_GenericSetAttr`, which implements the normal
+   way of setting object attributes.
 
    **Inheritance:**
 
@@ -1062,9 +1087,12 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 .. c:member:: traverseproc PyTypeObject.tp_traverse
 
    An optional pointer to a traversal function for the garbage collector.  This is
-   only used if the :const:`Py_TPFLAGS_HAVE_GC` flag bit is set.  More information
-   about Python's garbage collection scheme can be found in section
-   :ref:`supporting-cycle-detection`.
+   only used if the :const:`Py_TPFLAGS_HAVE_GC` flag bit is set.  The signature is::
+
+      int tp_traverse(PyObject *self, visitproc visit, void *arg);
+
+   More information about Python's garbage collection scheme can be found
+   in section :ref:`supporting-cycle-detection`.
 
    The :c:member:`~PyTypeObject.tp_traverse` pointer is used by the garbage collector to detect
    reference cycles. A typical implementation of a :c:member:`~PyTypeObject.tp_traverse` function
@@ -1106,7 +1134,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 .. c:member:: inquiry PyTypeObject.tp_clear
 
    An optional pointer to a clear function for the garbage collector. This is only
-   used if the :const:`Py_TPFLAGS_HAVE_GC` flag bit is set.
+   used if the :const:`Py_TPFLAGS_HAVE_GC` flag bit is set.  The signature is::
+
+      int tp_clear(PyObject *);
 
    The :c:member:`~PyTypeObject.tp_clear` member function is used to break reference cycles in cyclic
    garbage detected by the garbage collector.  Taken together, all :c:member:`~PyTypeObject.tp_clear`
@@ -1164,10 +1194,12 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: richcmpfunc PyTypeObject.tp_richcompare
 
-   An optional pointer to the rich comparison function, whose signature is
-   ``PyObject *tp_richcompare(PyObject *a, PyObject *b, int op)``. The first
-   parameter is guaranteed to be an instance of the type that is defined
-   by :c:type:`PyTypeObject`.
+   An optional pointer to the rich comparison function, whose signature is::
+
+      PyObject *tp_richcompare(PyObject *self, PyObject *other, int op);
+
+   The first parameter is guaranteed to be an instance of the type
+   that is defined by :c:type:`PyTypeObject`.
 
    The function should return the result of the comparison (usually ``Py_True``
    or ``Py_False``).  If the comparison is undefined, it must return
@@ -1272,7 +1304,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    presence normally signals that the instances of this type are iterable (although
    sequences may be iterable without this function).
 
-   This function has the same signature as :c:func:`PyObject_GetIter`.
+   This function has the same signature as :c:func:`PyObject_GetIter`::
+
+      PyObject *tp_iter(PyObject *self);
 
    **Inheritance:**
 
@@ -1282,6 +1316,10 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 .. c:member:: iternextfunc PyTypeObject.tp_iternext
 
    An optional pointer to a function that returns the next item in an iterator.
+   The signature is::
+
+      PyObject *tp_iternext(PyObject *self);
+
    When the iterator is exhausted, it must return *NULL*; a :exc:`StopIteration`
    exception may or may not be set.  When another error occurs, it must return
    *NULL* too.  Its presence signals that the instances of this type are
@@ -1387,11 +1425,11 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    An optional pointer to a "descriptor get" function.
 
-   The function signature is ::
+   The function signature is::
 
       PyObject * tp_descr_get(PyObject *self, PyObject *obj, PyObject *type);
 
-   .. XXX explain.
+   .. XXX explain more?
 
    **Inheritance:**
 
@@ -1403,13 +1441,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    An optional pointer to a function for setting and deleting
    a descriptor's value.
 
-   The function signature is ::
+   The function signature is::
 
       int tp_descr_set(PyObject *self, PyObject *obj, PyObject *value);
 
    The *value* argument is set to *NULL* to delete the value.
 
-   .. XXX explain.
+   .. XXX explain more?
 
    **Inheritance:**
 
@@ -1485,9 +1523,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :meth:`__init__`, and it is possible to reinitialize an instance by calling its
    :meth:`__init__` method again.
 
-   The function signature is ::
+   The function signature is::
 
-      int tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+      int tp_init(PyObject *self, PyObject *args, PyObject *kwds);
 
    The self argument is the instance to be initialized; the *args* and *kwds*
    arguments represent positional and keyword arguments of the call to
@@ -1513,9 +1551,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    An optional pointer to an instance allocation function.
 
-   The function signature is ::
+   The function signature is::
 
-      PyObject *tp_alloc(PyTypeObject *self, Py_ssize_t nitems)
+      PyObject *tp_alloc(PyTypeObject *self, Py_ssize_t nitems);
 
    **Inheritance:**
 
@@ -1537,9 +1575,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    An optional pointer to an instance creation function.
 
-   The function signature is ::
+   The function signature is::
 
-      PyObject *tp_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
+      PyObject *tp_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds);
 
    The subtype argument is the type of the object being created; the *args* and
    *kwds* arguments represent positional and keyword arguments of the call to the
@@ -1568,12 +1606,11 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    instances, like a factory function.
 
 
-.. c:member:: destructor PyTypeObject.tp_free
+.. c:member:: freefunc PyTypeObject.tp_free
 
-   An optional pointer to an instance deallocation function.  Its signature is
-   :c:type:`freefunc`::
+   An optional pointer to an instance deallocation function.  Its signature is::
 
-      void tp_free(void *)
+      void tp_free(void *self);
 
    An initializer that is compatible with this signature is :c:func:`PyObject_Free`.
 
@@ -1601,9 +1638,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    some types have a mixture of statically and dynamically allocated instances, and
    the statically allocated instances are not collectible.  Such types should
    define this function; it should return ``1`` for a collectible instance, and
-   ``0`` for a non-collectible instance. The signature is ::
+   ``0`` for a non-collectible instance. The signature is::
 
-      int tp_is_gc(PyObject *self)
+      int tp_is_gc(PyObject *self);
 
    (The only example of this are types themselves.  The metatype,
    :c:data:`PyType_Type`, defines this function to distinguish between statically
@@ -1689,7 +1726,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    An optional pointer to an instance finalization function.  Its signature is::
 
-      void tp_finalize(PyObject *self)
+      void tp_finalize(PyObject *self);
 
    If :c:member:`~PyTypeObject.tp_finalize` is set, the interpreter calls it once when
    finalizing an instance.  It is called either from the garbage
@@ -2115,7 +2152,7 @@ Async Object Structures
 
    The signature of this function is::
 
-      PyObject *am_await(PyObject *self)
+      PyObject *am_await(PyObject *self);
 
    The returned object must be an iterator, i.e. :c:func:`PyIter_Check` must
    return ``1`` for it.
@@ -2126,7 +2163,7 @@ Async Object Structures
 
    The signature of this function is::
 
-      PyObject *am_aiter(PyObject *self)
+      PyObject *am_aiter(PyObject *self);
 
    Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
 
@@ -2137,7 +2174,7 @@ Async Object Structures
 
    The signature of this function is::
 
-      PyObject *am_anext(PyObject *self)
+      PyObject *am_anext(PyObject *self);
 
    Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
    This slot may be set to *NULL*.
@@ -2165,15 +2202,25 @@ Slot Type typedefs
 
 .. c:type:: void (*destructor)(PyObject *)
 
-.. c:type:: void (*freefunc)(void)
+.. c:type:: void (*freefunc)(void *)
+
+   See :c:member:`~PyTypeObject.tp_free`.
 
 .. c:type:: PyObject *(*newfunc)(PyObject *, PyObject *, PyObject *)
 
+   See :c:member:`~PyTypeObject.tp_new`.
+
 .. c:type:: int (*initproc)(PyObject *, PyObject *, PyObject *)
+
+   See :c:member:`~PyTypeObject.tp_init`.
 
 .. c:type:: PyObject *(*reprfunc)(PyObject *)
 
+   See :c:member:`~PyTypeObject.tp_repr`.
+
 .. c:type:: int (*printfunc)(PyObject *, FILE *, int)
+
+   This is hidden if :const:`PY_LIMITED_API` is set.
 
 .. c:type:: PyObject *(*getattrfunc)(PyObject *self, char *attr)
 
@@ -2188,22 +2235,38 @@ Slot Type typedefs
 
    Return the value of the named attribute for the object.
 
+   See :c:member:`~PyTypeObject.tp_getattro`.
+
 .. c:type:: int (*setattrofunc)(PyObject *self, PyObject *attr, PyObject *value)
 
    Set the value of the named attribute for the object.
    The value argument is set to *NULL* to delete the attribute.
 
+   See :c:member:`~PyTypeObject.tp_setattro`.
+
 .. c:type:: PyObject *(*descrgetfunc)(PyObject *, PyObject *, PyObject *)
+
+   See :c:member:`~PyTypeObject.tp_descrget`.
 
 .. c:type:: int (*descrsetfunc)(PyObject *, PyObject *, PyObject *)
 
+   See :c:member:`~PyTypeObject.tp_descrset`.
+
 .. c:type:: Py_hash_t (*hashfunc)(PyObject *)
+
+   See :c:member:`~PyTypeObject.tp_hash`.
 
 .. c:type:: PyObject *(*richcmpfunc)(PyObject *, PyObject *, int)
 
+   See :c:member:`~PyTypeObject.tp_richcompare`.
+
 .. c:type:: PyObject *(*getiterfunc)(PyObject *)
 
+   See :c:member:`~PyTypeObject.tp_iter`.
+
 .. c:type:: PyObject *(*iternextfunc)(PyObject *)
+
+   See :c:member:`~PyTypeObject.tp_iternext`.
 
 .. c:type:: Py_ssize_t (*lenfunc)(PyObject *)
 
