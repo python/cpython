@@ -52,48 +52,15 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertIsNone(fut.result())
         self.protocol.connection_made(tr)
-        self.proactor.recv.assert_called_with(self.sock, 32768)
+        self.proactor.recv_into.assert_called_with(self.sock, tr._read_buffer)
 
     def test_loop_reading(self):
         tr = self.socket_transport()
         tr._loop_reading()
-        self.loop._proactor.recv.assert_called_with(self.sock, 32768)
+        self.loop._proactor.recv_into.assert_called_with(
+            self.sock, tr._read_buffer)
         self.assertFalse(self.protocol.data_received.called)
         self.assertFalse(self.protocol.eof_received.called)
-
-    def test_loop_reading_data(self):
-        res = asyncio.Future(loop=self.loop)
-        res.set_result(b'data')
-
-        tr = self.socket_transport()
-        tr._read_fut = res
-        tr._loop_reading(res)
-        self.loop._proactor.recv.assert_called_with(self.sock, 32768)
-        self.protocol.data_received.assert_called_with(b'data')
-
-    def test_loop_reading_no_data(self):
-        res = asyncio.Future(loop=self.loop)
-        res.set_result(b'')
-
-        tr = self.socket_transport()
-        self.assertRaises(AssertionError, tr._loop_reading, res)
-
-        tr.close = mock.Mock()
-        tr._read_fut = res
-        tr._loop_reading(res)
-        self.assertFalse(self.loop._proactor.recv.called)
-        self.assertTrue(self.protocol.eof_received.called)
-        self.assertTrue(tr.close.called)
-
-    def test_loop_reading_aborted(self):
-        err = self.loop._proactor.recv.side_effect = ConnectionAbortedError()
-
-        tr = self.socket_transport()
-        tr._fatal_error = mock.Mock()
-        tr._loop_reading()
-        tr._fatal_error.assert_called_with(
-                            err,
-                            'Fatal read error on pipe transport')
 
     def test_loop_reading_aborted_closing(self):
         self.loop._proactor.recv.side_effect = ConnectionAbortedError()
@@ -103,35 +70,6 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         tr._fatal_error = mock.Mock()
         tr._loop_reading()
         self.assertFalse(tr._fatal_error.called)
-
-    def test_loop_reading_aborted_is_fatal(self):
-        self.loop._proactor.recv.side_effect = ConnectionAbortedError()
-        tr = self.socket_transport()
-        tr._closing = False
-        tr._fatal_error = mock.Mock()
-        tr._loop_reading()
-        self.assertTrue(tr._fatal_error.called)
-
-    def test_loop_reading_conn_reset_lost(self):
-        err = self.loop._proactor.recv.side_effect = ConnectionResetError()
-
-        tr = self.socket_transport()
-        tr._closing = False
-        tr._fatal_error = mock.Mock()
-        tr._force_close = mock.Mock()
-        tr._loop_reading()
-        self.assertFalse(tr._fatal_error.called)
-        tr._force_close.assert_called_with(err)
-
-    def test_loop_reading_exception(self):
-        err = self.loop._proactor.recv.side_effect = (OSError())
-
-        tr = self.socket_transport()
-        tr._fatal_error = mock.Mock()
-        tr._loop_reading()
-        tr._fatal_error.assert_called_with(
-                            err,
-                            'Fatal read error on pipe transport')
 
     def test_write(self):
         tr = self.socket_transport()
@@ -335,51 +273,6 @@ class ProactorSocketTransportTests(test_utils.TestCase):
             tr.write_eof()
         close_transport(tr)
 
-    def test_pause_resume_reading(self):
-        tr = self.socket_transport()
-        futures = []
-        for msg in [b'data1', b'data2', b'data3', b'data4', b'data5', b'']:
-            f = asyncio.Future(loop=self.loop)
-            f.set_result(msg)
-            futures.append(f)
-
-        self.loop._proactor.recv.side_effect = futures
-        self.loop._run_once()
-        self.assertFalse(tr._paused)
-        self.assertTrue(tr.is_reading())
-        self.loop._run_once()
-        self.protocol.data_received.assert_called_with(b'data1')
-        self.loop._run_once()
-        self.protocol.data_received.assert_called_with(b'data2')
-
-        tr.pause_reading()
-        tr.pause_reading()
-        self.assertTrue(tr._paused)
-        self.assertFalse(tr.is_reading())
-        for i in range(10):
-            self.loop._run_once()
-        self.protocol.data_received.assert_called_with(b'data2')
-
-        tr.resume_reading()
-        tr.resume_reading()
-        self.assertFalse(tr._paused)
-        self.assertTrue(tr.is_reading())
-        self.loop._run_once()
-        self.protocol.data_received.assert_called_with(b'data3')
-        self.loop._run_once()
-        self.protocol.data_received.assert_called_with(b'data4')
-
-        tr.pause_reading()
-        tr.resume_reading()
-        self.loop.call_exception_handler = mock.Mock()
-        self.loop._run_once()
-        self.loop.call_exception_handler.assert_not_called()
-        self.protocol.data_received.assert_called_with(b'data5')
-        tr.close()
-
-        self.assertFalse(tr.is_reading())
-
-
     def pause_writing_transport(self, high):
         tr = self.socket_transport()
         tr.set_write_buffer_limits(high=high)
@@ -527,13 +420,13 @@ class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
         tr = self.socket_transport()
 
         res = asyncio.Future(loop=self.loop)
-        res.set_result(b'data')
+        res.set_result(1)
 
         tr = self.socket_transport()
         tr._read_fut = res
+        tr._read_buffer = b'a'
         tr._loop_reading(res)
-        self.loop._proactor.recv.assert_called_with(self.sock, 32768)
-        self.protocol.data_received.assert_called_with(b'data')
+        self.protocol.data_received.assert_called_with(b'a')
 
         # switch protocol to a BufferedProtocol
 
@@ -551,38 +444,6 @@ class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
         self.loop._proactor.recv_into.assert_called_with(self.sock, buf)
         buf_proto.buffer_updated.assert_called_with(4)
 
-    def test_proto_buf_switch(self):
-        tr = self.socket_transport()
-        test_utils.run_briefly(self.loop)
-        self.protocol.get_buffer.assert_called_with(-1)
-
-        # switch protocol to *another* BufferedProtocol
-
-        buf_proto = test_utils.make_test_protocol(asyncio.BufferedProtocol)
-        buf = bytearray(4)
-        buf_proto.get_buffer.side_effect = lambda hint: buf
-        tr._read_fut.done.side_effect = lambda: False
-        tr.set_protocol(buf_proto)
-        self.assertFalse(buf_proto.get_buffer.called)
-        test_utils.run_briefly(self.loop)
-        buf_proto.get_buffer.assert_called_with(-1)
-
-    def test_buffer_updated_error(self):
-        transport = self.socket_transport()
-        transport._fatal_error = mock.Mock()
-
-        self.loop.call_exception_handler = mock.Mock()
-        self.protocol.buffer_updated.side_effect = LookupError()
-
-        res = asyncio.Future(loop=self.loop)
-        res.set_result(10)
-        transport._read_fut = res
-        transport._loop_reading(res)
-
-        self.assertTrue(transport._fatal_error.called)
-        self.assertFalse(self.protocol.get_buffer.called)
-        self.assertTrue(self.protocol.buffer_updated.called)
-
     def test_loop_eof_received_error(self):
         res = asyncio.Future(loop=self.loop)
         res.set_result(0)
@@ -598,16 +459,6 @@ class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
         self.assertFalse(self.loop._proactor.recv_into.called)
         self.assertTrue(self.protocol.eof_received.called)
         self.assertTrue(tr._fatal_error.called)
-
-    def test_loop_reading_data(self):
-        res = asyncio.Future(loop=self.loop)
-        res.set_result(4)
-
-        tr = self.socket_transport()
-        tr._read_fut = res
-        tr._loop_reading(res)
-        self.loop._proactor.recv_into.assert_called_with(self.sock, self.buf)
-        self.protocol.buffer_updated.assert_called_with(4)
 
     def test_loop_reading_no_data(self):
         res = asyncio.Future(loop=self.loop)

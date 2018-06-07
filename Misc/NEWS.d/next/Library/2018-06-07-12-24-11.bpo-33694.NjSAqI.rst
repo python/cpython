@@ -1,0 +1,4 @@
+Refactor Proactor's data receiving code path.  The idea is to always use
+recv_into() and to emulate the old Protocol.data_received() path. This way
+there is no read cancellation race or data loss in set_protocol() and
+there's no performance degradation for both Protocol and BufferedProtocol.
