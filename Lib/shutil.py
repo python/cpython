@@ -196,7 +196,17 @@ def _fastcopy_fileobj(fsrc, fdst):
             return _fastcopy_sendfile(fsrc, fdst)
         except _GiveupOnFastCopy:
             pass
-    return copyfileobj(fsrc, fdst)
+
+    # Faster than copyfileobj() as it uses bytearray() and readinto().
+    # Cannot use it in copyfileobj() as we're not sure files are
+    # open in binary mode.
+    bufsize = 16 * 1024
+    while True:
+        buf = bytearray(bufsize)
+        buflen = fsrc.readinto(buf)
+        if not buflen:
+            break
+        fdst.write(buf[:buflen])
 
 def _samefile(src, dst):
     # Macintosh, Unix.
