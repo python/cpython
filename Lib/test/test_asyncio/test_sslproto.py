@@ -600,6 +600,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                     server_side=True)
             except ssl.SSLError:
                 pass
+            except OSError:
+                pass
             finally:
                 sock.close()
 
@@ -636,6 +638,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             except ssl.SSLError:
                 pass
             finally:
+                orig_sock.close()
                 sock.close()
 
         async def client(addr):
@@ -649,6 +652,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             writer.write(b'B')
             with self.assertRaises(ssl.SSLError):
                 await reader.readline()
+
+            writer.close()
             return 'OK'
 
         with self.tcp_server(server,
