@@ -62,6 +62,9 @@ You can pass many options to the configure script; run ``./configure --help``
 to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
 
+If you are running on Mac with the latest updates installed, make sure to install
+openSSL or some other SSL software along with Homebrew.
+
 On macOS, if you have configured Python with ``--enable-framework``, you
 should use ``make frameworkinstall`` to do the installation.  Note that this
 installs the Python executable in a place that is not normally on your PATH,
