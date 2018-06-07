@@ -161,6 +161,12 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                  extra=None, server=None):
         self._loop_reading_cb = None
         self._paused = True
+        self._buffered = False
+
+        self._read_backup_buffer = bytearray(32768)
+        self._read_buffer = None
+        self._read_buffer_belongs_to_proto = False
+
         super().__init__(loop, sock, protocol, waiter, extra, server)
 
         self._reschedule_on_resume = False
@@ -168,17 +174,9 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         self._paused = False
 
     def set_protocol(self, protocol):
-        if isinstance(protocol, protocols.BufferedProtocol):
-            self._loop_reading_cb = self._loop_reading__get_buffer
-        else:
-            self._loop_reading_cb = self._loop_reading__data_received
-
+        self._buffered = isinstance(protocol, protocols.BufferedProtocol)
+        self._buffer_belongs_to_proto = False
         super().set_protocol(protocol)
-
-        if self.is_reading():
-            # reset reading callback / buffers / self._read_fut
-            self.pause_reading()
-            self.resume_reading()
 
     def is_reading(self):
         return not self._paused and not self._closing
@@ -187,19 +185,6 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if self._closing or self._paused:
             return
         self._paused = True
-
-        if self._read_fut is not None and not self._read_fut.done():
-            # TODO: This is an ugly hack to cancel the current read future
-            # *and* avoid potential race conditions, as read cancellation
-            # goes through `future.cancel()` and `loop.call_soon()`.
-            # We then use this special attribute in the reader callback to
-            # exit *immediately* without doing any cleanup/rescheduling.
-            self._read_fut.__asyncio_cancelled_on_pause__ = True
-
-            self._read_fut.cancel()
-            self._read_fut = None
-            self._reschedule_on_resume = True
-
         if self._loop.get_debug():
             logger.debug("%r pauses reading", self)
 
@@ -228,67 +213,6 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             self.close()
 
     def _loop_reading(self, fut=None):
-        self._loop_reading_cb(fut)
-
-    def _loop_reading__data_received(self, fut):
-        if (fut is not None and
-                getattr(fut, '__asyncio_cancelled_on_pause__', False)):
-            return
-
-        if self._paused:
-            self._reschedule_on_resume = True
-            return
-
-        data = None
-        try:
-            if fut is not None:
-                assert self._read_fut is fut or (self._read_fut is None and
-                                                 self._closing)
-                self._read_fut = None
-                if fut.done():
-                    # deliver data later in "finally" clause
-                    data = fut.result()
-                else:
-                    # the future will be replaced by next proactor.recv call
-                    fut.cancel()
-
-            if self._closing:
-                # since close() has been called we ignore any read data
-                data = None
-                return
-
-            if data == b'':
-                # we got end-of-file so no need to reschedule a new read
-                return
-
-            # reschedule a new read
-            self._read_fut = self._loop._proactor.recv(self._sock, 32768)
-        except ConnectionAbortedError as exc:
-            if not self._closing:
-                self._fatal_error(exc, 'Fatal read error on pipe transport')
-            elif self._loop.get_debug():
-                logger.debug("Read error on pipe transport while closing",
-                             exc_info=True)
-        except ConnectionResetError as exc:
-            self._force_close(exc)
-        except OSError as exc:
-            self._fatal_error(exc, 'Fatal read error on pipe transport')
-        except futures.CancelledError:
-            if not self._closing:
-                raise
-        else:
-            self._read_fut.add_done_callback(self._loop_reading__data_received)
-        finally:
-            if data:
-                self._protocol.data_received(data)
-            elif data == b'':
-                self._loop_reading__on_eof()
-
-    def _loop_reading__get_buffer(self, fut):
-        if (fut is not None and
-                getattr(fut, '__asyncio_cancelled_on_pause__', False)):
-            return
-
         if self._paused:
             self._reschedule_on_resume = True
             return
@@ -324,32 +248,59 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                     # we got end-of-file so no need to reschedule a new read
                     self._loop_reading__on_eof()
                 else:
-                    try:
-                        self._protocol.buffer_updated(nbytes)
-                    except Exception as exc:
-                        self._fatal_error(
-                            exc,
-                            'Fatal error: '
-                            'protocol.buffer_updated() call failed.')
-                        return
+                    if self._buffered:
+                        try:
+                            if self._read_buffer_belongs_to_proto:
+                                self._protocol.buffer_updated(nbytes)
+                            else:
+                                protocols._feed_data_to_bufferred_proto(
+                                    self._protocol, self._read_buffer[:nbytes])
+                        except Exception as exc:
+                            self._fatal_error(
+                                exc,
+                                'Fatal error: '
+                                'protocol.buffer_updated() call failed.')
+                            return
+                    else:
+                        try:
+                            self._protocol.data_received(
+                                self._read_buffer[:nbytes])
+                        except Exception as exc:
+                            self._fatal_error(
+                                exc,
+                                'Fatal error: '
+                                'protocol.data_received() call failed.')
+                            return
 
         if self._closing or nbytes == 0:
             # since close() has been called we ignore any read data
             return
 
-        try:
-            buf = self._protocol.get_buffer(-1)
-            if not len(buf):
-                raise RuntimeError('get_buffer() returned an empty buffer')
-        except Exception as exc:
-            self._fatal_error(
-                exc, 'Fatal error: protocol.get_buffer() call failed.')
-            return
+        if self._buffered:
+            try:
+                self._read_buffer = self._protocol.get_buffer(-1)
+                if not len(self._read_buffer):
+                    raise RuntimeError('get_buffer() returned an empty buffer')
+            except Exception as exc:
+                self._fatal_error(
+                    exc, 'Fatal error: protocol.get_buffer() call failed.')
+                return
+            else:
+                self._read_buffer_belongs_to_proto = True
+        else:
+            self._read_buffer = self._read_backup_buffer
+            self._read_buffer_belongs_to_proto = False
 
         try:
-            # schedule a new read
-            self._read_fut = self._loop._proactor.recv_into(self._sock, buf)
-            self._read_fut.add_done_callback(self._loop_reading__get_buffer)
+            # TODO 3.8: Use WSARecv instead of WSARecvInto like libuv
+            # (see win/tcp.c; uv_process_tcp_read_req function.)
+            # WSARecv accepts a buffer as its first argument, which
+            # means we can use it for BufferedProtocol just fine,
+            # but it's easier to work with (in particular we can
+            # handle cancellation better.)
+            self._read_fut = self._loop._proactor.recv_into(
+                self._sock, self._read_buffer)
+            self._read_fut.add_done_callback(self._loop_reading)
         except ConnectionAbortedError as exc:
             if not self._closing:
                 self._fatal_error(exc, 'Fatal read error on pipe transport')

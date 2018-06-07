@@ -2504,10 +2504,12 @@ class SendfileMixin(SendfileBase):
                 self.loop.sendfile(cli_proto.transport, self.file))
         self.run_loop(srv_proto.done)
 
-        self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
-                        srv_proto.nbytes)
-        self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
-                        self.file.tell())
+        self.assertLessEqual(1024, srv_proto.nbytes)
+        self.assertLessEqual(srv_proto.nbytes, len(self.DATA))
+
+        self.assertLessEqual(1024, self.file.tell())
+        self.assertLessEqual(self.file.tell(), len(self.DATA))
+
         self.assertTrue(cli_proto.transport.is_closing())
 
     def test_sendfile_fallback_close_peer_in_the_middle_of_receiving(self):
