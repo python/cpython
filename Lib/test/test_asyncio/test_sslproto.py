@@ -59,9 +59,9 @@ class SslProtoHandshakeTests(test_utils.TestCase):
             return []
 
         waiter.cancel()
-        self.connection_made(ssl_proto, do_handshake=do_handshake)
 
         with test_utils.disable_logger():
+            self.connection_made(ssl_proto, do_handshake=do_handshake)
             self.loop.run_until_complete(handshake_fut)
 
     def test_eof_received_waiter(self):
