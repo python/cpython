@@ -1,0 +1,3 @@
+:meth:`asyncio.AbstractEventLoop.create_datagram_endpoint`:
+Do not connect UDP socket when broadcast is allowed.
+This allows to receive replies after a UDP broadcast.
