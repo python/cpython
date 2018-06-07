@@ -692,9 +692,6 @@ class StreamReader:
 
         while len(self._buffer) < n:
 
-            if self._exception is not None:
-                raise self._exception
-
             if self._eof:
                 incomplete = bytes(self._buffer)
                 self._buffer.clear()
