@@ -1,0 +1,1 @@
+Update ``unicodedata``'s database to Unicode version 11.0.0.
