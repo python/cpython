@@ -426,8 +426,16 @@ def _win_makedirs(src, dst):
         if tail == cdir:           # xxx/newdir/. exists if xxx/newdir exists
             return
     # --- </same as os.makedirs()>
-    _winapi.CreateDirectoryExW(src, dst)
-    _winapi.copypathsecurityinfo(src, dst)
+    if os.path.islink(src):
+        # On Windows if src dir is a symlink CreateDirectoryExW() also
+        # creates a symlink. Not on UNIX. For consistency across
+        # platforms and in order to avoid possible SameFileError
+        # exceptions later on we'll just create a plain dir.
+        os.mkdir(dst)
+        _winapi.copypathsecurityinfo(src, dst)
+    else:
+        _winapi.CreateDirectoryExW(src, dst)
+        _winapi.copypathsecurityinfo(src, dst)
 
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
