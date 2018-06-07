@@ -166,14 +166,6 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         self._loop.call_soon(self._loop_reading)
         self._paused = False
 
-    def set_protocol(self, protocol):
-        super().set_protocol(protocol)
-
-        if self.is_reading():
-            # reset reading callback / buffers / self._read_fut
-            self.pause_reading()
-            self.resume_reading()
-
     def is_reading(self):
         return not self._paused and not self._closing
 
@@ -202,7 +194,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
         self._paused = False
         if self._read_fut is None:
-            self._loop.call_soon(self._loop_reading, self._read_fut)
+            self._loop.call_soon(self._loop_reading, None)
 
         data = self._pending_data
         self._pending_data = None
@@ -230,7 +222,8 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
     def _data_received(self, data):
         if self._paused:
-            # don't call any protocol method while reading is paused
+            # Don't call any protocol method while reading is paused.
+            # The protocol will be called on resume_reading().
             assert self._pending_data is None
             self._pending_data = data
             return
@@ -289,8 +282,8 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                 # we got end-of-file so no need to reschedule a new read
                 return
 
-            # bpo-33694: buffer_updated() has currently no fast path because
-            # of a data loss issue with WSASend() cancellation.
+            # bpo-33694: buffer_updated() has currently no fast path because of
+            # a data loss issue caused by overlapped WSASend() cancellation.
 
             if not self._paused:
                 # reschedule a new read
