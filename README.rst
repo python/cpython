@@ -63,7 +63,9 @@ to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
 
 If you are running on Mac with the latest updates installed, make sure to install
-openSSL or some other SSL software along with Homebrew.
+openSSL or some other SSL software along with Homebrew or another package manager.
+If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more 
+information. 
 
 On macOS, if you have configured Python with ``--enable-framework``, you
 should use ``make frameworkinstall`` to do the installation.  Note that this
