@@ -561,7 +561,7 @@ tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "tuple.index(x): x not in tuple");
+    PyErr_Format(PyExc_ValueError, "%R is not in tuple", value);
     return NULL;
 }
 
