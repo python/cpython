@@ -733,6 +733,10 @@ include:
 * Exceptions occurring in cancelled tasks are no longer logged.
   (Contributed by Yury Selivanov in :issue:`30508`.)
 
+* New ``WindowsSelectorEventLoopPolicy`` and
+  ``WindowsProactorEventLoopPolicy`` classes.
+  (Contributed by Yury Selivanov in :issue:`33792`.)
+
 Several ``asyncio`` APIs have been
 :ref:`deprecated <whatsnew37-asyncio-deprecated>`.
 
