@@ -4248,9 +4248,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    value)`` pairs. Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.
 
-   Dict preserves insertion order.  Note that updating a key does not affect the
-   order.  On the other hand, keys added after deletion are inserted to the
-   last. ::
+   Dictionaries preserve insertion order.  Note that updating a key does not
+   affect the order.  Keys added after deletion are inserted at the end. ::
 
       >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
       >>> d
@@ -4268,7 +4267,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       {'one': 42, 'three': 3, 'four': 4, 'two': None}
 
    .. versionchanged:: 3.7
-      Dict order is guaranteed to be insertion order.  This behavior was
+      Dictionary order is guaranteed to be insertion order.  This behavior was
       implementation detail of CPython from 3.6.
 
 .. seealso::
@@ -4307,7 +4306,7 @@ support membership tests:
    a :exc:`RuntimeError` or fail to iterate over all entries.
 
    .. versionchanged:: 3.7
-      Dict order is guaranteed to be insertion order.
+      Dictionary order is guaranteed to be insertion order.
 
 .. describe:: x in dictview
 
@@ -4721,3 +4720,4 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
+
