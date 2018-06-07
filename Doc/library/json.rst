@@ -215,9 +215,9 @@ Basic Usage
 
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
-   Deserialize *fp* (a ``.read()``-supporting :term:`file-like object`
-   containing a JSON document) to a Python object using this :ref:`conversion
-   table <json-to-py-table>`.
+   Deserialize *fp* (a ``.read()``-supporting :term:`text file` or
+   :term:`binary file` containing a JSON document) to a Python object using
+   this :ref:`conversion table <json-to-py-table>`.
 
    *object_hook* is an optional function that will be called with the result of
    any object literal decoded (a :class:`dict`).  The return value of
@@ -263,6 +263,10 @@ Basic Usage
 
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+
+   .. versionchanged:: 3.6
+      *fp* can now be a :term:`binary file`. The input encoding should be
+      UTF-8, UTF-16 or UTF-32.
 
 .. function:: loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
