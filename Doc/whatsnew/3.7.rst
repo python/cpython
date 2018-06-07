@@ -1429,8 +1429,8 @@ dynamically as specified by :pep:`560`.
 unicodedata
 -----------
 
-The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
-<http://www.unicode.org/versions/Unicode10.0.0/>`_. (Contributed by Benjamin
+The internal :mod:`unicodedata` database has been upgraded to use `Unicode 11
+<http://www.unicode.org/versions/Unicode11.0.0/>`_. (Contributed by Benjamin
 Peterson.)
 
 
