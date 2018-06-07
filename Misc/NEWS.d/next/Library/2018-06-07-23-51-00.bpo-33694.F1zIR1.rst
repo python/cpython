@@ -1,0 +1,2 @@
+asyncio: Fix a race condition causing dataloss on
+pause_reading()/resume_reading() when using the ProactorEventLoop.
