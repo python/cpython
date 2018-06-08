@@ -1,0 +1,2 @@
+Use a better regex when breaking usage into wrappable parts. Avoids bogus
+assertion errors from custom metavar strings.
