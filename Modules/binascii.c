@@ -516,7 +516,9 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
             ** This is an invalid length, as there is no possible input that
             ** could encoded into such a base64 string.
             */
-            PyErr_SetString(Error, "Invalid length");
+            PyErr_SetString(Incomplete,
+                            "Invalid base64-encoded string:"
+                            "length cannot be 1 more than a multiple of 4");
         } else {
             PyErr_SetString(Error, "Incorrect padding");
         }
