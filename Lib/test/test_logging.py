@@ -1473,20 +1473,27 @@ class ConfigFileTest(BaseTest):
             formatter=default
             handlers=console
             """).strip()
-        with tempfile.NamedTemporaryFile(mode='w+t', encoding='utf-8') as fp:
-            fp.write(ini)
-            fp.flush()
-            logging.config.fileConfig(fp.name, defaults=dict(
-                version=1,
-                disable_existing_loggers=False,
-                formatters={
-                    "generic": {
-                        "format": "%(asctime)s [%(process)d] [%(levelname)s] %(message)s",
-                        "datefmt": "[%Y-%m-%d %H:%M:%S %z]",
-                        "class": "logging.Formatter"
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode='w+t', encoding='utf-8', delete='False'
+            ) as ntf:
+                ntf.write(ini)
+            logging.config.fileConfig(
+                ntf.name,
+                defaults=dict(
+                    version=1,
+                    disable_existing_loggers=False,
+                    formatters={
+                        "generic": {
+                            "format": "%(asctime)s [%(process)d] [%(levelname)s] %(message)s",
+                            "datefmt": "[%Y-%m-%d %H:%M:%S %z]",
+                            "class": "logging.Formatter"
                         },
                     },
-                ))
+                )
+            )
+        finally:
+            os.unlink(ntf.name)
 
 
 class SocketHandlerTest(BaseTest):
