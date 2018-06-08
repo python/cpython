@@ -535,7 +535,7 @@ class SSLProtocol(protocols.Protocol):
             if chunk:
                 try:
                     if self._app_protocol_is_buffer:
-                        protocols._feed_data_to_bufferred_proto(
+                        protocols._feed_data_to_buffered_proto(
                             self._app_protocol, chunk)
                     else:
                         self._app_protocol.data_received(chunk)

@@ -234,7 +234,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
         if isinstance(self._protocol, protocols.BufferedProtocol):
             try:
-                protocols._feed_data_to_bufferred_proto(self._protocol, data)
+                protocols._feed_data_to_buffered_proto(self._protocol, data)
             except Exception as exc:
                 self._fatal_error(exc,
                                   'Fatal error: protocol.buffer_updated() '
