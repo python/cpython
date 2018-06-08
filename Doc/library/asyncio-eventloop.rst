@@ -445,7 +445,7 @@ Creating connections
 
    .. versionchanged:: 3.7
 
-      The *path* parameter can now be a :class:`~pathlib.Path` object.
+      The *path* parameter can now be a :term:`path-like object`.
 
 
 Creating listening connections
@@ -536,7 +536,7 @@ Creating listening connections
 
    .. versionadded:: 3.7
 
-      The *ssl_handshake_timeout* parameter.
+      The *ssl_handshake_timeout* and *start_serving* parameters.
 
    .. versionchanged:: 3.7
 
