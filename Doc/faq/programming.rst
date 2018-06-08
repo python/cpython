@@ -1315,11 +1315,6 @@ that final assignment still results in an error, because tuples are immutable.
 Dictionaries
 ============
 
-How can I get a dictionary to store and display its keys in a consistent order?
--------------------------------------------------------------------------------
-
-Use :class:`collections.OrderedDict`.
-
 I want to do a complicated sort: can you do a Schwartzian Transform in Python?
 ------------------------------------------------------------------------------
 
