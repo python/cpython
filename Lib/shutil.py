@@ -49,7 +49,6 @@ if os.name == 'posix':
 elif os.name == 'nt':
     import nt
 
-# 1MB bufsize on Windows results in sensitive better performances
 _COPY_BUFSIZE = 1024 * 1024 if os.name == 'nt' else 16 * 1024
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
 _HAS_COPYFILE = posix and hasattr(posix, "_copyfile")  # OSX
@@ -166,20 +165,20 @@ def _fastcopy_sendfile(fsrc, fdst):
                 break  # EOF
             offset += sent
 
-def _fastcopy_binfileobj(fsrc, fdst, length=_COPY_BUFSIZE):
+def _copybinfileobj(fsrc, fdst, length=_COPY_BUFSIZE):
     """Copy 2 regular file objects opened in binary mode."""
     # Localize variable access to minimize overhead.
     fsrc_readinto = fsrc.readinto
     fdst_write = fdst.write
-    mv = memoryview(bytearray(length))
-    while True:
-        n = fsrc_readinto(mv)
-        if not n:
-            break
-        elif n < length:
-            fdst_write(mv[:n])
-        else:
-            fdst_write(mv)
+    with memoryview(bytearray(length)) as mv:
+        while True:
+            n = fsrc_readinto(mv)
+            if not n:
+                break
+            elif n < length:
+                fdst_write(mv[:n])
+            else:
+                fdst_write(mv)
 
 def _is_binary_files_pair(fsrc, fdst):
     return hasattr(fsrc, 'readinto') and \
@@ -189,7 +188,7 @@ def _is_binary_files_pair(fsrc, fdst):
 def copyfileobj(fsrc, fdst, length=_COPY_BUFSIZE):
     """copy data from file-like object fsrc to file-like object fdst"""
     if _is_binary_files_pair(fsrc, fdst):
-        _fastcopy_binfileobj(fsrc, fdst, length=length)
+        _copybinfileobj(fsrc, fdst, length=length)
     else:
         # Localize variable access to minimize overhead.
         fsrc_read = fsrc.read
@@ -251,7 +250,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
                 except _GiveupOnFastCopy:
                     pass
 
-            _fastcopy_binfileobj(fsrc, fdst)
+            _copybinfileobj(fsrc, fdst)
 
     return dst
 
