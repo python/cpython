@@ -42,6 +42,9 @@ class TestDecodeB(TestEmailBase):
         self._test(b'dm\x01k', b'vi', [errors.InvalidBase64CharactersDefect,
                                        errors.InvalidBase64PaddingDefect])
 
+    def test_invalid_length(self):
+        self._test(b'abcde', b'abcde', [errors.InvalidBase64LengthDefect])
+
 
 class TestDecode(TestEmailBase):
 

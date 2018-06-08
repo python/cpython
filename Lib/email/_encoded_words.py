@@ -108,20 +108,25 @@ def decode_b(encoded):
     try:
         return base64.b64decode(padded_encoded, validate=True), defects
     except binascii.Error:
-        # Since we had correct padding, this must an invalid char error.
+        # Since we had correct padding, this is likely an invalid char error.
         defects = [errors.InvalidBase64CharactersDefect()]
         # The non-alphabet characters are ignored as far as padding
-        # goes, but we don't know how many there are.  So we'll just
-        # try various padding lengths until something works.
-        for i in 0, 1, 2, 3:
+        # goes, but we don't know how many there are.  So we'll try without
+        # adding padding to see if it works, and if not we'll add as much
+        # padding as could possibly be necessary (extra padding is ignored).
+        try:
+            return base64.b64decode(encoded, validate=False), defects
+        except binascii.Error:
+            defects.append(errors.InvalidBase64PaddingDefect())
             try:
-                return base64.b64decode(encoded+b'='*i, validate=False), defects
+                return base64.b64decode(encoded+b'==', validate=False), defects
             except binascii.Error:
-                if i==0:
-                    defects.append(errors.InvalidBase64PaddingDefect())
-        else:
-            # This should never happen.
-            raise AssertionError("unexpected binascii.Error")
+                # This only happens when the encoded string's length is 1 more
+                # than a multiple of 4, which is invalid.
+                defects = [errors.InvalidBase64LengthDefect()]
+                # bpo-27397: Just return the encoded string (and the defects)
+                # since there's no way to decode.
+                return encoded, defects
 
 def encode_b(bstring):
     return base64.b64encode(bstring).decode('ascii')
