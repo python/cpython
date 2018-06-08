@@ -1051,6 +1051,27 @@ PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 }
 
 
+PyAPI_FUNC(PyObject *) PyObject_CallMethodArgs(PyObject *obj,
+                                               const char *name,
+                                               PyObject *args,
+                                               PyObject *kwargs)
+{
+    PyObject *callable, *retval;
+
+    if (obj ==  NULL)
+        return null_error();
+
+    callable = PyObject_GetAttrString(obj, name);
+    if (callable == NULL)
+        return NULL;
+
+    retval = PyObject_Call(callable, args, kwargs);
+    Py_DECREF(callable);
+
+    return retval;
+}
+
+
 /* PyEval_CallMethod is exact copy of PyObject_CallMethod.
  * This function is kept for backward compatibility.
  */

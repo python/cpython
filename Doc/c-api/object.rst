@@ -305,6 +305,18 @@ Object Protocol
       The types of *name* and *format* were changed from ``char *``.
 
 
+.. c:function:: PyObject* PyObject_CallMethodArgs(PyObject *obj, const char *name, PyObject *args, PyObject *kwargs)
+
+   Call the method named *name* of object *obj* with arguments given by the
+   tuple *args* and keywords arguments given by the dictionary *kwargs*.
+
+   *args* must not be *NULL*, use an empty tuple if no arguments are
+   needed. If no named arguments are needed, *kwargs* can be *NULL*.
+
+   This is the equivalent of the Python expression:
+   ``obj.name(*args, **kwargs)``.
+
+
 .. c:function:: PyObject* PyObject_CallFunctionObjArgs(PyObject *callable, ..., NULL)
 
    Call a callable Python object *callable*, with a variable number of

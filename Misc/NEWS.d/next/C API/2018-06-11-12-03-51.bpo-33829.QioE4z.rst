@@ -1,0 +1,2 @@
+Add a new helper for calling object methods with args and kwargs tuples passed
+unchanged as parameters.
