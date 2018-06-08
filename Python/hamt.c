@@ -2476,6 +2476,8 @@ hamt_alloc(void)
     if (o == NULL) {
         return NULL;
     }
+    o->h_count = 0;
+    o->h_root = NULL;
     o->h_weakreflist = NULL;
     PyObject_GC_Track(o);
     return o;

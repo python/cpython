@@ -1,0 +1,2 @@
+Fix a crash in hamt.c caused by enabling GC tracking for an object that
+hadn't all of its fields set to NULL.
