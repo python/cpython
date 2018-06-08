@@ -1000,11 +1000,11 @@ _channels_lookup(_channels *channels, int64_t id, PyThread_type_lock *pmutex)
 
     _channelref *ref = _channelref_find(channels->head, id, NULL);
     if (ref == NULL) {
-        PyErr_Format(ChannelNotFoundError, "channel %lld not found", id);
+        PyErr_Format(ChannelNotFoundError, "channel %" PRId64 " not found", id);
         goto done;
     }
     if (ref->chan == NULL || !ref->chan->open) {
-        PyErr_Format(ChannelClosedError, "channel %lld closed", id);
+        PyErr_Format(ChannelClosedError, "channel %" PRId64 " closed", id);
         goto done;
     }
 
@@ -1064,16 +1064,16 @@ _channels_close(_channels *channels, int64_t cid, _PyChannelState **pchan,
 
     _channelref *ref = _channelref_find(channels->head, cid, NULL);
     if (ref == NULL) {
-        PyErr_Format(ChannelNotFoundError, "channel %lld not found", cid);
+        PyErr_Format(ChannelNotFoundError, "channel %" PRId64 " not found", cid);
         goto done;
     }
 
     if (ref->chan == NULL) {
-        PyErr_Format(ChannelClosedError, "channel %lld closed", cid);
+        PyErr_Format(ChannelClosedError, "channel %" PRId64 " closed", cid);
         goto done;
     }
     else if (!force && end == CHANNEL_SEND && ref->chan->closing != NULL) {
-        PyErr_Format(ChannelClosedError, "channel %lld closed", cid);
+        PyErr_Format(ChannelClosedError, "channel %" PRId64 " closed", cid);
         goto done;
     }
     else {
@@ -1082,7 +1082,7 @@ _channels_close(_channels *channels, int64_t cid, _PyChannelState **pchan,
                     PyErr_ExceptionMatches(ChannelNotEmptyError)) {
                 if (ref->chan->closing != NULL) {
                     PyErr_Format(ChannelClosedError,
-                                 "channel %lld closed", cid);
+                                 "channel %" PRId64 " closed", cid);
                     goto done;
                 }
                 // Mark the channel as closing and return.  The channel
@@ -1144,7 +1144,7 @@ _channels_remove(_channels *channels, int64_t id, _PyChannelState **pchan)
     _channelref *prev = NULL;
     _channelref *ref = _channelref_find(channels->head, id, &prev);
     if (ref == NULL) {
-        PyErr_Format(ChannelNotFoundError, "channel %lld not found", id);
+        PyErr_Format(ChannelNotFoundError, "channel %" PRId64 " not found", id);
         goto done;
     }
 
@@ -1164,7 +1164,7 @@ _channels_add_id_object(_channels *channels, int64_t id)
 
     _channelref *ref = _channelref_find(channels->head, id, NULL);
     if (ref == NULL) {
-        PyErr_Format(ChannelNotFoundError, "channel %lld not found", id);
+        PyErr_Format(ChannelNotFoundError, "channel %" PRId64 " not found", id);
         goto done;
     }
     ref->objcount += 1;
@@ -1328,7 +1328,7 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj)
     // Past this point we are responsible for releasing the mutex.
 
     if (chan->closing != NULL) {
-        PyErr_Format(ChannelClosedError, "channel %lld closed", id);
+        PyErr_Format(ChannelClosedError, "channel %" PRId64 " closed", id);
         PyThread_release_lock(mutex);
         return -1;
     }
@@ -1377,7 +1377,7 @@ _channel_recv(_channels *channels, int64_t id)
     PyThread_release_lock(mutex);
     if (data == NULL) {
         if (!PyErr_Occurred()) {
-            PyErr_Format(ChannelEmptyError, "channel %lld is empty", id);
+            PyErr_Format(ChannelEmptyError, "channel %" PRId64 " is empty", id);
         }
         return NULL;
     }
@@ -1527,13 +1527,13 @@ channelid_repr(PyObject *self)
     channelid *cid = (channelid *)self;
     const char *fmt;
     if (cid->end == CHANNEL_SEND) {
-        fmt = "%s(%lld, send=True)";
+        fmt = "%s(%" PRId64 ", send=True)";
     }
     else if (cid->end == CHANNEL_RECV) {
-        fmt = "%s(%lld, recv=True)";
+        fmt = "%s(%" PRId64 ", recv=True)";
     }
     else {
-        fmt = "%s(%lld)";
+        fmt = "%s(%" PRId64 ")";
     }
     return PyUnicode_FromFormat(fmt, name, cid->id);
 }
@@ -1542,7 +1542,7 @@ static PyObject *
 channelid_str(PyObject *self)
 {
     channelid *cid = (channelid *)self;
-    return PyUnicode_FromFormat("%lld", cid->id);
+    return PyUnicode_FromFormat("%" PRId64 "", cid->id);
 }
 
 PyObject *
@@ -2048,14 +2048,14 @@ interpid_repr(PyObject *self)
     PyTypeObject *type = Py_TYPE(self);
     const char *name = _PyType_Name(type);
     interpid *id = (interpid *)self;
-    return PyUnicode_FromFormat("%s(%lld)", name, id->id);
+    return PyUnicode_FromFormat("%s(%" PRId64 ")", name, id->id);
 }
 
 static PyObject *
 interpid_str(PyObject *self)
 {
     interpid *id = (interpid *)self;
-    return PyUnicode_FromFormat("%lld", id->id);
+    return PyUnicode_FromFormat("%" PRId64 "", id->id);
 }
 
 PyObject *
