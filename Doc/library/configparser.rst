@@ -901,6 +901,9 @@ ConfigParser Objects
    converter gets its own corresponding :meth:`get*()` method on the parser
    object and section proxies.
 
+   .. versionchanged:: 3.1
+      The default *dict_type* is :class:`collections.OrderedDict`.
+
    .. versionchanged:: 3.2
       *allow_no_value*, *delimiters*, *comment_prefixes*, *strict*,
       *empty_lines_in_values*, *default_section* and *interpolation* were
@@ -915,7 +918,8 @@ ConfigParser Objects
       keys and values are implicitly converted to strings.
 
    .. versionchanged:: 3.7
-      The default *dict_type* is :class:`dict`.
+      The default *dict_type* is :class:`dict`, since it now guarantees
+      insertion order.
 
    .. method:: defaults()
 
@@ -1191,7 +1195,8 @@ RawConfigParser Objects
    as well as the legacy ``defaults=`` keyword argument handling.
 
    .. versionchanged:: 3.7
-      The default *dict_type* is :class:`dict`.
+      The default *dict_type* is :class:`dict`, since it now guarantees
+      insertion order.
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of
