@@ -1473,13 +1473,12 @@ class ConfigFileTest(BaseTest):
             formatter=default
             handlers=console
             """).strip()
+        fd, fn = tempfile.mkstemp(prefix='test_logging_', suffix='.ini')
         try:
-            with tempfile.NamedTemporaryFile(
-                mode='w+t', encoding='utf-8', delete='False'
-            ) as ntf:
-                ntf.write(ini)
+            os.write(fd, ini.encode('ascii'))
+            os.close(fd)
             logging.config.fileConfig(
-                ntf.name,
+                fn,
                 defaults=dict(
                     version=1,
                     disable_existing_loggers=False,
@@ -1493,7 +1492,7 @@ class ConfigFileTest(BaseTest):
                 )
             )
         finally:
-            os.unlink(ntf.name)
+            os.unlink(fn)
 
 
 class SocketHandlerTest(BaseTest):
