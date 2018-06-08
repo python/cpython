@@ -841,9 +841,9 @@ class TestDiscovery(unittest.TestCase):
         loader.suiteClass = list
 
         with unittest.mock.patch('builtins.__import__', _import):
-            # since loader.discover() can modify sys.path, restore it when done
+            # Since loader.discover() can modify sys.path, restore it when done.
             with support.DirsOnSysPath():
-                # make sure to remove 'package' from sys.modules when done
+                # Make sure to remove 'package' from sys.modules when done.
                 with test.test_importlib.util.uncache('package'):
                     suite = loader.discover('package')
 
@@ -858,9 +858,9 @@ class TestDiscovery(unittest.TestCase):
             return package
 
         with unittest.mock.patch('builtins.__import__', _import):
-            # since loader.discover() can modify sys.path, restore it when done
+            # Since loader.discover() can modify sys.path, restore it when done.
             with support.DirsOnSysPath():
-                # make sure to remove 'package' from sys.modules when done
+                # Make sure to remove 'package' from sys.modules when done.
                 with test.test_importlib.util.uncache('package'):
                     with self.assertRaises(TypeError) as cm:
                         loader.discover('package')
