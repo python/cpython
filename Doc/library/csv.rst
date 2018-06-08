@@ -203,10 +203,7 @@ The :mod:`csv` module defines the following classes:
    :class:`writer` instance.
 
    Note that unlike the :class:`DictReader` class, the *fieldnames* parameter
-   of the :class:`DictWriter` class is not optional.  The rationale for this is
-   that :class:`dict` objects didn't preserve insertion order at the time this
-   class was designed [2]_, making it impossible to know the order in which the
-   row should be written to file *f*, thus the need for the user to specify it.
+   of the :class:`DictWriter` class is not optional.
 
    A short usage example::
 
@@ -551,5 +548,3 @@ done::
    on write an extra ``\r`` will be added.  It should always be safe to specify
    ``newline=''``, since the csv module does its own
    (:term:`universal <universal newlines>`) newline handling.
-
-.. [2] Dictionaries insertion order is guaranteed starting with Python 3.7.
