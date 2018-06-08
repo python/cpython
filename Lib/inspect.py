@@ -2395,6 +2395,9 @@ class _ParameterKind(enum.IntEnum):
     def __str__(self):
         return self._name_
 
+    @property
+    def description(self):
+        return _PARAM_NAME_MAPPING[self]
 
 _POSITIONAL_ONLY         = _ParameterKind.POSITIONAL_ONLY
 _POSITIONAL_OR_KEYWORD   = _ParameterKind.POSITIONAL_OR_KEYWORD
@@ -2409,8 +2412,6 @@ _PARAM_NAME_MAPPING = {
     _KEYWORD_ONLY: 'keyword-only',
     _VAR_KEYWORD: 'variadic keyword'
 }
-
-_get_paramkind_descr = _PARAM_NAME_MAPPING.__getitem__
 
 
 class Parameter:
@@ -2453,7 +2454,7 @@ class Parameter:
         if default is not _empty:
             if self._kind in (_VAR_POSITIONAL, _VAR_KEYWORD):
                 msg = '{} parameters cannot have default values'
-                msg = msg.format(_get_paramkind_descr(self._kind))
+                msg = msg.format(self._kind.description)
                 raise ValueError(msg)
         self._default = default
         self._annotation = annotation
@@ -2475,7 +2476,7 @@ class Parameter:
                     'implicit arguments must be passed as '
                     'positional or keyword arguments, not {}'
                 )
-                msg = msg.format(_get_paramkind_descr(self._kind))
+                msg = msg.format(self._kind.description)
                 raise ValueError(msg)
             self._kind = _POSITIONAL_ONLY
             name = 'implicit{}'.format(name[1:])
@@ -2751,8 +2752,8 @@ class Signature:
                             'wrong parameter order: {} parameter before {} '
                             'parameter'
                         )
-                        msg = msg.format(_get_paramkind_descr(top_kind),
-                                         _get_paramkind_descr(kind))
+                        msg = msg.format(top_kind.description,
+                                         kind.description)
                         raise ValueError(msg)
                     elif kind > top_kind:
                         kind_defaults = False
