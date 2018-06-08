@@ -5077,11 +5077,13 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         t_fold = datetime(2002, 10, 27, 1, 45, tzinfo=Eastern2)
         t_fold_utc = t_fold.astimezone(timezone.utc)
         self.assertNotEqual(t_fold, t_fold_utc)
+        self.assertNotEqual(t_fold_utc, t_fold)
 
     def test_mixed_compare_gap(self):
         t_gap = datetime(2002, 4, 7, 2, 45, tzinfo=Eastern2)
         t_gap_utc = t_gap.astimezone(timezone.utc)
         self.assertNotEqual(t_gap, t_gap_utc)
+        self.assertNotEqual(t_gap_utc, t_gap)
 
     def test_hash_aware(self):
         t = datetime(2000, 1, 1, tzinfo=Eastern2)
