@@ -756,6 +756,8 @@ function.
 
       Describes a enum value of Parameter.kind.
 
+      .. versionadded:: 3.8
+
       Example: print all descriptions of arguments::
 
          >>> def foo(a, b, *, c, d=10):
