@@ -1384,6 +1384,24 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    this level, only single inheritance is supported; multiple inheritance require
    dynamically creating a type object by calling the metatype.
 
+   .. note::
+
+       .. from Modules/xxmodule.c
+
+       Slot initialization is subject to the rules of initializing globals.
+       C99 requires the initializers to be "address constants".  Function
+       designators like :c:func:`PyType_GenericNew`, with implicit conversion
+       to a pointer, are valid C99 address constants.
+
+       However, the unary '&' operator applied to a non-static variable
+       like :c:func:`PyBaseObject_Type` is not required to produce an address
+       constant.  Compilers may support this (gcc does), MSVC does not.
+       Both compilers are strictly standard conforming in this particular
+       behavior.
+
+       Consequently, :c:member:`~PyTypeObject.tp_base` should be set in
+       the extension module's init function.
+
    **Inheritance:**
 
    This field is not inherited by subtypes (obviously).
