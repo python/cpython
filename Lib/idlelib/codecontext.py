@@ -117,6 +117,7 @@ class CodeContext:
                     height=1,
                     width=1,  # Don't request more than we get.
                     padx=padx, border=border, relief=SUNKEN, state='disabled')
+            self.context.bind('<ButtonRelease-1>', self.jumptoline)
             # Pack the context widget before and above the text_frame widget,
             # thus ensuring that it will appear directly above text_frame.
             self.context.pack(side=TOP, fill=X, expand=False,
@@ -195,6 +196,20 @@ class CodeContext:
         self.context.delete('1.0', 'end')
         self.context.insert('end', '\n'.join(context_strings[showfirst:]))
         self.context['state'] = 'disabled'
+
+    def jumptoline(self, event=None):
+        "Show clicked context line at top of editor."
+        lines = len(self.info)
+        if lines == 1:  # No context lines are showing.
+            newtop = 1
+        else:
+            # Line number clicked.
+            contextline = int(float(self.context.index('insert')))
+            # Lines not displayed due to maxlines.
+            offset = max(1, lines - self.context_depth) - 1
+            newtop = self.info[offset + contextline][0]
+        self.text.yview(f'{newtop}.0')
+        self.update_code_context()
 
     def timer_event(self):
         "Event on editor text widget triggered every UPDATEINTERVAL ms."
