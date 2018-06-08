@@ -1,0 +1,1 @@
+correct logic in configure.ac so that HAVE_UUID_ENC_BE is not always defined
