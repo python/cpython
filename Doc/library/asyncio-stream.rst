@@ -44,13 +44,14 @@ Stream functions
    Start a socket server, with a callback for each client connected. The return
    value is the same as :meth:`~AbstractEventLoop.create_server()`.
 
-   The *client_connected_cb* parameter is called with two parameters:
-   *client_reader*, *client_writer*.  *client_reader* is a
-   :class:`StreamReader` object, while *client_writer* is a
-   :class:`StreamWriter` object.  The *client_connected_cb* parameter can
-   either be a plain callback function or a :ref:`coroutine function
-   <coroutine>`; if it is a coroutine function, it will be automatically
-   converted into a :class:`Task`.
+   The *client_connected_cb* callback is called whenever a new client
+   connection is established.  It receives a reader/writer pair as two
+   arguments, the first is a :class:`StreamReader` instance,
+   and the second is a :class:`StreamWriter` instance.
+
+   *client_connected_cb* accepts a plain callable or a
+   :ref:`coroutine function <coroutine>`; if it is a coroutine function,
+   it will be automatically converted into a :class:`Task`.
 
    When specified, the *loop* argument determines which event loop to use,
    and the *limit* argument determines the buffer size limit used by the
@@ -93,13 +94,14 @@ Stream functions
 
    Start a UNIX Domain Socket server, with a callback for each client connected.
 
-   The *client_connected_cb* parameter is called with two parameters:
-   *client_reader*, *client_writer*.  *client_reader* is a
-   :class:`StreamReader` object, while *client_writer* is a
-   :class:`StreamWriter` object.  The *client_connected_cb* parameter can
-   either be a plain callback function or a :ref:`coroutine function
-   <coroutine>`; if it is a coroutine function, it will be automatically
-   converted into a :class:`Task`.
+   The *client_connected_cb* callback is called whenever a new client
+   connection is established.  It receives a reader/writer pair as two
+   arguments, the first is a :class:`StreamReader` instance,
+   and the second is a :class:`StreamWriter` instance.
+
+   *client_connected_cb* accepts a plain callable or a
+   :ref:`coroutine function <coroutine>`; if it is a coroutine function,
+   it will be automatically converted into a :class:`Task`.
 
    When specified, the *loop* argument determines which event loop to use,
    and the *limit* argument determines the buffer size limit used by the
