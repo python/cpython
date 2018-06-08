@@ -636,7 +636,13 @@ class RawConfigParser(MutableMapping):
         if converters is not _UNSET:
             self._converters.update(converters)
         if defaults:
-            self._read_defaults(defaults)
+            # For backward compatibility, defaults should do no interpolation.
+            try:
+                interpolation = self._interpolation
+                self._interpolation = Interpolation()
+                self._read_defaults(defaults)
+            finally:
+                self._interpolation = interpolation
 
     def defaults(self):
         return self._defaults
