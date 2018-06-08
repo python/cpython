@@ -1759,17 +1759,10 @@ class datetime(date):
             ts = (self - _EPOCH) // timedelta(seconds=1)
         localtm = _time.localtime(ts)
         local = datetime(*localtm[:6])
-        try:
-            # Extract TZ data if available
-            gmtoff = localtm.tm_gmtoff
-            zone = localtm.tm_zone
-        except AttributeError:
-            delta = local - datetime(*_time.gmtime(ts)[:6])
-            zone = _time.strftime('%Z', localtm)
-            tz = timezone(delta, zone)
-        else:
-            tz = timezone(timedelta(seconds=gmtoff), zone)
-        return tz
+        # Extract TZ data
+        gmtoff = localtm.tm_gmtoff
+        zone = localtm.tm_zone
+        return timezone(timedelta(seconds=gmtoff), zone)
 
     def astimezone(self, tz=None):
         if tz is None:
