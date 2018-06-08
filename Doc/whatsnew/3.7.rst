@@ -699,11 +699,12 @@ include:
   gained support for Unix sockets.
   (Contributed by Quentin Dawans in :issue:`31245`.)
 
-* The :meth:`loop.create_connection() <asyncio.AbstractEventLoop.create_connection>`,
+* The :func:`asyncio.open_connection`, :func:`asyncio.start_server` functions,
+  :meth:`loop.create_connection() <asyncio.AbstractEventLoop.create_connection>`,
   :meth:`loop.create_server() <asyncio.AbstractEventLoop.create_server>`,
-  :meth:`loop.create_unix_server() <asyncio.AbstractEventLoop.create_unix_server>`, and
   :meth:`loop.create_accepted_socket() <asyncio.BaseEventLoop.connect_accepted_socket>`
-  now accept the *ssl_handshake_timeout* keyword argument.
+  methods and their corresponding UNIX socket variants now accept the
+  *ssl_handshake_timeout* keyword argument.
   (Contributed by Neil Aspinall in :issue:`29970`.)
 
 * The new :meth:`Handle.cancelled() <asyncio.Handle.cancelled>` method returns
