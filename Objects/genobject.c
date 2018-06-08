@@ -1878,20 +1878,19 @@ yield_close:
     return NULL;
 
 check_error:
-    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
+            PyErr_ExceptionMatches(PyExc_GeneratorExit))
+    {
         o->agt_state = AWAITABLE_STATE_CLOSED;
         if (o->agt_args == NULL) {
             /* when aclose() is called we don't want to propagate
-               StopAsyncIteration; just raise StopIteration, signalling
-               that 'aclose()' is done. */
+               StopAsyncIteration or GeneratorExit; just raise
+               StopIteration, signalling that this 'aclose()' await
+               is done.
+            */
             PyErr_Clear();
             PyErr_SetNone(PyExc_StopIteration);
         }
-    }
-    else if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
-        o->agt_state = AWAITABLE_STATE_CLOSED;
-        PyErr_Clear();          /* ignore these errors */
-        PyErr_SetNone(PyExc_StopIteration);
     }
     return NULL;
 }
