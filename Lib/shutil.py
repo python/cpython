@@ -47,7 +47,6 @@ if os.name == 'posix':
     import posix
 elif os.name == 'nt':
     import nt
-    import _winapi
 
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
 _HAS_COPYFILE = posix and hasattr(posix, "_copyfile")  # OSX
@@ -103,20 +102,6 @@ def _fastcopy_osx(src, dst, flags):
             raise _GiveupOnFastCopy(err)
         else:
             raise err from None
-
-def _fastcopy_win(src, dst):
-    """Copy 2 files by using high-performance CopyFileExW (Windows only).
-    Note: this will also copy file's extended attributes, metadata and
-    security information.
-    """
-    try:
-        _winapi.CopyFileExW(src, dst, 0)
-    except PermissionError as err:
-        if err.winerror == _winapi.ERROR_SHARING_VIOLATION and \
-                _samefile(src, dst):
-            raise SameFileError(
-                "{!r} and {!r} are the same file".format(src, dst))
-        raise err from None
 
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
@@ -394,13 +379,6 @@ def copy2(src, dst, *, follow_symlinks=True):
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
 
-    if os.name == 'nt':
-        if not follow_symlinks and os.path.islink(src):
-            os.symlink(os.readlink(src), dst)
-        else:
-            _fastcopy_win(src, dst)
-        return dst
-
     copyfile(src, dst, follow_symlinks=follow_symlinks)
     copystat(src, dst, follow_symlinks=follow_symlinks)
     return dst
@@ -416,40 +394,6 @@ def ignore_patterns(*patterns):
             ignored_names.extend(fnmatch.filter(names, pattern))
         return set(ignored_names)
     return _ignore_patterns
-
-def _win_makedirs(src, dst):
-    """Similar to os.makedirs() but creates a directory tree copying
-    attributes and security info from a template "src" directory.
-    As such "src" directory must exist else this will fail with
-    FileNotFoundError.
-    """
-    # --- <same as os.makedirs()>
-    head, tail = os.path.split(dst)
-    if not tail:
-        head, tail = os.path.split(head)
-    if head and tail and not os.path.exists(head):
-        try:
-            _win_makedirs(src, head)
-        except FileExistsError:
-            # Defeats race condition when another thread created the path
-            pass
-        cdir = os.curdir
-        if isinstance(tail, bytes):
-            cdir = bytes(os.curdir, 'ASCII')
-        if tail == cdir:           # xxx/newdir/. exists if xxx/newdir exists
-            return
-    # --- </same as os.makedirs()>
-    if os.path.islink(src):
-        # On Windows if src dir is a symlink CreateDirectoryExW() also
-        # creates a symlink. Not on UNIX. For consistency across
-        # platforms and in order to avoid possible SameFileError
-        # exceptions later on we'll just create a plain dir.
-        os.mkdir(dst)
-        _winapi.copypathsecurityinfo(src, dst)
-    else:
-        _winapi.CreateDirectoryExW(src, dst)
-        _winapi.copypathsecurityinfo(src, dst)
-
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
              ignore_dangling_symlinks=False):
@@ -496,11 +440,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     else:
         ignored_names = set()
 
-    if os.name == 'nt' and copy_function is copy2:
-        _win_makedirs(src, dst)
-    else:
-        os.makedirs(dst)
-
+    os.makedirs(dst)
     errors = []
     for name in names:
         if name in ignored_names:
