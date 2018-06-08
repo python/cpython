@@ -162,5 +162,36 @@ class ProactorTests(test_utils.TestCase):
         fut.cancel()
 
 
+class WinPolicyTests(test_utils.TestCase):
+
+    def test_selector_win_policy(self):
+        async def main():
+            self.assertIsInstance(
+                asyncio.get_running_loop(),
+                asyncio.SelectorEventLoop)
+
+        old_policy = asyncio.get_event_loop_policy()
+        try:
+            asyncio.set_event_loop_policy(
+                asyncio.WindowsSelectorEventLoopPolicy())
+            asyncio.run(main())
+        finally:
+            asyncio.set_event_loop_policy(old_policy)
+
+    def test_proactor_win_policy(self):
+        async def main():
+            self.assertIsInstance(
+                asyncio.get_running_loop(),
+                asyncio.ProactorEventLoop)
+
+        old_policy = asyncio.get_event_loop_policy()
+        try:
+            asyncio.set_event_loop_policy(
+                asyncio.WindowsProactorEventLoopPolicy())
+            asyncio.run(main())
+        finally:
+            asyncio.set_event_loop_policy(old_policy)
+
+
 if __name__ == '__main__':
     unittest.main()
