@@ -9,11 +9,12 @@ except ImportError:
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     raise SystemExit(1)
 
-import ctypes
-try:
-    ctypes.windll.shcore.SetProcessDpiAwareness(True)
-except AttributeError:
-    pass
+if sys.platform == 'win32':
+    import ctypes
+    try:
+        ctypes.OleDLL('shcore').SetProcessDpiAwareness(1)
+    except (AttributeError, OSError):
+        pass
 
 import tkinter.messagebox as tkMessageBox
 if TkVersion < 8.5:
