@@ -1451,6 +1451,49 @@ class ConfigFileTest(BaseTest):
         self.apply_config(self.disable_test, disable_existing_loggers=False)
         self.assertFalse(logger.disabled)
 
+    def test_defaults_do_no_interpolation(self):
+        """bpo-33802 defaults should not get interpolated"""
+        ini = textwrap.dedent("""
+            [formatters]
+            keys=default
+
+            [formatter_default]
+
+            [handlers]
+            keys=console
+
+            [handler_console]
+            class=logging.StreamHandler
+            args=tuple()
+
+            [loggers]
+            keys=root
+
+            [logger_root]
+            formatter=default
+            handlers=console
+            """).strip()
+        fd, fn = tempfile.mkstemp(prefix='test_logging_', suffix='.ini')
+        try:
+            os.write(fd, ini.encode('ascii'))
+            os.close(fd)
+            logging.config.fileConfig(
+                fn,
+                defaults=dict(
+                    version=1,
+                    disable_existing_loggers=False,
+                    formatters={
+                        "generic": {
+                            "format": "%(asctime)s [%(process)d] [%(levelname)s] %(message)s",
+                            "datefmt": "[%Y-%m-%d %H:%M:%S %z]",
+                            "class": "logging.Formatter"
+                        },
+                    },
+                )
+            )
+        finally:
+            os.unlink(fn)
+
 
 class SocketHandlerTest(BaseTest):
 

@@ -1206,8 +1206,16 @@ class ConfigParser(RawConfigParser):
 
     def _read_defaults(self, defaults):
         """Reads the defaults passed in the initializer, implicitly converting
-        values to strings like the rest of the API."""
-        self.read_dict({self.default_section: defaults})
+        values to strings like the rest of the API.
+
+        Does not perform interpolation for backwards compatibility.
+        """
+        try:
+            hold_interpolation = self._interpolation
+            self._interpolation = Interpolation()
+            self.read_dict({self.default_section: defaults})
+        finally:
+            self._interpolation = hold_interpolation
 
 
 class SafeConfigParser(ConfigParser):
