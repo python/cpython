@@ -155,8 +155,9 @@ The :mod:`csv` module defines the following classes:
 
    The *fieldnames* parameter is a :term:`sequence`.  If *fieldnames* is
    omitted, the values in the first row of file *f* will be used as the
-   fieldnames.  Regardless of how the fieldnames are determined, the ordered
-   dictionary preserves their original ordering.
+   fieldnames.  Regardless of how the fieldnames are determined, the
+   :mod:`OrderedDict <collections.OrderedDict>` preserves their original
+   ordering.
 
    If a row has more fields than fieldnames, the remaining data is put in a
    list and stored with the fieldname specified by *restkey* (which defaults

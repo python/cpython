@@ -281,9 +281,9 @@ Iterating over the members of an enum does not provide the aliases::
     >>> list(Shape)
     [<Shape.SQUARE: 2>, <Shape.DIAMOND: 1>, <Shape.CIRCLE: 3>]
 
-The special attribute ``__members__`` is an ordered dictionary mapping names
-to members.  It includes all names defined in the enumeration, including the
-aliases::
+The special attribute ``__members__`` is an
+:mod:`OrderedDict <collections.OrderedDict>` mapping names to members.  It
+includes all names defined in the enumeration, including the aliases::
 
     >>> for name, member in Shape.__members__.items():
     ...     name, member
