@@ -12,7 +12,6 @@ import unittest
 from test import support
 from test.support import script_helper
 
-raise unittest.SkipTest("FIXME: bpo-33615: test crash on some CIs")
 
 interpreters = support.import_module('_xxsubinterpreters')
 
