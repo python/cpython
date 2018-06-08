@@ -752,6 +752,23 @@ function.
          ...         print('Parameter:', param)
          Parameter: c
 
+   .. attribute:: Parameter.kind.description
+
+      Describes a enum value of Parameter.kind.
+
+      Example: print all descriptions of arguments::
+
+         >>> def foo(a, b, *, c, d=10):
+         ...     pass
+
+         >>> sig = signature(foo)
+         >>> for param in sig.parameters.values():
+         ...     print(param.kind.description)
+         positional or keyword
+         positional or keyword
+         keyword-only
+         keyword-only
+
    .. method:: Parameter.replace(*[, name][, kind][, default][, annotation])
 
       Create a new Parameter instance based on the instance replaced was invoked
