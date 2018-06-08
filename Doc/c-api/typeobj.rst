@@ -1799,6 +1799,18 @@ objects on the thread which called tp_dealloc will not violate any assumptions
 of the library.
 
 
+Heap Types
+----------
+
+In addition to defining Python types statically, you can define them
+dynamically (i.e. to the heap) using  :c:func:`PyType_FromSpec` and
+:c:func:`PyType_FromSpecWithBases`.
+
+.. XXX Explain how to use PyType_FromSpec().
+
+.. XXX Document PyType_Spec.
+
+
 .. _number-structs:
 
 Number Object Structures
