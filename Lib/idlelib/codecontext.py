@@ -208,7 +208,7 @@ class CodeContext:
             # Lines not displayed due to maxlines.
             offset = max(1, lines - self.context_depth) - 1
             newtop = self.info[offset + contextline][0]
-        self.text.yview(float(newtop))
+        self.text.yview(f'{newtop}.0')
         self.update_code_context()
 
     def timer_event(self):

@@ -274,7 +274,7 @@ class CodeContextTest(unittest.TestCase):
             cc.toggle_code_context_event()
 
         # Empty context.
-        cc.text.yview(1)
+        cc.text.yview(f'{2}.0')
         cc.update_code_context()
         eq(cc.topvisible, 2)
         cc.context.mark_set('insert', '1.5')
@@ -282,7 +282,7 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.topvisible, 1)
 
         # 4 lines of context showing.
-        cc.text.yview(11)
+        cc.text.yview(f'{12}.0')
         cc.update_code_context()
         eq(cc.topvisible, 12)
         cc.context.mark_set('insert', '3.0')
@@ -291,7 +291,7 @@ class CodeContextTest(unittest.TestCase):
 
         # More context lines than limit.
         cc.context_depth = 2
-        cc.text.yview(11)
+        cc.text.yview(f'{12}.0')
         cc.update_code_context()
         eq(cc.topvisible, 12)
         cc.context.mark_set('insert', '1.0')
