@@ -63,9 +63,7 @@ This module defines the following functions:
    :class:`Data`.
 
    The *dict_type* is the type used for dictionaries that are read from the
-   plist file. The exact structure of the plist can be recovered by using
-   :class:`collections.OrderedDict` (although the order of keys shouldn't be
-   important in plist files).
+   plist file.
 
    XML data for the :data:`FMT_XML` format is parsed using the Expat parser
    from :mod:`xml.parsers.expat` -- see its documentation for possible
