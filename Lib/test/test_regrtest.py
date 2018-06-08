@@ -390,6 +390,7 @@ class BaseTestCase(unittest.TestCase):
 
     def check_executed_tests(self, output, tests, skipped=(), failed=(),
                              env_changed=(), omitted=(),
+                             rerun=(),
                              randomize=False, interrupted=False,
                              fail_env_changed=False):
         if isinstance(tests, str):
@@ -402,6 +403,8 @@ class BaseTestCase(unittest.TestCase):
             env_changed = [env_changed]
         if isinstance(omitted, str):
             omitted = [omitted]
+        if isinstance(rerun, str):
+            rerun = [rerun]
 
         executed = self.parse_executed_tests(output)
         if randomize:
@@ -436,6 +439,14 @@ class BaseTestCase(unittest.TestCase):
             regex = list_regex('%s test%s omitted', omitted)
             self.check_line(output, regex)
 
+        if rerun:
+            regex = list_regex('%s re-run test%s', rerun)
+            self.check_line(output, regex)
+            self.check_line(output, "Re-running failed tests in verbose mode")
+            for name in rerun:
+                regex = "Re-running test %r in verbose mode" % name
+                self.check_line(output, regex)
+
         good = (len(tests) - len(skipped) - len(failed)
                 - len(omitted) - len(env_changed))
         if good:
@@ -447,14 +458,19 @@ class BaseTestCase(unittest.TestCase):
         if interrupted:
             self.check_line(output, 'Test suite interrupted by signal SIGINT.')
 
+        result = []
         if failed:
-            result = 'FAILURE'
-        elif interrupted:
-            result = 'INTERRUPTED'
+            result.append('FAILURE')
         elif fail_env_changed and env_changed:
-            result = 'ENV CHANGED'
-        else:
-            result = 'SUCCESS'
+            result.append('ENV CHANGED')
+        if interrupted:
+            result.append('INTERRUPTED')
+        if not result:
+            result.append('SUCCESS')
+        result = ', '.join(result)
+        if rerun:
+            self.check_line(output, 'Tests result: %s' % result)
+            result = 'FAILURE then %s' % result
         self.check_line(output, 'Tests result: %s' % result)
 
     def parse_random_seed(self, output):
@@ -947,6 +963,21 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("--fail-env-changed", testname, exitcode=3)
         self.check_executed_tests(output, [testname], env_changed=testname,
                                   fail_env_changed=True)
+
+    def test_rerun_fail(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_bug(self):
+                    # test always fail
+                    self.fail("bug")
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=2)
+        self.check_executed_tests(output, [testname],
+                                  failed=testname, rerun=testname)
 
 
 if __name__ == '__main__':
