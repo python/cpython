@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+import io
 
 try:
     import zlib
@@ -178,8 +179,15 @@ def _fastcopy_binfileobj(fsrc, fdst, length=1024 * 1024):
         else:
             fdst_write(mv)
 
+def _is_binary_files_pair(fsrc, fdst):
+    return hasattr(fsrc, 'readinto') and \
+        isinstance(fsrc, io.BytesIO) or 'b' in getattr(fsrc, 'mode', '') and \
+        isinstance(fdst, io.BytesIO) or 'b' in getattr(fdst, 'mode', '')
+
 def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""
+    if _is_binary_files_pair(fsrc, fdst):
+        return _fastcopy_binfileobj(fsrc, fdst, length=length)
     # Localize variable access to minimize overhead.
     fsrc_read = fsrc.read
     fdst_write = fdst.write
