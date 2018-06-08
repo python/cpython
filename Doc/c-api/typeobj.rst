@@ -20,6 +20,10 @@ functionality.  The fields of the type object are examined in detail in this
 section.  The fields will be described in the order in which they occur in the
 structure.
 
+In addition to the following quick reference, the :ref:`examples`
+section provides at-a-glance insight into the meaning and use of
+:c:type:`PyTypeObject`.
+
 
 Quick Reference
 ---------------
@@ -463,146 +467,6 @@ slot typedefs
 +-----------------------------+-----------------------------+----------------------+
 
 See :ref:`slot-typedefs` below for more detail.
-
-Examples
-^^^^^^^^
-
-A definition of a basic static type::
-
-   typedef struct {
-       PyObject_HEAD
-       const char *data;
-   } MyObject;
-
-   static PyTypeObject MyObject_Type = {
-       PyVarObject_HEAD_INIT(NULL, 0)
-       .tp_name = "mymod.MyObject",
-       .tp_basicsize = sizeof(MyObject),
-       .tp_doc = "My objects",
-       .tp_new = myobj_new,
-       .tp_dealloc = (destructor)myobj_dealloc,
-       .tp_repr = (reprfunc)myobj_repr,
-   };
-
-You may also find older code (especially in the CPython code base)
-with a more verbose initializer::
-
-   static PyTypeObject MyObject_Type = {
-       PyVarObject_HEAD_INIT(NULL, 0)
-       "mymod.MyObject",               /* tp_name */
-       sizeof(MyObject),               /* tp_basicsize */
-       0,                              /* tp_itemsize */
-       (destructor)myobj_dealloc,      /* tp_dealloc */
-       0,                              /* tp_print */
-       0,                              /* tp_getattr */
-       0,                              /* tp_setattr */
-       0,                              /* tp_as_async */
-       (reprfunc)myobj_repr,           /* tp_repr */
-       0,                              /* tp_as_number */
-       0,                              /* tp_as_sequence */
-       0,                              /* tp_as_mapping */
-       0,                              /* tp_hash */
-       0,                              /* tp_call */
-       0,                              /* tp_str */
-       0,                              /* tp_getattro */
-       0,                              /* tp_setattro */
-       0,                              /* tp_as_buffer */
-       0,                              /* tp_flags */
-       "My objects",                   /* tp_doc */
-       0,                              /* tp_traverse */
-       0,                              /* tp_clear */
-       0,                              /* tp_richcompare */
-       0,                              /* tp_weaklistoffset */
-       0,                              /* tp_iter */
-       0,                              /* tp_iternext */
-       0,                              /* tp_methods */
-       0,                              /* tp_members */
-       0,                              /* tp_getset */
-       0,                              /* tp_base */
-       0,                              /* tp_dict */
-       0,                              /* tp_descr_get */
-       0,                              /* tp_descr_set */
-       0,                              /* tp_dictoffset */
-       0,                              /* tp_init */
-       0,                              /* tp_alloc */
-       myobj_new,                      /* tp_new */
-   };
-
-A type that supports weakrefs, instance dicts, and hashing::
-
-   typedef struct {
-       PyObject_HEAD
-       const char *data;
-       PyObject *inst_dict;
-       PyObject *weakreflist;
-   } MyObject;
-
-   static PyTypeObject MyObject_Type = {
-       PyVarObject_HEAD_INIT(NULL, 0)
-       .tp_name = "mymod.MyObject",
-       .tp_basicsize = sizeof(MyObject),
-       .tp_doc = "My objects",
-       .tp_weaklistoffset = offsetof(MyObject, weakreflist),
-       .tp_dictoffset = offsetof(MyObject, inst_dict),
-       .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-       .tp_new = myobj_new,
-       .tp_traverse = (traverseproc)myobj_traverse,
-       .tp_clear = (inquiry)myobj_clear,
-       .tp_alloc = PyType_GenericNew,
-       .tp_dealloc = (destructor)myobj_dealloc,
-       .tp_repr = (reprfunc)myobj_repr,
-       .tp_hash = (hashfunc)myobj_hash,
-       .tp_richcompare = PyBaseObject_Type.tp_richcompare,
-   };
-
-A str subclass that cannot be subclassed and cannot be called
-to create instances (e.g. uses a separate factory func)::
-
-   typedef struct {
-       PyUnicodeObject raw;
-       char *extra;
-   } MyStr;
-
-   static PyTypeObject MyStr_Type = {
-       PyVarObject_HEAD_INIT(NULL, 0)
-       .tp_name = "mymod.MyStr",
-       .tp_basicsize = sizeof(MyStr),
-       .tp_base = NULL,  // set to &PyUnicode_Type in module init
-       .tp_doc = "my custom str",
-       .tp_flags = Py_TPFLAGS_DEFAULT,
-       .tp_new = NULL,
-       .tp_repr = (reprfunc)myobj_repr,
-   };
-
-The simplest static type (with fixed-length instances)::
-
-   typedef struct {
-       PyObject_HEAD
-   } MyObject;
-
-   static PyTypeObject MyObject_Type = {
-       PyVarObject_HEAD_INIT(NULL, 0)
-       .tp_name = "mymod.MyObject",
-   };
-
-The simplest static type (with variable-length instances)::
-
-   typedef struct {
-       PyObject_VAR_HEAD
-       const char *data[1];
-   } MyObject;
-
-   static PyTypeObject MyObject_Type = {
-       PyVarObject_HEAD_INIT(NULL, 0)
-       .tp_name = "mymod.MyObject",
-       .tp_basicsize = sizeof(MyObject) - sizeof(char *),
-       .tp_itemsize = sizeof(char *),
-   };
-
-For more examples, practical info, and a tutorial, see
-:ref:`defining-new-types` and :ref:`new-types-topics`.  For
-information about dynamically created (aka heap) types, see
-:c:func:`PyType_FromSpec`.
 
 
 PyTypeObject Definition
@@ -2424,4 +2288,144 @@ Slot Type typedefs
 .. c:type:: int (*objobjargproc)(PyObject *, PyObject *, PyObject *)
 
 
-.. XXX Add a section about heap types (see PyType_FromSpec)?
+.. _examples:
+
+Examples
+========
+
+The following are simple examples of Python type definitions.  They
+include common usage you may encounter.  Some demonstrate tricky corner
+cases.  For more examples, practical info, and a tutorial, see
+:ref:`defining-new-types` and :ref:`new-types-topics`.
+
+A basic static type::
+
+   typedef struct {
+       PyObject_HEAD
+       const char *data;
+   } MyObject;
+
+   static PyTypeObject MyObject_Type = {
+       PyVarObject_HEAD_INIT(NULL, 0)
+       .tp_name = "mymod.MyObject",
+       .tp_basicsize = sizeof(MyObject),
+       .tp_doc = "My objects",
+       .tp_new = myobj_new,
+       .tp_dealloc = (destructor)myobj_dealloc,
+       .tp_repr = (reprfunc)myobj_repr,
+   };
+
+You may also find older code (especially in the CPython code base)
+with a more verbose initializer::
+
+   static PyTypeObject MyObject_Type = {
+       PyVarObject_HEAD_INIT(NULL, 0)
+       "mymod.MyObject",               /* tp_name */
+       sizeof(MyObject),               /* tp_basicsize */
+       0,                              /* tp_itemsize */
+       (destructor)myobj_dealloc,      /* tp_dealloc */
+       0,                              /* tp_print */
+       0,                              /* tp_getattr */
+       0,                              /* tp_setattr */
+       0,                              /* tp_as_async */
+       (reprfunc)myobj_repr,           /* tp_repr */
+       0,                              /* tp_as_number */
+       0,                              /* tp_as_sequence */
+       0,                              /* tp_as_mapping */
+       0,                              /* tp_hash */
+       0,                              /* tp_call */
+       0,                              /* tp_str */
+       0,                              /* tp_getattro */
+       0,                              /* tp_setattro */
+       0,                              /* tp_as_buffer */
+       0,                              /* tp_flags */
+       "My objects",                   /* tp_doc */
+       0,                              /* tp_traverse */
+       0,                              /* tp_clear */
+       0,                              /* tp_richcompare */
+       0,                              /* tp_weaklistoffset */
+       0,                              /* tp_iter */
+       0,                              /* tp_iternext */
+       0,                              /* tp_methods */
+       0,                              /* tp_members */
+       0,                              /* tp_getset */
+       0,                              /* tp_base */
+       0,                              /* tp_dict */
+       0,                              /* tp_descr_get */
+       0,                              /* tp_descr_set */
+       0,                              /* tp_dictoffset */
+       0,                              /* tp_init */
+       0,                              /* tp_alloc */
+       myobj_new,                      /* tp_new */
+   };
+
+A type that supports weakrefs, instance dicts, and hashing::
+
+   typedef struct {
+       PyObject_HEAD
+       const char *data;
+       PyObject *inst_dict;
+       PyObject *weakreflist;
+   } MyObject;
+
+   static PyTypeObject MyObject_Type = {
+       PyVarObject_HEAD_INIT(NULL, 0)
+       .tp_name = "mymod.MyObject",
+       .tp_basicsize = sizeof(MyObject),
+       .tp_doc = "My objects",
+       .tp_weaklistoffset = offsetof(MyObject, weakreflist),
+       .tp_dictoffset = offsetof(MyObject, inst_dict),
+       .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+       .tp_new = myobj_new,
+       .tp_traverse = (traverseproc)myobj_traverse,
+       .tp_clear = (inquiry)myobj_clear,
+       .tp_alloc = PyType_GenericNew,
+       .tp_dealloc = (destructor)myobj_dealloc,
+       .tp_repr = (reprfunc)myobj_repr,
+       .tp_hash = (hashfunc)myobj_hash,
+       .tp_richcompare = PyBaseObject_Type.tp_richcompare,
+   };
+
+A str subclass that cannot be subclassed and cannot be called
+to create instances (e.g. uses a separate factory func)::
+
+   typedef struct {
+       PyUnicodeObject raw;
+       char *extra;
+   } MyStr;
+
+   static PyTypeObject MyStr_Type = {
+       PyVarObject_HEAD_INIT(NULL, 0)
+       .tp_name = "mymod.MyStr",
+       .tp_basicsize = sizeof(MyStr),
+       .tp_base = NULL,  // set to &PyUnicode_Type in module init
+       .tp_doc = "my custom str",
+       .tp_flags = Py_TPFLAGS_DEFAULT,
+       .tp_new = NULL,
+       .tp_repr = (reprfunc)myobj_repr,
+   };
+
+The simplest static type (with fixed-length instances)::
+
+   typedef struct {
+       PyObject_HEAD
+   } MyObject;
+
+   static PyTypeObject MyObject_Type = {
+       PyVarObject_HEAD_INIT(NULL, 0)
+       .tp_name = "mymod.MyObject",
+   };
+
+The simplest static type (with variable-length instances)::
+
+   typedef struct {
+       PyObject_VAR_HEAD
+       const char *data[1];
+   } MyObject;
+
+   static PyTypeObject MyObject_Type = {
+       PyVarObject_HEAD_INIT(NULL, 0)
+       .tp_name = "mymod.MyObject",
+       .tp_basicsize = sizeof(MyObject) - sizeof(char *),
+       .tp_itemsize = sizeof(char *),
+   };
