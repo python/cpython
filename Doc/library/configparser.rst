@@ -918,7 +918,7 @@ ConfigParser Objects
       keys and values are implicitly converted to strings.
 
    .. versionchanged:: 3.7
-      The default *dict_type* is :class:`dict`, since it now guarantees
+      The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
 
    .. method:: defaults()
@@ -1195,7 +1195,7 @@ RawConfigParser Objects
    as well as the legacy ``defaults=`` keyword argument handling.
 
    .. versionchanged:: 3.7
-      The default *dict_type* is :class:`dict`, since it now guarantees
+      The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
 
    .. note::
