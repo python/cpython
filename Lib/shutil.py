@@ -87,14 +87,6 @@ class _GiveupOnFastCopy(Exception):
     file copy when fast-copy functions fail to do so.
     """
 
-def copyfileobj(fsrc, fdst, length=16*1024):
-    """copy data from file-like object fsrc to file-like object fdst"""
-    while 1:
-        buf = fsrc.read(length)
-        if not buf:
-            break
-        fdst.write(buf)
-
 def _fastcopy_osx(src, dst, flags):
     """Copy a regular file content or metadata by using high-performance
     copyfile(3) syscall (OSX only).
@@ -131,6 +123,15 @@ def _fastcopy_sendfile(fsrc, fdst):
     high-performance sendfile(2) syscall.
     This should work on Linux >= 2.6.33 and Solaris only.
     """
+    # Note: copyfileobj() is left alone in order to not introduce any
+    # unexpected breakage. Possible risks by using zero-copy calls
+    # in copyfileobj() are:
+    # - fdst cannot be open in "a"(ppend) mode
+    # - fsrc and fdst may be open in "t"(ext) mode
+    # - fsrc may be a BufferedReader (which hides unread data in a buffer),
+    #   GzipFile (which decompresses data), HTTPResponse (which decodes
+    #   chunks).
+    # - possibly others (e.g. encrypted fs/partition?)
     global _HAS_SENDFILE
     try:
         infd = fsrc.fileno()
@@ -177,40 +178,31 @@ def _fastcopy_sendfile(fsrc, fdst):
                 break  # EOF
             offset += sent
 
-def _fastcopy_fileobj(fsrc, fdst):
-    """Copy 2 regular mmap-like files by using zero-copy sendfile(2)
-    syscall first. In case of error and no data was written in fdst
-    fallback on using plain read()/write() method.
-    """
-    # Note: copyfileobj() is left alone in order to not introduce any
-    # unexpected breakage. Possible risks by using zero-copy calls
-    # in copyfileobj() are:
-    # - fdst cannot be open in "a"(ppend) mode
-    # - fsrc and fdst may be open in "t"(ext) mode
-    # - fsrc may be a BufferedReader (which hides unread data in a buffer),
-    #   GzipFile (which decompresses data), HTTPResponse (which decodes
-    #   chunks).
-    # - possibly others (e.g. encrypted fs/partition?)
-    if _HAS_SENDFILE:
-        try:
-            return _fastcopy_sendfile(fsrc, fdst)
-        except _GiveupOnFastCopy:
-            pass
+def _fastcopy_binfileobj(fsrc, fdst, length=1024 * 1024):
+    """Copy 2 regular file objects opened in binary mode."""
+    # Localize variable access to minimize overhead.
+    fsrc_readinto = fsrc.readinto
+    fdst_write = fdst.write
+    mv = memoryview(bytearray(length))
+    while True:
+        n = fsrc_readinto(mv)
+        if not n:
+            break
+        elif n < length:
+            fdst_write(mv[:n])
+        else:
+            fdst_write(mv)
 
-    # Faster than copyfileobj() as it uses bytearray() and readinto().
-    # Cannot use it in copyfileobj() as we're not sure files are
-    # open in binary mode.
-    length = 1024 * 1024  # 1MB
-    with memoryview(bytearray(length)) as mv:
-        while True:
-            n = fsrc.readinto(mv)
-            if not n:
-                break
-            elif n < length:
-                with mv[:n] as smv:
-                    fdst.write(smv)
-            else:
-                fdst.write(mv)
+def copyfileobj(fsrc, fdst, length=16*1024):
+    """copy data from file-like object fsrc to file-like object fdst"""
+    # Localize variable access to minimize overhead.
+    fsrc_read = fsrc.read
+    fdst_write = fdst.write
+    while 1:
+        buf = fsrc_read(length)
+        if not buf:
+            break
+        fdst_write(buf)
 
 def _samefile(src, dst):
     # Macintosh, Unix.
@@ -255,9 +247,16 @@ def copyfile(src, dst, *, follow_symlinks=True):
             except _GiveupOnFastCopy:
                 pass
 
-        with open(src, 'rb') as fsrc:
-            with open(dst, 'wb') as fdst:
-                _fastcopy_fileobj(fsrc, fdst)
+        with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
+            if _HAS_SENDFILE:
+                try:
+                    _fastcopy_sendfile(fsrc, fdst)
+                    return dst
+                except _GiveupOnFastCopy:
+                    pass
+
+            _fastcopy_binfileobj(fsrc, fdst)
+
     return dst
 
 def copymode(src, dst, *, follow_symlinks=True):
