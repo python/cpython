@@ -439,7 +439,7 @@ Miscellaneous options
        ``True``
 
    * ``-X utf8`` enables the UTF-8 mode, whereas ``-X utf8=0`` disables the
-     UTF-8 mode.
+     UTF-8 mode. See :envvar:`PYTHONUTF8` for more details.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -819,6 +819,16 @@ conflict.
    activates, or else if a locale that *would* have triggered coercion is
    still active when the Python runtime is initialized.
 
+   Note that setting ``LC_ALL`` also implicitly turns of locale coercion, as
+   that setting will always override any ``LC_CTYPE`` setting the interpreter
+   may provide.
+
+   Also note that even when locale coercion is disabled, or when it fails to
+   find a suitable target locale, :envvar:`PYTHONUTF8` will still activate by
+   default in legacy ASCII-based C locales. Both features must be disabled in
+   order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
+   system interfaces.
+
    Availability: \*nix
 
    .. versionadded:: 3.7
@@ -834,10 +844,23 @@ conflict.
 
 .. envvar:: PYTHONUTF8
 
-   If set to ``1``, enable the UTF-8 mode. If set to ``0``, disable the UTF-8
-   mode. Any other non-empty string cause an error.
+   If set to ``1``, enable the UTF-8 mode, such that the interpreter uses
+   ``UTF-8`` as the text encoding for system interfaces, regardless of the
+   current locale setting. If set to ``0``, disable the UTF-8 mode. Any
+   other non-empty string causes an error during interpreter initialisation.
+
+   If this environment variable is not set, then the interpreter defaults to
+   using the current locale settings, *unless* that setting is identified as
+   a legacy C locale (as descibed for :envvar:`PYTHONCOERCECLOCALE`), and locale
+   coercion is either disabled or fails. In such legacy ``ASCII``-based locales,
+   the interpreter will default to enabling UTF-8 mode.
+
+   Also available as the :option:`-X` ``utf8`` option.
+
+   Availability: \*nix
 
    .. versionadded:: 3.7
+      See :pep:`540` for more details.
 
 
 Debug-mode variables
