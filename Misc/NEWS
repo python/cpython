@@ -374,11 +374,6 @@ Extension Modules
 Library
 -------
 
-- bpo-30665: fcntl.ioctl() now accepts larger range of integers as the third
-  argument.  On Linux signed and unsigned integers that fit in the size of
-  C pointer are accepted.  On other platforms integers that are representable
-  as C types "int" or "unsigned int" are accepted.
-
 - bpo-30746: Prohibited the '=' character in environment variable names in
   ``os.putenv()`` and ``os.spawn*()``.
 

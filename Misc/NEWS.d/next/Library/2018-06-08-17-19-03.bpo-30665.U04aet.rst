@@ -1,0 +1,4 @@
+:func:`fcntl.ioctl()` now accepts larger range of integers as the third
+argument.  On Linux signed and unsigned integers that fit in the size of a C
+pointer are accepted.  On other platforms integers that are representable as
+C types ``int`` or ``unsigned int`` are accepted.
