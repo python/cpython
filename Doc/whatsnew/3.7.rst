@@ -97,9 +97,10 @@ Significant improvements in the standard library:
 
 CPython implementation improvements:
 
+* Avoiding the use of ASCII as a default text encoding:
+  * :ref:`PEP 538 <whatsnew37-pep538>`, legacy C locale coercion
+  * :ref:`PEP 540 <whatsnew37-pep540>`, forced UTF-8 runtime mode
 * :ref:`PEP 552 <whatsnew37-pep552>`, deterministic .pycs
-* :ref:`PEP 538 <whatsnew37-pep538>`, legacy C locale coercion
-* :ref:`PEP 540 <whatsnew37-pep540>`, forced UTF-8 runtime mode
 * :ref:`the new development runtime mode <whatsnew37-devmode>`
 * :ref:`PEP 565 <whatsnew37-pep565>`, improved :exc:`DeprecationWarning`
   handling
@@ -184,7 +185,8 @@ PEP 538: Legacy C Locale Coercion
 
 An ongoing challenge within the Python 3 series has been determining a sensible
 default strategy for handling the "7-bit ASCII" text encoding assumption
-currently implied by the use of the default C locale on non-Windows platforms.
+currently implied by the use of the default C or POSIX locale on non-Windows
+platforms.
 
 :pep:`538` updates the default interpreter command line interface to
 automatically coerce that locale to an available UTF-8 based locale as
@@ -205,9 +207,17 @@ continues to be ``backslashreplace``, regardless of locale.
 
 Locale coercion is silent by default, but to assist in debugging potentially
 locale related integration problems, explicit warnings (emitted directly on
-:data:`~sys.stderr` can be requested by setting ``PYTHONCOERCECLOCALE=warn``.
+:data:`~sys.stderr`) can be requested by setting ``PYTHONCOERCECLOCALE=warn``.
 This setting will also cause the Python runtime to emit a warning if the
 legacy C locale remains active when the core interpreter is initialized.
+
+While :pep:`538`'s locale coercion has the benefit of also affecting extension
+modules (such as GNU ``readline``), as well as child processes (including those
+running non-Python applications and older versions of Python), it has the
+downside of requiring that a suitable target locale be present on the running
+system. To better handle the case where no suitable target locale is available
+(as occurs on RHEL/CentOS 7, for example), Python 3.7 also implements
+:ref:`whatsnew37-pep540`.
 
 .. seealso::
 
@@ -231,8 +241,17 @@ The forced UTF-8 mode can be used to change the text handling behavior in
 an embedded Python interpreter without changing the locale settings of
 an embedding application.
 
-The UTF-8 mode is enabled by default when the locale is "C".  See
-:ref:`whatsnew37-pep538` for details.
+While :pep:`540`'s UTF-8 mode has the benefit of working regardless of which
+locales are available on the running system, it has the downside of having no
+effect on extension modules (such as GNU ``readline``), child processes running
+non-Python applications, and child processes running older versions of Python.
+To reduce the risk of corrupting text data when communicating with such
+components, Python 3.7 also implements :ref:`whatsnew37-pep540`).
+
+The UTF-8 mode is enabled by default when the locale is ``C`` or ``POSIX``, and
+the :pep:`538` locale coercion feature fails to change it to a UTF-8 based
+alternative (whether that failure is due to ``PYTHONCOERCECLOCALE=0`` being set,
+``LC_ALL`` being set, or the lack of a suitable target locale).
 
 .. seealso::
 
