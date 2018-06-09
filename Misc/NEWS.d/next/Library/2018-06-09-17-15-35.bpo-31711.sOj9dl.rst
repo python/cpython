@@ -1,0 +1,2 @@
+Avoiding triggering undefined behaviour from SSL_write when calling
+SSLSocket.send() with empty input.
