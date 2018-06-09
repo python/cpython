@@ -9632,9 +9632,7 @@ main ()
 {
 
 #ifndef uuid_enc_be
-uuid_t uuid;
-unsigned char buf[sizeof(uuid)];
-uuid_enc_be(buf, &uuid);
+void *x = uuid_enc_be
 #endif
 
   ;
