@@ -519,6 +519,34 @@ class CmdLineTest(unittest.TestCase):
             with self.subTest(envar_value=value):
                 assert_python_ok('-c', code, **env_vars)
 
+    def test_set_bytecode_prefix(self):
+        # sys.bytecode_prefix can be set from either -X bytecode_prefix or
+        # PYTHONBYTECODEPREFIX env var, with the former taking precedence.
+        NO_VALUE = object()  # `-X bytecode_prefix` with no `=PATH`
+        cases = [
+            # (PYTHONBYTECODEPREFIX, -X bytecode_prefix, sys.bytecode_prefix)
+            (None, None, None),
+            ('foo', None, 'foo'),
+            (None, 'bar', 'bar'),
+            ('foo', 'bar', 'bar'),
+            ('foo', '', None),
+            ('foo', NO_VALUE, None),
+        ]
+        for envval, opt, expected in cases:
+            exp_clause = "is None" if expected is None else f'== "{expected}"'
+            code = f"import sys; sys.exit(not sys.bytecode_prefix {exp_clause})"
+            args = ['-c', code]
+            env = {}
+            if envval is not None:
+                env = {'PYTHONBYTECODEPREFIX': envval}
+            if opt is NO_VALUE:
+                args[:0] = ['-X', 'bytecode_prefix']
+            elif opt is not None:
+                args[:0] = ['-X', f'bytecode_prefix={opt}']
+            with self.subTest(envval=envval, opt=opt):
+                with support.temp_cwd():
+                    assert_python_ok(*args, **env)
+
     def run_xdev(self, *args, check_exitcode=True, xdev=True):
         env = dict(os.environ)
         env.pop('PYTHONWARNINGS', None)
