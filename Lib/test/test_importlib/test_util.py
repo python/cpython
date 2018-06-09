@@ -760,18 +760,22 @@ class PEP3147Tests:
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag to not be None')
-    def test_cache_from_source_respects_PYTHONBYTECODEPREFIX(self):
-        # If PYTHONBYTECODEPREFIX env var is set, cache_from_source will return
-        # a bytecode path inside that directory (in a subdirectory mirroring the
-        # .py file's path) rather than in a __pycache__ dir next to the py file.
+    def test_cache_from_source_respects_bytecode_prefix(self):
+        # If bytecode_prefix is set, cache_from_source will return a bytecode
+        # path inside that directory (in a subdirectory mirroring the .py file's
+        # path) rather than in a __pycache__ dir next to the py file.
         bytecode_prefixes = [
             os.path.join(os.path.sep, 'tmp', 'bytecode'),
             os.path.join(os.path.sep, 'tmp', '\u2603'),  # non-ASCII in path!
             os.path.join(os.path.sep, 'tmp', 'trailing-slash') + os.path.sep,
         ]
-        drive = 'C:' if os.name == 'nt' else ''
+        drive = ''
+        if os.name == 'nt':
+            drive = 'C:'
+            bytecode_prefixes = [
+                f'{drive}{prefix}' for prefix in bytecode_prefixes]
+            bytecode_prefixes += [r'\\?\C:\foo', r'\\localhost\c$\bar']
         for bytecode_prefix in bytecode_prefixes:
-            bytecode_prefix = drive + bytecode_prefix
             with self.subTest(path=bytecode_prefix):
                 path = drive + os.path.join(
                     os.path.sep, 'foo', 'bar', 'baz', 'qux.py')
@@ -785,9 +789,9 @@ class PEP3147Tests:
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag to not be None')
-    def test_cache_from_source_respects_PYTHONBYTECODEPREFIX_relative(self):
+    def test_cache_from_source_respects_bytecode_prefix_relative(self):
         # If the .py path we are given is relative, we will resolve to an
-        # absolute path before prefixing with PYTHONBYTECODEPREFIX, to avoid any
+        # absolute path before prefixing with bytecode_prefix, to avoid any
         # possible ambiguity.
         bytecode_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
         path = os.path.join('foo', 'bar', 'baz', 'qux.py')
@@ -803,10 +807,10 @@ class PEP3147Tests:
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag to not be None')
-    def test_source_from_cache_inside_PYTHONBYTECODEPREFIX(self):
-        # If PYTHONBYTECODEPREFIX is set and the cache path we get is inside it,
+    def test_source_from_cache_inside_bytecode_prefix(self):
+        # If bytecode_prefix is set and the cache path we get is inside it,
         # we return an absolute path to the py file based on the remainder of
-        # the path within PYTHONBYTECODEPREFIX.
+        # the path within bytecode_prefix.
         bytecode_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
         path = os.path.join(bytecode_prefix, 'foo', 'bar', 'baz',
                             f'qux.{self.tag}.pyc')
@@ -816,8 +820,8 @@ class PEP3147Tests:
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag to not be None')
-    def test_source_from_cache_outside_PYTHONBYTECODEPREFIX(self):
-        # If PYTHONBYTECODEPREFIX is set but the cache path we get is not inside
+    def test_source_from_cache_outside_bytecode_prefix(self):
+        # If bytecode_prefix is set but the cache path we get is not inside
         # it, just ignore it and handle the cache path according to the default
         # behavior.
         bytecode_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
