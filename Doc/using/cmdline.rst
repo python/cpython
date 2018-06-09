@@ -789,14 +789,16 @@ conflict.
 .. envvar:: PYTHONCOERCECLOCALE
 
    If set to the value ``0``, causes the main Python command line application
-   to skip coercing the legacy ASCII-based C locale to a more capable UTF-8
-   based alternative.
+   to skip coercing the legacy ASCII-based C and POSIX locales to a more
+   capable UTF-8 based alternative.
 
-   If this variable is *not* set, or is set to a value other than ``0``, and
-   the current locale reported for the ``LC_CTYPE`` category is the default
-   ``C`` locale, then the Python CLI will attempt to configure the following
-   locales for the ``LC_CTYPE`` category in the order listed before loading the
-   interpreter runtime:
+   If this variable is *not* set (or is set to a value other than ``0``) the
+   ``LC_ALL`` locale override environment variable is also not set, and the
+   current locale reported for the ``LC_CTYPE`` category is either the default
+   ``C`` locale, or else the explicitly ASCII-based ``POSIX`` locale, then the
+   Python CLI will attempt to configure the following locales for the
+   ``LC_CTYPE`` category in the order listed before loading the interpreter
+   runtime:
 
    * ``C.UTF-8``
    * ``C.utf8``
@@ -807,25 +809,23 @@ conflict.
    environment before the Python runtime is initialized. This ensures the
    updated setting is seen in subprocesses, as well as in operations that
    query the environment rather than the current C locale (such as Python's
-   own :func:`locale.getdefaultlocale`).
+   own :func:`locale.getdefaultlocale`, or the GNU `readline` library).
 
    Configuring one of these locales (either explicitly or via the above
-   implicit locale coercion) will automatically set the error handler for
-   :data:`sys.stdin` and :data:`sys.stdout` to ``surrogateescape``. This
-   behavior can be overridden using :envvar:`PYTHONIOENCODING` as usual.
+   implicit locale coercion) automatically enables the ``surrogateescape``
+   :ref:`error handler <error-handlers>` for :data:`sys.stdin` and
+   :data:`sys.stdout` (:data:`sys.stderr` continues to use ``backslashreplace``
+   as it does in any other locale). This stream handling behavior can be
+   overridden using :envvar:`PYTHONIOENCODING` as usual.
 
    For debugging purposes, setting ``PYTHONCOERCECLOCALE=warn`` will cause
    Python to emit warning messages on ``stderr`` if either the locale coercion
    activates, or else if a locale that *would* have triggered coercion is
    still active when the Python runtime is initialized.
 
-   Note that setting ``LC_ALL`` also implicitly turns of locale coercion, as
-   that setting will always override any ``LC_CTYPE`` setting the interpreter
-   may provide.
-
    Also note that even when locale coercion is disabled, or when it fails to
    find a suitable target locale, :envvar:`PYTHONUTF8` will still activate by
-   default in legacy ASCII-based C locales. Both features must be disabled in
+   default in legacy ASCII-based locales. Both features must be disabled in
    order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
    system interfaces.
 
@@ -844,16 +844,48 @@ conflict.
 
 .. envvar:: PYTHONUTF8
 
-   If set to ``1``, enable the UTF-8 mode, such that the interpreter uses
-   ``UTF-8`` as the text encoding for system interfaces, regardless of the
-   current locale setting. If set to ``0``, disable the UTF-8 mode. Any
-   other non-empty string causes an error during interpreter initialisation.
+   If set to ``1``, enables the interpreter's UTF-8 mode, where ``UTF-8`` is
+   used as the text encoding for system interfaces, regardless of the
+   current locale setting.
 
-   If this environment variable is not set, then the interpreter defaults to
-   using the current locale settings, *unless* that setting is identified as
-   a legacy C locale (as descibed for :envvar:`PYTHONCOERCECLOCALE`), and locale
-   coercion is either disabled or fails. In such legacy ``ASCII``-based locales,
-   the interpreter will default to enabling UTF-8 mode.
+   This means that:
+
+    * :func:`sys.getfilesystemencoding()` returns ``'UTF-8'``.
+    * :func:`locale.getpreferredencoding()` returns ``'UTF-8'`` (the locale
+      encoding is ignored, and the function's ``do_setlocale`` parameter has no
+      effect).
+    * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
+      UTF-8 as their text encoding, with the ``surrogateescape``
+      :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
+      and :data:`sys.stdout` (:data:`sys.stderr` continues to use
+      ``backslashreplace`` as it does in the default locale-aware mode)
+
+   As a consequence of the changes in those lower level APIs, other higher
+   level APIs also exhibit different default behaviours:
+
+    * Command line arguments, environment variables and filenames are decoded
+      to text using the UTF-8 encoding.
+    * :func:`os.fsdecode()` and :func:`os.fsencode()` use the UTF-8 encoding.
+    * :func:`open()`, :func:`io.open()`, and :func:`codecs.open()` use the UTF-8
+      encoding by default. However, they still use the strict error handler by
+      default so that attempting to open a binary file in text mode is likely
+      to raise an exception rather than producing nonsense data.
+
+   Note that the standard stream settings in UTF-8 mode can be overridden by
+   :envvar:`PYTHONIOENCODING` (just as they can be in the default locale-aware
+   mode).
+
+   If set to ``0``, the interpreter runs in its default locale-aware mode.
+
+   Setting any other non-empty string causes an error during interpreter
+   initialisation.
+
+   If this environment variable is not set at all, then the interpreter defaults
+   to using the current locale settings, *unless* the current locale is
+   identified as a legacy ASCII-based locale
+   (as descibed for :envvar:`PYTHONCOERCECLOCALE`), and locale coercion is
+   either disabled or fails. In such legacy locales, the interpreter will
+   default to enabling UTF-8 mode unless explicitly instructed not to do so.
 
    Also available as the :option:`-X` ``utf8`` option.
 
