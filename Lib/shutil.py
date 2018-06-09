@@ -49,9 +49,7 @@ if os.name == 'posix':
 elif os.name == 'nt':
     import nt
 
-# On Windows using 1MB instead of 16KB results in significantly better
-# performances.
-_COPY_BUFSIZE = 1024 * 1024 if os.name == 'nt' else 16 * 1024
+COPY_BUFSIZE = 1024 * 1024 if os.name == 'nt' else 16 * 1024
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
 _HAS_COPYFILE = posix and hasattr(posix, "_copyfile")  # OSX
 
@@ -92,7 +90,7 @@ class _GiveupOnFastCopy(Exception):
 
 def _fastcopy_osx(src, dst, flags):
     """Copy a regular file content or metadata by using high-performance
-    copyfile(3) syscall (OSX only).
+    copyfile(3) syscall (OSX).
     """
     if _samefile(src, dst):
         # ...or else copyfile() would return success and delete src
@@ -167,8 +165,8 @@ def _fastcopy_sendfile(fsrc, fdst):
                 break  # EOF
             offset += sent
 
-def _copybinfileobj(fsrc, fdst, length=_COPY_BUFSIZE):
-    """Copy 2 regular file objects opened in binary mode."""
+def _copybinfileobj(fsrc, fdst, length=COPY_BUFSIZE):
+    """Copy 2 regular file objects open in binary mode."""
     # Localize variable access to minimize overhead.
     fsrc_readinto = fsrc.readinto
     fdst_write = fdst.write
@@ -187,7 +185,7 @@ def _is_binary_files_pair(fsrc, fdst):
         isinstance(fsrc, io.BytesIO) or 'b' in getattr(fsrc, 'mode', '') and \
         isinstance(fdst, io.BytesIO) or 'b' in getattr(fdst, 'mode', '')
 
-def copyfileobj(fsrc, fdst, length=_COPY_BUFSIZE):
+def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
     """copy data from file-like object fsrc to file-like object fdst"""
     if _is_binary_files_pair(fsrc, fdst):
         _copybinfileobj(fsrc, fdst, length=length)
@@ -387,7 +385,6 @@ def copy2(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-
     copyfile(src, dst, follow_symlinks=follow_symlinks)
     copystat(src, dst, follow_symlinks=follow_symlinks)
     return dst
