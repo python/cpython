@@ -1652,6 +1652,32 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+_channel_from_cid(PyObject *cid, int end)
+{
+    PyObject *highlevel = PyImport_ImportModule("interpreters");
+    if (highlevel == NULL) {
+        PyErr_Clear();
+        highlevel = PyImport_ImportModule("test.support.interpreters");
+        if (highlevel == NULL) {
+            return NULL;
+        }
+    }
+    const char *clsname = (end == CHANNEL_RECV) ? "RecvChannel" :
+                                                  "SendChannel";
+    PyObject *cls = PyObject_GetAttrString(highlevel, clsname);
+    Py_DECREF(highlevel);
+    if (cls == NULL) {
+        return NULL;
+    }
+    PyObject *chan = PyObject_CallFunctionObjArgs(cls, cid, NULL);
+    Py_DECREF(cls);
+    if (chan == NULL) {
+        return NULL;
+    }
+    return chan;
+}
+
 struct _channelid_xid {
     int64_t id;
     int end;
@@ -1673,31 +1699,13 @@ _channelid_from_xid(_PyCrossInterpreterData *data)
     }
 
     /* Try returning a high-level channel end but fall back to the ID. */
-    PyObject *highlevel = PyImport_ImportModule("interpreters");
-    if (highlevel == NULL) {
-        PyErr_Clear();
-        highlevel = PyImport_ImportModule("test.support.interpreters");
-        if (highlevel == NULL) {
-            goto error;
-        }
-    }
-    const char *clsname = (xid->end == CHANNEL_RECV) ? "RecvChannel" :
-                                                       "SendChannel";
-    PyObject *cls = PyObject_GetAttrString(highlevel, clsname);
-    Py_DECREF(highlevel);
-    if (cls == NULL) {
-        goto error;
-    }
-    PyObject *chan = PyObject_CallFunctionObjArgs(cls, cid, NULL);
+    PyObject *chan = _channel_from_cid(cid, xid->end);
     if (chan == NULL) {
-        goto error;
+        PyErr_Clear();
+        return cid;
     }
     Py_DECREF(cid);
     return chan;
-
-error:
-    PyErr_Clear();
-    return cid;
 }
 
 static int
