@@ -376,7 +376,7 @@ Creating connections
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
    This method will try to establish the connection in the background.
-   When successful, the it returns a ``(transport, protocol)`` pair.
+   When successful, it returns a ``(transport, protocol)`` pair.
 
    Options changing how the connection is created:
 
@@ -429,7 +429,7 @@ Creating connections
    efficiently.
 
    This method will try to establish the connection in the background.
-   When successful, the it returns a ``(transport, protocol)`` pair.
+   When successful, it returns a ``(transport, protocol)`` pair.
 
    *path* is the name of a UNIX domain socket, and is required unless a *sock*
    parameter is specified.  Abstract UNIX sockets, :class:`str`,
