@@ -809,7 +809,7 @@ conflict.
    environment before the Python runtime is initialized. This ensures the
    updated setting is seen in subprocesses, as well as in operations that
    query the environment rather than the current C locale (such as Python's
-   own :func:`locale.getdefaultlocale`, or the GNU `readline` library).
+   own :func:`locale.getdefaultlocale`, or the GNU ``readline`` library).
 
    Configuring one of these locales (either explicitly or via the above
    implicit locale coercion) automatically enables the ``surrogateescape``
