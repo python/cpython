@@ -684,7 +684,7 @@ class FieldStorage:
                 if not data:
                     self.done = -1
                     break
-                self.file.write(data)
+                self.file.write(str(data))
                 todo = todo - len(data)
 
     def read_lines(self):
