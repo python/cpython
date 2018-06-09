@@ -855,7 +855,7 @@ conflict.
 
    This means that:
 
-    * :func:`sys.getfilesystemencoding()` returns ``'UTF-8'``(the locale
+    * :func:`sys.getfilesystemencoding()` returns ``'UTF-8'`` (the locale
       encoding is ignored).
     * :func:`locale.getpreferredencoding()` returns ``'UTF-8'`` (the locale
       encoding is ignored, and the function's ``do_setlocale`` parameter has no
