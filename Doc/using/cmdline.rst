@@ -438,8 +438,10 @@ Miscellaneous options
      * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
        ``True``
 
-   * ``-X utf8`` enables the UTF-8 mode, whereas ``-X utf8=0`` disables the
-     UTF-8 mode. See :envvar:`PYTHONUTF8` for more details.
+   * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
+     the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
+     mode (even when it would otherwise activate automatically).
+     See :envvar:`PYTHONUTF8` for more details.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -792,7 +794,7 @@ conflict.
    to skip coercing the legacy ASCII-based C and POSIX locales to a more
    capable UTF-8 based alternative.
 
-   If this variable is *not* set (or is set to a value other than ``0``) the
+   If this variable is *not* set (or is set to a value other than ``0``), the
    ``LC_ALL`` locale override environment variable is also not set, and the
    current locale reported for the ``LC_CTYPE`` category is either the default
    ``C`` locale, or else the explicitly ASCII-based ``POSIX`` locale, then the
@@ -806,10 +808,13 @@ conflict.
 
    If setting one of these locale categories succeeds, then the ``LC_CTYPE``
    environment variable will also be set accordingly in the current process
-   environment before the Python runtime is initialized. This ensures the
-   updated setting is seen in subprocesses, as well as in operations that
-   query the environment rather than the current C locale (such as Python's
-   own :func:`locale.getdefaultlocale`, or the GNU ``readline`` library).
+   environment before the Python runtime is initialized. This ensures that in
+   addition to being seen by both the interpreter itself and other locale-aware
+   components running in the same process (such as the GNU ``readline``
+   library), the updated setting is also seen in subprocesses (regardless of
+   whether or not those processes are running a Python interpreter), as well as
+   in operations that query the environment rather than the current C locale
+   (such as Python's own :func:`locale.getdefaultlocale`).
 
    Configuring one of these locales (either explicitly or via the above
    implicit locale coercion) automatically enables the ``surrogateescape``
@@ -850,7 +855,8 @@ conflict.
 
    This means that:
 
-    * :func:`sys.getfilesystemencoding()` returns ``'UTF-8'``.
+    * :func:`sys.getfilesystemencoding()` returns ``'UTF-8'``(the locale
+      encoding is ignored).
     * :func:`locale.getpreferredencoding()` returns ``'UTF-8'`` (the locale
       encoding is ignored, and the function's ``do_setlocale`` parameter has no
       effect).
