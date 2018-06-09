@@ -49,6 +49,8 @@ if os.name == 'posix':
 elif os.name == 'nt':
     import nt
 
+# On Windows using 1MB instead of 16KB results in significantly better
+# performances.
 _COPY_BUFSIZE = 1024 * 1024 if os.name == 'nt' else 16 * 1024
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
 _HAS_COPYFILE = posix and hasattr(posix, "_copyfile")  # OSX

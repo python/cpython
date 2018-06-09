@@ -77,8 +77,8 @@ Directory and files operations
       a subclass of the latter, this change is backward compatible.
 
    .. versionchanged:: 3.8
-      Platform-specific fast-copy syscalls are used internally in order to copy
-      the file more efficiently. See
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. exception:: SameFileError
@@ -170,8 +170,8 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Platform-specific fast-copy syscalls are used internally in order to copy
-      the file more efficiently. See
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. function:: copy2(src, dst, *, follow_symlinks=True)
@@ -197,8 +197,8 @@ Directory and files operations
       Now returns path to the newly created file.
 
    .. versionchanged:: 3.8
-      Platform-specific fast-copy syscalls are used internally in order to copy
-      the file more efficiently. See
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. function:: ignore_patterns(\*patterns)
@@ -258,8 +258,8 @@ Directory and files operations
       errors when *symlinks* is false.
 
    .. versionchanged:: 3.8
-      Platform-specific fast-copy syscalls are used internally in order to copy
-      the file more efficiently. See
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
@@ -335,8 +335,8 @@ Directory and files operations
       Added the *copy_function* keyword argument.
 
    .. versionchanged:: 3.8
-      Platform-specific fast-copy syscalls are used internally in order to copy
-      the file more efficiently. See
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. function:: disk_usage(path)
@@ -401,7 +401,7 @@ Platform-dependent efficient copy operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Starting from Python 3.8 all functions involving a file copy (:func:`copyfile`,
-:func:`copy`, :func:`copy2`, :func:`copytree`, and :func:`move`) use
+:func:`copy`, :func:`copy2`, :func:`copytree`, and :func:`move`) may use
 platform-specific "fast-copy" syscalls in order to copy the file more
 efficiently (see :issue:`33671`).
 "fast-copy" means that the copying operation occurs within the kernel, avoiding
@@ -411,12 +411,6 @@ On OSX `copyfile`_ is used to copy the file content (not metadata).
 
 On Linux, Solaris and other POSIX platforms where :func:`os.sendfile` supports
 copies between 2 regular file descriptors :func:`os.sendfile` is used.
-
-On Windows `CopyFileEx`_ is used by all copy functions except :func:`copyfile`
-preserving file's extended attributes, metadata and security information.
-Also, when creating directories, :func:`copytree` uses `CreateDirectoryEx`_ and
-`SetNamedSecurityInfo`_ preserving source directory attributes and security
-information.
 
 If the fast-copy operation fails and no data was written in the destination
 file then shutil will silently fallback on using less efficient
@@ -706,15 +700,6 @@ Querying the size of the output terminal
    `Other Environment Variables`_.
 
    .. versionadded:: 3.3
-
-.. _`CopyFileEx`:
-   https://msdn.microsoft.com/en-us/library/windows/desktop/aa363852(v=vs.85).aspx
-
-.. _`CreateDirectoryEx`:
-   https://msdn.microsoft.com/en-us/library/windows/desktop/aa363856(v=vs.85).aspx
-
-.. _`SetNamedSecurityInfo`:
-   https://msdn.microsoft.com/en-us/library/windows/desktop/aa379579(v=vs.85).aspx
 
 .. _`copyfile`:
    http://www.manpagez.com/man/3/copyfile/
