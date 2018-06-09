@@ -758,15 +758,6 @@ class PEP3147Tests:
         expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
         self.assertEqual(self.util.source_from_cache(path), expect)
 
-    @contextlib.contextmanager
-    def bytecode_path(self, path):
-        _orig_path = sys.bytecode_path
-        sys.bytecode_path = path
-        try:
-            yield
-        finally:
-            sys.bytecode_path = _orig_path
-
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_respects_PYTHONBYTECODEPATH(self):
@@ -787,7 +778,7 @@ class PEP3147Tests:
                 expect = os.path.join(
                     bytecode_path, 'foo', 'bar', 'baz',
                     'qux.{}.pyc'.format(self.tag))
-                with self.bytecode_path(bytecode_path):
+                with util.temporary_bytecode_path(bytecode_path):
                     self.assertEqual(
                         self.util.cache_from_source(path, optimization=''),
                         expect)
@@ -797,15 +788,15 @@ class PEP3147Tests:
     def test_cache_from_source_respects_PYTHONBYTECODEPATH_relative(self):
         # If the .py path we are given is relative, we will resolve to an
         # absolute path before prefixing with PYTHONBYTECODEPATH, to avoid any
-        # possible ambiguity
+        # possible ambiguity.
         bytecode_path = os.path.join(os.path.sep, 'tmp', 'bytecode')
         path = os.path.join('foo', 'bar', 'baz', 'qux.py')
         root = os.path.splitdrive(os.getcwd())[0] + os.path.sep
         expect = os.path.join(
             bytecode_path,
             os.path.relpath(os.getcwd(), root),
-            'foo', 'bar', 'baz', 'qux.{}.pyc'.format(self.tag))
-        with self.bytecode_path(bytecode_path):
+            'foo', 'bar', 'baz', f'qux.{self.tag}.pyc')
+        with util.temporary_bytecode_path(bytecode_path):
             self.assertEqual(
                 self.util.cache_from_source(path, optimization=''),
                 expect)
@@ -815,12 +806,12 @@ class PEP3147Tests:
     def test_source_from_cache_inside_PYTHONBYTECODEPATH(self):
         # If PYTHONBYTECODEPATH is set and the cache path we get is inside it,
         # we return an absolute path to the py file based on the remainder of
-        # the path within PYTHONBYTECODEPATH
+        # the path within PYTHONBYTECODEPATH.
         bytecode_path = os.path.join(os.path.sep, 'tmp', 'bytecode')
         path = os.path.join(bytecode_path, 'foo', 'bar', 'baz',
-                            'qux.{}.pyc'.format(self.tag))
+                            f'qux.{self.tag}.pyc')
         expect = os.path.join(os.path.sep, 'foo', 'bar', 'baz', 'qux.py')
-        with self.bytecode_path(bytecode_path):
+        with util.temporary_bytecode_path(bytecode_path):
             self.assertEqual(self.util.source_from_cache(path), expect)
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
@@ -831,9 +822,9 @@ class PEP3147Tests:
         # behavior.
         bytecode_path = os.path.join(os.path.sep, 'tmp', 'bytecode')
         path = os.path.join('foo', 'bar', 'baz', '__pycache__',
-                            'qux.{}.pyc'.format(self.tag))
+                            f'qux.{self.tag}.pyc')
         expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
-        with self.bytecode_path(bytecode_path):
+        with util.temporary_bytecode_path(bytecode_path):
             self.assertEqual(self.util.source_from_cache(path), expect)
 
 

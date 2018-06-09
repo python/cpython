@@ -320,6 +320,17 @@ def ensure_bytecode_path(bytecode_path):
 
 
 @contextlib.contextmanager
+def temporary_bytecode_path(path):
+    """Adjust and restore sys.bytecode_path."""
+    _orig_path = sys.bytecode_path
+    sys.bytecode_path = path
+    try:
+        yield
+    finally:
+        sys.bytecode_path = _orig_path
+
+
+@contextlib.contextmanager
 def create_modules(*names):
     """Temporarily create each named module with an attribute (named 'attr')
     that contains the name passed into the context manager that caused the

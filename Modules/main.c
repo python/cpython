@@ -145,7 +145,7 @@ static const char usage_6[] =
 "   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
 "   locale coercion and locale compatibility warnings on stderr.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
-"PYTHONBYTECODEPATH: alternate directory for bytecode cache (pyc) files.\n";
+"PYTHONBYTECODEPATH: root directory for bytecode cache (pyc) files.\n";
 
 static void
 pymain_usage(int error, const wchar_t* program)
@@ -1692,11 +1692,14 @@ pymain_init_bytecode_path(_PyCoreConfig *config)
     const wchar_t *xoption = config_get_xoption(config, L"bytecode_path");
     if (xoption) {
         const wchar_t *sep = wcschr(xoption, L'=');
-        if (sep) {
+        if (sep && wcslen(sep) > 1) {
             config->bytecode_path = _PyMem_RawWcsdup(sep + 1);
             if (config->bytecode_path == NULL) {
                 return _Py_INIT_NO_MEMORY();
             }
+        } else {
+            // -X bytecode_path= can cancel the env var
+            config->bytecode_path = NULL;
         }
     }
 

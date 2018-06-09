@@ -442,8 +442,9 @@ Miscellaneous options
      the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
      mode (even when it would otherwise activate automatically).
      See :envvar:`PYTHONUTF8` for more details.
-   * ``-X bytecode_path=PATH`` enables writing ``.pyc`` files to the given
-     directory instead of the code tree. See also :envvar:`PYTHONBYTECODEPATH`.
+   * ``-X bytecode_path=PATH`` enables writing ``.pyc`` files to a parallel tree
+     rooted at the given directory instead of to the code tree. See also
+     :envvar:`PYTHONBYTECODEPATH`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.

@@ -212,9 +212,10 @@ always available.
 .. data:: bytecode_path
 
    If this is set (not ``None``), Python will write ``.pyc`` files to (and read
-   them from) this directory, rather than from the source code tree. This value
-   is initially set based on the value of the :option:`-X`
-   ``bytecode_path=PATH`` command-line option or the
+   them from) a parallel directory tree rooted at this directory, rather than
+   from the source code tree. A relative path is interpreted relative to the
+   current working directory. This value is initially set based on the value of
+   the :option:`-X` ``bytecode_path=PATH`` command-line option or the
    :envvar:`PYTHONBYTECODEPATH` environment variable. If neither are set, it is
    ``None``.
 

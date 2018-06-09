@@ -108,8 +108,7 @@ def _path_isabs(path):
     Considers a Windows drive-relative path (no drive, but starts with slash) to
     still be "absolute".
     """
-    return path.startswith(path_separators) or path[1:3] in {
-        f':{s}' for s in path_separators}
+    return path.startswith(path_separators) or path[1:3] in _pathseps_with_colon
 
 
 def _write_atomic(path, data, mode=0o666):
@@ -1575,6 +1574,7 @@ def _setup(_bootstrap_module):
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
     setattr(self_module, 'path_separators', ''.join(path_separators))
+    setattr(self_module, '_pathseps_with_colon', {f':{s}' for s in path_separators})
 
     # Directly load the _thread module (needed during bootstrap).
     thread_module = _bootstrap._builtin_from_name('_thread')
