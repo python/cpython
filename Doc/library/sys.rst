@@ -211,13 +211,20 @@ always available.
 
 .. data:: bytecode_prefix
 
-   If this is set (not ``None``), Python will write ``.pyc`` files to (and read
-   them from) a parallel directory tree rooted at this directory, rather than
-   from the source code tree. A relative path is interpreted relative to the
-   current working directory. This value is initially set based on the value of
-   the :option:`-X` ``bytecode_prefix=PATH`` command-line option or the
-   :envvar:`PYTHONBYTECODEPREFIX` environment variable. If neither are set, it
-   is ``None``.
+   If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
+   files to (and read them from) a parallel directory tree rooted at this
+   directory, rather than from ``__pycache__`` directories in the source code
+   tree. Any ``__pycache__`` directories in the source code tree will be ignored
+   and new `.pyc` files written within the bytecode prefix. Thus if you use
+   :mod:`compileall` as a pre-build step, you must ensure you run it with the
+   same bytecode prefix (if any) that you will use at runtime.
+
+   A relative path is interpreted relative to the current working directory.
+
+   This value is initially set based on the value of the :option:`-X`
+   ``bytecode_prefix=PATH`` command-line option or the
+   :envvar:`PYTHONBYTECODEPREFIX` environment variable (command-line takes
+   precedence). If neither are set, it is ``None``.
 
    .. versionadded:: 3.8
 
