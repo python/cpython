@@ -72,6 +72,7 @@ class CodeContextTest(unittest.TestCase):
         del cls.root
 
     def setUp(self):
+        self.text.yview(0)
         self.cc = codecontext.CodeContext(self.editor)
 
     def tearDown(self):
@@ -263,6 +264,39 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.topvisible, 6)
         # context_depth is 1.
         eq(cc.context.get('1.0', 'end-1c'), '    def __init__(self, a, b):')
+
+    def test_jumptoline(self):
+        eq = self.assertEqual
+        cc = self.cc
+        jump = cc.jumptoline
+
+        if not cc.context:
+            cc.toggle_code_context_event()
+
+        # Empty context.
+        cc.text.yview(f'{2}.0')
+        cc.update_code_context()
+        eq(cc.topvisible, 2)
+        cc.context.mark_set('insert', '1.5')
+        jump()
+        eq(cc.topvisible, 1)
+
+        # 4 lines of context showing.
+        cc.text.yview(f'{12}.0')
+        cc.update_code_context()
+        eq(cc.topvisible, 12)
+        cc.context.mark_set('insert', '3.0')
+        jump()
+        eq(cc.topvisible, 8)
+
+        # More context lines than limit.
+        cc.context_depth = 2
+        cc.text.yview(f'{12}.0')
+        cc.update_code_context()
+        eq(cc.topvisible, 12)
+        cc.context.mark_set('insert', '1.0')
+        jump()
+        eq(cc.topvisible, 8)
 
     @mock.patch.object(codecontext.CodeContext, 'update_code_context')
     def test_timer_event(self, mock_update):
