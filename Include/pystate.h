@@ -44,7 +44,7 @@ typedef struct {
     int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
     int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
     int utf8_mode;          /* PYTHONUTF8, -X utf8; -1 means unknown */
-    wchar_t *bytecode_path; /* PYTHONBYTECODEPATH; -X bytecode_path=PATH */
+    wchar_t *bytecode_prefix; /* PYTHONBYTECODEPREFIX; -X bytecode_prefix=PATH */
 
     wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
     int argc;               /* Number of command line arguments,
@@ -102,7 +102,7 @@ typedef struct {
     PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
     PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
     PyObject *module_search_path;  /* sys.path list */
-    PyObject *bytecode_path;       /* sys.bytecode_path str, can be NULL */
+    PyObject *bytecode_prefix;     /* sys.bytecode_prefix str, can be NULL */
 } _PyMainInterpreterConfig;
 
 #define _PyMainInterpreterConfig_INIT \

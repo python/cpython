@@ -442,9 +442,9 @@ Miscellaneous options
      the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
      mode (even when it would otherwise activate automatically).
      See :envvar:`PYTHONUTF8` for more details.
-   * ``-X bytecode_path=PATH`` enables writing ``.pyc`` files to a parallel tree
-     rooted at the given directory instead of to the code tree. See also
-     :envvar:`PYTHONBYTECODEPATH`.
+   * ``-X bytecode_prefix=PATH`` enables writing ``.pyc`` files to a parallel
+     tree rooted at the given directory instead of to the code tree. See also
+     :envvar:`PYTHONBYTECODEPREFIX`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -465,7 +465,7 @@ Miscellaneous options
       The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
    .. versionadded:: 3.8
-      The ``-X bytecode_path`` option.
+      The ``-X bytecode_prefix`` option.
 
 
 Options you shouldn't use
@@ -593,12 +593,12 @@ conflict.
    specifying the :option:`-B` option.
 
 
-.. envvar:: PYTHONBYTECODEPATH
+.. envvar:: PYTHONBYTECODEPREFIX
 
    If this is set, Python will write ``.pyc`` files in a mirror directory tree
    at this path, instead of in ``__pycache__`` directories within the source
    tree. This is equivalent to specifying the :option:`-X`
-   ``bytecode_path=PATH`` option.
+   ``bytecode_prefix=PATH`` option.
 
    .. versionadded:: 3.8
 

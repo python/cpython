@@ -145,7 +145,7 @@ static const char usage_6[] =
 "   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
 "   locale coercion and locale compatibility warnings on stderr.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
-"PYTHONBYTECODEPATH: root directory for bytecode cache (pyc) files.\n";
+"PYTHONBYTECODEPREFIX: root directory for bytecode cache (pyc) files.\n";
 
 static void
 pymain_usage(int error, const wchar_t* program)
@@ -1677,29 +1677,29 @@ pymain_init_tracemalloc(_PyCoreConfig *config)
 
 
 static _PyInitError
-pymain_init_bytecode_path(_PyCoreConfig *config)
+pymain_init_bytecode_prefix(_PyCoreConfig *config)
 {
     wchar_t *env;
 
     int res = config_get_env_var_dup(
-        &env, L"PYTHONBYTECODEPATH", "PYTHONBYTECODEPATH");
+        &env, L"PYTHONBYTECODEPREFIX", "PYTHONBYTECODEPREFIX");
     if (res < 0) {
-        return DECODE_LOCALE_ERR("PYTHONBYTECODEPATH", res);
+        return DECODE_LOCALE_ERR("PYTHONBYTECODEPREFIX", res);
     } else if (env) {
-        config->bytecode_path = env;
+        config->bytecode_prefix = env;
     }
 
-    const wchar_t *xoption = config_get_xoption(config, L"bytecode_path");
+    const wchar_t *xoption = config_get_xoption(config, L"bytecode_prefix");
     if (xoption) {
         const wchar_t *sep = wcschr(xoption, L'=');
         if (sep && wcslen(sep) > 1) {
-            config->bytecode_path = _PyMem_RawWcsdup(sep + 1);
-            if (config->bytecode_path == NULL) {
+            config->bytecode_prefix = _PyMem_RawWcsdup(sep + 1);
+            if (config->bytecode_prefix == NULL) {
                 return _Py_INIT_NO_MEMORY();
             }
         } else {
-            // -X bytecode_path= can cancel the env var
-            config->bytecode_path = NULL;
+            // -X bytecode_prefix= can cancel the env var
+            config->bytecode_prefix = NULL;
         }
     }
 
@@ -1901,7 +1901,7 @@ config_read_complex_options(_PyCoreConfig *config)
         return err;
     }
 
-    err = pymain_init_bytecode_path(config);
+    err = pymain_init_bytecode_prefix(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -2275,7 +2275,7 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
         LIST = NULL; \
     } while (0)
 
-    CLEAR(config->bytecode_path);
+    CLEAR(config->bytecode_prefix);
     CLEAR(config->module_search_path_env);
     CLEAR(config->home);
     CLEAR(config->program_name);
@@ -2340,7 +2340,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(malloc_stats);
     COPY_ATTR(utf8_mode);
 
-    COPY_STR_ATTR(bytecode_path);
+    COPY_STR_ATTR(bytecode_prefix);
     COPY_STR_ATTR(module_search_path_env);
     COPY_STR_ATTR(home);
     COPY_STR_ATTR(program_name);
@@ -2376,7 +2376,7 @@ _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
     Py_CLEAR(config->warnoptions);
     Py_CLEAR(config->xoptions);
     Py_CLEAR(config->module_search_path);
-    Py_CLEAR(config->bytecode_path);
+    Py_CLEAR(config->bytecode_prefix);
 }
 
 
@@ -2429,7 +2429,7 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
     COPY_ATTR(warnoptions);
     COPY_ATTR(xoptions);
     COPY_ATTR(module_search_path);
-    COPY_ATTR(bytecode_path);
+    COPY_ATTR(bytecode_prefix);
 #undef COPY_ATTR
     return 0;
 }
@@ -2488,10 +2488,10 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
         COPY_WSTRLIST(main_config->module_search_path,
                       config->nmodule_search_path, config->module_search_paths);
 
-        if (config->bytecode_path != NULL) {
-            COPY_WSTR(bytecode_path);
+        if (config->bytecode_prefix != NULL) {
+            COPY_WSTR(bytecode_prefix);
         } else {
-            main_config->bytecode_path = NULL;
+            main_config->bytecode_prefix = NULL;
         }
 
     }

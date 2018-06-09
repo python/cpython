@@ -2458,10 +2458,10 @@ _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
     SET_SYS_FROM_STRING_BORROW("exec_prefix", config->exec_prefix);
     SET_SYS_FROM_STRING_BORROW("base_exec_prefix", config->base_exec_prefix);
 
-    if (config->bytecode_path != NULL) {
-        SET_SYS_FROM_STRING_BORROW("bytecode_path", config->bytecode_path);
+    if (config->bytecode_prefix != NULL) {
+        SET_SYS_FROM_STRING_BORROW("bytecode_prefix", config->bytecode_prefix);
     } else {
-        PyDict_SetItemString(sysdict, "bytecode_path", Py_None);
+        PyDict_SetItemString(sysdict, "bytecode_prefix", Py_None);
     }
 
     if (config->argv != NULL) {
