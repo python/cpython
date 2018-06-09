@@ -9,7 +9,6 @@ PyDoc_STRVAR(warnings__doc__,
 MODULE_NAME " provides basic warning filtering support.\n"
 "It is a helper module to speed up interpreter start-up.");
 
-_Py_IDENTIFIER(argv);
 _Py_IDENTIFIER(stderr);
 #ifndef Py_DEBUG
 _Py_IDENTIFIER(default);
