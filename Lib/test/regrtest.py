@@ -530,6 +530,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     resource_denieds = []
     environment_changed = []
     rerun = []
+    first_result = None
     interrupted = False
 
     if findleaks:
@@ -907,7 +908,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         if not result:
             result.append("SUCCESS")
 
-        return ', '.join(result)
+        result = ', '.join(result)
+        if first_result:
+            result = '%s then %s' % (first_result, result)
+        return result
 
 
     def display_result():
@@ -974,6 +978,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     display_result()
 
     if verbose2 and bad:
+        first_result = get_tests_result()
+
         print
         print "Re-running failed tests in verbose mode"
         rerun = bad[:]
