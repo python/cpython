@@ -2716,9 +2716,7 @@ void *x = uuid_create
 AC_MSG_CHECKING(for uuid_enc_be)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
 #ifndef uuid_enc_be
-uuid_t uuid;
-unsigned char buf[sizeof(uuid)];
-uuid_enc_be(buf, &uuid);
+void *x = uuid_enc_be
 #endif
 ]])],
   [AC_DEFINE(HAVE_UUID_ENC_BE, 1, Define if uuid_enc_be() exists.)
