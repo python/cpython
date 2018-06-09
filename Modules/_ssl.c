@@ -2276,10 +2276,18 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
     }
 
     do {
-        PySSL_BEGIN_ALLOW_THREADS
-        len = SSL_write(self->ssl, b->buf, (int)b->len);
-        _PySSL_UPDATE_ERRNO_IF(len <= 0, self, len);
-        PySSL_END_ALLOW_THREADS
+        if (b->len > 0) {
+            /*Sending 0 bytes to SSL_write is undefined behaviour re OpenSSL documentation.
+            * SSLSocket imitates normal socket in Python.
+            * We have to guard against empty input here. */
+            PySSL_BEGIN_ALLOW_THREADS
+            len = SSL_write(self->ssl, b->buf, (int)b->len);
+            _PySSL_UPDATE_ERRNO_IF(len <= 0, self, len);
+            PySSL_END_ALLOW_THREADS
+        } else {
+            len = 0;
+            _PySSL_UPDATE_ERRNO_IF(0, self, len); // Resetting errno
+        }
         err = self->ssl_errno;
 
         if (PyErr_CheckSignals())
@@ -2310,7 +2318,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
     } while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
 
     Py_XDECREF(sock);
-    if (len > 0)
+    if (len > 0 || b->len == 0)
         return PyLong_FromLong(len);
     else
         return PySSL_SetError(self, len, __FILE__, __LINE__);
