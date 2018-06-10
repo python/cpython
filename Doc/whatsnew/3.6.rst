@@ -1179,6 +1179,7 @@ colors for custom themes is added to Highlights tab of Settings dialog.
 (Contributed by Cheryl Sabella and Terry Jan Reedy in :issue:`33642`,
 :issue:`33768`, and :issue:`33679`,
 
+
 importlib
 ---------
 
