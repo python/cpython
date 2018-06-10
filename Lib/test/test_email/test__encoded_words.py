@@ -33,7 +33,10 @@ class TestDecodeB(TestEmailBase):
         self._test(b'Zm9v', b'foo')
 
     def test_missing_padding(self):
+        # 1 missing padding character
         self._test(b'dmk', b'vi', [errors.InvalidBase64PaddingDefect])
+        # 2 missing padding characters
+        self._test(b'dg', b'v', [errors.InvalidBase64PaddingDefect])
 
     def test_invalid_character(self):
         self._test(b'dm\x01k===', b'vi', [errors.InvalidBase64CharactersDefect])
