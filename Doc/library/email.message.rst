@@ -29,7 +29,7 @@ latter type of payload is indicated by the message having a MIME type such as
 :mimetype:`multipart/\*` or :mimetype:`message/rfc822`.
 
 The conceptual model provided by an :class:`EmailMessage` object is that of an
-ordered dictionary of headers coupled with a *payload* that represents the
+ordered mapping of headers coupled with a *payload* that represents the
 :rfc:`5322` body of the message, which might be a list of sub-``EmailMessage``
 objects.  In addition to the normal dictionary methods for accessing the header
 names and values, there are methods for accessing specialized information from
