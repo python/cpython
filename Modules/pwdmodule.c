@@ -140,7 +140,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     }
     buf = PyMem_RawMalloc(bufsize);
 
-    do {
+    while(1) {
         status = getpwuid_r(uid, &pwd, buf, bufsize, &p);
         if (p != NULL || status != ERANGE) {
             break;
@@ -156,7 +156,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
             break;
         }
         buf = (char *) p;
-    } while (1);
+    }
 
     if (status != 0) {
         p = NULL;
@@ -224,7 +224,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
     }
     buf = PyMem_RawMalloc(bufsize);
 
-    do {
+    while(1) {
         status = getpwnam_r(name, &pwd, buf, bufsize, &p);
         if (p != NULL || status != ERANGE) {
             break;
@@ -240,7 +240,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
             break;
         }
         buf = (char *) p;
-    } while (1);
+    }
 
     if (status != 0) {
         p = NULL;
