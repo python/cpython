@@ -1781,8 +1781,6 @@ class datetime(date):
 
         # Convert self to UTC, and attach the new time zone object.
         myoffset = mytz.utcoffset(self)
-        if myoffset is None:
-            raise ValueError("astimezone() requires an aware datetime")
         utc = (self - myoffset).replace(tzinfo=tz)
 
         # Convert from UTC to tz's local time.
