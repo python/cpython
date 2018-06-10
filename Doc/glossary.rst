@@ -114,7 +114,7 @@ Glossary
       location execution state (including local variables and pending
       try-statements).  When the *asynchronous generator iterator* effectively
       resumes with another awaitable returned by :meth:`__anext__`, it
-      picks-up where it left-off.  See :pep:`492` and :pep:`525`.
+      picks up where it left off.  See :pep:`492` and :pep:`525`.
 
    asynchronous iterable
       An object, that can be used in an :keyword:`async for` statement.
@@ -435,8 +435,8 @@ Glossary
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
       location execution state (including local variables and pending
-      try-statements).  When the *generator iterator* resumes, it picks-up where
-      it left-off (in contrast to functions which start fresh on every
+      try-statements).  When the *generator iterator* resumes, it picks up where
+      it left off (in contrast to functions which start fresh on every
       invocation).
 
       .. index:: single: generator expression
