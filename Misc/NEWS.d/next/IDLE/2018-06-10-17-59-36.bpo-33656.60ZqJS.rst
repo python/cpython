@@ -1,0 +1,2 @@
+Add Windows API call saying that tk scales for DPI. This should
+either have no effect or make text and lines sharper.
