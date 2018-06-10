@@ -37,6 +37,23 @@ The :mod:`shlex` module defines the following functions:
       standard input.
 
 
+.. function:: join(split_command)
+
+   Concatenate the tokens of the list *split_command* and return a string.
+   This function is the inverse of :func:`split`.
+
+      >>> from shlex import join
+      >>> print(join(['echo', '-n', 'Multiple words']))
+      echo -n 'Multiple words'
+
+   The returned value is shell-escaped to prevent against injection
+   vulnerabilities (see :func:`quote`).
+   Nonetheless, it's safer to pass a list of tokens to a shell command line
+   when possible.
+
+   .. versionadded:: 3.8
+
+
 .. function:: quote(s)
 
    Return a shell-escaped version of the string *s*.  The returned value is a

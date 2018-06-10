@@ -308,6 +308,14 @@ class ShlexTest(unittest.TestCase):
             self.assertEqual(shlex.quote("test%s'name'" % u),
                              "'test%s'\"'\"'name'\"'\"''" % u)
 
+    def testJoin(self):
+        all_data = self.data + self.posix_data
+        for command, *split_command in all_data:
+            joined = shlex.join(split_command)
+            resplit = shlex.split(joined)
+            self.assertEqual(split_command, resplit)
+
+
 # Allow this test to be used with old shlex.py
 if not getattr(shlex, "split", None):
     for methname in dir(ShlexTest):
