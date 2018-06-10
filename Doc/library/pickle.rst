@@ -510,7 +510,7 @@ methods:
 
 .. method:: object.__getnewargs__()
 
-   This method serve a similar purpose as :meth:`__getnewargs_ex__`, but
+   This method serves a similar purpose as :meth:`__getnewargs_ex__`, but
    supports only positional arguments.  It must return a tuple of arguments
    ``args`` which will be passed to the :meth:`__new__` method upon unpickling.
 
