@@ -274,7 +274,8 @@ Configure IDLE
 
 Code Context (toggle)(Editor Window only)
    Open a pane at the top of the edit window which shows the block context
-   of the code which has scrolled above the top of the window.
+   of the code which has scrolled above the top of the window.  Clicking a
+   line in this pane exposes that line at the top of the editor.
 
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
