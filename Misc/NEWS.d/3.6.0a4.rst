@@ -662,7 +662,7 @@ CPP invocation in configure must use CPPFLAGS. Patch by Chi Hsuan Yen.
 .. section: Build
 
 The configure script now inserts comments into the makefile to prevent the
-pgen and _freeze_importlib executables from being cross- compiled.
+pgen and _freeze_importlib executables from being cross-compiled.
 
 ..
 
