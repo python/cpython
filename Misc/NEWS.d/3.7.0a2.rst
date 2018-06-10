@@ -630,7 +630,7 @@ Remove test order dependence in idle_test.test_browser.
 Rename IDLE's module browser from Class Browser to Module Browser. The
 original module-level class and method browser became a module browser, with
 the addition of module-level functions, years ago. Nested classes and
-functions were added yesterday.  For back- compatibility, the virtual event
+functions were added yesterday.  For back-compatibility, the virtual event
 <<open-class-browser>>, which appears on the Keys tab of the Settings
 dialog, is not changed. Patch by Cheryl Sabella.
 
