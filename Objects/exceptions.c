@@ -343,7 +343,8 @@ PyException_SetContext(PyObject *self, PyObject *context)
 }
 
 #undef PyExceptionClass_Name
-char *
+
+const char *
 PyExceptionClass_Name(PyObject *ob)
 {
     return ((PyTypeObject*)ob)->tp_name;

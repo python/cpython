@@ -142,9 +142,9 @@ PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 
 #ifndef Py_LIMITED_API
 #define PyExceptionClass_Name(x) \
-     ((char *)(((PyTypeObject*)(x))->tp_name))
+     (((PyTypeObject*)(x))->tp_name)
 #else
-     PyAPI_FUNC(char *) PyExceptionClass_Name(PyObject*);
+PyAPI_FUNC(const char *) PyExceptionClass_Name(PyObject *);
 #endif
 
 #define PyExceptionInstance_Class(x) ((PyObject*)((x)->ob_type))

@@ -774,12 +774,12 @@ print_exception(PyObject *f, PyObject *value)
     }
     else {
         PyObject* moduleName;
-        char* className;
+        const char *className;
         _Py_IDENTIFIER(__module__);
         assert(PyExceptionClass_Check(type));
         className = PyExceptionClass_Name(type);
         if (className != NULL) {
-            char *dot = strrchr(className, '.');
+            const char *dot = strrchr(className, '.');
             if (dot != NULL)
                 className = dot+1;
         }

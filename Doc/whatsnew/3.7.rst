@@ -1625,11 +1625,11 @@ The fields :c:member:`name` and :c:member:`doc` of structures
 :c:type:`PyMemberDef`, :c:type:`PyGetSetDef`,
 :c:type:`PyStructSequence_Field`, :c:type:`PyStructSequence_Desc`,
 and :c:type:`wrapperbase` are now of type ``const char *`` rather of
-``char *``.  (Contributed by Serhiy Storchaka in :issue:`28761`.)
-
-The result of :c:func:`PyUnicode_AsUTF8AndSize` and :c:func:`PyUnicode_AsUTF8`
-is now of type ``const char *`` rather of ``char *``. (Contributed by Serhiy
-Storchaka in :issue:`28769`.)
+``char *``.  The result of :c:func:`PyUnicode_AsUTF8AndSize`,
+:c:func:`PyUnicode_AsUTF8` and :c:func:`PyExceptionClass_Name`
+is now of type ``const char *`` rather of ``char *``.
+(Contributed by Serhiy Storchaka in :issue:`28761`, :issue:`28769` and
+:issue:`33818`.)
 
 The result of :c:func:`PyMapping_Keys`, :c:func:`PyMapping_Values` and
 :c:func:`PyMapping_Items` is now always a list, rather than a list or a
