@@ -1058,8 +1058,7 @@ Instance methods:
 
    If provided, *tz* must be an instance of a :class:`tzinfo` subclass, and its
    :meth:`utcoffset` and :meth:`dst` methods must not return ``None``.  If *self*
-   is naive (``self.tzinfo is None``), it is presumed to represent time in the
-   system timezone.
+   is naive, it is presumed to represent time in the system timezone.
 
    If called without arguments (or with ``tz=None``) the system local
    timezone is assumed for the target timezone.  The ``.tzinfo`` attribute of the converted
