@@ -5769,14 +5769,14 @@ for maintenance.  Hence the conversion.
 The main difference for users is that user configurable key bindings for
 builtin features are now handled uniformly.  Now, editing a binding in a
 keyset only affects its value in the keyset.  All bindings are defined
-together in the system-specific default keysets in config- extensions.def.
-All custom keysets are saved as a whole in config- extension.cfg.  All take
+together in the system-specific default keysets in config-extensions.def.
+All custom keysets are saved as a whole in config-extension.cfg.  All take
 effect as soon as one clicks Apply or Ok.
 
 The affected events are '<<force-open-completions>>', '<<expand-word>>',
 '<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
 '<<run-module>>', '<<check-module>>', and '<<zoom-height>>'.  Any (global)
-customizations made before 3.6.3 will not affect their keyset- specific
+customizations made before 3.6.3 will not affect their keyset-specific
 customization after 3.6.3. and vice versa.
 
 Initial patch by Charles Wohlganger.
