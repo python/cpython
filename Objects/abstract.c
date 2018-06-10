@@ -1245,6 +1245,7 @@ PyNumber_Absolute(PyObject *o)
 }
 
 #undef PyIndex_Check
+
 int
 PyIndex_Check(PyObject *obj)
 {
@@ -2544,6 +2545,7 @@ PyObject_GetIter(PyObject *o)
 }
 
 #undef PyIter_Check
+
 int PyIter_Check(PyObject *obj)
 {
     return obj->ob_type->tp_iternext != NULL &&

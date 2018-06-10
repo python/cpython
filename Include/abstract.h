@@ -598,7 +598,7 @@ PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
     ((obj)->ob_type->tp_iternext != NULL && \
      (obj)->ob_type->tp_iternext != &_PyObject_NextNotImplemented)
 #else
-PyAPI_FUNC(int) PyIter_Check(PyObject*);
+PyAPI_FUNC(int) PyIter_Check(PyObject *);
 #endif
 
 /* Takes an iterator object and calls its tp_iternext slot,
