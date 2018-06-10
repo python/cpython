@@ -70,9 +70,7 @@ def b64decode(s, altchars=None, validate=False):
     characters.
 
     The result is returned as a bytes object.  A binascii.Error is raised if
-    s is incorrectly padded.  A binascii.Incomplete is raised if s has an
-    invalid number of base64-encoded characters (not including padding), i.e.
-    1 more than a multiple of 4.
+    s is incorrectly padded.
 
     If validate is False (the default), characters that are neither in the
     normal base-64 alphabet nor the alternative alphabet are discarded prior
@@ -101,10 +99,8 @@ def standard_b64decode(s):
 
     Argument s is a bytes-like object or ASCII string to decode.  The result
     is returned as a bytes object.  A binascii.Error is raised if the input
-    is incorrectly padded.  A binascii.Incomplete is raised if the input has
-    an invalid number of base64-encoded characters (not including padding),
-    i.e. 1 more than a multiple of 4. Characters that are not in the standard
-    alphabet are discarded prior to the padding check.
+    is incorrectly padded.  Characters that are not in the standard alphabet
+    are discarded prior to the padding check.
     """
     return b64decode(s)
 
@@ -126,11 +122,9 @@ def urlsafe_b64decode(s):
 
     Argument s is a bytes-like object or ASCII string to decode.  The result
     is returned as a bytes object.  A binascii.Error is raised if the input
-    is incorrectly padded.  A binascii.Incomplete is raised if the input has
-    an invalid number of base64-encoded characters (not including padding),
-    i.e. 1 more than a multiple of 4. Characters that are not in the URL-safe
-    base-64 alphabet, and are not a plus '+' or slash '/', are discarded prior
-    to the padding check.
+    is incorrectly padded.  Characters that are not in the URL-safe base-64
+    alphabet, and are not a plus '+' or slash '/', are discarded prior to the
+    padding check.
 
     The alphabet uses '-' instead of '+' and '_' instead of '/'.
     """

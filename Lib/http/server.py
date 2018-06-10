@@ -1098,7 +1098,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                         authorization = authorization[1].encode('ascii')
                         authorization = base64.decodebytes(authorization).\
                                         decode('ascii')
-                    except (binascii.Error, binascii.Incomplete, UnicodeError):
+                    except (binascii.Error, UnicodeError):
                         pass
                     else:
                         authorization = authorization.split(':')

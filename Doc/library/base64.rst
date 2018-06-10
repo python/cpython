@@ -69,11 +69,8 @@ The modern interface provides:
    at least length 2 (additional characters are ignored) which specifies the
    alternative alphabet used instead of the ``+`` and ``/`` characters.
 
-   A :exc:`binascii.Error` exception is raised if *s* is incorrectly padded.
-
-   A :exc:`binascii.Incomplete` exception is raised if *s* has an invalid
-   number of base64-encoded characters (not including padding), i.e. 1 more
-   than a multiple of 4.
+   A :exc:`binascii.Error` exception is raised
+   if *s* is incorrectly padded.
 
    If *validate* is ``False`` (the default), characters that are neither
    in the normal base-64 alphabet nor the alternative alphabet are
