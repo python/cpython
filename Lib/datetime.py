@@ -1783,7 +1783,7 @@ class datetime(date):
         if tz is mytz:
             return self
 
-        # Convert self to UTC, and attach the new time zone object.      
+        # Convert self to UTC, and attach the new time zone object.
         utc = (self - myoffset).replace(tzinfo=tz)
 
         # Convert from UTC to tz's local time.
