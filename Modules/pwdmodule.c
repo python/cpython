@@ -146,15 +146,12 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
             break;
         }
         if (bufsize > (PY_SSIZE_T_MAX >> 1)) {
-            PyErr_NoMemory();
             nomem = 1;
-            status = ERANGE;
             break;
         }
         bufsize <<= 1;
         p = PyMem_RawRealloc(buf, bufsize);
         if (p == NULL) {
-            PyErr_NoMemory();
             nomem = 1;
             break;
         }
@@ -173,9 +170,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
             PyMem_RawFree(buf);
         }
         if (nomem == 1) {
-            PyErr_Format(PyExc_RuntimeError,
-                         "getpwuid(): cannot allocate memory: %d", uid);
-            return NULL;
+            return PyErr_NoMemory();
         }
         PyObject *uid_obj = _PyLong_FromUid(uid);
         if (uid_obj == NULL)
@@ -235,15 +230,12 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
             break;
         }
         if (bufsize > (PY_SSIZE_T_MAX >> 1)) {
-            PyErr_NoMemory();
             nomem = 1;
-            status = ERANGE;
             break;
         }
         bufsize <<= 1;
         p = PyMem_RawRealloc(buf, bufsize);
         if (p == NULL) {
-            PyErr_NoMemory();
             nomem = 1;
             break;
         }
@@ -259,8 +251,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
 #endif
     if (p == NULL) {
         if (nomem == 1) {
-            PyErr_Format(PyExc_RuntimeError,
-                         "getpwnam(): cannot allocate memory: %s", name);
+            PyErr_NoMemory();
         } else {
             PyErr_Format(PyExc_KeyError,
                          "getpwnam(): name not found: %s", name);
