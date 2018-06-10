@@ -4,6 +4,7 @@ import builtins
 import contextlib
 import io
 import os
+import sys
 import shutil
 import subprocess
 
@@ -516,10 +517,19 @@ class BaseTestInternals:
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
-        data = '''
+        # issue28009 - AIX netstat -i(a) has specific formatting,
+        # i.e., '.' rather than ':' as format character
+        if not sys.platform.startswith("aix"):
+            data = '''
 fake hwaddr
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
+'''
+        else:
+            data = '''
+fake hwaddr
+cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+eth0      Link encap:Ethernet  HWaddr 12.34.56.78.90.ab
 '''
 
         popen = unittest.mock.MagicMock()
@@ -549,6 +559,8 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_ifconfig_getnode(self):
+        if sys.platform.startswith("aix"):
+            self.skipTest('AIX ifconfig does not provide MAC addr')
         node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig')
 
@@ -559,6 +571,8 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_arp_getnode(self):
+        if sys.platform.startswith("aix"):
+            self.skipTest('AIX arp does not provide MAC addr')
         node = self.uuid._arp_getnode()
         self.check_node(node, 'arp')
 

@@ -361,6 +361,11 @@ def _is_universal(mac):
     return not (mac & (1 << 41))
 
 def _find_mac(command, args, hw_identifiers, get_index):
+    # issue28009: AIX uses character '.' rather than ':'
+    if sys.platform.startswith("aix"):
+        c_field = b'.'
+    else:
+        c_field = b':'
     first_local_mac = None
     try:
         proc = _popen(command, *args.split())
@@ -373,7 +378,7 @@ def _find_mac(command, args, hw_identifiers, get_index):
                     if words[i] in hw_identifiers:
                         try:
                             word = words[get_index(i)]
-                            mac = int(word.replace(b':', b''), 16)
+                            mac = int(word.replace(c_field, b''), 16)
                             if _is_universal(mac):
                                 return mac
                             first_local_mac = first_local_mac or mac
@@ -437,6 +442,23 @@ def _lanscan_getnode():
     # This might work on HP-UX.
     return _find_mac('lanscan', '-ai', [b'lan0'], lambda i: 0)
 
+def _netstat_getmac_posix(words,i):
+    """Extract the MAC address from netstat -ia from posix netstat -ia."""
+    word = words[i]
+    if len(word) == 17 and word.count(b':') == 5:
+        return(int(word.replace(b':', b''), 16))
+    else:
+        return None
+
+def _netstat_getmac_aix(words,i):
+    """Extract the MAC address from netstat -ia specific for AIX netstat."""
+    word = words[i]
+    wlen = len(word)
+    if wlen >= 11 and wlen <=17 and word.count(b'.') == 5:
+        return int(word.replace(b'.', b''), 16)
+    else:
+        return None
+
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
     # This might work on AIX, Tru64 UNIX.
@@ -454,12 +476,15 @@ def _netstat_getnode():
             for line in proc.stdout:
                 try:
                     words = line.rstrip().split()
-                    word = words[i]
-                    if len(word) == 17 and word.count(b':') == 5:
-                        mac = int(word.replace(b':', b''), 16)
-                        if _is_universal(mac):
-                            return mac
-                        first_local_mac = first_local_mac or mac
+                    if sys.platform.startswith("aix"):
+                        mac = _netstat_getmac_aix(words,i)
+                    else:
+                        mac = _netstat_getmac_posix(words,i)
+                    if not mac:
+                        continue
+                    if _is_universal(mac):
+                        return mac
+                    first_local_mac = first_local_mac or mac
                 except (ValueError, IndexError):
                     pass
     except OSError:
@@ -575,12 +600,18 @@ def _load_system_functions():
 
         # The uuid_generate_* routines are provided by libuuid on at least
         # Linux and FreeBSD, and provided by libc on Mac OS X.
+        # uuid_create() is used by other POSIX platforms (e.g., AIX, FreeBSD)
         _libnames = ['uuid']
         if not sys.platform.startswith('win'):
             _libnames.append('c')
+        # also need to look for uuid_create() but only look if something was located
+        lib = None
         for libname in _libnames:
+            libnm = ctypes.util.find_library(libname)
+            if not libnm:
+                continue
             try:
-                lib = ctypes.CDLL(ctypes.util.find_library(libname))
+                lib = ctypes.CDLL(libnm)
             except Exception:                           # pragma: nocover
                 continue
             # Try to find the safe variety first.
@@ -603,6 +634,22 @@ def _load_system_functions():
                     _uuid_generate_time(_buffer)
                     return bytes(_buffer.raw), None
                 break
+        # if _uuid_generate_time has not been found (Linux) then we try libc
+        # as libc is already dynamically linked (or found above) verify a valid
+        # lib value, then look for uuid_generate()
+        if not lib:
+            try:
+                lib = ctypes.CDLL(None)
+            except:
+                lib = None
+        if lib:
+            if hasattr(lib, 'uuid_create'):    # pragma: nocover
+                _uuid_generate_time = lib.uuid_create
+                def _generate_time_safe():
+                    _buffer = ctypes.create_string_buffer(16)# uuid
+                    _status = ctypes.create_string_buffer(2) # c_ushort
+                    _uuid_generate_time(_buffer, _status)
+                    return bytes(_buffer.raw), bytes(_status.raw)
 
         # On Windows prior to 2000, UuidCreate gives a UUID containing the
         # hardware address.  On Windows 2000 and later, UuidCreate makes a
