@@ -1773,6 +1773,8 @@ class datetime(date):
         mytz = self.tzinfo
         if mytz is None:
             mytz = self._local_timezone()
+        elif mytz.utcoffset(self) is None:
+            mytz = self.replace(tzinfo=None)._local_timezone()
 
         if tz is mytz:
             return self
