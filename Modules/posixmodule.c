@@ -8238,9 +8238,6 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     }
 #endif /* SEEK_END */
 
-    if (PyErr_Occurred())
-        return -1;
-
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
