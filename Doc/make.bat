@@ -156,7 +156,7 @@ cmd /C %this% html
 
 if EXIST "%BUILDDIR%\html\index.html" (
     echo.Opening "%BUILDDIR%\html\index.html" in the default web browser...
-    start "%BUILDDIR%\html\index.html"
+    start "" "%BUILDDIR%\html\index.html"
 )
 
 goto end
