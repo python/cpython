@@ -2346,3 +2346,56 @@ There have been several major changes to the :term:`bytecode` in Python 3.6.
 * The new :opcode:`SETUP_ANNOTATIONS` and :opcode:`STORE_ANNOTATION` opcodes
   have been added to support the new :term:`variable annotation` syntax.
   (Contributed by Ivan Levkivskyi in :issue:`27985`.)
+
+
+Notable changes in Python 3.6.2
+===============================
+
+New ``make regen-all`` build target
+-----------------------------------
+
+To simplify cross-compilation, and to ensure that CPython can reliably be
+compiled without requiring an existing version of Python to already be
+available, the autotools-based build system no longer attempts to implicitly
+recompile generated files based on file modification times.
+
+Instead, a new ``make regen-all`` command has been added to force regeneration
+of these files when desired (e.g. after an initial version of Python has
+already been built based on the pregenerated versions).
+
+More selective regeneration targets are also defined - see
+:source:`Makefile.pre.in` for details.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionadded:: 3.6.2
+
+
+Removal of ``make touch`` build target
+--------------------------------------
+
+The ``make touch`` build target previously used to request implicit regeneration
+of generated files by updating their modification times has been removed.
+
+It has been replaced by the new ``make regen-all`` target.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionchanged:: 3.6.2
+
+
+Notable changes in Python 3.6.4
+===============================
+
+The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
+has been removed as its members being never cleared may cause a segfault
+during finalization of the interpreter.
+(Contributed by Xavier de Gaye in :issue:`22898` and :issue:`30697`.)
+
+
+Notable changes in Python 3.6.5
+===============================
+
+The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
+locale to the ``LC_NUMERIC`` locale in some cases.
+(Contributed by Victor Stinner in :issue:`31900`.)
