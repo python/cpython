@@ -1218,11 +1218,6 @@ changes, or look through the Subversion logs for all the details.
   created some new files that should be included.
   (Fixed by Tarek Ziadé; :issue:`8688`.)
 
-  The ``upload`` command now longer tries to change CR end-of-line characters
-  to CRLF.  This fixes a corruption issue with sdists that ended with a byte
-  equivalent to CR.
-  (Contributed by Bo Bayles in :issue:`32304`.)
-
 * The :mod:`doctest` module's :const:`IGNORE_EXCEPTION_DETAIL` flag
   will now ignore the name of the module containing the exception
   being tested.  (Patch by Lennart Regebro; :issue:`7490`.)
@@ -1535,7 +1530,7 @@ changes, or look through the Subversion logs for all the details.
   *ciphers* argument that's a string listing the encryption algorithms
   to be allowed; the format of the string is described
   `in the OpenSSL documentation
-  <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
   (Added by Antoine Pitrou; :issue:`8322`.)
 
   Another change makes the extension load all of OpenSSL's ciphers and
@@ -1790,7 +1785,7 @@ wish to read the Tcl/Tk manual page describing the
 Ttk theme engine, available at
 https://www.tcl.tk/man/tcl8.5/TkCmd/ttk_intro.htm. Some
 screenshots of the Python/Ttk code in use are at
-http://code.google.com/p/python-ttk/wiki/Screenshots.
+https://code.google.com/archive/p/python-ttk/wikis/Screenshots.wiki.
 
 The :mod:`ttk` module was written by Guilherme Polo and added in
 :issue:`2983`.  An alternate version called ``Tile.py``, written by
@@ -1813,8 +1808,8 @@ https://pypi.org/project/unittest2.
 
 When used from the command line, the module can automatically discover
 tests.  It's not as fancy as `py.test <http://pytest.org>`__ or
-`nose <http://code.google.com/p/python-nose/>`__, but provides a simple way
-to run tests kept within a set of package directories.  For example,
+`nose <https://nose.readthedocs.io/>`__, but provides a
+simple way to run tests kept within a set of package directories.  For example,
 the following command will search the :file:`test/` subdirectory for
 any importable test files named ``test*.py``::
 
@@ -2727,6 +2722,39 @@ and earlier.
 For cases where the connection establishment code can't be modified, but the
 overall application can be, the new :func:`ssl._https_verify_certificates`
 function can be used to adjust the default behaviour at runtime.
+
+
+New ``make regen-all`` build target
+-----------------------------------
+
+To simplify cross-compilation, and to ensure that CPython can reliably be
+compiled without requiring an existing version of Python to already be
+available, the autotools-based build system no longer attempts to implicitly
+recompile generated files based on file modification times.
+
+Instead, a new ``make regen-all`` command has been added to force regeneration
+of these files when desired (e.g. after an initial version of Python has
+already been built based on the pregenerated versions).
+
+More selective regeneration targets are also defined - see
+:source:`Makefile.pre.in` for details.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionadded:: 2.7.14
+
+
+Removal of ``make touch`` build target
+--------------------------------------
+
+The ``make touch`` build target previously used to request implicit regeneration
+of generated files by updating their modification times has been removed.
+
+It has been replaced by the new ``make regen-all`` target.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionchanged:: 2.7.14
 
 .. ======================================================================
 
