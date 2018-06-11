@@ -347,7 +347,7 @@ PyException_SetContext(PyObject *self, PyObject *context)
 char *
 PyExceptionClass_Name(PyObject *ob)
 {
-    return ((PyTypeObject*)ob)->tp_name;
+    return (char *)((PyTypeObject*)ob)->tp_name;
 }
 
 static struct PyMemberDef BaseException_members[] = {
