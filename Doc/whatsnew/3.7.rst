@@ -2340,12 +2340,6 @@ Changes in the Python API
   instead of a :class:`bytes` instance.
   (Contributed by Victor Stinner in :issue:`21071`.)
 
-* :mod:`argparse` subparsers are now required by default.  This matches the
-  behaviour in Python 2.  To add an optional subparser, pass
-  ``required=False`` to
-  :meth:`ArgumentParser.add_subparsers() <argparse.ArgumentParser.add_subparsers>`.
-  (Contributed by Anthony Sottile in :issue:`26510`.)
-
 * :meth:`ast.literal_eval()` is now stricter.  Addition and subtraction of
   arbitrary numbers are no longer allowed.
   (Contributed by Serhiy Storchaka in :issue:`31778`.)
