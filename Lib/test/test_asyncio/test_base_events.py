@@ -24,6 +24,10 @@ MOCK_ANY = mock.ANY
 PY34 = sys.version_info >= (3, 4)
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 def mock_socket_module():
     m_socket = mock.MagicMock(spec=socket)
     for name in (
@@ -1818,12 +1822,15 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.__old_bufsize = constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 16
         with open(support.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = cls.__old_bufsize
         support.unlink(support.TESTFN)
         super().tearDownClass()
 

@@ -157,7 +157,6 @@ def _run_until_complete_cb(fut):
     futures._get_loop(fut).stop()
 
 
-
 class _SendfileFallbackProtocol(protocols.Protocol):
     def __init__(self, transp):
         if not isinstance(transp, transports._FlowControlMixin):
@@ -304,6 +303,9 @@ class Server(events.AbstractServer):
 
     async def start_serving(self):
         self._start_serving()
+        # Skip one loop iteration so that all 'loop.add_reader'
+        # go through.
+        await tasks.sleep(0, loop=self._loop)
 
     async def serve_forever(self):
         if self._serving_forever_fut is not None:
@@ -798,7 +800,10 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
         if offset:
             file.seek(offset)
-        blocksize = min(count, 16384) if count else 16384
+        blocksize = (
+            min(count, constants.SENDFILE_FALLBACK_READBUFFER_SIZE)
+            if count else constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        )
         buf = bytearray(blocksize)
         total_sent = 0
         try:
@@ -808,7 +813,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if blocksize <= 0:
                         break
                 view = memoryview(buf)[:blocksize]
-                read = file.readinto(view)
+                read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     break  # EOF
                 await self.sock_sendall(sock, view)
@@ -1092,7 +1097,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if not getattr(transport, '_start_tls_compatible', False):
             raise TypeError(
-                f'transport {self!r} is not supported by start_tls()')
+                f'transport {transport!r} is not supported by start_tls()')
 
         waiter = self.create_future()
         ssl_protocol = sslproto.SSLProtocol(
@@ -1101,12 +1106,22 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl_handshake_timeout=ssl_handshake_timeout,
             call_connection_made=False)
 
-        transport.set_protocol(ssl_protocol)
-        self.call_soon(ssl_protocol.connection_made, transport)
-        if not transport.is_reading():
-            self.call_soon(transport.resume_reading)
+        # Pause early so that "ssl_protocol.data_received()" doesn't
+        # have a chance to get called before "ssl_protocol.connection_made()".
+        transport.pause_reading()
 
-        await waiter
+        transport.set_protocol(ssl_protocol)
+        conmade_cb = self.call_soon(ssl_protocol.connection_made, transport)
+        resume_cb = self.call_soon(transport.resume_reading)
+
+        try:
+            await waiter
+        except Exception:
+            transport.close()
+            conmade_cb.cancel()
+            resume_cb.cancel()
+            raise
+
         return ssl_protocol._app_transport
 
     async def create_datagram_endpoint(self, protocol_factory,
@@ -1363,6 +1378,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                         ssl, backlog, ssl_handshake_timeout)
         if start_serving:
             server._start_serving()
+            # Skip one loop iteration so that all 'loop.add_reader'
+            # go through.
+            await tasks.sleep(0, loop=self)
 
         if self._debug:
             logger.info("%r is serving", server)
@@ -1458,6 +1476,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
         protocol = protocol_factory()
+        debug_log = None
         if self._debug:
             # don't log parameters: they may contain sensitive information
             # (password) and may be too long
@@ -1465,7 +1484,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             self._log_subprocess(debug_log, stdin, stdout, stderr)
         transport = await self._make_subprocess_transport(
             protocol, cmd, True, stdin, stdout, stderr, bufsize, **kwargs)
-        if self._debug:
+        if self._debug and debug_log is not None:
             logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
@@ -1486,6 +1505,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     f"program arguments must be a bytes or text string, "
                     f"not {type(arg).__name__}")
         protocol = protocol_factory()
+        debug_log = None
         if self._debug:
             # don't log parameters: they may contain sensitive information
             # (password) and may be too long
@@ -1494,7 +1514,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport = await self._make_subprocess_transport(
             protocol, popen_args, False, stdin, stdout, stderr,
             bufsize, **kwargs)
-        if self._debug:
+        if self._debug and debug_log is not None:
             logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 

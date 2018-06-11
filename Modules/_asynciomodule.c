@@ -11,7 +11,7 @@ module _asyncio
 /* identifiers used from some functions */
 _Py_IDENTIFIER(__asyncio_running_event_loop__);
 _Py_IDENTIFIER(add_done_callback);
-_Py_IDENTIFIER(all_tasks);
+_Py_IDENTIFIER(_all_tasks_compat);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
 _Py_IDENTIFIER(current_task);
@@ -501,7 +501,13 @@ future_init(FutureObj *fut, PyObject *loop)
     if (is_true < 0) {
         return -1;
     }
-    if (is_true) {
+    if (is_true && !_Py_IsFinalizing()) {
+        /* Only try to capture the traceback if the interpreter is not being
+           finalized.  The original motivation to add a `_Py_IsFinalizing()`
+           call was to prevent SIGSEGV when a Future is created in a __del__
+           method, which is called during the interpreter shutdown and the
+           traceback module is already unloaded.
+        */
         fut->fut_source_tb = _PyObject_CallNoArg(traceback_extract_stack);
         if (fut->fut_source_tb == NULL) {
             return -1;
@@ -2119,7 +2125,7 @@ _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
         return NULL;
     }
 
-    all_tasks_func = _PyObject_GetAttrId(asyncio_mod, &PyId_all_tasks);
+    all_tasks_func = _PyObject_GetAttrId(asyncio_mod, &PyId__all_tasks_compat);
     if (all_tasks_func == NULL) {
         return NULL;
     }

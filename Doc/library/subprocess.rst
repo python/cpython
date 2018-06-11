@@ -39,7 +39,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   shell=False, cwd=None, timeout=None, check=False, \
-                  encoding=None, errors=None, text=None)
+                  encoding=None, errors=None, text=None, env=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -77,6 +77,11 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    specified *encoding* and *errors* or the :class:`io.TextIOWrapper` default.
    The *universal_newlines* argument is equivalent  to *text* and is provided
    for backwards compatibility. By default, file objects are opened in binary mode.
+
+   If *env* is not ``None``, it must be a mapping that defines the environment
+   variables for the new process; these are used instead of the default
+   behavior of inheriting the current process' environment. It is passed directly
+   to :class:`Popen`.
 
    Examples::
 
