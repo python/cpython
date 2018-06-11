@@ -4074,7 +4074,9 @@ class ThreadedTests(unittest.TestCase):
                 self.assertTrue(session)
                 with self.assertRaises(TypeError) as e:
                     s.session = object
-                self.assertEqual(str(e.exception), 'Value is not a SSLSession.')
+                self.assertEqual(
+                    str(e.exception), 'Value is not an SSLSession.'
+                )
 
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
