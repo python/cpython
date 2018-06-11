@@ -237,8 +237,8 @@ and the ``__annotations__`` attribute.
       and Guido van Rossum. Implemented by Ivan Levkivskyi.
 
    Tools that use or will use the new syntax:
-   `mypy <http://github.com/python/mypy>`_,
-   `pytype <http://github.com/google/pytype>`_, PyCharm, etc.
+   `mypy <http://www.mypy-lang.org/>`_,
+   `pytype <https://github.com/google/pytype>`_, PyCharm, etc.
 
 
 .. _whatsnew36-pep515:
@@ -907,7 +907,7 @@ return value.
 cmath
 -----
 
-The new :const:`cmath.tau` (τ) constant has been added.
+The new :const:`cmath.tau` (*τ*) constant has been added.
 (Contributed by Lisa Roach in :issue:`12345`, see :pep:`628` for details.)
 
 New constants: :const:`cmath.inf` and :const:`cmath.nan` to
@@ -1015,11 +1015,6 @@ The ``default_format`` attribute has been removed from
 attribute defaults to ``['gztar']``. Although not anticipated,
 any code relying on the presence of ``default_format`` may
 need to be adapted. See :issue:`27819` for more details.
-
-The ``upload`` command now longer tries to change CR end-of-line characters
-to CRLF.  This fixes a corruption issue with sdists that ended with a byte
-equivalent to CR.
-(Contributed by Bo Bayles in :issue:`32304`.)
 
 
 email
@@ -1240,7 +1235,7 @@ be reopened.
 math
 ----
 
-The tau (τ) constant has been added to the :mod:`math` and :mod:`cmath`
+The tau (*τ*) constant has been added to the :mod:`math` and :mod:`cmath`
 modules.
 (Contributed by Lisa Roach in :issue:`12345`, see :pep:`628` for details.)
 
@@ -1609,7 +1604,7 @@ mark class variables.  As introduced in :pep:`526`, a variable annotation
 wrapped in ClassVar indicates that a given attribute is intended to be used as
 a class variable and should not be set on instances of that class.
 (Contributed by Ivan Levkivskyi in `Github #280
-<https://github.com/python/typing/issues/280>`_.)
+<https://github.com/python/typing/pull/280>`_.)
 
 A new :const:`~typing.TYPE_CHECKING` constant that is assumed to be
 ``True`` by the static type chekers, but is ``False`` at runtime.
@@ -1893,11 +1888,6 @@ Build and C API Changes
 
 * The :c:func:`PyUnicode_FSConverter` and :c:func:`PyUnicode_FSDecoder`
   functions will now accept :term:`path-like objects <path-like object>`.
-
-* The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
-  has been removed as its members being never cleared may cause a segfault
-  during finalization of the interpreter. Contributed by Xavier de Gaye in
-  :issue:`22898` and :issue:`30697`.
 
 
 Other Improvements
@@ -2391,6 +2381,15 @@ It has been replaced by the new ``make regen-all`` target.
 (Contributed by Victor Stinner in :issue:`23404`.)
 
 .. versionchanged:: 3.6.2
+
+
+Notable changes in Python 3.6.4
+===============================
+
+The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
+has been removed as its members being never cleared may cause a segfault
+during finalization of the interpreter.
+(Contributed by Xavier de Gaye in :issue:`22898` and :issue:`30697`.)
 
 
 Notable changes in Python 3.6.5

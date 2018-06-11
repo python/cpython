@@ -1545,7 +1545,7 @@ changes, or look through the Subversion logs for all the details.
   *ciphers* argument that's a string listing the encryption algorithms
   to be allowed; the format of the string is described
   `in the OpenSSL documentation
-  <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
   (Added by Antoine Pitrou; :issue:`8322`.)
 
   Another change makes the extension load all of OpenSSL's ciphers and
@@ -1809,7 +1809,7 @@ wish to read the Tcl/Tk manual page describing the
 Ttk theme engine, available at
 https://www.tcl.tk/man/tcl8.5/TkCmd/ttk_intro.htm. Some
 screenshots of the Python/Ttk code in use are at
-http://code.google.com/p/python-ttk/wiki/Screenshots.
+https://code.google.com/archive/p/python-ttk/wikis/Screenshots.wiki.
 
 The :mod:`ttk` module was written by Guilherme Polo and added in
 :issue:`2983`.  An alternate version called ``Tile.py``, written by
@@ -1832,8 +1832,8 @@ https://pypi.org/project/unittest2.
 
 When used from the command line, the module can automatically discover
 tests.  It's not as fancy as `py.test <http://pytest.org>`__ or
-`nose <http://code.google.com/p/python-nose/>`__, but provides a simple way
-to run tests kept within a set of package directories.  For example,
+`nose <https://nose.readthedocs.io/>`__, but provides a
+simple way to run tests kept within a set of package directories.  For example,
 the following command will search the :file:`test/` subdirectory for
 any importable test files named ``test*.py``::
 
@@ -2367,6 +2367,18 @@ Port-Specific Changes: Mac OS X
   installation and a user-installed copy of the same version.
   (Changed by Ronald Oussoren; :issue:`4865`.)
 
+   .. versionchanged:: 2.7.13
+
+     As of 2.7.13, this change was removed.
+     ``/Library/Python/2.7/site-packages``, the site-packages directory
+     used by the Apple-supplied system Python 2.7 is no longer appended to
+     ``sys.path`` for user-installed Pythons such as from the python.org
+     installers.  As of macOS 10.12, Apple changed how the system
+     site-packages directory is configured, which could cause installation
+     of pip components, like setuptools, to fail.  Packages installed for
+     the system Python will no longer be shared with user-installed
+     Pythons. (:issue:`28440`)
+
 Port-Specific Changes: FreeBSD
 -----------------------------------
 
@@ -2558,6 +2570,21 @@ exemption allowing new ``-3`` warnings to be added in any Python 2.7
 maintenance release.
 
 
+Two new environment variables for debug mode
+--------------------------------------------
+
+In debug mode, the ``[xxx refs]`` statistic is not written by default, the
+:envvar:`PYTHONSHOWREFCOUNT` environment variable now must also be set.
+(Contributed by Victor Stinner; :issue:`31733`.)
+
+When Python is compiled with ``COUNT_ALLOC`` defined, allocation counts are no
+longer dumped by default anymore: the :envvar:`PYTHONSHOWALLOCCOUNT` environment
+variable must now also be set. Moreover, allocation counts are now dumped into
+stderr, rather than stdout. (Contributed by Victor Stinner; :issue:`31692`.)
+
+.. versionadded:: 2.7.15
+
+
 PEP 434: IDLE Enhancement Exception for All Branches
 ----------------------------------------------------
 
@@ -2602,10 +2629,162 @@ with the first of those changes appearing in the Python 2.7.7 release.
   certificate store, the :class:`~ssl.SSLContext` class, and other
   features. (Contributed by Alex Gaynor and David Reid; :issue:`21308`.)
 
+  Refer to the "Version added: 2.7.9" notes in the module documentation for
+  specific details.
+
 * :func:`os.urandom` was changed to cache a file descriptor to ``/dev/urandom``
   instead of reopening ``/dev/urandom`` on every call. (Contributed by Alex
   Gaynor; :issue:`21305`.)
 
+* :data:`hashlib.algorithms_guaranteed` and
+  :data:`hashlib.algorithms_available` were backported from Python 3 to make
+  it easier for Python 2 applications to select the strongest available hash
+  algorithm. (Contributed by Alex Gaynor in :issue:`21307`)
+
+
+PEP 477: Backport ensurepip (PEP 453) to Python 2.7
+---------------------------------------------------
+
+:pep:`477` approves the inclusion of the :pep:`453` ensurepip module and the
+improved documentation that was enabled by it in the Python 2.7 maintenance
+releases, appearing first in the Python 2.7.9 release.
+
+
+Bootstrapping pip By Default
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The new :mod:`ensurepip` module (defined in :pep:`453`) provides a standard
+cross-platform mechanism to bootstrap the pip installer into Python
+installations. The version of ``pip`` included with Python 2.7.9 is ``pip``
+1.5.6, and future 2.7.x maintenance releases will update the bundled version to
+the latest version of ``pip`` that is available at the time of creating the
+release candidate.
+
+By default, the commands ``pip``, ``pipX`` and ``pipX.Y`` will be installed on
+all platforms (where X.Y stands for the version of the Python installation),
+along with the ``pip`` Python package and its dependencies.
+
+For CPython :ref:`source builds on POSIX systems <building-python-on-unix>`,
+the ``make install`` and ``make altinstall`` commands do not bootstrap ``pip``
+by default.  This behaviour can be controlled through configure options, and
+overridden through Makefile options.
+
+On Windows and Mac OS X, the CPython installers now default to installing
+``pip`` along with CPython itself (users may opt out of installing it
+during the installation process). Window users will need to opt in to the
+automatic ``PATH`` modifications to have ``pip`` available from the command
+line by default, otherwise it can still be accessed through the Python
+launcher for Windows as ``py -m pip``.
+
+As `discussed in the PEP`__, platform packagers may choose not to install
+these commands by default, as long as, when invoked, they provide clear and
+simple directions on how to install them on that platform (usually using
+the system package manager).
+
+__ https://www.python.org/dev/peps/pep-0477/#disabling-ensurepip-by-downstream-distributors
+
+
+Documentation Changes
+~~~~~~~~~~~~~~~~~~~~~
+
+As part of this change, the :ref:`installing-index` and
+:ref:`distributing-index` sections of the documentation have been
+completely redesigned as short getting started and FAQ documents. Most
+packaging documentation has now been moved out to the Python Packaging
+Authority maintained `Python Packaging User Guide
+<http://packaging.python.org>`__ and the documentation of the individual
+projects.
+
+However, as this migration is currently still incomplete, the legacy
+versions of those guides remaining available as :ref:`install-index`
+and :ref:`distutils-index`.
+
+.. seealso::
+
+   :pep:`453` -- Explicit bootstrapping of pip in Python installations
+      PEP written by Donald Stufft and Nick Coghlan, implemented by
+      Donald Stufft, Nick Coghlan, Martin von Löwis and Ned Deily.
+
+PEP 476: Enabling certificate verification by default for stdlib http clients
+-----------------------------------------------------------------------------
+
+:pep:`476` updated :mod:`httplib` and modules which use it, such as
+:mod:`urllib2` and :mod:`xmlrpclib`, to now verify that the server
+presents a certificate which is signed by a Certificate Authority in the
+platform trust store and whose hostname matches the hostname being requested
+by default, significantly improving security for many applications. This
+change was made in the Python 2.7.9 release.
+
+For applications which require the old previous behavior, they can pass an
+alternate context::
+
+    import urllib2
+    import ssl
+
+    # This disables all verification
+    context = ssl._create_unverified_context()
+
+    # This allows using a specific certificate for the host, which doesn't need
+    # to be in the trust store
+    context = ssl.create_default_context(cafile="/path/to/file.crt")
+
+    urllib2.urlopen("https://invalid-cert", context=context)
+
+
+PEP 493: HTTPS verification migration tools for Python 2.7
+----------------------------------------------------------
+
+:pep:`493` provides additional migration tools to support a more incremental
+infrastructure upgrade process for environments containing applications and
+services relying on the historically permissive processing of server
+certificates when establishing client HTTPS connections.  These additions were
+made in the Python 2.7.12 release.
+
+These tools are intended for use in cases where affected applications and
+services can't be modified to explicitly pass a more permissive SSL context
+when establishing the connection.
+
+For applications and services which can't be modified at all, the new
+``PYTHONHTTPSVERIFY`` environment variable may be set to ``0`` to revert an
+entire Python process back to the default permissive behaviour of Python 2.7.8
+and earlier.
+
+For cases where the connection establishment code can't be modified, but the
+overall application can be, the new :func:`ssl._https_verify_certificates`
+function can be used to adjust the default behaviour at runtime.
+
+
+New ``make regen-all`` build target
+-----------------------------------
+
+To simplify cross-compilation, and to ensure that CPython can reliably be
+compiled without requiring an existing version of Python to already be
+available, the autotools-based build system no longer attempts to implicitly
+recompile generated files based on file modification times.
+
+Instead, a new ``make regen-all`` command has been added to force regeneration
+of these files when desired (e.g. after an initial version of Python has
+already been built based on the pregenerated versions).
+
+More selective regeneration targets are also defined - see
+:source:`Makefile.pre.in` for details.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionadded:: 2.7.14
+
+
+Removal of ``make touch`` build target
+--------------------------------------
+
+The ``make touch`` build target previously used to request implicit regeneration
+of generated files by updating their modification times has been removed.
+
+It has been replaced by the new ``make regen-all`` target.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionchanged:: 2.7.14
 
 .. ======================================================================
 
