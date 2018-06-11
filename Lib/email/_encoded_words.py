@@ -99,6 +99,7 @@ def len_q(bstring):
 
 def decode_b(encoded):
     # First try encoding with validate=True, fixing the padding if needed.
+    # This will succeed only if encoded includes no invalid characters.
     pad_err = len(encoded) % 4
     missing_padding = b'==='[:4-pad_err] if pad_err else b''
     try:
@@ -107,6 +108,8 @@ def decode_b(encoded):
             [errors.InvalidBase64PaddingDefect()] if pad_err else [],
         )
     except binascii.Error:
+        # Since we had correct padding, this is likely an invalid char error.
+        #
         # The non-alphabet characters are ignored as far as padding
         # goes, but we don't know how many there are.  So try without adding
         # padding to see if it works.
