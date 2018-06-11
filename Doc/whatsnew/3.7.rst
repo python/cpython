@@ -2431,3 +2431,8 @@ sufficient to both emit :exc:`BytesWarning` messages and have them converted
 to exceptions.  Instead, the flag must be set (to cause the warnings to be
 emitted in the first place), and an explicit ``error::BytesWarning``
 warnings filter added to convert them to exceptions.
+
+Due to a change in the way docstrings are handled by the compiler, the
+implicit ``return None`` in a function body consisting solely of a docstring
+is now marked as occurring on the same line as the docstring, not on the
+function's header line.
