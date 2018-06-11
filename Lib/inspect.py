@@ -1213,7 +1213,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
     turn names and values into strings.  The last argument is an optional
     function to format the sequence of arguments.
 
-    Deprecated since Python 3.5 use, the `signature` function and `Signature`
+    Deprecated since Python 3.5 : use the `signature` function and `Signature`
     objects.
     """
 
