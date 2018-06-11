@@ -432,7 +432,7 @@ to make sure everything functions as expected in both versions of Python.
 .. _coverage.py: https://pypi.org/project/coverage
 .. _Futurize: http://python-future.org/automatic_conversion.html
 .. _importlib: https://docs.python.org/3/library/importlib.html#module-importlib
-.. _importlib2: https://pypi.python.org/pypi/importlib2
+.. _importlib2: https://pypi.org/project/importlib2
 .. _Modernize: https://python-modernize.readthedocs.org/en/latest/
 .. _mypy: http://mypy-lang.org/
 .. _Porting to Python 3: http://python3porting.com/
