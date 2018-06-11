@@ -1995,6 +1995,15 @@ becomes the :attr:`~object.__dict__` attribute of the class object.
       Describes the implicit ``__class__`` closure reference
 
 
+Uses for metaclasses
+^^^^^^^^^^^^^^^^^^^^
+
+The potential uses for metaclasses are boundless. Some ideas that have been
+explored include enum, logging, interface checking, automatic delegation,
+automatic property creation, proxies, frameworks, and automatic resource
+locking/synchronization.
+
+
 Customizing instance and subclass checks
 ----------------------------------------
 
