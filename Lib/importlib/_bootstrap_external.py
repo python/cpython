@@ -322,15 +322,15 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
             raise ValueError('{!r} is not alphanumeric'.format(optimization))
         almost_filename = '{}.{}{}'.format(almost_filename, _OPT, optimization)
     filename = almost_filename + BYTECODE_SUFFIXES[0]
-    if sys.bytecode_prefix is not None:
+    if sys.pycache_prefix is not None:
         # We need an absolute path to the py file to avoid the possibility of
-        # collisions within sys.bytecode_prefix, if someone has two different
+        # collisions within sys.pycache_prefix, if someone has two different
         # `foo/bar.py` on their system and they import both of them using the
-        # same sys.bytecode_prefix. Let's say sys.bytecode_prefix is
+        # same sys.pycache_prefix. Let's say sys.pycache_prefix is
         # `C:\Bytecode`; the idea here is that if we get `Foo\Bar`, we first
         # make it absolute (`C:\Somewhere\Foo\Bar`), then make it root-relative
-        # (`Somewhere\Foo\Bar`), so we end up placing the bytecode file in
-        # an unambiguous `C:\Bytecode\Somewhere\Foo\Bar\`.
+        # (`Somewhere\Foo\Bar`), so we end up placing the bytecode file in an
+        # unambiguous `C:\Bytecode\Somewhere\Foo\Bar\`.
         if not _path_isabs(head):
             head = _path_join(_os.getcwd(), head)
 
@@ -343,7 +343,7 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
         # Strip initial path separator from `head` to complete the conversion
         # back to a root-relative path before joining.
         return _path_join(
-            sys.bytecode_prefix,
+            sys.pycache_prefix,
             head.lstrip(path_separators),
             filename,
         )
@@ -364,8 +364,8 @@ def source_from_cache(path):
     path = _os.fspath(path)
     head, pycache_filename = _path_split(path)
     found_in_bytecode_prefix = False
-    if sys.bytecode_prefix is not None:
-        stripped_path = sys.bytecode_prefix.rstrip(path_separators)
+    if sys.pycache_prefix is not None:
+        stripped_path = sys.pycache_prefix.rstrip(path_separators)
         if head.startswith(stripped_path + path_sep):
             head = head[len(stripped_path):]
             found_in_bytecode_prefix = True

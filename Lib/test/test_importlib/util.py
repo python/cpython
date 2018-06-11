@@ -320,14 +320,14 @@ def ensure_bytecode_path(bytecode_path):
 
 
 @contextlib.contextmanager
-def temporary_bytecode_prefix(prefix):
-    """Adjust and restore sys.bytecode_prefix."""
-    _orig_prefix = sys.bytecode_prefix
-    sys.bytecode_prefix = prefix
+def temporary_pycache_prefix(prefix):
+    """Adjust and restore sys.pycache_prefix."""
+    _orig_prefix = sys.pycache_prefix
+    sys.pycache_prefix = prefix
     try:
         yield
     finally:
-        sys.bytecode_prefix = _orig_prefix
+        sys.pycache_prefix = _orig_prefix
 
 
 @contextlib.contextmanager

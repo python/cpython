@@ -209,7 +209,7 @@ always available.
    yourself to control bytecode file generation.
 
 
-.. data:: bytecode_prefix
+.. data:: pycache_prefix
 
    If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
    files to (and read them from) a parallel directory tree rooted at this
@@ -222,8 +222,8 @@ always available.
    A relative path is interpreted relative to the current working directory.
 
    This value is initially set based on the value of the :option:`-X`
-   ``bytecode_prefix=PATH`` command-line option or the
-   :envvar:`PYTHONBYTECODEPREFIX` environment variable (command-line takes
+   ``pycache_prefix=PATH`` command-line option or the
+   :envvar:`PYTHONPYCACHEPREFIX` environment variable (command-line takes
    precedence). If neither are set, it is ``None``.
 
    .. versionadded:: 3.8
