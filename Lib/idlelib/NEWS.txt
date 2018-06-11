@@ -3,6 +3,14 @@ Released on 2018-06-18?
 ======================================
 
 
+bpo-33656: On Windows, add API call saying that tk scales for DPI.
+On Windows 8.1+ or 10, with DPI compatibility properties of the Python
+binary unchanged, and a monitor resolution greater than 96 DPI, this
+should make text and lines sharper.  It should otherwise have no
+effect.  If perchance it make text worse on your monitor, you can
+disable the ctypes.OleDLL call near the top of pyshell.py and report
+the problem on python-list or idle-dev@python.org.
+
 bpo-33768: Clicking on a context line moves that line to the top
 of the editor window.
 

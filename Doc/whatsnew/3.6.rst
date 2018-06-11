@@ -1179,6 +1179,12 @@ colors for custom themes is added to Highlights tab of Settings dialog.
 (Contributed by Cheryl Sabella and Terry Jan Reedy in :issue:`33642`,
 :issue:`33768`, and :issue:`33679`)
 
+On Windows, a new API call tells Windows that tk scales for DPI. On Windows
+8.1+ or 10, with DPI compatibility properties of the Python binary
+unchanged, and a monitor resolution greater than 96 DPI, this should
+make text and lines sharper.  It should otherwise have no effect.
+(Contributed by Terry Jan Reedy in :issue:`33656`).
+
 
 importlib
 ---------

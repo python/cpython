@@ -373,11 +373,12 @@ class ConfigDialog(Toplevel):
                             ).grid(row=row, column=1, sticky=W, padx=7)
             elif opt['type'] == 'int':
                 Entry(entry_area, textvariable=var, validate='key',
-                      validatecommand=(self.is_int, '%P')
+                      validatecommand=(self.is_int, '%P'), width=10
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
 
-            else:
-                Entry(entry_area, textvariable=var
+            else:  # type == 'str'
+                # Limit size to fit non-expanding space with larger font.
+                Entry(entry_area, textvariable=var, width=15
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
         return
 
