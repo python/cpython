@@ -962,8 +962,10 @@ It is used when ``http.server`` is run with ``-m``.
 idlelib and IDLE
 ----------------
 
+Multiple fixes for autocompletion. (Contributed by Louie Lu in :issue:`15786`.)
+
 Module Browser (on the File menu, formerly called Class Browser),
-now displays nested functions and classed in addition to top-level
+now displays nested functions and classes in addition to top-level
 functions and classes.
 (Contributed by Guilherme Polo, Cheryl Sabella, and Terry Jan Reedy
 in :issue:`1612262`.)
@@ -975,13 +977,19 @@ to improve both appearance and function.
 The font sample now includes a selection of non-Latin characters so that
 users can better see the effect of selecting a particular font.
 (Contributed by Terry Jan Reedy in :issue:`13802`.)
-The sample can be edited to test other characters.
+The sample can be edited to include other characters.
 (Contributed by Serhiy Storchaka in :issue:`31860`.)
 
 The IDLE features formerly implemented as extensions have been reimplemented
 as normal features.  Their settings have been moved from the Extensions tab
 to other dialog tabs.
 (Contributed by Charles Wohlganger and Terry Jan Reedy in :issue:`27099`.)
+
+Editor code context option revised.  Box displays all context lines up to
+maxlines.  Clicking on a context line jumps the editor to that line.  Context
+colors for custom themes is added to Highlights tab of Settings dialog.
+(Contributed by Cheryl Sabella and Terry Jan Reedy in :issue:`33642`,
+:issue:`33768`, and :issue:`33679`,
 
 The changes above have been backported to 3.6 maintenance releases.
 
@@ -2332,12 +2340,6 @@ Changes in the Python API
   instead of a :class:`bytes` instance.
   (Contributed by Victor Stinner in :issue:`21071`.)
 
-* :mod:`argparse` subparsers are now required by default.  This matches the
-  behaviour in Python 2.  To add an optional subparser, pass
-  ``required=False`` to
-  :meth:`ArgumentParser.add_subparsers() <argparse.ArgumentParser.add_subparsers>`.
-  (Contributed by Anthony Sottile in :issue:`26510`.)
-
 * :meth:`ast.literal_eval()` is now stricter.  Addition and subtraction of
   arbitrary numbers are no longer allowed.
   (Contributed by Serhiy Storchaka in :issue:`31778`.)
@@ -2429,3 +2431,8 @@ sufficient to both emit :exc:`BytesWarning` messages and have them converted
 to exceptions.  Instead, the flag must be set (to cause the warnings to be
 emitted in the first place), and an explicit ``error::BytesWarning``
 warnings filter added to convert them to exceptions.
+
+Due to a change in the way docstrings are handled by the compiler, the
+implicit ``return None`` in a function body consisting solely of a docstring
+is now marked as occurring on the same line as the docstring, not on the
+function's header line.

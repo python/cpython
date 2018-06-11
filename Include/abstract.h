@@ -593,12 +593,11 @@ PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
 /* Returns 1 if the object 'obj' provides iterator protocols, and 0 otherwise.
 
    This function always succeeds. */
+PyAPI_FUNC(int) PyIter_Check(PyObject *);
 #ifndef Py_LIMITED_API
 #define PyIter_Check(obj) \
     ((obj)->ob_type->tp_iternext != NULL && \
      (obj)->ob_type->tp_iternext != &_PyObject_NextNotImplemented)
-#else
-PyAPI_FUNC(int) PyIter_Check(PyObject*);
 #endif
 
 /* Takes an iterator object and calls its tp_iternext slot,
@@ -719,12 +718,11 @@ PyAPI_FUNC(PyObject *) PyNumber_Or(PyObject *o1, PyObject *o2);
 
 /* Returns 1 if obj is an index integer (has the nb_index slot of the
    tp_as_number structure filled in), and 0 otherwise. */
+PyAPI_FUNC(int) PyIndex_Check(PyObject *);
 #ifndef Py_LIMITED_API
 #define PyIndex_Check(obj)                              \
     ((obj)->ob_type->tp_as_number != NULL &&            \
      (obj)->ob_type->tp_as_number->nb_index != NULL)
-#else
-PyAPI_FUNC(int) PyIndex_Check(PyObject *);
 #endif
 
 /* Returns the object 'o' converted to a Python int, or NULL with an exception
