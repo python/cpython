@@ -98,9 +98,13 @@ Optimizations
   first introduced in Python 3.4.  It offers better performance and smaller
   size compared to Protocol 3 available since Python 3.0.
 
+
 Build and C API Changes
 =======================
 
+* The result of :c:func:`PyExceptionClass_Name` is now of type
+  ``const char *`` rather of ``char *``.
+  (Contributed by Serhiy Storchaka in :issue:`33818`.)
 
 
 Deprecated
