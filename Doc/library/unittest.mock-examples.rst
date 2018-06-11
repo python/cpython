@@ -928,7 +928,7 @@ After the ``MagicMock`` has been used we can use attributes like
 .. note::
 
     An alternative to using ``MagicMock`` is to use ``Mock`` and *only* provide
-    the magic methods you specifically want:
+    the special methods you specifically want:
 
         >>> mock = Mock()
         >>> mock.__getitem__ = Mock(side_effect=getitem)
@@ -936,7 +936,7 @@ After the ``MagicMock`` has been used we can use attributes like
 
     A *third* option is to use ``MagicMock`` but passing in ``dict`` as the *spec*
     (or *spec_set*) argument so that the ``MagicMock`` created only has
-    dictionary magic methods available:
+    dictionary special methods available:
 
         >>> mock = MagicMock(spec_set=dict)
         >>> mock.__getitem__.side_effect = getitem

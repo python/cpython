@@ -200,7 +200,7 @@ handle user specified comparison functions.
 
 In Py3.0, the *cmp* parameter was removed entirely (as part of a larger effort to
 simplify and unify the language, eliminating the conflict between rich
-comparisons and the :meth:`__cmp__` magic method).
+comparisons and the :meth:`__cmp__` special method).
 
 In Py2.x, sort allowed an optional function which can be called for doing the
 comparisons. That function should take two arguments to be compared and then
