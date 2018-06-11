@@ -712,8 +712,9 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(varkw, varkw_e)
         self.assertEqual(defaults, defaults_e)
         if formatted is not None:
-            self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults),
-                             formatted)
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults),
+                                 formatted)
 
     def assertFullArgSpecEquals(self, routine, args_e, varargs_e=None,
                                     varkw_e=None, defaults_e=None,
@@ -729,8 +730,9 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(kwonlydefaults, kwonlydefaults_e)
         self.assertEqual(ann, ann_e)
         if formatted is not None:
-            self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
-                                                    kwonlyargs, kwonlydefaults, ann),
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
+                                                       kwonlyargs, kwonlydefaults, ann),
                              formatted)
 
     def test_getargspec(self):
