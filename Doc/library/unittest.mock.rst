@@ -127,8 +127,8 @@ ends:
    ...
    >>> assert foo == original
 
-Mock supports the mocking of Python :ref:`magic methods <magic-methods>`. The
-easiest way of using magic methods is with the :class:`MagicMock` class. It
+Mock supports the mocking of Python :ref:`special methods <special-lookup>`. The
+easiest way of using special methods is with the :class:`MagicMock` class. It
 allows you to do things like:
 
     >>> mock = MagicMock()
@@ -137,12 +137,12 @@ allows you to do things like:
     'foobarbaz'
     >>> mock.__str__.assert_called_with()
 
-Mock allows you to assign functions (or other Mock instances) to magic methods
+Mock allows you to assign functions (or other Mock instances) to special methods
 and they will be called appropriately. The :class:`MagicMock` class is just a Mock
-variant that has all of the magic methods pre-created for you (well, all the
+variant that has all of the special methods pre-created for you (well, all the
 useful ones anyway).
 
-The following is an example of using magic methods with the ordinary Mock
+The following is an example of using special methods with the ordinary Mock
 class:
 
     >>> mock = Mock()
@@ -190,7 +190,7 @@ new mocks when you access them [#]_. Accessing the same attribute will always
 return the same mock. Mocks record how you use them, allowing you to make
 assertions about what your code has done to them.
 
-:class:`MagicMock` is a subclass of :class:`Mock` with all the magic methods
+:class:`MagicMock` is a subclass of :class:`Mock` with all the special methods
 pre-created and ready to use. There are also non-callable variants, useful
 when you are mocking out objects that aren't callable:
 :class:`NonCallableMock` and :class:`NonCallableMagicMock`
@@ -209,7 +209,7 @@ the *new_callable* argument to :func:`patch`.
     * *spec*: This can be either a list of strings or an existing object (a
       class or instance) that acts as the specification for the mock object. If
       you pass in an object then a list of strings is formed by calling dir on
-      the object (excluding unsupported magic attributes and methods).
+      the object (excluding unsupported special attributes and methods).
       Accessing any attribute not in this list will raise an :exc:`AttributeError`.
 
       If *spec* is an object (rather than a list of strings) then
@@ -659,7 +659,7 @@ the *new_callable* argument to :func:`patch`.
     .. attribute:: mock_calls
 
         :attr:`mock_calls` records *all* calls to the mock object, its methods,
-        magic methods *and* return value mocks.
+        special methods *and* return value mocks.
 
             >>> mock = MagicMock()
             >>> result = mock(1, 2, 3)
@@ -716,8 +716,8 @@ Mock objects that use a class or an instance as a :attr:`spec` or
     >>> isinstance(mock, SomeClass)
     True
 
-The :class:`Mock` classes have support for mocking magic methods. See :ref:`magic
-methods <magic-methods>` for the full details.
+The :class:`Mock` classes have support for mocking special methods. See :ref:`Mocking
+Special Methods <magic-methods>` for the full details.
 
 The mock classes and the :func:`patch` decorators all take arbitrary keyword
 arguments for configuration. For the :func:`patch` decorators the keywords are
@@ -1017,12 +1017,12 @@ method:
     [call.child1('one'), call.child2('two')]
 
 
-.. [#] The only exceptions are magic methods and attributes (those that have
+.. [#] The only exceptions are special methods and attributes (those that have
        leading and trailing double underscores). Mock doesn't create these but
        instead raises an :exc:`AttributeError`. This is because the interpreter
        will often implicitly request these methods, and gets *very* confused to
-       get a new Mock object when it expects a magic method. If you need magic
-       method support see :ref:`magic methods <magic-methods>`.
+       get a new Mock object when it expects a special method. If you need special
+       method support see :ref:`Mocking Special Methods <magic-methods>`.
 
 
 The patchers
@@ -1307,7 +1307,7 @@ Keywords can be used in the :func:`patch.dict` call to set values in the diction
 :func:`patch.dict` can be used with dictionary like objects that aren't actually
 dictionaries. At the very minimum they must support item getting, setting,
 deleting and either iteration or membership test. This corresponds to the
-magic methods :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__` and either
+special methods :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__` and either
 :meth:`__iter__` or :meth:`__contains__`.
 
     >>> class Container:
@@ -1596,24 +1596,24 @@ that proxy attribute access, like the `django settings object
 <http://www.voidspace.org.uk/python/weblog/arch_d7_2010_12_04.shtml#e1198>`_.
 
 
-MagicMock and magic method support
-----------------------------------
+MagicMock and special method support
+------------------------------------
 
 .. _magic-methods:
 
-Mocking Magic Methods
-~~~~~~~~~~~~~~~~~~~~~
+Mocking Special Methods
+~~~~~~~~~~~~~~~~~~~~~~~
 
-:class:`Mock` supports mocking the Python protocol methods, also known as
-"magic methods". This allows mock objects to replace containers or other
+:class:`Mock` supports mocking :ref:`special methods <special-lookup>`, allowing
+mock objects to replace containers or other
 objects that implement Python protocols.
 
-Because magic methods are looked up differently from normal methods [#]_, this
-support has been specially implemented. This means that only specific magic
+Because special methods are looked up differently from normal methods [#]_, this
+support has been specially implemented. This means that only specific special
 methods are supported. The supported list includes *almost* all of them. If
 there are any missing that you need please let us know.
 
-You mock magic methods by setting the method you are interested in to a function
+You mock special methods by setting the method you are interested in to a function
 or a mock instance. If you are using a function then it *must* take ``self`` as
 the first argument [#]_.
 
@@ -1648,15 +1648,15 @@ One use case for this is for mocking objects used as context managers in a
    >>> mock.__enter__.assert_called_with()
    >>> mock.__exit__.assert_called_with(None, None, None)
 
-Calls to magic methods do not appear in :attr:`~Mock.method_calls`, but they
+Calls to special methods do not appear in :attr:`~Mock.method_calls`, but they
 are recorded in :attr:`~Mock.mock_calls`.
 
 .. note::
 
    If you use the *spec* keyword argument to create a mock then attempting to
-   set a magic method that isn't in the spec will raise an :exc:`AttributeError`.
+   set a special method that isn't in the spec will raise an :exc:`AttributeError`.
 
-The full list of supported magic methods is:
+The full list of supported special methods is:
 
 * ``__hash__``, ``__sizeof__``, ``__repr__`` and ``__str__``
 * ``__dir__``, ``__format__`` and ``__subclasses__``
@@ -1687,8 +1687,8 @@ by mock, can't be set dynamically, or can cause problems:
 
 
 
-Magic Mock
-~~~~~~~~~~
+MagicMock
+~~~~~~~~~
 
 There are two ``MagicMock`` variants: :class:`MagicMock` and :class:`NonCallableMagicMock`.
 
@@ -1696,12 +1696,12 @@ There are two ``MagicMock`` variants: :class:`MagicMock` and :class:`NonCallable
 .. class:: MagicMock(*args, **kw)
 
    ``MagicMock`` is a subclass of :class:`Mock` with default implementations
-   of most of the magic methods. You can use ``MagicMock`` without having to
-   configure the magic methods yourself.
+   of most of the special methods. You can use ``MagicMock`` without having to
+   configure the special methods yourself.
 
    The constructor parameters have the same meaning as for :class:`Mock`.
 
-   If you use the *spec* or *spec_set* arguments then *only* magic methods
+   If you use the *spec* or *spec_set* arguments then *only* special methods
    that exist in the spec will be created.
 
 
@@ -1713,7 +1713,7 @@ There are two ``MagicMock`` variants: :class:`MagicMock` and :class:`NonCallable
     :class:`MagicMock`, with the exception of *return_value* and
     *side_effect* which have no meaning on a non-callable mock.
 
-The magic methods are setup with :class:`MagicMock` objects, so you can configure them
+The special methods are setup with :class:`MagicMock` objects, so you can configure them
 and use them in the usual way:
 
    >>> mock = MagicMock()
@@ -1793,10 +1793,10 @@ it and subsequent iterations will result in an empty list:
    >>> list(mock)
    []
 
-``MagicMock`` has all of the supported magic methods configured except for some
+``MagicMock`` has all of the supported special methods configured except for some
 of the obscure and obsolete ones. You can still set these up if you want.
 
-Magic methods that are supported but not setup by default in ``MagicMock`` are:
+Special methods that are supported but not setup by default in ``MagicMock`` are:
 
 * ``__subclasses__``
 * ``__dir__``
@@ -1809,7 +1809,7 @@ Magic methods that are supported but not setup by default in ``MagicMock`` are:
 
 
 
-.. [#] Magic methods *should* be looked up on the class rather than the
+.. [#] Special methods *should* be looked up on the class rather than the
    instance. Different versions of Python are inconsistent about applying this
    rule. The supported protocol methods should work with all supported versions
    of Python.
