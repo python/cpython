@@ -963,12 +963,13 @@ class RawConfigParser(MutableMapping):
     def __setitem__(self, key, value):
         # To conform with the mapping protocol, overwrites existing values in
         # the section.
-
+        if key in self and self[key] is value:
+            return
         # XXX this is not atomic if read_dict fails at any point. Then again,
         # no update method in configparser is atomic in this implementation.
-        if key == self.default_section and self._defaults != value:
+        if key == self.default_section:
             self._defaults.clear()
-        elif key in self._sections and self._sections[key] != value:
+        elif key in self._sections:
             self._sections[key].clear()
         self.read_dict({key: value})
 
