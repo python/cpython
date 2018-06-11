@@ -37,3 +37,12 @@ Lib/test/test_importlib/data01/* -text
 *.proj text eol=crlf
 PCbuild/readme.txt text eol=crlf
 PC/readme.txt text eol=crlf
+
+# Generated files
+# https://github.com/github/linguist#generated-code
+Modules/clinic/*.h linguist-generated=true
+Objects/clinic/*.h linguist-generated=true
+PC/clinic/*.h linguist-generated=true
+Python/clinic/*.h linguist-generated=true
+Python/importlib.h linguist-generated=true
+Python/importlib_external.h linguist-generated=true
