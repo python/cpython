@@ -140,11 +140,10 @@ PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 #define PyExceptionInstance_Check(x)                    \
     PyType_FastSubclass((x)->ob_type, Py_TPFLAGS_BASE_EXC_SUBCLASS)
 
+PyAPI_FUNC(char *) PyExceptionClass_Name(PyObject *);
 #ifndef Py_LIMITED_API
 #define PyExceptionClass_Name(x) \
      ((char *)(((PyTypeObject *)(x))->tp_name))
-#else
-     PyAPI_FUNC(const char *) PyExceptionClass_Name(PyObject *);
 #endif
 
 #define PyExceptionInstance_Class(x) ((PyObject*)((x)->ob_type))

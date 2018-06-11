@@ -1,4 +1,4 @@
 Seven macro incompatibilities with the Limited API were fixed, and the
-macros PyIter_Check, PyIndex_Check and PyExceptionClass_Name were added as
-functions. The return type of PyExceptionClass_Name is "const char \*".
+macros :c:func:`PyIter_Check`, :c:func:`PyIndex_Check` and
+:c:func:`PyExceptionClass_Name` were added as functions.
 A script for automatic macro checks was added.
