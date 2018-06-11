@@ -448,7 +448,7 @@ Developer resources:  https://devguide.python.org/
 .br
 Downloads:  https://www.python.org/downloads/
 .br
-Module repository:  https://pypi.python.org/
+Module repository:  https://pypi.org/
 .br
 Newsgroups:  comp.lang.python, comp.lang.python.announce
 .SH LICENSING
