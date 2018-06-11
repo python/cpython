@@ -1055,15 +1055,7 @@ class EditorWindow(object):
         }
 
     def load_extension(self, name):
-        fname = self.extfiles.get(name, name)
-        try:
-            try:
-                mod = importlib.import_module('.' + fname, package=__package__)
-            except (ImportError, TypeError):
-                mod = importlib.import_module(fname)
-        except ImportError:
-            print("\nFailed to import extension: ", name)
-            raise
+        mod = self._load_extension_module(name)
         cls = getattr(mod, name)
         keydefs = idleConf.GetExtensionBindings(name)
         if hasattr(cls, "menudefs"):
@@ -1081,6 +1073,28 @@ class EditorWindow(object):
                 methodname = methodname + "_event"
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
+
+    def _load_extension_module(self, name):
+        fname = self.extfiles.get(name, name)
+        mod = None
+        first_exception = None
+        for modpath, package in [
+            ['.' + fname, __package__],
+            [fname, None],
+            ['.' + fname.lower(), __package__],
+            [fname.lower(), None],
+        ]:
+            try:
+                mod = importlib.import_module(modpath, package=package)
+            except (ImportError, TypeError) as exc:
+                if first_exception is None:
+                    first_exception = exc
+                continue
+            break
+        if mod is None:
+            print("\nFailed to import extension: ", name)
+            raise first_exception
+        return mod
 
     def apply_bindings(self, keydefs=None):
         if keydefs is None:

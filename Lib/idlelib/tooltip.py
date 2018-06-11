@@ -7,8 +7,9 @@ from tkinter import *
 
 class ToolTipBase:
 
-    def __init__(self, button):
+    def __init__(self, button, delay=1500):
         self.button = button
+        self.delay = delay
         self.tipwindow = None
         self.id = None
         self.x = self.y = 0
@@ -25,7 +26,7 @@ class ToolTipBase:
 
     def schedule(self):
         self.unschedule()
-        self.id = self.button.after(1500, self.showtip)
+        self.id = self.button.after(self.delay, self.showtip)
 
     def unschedule(self):
         id = self.id
@@ -60,15 +61,15 @@ class ToolTipBase:
             tw.destroy()
 
 class ToolTip(ToolTipBase):
-    def __init__(self, button, text):
-        ToolTipBase.__init__(self, button)
+    def __init__(self, button, text, delay=1500):
+        ToolTipBase.__init__(self, button, delay=delay)
         self.text = text
     def showcontents(self):
         ToolTipBase.showcontents(self, self.text)
 
 class ListboxToolTip(ToolTipBase):
-    def __init__(self, button, items):
-        ToolTipBase.__init__(self, button)
+    def __init__(self, button, items, delay=1500):
+        ToolTipBase.__init__(self, button, delay=delay)
         self.items = items
     def showcontents(self):
         listbox = Listbox(self.tipwindow, background="#ffffe0")

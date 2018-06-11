@@ -48,6 +48,18 @@ bell= True
 #
 # See config-keys.def for notes on specifying keys and extend.txt for
 # information on creating IDLE extensions.
+[Squeezer]
+enable= True
+enable_editor= False
+auto-squeeze-min-lines= 30
+show-tooltip= True
+tooltip-delay= 500
+preview-command-win= notepad.exe {filepath}
+preview-command-posix=
+[Squeezer_bindings]
+expand-last-squeezed=
+preview-last-squeezed=
+squeeze-current-text=
 
 # A fake extension for testing and example purposes.  When enabled and
 # invoked, inserts or deletes z-text at beginning of every line.
