@@ -363,13 +363,13 @@ def source_from_cache(path):
         raise NotImplementedError('sys.implementation.cache_tag is None')
     path = _os.fspath(path)
     head, pycache_filename = _path_split(path)
-    found_in_bytecode_prefix = False
+    found_in_pycache_prefix = False
     if sys.pycache_prefix is not None:
         stripped_path = sys.pycache_prefix.rstrip(path_separators)
         if head.startswith(stripped_path + path_sep):
             head = head[len(stripped_path):]
-            found_in_bytecode_prefix = True
-    if not found_in_bytecode_prefix:
+            found_in_pycache_prefix = True
+    if not found_in_pycache_prefix:
         head, pycache = _path_split(head)
         if pycache != _PYCACHE:
             raise ValueError(f'{_PYCACHE} not bottom-level directory in '

@@ -215,9 +215,9 @@ always available.
    files to (and read them from) a parallel directory tree rooted at this
    directory, rather than from ``__pycache__`` directories in the source code
    tree. Any ``__pycache__`` directories in the source code tree will be ignored
-   and new `.pyc` files written within the bytecode prefix. Thus if you use
+   and new `.pyc` files written within the pycache prefix. Thus if you use
    :mod:`compileall` as a pre-build step, you must ensure you run it with the
-   same bytecode prefix (if any) that you will use at runtime.
+   same pycache prefix (if any) that you will use at runtime.
 
    A relative path is interpreted relative to the current working directory.
 
