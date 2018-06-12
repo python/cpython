@@ -850,12 +850,18 @@ boolean {0[0]} NO
         self.assertEqual(set(cf['section3'].keys()), {'named'})
         self.assertNotIn('name3', cf['section3'])
         self.assertEqual(cf.sections(), ['section1', 'section2', 'section3'])
+        # For bpo-32108, assigning default_section to itself.
+        cf[self.default_section] = cf[self.default_section]
+        self.assertNotEqual(set(cf[self.default_section].keys()), set())
         cf[self.default_section] = {}
         self.assertEqual(set(cf[self.default_section].keys()), set())
         self.assertEqual(set(cf['section1'].keys()), {'name1'})
         self.assertEqual(set(cf['section2'].keys()), {'name22'})
         self.assertEqual(set(cf['section3'].keys()), set())
         self.assertEqual(cf.sections(), ['section1', 'section2', 'section3'])
+        # For bpo-32108, assigning section to itself.
+        cf['section2'] = cf['section2']
+        self.assertEqual(set(cf['section2'].keys()), {'name22'})
 
     def test_invalid_multiline_value(self):
         if self.allow_no_value:
