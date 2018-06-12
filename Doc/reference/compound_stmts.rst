@@ -309,7 +309,7 @@ from a function that handled an exception.
    statement: continue
 
 The optional :keyword:`else` clause is executed if no exception was raised, and
-if no :keyword:`return`, :keyword:`continue`, or :keyword:`break` statement was
+no :keyword:`return`, :keyword:`continue`, or :keyword:`break` statement was
 executed.  Exceptions in the :keyword:`else` clause are not handled by the
 preceding :keyword:`except` clauses.
 
