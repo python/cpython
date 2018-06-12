@@ -5,6 +5,7 @@
 
 from tkinter import *
 
+
 class ToolTipBase:
 
     def __init__(self, button):
@@ -47,11 +48,10 @@ class ToolTipBase:
         tw.wm_geometry("+%d+%d" % (x, y))
         self.showcontents()
 
-    def showcontents(self, text="Your text here"):
-        # Override this in derived class
-        label = Label(self.tipwindow, text=text, justify=LEFT,
-                      background="#ffffe0", relief=SOLID, borderwidth=1)
-        label.pack()
+    def showcontents(self):
+        """content display hook for concrete sub-classes"""
+        # See ToolTip for an example
+        raise NotImplementedError
 
     def hidetip(self):
         tw = self.tipwindow
@@ -59,22 +59,17 @@ class ToolTipBase:
         if tw:
             tw.destroy()
 
+
 class ToolTip(ToolTipBase):
     def __init__(self, button, text):
         ToolTipBase.__init__(self, button)
         self.text = text
-    def showcontents(self):
-        ToolTipBase.showcontents(self, self.text)
 
-class ListboxToolTip(ToolTipBase):
-    def __init__(self, button, items):
-        ToolTipBase.__init__(self, button)
-        self.items = items
     def showcontents(self):
-        listbox = Listbox(self.tipwindow, background="#ffffe0")
-        listbox.pack()
-        for item in self.items:
-            listbox.insert(END, item)
+        label = Label(self.tipwindow, text=self.text, justify=LEFT,
+                      background="#ffffe0", relief=SOLID, borderwidth=1)
+        label.pack()
+
 
 def _tooltip(parent):  # htest #
     top = Toplevel(parent)
@@ -84,12 +79,9 @@ def _tooltip(parent):  # htest #
     label = Label(top, text="Place your mouse over buttons")
     label.pack()
     button1 = Button(top, text="Button 1")
-    button2 = Button(top, text="Button 2")
     button1.pack()
-    button2.pack()
     ToolTip(button1, "This is tooltip text for button1.")
-    ListboxToolTip(button2, ["This is","multiple line",
-                            "tooltip text","for button2"])
+
 
 if __name__ == '__main__':
     from idlelib.idle_test.htest import run
