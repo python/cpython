@@ -2442,3 +2442,8 @@ Due to a change in the way docstrings are handled by the compiler, the
 implicit ``return None`` in a function body consisting solely of a docstring
 is now marked as occurring on the same line as the docstring, not on the
 function's header line.
+
+The current exception state has been moved from the frame object to the co-routine.
+This simplified the interpreter and fixed a couple of obscure bugs caused by
+having swap exception state when entering or exiting a generator.
+(Contributed by Mark Shannon in :issue:`25612`.)
