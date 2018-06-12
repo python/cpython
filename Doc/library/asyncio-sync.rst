@@ -36,7 +36,7 @@ Lock
    'locked' or 'unlocked'.
 
    The lock is created in the unlocked state.
-   It has two basic methods, :meth:`acquire` and :meth:`release`.
+   It has two basic methods, :meth:`.acquire` and :meth:`.release`.
    When the state is unlocked, acquire() changes the state to
    locked and returns immediately.  When the state is locked, acquire() blocks
    until a call to release() in another coroutine changes it to unlocked, then
@@ -50,7 +50,7 @@ Lock
    resets the state to unlocked; first coroutine which is blocked in acquire()
    is being processed.
 
-   :meth:`acquire` is a coroutine and should be called with ``await``.
+   :meth:`.acquire` is a coroutine and should be called with ``await``.
 
    Locks support the :ref:`context management protocol <async-with-locks>`.
 
@@ -175,9 +175,9 @@ Condition
    .. method:: notify_all()
 
       Wake up all coroutines waiting on this condition. This method acts like
-      :meth:`notify`, but wakes up all waiting coroutines instead of one. If the
-      calling coroutine has not acquired the lock when this method is called, a
-      :exc:`RuntimeError` is raised.
+      :meth:`.notify`, but wakes up all waiting coroutines instead of one. If
+      the calling coroutine has not acquired the lock when this method is
+      called, a :exc:`RuntimeError` is raised.
 
    .. method:: release()
 
@@ -199,7 +199,7 @@ Condition
       called, a :exc:`RuntimeError` is raised.
 
       This method releases the underlying lock, and then blocks until it is
-      awakened by a :meth:`notify` or :meth:`notify_all` call for the same
+      awakened by a :meth:`.notify` or :meth:`.notify_all` call for the same
       condition variable in another coroutine.  Once awakened, it re-acquires
       the lock and returns ``True``.
 
@@ -223,9 +223,9 @@ Semaphore
    A Semaphore implementation.
 
    A semaphore manages an internal counter which is decremented by each
-   :meth:`acquire` call and incremented by each :meth:`release` call. The
-   counter can never go below zero; when :meth:`acquire` finds that it is zero,
-   it blocks, waiting until some other coroutine calls :meth:`release`.
+   :meth:`.acquire` call and incremented by each :meth:`.release` call. The
+   counter can never go below zero; when :meth:`.acquire` finds that it is zero,
+   it blocks, waiting until some other coroutine calls :meth:`.release`.
 
    The optional argument gives the initial value for the internal counter; it
    defaults to ``1``. If the value given is less than ``0``, :exc:`ValueError`
@@ -242,7 +242,7 @@ Semaphore
 
       If the internal counter is larger than zero on entry, decrement it by one
       and return ``True`` immediately.  If it is zero on entry, block, waiting
-      until some other coroutine has called :meth:`release` to make it larger
+      until some other coroutine has called :meth:`.release` to make it larger
       than ``0``, and then return ``True``.
 
       This method is a :ref:`coroutine <coroutine>`.
