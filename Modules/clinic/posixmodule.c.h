@@ -3855,38 +3855,33 @@ exit:
 
 #if defined(__APPLE__)
 
-PyDoc_STRVAR(os__copyfile__doc__,
-"_copyfile($module, src, dst, flags, /)\n"
+PyDoc_STRVAR(os__fcopyfile__doc__,
+"_fcopyfile($module, infd, outfd, flags, /)\n"
 "--\n"
 "\n"
-"Efficiently copy the content of 2 file descriptors (OSX only).");
+"Efficiently copy content or metadata of 2 regular file descriptors (OSX).");
 
-#define OS__COPYFILE_METHODDEF    \
-    {"_copyfile", (PyCFunction)os__copyfile, METH_FASTCALL, os__copyfile__doc__},
-
-static PyObject *
-os__copyfile_impl(PyObject *module, path_t *src, path_t *dst, int flags);
+#define OS__FCOPYFILE_METHODDEF    \
+    {"_fcopyfile", (PyCFunction)os__fcopyfile, METH_FASTCALL, os__fcopyfile__doc__},
 
 static PyObject *
-os__copyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags);
+
+static PyObject *
+os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    path_t src = PATH_T_INITIALIZE("_copyfile", "src", 0, 0);
-    path_t dst = PATH_T_INITIALIZE("_copyfile", "dst", 0, 0);
+    int infd;
+    int outfd;
     int flags;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&i:_copyfile",
-        path_converter, &src, path_converter, &dst, &flags)) {
+    if (!_PyArg_ParseStack(args, nargs, "iii:_fcopyfile",
+        &infd, &outfd, &flags)) {
         goto exit;
     }
-    return_value = os__copyfile_impl(module, &src, &dst, flags);
+    return_value = os__fcopyfile_impl(module, infd, outfd, flags);
 
 exit:
-    /* Cleanup for src */
-    path_cleanup(&src);
-    /* Cleanup for dst */
-    path_cleanup(&dst);
-
     return return_value;
 }
 
@@ -6453,9 +6448,9 @@ exit:
     #define OS_PREADV_METHODDEF
 #endif /* !defined(OS_PREADV_METHODDEF) */
 
-#ifndef OS__COPYFILE_METHODDEF
-    #define OS__COPYFILE_METHODDEF
-#endif /* !defined(OS__COPYFILE_METHODDEF) */
+#ifndef OS__FCOPYFILE_METHODDEF
+    #define OS__FCOPYFILE_METHODDEF
+#endif /* !defined(OS__FCOPYFILE_METHODDEF) */
 
 #ifndef OS_PIPE_METHODDEF
     #define OS_PIPE_METHODDEF
@@ -6632,4 +6627,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=d245a974d050df80 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b5d1ec71bc6f0651 input=a9049054013a1b77]*/

@@ -1952,8 +1952,6 @@ class _ZeroCopyFileTest(object):
         with self.assertRaises(FileNotFoundError) as cm:
             shutil.copyfile(name, "new")
         self.assertEqual(cm.exception.filename, name)
-        if OSX:
-            self.assertEqual(cm.exception.filename2, "new")
 
     def test_empty_file(self):
         srcname = TESTFN + 'src'
@@ -2115,10 +2113,10 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
 
 @unittest.skipIf(not OSX, 'OSX only')
 class TestZeroCopyOSX(_ZeroCopyFileTest, unittest.TestCase):
-    PATCHPOINT = "posix._copyfile"
+    PATCHPOINT = "posix._fcopyfile"
 
     def zerocopy_fun(self, src, dst):
-        return shutil._fastcopy_osx(src.name, dst.name, posix._COPYFILE_DATA)
+        return shutil._fastcopy_osx(src, dst, posix._COPYFILE_DATA)
 
 
 class TermsizeTests(unittest.TestCase):

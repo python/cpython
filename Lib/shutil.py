@@ -51,7 +51,7 @@ elif os.name == 'nt':
 
 COPY_BUFSIZE = 1024 * 1024 if os.name == 'nt' else 16 * 1024
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
-_HAS_COPYFILE = posix and hasattr(posix, "_copyfile")  # OSX
+_HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # OSX
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
@@ -88,18 +88,21 @@ class _GiveupOnFastCopy(Exception):
     file copy when fast-copy functions fail to do so.
     """
 
-def _fastcopy_osx(src, dst, flags):
+def _fastcopy_osx(fsrc, fdst, flags):
     """Copy a regular file content or metadata by using high-performance
     copyfile(3) syscall (OSX).
     """
-    if _samefile(src, dst):
-        # ...or else copyfile() would return success and delete src
-        # file content. This is stupid as it forces us to do 2 extra
-        # stat() calls.
-        raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
     try:
-        posix._copyfile(src, dst, flags)
+        infd = fsrc.fileno()
+        outfd = fdst.fileno()
+    except Exception as err:
+        raise _GiveupOnFastCopy(err)  # not a regular file
+
+    try:
+        posix._fcopyfile(infd, outfd, flags)
     except OSError as err:
+        err.filename = fsrc.name
+        err.filename2 = fdst.name
         if err.errno in {errno.EINVAL, errno.ENOTSUP}:
             raise _GiveupOnFastCopy(err)
         else:
@@ -235,17 +238,17 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if not follow_symlinks and os.path.islink(src):
         os.symlink(os.readlink(src), dst)
     else:
-        if _HAS_COPYFILE:
-            try:
-                _fastcopy_osx(src, dst, posix._COPYFILE_DATA)
-                return dst
-            except _GiveupOnFastCopy:
-                pass
-
         with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
             if _HAS_SENDFILE:
                 try:
                     _fastcopy_sendfile(fsrc, fdst)
+                    return dst
+                except _GiveupOnFastCopy:
+                    pass
+
+            if _HAS_FCOPYFILE:
+                try:
+                    _fastcopy_osx(fsrc, fdst, posix._COPYFILE_DATA)
                     return dst
                 except _GiveupOnFastCopy:
                     pass

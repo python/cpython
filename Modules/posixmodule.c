@@ -8751,27 +8751,27 @@ done:
 
 #if defined(__APPLE__)
 /*[clinic input]
-os._copyfile
+os._fcopyfile
 
-    src: path_t
-    dst: path_t
+    infd: int
+    outfd: int
     flags: int
     /
 
-Efficiently copy the content of 2 file descriptors (OSX only).
+Efficiently copy content or metadata of 2 regular file descriptors (OSX).
 [clinic start generated code]*/
 
 static PyObject *
-os__copyfile_impl(PyObject *module, path_t *src, path_t *dst, int flags)
-/*[clinic end generated code: output=d9f64f7425e4174b input=7e0bf8e81908f871]*/
+os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags)
+/*[clinic end generated code: output=8e8885c721ec38e3 input=aeb9456804eec879]*/
 {
     int ret;
 
     Py_BEGIN_ALLOW_THREADS
-    ret = copyfile(src->narrow, dst->narrow, NULL, flags);
+    ret = fcopyfile(infd, outfd, NULL, flags);
     Py_END_ALLOW_THREADS
     if (ret < 0)
-        return path_error2(src, dst);
+        return posix_error();
     Py_RETURN_NONE;
 }
 #endif
@@ -12953,7 +12953,7 @@ static PyMethodDef posix_methods[] = {
     OS_UTIME_METHODDEF
     OS_TIMES_METHODDEF
     OS__EXIT_METHODDEF
-    OS__COPYFILE_METHODDEF
+    OS__FCOPYFILE_METHODDEF
     OS_EXECV_METHODDEF
     OS_EXECVE_METHODDEF
     OS_SPAWNV_METHODDEF
