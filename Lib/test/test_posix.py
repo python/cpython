@@ -1541,9 +1541,10 @@ class TestPosixSpawn(unittest.TestCase):
                                 os.environ, file_actions)
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
-        max_tries = 3
-        while not os.path.exists(outfile) and max_tries:
-            max_tries -= 1
+        deadline = time.monotonic() + 0.3
+        while not os.path.exists(outfile):
+            if time.monotonic() > deadline:
+                break
             time.sleep(0.1)
 
         with open(outfile) as f:
