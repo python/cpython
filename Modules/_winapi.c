@@ -163,6 +163,7 @@ create_converter('LPSECURITY_ATTRIBUTES', '" F_POINTER "')
 create_converter('BOOL', 'i') # F_BOOL used previously (always 'i')
 create_converter('DWORD', 'k') # F_DWORD is always "k" (which is much shorter)
 create_converter('LPCTSTR', 's')
+create_converter('LPCWSTR', 'u')
 create_converter('LPWSTR', 'u')
 create_converter('UINT', 'I') # F_UINT used previously (always 'I')
 
@@ -186,7 +187,7 @@ class DWORD_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = Py_BuildValue("k", _return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=4527052fe06e5823]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=27456f8555228b62]*/
 
 #include "clinic/_winapi.c.h"
 

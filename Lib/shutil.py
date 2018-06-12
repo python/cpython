@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+import io
 
 try:
     import zlib
@@ -42,6 +43,16 @@ try:
 except ImportError:
     getgrnam = None
 
+posix = nt = None
+if os.name == 'posix':
+    import posix
+elif os.name == 'nt':
+    import nt
+
+COPY_BUFSIZE = 1024 * 1024 if os.name == 'nt' else 16 * 1024
+_HAS_SENDFILE = posix and hasattr(os, "sendfile")
+_HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # OSX
+
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
            "ExecError", "make_archive", "get_archive_formats",
@@ -72,14 +83,124 @@ class RegistryError(Exception):
     """Raised when a registry operation with the archiving
     and unpacking registries fails"""
 
+class _GiveupOnFastCopy(Exception):
+    """Raised as a signal to fallback on using raw read()/write()
+    file copy when fast-copy functions fail to do so.
+    """
 
-def copyfileobj(fsrc, fdst, length=16*1024):
+def _fastcopy_osx(fsrc, fdst, flags):
+    """Copy a regular file content or metadata by using high-performance
+    fcopyfile(3) syscall (OSX).
+    """
+    try:
+        infd = fsrc.fileno()
+        outfd = fdst.fileno()
+    except Exception as err:
+        raise _GiveupOnFastCopy(err)  # not a regular file
+
+    try:
+        posix._fcopyfile(infd, outfd, flags)
+    except OSError as err:
+        err.filename = fsrc.name
+        err.filename2 = fdst.name
+        if err.errno in {errno.EINVAL, errno.ENOTSUP}:
+            raise _GiveupOnFastCopy(err)
+        else:
+            raise err from None
+
+def _fastcopy_sendfile(fsrc, fdst):
+    """Copy data from one regular mmap-like fd to another by using
+    high-performance sendfile(2) syscall.
+    This should work on Linux >= 2.6.33 and Solaris only.
+    """
+    # Note: copyfileobj() is left alone in order to not introduce any
+    # unexpected breakage. Possible risks by using zero-copy calls
+    # in copyfileobj() are:
+    # - fdst cannot be open in "a"(ppend) mode
+    # - fsrc and fdst may be open in "t"(ext) mode
+    # - fsrc may be a BufferedReader (which hides unread data in a buffer),
+    #   GzipFile (which decompresses data), HTTPResponse (which decodes
+    #   chunks).
+    # - possibly others (e.g. encrypted fs/partition?)
+    global _HAS_SENDFILE
+    try:
+        infd = fsrc.fileno()
+        outfd = fdst.fileno()
+    except Exception as err:
+        raise _GiveupOnFastCopy(err)  # not a regular file
+
+    # Hopefully the whole file will be copied in a single call.
+    # sendfile() is called in a loop 'till EOF is reached (0 return)
+    # so a bufsize smaller or bigger than the actual file size
+    # should not make any difference, also in case the file content
+    # changes while being copied.
+    try:
+        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MB
+    except Exception:
+        blocksize = 2 ** 27  # 128MB
+
+    offset = 0
+    while True:
+        try:
+            sent = os.sendfile(outfd, infd, offset, blocksize)
+        except OSError as err:
+            # ...in oder to have a more informative exception.
+            err.filename = fsrc.name
+            err.filename2 = fdst.name
+
+            if err.errno == errno.ENOTSOCK:
+                # sendfile() on this platform (probably Linux < 2.6.33)
+                # does not support copies between regular files (only
+                # sockets).
+                _HAS_SENDFILE = False
+                raise _GiveupOnFastCopy(err)
+
+            if err.errno == errno.ENOSPC:  # filesystem is full
+                raise err from None
+
+            # Give up on first call and if no data was copied.
+            if offset == 0 and os.lseek(outfd, 0, os.SEEK_CUR) == 0:
+                raise _GiveupOnFastCopy(err)
+
+            raise err
+        else:
+            if sent == 0:
+                break  # EOF
+            offset += sent
+
+def _copybinfileobj(fsrc, fdst, length=COPY_BUFSIZE):
+    """Copy 2 regular file objects open in binary mode."""
+    # Localize variable access to minimize overhead.
+    fsrc_readinto = fsrc.readinto
+    fdst_write = fdst.write
+    with memoryview(bytearray(length)) as mv:
+        while True:
+            n = fsrc_readinto(mv)
+            if not n:
+                break
+            elif n < length:
+                fdst_write(mv[:n])
+            else:
+                fdst_write(mv)
+
+def _is_binary_files_pair(fsrc, fdst):
+    return hasattr(fsrc, 'readinto') and \
+        isinstance(fsrc, io.BytesIO) or 'b' in getattr(fsrc, 'mode', '') and \
+        isinstance(fdst, io.BytesIO) or 'b' in getattr(fdst, 'mode', '')
+
+def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
     """copy data from file-like object fsrc to file-like object fdst"""
-    while 1:
-        buf = fsrc.read(length)
-        if not buf:
-            break
-        fdst.write(buf)
+    if _is_binary_files_pair(fsrc, fdst):
+        _copybinfileobj(fsrc, fdst, length=length)
+    else:
+        # Localize variable access to minimize overhead.
+        fsrc_read = fsrc.read
+        fdst_write = fdst.write
+        while 1:
+            buf = fsrc_read(length)
+            if not buf:
+                break
+            fdst_write(buf)
 
 def _samefile(src, dst):
     # Macintosh, Unix.
@@ -117,9 +238,23 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if not follow_symlinks and os.path.islink(src):
         os.symlink(os.readlink(src), dst)
     else:
-        with open(src, 'rb') as fsrc:
-            with open(dst, 'wb') as fdst:
-                copyfileobj(fsrc, fdst)
+        with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
+            if _HAS_SENDFILE:
+                try:
+                    _fastcopy_sendfile(fsrc, fdst)
+                    return dst
+                except _GiveupOnFastCopy:
+                    pass
+
+            if _HAS_FCOPYFILE:
+                try:
+                    _fastcopy_osx(fsrc, fdst, posix._COPYFILE_DATA)
+                    return dst
+                except _GiveupOnFastCopy:
+                    pass
+
+            _copybinfileobj(fsrc, fdst)
+
     return dst
 
 def copymode(src, dst, *, follow_symlinks=True):
@@ -244,13 +379,12 @@ def copy(src, dst, *, follow_symlinks=True):
 
 def copy2(src, dst, *, follow_symlinks=True):
     """Copy data and all stat info ("cp -p src dst"). Return the file's
-    destination."
+    destination.
 
     The destination may be a directory.
 
     If follow_symlinks is false, symlinks won't be followed. This
     resembles GNU's "cp -P src dst".
-
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
@@ -1015,7 +1149,6 @@ if hasattr(os, 'statvfs'):
 
 elif os.name == 'nt':
 
-    import nt
     __all__.append('disk_usage')
     _ntuple_diskusage = collections.namedtuple('usage', 'total used free')
 
