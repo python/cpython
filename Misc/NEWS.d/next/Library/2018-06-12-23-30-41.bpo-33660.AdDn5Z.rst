@@ -1,0 +1,2 @@
+Fix pathlib.PosixPath to resolve a relative path located on the root
+directory properly.
