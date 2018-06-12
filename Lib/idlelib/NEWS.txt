@@ -3,6 +3,42 @@ Released on 2018-06-18?
 ======================================
 
 
+bpo-33656: On Windows, add API call saying that tk scales for DPI.
+On Windows 8.1+ or 10, with DPI compatibility properties of the Python
+binary unchanged, and a monitor resolution greater than 96 DPI, this
+should make text and lines sharper and some colors brighter.
+On other systems, it should have no effect.  If you have a custom theme,
+you may want to adjust a color or two.  If perchance it make text worse
+on your monitor, you can disable the ctypes.OleDLL call near the top of
+pyshell.py and report the problem on python-list or idle-dev@python.org.
+
+bpo-33768: Clicking on a context line moves that line to the top
+of the editor window.
+
+bpo-33763: Replace the code context label widget with a text widget.
+
+bpo-33664: Scroll IDLE editor text by lines.
+(Previously, the mouse wheel and scrollbar slider moved text by a fixed
+number of pixels, resulting in partial lines at the top of the editor
+box.)  This change also applies to the shell and grep output windows,
+but currently not to read-only text views.
+
+bpo-33679: Enable theme-specific color configuration for Code Context.
+(Previously, there was one code context foreground and background font
+color setting, default or custom, on the extensions tab, that applied
+to all themes.)  For built-in themes, the foreground is the same as
+normal text and the background is a contrasting gray.  Context colors for
+custom themes are set on the Hightlights tab along with other colors.
+When one starts IDLE from a console and loads a custom theme without
+definitions for 'context', one will see a warning message on the
+console.
+
+bpo-33642: Display up to maxlines non-blank lines for Code Context.
+If there is no current context, show a single blank line.  (Previously,
+the Code Contex had numlines lines, usually with some blank.)  The use
+of a new option, 'maxlines' (default 15), avoids possible interference
+with user settings of the old option, 'numlines' (default 3).
+
 bpo-33628: Cleanup codecontext.py and its test.
 
 bpo-32831: Add docstrings and tests for codecontext.py.

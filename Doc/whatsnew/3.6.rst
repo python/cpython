@@ -1142,6 +1142,49 @@ In compensation, the eventual result with be that some idlelib classes will be
 easier to use, with better APIs and docstrings explaining them.  Additional
 useful information will be added to idlelib when available.
 
+New in 3.6.2:
+
+Multiple fixes for autocompletion. (Contributed by Louie Lu in :issue:`15786`.)
+
+New in 3.6.3:
+
+Module Browser (on the File menu, formerly called Class Browser),
+now displays nested functions and classes in addition to top-level
+functions and classes.
+(Contributed by Guilherme Polo, Cheryl Sabella, and Terry Jan Reedy
+in :issue:`1612262`.)
+
+The IDLE features formerly implemented as extensions have been reimplemented
+as normal features.  Their settings have been moved from the Extensions tab
+to other dialog tabs.
+(Contributed by Charles Wohlganger and Terry Jan Reedy in :issue:`27099`.)
+
+The Settings dialog (Options, Configure IDLE) has been partly rewritten
+to improve both appearance and function.
+(Contributed by Cheryl Sabella and Terry Jan Reedy in multiple issues.)
+
+New in 3.6.4:
+
+The font sample now includes a selection of non-Latin characters so that
+users can better see the effect of selecting a particular font.
+(Contributed by Terry Jan Reedy in :issue:`13802`.)
+The sample can be edited to include other characters.
+(Contributed by Serhiy Storchaka in :issue:`31860`.)
+
+New in 3.6.6:
+
+Editor code context option revised.  Box displays all context lines up to
+maxlines.  Clicking on a context line jumps the editor to that line.  Context
+colors for custom themes is added to Highlights tab of Settings dialog.
+(Contributed by Cheryl Sabella and Terry Jan Reedy in :issue:`33642`,
+:issue:`33768`, and :issue:`33679`)
+
+On Windows, a new API call tells Windows that tk scales for DPI. On Windows
+8.1+ or 10, with DPI compatibility properties of the Python binary
+unchanged, and a monitor resolution greater than 96 DPI, this should
+make text and lines sharper.  It should otherwise have no effect.
+(Contributed by Terry Jan Reedy in :issue:`33656`).
+
 
 importlib
 ---------
@@ -2309,3 +2352,56 @@ There have been several major changes to the :term:`bytecode` in Python 3.6.
 * The new :opcode:`SETUP_ANNOTATIONS` and :opcode:`STORE_ANNOTATION` opcodes
   have been added to support the new :term:`variable annotation` syntax.
   (Contributed by Ivan Levkivskyi in :issue:`27985`.)
+
+
+Notable changes in Python 3.6.2
+===============================
+
+New ``make regen-all`` build target
+-----------------------------------
+
+To simplify cross-compilation, and to ensure that CPython can reliably be
+compiled without requiring an existing version of Python to already be
+available, the autotools-based build system no longer attempts to implicitly
+recompile generated files based on file modification times.
+
+Instead, a new ``make regen-all`` command has been added to force regeneration
+of these files when desired (e.g. after an initial version of Python has
+already been built based on the pregenerated versions).
+
+More selective regeneration targets are also defined - see
+:source:`Makefile.pre.in` for details.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionadded:: 3.6.2
+
+
+Removal of ``make touch`` build target
+--------------------------------------
+
+The ``make touch`` build target previously used to request implicit regeneration
+of generated files by updating their modification times has been removed.
+
+It has been replaced by the new ``make regen-all`` target.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionchanged:: 3.6.2
+
+
+Notable changes in Python 3.6.4
+===============================
+
+The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
+has been removed as its members being never cleared may cause a segfault
+during finalization of the interpreter.
+(Contributed by Xavier de Gaye in :issue:`22898` and :issue:`30697`.)
+
+
+Notable changes in Python 3.6.5
+===============================
+
+The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
+locale to the ``LC_NUMERIC`` locale in some cases.
+(Contributed by Victor Stinner in :issue:`31900`.)

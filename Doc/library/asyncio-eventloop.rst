@@ -376,7 +376,7 @@ Creating connections
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
    This method will try to establish the connection in the background.
-   When successful, the it returns a ``(transport, protocol)`` pair.
+   When successful, it returns a ``(transport, protocol)`` pair.
 
    Options changing how the connection is created:
 
@@ -429,7 +429,7 @@ Creating connections
    efficiently.
 
    This method will try to establish the connection in the background.
-   When successful, the it returns a ``(transport, protocol)`` pair.
+   When successful, it returns a ``(transport, protocol)`` pair.
 
    *path* is the name of a UNIX domain socket, and is required unless a *sock*
    parameter is specified.  Abstract UNIX sockets, :class:`str`,
@@ -445,7 +445,7 @@ Creating connections
 
    .. versionchanged:: 3.7
 
-      The *path* parameter can now be a :class:`~pathlib.Path` object.
+      The *path* parameter can now be a :term:`path-like object`.
 
 
 Creating listening connections
@@ -536,7 +536,7 @@ Creating listening connections
 
    .. versionadded:: 3.7
 
-      The *ssl_handshake_timeout* parameter.
+      The *ssl_handshake_timeout* and *start_serving* parameters.
 
    .. versionchanged:: 3.7
 

@@ -1,4 +1,4 @@
-{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf200
+{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf400
 {\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fmodern\fcharset0 CourierNewPSMT;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
@@ -7,15 +7,9 @@
 
 \f0\fs24 \cf0 This package will install Python $FULL_VERSION for macOS $MACOSX_DEPLOYMENT_TARGET for the following architecture(s): $ARCHITECTURES.\
 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
-
-\b \cf0 NOTE:
-\b0   This is a beta preview of the next feature release of Python 3.  Existing features may change or be deleted prior to the release code freeze.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-\cf0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 \ul \ulc0 Which installer variant should I use? [CHANGED in 3.7.0b1]
+\b \cf0 \ul \ulc0 Which installer variant should I use?
 \b0 \ulnone \
 \
 For Python.3.7, python.org currently provides two installer variants for download: one that installs a 
@@ -31,7 +25,7 @@ For Python.3.7, python.org currently provides two installer variants for downloa
 \i0  variant.)  If you are running on macOS 10.9 or later and if you have no need for compatibility with older systems, use the 10.9 variant.  Use the 10.6 variant if you are running on macOS 10.6 through 10.8 or if you want to produce standalone applications that can run on systems from 10.6.  The Pythons installed by these installers are built with private copies of some third-party libraries not included with or newer than those in macOS itself.  The list of these libraries varies by installer variant and is included at the end of the License.rtf file.
 \b \ul \
 \
-Certificate verification and OpenSSL \{UPDATED in 3.7.0b1]\
+Certificate verification and OpenSSL\
 
 \b0 \ulnone \
 This variant of Python 3.7 includes its own private copy of OpenSSL 1.1.0.  The deprecated Apple-supplied OpenSSL libraries are no longer used.  This means that the trust certificates in system and user keychains managed by the 
@@ -40,11 +34,11 @@ This variant of Python 3.7 includes its own private copy of OpenSSL 1.1.0.  The 
 \i security
 \i0  command line utility are no longer used as defaults by the Python 
 \f1 ssl
-\f0  module.  For this beta release, a sample command script is included in 
+\f0  module.  A sample command script is included in 
 \f1 /Applications/Python 3.7
 \f0  to install a curated bundle of default root certificates from the third-party 
 \f1 certifi
-\f0  package ({\field{\*\fldinst{HYPERLINK "https://pypi.python.org/pypi/certifi"}}{\fldrslt https://pypi.python.org/pypi/certifi}}).  If you choose to use 
+\f0  package ({\field{\*\fldinst{HYPERLINK "https://pypi.org/project/certifi/"}}{\fldrslt https://pypi.org/project/certifi/}}).  If you choose to use 
 \f1 certifi
 \f0 , you should consider subscribing to the{\field{\*\fldinst{HYPERLINK "https://certifi.io/en/latest/"}}{\fldrslt  project's email update service}} to be notified when the certificate bundle is updated.\
 \
@@ -53,10 +47,10 @@ The bundled
 \f0  included with this installer has its own default certificate store for verifying download connections.\
 \
 
-\b \ul Using IDLE or other Tk applications [NEW/CHANGED in 3.7.0b3] 
+\b \ul Using IDLE or other Tk applications 
 \b0 \ulnone \
 \
-Both installer variants come with their own private version of Tcl/Tk 8.6. They no longer use system-supplied or third-party supplied versions of Tcl/Tk.\
+Both installer variants now come with their own private version of Tcl/Tk 8.6. They no longer use system-supplied or third-party supplied versions of Tcl/Tk as in previous releases.\
 
 \b \ul \
 Other changes\
