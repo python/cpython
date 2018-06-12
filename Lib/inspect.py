@@ -1220,7 +1220,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
     from warnings import warn
 
     warn("`formatargspec` is deprecated since Python 3.5. Use `signature` and "
-         " the `Signature` object directly",
+         "the `Signature` object directly",
          DeprecationWarning,
          stacklevel=2)
 
