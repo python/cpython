@@ -1,0 +1,2 @@
+Improve the performance of :meth:`collections.deque.remove` and raise
+`exc`:`RuntimeError` if the deque is mutated during removal.
