@@ -70,7 +70,9 @@ if (-not $skipupload) {
     popd
 
     $d = "$target/$($p[0])/"
-    & $plink -batch $user@$server mkdir $d "&&" chgrp downloads $d "&&" chmod g-x,o+rx $d
+    & $plink -batch $user@$server mkdir $d
+    & $plink -batch $user@$server chgrp downloads $d
+    & $plink -batch $user@$server chmod g-x,o+rx $d
     & $pscp -batch $doc.FullName "$user@${server}:$d"
 
     foreach ($a in gci "$build" -Directory) {
@@ -83,12 +85,16 @@ if (-not $skipupload) {
         & $pscp -batch $exe.FullName "$user@${server}:$d"
 
         $sd = "$d$($a.Name)$($p[1])/"
-        & $plink -batch $user@$server mkdir $sd "&&" chgrp downloads $sd "&&" chmod g-x,o+rx $sd
+        & $plink -batch $user@$server mkdir $sd
+        & $plink -batch $user@$server chgrp downloads $sd
+        & $plink -batch $user@$server chmod g-x,o+rx $sd
         & $pscp -batch $msi.FullName "$user@${server}:$sd"
-        & $plink -batch $user@$server chgrp downloads $sd* "&&" chmod g-x,o+rx $sd*
+        & $plink -batch $user@$server chgrp downloads $sd*
+        & $plink -batch $user@$server chmod g-x,o+rx $sd*
     }
 
-    & $plink -batch $user@$server chgrp downloads $d* "&&" chmod g-x,o+rx $d*
+    & $plink -batch $user@$server chgrp downloads $d*
+    & $plink -batch $user@$server chmod g-x,o+rx $d*
 }
 
 if (-not $skippurge) {
