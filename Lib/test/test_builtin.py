@@ -1710,7 +1710,7 @@ class PtyTests(unittest.TestCase):
             'if result != {expected!a}:\n'
             '    raise AssertionError("unexpected input " + ascii(result))\n'
         )
-        sentinel = 'Hé, this is before calling input()'
+        sentinel = '123'
         if stdio_encoding:
             expected = terminal_input.decode(stdio_encoding, 'surrogateescape')
             exp_sentinel = sentinel.encode(stdio_encoding, errors='replace')
@@ -1740,7 +1740,6 @@ class PtyTests(unittest.TestCase):
         [master, slave] = pty.openpty()
         proc = subprocess.Popen(cmd, stdin=slave, stdout=slave, stderr=slave)
         os.close(slave)
-        output = "could not read process output"
         with proc, os.fdopen(master, "wb", closefd=False) as writer:
             # Wait for the process to be fully started.
             sentinel = os.read(master, len(expected))
