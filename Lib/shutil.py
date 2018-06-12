@@ -179,7 +179,8 @@ def _copybinfileobj(fsrc, fdst, length=COPY_BUFSIZE):
             if not n:
                 break
             elif n < length:
-                fdst_write(mv[:n])
+                with mv[:n] as smv:
+                    fdst.write(smv)
             else:
                 fdst_write(mv)
 
