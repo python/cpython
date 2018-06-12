@@ -2349,6 +2349,15 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         st = os.stat(join('other_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
 
+    def test_resolve_root(self):
+        current_directory = os.getcwd()
+        try:
+            os.chdir('/')
+            p = self.cls('spam')
+            self.assertEqual(str(p.resolve()), '/spam')
+        finally:
+            os.chdir(current_directory)
+
     def test_touch_mode(self):
         old_mask = os.umask(0)
         self.addCleanup(os.umask, old_mask)
