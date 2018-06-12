@@ -1544,11 +1544,19 @@ class TestPosixSpawn(unittest.TestCase):
         deadline = time.monotonic() + 0.3
         while not os.path.exists(outfile):
             if time.monotonic() > deadline:
-                break
+                raise TimeoutError
             time.sleep(0.1)
 
+        deadline = time.monotonic() + 0.3
         with open(outfile) as f:
-            self.assertEqual(f.read(), 'hello')
+            while True:
+                if time.monotonic() > deadline:
+                    raise TimeoutError
+                f.seek(0)
+                data = f.read()
+                if data:
+                    break
+            self.assertEqual(data, 'hello')
 
     def test_close_file(self):
         closefile = support.TESTFN
