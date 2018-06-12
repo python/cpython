@@ -1529,6 +1529,7 @@ class TestPosixSpawn(unittest.TestCase):
         script = """if 1:
             import sys
             sys.stdout.write("hello")
+            sys.stdout.flush()
             """
         file_actions = [
             (os.POSIX_SPAWN_OPEN, 1, outfile,
@@ -1539,6 +1540,12 @@ class TestPosixSpawn(unittest.TestCase):
                                 [sys.executable, '-c', script],
                                 os.environ, file_actions)
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
+        max_tries = 3
+        while not os.path.exists(outfile) and max_tries:
+            max_tries -= 1
+            time.sleep(0.1)
+
         with open(outfile) as f:
             self.assertEqual(f.read(), 'hello')
 
