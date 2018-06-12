@@ -2066,7 +2066,7 @@ static int PySSL_set_context(PySSLSocket *self, PyObject *value,
         SSL_set_SSL_CTX(self->ssl, self->ctx->ctx);
 #endif
     } else {
-        PyErr_SetString(PyExc_TypeError, "The value must be an SSLContext.");
+        PyErr_SetString(PyExc_TypeError, "The value must be a SSLContext");
         return -1;
     }
 
@@ -2725,7 +2725,7 @@ static int PySSL_set_session(PySSLSocket *self, PyObject *value,
     int result;
 
     if (!PySSLSession_Check(value)) {
-        PyErr_SetString(PyExc_TypeError, "Value is not an SSLSession.");
+        PyErr_SetString(PyExc_TypeError, "Value is not a SSLSession.");
         return -1;
     }
     pysess = (PySSLSession *)value;
