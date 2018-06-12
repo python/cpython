@@ -90,11 +90,11 @@ if (-not $skipupload) {
         & $plink -batch $user@$server chmod g-x,o+rx $sd
         & $pscp -batch $msi.FullName "$user@${server}:$sd"
         & $plink -batch $user@$server chgrp downloads $sd*
-        & $plink -batch $user@$server chmod g-x,o+rx $sd*
+        & $plink -batch $user@$server chmod g-x,o+r $sd*
     }
 
     & $plink -batch $user@$server chgrp downloads $d*
-    & $plink -batch $user@$server chmod g-x,o+rx $d*
+    & $plink -batch $user@$server chmod g-x,o+r $d*
 }
 
 if (-not $skippurge) {
