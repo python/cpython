@@ -1,3 +1,0 @@
-The urllib.robotparser's ``__str__`` representation now includes wildcard
-entries and the "Crawl-delay" and "Request-rate" fields. Patch by
-Michael Lazar.
