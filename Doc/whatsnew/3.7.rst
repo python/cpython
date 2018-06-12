@@ -991,6 +991,12 @@ colors for custom themes is added to Highlights tab of Settings dialog.
 (Contributed by Cheryl Sabella and Terry Jan Reedy in :issue:`33642`,
 :issue:`33768`, and :issue:`33679`,
 
+On Windows, a new API call tells Windows that tk scales for DPI. On Windows
+8.1+ or 10, with DPI compatibility properties of the Python binary
+unchanged, and a monitor resolution greater than 96 DPI, this should
+make text and lines sharper.  It should otherwise have no effect.
+(Contributed by Terry Jan Reedy in :issue:`33656`).
+
 The changes above have been backported to 3.6 maintenance releases.
 
 
@@ -2340,12 +2346,6 @@ Changes in the Python API
   instead of a :class:`bytes` instance.
   (Contributed by Victor Stinner in :issue:`21071`.)
 
-* :mod:`argparse` subparsers are now required by default.  This matches the
-  behaviour in Python 2.  To add an optional subparser, pass
-  ``required=False`` to
-  :meth:`ArgumentParser.add_subparsers() <argparse.ArgumentParser.add_subparsers>`.
-  (Contributed by Anthony Sottile in :issue:`26510`.)
-
 * :meth:`ast.literal_eval()` is now stricter.  Addition and subtraction of
   arbitrary numbers are no longer allowed.
   (Contributed by Serhiy Storchaka in :issue:`31778`.)
@@ -2437,3 +2437,8 @@ sufficient to both emit :exc:`BytesWarning` messages and have them converted
 to exceptions.  Instead, the flag must be set (to cause the warnings to be
 emitted in the first place), and an explicit ``error::BytesWarning``
 warnings filter added to convert them to exceptions.
+
+Due to a change in the way docstrings are handled by the compiler, the
+implicit ``return None`` in a function body consisting solely of a docstring
+is now marked as occurring on the same line as the docstring, not on the
+function's header line.
