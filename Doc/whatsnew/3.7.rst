@@ -98,6 +98,7 @@ Significant improvements in the standard library:
 CPython implementation improvements:
 
 * Avoiding the use of ASCII as a default text encoding:
+
   * :ref:`PEP 538 <whatsnew37-pep538>`, legacy C locale coercion
   * :ref:`PEP 540 <whatsnew37-pep540>`, forced UTF-8 runtime mode
 * :ref:`PEP 552 <whatsnew37-pep552>`, deterministic .pycs
