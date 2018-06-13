@@ -86,13 +86,13 @@ class OnHoverToolTipBase(ToolTipBase):
         self._after_id = None
         self._id1 = self.anchor_widget.bind("<Enter>", self._show_event)
         self._id2 = self.anchor_widget.bind("<Leave>", self._hide_event)
-        self._id3 = self.anchor_widget.bind("<ButtonPress>", self._hide_event)
+        self._id3 = self.anchor_widget.bind("<Button>", self._hide_event)
 
     def __del__(self):
         try:
             self.anchor_widget.unbind("<Enter>", self._id1)
             self.anchor_widget.unbind("<Leave>", self._id2)
-            self.anchor_widget.unbind("<ButtonPress>", self._id3)
+            self.anchor_widget.unbind("<Button>", self._id3)
         except TclError:
             pass
         super(OnHoverToolTipBase, self).__del__()
