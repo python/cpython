@@ -5,8 +5,11 @@ pushd %~dp0
 
 set this=%~n0
 
-call ..\PCBuild\find_python.bat %PYTHON%
-if not defined SPHINXBUILD if defined PYTHON (
+call ..\PCbuild\find_python.bat %PYTHON%
+
+if not defined PYTHON set PYTHON=py
+
+if not defined SPHINXBUILD (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
@@ -16,12 +19,23 @@ if not defined SPHINXBUILD if defined PYTHON (
     set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sys.exit(sphinx.main())"
 )
 
-if not defined PYTHON set PYTHON=py
-if not defined SPHINXBUILD set SPHINXBUILD=sphinx-build
+if "%1" NEQ "htmlhelp" goto :skiphhcsearch
+if exist "%HTMLHELP%" goto :skiphhcsearch
 
-if DEFINED ProgramFiles(x86) set _PRGMFLS=%ProgramFiles(x86)%
-if NOT DEFINED ProgramFiles(x86) set _PRGMFLS=%ProgramFiles%
-if "%HTMLHELP%" EQU "" set HTMLHELP=%_PRGMFLS%\HTML Help Workshop\hhc.exe
+rem Search for HHC in likely places
+set HTMLHELP=
+where hhc /q && set HTMLHELP=hhc && goto :skiphhcsearch
+where /R ..\externals hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
+if not exist "%HTMLHELP%" where /R "%ProgramFiles(x86)%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
+if not exist "%HTMLHELP%" where /R "%ProgramFiles%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
+if not exist "%HTMLHELP%" (
+    echo.
+    echo.The HTML Help Workshop was not found.  Set the HTMLHELP variable
+    echo.to the path to hhc.exe or download and install it from
+    echo.http://msdn.microsoft.com/en-us/library/ms669985
+    exit /B 1
+)
+:skiphhcsearch
 
 if "%DISTVERSION%" EQU "" for /f "usebackq" %%v in (`%PYTHON% tools/extensions/patchlevel.py`) do set DISTVERSION=%%v
 
@@ -33,11 +47,11 @@ if "%1" EQU "help" goto help
 if "%1" EQU "check" goto check
 if "%1" EQU "serve" goto serve
 if "%1" == "clean" (
-    rmdir /q /s %BUILDDIR%
+    rmdir /q /s "%BUILDDIR%"
     goto end
 )
 
-%SPHINXBUILD% 2> nul
+%SPHINXBUILD% >nul 2> nul
 if errorlevel 9009 (
     echo.
     echo.The 'sphinx-build' command was not found. Make sure you have Sphinx
@@ -47,7 +61,8 @@ if errorlevel 9009 (
     echo.
     echo.If you don't have Sphinx installed, grab it from
     echo.http://sphinx-doc.org/
-    goto end
+    popd
+    exit /B 1
 )
 
 rem Targets that do require sphinx-build and have their own label
@@ -81,22 +96,14 @@ echo.be passed by setting the SPHINXOPTS environment variable.
 goto end
 
 :build
+if not exist "%BUILDDIR%" mkdir "%BUILDDIR%"
 if NOT "%PAPER%" == "" (
     set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )
-cmd /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . %BUILDDIR%\%*"
+cmd /S /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . "%BUILDDIR%\%1" %2 %3 %4 %5 %6 %7 %8 %9"
 
 if "%1" EQU "htmlhelp" (
-    if  not exist "%HTMLHELP%" (
-        echo.
-        echo.The HTML Help Workshop was not found.  Set the HTMLHELP variable
-        echo.to the path to hhc.exe or download and install it from
-        echo.http://msdn.microsoft.com/en-us/library/ms669985
-        rem Set errorlevel to 1 and exit
-        cmd /C exit /b 1
-        goto end
-    )
-    cmd /C "%HTMLHELP%" build\htmlhelp\python%DISTVERSION:.=%.hhp
+    "%HTMLHELP%" "%BUILDDIR%\htmlhelp\python%DISTVERSION:.=%.hhp"
     rem hhc.exe seems to always exit with code 1, reset to 0 for less than 2
     if not errorlevel 2 cmd /C exit /b 0
 )
@@ -116,19 +123,19 @@ if NOT "%2" EQU "" (
 )
 cmd /C %this% html
 
-if EXIST %BUILDDIR%\html\index.html (
-    echo.Opening %BUILDDIR%\html\index.html in the default web browser...
-    start %BUILDDIR%\html\index.html
+if EXIST "%BUILDDIR%\html\index.html" (
+    echo.Opening "%BUILDDIR%\html\index.html" in the default web browser...
+    start "" "%BUILDDIR%\html\index.html"
 )
 
 goto end
 
 :check
-cmd /C %PYTHON% tools\rstlint.py -i tools
+cmd /S /C "%PYTHON% tools\rstlint.py -i tools"
 goto end
 
 :serve
-cmd /C %PYTHON% ..\Tools\scripts\serve.py %BUILDDIR%\html
+cmd /S /C "%PYTHON% ..\Tools\scripts\serve.py "%BUILDDIR%\html""
 goto end
 
 :end
