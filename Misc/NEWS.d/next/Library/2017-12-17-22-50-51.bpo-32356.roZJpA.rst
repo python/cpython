@@ -1,0 +1,1 @@
+asyncio.transport.resume_reading() and pause_reading() are now idempotent.

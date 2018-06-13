@@ -124,10 +124,18 @@ ReadTransport
       the protocol's :meth:`data_received` method until :meth:`resume_reading`
       is called.
 
+      .. versionchanged:: 3.6.7
+         The method is idempotent, i.e. it can be called when the
+         transport is already paused or closed.
+
    .. method:: resume_reading()
 
       Resume the receiving end.  The protocol's :meth:`data_received` method
       will be called once again if some data is available for reading.
+
+      .. versionchanged:: 3.6.7
+         The method is idempotent, i.e. it can be called when the
+         transport is already reading.
 
 
 WriteTransport
