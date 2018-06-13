@@ -1,2 +1,0 @@
-IDLE now colors async and await as keywords in 3.6. They become full
-keywords in 3.7.
