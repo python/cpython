@@ -1,0 +1,3 @@
+Port CPython to build with clang-cl on Windows.
+
+Patch by Ethan Smith
