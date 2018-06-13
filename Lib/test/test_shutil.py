@@ -1939,18 +1939,32 @@ class TestCopyFileObj(unittest.TestCase):
     def test_alternate_win_impl(self):
         # On Windows copyfile() uses copyfileobj() for files < 128 MiB,
         # else an alternate memoryview()-based implementation.
+        def os_stat_mocked(path):
+            # Make shutil believe src file is 128 MiB.
+            if path == TESTFN:
+                mock = unittest.mock.Mock()
+                mock.st_size = 128 * 1024 * 1024
+                mock.st_mode = os.lstat(path).st_mode
+                return mock
+            else:
+                return os.lstat(path)
+
+        # Make sure it's not called.
         with unittest.mock.patch("shutil._copybinfileobj") as m:
             shutil.copyfile(TESTFN, TESTFN2)
-        assert not m.called
-
-        fname = TESTFN + '-win'
-        self.addCleanup(support.unlink, fname)
-        write_test_file(fname, 128 * 1024 * 1024)
-        with unittest.mock.patch("shutil._copybinfileobj") as m:
-            shutil.copyfile(fname, TESTFN2)
-        assert m.called
-        shutil.copyfile(fname, TESTFN2)
-        self.assert_files_eq(fname, TESTFN2)
+            assert not m.called
+        # Make sure it's called.
+        with unittest.mock.patch('shutil.os.stat', create=True,
+                                 side_effect=os_stat_mocked) as m1:
+            with unittest.mock.patch("shutil._copybinfileobj") as m2:
+                shutil.copyfile(TESTFN, TESTFN2)
+                assert m1.called
+                assert m2.called
+        # Test it.
+        with unittest.mock.patch('shutil.os.stat', create=True,
+                                 side_effect=os_stat_mocked) as m1:
+            shutil.copyfile(TESTFN, TESTFN2)
+        self.assert_files_eq(TESTFN, TESTFN2)
 
 
 class _ZeroCopyFileTest(object):
