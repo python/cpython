@@ -100,15 +100,11 @@ Optimizations
   "fast-copy" means that the copying operation occurs within the kernel,
   avoiding the use of userspace buffers in Python as in
   "``outfd.write(infd.read())``".
-  All other platforms not using such technique will rely on a faster
-  :func:`shutil.copyfile` implementation using :func:`memoryview`,
-  :class:`bytearray` and
-  :meth:`BufferedIOBase.readinto() <io.BufferedIOBase.readinto>`.
-  Finally, :func:`shutil.copyfile` default buffer size on Windows was increased
-  from 16KB to 1MB.
-  The speedup for copying a 512MB file within the same partition is about +26%
-  on Linux, +50% on macOS and +38% on Windows. Also, much less CPU cycles are
-  consumed.
+  Also, :func:`shutil.copyfile` default buffer size on Windows was increased
+  from 16 KiB to 1 MiB.
+  The speedup for copying a 512 MiB file within the same partition is about
+  +26% on Linux, +50% on macOS and +40% on Windows. Also, much less CPU cycles
+  are consumed.
   (Contributed by Giampaolo Rodola' in :issue:`25427`.)
 
 * The default protocol in the :mod:`pickle` module is now Protocol 4,
