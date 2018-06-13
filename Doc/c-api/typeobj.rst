@@ -170,9 +170,11 @@ fields exist as well:
 
    .. code-block:: none
 
-      X - *PyType_Ready* always sets this value (if *NULL*)
+      X - *PyType_Ready* sets this value if it is *NULL*
       ~ - *PyType_Ready* always sets this value (it should be *NULL*)
       ? - *PyType_Ready* may set this value depending on other slots
+
+      Also see the inheritance column ("I").
 
    **"I"**:  inheritance
 
