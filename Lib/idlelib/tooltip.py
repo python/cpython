@@ -66,7 +66,10 @@ class ToolTipBase(object):
         tw = self.tipwindow
         self.tipwindow = None
         if tw:
-            tw.destroy()
+            try:
+                tw.destroy()
+            except TclError:
+                pass
 
     def is_active(self):
         """tell whether the tooltip is currently displayed"""

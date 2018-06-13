@@ -28,10 +28,6 @@ class CallTip(ToolTipBase):
         self.checkhide_after_id = None
 
     def __del__(self):
-        try:
-            self._unbind_events()
-        except TclError:
-            pass
         super(CallTip, self).__del__()
 
     def get_position(self):
@@ -110,7 +106,10 @@ class CallTip(ToolTipBase):
         if not self.tipwindow:
             return
 
-        self.label.destroy()
+        try:
+            self.label.destroy()
+        except TclError:
+            pass
         self.label = None
 
         self.parenline = self.parencol = self.lastline = None
@@ -121,7 +120,8 @@ class CallTip(ToolTipBase):
 
         try:
             self._unbind_events()
-        except TclError:
+        except (TclError, ValueError):
+            # ValueError may be raised by MultiCall
             pass
 
         super(CallTip, self).hidetip()
