@@ -14,9 +14,9 @@ extern "C" {
 #endif
 
 #if defined(_MSC_VER)
-	/* Forward declare struct timeval so that clang-cl doesn't complain about it
-	being a local declaration later on  in _PyTime_AsTimeval.*/
-	struct timeval;
+        /* Forward declare struct timeval so that clang-cl doesn't complain about it
+        being a local declaration later on  in _PyTime_AsTimeval.*/
+        struct timeval;
 #endif /* _MSC_VER */
 
 /* _PyTime_t: Python timestamp with subsecond precision. It can be used to
