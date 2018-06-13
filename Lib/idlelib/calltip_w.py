@@ -17,10 +17,11 @@ MARK_RIGHT = "calltipwindowregion_right"
 
 
 class CallTip(ToolTipBase):
+    """a call-tip widget for tkinter text widgets"""
 
-    def __init__(self, editor_widget):
-        super(CallTip, self).__init__(editor_widget)
-        self._editor = self.anchor_widget
+    def __init__(self, text_widget):
+        super(CallTip, self).__init__(text_widget)
+        self._text_widget = self.anchor_widget
         self.label = self.text = None
         self.parenline = self.parencol = self.lastline = None
         self.hideid = self.checkhideid = None
@@ -35,13 +36,13 @@ class CallTip(ToolTipBase):
 
     def get_position(self):
         """Choose the position of the calltip"""
-        curline = int(self._editor.index("insert").split('.')[0])
+        curline = int(self._text_widget.index("insert").split('.')[0])
         if curline == self.parenline:
-            box = self._editor.bbox("%d.%d" % (self.parenline, self.parencol))
+            box = self._text_widget.bbox("%d.%d" % (self.parenline, self.parencol))
         else:
-            box = self._editor.bbox("%d.0" % curline)
+            box = self._text_widget.bbox("%d.0" % curline)
         if not box:
-            box = list(self._editor.bbox("insert"))
+            box = list(self._text_widget.bbox("insert"))
             # align to left of window
             box[0] = 0
             box[2] = 0
@@ -49,11 +50,11 @@ class CallTip(ToolTipBase):
 
     def position_window(self):
         """Check if needs to reposition the window, and if so - do it."""
-        curline = int(self._editor.index("insert").split('.')[0])
+        curline = int(self._text_widget.index("insert").split('.')[0])
         if curline == self.lastline:
             return
         self.lastline = curline
-        self._editor.see("insert")
+        self._text_widget.see("insert")
         super(CallTip, self).position_window()
 
     def showtip(self, text, parenleft, parenright):
@@ -64,9 +65,9 @@ class CallTip(ToolTipBase):
         if self.tipwindow or not self.text:
             return
 
-        self._editor.mark_set(MARK_RIGHT, parenright)
+        self._text_widget.mark_set(MARK_RIGHT, parenright)
         self.parenline, self.parencol = map(
-            int, self._editor.index(parenleft).split("."))
+            int, self._text_widget.index(parenleft).split("."))
 
         super(CallTip, self).showtip()
 
@@ -75,7 +76,7 @@ class CallTip(ToolTipBase):
     def showcontents(self):
         self.label = Label(self.tipwindow, text=self.text, justify=LEFT,
                            background="#ffffe0", relief=SOLID, borderwidth=1,
-                           font=self._editor['font'])
+                           font=self._text_widget['font'])
         self.label.pack()
 
     def checkhide_event(self, event=None):
@@ -84,18 +85,18 @@ class CallTip(ToolTipBase):
             # this function, the function will be called nevertheless,
             # so do nothing in this case.
             return None
-        curline, curcol = map(int, self._editor.index("insert").split('.'))
+        curline, curcol = map(int, self._text_widget.index("insert").split('.'))
         if curline < self.parenline or \
            (curline == self.parenline and curcol <= self.parencol) or \
-           self._editor.compare("insert", ">", MARK_RIGHT):
+           self._text_widget.compare("insert", ">", MARK_RIGHT):
             self.hidetip()
             return "break"
         else:
             self.position_window()
             if self.checkhide_after_id is not None:
-                self._editor.after_cancel(self.checkhide_after_id)
+                self._text_widget.after_cancel(self.checkhide_after_id)
             self.checkhide_after_id = \
-                self._editor.after(CHECKHIDE_TIME, self.checkhide_event)
+                self._text_widget.after(CHECKHIDE_TIME, self.checkhide_event)
             return None
 
     def hide_event(self, event):
@@ -114,7 +115,7 @@ class CallTip(ToolTipBase):
 
         self.parenline = self.parencol = self.lastline = None
         try:
-            self._editor.mark_unset(MARK_RIGHT)
+            self._text_widget.mark_unset(MARK_RIGHT)
         except TclError:
             pass
 
@@ -126,24 +127,24 @@ class CallTip(ToolTipBase):
         super(CallTip, self).hidetip()
 
     def _bind_events(self):
-        self.checkhideid = self._editor.bind(CHECKHIDE_VIRTUAL_EVENT_NAME,
-                                             self.checkhide_event)
+        self.checkhideid = self._text_widget.bind(CHECKHIDE_VIRTUAL_EVENT_NAME,
+                                                  self.checkhide_event)
         for seq in CHECKHIDE_SEQUENCES:
-            self._editor.event_add(CHECKHIDE_VIRTUAL_EVENT_NAME, seq)
-        self._editor.after(CHECKHIDE_TIME, self.checkhide_event)
-        self.hideid = self._editor.bind(HIDE_VIRTUAL_EVENT_NAME,
-                                        self.hide_event)
+            self._text_widget.event_add(CHECKHIDE_VIRTUAL_EVENT_NAME, seq)
+        self._text_widget.after(CHECKHIDE_TIME, self.checkhide_event)
+        self.hideid = self._text_widget.bind(HIDE_VIRTUAL_EVENT_NAME,
+                                             self.hide_event)
         for seq in HIDE_SEQUENCES:
-            self._editor.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
+            self._text_widget.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
 
     def _unbind_events(self):
         for seq in CHECKHIDE_SEQUENCES:
-            self._editor.event_delete(CHECKHIDE_VIRTUAL_EVENT_NAME, seq)
-        self._editor.unbind(CHECKHIDE_VIRTUAL_EVENT_NAME, self.checkhideid)
+            self._text_widget.event_delete(CHECKHIDE_VIRTUAL_EVENT_NAME, seq)
+        self._text_widget.unbind(CHECKHIDE_VIRTUAL_EVENT_NAME, self.checkhideid)
         self.checkhideid = None
         for seq in HIDE_SEQUENCES:
-            self._editor.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
-        self._editor.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideid)
+            self._text_widget.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
+        self._text_widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideid)
         self.hideid = None
 
 
