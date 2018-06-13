@@ -1918,47 +1918,22 @@ class TestCopyFileObj(unittest.TestCase):
             with open(dst, 'rb') as fdst:
                 self.assertEqual(fsrc.read(), fdst.read())
 
-    # ---
-
     def test_content(self):
         with self.get_files() as (src, dst):
             shutil.copyfileobj(src, dst)
         self.assert_files_eq(TESTFN, TESTFN2)
 
-    def test_not_closed(self):
+    def test_file_not_closed(self):
         with self.get_files() as (src, dst):
             shutil.copyfileobj(src, dst)
             assert not src.closed
             assert not dst.closed
 
-    def test_offset(self):
+    def test_file_offset(self):
         with self.get_files() as (src, dst):
             shutil.copyfileobj(src, dst)
             self.assertEqual(src.tell(), self.FILESIZE)
             self.assertEqual(dst.tell(), self.FILESIZE)
-
-    def test_bincopy(self):
-        with unittest.mock.patch('shutil._copybinfileobj') as m:
-            with self.get_files() as (src, dst):
-                shutil.copyfileobj(src, dst)
-                assert m.called
-
-    def test_bincopy_neg_length(self):
-        with unittest.mock.patch('shutil._copybinfileobj') as m:
-            with self.get_files() as (src, dst):
-                shutil.copyfileobj(src, dst, length=-1)
-                assert not m.called
-        self.assert_files_eq(TESTFN, TESTFN2)
-
-    def test_bincopy_text_file(self):
-        src = open(TESTFN, "rt")
-        dst = open(TESTFN2, "wt")
-        self.addCleanup(src.close)
-        self.addCleanup(dst.close)
-        with unittest.mock.patch('shutil._copybinfileobj') as m:
-            shutil.copyfileobj(src, dst)
-            assert not m.called
-        self.assert_files_eq(TESTFN, TESTFN2)
 
 
 class _ZeroCopyFileTest(object):

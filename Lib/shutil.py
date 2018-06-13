@@ -168,45 +168,16 @@ def _fastcopy_sendfile(fsrc, fdst):
                 break  # EOF
             offset += sent
 
-def _copybinfileobj(fsrc, fdst, length=COPY_BUFSIZE):
-    """Copy 2 regular file objects open in binary mode."""
-    # Localize variable access to minimize overhead.
-    fsrc_readinto = fsrc.readinto
-    fdst_write = fdst.write
-    with memoryview(bytearray(length)) as mv:
-        while True:
-            n = fsrc_readinto(mv)
-            if not n:
-                break
-            elif n < length:
-                with mv[:n] as smv:
-                    fdst.write(smv)
-            else:
-                fdst_write(mv)
-
-def _do_bincopy(fsrc, fdst, length):
-    if length <= 0:
-        return False
-    if not hasattr(fsrc, 'readinto'):
-        return False
-    if isinstance(fsrc, io.BytesIO) or 'b' in getattr(fsrc, 'mode', ''):
-        if isinstance(fdst, io.BytesIO) or 'b' in getattr(fdst, 'mode', ''):
-            return True
-    return False
-
 def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
     """copy data from file-like object fsrc to file-like object fdst"""
-    if _do_bincopy(fsrc, fdst, length):
-        _copybinfileobj(fsrc, fdst, length=length)
-    else:
-        # Localize variable access to minimize overhead.
-        fsrc_read = fsrc.read
-        fdst_write = fdst.write
-        while True:
-            buf = fsrc_read(length)
-            if not buf:
-                break
-            fdst_write(buf)
+    # Localize variable access to minimize overhead.
+    fsrc_read = fsrc.read
+    fdst_write = fdst.write
+    while True:
+        buf = fsrc_read(length)
+        if not buf:
+            break
+        fdst_write(buf)
 
 def _samefile(src, dst):
     # Macintosh, Unix.
@@ -259,7 +230,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
                 except _GiveupOnFastCopy:
                     pass
 
-            _copybinfileobj(fsrc, fdst)
+            copyfileobj(fsrc, fdst)
 
     return dst
 
