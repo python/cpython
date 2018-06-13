@@ -412,6 +412,10 @@ On macOS `fcopyfile`_ is used to copy the file content (not metadata).
 On Linux, Solaris and other POSIX platforms where :func:`os.sendfile` supports
 copies between 2 regular file descriptors :func:`os.sendfile` is used.
 
+On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
+instead of 16 KiB) and if file size >= 128 MiB a :func:`memoryview`-based
+variant of :func:`shutil.copyfileobj` is used.
+
 If the fast-copy operation fails and no data was written in the destination
 file then shutil will silently fallback on using less efficient
 :func:`copyfileobj` function internally.
