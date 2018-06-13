@@ -8755,12 +8755,12 @@ os._fcopyfile
     flags: int
     /
 
-Efficiently copy content or metadata of 2 regular file descriptors (OSX).
+Efficiently copy content or metadata of 2 regular file descriptors (macOS).
 [clinic start generated code]*/
 
 static PyObject *
 os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags)
-/*[clinic end generated code: output=8e8885c721ec38e3 input=aeb9456804eec879]*/
+/*[clinic end generated code: output=8e8885c721ec38e3 input=69e0770e600cb44f]*/
 {
     int ret;
 

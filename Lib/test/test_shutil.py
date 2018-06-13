@@ -33,7 +33,7 @@ from test import support
 from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
-OSX = sys.platform.startswith("darwin")
+MACOS = sys.platform.startswith("darwin")
 try:
     import grp
     import pwd
@@ -1808,7 +1808,7 @@ class TestCopyFile(unittest.TestCase):
 
         self.assertRaises(OSError, shutil.copyfile, 'srcfile', 'destfile')
 
-    @unittest.skipIf(OSX, "skipped on OSX")
+    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_dest_open_fails(self):
 
         srcfile = self.Faux()
@@ -1828,7 +1828,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot open "destfile"',))
 
-    @unittest.skipIf(OSX, "skipped on OSX")
+    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_dest_close_fails(self):
 
         srcfile = self.Faux()
@@ -1851,7 +1851,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot close',))
 
-    @unittest.skipIf(OSX, "skipped on OSX")
+    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_source_close_fails(self):
 
         srcfile = self.Faux(True)
@@ -2111,12 +2111,12 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
             shutil._HAS_SENDFILE = True
 
 
-@unittest.skipIf(not OSX, 'OSX only')
-class TestZeroCopyOSX(_ZeroCopyFileTest, unittest.TestCase):
+@unittest.skipIf(not MACOS, 'macOS only')
+class TestZeroCopyMACOS(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "posix._fcopyfile"
 
     def zerocopy_fun(self, src, dst):
-        return shutil._fastcopy_osx(src, dst, posix._COPYFILE_DATA)
+        return shutil._fastcopy_fcopyfile(src, dst, posix._COPYFILE_DATA)
 
 
 class TermsizeTests(unittest.TestCase):

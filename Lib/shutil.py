@@ -51,7 +51,7 @@ elif os.name == 'nt':
 
 COPY_BUFSIZE = 1024 * 1024 if os.name == 'nt' else 16 * 1024
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
-_HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # OSX
+_HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
@@ -88,9 +88,9 @@ class _GiveupOnFastCopy(Exception):
     file copy when fast-copy functions fail to do so.
     """
 
-def _fastcopy_osx(fsrc, fdst, flags):
+def _fastcopy_fcopyfile(fsrc, fdst, flags):
     """Copy a regular file content or metadata by using high-performance
-    fcopyfile(3) syscall (OSX).
+    fcopyfile(3) syscall (macOS).
     """
     try:
         infd = fsrc.fileno()
@@ -249,7 +249,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
 
             if _HAS_FCOPYFILE:
                 try:
-                    _fastcopy_osx(fsrc, fdst, posix._COPYFILE_DATA)
+                    _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
                     return dst
                 except _GiveupOnFastCopy:
                     pass
