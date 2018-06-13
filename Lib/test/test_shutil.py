@@ -1892,6 +1892,75 @@ class TestCopyFile(unittest.TestCase):
             os.rmdir(dst_dir)
 
 
+class TestCopyFileObj(unittest.TestCase):
+    FILESIZE = 2 * 1024 * 1024
+
+    @classmethod
+    def setUpClass(cls):
+        write_test_file(TESTFN, cls.FILESIZE)
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(TESTFN)
+        support.unlink(TESTFN2)
+
+    def tearDown(self):
+        support.unlink(TESTFN2)
+
+    @contextlib.contextmanager
+    def get_files(self):
+        with open(TESTFN, "rb") as src:
+            with open(TESTFN2, "wb") as dst:
+                yield (src, dst)
+
+    def assert_files_eq(self, src, dst):
+        with open(src, 'rb') as fsrc:
+            with open(dst, 'rb') as fdst:
+                self.assertEqual(fsrc.read(), fdst.read())
+
+    # ---
+
+    def test_content(self):
+        with self.get_files() as (src, dst):
+            shutil.copyfileobj(src, dst)
+        self.assert_files_eq(TESTFN, TESTFN2)
+
+    def test_not_closed(self):
+        with self.get_files() as (src, dst):
+            shutil.copyfileobj(src, dst)
+            assert not src.closed
+            assert not dst.closed
+
+    def test_offset(self):
+        with self.get_files() as (src, dst):
+            shutil.copyfileobj(src, dst)
+            self.assertEqual(src.tell(), self.FILESIZE)
+            self.assertEqual(dst.tell(), self.FILESIZE)
+
+    def test_bincopy(self):
+        with unittest.mock.patch('shutil._copybinfileobj') as m:
+            with self.get_files() as (src, dst):
+                shutil.copyfileobj(src, dst)
+                assert m.called
+
+    def test_bincopy_neg_length(self):
+        with unittest.mock.patch('shutil._copybinfileobj') as m:
+            with self.get_files() as (src, dst):
+                shutil.copyfileobj(src, dst, length=-1)
+                assert not m.called
+        self.assert_files_eq(TESTFN, TESTFN2)
+
+    def test_bincopy_text_file(self):
+        src = open(TESTFN, "rt")
+        dst = open(TESTFN2, "wt")
+        self.addCleanup(src.close)
+        self.addCleanup(dst.close)
+        with unittest.mock.patch('shutil._copybinfileobj') as m:
+            shutil.copyfileobj(src, dst)
+            assert not m.called
+        self.assert_files_eq(TESTFN, TESTFN2)
+
+
 class _ZeroCopyFileTest(object):
     """Tests common to all zero-copy APIs."""
     FILESIZE = (10 * 1024 * 1024)  # 10 MiB

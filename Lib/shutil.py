@@ -184,20 +184,25 @@ def _copybinfileobj(fsrc, fdst, length=COPY_BUFSIZE):
             else:
                 fdst_write(mv)
 
-def _is_binary_files_pair(fsrc, fdst):
-    return hasattr(fsrc, 'readinto') and \
-        isinstance(fsrc, io.BytesIO) or 'b' in getattr(fsrc, 'mode', '') and \
-        isinstance(fdst, io.BytesIO) or 'b' in getattr(fdst, 'mode', '')
+def _do_bincopy(fsrc, fdst, length):
+    if length <= 0:
+        return False
+    if not hasattr(fsrc, 'readinto'):
+        return False
+    if isinstance(fsrc, io.BytesIO) or 'b' in getattr(fsrc, 'mode', ''):
+        if isinstance(fdst, io.BytesIO) or 'b' in getattr(fdst, 'mode', ''):
+            return True
+    return False
 
 def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
     """copy data from file-like object fsrc to file-like object fdst"""
-    if _is_binary_files_pair(fsrc, fdst):
+    if _do_bincopy(fsrc, fdst, length):
         _copybinfileobj(fsrc, fdst, length=length)
     else:
         # Localize variable access to minimize overhead.
         fsrc_read = fsrc.read
         fdst_write = fdst.write
-        while 1:
+        while True:
             buf = fsrc_read(length)
             if not buf:
                 break
