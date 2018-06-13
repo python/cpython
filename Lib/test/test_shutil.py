@@ -1935,6 +1935,23 @@ class TestCopyFileObj(unittest.TestCase):
             self.assertEqual(src.tell(), self.FILESIZE)
             self.assertEqual(dst.tell(), self.FILESIZE)
 
+    @unittest.skipIf(os.name != 'nt', "Windows only")
+    def test_alternate_win_impl(self):
+        # On Windows copyfile() uses copyfileobj() for files < 128 MiB,
+        # else an alternate memoryview()-based implementation.
+        with unittest.mock.patch("shutil._copybinfileobj") as m:
+            shutil.copyfile(TESTFN, TESTFN2)
+        assert not m.called
+
+        fname = TESTFN + '-win'
+        self.addCleanup(support.unlink, fname)
+        write_test_file(fname, 128 * 1024 * 1024)
+        with unittest.mock.patch("shutil._copybinfileobj") as m:
+            shutil.copyfile(fname, TESTFN2)
+        assert m.called
+        shutil.copyfile(fname, TESTFN2)
+        self.assert_files_eq(fname, TESTFN2)
+
 
 class _ZeroCopyFileTest(object):
     """Tests common to all zero-copy APIs."""

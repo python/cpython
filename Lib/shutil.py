@@ -43,13 +43,14 @@ try:
 except ImportError:
     getgrnam = None
 
+_WINDOWS = os.name == 'nt'
 posix = nt = None
 if os.name == 'posix':
     import posix
-elif os.name == 'nt':
+elif _WINDOWS:
     import nt
 
-COPY_BUFSIZE = 1024 * 1024 if os.name == 'nt' else 16 * 1024
+COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 16 * 1024
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
@@ -168,6 +169,25 @@ def _fastcopy_sendfile(fsrc, fdst):
                 break  # EOF
             offset += sent
 
+def _copybinfileobj(fsrc, fdst, length=COPY_BUFSIZE):
+    """Copy 2 regular file objects open in binary mode.
+    This is used on Windows only for files >= 128 MiB as it appears to
+    give a considerable boost.
+    """
+    # Localize variable access to minimize overhead.
+    fsrc_readinto = fsrc.readinto
+    fdst_write = fdst.write
+    with memoryview(bytearray(length)) as mv:
+        while True:
+            n = fsrc_readinto(mv)
+            if not n:
+                break
+            elif n < length:
+                with mv[:n] as smv:
+                    fdst.write(smv)
+            else:
+                fdst_write(mv)
+
 def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
     """copy data from file-like object fsrc to file-like object fdst"""
     # Localize variable access to minimize overhead.
@@ -192,7 +212,7 @@ def _samefile(src, dst):
             os.path.normcase(os.path.abspath(dst)))
 
 def copyfile(src, dst, *, follow_symlinks=True):
-    """Copy data from src to dst.
+    """Copy data from src to dst in the most efficient way possible.
 
     If follow_symlinks is not set and src is a symbolic link, a new
     symlink will be created instead of copying the file it points to.
@@ -201,7 +221,8 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
-    for fn in [src, dst]:
+    fsize = 0
+    for i, fn in enumerate([src, dst]):
         try:
             st = os.stat(fn)
         except OSError:
@@ -211,6 +232,8 @@ def copyfile(src, dst, *, follow_symlinks=True):
             # XXX What about other special files? (sockets, devices...)
             if stat.S_ISFIFO(st.st_mode):
                 raise SpecialFileError("`%s` is a named pipe" % fn)
+            if _WINDOWS and i == 0:
+                fsize = st.st_size
 
     if not follow_symlinks and os.path.islink(src):
         os.symlink(os.readlink(src), dst)
@@ -230,7 +253,14 @@ def copyfile(src, dst, *, follow_symlinks=True):
                 except _GiveupOnFastCopy:
                     pass
 
-            copyfileobj(fsrc, fdst)
+            if _WINDOWS and fsize >= 128 * 1024 * 1024:
+                # Use alternate memoryview() based implementation on Windows
+                # for files >= 128 MiB. It appears this gives a considerable
+                # speedup, see:
+                # https://github.com/python/cpython/pull/7160#discussion_r195162475
+                _copybinfileobj(fsrc, fdst)
+            else:
+                copyfileobj(fsrc, fdst)
 
     return dst
 
@@ -1124,7 +1154,7 @@ if hasattr(os, 'statvfs'):
         used = (st.f_blocks - st.f_bfree) * st.f_frsize
         return _ntuple_diskusage(total, used, free)
 
-elif os.name == 'nt':
+elif _WINDOWS:
 
     __all__.append('disk_usage')
     _ntuple_diskusage = collections.namedtuple('usage', 'total used free')
