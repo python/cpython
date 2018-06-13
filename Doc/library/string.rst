@@ -257,8 +257,9 @@ attribute using :func:`getattr`, while an expression of the form ``'[index]'``
 does an index lookup using :func:`__getitem__`.
 
 .. versionchanged:: 2.7
-   The positional argument specifiers can be omitted, so ``'{} {}'`` is
-   equivalent to ``'{0} {1}'``.
+   The positional argument specifiers can be omitted for :meth:`str.format` and
+   :meth:`unicode.format`, so ``'{} {}'`` is equivalent to ``'{0} {1}'``,
+   ``u'{} {}'`` is equivalent to ``u'{0} {1}'``.
 
 Some simple format string examples::
 
