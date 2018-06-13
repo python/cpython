@@ -167,6 +167,9 @@ Changes in the Python API
 * The :class:`cProfile.Profile` class can now be used as a context
   manager. (Contributed by Scott Sanderson in :issue:`29235`.)
 
+* :func:`shutil.copyfile` default buffer size on Windows was changed from
+  16 KiB to 1 MiB.
+
 CPython bytecode changes
 ------------------------
 
