@@ -269,6 +269,13 @@ class PlatformTest(unittest.TestCase):
             executable = sys.executable
         res = platform.libc_ver(executable)
 
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, 'wb') as f:
+            f.write(b'x'*(16384-10))
+            f.write(b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0')
+        self.assertEqual(platform.libc_ver(support.TESTFN),
+                         ('glibc', '1.23.4'))
+
     def test_popen(self):
         mswindows = (sys.platform == "win32")
 
