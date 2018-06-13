@@ -105,6 +105,7 @@ Optimizations
   The speedup for copying a 512 MiB file within the same partition is about
   +26% on Linux, +50% on macOS and +40% on Windows. Also, much less CPU cycles
   are consumed.
+  See :ref:`shutil-platform-dependent-efficient-copy-operations` section.
   (Contributed by Giampaolo Rodola' in :issue:`25427`.)
 
 * The default protocol in the :mod:`pickle` module is now Protocol 4,
