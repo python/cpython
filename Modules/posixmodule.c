@@ -5181,7 +5181,7 @@ enum posix_spawn_file_actions_identifier {
 static int
 parse_file_actions(PyObject *file_actions,
                    posix_spawn_file_actions_t *file_actionsp,
-                   PyObject* temp_buffer)
+                   PyObject *temp_buffer)
 #else
     static int
     parse_file_actions(PyObject *file_actions,
@@ -5232,7 +5232,10 @@ parse_file_actions(PyObject *file_actions,
                     goto fail;
                 }
 #if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ < 20))
-                PyList_Append(temp_buffer, path);
+                int error = PyList_Append(temp_buffer, path);
+                if (error) {
+                    goto fail;
+                }
 #endif
                 errno = posix_spawn_file_actions_addopen(file_actionsp,
                         fd, PyBytes_AS_STRING(path), oflag, (mode_t)mode);
