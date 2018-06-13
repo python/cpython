@@ -3,46 +3,58 @@
 After tooltip.py, which uses ideas gleaned from PySol
 Used by the calltips IDLE extension.
 """
-from tkinter import Toplevel, Label, LEFT, SOLID, TclError
+from tkinter import Label, LEFT, SOLID, TclError
+
+from idlelib.tooltip import ToolTipBase
 
 HIDE_VIRTUAL_EVENT_NAME = "<<calltipwindow-hide>>"
 HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")
 CHECKHIDE_VIRTUAL_EVENT_NAME = "<<calltipwindow-checkhide>>"
 CHECKHIDE_SEQUENCES = ("<KeyRelease>", "<ButtonRelease>")
-CHECKHIDE_TIME = 100 # milliseconds
+CHECKHIDE_TIME = 100  # milliseconds
 
 MARK_RIGHT = "calltipwindowregion_right"
 
-class CallTip:
 
-    def __init__(self, widget):
-        self.widget = widget
-        self.tipwindow = self.label = None
-        self.parenline = self.parencol = None
-        self.lastline = None
+class CallTip(ToolTipBase):
+
+    def __init__(self, editor_widget):
+        super(CallTip, self).__init__(editor_widget)
+        self._editor = self.anchor_widget
+        self.label = self.text = None
+        self.parenline = self.parencol = self.lastline = None
         self.hideid = self.checkhideid = None
         self.checkhide_after_id = None
 
-    def position_window(self):
-        """Check if needs to reposition the window, and if so - do it."""
-        curline = int(self.widget.index("insert").split('.')[0])
-        if curline == self.lastline:
-            return
-        self.lastline = curline
-        self.widget.see("insert")
+    def __del__(self):
+        try:
+            self._unbind_events()
+        except TclError:
+            pass
+        super(CallTip, self).__del__()
+
+    def get_position(self):
+        """Choose the position of the calltip"""
+        curline = int(self._editor.index("insert").split('.')[0])
         if curline == self.parenline:
-            box = self.widget.bbox("%d.%d" % (self.parenline,
-                                              self.parencol))
+            box = self._editor.bbox("%d.%d" % (self.parenline, self.parencol))
         else:
-            box = self.widget.bbox("%d.0" % curline)
+            box = self._editor.bbox("%d.0" % curline)
         if not box:
-            box = list(self.widget.bbox("insert"))
+            box = list(self._editor.bbox("insert"))
             # align to left of window
             box[0] = 0
             box[2] = 0
-        x = box[0] + self.widget.winfo_rootx() + 2
-        y = box[1] + box[3] + self.widget.winfo_rooty()
-        self.tipwindow.wm_geometry("+%d+%d" % (x, y))
+        return box[0] + 2, box[1] + box[3]
+
+    def position_window(self):
+        """Check if needs to reposition the window, and if so - do it."""
+        curline = int(self._editor.index("insert").split('.')[0])
+        if curline == self.lastline:
+            return
+        self.lastline = curline
+        self._editor.see("insert")
+        super(CallTip, self).position_window()
 
     def showtip(self, text, parenleft, parenright):
         """Show the calltip, bind events which will close it and reposition it.
@@ -52,37 +64,19 @@ class CallTip:
         if self.tipwindow or not self.text:
             return
 
-        self.widget.mark_set(MARK_RIGHT, parenright)
+        self._editor.mark_set(MARK_RIGHT, parenright)
         self.parenline, self.parencol = map(
-            int, self.widget.index(parenleft).split("."))
+            int, self._editor.index(parenleft).split("."))
 
-        self.tipwindow = tw = Toplevel(self.widget)
-        self.position_window()
-        # remove border on calltip window
-        tw.wm_overrideredirect(1)
-        try:
-            # This command is only needed and available on Tk >= 8.4.0 for OSX
-            # Without it, call tips intrude on the typing process by grabbing
-            # the focus.
-            tw.tk.call("::tk::unsupported::MacWindowStyle", "style", tw._w,
-                       "help", "noActivates")
-        except TclError:
-            pass
-        self.label = Label(tw, text=self.text, justify=LEFT,
+        super(CallTip, self).showtip()
+
+        self._bind_events()
+
+    def showcontents(self):
+        self.label = Label(self.tipwindow, text=self.text, justify=LEFT,
                            background="#ffffe0", relief=SOLID, borderwidth=1,
-                           font = self.widget['font'])
+                           font=self._editor['font'])
         self.label.pack()
-        tw.lift()  # work around bug in Tk 8.5.18+ (issue #24570)
-
-        self.checkhideid = self.widget.bind(CHECKHIDE_VIRTUAL_EVENT_NAME,
-                                            self.checkhide_event)
-        for seq in CHECKHIDE_SEQUENCES:
-            self.widget.event_add(CHECKHIDE_VIRTUAL_EVENT_NAME, seq)
-        self.widget.after(CHECKHIDE_TIME, self.checkhide_event)
-        self.hideid = self.widget.bind(HIDE_VIRTUAL_EVENT_NAME,
-                                       self.hide_event)
-        for seq in HIDE_SEQUENCES:
-            self.widget.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
 
     def checkhide_event(self, event=None):
         if not self.tipwindow:
@@ -90,18 +84,18 @@ class CallTip:
             # this function, the function will be called nevertheless,
             # so do nothing in this case.
             return None
-        curline, curcol = map(int, self.widget.index("insert").split('.'))
+        curline, curcol = map(int, self._editor.index("insert").split('.'))
         if curline < self.parenline or \
            (curline == self.parenline and curcol <= self.parencol) or \
-           self.widget.compare("insert", ">", MARK_RIGHT):
+           self._editor.compare("insert", ">", MARK_RIGHT):
             self.hidetip()
             return "break"
         else:
             self.position_window()
             if self.checkhide_after_id is not None:
-                self.widget.after_cancel(self.checkhide_after_id)
+                self._editor.after_cancel(self.checkhide_after_id)
             self.checkhide_after_id = \
-                self.widget.after(CHECKHIDE_TIME, self.checkhide_event)
+                self._editor.after(CHECKHIDE_TIME, self.checkhide_event)
             return None
 
     def hide_event(self, event):
@@ -115,25 +109,42 @@ class CallTip:
         if not self.tipwindow:
             return
 
-        for seq in CHECKHIDE_SEQUENCES:
-            self.widget.event_delete(CHECKHIDE_VIRTUAL_EVENT_NAME, seq)
-        self.widget.unbind(CHECKHIDE_VIRTUAL_EVENT_NAME, self.checkhideid)
-        self.checkhideid = None
-        for seq in HIDE_SEQUENCES:
-            self.widget.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
-        self.widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideid)
-        self.hideid = None
-
         self.label.destroy()
         self.label = None
-        self.tipwindow.destroy()
-        self.tipwindow = None
 
-        self.widget.mark_unset(MARK_RIGHT)
         self.parenline = self.parencol = self.lastline = None
+        try:
+            self._editor.mark_unset(MARK_RIGHT)
+        except TclError:
+            pass
 
-    def is_active(self):
-        return bool(self.tipwindow)
+        try:
+            self._unbind_events()
+        except TclError:
+            pass
+
+        super(CallTip, self).hidetip()
+
+    def _bind_events(self):
+        self.checkhideid = self._editor.bind(CHECKHIDE_VIRTUAL_EVENT_NAME,
+                                             self.checkhide_event)
+        for seq in CHECKHIDE_SEQUENCES:
+            self._editor.event_add(CHECKHIDE_VIRTUAL_EVENT_NAME, seq)
+        self._editor.after(CHECKHIDE_TIME, self.checkhide_event)
+        self.hideid = self._editor.bind(HIDE_VIRTUAL_EVENT_NAME,
+                                        self.hide_event)
+        for seq in HIDE_SEQUENCES:
+            self._editor.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
+
+    def _unbind_events(self):
+        for seq in CHECKHIDE_SEQUENCES:
+            self._editor.event_delete(CHECKHIDE_VIRTUAL_EVENT_NAME, seq)
+        self._editor.unbind(CHECKHIDE_VIRTUAL_EVENT_NAME, self.checkhideid)
+        self.checkhideid = None
+        for seq in HIDE_SEQUENCES:
+            self._editor.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
+        self._editor.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideid)
+        self.hideid = None
 
 
 def _calltip_window(parent):  # htest #
@@ -147,8 +158,8 @@ def _calltip_window(parent):  # htest #
     text.pack(side=LEFT, fill=BOTH, expand=1)
     text.insert("insert", "string.split")
     top.update()
-    calltip = CallTip(text)
 
+    calltip = CallTip(text)
     def calltip_show(event):
         calltip.showtip("(s=Hello world)", "insert", "end")
     def calltip_hide(event):
@@ -157,7 +168,9 @@ def _calltip_window(parent):  # htest #
     text.event_add("<<calltip-hide>>", ")")
     text.bind("<<calltip-show>>", calltip_show)
     text.bind("<<calltip-hide>>", calltip_hide)
+
     text.focus_set()
+
 
 if __name__=='__main__':
     from idlelib.idle_test.htest import run
