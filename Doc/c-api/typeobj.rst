@@ -1259,8 +1259,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Default:**
 
-   :c:type:`PyBaseObject_Type` provides a :attr:`tp_richcompare`.
-   However, if only :attr:`tp_hash` is defined, not even this is used
+   :c:type:`PyBaseObject_Type` provides a :attr:`tp_richcompare`
+   implementation, which may be inherited.  However, if only
+   :attr:`tp_hash` is defined, not even the inherited function is used
    and instances of the type will not be able to participate in any
    comparisons.
 
