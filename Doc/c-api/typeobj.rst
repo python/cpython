@@ -41,7 +41,7 @@ Quick Reference
    |                                             |                                   | methods/attrs     +---+---+---+---+
    |                                             |                                   |                   | O | T | D | I |
    +=============================================+===================================+===================+===+===+===+===+
-   | \* :c:member:`~PyTypeObject.tp_name`        | const char *                      | __name__          | X | X |   |   |
+   | <R> :c:member:`~PyTypeObject.tp_name`       | const char *                      | __name__          | X | X |   |   |
    +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_basicsize`      | Py_ssize_t                        |                   | X | X |   | X |
    +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -159,7 +159,7 @@ fields exist as well:
    A slot name in parentheses indicates it is (effectively) deprecated.
    Names in angle brackets should be treated as read-only.
    Names in square brackets are for internal use only.
-   An asterisk means the field must be non-*NULL*.
+   "<R>" (as a prefix) means the field is required (must be non-*NULL*).
 .. [#cols] Columns:
 
    **"O"**:  set on :c:type:`PyBaseObject_Type`
