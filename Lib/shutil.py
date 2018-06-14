@@ -239,17 +239,17 @@ def copyfile(src, dst, *, follow_symlinks=True):
         os.symlink(os.readlink(src), dst)
     else:
         with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
-            # Linux / Solaris
-            if _HAS_SENDFILE:
+            # macOS
+            if _HAS_FCOPYFILE:
                 try:
-                    _fastcopy_sendfile(fsrc, fdst)
+                    _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
                     return dst
                 except _GiveupOnFastCopy:
                     pass
-            # macOS
-            elif _HAS_FCOPYFILE:
+            # Linux / Solaris
+            elif _HAS_SENDFILE:
                 try:
-                    _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
+                    _fastcopy_sendfile(fsrc, fdst)
                     return dst
                 except _GiveupOnFastCopy:
                     pass
