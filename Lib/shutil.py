@@ -170,10 +170,7 @@ def _fastcopy_sendfile(fsrc, fdst):
             offset += sent
 
 def _copybinfileobj(fsrc, fdst, length=COPY_BUFSIZE):
-    """Copy 2 regular file objects open in binary mode.
-    This is used on Windows only for files >= 128 MiB as it appears to
-    give a considerable boost.
-    """
+    """readinto()/memoryview() based variant of copyfileobj()."""
     # Localize variable access to minimize overhead.
     fsrc_readinto = fsrc.readinto
     fdst_write = fdst.write
@@ -221,7 +218,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
-    fsize = 0
+    filesize = 0
     for i, fn in enumerate([src, dst]):
         try:
             st = os.stat(fn)
@@ -233,34 +230,35 @@ def copyfile(src, dst, *, follow_symlinks=True):
             if stat.S_ISFIFO(st.st_mode):
                 raise SpecialFileError("`%s` is a named pipe" % fn)
             if _WINDOWS and i == 0:
-                fsize = st.st_size
+                filesize = st.st_size
 
     if not follow_symlinks and os.path.islink(src):
         os.symlink(os.readlink(src), dst)
     else:
         with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
+            # Linux / Solaris
             if _HAS_SENDFILE:
                 try:
                     _fastcopy_sendfile(fsrc, fdst)
                     return dst
                 except _GiveupOnFastCopy:
                     pass
-
-            if _HAS_FCOPYFILE:
+            # macOS
+            elif _HAS_FCOPYFILE:
                 try:
                     _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
                     return dst
                 except _GiveupOnFastCopy:
                     pass
-
-            if _WINDOWS and fsize >= 128 * 1024 * 1024:
-                # Use alternate memoryview() based implementation on Windows
-                # for files >= 128 MiB. It appears this gives a considerable
-                # speedup, see:
-                # https://github.com/python/cpython/pull/7160#discussion_r195162475
+            # Windows: for files >= 128 MiB in size we observe a
+            # considerable speedup by using a readinto()/memoryview()
+            # variant of copyfileobj(), see:
+            # https://github.com/python/cpython/pull/7160#discussion_r195162475
+            elif _WINDOWS and filesize >= 128 * 1024 * 1024:
                 _copybinfileobj(fsrc, fdst)
-            else:
-                copyfileobj(fsrc, fdst)
+                return dst
+
+            copyfileobj(fsrc, fdst)
 
     return dst
 
