@@ -1,8 +1,4 @@
-""" Test idlelib.browser.
-
-Coverage: 88%
-(Higher, because should exclude 3 lines that .coveragerc won't exclude.)
-"""
+"Test browser, coverage 90%."
 
 from collections import deque
 import os.path
