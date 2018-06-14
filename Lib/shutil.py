@@ -169,8 +169,11 @@ def _fastcopy_sendfile(fsrc, fdst):
                 break  # EOF
             offset += sent
 
-def _copybinfileobj(fsrc, fdst, length=COPY_BUFSIZE):
-    """readinto()/memoryview() based variant of copyfileobj()."""
+def _copyfileobj_readinto(fsrc, fdst, length=COPY_BUFSIZE):
+    """readinto()/memoryview() based variant of copyfileobj().
+    *fsrc* must support readinto() method and both files must be
+    open in binary mode.
+    """
     # Localize variable access to minimize overhead.
     fsrc_readinto = fsrc.readinto
     fdst_write = fdst.write
@@ -250,12 +253,10 @@ def copyfile(src, dst, *, follow_symlinks=True):
                     return dst
                 except _GiveupOnFastCopy:
                     pass
-            # Windows: for files >= 128 MiB in size we observe a
-            # considerable speedup by using a readinto()/memoryview()
-            # variant of copyfileobj(), see:
-            # https://github.com/python/cpython/pull/7160#discussion_r195162475
-            elif _WINDOWS and file_size >= 128 * 1024 * 1024:
-                _copybinfileobj(fsrc, fdst)
+            # Windows, see:
+            # https://github.com/python/cpython/pull/7160#discussion_r195405230
+            elif _WINDOWS and file_size > 0:
+                _copyfileobj_readinto(fsrc, fdst, min(file_size, COPY_BUFSIZE))
                 return dst
 
             copyfileobj(fsrc, fdst)

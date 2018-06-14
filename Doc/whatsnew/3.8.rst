@@ -100,9 +100,9 @@ Optimizations
   "fast-copy" means that the copying operation occurs within the kernel,
   avoiding the use of userspace buffers in Python as in
   "``outfd.write(infd.read())``".
-  On Windows :func:`shutil.copyfile` default buffer size was increased
-  from 16 KiB to 1 MiB and a faster implementation of :func:`shutil.copyfileobj`
-  is used for files bigger than 128 MiB.
+  On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
+  instead of 16 KiB) and a :func:`memoryview`-based variant of
+  :func:`shutil.copyfileobj` is used.
   The speedup for copying a 512 MiB file within the same partition is about
   +26% on Linux, +50% on macOS and +40% on Windows. Also, much less CPU cycles
   are consumed.

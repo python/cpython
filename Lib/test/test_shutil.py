@@ -1936,35 +1936,34 @@ class TestCopyFileObj(unittest.TestCase):
             self.assertEqual(dst.tell(), self.FILESIZE)
 
     @unittest.skipIf(os.name != 'nt', "Windows only")
-    def test_alternate_win_impl(self):
-        # On Windows copyfile() uses copyfileobj() for files < 128 MiB,
-        # else an alternate memoryview()-based implementation.
-        def os_stat_mocked(path):
-            # Make shutil believe src file is 128 MiB.
-            if path == TESTFN:
-                mock = unittest.mock.Mock()
-                mock.st_size = 128 * 1024 * 1024
-                mock.st_mode = os.lstat(path).st_mode
-                return mock
-            else:
-                return os.lstat(path)
+    def test_win_impl(self):
+        # Make sure alternate Windows implementation is called.
+        with unittest.mock.patch("shutil._copyfileobj_readinto") as m:
+            shutil.copyfile(TESTFN, TESTFN2)
+        assert m.called
 
-        # Make sure it's not called.
-        with unittest.mock.patch("shutil._copybinfileobj") as m:
-            shutil.copyfile(TESTFN, TESTFN2)
-            assert not m.called
-        # Make sure it's called.
-        with unittest.mock.patch('shutil.os.stat', create=True,
-                                 side_effect=os_stat_mocked) as m1:
-            with unittest.mock.patch("shutil._copybinfileobj") as m2:
-                shutil.copyfile(TESTFN, TESTFN2)
-                assert m1.called
-                assert m2.called
-        # Test it.
-        with unittest.mock.patch('shutil.os.stat', create=True,
-                                 side_effect=os_stat_mocked) as m1:
-            shutil.copyfile(TESTFN, TESTFN2)
-        self.assert_files_eq(TESTFN, TESTFN2)
+        # File size is 2 MiB but max buf size should be 1 MiB.
+        self.assertEqual(m.call_args[0][2], 1 * 1024 * 1024)
+
+        # If file size < 1 MiB memoryview() length must be equal to
+        # the actual file size.
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            f.write(b'foo')
+        fname = f.name
+        self.addCleanup(support.unlink, fname)
+        with unittest.mock.patch("shutil._copyfileobj_readinto") as m:
+            shutil.copyfile(fname, TESTFN2)
+        self.assertEqual(m.call_args[0][2], 3)
+
+        # Empty files should not rely on readinto() variant.
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            pass
+        fname = f.name
+        self.addCleanup(support.unlink, fname)
+        with unittest.mock.patch("shutil._copyfileobj_readinto") as m:
+            shutil.copyfile(fname, TESTFN2)
+        assert not m.called
+        self.assert_files_eq(fname, TESTFN2)
 
 
 class _ZeroCopyFileTest(object):
