@@ -4,12 +4,11 @@ import textwrap
 
 
 def format_duration(seconds):
-    ms, seconds = math.modf(seconds)
-    seconds = math.ceil(seconds)
-    ms = math.ceil(ms * 1e3)
-
+    ms = math.ceil(seconds * 1e3)
+    seconds, ms = divmod(ms, 1000)
     minutes, seconds = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
+
     parts = []
     if hours:
         parts.append('%s hour' % hours)
@@ -17,8 +16,11 @@ def format_duration(seconds):
         parts.append('%s min' % minutes)
     if seconds:
         parts.append('%s sec' % seconds)
-    if ms or (not parts):
+    if ms:
         parts.append('%s ms' % ms)
+    if not parts:
+        return '0 ms'
+
     parts = parts[:2]
     return ' '.join(parts)
 
