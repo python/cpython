@@ -218,7 +218,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
-    filesize = 0
+    file_size = 0
     for i, fn in enumerate([src, dst]):
         try:
             st = os.stat(fn)
@@ -230,7 +230,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
             if stat.S_ISFIFO(st.st_mode):
                 raise SpecialFileError("`%s` is a named pipe" % fn)
             if _WINDOWS and i == 0:
-                filesize = st.st_size
+                file_size = st.st_size
 
     if not follow_symlinks and os.path.islink(src):
         os.symlink(os.readlink(src), dst)
@@ -254,7 +254,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
             # considerable speedup by using a readinto()/memoryview()
             # variant of copyfileobj(), see:
             # https://github.com/python/cpython/pull/7160#discussion_r195162475
-            elif _WINDOWS and filesize >= 128 * 1024 * 1024:
+            elif _WINDOWS and file_size >= 128 * 1024 * 1024:
                 _copybinfileobj(fsrc, fdst)
                 return dst
 
