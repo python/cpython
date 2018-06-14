@@ -1,19 +1,28 @@
 import os.path
+import math
 import textwrap
 
 
 def format_duration(seconds):
-    if seconds < 1.0:
-        return '%.0f ms' % (seconds * 1e3)
-    if seconds < 60.0:
-        return '%.0f sec' % seconds
+    ms = math.ceil(seconds * 1e3)
+    seconds, ms = divmod(ms, 1000)
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
 
-    minutes, seconds = divmod(seconds, 60.0)
-    hours, minutes = divmod(minutes, 60.0)
+    parts = []
     if hours:
-        return '%.0f hour %.0f min' % (hours, minutes)
-    else:
-        return '%.0f min %.0f sec' % (minutes, seconds)
+        parts.append('%s hour' % hours)
+    if minutes:
+        parts.append('%s min' % minutes)
+    if seconds:
+        parts.append('%s sec' % seconds)
+    if ms:
+        parts.append('%s ms' % ms)
+    if not parts:
+        return '0 ms'
+
+    parts = parts[:2]
+    return ' '.join(parts)
 
 
 def removepy(names):
