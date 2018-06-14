@@ -517,7 +517,7 @@ class TestBasic(unittest.TestCase):
         for match in (True, False):
             d = deque(['ab'])
             d.extend([MutateCmp(d, match), 'c'])
-            self.assertRaises((IndexError, RuntimeError), d.remove, 'c')
+            self.assertRaises(RuntimeError, d.remove, 'c')
             self.assertEqual(d, deque())
 
     def test_repr(self):

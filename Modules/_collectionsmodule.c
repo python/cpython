@@ -149,29 +149,21 @@ deque_get_block(dequeobject *deque, Py_ssize_t *index)
     Py_ssize_t i = *index, m = i, n;
     block *b;
 
-    if (i == 0) {
-        *index = deque->leftindex;
+    i += deque->leftindex;
+    n = (Py_ssize_t)((size_t) i / BLOCKLEN);
+    *index = (Py_ssize_t)((size_t) i % BLOCKLEN);
+    if (m < (Py_SIZE(deque) >> 1)) {
         b = deque->leftblock;
-    } else if (i == Py_SIZE(deque) - 1) {
-        *index = deque->rightindex;
-        b = deque->rightblock;
+        while (n--) {
+            b = b->rightlink;
+        }
     } else {
-        i += deque->leftindex;
-        n = (Py_ssize_t)((size_t) i / BLOCKLEN);
-        *index = (Py_ssize_t)((size_t) i % BLOCKLEN);
-        if (m < (Py_SIZE(deque) >> 1)) {
-            b = deque->leftblock;
-            while (n--) {
-                b = b->rightlink;
-            }
-        } else {
-            n = (Py_ssize_t)(
-                    ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
-                    / BLOCKLEN - n);
-            b = deque->rightblock;
-            while (n--) {
-                b = b->leftlink;
-            }
+        n = (Py_ssize_t)(
+                ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
+                / BLOCKLEN - n);
+        b = deque->rightblock;
+        while (n--) {
+            b = b->leftlink;
         }
     }
     return b;
@@ -1081,7 +1073,7 @@ deque_len(dequeobject *deque)
 
 static Py_ssize_t
 _deque_index(dequeobject *deque, PyObject *value,
-                     Py_ssize_t start, Py_ssize_t stop)
+             Py_ssize_t start, Py_ssize_t stop)
 {
     Py_ssize_t n;
     PyObject *item;
@@ -1124,12 +1116,10 @@ _deque_index(dequeobject *deque, PyObject *value,
             return -1;
         }
 
-        do {
-            if (++index == BLOCKLEN) {
-                b = b->rightlink;
-                index = 0;
-            }
-        } while (0);
+        if (++index == BLOCKLEN) {
+            b = b->rightlink;
+            index = 0;
+        }
     }
     PyErr_Format(PyExc_ValueError, "%R is not in deque", value);
     return -1;
@@ -1143,8 +1133,8 @@ deque_index(dequeobject *deque, PyObject *args, Py_ssize_t nargs)
     PyObject *value;
 
     if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index", &value,
-                               _PyEval_SliceIndexNotNone, &start,
-                               _PyEval_SliceIndexNotNone, &stop)) {
+                           _PyEval_SliceIndexNotNone, &start,
+                           _PyEval_SliceIndexNotNone, &stop)) {
         return NULL;
     }
 
