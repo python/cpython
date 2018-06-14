@@ -18,6 +18,9 @@ class Test(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
+    def test_init(self):
+        self.assert
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
