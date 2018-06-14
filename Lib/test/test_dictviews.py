@@ -99,6 +99,7 @@ class DictSetTest(unittest.TestCase):
         self.assertEqual(d1.keys() & set(d2.keys()), {'b'})
         self.assertEqual(d1.keys() & set(d3.keys()), set())
         self.assertEqual(d1.keys() & tuple(d1.keys()), {'a', 'b'})
+        self.assertEqual(d1.keys() & frozenset(d1.keys()), {'a', 'b'})
 
         self.assertEqual(d1.keys() | d1.keys(), {'a', 'b'})
         self.assertEqual(d1.keys() | d2.keys(), {'a', 'b', 'c'})
