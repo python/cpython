@@ -1389,7 +1389,7 @@ mapping.  It is not supported by :meth:`str.encode` (which only produces
 +--------------------+---------+---------------------------+
 | Codec              | Aliases | Purpose                   |
 +====================+=========+===========================+
-| rot_13             | rot13   | Returns the Caesar-cipher |
+| rot_13             | rot13   | Returns the Caesar-cypher |
 |                    |         | encryption of the operand |
 +--------------------+---------+---------------------------+
 
