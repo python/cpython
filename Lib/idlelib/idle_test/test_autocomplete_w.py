@@ -13,12 +13,14 @@ class AutoCompleteWindowTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = Tk()
+        cls.root.withdraw()
         cls.text = Text(cls.root)
         cls.acw = acw.AutoCompleteWindow(cls.text)
 
     @classmethod
     def tearDownClass(cls):
         del cls.text, cls.acw
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
 

@@ -12,11 +12,13 @@ class CallTipTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = Tk()
+        cls.root.withdraw()
         cls.text = Text(cls.root)
         cls.calltip = calltip_w.CallTip(cls.text)
 
     @classmethod
     def tearDownClass(cls):
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.text, cls.root
 
