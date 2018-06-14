@@ -1,7 +1,5 @@
-''' Test autocomplete and autocomple_w
+"Test autocomplete, coverage 57%."
 
-Coverage of autocomple: 56%
-'''
 import unittest
 from test.support import requires
 from tkinter import Tk, Text
