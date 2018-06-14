@@ -1,6 +1,6 @@
 "Test , coverage %."
 
-from idlelib import 
+from idlelib import
 import unittest
 from test.support import requires
 from tkinter import Tk
