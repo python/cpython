@@ -19,6 +19,7 @@ import threading
 import unittest
 from test import libregrtest
 from test import support
+from test.libregrtest import utils
 
 
 Py_DEBUG = hasattr(sys, 'getobjects')
@@ -978,6 +979,30 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=2)
         self.check_executed_tests(output, [testname],
                                   failed=testname, rerun=testname)
+
+
+class TestUtils(unittest.TestCase):
+    def test_format_duration(self):
+        self.assertEqual(utils.format_duration(0),
+                         '0 ms')
+        self.assertEqual(utils.format_duration(1e-9),
+                         '1 ms')
+        self.assertEqual(utils.format_duration(10e-3),
+                         '10 ms')
+        self.assertEqual(utils.format_duration(1.5),
+                         '1 sec 500 ms')
+        self.assertEqual(utils.format_duration(1),
+                         '1 sec')
+        self.assertEqual(utils.format_duration(2 * 60),
+                         '2 min')
+        self.assertEqual(utils.format_duration(2 * 60 + 1),
+                         '2 min 1 sec')
+        self.assertEqual(utils.format_duration(3 * 3600),
+                         '3 hour')
+        self.assertEqual(utils.format_duration(3 * 3600  + 2 * 60 + 1),
+                         '3 hour 2 min')
+        self.assertEqual(utils.format_duration(3 * 3600 + 1),
+                         '3 hour 1 sec')
 
 
 if __name__ == '__main__':
