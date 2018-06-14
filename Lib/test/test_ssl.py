@@ -989,7 +989,7 @@ class ContextTests(unittest.TestCase):
 
 
     def test_load_dh_params(self):
-        filename = u'dhpäräm.pem'
+        filename = 'dhparam.pem'
         fs_encoding = sys.getfilesystemencoding()
         try:
             filename.encode(fs_encoding)
