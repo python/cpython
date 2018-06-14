@@ -1,4 +1,4 @@
-"Test autocomplete_w, coverage %."
+"Test autocomplete_w, coverage 11%."
 
 import unittest
 from test.support import requires
