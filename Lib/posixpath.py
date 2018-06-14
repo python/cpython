@@ -169,7 +169,7 @@ def islink(path):
     """Test whether a path is a symbolic link"""
     try:
         st = os.lstat(path)
-    except (OSError, AttributeError):
+    except (OSError, ValueError, AttributeError):
         return False
     return stat.S_ISLNK(st.st_mode)
 
@@ -179,7 +179,7 @@ def lexists(path):
     """Test whether a path exists.  Returns True for broken symbolic links"""
     try:
         os.lstat(path)
-    except OSError:
+    except (OSError, ValueError):
         return False
     return True
 
@@ -191,7 +191,7 @@ def ismount(path):
     """Test whether a path is a mount point"""
     try:
         s1 = os.lstat(path)
-    except OSError:
+    except (OSError, ValueError):
         # It doesn't exist -- so not a mount point. :-)
         return False
     else:
@@ -206,7 +206,7 @@ def ismount(path):
     parent = realpath(parent)
     try:
         s2 = os.lstat(parent)
-    except OSError:
+    except (OSError, ValueError):
         return False
 
     dev1 = s1.st_dev

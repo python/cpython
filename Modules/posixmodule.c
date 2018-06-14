@@ -3854,22 +3854,32 @@ cleanup:
 /*[clinic input]
 os._isdir
 
-    path: path_t
+    path as arg: object
     /
 
 Return true if the pathname refers to an existing directory.
 [clinic start generated code]*/
 
 static PyObject *
-os__isdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=75f56f32720836cb input=5e0800149c0ad95f]*/
+os__isdir(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=404f334d85d4bf25 input=36cb6785874d479e]*/
 {
     DWORD attributes;
+    path_t path = PATH_T_INITIALIZE("_isdir", "path", 0, 0);
+
+    if (!path_converter(arg, &path)) {
+        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+            PyErr_Clear();
+            Py_RETURN_FALSE;
+        }
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
-    attributes = GetFileAttributesW(path->wide);
+    attributes = GetFileAttributesW(path.wide);
     Py_END_ALLOW_THREADS
 
+    path_cleanup(&path);
     if (attributes == INVALID_FILE_ATTRIBUTES)
         Py_RETURN_FALSE;
 

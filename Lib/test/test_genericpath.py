@@ -138,9 +138,19 @@ class GenericTest:
         self.assertIs(self.pathmodule.exists(filename), True)
         self.assertIs(self.pathmodule.exists(bfilename), True)
 
+        self.assertIs(self.pathmodule.exists(filename + '\udfff'), False)
+        self.assertIs(self.pathmodule.exists(bfilename + b'\xff'), False)
+        self.assertIs(self.pathmodule.exists(filename + '\x00'), False)
+        self.assertIs(self.pathmodule.exists(bfilename + b'\x00'), False)
+
         if self.pathmodule is not genericpath:
             self.assertIs(self.pathmodule.lexists(filename), True)
             self.assertIs(self.pathmodule.lexists(bfilename), True)
+
+            self.assertIs(self.pathmodule.lexists(filename + '\udfff'), False)
+            self.assertIs(self.pathmodule.lexists(bfilename + b'\xff'), False)
+            self.assertIs(self.pathmodule.lexists(filename + '\x00'), False)
+            self.assertIs(self.pathmodule.lexists(bfilename + b'\x00'), False)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_exists_fd(self):
@@ -157,6 +167,11 @@ class GenericTest:
         bfilename = os.fsencode(filename)
         self.assertIs(self.pathmodule.isdir(filename), False)
         self.assertIs(self.pathmodule.isdir(bfilename), False)
+
+        self.assertIs(self.pathmodule.isdir(filename + '\udfff'), False)
+        self.assertIs(self.pathmodule.isdir(bfilename + b'\xff'), False)
+        self.assertIs(self.pathmodule.isdir(filename + '\x00'), False)
+        self.assertIs(self.pathmodule.isdir(bfilename + b'\x00'), False)
 
         try:
             create_file(filename)
@@ -177,6 +192,11 @@ class GenericTest:
         bfilename = os.fsencode(filename)
         self.assertIs(self.pathmodule.isfile(filename), False)
         self.assertIs(self.pathmodule.isfile(bfilename), False)
+
+        self.assertIs(self.pathmodule.isfile(filename + '\udfff'), False)
+        self.assertIs(self.pathmodule.isfile(bfilename + b'\xff'), False)
+        self.assertIs(self.pathmodule.isfile(filename + '\x00'), False)
+        self.assertIs(self.pathmodule.isfile(bfilename + b'\x00'), False)
 
         try:
             create_file(filename)
@@ -294,22 +314,24 @@ class TestGenericTest(GenericTest, unittest.TestCase):
     def test_invalid_paths(self):
         for attr in GenericTest.common_attributes:
             # os.path.commonprefix doesn't raise ValueError
-            if attr == 'commonprefix':
+            if attr in 'commonprefix':
                 continue
             func = getattr(self.pathmodule, attr)
             with self.subTest(attr=attr):
-                try:
+                if attr in ('exists', 'isdir', 'isfile'):
                     func('/tmp\udfffabcds')
-                except (OSError, UnicodeEncodeError):
-                    pass
-                try:
                     func(b'/tmp\xffabcds')
-                except (OSError, UnicodeDecodeError):
-                    pass
-                with self.assertRaisesRegex(ValueError, 'embedded null'):
                     func('/tmp\x00abcds')
-                with self.assertRaisesRegex(ValueError, 'embedded null'):
                     func(b'/tmp\x00abcds')
+                else:
+                    with self.assertRaises((OSError, UnicodeEncodeError)):
+                        func('/tmp\udfffabcds')
+                    with self.assertRaises((OSError, UnicodeDecodeError)):
+                        func(b'/tmp\xffabcds')
+                    with self.assertRaisesRegex(ValueError, 'embedded null'):
+                        func('/tmp\x00abcds')
+                    with self.assertRaisesRegex(ValueError, 'embedded null'):
+                        func(b'/tmp\x00abcds')
 
 # Following TestCase is not supposed to be run from test_genericpath.
 # It is inherited by other test modules (macpath, ntpath, posixpath).

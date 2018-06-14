@@ -1,0 +1,7 @@
+:mod:`os.path` functions that return the boolean result like
+:func:`~os.path.exists`, :func:`~os.path.lexists`, :func:`~os.path.isdir`,
+:func:`~os.path.isfile`, :func:`~os.path.islink`, and
+:func:`~os.path.ismount` now return ``False`` instead of raising
+:exc:`ValueError` or its subclasses :exc:`UnicodeEncodeError` and
+:exc:`UnicodeDecodeError` for paths that contain characters or bytes
+unrepresntative at the OS level.
