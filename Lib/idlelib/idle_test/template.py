@@ -4,7 +4,7 @@ import unittest
 from test.support import requires
 from tkinter import Tk
 
-import
+import idlelib.
 
 class Test(unittest.TestCase):
 
