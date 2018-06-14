@@ -1,9 +1,12 @@
+"Test calltips, coverage 60%"
+
 import unittest
 import idlelib.calltips as ct
 import textwrap
 import types
 
 default_tip = ct._default_callable_argspec
+
 
 # Test Class TC is used in multiple get_argspec test methods
 class TC():
@@ -31,9 +34,11 @@ class TC():
     @staticmethod
     def sm(b): 'doc'
 
-tc = TC()
 
+tc = TC()
 signature = ct.get_argspec  # 2.7 and 3.x use different functions
+
+
 class Get_signatureTest(unittest.TestCase):
     # The signature function must return a string, even if blank.
     # Test a variety of objects to be sure that none cause it to raise
@@ -198,5 +203,6 @@ class Get_entityTest(unittest.TestCase):
     def test_good_entity(self):
         self.assertIs(ct.get_entity('int'), int)
 
+
 if __name__ == '__main__':
-    unittest.main(verbosity=2, exit=False)
+    unittest.main(verbosity=2)
