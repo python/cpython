@@ -1,9 +1,9 @@
 "Test autoexpand, coverage 100%."
 
+from idlelib.autoexpand import AutoExpand
 import unittest
 from test.support import requires
 from tkinter import Text, Tk
-from idlelib.autoexpand import AutoExpand
 
 
 class Dummy_Editwin:

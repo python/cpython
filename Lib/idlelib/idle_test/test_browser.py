@@ -1,16 +1,16 @@
 "Test browser, coverage 90%."
 
-from collections import deque
-import os.path
-import pyclbr
-from tkinter import Tk
-
+from idlelib import browser
 from test.support import requires
 import unittest
 from unittest import mock
 from idlelib.idle_test.mock_idle import Func
 
-from idlelib import browser
+from collections import deque
+import os.path
+import pyclbr
+from tkinter import Tk
+
 from idlelib import filelist
 from idlelib.tree import TreeNode
 
