@@ -9,9 +9,6 @@ import idlelib.autocomplete_w as acw
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Event
 
-class AutoCompleteWindow:
-    def complete():
-        return
 
 class DummyEditwin:
     def __init__(self, root, text):
