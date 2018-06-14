@@ -987,15 +987,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaisesRegexp(ssl.SSLError, "not enough data"):
             ctx.load_verify_locations(cadata=b"broken")
 
-
     def test_load_dh_params(self):
-        filename = 'dhparam.pem'
-        fs_encoding = sys.getfilesystemencoding()
-        try:
-            filename.encode(fs_encoding)
-        except UnicodeEncodeError:
-            self.skipTest("filename %r cannot be encoded to the filesystem encoding %r" % (filename, fs_encoding))
-
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.load_dh_params(DHFILE)
         if os.name != 'nt':
@@ -1007,6 +999,14 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaises(ssl.SSLError) as cm:
             ctx.load_dh_params(CERTFILE)
+
+    def test_non_ascii_path(self):
+        filename = u'dhpäräm.pem'
+        fs_encoding = sys.getfilesystemencoding()
+        try:
+            filename.encode(fs_encoding)
+        except UnicodeEncodeError:
+            self.skipTest("filename %r cannot be encoded to the filesystem encoding %r" % (filename, fs_encoding))
         with support.temp_dir() as d:
             fname = os.path.join(d, filename)
             shutil.copy(DHFILE, fname)
