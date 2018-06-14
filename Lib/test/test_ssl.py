@@ -2466,7 +2466,7 @@ def server_params_test(client_context, server_context, indata=b"FOO\n",
                         sys.stdout.write(
                             " client:  sending %r...\n" % indata)
                 s.write(arg)
-                outdata = s.read()
+                outdata = s.read() if len(arg) > 0 else b''
                 if connectionchatty:
                     if support.verbose:
                         sys.stdout.write(" client:  read %r\n" % outdata)
@@ -2575,6 +2575,14 @@ class ThreadedTests(unittest.TestCase):
         with self.subTest(client=ssl.PROTOCOL_TLS_CLIENT, server=ssl.PROTOCOL_TLS_SERVER):
             server_params_test(client_context=client_context,
                                server_context=server_context,
+                               chatty=True, connectionchatty=True,
+                               sni_name=hostname)
+
+        ## Testing that SSLSopcet can handle empty input
+        with self.subTest(client=ssl.PROTOCOL_TLS_CLIENT, server=ssl.PROTOCOL_TLS_SERVER):
+            server_params_test(client_context=client_context,
+                               server_context=server_context,
+                               indata = b'',
                                chatty=True, connectionchatty=True,
                                sni_name=hostname)
 
