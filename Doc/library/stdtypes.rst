@@ -1129,7 +1129,7 @@ Lists
 
 Lists are mutable sequences, typically used to store collections of
 homogeneous items (where the precise degree of similarity will vary by
-application).
+application).  List elements are accessed with a O(1).
 
 .. class:: list([iterable])
 
