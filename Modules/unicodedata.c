@@ -674,9 +674,9 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
           i+=2;
           if (i < end &&
               TBase < *i && *i < (TBase+TCount)) {
-              code += *i-TBase;
               /* check T character is a modern trailing consonant
                  (0x11A8 ~ 0x11C2). */
+              code += *i-TBase;
               i++;
           }
           *o++ = code;
