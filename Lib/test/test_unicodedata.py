@@ -206,12 +206,12 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     def test_issue29456(self):
         # Fix #29456
-        u1176_str_a = '\u1100\u1176\u11a8'
-        u1176_str_b = '\u1100\u1176\u11a8'
-        u11a7_str_a = '\u1100\u1175\u11a7'
-        u11a7_str_b = '\uae30\u11a7'
-        u11c3_str_a = '\u1100\u1175\u11c3'
-        u11c3_str_b = '\uae30\u11c3'
+        u1176_str_a = u'\u1100\u1176\u11a8'
+        u1176_str_b = u'\u1100\u1176\u11a8'
+        u11a7_str_a = u'\u1100\u1175\u11a7'
+        u11a7_str_b = u'\uae30\u11a7'
+        u11c3_str_a = u'\u1100\u1175\u11c3'
+        u11c3_str_b = u'\uae30\u11c3'
         self.assertEqual(self.db.normalize('NFC', u1176_str_a), u1176_str_b)
         self.assertEqual(self.db.normalize('NFC', u11a7_str_a), u11a7_str_b)
         self.assertEqual(self.db.normalize('NFC', u11c3_str_a), u11c3_str_b)
