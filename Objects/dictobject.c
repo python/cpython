@@ -3962,10 +3962,9 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
         }
     }
 
-    /* at this point, one of two things should be true
-       1. self and other are both dictviews and self is bigger
-          than other
-       2. self is a dictview and other is not a dictview */
+    /* at this point, two things should be true
+       1. self is a dictview
+       2. if other is a dictview then it is smaller than self */
     result = PySet_New(NULL);
     if (result == NULL)
         return NULL;
