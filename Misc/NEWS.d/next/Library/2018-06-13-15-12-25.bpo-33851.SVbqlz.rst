@@ -1,0 +1,1 @@
+Fix :func:`ast.get_docstring` for a node that lacks a docstring.
