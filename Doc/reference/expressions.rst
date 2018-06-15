@@ -777,7 +777,7 @@ whose value is one of the keys of the mapping, and the subscription selects the
 value in the mapping that corresponds to that key.  (The expression list is a
 tuple except if it has exactly one item.)
 
-If the primary is a sequence, the expression (list) must evaluate to an integer
+If the primary is a sequence, the expression list must evaluate to an integer
 or a slice (as discussed in the following section).
 
 The formal syntax makes no special provision for negative indices in
