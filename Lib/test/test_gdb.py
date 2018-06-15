@@ -168,7 +168,11 @@ class DebuggerTests(unittest.TestCase):
             commands += ['set print entry-values no']
 
         if cmds_after_breakpoint:
-            commands += cmds_after_breakpoint
+            # bpo-32962: When Python is compiled with -mcet -fcf-protection,
+            # arguments are unusable before running the first instruction
+            # of the function entry point. The 'next' command makes the
+            # required first step.
+            commands += ['next'] + cmds_after_breakpoint
         else:
             commands += ['backtrace']
 
@@ -859,9 +863,12 @@ id(42)
             id("first break point")
             l = MyList()
         ''')
+        # bpo-32962: same case as in get_stack_trace():
+        # we need an additional 'next' command in order to read
+        # arguments of the innermost function of the call stack.
         # Verify with "py-bt":
         gdb_output = self.get_stack_trace(cmd,
-                                          cmds_after_breakpoint=['break wrapper_call', 'continue', 'py-bt'])
+                                          cmds_after_breakpoint=['break wrapper_call', 'continue', 'next', 'py-bt'])
         self.assertRegex(gdb_output,
                          r"<method-wrapper u?'__init__' of MyList object at ")
 
