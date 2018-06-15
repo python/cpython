@@ -1,1 +1,0 @@
-Fixed test_gdb when Python is compiled with flags -mcet -fcf-protection -O0.
