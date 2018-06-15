@@ -5,7 +5,7 @@ import unittest
 
 
 class ObjectTreeItemTest(unittest.TestCase):
-    
+
     def test_init(self):
         ti = debugobj.ObjectTreeItem('label', 22)
         self.assertEqual(ti.labeltext, 'label')
