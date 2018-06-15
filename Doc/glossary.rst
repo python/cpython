@@ -378,6 +378,11 @@ Glossary
       division.  Note that ``(-11) // 4`` is ``-3`` because that is ``-2.75``
       rounded *downward*. See :pep:`238`.
 
+   frozen set
+      An :term:`immutable` built-in :term:`set` type.
+
+      See :ref:`types-set`, and :pep:`218`, which introduced frozen sets.
+
    function
       A series of statements which returns some value to a caller. It can also
       be passed zero or more :term:`arguments <argument>` which may be used in
@@ -643,6 +648,8 @@ Glossary
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
       elements are O(1).
+
+      See :ref:`typesseq`.
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and
@@ -988,6 +995,16 @@ Glossary
       interface can be registered explicitly using
       :func:`~abc.register`.
 
+   set
+      An unordered collection of distinct :term:`hashable` objects that eases
+      duplicate removal and computation of mathematical operations such as
+      intersection and difference.
+
+      Python provides two built-in set types: set (a :term:`mutable` type), and
+      frozen set (an :term:`immutable` type).
+
+      See :ref:`types-set`, and :pep:`218`, which introduced sets.
+
    single dispatch
       A form of :term:`generic function` dispatch where the implementation is
       chosen based on the type of a single argument.
@@ -1039,6 +1056,11 @@ Glossary
       quotes within a string and they can span multiple lines without the
       use of the continuation character, making them especially useful when
       writing docstrings.
+
+   tuple
+      An :term:`immutable` built-in :term:`sequence`.
+
+      See :ref:`typesseq`.
 
    type
       The type of a Python object determines what kind of object it is; every
