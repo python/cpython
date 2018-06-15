@@ -1,20 +1,16 @@
-""" Test idlelib.browser.
+"Test browser, coverage 90%."
 
-Coverage: 88%
-(Higher, because should exclude 3 lines that .coveragerc won't exclude.)
-"""
+from idlelib import browser
+from test.support import requires
+import unittest
+from unittest import mock
+from idlelib.idle_test.mock_idle import Func
 
 from collections import deque
 import os.path
 import pyclbr
 from tkinter import Tk
 
-from test.support import requires
-import unittest
-from unittest import mock
-from idlelib.idle_test.mock_idle import Func
-
-from idlelib import browser
 from idlelib import filelist
 from idlelib.tree import TreeNode
 

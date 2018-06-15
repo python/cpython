@@ -1,9 +1,9 @@
-'''Test idlelib.config.
-
-Coverage: 96% (100% for IdleConfParser, IdleUserConfParser*, ConfigChanges).
+"""Test config, coverage 93%.
+(100% for IdleConfParser, IdleUserConfParser*, ConfigChanges).
 * Exception is OSError clause in Save method.
 Much of IdleConf is also exercised by ConfigDialog and test_configdialog.
-'''
+"""
+from idlelib import config
 import copy
 import sys
 import os
@@ -12,7 +12,6 @@ from test.support import captured_stderr, findfile
 import unittest
 from unittest import mock
 import idlelib
-from idlelib import config
 from idlelib.idle_test.mock_idle import Func
 
 # Tests should not depend on fortuitous user configurations.

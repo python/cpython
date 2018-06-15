@@ -1,10 +1,6 @@
-'''Test idlelib/colorizer.py
+"Test colorizer, coverage 25%."
 
-Perform minimal sanity checks that module imports and some things run.
-
-Coverage 22%.
-'''
-from idlelib import colorizer  # always test import
+from idlelib import colorizer
 from test.support import requires
 from tkinter import Tk, Text
 import unittest
@@ -35,6 +31,7 @@ class ColorConfigTest(unittest.TestCase):
 
     def test_colorizer(self):
         colorizer.color_config(self.text)
+
 
 class ColorDelegatorTest(unittest.TestCase):
 

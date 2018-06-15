@@ -159,6 +159,9 @@ def _calltip_window(parent):  # htest #
     text.bind("<<calltip-hide>>", calltip_hide)
     text.focus_set()
 
-if __name__=='__main__':
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_calltips', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_calltip_window)
