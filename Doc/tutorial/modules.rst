@@ -128,7 +128,7 @@ Executing modules as scripts
 
 When you run a Python module with ::
 
-   python fibo.py <arguments>
+   python3 fibo.py <arguments>
 
 the code in the module will be executed, just as if you imported it, but with
 the ``__name__`` set to ``"__main__"``.  That means that by adding this code at
@@ -144,7 +144,7 @@ executed as the "main" file:
 
 .. code-block:: shell-session
 
-   $ python fibo.py 50
+   $ python3 fibo.py 50
    1 1 2 3 5 8 13 21 34
 
 If the module is imported, the code is not run::
