@@ -2015,6 +2015,7 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
         Py_IgnoreEnvironmentFlag = init_ignore_env;
         _PyCoreConfig_Clear(&pymain->config);
         pymain_clear_cmdline(pymain, cmdline);
+        memset(cmdline, 0, sizeof(*cmdline));
         pymain_get_global_config(pymain, cmdline);
 
         /* The encoding changed: read again the configuration
