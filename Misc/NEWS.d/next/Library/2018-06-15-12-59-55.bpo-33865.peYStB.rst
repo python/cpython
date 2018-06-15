@@ -1,0 +1,1 @@
+Add aliases for encodings. Patch by Karthikeyan Singaravelan.
