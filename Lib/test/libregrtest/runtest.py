@@ -98,6 +98,13 @@ def runtest(ns, test):
 
     output_on_failure = ns.verbose3
 
+    if ns.huntrleaks:
+        warmup, repetitions, _ = ns.huntrleaks
+        if warmup < 3:
+            msg = ("WARNING: Using less than 3 warmup repetitions can "
+                   "give false positives!")
+            print(msg, file=sys.stdout, flush=True)
+
     use_timeout = (ns.timeout is not None)
     if use_timeout:
         faulthandler.dump_traceback_later(ns.timeout, exit=True)
