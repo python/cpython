@@ -51,8 +51,7 @@ def run(main, *, debug=False):
 
 
 def _cancel_all_tasks(loop):
-    to_cancel = [task for task in tasks.all_tasks(loop)
-                 if not task.done()]
+    to_cancel = tasks.all_tasks(loop)
     if not to_cancel:
         return
 

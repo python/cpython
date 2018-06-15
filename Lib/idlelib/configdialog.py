@@ -373,11 +373,12 @@ class ConfigDialog(Toplevel):
                             ).grid(row=row, column=1, sticky=W, padx=7)
             elif opt['type'] == 'int':
                 Entry(entry_area, textvariable=var, validate='key',
-                      validatecommand=(self.is_int, '%P')
+                      validatecommand=(self.is_int, '%P'), width=10
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
 
-            else:
-                Entry(entry_area, textvariable=var
+            else:  # type == 'str'
+                # Limit size to fit non-expanding space with larger font.
+                Entry(entry_area, textvariable=var, width=15
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
         return
 
@@ -799,19 +800,20 @@ class HighPage(Frame):
         """
         self.theme_elements = {
             'Normal Text': ('normal', '00'),
-            'Python Keywords': ('keyword', '01'),
-            'Python Definitions': ('definition', '02'),
-            'Python Builtins': ('builtin', '03'),
-            'Python Comments': ('comment', '04'),
-            'Python Strings': ('string', '05'),
-            'Selected Text': ('hilite', '06'),
-            'Found Text': ('hit', '07'),
-            'Cursor': ('cursor', '08'),
-            'Editor Breakpoint': ('break', '09'),
-            'Shell Normal Text': ('console', '10'),
-            'Shell Error Text': ('error', '11'),
-            'Shell Stdout Text': ('stdout', '12'),
-            'Shell Stderr Text': ('stderr', '13'),
+            'Code Context': ('context', '01'),
+            'Python Keywords': ('keyword', '02'),
+            'Python Definitions': ('definition', '03'),
+            'Python Builtins': ('builtin', '04'),
+            'Python Comments': ('comment', '05'),
+            'Python Strings': ('string', '06'),
+            'Selected Text': ('hilite', '07'),
+            'Found Text': ('hit', '08'),
+            'Cursor': ('cursor', '09'),
+            'Editor Breakpoint': ('break', '10'),
+            'Shell Normal Text': ('console', '11'),
+            'Shell Error Text': ('error', '12'),
+            'Shell Stdout Text': ('stdout', '13'),
+            'Shell Stderr Text': ('stderr', '14'),
             }
         self.builtin_name = tracers.add(
                 StringVar(self), self.var_changed_builtin_name)
@@ -842,6 +844,7 @@ class HighPage(Frame):
             ('\n', 'normal'),
             ('#you can click here', 'comment'), ('\n', 'normal'),
             ('#to choose items', 'comment'), ('\n', 'normal'),
+            ('code context section', 'context'), ('\n\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
             ('func', 'definition'), ('(param):\n  ', 'normal'),
             ('"""string"""', 'string'), ('\n  var0 = ', 'normal'),
@@ -1843,7 +1846,7 @@ class GenPage(Frame):
         self.format_width = tracers.add(
                 StringVar(self), ('extensions', 'FormatParagraph', 'max-width'))
         self.context_lines = tracers.add(
-                StringVar(self), ('extensions', 'CodeContext', 'numlines'))
+                StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
 
         # Create widgets:
         # Section frames.
@@ -1910,7 +1913,7 @@ class GenPage(Frame):
                 frame_format, textvariable=self.format_width, width=4)
 
         frame_context = Frame(frame_editor, borderwidth=0)
-        context_title = Label(frame_context, text='Context Lines :')
+        context_title = Label(frame_context, text='Max Context Lines :')
         self.context_int = Entry(
                 frame_context, textvariable=self.context_lines, width=3)
 
@@ -2012,7 +2015,7 @@ class GenPage(Frame):
         self.format_width.set(idleConf.GetOption(
                 'extensions', 'FormatParagraph', 'max-width', type='int'))
         self.context_lines.set(idleConf.GetOption(
-                'extensions', 'CodeContext', 'numlines', type='int'))
+                'extensions', 'CodeContext', 'maxlines', type='int'))
 
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
@@ -2204,6 +2207,9 @@ ParenMatch: Style indicates what is highlighted when closer is entered:
 'opener' - opener '({[' corresponding to closer; 'parens' - both chars;
 'expression' (default) - also everything in between.  Flash-delay is how
 long to highlight if cursor is not moved (0 means forever).
+
+CodeContext: Maxlines is the maximum number of code context lines to
+display when Code Context is turned on for an editor window.
 '''
 }
 

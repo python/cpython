@@ -130,8 +130,8 @@ but will not be included in any bugfix releases of
 Python because they break backward compatibility.
 
 
-.. _defusedxml: https://pypi.python.org/pypi/defusedxml/
-.. _defusedexpat: https://pypi.python.org/pypi/defusedexpat/
+.. _defusedxml: https://pypi.org/project/defusedxml/
+.. _defusedexpat: https://pypi.org/project/defusedexpat/
 .. _Billion Laughs: https://en.wikipedia.org/wiki/Billion_laughs
 .. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
 .. _DTD: https://en.wikipedia.org/wiki/Document_type_definition

@@ -11,7 +11,7 @@ module _asyncio
 /* identifiers used from some functions */
 _Py_IDENTIFIER(__asyncio_running_event_loop__);
 _Py_IDENTIFIER(add_done_callback);
-_Py_IDENTIFIER(all_tasks);
+_Py_IDENTIFIER(_all_tasks_compat);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
 _Py_IDENTIFIER(current_task);
@@ -201,6 +201,7 @@ get_future_loop(PyObject *fut)
 
     _Py_IDENTIFIER(get_loop);
     _Py_IDENTIFIER(_loop);
+    PyObject *getloop;
 
     if (Future_CheckExact(fut) || Task_CheckExact(fut)) {
         PyObject *loop = ((FutureObj *)fut)->fut_loop;
@@ -208,14 +209,15 @@ get_future_loop(PyObject *fut)
         return loop;
     }
 
-    PyObject *getloop = _PyObject_GetAttrId(fut, &PyId_get_loop);
+    if (_PyObject_LookupAttrId(fut, &PyId_get_loop, &getloop) < 0) {
+        return NULL;
+    }
     if (getloop != NULL) {
         PyObject *res = _PyObject_CallNoArg(getloop);
         Py_DECREF(getloop);
         return res;
     }
 
-    PyErr_Clear();
     return _PyObject_GetAttrId(fut, &PyId__loop);
 }
 
@@ -499,7 +501,13 @@ future_init(FutureObj *fut, PyObject *loop)
     if (is_true < 0) {
         return -1;
     }
-    if (is_true) {
+    if (is_true && !_Py_IsFinalizing()) {
+        /* Only try to capture the traceback if the interpreter is not being
+           finalized.  The original motivation to add a `_Py_IsFinalizing()`
+           call was to prevent SIGSEGV when a Future is created in a __del__
+           method, which is called during the interpreter shutdown and the
+           traceback module is already unloaded.
+        */
         fut->fut_source_tb = _PyObject_CallNoArg(traceback_extract_stack);
         if (fut->fut_source_tb == NULL) {
             return -1;
@@ -1877,17 +1885,19 @@ enter_task(PyObject *loop, PyObject *task)
     }
     item = _PyDict_GetItem_KnownHash(current_tasks, loop, hash);
     if (item != NULL) {
+        Py_INCREF(item);
         PyErr_Format(
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
             "task %R is being executed.",
             task, item, NULL);
+        Py_DECREF(item);
         return -1;
     }
-    if (_PyDict_SetItem_KnownHash(current_tasks, loop, task, hash) < 0) {
+    if (PyErr_Occurred()) {
         return -1;
     }
-    return 0;
+    return _PyDict_SetItem_KnownHash(current_tasks, loop, task, hash);
 }
 
 
@@ -2075,6 +2085,7 @@ _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
     if (loop == Py_None) {
         loop = get_event_loop();
         if (loop == NULL) {
+            Py_DECREF(current_task_func);
             return NULL;
         }
         ret = PyObject_CallFunctionObjArgs(current_task_func, loop, NULL);
@@ -2107,15 +2118,15 @@ _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
     PyObject *res;
     PyObject *all_tasks_func;
 
-    all_tasks_func = _PyObject_GetAttrId(asyncio_mod, &PyId_all_tasks);
-    if (all_tasks_func == NULL) {
-        return NULL;
-    }
-
     if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
                      "Task.all_tasks() is deprecated, " \
                      "use asyncio.all_tasks() instead",
                      1) < 0) {
+        return NULL;
+    }
+
+    all_tasks_func = _PyObject_GetAttrId(asyncio_mod, &PyId__all_tasks_compat);
+    if (all_tasks_func == NULL) {
         return NULL;
     }
 
@@ -2723,6 +2734,7 @@ set_exception:
                 PyObject *add_cb = _PyObject_GetAttrId(
                     result, &PyId_add_done_callback);
                 if (add_cb == NULL) {
+                    Py_DECREF(wrapper);
                     goto fail;
                 }
                 PyObject *stack[2];
@@ -2788,19 +2800,19 @@ set_exception:
     }
     if (res == 1) {
         /* `result` is a generator */
-        PyObject *ret;
-        ret = task_set_error_soon(
+        o = task_set_error_soon(
             task, PyExc_RuntimeError,
             "yield was used instead of yield from for "
-            "generator in task %R with %S", task, result);
+            "generator in task %R with %R", task, result);
         Py_DECREF(result);
-        return ret;
+        return o;
     }
 
     /* The `result` is none of the above */
-    Py_DECREF(result);
-    return task_set_error_soon(
+    o = task_set_error_soon(
         task, PyExc_RuntimeError, "Task got bad yield: %R", result);
+    Py_DECREF(result);
+    return o;
 
 self_await:
     o = task_set_error_soon(

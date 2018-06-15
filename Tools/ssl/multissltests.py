@@ -45,16 +45,16 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.0.2n",
-    "1.1.0g",
-    "1.1.1-pre1",
+    "1.0.2o",
+    "1.1.0h",
+    # "1.1.1-pre7",
 ]
 
 LIBRESSL_OLD_VERSIONS = [
 ]
 
 LIBRESSL_RECENT_VERSIONS = [
-    "2.7.1",
+    "2.7.3",
 ]
 
 # store files in ../multissl
@@ -73,7 +73,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '--debug',
     action='store_true',
-    help="Enable debug mode",
+    help="Enable debug logging",
 )
 parser.add_argument(
     '--disable-ancient',
@@ -125,6 +125,23 @@ parser.add_argument(
         "all and runs the test suite."
     )
 )
+parser.add_argument(
+    '--system',
+    default='',
+    help="Override the automatic system type detection."
+)
+parser.add_argument(
+    '--force',
+    action='store_true',
+    dest='force',
+    help="Force build and installation."
+)
+parser.add_argument(
+    '--keep-sources',
+    action='store_true',
+    dest='keep_sources',
+    help="Keep original sources for debugging."
+)
 
 
 class AbstractBuilder(object):
@@ -152,6 +169,7 @@ class AbstractBuilder(object):
         # build directory (removed after install)
         self.build_dir = os.path.join(
             self.src_dir, self.build_template.format(version))
+        self.system = args.system
 
     def __str__(self):
         return "<{0.__class__.__name__} for {0.version}>".format(self)
@@ -254,22 +272,31 @@ class AbstractBuilder(object):
         """Now build openssl"""
         log.info("Running build in {}".format(self.build_dir))
         cwd = self.build_dir
-        cmd = ["./config", "shared", "--prefix={}".format(self.install_dir)]
-        self._subprocess_call(cmd, cwd=cwd)
+        cmd = [
+            "./config",
+            "shared", "--debug",
+            "--prefix={}".format(self.install_dir)
+        ]
+        env = os.environ.copy()
+        # set rpath
+        env["LD_RUN_PATH"] = self.lib_dir
+        if self.system:
+            env['SYSTEM'] = self.system
+        self._subprocess_call(cmd, cwd=cwd, env=env)
         # Old OpenSSL versions do not support parallel builds.
-        self._subprocess_call(["make", "-j1"], cwd=cwd)
+        self._subprocess_call(["make", "-j1"], cwd=cwd, env=env)
 
-    def _make_install(self, remove=True):
+    def _make_install(self):
         self._subprocess_call(
             ["make", "-j1", self.install_target],
             cwd=self.build_dir
         )
-        if remove:
+        if not self.args.keep_sources:
             shutil.rmtree(self.build_dir)
 
     def install(self):
         log.info(self.openssl_cli)
-        if not self.has_openssl:
+        if not self.has_openssl or self.args.force:
             if not self.has_src:
                 self._download_src()
             else:

@@ -1,0 +1,2 @@
+python-gdb now catchs ValueError on read_var(): when Python has no debug
+symbols for example.

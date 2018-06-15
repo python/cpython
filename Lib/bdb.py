@@ -257,7 +257,7 @@ class Bdb:
         pass
 
     def user_line(self, frame):
-        """Called when when we stop or break at a line."""
+        """Called when we stop or break at a line."""
         pass
 
     def user_return(self, frame, return_value):
