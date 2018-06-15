@@ -3932,13 +3932,12 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     int rv;
     int (*dict_contains)(_PyDictViewObject *, PyObject *);
 
-
     /* Python interpreter swaps parameters when dict view
        is on right side of & */
     if (!PyDictViewSet_Check(self)) {
-        PyObject *tmp = other;
-        other = self;
-        self = tmp;
+        _Py_IDENTIFIER(intersection);
+
+        return _PyObject_CallMethodIdObjArgs(self, &PyId_intersection, other, NULL);
     }
 
     len_self = dictview_len((_PyDictViewObject *)self);
@@ -3946,7 +3945,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
 
     /* if other is a set and self is smaller than other,
        reuse set intersection logic */
-    if (PyAnySet_Check(other) && len_self <= PyObject_Size(other)) {
+    if (PySet_Check(other) && len_self <= PyObject_Size(other)) {
         _Py_IDENTIFIER(intersection);
 
         return _PyObject_CallMethodIdObjArgs(other, &PyId_intersection, self, NULL);
