@@ -840,6 +840,13 @@ Common commands: (see '--help-commands' for more)
             self.cmdclass[command] = klass
             return klass
 
+        if command == "bdist_wheel":
+            help_url = "https://packaging.python.org/tutorials/distributing-packages/#wheels"
+            raise DistutilsModuleError("invalid command '%s'\nnote: The wheel "
+                                       "package provides this command. See "
+                                       "%s for information on packaging wheels"
+                                       % (command, help_url))
+
         raise DistutilsModuleError("invalid command '%s'" % command)
 
     def get_command_obj(self, command, create=1):
