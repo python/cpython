@@ -5356,10 +5356,10 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     if (file_actions != Py_None) {
         /* There is a bug in old versions of glibc that makes some of the
          * helper functions for manipulating file actions not copy the provided
-         * buffers. The use of `temp_buffer` here is a workaround that keeps the
+         * buffers. The problem is that posix_spawn_file_actions_addopen copies
+         * the value of **path** except for some old versions of glibc (<2.20).
+         * The use of `temp_buffer` here is a workaround that keeps the
          * python objects that own the buffers alive until posix_spawn gets called.
-         * posix_spawn_file_actions_addopen copies the value of **path** except for
-         * some old versions of glibc (<2.20).
          * Check https://bugs.python.org/issue33630 and
          * https://sourceware.org/bugzilla/show_bug.cgi?id=17048 for more info.*/
         temp_buffer = PyList_New(0);
