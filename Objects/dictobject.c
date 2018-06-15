@@ -3945,7 +3945,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
 
     /* if other is a set and self is smaller than other,
        reuse set intersection logic */
-    if (PySet_Check(other) && len_self <= PyObject_Size(other)) {
+    if (Py_TYPE(other) == &PySet_Type && len_self <= PyObject_Size(other)) {
         _Py_IDENTIFIER(intersection);
 
         return _PyObject_CallMethodIdObjArgs(other, &PyId_intersection, self, NULL);
@@ -3962,7 +3962,10 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
         }
     }
 
-    /* at this point, self should be bigger than other */
+    /* at this point, one of two things should be true
+       1. self and other are both dictviews and self is bigger
+          than other
+       2. self is a dictview and other is not a dictview */
     result = PySet_New(NULL);
     if (result == NULL)
         return NULL;
