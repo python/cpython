@@ -1461,6 +1461,9 @@ then
 	    else
 		OPT="-g $WRAP -O3 -Wall"
 	    fi
+	    # bpo-30345: When using PGO+LTO and compile without LDFLAGS=-g,
+	    # gdb fails to get function arguments.
+	    LDFLAGS="$LDFLAGS -g"
 	    ;;
 	*)
 	    OPT="-O3 -Wall"
