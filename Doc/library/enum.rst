@@ -281,7 +281,7 @@ Iterating over the members of an enum does not provide the aliases::
     >>> list(Shape)
     [<Shape.SQUARE: 2>, <Shape.DIAMOND: 1>, <Shape.CIRCLE: 3>]
 
-The special attribute ``__members__`` is an ordered dictionary mapping names
+The special attribute ``__members__`` is a dictionary mapping names
 to members.  It includes all names defined in the enumeration, including the
 aliases::
 
@@ -998,12 +998,17 @@ Finer Points
 Supported ``__dunder__`` names
 """"""""""""""""""""""""""""""
 
-:attr:`__members__` is an :class:`OrderedDict` of ``member_name``:``member``
+:attr:`__members__` is a dictionary ``member_name``:``member``
 items.  It is only available on the class.
 
 :meth:`__new__`, if specified, must create and return the enum members; it is
 also a very good idea to set the member's :attr:`_value_` appropriately.  Once
 all the members are created it is no longer used.
+
+.. versionchanged:: 3.8
+   :attr:`__members__` is changed from :class:`collections.OrderedDict` to
+   :class:`dict`, because ``dict`` is guaranteed to preserve insertion order
+   since Python 3.7.
 
 
 Supported ``_sunder_`` names
