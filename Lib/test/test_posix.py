@@ -1527,9 +1527,10 @@ class TestPosixSpawn(unittest.TestCase):
         outfile = support.TESTFN
         self.addCleanup(support.unlink, outfile)
         script = """if 1:
-            import sys
+            import sys, os
             sys.stdout.write("hello")
             sys.stdout.flush()
+            os.fsync(sys.stdout.fileno())
             """
         file_actions = [
             (os.POSIX_SPAWN_OPEN, 1, outfile,
@@ -1540,23 +1541,8 @@ class TestPosixSpawn(unittest.TestCase):
                                 [sys.executable, '-c', script],
                                 os.environ, file_actions)
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
-
-        deadline = time.monotonic() + 0.3
-        while not os.path.exists(outfile):
-            if time.monotonic() > deadline:
-                raise TimeoutError
-            time.sleep(0.1)
-
-        deadline = time.monotonic() + 0.3
         with open(outfile) as f:
-            while True:
-                if time.monotonic() > deadline:
-                    raise TimeoutError
-                f.seek(0)
-                data = f.read()
-                if data:
-                    break
-            self.assertEqual(data, 'hello')
+            self.assertEqual(f.read(), 'hello')
 
     def test_close_file(self):
         closefile = support.TESTFN
