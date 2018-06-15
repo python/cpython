@@ -161,10 +161,11 @@ class DebuggerTests(unittest.TestCase):
         if (gdb_major_version, gdb_minor_version) >= (7, 4):
             commands += ['set print entry-values no']
 
-        # bpo-32962: When Python is compiled with -mcet -fcf-protection,
-        # arguments are unusable before running the first instruction
-        # of the function entry point. Next makes the required first step.
         if cmds_after_breakpoint:
+            # bpo-32962: When Python is compiled with -mcet -fcf-protection,
+            # arguments are unusable before running the first instruction
+            # of the function entry point. The 'next' command makes the
+            # required first step.
             commands += ['next'] + cmds_after_breakpoint
         else:
             commands += ['backtrace']
@@ -851,8 +852,8 @@ id(42)
             l = MyList()
         ''')
         # bpo-32962: same case as in get_stack_trace():
-        # we need one extra step in order to read arguments
-        # of the innermost function of the call stack.
+        # we need an additional 'next' command in order to read
+        # arguments of the innermost function of the call stack.
         # Verify with "py-bt":
         gdb_output = self.get_stack_trace(cmd,
                                           cmds_after_breakpoint=['break wrapper_call', 'continue', 'next', 'py-bt'])
