@@ -143,6 +143,32 @@ freeblock(block *b)
     }
 }
 
+static block *
+deque_get_block(dequeobject *deque, Py_ssize_t *index)
+{
+    Py_ssize_t i = *index, m = i, n;
+    block *b;
+
+    i += deque->leftindex;
+    n = (Py_ssize_t)((size_t) i / BLOCKLEN);
+    *index = (Py_ssize_t)((size_t) i % BLOCKLEN);
+    if (m < (Py_SIZE(deque) >> 1)) {
+        b = deque->leftblock;
+        while (n--) {
+            b = b->rightlink;
+        }
+    } else {
+        n = (Py_ssize_t)(
+                ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
+                / BLOCKLEN - n);
+        b = deque->rightblock;
+        while (n--) {
+            b = b->leftlink;
+        }
+    }
+    return b;
+}
+
 static PyObject *
 deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -1045,21 +1071,16 @@ deque_len(dequeobject *deque)
     return Py_SIZE(deque);
 }
 
-static PyObject *
-deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
+static Py_ssize_t
+_deque_index(dequeobject *deque, PyObject *value,
+             Py_ssize_t start, Py_ssize_t stop)
 {
-    Py_ssize_t i, n, start=0, stop=Py_SIZE(deque);
-    PyObject *v, *item;
+    Py_ssize_t n;
+    PyObject *item;
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;
     size_t start_state = deque->state;
     int cmp;
-
-    if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index", &v,
-                           _PyEval_SliceIndexNotNone, &start,
-                           _PyEval_SliceIndexNotNone, &stop)) {
-        return NULL;
-    }
 
     if (start < 0) {
         start += Py_SIZE(deque);
@@ -1077,37 +1098,52 @@ deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
         start = stop;
     assert(0 <= start && start <= stop && stop <= Py_SIZE(deque));
 
-    /* XXX Replace this loop with faster code from deque_item() */
-    for (i=0 ; i<start ; i++) {
-        index++;
-        if (index == BLOCKLEN) {
-            b = b->rightlink;
-            index = 0;
-        }
-    }
+    index = start;
+    b = deque_get_block(deque, &index);
 
-    n = stop - i;
+    n = stop - start ;
     while (--n >= 0) {
         CHECK_NOT_END(b);
         item = b->data[index];
-        cmp = PyObject_RichCompareBool(item, v, Py_EQ);
+        cmp = PyObject_RichCompareBool(item, value, Py_EQ);
         if (cmp > 0)
-            return PyLong_FromSsize_t(stop - n - 1);
+            return stop - n - 1;
         if (cmp < 0)
-            return NULL;
+            return -1;
         if (start_state != deque->state) {
             PyErr_SetString(PyExc_RuntimeError,
                             "deque mutated during iteration");
-            return NULL;
+            return -1;
         }
-        index++;
-        if (index == BLOCKLEN) {
+
+        if (++index == BLOCKLEN) {
             b = b->rightlink;
             index = 0;
         }
     }
-    PyErr_Format(PyExc_ValueError, "%R is not in deque", v);
-    return NULL;
+    PyErr_Format(PyExc_ValueError, "%R is not in deque", value);
+    return -1;
+}
+
+
+static PyObject *
+deque_index(dequeobject *deque, PyObject *args, Py_ssize_t nargs)
+{
+    Py_ssize_t i, start=0, stop=Py_SIZE(deque);
+    PyObject *value;
+
+    if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index", &value,
+                           _PyEval_SliceIndexNotNone, &start,
+                           _PyEval_SliceIndexNotNone, &stop)) {
+        return NULL;
+    }
+
+    i = _deque_index(deque, value, start, stop);
+
+    if (i == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+   return PyLong_FromSsize_t(i);
 }
 
 PyDoc_STRVAR(index_doc,
@@ -1159,36 +1195,30 @@ deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 PyDoc_STRVAR(insert_doc,
 "D.insert(index, object) -- insert object before index");
 
+static int deque_del_item(dequeobject *, Py_ssize_t);
+
 static PyObject *
 deque_remove(dequeobject *deque, PyObject *value)
 {
-    Py_ssize_t i, n=Py_SIZE(deque);
+    Py_ssize_t i;
+    size_t start_state = deque->state;
+    int rv;
 
-    for (i=0 ; i<n ; i++) {
-        PyObject *item = deque->leftblock->data[deque->leftindex];
-        int cmp = PyObject_RichCompareBool(item, value, Py_EQ);
-
-        if (Py_SIZE(deque) != n) {
-            PyErr_SetString(PyExc_IndexError,
-                "deque mutated during remove().");
-            return NULL;
-        }
-        if (cmp > 0) {
-            PyObject *tgt = deque_popleft(deque, NULL);
-            assert (tgt != NULL);
-            if (_deque_rotate(deque, i))
-                return NULL;
-            Py_DECREF(tgt);
-            Py_RETURN_NONE;
-        }
-        else if (cmp < 0) {
-            _deque_rotate(deque, i);
-            return NULL;
-        }
-        _deque_rotate(deque, -1);
+    i = _deque_index(deque, value, 0, Py_SIZE(deque));
+    if (i == -1 && PyErr_Occurred()) {
+        return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "deque.remove(x): x not in deque");
-    return NULL;
+    if (start_state != deque->state) {
+        PyErr_SetString(PyExc_RuntimeError, "deque mutated during remove");
+        return NULL;
+    }
+
+    rv = deque_del_item(deque, i);
+    if (rv < 0) {
+      return NULL;
+    }
+
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(remove_doc,
