@@ -1139,7 +1139,9 @@ the other must be a sequence. In the former case, the numbers are converted to a
 common type and then multiplied together.  In the latter case, sequence
 repetition is performed; a negative repetition factor yields an empty sequence.
 
-.. index:: single: matrix multiplication
+.. index::
+   single: matrix multiplication
+   operator: @
 
 The ``@`` (at) operator is intended to be used for matrix multiplication.  No
 builtin Python types implement this operator.
