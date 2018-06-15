@@ -677,7 +677,6 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
               code += *i-TBase;
               /* check T character is a modern trailing consonant
                  (0x11A8 ~ 0x11C2). */
-              code += PyUnicode_READ(kind, data, i)-TBase;
               i++;
           }
           *o++ = code;
