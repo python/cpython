@@ -627,7 +627,10 @@ class Enum(metaclass=EnumMeta):
         # _value2member_map_ is populated in the same order every time
         # for a consistent reverse mapping of number to name when there
         # are multiple names for the same number.
-        members = [(name, source[name]) for name in source if filter(name)]
+        members = [
+                (name, value)
+                for name, value in source.items()
+                if filter(name)]
         try:
             # sort by value
             members.sort(key=lambda t: (t[1], t[0]))
