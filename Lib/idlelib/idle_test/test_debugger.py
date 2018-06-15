@@ -1,9 +1,9 @@
 "Test debugger, coverage 19%"
 
 from idlelib import debugger
+import unittest
 from test.support import requires
 requires('gui')
-import unittest
 from tkinter import Tk
 
 
@@ -22,6 +22,8 @@ class NameSpaceTest(unittest.TestCase):
     def test_init(self):
         debugger.NamespaceViewer(self.root, 'Test')
 
+
+# Other classes are Idb, Debugger, and StackViewer.
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
