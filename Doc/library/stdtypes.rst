@@ -3360,7 +3360,10 @@ Notes:
    The bytearray version of this method does *not* operate in place - it
    always produces a new object, even if no changes were made.
 
-.. seealso:: :pep:`461`.
+.. seealso::
+
+   :pep:`461` - Adding % formatting to bytes and bytearray
+
 .. versionadded:: 3.5
 
 .. _typememoryview:
