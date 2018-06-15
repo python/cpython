@@ -1,4 +1,4 @@
-"Test filelist, coverage %."
+"Test filelist, coverage 19%."
 
 from idlelib import filelist
 import unittest
