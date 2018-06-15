@@ -5177,16 +5177,10 @@ enum posix_spawn_file_actions_identifier {
     POSIX_SPAWN_DUP2
 };
 
-#if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ < 20))
 static int
 parse_file_actions(PyObject *file_actions,
                    posix_spawn_file_actions_t *file_actionsp,
                    PyObject *temp_buffer)
-#else
-    static int
-    parse_file_actions(PyObject *file_actions,
-                       posix_spawn_file_actions_t *file_actionsp)
-#endif
 {
     PyObject *seq;
     PyObject *file_action = NULL;
@@ -5231,12 +5225,10 @@ parse_file_actions(PyObject *file_actions,
                 {
                     goto fail;
                 }
-#if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ < 20))
                 int error = PyList_Append(temp_buffer, path);
                 if (error) {
                     goto fail;
                 }
-#endif
                 errno = posix_spawn_file_actions_addopen(file_actionsp,
                         fd, PyBytes_AS_STRING(path), oflag, (mode_t)mode);
                 /* addopen copies the value except for some old versions of
@@ -5375,7 +5367,6 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
          * Check https://bugs.python.org/issue33630 and
          * https://sourceware.org/bugzilla/show_bug.cgi?id=17048 for more info. */
 
-#if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ < 20))
         temp_buffer = PyList_New(0);
 
         if (!temp_buffer) {
@@ -5384,11 +5375,6 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         if (parse_file_actions(file_actions, &file_actions_buf, temp_buffer)) {
             goto exit;
         }
-#else
-        if (parse_file_actions(file_actions, &file_actions_buf)) {
-            goto exit;
-        }
-#endif
         file_actionsp = &file_actions_buf;
     }
 
