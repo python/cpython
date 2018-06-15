@@ -526,6 +526,13 @@ class Regrtest:
     def _main(self, tests, kwargs):
         self.ns = self.parse_args(kwargs)
 
+        if self.ns.huntrleaks:
+            warmup, repetitions, _ = self.ns.huntrleaks
+            if warmup < 1 or repetitions < 1:
+                print("Invalid values for the --huntrleaks/-R parameters",
+                      file=sys.stderr, flush=True)
+                sys.exit(2)
+
         if self.ns.slaveargs is not None:
             from test.libregrtest.runtest_mp import run_tests_slave
             run_tests_slave(self.ns.slaveargs)
