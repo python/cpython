@@ -5225,16 +5225,11 @@ parse_file_actions(PyObject *file_actions,
                 {
                     goto fail;
                 }
-                int error = PyList_Append(temp_buffer, path);
-                if (error) {
+                if (PyList_Append(temp_buffer, path)) {
                     goto fail;
                 }
                 errno = posix_spawn_file_actions_addopen(file_actionsp,
                         fd, PyBytes_AS_STRING(path), oflag, (mode_t)mode);
-                /* addopen copies the value except for some old versions of
-                 * glibc (<2.20). The usage of temp_buffer is a workaround
-                 * to keep this temporary objects alive until posix_spawn
-                 * gets called.*/
                 Py_DECREF(path);
                 if (errno) {
                     posix_error();
@@ -5359,16 +5354,17 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     }
 
     if (file_actions != Py_None) {
-
         /* There is a bug in old versions of glibc that makes some of the
          * helper functions for manipulating file actions not copy the provided
          * buffers. The use of `temp_buffer` here is a workaround that keeps the
          * python objects that own the buffers alive until posix_spawn gets called.
+         * posix_spawn_file_actions_addopen copies the value of **path** except for
+         * some old * versions of * glibc (<2.20). The usage of temp_buffer is
+         * a workaround * to keep this temporary objects alive until posix_spawn
+         * gets called.
          * Check https://bugs.python.org/issue33630 and
-         * https://sourceware.org/bugzilla/show_bug.cgi?id=17048 for more info. */
-
+         * https://sourceware.org/bugzilla/show_bug.cgi?id=17048 for more info.*/
         temp_buffer = PyList_New(0);
-
         if (!temp_buffer) {
             goto exit;
         }
@@ -5399,9 +5395,7 @@ exit:
     if (argvlist) {
         free_string_array(argvlist, argc);
     }
-
     Py_XDECREF(temp_buffer);
-
     return result;
 }
 #endif /* HAVE_POSIX_SPAWN */
