@@ -241,12 +241,13 @@ class PyObjectPtr(object):
 
     def safe_tp_name(self):
         try:
-            return self.type().field('tp_name').string()
-        except NullPyObjectPtr:
-            # NULL tp_name?
-            return 'unknown'
-        except RuntimeError:
-            # Can't even read the object at all?
+            ob_type = self.type()
+            tp_name = ob_type.field('tp_name')
+            return tp_name.string()
+        # NullPyObjectPtr: NULL tp_name?
+        # RuntimeError: Can't even read the object at all?
+        # UnicodeDecodeError: Failed to decode tp_name bytestring
+        except (NullPyObjectPtr, RuntimeError, UnicodeDecodeError):
             return 'unknown'
 
     def proxyval(self, visited):
@@ -320,7 +321,9 @@ class PyObjectPtr(object):
         try:
             tp_name = t.field('tp_name').string()
             tp_flags = int(t.field('tp_flags'))
-        except RuntimeError:
+        # RuntimeError: NULL pointers
+        # UnicodeDecodeError: string() fails to decode the bytestring
+        except (RuntimeError, UnicodeDecodeError):
             # Handle any kind of error e.g. NULL ptrs by simply using the base
             # class
             return cls
@@ -336,6 +339,7 @@ class PyObjectPtr(object):
                     'set' : PySetObjectPtr,
                     'frozenset' : PySetObjectPtr,
                     'builtin_function_or_method' : PyCFunctionObjectPtr,
+                    'method-wrapper': wrapperobject,
                     }
         if tp_name in name_map:
             return name_map[tp_name]
@@ -602,7 +606,10 @@ class PyCFunctionObjectPtr(PyObjectPtr):
 
     def proxyval(self, visited):
         m_ml = self.field('m_ml') # m_ml is a (PyMethodDef*)
-        ml_name = m_ml['ml_name'].string()
+        try:
+            ml_name = m_ml['ml_name'].string()
+        except UnicodeDecodeError:
+            ml_name = '<ml_name:UnicodeDecodeError>'
 
         pyop_m_self = self.pyop_field('m_self')
         if pyop_m_self.is_null():
@@ -1131,7 +1138,9 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         # Convert the int code points to unicode characters, and generate a
         # local unicode instance.
         # This splits surrogate pairs if sizeof(Py_UNICODE) is 2 here (in gdb).
-        result = u''.join([_unichr(ucs) for ucs in Py_UNICODEs])
+        result = u''.join([
+            (_unichr(ucs) if ucs <= 0x10ffff else '\ufffd')
+            for ucs in Py_UNICODEs])
         return result
 
     def write_repr(self, out, visited):
@@ -1142,6 +1151,41 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         # with a Python 3 interpreter.
         out.write('u')
         out.write(val.lstrip('u'))
+
+
+class wrapperobject(PyObjectPtr):
+    _typename = 'wrapperobject'
+
+    def safe_name(self):
+        try:
+            name = self.field('descr')['d_base']['name'].string()
+            return repr(name)
+        except (NullPyObjectPtr, RuntimeError, UnicodeDecodeError):
+            return '<unknown name>'
+
+    def safe_tp_name(self):
+        try:
+            return self.field('self')['ob_type']['tp_name'].string()
+        except (NullPyObjectPtr, RuntimeError, UnicodeDecodeError):
+            return '<unknown tp_name>'
+
+    def safe_self_addresss(self):
+        try:
+            address = long(self.field('self'))
+            return '%#x' % address
+        except (NullPyObjectPtr, RuntimeError):
+            return '<failed to get self address>'
+
+    def proxyval(self, visited):
+        name = self.safe_name()
+        tp_name = self.safe_tp_name()
+        self_address = self.safe_self_addresss()
+        return ("<method-wrapper %s of %s object at %s>"
+                % (name, tp_name, self_address))
+
+    def write_repr(self, out, visited):
+        proxy = self.proxyval(visited)
+        out.write(proxy)
 
 
 def int_from_int(gdbval):
@@ -1176,11 +1220,13 @@ class PyObjectPtrPrinter:
 
 def pretty_printer_lookup(gdbval):
     type = gdbval.type.unqualified()
-    if type.code == gdb.TYPE_CODE_PTR:
-        type = type.target().unqualified()
-        t = str(type)
-        if t in ("PyObject", "PyFrameObject"):
-            return PyObjectPtrPrinter(gdbval)
+    if type.code != gdb.TYPE_CODE_PTR:
+        return None
+
+    type = type.target().unqualified()
+    t = str(type)
+    if t in ("PyObject", "PyFrameObject", "PyUnicodeObject", "wrapperobject"):
+        return PyObjectPtrPrinter(gdbval)
 
 """
 During development, I've been manually invoking the code in this way:
@@ -1202,7 +1248,7 @@ that this python file is installed to the same path as the library (or its
   /usr/lib/debug/usr/lib/libpython2.6.so.1.0.debug-gdb.py
 """
 def register (obj):
-    if obj == None:
+    if obj is None:
         obj = gdb
 
     # Wire up the pretty-printer
@@ -1304,23 +1350,43 @@ class Frame(object):
          '''
         if self.is_waiting_for_gil():
             return 'Waiting for the GIL'
-        elif self.is_gc_collect():
+
+        if self.is_gc_collect():
             return 'Garbage-collecting'
-        else:
-            # Detect invocations of PyCFunction instances:
-            older = self.older()
-            if older and older._gdbframe.name() == 'PyCFunction_Call':
-                # Within that frame:
-                #   "func" is the local containing the PyObject* of the
-                # PyCFunctionObject instance
-                #   "f" is the same value, but cast to (PyCFunctionObject*)
-                #   "self" is the (PyObject*) of the 'self'
-                try:
-                    # Use the prettyprinter for the func:
-                    func = older._gdbframe.read_var('func')
-                    return str(func)
-                except RuntimeError:
-                    return 'PyCFunction invocation (unable to read "func")'
+
+        # Detect invocations of PyCFunction instances:
+        frame = self._gdbframe
+        caller = frame.name()
+        if not caller:
+            return False
+
+        if caller == 'PyCFunction_Call':
+            arg_name = 'func'
+            # Within that frame:
+            #   "func" is the local containing the PyObject* of the
+            # PyCFunctionObject instance
+            #   "f" is the same value, but cast to (PyCFunctionObject*)
+            #   "self" is the (PyObject*) of the 'self'
+            try:
+                # Use the prettyprinter for the func:
+                func = frame.read_var(arg_name)
+                return str(func)
+            except ValueError:
+                return ('PyCFunction invocation (unable to read %s: '
+                        'missing debuginfos?)' % arg_name)
+            except RuntimeError:
+                return 'PyCFunction invocation (unable to read %s)' % arg_name
+
+        if caller == 'wrapper_call':
+            arg_name = 'wp'
+            try:
+                func = frame.read_var(arg_name)
+                return str(func)
+            except ValueError:
+                return ('<wrapper_call invocation (unable to read %s: '
+                        'missing debuginfos?)>' % arg_name)
+            except RuntimeError:
+                return '<wrapper_call invocation (unable to read %s)>' % arg_name
 
         # This frame isn't worth reporting:
         return False
@@ -1368,7 +1434,11 @@ class Frame(object):
     def get_selected_python_frame(cls):
         '''Try to obtain the Frame for the python-related code in the selected
         frame, or None'''
-        frame = cls.get_selected_frame()
+        try:
+            frame = cls.get_selected_frame()
+        except gdb.error:
+            # No frame: Python didn't start yet
+            return None
 
         while frame:
             if frame.is_python_frame():
@@ -1509,6 +1579,10 @@ PyList()
 def move_in_stack(move_up):
     '''Move up or down the stack (for the py-up/py-down command)'''
     frame = Frame.get_selected_python_frame()
+    if not frame:
+        print('Unable to locate python frame')
+        return
+
     while frame:
         if move_up:
             iter_frame = frame.older()
@@ -1571,6 +1645,10 @@ class PyBacktraceFull(gdb.Command):
 
     def invoke(self, args, from_tty):
         frame = Frame.get_selected_python_frame()
+        if not frame:
+            print('Unable to locate python frame')
+            return
+
         while frame:
             if frame.is_python_frame():
                 frame.print_summary()
@@ -1588,8 +1666,12 @@ class PyBacktrace(gdb.Command):
 
 
     def invoke(self, args, from_tty):
-        sys.stdout.write('Traceback (most recent call first):\n')
         frame = Frame.get_selected_python_frame()
+        if not frame:
+            print('Unable to locate python frame')
+            return
+
+        sys.stdout.write('Traceback (most recent call first):\n')
         while frame:
             if frame.is_python_frame():
                 frame.print_traceback()
