@@ -1,0 +1,1 @@
+Add glossary entry for 'magic method'.

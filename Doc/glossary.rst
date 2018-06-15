@@ -658,6 +658,9 @@ Glossary
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
 
+   magic method
+      An informal synonym for :term:`special method`.
+
    mapping
       A container object that supports arbitrary key lookups and implements the
       methods specified in the :class:`~collections.abc.Mapping` or
