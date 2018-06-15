@@ -1,7 +1,5 @@
-''' Test idlelib.debugger.
+"Test debugger, coverage 19%"
 
-Coverage: 19%
-'''
 from idlelib import debugger
 from test.support import requires
 requires('gui')

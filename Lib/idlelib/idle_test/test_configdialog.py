@@ -1,7 +1,6 @@
-"""Test idlelib.configdialog.
+"""Test configdialog, coverage 94%.
 
 Half the class creates dialog, half works with user customizations.
-Coverage: 95%.
 """
 from idlelib import configdialog
 from test.support import requires
