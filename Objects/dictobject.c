@@ -3323,8 +3323,9 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
 {
     dictiterobject *di;
     di = PyObject_GC_New(dictiterobject, itertype);
-    if (di == NULL)
+    if (di == NULL) {
         return NULL;
+    }
     Py_INCREF(dict);
     di->di_dict = dict;
     di->di_used = dict->ma_used;
@@ -3333,9 +3334,6 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
         itertype == &PyDictRevIterItem_Type ||
         itertype == &PyDictRevIterValue_Type) {
         if (dict->ma_used) {
-            di->di_pos = dict->ma_used - 1;
-        }
-        else if (dict->ma_keys->dk_nentries) {
             di->di_pos = dict->ma_keys->dk_nentries - 1;
         }
         else {
@@ -3353,8 +3351,9 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
             return NULL;
         }
     }
-    else
+    else {
         di->di_result = NULL;
+    }
     _PyObject_GC_TRACK(di);
     return (PyObject *)di;
 }
@@ -3673,9 +3672,6 @@ PyTypeObject PyDictIterItem_Type = {
 static PyObject *
 dictreviter_iternextkey(dictiterobject *di)
 {
-    PyObject *key;
-    Py_ssize_t i;
-    PyDictKeysObject *k;
     PyDictObject *d = di->di_dict;
 
     if (d == NULL) {
@@ -3690,8 +3686,9 @@ dictreviter_iternextkey(dictiterobject *di)
         return NULL;
     }
 
-    i = di->di_pos;
-    k = d->ma_keys;
+    Py_ssize_t i = di->di_pos;
+    PyDictKeysObject *k = d->ma_keys;
+    PyObject *key;
 
     if (d->ma_values) {
         if (i < 0) {
@@ -3725,8 +3722,6 @@ fail:
 static PyObject *
 dictreviter_iternextitem(dictiterobject *di)
 {
-    PyObject *key, *value, *result;
-    Py_ssize_t i;
     PyDictObject *d = di->di_dict;
 
     if (d == NULL) {
@@ -3741,7 +3736,8 @@ dictreviter_iternextitem(dictiterobject *di)
         return NULL;
     }
 
-    i = di->di_pos;
+    Py_ssize_t i = di->di_pos;
+    PyObject *key, *value, *result;
 
     if (d->ma_values) {
         if (i < 0) {
@@ -3797,8 +3793,6 @@ fail:
 static PyObject *
 dictreviter_iternextvalue(dictiterobject *di)
 {
-    PyObject *value;
-    Py_ssize_t i;
     PyDictObject *d = di->di_dict;
 
     if (d == NULL) {
@@ -3813,7 +3807,8 @@ dictreviter_iternextvalue(dictiterobject *di)
         return NULL;
     }
 
-    i = di->di_pos;
+    PyObject *value;
+    Py_ssize_t i = di->di_pos;
 
     if (d->ma_values) {
         if (i < 0) {
@@ -3849,7 +3844,6 @@ PyTypeObject PyDictRevIterKey_Type = {
     "dict_reversekeyiterator",
     sizeof(dictiterobject),
     .tp_dealloc = (destructor)dictiter_dealloc,
-    .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
@@ -3929,7 +3923,6 @@ PyTypeObject PyDictRevIterItem_Type = {
     "dict_reverseitemiterator",
     sizeof(dictiterobject),
     .tp_dealloc = (destructor)dictiter_dealloc,
-    .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
@@ -3942,7 +3935,6 @@ PyTypeObject PyDictRevIterValue_Type = {
     "dict_reversevalueiterator",
     sizeof(dictiterobject),
     .tp_dealloc = (destructor)dictiter_dealloc,
-    .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)dictiter_traverse,
     .tp_iter = PyObject_SelfIter,

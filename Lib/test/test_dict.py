@@ -1279,7 +1279,8 @@ class DictTest(unittest.TestCase):
         self.assertRaises(RuntimeError, iter_and_mutate)
 
     def test_reversed(self):
-        d = {"a": 1, "b": 2, "c": 3, "d": 4}
+        d = {"a": 1, "b": 2, "foo": 0, "c": 3, "d": 4}
+        del d["foo"]
         r = reversed(d)
         self.assertEqual(list(r), list('dcba'))
         self.assertRaises(StopIteration, next, r)
