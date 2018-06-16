@@ -76,6 +76,14 @@ PyPy
    interpreter (since it is written in Python).  Additional information is
    available on `the PyPy project's home page <http://pypy.org/>`_.
 
+MicroPython
+   An implementation optimised to run on microcontrollers and in constrained
+   environments, compact enough to fit and run within just 256k of code space
+   and 16k of RAM while aiming to be as compatible with standard Python as
+   possible to allow the transfer of code with ease from the desktop.  For more
+   information, see `the MicroPython website <https://micropython.org/>`_.
+
+
 Each of these implementations varies in some way from the language as documented
 in this manual, or introduces specific information beyond what's covered in the
 standard Python documentation.  Please refer to the implementation-specific
