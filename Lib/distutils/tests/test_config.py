@@ -17,6 +17,7 @@ index-servers =
     server1
     server2
     server3
+    server4
 
 [server1]
 username:me
@@ -31,6 +32,10 @@ repository:http://another.pypi/
 [server3]
 username:cbiggles
 password:yh^%#rest-of-my-password
+
+[server4]
+username:mufasa
+passwordeval:"echo 'hello'"
 """
 
 PYPIRC_OLD = """\
@@ -132,9 +137,23 @@ class PyPIRCCommandTestCase(BasePyPIRCCommandTestCase):
                   ('server', 'server3'), ('username', 'cbiggles')]
         self.assertEqual(config, waited)
 
+    def test_password_eval(self):
+        # If passwordeval is specified, use its return value.
+        self.write_file(self.rc, PYPIRC)
+        cmd = self._cmd(self.dist)
+        cmd.repository = 'server4'
+        config = cmd._read_pypirc()
+
+        config = list(sorted(config.items()))
+        waited = [('password', 'hello'), ('realm', 'pypi'),
+                  ('repository', 'https://upload.pypi.org/legacy/'),
+                  ('server', 'server4'), ('username', 'mufasa')]
+        self.assertEqual(config, waited)
+
 
 def test_suite():
     return unittest.makeSuite(PyPIRCCommandTestCase)
+
 
 if __name__ == "__main__":
     run_unittest(test_suite())

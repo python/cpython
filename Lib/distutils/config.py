@@ -5,6 +5,8 @@ that uses .pypirc in the distutils.command package.
 """
 import os
 from configparser import RawConfigParser
+import subprocess
+import shlex
 
 from distutils.cmd import Command
 
@@ -82,6 +84,12 @@ class PyPIRCCommand(Command):
                             current[key] = config.get(server, key)
                         else:
                             current[key] = default
+
+                    # Handle password eval separately, and override any static
+                    # password provided.
+                    if config.has_option(server, 'passwordeval'):
+                        cmd = shlex.split(config.get(server, 'passwordeval'))
+                        current['password'] = subprocess.check_output(cmd, shell=True).decode().rstrip('\n')
 
                     # work around people having "repository" for the "pypi"
                     # section of their config set to the HTTP (rather than
