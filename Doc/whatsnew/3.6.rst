@@ -1855,7 +1855,7 @@ Build and C API Changes
   For more information, see :pep:`7` and :issue:`17884`.
 
 * Cross-compiling CPython with the Android NDK and the Android API level set to
-  21 (Android 5.0 Lollilop) or greater runs successfully. While Android is not
+  21 (Android 5.0 Lollipop) or greater runs successfully. While Android is not
   yet a supported platform, the Python test suite runs on the Android emulator
   with only about 16 tests failures. See the Android meta-issue :issue:`26865`.
 
