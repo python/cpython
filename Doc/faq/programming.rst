@@ -16,6 +16,11 @@ Is there a source code level debugger with breakpoints, single-stepping, etc.?
 
 Yes.
 
+Several debuggers for Python are described below, and the built-in function
+:func:`breakpoint` allows you to drop into any of them just by setting the
+:func:`sys.breakpointhook` hook function, conveniently letting you change a
+single line of code to switch between debuggers.
+
 The pdb module is a simple but adequate console-mode debugger for Python. It is
 part of the standard Python library, and is :mod:`documented in the Library
 Reference Manual <pdb>`. You can also write your own debugger by using the code
