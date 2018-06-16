@@ -2262,7 +2262,7 @@ Changes in the Python API
 
 * Because :func:`shutil.rmtree` is now implemented using the :func:`os.scandir`
   function, the user specified handler *onerror* is now called with the first
-  argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
+  argument ``os.scandir`` instead of ``os.listdir`` when listing the directory
   is failed.
 
 * Support for nested sets and set operations in regular expressions as in

@@ -1414,7 +1414,7 @@ http
 :class:`http.server.BaseHTTPRequestHandler` now buffers the headers and writes
 them all at once when :meth:`~http.server.BaseHTTPRequestHandler.end_headers` is
 called.  A new method :meth:`~http.server.BaseHTTPRequestHandler.flush_headers`
-can be used to directly manage when the accumlated headers are sent.
+can be used to directly manage when the accumulated headers are sent.
 (Contributed by Andrew Schaaf in :issue:`3709`.)
 
 :class:`http.server` now produces valid ``HTML 4.01 strict`` output.

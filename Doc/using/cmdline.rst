@@ -905,7 +905,7 @@ conflict.
    If this environment variable is not set at all, then the interpreter defaults
    to using the current locale settings, *unless* the current locale is
    identified as a legacy ASCII-based locale
-   (as descibed for :envvar:`PYTHONCOERCECLOCALE`), and locale coercion is
+   (as described for :envvar:`PYTHONCOERCECLOCALE`), and locale coercion is
    either disabled or fails. In such legacy locales, the interpreter will
    default to enabling UTF-8 mode unless explicitly instructed not to do so.
 
