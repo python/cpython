@@ -314,7 +314,7 @@ class TestGenericTest(GenericTest, unittest.TestCase):
     def test_invalid_paths(self):
         for attr in GenericTest.common_attributes:
             # os.path.commonprefix doesn't raise ValueError
-            if attr in 'commonprefix':
+            if attr == 'commonprefix':
                 continue
             func = getattr(self.pathmodule, attr)
             with self.subTest(attr=attr):
