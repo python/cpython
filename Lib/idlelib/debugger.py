@@ -12,7 +12,7 @@ from idlelib.windows import ListedToplevel
 class Idb(bdb.Bdb):
 
     def __init__(self, gui):
-        self.gui = gui
+        self.gui = gui  # An instance of Debugger or proxy of remote.
         bdb.Bdb.__init__(self)
 
     def user_line(self, frame):
@@ -63,7 +63,7 @@ class Debugger:
         if idb is None:
             idb = Idb(self)
         self.pyshell = pyshell
-        self.idb = idb
+        self.idb = idb  # If passed, a proxy of remote instance.
         self.frame = None
         self.make_gui()
         self.interacting = 0
@@ -542,3 +542,9 @@ class NamespaceViewer:
 
     def close(self):
         self.frame.destroy()
+
+if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_debugger', verbosity=2, exit=False)
+
+# TODO: htest?
