@@ -623,9 +623,6 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
-OPENSSL_LDFLAGS
-OPENSSL_LIBS
-OPENSSL_INCLUDES
 ENSUREPIP
 SRCDIRS
 THREADHEADERS
@@ -837,7 +834,6 @@ with_libc
 enable_big_digits
 with_computed_gotos
 with_ensurepip
-with_openssl
 with_ssl_default_suites
 '
       ac_precious_vars='build_alias
@@ -1535,7 +1531,6 @@ Optional Packages:
                           default on supported compilers)
   --with(out)-ensurepip=[=upgrade]
                           "install" or "upgrade" using bundled pip
-  --with-openssl=DIR      root of the OpenSSL directory
   --with-ssl-default-suites=[python|openssl|STRING]
                           Override default cipher suites string, python: use
                           Python's preferred selection (default), openssl:
@@ -16196,209 +16191,7 @@ $as_echo "#define HAVE_GETRANDOM 1" >>confdefs.h
 fi
 
 # Check for usable OpenSSL
-
-    found=false
-
-# Check whether --with-openssl was given.
-if test "${with_openssl+set}" = set; then :
-  withval=$with_openssl;
-            case "$withval" in
-            "" | y | ye | yes | n | no)
-            as_fn_error $? "Invalid --with-openssl value" "$LINENO" 5
-              ;;
-            *) ssldirs="$withval"
-              ;;
-            esac
-
-else
-
-            # if pkg-config is installed and openssl has installed a .pc file,
-            # then use that information and don't search ssldirs
-            if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
-set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$PKG_CONFIG"; then
-  ac_cv_prog_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_PKG_CONFIG="${ac_tool_prefix}pkg-config"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-PKG_CONFIG=$ac_cv_prog_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_PKG_CONFIG"; then
-  ac_ct_PKG_CONFIG=$PKG_CONFIG
-  # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_PKG_CONFIG"; then
-  ac_cv_prog_ac_ct_PKG_CONFIG="$ac_ct_PKG_CONFIG" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_PKG_CONFIG="pkg-config"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_PKG_CONFIG=$ac_cv_prog_ac_ct_PKG_CONFIG
-if test -n "$ac_ct_PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_PKG_CONFIG" >&5
-$as_echo "$ac_ct_PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_ct_PKG_CONFIG" = x; then
-    PKG_CONFIG=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    PKG_CONFIG=$ac_ct_PKG_CONFIG
-  fi
-else
-  PKG_CONFIG="$ac_cv_prog_PKG_CONFIG"
-fi
-
-            if test x"$PKG_CONFIG" != x""; then
-                OPENSSL_LDFLAGS=`$PKG_CONFIG openssl --libs-only-L 2>/dev/null`
-                if test $? = 0; then
-                    OPENSSL_LIBS=`$PKG_CONFIG openssl --libs-only-l 2>/dev/null`
-                    OPENSSL_INCLUDES=`$PKG_CONFIG openssl --cflags-only-I 2>/dev/null`
-                    found=true
-                fi
-            fi
-
-            # no such luck; use some default ssldirs
-            if ! $found; then
-                ssldirs="/usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr"
-            fi
-
-
-fi
-
-
-
-    # note that we #include <openssl/foo.h>, so the OpenSSL headers have to be in
-    # an 'openssl' subdirectory
-
-    if ! $found; then
-        OPENSSL_INCLUDES=
-        for ssldir in $ssldirs; do
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for openssl/ssl.h in $ssldir" >&5
-$as_echo_n "checking for openssl/ssl.h in $ssldir... " >&6; }
-            if test -f "$ssldir/include/openssl/ssl.h"; then
-                OPENSSL_INCLUDES="-I$ssldir/include"
-                OPENSSL_LDFLAGS="-L$ssldir/lib"
-                OPENSSL_LIBS="-lssl -lcrypto"
-                found=true
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-                break
-            else
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-            fi
-        done
-
-        # if the file wasn't found, well, go ahead and try the link anyway -- maybe
-        # it will just work!
-    fi
-
-    # try the preprocessor and linker with our new flags,
-    # being careful not to pollute the global LIBS, LDFLAGS, and CPPFLAGS
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether compiling and linking against OpenSSL works" >&5
-$as_echo_n "checking whether compiling and linking against OpenSSL works... " >&6; }
-    echo "Trying link with OPENSSL_LDFLAGS=$OPENSSL_LDFLAGS;" \
-        "OPENSSL_LIBS=$OPENSSL_LIBS; OPENSSL_INCLUDES=$OPENSSL_INCLUDES" >&5
-
-    save_LIBS="$LIBS"
-    save_LDFLAGS="$LDFLAGS"
-    save_CPPFLAGS="$CPPFLAGS"
-    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$OPENSSL_LIBS $LIBS"
-    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <openssl/ssl.h>
-int
-main ()
-{
-SSL_new(NULL)
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            have_openssl=yes
-
-else
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-            have_openssl=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-    CPPFLAGS="$save_CPPFLAGS"
-    LDFLAGS="$save_LDFLAGS"
-    LIBS="$save_LIBS"
-
-
-
-
-
+AX_CHECK_OPENSSL(have_openssl=yes,have_openssl=no)
 
 if test "$have_openssl" = yes; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X509_VERIFY_PARAM_set1_host in libssl" >&5
