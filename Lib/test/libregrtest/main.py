@@ -462,6 +462,13 @@ class Regrtest:
                    or self.tests or self.ns.args)):
             self.display_header()
 
+        if self.ns.huntrleaks:
+            warmup, repetitions, _ = self.ns.huntrleaks
+            if warmup < 3:
+                msg = ("WARNING: Running tests with --huntrleaks/-R and less than "
+                        "3 warmup repetitions can give false positives!")
+                print(msg, file=sys.stdout, flush=True)
+
         if self.ns.randomize:
             print("Using random seed", self.ns.random_seed)
 
