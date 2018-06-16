@@ -465,7 +465,7 @@ class Regrtest:
         if self.ns.huntrleaks:
             warmup, repetitions, _ = self.ns.huntrleaks
             if warmup < 3:
-                msg = ("WARNING: Runing tests with --huntrleaks/-R and less than "
+                msg = ("WARNING: Running tests with --huntrleaks/-R and less than "
                         "3 warmup repetitions can give false positives!")
                 print(msg, file=sys.stdout, flush=True)
 
