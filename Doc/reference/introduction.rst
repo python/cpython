@@ -85,8 +85,8 @@ MicroPython
 
 CircuitPython
    A MicroPython fork targeted towards students and beginners, with a strong
-   focus on Adafruit boards.  For more information, see `the CircuitPython
-   repository <https://github.com/adafruit/circuitpython>`_.
+   focus on Adafruit's open-hardware boards.  For more information, see
+   `the CircuitPython repository <https://github.com/adafruit/circuitpython>`_.
 
 
 Each of these implementations varies in some way from the language as documented
