@@ -209,6 +209,26 @@ always available.
    yourself to control bytecode file generation.
 
 
+.. data:: pycache_prefix
+
+   If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
+   files to (and read them from) a parallel directory tree rooted at this
+   directory, rather than from ``__pycache__`` directories in the source code
+   tree. Any ``__pycache__`` directories in the source code tree will be ignored
+   and new `.pyc` files written within the pycache prefix. Thus if you use
+   :mod:`compileall` as a pre-build step, you must ensure you run it with the
+   same pycache prefix (if any) that you will use at runtime.
+
+   A relative path is interpreted relative to the current working directory.
+
+   This value is initially set based on the value of the :option:`-X`
+   ``pycache_prefix=PATH`` command-line option or the
+   :envvar:`PYTHONPYCACHEPREFIX` environment variable (command-line takes
+   precedence). If neither are set, it is ``None``.
+
+   .. versionadded:: 3.8
+
+
 .. function:: excepthook(type, value, traceback)
 
    This function prints out a given traceback and exception to ``sys.stderr``.

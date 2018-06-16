@@ -1,0 +1,3 @@
+Add :envvar:`PYTHONPYCACHEPREFIX` environment variable and :option:`-X`
+``pycache_prefix`` command-line option to set an alternate root directory for
+writing module bytecode cache files.

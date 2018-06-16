@@ -519,6 +519,32 @@ class CmdLineTest(unittest.TestCase):
             with self.subTest(envar_value=value):
                 assert_python_ok('-c', code, **env_vars)
 
+    def test_set_pycache_prefix(self):
+        # sys.pycache_prefix can be set from either -X pycache_prefix or
+        # PYTHONPYCACHEPREFIX env var, with the former taking precedence.
+        NO_VALUE = object()  # `-X pycache_prefix` with no `=PATH`
+        cases = [
+            # (PYTHONPYCACHEPREFIX, -X pycache_prefix, sys.pycache_prefix)
+            (None, None, None),
+            ('foo', None, 'foo'),
+            (None, 'bar', 'bar'),
+            ('foo', 'bar', 'bar'),
+            ('foo', '', None),
+            ('foo', NO_VALUE, None),
+        ]
+        for envval, opt, expected in cases:
+            exp_clause = "is None" if expected is None else f'== "{expected}"'
+            code = f"import sys; sys.exit(not sys.pycache_prefix {exp_clause})"
+            args = ['-c', code]
+            env = {} if envval is None else {'PYTHONPYCACHEPREFIX': envval}
+            if opt is NO_VALUE:
+                args[:0] = ['-X', 'pycache_prefix']
+            elif opt is not None:
+                args[:0] = ['-X', f'pycache_prefix={opt}']
+            with self.subTest(envval=envval, opt=opt):
+                with support.temp_cwd():
+                    assert_python_ok(*args, **env)
+
     def run_xdev(self, *args, check_exitcode=True, xdev=True):
         env = dict(os.environ)
         env.pop('PYTHONWARNINGS', None)
