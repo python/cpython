@@ -109,8 +109,10 @@ class DictSetTest(unittest.TestCase):
         self.assertEqual(d4.keys() & d3.keys(), {'d'})
         self.assertEqual(d4.keys() & set(d3.keys()), {'d'})
         self.assertIsInstance(d4.keys() & frozenset(d3.keys()), set)
-        self.assertIsInstance(frozenset(d3.keys()) & d4.keys(), frozenset)
+        self.assertIsInstance(frozenset(d3.keys()) & d4.keys(), set)
         self.assertIs(type(d4.keys() & CustomSet(d3.keys())), set)
+        self.assertIs(type(d1.keys() & []), set)
+        self.assertIs(type([] & d1.keys()), set)
 
         self.assertEqual(d1.keys() | d1.keys(), {'a', 'b'})
         self.assertEqual(d1.keys() | d2.keys(), {'a', 'b', 'c'})

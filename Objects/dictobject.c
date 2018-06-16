@@ -3935,13 +3935,12 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     /* Python interpreter swaps parameters when dict view
        is on right side of & */
     if (!PyDictViewSet_Check(self)) {
-        _Py_IDENTIFIER(intersection);
-
-        return _PyObject_CallMethodIdObjArgs(self, &PyId_intersection, other, NULL);
-    }
+        PyObject *tmp = other;
+        other = self;
+        self = tmp;
+    }    
 
     len_self = dictview_len((_PyDictViewObject *)self);
-
 
     /* if other is a set and self is smaller than other,
        reuse set intersection logic */
