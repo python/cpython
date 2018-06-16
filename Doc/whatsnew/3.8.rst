@@ -71,7 +71,7 @@ Parallel filesystem cache for compiled bytecode files
 -----------------------------------------------------
 
 The new :envvar:`PYTHONPYCACHEPREFIX` setting (also available as
-:opt:`-X ``pycache_prefix``) configures the implicit bytecode
+:option:`-X ``pycache_prefix``) configures the implicit bytecode
 cache to use a separate parallel filesystem tree, rather than
 the default ``__pycache__`` subdirectories within each source
 directory.
