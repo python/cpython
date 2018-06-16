@@ -83,6 +83,11 @@ MicroPython
    possible to allow the transfer of code with ease from the desktop.  For more
    information, see `the MicroPython website <https://micropython.org/>`_.
 
+CircuitPython
+   A MicroPython fork targeted towards students and beginners, with a strong
+   focus on Adafruit boards.  For more information, see `the CircuitPython
+   repository <https://github.com/adafruit/circuitpython>`_.
+
 
 Each of these implementations varies in some way from the language as documented
 in this manual, or introduces specific information beyond what's covered in the
