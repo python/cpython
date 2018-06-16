@@ -371,8 +371,8 @@ compute, a common technique is to cache the parameters and the resulting value
 of each call to the function, and return the cached value if the same value is
 requested again.  This is called "memoizing", and can be implemented like this::
 
-   # Callers will never provide a third parameter for this function.
-   def expensive(arg1, arg2, _cache={}):
+   # Callers can only provide two parameters and optionally pass _cache by keyword
+   def expensive(arg1, arg2, *, _cache={}):
        if (arg1, arg2) in _cache:
            return _cache[(arg1, arg2)]
 
