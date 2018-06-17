@@ -138,3 +138,7 @@ class TextToolTipTest(unittest.TestCase):
         root_update()
         self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
         self.assertEqual(tooltip.showtip.call_args_list, [])
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
