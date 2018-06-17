@@ -65,9 +65,9 @@ combines the expressive power and convenience of Python with a powerful type
 system and compile-time type checking.  Mypy type checks standard Python
 programs; run them using any Python VM with basically no runtime overhead.
 
-`Pytype <https://github.com/google/pytype>`_ is a static analyzer that helps you
+`Pytype <https://github.com/google/pytype>`_ is a static analyzer that helps
 find type errors in Python code.  It can type-check code with or without type
-hints, as well as generate them.  Pytype runs under Python 2.7 or 3.6 and
+hints, as well as insert them.  Pytype runs under Python 2.7 or 3.6 and
 analyzes both Python 2 and Python 3 code.
 
 `PyChecker <http://pychecker.sourceforge.net/>`_ is a static analysis tool that
@@ -82,7 +82,7 @@ standard, whether declared interfaces are fully implemented, and more.
 https://docs.pylint.org/ provides a full list of Pylint's features.
 
 `PyAnnotate <https://github.com/dropbox/pyannotate>`_ inserts type hints into
-your source code based on call arguments and return types observed at runtime,
+source code based on call arguments and return types observed at runtime,
 which can be used by tools such as mypy or pytype for static analysis.
 
 How can I create a stand-alone binary from a Python script?
