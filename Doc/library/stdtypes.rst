@@ -1132,7 +1132,7 @@ homogeneous items (where the precise degree of similarity will vary by
 application).
 
 Despite its name, lists are more akin to arrays in other languages than to
-linked lists, since its elements are accessed with time complexity O(1).
+linked lists, since their elements are accessed with time complexity O(1).
 
 .. class:: list([iterable])
 
