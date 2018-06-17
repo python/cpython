@@ -21,9 +21,13 @@ implemented in C or C++ (or other languages callable from C). Python is also
 suitable as an extension language for customizable applications.
 
 This tutorial introduces the reader informally to the basic concepts and
-features of the Python language and system. It helps to have a Python
-interpreter handy for hands-on experience, but all examples are self-contained,
-so the tutorial can be read off-line as well.
+features of the Python language and system. While all examples are
+self-contained and the tutorial can be read off-line, it helps to have a Python
+interpreter handy for hands-on experience, and an on-line interpreter is
+available at https://www.python.org/shell.  Please note that this interpreter
+version will most likely not match the same version of Python this tutorial
+follows, but if you can't install Python for some reason, it will help you run
+most if not all examples.
 
 For a description of standard objects and modules, see :ref:`library-index`.
 :ref:`reference-index` gives a more formal definition of the language.  To write
