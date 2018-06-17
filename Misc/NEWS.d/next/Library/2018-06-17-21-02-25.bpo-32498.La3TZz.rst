@@ -1,0 +1,2 @@
+Made ``urllib.parse.unquote()`` polymorphic, accepting both string and
+bytes.  Patch by Stein Karlsen.
