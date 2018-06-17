@@ -162,7 +162,7 @@ def _calltip_window(parent):  # htest #
 
     calltip = CallTip(text)
     def calltip_show(event):
-        calltip.showtip("(s=Hello world)", "insert", "end")
+        calltip.showtip("(s='Hello world')", "insert", "end")
     def calltip_hide(event):
         calltip.hidetip()
     text.event_add("<<calltip-show>>", "(")
