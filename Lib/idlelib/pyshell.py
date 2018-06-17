@@ -1033,7 +1033,7 @@ class PyShell(OutputWindow):
         return self.shell_title
 
     COPYRIGHT = \
-          'Type "copyright", "credits" or "license()" for more information.'
+          'Type "help", "copyright", "credits" or "license()" for more information.'
 
     def begin(self):
         self.text.mark_set("iomark", "insert")

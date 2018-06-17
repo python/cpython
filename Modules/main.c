@@ -144,7 +144,8 @@ static const char usage_6[] =
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
 "   locale coercion and locale compatibility warnings on stderr.\n"
-"PYTHONDEVMODE: enable the development mode.\n";
+"PYTHONDEVMODE: enable the development mode.\n"
+"PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n";
 
 static void
 pymain_usage(int error, const wchar_t* program)
@@ -1675,6 +1676,37 @@ pymain_init_tracemalloc(_PyCoreConfig *config)
 }
 
 
+static _PyInitError
+pymain_init_pycache_prefix(_PyCoreConfig *config)
+{
+    wchar_t *env;
+
+    int res = config_get_env_var_dup(
+        &env, L"PYTHONPYCACHEPREFIX", "PYTHONPYCACHEPREFIX");
+    if (res < 0) {
+        return DECODE_LOCALE_ERR("PYTHONPYCACHEPREFIX", res);
+    } else if (env) {
+        config->pycache_prefix = env;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"pycache_prefix");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (sep && wcslen(sep) > 1) {
+            config->pycache_prefix = _PyMem_RawWcsdup(sep + 1);
+            if (config->pycache_prefix == NULL) {
+                return _Py_INIT_NO_MEMORY();
+            }
+        } else {
+            // -X pycache_prefix= can cancel the env var
+            config->pycache_prefix = NULL;
+        }
+    }
+
+    return _Py_INIT_OK();
+}
+
+
 static void
 get_env_flag(int *flag, const char *name)
 {
@@ -1868,6 +1900,12 @@ config_read_complex_options(_PyCoreConfig *config)
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
+
+    err = pymain_init_pycache_prefix(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     return _Py_INIT_OK();
 }
 
@@ -2015,6 +2053,7 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
         Py_IgnoreEnvironmentFlag = init_ignore_env;
         _PyCoreConfig_Clear(&pymain->config);
         pymain_clear_cmdline(pymain, cmdline);
+        memset(cmdline, 0, sizeof(*cmdline));
         pymain_get_global_config(pymain, cmdline);
 
         /* The encoding changed: read again the configuration
@@ -2237,6 +2276,7 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
         LIST = NULL; \
     } while (0)
 
+    CLEAR(config->pycache_prefix);
     CLEAR(config->module_search_path_env);
     CLEAR(config->home);
     CLEAR(config->program_name);
@@ -2301,6 +2341,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(malloc_stats);
     COPY_ATTR(utf8_mode);
 
+    COPY_STR_ATTR(pycache_prefix);
     COPY_STR_ATTR(module_search_path_env);
     COPY_STR_ATTR(home);
     COPY_STR_ATTR(program_name);
@@ -2336,6 +2377,7 @@ _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
     Py_CLEAR(config->warnoptions);
     Py_CLEAR(config->xoptions);
     Py_CLEAR(config->module_search_path);
+    Py_CLEAR(config->pycache_prefix);
 }
 
 
@@ -2388,6 +2430,7 @@ _PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
     COPY_ATTR(warnoptions);
     COPY_ATTR(xoptions);
     COPY_ATTR(module_search_path);
+    COPY_ATTR(pycache_prefix);
 #undef COPY_ATTR
     return 0;
 }
@@ -2445,6 +2488,13 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
 
         COPY_WSTRLIST(main_config->module_search_path,
                       config->nmodule_search_path, config->module_search_paths);
+
+        if (config->pycache_prefix != NULL) {
+            COPY_WSTR(pycache_prefix);
+        } else {
+            main_config->pycache_prefix = NULL;
+        }
+
     }
 
     return _Py_INIT_OK();
