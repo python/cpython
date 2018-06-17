@@ -2727,13 +2727,14 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
         first_part = to_encode[:text_space]
         ew = _ew.encode(first_part, charset=encode_as)
         excess = len(ew) - remaining_space
+        encoded_first_part = ew.split('?')[3]
         if excess > 0:
             # encode always chooses the shortest encoding, so this
             # is guaranteed to fit at this point.
-            first_part = first_part[:-excess]
+            encoded_first_part = encoded_first_part[:-excess]
             ew = _ew.encode(first_part)
         lines[-1] += ew
-        to_encode = to_encode[len(first_part):]
+        to_encode = to_encode[len(encoded_first_part):]
         if to_encode:
             lines.append(' ')
             new_last_ew = len(lines[-1])

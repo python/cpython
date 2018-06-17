@@ -1,0 +1,2 @@
+Fix infinite loop on folding email if headers has no spaces with non-ascii 
+characters and a size of value is over 78
