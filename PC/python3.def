@@ -87,9 +87,6 @@ EXPORTS
   PyDictItems_Type=python38.PyDictItems_Type DATA
   PyDictIterItem_Type=python38.PyDictIterItem_Type DATA
   PyDictIterKey_Type=python38.PyDictIterKey_Type DATA
-  PyDictRevIterKey_Type=python38.PyDictRevIterKey_Type DATA
-  PyDictRevIterItem_Type=python38.PyDictRevIterItem_Type DATA
-  PyDictRevIterValue_Type=python38.PyDictRevIterValue_Type DATA
   PyDictIterValue_Type=python38.PyDictIterValue_Type DATA
   PyDictKeys_Type=python38.PyDictKeys_Type DATA
   PyDictProxy_New=python38.PyDictProxy_New
