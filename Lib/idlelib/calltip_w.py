@@ -7,9 +7,9 @@ from tkinter import Label, LEFT, SOLID, TclError
 
 from idlelib.tooltip import ToolTipBase
 
-HIDE_VIRTUAL_EVENT_NAME = "<<calltipwindow-hide>>"
+HIDE_EVENT = "<<calltipwindow-hide>>"
 HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")
-CHECKHIDE_VIRTUAL_EVENT_NAME = "<<calltipwindow-checkhide>>"
+CHECKHIDE_EVENT = "<<calltipwindow-checkhide>>"
 CHECKHIDE_SEQUENCES = ("<KeyRelease>", "<ButtonRelease>")
 CHECKHIDE_TIME = 100  # milliseconds
 
@@ -127,24 +127,24 @@ class CallTip(ToolTipBase):
         super(CallTip, self).hidetip()
 
     def _bind_events(self):
-        self.checkhideid = self.text_widget.bind(CHECKHIDE_VIRTUAL_EVENT_NAME,
+        self.checkhideid = self.text_widget.bind(CHECKHIDE_EVENT,
                                                   self.checkhide_event)
         for seq in CHECKHIDE_SEQUENCES:
-            self.text_widget.event_add(CHECKHIDE_VIRTUAL_EVENT_NAME, seq)
+            self.text_widget.event_add(CHECKHIDE_EVENT, seq)
         self.text_widget.after(CHECKHIDE_TIME, self.checkhide_event)
-        self.hideid = self.text_widget.bind(HIDE_VIRTUAL_EVENT_NAME,
+        self.hideid = self.text_widget.bind(HIDE_EVENT,
                                              self.hide_event)
         for seq in HIDE_SEQUENCES:
-            self.text_widget.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
+            self.text_widget.event_add(HIDE_EVENT, seq)
 
     def _unbind_events(self):
         for seq in CHECKHIDE_SEQUENCES:
-            self.text_widget.event_delete(CHECKHIDE_VIRTUAL_EVENT_NAME, seq)
-        self.text_widget.unbind(CHECKHIDE_VIRTUAL_EVENT_NAME, self.checkhideid)
+            self.text_widget.event_delete(CHECKHIDE_EVENT, seq)
+        self.text_widget.unbind(CHECKHIDE_EVENT, self.checkhideid)
         self.checkhideid = None
         for seq in HIDE_SEQUENCES:
-            self.text_widget.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
-        self.text_widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideid)
+            self.text_widget.event_delete(HIDE_EVENT, seq)
+        self.text_widget.unbind(HIDE_EVENT, self.hideid)
         self.hideid = None
 
 
