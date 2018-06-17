@@ -15,7 +15,7 @@ class MainMenuTest(unittest.TestCase):
 
     def test_default_keydefs(self):
         self.assertGreaterEqual(len(mainmenu.default_keydefs), 50)
-        
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
