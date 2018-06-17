@@ -201,6 +201,6 @@ class AboutDialog(Toplevel):
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_help_about', verbosity=2, exit=False)
-    
+
     from idlelib.idle_test.htest import run
     run(AboutDialog)
