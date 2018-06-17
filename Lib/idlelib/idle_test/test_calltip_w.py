@@ -23,7 +23,7 @@ class CallTipTest(unittest.TestCase):
         del cls.text, cls.root
 
     def test_init(self):
-        self.assertEqual(self.calltip.widget, self.text)
+        self.assertEqual(self.calltip.text_widget, self.text)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
