@@ -172,7 +172,9 @@ def _calltip_window(parent):  # htest #
 
     text.focus_set()
 
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_calltips', verbosity=2, exit=False)
 
-if __name__=='__main__':
     from idlelib.idle_test.htest import run
     run(_calltip_window)

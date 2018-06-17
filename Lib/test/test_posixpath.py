@@ -153,27 +153,20 @@ class PosixPathTest(unittest.TestCase):
     def test_islink(self):
         self.assertIs(posixpath.islink(support.TESTFN + "1"), False)
         self.assertIs(posixpath.lexists(support.TESTFN + "2"), False)
-        f = open(support.TESTFN + "1", "wb")
-        try:
+        with open(support.TESTFN + "1", "wb") as f:
             f.write(b"foo")
-            f.close()
-            self.assertIs(posixpath.islink(support.TESTFN + "1"), False)
-            if support.can_symlink():
-                os.symlink(support.TESTFN + "1", support.TESTFN + "2")
-                self.assertIs(posixpath.islink(support.TESTFN + "2"), True)
-                os.remove(support.TESTFN + "1")
-                self.assertIs(posixpath.islink(support.TESTFN + "2"), True)
-                self.assertIs(posixpath.exists(support.TESTFN + "2"), False)
-                self.assertIs(posixpath.lexists(support.TESTFN + "2"), True)
-        finally:
-            if not f.close():
-                f.close()
+        self.assertIs(posixpath.islink(support.TESTFN + "1"), False)
+        if support.can_symlink():
+            os.symlink(support.TESTFN + "1", support.TESTFN + "2")
+            self.assertIs(posixpath.islink(support.TESTFN + "2"), True)
+            os.remove(support.TESTFN + "1")
+            self.assertIs(posixpath.islink(support.TESTFN + "2"), True)
+            self.assertIs(posixpath.exists(support.TESTFN + "2"), False)
+            self.assertIs(posixpath.lexists(support.TESTFN + "2"), True)
 
     def test_ismount(self):
         self.assertIs(posixpath.ismount("/"), True)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            self.assertIs(posixpath.ismount(b"/"), True)
+        self.assertIs(posixpath.ismount(b"/"), True)
 
     def test_ismount_non_existent(self):
         # Non-existent mountpoint.
