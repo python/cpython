@@ -1677,7 +1677,7 @@ The callback function should raise :exc:`OptionValueError` if there are any
 problems with the option or its argument(s).  :mod:`optparse` catches this and
 terminates the program, printing the error message you supply to stderr.  Your
 message should be clear, concise, accurate, and mention the option at fault.
-Otherwise, the user will have a hard time figuring out what he did wrong.
+Otherwise, the user will have a hard time figuring out what they did wrong.
 
 
 .. _optparse-callback-example-1:

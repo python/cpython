@@ -546,7 +546,7 @@ on the hash function used in digital signatures.
     preparer, generates all or part of a message to be signed by a second
     party, the message signer. If the message preparer is able to find
     cryptographic hash function collisions (i.e., two messages producing the
-    same hash value), then she might prepare meaningful versions of the message
+    same hash value), then they might prepare meaningful versions of the message
     that would produce the same hash value and digital signature, but with
     different results (e.g., transferring $1,000,000 to an account, rather than
     $10). Cryptographic hash functions have been designed with collision
