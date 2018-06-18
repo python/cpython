@@ -301,8 +301,8 @@ class HelpSource(Query):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_query', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_query', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(Query, HelpSource)

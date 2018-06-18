@@ -1,9 +1,10 @@
-# Test the functions and main class method of paragraph.py
+"Test paragraph, coverage 76%."
+
+from idlelib import paragraph as pg
 import unittest
-from idlelib import paragraph as fp
-from idlelib.editor import EditorWindow
-from tkinter import Tk, Text
 from test.support import requires
+from tkinter import Tk, Text
+from idlelib.editor import EditorWindow
 
 
 class Is_Get_Test(unittest.TestCase):
@@ -15,26 +16,26 @@ class Is_Get_Test(unittest.TestCase):
     leadingws_nocomment = '    This is not a comment'
 
     def test_is_all_white(self):
-        self.assertTrue(fp.is_all_white(''))
-        self.assertTrue(fp.is_all_white('\t\n\r\f\v'))
-        self.assertFalse(fp.is_all_white(self.test_comment))
+        self.assertTrue(pg.is_all_white(''))
+        self.assertTrue(pg.is_all_white('\t\n\r\f\v'))
+        self.assertFalse(pg.is_all_white(self.test_comment))
 
     def test_get_indent(self):
         Equal = self.assertEqual
-        Equal(fp.get_indent(self.test_comment), '')
-        Equal(fp.get_indent(self.trailingws_comment), '')
-        Equal(fp.get_indent(self.leadingws_comment), '    ')
-        Equal(fp.get_indent(self.leadingws_nocomment), '    ')
+        Equal(pg.get_indent(self.test_comment), '')
+        Equal(pg.get_indent(self.trailingws_comment), '')
+        Equal(pg.get_indent(self.leadingws_comment), '    ')
+        Equal(pg.get_indent(self.leadingws_nocomment), '    ')
 
     def test_get_comment_header(self):
         Equal = self.assertEqual
         # Test comment strings
-        Equal(fp.get_comment_header(self.test_comment), '#')
-        Equal(fp.get_comment_header(self.trailingws_comment), '#')
-        Equal(fp.get_comment_header(self.leadingws_comment), '    #')
+        Equal(pg.get_comment_header(self.test_comment), '#')
+        Equal(pg.get_comment_header(self.trailingws_comment), '#')
+        Equal(pg.get_comment_header(self.leadingws_comment), '    #')
         # Test non-comment strings
-        Equal(fp.get_comment_header(self.leadingws_nocomment), '    ')
-        Equal(fp.get_comment_header(self.test_nocomment), '')
+        Equal(pg.get_comment_header(self.leadingws_nocomment), '    ')
+        Equal(pg.get_comment_header(self.test_nocomment), '')
 
 
 class FindTest(unittest.TestCase):
@@ -62,7 +63,7 @@ class FindTest(unittest.TestCase):
             linelength = int(text.index("%d.end" % line).split('.')[1])
             for col in (0, linelength//2, linelength):
                 tempindex = "%d.%d" % (line, col)
-                self.assertEqual(fp.find_paragraph(text, tempindex), expected)
+                self.assertEqual(pg.find_paragraph(text, tempindex), expected)
         text.delete('1.0', 'end')
 
     def test_find_comment(self):
@@ -161,7 +162,7 @@ class ReformatFunctionTest(unittest.TestCase):
 
     def test_reformat_paragraph(self):
         Equal = self.assertEqual
-        reform = fp.reformat_paragraph
+        reform = pg.reformat_paragraph
         hw = "O hello world"
         Equal(reform(' ', 1), ' ')
         Equal(reform("Hello    world", 20), "Hello  world")
@@ -192,7 +193,7 @@ class ReformatCommentTest(unittest.TestCase):
         test_string = (
             "    \"\"\"this is a test of a reformat for a triple quoted string"
             " will it reformat to less than 70 characters for me?\"\"\"")
-        result = fp.reformat_comment(test_string, 70, "    ")
+        result = pg.reformat_comment(test_string, 70, "    ")
         expected = (
             "    \"\"\"this is a test of a reformat for a triple quoted string will it\n"
             "    reformat to less than 70 characters for me?\"\"\"")
@@ -201,7 +202,7 @@ class ReformatCommentTest(unittest.TestCase):
         test_comment = (
             "# this is a test of a reformat for a triple quoted string will "
             "it reformat to less than 70 characters for me?")
-        result = fp.reformat_comment(test_comment, 70, "#")
+        result = pg.reformat_comment(test_comment, 70, "#")
         expected = (
             "# this is a test of a reformat for a triple quoted string will it\n"
             "# reformat to less than 70 characters for me?")
@@ -210,7 +211,7 @@ class ReformatCommentTest(unittest.TestCase):
 
 class FormatClassTest(unittest.TestCase):
     def test_init_close(self):
-        instance = fp.FormatParagraph('editor')
+        instance = pg.FormatParagraph('editor')
         self.assertEqual(instance.editwin, 'editor')
         instance.close()
         self.assertEqual(instance.editwin, None)
@@ -269,14 +270,16 @@ class FormatEventTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = Tk()
+        cls.root.withdraw()
         editor = Editor(root=cls.root)
         cls.text = editor.text.text  # Test code does not need the wrapper.
-        cls.formatter = fp.FormatParagraph(editor).format_paragraph_event
+        cls.formatter = pg.FormatParagraph(editor).format_paragraph_event
         # Sets the insert mark just after the re-wrapped and inserted  text.
 
     @classmethod
     def tearDownClass(cls):
         del cls.text, cls.formatter
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
 

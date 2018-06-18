@@ -1,11 +1,8 @@
-"""Unittest for idlelib.pyparse.py.
+"Test pyparse, coverage 96%."
 
-Coverage: 97%
-"""
-
-from collections import namedtuple
-import unittest
 from idlelib import pyparse
+import unittest
+from collections import namedtuple
 
 
 class ParseMapTest(unittest.TestCase):
