@@ -3670,7 +3670,7 @@ PyTypeObject PyDictIterItem_Type = {
 /* dictreviter */
 
 static PyObject *
-dictreviter_iternextkey(dictiterobject *di)
+dictreviter_iternext(dictiterobject *di)
 {
     PyDictObject *d = di->di_dict;
 
@@ -3681,21 +3681,22 @@ dictreviter_iternextkey(dictiterobject *di)
 
     if (di->di_used != d->ma_used) {
         PyErr_SetString(PyExc_RuntimeError,
-                        "dictionary changed size during iteration");
+                         "dictionary changed size during iteration");
         di->di_used = -1; /* Make this state sticky */
         return NULL;
     }
 
     Py_ssize_t i = di->di_pos;
     PyDictKeysObject *k = d->ma_keys;
-    PyObject *key;
+    PyObject *key, *value, *result;
 
     if (d->ma_values) {
         if (i < 0) {
             goto fail;
         }
         key = DK_ENTRIES(k)[i].me_key;
-        assert(d->ma_values[i] != NULL);
+        value = d->ma_values[i];
+        assert (value != NULL);
     }
     else {
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
@@ -3707,131 +3708,45 @@ dictreviter_iternextkey(dictiterobject *di)
             goto fail;
         }
         key = entry_ptr->me_key;
-    }
-    di->di_pos = i-1;
-    di->len--;
-    Py_INCREF(key);
-    return key;
-
-fail:
-    di->di_dict = NULL;
-    Py_DECREF(d);
-    return NULL;
-}
-
-static PyObject *
-dictreviter_iternextitem(dictiterobject *di)
-{
-    PyDictObject *d = di->di_dict;
-
-    if (d == NULL) {
-        return NULL;
-    }
-    assert (PyDict_Check(d));
-
-    if (di->di_used != d->ma_used) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "dictionnary changed size during iteration");
-        di->di_used = -1; /* Make this state sticky */
-        return NULL;
-    }
-
-    Py_ssize_t i = di->di_pos;
-    PyObject *key, *value, *result;
-
-    if (d->ma_values) {
-        if (i < 0) {
-            goto fail;
-        }
-        key = DK_ENTRIES(d->ma_keys)[i].me_key;
-        value = d->ma_values[i];
-        assert (value != NULL);
-    }
-    else {
-        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
-        while (i >= 0 && entry_ptr->me_value == NULL) {
-            entry_ptr--;
-            i--;
-        }
-        if (i < 0) {
-            goto fail;
-        }
-        key = entry_ptr->me_key;
         value = entry_ptr->me_value;
     }
     di->di_pos = i-1;
     di->len--;
-    Py_INCREF(key);
-    Py_INCREF(value);
-    result = di->di_result;
-    if (Py_REFCNT(result) == 1) {
-        PyObject *oldkey = PyTuple_GET_ITEM(result, 0);
-        PyObject *oldvalue = PyTuple_GET_ITEM(result, 1);
-        PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
-        PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
-        Py_INCREF(result);
-        Py_DECREF(oldkey);
-        Py_DECREF(oldvalue);
+
+    if (Py_TYPE(di) == &PyDictRevIterKey_Type) {
+        Py_INCREF(key);
+        return key;
     }
-    else {
-        result = PyTuple_New(2);
-        if (result == NULL) {
-            return NULL;
+    else if (Py_TYPE(di) == &PyDictRevIterValue_Type) {
+        Py_INCREF(value);
+        return value;
+    }
+    else if (Py_TYPE(di) == &PyDictRevIterItem_Type) {
+        Py_INCREF(key);
+        Py_INCREF(value);
+        result = di->di_result;
+        if (Py_REFCNT(result) == 1) {
+            PyObject *oldkey = PyTuple_GET_ITEM(result, 0);
+            PyObject *oldvalue = PyTuple_GET_ITEM(result, 1);
+            PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
+            PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
+            Py_INCREF(result);
+            Py_DECREF(oldkey);
+            Py_DECREF(oldvalue);
         }
-        PyTuple_SET_ITEM(result, 0, key); /* steals reference */
-        PyTuple_SET_ITEM(result, 1, value); /* steals reference */
+        else {
+            result = PyTuple_New(2);
+            if (result == NULL) {
+                return NULL;
+            }
+            PyTuple_SET_ITEM(result, 0, key); /* steals reference */
+            PyTuple_SET_ITEM(result, 1, value); /* steals reference */
 
-    }
-    return result;
-
-fail:
-    di->di_dict = NULL;
-    Py_DECREF(d);
-    return NULL;
-}
-
-static PyObject *
-dictreviter_iternextvalue(dictiterobject *di)
-{
-    PyDictObject *d = di->di_dict;
-
-    if (d == NULL) {
-        return NULL;
-    }
-    assert (PyDict_Check(d));
-
-    if (di->di_used != d->ma_used) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "dictionnary changed size during iteration");
-        di->di_used = -1; /* Make this state sticky */
-        return NULL;
-    }
-
-    PyObject *value;
-    Py_ssize_t i = di->di_pos;
-
-    if (d->ma_values) {
-        if (i < 0) {
-            goto fail;
         }
-        value = d->ma_values[i];
-        assert(value != NULL);
+        return result;
+    } else {
+        Py_UNREACHABLE();
     }
-    else {
-        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
-        while (i >= 0 && entry_ptr->me_value == NULL) {
-            entry_ptr--;
-            i--;
-        }
-        if (i < 0) {
-            goto fail;
-        }
-        value = entry_ptr->me_value;
-    }
-    di->di_pos = i-1;
-    di->len--;
-    Py_INCREF(value);
-    return value;
 
 fail:
     di->di_dict = NULL;
@@ -3847,7 +3762,7 @@ PyTypeObject PyDictRevIterKey_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)dictreviter_iternextkey,
+    .tp_iternext = (iternextfunc)dictreviter_iternext,
     .tp_methods = dictiter_methods
 };
 
@@ -3886,15 +3801,15 @@ dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
         if (Py_TYPE(di) == &PyDictIterItem_Type)
             element = dictiter_iternextitem(&tmp);
         else if (Py_TYPE(di) == &PyDictRevIterItem_Type)
-            element = dictreviter_iternextitem(&tmp);
+            element = dictreviter_iternext(&tmp);
         else if (Py_TYPE(di) == &PyDictIterKey_Type)
             element = dictiter_iternextkey(&tmp);
         else if (Py_TYPE(di) == &PyDictRevIterKey_Type)
-            element = dictreviter_iternextkey(&tmp);
+            element = dictreviter_iternext(&tmp);
         else if (Py_TYPE(di) == &PyDictIterValue_Type)
             element = dictiter_iternextvalue(&tmp);
         else if (Py_TYPE(di) == &PyDictRevIterValue_Type)
-            element = dictreviter_iternextvalue(&tmp);
+            element = dictreviter_iternext(&tmp);
         else
             Py_UNREACHABLE();
         if (element) {
@@ -3926,7 +3841,7 @@ PyTypeObject PyDictRevIterItem_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)dictreviter_iternextitem,
+    .tp_iternext = (iternextfunc)dictreviter_iternext,
     .tp_methods = dictiter_methods
 };
 
@@ -3938,7 +3853,7 @@ PyTypeObject PyDictRevIterValue_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)dictreviter_iternextvalue,
+    .tp_iternext = (iternextfunc)dictreviter_iternext,
     .tp_methods = dictiter_methods
 };
 
