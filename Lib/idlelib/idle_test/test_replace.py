@@ -1,4 +1,4 @@
-"Test replace. %"
+"Test replace. 78%"
 
 from idlelib.replace import ReplaceDialog
 import unittest
