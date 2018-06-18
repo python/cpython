@@ -1607,9 +1607,39 @@ PyErr_CheckSignals(void)
 }
 
 
-/* Replacements for intrcheck.c functionality
- * Declared in pyerrors.h
- */
+/* Simulate the effect of a SIGINT signal arriving. The next time
+   PyErr_CheckSignals() is called,  the Python SIGINT signal handler will be
+   raised.
+
+   The SIGINT signal must be handled by Python, otherwise an exception is
+   raised and return -1. Return 0 on success.
+
+   The GIL doesn't need to be hold to call this function. */
+int
+PyErr_SetInterruptWithErr(void)
+{
+    if (Handlers[SIGINT].func == IgnoreHandler) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "the SIGINT signal is ignored");
+        return -1;
+    }
+
+    if (Handlers[SIGINT].func == DefaultHandler) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "the SIGINT signal is not handled by Python");
+        return -1;
+    }
+
+    trip_signal(SIGINT);
+    return 0;
+}
+
+
+/* Simulate the effect of a SIGINT signal arriving. The next time
+   PyErr_CheckSignals() is called,  the Python SIGINT signal handler will be
+   raised.
+
+   The GIL doesn't need to be hold to call this function. */
 void
 PyErr_SetInterrupt(void)
 {

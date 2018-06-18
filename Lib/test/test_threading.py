@@ -1163,12 +1163,51 @@ class BoundedSemaphoreTests(lock_tests.BoundedSemaphoreTests):
 class BarrierTests(lock_tests.BarrierTests):
     barriertype = staticmethod(threading.Barrier)
 
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         extra = {"ThreadError"}
         blacklist = {'currentThread', 'activeCount'}
         support.check__all__(self, threading, ('threading', '_thread'),
                              extra=extra, blacklist=blacklist)
+
+
+class InterruptMainTests(unittest.TestCase):
+    def test_interrupt_main_subthread(self):
+        #Calling start_new_thread with a function that executes interrupt_main
+        # should raise KeyboardInterrupt upon completion.
+        def call_interrupt():
+            _thread.interrupt_main()
+        t = threading.Thread(target=call_interrupt)
+        with self.assertRaises(KeyboardInterrupt):
+            t.start()
+            t.join()
+        t.join()
+
+    def test_interrupt_main_mainthread(self):
+        # Make sure that if interrupt_main is called in main threat that
+        # KeyboardInterrupt is raised instantly.
+        with self.assertRaises(KeyboardInterrupt):
+            _thread.interrupt_main()
+
+    def test_interrupt_main_error(self):
+        handler = signal.getsignal(signal.SIGINT)
+        try:
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
+            with self.assertRaises(RuntimeError) as cm:
+                _thread.interrupt_main()
+            self.assertEqual(str(cm.exception),
+                             'the SIGINT signal is ignored')
+
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            with self.assertRaises(RuntimeError) as cm:
+                _thread.interrupt_main()
+            self.assertEqual(str(cm.exception),
+                             'the SIGINT signal is not handled by Python')
+
+        finally:
+            signal.signal(signal.SIGINT, handler)
+
 
 if __name__ == "__main__":
     unittest.main()
