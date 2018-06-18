@@ -1,4 +1,4 @@
-"""Test query, coverate 91%).
+"""Test query, coverage 91%).
 
 Non-gui tests for Query, SectionName, ModuleName, and HelpSource use
 dummy versions that extract the non-gui methods and add other needed
