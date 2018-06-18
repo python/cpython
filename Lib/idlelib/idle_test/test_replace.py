@@ -1,4 +1,4 @@
-"Test replace. 78%"
+"Test replace, coverage 78%."
 
 from idlelib.replace import ReplaceDialog
 import unittest
