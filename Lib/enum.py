@@ -1,12 +1,6 @@
 import sys
 from types import MappingProxyType, DynamicClassAttribute
 
-# try _collections first to reduce startup cost
-try:
-    from _collections import OrderedDict
-except ImportError:
-    from collections import OrderedDict
-
 
 __all__ = [
         'EnumMeta',
@@ -168,7 +162,7 @@ class EnumMeta(type):
         # create our new Enum type
         enum_class = super().__new__(metacls, cls, bases, classdict)
         enum_class._member_names_ = []               # names in definition order
-        enum_class._member_map_ = OrderedDict()      # name->value map
+        enum_class._member_map_ = {}                 # name->value map
         enum_class._member_type_ = member_type
 
         # save attributes from super classes so we know if we can take
@@ -630,14 +624,12 @@ class Enum(metaclass=EnumMeta):
             source = vars(source)
         else:
             source = module_globals
-        # We use an OrderedDict of sorted source keys so that the
-        # _value2member_map is populated in the same order every time
+        # _value2member_map_ is populated in the same order every time
         # for a consistent reverse mapping of number to name when there
-        # are multiple names for the same number rather than varying
-        # between runs due to hash randomization of the module dictionary.
+        # are multiple names for the same number.
         members = [
-                (name, source[name])
-                for name in source.keys()
+                (name, value)
+                for name, value in source.items()
                 if filter(name)]
         try:
             # sort by value
