@@ -36,7 +36,7 @@ class PyShellFileListTest(unittest.TestCase):
 ##        pyshell.use_subprocess = False
 ##        ps = pyshell.PyShellFileList(self.root).open_shell()
 ##        self.assertIsInstance(ps, pyshell.PyShell)
-        
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
