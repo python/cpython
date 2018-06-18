@@ -1,1 +1,0 @@
-Changed ``Enum._member_map_`` from ``OrderedDict`` to ``dict``.
