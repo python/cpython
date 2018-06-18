@@ -497,7 +497,8 @@ Here is an example session that uses the ``GET`` method::
    b'<!doctype html>\n<!--[if"...
    ...
    >>> # Example of an invalid request
-   >>> conn.request("GET", "/parrot.spam")
+   >>> conn = http.client.HTTPSConnection("httpbin.org")
+   >>> conn.request("GET", "/status/404")
    >>> r2 = conn.getresponse()
    >>> print(r2.status, r2.reason)
    404 Not Found
