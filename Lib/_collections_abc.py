@@ -311,7 +311,6 @@ class Reversible(Iterable):
             return _check_methods(C, "__reversed__", "__iter__")
         return NotImplemented
 
-Reversible.register(dict)
 Reversible.register(dict_keys)
 Reversible.register(dict_values)
 Reversible.register(dict_items)
