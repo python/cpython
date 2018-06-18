@@ -79,11 +79,14 @@ AboutDialog_spec = {
            "are correctly displayed.\n [Close] to exit.",
     }
 
+# TODO implement ^\; adding '<Control-Key-\\>' to function does not work.
 _calltip_window_spec = {
     'file': 'calltip_w',
     'kwds': {},
     'msg': "Typing '(' should display a calltip.\n"
            "Typing ') should hide the calltip.\n"
+           "So should moving cursor out of argument area.\n"
+           "Force-open-calltip does not work here.\n"
     }
 
 _module_browser_spec = {
