@@ -1,4 +1,4 @@
-"Test , coverage 100%."
+"Test mainmenu, coverage 100%."
 # Reported as 88%; mocking turtledemo absence would have no point.
 
 from idlelib import mainmenu
