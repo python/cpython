@@ -1256,7 +1256,7 @@ Finding all Adverbs
 ^^^^^^^^^^^^^^^^^^^
 
 :func:`findall` matches *all* occurrences of a pattern, not just the first
-one as :func:`search` does.  For example, if a writer and wanted to
+one as :func:`search` does.  For example, if a writer wanted to
 find all of the adverbs in some text, they might use :func:`findall` in
 the following manner:
 
