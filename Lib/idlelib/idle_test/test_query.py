@@ -1,6 +1,4 @@
-"""Test query, coverate 94% (100% for Query and SectionName).
-
-6 of 8 missing lines are hard-to-trigger ModuleName exceptions.
+"""Test query, coverate 91%).
 
 Non-gui tests for Query, SectionName, ModuleName, and HelpSource use
 dummy versions that extract the non-gui methods and add other needed
