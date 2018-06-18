@@ -5,7 +5,6 @@ that uses .pypirc in the distutils.command package.
 """
 import os
 from configparser import RawConfigParser
-import subprocess
 import shlex
 
 from distutils.cmd import Command
@@ -49,6 +48,11 @@ class PyPIRCCommand(Command):
 
     def _read_pypirc(self):
         """Reads the .pypirc file."""
+
+        # Subprocess is not available during distutils build of Python, thus
+        # the method-local import.
+        import subprocess
+
         rc = self._get_rc_file()
         if os.path.exists(rc):
             self.announce('Using PyPI login from %s' % rc)
