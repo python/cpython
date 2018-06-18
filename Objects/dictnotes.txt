@@ -86,9 +86,9 @@ While making a dictionary more sparse reduces collisions, it impairs
 iteration and key listing.  Those methods loop over every potential
 entry.  Doubling the size of dictionary results in twice as many
 non-overlapping memory accesses for keys(), items(), values(),
-__iter__(), __reversed__(), iterkeys(), iteritems(), itervalues(),
-and update(). Also, every dictionary iterates at least twice, once for
-the memset() when it is created and once by dealloc().
+__iter__(), iterkeys(), iteritems(), itervalues(), and update().
+Also, every dictionary iterates at least twice, once for the memset()
+when it is created and once by dealloc().
 
 Dictionary operations involving only a single key can be O(1) unless
 resizing is possible.  By checking for a resize only when the
