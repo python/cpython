@@ -525,7 +525,7 @@ def collect_cc(info_add):
     info_add('CC.version', text)
 
 
-def collect_dbm(info_add):
+def collect_gdbm(info_add):
     try:
         import _gdbm
     except ImportError:
@@ -561,7 +561,7 @@ def collect_info(info):
         collect_testcapi,
         collect_resource,
         collect_cc,
-        collect_dbm,
+        collect_gdbm,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
