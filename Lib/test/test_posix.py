@@ -1527,8 +1527,10 @@ class TestPosixSpawn(unittest.TestCase):
         outfile = support.TESTFN
         self.addCleanup(support.unlink, outfile)
         script = """if 1:
-            import sys
+            import sys, os
             sys.stdout.write("hello")
+            sys.stdout.flush()
+            os.fsync(sys.stdout.fileno())
             """
         file_actions = [
             (os.POSIX_SPAWN_OPEN, 1, outfile,
