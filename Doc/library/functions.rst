@@ -43,8 +43,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: abs(x)
 
    Return the absolute value of a number.  The argument may be an
-   integer or a floating point number.  If the argument is a complex number, its
-   magnitude is returned.
+   integer or a floating point number, If *x* defines :meth:`__abs__`,
+   ``abs(x)`` returns ``x.__abs__()``. If the argument is a complex number, its magnitude is returned.
 
 
 .. function:: all(iterable)
