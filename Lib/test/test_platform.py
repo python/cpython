@@ -260,7 +260,6 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(sts, 0)
 
     def test_libc_ver(self):
-        import os
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
             # Cygwin horror

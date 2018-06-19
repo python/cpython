@@ -140,9 +140,7 @@ _libc_search = re.compile(b'(__libc_init)'
                           b'|'
                           br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
 
-def libc_ver(executable=sys.executable, lib='', version='',
-
-             chunksize=16384):
+def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
 
     """ Tries to determine the libc version that the file executable
         (which defaults to the Python interpreter) is linked against.
