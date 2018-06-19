@@ -16,7 +16,7 @@ class CodePicklerTest(unittest.TestCase):
         code = rpc.unpickle_code(cbytes)
         self.assertEqual(code.co_names, ('a', 'b', 'c'))
 
-    def test_code_pickler(self):        
+    def test_code_pickler(self):
         self.assertIn(type((lambda:None).__code__),
                       rpc.CodePickler.dispatch_table)
 
@@ -24,7 +24,7 @@ class CodePicklerTest(unittest.TestCase):
         def f(): pass
         # The main test here is that pickling code does not raise.
         self.assertIn(b'test_rpc.py', rpc.dumps(f.__code__))
-        
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
