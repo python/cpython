@@ -361,7 +361,20 @@ Larry
         fs = cgi.FieldStorage(fp, environ=env, encoding="latin-1")
         self.assertEqual(len(fs.list), 1)
         self.assertEqual(fs.list[0].name, 'submit-name')
-        self.assertEqual(fs.list[0].value, 'Larry')
+        self.assertEqual(fs.list[0].value, b'Larry')
+
+    def test_fieldstorage_not_multipart(self):
+        POSTDATA = b'{"name": "Bert"}'
+
+        env = {
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'text/plain',
+            'CONTENT_LENGTH': str(len(POSTDATA))
+        }
+        fp = BytesIO(POSTDATA)
+        fs = cgi.FieldStorage(fp, environ=env)
+        self.assertEqual(fs.list, None)
+        self.assertEqual(fs.value, b'{"name": "Bert"}')
 
     def test_fieldstorage_as_context_manager(self):
         fp = BytesIO(b'x' * 10)

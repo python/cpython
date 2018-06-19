@@ -646,10 +646,6 @@ class FieldStorage:
             parser.feed(hdr_text.decode(self.encoding, self.errors))
             headers = parser.close()
 
-            # Some clients add Content-Length for part headers, ignore them
-            if 'content-length' in headers:
-                del headers['content-length']
-
             part = klass(self.fp, headers, ib, environ, keep_blank_values,
                          strict_parsing,self.limit-self.bytes_read,
                          self.encoding, self.errors)
@@ -818,7 +814,7 @@ class FieldStorage:
         which unlinks the temporary files you have created.
 
         """
-        if self._binary_file:
+        if self._binary_file or self.length >= 0:
             return tempfile.TemporaryFile("wb+")
         else:
             return tempfile.TemporaryFile("w+",
