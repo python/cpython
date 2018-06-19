@@ -74,8 +74,8 @@ class TestGdbm(unittest.TestCase):
 
         # bpo-33901: on macOS with gdbm 1.15, an empty database uses 16 MiB
         # and adding an entry of 10,000 B has no effect on the file size.
-        # Add size0//2 bytes to make sure that the file size changes.
-        value_size = max(size0 // 2, 10000)
+        # Add size0 bytes to make sure that the file size changes.
+        value_size = max(size0, 10000)
         self.g['x'] = 'x' * value_size
         size1 = os.path.getsize(filename)
         self.assertGreater(size1, size0)
