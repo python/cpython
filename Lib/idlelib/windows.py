@@ -90,3 +90,8 @@ class ListedToplevel(Toplevel):
             # This can happen when the window menu was torn off.
             # Simply ignore it.
             pass
+
+
+if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_windows', verbosity=2)
