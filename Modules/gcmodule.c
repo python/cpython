@@ -1767,7 +1767,7 @@ PyObject_GC_UnTrack(void *op)
     /* Obscure:  the Py_TRASHCAN mechanism requires that we be able to
      * call PyObject_GC_UnTrack twice on an object.
      */
-    if (IS_TRACKED(op))
+    if (_PyObject_GC_IS_TRACKED(op))
         _PyObject_GC_UNTRACK(op);
 }
 
@@ -1846,7 +1846,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
     PyGC_Head *g = AS_GC(op);
-    assert(!IS_TRACKED(op));
+    assert(!_PyObject_GC_IS_TRACKED(op));
     if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head))
         return (PyVarObject *)PyErr_NoMemory();
     g = (PyGC_Head *)PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
@@ -1861,7 +1861,7 @@ void
 PyObject_GC_Del(void *op)
 {
     PyGC_Head *g = AS_GC(op);
-    if (IS_TRACKED(op))
+    if (_PyObject_GC_IS_TRACKED(op))
         gc_list_remove(g);
     if (_PyRuntime.gc.generations[0].count > 0) {
         _PyRuntime.gc.generations[0].count--;
