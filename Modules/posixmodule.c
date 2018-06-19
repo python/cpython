@@ -5226,6 +5226,7 @@ parse_file_actions(PyObject *file_actions,
                     goto fail;
                 }
                 if (PyList_Append(temp_buffer, path)) {
+                    Py_DECREF(path);
                     goto fail;
                 }
                 errno = posix_spawn_file_actions_addopen(file_actionsp,
