@@ -136,6 +136,10 @@ Removed
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
+* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from :mod:`cgi`
+  module.  They are deprecated from Python 3.2 or older.
+
+
 
 Porting to Python 3.8
 =====================
