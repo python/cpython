@@ -93,5 +93,5 @@ class ListedToplevel(Toplevel):
 
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_windows', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_windows', verbosity=2)
