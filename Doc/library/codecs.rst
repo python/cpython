@@ -1238,6 +1238,9 @@ particular, the following variants typically exist:
    The utf-32\* decoders no longer decode
    byte sequences that correspond to surrogate code points.
 
+.. versionchanged:: 3.7
+   Added aliases for cp720, cp737, cp856, cp874, cp875, cp1006 and cp65001.
+
 
 Python Specific Encodings
 -------------------------

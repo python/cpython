@@ -1,1 +1,1 @@
-Add aliases for encodings. Patch by Karthikeyan Singaravelan.
+Add aliases for code page encodings (720 for cp720, 737 for cp737, 856 for cp856, 874 for cp874, 875 for cp875, 1006 for cp1006, 65001 for cp65001). Patch by Karthikeyan Singaravelan.
