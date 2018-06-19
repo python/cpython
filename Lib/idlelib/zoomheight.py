@@ -11,7 +11,7 @@ class ZoomHeight:
     def __init__(self, editwin):
         self.editwin = editwin
 
-    def zoom_height_event(self, event):
+    def zoom_height_event(self, event=None):
         top = self.editwin.top
         zoom_height(top)
         return "break"
@@ -46,3 +46,10 @@ def zoom_height(top):
     else:
         newgeom = "%dx%d+%d+%d" % (width, newheight, x, newy)
     top.wm_geometry(newgeom)
+
+
+if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_zoomheight', verbosity=2, exit=False)
+
+    # Add htest?

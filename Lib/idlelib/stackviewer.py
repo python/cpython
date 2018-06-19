@@ -148,5 +148,8 @@ def _stack_viewer(parent):  # htest #
     del sys.last_traceback
 
 if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_stackviewer', verbosity=2)
+
     from idlelib.idle_test.htest import run
     run(_stack_viewer)

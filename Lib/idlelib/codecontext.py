@@ -233,6 +233,8 @@ class CodeContext:
 CodeContext.reload()
 
 
-if __name__ == "__main__":  # pragma: no cover
-    import unittest
-    unittest.main('idlelib.idle_test.test_codecontext', verbosity=2, exit=False)
+if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_codecontext', verbosity=2, exit=False)
+
+    # Add htest.

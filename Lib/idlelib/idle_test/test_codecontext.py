@@ -2,10 +2,10 @@
 
 from idlelib import codecontext
 import unittest
-from unittest import mock
 from test.support import requires
 from tkinter import Tk, Frame, Text, TclError
 
+from unittest import mock
 import re
 from idlelib import config
 

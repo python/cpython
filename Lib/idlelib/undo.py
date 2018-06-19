@@ -359,8 +359,8 @@ def _undo_delegator(parent):  # htest #
     dump.pack(side='left')
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_undo', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_undo', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_undo_delegator)

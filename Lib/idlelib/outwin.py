@@ -184,5 +184,5 @@ class OnDemandOutputWindow:
         self.write = self.owin.write
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_outwin', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_outwin', verbosity=2, exit=False)
