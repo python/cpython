@@ -142,7 +142,7 @@ def collect_platform(info_add):
     info_add('platform.python_implementation',
              platform.python_implementation())
     info_add('platform.platform',
-             platform.platform(aliased=True))
+             platform.platform(aliased=True, terse=True))
 
 
 def collect_locale(info_add):
