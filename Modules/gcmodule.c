@@ -1786,6 +1786,7 @@ _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
         g = (PyGC_Head *)PyObject_Malloc(size);
     if (g == NULL)
         return PyErr_NoMemory();
+    assert(((uintptr_t)g & 7) == 0);  // g must be aligned 8bytes boundary
     g->gc.gc_next = NULL;
     g->gc.gc_prev = 0;
     _PyRuntime.gc.generations[0].count++; /* number of allocated GC objects */
