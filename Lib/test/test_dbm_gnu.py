@@ -74,7 +74,7 @@ class TestGdbm(unittest.TestCase):
 
         self.g['x'] = 'x' * 10000
         size1 = os.path.getsize(filename)
-        self.assertTrue(size0 < size1)
+        self.assertGreater(size1, size0)
 
         del self.g['x']
         # 'size' is supposed to be the same even after deleting an entry.
@@ -82,7 +82,8 @@ class TestGdbm(unittest.TestCase):
 
         self.g.reorganize()
         size2 = os.path.getsize(filename)
-        self.assertTrue(size1 > size2 >= size0)
+        self.assertLess(size2, size1)
+        self.assertGreaterEqual(size2, size0)
 
     def test_context_manager(self):
         with gdbm.open(filename, 'c') as db:
