@@ -1,0 +1,3 @@
+Fix issue in cgi.py sending requests with Content-Length but without
+Content-Disposition headers, also choosing between creating files in text or
+binary mode.
