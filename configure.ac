@@ -1303,9 +1303,12 @@ if test "$Py_LTO" = 'true' ; then
       ;;
   esac
 
-  # bpo-30345: When using PGO+LTO and compile without -g in $LDFLAGS,
-  # gdb fails to get function arguments.
-  LTOFLAGS="$LTOFLAGS -g"
+  if test "$ac_cv_prog_cc_g" = "yes"
+  then
+      # bpo-30345: When using PGO+LTO and compile without -g in $LDFLAGS,
+      # gdb fails to get function arguments.
+      LTOFLAGS="$LTOFLAGS -g"
+  fi
 
   CFLAGS="$CFLAGS $LTOFLAGS"
   LDFLAGS="$LDFLAGS $LTOFLAGS"
