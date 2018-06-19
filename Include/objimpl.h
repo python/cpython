@@ -286,11 +286,12 @@ extern PyGC_Head *_PyGC_generation0;
 
 /* Tell the GC to track this object.
  *
- * NB: While the object is tracked the collector it must be safe to call the
+ * NB: While the object is tracked by the collector, it must be safe to call the
  * ob_traverse method.
  *
  * Internal note: _PyGC_generation0->gc.gc_prev doesn't have any bit flags
- * because it's not object header. Wo we skip using _PyGCHead_SET_PREV() here.
+ * because it's not object header.  That's why we don't use _PyGCHead_SET_PREV()
+ * for it.
  */
 #define _PyObject_GC_TRACK(o) do { \
     PyGC_Head *g = _Py_AS_GC(o); \

@@ -38,7 +38,6 @@
 #define MASK_COLLECTING              (1 << 1)
 #define MASK_TENTATIVELY_UNREACHABLE (1 << 2)
 
-#define IS_TRACKED(o) (_Py_AS_GC(o)->gc.gc_next != NULL)
 #define IS_TENTATIVELY_UNREACHABLE(o) ( \
     (_Py_AS_GC(o)->gc.gc_prev & MASK_TENTATIVELY_UNREACHABLE) != 0)
 
@@ -294,8 +293,8 @@ validate_list(PyGC_Head *head, uintptr_t expected_mask)
 /*** end of list stuff ***/
 
 
-/* Set all gc_refs = ob_refcnt.  After this, gc_refs is > 0 for all objects
- * in containers.
+/* Set all gc_refs = ob_refcnt.  After this, gc_refs is > 0 and
+ * MASK_COLLECTING bit is set for all objects in containers.
  */
 static void
 update_refs(PyGC_Head *containers)
@@ -1496,7 +1495,7 @@ gc_is_tracked(PyObject *module, PyObject *obj)
 {
     PyObject *result;
 
-    if (PyObject_IS_GC(obj) && IS_TRACKED(obj))
+    if (PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj))
         result = Py_True;
     else
         result = Py_False;
