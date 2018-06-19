@@ -1,0 +1,1 @@
+Print the header values besides the header keys instead just the header keys if *debuglevel* is set to >0 in :mod:`http.client`. Patch by Marco Strigl.
