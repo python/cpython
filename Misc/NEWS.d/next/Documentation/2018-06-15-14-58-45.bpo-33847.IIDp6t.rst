@@ -1,0 +1,1 @@
+Add '@' operator entry to index.
