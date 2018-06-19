@@ -235,9 +235,8 @@ def _replace_dialog(parent):  # htest #
     button.pack()
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_replace',
-                verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_replace', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_replace_dialog)

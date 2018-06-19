@@ -772,7 +772,7 @@ whose value is one of the keys of the mapping, and the subscription selects the
 value in the mapping that corresponds to that key.  (The expression list is a
 tuple except if it has exactly one item.)
 
-If the primary is a sequence, the expression (list) must evaluate to an integer
+If the primary is a sequence, the expression list must evaluate to an integer
 or a slice (as discussed in the following section).
 
 The formal syntax makes no special provision for negative indices in
@@ -1139,7 +1139,9 @@ the other must be a sequence. In the former case, the numbers are converted to a
 common type and then multiplied together.  In the latter case, sequence
 repetition is performed; a negative repetition factor yields an empty sequence.
 
-.. index:: single: matrix multiplication
+.. index::
+   single: matrix multiplication
+   operator: @
 
 The ``@`` (at) operator is intended to be used for matrix multiplication.  No
 builtin Python types implement this operator.

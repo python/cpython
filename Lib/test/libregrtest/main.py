@@ -79,6 +79,7 @@ class Regrtest:
         self.resource_denieds = []
         self.environment_changed = []
         self.rerun = []
+        self.first_result = None
         self.interrupted = False
 
         # used by --slow
@@ -273,6 +274,8 @@ class Regrtest:
         self.ns.failfast = False
         self.ns.verbose3 = False
 
+        self.first_result = self.get_tests_result()
+
         print()
         print("Re-running failed tests in verbose mode")
         self.rerun = self.bad[:]
@@ -447,7 +450,10 @@ class Regrtest:
         if not result:
             result.append("SUCCESS")
 
-        return ', '.join(result)
+        result = ', '.join(result)
+        if self.first_result:
+            result = '%s then %s' % (self.first_result, result)
+        return result
 
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
@@ -455,6 +461,13 @@ class Regrtest:
             or not(self.ns.pgo or self.ns.quiet or self.ns.single
                    or self.tests or self.ns.args)):
             self.display_header()
+
+        if self.ns.huntrleaks:
+            warmup, repetitions, _ = self.ns.huntrleaks
+            if warmup < 3:
+                msg = ("WARNING: Running tests with --huntrleaks/-R and less than "
+                        "3 warmup repetitions can give false positives!")
+                print(msg, file=sys.stdout, flush=True)
 
         if self.ns.randomize:
             print("Using random seed", self.ns.random_seed)

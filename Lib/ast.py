@@ -206,7 +206,7 @@ def get_docstring(node, clean=True):
     """
     if not isinstance(node, (AsyncFunctionDef, FunctionDef, ClassDef, Module)):
         raise TypeError("%r can't have docstrings" % node.__class__.__name__)
-    if not node.body:
+    if not(node.body and isinstance(node.body[0], Expr)):
         return None
     node = node.body[0].value
     if isinstance(node, Str):
@@ -215,7 +215,7 @@ def get_docstring(node, clean=True):
         text = node.value
     else:
         return None
-    if clean and text:
+    if clean:
         import inspect
         text = inspect.cleandoc(text)
     return text

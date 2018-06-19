@@ -97,9 +97,11 @@ Significant improvements in the standard library:
 
 CPython implementation improvements:
 
+* Avoiding the use of ASCII as a default text encoding:
+
+  * :ref:`PEP 538 <whatsnew37-pep538>`, legacy C locale coercion
+  * :ref:`PEP 540 <whatsnew37-pep540>`, forced UTF-8 runtime mode
 * :ref:`PEP 552 <whatsnew37-pep552>`, deterministic .pycs
-* :ref:`PEP 538 <whatsnew37-pep538>`, legacy C locale coercion
-* :ref:`PEP 540 <whatsnew37-pep540>`, forced UTF-8 runtime mode
 * :ref:`the new development runtime mode <whatsnew37-devmode>`
 * :ref:`PEP 565 <whatsnew37-pep565>`, improved :exc:`DeprecationWarning`
   handling
@@ -184,7 +186,8 @@ PEP 538: Legacy C Locale Coercion
 
 An ongoing challenge within the Python 3 series has been determining a sensible
 default strategy for handling the "7-bit ASCII" text encoding assumption
-currently implied by the use of the default C locale on non-Windows platforms.
+currently implied by the use of the default C or POSIX locale on non-Windows
+platforms.
 
 :pep:`538` updates the default interpreter command line interface to
 automatically coerce that locale to an available UTF-8 based locale as
@@ -205,9 +208,17 @@ continues to be ``backslashreplace``, regardless of locale.
 
 Locale coercion is silent by default, but to assist in debugging potentially
 locale related integration problems, explicit warnings (emitted directly on
-:data:`~sys.stderr` can be requested by setting ``PYTHONCOERCECLOCALE=warn``.
+:data:`~sys.stderr`) can be requested by setting ``PYTHONCOERCECLOCALE=warn``.
 This setting will also cause the Python runtime to emit a warning if the
 legacy C locale remains active when the core interpreter is initialized.
+
+While :pep:`538`'s locale coercion has the benefit of also affecting extension
+modules (such as GNU ``readline``), as well as child processes (including those
+running non-Python applications and older versions of Python), it has the
+downside of requiring that a suitable target locale be present on the running
+system. To better handle the case where no suitable target locale is available
+(as occurs on RHEL/CentOS 7, for example), Python 3.7 also implements
+:ref:`whatsnew37-pep540`.
 
 .. seealso::
 
@@ -231,8 +242,17 @@ The forced UTF-8 mode can be used to change the text handling behavior in
 an embedded Python interpreter without changing the locale settings of
 an embedding application.
 
-The UTF-8 mode is enabled by default when the locale is "C".  See
-:ref:`whatsnew37-pep538` for details.
+While :pep:`540`'s UTF-8 mode has the benefit of working regardless of which
+locales are available on the running system, it has the downside of having no
+effect on extension modules (such as GNU ``readline``), child processes running
+non-Python applications, and child processes running older versions of Python.
+To reduce the risk of corrupting text data when communicating with such
+components, Python 3.7 also implements :ref:`whatsnew37-pep540`).
+
+The UTF-8 mode is enabled by default when the locale is ``C`` or ``POSIX``, and
+the :pep:`538` locale coercion feature fails to change it to a UTF-8 based
+alternative (whether that failure is due to ``PYTHONCOERCECLOCALE=0`` being set,
+``LC_ALL`` being set, or the lack of a suitable target locale).
 
 .. seealso::
 
@@ -699,11 +719,12 @@ include:
   gained support for Unix sockets.
   (Contributed by Quentin Dawans in :issue:`31245`.)
 
-* The :meth:`loop.create_connection() <asyncio.AbstractEventLoop.create_connection>`,
+* The :func:`asyncio.open_connection`, :func:`asyncio.start_server` functions,
+  :meth:`loop.create_connection() <asyncio.AbstractEventLoop.create_connection>`,
   :meth:`loop.create_server() <asyncio.AbstractEventLoop.create_server>`,
-  :meth:`loop.create_unix_server() <asyncio.AbstractEventLoop.create_unix_server>`, and
   :meth:`loop.create_accepted_socket() <asyncio.BaseEventLoop.connect_accepted_socket>`
-  now accept the *ssl_handshake_timeout* keyword argument.
+  methods and their corresponding UNIX socket variants now accept the
+  *ssl_handshake_timeout* keyword argument.
   (Contributed by Neil Aspinall in :issue:`29970`.)
 
 * The new :meth:`Handle.cancelled() <asyncio.Handle.cancelled>` method returns
@@ -732,6 +753,10 @@ include:
 
 * Exceptions occurring in cancelled tasks are no longer logged.
   (Contributed by Yury Selivanov in :issue:`30508`.)
+
+* New ``WindowsSelectorEventLoopPolicy`` and
+  ``WindowsProactorEventLoopPolicy`` classes.
+  (Contributed by Yury Selivanov in :issue:`33792`.)
 
 Several ``asyncio`` APIs have been
 :ref:`deprecated <whatsnew37-asyncio-deprecated>`.
@@ -938,8 +963,10 @@ It is used when ``http.server`` is run with ``-m``.
 idlelib and IDLE
 ----------------
 
+Multiple fixes for autocompletion. (Contributed by Louie Lu in :issue:`15786`.)
+
 Module Browser (on the File menu, formerly called Class Browser),
-now displays nested functions and classed in addition to top-level
+now displays nested functions and classes in addition to top-level
 functions and classes.
 (Contributed by Guilherme Polo, Cheryl Sabella, and Terry Jan Reedy
 in :issue:`1612262`.)
@@ -951,13 +978,25 @@ to improve both appearance and function.
 The font sample now includes a selection of non-Latin characters so that
 users can better see the effect of selecting a particular font.
 (Contributed by Terry Jan Reedy in :issue:`13802`.)
-The sample can be edited to test other characters.
+The sample can be edited to include other characters.
 (Contributed by Serhiy Storchaka in :issue:`31860`.)
 
 The IDLE features formerly implemented as extensions have been reimplemented
 as normal features.  Their settings have been moved from the Extensions tab
 to other dialog tabs.
 (Contributed by Charles Wohlganger and Terry Jan Reedy in :issue:`27099`.)
+
+Editor code context option revised.  Box displays all context lines up to
+maxlines.  Clicking on a context line jumps the editor to that line.  Context
+colors for custom themes is added to Highlights tab of Settings dialog.
+(Contributed by Cheryl Sabella and Terry Jan Reedy in :issue:`33642`,
+:issue:`33768`, and :issue:`33679`,
+
+On Windows, a new API call tells Windows that tk scales for DPI. On Windows
+8.1+ or 10, with DPI compatibility properties of the Python binary
+unchanged, and a monitor resolution greater than 96 DPI, this should
+make text and lines sharper.  It should otherwise have no effect.
+(Contributed by Terry Jan Reedy in :issue:`33656`).
 
 The changes above have been backported to 3.6 maintenance releases.
 
@@ -1429,8 +1468,8 @@ dynamically as specified by :pep:`560`.
 unicodedata
 -----------
 
-The internal :mod:`unicodedata` database has been upgraded to use `Unicode 10
-<http://www.unicode.org/versions/Unicode10.0.0/>`_. (Contributed by Benjamin
+The internal :mod:`unicodedata` database has been upgraded to use `Unicode 11
+<http://www.unicode.org/versions/Unicode11.0.0/>`_. (Contributed by Benjamin
 Peterson.)
 
 
@@ -2223,7 +2262,7 @@ Changes in the Python API
 
 * Because :func:`shutil.rmtree` is now implemented using the :func:`os.scandir`
   function, the user specified handler *onerror* is now called with the first
-  argument ``os.scandir`` instead of ``os.listdir`` when listing the direcory
+  argument ``os.scandir`` instead of ``os.listdir`` when listing the directory
   is failed.
 
 * Support for nested sets and set operations in regular expressions as in
@@ -2307,12 +2346,6 @@ Changes in the Python API
 * :attr:`Struct.format <struct.Struct.format>` is now a :class:`str` instance
   instead of a :class:`bytes` instance.
   (Contributed by Victor Stinner in :issue:`21071`.)
-
-* :mod:`argparse` subparsers are now required by default.  This matches the
-  behaviour in Python 2.  To add an optional subparser, pass
-  ``required=False`` to
-  :meth:`ArgumentParser.add_subparsers() <argparse.ArgumentParser.add_subparsers>`.
-  (Contributed by Anthony Sottile in :issue:`26510`.)
 
 * :meth:`ast.literal_eval()` is now stricter.  Addition and subtraction of
   arbitrary numbers are no longer allowed.
@@ -2405,3 +2438,13 @@ sufficient to both emit :exc:`BytesWarning` messages and have them converted
 to exceptions.  Instead, the flag must be set (to cause the warnings to be
 emitted in the first place), and an explicit ``error::BytesWarning``
 warnings filter added to convert them to exceptions.
+
+Due to a change in the way docstrings are handled by the compiler, the
+implicit ``return None`` in a function body consisting solely of a docstring
+is now marked as occurring on the same line as the docstring, not on the
+function's header line.
+
+The current exception state has been moved from the frame object to the co-routine.
+This simplified the interpreter and fixed a couple of obscure bugs caused by
+having swap exception state when entering or exiting a generator.
+(Contributed by Mark Shannon in :issue:`25612`.)

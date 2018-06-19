@@ -1097,7 +1097,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if not getattr(transport, '_start_tls_compatible', False):
             raise TypeError(
-                f'transport {self!r} is not supported by start_tls()')
+                f'transport {transport!r} is not supported by start_tls()')
 
         waiter = self.create_future()
         ssl_protocol = sslproto.SSLProtocol(
@@ -1111,10 +1111,17 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport.pause_reading()
 
         transport.set_protocol(ssl_protocol)
-        self.call_soon(ssl_protocol.connection_made, transport)
-        self.call_soon(transport.resume_reading)
+        conmade_cb = self.call_soon(ssl_protocol.connection_made, transport)
+        resume_cb = self.call_soon(transport.resume_reading)
 
-        await waiter
+        try:
+            await waiter
+        except Exception:
+            transport.close()
+            conmade_cb.cancel()
+            resume_cb.cancel()
+            raise
+
         return ssl_protocol._app_transport
 
     async def create_datagram_endpoint(self, protocol_factory,
@@ -1469,6 +1476,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
         protocol = protocol_factory()
+        debug_log = None
         if self._debug:
             # don't log parameters: they may contain sensitive information
             # (password) and may be too long
@@ -1476,7 +1484,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             self._log_subprocess(debug_log, stdin, stdout, stderr)
         transport = await self._make_subprocess_transport(
             protocol, cmd, True, stdin, stdout, stderr, bufsize, **kwargs)
-        if self._debug:
+        if self._debug and debug_log is not None:
             logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
@@ -1497,6 +1505,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     f"program arguments must be a bytes or text string, "
                     f"not {type(arg).__name__}")
         protocol = protocol_factory()
+        debug_log = None
         if self._debug:
             # don't log parameters: they may contain sensitive information
             # (password) and may be too long
@@ -1505,7 +1514,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport = await self._make_subprocess_transport(
             protocol, popen_args, False, stdin, stdout, stderr,
             bufsize, **kwargs)
-        if self._debug:
+        if self._debug and debug_log is not None:
             logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 

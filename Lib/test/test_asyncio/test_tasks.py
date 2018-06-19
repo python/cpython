@@ -2182,7 +2182,11 @@ class BaseTaskTests:
         self.assertFalse(m_log.error.called)
 
         with self.assertRaises(ValueError):
-            self.new_task(self.loop, coro())
+            gen = coro()
+            try:
+                self.new_task(self.loop, gen)
+            finally:
+                gen.close()
 
         self.assertTrue(m_log.error.called)
         message = m_log.error.call_args[0][0]
@@ -2613,7 +2617,8 @@ class BaseTaskIntrospectionTests:
         self.assertEqual(asyncio.all_tasks(loop), set())
         self._register_task(task)
         self.assertEqual(asyncio.all_tasks(loop), set())
-        self.assertEqual(asyncio.Task.all_tasks(loop), {task})
+        with self.assertWarns(PendingDeprecationWarning):
+            self.assertEqual(asyncio.Task.all_tasks(loop), {task})
         self._unregister_task(task)
 
     def test__enter_task(self):

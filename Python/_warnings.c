@@ -9,7 +9,6 @@ PyDoc_STRVAR(warnings__doc__,
 MODULE_NAME " provides basic warning filtering support.\n"
 "It is a helper module to speed up interpreter start-up.");
 
-_Py_IDENTIFIER(argv);
 _Py_IDENTIFIER(stderr);
 #ifndef Py_DEBUG
 _Py_IDENTIFIER(default);
@@ -671,7 +670,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
 {
     PyObject *globals;
 
-    /* Setup globals and lineno. */
+    /* Setup globals, filename and lineno. */
     PyFrameObject *f = PyThreadState_GET()->frame;
     // Stack level comparisons to Python code is off by one as there is no
     // warnings-related stack level to avoid.
@@ -688,10 +687,13 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
 
     if (f == NULL) {
         globals = PyThreadState_Get()->interp->sysdict;
+        *filename = PyUnicode_FromString("sys");
         *lineno = 1;
     }
     else {
         globals = f->f_globals;
+        *filename = f->f_code->co_filename;
+        Py_INCREF(*filename);
         *lineno = PyFrame_GetLineNumber(f);
     }
 
@@ -724,71 +726,6 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         *module = PyUnicode_FromString("<string>");
         if (*module == NULL)
             goto handle_error;
-    }
-
-    /* Setup filename. */
-    *filename = PyDict_GetItemString(globals, "__file__");
-    if (*filename != NULL && PyUnicode_Check(*filename)) {
-        Py_ssize_t len;
-        int kind;
-        void *data;
-
-        if (PyUnicode_READY(*filename))
-            goto handle_error;
-
-        len = PyUnicode_GetLength(*filename);
-        kind = PyUnicode_KIND(*filename);
-        data = PyUnicode_DATA(*filename);
-
-#define ascii_lower(c) ((c <= 127) ? Py_TOLOWER(c) : 0)
-        /* if filename.lower().endswith(".pyc"): */
-        if (len >= 4 &&
-            PyUnicode_READ(kind, data, len-4) == '.' &&
-            ascii_lower(PyUnicode_READ(kind, data, len-3)) == 'p' &&
-            ascii_lower(PyUnicode_READ(kind, data, len-2)) == 'y' &&
-            ascii_lower(PyUnicode_READ(kind, data, len-1)) == 'c')
-        {
-            *filename = PyUnicode_Substring(*filename, 0,
-                                            PyUnicode_GET_LENGTH(*filename)-1);
-            if (*filename == NULL)
-                goto handle_error;
-        }
-        else
-            Py_INCREF(*filename);
-    }
-    else {
-        *filename = NULL;
-        if (*module != Py_None && _PyUnicode_EqualToASCIIString(*module, "__main__")) {
-            PyObject *argv = _PySys_GetObjectId(&PyId_argv);
-            /* PyList_Check() is needed because sys.argv is set to None during
-               Python finalization */
-            if (argv != NULL && PyList_Check(argv) && PyList_Size(argv) > 0) {
-                int is_true;
-                *filename = PyList_GetItem(argv, 0);
-                Py_INCREF(*filename);
-                /* If sys.argv[0] is false, then use '__main__'. */
-                is_true = PyObject_IsTrue(*filename);
-                if (is_true < 0) {
-                    Py_DECREF(*filename);
-                    goto handle_error;
-                }
-                else if (!is_true) {
-                    Py_SETREF(*filename, PyUnicode_FromString("__main__"));
-                    if (*filename == NULL)
-                        goto handle_error;
-                }
-            }
-            else {
-                /* embedded interpreters don't have sys.argv, see bug #839151 */
-                *filename = PyUnicode_FromString("__main__");
-                if (*filename == NULL)
-                    goto handle_error;
-            }
-        }
-        if (*filename == NULL) {
-            *filename = *module;
-            Py_INCREF(*filename);
-        }
     }
 
     return 1;
