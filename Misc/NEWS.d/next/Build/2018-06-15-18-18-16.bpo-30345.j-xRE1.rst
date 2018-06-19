@@ -1,2 +1,1 @@
-When using PGO+LTO and compile without LDFLAGS=-g, gdb fails to get function
-arguments: add -g to LDFLAGS to ease debug.
+Add -g to LDFLAGS when compiling with LTO to get debug symbols.
