@@ -8,6 +8,17 @@ from test.support import TESTFN, TESTFN_NONASCII, unlink
 filename = TESTFN
 
 class TestGdbm(unittest.TestCase):
+    @staticmethod
+    def setUpClass():
+        if support.verbose:
+            try:
+                import _gdbm
+                version = _gdbm._GDBM_VERSION
+            except (ImportError, AttributeError):
+                pass
+            else:
+                print(f"gdbm version: {version}")
+
     def setUp(self):
         self.g = None
 
