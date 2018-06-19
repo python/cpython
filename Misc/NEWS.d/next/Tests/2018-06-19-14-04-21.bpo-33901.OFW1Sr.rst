@@ -1,0 +1,4 @@
+Fix test_dbm_gnu for gdbm 1.15. Using gdbm 1.15, creating a database creates
+a file of 16 MiB. Adding a small entry and then modifying the small entry
+doesn't change the file size. Modify test_dbm_gnu to be less strict: allow
+that the file size doesn't change.
