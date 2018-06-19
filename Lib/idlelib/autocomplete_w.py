@@ -458,3 +458,10 @@ class AutoCompleteWindow:
         self.listbox = None
         self.autocompletewindow.destroy()
         self.autocompletewindow = None
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_autocomplete_w', verbosity=2, exit=False)
+
+# TODO: autocomplete/w htest here
