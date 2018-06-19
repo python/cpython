@@ -5,19 +5,19 @@ import os
 from test.support import TESTFN, TESTFN_NONASCII, unlink
 
 
-filename = TESTFN
-
 class TestGdbm(unittest.TestCase):
     def setUp(self):
+        self.filename = TESTFN
         self.g = None
+        self.assertFalse(os.path.exists(self.filename))
 
     def tearDown(self):
         if self.g is not None:
             self.g.close()
-        unlink(filename)
+        unlink(self.filename)
 
     def test_key_methods(self):
-        self.g = gdbm.open(filename, 'c')
+        self.g = gdbm.open(self.filename, 'c')
         self.assertEqual(self.g.keys(), [])
         self.g['a'] = 'b'
         self.g['12345678910'] = '019237410982340912840198242'
@@ -42,15 +42,17 @@ class TestGdbm(unittest.TestCase):
         self.assertEqual(self.g[b'xxx'], b'foo')
 
     def test_error_conditions(self):
-        # Try to open a non-existent database.
-        unlink(filename)
-        self.assertRaises(gdbm.error, gdbm.open, filename, 'r')
+        # setUp() ensures that the filename doesn't exist
+        with self.assertRaises(gdbm.error):
+            gdbm.open(self.filename, 'r')
         # Try to access a closed database.
-        self.g = gdbm.open(filename, 'c')
+        self.g = gdbm.open(self.filename, 'c')
         self.g.close()
-        self.assertRaises(gdbm.error, lambda: self.g['a'])
+        with self.assertRaises(gdbm.error):
+            self.g['a']
         # try pass an invalid open flag
-        self.assertRaises(gdbm.error, lambda: gdbm.open(filename, 'rx').close())
+        with self.assertRaises(gdbm.error):
+            gdbm.open(self.filename, 'rx')
 
     def test_flags(self):
         # Test the flag parameter open() by trying all supported flag modes.
@@ -58,38 +60,38 @@ class TestGdbm(unittest.TestCase):
         # Test standard flags (presumably "crwn").
         modes = all - set('fsu')
         for mode in sorted(modes):  # put "c" mode first
-            self.g = gdbm.open(filename, mode)
+            self.g = gdbm.open(self.filename, mode)
             self.g.close()
 
         # Test additional flags (presumably "fsu").
         flags = all - set('crwn')
         for mode in modes:
             for flag in flags:
-                self.g = gdbm.open(filename, mode + flag)
+                self.g = gdbm.open(self.filename, mode + flag)
                 self.g.close()
 
     def test_reorganize(self):
-        self.g = gdbm.open(filename, 'c')
-        size0 = os.path.getsize(filename)
+        self.g = gdbm.open(self.filename, 'c')
+        size0 = os.path.getsize(self.filename)
 
         self.g['x'] = 'x' * 10000
-        size1 = os.path.getsize(filename)
+        size1 = os.path.getsize(self.filename)
         self.assertGreater(size1, size0)
 
         del self.g['x']
         # 'size' is supposed to be the same even after deleting an entry.
-        self.assertEqual(os.path.getsize(filename), size1)
+        self.assertEqual(os.path.getsize(self.filename), size1)
 
         self.g.reorganize()
-        size2 = os.path.getsize(filename)
+        size2 = os.path.getsize(self.filename)
         self.assertLess(size2, size1)
         self.assertGreaterEqual(size2, size0)
 
     def test_context_manager(self):
-        with gdbm.open(filename, 'c') as db:
+        with gdbm.open(self.filename, 'c') as db:
             db["gdbm context manager"] = "context manager"
 
-        with gdbm.open(filename, 'r') as db:
+        with gdbm.open(self.filename, 'r') as db:
             self.assertEqual(list(db.keys()), [b"gdbm context manager"])
 
         with self.assertRaises(gdbm.error) as cm:
@@ -98,17 +100,19 @@ class TestGdbm(unittest.TestCase):
                          "GDBM object has already been closed")
 
     def test_bytes(self):
-        with gdbm.open(filename, 'c') as db:
+        with gdbm.open(self.filename, 'c') as db:
             db[b'bytes key \xbd'] = b'bytes value \xbd'
-        with gdbm.open(filename, 'r') as db:
+
+        with gdbm.open(self.filename, 'r') as db:
             self.assertEqual(list(db.keys()), [b'bytes key \xbd'])
             self.assertTrue(b'bytes key \xbd' in db)
             self.assertEqual(db[b'bytes key \xbd'], b'bytes value \xbd')
 
     def test_unicode(self):
-        with gdbm.open(filename, 'c') as db:
+        with gdbm.open(self.filename, 'c') as db:
             db['Unicode key \U0001f40d'] = 'Unicode value \U0001f40d'
-        with gdbm.open(filename, 'r') as db:
+
+        with gdbm.open(self.filename, 'r') as db:
             self.assertEqual(list(db.keys()), ['Unicode key \U0001f40d'.encode()])
             self.assertTrue('Unicode key \U0001f40d'.encode() in db)
             self.assertTrue('Unicode key \U0001f40d' in db)
@@ -120,12 +124,14 @@ class TestGdbm(unittest.TestCase):
     @unittest.skipUnless(TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')
     def test_nonascii_filename(self):
-        filename = TESTFN_NONASCII
-        self.addCleanup(unlink, filename)
-        with gdbm.open(filename, 'c') as db:
+        self.filename = TESTFN_NONASCII
+        self.assertFalse(os.path.exists(self.filename))
+
+        with gdbm.open(self.filename, 'c') as db:
             db[b'key'] = b'value'
-        self.assertTrue(os.path.exists(filename))
-        with gdbm.open(filename, 'r') as db:
+
+        self.assertTrue(os.path.exists(self.filename))
+        with gdbm.open(self.filename, 'r') as db:
             self.assertEqual(list(db.keys()), [b'key'])
             self.assertTrue(b'key' in db)
             self.assertEqual(db[b'key'], b'value')
