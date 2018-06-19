@@ -33,7 +33,7 @@ from test import support
 from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
-OSX = sys.platform.startswith("darwin")
+MACOS = sys.platform.startswith("darwin")
 try:
     import grp
     import pwd
@@ -1808,7 +1808,7 @@ class TestCopyFile(unittest.TestCase):
 
         self.assertRaises(OSError, shutil.copyfile, 'srcfile', 'destfile')
 
-    @unittest.skipIf(OSX, "skipped on OSX")
+    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_dest_open_fails(self):
 
         srcfile = self.Faux()
@@ -1828,7 +1828,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot open "destfile"',))
 
-    @unittest.skipIf(OSX, "skipped on OSX")
+    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_dest_close_fails(self):
 
         srcfile = self.Faux()
@@ -1851,7 +1851,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot close',))
 
-    @unittest.skipIf(OSX, "skipped on OSX")
+    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_source_close_fails(self):
 
         srcfile = self.Faux(True)
@@ -1890,6 +1890,80 @@ class TestCopyFile(unittest.TestCase):
             self.assertTrue(os.path.isdir(dst_dir))
         finally:
             os.rmdir(dst_dir)
+
+
+class TestCopyFileObj(unittest.TestCase):
+    FILESIZE = 2 * 1024 * 1024
+
+    @classmethod
+    def setUpClass(cls):
+        write_test_file(TESTFN, cls.FILESIZE)
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(TESTFN)
+        support.unlink(TESTFN2)
+
+    def tearDown(self):
+        support.unlink(TESTFN2)
+
+    @contextlib.contextmanager
+    def get_files(self):
+        with open(TESTFN, "rb") as src:
+            with open(TESTFN2, "wb") as dst:
+                yield (src, dst)
+
+    def assert_files_eq(self, src, dst):
+        with open(src, 'rb') as fsrc:
+            with open(dst, 'rb') as fdst:
+                self.assertEqual(fsrc.read(), fdst.read())
+
+    def test_content(self):
+        with self.get_files() as (src, dst):
+            shutil.copyfileobj(src, dst)
+        self.assert_files_eq(TESTFN, TESTFN2)
+
+    def test_file_not_closed(self):
+        with self.get_files() as (src, dst):
+            shutil.copyfileobj(src, dst)
+            assert not src.closed
+            assert not dst.closed
+
+    def test_file_offset(self):
+        with self.get_files() as (src, dst):
+            shutil.copyfileobj(src, dst)
+            self.assertEqual(src.tell(), self.FILESIZE)
+            self.assertEqual(dst.tell(), self.FILESIZE)
+
+    @unittest.skipIf(os.name != 'nt', "Windows only")
+    def test_win_impl(self):
+        # Make sure alternate Windows implementation is called.
+        with unittest.mock.patch("shutil._copyfileobj_readinto") as m:
+            shutil.copyfile(TESTFN, TESTFN2)
+        assert m.called
+
+        # File size is 2 MiB but max buf size should be 1 MiB.
+        self.assertEqual(m.call_args[0][2], 1 * 1024 * 1024)
+
+        # If file size < 1 MiB memoryview() length must be equal to
+        # the actual file size.
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            f.write(b'foo')
+        fname = f.name
+        self.addCleanup(support.unlink, fname)
+        with unittest.mock.patch("shutil._copyfileobj_readinto") as m:
+            shutil.copyfile(fname, TESTFN2)
+        self.assertEqual(m.call_args[0][2], 3)
+
+        # Empty files should not rely on readinto() variant.
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            pass
+        fname = f.name
+        self.addCleanup(support.unlink, fname)
+        with unittest.mock.patch("shutil._copyfileobj_readinto") as m:
+            shutil.copyfile(fname, TESTFN2)
+        assert not m.called
+        self.assert_files_eq(fname, TESTFN2)
 
 
 class _ZeroCopyFileTest(object):
@@ -2111,12 +2185,12 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
             shutil._HAS_SENDFILE = True
 
 
-@unittest.skipIf(not OSX, 'OSX only')
-class TestZeroCopyOSX(_ZeroCopyFileTest, unittest.TestCase):
+@unittest.skipIf(not MACOS, 'macOS only')
+class TestZeroCopyMACOS(_ZeroCopyFileTest, unittest.TestCase):
     PATCHPOINT = "posix._fcopyfile"
 
     def zerocopy_fun(self, src, dst):
-        return shutil._fastcopy_osx(src, dst, posix._COPYFILE_DATA)
+        return shutil._fastcopy_fcopyfile(src, dst, posix._COPYFILE_DATA)
 
 
 class TermsizeTests(unittest.TestCase):

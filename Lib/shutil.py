@@ -43,15 +43,16 @@ try:
 except ImportError:
     getgrnam = None
 
+_WINDOWS = os.name == 'nt'
 posix = nt = None
 if os.name == 'posix':
     import posix
-elif os.name == 'nt':
+elif _WINDOWS:
     import nt
 
-COPY_BUFSIZE = 1024 * 1024 if os.name == 'nt' else 16 * 1024
+COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 16 * 1024
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
-_HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # OSX
+_HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
@@ -88,9 +89,9 @@ class _GiveupOnFastCopy(Exception):
     file copy when fast-copy functions fail to do so.
     """
 
-def _fastcopy_osx(fsrc, fdst, flags):
+def _fastcopy_fcopyfile(fsrc, fdst, flags):
     """Copy a regular file content or metadata by using high-performance
-    fcopyfile(3) syscall (OSX).
+    fcopyfile(3) syscall (macOS).
     """
     try:
         infd = fsrc.fileno()
@@ -168,8 +169,11 @@ def _fastcopy_sendfile(fsrc, fdst):
                 break  # EOF
             offset += sent
 
-def _copybinfileobj(fsrc, fdst, length=COPY_BUFSIZE):
-    """Copy 2 regular file objects open in binary mode."""
+def _copyfileobj_readinto(fsrc, fdst, length=COPY_BUFSIZE):
+    """readinto()/memoryview() based variant of copyfileobj().
+    *fsrc* must support readinto() method and both files must be
+    open in binary mode.
+    """
     # Localize variable access to minimize overhead.
     fsrc_readinto = fsrc.readinto
     fdst_write = fdst.write
@@ -179,28 +183,21 @@ def _copybinfileobj(fsrc, fdst, length=COPY_BUFSIZE):
             if not n:
                 break
             elif n < length:
-                fdst_write(mv[:n])
+                with mv[:n] as smv:
+                    fdst.write(smv)
             else:
                 fdst_write(mv)
 
-def _is_binary_files_pair(fsrc, fdst):
-    return hasattr(fsrc, 'readinto') and \
-        isinstance(fsrc, io.BytesIO) or 'b' in getattr(fsrc, 'mode', '') and \
-        isinstance(fdst, io.BytesIO) or 'b' in getattr(fdst, 'mode', '')
-
 def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
     """copy data from file-like object fsrc to file-like object fdst"""
-    if _is_binary_files_pair(fsrc, fdst):
-        _copybinfileobj(fsrc, fdst, length=length)
-    else:
-        # Localize variable access to minimize overhead.
-        fsrc_read = fsrc.read
-        fdst_write = fdst.write
-        while 1:
-            buf = fsrc_read(length)
-            if not buf:
-                break
-            fdst_write(buf)
+    # Localize variable access to minimize overhead.
+    fsrc_read = fsrc.read
+    fdst_write = fdst.write
+    while True:
+        buf = fsrc_read(length)
+        if not buf:
+            break
+        fdst_write(buf)
 
 def _samefile(src, dst):
     # Macintosh, Unix.
@@ -215,7 +212,7 @@ def _samefile(src, dst):
             os.path.normcase(os.path.abspath(dst)))
 
 def copyfile(src, dst, *, follow_symlinks=True):
-    """Copy data from src to dst.
+    """Copy data from src to dst in the most efficient way possible.
 
     If follow_symlinks is not set and src is a symbolic link, a new
     symlink will be created instead of copying the file it points to.
@@ -224,7 +221,8 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
-    for fn in [src, dst]:
+    file_size = 0
+    for i, fn in enumerate([src, dst]):
         try:
             st = os.stat(fn)
         except OSError:
@@ -234,26 +232,34 @@ def copyfile(src, dst, *, follow_symlinks=True):
             # XXX What about other special files? (sockets, devices...)
             if stat.S_ISFIFO(st.st_mode):
                 raise SpecialFileError("`%s` is a named pipe" % fn)
+            if _WINDOWS and i == 0:
+                file_size = st.st_size
 
     if not follow_symlinks and os.path.islink(src):
         os.symlink(os.readlink(src), dst)
     else:
         with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
-            if _HAS_SENDFILE:
+            # macOS
+            if _HAS_FCOPYFILE:
+                try:
+                    _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
+                    return dst
+                except _GiveupOnFastCopy:
+                    pass
+            # Linux / Solaris
+            elif _HAS_SENDFILE:
                 try:
                     _fastcopy_sendfile(fsrc, fdst)
                     return dst
                 except _GiveupOnFastCopy:
                     pass
+            # Windows, see:
+            # https://github.com/python/cpython/pull/7160#discussion_r195405230
+            elif _WINDOWS and file_size > 0:
+                _copyfileobj_readinto(fsrc, fdst, min(file_size, COPY_BUFSIZE))
+                return dst
 
-            if _HAS_FCOPYFILE:
-                try:
-                    _fastcopy_osx(fsrc, fdst, posix._COPYFILE_DATA)
-                    return dst
-                except _GiveupOnFastCopy:
-                    pass
-
-            _copybinfileobj(fsrc, fdst)
+            copyfileobj(fsrc, fdst)
 
     return dst
 
@@ -1147,7 +1153,7 @@ if hasattr(os, 'statvfs'):
         used = (st.f_blocks - st.f_bfree) * st.f_frsize
         return _ntuple_diskusage(total, used, free)
 
-elif os.name == 'nt':
+elif _WINDOWS:
 
     __all__.append('disk_usage')
     _ntuple_diskusage = collections.namedtuple('usage', 'total used free')
