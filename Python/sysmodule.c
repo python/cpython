@@ -1085,7 +1085,9 @@ sys_getwindowsversion(PyObject *self)
     // We need to read the version info from a system file resource
     // to accurately identify the OS version. If we fail for any reason,
     // just return whatever GetVersion said.
+    Py_BEGIN_ALLOW_THREADS
     hKernel32 = GetModuleHandleW(L"kernel32.dll");
+    Py_END_ALLOW_THREADS
     if (hKernel32 && GetModuleFileNameW(hKernel32, kernel32_path, MAX_PATH) &&
         (verblock_size = GetFileVersionInfoSizeW(kernel32_path, NULL)) &&
         (verblock = PyMem_RawMalloc(verblock_size))) {

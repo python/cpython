@@ -7534,9 +7534,13 @@ check_CreateSymbolicLink(void)
     /* only recheck */
     if (Py_CreateSymbolicLinkW)
         return 1;
+
+    Py_BEGIN_ALLOW_THREADS
     hKernel32 = GetModuleHandleW(L"KERNEL32");
     *(FARPROC*)&Py_CreateSymbolicLinkW = GetProcAddress(hKernel32,
                                                         "CreateSymbolicLinkW");
+    Py_END_ALLOW_THREADS
+
     return Py_CreateSymbolicLinkW != NULL;
 }
 
@@ -11049,7 +11053,6 @@ check_ShellExecute()
            the system SHELL32.DLL, even if there is another SHELL32.DLL
            in the DLL search path. */
         hShell32 = LoadLibraryW(L"SHELL32");
-        Py_END_ALLOW_THREADS
         if (hShell32) {
             *(FARPROC*)&Py_ShellExecuteW = GetProcAddress(hShell32,
                                             "ShellExecuteW");
@@ -11057,6 +11060,7 @@ check_ShellExecute()
         } else {
             has_ShellExecute = 0;
         }
+        Py_END_ALLOW_THREADS
     }
     return has_ShellExecute;
 }
@@ -11669,11 +11673,12 @@ os_cpu_count_impl(PyObject *module)
     /* Vista is supported and the GetMaximumProcessorCount API is Win7+
        Need to fallback to Vista behavior if this call isn't present */
     HINSTANCE hKernel32;
-    hKernel32 = GetModuleHandleW(L"KERNEL32");
-
     static DWORD(CALLBACK *_GetMaximumProcessorCount)(WORD) = NULL;
+    Py_BEGIN_ALLOW_THREADS
+    hKernel32 = GetModuleHandleW(L"KERNEL32");
     *(FARPROC*)&_GetMaximumProcessorCount = GetProcAddress(hKernel32,
         "GetMaximumProcessorCount");
+    Py_END_ALLOW_THREADS
     if (_GetMaximumProcessorCount != NULL) {
         ncpu = _GetMaximumProcessorCount(ALL_PROCESSOR_GROUPS);
     }

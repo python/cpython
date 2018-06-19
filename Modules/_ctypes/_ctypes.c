@@ -663,7 +663,9 @@ CDataType_in_dll(PyObject *type, PyObject *args)
     }
 
 #ifdef MS_WIN32
+    Py_BEGIN_ALLOW_THREADS
     address = (void *)GetProcAddress(handle, name);
+    Py_END_ALLOW_THREADS
     if (!address) {
         PyErr_Format(PyExc_ValueError,
                      "symbol '%s' not found",
@@ -3157,18 +3159,23 @@ static PyGetSetDef PyCFuncPtr_getsets[] = {
 #ifdef MS_WIN32
 static PPROC FindAddress(void *handle, const char *name, PyObject *type)
 {
+    PPROC address;
 #ifdef MS_WIN64
     /* win64 has no stdcall calling conv, so it should
        also not have the name mangling of it.
     */
-    return (PPROC)GetProcAddress(handle, name);
+    Py_BEGIN_ALLOW_THREADS
+    address = (PPROC)GetProcAddress(handle, name);
+    Py_END_ALLOW_THREADS
+    return address;
 #else
-    PPROC address;
     char *mangled_name;
     int i;
     StgDictObject *dict;
 
+    Py_BEGIN_ALLOW_THREADS
     address = (PPROC)GetProcAddress(handle, name);
+    Py_END_ALLOW_THREADS
     if (address)
         return address;
     if (((size_t)name & ~0xFFFF) == 0) {
@@ -3189,7 +3196,9 @@ static PPROC FindAddress(void *handle, const char *name, PyObject *type)
         return NULL;
     for (i = 0; i < 32; ++i) {
         sprintf(mangled_name, "_%s@%d", name, i*4);
+        Py_BEGIN_ALLOW_THREADS
         address = (PPROC)GetProcAddress(handle, mangled_name);
+        Py_END_ALLOW_THREADS
         if (address)
             return address;
     }

@@ -1251,7 +1251,10 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     if (!name)
         return NULL;
 
+    Py_BEGIN_ALLOW_THREADS
     hMod = LoadLibraryW(name);
+    Py_END_ALLOW_THREADS
+
     if (!hMod)
         return PyErr_SetFromWindowsErr(GetLastError());
 #ifdef _WIN64
@@ -1268,9 +1271,15 @@ Free the handle of an executable previously loaded by LoadLibrary.\n";
 static PyObject *free_library(PyObject *self, PyObject *args)
 {
     void *hMod;
+    BOOL result;
     if (!PyArg_ParseTuple(args, "O&:FreeLibrary", &_parse_voidp, &hMod))
         return NULL;
-    if (!FreeLibrary((HMODULE)hMod))
+
+    Py_BEGIN_ALLOW_THREADS
+    result = FreeLibrary((HMODULE)hMod);
+    Py_END_ALLOW_THREADS
+
+    if (!result)
         return PyErr_SetFromWindowsErr(GetLastError());
     Py_RETURN_NONE;
 }

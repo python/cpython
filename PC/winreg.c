@@ -979,10 +979,12 @@ winreg_DeleteKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
 
     /* Only available on 64bit platforms, so we must load it
        dynamically. */
+    Py_BEGIN_ALLOW_THREADS
     hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RDKEFunc)GetProcAddress(hMod,
                                                                    "RegDeleteKeyExW");
+    Py_END_ALLOW_THREADS
     if (!pfn) {
         PyErr_SetString(PyExc_NotImplementedError,
                                         "not implemented on this platform");
@@ -1707,10 +1709,12 @@ winreg_DisableReflectionKey_impl(PyObject *module, HKEY key)
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
+    Py_BEGIN_ALLOW_THREADS
     hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RDRKFunc)GetProcAddress(hMod,
                                        "RegDisableReflectionKey");
+    Py_END_ALLOW_THREADS
     if (!pfn) {
         PyErr_SetString(PyExc_NotImplementedError,
                         "not implemented on this platform");
@@ -1750,10 +1754,12 @@ winreg_EnableReflectionKey_impl(PyObject *module, HKEY key)
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
+    Py_BEGIN_ALLOW_THREADS
     hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RERKFunc)GetProcAddress(hMod,
                                        "RegEnableReflectionKey");
+    Py_END_ALLOW_THREADS
     if (!pfn) {
         PyErr_SetString(PyExc_NotImplementedError,
                         "not implemented on this platform");
@@ -1792,10 +1798,12 @@ winreg_QueryReflectionKey_impl(PyObject *module, HKEY key)
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
+    Py_BEGIN_ALLOW_THREADS
     hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
         pfn = (RQRKFunc)GetProcAddress(hMod,
                                        "RegQueryReflectionKey");
+    Py_END_ALLOW_THREADS
     if (!pfn) {
         PyErr_SetString(PyExc_NotImplementedError,
                         "not implemented on this platform");
