@@ -321,7 +321,7 @@ class HTTPResponse(io.BufferedIOBase):
 
         if self.debuglevel > 0:
             for hdr in self.headers:
-                print("header:", hdr, end=" ")
+                print("header:", hdr + ":", self.headers.get(hdr))
 
         # are we using the chunked-style of transfer encoding?
         tr_enc = self.headers.get("transfer-encoding")
