@@ -34,6 +34,7 @@
 #define GC_DEBUG (0)  /* More asserts */
 
 // Bit 0 of gc_prev is used for _PyGC_PREV_MASK_FINALIZED in objimpl.h
+// These two mask bits are used only between GC.
 #define MASK_COLLECTING              (1 << 1)
 #define MASK_TENTATIVELY_UNREACHABLE (1 << 2)
 

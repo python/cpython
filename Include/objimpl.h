@@ -284,8 +284,14 @@ extern PyGC_Head *_PyGC_generation0;
 #define _PyGC_FINALIZED(o) _PyGCHead_FINALIZED(_Py_AS_GC(o))
 #define _PyGC_SET_FINALIZED(o) _PyGCHead_SET_FINALIZED(_Py_AS_GC(o))
 
-/* Tell the GC to track this object.  NB: While the object is tracked the
- * collector it must be safe to call the ob_traverse method. */
+/* Tell the GC to track this object.
+ *
+ * NB: While the object is tracked the collector it must be safe to call the
+ * ob_traverse method.
+ *
+ * Internal note: _PyGC_generation0->gc.gc_prev doesn't have any bit flags
+ * because it's not object header. Wo we skip using _PyGCHead_SET_PREV() here.
+ */
 #define _PyObject_GC_TRACK(o) do { \
     PyGC_Head *g = _Py_AS_GC(o); \
     if (g->gc.gc_next != NULL) \
@@ -298,8 +304,9 @@ extern PyGC_Head *_PyGC_generation0;
     } while (0);
 
 /* Tell the GC to stop tracking this object.
- * NOTE: This may be called while GC.  So _PyGC_PREV_MASK_INTERNAL must be
- * cleared.
+ *
+ * Internal note: This may be called while GC.  So _PyGC_PREV_MASK_INTERNAL must
+ * be cleared.  Only _PyGC_PREV_MASK_FINALIZED bit is kept.
  */
 #define _PyObject_GC_UNTRACK(o) do { \
     PyGC_Head *g = _Py_AS_GC(o); \
