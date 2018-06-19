@@ -15061,46 +15061,46 @@ static PyObject *unicode_iter(PyObject *seq);
 
 PyTypeObject PyUnicode_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "str",              /* tp_name */
-    sizeof(PyUnicodeObject),        /* tp_size */
-    0,                  /* tp_itemsize */
+    "str",                        /* tp_name */
+    sizeof(PyUnicodeObject),      /* tp_basicsize */
+    0,                            /* tp_itemsize */
     /* Slots */
-    (destructor)unicode_dealloc,    /* tp_dealloc */
-    0,                  /* tp_print */
-    0,                  /* tp_getattr */
-    0,                  /* tp_setattr */
-    0,                  /* tp_reserved */
-    unicode_repr,           /* tp_repr */
-    &unicode_as_number,         /* tp_as_number */
-    &unicode_as_sequence,       /* tp_as_sequence */
-    &unicode_as_mapping,        /* tp_as_mapping */
-    (hashfunc) unicode_hash,        /* tp_hash*/
-    0,                  /* tp_call*/
-    (reprfunc) unicode_str,     /* tp_str */
-    PyObject_GenericGetAttr,        /* tp_getattro */
-    0,                  /* tp_setattro */
-    0,                  /* tp_as_buffer */
+    (destructor)unicode_dealloc,  /* tp_dealloc */
+    0,                            /* tp_print */
+    0,                            /* tp_getattr */
+    0,                            /* tp_setattr */
+    0,                            /* tp_reserved */
+    unicode_repr,                 /* tp_repr */
+    &unicode_as_number,           /* tp_as_number */
+    &unicode_as_sequence,         /* tp_as_sequence */
+    &unicode_as_mapping,          /* tp_as_mapping */
+    (hashfunc) unicode_hash,      /* tp_hash*/
+    0,                            /* tp_call*/
+    (reprfunc) unicode_str,       /* tp_str */
+    PyObject_GenericGetAttr,      /* tp_getattro */
+    0,                            /* tp_setattro */
+    0,                            /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-    Py_TPFLAGS_UNICODE_SUBCLASS,    /* tp_flags */
-    unicode_doc,            /* tp_doc */
-    0,                  /* tp_traverse */
-    0,                  /* tp_clear */
-    PyUnicode_RichCompare,      /* tp_richcompare */
-    0,                  /* tp_weaklistoffset */
-    unicode_iter,           /* tp_iter */
-    0,                  /* tp_iternext */
-    unicode_methods,            /* tp_methods */
-    0,                  /* tp_members */
-    0,                  /* tp_getset */
-    &PyBaseObject_Type,         /* tp_base */
-    0,                  /* tp_dict */
-    0,                  /* tp_descr_get */
-    0,                  /* tp_descr_set */
-    0,                  /* tp_dictoffset */
-    0,                  /* tp_init */
-    0,                  /* tp_alloc */
-    unicode_new,            /* tp_new */
-    PyObject_Del,           /* tp_free */
+    Py_TPFLAGS_UNICODE_SUBCLASS,   /* tp_flags */
+    unicode_doc,                  /* tp_doc */
+    0,                            /* tp_traverse */
+    0,                            /* tp_clear */
+    PyUnicode_RichCompare,        /* tp_richcompare */
+    0,                            /* tp_weaklistoffset */
+    unicode_iter,                 /* tp_iter */
+    0,                            /* tp_iternext */
+    unicode_methods,              /* tp_methods */
+    0,                            /* tp_members */
+    0,                            /* tp_getset */
+    &PyBaseObject_Type,           /* tp_base */
+    0,                            /* tp_dict */
+    0,                            /* tp_descr_get */
+    0,                            /* tp_descr_set */
+    0,                            /* tp_dictoffset */
+    0,                            /* tp_init */
+    0,                            /* tp_alloc */
+    unicode_new,                  /* tp_new */
+    PyObject_Del,                 /* tp_free */
 };
 
 /* Initialize the Unicode implementation */
