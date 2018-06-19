@@ -1,4 +1,4 @@
-"Test windows, coverage %."
+"Test windows, coverage 47%."
 
 from idlelib import windows
 import unittest
@@ -14,7 +14,7 @@ class WindowListTest(unittest.TestCase):
         self.assertEqual(wl.callbacks, [])
 
     # Further tests need mock Window.
-    
+
 
 class ListedToplevelTest(unittest.TestCase):
 
@@ -35,7 +35,7 @@ class ListedToplevelTest(unittest.TestCase):
         del cls.root
 
     def test_init(self):
-        
+
         win = windows.ListedToplevel(self.root)
         self.assertIn(win, windows.registry)
         self.assertEqual(win.focused_widget, win)
