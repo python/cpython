@@ -103,8 +103,6 @@ else:
 HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
 
-WIN32 = (sys.platform == "win32")
-
 from multiprocessing.connection import wait
 
 def wait_for_handle(handle, timeout):
@@ -3806,7 +3804,7 @@ class _TestPollEintr(BaseTestCase):
 
 class TestInvalidHandle(unittest.TestCase):
 
-    @unittest.skipIf(WIN32, "skipped on Windows")
+    @unittest.skipIf(support.MS_WINDOWS, "skipped on Windows")
     def test_invalid_handles(self):
         conn = multiprocessing.connection.Connection(44977608)
         # check that poll() doesn't crash
@@ -4134,12 +4132,12 @@ class TestWait(unittest.TestCase):
 
 class TestInvalidFamily(unittest.TestCase):
 
-    @unittest.skipIf(WIN32, "skipped on Windows")
+    @unittest.skipIf(support.MS_WINDOWS, "skipped on Windows")
     def test_invalid_family(self):
         with self.assertRaises(ValueError):
             multiprocessing.connection.Listener(r'\\.\test')
 
-    @unittest.skipUnless(WIN32, "skipped on non-Windows platforms")
+    @unittest.skipUnless(support.MS_WINDOWS, "skipped on non-Windows platforms")
     def test_invalid_family_win32(self):
         with self.assertRaises(ValueError):
             multiprocessing.connection.Listener('/var/test.pipe')
@@ -4265,7 +4263,7 @@ class TestForkAwareThreadLock(unittest.TestCase):
 class TestCloseFds(unittest.TestCase):
 
     def get_high_socket_fd(self):
-        if WIN32:
+        if support.MS_WINDOWS:
             # The child process will not have any socket handles, so
             # calling socket.fromfd() should produce WSAENOTSOCK even
             # if there is a handle of the same number.
@@ -4283,7 +4281,7 @@ class TestCloseFds(unittest.TestCase):
             return fd
 
     def close(self, fd):
-        if WIN32:
+        if support.MS_WINDOWS:
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=fd).close()
         else:
             os.close(fd)
