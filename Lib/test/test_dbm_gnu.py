@@ -72,9 +72,13 @@ class TestGdbm(unittest.TestCase):
         self.g = gdbm.open(filename, 'c')
         size0 = os.path.getsize(filename)
 
-        self.g['x'] = 'x' * 10000
+        # bpo-33901: on macOS with gdbm 1.15, an empty database uses 16 MiB
+        # and adding an entry of 10,000 B has no effect on the file size.
+        # Add size0//2 bytes to make sure that the file size changes.
+        value_size = max(size0 // 2, 10000)
+        self.g['x'] = 'x' * value_size
         size1 = os.path.getsize(filename)
-        self.assertGreaterEqual(size1, size0)
+        self.assertGreater(size1, size0)
 
         del self.g['x']
         # 'size' is supposed to be the same even after deleting an entry.
@@ -82,7 +86,7 @@ class TestGdbm(unittest.TestCase):
 
         self.g.reorganize()
         size2 = os.path.getsize(filename)
-        self.assertLessEqual(size2, size1)
+        self.assertLess(size2, size1)
         self.assertGreaterEqual(size2, size0)
 
     def test_context_manager(self):
