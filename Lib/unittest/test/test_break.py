@@ -40,15 +40,10 @@ class TestBreak(unittest.TestCase):
     def testRegisterResult(self):
         result = unittest.TestResult()
         unittest.registerResult(result)
-
-        for ref in unittest.signals._results:
-            if ref is result:
-                break
-            elif ref is not result:
-                self.fail("odd object in result set")
-        else:
-            self.fail("result not found")
-
+        try:
+            self.assertIn(result, unittest.signals._results)
+        finally:
+            unittest.removeResult(result)
 
     def testInterruptCaught(self):
         default_handler = signal.getsignal(signal.SIGINT)
