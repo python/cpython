@@ -644,7 +644,6 @@ class _BinaryPlistParser:
         elif tokenH == 0x50:  # ascii string
             s = self._get_size(tokenL)
             result =  self._fp.read(s).decode('ascii')
-            result = result
 
         elif tokenH == 0x60:  # unicode string
             s = self._get_size(tokenL)
