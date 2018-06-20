@@ -1,6 +1,6 @@
 "Test , coverage %."
 
-from idlelib import
+from idlelib import zzdummy
 import unittest
 from test.support import requires
 from tkinter import Tk
@@ -23,7 +23,7 @@ class Test(unittest.TestCase):
         del cls.root
 
     def test_init(self):
-        self.assert
+        self.assertTrue(True)
 
 
 if __name__ == '__main__':
