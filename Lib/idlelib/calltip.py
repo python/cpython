@@ -15,7 +15,7 @@ from idlelib.hyperparser import HyperParser
 import __main__
 
 
-class CallTips:
+class Calltip:
 
     def __init__(self, editwin=None):
         if editwin is None:  # subprocess and test
