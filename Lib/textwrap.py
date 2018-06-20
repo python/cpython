@@ -3,11 +3,13 @@
 
 # Copyright (C) 1999-2001 Gregory P. Ward.
 # Copyright (C) 2002, 2003 Python Software Foundation.
+# Copyright (C) 2015-2017 Florent Gallaire <fgallaire@gmail.com>
 # Written by Greg Ward <gward@python.net>
 
 import re
 
-__all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten']
+__all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten',
+           'cjk_wide', 'cjk_len', 'cjk_slices']
 
 # Hardcode the recognized whitespace characters to the US-ASCII
 # whitespace characters.  The main reason for doing this is that
@@ -61,6 +63,8 @@ class TextWrapper:
         Truncate wrapped lines.
       placeholder (default: ' [...]')
         Append to the last line of truncated text.
+      cjk (default: false)
+        Handle double-width CJK chars.
     """
 
     unicode_whitespace_trans = {}
@@ -125,7 +129,8 @@ class TextWrapper:
                  tabsize=8,
                  *,
                  max_lines=None,
-                 placeholder=' [...]'):
+                 placeholder=' [...]',
+                 cjk=False):
         self.width = width
         self.initial_indent = initial_indent
         self.subsequent_indent = subsequent_indent
@@ -138,7 +143,9 @@ class TextWrapper:
         self.tabsize = tabsize
         self.max_lines = max_lines
         self.placeholder = placeholder
+        self.cjk = cjk
 
+        self._width = cjk_len if self.cjk else len
 
     # -- Private methods -----------------------------------------------
     # (possibly useful for subclasses to override)
@@ -215,8 +222,13 @@ class TextWrapper:
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
         if self.break_long_words:
-            cur_line.append(reversed_chunks[-1][:space_left])
-            reversed_chunks[-1] = reversed_chunks[-1][space_left:]
+            if self.cjk:
+                chunk_start, chunk_end = cjk_slices(reversed_chunks[-1], space_left)
+                cur_line.append(chunk_start)
+                reversed_chunks[-1] = chunk_end
+            else:
+                cur_line.append(reversed_chunks[-1][:space_left])
+                reversed_chunks[-1] = reversed_chunks[-1][space_left:]
 
         # Otherwise, we have to preserve the long word intact.  Only add
         # it to the current line if there's nothing already there --
@@ -246,6 +258,9 @@ class TextWrapper:
         lines = []
         if self.width <= 0:
             raise ValueError("invalid width %r (must be > 0)" % self.width)
+        elif self.width == 1 and (sum(self._width(chunk) for chunk in chunks) >
+                                  sum(len(chunk) for chunk in chunks)):
+            raise ValueError("invalid width 1 (must be > 1 when CJK chars)")
         if self.max_lines is not None:
             if self.max_lines > 1:
                 indent = self.subsequent_indent
@@ -280,7 +295,7 @@ class TextWrapper:
                 del chunks[-1]
 
             while chunks:
-                l = len(chunks[-1])
+                l = self._width(chunks[-1])
 
                 # Can at least squeeze this chunk onto the current line.
                 if cur_len + l <= width:
@@ -293,7 +308,7 @@ class TextWrapper:
 
             # The current line is full, and the next chunk is too big to
             # fit on *any* line (not just this one).
-            if chunks and len(chunks[-1]) > width:
+            if chunks and self._width(chunks[-1]) > width:
                 self._handle_long_word(chunks, cur_line, cur_len, width)
                 cur_len = sum(map(len, cur_line))
 
@@ -365,7 +380,7 @@ class TextWrapper:
 
 # -- Convenience interface ---------------------------------------------
 
-def wrap(text, width=70, **kwargs):
+def wrap(text, width=70, cjk=False, **kwargs):
     """Wrap a single paragraph of text, returning a list of wrapped lines.
 
     Reformat the single paragraph in 'text' so it fits in lines of no
@@ -375,10 +390,10 @@ def wrap(text, width=70, **kwargs):
     space.  See TextWrapper class for available keyword args to customize
     wrapping behaviour.
     """
-    w = TextWrapper(width=width, **kwargs)
+    w = TextWrapper(width=width, cjk=cjk, **kwargs)
     return w.wrap(text)
 
-def fill(text, width=70, **kwargs):
+def fill(text, width=70, cjk=False, **kwargs):
     """Fill a single paragraph of text, returning a new string.
 
     Reformat the single paragraph in 'text' to fit in lines of no more
@@ -387,10 +402,10 @@ def fill(text, width=70, **kwargs):
     whitespace characters converted to space.  See TextWrapper class for
     available keyword args to customize wrapping behaviour.
     """
-    w = TextWrapper(width=width, **kwargs)
+    w = TextWrapper(width=width, cjk=cjk, **kwargs)
     return w.fill(text)
 
-def shorten(text, width, **kwargs):
+def shorten(text, width, cjk=False, **kwargs):
     """Collapse and truncate the given text to fit in the given width.
 
     The text first has its whitespace collapsed.  If it then fits in
@@ -402,8 +417,41 @@ def shorten(text, width, **kwargs):
         >>> textwrap.shorten("Hello  world!", width=11)
         'Hello [...]'
     """
-    w = TextWrapper(width=width, max_lines=1, **kwargs)
+    w = TextWrapper(width=width, cjk=cjk, max_lines=1, **kwargs)
     return w.fill(' '.join(text.strip().split()))
+
+
+# -- CJK support ------------------------------------------------------
+
+def cjk_wide(char):
+    """Return True if char is Fullwidth or Wide, False otherwise.
+    Fullwidth and Wide CJK chars are double-width.
+    """
+    import unicodedata
+    return unicodedata.east_asian_width(char) in ('F', 'W')
+
+
+def cjk_len(text):
+    """Return the real width of text (its len if not a string).
+    """
+    if not isinstance(text, str):
+        return len(text)
+    return sum(2 if cjk_wide(char) else 1 for char in text)
+
+
+def cjk_slices(text, index):
+    """Return the two slices of text cut to index.
+    """
+    if not isinstance(text, str):
+        return text[:index], text[index:]
+    if cjk_len(text) <= index:
+        return text, ''
+    width = 0
+    for i, char in enumerate(text):
+        width = width + cjk_wide(char) + 1
+        if width > index:
+            break
+    return text[:i], text[i:]
 
 
 # -- Loosely related functionality -------------------------------------

@@ -578,6 +578,10 @@ class LongWordTestCase (BaseTestCase):
 Did you say "supercalifragilisticexpialidocious?"
 How *do* you spell that odd word, anyways?
 '''
+        self.text_cjk = '''\
+Did you say "いろはにほへとちりぬるをいろはにほ?"
+How りぬ るをいろはにほり ぬるは, anyways?
+'''
 
     def test_break_long(self):
         # Wrap text with long words and lots of punctuation
@@ -590,6 +594,14 @@ How *do* you spell that odd word, anyways?
         self.check_wrap(self.text, 50,
                         ['Did you say "supercalifragilisticexpialidocious?"',
                          'How *do* you spell that odd word, anyways?'])
+        self.check_wrap(self.text_cjk, 30,
+                        ['Did you say "いろはにほへとち',
+                         'りぬるをいろはにほ?" How りぬ',
+                         'るをいろはにほり ぬるは,',
+                         'anyways?'], cjk=True)
+        self.check_wrap(self.text_cjk, 50,
+                        ['Did you say "いろはにほへとちりぬるをいろはにほ?"',
+                         'How りぬ るをいろはにほり ぬるは, anyways?'], cjk=True)
 
         # SF bug 797650.  Prevent an infinite loop by making sure that at
         # least one character gets split off on every pass.
