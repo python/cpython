@@ -54,7 +54,7 @@ class EditorWindow(object):
     from idlelib.statusbar import MultiStatusBar
     from idlelib.autocomplete import AutoComplete
     from idlelib.autoexpand import AutoExpand
-    from idlelib.calltips import CallTips
+    from idlelib.calltip import Calltip
     from idlelib.codecontext import CodeContext
     from idlelib.paragraph import FormatParagraph
     from idlelib.parenmatch import ParenMatch
@@ -311,11 +311,11 @@ class EditorWindow(object):
         text.bind("<<check-module>>", scriptbinding.check_module_event)
         text.bind("<<run-module>>", scriptbinding.run_module_event)
         text.bind("<<do-rstrip>>", self.RstripExtension(self).do_rstrip)
-        calltips = self.CallTips(self)
-        text.bind("<<try-open-calltip>>", calltips.try_open_calltip_event)
-        #refresh-calltips must come after paren-closed to work right
-        text.bind("<<refresh-calltip>>", calltips.refresh_calltip_event)
-        text.bind("<<force-open-calltip>>", calltips.force_open_calltip_event)
+        ctip = self.Calltip(self)
+        text.bind("<<try-open-calltip>>", ctip.try_open_calltip_event)
+        #refresh-calltip must come after paren-closed to work right
+        text.bind("<<refresh-calltip>>", ctip.refresh_calltip_event)
+        text.bind("<<force-open-calltip>>", ctip.force_open_calltip_event)
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
         text.bind("<<toggle-code-context>>",
                   self.CodeContext(self).toggle_code_context_event)
