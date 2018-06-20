@@ -27,6 +27,10 @@ class TestCgitb(unittest.TestCase):
             html = cgitb.html(sys.exc_info())
             self.assertIn("ValueError", html)
             self.assertIn(str(err), html)
+            self.assertIn(cgitb._CSS, html)
+            html_with_css = cgitb.html(sys.exc_info(), css="CUSTOM CSS")
+            self.assertNotIn(cgitb._CSS, html_with_css)
+            self.assertIn("CUSTOM CSS", html_with_css)
 
     def test_text(self):
         try:

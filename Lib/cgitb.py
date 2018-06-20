@@ -64,12 +64,10 @@ def grey(text):
 def title(exception, version, date):
     subtitle = version + ' | ' + date
     return '''
-<font face="helvetica, arial">
-  <h1 style="font-size: 1.6em; margin-top: 0px; border-bottom: 1px solid #ddd;">{exception}</h1>
-  <p style="color: #959595">
+  <h1>{exception}</h1>
+  <p id="subtitle">
     {subtitle}
-  </p>
-</font>'''.format(exception=exception, subtitle=grey(subtitle))
+  </p>'''.format(exception=exception, subtitle=subtitle)
 
 def lookup(name, frame, locals):
     """Find the value for a given name in the given environment."""
@@ -108,16 +106,51 @@ def scanvars(reader, frame, locals):
         lasttoken = token
     return vars
 
-def html(einfo, context=5):
+_CSS = """
+body {
+  background-color: #f0f0f8;
+  font-family: helvetica, arial;
+}
+h1 {
+  font-size: 1.6em;
+  margin-top: 0px;
+  border-bottom: 1px solid #ddd;
+}
+#subtitle {
+  color: #696969;
+}
+.frame-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 0;
+}
+.frame-table tr td, .frame-table tr th {
+  padding: 0;
+}
+.frame-table .frame-title {
+  background-color: #d8bbff;
+  padding: 0.2em;
+}
+.frame-variables{
+  color: #696969;
+}
+.error-line {
+  background-color: #6c5fc7;
+  color: #ffffff;
+}
+"""
+
+def html(einfo, context=5, css=_CSS):
     """Return a nice HTML document describing a given traceback."""
     etype, evalue, etb = einfo
     if isinstance(etype, type):
         etype = etype.__name__
     pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
     date = time.ctime(time.time())
-    head = '<body bgcolor="#f0f0f8">' + title(
+    css_block = "<style>{css}</style>".format(css=css)
+    head =  '<body>' + css_block + title(
         pydoc.html.escape(str(etype)), pyver, date) + '''
-<p><font face="helvetica, arial">A problem occurred in a Python script.  Here is the sequence of
+<p>A problem occurred in a Python script.  Here is the sequence of
 function calls leading up to the error, in the order they occurred.</p>'''
 
     indent = '<tt>' + small('&nbsp;' * 5) + '&nbsp;</tt>'
@@ -144,15 +177,15 @@ function calls leading up to the error, in the order they occurred.</p>'''
             finally: lnum[0] += 1
         vars = scanvars(reader, frame, locals)
 
-        rows = ['<tr><td bgcolor="#d8bbff">%s%s %s</td></tr>' %
-                ('<big>&nbsp;</big>', link, call)]
+        rows = ['<tr><td class="frame-title">%s %s</td></tr>' %
+                (link, call)]
         if index is not None:
             i = lnum - index
             for line in lines:
                 num = small('&nbsp;' * (5-len(str(i))) + str(i)) + '&nbsp;'
                 if i in highlight:
                     line = '<tt>=&gt;%s%s</tt>' % (num, pydoc.html.preformat(line))
-                    rows.append('<tr><td bgcolor="#6c5fc7"><font color="#ffffff">%s</td></tr>' % line)
+                    rows.append('<tr><td class="error-line">%s</td></tr>' % line)
                 else:
                     line = '<tt>&nbsp;&nbsp;%s%s</tt>' % (num, pydoc.html.preformat(line))
                     rows.append('<tr><td>%s</td></tr>' % line)
@@ -173,9 +206,9 @@ function calls leading up to the error, in the order they occurred.</p>'''
             else:
                 dump.append(name + ' <em>undefined</em>')
 
-        rows.append('<tr><td>%s<br><br></td></tr>' % small(grey(', '.join(dump))))
+        rows.append('<tr><td class="frame-variables">%s<br><br></td></tr>' % small(', '.join(dump)))
         frames.append('''
-<table width="100%%" cellspacing=0 cellpadding=0 border=0>
+<table class="frame-table">
 %s</table>''' % '\n'.join(rows))
 
     exception = ['<p>%s: %s' % (strong(pydoc.html.escape(str(etype))),
