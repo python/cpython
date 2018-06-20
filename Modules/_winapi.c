@@ -1230,6 +1230,33 @@ _winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle)
 }
 
 /*[clinic input]
+_winapi.GetProcessHandleCount
+
+    ProcessHandle: HANDLE(c_default="GetCurrentProcess()") = NULL
+    /
+
+Return the number of open handles for the specified process.
+
+Return the number of open handles for the process specified
+by ProcessHandle.  If ProcessHandle is not given then the
+handle count for the current process is given.
+
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetProcessHandleCount_impl(PyObject *module, HANDLE ProcessHandle)
+/*[clinic end generated code: output=af58910c23922016 input=089cb7546e598a2d]*/
+{
+    DWORD HandleCount;
+
+    if (!GetProcessHandleCount(ProcessHandle, &HandleCount))
+        return PyErr_SetFromWindowsErr(0);
+
+    return PyLong_FromUnsignedLong(HandleCount);
+}
+
+
+/*[clinic input]
 _winapi.GetStdHandle -> HANDLE
 
     std_handle: DWORD
@@ -1714,6 +1741,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_GETEXITCODEPROCESS_METHODDEF
     _WINAPI_GETLASTERROR_METHODDEF
     _WINAPI_GETMODULEFILENAME_METHODDEF
+    _WINAPI_GETPROCESSHANDLECOUNT_METHODDEF
     _WINAPI_GETSTDHANDLE_METHODDEF
     _WINAPI_GETVERSION_METHODDEF
     _WINAPI_OPENPROCESS_METHODDEF

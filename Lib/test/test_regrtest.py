@@ -857,6 +857,28 @@ class ArgsTestCase(BaseTestCase):
         """)
         self.check_leak(code, 'file descriptors')
 
+    @unittest.skipUnless(sys.platform == 'win32', 'specific to Windows')
+    @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    def test_huntrleaks_handle_leak(self):
+        # test --huntrleaks for file descriptor leak
+        code = textwrap.dedent("""
+            import os
+            import unittest
+            import _winapi
+
+            process = _winapi.GetCurrentProcess()
+            handle = process
+
+            class FDLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    handle2 = _winapi.DuplicateHandle(
+                        process, handle, process,
+                        0, 1,
+                        _winapi.DUPLICATE_SAME_ACCESS)
+                    # bug: never close handle2
+        """)
+        self.check_leak(code, 'handles')
+
     def test_list_tests(self):
         # test --list-tests
         tests = [self.create_test() for i in range(5)]

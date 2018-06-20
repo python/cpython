@@ -1,0 +1,2 @@
+regrtest now also checks for leak of Windows handles. Initial patch written
+by Richard Oudkerk.

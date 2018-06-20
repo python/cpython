@@ -13,6 +13,12 @@ except ImportError:
         return (cls._abc_registry, cls._abc_cache,
                 cls._abc_negative_cache, cls._abc_negative_cache_version)
 
+if sys.platform == 'win32':
+    from _winapi import GetProcessHandleCount as handle_count
+else:
+    def handle_count():
+        return 0
+
 
 def dash_R(the_module, test, indirect_test, huntrleaks):
     """Run a test multiple times, looking for reference leaks.
@@ -59,24 +65,27 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     rc_deltas = [0] * repcount
     alloc_deltas = [0] * repcount
     fd_deltas = [0] * repcount
+    handle_deltas = [0] * repcount
 
     print("beginning", repcount, "repetitions", file=sys.stderr)
     print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr,
           flush=True)
     # initialize variables to make pyflakes quiet
-    rc_before = alloc_before = fd_before = 0
+    rc_before = alloc_before = fd_before = handle_before = 0
     for i in range(repcount):
         indirect_test()
-        alloc_after, rc_after, fd_after = dash_R_cleanup(fs, ps, pic, zdc,
-                                                         abcs)
+        result = dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        alloc_after, rc_after, fd_after, handle_after = result
         print('.', end='', file=sys.stderr, flush=True)
         if i >= nwarmup:
             rc_deltas[i] = get_pooled_int(rc_after - rc_before)
             alloc_deltas[i] = get_pooled_int(alloc_after - alloc_before)
             fd_deltas[i] = get_pooled_int(fd_after - fd_before)
+            handle_deltas[i] = get_pooled_int(handle_after - handle_before)
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
+        handle_before = handle_after
     print(file=sys.stderr)
 
     # These checkers return False on success, True on failure
@@ -102,7 +111,8 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     for deltas, item_name, checker in [
         (rc_deltas, 'references', check_rc_deltas),
         (alloc_deltas, 'memory blocks', check_rc_deltas),
-        (fd_deltas, 'file descriptors', check_fd_deltas)
+        (fd_deltas, 'file descriptors', check_fd_deltas),
+        (handle_deltas, 'handles', check_fd_deltas),
     ]:
         # ignore warmup runs
         deltas = deltas[nwarmup:]
@@ -154,7 +164,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     func1 = sys.getallocatedblocks
     func2 = sys.gettotalrefcount
     gc.collect()
-    return func1(), func2(), support.fd_count()
+    return func1(), func2(), support.fd_count(), handle_count()
 
 
 def clear_caches():
