@@ -15,9 +15,9 @@ python -m idlelib.idle_test.htest
 1. Test Files
 
 The idle directory, idlelib, has over 60 xyz.py files. The idle_test
-subdirectory contains a test_xyz.py for each implementation file.  To
+subdirectory contains test_xyz.py for each implementation file xyz.  To
 add a test for abc.py, open idle_test/template.py and immediately Save
-As test_abc.py.  Iinsert 'abc' on the first line, and replace 'zzdummy'
+As test_abc.py.  Insert 'abc' on the first line, and replace 'zzdummy'
 with 'abc.
 
 Remove the imports of requires and tkinter if not needed.  Otherwise,
@@ -54,7 +54,7 @@ from test.support import requires
 requires('gui')
 
 To guard a test class, put "requires('gui')" in its setUpClass function.
-The template class does this.
+The template.py file does this.
 
 To avoid interfering with other GUI tests, all GUI objects must be
 destroyed and deleted by the end of the test.  The Tk root created in a
