@@ -11,6 +11,12 @@ class TooltipBase(object):
     """abstract base class for tooltips"""
 
     def __init__(self, anchor_widget):
+        """Create a tooltip.
+
+        anchor_widget: the widget next to which the tooltip will be shown
+
+        Note that a widget will only be shown when showtip() is called.
+        """
         self.anchor_widget = anchor_widget
         self.tipwindow = None
 
@@ -80,6 +86,14 @@ class OnHoverTooltipBase(TooltipBase):
     """abstract base class for tooltips, with delayed on-hover display"""
 
     def __init__(self, anchor_widget, hover_delay=1000):
+        """Create a tooltip with a mouse hover delay.
+
+        anchor_widget: the widget next to which the tooltip will be shown
+
+        Note that a widget will only be shown when showtip() is called,
+        e.g. after hovering over the anchor widget with the mouse for enough
+        time.
+        """
         super(OnHoverTooltipBase, self).__init__(anchor_widget)
         self.hover_delay = hover_delay
 
@@ -133,6 +147,14 @@ class OnHoverTooltipBase(TooltipBase):
 class TextTooltip(OnHoverTooltipBase):
     """an on-hover text-only tooltip"""
     def __init__(self, anchor_widget, text, hover_delay=1000):
+        """Create a text tooltip with a mouse hover delay.
+
+        anchor_widget: the widget next to which the tooltip will be shown
+
+        Note that a widget will only be shown when showtip() is called,
+        e.g. after hovering over the anchor widget with the mouse for enough
+        time.
+        """
         super(TextTooltip, self).__init__(anchor_widget,
                                           hover_delay=hover_delay)
         self.text = text
