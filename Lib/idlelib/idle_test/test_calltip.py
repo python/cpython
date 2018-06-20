@@ -1,11 +1,11 @@
-"Test calltips, coverage 60%"
+"Test calltip, coverage 60%"
 
-from idlelib import calltips
+from idlelib import calltip
 import unittest
 import textwrap
 import types
 
-default_tip = calltips._default_callable_argspec
+default_tip = calltip._default_callable_argspec
 
 
 # Test Class TC is used in multiple get_argspec test methods
@@ -36,7 +36,7 @@ class TC():
 
 
 tc = TC()
-signature = calltips.get_argspec  # 2.7 and 3.x use different functions
+signature = calltip.get_argspec  # 2.7 and 3.x use different functions
 
 
 class Get_signatureTest(unittest.TestCase):
@@ -66,7 +66,7 @@ class Get_signatureTest(unittest.TestCase):
               '  See help(type) for accurate signature.')
         gtest(list.__init__,
               '(self, /, *args, **kwargs)'
-              + calltips._argument_positional + '\n' +
+              + calltip._argument_positional + '\n' +
               'Initialize self.  See help(type(self)) for accurate signature.')
         append_doc =  "L.append(object) -> None -- append object to end"
         gtest(list.append, append_doc)
@@ -100,7 +100,7 @@ non-overlapping occurrences o...''')
     def test_docline_truncation(self):
         def f(): pass
         f.__doc__ = 'a'*300
-        self.assertEqual(signature(f), '()\n' + 'a' * (calltips._MAX_COLS-3) + '...')
+        self.assertEqual(signature(f), '()\n' + 'a' * (calltip._MAX_COLS-3) + '...')
 
     def test_multiline_docstring(self):
         # Test fewer lines than max.
@@ -119,7 +119,7 @@ bytes() -> empty bytes object''')
         # Test more than max lines
         def f(): pass
         f.__doc__ = 'a\n' * 15
-        self.assertEqual(signature(f), '()' + '\na' * calltips._MAX_LINES)
+        self.assertEqual(signature(f), '()' + '\na' * calltip._MAX_LINES)
 
     def test_functions(self):
         def t1(): 'doc'
@@ -166,7 +166,7 @@ bytes() -> empty bytes object''')
         class Test:
             def __call__(*, a): pass
 
-        mtip = calltips._invalid_method
+        mtip = calltip._invalid_method
         self.assertEqual(signature(C().m2), mtip)
         self.assertEqual(signature(Test()), mtip)
 
@@ -174,7 +174,7 @@ bytes() -> empty bytes object''')
         # test that re works to delete a first parameter name that
         # includes non-ascii chars, such as various forms of A.
         uni = "(A\u0391\u0410\u05d0\u0627\u0905\u1e00\u3042, a)"
-        assert calltips._first_param.sub('', uni) == '(a)'
+        assert calltip._first_param.sub('', uni) == '(a)'
 
     def test_no_docstring(self):
         def nd(s):
@@ -207,9 +207,9 @@ bytes() -> empty bytes object''')
 
 class Get_entityTest(unittest.TestCase):
     def test_bad_entity(self):
-        self.assertIsNone(calltips.get_entity('1/0'))
+        self.assertIsNone(calltip.get_entity('1/0'))
     def test_good_entity(self):
-        self.assertIs(calltips.get_entity('int'), int)
+        self.assertIs(calltip.get_entity('int'), int)
 
 
 if __name__ == '__main__':
