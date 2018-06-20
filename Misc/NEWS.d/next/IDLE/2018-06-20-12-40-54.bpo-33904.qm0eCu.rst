@@ -1,0 +1,1 @@
+IDLE: In rstrip, rename class RstripExtension as Rstrip

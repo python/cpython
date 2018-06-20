@@ -58,7 +58,7 @@ class EditorWindow(object):
     from idlelib.codecontext import CodeContext
     from idlelib.paragraph import FormatParagraph
     from idlelib.parenmatch import ParenMatch
-    from idlelib.rstrip import RstripExtension
+    from idlelib.rstrip import Rstrip
     from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
@@ -310,7 +310,7 @@ class EditorWindow(object):
         scriptbinding = ScriptBinding(self)
         text.bind("<<check-module>>", scriptbinding.check_module_event)
         text.bind("<<run-module>>", scriptbinding.run_module_event)
-        text.bind("<<do-rstrip>>", self.RstripExtension(self).do_rstrip)
+        text.bind("<<do-rstrip>>", self.Rstrip(self).do_rstrip)
         ctip = self.Calltip(self)
         text.bind("<<try-open-calltip>>", ctip.try_open_calltip_event)
         #refresh-calltip must come after paren-closed to work right
