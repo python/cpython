@@ -1,4 +1,4 @@
-"""A Calltip window class for Tkinter/IDLE.
+"""A calltip window class for Tkinter/IDLE.
 
 After tooltip.py, which uses ideas gleaned from PySol
 Used by calltip.
@@ -13,7 +13,7 @@ CHECKHIDE_TIME = 100 # milliseconds
 
 MARK_RIGHT = "calltipwindowregion_right"
 
-class Calltip:
+class CalltipWindow:
 
     def __init__(self, widget):
         self.widget = widget
@@ -47,7 +47,7 @@ class Calltip:
     def showtip(self, text, parenleft, parenright):
         """Show the calltip, bind events which will close it and reposition it.
         """
-        # Only called in Calltip, where lines are truncated
+        # Only called in calltip.Calltip, where lines are truncated
         self.text = text
         if self.tipwindow or not self.text:
             return
@@ -147,7 +147,7 @@ def _calltip_window(parent):  # htest #
     text.pack(side=LEFT, fill=BOTH, expand=1)
     text.insert("insert", "string.split")
     top.update()
-    calltip = Calltip(text)
+    calltip = CalltipWindow(text)
 
     def calltip_show(event):
         calltip.showtip("(s=Hello world)", "insert", "end")
