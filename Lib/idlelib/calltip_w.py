@@ -1,7 +1,7 @@
-"""A CallTip window class for Tkinter/IDLE.
+"""A calltip window class for Tkinter/IDLE.
 
 After tooltip.py, which uses ideas gleaned from PySol
-Used by the calltips IDLE extension.
+Used by calltip.
 """
 from tkinter import Label, LEFT, SOLID, TclError
 
@@ -16,11 +16,11 @@ CHECKHIDE_TIME = 100  # milliseconds
 MARK_RIGHT = "calltipwindowregion_right"
 
 
-class CallTip(TooltipBase):
+class CalltipWindow(TooltipBase):
     """a call-tip widget for tkinter text widgets"""
 
     def __init__(self, text_widget):
-        super(CallTip, self).__init__(text_widget)
+        super(CalltipWindow, self).__init__(text_widget)
         self.text_widget = self.anchor_widget
         self.label = self.text = None
         self.parenline = self.parencol = self.lastline = None
@@ -28,7 +28,7 @@ class CallTip(TooltipBase):
         self.checkhide_after_id = None
 
     def __del__(self):
-        super(CallTip, self).__del__()
+        super(CalltipWindow, self).__del__()
 
     def get_position(self):
         """Choose the position of the calltip"""
@@ -51,12 +51,12 @@ class CallTip(TooltipBase):
             return
         self.lastline = curline
         self.text_widget.see("insert")
-        super(CallTip, self).position_window()
+        super(CalltipWindow, self).position_window()
 
     def showtip(self, text, parenleft, parenright):
         """Show the calltip, bind events which will close it and reposition it.
         """
-        # Only called in CallTips, where lines are truncated
+        # Only called in calltip.Calltip, where lines are truncated
         self.text = text
         if self.tipwindow or not self.text:
             return
@@ -65,7 +65,7 @@ class CallTip(TooltipBase):
         self.parenline, self.parencol = map(
             int, self.text_widget.index(parenleft).split("."))
 
-        super(CallTip, self).showtip()
+        super(CalltipWindow, self).showtip()
 
         self._bind_events()
 
@@ -124,7 +124,7 @@ class CallTip(TooltipBase):
             # ValueError may be raised by MultiCall
             pass
 
-        super(CallTip, self).hidetip()
+        super(CalltipWindow, self).hidetip()
 
     def _bind_events(self):
         self.checkhideid = self.text_widget.bind(CHECKHIDE_EVENT,
@@ -160,7 +160,7 @@ def _calltip_window(parent):  # htest #
     text.insert("insert", "string.split")
     top.update()
 
-    calltip = CallTip(text)
+    calltip = CalltipWindow(text)
     def calltip_show(event):
         calltip.showtip("(s='Hello world')", "insert", "end")
     def calltip_hide(event):
@@ -174,7 +174,7 @@ def _calltip_window(parent):  # htest #
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_calltips', verbosity=2, exit=False)
+    main('idlelib.idle_test.test_calltip_w', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_calltip_window)

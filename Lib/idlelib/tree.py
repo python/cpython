@@ -462,6 +462,8 @@ def _tree_widget(parent):  # htest #
     node.expand()
 
 if __name__ == '__main__':
-    # test_tree is currently a copy of this
+    from unittest import main
+    main('idlelib.idle_test.test_tree', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_tree_widget)

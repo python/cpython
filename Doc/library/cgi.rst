@@ -284,18 +284,6 @@ algorithms implemented in this module in other circumstances.
    passed to :func:`urllib.parse.parse_qs` unchanged.
 
 
-.. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False)
-
-   This function is deprecated in this module. Use :func:`urllib.parse.parse_qs`
-   instead. It is maintained here only for backward compatibility.
-
-
-.. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False)
-
-   This function is deprecated in this module. Use :func:`urllib.parse.parse_qsl`
-   instead. It is maintained here only for backward compatibility.
-
-
 .. function:: parse_multipart(fp, pdict, encoding="utf-8", errors="replace")
 
    Parse input of type :mimetype:`multipart/form-data` (for  file uploads).
@@ -346,20 +334,6 @@ algorithms implemented in this module in other circumstances.
 .. function:: print_environ_usage()
 
    Print a list of useful (used by CGI) environment variables in HTML.
-
-
-.. function:: escape(s, quote=False)
-
-   Convert the characters ``'&'``, ``'<'`` and ``'>'`` in string *s* to HTML-safe
-   sequences.  Use this if you need to display text that might contain such
-   characters in HTML.  If the optional flag *quote* is true, the quotation mark
-   character (``"``) is also translated; this helps for inclusion in an HTML
-   attribute value delimited by double quotes, as in ``<a href="...">``.  Note
-   that single quotes are never translated.
-
-   .. deprecated:: 3.2
-      This function is unsafe because *quote* is false by default, and therefore
-      deprecated.  Use :func:`html.escape` instead.
 
 
 .. _cgi-security:
