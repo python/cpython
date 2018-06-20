@@ -15,7 +15,7 @@ from idlelib.hyperparser import HyperParser
 import __main__
 
 
-class CallTips:
+class Calltip:
 
     def __init__(self, editwin=None):
         if editwin is None:  # subprocess and test
@@ -31,7 +31,7 @@ class CallTips:
 
     def _make_tk_calltip_window(self):
         # See __init__ for usage
-        return calltip_w.CallTip(self.text)
+        return calltip_w.Calltip(self.text)
 
     def _remove_calltip_window(self, event=None):
         if self.active_calltip:
@@ -44,7 +44,7 @@ class CallTips:
         return "break"
 
     def try_open_calltip_event(self, event):
-        """Happens when it would be nice to open a CallTip, but not really
+        """Happens when it would be nice to open a Calltip, but not really
         necessary, for example after an opening bracket, so function calls
         won't be made.
         """
@@ -175,4 +175,4 @@ def get_argspec(ob):
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_calltips', verbosity=2)
+    main('idlelib.idle_test.test_calltip', verbosity=2)

@@ -1,0 +1,3 @@
+For consistency and appearance, rename an IDLE module and class. Module
+idlelib.calltips is now calltip.  Class idlelib.calltip_w.CallTip is now
+Calltip.
