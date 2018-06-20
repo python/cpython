@@ -21,7 +21,6 @@ class CalltipWindow(TooltipBase):
 
     def __init__(self, text_widget):
         super(CalltipWindow, self).__init__(text_widget)
-        self.text_widget = self.anchor_widget
         self.label = self.text = None
         self.parenline = self.parencol = self.lastline = None
         self.hideid = self.checkhideid = None
@@ -32,13 +31,13 @@ class CalltipWindow(TooltipBase):
 
     def get_position(self):
         """Choose the position of the calltip"""
-        curline = int(self.text_widget.index("insert").split('.')[0])
+        curline = int(self.anchor_widget.index("insert").split('.')[0])
         if curline == self.parenline:
-            box = self.text_widget.bbox("%d.%d" % (self.parenline, self.parencol))
+            box = self.anchor_widget.bbox("%d.%d" % (self.parenline, self.parencol))
         else:
-            box = self.text_widget.bbox("%d.0" % curline)
+            box = self.anchor_widget.bbox("%d.0" % curline)
         if not box:
-            box = list(self.text_widget.bbox("insert"))
+            box = list(self.anchor_widget.bbox("insert"))
             # align to left of window
             box[0] = 0
             box[2] = 0
@@ -46,11 +45,11 @@ class CalltipWindow(TooltipBase):
 
     def position_window(self):
         """Check if needs to reposition the window, and if so - do it."""
-        curline = int(self.text_widget.index("insert").split('.')[0])
+        curline = int(self.anchor_widget.index("insert").split('.')[0])
         if curline == self.lastline:
             return
         self.lastline = curline
-        self.text_widget.see("insert")
+        self.anchor_widget.see("insert")
         super(CalltipWindow, self).position_window()
 
     def showtip(self, text, parenleft, parenright):
@@ -61,9 +60,9 @@ class CalltipWindow(TooltipBase):
         if self.tipwindow or not self.text:
             return
 
-        self.text_widget.mark_set(MARK_RIGHT, parenright)
+        self.anchor_widget.mark_set(MARK_RIGHT, parenright)
         self.parenline, self.parencol = map(
-            int, self.text_widget.index(parenleft).split("."))
+            int, self.anchor_widget.index(parenleft).split("."))
 
         super(CalltipWindow, self).showtip()
 
@@ -72,7 +71,7 @@ class CalltipWindow(TooltipBase):
     def showcontents(self):
         self.label = Label(self.tipwindow, text=self.text, justify=LEFT,
                            background="#ffffe0", relief=SOLID, borderwidth=1,
-                           font=self.text_widget['font'])
+                           font=self.anchor_widget['font'])
         self.label.pack()
 
     def checkhide_event(self, event=None):
@@ -81,18 +80,18 @@ class CalltipWindow(TooltipBase):
             # this function, the function will be called nevertheless,
             # so do nothing in this case.
             return None
-        curline, curcol = map(int, self.text_widget.index("insert").split('.'))
+        curline, curcol = map(int, self.anchor_widget.index("insert").split('.'))
         if curline < self.parenline or \
            (curline == self.parenline and curcol <= self.parencol) or \
-           self.text_widget.compare("insert", ">", MARK_RIGHT):
+           self.anchor_widget.compare("insert", ">", MARK_RIGHT):
             self.hidetip()
             return "break"
         else:
             self.position_window()
             if self.checkhide_after_id is not None:
-                self.text_widget.after_cancel(self.checkhide_after_id)
+                self.anchor_widget.after_cancel(self.checkhide_after_id)
             self.checkhide_after_id = \
-                self.text_widget.after(CHECKHIDE_TIME, self.checkhide_event)
+                self.anchor_widget.after(CHECKHIDE_TIME, self.checkhide_event)
             return None
 
     def hide_event(self, event):
@@ -114,7 +113,7 @@ class CalltipWindow(TooltipBase):
 
         self.parenline = self.parencol = self.lastline = None
         try:
-            self.text_widget.mark_unset(MARK_RIGHT)
+            self.anchor_widget.mark_unset(MARK_RIGHT)
         except TclError:
             pass
 
@@ -127,24 +126,24 @@ class CalltipWindow(TooltipBase):
         super(CalltipWindow, self).hidetip()
 
     def _bind_events(self):
-        self.checkhideid = self.text_widget.bind(CHECKHIDE_EVENT,
+        self.checkhideid = self.anchor_widget.bind(CHECKHIDE_EVENT,
                                                   self.checkhide_event)
         for seq in CHECKHIDE_SEQUENCES:
-            self.text_widget.event_add(CHECKHIDE_EVENT, seq)
-        self.text_widget.after(CHECKHIDE_TIME, self.checkhide_event)
-        self.hideid = self.text_widget.bind(HIDE_EVENT,
+            self.anchor_widget.event_add(CHECKHIDE_EVENT, seq)
+        self.anchor_widget.after(CHECKHIDE_TIME, self.checkhide_event)
+        self.hideid = self.anchor_widget.bind(HIDE_EVENT,
                                              self.hide_event)
         for seq in HIDE_SEQUENCES:
-            self.text_widget.event_add(HIDE_EVENT, seq)
+            self.anchor_widget.event_add(HIDE_EVENT, seq)
 
     def _unbind_events(self):
         for seq in CHECKHIDE_SEQUENCES:
-            self.text_widget.event_delete(CHECKHIDE_EVENT, seq)
-        self.text_widget.unbind(CHECKHIDE_EVENT, self.checkhideid)
+            self.anchor_widget.event_delete(CHECKHIDE_EVENT, seq)
+        self.anchor_widget.unbind(CHECKHIDE_EVENT, self.checkhideid)
         self.checkhideid = None
         for seq in HIDE_SEQUENCES:
-            self.text_widget.event_delete(HIDE_EVENT, seq)
-        self.text_widget.unbind(HIDE_EVENT, self.hideid)
+            self.anchor_widget.event_delete(HIDE_EVENT, seq)
+        self.anchor_widget.unbind(HIDE_EVENT, self.hideid)
         self.hideid = None
 
 
