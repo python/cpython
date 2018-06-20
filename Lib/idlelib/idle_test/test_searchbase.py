@@ -1,8 +1,7 @@
-'''tests idlelib.searchbase.
+"Test searchbase, coverage 98%."
+# The only thing not covered is inconsequential --
+# testing skipping of suite when self.needwrapbutton is false.
 
-Coverage: 99%. The only thing not covered is inconsequential --
-testing skipping of suite when self.needwrapbutton is false.
-'''
 import unittest
 from test.support import requires
 from tkinter import Tk, Frame  ##, BooleanVar, StringVar
@@ -21,6 +20,7 @@ from idlelib.idle_test.mock_idle import Func
 ##def tearDownModule():
 ##    se.BooleanVar = BooleanVar
 ##    se.StringVar = StringVar
+
 
 class SearchDialogBaseTest(unittest.TestCase):
 
