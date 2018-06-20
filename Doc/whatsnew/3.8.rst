@@ -67,6 +67,20 @@ Summary -- Release highlights
 New Features
 ============
 
+Parallel filesystem cache for compiled bytecode files
+-----------------------------------------------------
+
+The new :envvar:`PYTHONPYCACHEPREFIX` setting (also available as
+:option:`-X` ``pycache_prefix``) configures the implicit bytecode
+cache to use a separate parallel filesystem tree, rather than
+the default ``__pycache__`` subdirectories within each source
+directory.
+
+The location of the cache is reported in :data:`sys.pycache_prefix`
+(:const:`None` indicates the default location in ``__pycache__``
+subdirectories).
+
+(Contributed by Carl Meyer in :issue:`33499`.)
 
 
 Other Language Changes
