@@ -39,6 +39,8 @@ class TestBreak(unittest.TestCase):
 
     def testRegisterResult(self):
         result = unittest.TestResult()
+        self.assertNotIn(result, unittest.signals._results)
+
         unittest.registerResult(result)
         try:
             self.assertIn(result, unittest.signals._results)
