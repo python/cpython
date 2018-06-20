@@ -112,7 +112,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         (rc_deltas, 'references', check_rc_deltas),
         (alloc_deltas, 'memory blocks', check_rc_deltas),
         (fd_deltas, 'file descriptors', check_fd_deltas),
-        (handle_deltas, 'handles', check_fd_deltas),
+        (handle_deltas, 'handles', check_rc_deltas),
     ]:
         # ignore warmup runs
         deltas = deltas[nwarmup:]
