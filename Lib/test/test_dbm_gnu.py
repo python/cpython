@@ -12,9 +12,8 @@ class TestGdbm(unittest.TestCase):
     def setUpClass():
         if support.verbose:
             try:
-                import _gdbm
-                version = _gdbm._GDBM_VERSION
-            except (ImportError, AttributeError):
+                from _gdbm import _GDBM_VERSION as version
+            except ImportError:
                 pass
             else:
                 print(f"gdbm version: {version}")
