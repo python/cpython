@@ -33,12 +33,6 @@ The functions supplied by this module are actually bound methods of a hidden
 instance of the :class:`random.Random` class.  You can instantiate your own
 instances of :class:`Random` to get generators that don't share state.
 
-Class :class:`Random` can also be subclassed if you want to use a different
-basic generator of your own devising: in that case, override the :meth:`~Random.random`,
-:meth:`~Random.seed`, :meth:`~Random.getstate`, and :meth:`~Random.setstate` methods.
-Optionally, a new generator can supply a :meth:`~Random.getrandbits` method --- this
-allows :meth:`randrange` to produce selections over an arbitrarily large range.
-
 The :mod:`random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
 from sources provided by the operating system.
@@ -309,6 +303,15 @@ be found in any statistics text.
 
 Alternative Generator
 ---------------------
+
+.. class:: Random([seed])
+
+   Class to be subclassed if you want to use a different basic generator of your
+   own devising: in that case, override the :meth:`random`,
+   :meth:`seed`, :meth:`getstate`, and :meth:`setstate`
+   methods. Optionally, a new generator can supply a
+   :meth:`getrandbits` method --- this allows :meth:`randrange` to
+   produce selections over an arbitrarily large range.
 
 .. class:: SystemRandom([seed])
 
