@@ -57,7 +57,6 @@ import contextlib
 import datetime
 import enum
 from io import BytesIO
-import itertools
 import os
 import re
 import struct
@@ -244,246 +243,233 @@ def _escape(text):
     text = text.replace(">", "&gt;")        # escape '>'
     return text
 
-class _PlistParser:
-    def __init__(self, use_builtin_types, dict_type):
-        self.stack = []
-        self.current_key = None
-        self.root = None
-        self._use_builtin_types = use_builtin_types
-        self._dict_type = dict_type
 
-    def parse(self, fileobj):
-        self.parser = ParserCreate()
-        self.parser.StartElementHandler = self.handle_begin_element
-        self.parser.EndElementHandler = self.handle_end_element
-        self.parser.CharacterDataHandler = self.handle_data
-        self.parser.ParseFile(fileobj)
-        return self.root
+def _parse_xml(fp, use_builtin_types, dict_type):
 
-    def handle_begin_element(self, element, attrs):
-        self.data = []
-        handler = getattr(self, "begin_" + element, None)
+    stack = []
+    data = []
+    current_key = None
+    root = None
+
+    def handle_begin_element(element, attrs):
+        data.clear()
+        handler = begin_handlers.get(element)
         if handler is not None:
             handler(attrs)
 
-    def handle_end_element(self, element):
-        handler = getattr(self, "end_" + element, None)
+    def handle_end_element(element):
+        handler = end_handlers.get(element)
         if handler is not None:
             handler()
 
-    def handle_data(self, data):
-        self.data.append(data)
+    def add_object(value):
+        # this is the root object
+        nonlocal root
+        root = value
 
-    def add_object(self, value):
-        if self.current_key is not None:
-            if not isinstance(self.stack[-1], type({})):
-                raise ValueError("unexpected element at line %d" %
-                                 self.parser.CurrentLineNumber)
-            self.stack[-1][self.current_key] = value
-            self.current_key = None
-        elif not self.stack:
-            # this is the root object
-            self.root = value
-        else:
-            if not isinstance(self.stack[-1], type([])):
-                raise ValueError("unexpected element at line %d" %
-                                 self.parser.CurrentLineNumber)
-            self.stack[-1].append(value)
+    def add_dict_item(value):
+        nonlocal current_key
+        if current_key is None:
+            raise ValueError("unexpected element at line %d" %
+                             parser.CurrentLineNumber)
+        stack[-1][current_key] = value
+        current_key = None
 
-    def get_data(self):
-        data = ''.join(self.data)
-        self.data = []
-        return data
+    def get_data():
+        sdata = ''.join(data)
+        data.clear()
+        return sdata
 
     # element handlers
 
-    def begin_dict(self, attrs):
-        d = self._dict_type()
-        self.add_object(d)
-        self.stack.append(d)
+    begin_handlers = {}
+    end_handlers = {}
 
-    def end_dict(self):
-        if self.current_key:
+    def begin_dict(attrs):
+        nonlocal add_object
+        d = dict_type()
+        add_object(d)
+        stack.append(add_object)
+        stack.append(d)
+        add_object = add_dict_item
+    begin_handlers['dict'] = begin_dict
+
+    def end_dict():
+        nonlocal add_object
+        if current_key is not None:
             raise ValueError("missing value for key '%s' at line %d" %
-                             (self.current_key,self.parser.CurrentLineNumber))
-        self.stack.pop()
+                             (current_key, parser.CurrentLineNumber))
+        stack.pop()
+        add_object = stack.pop()
+    end_handlers['dict'] = end_dict
 
-    def end_key(self):
-        if self.current_key or not isinstance(self.stack[-1], type({})):
+    def end_key():
+        nonlocal current_key
+        if current_key is not None or add_object is not add_dict_item:
             raise ValueError("unexpected key at line %d" %
-                             self.parser.CurrentLineNumber)
-        self.current_key = self.get_data()
+                             parser.CurrentLineNumber)
+        current_key = get_data()
+    end_handlers['key'] = end_key
 
-    def begin_array(self, attrs):
+    def begin_array(attrs):
+        nonlocal add_object
         a = []
-        self.add_object(a)
-        self.stack.append(a)
+        add_object(a)
+        stack.append(add_object)
+        add_object = a.append
+    begin_handlers['array'] = begin_array
 
-    def end_array(self):
-        self.stack.pop()
+    def end_array():
+        nonlocal add_object
+        add_object = stack.pop()
+    end_handlers['array'] = end_array
 
-    def end_true(self):
-        self.add_object(True)
+    end_handlers['true'] = lambda: add_object(True)
+    end_handlers['false'] = lambda: add_object(False)
+    end_handlers['integer'] = lambda: add_object(int(get_data()))
+    end_handlers['real'] = lambda: add_object(float(get_data()))
+    end_handlers['string'] = lambda: add_object(get_data())
+    if use_builtin_types:
+        end_handlers['data'] = lambda: add_object(_decode_base64(get_data()))
+    else:
+        end_handlers['data'] = lambda: add_object(Data.fromBase64(get_data()))
+    end_handlers['date'] = lambda: add_object(_date_from_string(get_data()))
 
-    def end_false(self):
-        self.add_object(False)
-
-    def end_integer(self):
-        self.add_object(int(self.get_data()))
-
-    def end_real(self):
-        self.add_object(float(self.get_data()))
-
-    def end_string(self):
-        self.add_object(self.get_data())
-
-    def end_data(self):
-        if self._use_builtin_types:
-            self.add_object(_decode_base64(self.get_data()))
-
-        else:
-            self.add_object(Data.fromBase64(self.get_data()))
-
-    def end_date(self):
-        self.add_object(_date_from_string(self.get_data()))
+    parser = ParserCreate()
+    parser.StartElementHandler = handle_begin_element
+    parser.EndElementHandler = handle_end_element
+    parser.CharacterDataHandler = data.append
+    parser.ParseFile(fp)
+    return root
 
 
-class _DumbXMLWriter:
-    def __init__(self, file, indent_level=0, indent="\t"):
-        self.file = file
-        self.stack = []
-        self._indent_level = indent_level
-        self.indent = indent
+def _write_xml(value, file, sort_keys, skipkeys):
 
-    def begin_element(self, element):
-        self.stack.append(element)
-        self.writeln("<%s>" % element)
-        self._indent_level += 1
+    stack = []
+    indent_level = 0
+    indent = b"\t"
 
-    def end_element(self, element):
-        assert self._indent_level > 0
-        assert self.stack.pop() == element
-        self._indent_level -= 1
-        self.writeln("</%s>" % element)
+    def begin_element(element):
+        nonlocal indent_level
+        stack.append(element)
+        writeln("<%s>" % element)
+        indent_level += 1
 
-    def simple_element(self, element, value=None):
+    def end_element(element):
+        nonlocal indent_level
+        assert indent_level > 0
+        assert stack.pop() == element
+        indent_level -= 1
+        writeln("</%s>" % element)
+
+    def simple_element(element, value=None):
         if value is not None:
             value = _escape(value)
-            self.writeln("<%s>%s</%s>" % (element, value, element))
+            writeln("<%s>%s</%s>" % (element, value, element))
 
         else:
-            self.writeln("<%s/>" % element)
+            writeln("<%s/>" % element)
 
-    def writeln(self, line):
+    def writeln(line):
         if line:
             # plist has fixed encoding of utf-8
+            line = line.encode('utf-8')
+            file.write(indent_level * indent)
+            file.write(line)
+        file.write(b'\n')
 
-            # XXX: is this test needed?
-            if isinstance(line, str):
-                line = line.encode('utf-8')
-            self.file.write(self._indent_level * self.indent)
-            self.file.write(line)
-        self.file.write(b'\n')
+    def writelnbytes(line):
+        if line:
+            # plist has fixed encoding of utf-8
+            file.write(indent_level * indent)
+            file.write(line)
+        file.write(b'\n')
 
-
-class _PlistWriter(_DumbXMLWriter):
-    def __init__(
-            self, file, indent_level=0, indent=b"\t", writeHeader=1,
-            sort_keys=True, skipkeys=False):
-
-        if writeHeader:
-            file.write(PLISTHEADER)
-        _DumbXMLWriter.__init__(self, file, indent_level, indent)
-        self._sort_keys = sort_keys
-        self._skipkeys = skipkeys
-
-    def write(self, value):
-        self.writeln("<plist version=\"1.0\">")
-        self.write_value(value)
-        self.writeln("</plist>")
-
-    def write_value(self, value):
+    def write_value(value):
         if isinstance(value, str):
-            self.simple_element("string", value)
+            simple_element("string", value)
 
         elif value is True:
-            self.simple_element("true")
+            simple_element("true")
 
         elif value is False:
-            self.simple_element("false")
+            simple_element("false")
 
         elif isinstance(value, int):
             if -1 << 63 <= value < 1 << 64:
-                self.simple_element("integer", "%d" % value)
+                simple_element("integer", "%d" % value)
             else:
                 raise OverflowError(value)
 
         elif isinstance(value, float):
-            self.simple_element("real", repr(value))
+            simple_element("real", repr(value))
 
         elif isinstance(value, dict):
-            self.write_dict(value)
+            write_dict(value)
 
         elif isinstance(value, Data):
-            self.write_data(value)
+            write_bytes(value.data)
 
         elif isinstance(value, (bytes, bytearray)):
-            self.write_bytes(value)
+            write_bytes(value)
 
         elif isinstance(value, datetime.datetime):
-            self.simple_element("date", _date_to_string(value))
+            simple_element("date", _date_to_string(value))
 
         elif isinstance(value, (tuple, list)):
-            self.write_array(value)
+            write_array(value)
 
         else:
             raise TypeError("unsupported type: %s" % type(value))
 
-    def write_data(self, data):
-        self.write_bytes(data.data)
-
-    def write_bytes(self, data):
-        self.begin_element("data")
-        self._indent_level -= 1
+    def write_bytes(data):
+        nonlocal indent_level
+        begin_element("data")
+        indent_level -= 1
         maxlinelength = max(
             16,
-            76 - len(self.indent.replace(b"\t", b" " * 8) * self._indent_level))
+            76 - len(indent.replace(b"\t", b" " * 8) * indent_level))
 
         for line in _encode_base64(data, maxlinelength).split(b"\n"):
             if line:
-                self.writeln(line)
-        self._indent_level += 1
-        self.end_element("data")
+                writelnbytes(line)
+        indent_level += 1
+        end_element("data")
 
-    def write_dict(self, d):
+    def write_dict(d):
         if d:
-            self.begin_element("dict")
-            if self._sort_keys:
+            begin_element("dict")
+            if sort_keys:
                 items = sorted(d.items())
             else:
                 items = d.items()
 
             for key, value in items:
                 if not isinstance(key, str):
-                    if self._skipkeys:
+                    if skipkeys:
                         continue
                     raise TypeError("keys must be strings")
-                self.simple_element("key", key)
-                self.write_value(value)
-            self.end_element("dict")
+                simple_element("key", key)
+                write_value(value)
+            end_element("dict")
 
         else:
-            self.simple_element("dict")
+            simple_element("dict")
 
-    def write_array(self, array):
+    def write_array(array):
         if array:
-            self.begin_element("array")
+            begin_element("array")
             for value in array:
-                self.write_value(value)
-            self.end_element("array")
+                write_value(value)
+            end_element("array")
 
         else:
-            self.simple_element("array")
+            simple_element("array")
+
+    file.write(PLISTHEADER)
+    writeln("<plist version=\"1.0\">")
+    write_value(value)
+    writeln("</plist>")
 
 
 def _is_fmt_xml(header):
@@ -525,9 +511,7 @@ class InvalidFileException (ValueError):
 
 _BINARY_FORMAT = {1: 'B', 2: 'H', 4: 'L', 8: 'Q'}
 
-_undefined = object()
-
-class _BinaryPlistParser:
+def _parse_binary(fp, use_builtin_types, dict_type):
     """
     Read or write a binary plist file, following the description of the binary
     format.  Raise InvalidFileException in case of error, otherwise return the
@@ -535,47 +519,19 @@ class _BinaryPlistParser:
 
     see also: http://opensource.apple.com/source/CF/CF-744.18/CFBinaryPList.c
     """
-    def __init__(self, use_builtin_types, dict_type):
-        self._use_builtin_types = use_builtin_types
-        self._dict_type = dict_type
 
-    def parse(self, fp):
-        try:
-            # The basic file format:
-            # HEADER
-            # object...
-            # refid->offset...
-            # TRAILER
-            self._fp = fp
-            self._fp.seek(-32, os.SEEK_END)
-            trailer = self._fp.read(32)
-            if len(trailer) != 32:
-                raise InvalidFileException()
-            (
-                offset_size, self._ref_size, num_objects, top_object,
-                offset_table_offset
-            ) = struct.unpack('>6xBBQQQ', trailer)
-            self._fp.seek(offset_table_offset)
-            self._object_offsets = self._read_ints(num_objects, offset_size)
-            self._objects = [_undefined] * num_objects
-            return self._read_object(top_object)
-
-        except (OSError, IndexError, struct.error, OverflowError,
-                UnicodeDecodeError):
-            raise InvalidFileException()
-
-    def _get_size(self, tokenL):
+    def get_size(tokenL):
         """ return the size of the next object."""
         if tokenL == 0xF:
-            m = self._fp.read(1)[0] & 0x3
+            m = fp.read(1)[0] & 0x3
             s = 1 << m
             f = '>' + _BINARY_FORMAT[s]
-            return struct.unpack(f, self._fp.read(s))[0]
+            return struct.unpack(f, fp.read(s))[0]
 
         return tokenL
 
-    def _read_ints(self, n, size):
-        data = self._fp.read(size * n)
+    def read_ints(n, size):
+        data = fp.read(size * n)
         if size in _BINARY_FORMAT:
             return struct.unpack('>' + _BINARY_FORMAT[size] * n, data)
         else:
@@ -584,22 +540,22 @@ class _BinaryPlistParser:
             return tuple(int.from_bytes(data[i: i + size], 'big')
                          for i in range(0, size * n, size))
 
-    def _read_refs(self, n):
-        return self._read_ints(n, self._ref_size)
+    def read_refs(n):
+        return read_ints(n, ref_size)
 
-    def _read_object(self, ref):
+    def read_object(ref):
         """
         read the object by reference.
 
         May recursively read sub-objects (content of an array/dict/set)
         """
-        result = self._objects[ref]
-        if result is not _undefined:
+        result = objects[ref]
+        if result is not undefined:
             return result
 
-        offset = self._object_offsets[ref]
-        self._fp.seek(offset)
-        token = self._fp.read(1)[0]
+        offset = object_offsets[ref]
+        fp.seek(offset)
+        token = fp.read(1)[0]
         tokenH, tokenL = token & 0xF0, token & 0x0F
 
         if token == 0x00:
@@ -618,47 +574,45 @@ class _BinaryPlistParser:
             result = b''
 
         elif tokenH == 0x10:  # int
-            result = int.from_bytes(self._fp.read(1 << tokenL),
+            result = int.from_bytes(fp.read(1 << tokenL),
                                     'big', signed=tokenL >= 3)
 
         elif token == 0x22: # real
-            result = struct.unpack('>f', self._fp.read(4))[0]
+            result = struct.unpack('>f', fp.read(4))[0]
 
         elif token == 0x23: # real
-            result = struct.unpack('>d', self._fp.read(8))[0]
+            result = struct.unpack('>d', fp.read(8))[0]
 
         elif token == 0x33:  # date
-            f = struct.unpack('>d', self._fp.read(8))[0]
+            f = struct.unpack('>d', fp.read(8))[0]
             # timestamp 0 of binary plists corresponds to 1/1/2001
             # (year of Mac OS X 10.0), instead of 1/1/1970.
-            result = (datetime.datetime(2001, 1, 1) +
-                      datetime.timedelta(seconds=f))
+            result = _start_datetime + datetime.timedelta(seconds=f)
 
         elif tokenH == 0x40:  # data
-            s = self._get_size(tokenL)
-            if self._use_builtin_types:
-                result = self._fp.read(s)
+            s = get_size(tokenL)
+            if use_builtin_types:
+                result = fp.read(s)
             else:
-                result = Data(self._fp.read(s))
+                result = Data(fp.read(s))
 
         elif tokenH == 0x50:  # ascii string
-            s = self._get_size(tokenL)
-            result =  self._fp.read(s).decode('ascii')
-            result = result
+            s = get_size(tokenL)
+            result =  fp.read(s).decode('ascii')
 
         elif tokenH == 0x60:  # unicode string
-            s = self._get_size(tokenL)
-            result = self._fp.read(s * 2).decode('utf-16be')
+            s = get_size(tokenL)
+            result = fp.read(s * 2).decode('utf-16be')
 
         # tokenH == 0x80 is documented as 'UID' and appears to be used for
         # keyed-archiving, not in plists.
 
         elif tokenH == 0xA0:  # array
-            s = self._get_size(tokenL)
-            obj_refs = self._read_refs(s)
+            s = get_size(tokenL)
+            obj_refs = read_refs(s)
             result = []
-            self._objects[ref] = result
-            result.extend(self._read_object(x) for x in obj_refs)
+            objects[ref] = result
+            result.extend(read_object(x) for x in obj_refs)
 
         # tokenH == 0xB0 is documented as 'ordset', but is not actually
         # implemented in the Apple reference code.
@@ -667,19 +621,42 @@ class _BinaryPlistParser:
         # plists.
 
         elif tokenH == 0xD0:  # dict
-            s = self._get_size(tokenL)
-            key_refs = self._read_refs(s)
-            obj_refs = self._read_refs(s)
-            result = self._dict_type()
-            self._objects[ref] = result
+            s = get_size(tokenL)
+            key_refs = read_refs(s)
+            obj_refs = read_refs(s)
+            result = dict_type()
+            objects[ref] = result
             for k, o in zip(key_refs, obj_refs):
-                result[self._read_object(k)] = self._read_object(o)
+                result[read_object(k)] = read_object(o)
 
         else:
             raise InvalidFileException()
 
-        self._objects[ref] = result
+        objects[ref] = result
         return result
+
+    try:
+        # The basic file format:
+        # HEADER
+        # object...
+        # refid->offset...
+        # TRAILER
+        fp.seek(-32, os.SEEK_END)
+        trailer = fp.read(32)
+        if len(trailer) != 32:
+            raise InvalidFileException()
+        (
+            offset_size, ref_size, num_objects, top_object,
+            offset_table_offset
+        ) = struct.unpack('>6xBBQQQ', trailer)
+        fp.seek(offset_table_offset)
+        object_offsets = read_ints(num_objects, offset_size)
+        undefined = object()
+        objects = [undefined] * num_objects
+        return read_object(top_object)
+
+    except (OSError, IndexError, struct.error):
+        raise InvalidFileException()
 
 def _count_to_size(count):
     if count < 1 << 8:
@@ -695,215 +672,212 @@ def _count_to_size(count):
         return 8
 
 _scalars = (str, int, float, datetime.datetime, bytes)
+_start_datetime = datetime.datetime(2001, 1, 1)
 
-class _BinaryPlistWriter (object):
-    def __init__(self, fp, sort_keys, skipkeys):
-        self._fp = fp
-        self._sort_keys = sort_keys
-        self._skipkeys = skipkeys
+def _write_binary(value, fp, sort_keys, skipkeys):
 
-    def write(self, value):
-
-        # Flattened object list:
-        self._objlist = []
-
-        # Mappings from object->objectid
-        # First dict has (type(object), object) as the key,
-        # second dict is used when object is not hashable and
-        # has id(object) as the key.
-        self._objtable = {}
-        self._objidtable = {}
-
-        # Create list of all objects in the plist
-        self._flatten(value)
-
-        # Size of object references in serialized containers
-        # depends on the number of objects in the plist.
-        num_objects = len(self._objlist)
-        self._object_offsets = [0]*num_objects
-        self._ref_size = _count_to_size(num_objects)
-
-        self._ref_format = _BINARY_FORMAT[self._ref_size]
-
-        # Write file header
-        self._fp.write(b'bplist00')
-
-        # Write object list
-        for obj in self._objlist:
-            self._write_object(obj)
-
-        # Write refnum->object offset table
-        top_object = self._getrefnum(value)
-        offset_table_offset = self._fp.tell()
-        offset_size = _count_to_size(offset_table_offset)
-        offset_format = '>' + _BINARY_FORMAT[offset_size] * num_objects
-        self._fp.write(struct.pack(offset_format, *self._object_offsets))
-
-        # Write trailer
-        sort_version = 0
-        trailer = (
-            sort_version, offset_size, self._ref_size, num_objects,
-            top_object, offset_table_offset
-        )
-        self._fp.write(struct.pack('>5xBBBQQQ', *trailer))
-
-    def _flatten(self, value):
+    def flatten(value):
         # First check if the object is in the object table, not used for
         # containers to ensure that two subcontainers with the same contents
         # will be serialized as distinct values.
         if isinstance(value, _scalars):
-            if (type(value), value) in self._objtable:
+            if (type(value), value) in objtable:
                 return
 
         elif isinstance(value, Data):
-            if (type(value.data), value.data) in self._objtable:
+            if (type(value.data), value.data) in objtable:
                 return
 
-        elif id(value) in self._objidtable:
+        elif id(value) in objidtable:
             return
 
         # Add to objectreference map
-        refnum = len(self._objlist)
-        self._objlist.append(value)
+        refnum = len(objlist)
+        objlist.append(value)
         if isinstance(value, _scalars):
-            self._objtable[(type(value), value)] = refnum
+            objtable[(type(value), value)] = refnum
         elif isinstance(value, Data):
-            self._objtable[(type(value.data), value.data)] = refnum
+            objtable[(type(value.data), value.data)] = refnum
         else:
-            self._objidtable[id(value)] = refnum
+            objidtable[id(value)] = refnum
 
         # And finally recurse into containers
         if isinstance(value, dict):
             keys = []
             values = []
             items = value.items()
-            if self._sort_keys:
+            if sort_keys:
                 items = sorted(items)
 
             for k, v in items:
                 if not isinstance(k, str):
-                    if self._skipkeys:
+                    if skipkeys:
                         continue
                     raise TypeError("keys must be strings")
                 keys.append(k)
                 values.append(v)
 
-            for o in itertools.chain(keys, values):
-                self._flatten(o)
+            for o in keys:
+                flatten(o)
+            for o in values:
+                flatten(o)
 
         elif isinstance(value, (list, tuple)):
             for o in value:
-                self._flatten(o)
+                flatten(o)
 
-    def _getrefnum(self, value):
+    def getrefnum(value):
         if isinstance(value, _scalars):
-            return self._objtable[(type(value), value)]
+            return objtable[(type(value), value)]
         elif isinstance(value, Data):
-            return self._objtable[(type(value.data), value.data)]
+            return objtable[(type(value.data), value.data)]
         else:
-            return self._objidtable[id(value)]
+            return objidtable[id(value)]
 
-    def _write_size(self, token, size):
+    def write_size(token, size):
         if size < 15:
-            self._fp.write(struct.pack('>B', token | size))
+            fp.write(struct.pack('>B', token | size))
 
         elif size < 1 << 8:
-            self._fp.write(struct.pack('>BBB', token | 0xF, 0x10, size))
+            fp.write(struct.pack('>BBB', token | 0xF, 0x10, size))
 
         elif size < 1 << 16:
-            self._fp.write(struct.pack('>BBH', token | 0xF, 0x11, size))
+            fp.write(struct.pack('>BBH', token | 0xF, 0x11, size))
 
         elif size < 1 << 32:
-            self._fp.write(struct.pack('>BBL', token | 0xF, 0x12, size))
+            fp.write(struct.pack('>BBL', token | 0xF, 0x12, size))
 
         else:
-            self._fp.write(struct.pack('>BBQ', token | 0xF, 0x13, size))
+            fp.write(struct.pack('>BBQ', token | 0xF, 0x13, size))
 
-    def _write_object(self, value):
-        ref = self._getrefnum(value)
-        self._object_offsets[ref] = self._fp.tell()
+    def write_object(value):
+        ref = getrefnum(value)
+        object_offsets[ref] = fp.tell()
         if value is None:
-            self._fp.write(b'\x00')
+            fp.write(b'\x00')
 
         elif value is False:
-            self._fp.write(b'\x08')
+            fp.write(b'\x08')
 
         elif value is True:
-            self._fp.write(b'\x09')
+            fp.write(b'\x09')
 
         elif isinstance(value, int):
             if value < 0:
                 try:
-                    self._fp.write(struct.pack('>Bq', 0x13, value))
+                    fp.write(struct.pack('>Bq', 0x13, value))
                 except struct.error:
                     raise OverflowError(value) from None
             elif value < 1 << 8:
-                self._fp.write(struct.pack('>BB', 0x10, value))
+                fp.write(struct.pack('>BB', 0x10, value))
             elif value < 1 << 16:
-                self._fp.write(struct.pack('>BH', 0x11, value))
+                fp.write(struct.pack('>BH', 0x11, value))
             elif value < 1 << 32:
-                self._fp.write(struct.pack('>BL', 0x12, value))
+                fp.write(struct.pack('>BL', 0x12, value))
             elif value < 1 << 63:
-                self._fp.write(struct.pack('>BQ', 0x13, value))
+                fp.write(struct.pack('>BQ', 0x13, value))
             elif value < 1 << 64:
-                self._fp.write(b'\x14' + value.to_bytes(16, 'big', signed=True))
+                fp.write(b'\x14' + value.to_bytes(16, 'big', signed=True))
             else:
                 raise OverflowError(value)
 
         elif isinstance(value, float):
-            self._fp.write(struct.pack('>Bd', 0x23, value))
+            fp.write(struct.pack('>Bd', 0x23, value))
 
         elif isinstance(value, datetime.datetime):
-            f = (value - datetime.datetime(2001, 1, 1)).total_seconds()
-            self._fp.write(struct.pack('>Bd', 0x33, f))
+            f = (value - _start_datetime).total_seconds()
+            fp.write(struct.pack('>Bd', 0x33, f))
 
         elif isinstance(value, Data):
-            self._write_size(0x40, len(value.data))
-            self._fp.write(value.data)
+            write_size(0x40, len(value.data))
+            fp.write(value.data)
 
         elif isinstance(value, (bytes, bytearray)):
-            self._write_size(0x40, len(value))
-            self._fp.write(value)
+            write_size(0x40, len(value))
+            fp.write(value)
 
         elif isinstance(value, str):
             try:
                 t = value.encode('ascii')
-                self._write_size(0x50, len(value))
+                write_size(0x50, len(value))
             except UnicodeEncodeError:
                 t = value.encode('utf-16be')
-                self._write_size(0x60, len(t) // 2)
+                write_size(0x60, len(t) // 2)
 
-            self._fp.write(t)
+            fp.write(t)
 
         elif isinstance(value, (list, tuple)):
-            refs = [self._getrefnum(o) for o in value]
+            refs = [getrefnum(o) for o in value]
             s = len(refs)
-            self._write_size(0xA0, s)
-            self._fp.write(struct.pack('>' + self._ref_format * s, *refs))
+            write_size(0xA0, s)
+            fp.write(struct.pack('>' + ref_format * s, *refs))
 
         elif isinstance(value, dict):
             keyRefs, valRefs = [], []
 
-            if self._sort_keys:
+            if sort_keys:
                 rootItems = sorted(value.items())
             else:
                 rootItems = value.items()
 
             for k, v in rootItems:
                 if not isinstance(k, str):
-                    if self._skipkeys:
+                    if skipkeys:
                         continue
                     raise TypeError("keys must be strings")
-                keyRefs.append(self._getrefnum(k))
-                valRefs.append(self._getrefnum(v))
+                keyRefs.append(getrefnum(k))
+                valRefs.append(getrefnum(v))
 
             s = len(keyRefs)
-            self._write_size(0xD0, s)
-            self._fp.write(struct.pack('>' + self._ref_format * s, *keyRefs))
-            self._fp.write(struct.pack('>' + self._ref_format * s, *valRefs))
+            write_size(0xD0, s)
+            fp.write(struct.pack('>' + ref_format * s, *keyRefs))
+            fp.write(struct.pack('>' + ref_format * s, *valRefs))
 
         else:
             raise TypeError(value)
+
+    # Flattened object list:
+    objlist = []
+
+    # Mappings from object->objectid
+    # First dict has (type(object), object) as the key,
+    # second dict is used when object is not hashable and
+    # has id(object) as the key.
+    objtable = {}
+    objidtable = {}
+
+    # Create list of all objects in the plist
+    flatten(value)
+
+    # Size of object references in serialized containers
+    # depends on the number of objects in the plist.
+    num_objects = len(objlist)
+    object_offsets = [0]*num_objects
+    ref_size = _count_to_size(num_objects)
+
+    ref_format = _BINARY_FORMAT[ref_size]
+
+    # Write file header
+    fp.write(b'bplist00')
+
+    # Write object list
+    for obj in objlist:
+        write_object(obj)
+
+    # Write refnum->object offset table
+    top_object = getrefnum(value)
+    offset_table_offset = fp.tell()
+    offset_size = _count_to_size(offset_table_offset)
+    offset_format = '>' + _BINARY_FORMAT[offset_size] * num_objects
+    fp.write(struct.pack(offset_format, *object_offsets))
+
+    # Write trailer
+    sort_version = 0
+    trailer = (
+        sort_version, offset_size, ref_size, num_objects,
+        top_object, offset_table_offset
+    )
+    fp.write(struct.pack('>5xBBBQQQ', *trailer))
 
 
 def _is_fmt_binary(header):
@@ -917,13 +891,13 @@ def _is_fmt_binary(header):
 _FORMATS={
     FMT_XML: dict(
         detect=_is_fmt_xml,
-        parser=_PlistParser,
-        writer=_PlistWriter,
+        parser=_parse_xml,
+        writer=_write_xml,
     ),
     FMT_BINARY: dict(
         detect=_is_fmt_binary,
-        parser=_BinaryPlistParser,
-        writer=_BinaryPlistWriter,
+        parser=_parse_binary,
+        writer=_write_binary,
     )
 }
 
@@ -946,8 +920,7 @@ def load(fp, *, fmt=None, use_builtin_types=True, dict_type=dict):
     else:
         P = _FORMATS[fmt]['parser']
 
-    p = P(use_builtin_types=use_builtin_types, dict_type=dict_type)
-    return p.parse(fp)
+    return P(fp, use_builtin_types=use_builtin_types, dict_type=dict_type)
 
 
 def loads(value, *, fmt=None, use_builtin_types=True, dict_type=dict):
@@ -966,8 +939,8 @@ def dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False):
     if fmt not in _FORMATS:
         raise ValueError("Unsupported format: %r"%(fmt,))
 
-    writer = _FORMATS[fmt]["writer"](fp, sort_keys=sort_keys, skipkeys=skipkeys)
-    writer.write(value)
+    writer = _FORMATS[fmt]["writer"]
+    writer(value, fp, sort_keys=sort_keys, skipkeys=skipkeys)
 
 
 def dumps(value, *, fmt=FMT_XML, skipkeys=False, sort_keys=True):
