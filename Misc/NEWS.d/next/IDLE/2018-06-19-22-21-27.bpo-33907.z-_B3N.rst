@@ -1,3 +1,4 @@
-For consistency and appearance, rename an IDLE module and class. Module
-idlelib.calltips is now calltip.  Class idlelib.calltip_w.CallTip is now
-Calltip.
+For consistency and appearance, rename an IDLE module and classes.
+Module calltips and class calltips.Calltips are now calltip and calltip.Calltip.
+Class calltip_w.CallTip is now calltip_w.CalltipWindow.
+
