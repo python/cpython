@@ -14,7 +14,7 @@ class CallTipTest(unittest.TestCase):
         cls.root = Tk()
         cls.root.withdraw()
         cls.text = Text(cls.root)
-        cls.calltip = calltip_w.CallTip(cls.text)
+        cls.calltip = calltip_w.Calltip(cls.text)
 
     @classmethod
     def tearDownClass(cls):
