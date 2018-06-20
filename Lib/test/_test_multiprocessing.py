@@ -20,6 +20,7 @@ import logging
 import struct
 import operator
 import weakref
+import warnings
 import test.support
 import test.support.script_helper
 from test import support
@@ -4474,15 +4475,12 @@ class TestSemaphoreTracker(unittest.TestCase):
         from multiprocessing.semaphore_tracker import _semaphore_tracker
         _semaphore_tracker.ensure_running()
         pid = _semaphore_tracker._pid
+        time.sleep(1.0) # Give time for the child to register the signal handlers
         os.kill(pid, signum)
         time.sleep(1.0)  # give it time to die
 
         ctx = multiprocessing.get_context("spawn")
-        with contextlib.ExitStack() as stack:
-            if should_die:
-                stack.enter_context(self.assertWarnsRegex(
-                    UserWarning,
-                    "semaphore_tracker: process died"))
+        with warnings.catch_warnings(record=True) as all_warn:
             sem = ctx.Semaphore()
             sem.acquire()
             sem.release()
@@ -4492,6 +4490,14 @@ class TestSemaphoreTracker(unittest.TestCase):
             del sem
             gc.collect()
             self.assertIsNone(wr())
+            if should_die:
+                self.assertEqual(len(all_warn), 1)
+                the_warn = all_warn[0]
+                issubclass(the_warn.category, UserWarning)
+                self.assertTrue("semaphore_tracker: process died"
+                                in str(the_warn.message))
+            else:
+                self.assertEqual(len(all_warn), 0)
 
     def test_semaphore_tracker_sigint(self):
         # Catchable signal (ignored by semaphore tracker)
