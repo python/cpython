@@ -61,7 +61,7 @@ _bz2_BZ2Compressor_flush(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
     return _bz2_BZ2Compressor_flush_impl(self);
 }
 
-PyDoc_STRVAR(_bz2_BZ2Compressor___init____doc__,
+PyDoc_STRVAR(_bz2_BZ2Compressor__doc__,
 "BZ2Compressor(compresslevel=9, /)\n"
 "--\n"
 "\n"
@@ -72,16 +72,16 @@ PyDoc_STRVAR(_bz2_BZ2Compressor___init____doc__,
 "\n"
 "For one-shot compression, use the compress() function instead.");
 
-static int
-_bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel);
+static PyObject *
+_bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel);
 
-static int
-_bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+_bz2_BZ2Compressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
     int compresslevel = 9;
 
-    if ((Py_TYPE(self) == &BZ2Compressor_Type) &&
+    if ((type == &BZ2Compressor_Type) &&
         !_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
         goto exit;
     }
@@ -89,7 +89,7 @@ _bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         &compresslevel)) {
         goto exit;
     }
-    return_value = _bz2_BZ2Compressor___init___impl((BZ2Compressor *)self, compresslevel);
+    return_value = _bz2_BZ2Compressor_impl(type, compresslevel);
 
 exit:
     return return_value;
@@ -145,7 +145,7 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_bz2_BZ2Decompressor___init____doc__,
+PyDoc_STRVAR(_bz2_BZ2Decompressor__doc__,
 "BZ2Decompressor()\n"
 "--\n"
 "\n"
@@ -153,25 +153,25 @@ PyDoc_STRVAR(_bz2_BZ2Decompressor___init____doc__,
 "\n"
 "For one-shot decompression, use the decompress() function instead.");
 
-static int
-_bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self);
+static PyObject *
+_bz2_BZ2Decompressor_impl(PyTypeObject *type);
 
-static int
-_bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+_bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
 
-    if ((Py_TYPE(self) == &BZ2Decompressor_Type) &&
+    if ((type == &BZ2Decompressor_Type) &&
         !_PyArg_NoPositional("BZ2Decompressor", args)) {
         goto exit;
     }
-    if ((Py_TYPE(self) == &BZ2Decompressor_Type) &&
+    if ((type == &BZ2Decompressor_Type) &&
         !_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
         goto exit;
     }
-    return_value = _bz2_BZ2Decompressor___init___impl((BZ2Decompressor *)self);
+    return_value = _bz2_BZ2Decompressor_impl(type);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=564a0313177fff63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=558c3b1efdd19d66 input=a9049054013a1b77]*/

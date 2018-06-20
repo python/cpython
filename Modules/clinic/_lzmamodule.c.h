@@ -111,7 +111,7 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_lzma_LZMADecompressor___init____doc__,
+PyDoc_STRVAR(_lzma_LZMADecompressor__doc__,
 "LZMADecompressor(format=FORMAT_AUTO, memlimit=None, filters=None)\n"
 "--\n"
 "\n"
@@ -134,14 +134,14 @@ PyDoc_STRVAR(_lzma_LZMADecompressor___init____doc__,
 "\n"
 "For one-shot decompression, use the decompress() function instead.");
 
-static int
-_lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
-                                     PyObject *memlimit, PyObject *filters);
+static PyObject *
+_lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
+                            PyObject *memlimit, PyObject *filters);
 
-static int
-_lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+_lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
     static const char * const _keywords[] = {"format", "memlimit", "filters", NULL};
     static _PyArg_Parser _parser = {"|iOO:LZMADecompressor", _keywords, 0};
     int format = FORMAT_AUTO;
@@ -152,7 +152,7 @@ _lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs
         &format, &memlimit, &filters)) {
         goto exit;
     }
-    return_value = _lzma_LZMADecompressor___init___impl((Decompressor *)self, format, memlimit, filters);
+    return_value = _lzma_LZMADecompressor_impl(type, format, memlimit, filters);
 
 exit:
     return return_value;
@@ -256,4 +256,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=38c2d52362bf3712 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4df2398e6a198f8e input=a9049054013a1b77]*/

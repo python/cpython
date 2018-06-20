@@ -709,8 +709,8 @@ the raw compressor does not support preset compression levels.
 
 For one-shot compression, use the compress() function instead.
 [-clinic start generated code]*/
-static int
-Compressor_init(Compressor *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     static char *arg_names[] = {"format", "check", "preset", "filters", NULL};
     int format = FORMAT_XZ;
@@ -718,28 +718,37 @@ Compressor_init(Compressor *self, PyObject *args, PyObject *kwargs)
     uint32_t preset = LZMA_PRESET_DEFAULT;
     PyObject *preset_obj = Py_None;
     PyObject *filterspecs = Py_None;
+    Compressor *self;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
                                      "|iiOO:LZMACompressor", arg_names,
                                      &format, &check, &preset_obj,
                                      &filterspecs))
-        return -1;
+    {
+        return NULL;
+    }
 
     if (format != FORMAT_XZ && check != -1 && check != LZMA_CHECK_NONE) {
         PyErr_SetString(PyExc_ValueError,
                         "Integrity checks are only supported by FORMAT_XZ");
-        return -1;
+        return NULL;
     }
 
     if (preset_obj != Py_None && filterspecs != Py_None) {
         PyErr_SetString(PyExc_ValueError,
                         "Cannot specify both preset and filter chain");
-        return -1;
+        return NULL;
     }
 
-    if (preset_obj != Py_None)
-        if (!uint32_converter(preset_obj, &preset))
-            return -1;
+    if (preset_obj != Py_None && !uint32_converter(preset_obj, &preset)) {
+        return NULL;
+    }
+
+    assert(type != NULL && type->tp_alloc != NULL);
+    self = (Compressor *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
 
     self->alloc.opaque = NULL;
     self->alloc.alloc = PyLzma_Malloc;
@@ -748,8 +757,9 @@ Compressor_init(Compressor *self, PyObject *args, PyObject *kwargs)
 
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
+        Py_DECREF(self);
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return -1;
+        return NULL;
     }
 
     self->flushed = 0;
@@ -757,29 +767,34 @@ Compressor_init(Compressor *self, PyObject *args, PyObject *kwargs)
         case FORMAT_XZ:
             if (check == -1)
                 check = LZMA_CHECK_CRC64;
-            if (Compressor_init_xz(&self->lzs, check, preset, filterspecs) != 0)
-                break;
-            return 0;
+            if (Compressor_init_xz(&self->lzs, check, preset, filterspecs) != 0) {
+                goto error;
+            }
+            break;
 
         case FORMAT_ALONE:
-            if (Compressor_init_alone(&self->lzs, preset, filterspecs) != 0)
-                break;
-            return 0;
+            if (Compressor_init_alone(&self->lzs, preset, filterspecs) != 0) {
+                goto error;
+            }
+            break;
 
         case FORMAT_RAW:
-            if (Compressor_init_raw(&self->lzs, filterspecs) != 0)
-                break;
-            return 0;
+            if (Compressor_init_raw(&self->lzs, filterspecs) != 0) {
+                goto error;
+            }
+            break;
 
         default:
             PyErr_Format(PyExc_ValueError,
                          "Invalid container format: %d", format);
-            break;
+            goto error;
     }
 
-    PyThread_free_lock(self->lock);
-    self->lock = NULL;
-    return -1;
+    return (PyObject *)self;
+
+error:
+    Py_DECREF(self);
+    return NULL;
 }
 
 static void
@@ -862,9 +877,9 @@ static PyTypeObject Compressor_type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    (initproc)Compressor_init,          /* tp_init */
+    0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+    Compressor_new,                     /* tp_new */
 };
 
 
@@ -1103,7 +1118,8 @@ Decompressor_init_raw(lzma_stream *lzs, PyObject *filterspecs)
 }
 
 /*[clinic input]
-_lzma.LZMADecompressor.__init__
+@classmethod
+_lzma.LZMADecompressor.__new__
 
     format: int(c_default="FORMAT_AUTO") = FORMAT_AUTO
         Specifies the container format of the input stream.  If this is
@@ -1127,11 +1143,12 @@ Create a decompressor object for decompressing data incrementally.
 For one-shot decompression, use the decompress() function instead.
 [clinic start generated code]*/
 
-static int
-_lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
-                                     PyObject *memlimit, PyObject *filters)
-/*[clinic end generated code: output=3e1821f8aa36564c input=81fe684a6c2f8a27]*/
+static PyObject *
+_lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
+                            PyObject *memlimit, PyObject *filters)
+/*[clinic end generated code: output=2d46d5e70f10bc7f input=ca40cd1cb1202b0d]*/
 {
+    Decompressor *self;
     const uint32_t decoder_flags = LZMA_TELL_ANY_CHECK | LZMA_TELL_NO_CHECK;
     uint64_t memlimit_ = UINT64_MAX;
     lzma_ret lzret;
@@ -1140,23 +1157,29 @@ _lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
         if (format == FORMAT_RAW) {
             PyErr_SetString(PyExc_ValueError,
                             "Cannot specify memory limit with FORMAT_RAW");
-            return -1;
+            return NULL;
         }
         memlimit_ = PyLong_AsUnsignedLongLong(memlimit);
-        if (PyErr_Occurred())
-            return -1;
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
     }
 
     if (format == FORMAT_RAW && filters == Py_None) {
         PyErr_SetString(PyExc_ValueError,
                         "Must specify filters for FORMAT_RAW");
-        return -1;
+        return NULL;
     } else if (format != FORMAT_RAW && filters != Py_None) {
         PyErr_SetString(PyExc_ValueError,
                         "Cannot specify filters except with FORMAT_RAW");
-        return -1;
+        return NULL;
     }
 
+    assert(type != NULL && type->tp_alloc != NULL);
+    self = (Decompressor *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
     self->alloc.opaque = NULL;
     self->alloc.alloc = PyLzma_Malloc;
     self->alloc.free = PyLzma_Free;
@@ -1165,55 +1188,60 @@ _lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
 
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
+        Py_DECREF(self);
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return -1;
+        return NULL;
     }
 
     self->check = LZMA_CHECK_UNKNOWN;
     self->needs_input = 1;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
+    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
     if (self->unused_data == NULL)
         goto error;
 
     switch (format) {
         case FORMAT_AUTO:
             lzret = lzma_auto_decoder(&self->lzs, memlimit_, decoder_flags);
-            if (catch_lzma_error(lzret))
-                break;
-            return 0;
+            if (catch_lzma_error(lzret)) {
+                goto error;
+            }
+            break;
 
         case FORMAT_XZ:
             lzret = lzma_stream_decoder(&self->lzs, memlimit_, decoder_flags);
-            if (catch_lzma_error(lzret))
-                break;
-            return 0;
+            if (catch_lzma_error(lzret)) {
+                goto error;
+            }
+            break;
 
         case FORMAT_ALONE:
             self->check = LZMA_CHECK_NONE;
             lzret = lzma_alone_decoder(&self->lzs, memlimit_);
-            if (catch_lzma_error(lzret))
-                break;
-            return 0;
+            if (catch_lzma_error(lzret)) {
+                goto error;
+            }
+            break;
 
         case FORMAT_RAW:
             self->check = LZMA_CHECK_NONE;
-            if (Decompressor_init_raw(&self->lzs, filters) == -1)
-                break;
-            return 0;
+            if (Decompressor_init_raw(&self->lzs, filters) == -1) {
+                goto error;
+            }
+            break;
 
         default:
             PyErr_Format(PyExc_ValueError,
                          "Invalid container format: %d", format);
-            break;
+            goto error;
     }
 
+    return (PyObject *)self;
+
 error:
-    Py_CLEAR(self->unused_data);
-    PyThread_free_lock(self->lock);
-    self->lock = NULL;
-    return -1;
+    Py_DECREF(self);
+    return NULL;
 }
 
 static void
@@ -1280,7 +1308,7 @@ static PyTypeObject Decompressor_type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    _lzma_LZMADecompressor___init____doc__,  /* tp_doc */
+    _lzma_LZMADecompressor__doc__,      /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -1295,9 +1323,9 @@ static PyTypeObject Decompressor_type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    _lzma_LZMADecompressor___init__,    /* tp_init */
+    0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+    _lzma_LZMADecompressor,             /* tp_new */
 };
 
 

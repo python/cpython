@@ -375,6 +375,10 @@ class CompressorDecompressorTestCase(unittest.TestCase):
             lzd.__init__()
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
+    def test_uninitialized_LZMADecompressor_crash(self):
+        self.assertEqual(LZMADecompressor.__new__(LZMADecompressor).
+                         decompress(bytes()), b'')
+
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):
 

@@ -291,7 +291,8 @@ BZ2_Free(void* ctx, void *ptr)
 }
 
 /*[clinic input]
-_bz2.BZ2Compressor.__init__
+@classmethod
+_bz2.BZ2Compressor.__new__
 
     compresslevel: int = 9
         Compression level, as a number between 1 and 9.
@@ -302,22 +303,30 @@ Create a compressor object for compressing data incrementally.
 For one-shot compression, use the compress() function instead.
 [clinic start generated code]*/
 
-static int
-_bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel)
-/*[clinic end generated code: output=c4e6adfd02963827 input=4e1ff7b8394b6e9a]*/
+static PyObject *
+_bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel)
+/*[clinic end generated code: output=83346c96beaacad7 input=d4500d2a52c8b263]*/
 {
     int bzerror;
+    BZ2Compressor *self;
 
     if (!(1 <= compresslevel && compresslevel <= 9)) {
         PyErr_SetString(PyExc_ValueError,
                         "compresslevel must be between 1 and 9");
-        return -1;
+        return NULL;
+    }
+
+    assert(type != NULL && type->tp_alloc != NULL);
+    self = (BZ2Compressor *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
     }
 
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
+        Py_DECREF(self);
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return -1;
+        return NULL;
     }
 
     self->bzs.opaque = NULL;
@@ -327,12 +336,11 @@ _bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel)
     if (catch_bz2_error(bzerror))
         goto error;
 
-    return 0;
+    return (PyObject *)self;
 
 error:
-    PyThread_free_lock(self->lock);
-    self->lock = NULL;
-    return -1;
+    Py_DECREF(self);
+    return NULL;
 }
 
 static void
@@ -373,7 +381,7 @@ static PyTypeObject BZ2Compressor_Type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    _bz2_BZ2Compressor___init____doc__,  /* tp_doc */
+    _bz2_BZ2Compressor__doc__,          /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -388,9 +396,9 @@ static PyTypeObject BZ2Compressor_Type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    _bz2_BZ2Compressor___init__,        /* tp_init */
+    0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+    _bz2_BZ2Compressor,                 /* tp_new */
 };
 
 
@@ -621,30 +629,39 @@ BZ2Decompressor_getstate(BZ2Decompressor *self, PyObject *noargs)
 }
 
 /*[clinic input]
-_bz2.BZ2Decompressor.__init__
+@classmethod
+_bz2.BZ2Decompressor.__new__
 
 Create a decompressor object for decompressing data incrementally.
 
 For one-shot decompression, use the decompress() function instead.
 [clinic start generated code]*/
 
-static int
-_bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
-/*[clinic end generated code: output=e4d2b9bb866ab8f1 input=95f6500dcda60088]*/
+static PyObject *
+_bz2_BZ2Decompressor_impl(PyTypeObject *type)
+/*[clinic end generated code: output=5150d51ccaab220e input=b87413ce51853528]*/
 {
+    BZ2Decompressor *self;
     int bzerror;
+
+    assert(type != NULL && type->tp_alloc != NULL);
+    self = (BZ2Decompressor *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
 
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
+        Py_DECREF(self);
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return -1;
+        return NULL;
     }
 
     self->needs_input = 1;
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
+    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
     if (self->unused_data == NULL)
         goto error;
 
@@ -652,13 +669,11 @@ _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
     if (catch_bz2_error(bzerror))
         goto error;
 
-    return 0;
+    return (PyObject *)self;
 
 error:
-    Py_CLEAR(self->unused_data);
-    PyThread_free_lock(self->lock);
-    self->lock = NULL;
-    return -1;
+    Py_DECREF(self);
+    return NULL;
 }
 
 static void
@@ -719,7 +734,7 @@ static PyTypeObject BZ2Decompressor_Type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    _bz2_BZ2Decompressor___init____doc__,  /* tp_doc */
+    _bz2_BZ2Decompressor__doc__,        /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -734,9 +749,9 @@ static PyTypeObject BZ2Decompressor_Type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    _bz2_BZ2Decompressor___init__,      /* tp_init */
+    0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+    _bz2_BZ2Decompressor,               /* tp_new */
 };
 
 

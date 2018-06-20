@@ -826,6 +826,10 @@ class BZ2DecompressorTest(BaseTest):
             bzd.__init__()
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
+    def test_uninitialized_BZ2Decompressor_crash(self):
+        self.assertEqual(BZ2Decompressor.__new__(BZ2Decompressor).
+                         decompress(bytes()), b'')
+
 
 class CompressDecompressTest(BaseTest):
     def testCompress(self):

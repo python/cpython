@@ -1,0 +1,6 @@
+Fix segfaults when creating :class:`lzma.LZMADecompressor` and
+:class:`bz2.BZ2Decompressor` objects without calling ``__init__()``, and fix
+leakage of locks and internal buffers when calling the ``__init__()``
+methods of :class:`lzma.LZMADecompressor`, :class:`lzma.LZMACompressor`,
+:class:`bz2.BZ2Compressor`, and :class:`bz2.BZ2Decompressor` objects
+multiple times.
