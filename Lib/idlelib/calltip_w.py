@@ -5,7 +5,7 @@ Used by the calltips IDLE extension.
 """
 from tkinter import Label, LEFT, SOLID, TclError
 
-from idlelib.tooltip import ToolTipBase
+from idlelib.tooltip import TooltipBase
 
 HIDE_EVENT = "<<calltipwindow-hide>>"
 HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")
@@ -16,7 +16,7 @@ CHECKHIDE_TIME = 100  # milliseconds
 MARK_RIGHT = "calltipwindowregion_right"
 
 
-class CallTip(ToolTipBase):
+class CallTip(TooltipBase):
     """a call-tip widget for tkinter text widgets"""
 
     def __init__(self, text_widget):

@@ -7,7 +7,7 @@ This includes:
 from tkinter import *
 
 
-class ToolTipBase(object):
+class TooltipBase(object):
     """abstract base class for tooltips"""
 
     def __init__(self, anchor_widget):
@@ -76,11 +76,11 @@ class ToolTipBase(object):
         return bool(self.tipwindow)
 
 
-class OnHoverToolTipBase(ToolTipBase):
+class OnHoverTooltipBase(TooltipBase):
     """abstract base class for tooltips, with delayed on-hover display"""
 
     def __init__(self, anchor_widget, hover_delay=1000):
-        super(OnHoverToolTipBase, self).__init__(anchor_widget)
+        super(OnHoverTooltipBase, self).__init__(anchor_widget)
         self.hover_delay = hover_delay
 
         self._after_id = None
@@ -95,7 +95,7 @@ class OnHoverToolTipBase(ToolTipBase):
             self.anchor_widget.unbind("<Button>", self._id3)
         except TclError:
             pass
-        super(OnHoverToolTipBase, self).__del__()
+        super(OnHoverTooltipBase, self).__del__()
 
     def _show_event(self, event=None):
         """event handler to display the tooltip"""
@@ -127,13 +127,13 @@ class OnHoverToolTipBase(ToolTipBase):
             self.unschedule()
         except TclError:
             pass
-        super(OnHoverToolTipBase, self).hidetip()
+        super(OnHoverTooltipBase, self).hidetip()
 
 
-class TextToolTip(OnHoverToolTipBase):
+class TextTooltip(OnHoverTooltipBase):
     """an on-hover text-only tooltip"""
     def __init__(self, anchor_widget, text, hover_delay=1000):
-        super(TextToolTip, self).__init__(anchor_widget,
+        super(TextTooltip, self).__init__(anchor_widget,
                                           hover_delay=hover_delay)
         self.text = text
 
@@ -152,10 +152,10 @@ def _tooltip(parent):  # htest #
     label.pack()
     button1 = Button(top, text="Button 1 -- 1/2 second hover delay")
     button1.pack()
-    TextToolTip(button1, "This is tooltip text for button1.", hover_delay=500)
+    TextTooltip(button1, "This is tooltip text for button1.", hover_delay=500)
     button2 = Button(top, text="Button 2 -- no hover delay")
     button2.pack()
-    TextToolTip(button2, "This is tooltip\ntext for button2.",
+    TextTooltip(button2, "This is tooltip\ntext for button2.",
                 hover_delay=None)
 
 
