@@ -267,7 +267,7 @@ class EditorWindow(object):
         self.saved_change_hook()
         self.update_recent_files_list()
         self.load_extensions()
-        menu = self.menudict.get('windows')
+        menu = self.menudict.get('window')
         if menu:
             end = menu.index("end")
             if end is None:
@@ -410,7 +410,7 @@ class EditorWindow(object):
         ("format", "F_ormat"),
         ("run", "_Run"),
         ("options", "_Options"),
-        ("windows", "_Window"),
+        ("window", "_Window"),
         ("help", "_Help"),
     ]
 
@@ -437,7 +437,7 @@ class EditorWindow(object):
 
     def postwindowsmenu(self):
         # Only called when Window menu exists
-        menu = self.menudict['windows']
+        menu = self.menudict['window']
         end = menu.index("end")
         if end is None:
             end = -1

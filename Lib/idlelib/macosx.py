@@ -148,7 +148,7 @@ def overrideRootMenu(root, flist):
     root.configure(menu=menubar)
     menudict = {}
 
-    menudict['windows'] = menu = Menu(menubar, name='windows', tearoff=0)
+    menudict['window'] = menu = Menu(menubar, name='window', tearoff=0)
     menubar.add_cascade(label='Window', menu=menu, underline=0)
 
     def postwindowsmenu(menu=menu):
