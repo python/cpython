@@ -16,6 +16,7 @@ import unittest
 import weakref
 import os
 import subprocess
+import signal
 
 from test import lock_tests
 from test import support
