@@ -225,13 +225,9 @@ method_richcompare(PyObject *self, PyObject *other, int op)
     b = (PyMethodObject *)other;
     eq = PyObject_RichCompareBool(a->im_func, b->im_func, Py_EQ);
     if (eq == 1) {
-        if (a->im_self == NULL || b->im_self == NULL)
-            eq = a->im_self == b->im_self;
-        else
-            eq = PyObject_RichCompareBool(a->im_self, b->im_self,
-                                          Py_EQ);
+        eq = (a->im_self == b->im_self);
     }
-    if (eq < 0)
+    else if (eq < 0)
         return NULL;
     if (op == Py_EQ)
         res = eq ? Py_True : Py_False;
@@ -274,9 +270,9 @@ method_hash(PyMethodObject *a)
 {
     Py_hash_t x, y;
     if (a->im_self == NULL)
-        x = PyObject_Hash(Py_None);
+        x = _Py_HashPointer(Py_None);
     else
-        x = PyObject_Hash(a->im_self);
+        x = _Py_HashPointer(a->im_self);
     if (x == -1)
         return -1;
     y = PyObject_Hash(a->im_func);

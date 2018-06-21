@@ -1038,36 +1038,37 @@ wrapper_dealloc(wrapperobject *wp)
 static PyObject *
 wrapper_richcompare(PyObject *a, PyObject *b, int op)
 {
-    PyWrapperDescrObject *a_descr, *b_descr;
+    wrapperobject *wa, *wb;
+    int eq;
 
     assert(a != NULL && b != NULL);
 
     /* both arguments should be wrapperobjects */
-    if (!Wrapper_Check(a) || !Wrapper_Check(b)) {
+    if ((op != Py_EQ && op != Py_NE)
+        || !Wrapper_Check(a) || !Wrapper_Check(b))
+    {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    /* compare by descriptor address; if the descriptors are the same,
-       compare by the objects they're bound to */
-    a_descr = ((wrapperobject *)a)->descr;
-    b_descr = ((wrapperobject *)b)->descr;
-    if (a_descr == b_descr) {
-        a = ((wrapperobject *)a)->self;
-        b = ((wrapperobject *)b)->self;
-        return PyObject_RichCompare(a, b, op);
+    wa = (wrapperobject *)a;
+    wb = (wrapperobject *)b;
+    eq = (wa->descr == wb->descr && wa->self == wb->self);
+    if (eq == (op == Py_EQ)) {
+        Py_RETURN_TRUE;
     }
-
-    Py_RETURN_RICHCOMPARE(a_descr, b_descr, op);
+    else {
+        Py_RETURN_FALSE;
+    }
 }
 
 static Py_hash_t
 wrapper_hash(wrapperobject *wp)
 {
     Py_hash_t x, y;
-    x = _Py_HashPointer(wp->descr);
+    x = _Py_HashPointer(wp->self);
     if (x == -1)
         return -1;
-    y = PyObject_Hash(wp->self);
+    y = _Py_HashPointer(wp->descr);
     if (y == -1)
         return -1;
     x = x ^ y;
