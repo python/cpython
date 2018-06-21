@@ -447,6 +447,7 @@ class WarnTests(BaseTest):
                            "warnings.warn('hello', UserWarning)"),
                           filename, "exec")
         with original_warnings.catch_warnings(record=True) as w:
+            self.module.simplefilter("always", category=UserWarning)
             exec(codeobj)
         self.assertEqual(w[0].filename, filename)
 
