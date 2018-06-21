@@ -1,0 +1,1 @@
+make select.epoll() and its docs consistent re. *sizehint* and *flags*
