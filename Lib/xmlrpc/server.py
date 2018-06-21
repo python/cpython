@@ -107,6 +107,7 @@ server.handle_request()
 from xmlrpc.client import Fault, dumps, loads, gzip_encode, gzip_decode
 from http.server import BaseHTTPRequestHandler
 from functools import partial
+from inspect import signature
 import http.server
 import socketserver
 import sys
@@ -772,23 +773,13 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
             self.escape(anchor), self.escape(name))
 
         if inspect.ismethod(object):
-            args = inspect.getfullargspec(object)
+            sig = signature(object)
             # exclude the argument bound to the instance, it will be
             # confusing to the non-Python user
-            argspec = inspect.formatargspec (
-                    args.args[1:],
-                    args.varargs,
-                    args.varkw,
-                    args.defaults,
-                    annotations=args.annotations,
-                    formatvalue=self.formatvalue
-                )
+            sig.replace(parameters=tuple(sig.parameters.values())[1:])
+            argspec = str(sig)
         elif inspect.isfunction(object):
-            args = inspect.getfullargspec(object)
-            argspec = inspect.formatargspec(
-                args.args, args.varargs, args.varkw, args.defaults,
-                annotations=args.annotations,
-                formatvalue=self.formatvalue)
+            argspec = str(signature(object))
         else:
             argspec = '(...)'
 
