@@ -68,6 +68,8 @@ RECIP_BPF = 2**-BPF
 
 import _random
 
+_sentinel=object()
+
 class Random(_random.Random):
     """Random number generator base class used by bound module functions.
 
@@ -84,13 +86,26 @@ class Random(_random.Random):
 
     VERSION = 3     # used by getstate/setstate
 
-    def __init__(self, x=None):
+    def __init__(self, seed=None, x=_sentinel):
         """Initialize an instance.
 
-        Optional argument x controls seeding, as for Random.seed().
+        Optional argument `seed` controls seeding, as for Random.seed().
+
+        Argument `x` is deprecated and renamed `seed` since Python 3.8.
         """
 
-        self.seed(x)
+        if seed is not None and x is not _sentinel:
+            raise ValueError('Cannot pass both `seed` and `x` parameter.')
+
+        if x is not _sentinel:
+            from warnings import warn
+            warn("random.Random's `x` kwargs has been renamed to `seed=` since "
+                 "Python 3.8 and will be removed in future versions",
+                 DeprecationWarning,
+                 stacklevel=2)
+            seed = x
+
+        self.seed(seed)
         self.gauss_next = None
 
     def __init_subclass__(cls, **kwargs):

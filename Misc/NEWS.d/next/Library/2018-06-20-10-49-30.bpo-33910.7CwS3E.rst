@@ -1,0 +1,2 @@
+Update random.Random's parameter to have a proper name. Use ``seed`` instead
+of ``x`` and properly deprecate ``x``.
