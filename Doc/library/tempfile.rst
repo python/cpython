@@ -253,7 +253,7 @@ to specify the directory and this is the recommended approach.
    default value for the *dir* argument to the functions defined in this
    module.
 
-   If ``tempdir`` is unset or ``None`` at any call to any of the above
+   If ``tempdir`` is ``None`` (the default) at any call to any of the above
    functions except :func:`gettempprefix` it is initialized following the
    algorithm described in :func:`gettempdir`.
 
