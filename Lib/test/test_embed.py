@@ -229,6 +229,15 @@ class EmbeddingTests(unittest.TestCase):
         self.assertEqual(out, '')
         self.assertEqual(err, '')
 
+    def test_initialize_twice(self):
+        """
+        bpo-33932: Calling Py_Initialize() twice should do nothing (and not
+        crash!).
+        """
+        out, err = self.run_embedded_interpreter("initialize_twice")
+        self.assertEqual(out, '')
+        self.assertEqual(err, '')
+
 
 if __name__ == "__main__":
     unittest.main()

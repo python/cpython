@@ -616,7 +616,8 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     }
 
     if (_PyRuntime.initialized) {
-        return _Py_INIT_ERR("main interpreter already initialized");
+        /* bpo-33932: Calling Py_Initialize() twice does nothing. */
+        return _Py_INIT_OK();
     }
     if (_PyRuntime.core_initialized) {
         return _Py_INIT_ERR("runtime core already initialized");
