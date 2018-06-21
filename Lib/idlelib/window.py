@@ -87,11 +87,11 @@ class ListedToplevel(Toplevel):
             self.tkraise()
             self.focused_widget.focus_set()
         except TclError:
-            # This can happen when the window menu was torn off.
+            # This can happen when the Window menu was torn off.
             # Simply ignore it.
             pass
 
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_windows', verbosity=2)
+    main('idlelib.idle_test.test_window', verbosity=2)

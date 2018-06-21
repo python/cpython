@@ -6,7 +6,7 @@ from tkinter.ttk import Scrollbar
 
 from idlelib import macosx
 from idlelib.scrolledlist import ScrolledList
-from idlelib.windows import ListedToplevel
+from idlelib.window import ListedToplevel
 
 
 class Idb(bdb.Bdb):
@@ -40,7 +40,7 @@ class Idb(bdb.Bdb):
             prev_name = prev_frame.f_code.co_filename
             if 'idlelib' in prev_name and 'debugger' in prev_name:
                 # catch both idlelib/debugger.py and idlelib/debugger_r.py
-                # on both posix and windows
+                # on both Posix and Windows
                 return False
             return self.in_rpc_code(prev_frame)
 
