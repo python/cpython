@@ -128,7 +128,7 @@ def overrideRootMenu(root, flist):
     # menu.
     from tkinter import Menu
     from idlelib import mainmenu
-    from idlelib import windows
+    from idlelib import window
 
     closeItem = mainmenu.menudefs[0][1][-2]
 
