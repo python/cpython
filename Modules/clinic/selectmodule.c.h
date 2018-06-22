@@ -58,7 +58,7 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_register__doc__,
-"register($self, fd, eventmask=POLLIN | POLLOUT | POLLPRI, /)\n"
+"register($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
 "--\n"
 "\n"
 "Register a file descriptor with the polling object.\n"
@@ -79,7 +79,7 @@ select_poll_register(pollObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    unsigned short eventmask = POLLIN | POLLOUT | POLLPRI;
+    unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
     if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
         fildes_converter, &fd, ushort_converter, &eventmask)) {
@@ -202,7 +202,7 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_register__doc__,
-"register($self, fd, eventmask=POLLIN | POLLOUT | POLLPRI, /)\n"
+"register($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
 "--\n"
 "\n"
 "Register a file descriptor with the polling object.\n"
@@ -225,7 +225,7 @@ select_devpoll_register(devpollObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    unsigned short eventmask = POLLIN | POLLOUT | POLLPRI;
+    unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
     if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
         fildes_converter, &fd, ushort_converter, &eventmask)) {
@@ -242,7 +242,7 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_modify__doc__,
-"modify($self, fd, eventmask=POLLIN | POLLOUT | POLLPRI, /)\n"
+"modify($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
 "--\n"
 "\n"
 "Modify a possible already registered file descriptor.\n"
@@ -265,7 +265,7 @@ select_devpoll_modify(devpollObject *self, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    unsigned short eventmask = POLLIN | POLLOUT | POLLPRI;
+    unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
     if (!_PyArg_ParseStack(args, nargs, "O&|O&:modify",
         fildes_converter, &fd, ushort_converter, &eventmask)) {
@@ -560,7 +560,7 @@ exit:
 #if defined(HAVE_EPOLL)
 
 PyDoc_STRVAR(select_epoll_register__doc__,
-"register($self, /, fd, eventmask=EPOLLIN | EPOLLOUT | EPOLLPRI)\n"
+"register($self, /, fd, eventmask=EPOLLIN | EPOLLPRI | EPOLLOUT)\n"
 "--\n"
 "\n"
 "Registers a new fd or raises an OSError if the fd is already registered.\n"
@@ -586,7 +586,7 @@ select_epoll_register(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, P
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
     static _PyArg_Parser _parser = {"O&|I:register", _keywords, 0};
     int fd;
-    unsigned int eventmask = EPOLLIN | EPOLLOUT | EPOLLPRI;
+    unsigned int eventmask = EPOLLIN | EPOLLPRI | EPOLLOUT;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         fildes_converter, &fd, &eventmask)) {
@@ -1040,4 +1040,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=24d97bdbdf346b5f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b5b5f67051d1d463 input=a9049054013a1b77]*/

@@ -452,7 +452,7 @@ select.poll.register
 
     fd: fildes
       either an integer, or an object with a fileno() method returning an int
-    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLOUT | POLLPRI") = POLLIN | POLLOUT | POLLPRI
+    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
       an optional bitmask describing the type of events to check for
     /
 
@@ -461,7 +461,7 @@ Register a file descriptor with the polling object.
 
 static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=0dc7173c800a4a65 input=e20f283a8250fb5e]*/
+/*[clinic end generated code: output=0dc7173c800a4a65 input=499d96a2836217f5]*/
 {
     PyObject *key, *value;
     int err;
@@ -590,7 +590,7 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
     _PyTime_t timeout = -1, ms = -1, deadline = 0;
     int async_err = 0;
 
-    if (timeout_obj != NULL && timeout_obj != Py_None) {
+    if (timeout_obj != Py_None) {
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
                                            _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
@@ -831,7 +831,7 @@ select.devpoll.register
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLOUT | POLLPRI") = POLLIN | POLLOUT | POLLPRI
+    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
         an optional bitmask describing the type of events to check for
     /
 
@@ -841,7 +841,7 @@ Register a file descriptor with the polling object.
 static PyObject *
 select_devpoll_register_impl(devpollObject *self, int fd,
                              unsigned short eventmask)
-/*[clinic end generated code: output=6e07fe8b74abba0c input=c6bed777bd69a7bc]*/
+/*[clinic end generated code: output=6e07fe8b74abba0c input=389a0785bb8feb57]*/
 {
     return internal_devpoll_register(self, fd, eventmask, 0);
 }
@@ -852,7 +852,7 @@ select.devpoll.modify
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLOUT | POLLPRI") = POLLIN | POLLOUT | POLLPRI
+    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
         an optional bitmask describing the type of events to check for
     /
 
@@ -862,7 +862,7 @@ Modify a possible already registered file descriptor.
 static PyObject *
 select_devpoll_modify_impl(devpollObject *self, int fd,
                            unsigned short eventmask)
-/*[clinic end generated code: output=bc2e6d23aaff98b4 input=2d8e3ddaa722656c]*/
+/*[clinic end generated code: output=bc2e6d23aaff98b4 input=f0d7de3889cc55fb]*/
 static PyObject *
 devpoll_modify(devpollObject *self, PyObject *args)
 {
@@ -921,7 +921,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
         return devpoll_err_closed();
 
     /* Check values for timeout */
-    if (timeout_obj == NULL || timeout_obj == Py_None) {
+    if (timeout_obj == Py_None) {
         timeout = -1;
         ms = -1;
     }
@@ -1434,7 +1434,7 @@ select.epoll.register
 
     fd: fildes
       the target file descriptor of the operation
-    eventmask: unsigned_int(c_default="EPOLLIN | EPOLLOUT | EPOLLPRI", bitwise=True) = EPOLLIN | EPOLLOUT | EPOLLPRI
+    eventmask: unsigned_int(c_default="EPOLLIN | EPOLLPRI | EPOLLOUT", bitwise=True) = EPOLLIN | EPOLLPRI | EPOLLOUT
       a bit set composed of the various EPOLL constants
 
 Registers a new fd or raises an OSError if the fd is already registered.
@@ -1445,7 +1445,7 @@ The epoll interface supports all file descriptors that support poll.
 static PyObject *
 select_epoll_register_impl(pyEpoll_Object *self, int fd,
                            unsigned int eventmask)
-/*[clinic end generated code: output=318e5e6386520599 input=aee776f8e8d6d25f]*/
+/*[clinic end generated code: output=318e5e6386520599 input=6cf699c152dd8ca9]*/
 {
     return pyepoll_internal_ctl(self->epfd, EPOLL_CTL_ADD, fd, eventmask);
 }
@@ -1488,11 +1488,11 @@ select_epoll_unregister_impl(pyEpoll_Object *self, int fd)
 /*[clinic input]
 select.epoll.poll
 
-    timeout as timeout_obj: object(c_default="Py_None") = -1.0
+    timeout as timeout_obj: object = None
       the maximum time to wait in seconds (as float);
-      a timeout of -1 makes poll wait indefinitely
+      a timeout of None or -1 makes poll wait indefinitely
     maxevents: int = -1
-      the maximum number of events returned
+      the maximum number of events returned; -1 means no limit
 
 Wait for events on the epoll file descriptor.
 [clinic start generated code]*/
@@ -2063,7 +2063,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
         return NULL;
     }
 
-    if (otimeout == Py_None || otimeout == NULL) {
+    if (otimeout == Py_None) {
         ptimeoutspec = NULL;
     }
     else {
@@ -2087,7 +2087,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
         ptimeoutspec = &timeoutspec;
     }
 
-    if (changelist != NULL && changelist != Py_None) {
+    if (changelist != Py_None) {
         seq = PySequence_Fast(changelist, "changelist is not iterable");
         if (seq == NULL) {
             return NULL;
