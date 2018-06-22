@@ -772,13 +772,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         title = '<a name="%s"><strong>%s</strong></a>' % (
             self.escape(anchor), self.escape(name))
 
-        if inspect.ismethod(object):
-            sig = signature(object)
-            # exclude the argument bound to the instance, it will be
-            # confusing to the non-Python user
-            sig.replace(parameters=tuple(sig.parameters.values())[1:])
-            argspec = str(sig)
-        elif inspect.isfunction(object):
+        if callable(object):
             argspec = str(signature(object))
         else:
             argspec = '(...)'
