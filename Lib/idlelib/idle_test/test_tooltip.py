@@ -72,6 +72,17 @@ class TextToolTipTest(unittest.TestCase):
         tooltip.showtip()
         self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
 
+    def test_showtip_twice(self):
+        tooltip = TextTooltip(self.button, 'ToolTip text')
+        self.addCleanup(tooltip.hidetip)
+        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        tooltip.showtip()
+        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        orig_tipwindow = tooltip.tipwindow
+        tooltip.showtip()
+        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertIs(tooltip.tipwindow, orig_tipwindow)
+
     def test_hidetip(self):
         tooltip = TextTooltip(self.button, 'ToolTip text')
         self.addCleanup(tooltip.hidetip)
