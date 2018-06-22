@@ -5,6 +5,7 @@ import locale
 import sys
 import unittest
 import encodings
+from unittest import mock
 
 from test import support
 
@@ -196,19 +197,33 @@ class ReadTest(MixInCheckStateHandling):
         self.assertEqual(f.read(), ''.join(lines[1:]))
         self.assertEqual(f.read(), '')
 
+        # Issue #32110: Test readline() followed by read(n)
+        f = getreader()
+        self.assertEqual(f.readline(), lines[0])
+        self.assertEqual(f.read(1), lines[1][0])
+        self.assertEqual(f.read(0), '')
+        self.assertEqual(f.read(100), data[len(lines[0]) + 1:][:100])
+
         # Issue #16636: Test readline() followed by readlines()
         f = getreader()
         self.assertEqual(f.readline(), lines[0])
         self.assertEqual(f.readlines(), lines[1:])
         self.assertEqual(f.read(), '')
 
-        # Test read() followed by read()
+        # Test read(n) followed by read()
         f = getreader()
         self.assertEqual(f.read(size=40, chars=5), data[:5])
         self.assertEqual(f.read(), data[5:])
         self.assertEqual(f.read(), '')
 
-        # Issue #12446: Test read() followed by readlines()
+        # Issue #32110: Test read(n) followed by read(n)
+        f = getreader()
+        self.assertEqual(f.read(size=40, chars=5), data[:5])
+        self.assertEqual(f.read(1), data[5])
+        self.assertEqual(f.read(0), '')
+        self.assertEqual(f.read(100), data[6:106])
+
+        # Issue #12446: Test read(n) followed by readlines()
         f = getreader()
         self.assertEqual(f.read(size=40, chars=5), data[:5])
         self.assertEqual(f.readlines(), [lines[0][5:]] + lines[1:])
@@ -3166,16 +3181,9 @@ class CodePageTest(unittest.TestCase):
     def test_mbcs_alias(self):
         # Check that looking up our 'default' codepage will return
         # mbcs when we don't have a more specific one available
-        import _bootlocale
-        def _get_fake_codepage(*a):
-            return 'cp123'
-        old_getpreferredencoding = _bootlocale.getpreferredencoding
-        _bootlocale.getpreferredencoding = _get_fake_codepage
-        try:
+        with mock.patch('_winapi.GetACP', return_value=123):
             codec = codecs.lookup('cp123')
             self.assertEqual(codec.name, 'mbcs')
-        finally:
-            _bootlocale.getpreferredencoding = old_getpreferredencoding
 
 
 class ASCIITest(unittest.TestCase):

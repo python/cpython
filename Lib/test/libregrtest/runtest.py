@@ -102,7 +102,7 @@ def runtest(ns, test):
     if use_timeout:
         faulthandler.dump_traceback_later(ns.timeout, exit=True)
     try:
-        support.match_tests = ns.match_tests
+        support.set_match_tests(ns.match_tests)
         # reset the environment_altered flag to detect if a test altered
         # the environment
         support.environment_altered = False

@@ -1,8 +1,10 @@
 """Selector and proactor event loops for Windows."""
 
+import _overlapped
 import _winapi
 import errno
 import math
+import msvcrt
 import socket
 import struct
 import weakref
@@ -14,14 +16,14 @@ from . import proactor_events
 from . import selector_events
 from . import tasks
 from . import windows_utils
-from . import _overlapped
-from .coroutines import coroutine
 from .log import logger
 
 
-__all__ = ['SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
-           'DefaultEventLoopPolicy',
-           ]
+__all__ = (
+    'SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
+    'DefaultEventLoopPolicy', 'WindowsSelectorEventLoopPolicy',
+    'WindowsProactorEventLoopPolicy',
+)
 
 
 NULL = 0
@@ -52,7 +54,7 @@ class _OverlappedFuture(futures.Future):
         info = super()._repr_info()
         if self._ov is not None:
             state = 'pending' if self._ov.pending else 'completed'
-            info.insert(1, 'overlapped=<%s, %#x>' % (state, self._ov.address))
+            info.insert(1, f'overlapped=<{state}, {self._ov.address:#x}>')
         return info
 
     def _cancel_overlapped(self):
@@ -108,12 +110,12 @@ class _BaseWaitHandleFuture(futures.Future):
 
     def _repr_info(self):
         info = super()._repr_info()
-        info.append('handle=%#x' % self._handle)
+        info.append(f'handle={self._handle:#x}')
         if self._handle is not None:
             state = 'signaled' if self._poll() else 'waiting'
             info.append(state)
         if self._wait_handle is not None:
-            info.append('wait_handle=%#x' % self._wait_handle)
+            info.append(f'wait_handle={self._wait_handle:#x}')
         return info
 
     def _unregister_wait_cb(self, fut):
@@ -296,9 +298,6 @@ class PipeServer(object):
 class _WindowsSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Windows version of selector event loop."""
 
-    def _socketpair(self):
-        return windows_utils.socketpair()
-
 
 class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
     """Windows version of proactor event loop using IOCP."""
@@ -308,20 +307,15 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             proactor = IocpProactor()
         super().__init__(proactor)
 
-    def _socketpair(self):
-        return windows_utils.socketpair()
-
-    @coroutine
-    def create_pipe_connection(self, protocol_factory, address):
+    async def create_pipe_connection(self, protocol_factory, address):
         f = self._proactor.connect_pipe(address)
-        pipe = yield from f
+        pipe = await f
         protocol = protocol_factory()
         trans = self._make_duplex_pipe_transport(pipe, protocol,
                                                  extra={'addr': address})
         return trans, protocol
 
-    @coroutine
-    def start_serving_pipe(self, protocol_factory, address):
+    async def start_serving_pipe(self, protocol_factory, address):
         server = PipeServer(address)
 
         def loop_accept_pipe(f=None):
@@ -367,28 +361,20 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         self.call_soon(loop_accept_pipe)
         return [server]
 
-    @coroutine
-    def _make_subprocess_transport(self, protocol, args, shell,
-                                   stdin, stdout, stderr, bufsize,
-                                   extra=None, **kwargs):
+    async def _make_subprocess_transport(self, protocol, args, shell,
+                                         stdin, stdout, stderr, bufsize,
+                                         extra=None, **kwargs):
         waiter = self.create_future()
         transp = _WindowsSubprocessTransport(self, protocol, args, shell,
                                              stdin, stdout, stderr, bufsize,
                                              waiter=waiter, extra=extra,
                                              **kwargs)
         try:
-            yield from waiter
-        except Exception as exc:
-            # Workaround CPython bug #23353: using yield/yield-from in an
-            # except block of a generator doesn't clear properly sys.exc_info()
-            err = exc
-        else:
-            err = None
-
-        if err is not None:
+            await waiter
+        except Exception:
             transp.close()
-            yield from transp._wait()
-            raise err
+            await transp._wait()
+            raise
 
         return transp
 
@@ -441,7 +427,8 @@ class IocpProactor:
             try:
                 return ov.getresult()
             except OSError as exc:
-                if exc.winerror == _overlapped.ERROR_NETNAME_DELETED:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
@@ -463,7 +450,8 @@ class IocpProactor:
             try:
                 return ov.getresult()
             except OSError as exc:
-                if exc.winerror == _overlapped.ERROR_NETNAME_DELETED:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
@@ -482,7 +470,8 @@ class IocpProactor:
             try:
                 return ov.getresult()
             except OSError as exc:
-                if exc.winerror == _overlapped.ERROR_NETNAME_DELETED:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
@@ -504,11 +493,10 @@ class IocpProactor:
             conn.settimeout(listener.gettimeout())
             return conn, conn.getpeername()
 
-        @coroutine
-        def accept_coro(future, conn):
+        async def accept_coro(future, conn):
             # Coroutine closing the accept socket if the future is cancelled
             try:
-                yield from future
+                await future
             except futures.CancelledError:
                 conn.close()
                 raise
@@ -541,6 +529,27 @@ class IocpProactor:
 
         return self._register(ov, conn, finish_connect)
 
+    def sendfile(self, sock, file, offset, count):
+        self._register_with_iocp(sock)
+        ov = _overlapped.Overlapped(NULL)
+        offset_low = offset & 0xffff_ffff
+        offset_high = (offset >> 32) & 0xffff_ffff
+        ov.TransmitFile(sock.fileno(),
+                        msvcrt.get_osfhandle(file.fileno()),
+                        offset_low, offset_high,
+                        count, 0, 0)
+
+        def finish_sendfile(trans, key, ov):
+            try:
+                return ov.getresult()
+            except OSError as exc:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
+                    raise ConnectionResetError(*exc.args)
+                else:
+                    raise
+        return self._register(ov, sock, finish_sendfile)
+
     def accept_pipe(self, pipe):
         self._register_with_iocp(pipe)
         ov = _overlapped.Overlapped(NULL)
@@ -558,13 +567,12 @@ class IocpProactor:
 
         return self._register(ov, pipe, finish_accept_pipe)
 
-    @coroutine
-    def connect_pipe(self, address):
+    async def connect_pipe(self, address):
         delay = CONNECT_PIPE_INIT_DELAY
         while True:
-            # Unfortunately there is no way to do an overlapped connect to a pipe.
-            # Call CreateFile() in a loop until it doesn't fail with
-            # ERROR_PIPE_BUSY
+            # Unfortunately there is no way to do an overlapped connect to
+            # a pipe.  Call CreateFile() in a loop until it doesn't fail with
+            # ERROR_PIPE_BUSY.
             try:
                 handle = _overlapped.ConnectPipe(address)
                 break
@@ -574,7 +582,7 @@ class IocpProactor:
 
             # ConnectPipe() failed with ERROR_PIPE_BUSY: retry later
             delay = min(delay * 2, CONNECT_PIPE_MAX_DELAY)
-            yield from tasks.sleep(delay, loop=self._loop)
+            await tasks.sleep(delay, loop=self._loop)
 
         return windows_utils.PipeHandle(handle)
 
@@ -729,7 +737,7 @@ class IocpProactor:
                     f.set_result(value)
                     self._results.append(f)
 
-        # Remove unregisted futures
+        # Remove unregistered futures
         for ov in self._unregistered:
             self._cache.pop(ov.address, None)
         self._unregistered.clear()
@@ -794,8 +802,12 @@ class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 SelectorEventLoop = _WindowsSelectorEventLoop
 
 
-class _WindowsDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+class WindowsSelectorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     _loop_factory = SelectorEventLoop
 
 
-DefaultEventLoopPolicy = _WindowsDefaultEventLoopPolicy
+class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+    _loop_factory = ProactorEventLoop
+
+
+DefaultEventLoopPolicy = WindowsSelectorEventLoopPolicy

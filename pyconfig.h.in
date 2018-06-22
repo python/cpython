@@ -140,6 +140,9 @@
 /* Define to 1 if you have the `copysign' function. */
 #undef HAVE_COPYSIGN
 
+/* Define to 1 if you have the <crypt.h> header file. */
+#undef HAVE_CRYPT_H
+
 /* Define to 1 if you have the `ctermid' function. */
 #undef HAVE_CTERMID
 
@@ -209,6 +212,10 @@
 /* Define to 1 if you have the declaration of `RTLD_LOCAL', and to 0 if you
    don't. */
 #undef HAVE_DECL_RTLD_LOCAL
+
+/* Define to 1 if you have the declaration of `RTLD_MEMBER', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_MEMBER
 
 /* Define to 1 if you have the declaration of `RTLD_NODELETE', and to 0 if you
    don't. */
@@ -496,7 +503,7 @@
 /* Define to 1 if you have the <ieeefp.h> header file. */
 #undef HAVE_IEEEFP_H
 
-/* Define to 1 if you have the 'if_nameindex' function. */
+/* Define to 1 if you have the `if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
 
 /* Define if you have the 'inet_aton' function. */
@@ -601,7 +608,7 @@
 /* Define to 1 if you have the <linux/vm_sockets.h> header file. */
 #undef HAVE_LINUX_VM_SOCKETS_H
 
-/* Define to 1 if you have the 'lockf' function and the F_LOCK macro. */
+/* Define to 1 if you have the `lockf' function. */
 #undef HAVE_LOCKF
 
 /* Define to 1 if you have the `log1p' function. */
@@ -610,7 +617,7 @@
 /* Define to 1 if you have the `log2' function. */
 #undef HAVE_LOG2
 
-/* Define this if you have the type long double. */
+/* Define to 1 if the system has the type `long double'. */
 #undef HAVE_LONG_DOUBLE
 
 /* Define to 1 if you have the `lstat' function. */
@@ -700,8 +707,17 @@
 /* Define to 1 if you have the `posix_fallocate' function. */
 #undef HAVE_POSIX_FALLOCATE
 
+/* Define to 1 if you have the `posix_spawn' function. */
+#undef HAVE_POSIX_SPAWN
+
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
+
+/* Define to 1 if you have the `preadv' function. */
+#undef HAVE_PREADV
+
+/* Define to 1 if you have the `preadv2' function. */
+#undef HAVE_PREADV2
 
 /* Define if you have the 'prlimit' functions. */
 #undef HAVE_PRLIMIT
@@ -738,6 +754,12 @@
 
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
+
+/* Define to 1 if you have the `pwritev' function. */
+#undef HAVE_PWRITEV
+
+/* Define to 1 if you have the `pwritev2' function. */
+#undef HAVE_PWRITEV2
 
 /* Define to 1 if you have the `readlink' function. */
 #undef HAVE_READLINK
@@ -873,6 +895,9 @@
 
 /* Define to 1 if you have the `sigaltstack' function. */
 #undef HAVE_SIGALTSTACK
+
+/* Define to 1 if you have the `sigfillset' function. */
+#undef HAVE_SIGFILLSET
 
 /* Define to 1 if `si_band' is a member of `siginfo_t'. */
 #undef HAVE_SIGINFO_T_SI_BAND
@@ -1187,6 +1212,21 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
+/* Define if uuid_create() exists. */
+#undef HAVE_UUID_CREATE
+
+/* Define if uuid_enc_be() exists. */
+#undef HAVE_UUID_ENC_BE
+
+/* Define if uuid_generate_time_safe() exists. */
+#undef HAVE_UUID_GENERATE_TIME_SAFE
+
+/* Define to 1 if you have the <uuid.h> header file. */
+#undef HAVE_UUID_H
+
+/* Define to 1 if you have the <uuid/uuid.h> header file. */
+#undef HAVE_UUID_UUID_H
+
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3
 
@@ -1220,6 +1260,9 @@
 
 /* Define to 1 if you have the `writev' function. */
 #undef HAVE_WRITEV
+
+/* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
+#undef HAVE_X509_VERIFY_PARAM_SET1_HOST
 
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
@@ -1276,6 +1319,13 @@
 
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
+
+/* Default cipher suites list for ssl module. 1: Python's preferred selection,
+   2: leave OpenSSL defaults untouched, 0: custom string */
+#undef PY_SSL_DEFAULT_CIPHERS
+
+/* Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0 */
+#undef PY_SSL_DEFAULT_CIPHER_STRING
 
 /* Define to emit a locale compatibility warning in the C locale */
 #undef PY_WARN_ON_C_LOCALE
@@ -1396,9 +1446,6 @@
 # undef __EXTENSIONS__
 #endif
 
-
-/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
-#undef WANT_SIGFPE_HANDLER
 
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS

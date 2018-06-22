@@ -436,6 +436,21 @@ Other constructors, all class methods:
    d``.
 
 
+.. classmethod:: date.fromisoformat(date_string)
+
+  Return a :class:`date` corresponding to a *date_string* in the format emitted
+  by :meth:`date.isoformat`. Specifically, this function supports strings in
+  the format(s) ``YYYY-MM-DD``.
+
+  .. caution::
+
+    This does not support parsing arbitrary ISO 8601 strings - it is only intended
+    as the inverse operation of :meth:`date.isoformat`.
+
+  .. versionadded:: 3.7
+
+
+
 Class attributes:
 
 .. attribute:: date.min
@@ -819,6 +834,21 @@ Other constructors, all class methods:
       Added the *tzinfo* argument.
 
 
+.. classmethod:: datetime.fromisoformat(date_string)
+
+  Return a :class:`datetime` corresponding to a *date_string* in one of the
+  formats emitted by :meth:`date.isoformat` and :meth:`datetime.isoformat`.
+  Specifically, this function supports strings in the format(s)
+  ``YYYY-MM-DD[*HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]]``,
+  where ``*`` can match any single character.
+
+  .. caution::
+
+    This does not support parsing arbitrary ISO 8601 strings - it is only intended
+    as the inverse operation of :meth:`datetime.isoformat`.
+
+  .. versionadded:: 3.7
+
 .. classmethod:: datetime.strptime(date_string, format)
 
    Return a :class:`.datetime` corresponding to *date_string*, parsed according to
@@ -1028,8 +1058,7 @@ Instance methods:
 
    If provided, *tz* must be an instance of a :class:`tzinfo` subclass, and its
    :meth:`utcoffset` and :meth:`dst` methods must not return ``None``.  If *self*
-   is naive (``self.tzinfo is None``), it is presumed to represent time in the
-   system timezone.
+   is naive, it is presumed to represent time in the system timezone.
 
    If called without arguments (or with ``tz=None``) the system local
    timezone is assumed for the target timezone.  The ``.tzinfo`` attribute of the converted
@@ -1486,6 +1515,23 @@ In boolean contexts, a :class:`.time` object is always considered to be true.
    error-prone and has been removed in Python 3.5.  See :issue:`13936` for full
    details.
 
+
+Other constructor:
+
+.. classmethod:: time.fromisoformat(time_string)
+
+  Return a :class:`time` corresponding to a *time_string* in one of the
+  formats emitted by :meth:`time.isoformat`. Specifically, this function supports
+  strings in the format(s) ``HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]``.
+
+  .. caution::
+
+    This does not support parsing arbitrary ISO 8601 strings - it is only intended
+    as the inverse operation of :meth:`time.isoformat`.
+
+  .. versionadded:: 3.7
+
+
 Instance methods:
 
 .. method:: time.replace(hour=self.hour, minute=self.minute, second=self.second, \
@@ -1586,7 +1632,6 @@ Instance methods:
    If :attr:`.tzinfo` is ``None``, returns ``None``, else returns
    ``self.tzinfo.tzname(None)``, or raises an exception if the latter doesn't
    return ``None`` or a string object.
-
 
 Example:
 
@@ -2163,8 +2208,8 @@ Notes:
       :meth:`utcoffset` is transformed into a string of the form
       ±HHMM[SS[.uuuuuu]], where HH is a 2-digit string giving the number of UTC
       offset hours, and MM is a 2-digit string giving the number of UTC offset
-      minutes, SS is a 2-digit string string giving the number of UTC offset
-      seconds and uuuuuu is a 2-digit string string giving the number of UTC
+      minutes, SS is a 2-digit string giving the number of UTC offset
+      seconds and uuuuuu is a 2-digit string giving the number of UTC
       offset microseconds.  The uuuuuu part is omitted when the offset is a
       whole number of minutes and both the uuuuuu and the SS parts are omitted
       when the offset is a whole number of minutes.  For example, if

@@ -65,6 +65,7 @@ static PyObject *run_pyc_file(FILE *, const char *, PyObject *, PyObject *,
                               PyCompilerFlags *);
 static void err_input(perrdetail *);
 static void err_free(perrdetail *);
+static int PyRun_InteractiveOneObjectEx(FILE *, PyObject *, PyCompilerFlags *);
 
 /* Parse input from a file and execute it */
 int
@@ -89,6 +90,10 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     PyObject *filename, *v;
     int ret, err;
     PyCompilerFlags local_flags;
+    int nomem_count = 0;
+#ifdef Py_REF_DEBUG
+    int show_ref_count = PyThreadState_GET()->interp->core_config.show_ref_count;
+#endif
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
     if (filename == NULL) {
@@ -110,22 +115,33 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
         _PySys_SetObjectId(&PyId_ps2, v = PyUnicode_FromString("... "));
         Py_XDECREF(v);
     }
-    err = -1;
-    for (;;) {
-        ret = PyRun_InteractiveOneObject(fp, filename, flags);
-#ifdef Py_REF_DEBUG
-        if (_PyDebug_XOptionShowRefCount() == Py_True)
-            _PyDebug_PrintTotalRefs();
-#endif
-        if (ret == E_EOF) {
-            err = 0;
-            break;
+    err = 0;
+    do {
+        ret = PyRun_InteractiveOneObjectEx(fp, filename, flags);
+        if (ret == -1 && PyErr_Occurred()) {
+            /* Prevent an endless loop after multiple consecutive MemoryErrors
+             * while still allowing an interactive command to fail with a
+             * MemoryError. */
+            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+                if (++nomem_count > 16) {
+                    PyErr_Clear();
+                    err = -1;
+                    break;
+                }
+            } else {
+                nomem_count = 0;
+            }
+            PyErr_Print();
+            flush_io();
+        } else {
+            nomem_count = 0;
         }
-        /*
-        if (ret == E_NOMEM)
-            break;
-        */
-    }
+#ifdef Py_REF_DEBUG
+        if (show_ref_count) {
+            _PyDebug_PrintTotalRefs();
+        }
+#endif
+    } while (ret != E_EOF);
     Py_DECREF(filename);
     return err;
 }
@@ -154,8 +170,11 @@ static int PARSER_FLAGS(PyCompilerFlags *flags)
                    PyPARSE_WITH_IS_KEYWORD : 0)) : 0)
 #endif
 
-int
-PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
+/* A PyRun_InteractiveOneObject() auxiliary function that does not print the
+ * error on failure. */
+static int
+PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
+                             PyCompilerFlags *flags)
 {
     PyObject *m, *d, *v, *w, *oenc = NULL, *mod_name;
     mod_ty mod;
@@ -167,7 +186,6 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
 
     mod_name = _PyUnicode_FromId(&PyId___main__); /* borrowed */
     if (mod_name == NULL) {
-        PyErr_Print();
         return -1;
     }
 
@@ -227,7 +245,6 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
             PyErr_Clear();
             return E_EOF;
         }
-        PyErr_Print();
         return -1;
     }
     m = PyImport_AddModuleObject(mod_name);
@@ -239,13 +256,24 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
     v = run_mod(mod, filename, d, d, flags, arena);
     PyArena_Free(arena);
     if (v == NULL) {
-        PyErr_Print();
-        flush_io();
         return -1;
     }
     Py_DECREF(v);
     flush_io();
     return 0;
+}
+
+int
+PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
+{
+    int res;
+
+    res = PyRun_InteractiveOneObjectEx(fp, filename, flags);
+    if (res == -1) {
+        PyErr_Print();
+        flush_io();
+    }
+    return res;
 }
 
 int
@@ -746,12 +774,12 @@ print_exception(PyObject *f, PyObject *value)
     }
     else {
         PyObject* moduleName;
-        char* className;
+        const char *className;
         _Py_IDENTIFIER(__module__);
         assert(PyExceptionClass_Check(type));
         className = PyExceptionClass_Name(type);
         if (className != NULL) {
-            char *dot = strrchr(className, '.');
+            const char *dot = strrchr(className, '.');
             if (dot != NULL)
                 className = dot+1;
         }
@@ -1025,7 +1053,8 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
                        "Bad magic number in .pyc file");
         return NULL;
     }
-    /* Skip mtime and size */
+    /* Skip the rest of the header. */
+    (void) PyMarshal_ReadLongFromFile(fp);
     (void) PyMarshal_ReadLongFromFile(fp);
     (void) PyMarshal_ReadLongFromFile(fp);
     if (PyErr_Occurred())
@@ -1300,7 +1329,7 @@ err_input(perrdetail *err)
 {
     PyObject *v, *w, *errtype, *errtext;
     PyObject *msg_obj = NULL;
-    char *msg = NULL;
+    const char *msg = NULL;
     int offset = err->offset;
 
     errtype = PyExc_SyntaxError;

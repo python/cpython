@@ -1806,7 +1806,8 @@ bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=760412661a34ad5a input=ef7bb59b09c21d62]*/
 {
     Py_ssize_t left, right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1816,7 +1817,7 @@ bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -1847,7 +1848,8 @@ bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=d005c9d0ab909e66 input=80843f975dd7c480]*/
 {
     Py_ssize_t left, right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1857,7 +1859,7 @@ bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -1885,7 +1887,8 @@ bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=030e2fbd2f7276bd input=e728b994954cfd91]*/
 {
     Py_ssize_t right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1895,7 +1898,7 @@ bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -1937,7 +1940,7 @@ PyDoc_STRVAR(alloc_doc,
 Return the number of bytes actually allocated.");
 
 static PyObject *
-bytearray_alloc(PyByteArrayObject *self)
+bytearray_alloc(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromSsize_t(self->ob_alloc);
 }
@@ -2015,7 +2018,7 @@ Create a string of hexadecimal numbers from a bytearray object.\n\
 Example: bytearray([0xb9, 0x01, 0xef]).hex() -> 'b901ef'.");
 
 static PyObject *
-bytearray_hex(PyBytesObject *self)
+bytearray_hex(PyBytesObject *self, PyObject *Py_UNUSED(ignored))
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);
@@ -2133,7 +2136,7 @@ bytearray_methods[] = {
     BYTEARRAY_REDUCE_EX_METHODDEF
     BYTEARRAY_SIZEOF_METHODDEF
     BYTEARRAY_APPEND_METHODDEF
-    {"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
+    {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
     {"center", (PyCFunction)stringlib_center, METH_VARARGS, _Py_center__doc__},
     BYTEARRAY_CLEAR_METHODDEF
@@ -2152,23 +2155,25 @@ bytearray_methods[] = {
     {"hex", (PyCFunction)bytearray_hex, METH_NOARGS, hex__doc__},
     {"index", (PyCFunction)bytearray_index, METH_VARARGS, _Py_index__doc__},
     BYTEARRAY_INSERT_METHODDEF
-    {"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,
+    {"isalnum", stringlib_isalnum, METH_NOARGS,
      _Py_isalnum__doc__},
-    {"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,
+    {"isalpha", stringlib_isalpha, METH_NOARGS,
      _Py_isalpha__doc__},
-    {"isdigit", (PyCFunction)stringlib_isdigit, METH_NOARGS,
+    {"isascii", stringlib_isascii, METH_NOARGS,
+     _Py_isascii__doc__},
+    {"isdigit", stringlib_isdigit, METH_NOARGS,
      _Py_isdigit__doc__},
-    {"islower", (PyCFunction)stringlib_islower, METH_NOARGS,
+    {"islower", stringlib_islower, METH_NOARGS,
      _Py_islower__doc__},
-    {"isspace", (PyCFunction)stringlib_isspace, METH_NOARGS,
+    {"isspace", stringlib_isspace, METH_NOARGS,
      _Py_isspace__doc__},
-    {"istitle", (PyCFunction)stringlib_istitle, METH_NOARGS,
+    {"istitle", stringlib_istitle, METH_NOARGS,
      _Py_istitle__doc__},
-    {"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,
+    {"isupper", stringlib_isupper, METH_NOARGS,
      _Py_isupper__doc__},
     BYTEARRAY_JOIN_METHODDEF
     {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, _Py_ljust__doc__},
-    {"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
+    {"lower", stringlib_lower, METH_NOARGS, _Py_lower__doc__},
     BYTEARRAY_LSTRIP_METHODDEF
     BYTEARRAY_MAKETRANS_METHODDEF
     BYTEARRAY_PARTITION_METHODDEF
@@ -2187,11 +2192,11 @@ bytearray_methods[] = {
     {"startswith", (PyCFunction)bytearray_startswith, METH_VARARGS ,
      _Py_startswith__doc__},
     BYTEARRAY_STRIP_METHODDEF
-    {"swapcase", (PyCFunction)stringlib_swapcase, METH_NOARGS,
+    {"swapcase", stringlib_swapcase, METH_NOARGS,
      _Py_swapcase__doc__},
-    {"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
+    {"title", stringlib_title, METH_NOARGS, _Py_title__doc__},
     BYTEARRAY_TRANSLATE_METHODDEF
-    {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
+    {"upper", stringlib_upper, METH_NOARGS, _Py_upper__doc__},
     {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, _Py_zfill__doc__},
     {NULL}
 };
@@ -2319,7 +2324,7 @@ bytearrayiter_next(bytesiterobject *it)
 }
 
 static PyObject *
-bytearrayiter_length_hint(bytesiterobject *it)
+bytearrayiter_length_hint(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = 0;
     if (it->it_seq) {
@@ -2335,7 +2340,7 @@ PyDoc_STRVAR(length_hint_doc,
     "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-bytearrayiter_reduce(bytesiterobject *it)
+bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),

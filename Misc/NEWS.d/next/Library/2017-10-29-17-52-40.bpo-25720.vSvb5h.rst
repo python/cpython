@@ -1,2 +1,0 @@
-Fix the method for checking pad state of curses WINDOW. Patch by Masayuki
-Yamamoto.

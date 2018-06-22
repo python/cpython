@@ -107,7 +107,7 @@ This example uses the iterator form::
       The SQLite web page; the documentation describes the syntax and the
       available data types for the supported SQL dialect.
 
-   http://www.w3schools.com/sql/
+   https://www.w3schools.com/sql/
       Tutorial, reference and examples for learning SQL syntax.
 
    :pep:`249` - Database API Specification 2.0
@@ -172,9 +172,13 @@ Module functions and constants
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
 
-   Opens a connection to the SQLite database file *database*. You can use
-   ``":memory:"`` to open a database connection to a database that resides in RAM
-   instead of on disk.
+   Opens a connection to the SQLite database file *database*. By default returns a
+   :class:`Connection` object, unless a custom *factory* is given.
+
+   *database* is a :term:`path-like object` giving the pathname (absolute or
+   relative to the current  working directory) of the database file to be opened.
+   You can use ``":memory:"`` to open a database connection to a database that
+   resides in RAM instead of on disk.
 
    When a database is accessed by multiple connections, and one of the processes
    modifies the database, the SQLite database is locked until that transaction is
@@ -222,6 +226,9 @@ Module functions and constants
 
    .. versionchanged:: 3.4
       Added the *uri* parameter.
+
+   .. versionchanged:: 3.7
+      *database* can now also be a :term:`path-like object`, not only a string.
 
 
 .. function:: register_converter(typename, callable)
@@ -525,6 +532,56 @@ Connection Objects
                  f.write('%s\n' % line)
 
 
+   .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
+
+      This method makes a backup of a SQLite database even while it's being accessed
+      by other clients, or concurrently by the same connection.  The copy will be
+      written into the mandatory argument *target*, that must be another
+      :class:`Connection` instance.
+
+      By default, or when *pages* is either ``0`` or a negative integer, the entire
+      database is copied in a single step; otherwise the method performs a loop
+      copying up to *pages* pages at a time.
+
+      If *progress* is specified, it must either be ``None`` or a callable object that
+      will be executed at each iteration with three integer arguments, respectively
+      the *status* of the last iteration, the *remaining* number of pages still to be
+      copied and the *total* number of pages.
+
+      The *name* argument specifies the database name that will be copied: it must be
+      a string containing either ``"main"``, the default, to indicate the main
+      database, ``"temp"`` to indicate the temporary database or the name specified
+      after the ``AS`` keyword in an ``ATTACH DATABASE`` statement for an attached
+      database.
+
+      The *sleep* argument specifies the number of seconds to sleep by between
+      successive attempts to backup remaining pages, can be specified either as an
+      integer or a floating point value.
+
+      Example 1, copy an existing database into another::
+
+         import sqlite3
+
+         def progress(status, remaining, total):
+             print(f'Copied {total-remaining} of {total} pages...')
+
+         con = sqlite3.connect('existing_db.db')
+         with sqlite3.connect('backup.db') as bck:
+             con.backup(bck, pages=1, progress=progress)
+
+      Example 2, copy an existing database into a transient copy::
+
+         import sqlite3
+
+         source = sqlite3.connect('existing_db.db')
+         dest = sqlite3.connect(':memory:')
+         source.backup(dest)
+
+      Availability: SQLite 3.6.11 or higher
+
+      .. versionadded:: 3.7
+
+
 .. _sqlite3-cursor-objects:
 
 Cursor Objects
@@ -763,6 +820,13 @@ Exceptions
    Exception raised for programming errors, e.g. table not found or already
    exists, syntax error in the SQL statement, wrong number of parameters
    specified, etc.  It is a subclass of :exc:`DatabaseError`.
+
+.. exception:: OperationalError
+
+   Exception raised for errors that are related to the database's operation
+   and not necessarily under the control of the programmer, e.g. an unexpected
+   disconnect occurs, the data source name is not found, a transaction could
+   not be processed, etc.  It is a subclass of :exc:`DatabaseError`.
 
 
 .. _sqlite3-types:

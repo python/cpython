@@ -74,6 +74,11 @@ python \- an interpreted, interactive, object-oriented programming language
 ]
 .br
        [
+.B \--check-hash-based-pycs
+\'default\'|\'always\'|\'never\'
+]
+.br
+       [
 .B \-c
 .I command
 |
@@ -123,8 +128,11 @@ Specify the command to execute (see next section).
 This terminates the option list (following options are passed as
 arguments to the command).
 .TP
+.BI "\-\-check-hash-based-pycs " mode
+Configure how Python evaluates the up-to-dateness of hash-based .pyc files.
+.TP
 .B \-d
-Turn on parser debugging output (for wizards only, depending on
+Turn on parser debugging output (for expert only, depending on
 compilation options).
 .TP
 .B \-E
@@ -156,10 +164,13 @@ for the named module and runs the corresponding
 file as a script.
 .TP
 .B \-O
-Turn on basic optimizations.  Given twice, causes docstrings to be discarded.
+Remove assert statements and any code conditional on the value of
+__debug__; augment the filename for compiled (bytecode) files by
+adding .opt-1 before the .pyc extension.
 .TP
 .B \-OO
-Discard docstrings in addition to the \fB-O\fP optimizations.
+Do \fB-O\fP and also discard docstrings; change the filename for
+compiled (bytecode) files by adding .opt-2 before the .pyc extension.
 .TP
 .B \-q
 Do not print the version and copyright messages. These messages are
@@ -437,7 +448,7 @@ Developer resources:  https://devguide.python.org/
 .br
 Downloads:  https://www.python.org/downloads/
 .br
-Module repository:  https://pypi.python.org/
+Module repository:  https://pypi.org/
 .br
 Newsgroups:  comp.lang.python, comp.lang.python.announce
 .SH LICENSING

@@ -7,6 +7,216 @@
 Initialization, Finalization, and Threads
 *****************************************
 
+.. _pre-init-safe:
+
+Before Python Initialization
+============================
+
+In an application embedding  Python, the :c:func:`Py_Initialize` function must
+be called before using any other Python/C API functions; with the exception of
+a few functions and the :ref:`global configuration variables
+<global-conf-vars>`.
+
+The following functions can be safely called before Python is initialized:
+
+* Configuration functions:
+
+  * :c:func:`PyImport_AppendInittab`
+  * :c:func:`PyImport_ExtendInittab`
+  * :c:func:`PyInitFrozenExtensions`
+  * :c:func:`PyMem_SetAllocator`
+  * :c:func:`PyMem_SetupDebugHooks`
+  * :c:func:`PyObject_SetArenaAllocator`
+  * :c:func:`Py_SetPath`
+  * :c:func:`Py_SetProgramName`
+  * :c:func:`Py_SetPythonHome`
+  * :c:func:`Py_SetStandardStreamEncoding`
+  * :c:func:`PySys_AddWarnOption`
+  * :c:func:`PySys_AddXOption`
+  * :c:func:`PySys_ResetWarnOptions`
+
+* Informative functions:
+
+  * :c:func:`PyMem_GetAllocator`
+  * :c:func:`PyObject_GetArenaAllocator`
+  * :c:func:`Py_GetBuildInfo`
+  * :c:func:`Py_GetCompiler`
+  * :c:func:`Py_GetCopyright`
+  * :c:func:`Py_GetPlatform`
+  * :c:func:`Py_GetVersion`
+
+* Utilities:
+
+  * :c:func:`Py_DecodeLocale`
+
+* Memory allocators:
+
+  * :c:func:`PyMem_RawMalloc`
+  * :c:func:`PyMem_RawRealloc`
+  * :c:func:`PyMem_RawCalloc`
+  * :c:func:`PyMem_RawFree`
+
+.. note::
+
+   The following functions **should not be called** before
+   :c:func:`Py_Initialize`: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
+   :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
+   :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`,
+   :c:func:`Py_GetProgramName` and :c:func:`PyEval_InitThreads`.
+
+
+.. _global-conf-vars:
+
+Global configuration variables
+==============================
+
+Python has variables for the global configuration to control different features
+and options. By default, these flags are controlled by :ref:`command line
+options <using-on-interface-options>`.
+
+When a flag is set by an option, the value of the flag is the number of times
+that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
+to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
+
+.. c:var:: Py_BytesWarningFlag
+
+   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
+   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error if greater
+   or equal to ``2``.
+
+   Set by the :option:`-b` option.
+
+.. c:var:: Py_DebugFlag
+
+   Turn on parser debugging output (for expert only, depending on compilation
+   options).
+
+   Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
+   variable.
+
+.. c:var:: Py_DontWriteBytecodeFlag
+
+   If set to non-zero, Python won't try to write ``.pyc`` files on the
+   import of source modules.
+
+   Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
+   environment variable.
+
+.. c:var:: Py_FrozenFlag
+
+   Suppress error messages when calculating the module search path in
+   :c:func:`Py_GetPath`.
+
+   Private flag used by ``_freeze_importlib`` and ``frozenmain`` programs.
+
+.. c:var:: Py_HashRandomizationFlag
+
+   Set to ``1`` if the :envvar:`PYTHONHASHSEED` environment variable is set to
+   a non-empty string.
+
+   If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
+   variable to initialize the secret hash seed.
+
+.. c:var:: Py_IgnoreEnvironmentFlag
+
+   Ignore all :envvar:`PYTHON*` environment variables, e.g.
+   :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
+
+   Set by the :option:`-E` and :option:`-I` options.
+
+.. c:var:: Py_InspectFlag
+
+   When a script is passed as first argument or the :option:`-c` option is used,
+   enter interactive mode after executing the script or the command, even when
+   :data:`sys.stdin` does not appear to be a terminal.
+
+   Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
+   variable.
+
+.. c:var:: Py_InteractiveFlag
+
+   Set by the :option:`-i` option.
+
+.. c:var:: Py_IsolatedFlag
+
+   Run Python in isolated mode. In isolated mode :data:`sys.path` contains
+   neither the script's directory nor the user's site-packages directory.
+
+   Set by the :option:`-I` option.
+
+   .. versionadded:: 3.4
+
+.. c:var:: Py_LegacyWindowsFSEncodingFlag
+
+   If the flag is non-zero, use the ``mbcs`` encoding instead of the UTF-8
+   encoding for the filesystem encoding.
+
+   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
+   variable is set to a non-empty string.
+
+   See :pep:`529` for more details.
+
+   Availability: Windows.
+
+.. c:var:: Py_LegacyWindowsStdioFlag
+
+   If the flag is non-zero, use :class:`io.FileIO` instead of
+   :class:`WindowsConsoleIO` for :mod:`sys` standard streams.
+
+   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
+   variable is set to a non-empty string.
+
+   See :pep:`528` for more details.
+
+   Availability: Windows.
+
+.. c:var:: Py_NoSiteFlag
+
+   Disable the import of the module :mod:`site` and the site-dependent
+   manipulations of :data:`sys.path` that it entails.  Also disable these
+   manipulations if :mod:`site` is explicitly imported later (call
+   :func:`site.main` if you want them to be triggered).
+
+   Set by the :option:`-S` option.
+
+.. c:var:: Py_NoUserSiteDirectory
+
+   Don't add the :data:`user site-packages directory <site.USER_SITE>` to
+   :data:`sys.path`.
+
+   Set by the :option:`-s` and :option:`-I` options, and the
+   :envvar:`PYTHONNOUSERSITE` environment variable.
+
+.. c:var:: Py_OptimizeFlag
+
+   Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
+   variable.
+
+.. c:var:: Py_QuietFlag
+
+   Don't display the copyright and version messages even in interactive mode.
+
+   Set by the :option:`-q` option.
+
+   .. versionadded:: 3.2
+
+.. c:var:: Py_UnbufferedStdioFlag
+
+   Force the stdout and stderr streams to be unbuffered.
+
+   Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
+   environment variable.
+
+.. c:var:: Py_VerboseFlag
+
+   Print a message each time a module is initialized, showing the place
+   (filename or built-in module) from which it is loaded.  If greater or equal
+   to ``2``, print a message for each file that is checked for when
+   searching for a module. Also provides information on module cleanup at exit.
+
+   Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
+   variable.
+
 
 Initializing and finalizing the interpreter
 ===========================================
@@ -27,9 +237,11 @@ Initializing and finalizing the interpreter
       single: PySys_SetArgvEx()
       single: Py_FinalizeEx()
 
-   Initialize the Python interpreter.  In an application embedding  Python, this
-   should be called before using any other Python/C API functions; with the
-   exception of :c:func:`Py_SetProgramName`, :c:func:`Py_SetPythonHome` and :c:func:`Py_SetPath`.  This initializes
+   Initialize the Python interpreter.  In an application embedding  Python,
+   this should be called before using any other Python/C API functions; see
+   :ref:`Before Python Initialization <pre-init-safe>` for the few exceptions.
+
+   This initializes
    the table of loaded modules (``sys.modules``), and creates the fundamental
    modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
@@ -64,8 +276,8 @@ Initializing and finalizing the interpreter
    the last call to :c:func:`Py_Initialize`.  Ideally, this frees all memory
    allocated by the Python interpreter.  This is a no-op when called for a second
    time (without calling :c:func:`Py_Initialize` again first).  Normally the
-   return value is 0.  If there were errors during finalization
-   (flushing buffered data), -1 is returned.
+   return value is ``0``.  If there were errors during finalization
+   (flushing buffered data), ``-1`` is returned.
 
    This function is provided for a number of reasons.  An embedding application
    might want to restart Python without having to restart the application itself.
@@ -129,7 +341,7 @@ Process-wide parameters
    .. versionadded:: 3.4
 
 
-.. c:function:: void Py_SetProgramName(wchar_t *name)
+.. c:function:: void Py_SetProgramName(const wchar_t *name)
 
    .. index::
       single: Py_Initialize()
@@ -396,7 +608,7 @@ Process-wide parameters
    .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
 
 
-.. c:function:: void Py_SetPythonHome(wchar_t *home)
+.. c:function:: void Py_SetPythonHome(const wchar_t *home)
 
    Set the default "home" directory, that is, the location of the standard
    Python libraries.  See :envvar:`PYTHONHOME` for the meaning of the
@@ -478,15 +690,14 @@ This is so common that a pair of macros exists to simplify it::
 
 The :c:macro:`Py_BEGIN_ALLOW_THREADS` macro opens a new block and declares a
 hidden local variable; the :c:macro:`Py_END_ALLOW_THREADS` macro closes the
-block.  These two macros are still available when Python is compiled without
-thread support (they simply have an empty expansion).
+block.
 
-When thread support is enabled, the block above expands to the following code::
+The block above expands to the following code::
 
    PyThreadState *_save;
 
    _save = PyEval_SaveThread();
-   ...Do some blocking I/O operation...
+   ... Do some blocking I/O operation ...
    PyEval_RestoreThread(_save);
 
 .. index::
@@ -609,36 +820,24 @@ code, or when embedding the Python interpreter:
 
    This is a no-op when called for a second time.
 
+   .. versionchanged:: 3.7
+      This function is now called by :c:func:`Py_Initialize()`, so you don't
+      have to call it yourself anymore.
+
    .. versionchanged:: 3.2
       This function cannot be called before :c:func:`Py_Initialize()` anymore.
 
    .. index:: module: _thread
-
-   .. note::
-
-      When only the main thread exists, no GIL operations are needed. This is a
-      common situation (most Python programs do not use threads), and the lock
-      operations slow the interpreter down a bit. Therefore, the lock is not
-      created initially.  This situation is equivalent to having acquired the lock:
-      when there is only a single thread, all object accesses are safe.  Therefore,
-      when this function initializes the global interpreter lock, it also acquires
-      it.  Before the Python :mod:`_thread` module creates a new thread, knowing
-      that either it has the lock or the lock hasn't been created yet, it calls
-      :c:func:`PyEval_InitThreads`.  When this call returns, it is guaranteed that
-      the lock has been created and that the calling thread has acquired it.
-
-      It is **not** safe to call this function when it is unknown which thread (if
-      any) currently has the global interpreter lock.
-
-      This function is not available when thread support is disabled at compile time.
 
 
 .. c:function:: int PyEval_ThreadsInitialized()
 
    Returns a non-zero value if :c:func:`PyEval_InitThreads` has been called.  This
    function can be called without holding the GIL, and therefore can be used to
-   avoid calls to the locking API when running single-threaded.  This function is
-   not available when thread support is disabled at compile time.
+   avoid calls to the locking API when running single-threaded.
+
+   .. versionchanged:: 3.7
+      The :term:`GIL` is now initialized by :c:func:`Py_Initialize()`.
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
@@ -646,8 +845,7 @@ code, or when embedding the Python interpreter:
    Release the global interpreter lock (if it has been created and thread
    support is enabled) and reset the thread state to *NULL*, returning the
    previous thread state (which is not *NULL*).  If the lock has been created,
-   the current thread must have acquired it.  (This function is available even
-   when thread support is disabled at compile time.)
+   the current thread must have acquired it.
 
 
 .. c:function:: void PyEval_RestoreThread(PyThreadState *tstate)
@@ -655,8 +853,7 @@ code, or when embedding the Python interpreter:
    Acquire the global interpreter lock (if it has been created and thread
    support is enabled) and set the thread state to *tstate*, which must not be
    *NULL*.  If the lock has been created, the current thread must not have
-   acquired it, otherwise deadlock ensues.  (This function is available even
-   when thread support is disabled at compile time.)
+   acquired it, otherwise deadlock ensues.
 
 
 .. c:function:: PyThreadState* PyThreadState_Get()
@@ -748,7 +945,7 @@ example usage in the Python source distribution.
    This macro expands to ``{ PyThreadState *_save; _save = PyEval_SaveThread();``.
    Note that it contains an opening brace; it must be matched with a following
    :c:macro:`Py_END_ALLOW_THREADS` macro.  See above for further discussion of this
-   macro.  It is a no-op when thread support is disabled at compile time.
+   macro.
 
 
 .. c:macro:: Py_END_ALLOW_THREADS
@@ -756,29 +953,29 @@ example usage in the Python source distribution.
    This macro expands to ``PyEval_RestoreThread(_save); }``. Note that it contains
    a closing brace; it must be matched with an earlier
    :c:macro:`Py_BEGIN_ALLOW_THREADS` macro.  See above for further discussion of
-   this macro.  It is a no-op when thread support is disabled at compile time.
+   this macro.
 
 
 .. c:macro:: Py_BLOCK_THREADS
 
    This macro expands to ``PyEval_RestoreThread(_save);``: it is equivalent to
-   :c:macro:`Py_END_ALLOW_THREADS` without the closing brace.  It is a no-op when
-   thread support is disabled at compile time.
+   :c:macro:`Py_END_ALLOW_THREADS` without the closing brace.
 
 
 .. c:macro:: Py_UNBLOCK_THREADS
 
    This macro expands to ``_save = PyEval_SaveThread();``: it is equivalent to
    :c:macro:`Py_BEGIN_ALLOW_THREADS` without the opening brace and variable
-   declaration.  It is a no-op when thread support is disabled at compile time.
+   declaration.
 
 
 Low-level API
 -------------
 
-All of the following functions are only available when thread support is enabled
-at compile time, and must be called only when the global interpreter lock has
-been created.
+All of the following functions must be called after :c:func:`Py_Initialize`.
+
+.. versionchanged:: 3.7
+   :c:func:`Py_Initialize()` now initializes the :term:`GIL`.
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_New()
@@ -824,7 +1021,7 @@ been created.
 .. c:function:: PY_INT64_T PyInterpreterState_GetID(PyInterpreterState *interp)
 
    Return the interpreter's unique ID.  If there was any error in doing
-   so then -1 is returned and an error is set.
+   so then ``-1`` is returned and an error is set.
 
    .. versionadded:: 3.7
 
@@ -859,8 +1056,7 @@ been created.
    If this thread already has the lock, deadlock ensues.
 
    :c:func:`PyEval_RestoreThread` is a higher-level function which is always
-   available (even when thread support isn't enabled or when threads have
-   not been initialized).
+   available (even when threads have not been initialized).
 
 
 .. c:function:: void PyEval_ReleaseThread(PyThreadState *tstate)
@@ -872,8 +1068,7 @@ been created.
    reported.
 
    :c:func:`PyEval_SaveThread` is a higher-level function which is always
-   available (even when thread support isn't enabled or when threads have
-   not been initialized).
+   available (even when threads have not been initialized).
 
 
 .. c:function:: void PyEval_AcquireLock()
@@ -1068,18 +1263,18 @@ Python-level trace functions in previous versions.
    registration function as *obj*, *frame* is the frame object to which the event
    pertains, *what* is one of the constants :const:`PyTrace_CALL`,
    :const:`PyTrace_EXCEPTION`, :const:`PyTrace_LINE`, :const:`PyTrace_RETURN`,
-   :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION`, or
-   :const:`PyTrace_C_RETURN`, and *arg* depends on the value of *what*:
+   :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION`, :const:`PyTrace_C_RETURN`,
+   or :const:`PyTrace_OPCODE`, and *arg* depends on the value of *what*:
 
    +------------------------------+--------------------------------------+
    | Value of *what*              | Meaning of *arg*                     |
    +==============================+======================================+
-   | :const:`PyTrace_CALL`        | Always *NULL*.                       |
+   | :const:`PyTrace_CALL`        | Always :c:data:`Py_None`.            |
    +------------------------------+--------------------------------------+
    | :const:`PyTrace_EXCEPTION`   | Exception information as returned by |
    |                              | :func:`sys.exc_info`.                |
    +------------------------------+--------------------------------------+
-   | :const:`PyTrace_LINE`        | Always *NULL*.                       |
+   | :const:`PyTrace_LINE`        | Always :c:data:`Py_None`.            |
    +------------------------------+--------------------------------------+
    | :const:`PyTrace_RETURN`      | Value being returned to the caller,  |
    |                              | or *NULL* if caused by an exception. |
@@ -1090,7 +1285,8 @@ Python-level trace functions in previous versions.
    +------------------------------+--------------------------------------+
    | :const:`PyTrace_C_RETURN`    | Function object being called.        |
    +------------------------------+--------------------------------------+
-
+   | :const:`PyTrace_OPCODE`      | Always :c:data:`Py_None`.            |
+   +------------------------------+--------------------------------------+
 
 .. c:var:: int PyTrace_CALL
 
@@ -1114,14 +1310,15 @@ Python-level trace functions in previous versions.
 
 .. c:var:: int PyTrace_LINE
 
-   The value passed as the *what* parameter to a trace function (but not a
-   profiling function) when a line-number event is being reported.
+   The value passed as the *what* parameter to a :c:type:`Py_tracefunc` function
+   (but not a profiling function) when a line-number event is being reported.
+   It may be disabled for a frame by setting :attr:`f_trace_lines` to *0* on that frame.
 
 
 .. c:var:: int PyTrace_RETURN
 
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions when a
-   call is returning without propagating an exception.
+   call is about to return.
 
 
 .. c:var:: int PyTrace_C_CALL
@@ -1142,22 +1339,32 @@ Python-level trace functions in previous versions.
    function has returned.
 
 
+.. c:var:: int PyTrace_OPCODE
+
+   The value for the *what* parameter to :c:type:`Py_tracefunc` functions (but not
+   profiling functions) when a new opcode is about to be executed.  This event is
+   not emitted by default: it must be explicitly requested by setting
+   :attr:`f_trace_opcodes` to *1* on the frame.
+
+
 .. c:function:: void PyEval_SetProfile(Py_tracefunc func, PyObject *obj)
 
    Set the profiler function to *func*.  The *obj* parameter is passed to the
    function as its first parameter, and may be any Python object, or *NULL*.  If
    the profile function needs to maintain state, using a different value for *obj*
    for each thread provides a convenient and thread-safe place to store it.  The
-   profile function is called for all monitored events except the line-number
-   events.
+   profile function is called for all monitored events except :const:`PyTrace_LINE`
+   :const:`PyTrace_OPCODE` and :const:`PyTrace_EXCEPTION`.
 
 
 .. c:function:: void PyEval_SetTrace(Py_tracefunc func, PyObject *obj)
 
    Set the tracing function to *func*.  This is similar to
    :c:func:`PyEval_SetProfile`, except the tracing function does receive line-number
-   events.
-
+   events and per-opcode events, but does not receive any event related to C function
+   objects being called.  Any trace function registered using :c:func:`PyEval_SetTrace`
+   will not receive :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or
+   :const:`PyTrace_C_RETURN` as a value for the *what* parameter.
 
 .. _advanced-debugging:
 

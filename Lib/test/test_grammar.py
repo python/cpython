@@ -251,6 +251,8 @@ class CNS:
 
 class GrammarTests(unittest.TestCase):
 
+    check_syntax_error = check_syntax_error
+
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
 
@@ -575,6 +577,10 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(f(spam='fried', **{'eggs':'scrambled'}),
                          ((), {'eggs':'scrambled', 'spam':'fried'}))
 
+        # Check ast errors in *args and *kwargs
+        check_syntax_error(self, "f(*g(1=2))")
+        check_syntax_error(self, "f(**g(1=2))")
+
         # argument annotation tests
         def f(x) -> list: pass
         self.assertEqual(f.__annotations__, {'return': list})
@@ -615,10 +621,6 @@ class GrammarTests(unittest.TestCase):
         def f(x=1): return closure
         def f(*, k=1): return closure
         def f() -> int: return closure
-
-        # Check ast errors in *args and *kwargs
-        check_syntax_error(self, "f(*g(1=2))")
-        check_syntax_error(self, "f(**g(1=2))")
 
         # Check trailing commas are permitted in funcdef argument list
         def f(a,): pass
@@ -805,6 +807,133 @@ class GrammarTests(unittest.TestCase):
         x = g2()
         check_syntax_error(self, "class foo:return 1")
 
+    def test_break_in_finally(self):
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                pass
+            finally:
+                break
+        self.assertEqual(count, 1)
+
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                continue
+            finally:
+                break
+        self.assertEqual(count, 1)
+
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                1/0
+            finally:
+                break
+        self.assertEqual(count, 1)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                pass
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                continue
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+        for count in [0, 1]:
+            self.assertEqual(count, 0)
+            try:
+                1/0
+            finally:
+                break
+        self.assertEqual(count, 0)
+
+    def test_continue_in_finally(self):
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                pass
+            finally:
+                continue
+            break
+        self.assertEqual(count, 2)
+
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                break
+            finally:
+                continue
+        self.assertEqual(count, 2)
+
+        count = 0
+        while count < 2:
+            count += 1
+            try:
+                1/0
+            finally:
+                continue
+            break
+        self.assertEqual(count, 2)
+
+        for count in [0, 1]:
+            try:
+                pass
+            finally:
+                continue
+            break
+        self.assertEqual(count, 1)
+
+        for count in [0, 1]:
+            try:
+                break
+            finally:
+                continue
+        self.assertEqual(count, 1)
+
+        for count in [0, 1]:
+            try:
+                1/0
+            finally:
+                continue
+            break
+        self.assertEqual(count, 1)
+
+    def test_return_in_finally(self):
+        def g1():
+            try:
+                pass
+            finally:
+                return 1
+        self.assertEqual(g1(), 1)
+
+        def g2():
+            try:
+                return 2
+            finally:
+                return 3
+        self.assertEqual(g2(), 3)
+
+        def g3():
+            try:
+                1/0
+            finally:
+                return 4
+        self.assertEqual(g3(), 4)
+
     def test_yield(self):
         # Allowed as standalone statement
         def g(): yield 1
@@ -840,6 +969,33 @@ class GrammarTests(unittest.TestCase):
         check_syntax_error(self, "class foo:yield from ()")
         # Check annotation refleak on SyntaxError
         check_syntax_error(self, "def g(a:(yield)): pass")
+
+    def test_yield_in_comprehensions(self):
+        # Check yield in comprehensions
+        def g(): [x for x in [(yield 1)]]
+        def g(): [x for x in [(yield from ())]]
+
+        check = self.check_syntax_error
+        check("def g(): [(yield x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("def g(): [x for x in () if not (yield x)]",
+              "'yield' inside list comprehension")
+        check("def g(): [y for x in () for y in [(yield x)]]",
+              "'yield' inside list comprehension")
+        check("def g(): {(yield x) for x in ()}",
+              "'yield' inside set comprehension")
+        check("def g(): {(yield x): x for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): {x: (yield x) for x in ()}",
+              "'yield' inside dict comprehension")
+        check("def g(): ((yield x) for x in ())",
+              "'yield' inside generator expression")
+        check("def g(): [(yield from x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("class C: [(yield x) for x in ()]",
+              "'yield' inside list comprehension")
+        check("[(yield x) for x in ()]",
+              "'yield' inside list comprehension")
 
     def test_raise(self):
         # 'raise' test [',' test]
@@ -982,7 +1138,6 @@ class GrammarTests(unittest.TestCase):
         try: 1/0
         except EOFError: pass
         except TypeError as msg: pass
-        except RuntimeError as msg: pass
         except: pass
         else: pass
         try: 1/0
@@ -1091,7 +1246,7 @@ class GrammarTests(unittest.TestCase):
         d[1,2] = 3
         d[1,2,3] = 4
         L = list(d)
-        L.sort(key=lambda x: x if isinstance(x, tuple) else ())
+        L.sort(key=lambda x: (type(x).__name__, x))
         self.assertEqual(str(L), '[1, (1,), (1, 2), (1, 2, 3)]')
 
     def test_atoms(self):

@@ -274,6 +274,12 @@ are always available.  They are listed here in alphabetical order.
       character.  This is to facilitate detection of incomplete and complete
       statements in the :mod:`code` module.
 
+   .. warning::
+
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string when compiling to an AST
+      object due to stack depth limitations in Python's AST compiler.
+
    .. versionchanged:: 3.2
       Allowed use of Windows and Mac newlines.  Also input in ``'exec'`` mode
       does not have to end in a newline anymore.  Added the *optimize* parameter.
@@ -665,8 +671,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: hex(x)
 
    Convert an integer number to a lowercase hexadecimal string prefixed with
-   "0x". If x is not a Python :class:`int` object, it has to define an
-   __index__() method that returns an integer. Some examples:
+   "0x". If *x* is not a Python :class:`int` object, it has to define an
+   :meth:`__index__` method that returns an integer. Some examples:
 
       >>> hex(255)
       '0xff'
@@ -724,9 +730,10 @@ are always available.  They are listed here in alphabetical order.
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
-   ``0`` if no arguments are given.  If *x* is a number, return
-   :meth:`x.__int__() <object.__int__>`.  For floating point numbers, this
-   truncates towards zero.
+   ``0`` if no arguments are given.  If *x* defines :meth:`__int__`,
+   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__trunc__`,
+   it returns ``x.__trunc__()``.
+   For floating point numbers, this truncates towards zero.
 
    If *x* is not a number or if *base* is given, then *x* must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
@@ -1322,11 +1329,12 @@ are always available.  They are listed here in alphabetical order.
    equally close, rounding is done toward the even choice (so, for example,
    both ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is
    ``2``).  Any integer value is valid for *ndigits* (positive, zero, or
-   negative).  The return value is an integer if called with one argument,
-   otherwise of the same type as *number*.
+   negative).  The return value is an integer if *ndigits* is omitted or
+   ``None``.
+   Otherwise the return value has the same type as *number*.
 
-   For a general Python object ``number``, ``round(number, ndigits)`` delegates to
-   ``number.__round__(ndigits)``.
+   For a general Python object ``number``, ``round`` delegates to
+   ``number.__round__``.
 
    .. note::
 
@@ -1423,7 +1431,7 @@ are always available.  They are listed here in alphabetical order.
    a regular function and do something with its result.  This is needed
    in some cases where you need a reference to a function from a class
    body and you want to avoid the automatic transformation to instance
-   method.  For these cases, use this idiom:
+   method.  For these cases, use this idiom::
 
       class C:
           builtin_open = staticmethod(open)

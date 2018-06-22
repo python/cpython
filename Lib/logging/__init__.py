@@ -466,7 +466,8 @@ class Formatter(object):
 
         Initialize the formatter either with the specified format string, or a
         default as described above. Allow for specialized date formatting with
-        the optional datefmt argument (if omitted, you get the ISO8601 format).
+        the optional datefmt argument. If datefmt is omitted, you get an
+        ISO8601-like (or RFC 3339-like) format.
 
         Use a style parameter of '%', '{' or '$' to specify that you want to
         use one of %-formatting, :meth:`str.format` (``{}``) formatting or
@@ -494,13 +495,13 @@ class Formatter(object):
         in formatters to provide for any specific requirement, but the
         basic behaviour is as follows: if datefmt (a string) is specified,
         it is used with time.strftime() to format the creation time of the
-        record. Otherwise, the ISO8601 format is used. The resulting
-        string is returned. This function uses a user-configurable function
-        to convert the creation time to a tuple. By default, time.localtime()
-        is used; to change this for a particular formatter instance, set the
-        'converter' attribute to a function with the same signature as
-        time.localtime() or time.gmtime(). To change it for all formatters,
-        for example if you want all logging times to be shown in GMT,
+        record. Otherwise, an ISO8601-like (or RFC 3339-like) format is used.
+        The resulting string is returned. This function uses a user-configurable
+        function to convert the creation time to a tuple. By default,
+        time.localtime() is used; to change this for a particular formatter
+        instance, set the 'converter' attribute to a function with the same
+        signature as time.localtime() or time.gmtime(). To change it for all
+        formatters, for example if you want all logging times to be shown in GMT,
         set the 'converter' attribute in the Formatter class.
         """
         ct = self.converter(record.created)
@@ -1396,7 +1397,7 @@ class Logger(Filterer):
         if self.isEnabledFor(level):
             self._log(level, msg, args, **kwargs)
 
-    def findCaller(self, stack_info=False):
+    def findCaller(self, stack_info=False, stacklevel=1):
         """
         Find the stack frame of the caller so that we can note the source
         file name, line number and function name.
@@ -1406,6 +1407,12 @@ class Logger(Filterer):
         #IronPython isn't run with -X:Frames.
         if f is not None:
             f = f.f_back
+        orig_f = f
+        while f and stacklevel > 1:
+            f = f.f_back
+            stacklevel -= 1
+        if not f:
+            f = orig_f
         rv = "(unknown file)", 0, "(unknown function)", None
         while hasattr(f, "f_code"):
             co = f.f_code
@@ -1441,7 +1448,8 @@ class Logger(Filterer):
                 rv.__dict__[key] = extra[key]
         return rv
 
-    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
+    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False,
+             stacklevel=1):
         """
         Low-level logging routine which creates a LogRecord and then calls
         all the handlers of this logger to handle the record.
@@ -1452,7 +1460,7 @@ class Logger(Filterer):
             #exception on some versions of IronPython. We trap it here so that
             #IronPython can use logging.
             try:
-                fn, lno, func, sinfo = self.findCaller(stack_info)
+                fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
             except ValueError: # pragma: no cover
                 fn, lno, func = "(unknown file)", 0, "(unknown function)"
         else: # pragma: no cover
@@ -1568,6 +1576,9 @@ class Logger(Filterer):
         """
         Is this logger enabled for level 'level'?
         """
+        if self.disabled:
+            return False
+
         try:
             return self._cache[level]
         except KeyError:

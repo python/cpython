@@ -20,7 +20,7 @@ static PyObject *
 datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz);
 
 static PyObject *
-datetime_datetime_now(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+datetime_datetime_now(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"tz", NULL};
@@ -36,4 +36,4 @@ datetime_datetime_now(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=93cb014e47dae4b3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1fc05897ab239b3f input=a9049054013a1b77]*/

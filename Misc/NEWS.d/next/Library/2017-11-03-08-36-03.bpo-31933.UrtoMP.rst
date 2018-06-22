@@ -1,2 +1,0 @@
-Fix Blake2 params leaf_size and node_offset on big endian platforms. Patch
-by Jack O'Connor.

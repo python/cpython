@@ -32,7 +32,7 @@ operator can be mapped across two vectors to form an efficient dot-product:
 ``sum(map(operator.mul, vector1, vector2))``.
 
 
-**Infinite Iterators:**
+**Infinite iterators:**
 
 ==================  =================       =================================================               =========================================
 Iterator            Arguments               Results                                                         Example
@@ -61,7 +61,7 @@ Iterator                        Arguments                       Results         
 :func:`zip_longest`             p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-``
 ============================    ============================    =================================================   =============================================================
 
-**Combinatoric generators:**
+**Combinatoric iterators:**
 
 ==============================================   ====================       =============================================================
 Iterator                                         Arguments                  Results
@@ -436,15 +436,24 @@ loops that truncate the stream.
           # islice('ABCDEFG', 2, None) --> C D E F G
           # islice('ABCDEFG', 0, None, 2) --> A C E G
           s = slice(*args)
-          it = iter(range(s.start or 0, s.stop or sys.maxsize, s.step or 1))
+          start, stop, step = s.start or 0, s.stop or sys.maxsize, s.step or 1
+          it = iter(range(start, stop, step))
           try:
               nexti = next(it)
           except StopIteration:
+              # Consume *iterable* up to the *start* position.
+              for i, element in zip(range(start), iterable):
+                  pass
               return
-          for i, element in enumerate(iterable):
-              if i == nexti:
-                  yield element
-                  nexti = next(it)
+          try:
+              for i, element in enumerate(iterable):
+                  if i == nexti:
+                      yield element
+                      nexti = next(it)
+          except StopIteration:
+              # Consume to *stop*.
+              for i, element in zip(range(i + 1, stop), iterable):
+                  pass
 
    If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
    then the step defaults to one.
@@ -679,6 +688,11 @@ which incur interpreter overhead.
        "Return first n items of the iterable as a list"
        return list(islice(iterable, n))
 
+   def prepend(value, iterator):
+       "Prepend a single value in front of an iterator"
+       # prepend(1, [2, 3, 4]) -> 1 2 3 4
+       return chain([value], iterator)
+
    def tabulate(function, start=0):
        "Return function(0), function(1), ..."
        return map(function, count(start))
@@ -688,8 +702,8 @@ which incur interpreter overhead.
        # tail(3, 'ABCDEFG') --> E F G
        return iter(collections.deque(iterable, maxlen=n))
 
-   def consume(iterator, n):
-       "Advance the iterator n-steps ahead. If n is none, consume entirely."
+   def consume(iterator, n=None):
+       "Advance the iterator n-steps ahead. If n is None, consume entirely."
        # Use functions that consume iterators at C speed.
        if n is None:
            # feed the entire iterator into a zero-length deque
@@ -753,15 +767,16 @@ which incur interpreter overhead.
    def roundrobin(*iterables):
        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
        # Recipe credited to George Sakkis
-       pending = len(iterables)
+       num_active = len(iterables)
        nexts = cycle(iter(it).__next__ for it in iterables)
-       while pending:
+       while num_active:
            try:
                for next in nexts:
                    yield next()
            except StopIteration:
-               pending -= 1
-               nexts = cycle(islice(nexts, pending))
+               # Remove the iterator we just exhausted from the cycle.
+               num_active -= 1
+               nexts = cycle(islice(nexts, num_active))
 
    def partition(pred, iterable):
        'Use a predicate to partition entries into false entries and true entries'
@@ -857,6 +872,29 @@ which incur interpreter overhead.
        n = len(pool)
        indices = sorted(random.randrange(n) for i in range(r))
        return tuple(pool[i] for i in indices)
+
+   def nth_combination(iterable, r, index):
+       'Equivalent to list(combinations(iterable, r))[index]'
+       pool = tuple(iterable)
+       n = len(pool)
+       if r < 0 or r > n:
+           raise ValueError
+       c = 1
+       k = min(r, n-r)
+       for i in range(1, k+1):
+           c = c * (n - k + i) // i
+       if index < 0:
+           index += c
+       if index < 0 or index >= c:
+           raise IndexError
+       result = []
+       while r:
+           c, n, r = c*r//n, n-1, r-1
+           while index >= c:
+               index -= c
+               c, n = c*(n-r)//n, n-1
+           result.append(pool[-1-n])
+       return tuple(result)
 
 Note, many of the above recipes can be optimized by replacing global lookups
 with local variables defined as default values.  For example, the

@@ -1553,7 +1553,8 @@ Return a tuple containing unpacked values.
 
 Values are unpacked according to the format string Struct.format.
 
-The buffer's size in bytes, minus offset, must be at least Struct.size.
+The buffer's size in bytes, starting at position offset, must be
+at least Struct.size.
 
 See help(struct) for more on format strings.
 [clinic start generated code]*/
@@ -1561,16 +1562,38 @@ See help(struct) for more on format strings.
 static PyObject *
 Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset)
-/*[clinic end generated code: output=57fac875e0977316 input=97ade52422f8962f]*/
+/*[clinic end generated code: output=57fac875e0977316 input=cafd4851d473c894]*/
 {
     assert(self->s_codes != NULL);
 
-    if (offset < 0)
+    if (offset < 0) {
+        if (offset + self->s_size > 0) {
+            PyErr_Format(StructError,
+                         "not enough data to unpack %zd bytes at offset %zd",
+                         self->s_size,
+                         offset);
+            return NULL;
+        }
+
+        if (offset + buffer->len < 0) {
+            PyErr_Format(StructError,
+                         "offset %zd out of range for %zd-byte buffer",
+                         offset,
+                         buffer->len);
+            return NULL;
+        }
         offset += buffer->len;
-    if (offset < 0 || buffer->len - offset < self->s_size) {
+    }
+
+    if ((buffer->len - offset) < self->s_size) {
         PyErr_Format(StructError,
-            "unpack_from requires a buffer of at least %zd bytes",
-            self->s_size);
+                     "unpack_from requires a buffer of at least %zu bytes for "
+                     "unpacking %zd bytes at offset %zd "
+                     "(actual buffer size is %zd)",
+                     (size_t)self->s_size + (size_t)offset,
+                     self->s_size,
+                     offset,
+                     buffer->len);
         return NULL;
     }
     return s_unpack_internal(self, (char*)buffer->buf + offset);
@@ -1606,7 +1629,7 @@ unpackiter_traverse(unpackiterobject *self, visitproc visit, void *arg)
 }
 
 static PyObject *
-unpackiter_len(unpackiterobject *self)
+unpackiter_len(unpackiterobject *self, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len;
     if (self->so == NULL)
@@ -1733,7 +1756,7 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
  *
  */
 static int
-s_pack_internal(PyStructObject *soself, PyObject **args, int offset, char* buf)
+s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset, char* buf)
 {
     formatcode *code;
     /* XXX(nnorwitz): why does i need to be a local?  can we use
@@ -1820,7 +1843,7 @@ to the format string S.format.  See help(struct) for more on format\n\
 strings.");
 
 static PyObject *
-s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs)
+s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyStructObject *soself;
     PyObject *result;
@@ -1859,7 +1882,7 @@ offset.  Note that the offset is a required argument.  See\n\
 help(struct) for more on format strings.");
 
 static PyObject *
-s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
+s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyStructObject *soself;
     Py_buffer buffer;
@@ -2123,7 +2146,7 @@ Return a bytes object containing the values v1, v2, ... packed according\n\
 to the format string.  See help(struct) for more on format strings.");
 
 static PyObject *
-pack(PyObject *self, PyObject **args, Py_ssize_t nargs)
+pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;
@@ -2151,7 +2174,7 @@ that the offset is a required argument.  See help(struct) for more\n\
 on format strings.");
 
 static PyObject *
-pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs)
+pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;

@@ -25,8 +25,7 @@ from test import support
 # #12316 and #11870), and fork() from a worker thread is known to trigger
 # problems with some operating systems (issue #3863): skip problematic tests
 # on platforms known to behave badly.
-platforms_to_skip = ('freebsd4', 'freebsd5', 'freebsd6', 'netbsd5',
-                     'hp-ux11')
+platforms_to_skip = ('netbsd5', 'hp-ux11')
 
 
 # A trivial mutable counter.
@@ -132,10 +131,10 @@ class ThreadTests(BaseTestCase):
         # Kill the "immortal" _DummyThread
         del threading._active[ident[0]]
 
-    # run with a small(ish) thread stack size (256kB)
+    # run with a small(ish) thread stack size (256 KiB)
     def test_various_ops_small_stack(self):
         if verbose:
-            print('with 256kB thread stack size...')
+            print('with 256 KiB thread stack size...')
         try:
             threading.stack_size(262144)
         except _thread.error:
@@ -144,10 +143,10 @@ class ThreadTests(BaseTestCase):
         self.test_various_ops()
         threading.stack_size(0)
 
-    # run with a large thread stack size (1MB)
+    # run with a large thread stack size (1 MiB)
     def test_various_ops_large_stack(self):
         if verbose:
-            print('with 1MB thread stack size...')
+            print('with 1 MiB thread stack size...')
         try:
             threading.stack_size(0x100000)
         except _thread.error:
@@ -427,7 +426,7 @@ class ThreadTests(BaseTestCase):
         t.daemon = True
         self.assertIn('daemon', repr(t))
 
-    def test_deamon_param(self):
+    def test_daemon_param(self):
         t = threading.Thread()
         self.assertFalse(t.daemon)
         t = threading.Thread(daemon=False)

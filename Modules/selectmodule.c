@@ -1305,10 +1305,13 @@ select_epoll_impl(PyTypeObject *type, int sizehint, int flags)
         PyErr_SetString(PyExc_ValueError, "negative sizehint");
         return NULL;
     }
+
+#ifdef HAVE_EPOLL_CREATE1
     if (flags && flags != EPOLL_CLOEXEC) {
         PyErr_SetString(PyExc_OSError, "invalid flags");
         return NULL;
     }
+#endif
 
     return newPyEpoll_Object(type, sizehint, -1);
 }
@@ -1500,7 +1503,7 @@ Wait for events on the epoll file descriptor.
 static PyObject *
 select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
                        int maxevents)
-/*[clinic end generated code: output=e02d121a20246c6c input=205c0207f1971f5f]*/
+/*[clinic end generated code: output=e02d121a20246c6c input=6fd19c94e3ac0b66]*/
 {
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;

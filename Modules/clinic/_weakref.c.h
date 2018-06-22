@@ -44,7 +44,7 @@ _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
                                    PyObject *key);
 
 static PyObject *
-_weakref__remove_dead_weakref(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_weakref__remove_dead_weakref(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *dct;
@@ -59,4 +59,4 @@ _weakref__remove_dead_weakref(PyObject *module, PyObject **args, Py_ssize_t narg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=87ddb70850080222 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b6a61a4f365a3f0a input=a9049054013a1b77]*/

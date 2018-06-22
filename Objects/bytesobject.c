@@ -2422,7 +2422,7 @@ Create a string of hexadecimal numbers from a bytes object.\n\
 Example: b'\\xb9\\x01\\xef'.hex() -> 'b901ef'.");
 
 static PyObject *
-bytes_hex(PyBytesObject *self)
+bytes_hex(PyBytesObject *self, PyObject *Py_UNUSED(ignored))
 {
     char* argbuf = PyBytes_AS_STRING(self);
     Py_ssize_t arglen = PyBytes_GET_SIZE(self);
@@ -2430,7 +2430,7 @@ bytes_hex(PyBytesObject *self)
 }
 
 static PyObject *
-bytes_getnewargs(PyBytesObject *v)
+bytes_getnewargs(PyBytesObject *v, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("(y#)", v->ob_sval, Py_SIZE(v));
 }
@@ -2439,7 +2439,7 @@ bytes_getnewargs(PyBytesObject *v)
 static PyMethodDef
 bytes_methods[] = {
     {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
-    {"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
+    {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
     {"center", (PyCFunction)stringlib_center, METH_VARARGS,
      _Py_center__doc__},
@@ -2455,23 +2455,25 @@ bytes_methods[] = {
     BYTES_FROMHEX_METHODDEF
     {"hex", (PyCFunction)bytes_hex, METH_NOARGS, hex__doc__},
     {"index", (PyCFunction)bytes_index, METH_VARARGS, _Py_index__doc__},
-    {"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,
+    {"isalnum", stringlib_isalnum, METH_NOARGS,
      _Py_isalnum__doc__},
-    {"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,
+    {"isalpha", stringlib_isalpha, METH_NOARGS,
      _Py_isalpha__doc__},
-    {"isdigit", (PyCFunction)stringlib_isdigit, METH_NOARGS,
+    {"isascii", stringlib_isascii, METH_NOARGS,
+     _Py_isascii__doc__},
+    {"isdigit", stringlib_isdigit, METH_NOARGS,
      _Py_isdigit__doc__},
-    {"islower", (PyCFunction)stringlib_islower, METH_NOARGS,
+    {"islower", stringlib_islower, METH_NOARGS,
      _Py_islower__doc__},
-    {"isspace", (PyCFunction)stringlib_isspace, METH_NOARGS,
+    {"isspace", stringlib_isspace, METH_NOARGS,
      _Py_isspace__doc__},
-    {"istitle", (PyCFunction)stringlib_istitle, METH_NOARGS,
+    {"istitle", stringlib_istitle, METH_NOARGS,
      _Py_istitle__doc__},
-    {"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,
+    {"isupper", stringlib_isupper, METH_NOARGS,
      _Py_isupper__doc__},
     BYTES_JOIN_METHODDEF
     {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, _Py_ljust__doc__},
-    {"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
+    {"lower", stringlib_lower, METH_NOARGS, _Py_lower__doc__},
     BYTES_LSTRIP_METHODDEF
     BYTES_MAKETRANS_METHODDEF
     BYTES_PARTITION_METHODDEF
@@ -2487,11 +2489,11 @@ bytes_methods[] = {
     {"startswith", (PyCFunction)bytes_startswith, METH_VARARGS,
      _Py_startswith__doc__},
     BYTES_STRIP_METHODDEF
-    {"swapcase", (PyCFunction)stringlib_swapcase, METH_NOARGS,
+    {"swapcase", stringlib_swapcase, METH_NOARGS,
      _Py_swapcase__doc__},
-    {"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
+    {"title", stringlib_title, METH_NOARGS, _Py_title__doc__},
     BYTES_TRANSLATE_METHODDEF
-    {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
+    {"upper", stringlib_upper, METH_NOARGS, _Py_upper__doc__},
     {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, _Py_zfill__doc__},
     {NULL,     NULL}                         /* sentinel */
 };
@@ -3035,7 +3037,7 @@ striter_next(striterobject *it)
 }
 
 static PyObject *
-striter_len(striterobject *it)
+striter_len(striterobject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = 0;
     if (it->it_seq)
@@ -3047,7 +3049,7 @@ PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-striter_reduce(striterobject *it)
+striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),

@@ -22,8 +22,8 @@ Argument Clinic How-To
   compatibility for future versions.  In other words: if you
   maintain an external C extension for CPython, you're welcome
   to experiment with Argument Clinic in your own code.  But the
-  version of Argument Clinic that ships with CPython 3.5 *could*
-  be totally incompatible and break all your code.
+  version of Argument Clinic that ships with the next version
+  of CPython *could* be totally incompatible and break all your code.
 
 The Goals Of Argument Clinic
 ============================
@@ -267,12 +267,16 @@ Let's dive in!
    should get its own line.  All the parameter lines should be
    indented from the function name and the docstring.
 
-   The general form of these parameter lines is as follows::
+   The general form of these parameter lines is as follows:
+
+   .. code-block:: none
 
        name_of_parameter: converter
 
    If the parameter has a default value, add that after the
-   converter::
+   converter:
+
+   .. code-block:: none
 
        name_of_parameter: converter = default_value
 
@@ -925,13 +929,17 @@ Parameter default values
 ------------------------
 
 Default values for parameters can be any of a number of values.
-At their simplest, they can be string, int, or float literals::
+At their simplest, they can be string, int, or float literals:
+
+.. code-block:: none
 
     foo: str = "abc"
     bar: int = 123
     bat: float = 45.6
 
-They can also use any of Python's built-in constants::
+They can also use any of Python's built-in constants:
+
+.. code-block:: none
 
     yep:  bool = True
     nope: bool = False
@@ -959,7 +967,9 @@ It can be an entire expression, using math operators and looking up attributes
 on objects.  However, this support isn't exactly simple, because of some
 non-obvious semantics.
 
-Consider the following example::
+Consider the following example:
+
+.. code-block:: none
 
     foo: Py_ssize_t = sys.maxsize - 1
 
@@ -970,7 +980,9 @@ runtime, when the user asks for the function's signature.
 
 What namespace is available when the expression is evaluated?  It's evaluated
 in the context of the module the builtin came from.  So, if your module has an
-attribute called "``max_widgets``", you may simply use it::
+attribute called "``max_widgets``", you may simply use it:
+
+.. code-block:: none
 
     foo: Py_ssize_t = max_widgets
 
@@ -982,7 +994,9 @@ it's best to restrict yourself to modules that are preloaded by Python itself.)
 Evaluating default values only at runtime means Argument Clinic can't compute
 the correct equivalent C default value.  So you need to tell it explicitly.
 When you use an expression, you must also specify the equivalent expression
-in C, using the ``c_default`` parameter to the converter::
+in C, using the ``c_default`` parameter to the converter:
+
+.. code-block:: none
 
     foo: Py_ssize_t(c_default="PY_SSIZE_T_MAX - 1") = sys.maxsize - 1
 
@@ -1359,7 +1373,9 @@ Let's start with defining some terminology:
   A field, in this context, is a subsection of Clinic's output.
   For example, the ``#define`` for the ``PyMethodDef`` structure
   is a field, called ``methoddef_define``.  Clinic has seven
-  different fields it can output per function definition::
+  different fields it can output per function definition:
+
+  .. code-block:: none
 
       docstring_prototype
       docstring_definition
@@ -1416,7 +1432,9 @@ Let's start with defining some terminology:
 
 Clinic defines five new directives that let you reconfigure its output.
 
-The first new directive is ``dump``::
+The first new directive is ``dump``:
+
+.. code-block:: none
 
    dump <destination>
 
@@ -1425,7 +1443,9 @@ the current block, and empties it.  This only works with ``buffer`` and
 ``two-pass`` destinations.
 
 The second new directive is ``output``.  The most basic form of ``output``
-is like this::
+is like this:
+
+.. code-block:: none
 
     output <field> <destination>
 
@@ -1433,7 +1453,9 @@ This tells Clinic to output *field* to *destination*.  ``output`` also
 supports a special meta-destination, called ``everything``, which tells
 Clinic to output *all* fields to that *destination*.
 
-``output`` has a number of other functions::
+``output`` has a number of other functions:
+
+.. code-block:: none
 
     output push
     output pop
@@ -1508,7 +1530,9 @@ preset configurations, as follows:
     Suppresses the ``impl_prototype``, write the ``docstring_definition``
     and ``parser_definition`` to ``buffer``, write everything else to ``block``.
 
-The third new directive is ``destination``::
+The third new directive is ``destination``:
+
+.. code-block:: none
 
     destination <name> <command> [...]
 
@@ -1516,7 +1540,9 @@ This performs an operation on the destination named ``name``.
 
 There are two defined subcommands: ``new`` and ``clear``.
 
-The ``new`` subcommand works like this::
+The ``new`` subcommand works like this:
+
+.. code-block:: none
 
     destination <name> new <type>
 
@@ -1564,7 +1590,9 @@ There are five destination types:
         A two-pass buffer, like the "two-pass" builtin destination above.
 
 
-The ``clear`` subcommand works like this::
+The ``clear`` subcommand works like this:
+
+.. code-block:: none
 
     destination <name> clear
 
@@ -1572,7 +1600,9 @@ It removes all the accumulated text up to this point in the destination.
 (I don't know what you'd need this for, but I thought maybe it'd be
 useful while someone's experimenting.)
 
-The fourth new directive is ``set``::
+The fourth new directive is ``set``:
+
+.. code-block:: none
 
     set line_prefix "string"
     set line_suffix "string"
@@ -1590,7 +1620,9 @@ Both of these support two format strings:
     Turns into the string ``*/``, the end-comment text sequence for C files.
 
 The final new directive is one you shouldn't need to use directly,
-called ``preserve``::
+called ``preserve``:
+
+.. code-block:: none
 
     preserve
 
@@ -1638,7 +1670,9 @@ like so::
     #endif /* HAVE_FUNCTIONNAME */
 
 Then, remove those three lines from the ``PyMethodDef`` structure,
-replacing them with the macro Argument Clinic generated::
+replacing them with the macro Argument Clinic generated:
+
+.. code-block:: none
 
     MODULE_FUNCTIONNAME_METHODDEF
 

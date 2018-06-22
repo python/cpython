@@ -22,7 +22,7 @@ _multibytecodec_MultibyteCodec_encode_impl(MultibyteCodecObject *self,
                                            const char *errors);
 
 static PyObject *
-_multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"input", "errors", NULL};
@@ -60,7 +60,7 @@ _multibytecodec_MultibyteCodec_decode_impl(MultibyteCodecObject *self,
                                            const char *errors);
 
 static PyObject *
-_multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"input", "errors", NULL};
@@ -97,7 +97,7 @@ _multibytecodec_MultibyteIncrementalEncoder_encode_impl(MultibyteIncrementalEnco
                                                         int final);
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"input", "final", NULL};
@@ -146,7 +146,7 @@ _multibytecodec_MultibyteIncrementalDecoder_decode_impl(MultibyteIncrementalDeco
                                                         int final);
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"input", "final", NULL};
@@ -199,7 +199,7 @@ _multibytecodec_MultibyteStreamReader_read_impl(MultibyteStreamReaderObject *sel
                                                 PyObject *sizeobj);
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_read(MultibyteStreamReaderObject *self, PyObject **args, Py_ssize_t nargs)
+_multibytecodec_MultibyteStreamReader_read(MultibyteStreamReaderObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
@@ -228,7 +228,7 @@ _multibytecodec_MultibyteStreamReader_readline_impl(MultibyteStreamReaderObject 
                                                     PyObject *sizeobj);
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_readline(MultibyteStreamReaderObject *self, PyObject **args, Py_ssize_t nargs)
+_multibytecodec_MultibyteStreamReader_readline(MultibyteStreamReaderObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
@@ -257,7 +257,7 @@ _multibytecodec_MultibyteStreamReader_readlines_impl(MultibyteStreamReaderObject
                                                      PyObject *sizehintobj);
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_readlines(MultibyteStreamReaderObject *self, PyObject **args, Py_ssize_t nargs)
+_multibytecodec_MultibyteStreamReader_readlines(MultibyteStreamReaderObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *sizehintobj = Py_None;
@@ -330,4 +330,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=dc2352619de9d74f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=680f59f4cfe63c25 input=a9049054013a1b77]*/

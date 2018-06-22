@@ -573,7 +573,7 @@ class TestUrlopen(unittest.TestCase):
                              cafile=CERT_fakehostname)
             # Good cert, but mismatching hostname
             handler = self.start_https_server(certfile=CERT_fakehostname)
-            with self.assertRaises(ssl.CertificateError) as cm:
+            with self.assertRaises(urllib.error.URLError) as cm:
                 self.urlopen("https://localhost:%s/bizarre" % handler.port,
                              cafile=CERT_fakehostname)
 

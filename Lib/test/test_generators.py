@@ -9,12 +9,18 @@ import inspect
 
 from test import support
 
-_testcapi = support.import_module('_testcapi')
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 
 # This tests to make sure that if a SIGINT arrives just before we send into a
 # yield from chain, the KeyboardInterrupt is raised in the innermost
 # generator (see bpo-30039).
+@unittest.skipUnless(_testcapi is not None and
+                     hasattr(_testcapi, "raise_SIGINT_then_send_None"),
+                     "needs _testcapi.raise_SIGINT_then_send_None")
 class SignalAndYieldFromTest(unittest.TestCase):
 
     def generator1(self):
@@ -265,25 +271,15 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(next(g), "done")
         self.assertEqual(sys.exc_info(), (None, None, None))
 
-    def test_stopiteration_warning(self):
+    def test_stopiteration_error(self):
         # See also PEP 479.
 
         def gen():
             raise StopIteration
             yield
 
-        with self.assertRaises(StopIteration), \
-             self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-
+        with self.assertRaisesRegex(RuntimeError, 'raised StopIteration'):
             next(gen())
-
-        with self.assertRaisesRegex(DeprecationWarning,
-                                    "generator .* raised StopIteration"), \
-             warnings.catch_warnings():
-
-            warnings.simplefilter('error')
-            next(gen())
-
 
     def test_tutorial_stopiteration(self):
         # Raise StopIteration" stops the generator too:
@@ -296,13 +292,7 @@ class ExceptionTest(unittest.TestCase):
         g = f()
         self.assertEqual(next(g), 1)
 
-        with self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-            with self.assertRaises(StopIteration):
-                next(g)
-
-        with self.assertRaises(StopIteration):
-            # This time StopIteration isn't raised from the generator's body,
-            # hence no warning.
+        with self.assertRaisesRegex(RuntimeError, 'raised StopIteration'):
             next(g)
 
     def test_return_tuple(self):
@@ -1458,7 +1448,7 @@ class Knights:
             # If we create a square with one exit, we must visit it next;
             # else somebody else will have to visit it, and since there's
             # only one adjacent, there won't be a way to leave it again.
-            # Finelly, if we create more than one free square with a
+            # Finally, if we create more than one free square with a
             # single exit, we can only move to one of them next, leaving
             # the other one a dead end.
             ne0 = ne1 = 0
@@ -1516,7 +1506,7 @@ class Knights:
                 succs[final].remove(corner)
                 add_to_successors(this)
 
-        # Generate moves 3 thru m*n-1.
+        # Generate moves 3 through m*n-1.
         def advance(len=len):
             # If some successor has only one exit, must take it.
             # Else favor successors with fewer exits.
@@ -1538,7 +1528,7 @@ class Knights:
                         yield i
                     add_to_successors(i)
 
-        # Generate moves 3 thru m*n-1.  Alternative version using a
+        # Generate moves 3 through m*n-1.  Alternative version using a
         # stronger (but more expensive) heuristic to order successors.
         # Since the # of backtracking levels is m*n, a poor move early on
         # can take eons to undo.  Smallest square board for which this
@@ -1830,13 +1820,7 @@ Yield by itself yields None:
 [None]
 
 
-
-An obscene abuse of a yield expression within a generator expression:
-
->>> list((yield 21) for i in range(4))
-[21, None, 21, None, 21, None, 21, None]
-
-And a more sane, but still weird usage:
+Yield is allowed only in the outermost iterable in generator expression:
 
 >>> def f(): list(i for i in [(yield 26)])
 >>> type(f())
@@ -2103,10 +2087,6 @@ enclosing function a generator:
 <class 'generator'>
 
 >>> def f(): lambda x=(yield): 1
->>> type(f())
-<class 'generator'>
-
->>> def f(): x=(i for i in (yield) if (yield))
 >>> type(f())
 <class 'generator'>
 

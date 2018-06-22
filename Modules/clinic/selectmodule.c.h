@@ -36,7 +36,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj);
 
 static PyObject *
-select_select(PyObject *module, PyObject **args, Py_ssize_t nargs)
+select_select(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *rlist;
@@ -75,7 +75,7 @@ static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask);
 
 static PyObject *
-select_poll_register(pollObject *self, PyObject **args, Py_ssize_t nargs)
+select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -114,7 +114,7 @@ static PyObject *
 select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask);
 
 static PyObject *
-select_poll_modify(pollObject *self, PyObject **args, Py_ssize_t nargs)
+select_poll_modify(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -181,7 +181,7 @@ static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj);
 
 static PyObject *
-select_poll_poll(pollObject *self, PyObject **args, Py_ssize_t nargs)
+select_poll_poll(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *timeout_obj = Py_None;
@@ -221,7 +221,7 @@ select_devpoll_register_impl(devpollObject *self, int fd,
                              unsigned short eventmask);
 
 static PyObject *
-select_devpoll_register(devpollObject *self, PyObject **args, Py_ssize_t nargs)
+select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -261,7 +261,7 @@ select_devpoll_modify_impl(devpollObject *self, int fd,
                            unsigned short eventmask);
 
 static PyObject *
-select_devpoll_modify(devpollObject *self, PyObject **args, Py_ssize_t nargs)
+select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -328,7 +328,7 @@ static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj);
 
 static PyObject *
-select_devpoll_poll(devpollObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+select_devpoll_poll(devpollObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"timeout", NULL};
@@ -580,7 +580,7 @@ select_epoll_register_impl(pyEpoll_Object *self, int fd,
                            unsigned int eventmask);
 
 static PyObject *
-select_epoll_register(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
@@ -621,7 +621,7 @@ select_epoll_modify_impl(pyEpoll_Object *self, int fd,
                          unsigned int eventmask);
 
 static PyObject *
-select_epoll_modify(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
@@ -659,7 +659,7 @@ static PyObject *
 select_epoll_unregister_impl(pyEpoll_Object *self, int fd);
 
 static PyObject *
-select_epoll_unregister(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
@@ -681,16 +681,16 @@ exit:
 #if defined(HAVE_EPOLL)
 
 PyDoc_STRVAR(select_epoll_poll__doc__,
-"poll($self, /, timeout=-1.0, maxevents=-1)\n"
+"poll($self, /, timeout=None, maxevents=-1)\n"
 "--\n"
 "\n"
 "Wait for events on the epoll file descriptor.\n"
 "\n"
 "  timeout\n"
 "    the maximum time to wait in seconds (as float);\n"
-"    a timeout of -1 makes poll wait indefinitely\n"
+"    a timeout of None or -1 makes poll wait indefinitely\n"
 "  maxevents\n"
-"    the maximum number of events returned");
+"    the maximum number of events returned; -1 means no limit");
 
 #define SELECT_EPOLL_POLL_METHODDEF    \
     {"poll", (PyCFunction)select_epoll_poll, METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
@@ -700,7 +700,7 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
                        int maxevents);
 
 static PyObject *
-select_epoll_poll(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"timeout", "maxevents", NULL};
@@ -756,7 +756,7 @@ select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
                            PyObject *exc_value, PyObject *exc_tb);
 
 static PyObject *
-select_epoll___exit__(pyEpoll_Object *self, PyObject **args, Py_ssize_t nargs)
+select_epoll___exit__(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *exc_type = Py_None;
@@ -922,7 +922,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
                            int maxevents, PyObject *otimeout);
 
 static PyObject *
-select_kqueue_control(kqueue_queue_Object *self, PyObject **args, Py_ssize_t nargs)
+select_kqueue_control(kqueue_queue_Object *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *changelist;
@@ -1040,4 +1040,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=b5b5f67051d1d463 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=317c96d0d6aadcc3 input=a9049054013a1b77]*/

@@ -267,7 +267,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    should be about 16 or more bytes from a proper source, e.g. :func:`os.urandom`.
 
    *n* is the CPU/Memory cost factor, *r* the block size, *p* parallelization
-   factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MB).
+   factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MiB).
    *dklen* is the length of the derived key.
 
    Availability: OpenSSL 1.1+
@@ -283,7 +283,7 @@ BLAKE2
 .. index::
    single: blake2b, blake2s
 
-BLAKE2_ is a cryptographic hash function defined in RFC-7693_ that comes in two
+BLAKE2_ is a cryptographic hash function defined in :rfc:`7693` that comes in two
 flavors:
 
 * **BLAKE2b**, optimized for 64-bit platforms and produces digests of any size
@@ -482,7 +482,7 @@ Keyed hashing
 
 Keyed hashing can be used for authentication as a faster and simpler
 replacement for `Hash-based message authentication code
-<http://en.wikipedia.org/wiki/Hash-based_message_authentication_code>`_ (HMAC).
+<https://en.wikipedia.org/wiki/Hash-based_message_authentication_code>`_ (HMAC).
 BLAKE2 can be securely used in prefix-MAC mode thanks to the
 indifferentiability property inherited from BLAKE.
 
@@ -546,7 +546,7 @@ on the hash function used in digital signatures.
     preparer, generates all or part of a message to be signed by a second
     party, the message signer. If the message preparer is able to find
     cryptographic hash function collisions (i.e., two messages producing the
-    same hash value), then she might prepare meaningful versions of the message
+    same hash value), then they might prepare meaningful versions of the message
     that would produce the same hash value and digital signature, but with
     different results (e.g., transferring $1,000,000 to an account, rather than
     $10). Cryptographic hash functions have been designed with collision
@@ -562,7 +562,7 @@ on the hash function used in digital signatures.
     by the signer.
 
     (`NIST SP-800-106 "Randomized Hashing for Digital Signatures"
-    <http://csrc.nist.gov/publications/nistpubs/800-106/NIST-SP-800-106.pdf>`_)
+    <https://csrc.nist.gov/publications/detail/sp/800-106/final>`_)
 
 In BLAKE2 the salt is processed as a one-time input to the hash function during
 initialization, rather than as an input to each compression function.
@@ -699,7 +699,7 @@ implementation, extension code, and this documentation:
 
    You should have received a copy of the CC0 Public Domain Dedication along
    with this software. If not, see
-   http://creativecommons.org/publicdomain/zero/1.0/.
+   https://creativecommons.org/publicdomain/zero/1.0/.
 
 The following people have helped with development or contributed their changes
 to the project and the public domain according to the Creative Commons Public
@@ -707,7 +707,6 @@ Domain Dedication 1.0 Universal:
 
 * *Alexandr Sokolovskiy*
 
-.. _RFC-7693: https://tools.ietf.org/html/rfc7693
 .. _BLAKE2: https://blake2.net
 .. _HMAC: https://en.wikipedia.org/wiki/Hash-based_message_authentication_code
 .. _BLAKE: https://131002.net/blake/
@@ -728,7 +727,7 @@ Domain Dedication 1.0 Universal:
    https://blake2.net
       Official BLAKE2 website.
 
-   http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
+   https://csrc.nist.gov/csrc/media/publications/fips/180/2/archive/2002-08-01/documents/fips180-2.pdf
       The FIPS 180-2 publication on Secure Hash Algorithms.
 
    https://en.wikipedia.org/wiki/Cryptographic_hash_function#Cryptographic_hash_algorithms

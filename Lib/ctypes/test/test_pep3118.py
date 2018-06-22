@@ -188,7 +188,7 @@ native_types = [
     (PackedPoint,               "B",                                   (),  PackedPoint),
     (Point2,                    "T{<l:x:<l:y:}".replace('l', s_long),  (),  Point2),
     (EmptyStruct,               "T{}",                                 (),  EmptyStruct),
-    # the pep does't support unions
+    # the pep doesn't support unions
     (aUnion,                    "B",                                   (),  aUnion),
     # structure with sub-arrays
     (StructWithArrays, "T{(2,3)<l:x:(4)T{<l:x:<l:y:}:y:}".replace('l', s_long), (), StructWithArrays),

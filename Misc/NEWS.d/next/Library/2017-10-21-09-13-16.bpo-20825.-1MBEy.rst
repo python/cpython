@@ -1,3 +1,0 @@
-Add `subnet_of` and `superset_of` containment tests to
-:class:`ipaddress.IPv6Network` and :class:`ipaddress.IPv4Network`.
-Patch by Michel Albert and Cheryl Sabella.

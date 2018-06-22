@@ -16,11 +16,11 @@ PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 #define PyCFunction_Check(op) (Py_TYPE(op) == &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
-typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject **, Py_ssize_t);
+typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
 typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
                                              PyObject *);
 typedef PyObject *(*_PyCFunctionFastWithKeywords) (PyObject *,
-                                                   PyObject **, Py_ssize_t,
+                                                   PyObject *const *, Py_ssize_t,
                                                    PyObject *);
 typedef PyObject *(*PyNoArgsFunction)(PyObject *);
 
@@ -43,12 +43,12 @@ PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyCFunction_FastCallDict(PyObject *func,
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwargs);
 
 PyAPI_FUNC(PyObject *) _PyCFunction_FastCallKeywords(PyObject *func,
-    PyObject **stack,
+    PyObject *const *stack,
     Py_ssize_t nargs,
     PyObject *kwnames);
 #endif
@@ -110,14 +110,14 @@ typedef struct {
 PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallDict(
     PyMethodDef *method,
     PyObject *self,
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwargs);
 
 PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallKeywords(
     PyMethodDef *method,
     PyObject *self,
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwnames);
 #endif

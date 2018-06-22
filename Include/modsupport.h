@@ -52,7 +52,7 @@ PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyArg_UnpackStack(
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     const char *name,
     Py_ssize_t min,
@@ -99,12 +99,12 @@ typedef struct _PyArg_Parser {
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast(PyObject *, PyObject *,
                                                  struct _PyArg_Parser *, ...);
 PyAPI_FUNC(int) _PyArg_ParseStack(
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     const char *format,
     ...);
 PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords(
-    PyObject **args,
+    PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwnames,
     struct _PyArg_Parser *,

@@ -233,7 +233,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			case $doconfig in
 			no)	cc="$cc \$(CCSHARED) \$(PY_CFLAGS) \$(PY_CPPFLAGS)";;
 			*)
-				cc="$cc \$(PY_CORE_CFLAGS)";;
+				cc="$cc \$(PY_STDMODULE_CFLAGS)";;
 			esac
 			rule="$obj: $src; $cc $cpps -c $src -o $obj"
 			echo "$rule" >>$rulesf

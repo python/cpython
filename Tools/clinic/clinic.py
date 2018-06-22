@@ -710,12 +710,12 @@ class CLanguage(Language):
 
         parser_prototype_fastcall = normalize_snippet("""
             static PyObject *
-            {c_basename}({self_type}{self_name}, PyObject **args, Py_ssize_t nargs)
+            {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs)
             """)
 
         parser_prototype_fastcall_keywords = normalize_snippet("""
             static PyObject *
-            {c_basename}({self_type}{self_name}, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+            {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
             """)
 
         # parser_body_fields remembers the fields passed in to the

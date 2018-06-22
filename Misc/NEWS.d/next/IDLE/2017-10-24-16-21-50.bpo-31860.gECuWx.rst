@@ -1,2 +1,0 @@
-The font sample in the IDLE configuration dialog is now editable.
-Changes persist while IDLE remains open

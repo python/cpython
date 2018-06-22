@@ -60,6 +60,31 @@ def add_dir_to_list(dirlist, dir):
             return
     dirlist.insert(0, dir)
 
+def sysroot_paths(make_vars, subdirs):
+    """Get the paths of sysroot sub-directories.
+
+    * make_vars: a sequence of names of variables of the Makefile where
+      sysroot may be set.
+    * subdirs: a sequence of names of subdirectories used as the location for
+      headers or libraries.
+    """
+
+    dirs = []
+    for var_name in make_vars:
+        var = sysconfig.get_config_var(var_name)
+        if var is not None:
+            m = re.search(r'--sysroot=([^"]\S*|"[^"]+")', var)
+            if m is not None:
+                sysroot = m.group(1).strip('"')
+                for subdir in subdirs:
+                    if os.path.isabs(subdir):
+                        subdir = subdir[1:]
+                    path = os.path.join(sysroot, subdir)
+                    if os.path.isdir(path):
+                        dirs.append(path)
+                break
+    return dirs
+
 def macosx_sdk_root():
     """
     Return the directory of the current OSX SDK,
@@ -338,6 +363,16 @@ class PyBuildExt(build_ext):
             print_three_column(failed)
             print()
 
+        if any('_ssl' in l
+               for l in (missing, self.failed, self.failed_on_import)):
+            print()
+            print("Could not build the ssl module!")
+            print("Python requires an OpenSSL 1.0.2 or 1.1 compatible "
+                  "libssl with X509_VERIFY_PARAM_set1_host().")
+            print("LibreSSL 2.6.4 and earlier do not provide the necessary "
+                  "APIs, https://github.com/libressl-portable/portable/issues/381")
+            print()
+
     def build_extension(self, ext):
 
         if ext.name == '_ctypes':
@@ -501,13 +536,6 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
-    def detect_math_libs(self):
-        # Check for MacOS X, which doesn't need libm.a at all
-        if host_platform == 'darwin':
-            return []
-        else:
-            return ['m']
-
     def detect_modules(self):
         # Ensure that /usr/local is always used, but the local build
         # directories (i.e. '.' and 'Include') must be first.  See issue
@@ -566,18 +594,23 @@ class PyBuildExt(build_ext):
             add_dir_to_list(self.compiler.include_dirs,
                             sysconfig.get_config_var("INCLUDEDIR"))
 
+        system_lib_dirs = ['/lib64', '/usr/lib64', '/lib', '/usr/lib']
+        system_include_dirs = ['/usr/include']
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
         # be assumed that no additional -I,-L directives are needed.
         if not cross_compiling:
-            lib_dirs = self.compiler.library_dirs + [
-                '/lib64', '/usr/lib64',
-                '/lib', '/usr/lib',
-                ]
-            inc_dirs = self.compiler.include_dirs + ['/usr/include']
+            lib_dirs = self.compiler.library_dirs + system_lib_dirs
+            inc_dirs = self.compiler.include_dirs + system_include_dirs
         else:
-            lib_dirs = self.compiler.library_dirs[:]
-            inc_dirs = self.compiler.include_dirs[:]
+            # Add the sysroot paths. 'sysroot' is a compiler option used to
+            # set the logical path of the standard system headers and
+            # libraries.
+            lib_dirs = (self.compiler.library_dirs +
+                        sysroot_paths(('LDFLAGS', 'CC'), system_lib_dirs))
+            inc_dirs = (self.compiler.include_dirs +
+                        sysroot_paths(('CPPFLAGS', 'CFLAGS', 'CC'),
+                                      system_include_dirs))
         exts = []
         missing = []
 
@@ -613,8 +646,6 @@ class PyBuildExt(build_ext):
                 if item.startswith('-L'):
                     lib_dirs.append(item[2:])
 
-        math_libs = self.detect_math_libs()
-
         #
         # The following modules are all pretty straightforward, and compile
         # on pretty much any POSIXish platform.
@@ -623,17 +654,20 @@ class PyBuildExt(build_ext):
         # array objects
         exts.append( Extension('array', ['arraymodule.c']) )
 
+        # Context Variables
+        exts.append( Extension('_contextvars', ['_contextvarsmodule.c']) )
+
         shared_math = 'Modules/_math.o'
         # complex math library functions
         exts.append( Extension('cmath', ['cmathmodule.c'],
                                extra_objects=[shared_math],
                                depends=['_math.h', shared_math],
-                               libraries=math_libs) )
+                               libraries=['m']) )
         # math library functions, e.g. sin()
         exts.append( Extension('math',  ['mathmodule.c'],
                                extra_objects=[shared_math],
                                depends=['_math.h', shared_math],
-                               libraries=math_libs) )
+                               libraries=['m']) )
 
         # time libraries: librt may be needed for clock_gettime()
         time_libs = []
@@ -644,10 +678,10 @@ class PyBuildExt(build_ext):
         # time operations and variables
         exts.append( Extension('time', ['timemodule.c'],
                                libraries=time_libs) )
-        # math_libs is needed by delta_new() that uses round() and by accum()
-        # that uses modf().
+        # libm is needed by delta_new() that uses round() and by accum() that
+        # uses modf().
         exts.append( Extension('_datetime', ['_datetimemodule.c'],
-                               libraries=math_libs) )
+                               libraries=['m']) )
         # random number generator implemented in C
         exts.append( Extension("_random", ["_randommodule.c"]) )
         # bisect
@@ -678,6 +712,10 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_opcode', ['_opcode.c']) )
         # asyncio speedups
         exts.append( Extension("_asyncio", ["_asynciomodule.c"]) )
+        # _abc speedups
+        exts.append( Extension("_abc", ["_abc.c"]) )
+        # _queue module
+        exts.append( Extension("_queue", ["_queuemodule.c"]) )
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
@@ -719,6 +757,10 @@ class PyBuildExt(build_ext):
             ['_xxtestfuzz/_xxtestfuzz.c', '_xxtestfuzz/fuzzer.c'])
         )
 
+        # Python interface to subinterpreter C-API.
+        exts.append(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c'],
+                              define_macros=[('Py_BUILD_CORE', '')]))
+
         #
         # Here ends the simple stuff.  From here on, modules need certain
         # libraries, are platform-specific, or present other surprises.
@@ -732,9 +774,9 @@ class PyBuildExt(build_ext):
         # According to #993173, this one should actually work fine on
         # 64-bit platforms.
         #
-        # audioop needs math_libs for floor() in multiple functions.
+        # audioop needs libm for floor() in multiple functions.
         exts.append( Extension('audioop', ['audioop.c'],
-                               libraries=math_libs) )
+                               libraries=['m']) )
 
         # readline
         do_readline = self.compiler.find_library_file(lib_dirs, 'readline')
@@ -837,77 +879,18 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_socket', ['socketmodule.c'],
                                depends = ['socketmodule.h']) )
         # Detect SSL support for the socket module (via _ssl)
-        search_for_ssl_incs_in = [
-                              '/usr/local/ssl/include',
-                              '/usr/contrib/ssl/include/'
-                             ]
-        ssl_incs = find_file('openssl/ssl.h', inc_dirs,
-                             search_for_ssl_incs_in
-                             )
-        if ssl_incs is not None:
-            krb5_h = find_file('krb5.h', inc_dirs,
-                               ['/usr/kerberos/include'])
-            if krb5_h:
-                ssl_incs += krb5_h
-        ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
-                                     ['/usr/local/ssl/lib',
-                                      '/usr/contrib/ssl/lib/'
-                                     ] )
-
-        if (ssl_incs is not None and
-            ssl_libs is not None):
-            exts.append( Extension('_ssl', ['_ssl.c'],
-                                   include_dirs = ssl_incs,
-                                   library_dirs = ssl_libs,
-                                   libraries = ['ssl', 'crypto'],
-                                   depends = ['socketmodule.h']), )
+        ssl_ext, hashlib_ext = self._detect_openssl(inc_dirs, lib_dirs)
+        if ssl_ext is not None:
+            exts.append(ssl_ext)
         else:
             missing.append('_ssl')
-
-        # find out which version of OpenSSL we have
-        openssl_ver = 0
-        openssl_ver_re = re.compile(
-            r'^\s*#\s*define\s+OPENSSL_VERSION_NUMBER\s+(0x[0-9a-fA-F]+)' )
-
-        # look for the openssl version header on the compiler search path.
-        opensslv_h = find_file('openssl/opensslv.h', [],
-                inc_dirs + search_for_ssl_incs_in)
-        if opensslv_h:
-            name = os.path.join(opensslv_h[0], 'openssl/opensslv.h')
-            if host_platform == 'darwin' and is_macosx_sdk_path(name):
-                name = os.path.join(macosx_sdk_root(), name[1:])
-            try:
-                with open(name, 'r') as incfile:
-                    for line in incfile:
-                        m = openssl_ver_re.match(line)
-                        if m:
-                            openssl_ver = int(m.group(1), 16)
-                            break
-            except IOError as msg:
-                print("IOError while reading opensshv.h:", msg)
-
-        #print('openssl_ver = 0x%08x' % openssl_ver)
-        min_openssl_ver = 0x00907000
-        have_any_openssl = ssl_incs is not None and ssl_libs is not None
-        have_usable_openssl = (have_any_openssl and
-                               openssl_ver >= min_openssl_ver)
-
-        if have_any_openssl:
-            if have_usable_openssl:
-                # The _hashlib module wraps optimized implementations
-                # of hash functions from the OpenSSL library.
-                exts.append( Extension('_hashlib', ['_hashopenssl.c'],
-                                       depends = ['hashlib.h'],
-                                       include_dirs = ssl_incs,
-                                       library_dirs = ssl_libs,
-                                       libraries = ['ssl', 'crypto']) )
-            else:
-                print("warning: openssl 0x%08x is too old for _hashlib" %
-                      openssl_ver)
-                missing.append('_hashlib')
+        if hashlib_ext is not None:
+            exts.append(hashlib_ext)
+        else:
+            missing.append('_hashlib')
 
         # We always compile these even when OpenSSL is available (issue #14693).
-        # It's harmless and the object code is tiny (40-50 KB per module,
+        # It's harmless and the object code is tiny (40-50 KiB per module,
         # only loaded when actually used).
         exts.append( Extension('_sha256', ['sha256module.c'],
                                depends=['hashlib.h']) )
@@ -1348,20 +1331,14 @@ class PyBuildExt(build_ext):
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface
             exts.append( Extension('resource', ['resource.c']) )
-
-            # Sun yellow pages. Some systems have the functions in libc.
-            if (host_platform not in ['cygwin', 'qnx6'] and
-                find_file('rpcsvc/yp_prot.h', inc_dirs, []) is not None):
-                if (self.compiler.find_library_file(lib_dirs, 'nsl')):
-                    libs = ['nsl']
-                else:
-                    libs = []
-                exts.append( Extension('nis', ['nismodule.c'],
-                                       libraries = libs) )
-            else:
-                missing.append('nis')
         else:
-            missing.extend(['nis', 'resource', 'termios'])
+            missing.extend(['resource', 'termios'])
+
+        nis = self._detect_nis(inc_dirs, lib_dirs)
+        if nis is not None:
+            exts.append(nis)
+        else:
+            missing.append('nis')
 
         # Curses support, requiring the System V version of curses, often
         # provided by the ncurses library.
@@ -1378,7 +1355,7 @@ class PyBuildExt(build_ext):
             if host_platform == 'darwin':
                 # On OS X, there is no separate /usr/lib/libncursesw nor
                 # libpanelw.  If we are here, we found a locally-supplied
-                # version of libncursesw.  There should be also be a
+                # version of libncursesw.  There should also be a
                 # libpanelw.  _XOPEN_SOURCE defines are usually excluded
                 # for OS X but we need _XOPEN_SOURCE_EXTENDED here for
                 # ncurses wide char support
@@ -1600,12 +1577,6 @@ class PyBuildExt(build_ext):
             macros = dict()
             libraries = []
 
-        elif host_platform in ('freebsd4', 'freebsd5', 'freebsd6', 'freebsd7', 'freebsd8'):
-            # FreeBSD's P1003.1b semaphore support is very experimental
-            # and has many known problems. (as of June 2008)
-            macros = dict()
-            libraries = []
-
         elif host_platform.startswith('openbsd'):
             macros = dict()
             libraries = []
@@ -1659,12 +1630,11 @@ class PyBuildExt(build_ext):
 
         # Build the _uuid module if possible
         uuid_incs = find_file("uuid.h", inc_dirs, ["/usr/include/uuid"])
-        if uuid_incs:
+        if uuid_incs is not None:
             if self.compiler.find_library_file(lib_dirs, 'uuid'):
                 uuid_libs = ['uuid']
             else:
                 uuid_libs = []
-        if uuid_incs:
             self.extensions.append(Extension('_uuid', ['_uuidmodule.c'],
                                    libraries=uuid_libs,
                                    include_dirs=uuid_incs))
@@ -1972,7 +1942,6 @@ class PyBuildExt(build_ext):
                    '_ctypes/stgdict.c',
                    '_ctypes/cfield.c']
         depends = ['_ctypes/ctypes.h']
-        math_libs = self.detect_math_libs()
 
         if host_platform == 'darwin':
             sources.append('_ctypes/malloc_closure.c')
@@ -2003,10 +1972,10 @@ class PyBuildExt(build_ext):
                         libraries=[],
                         sources=sources,
                         depends=depends)
-        # function my_sqrt() needs math library for sqrt()
+        # function my_sqrt() needs libm for sqrt()
         ext_test = Extension('_ctypes_test',
                      sources=['_ctypes/_ctypes_test.c'],
-                     libraries=math_libs)
+                     libraries=['m'])
         self.extensions.extend([ext, ext_test])
 
         if host_platform == 'darwin':
@@ -2036,6 +2005,10 @@ class PyBuildExt(build_ext):
             ext.libraries.append(ffi_lib)
             self.use_system_libffi = True
 
+        if sysconfig.get_config_var('HAVE_LIBDL'):
+            # for dlopen, see bpo-32647
+            ext.libraries.append('dl')
+
     def _decimal_ext(self):
         extra_compile_args = []
         undef_macros = []
@@ -2050,7 +2023,7 @@ class PyBuildExt(build_ext):
                                                          'Modules',
                                                          '_decimal',
                                                          'libmpdec'))]
-            libraries = self.detect_math_libs()
+            libraries = ['m']
             sources = [
               '_decimal/_decimal.c',
               '_decimal/libmpdec/basearith.c',
@@ -2155,6 +2128,109 @@ class PyBuildExt(build_ext):
         )
         return ext
 
+    def _detect_openssl(self, inc_dirs, lib_dirs):
+        config_vars = sysconfig.get_config_vars()
+
+        def split_var(name, sep):
+            # poor man's shlex, the re module is not available yet.
+            value = config_vars.get(name)
+            if not value:
+                return ()
+            # This trick works because ax_check_openssl uses --libs-only-L,
+            # --libs-only-l, and --cflags-only-I.
+            value = ' ' + value
+            sep = ' ' + sep
+            return [v.strip() for v in value.split(sep) if v.strip()]
+
+        openssl_includes = split_var('OPENSSL_INCLUDES', '-I')
+        openssl_libdirs = split_var('OPENSSL_LDFLAGS', '-L')
+        openssl_libs = split_var('OPENSSL_LIBS', '-l')
+        if not openssl_libs:
+            # libssl and libcrypto not found
+            return None, None
+
+        # Find OpenSSL includes
+        ssl_incs = find_file(
+            'openssl/ssl.h', inc_dirs, openssl_includes
+        )
+        if ssl_incs is None:
+            return None, None
+
+        # OpenSSL 1.0.2 uses Kerberos for KRB5 ciphers
+        krb5_h = find_file(
+            'krb5.h', inc_dirs,
+            ['/usr/kerberos/include']
+        )
+        if krb5_h:
+            ssl_incs.extend(krb5_h)
+
+        if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
+            ssl_ext = Extension(
+                '_ssl', ['_ssl.c'],
+                include_dirs=openssl_includes,
+                library_dirs=openssl_libdirs,
+                libraries=openssl_libs,
+                depends=['socketmodule.h']
+            )
+        else:
+            ssl_ext = None
+
+        hashlib_ext = Extension(
+            '_hashlib', ['_hashopenssl.c'],
+            depends=['hashlib.h'],
+            include_dirs=openssl_includes,
+            library_dirs=openssl_libdirs,
+            libraries=openssl_libs,
+        )
+
+        return ssl_ext, hashlib_ext
+
+    def _detect_nis(self, inc_dirs, lib_dirs):
+        if host_platform in {'win32', 'cygwin', 'qnx6'}:
+            return None
+
+        libs = []
+        library_dirs = []
+        includes_dirs = []
+
+        # bpo-32521: glibc has deprecated Sun RPC for some time. Fedora 28
+        # moved headers and libraries to libtirpc and libnsl. The headers
+        # are in tircp and nsl sub directories.
+        rpcsvc_inc = find_file(
+            'rpcsvc/yp_prot.h', inc_dirs,
+            [os.path.join(inc_dir, 'nsl') for inc_dir in inc_dirs]
+        )
+        rpc_inc = find_file(
+            'rpc/rpc.h', inc_dirs,
+            [os.path.join(inc_dir, 'tirpc') for inc_dir in inc_dirs]
+        )
+        if rpcsvc_inc is None or rpc_inc is None:
+            # not found
+            return None
+        includes_dirs.extend(rpcsvc_inc)
+        includes_dirs.extend(rpc_inc)
+
+        if self.compiler.find_library_file(lib_dirs, 'nsl'):
+            libs.append('nsl')
+        else:
+            # libnsl-devel: check for libnsl in nsl/ subdirectory
+            nsl_dirs = [os.path.join(lib_dir, 'nsl') for lib_dir in lib_dirs]
+            libnsl = self.compiler.find_library_file(nsl_dirs, 'nsl')
+            if libnsl is not None:
+                library_dirs.append(os.path.dirname(libnsl))
+                libs.append('nsl')
+
+        if self.compiler.find_library_file(lib_dirs, 'tirpc'):
+            libs.append('tirpc')
+
+        return Extension(
+            'nis', ['nismodule.c'],
+            libraries=libs,
+            library_dirs=library_dirs,
+            include_dirs=includes_dirs
+        )
+
+
 class PyBuildInstall(install):
     # Suppress the warning about installation into the lib_dynload
     # directory, which is not in sys.path when running Python during
@@ -2215,7 +2291,7 @@ class PyBuildScripts(build_scripts):
         newoutfiles = []
         newupdated_files = []
         for filename in outfiles:
-            if filename.endswith(('2to3', 'pyvenv')):
+            if filename.endswith('2to3'):
                 newfilename = filename + fullversion
             else:
                 newfilename = filename + minoronly
@@ -2283,7 +2359,7 @@ def main():
           # check the PyBuildScripts command above, and change the links
           # created by the bininstall target in Makefile.pre.in
           scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3",
-                     "Tools/scripts/2to3", "Tools/scripts/pyvenv"]
+                     "Tools/scripts/2to3"]
         )
 
 # --install-platlib

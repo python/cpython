@@ -321,8 +321,8 @@ not handled, the exception is temporarily saved. The :keyword:`finally` clause
 is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`finally` clause.  If the :keyword:`finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
-If the :keyword:`finally` clause executes a :keyword:`return` or :keyword:`break`
-statement, the saved exception is discarded::
+If the :keyword:`finally` clause executes a :keyword:`return`, :keyword:`break`
+or :keyword:`continue` statement, the saved exception is discarded::
 
    >>> def f():
    ...     try:
@@ -343,10 +343,7 @@ the :keyword:`finally` clause.
 
 When a :keyword:`return`, :keyword:`break` or :keyword:`continue` statement is
 executed in the :keyword:`try` suite of a :keyword:`try`...\ :keyword:`finally`
-statement, the :keyword:`finally` clause is also executed 'on the way out.' A
-:keyword:`continue` statement is illegal in the :keyword:`finally` clause. (The
-reason is a problem with the current implementation --- this restriction may be
-lifted in the future).
+statement, the :keyword:`finally` clause is also executed 'on the way out.'
 
 The return value of a function is determined by the last :keyword:`return`
 statement executed.  Since the :keyword:`finally` clause always executes, a
@@ -365,6 +362,10 @@ always be the last one executed::
 Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
+
+.. versionchanged:: 3.8
+   Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
+   :keyword:`finally` clause due to a problem with the implementation.
 
 
 .. _with:
@@ -559,12 +560,14 @@ Parameters may have annotations of the form "``: expression``" following the
 parameter name.  Any parameter may have an annotation even those of the form
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
-any valid Python expression and are evaluated when the function definition is
-executed.  Annotations may be evaluated in a different order than they appear in
-the source code.  The presence of annotations does not change the semantics of a
-function.  The annotation values are available as values of a dictionary keyed
-by the parameters' names in the :attr:`__annotations__` attribute of the
-function object.
+any valid Python expression.  The presence of annotations does not change the
+semantics of a function.  The annotation values are available as values of
+a dictionary keyed by the parameters' names in the :attr:`__annotations__`
+attribute of the function object.  If the ``annotations`` import from
+:mod:`__future__` is used, annotations are preserved as strings at runtime which
+enables postponed evaluation.  Otherwise, they are evaluated when the function
+definition is executed.  In this case annotations may be evaluated in
+a different order than they appear in the source code.
 
 .. index:: pair: lambda; expression
 
@@ -586,6 +589,17 @@ access the local variables of the function containing the def.  See section
 
    :pep:`3107` - Function Annotations
       The original specification for function annotations.
+
+   :pep:`484` - Type Hints
+      Definition of a standard meaning for annotations: type hints.
+
+   :pep:`526` - Syntax for Variable Annotations
+      Ability to type hint variable declarations, including class
+      variables and instance variables
+
+   :pep:`563` - Postponed Evaluation of Annotations
+      Support for forward references within annotations by preserving
+      annotations in a string form at runtime instead of eager evaluation.
 
 
 .. _class:
@@ -669,6 +683,8 @@ can be used to create instance variables with different implementation details.
    :pep:`3115` - Metaclasses in Python 3
    :pep:`3129` - Class Decorators
 
+
+.. _async:
 
 Coroutines
 ==========
@@ -773,7 +789,6 @@ Is semantically equivalent to::
     mgr = (EXPR)
     aexit = type(mgr).__aexit__
     aenter = type(mgr).__aenter__(mgr)
-    exc = True
 
     VAR = await aenter
     try:

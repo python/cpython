@@ -809,8 +809,7 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen,
-                                                "surrogateescape");
+            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, "surrogateescape");
 #endif
             PyMem_Free(outbuf);
             break;
@@ -1193,11 +1192,13 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
             if (freq != -1) {
                 /* check that _PyTime_MulDiv(t, SEC_TO_NS, ticks_per_second)
                    cannot overflow below */
+#if LONG_MAX > _PyTime_MAX / SEC_TO_NS
                 if ((_PyTime_t)freq > _PyTime_MAX / SEC_TO_NS) {
                     PyErr_SetString(PyExc_OverflowError,
                                     "_SC_CLK_TCK is too large");
                     return -1;
                 }
+#endif
 
                 ticks_per_second = freq;
             }
@@ -1258,6 +1259,112 @@ Process time for profiling as nanoseconds:\n\
 sum of the kernel and user-space CPU time.");
 
 
+#if defined(MS_WINDOWS)
+#define HAVE_THREAD_TIME
+static int
+_PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
+{
+    HANDLE thread;
+    FILETIME creation_time, exit_time, kernel_time, user_time;
+    ULARGE_INTEGER large;
+    _PyTime_t ktime, utime, t;
+    BOOL ok;
+
+    thread =  GetCurrentThread();
+    ok = GetThreadTimes(thread, &creation_time, &exit_time,
+                        &kernel_time, &user_time);
+    if (!ok) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+
+    if (info) {
+        info->implementation = "GetThreadTimes()";
+        info->resolution = 1e-7;
+        info->monotonic = 1;
+        info->adjustable = 0;
+    }
+
+    large.u.LowPart = kernel_time.dwLowDateTime;
+    large.u.HighPart = kernel_time.dwHighDateTime;
+    ktime = large.QuadPart;
+
+    large.u.LowPart = user_time.dwLowDateTime;
+    large.u.HighPart = user_time.dwHighDateTime;
+    utime = large.QuadPart;
+
+    /* ktime and utime have a resolution of 100 nanoseconds */
+    t = _PyTime_FromNanoseconds((ktime + utime) * 100);
+    *tp = t;
+    return 0;
+}
+
+#elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID)
+#define HAVE_THREAD_TIME
+static int
+_PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
+{
+    struct timespec ts;
+    const clockid_t clk_id = CLOCK_THREAD_CPUTIME_ID;
+    const char *function = "clock_gettime(CLOCK_THREAD_CPUTIME_ID)";
+
+    if (clock_gettime(clk_id, &ts)) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+    if (info) {
+        struct timespec res;
+        info->implementation = function;
+        info->monotonic = 1;
+        info->adjustable = 0;
+        if (clock_getres(clk_id, &res)) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+        info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+    }
+
+    if (_PyTime_FromTimespec(tp, &ts) < 0) {
+        return -1;
+    }
+    return 0;
+}
+#endif
+
+#ifdef HAVE_THREAD_TIME
+static PyObject *
+time_thread_time(PyObject *self, PyObject *unused)
+{
+    _PyTime_t t;
+    if (_PyTime_GetThreadTimeWithInfo(&t, NULL) < 0) {
+        return NULL;
+    }
+    return _PyFloat_FromPyTime(t);
+}
+
+PyDoc_STRVAR(thread_time_doc,
+"thread_time() -> float\n\
+\n\
+Thread time for profiling: sum of the kernel and user-space CPU time.");
+
+static PyObject *
+time_thread_time_ns(PyObject *self, PyObject *unused)
+{
+    _PyTime_t t;
+    if (_PyTime_GetThreadTimeWithInfo(&t, NULL) < 0) {
+        return NULL;
+    }
+    return _PyTime_AsNanosecondsObject(t);
+}
+
+PyDoc_STRVAR(thread_time_ns_doc,
+"thread_time() -> int\n\
+\n\
+Thread time for profiling as nanoseconds:\n\
+sum of the kernel and user-space CPU time.");
+#endif
+
+
 static PyObject *
 time_get_clock_info(PyObject *self, PyObject *args)
 {
@@ -1311,6 +1418,13 @@ time_get_clock_info(PyObject *self, PyObject *args)
             return NULL;
         }
     }
+#ifdef HAVE_THREAD_TIME
+    else if (strcmp(name, "thread_time") == 0) {
+        if (_PyTime_GetThreadTimeWithInfo(&t, &info) < 0) {
+            return NULL;
+        }
+    }
+#endif
     else {
         PyErr_SetString(PyExc_ValueError, "unknown clock");
         return NULL;
@@ -1519,6 +1633,10 @@ static PyMethodDef time_methods[] = {
     {"monotonic_ns",    time_monotonic_ns, METH_NOARGS, monotonic_ns_doc},
     {"process_time",    time_process_time, METH_NOARGS, process_time_doc},
     {"process_time_ns", time_process_time_ns, METH_NOARGS, process_time_ns_doc},
+#ifdef HAVE_THREAD_TIME
+    {"thread_time",     time_thread_time, METH_NOARGS, thread_time_doc},
+    {"thread_time_ns",  time_thread_time_ns, METH_NOARGS, thread_time_ns_doc},
+#endif
     {"perf_counter",    time_perf_counter, METH_NOARGS, perf_counter_doc},
     {"perf_counter_ns", time_perf_counter_ns, METH_NOARGS, perf_counter_ns_doc},
     {"get_clock_info",  time_get_clock_info, METH_VARARGS, get_clock_info_doc},

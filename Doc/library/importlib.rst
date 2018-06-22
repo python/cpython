@@ -67,6 +67,9 @@ generically as an :term:`importer`) to participate in the import process.
     :pep:`489`
         Multi-phase extension module initialization
 
+    :pep:`552`
+        Deterministic pycs
+
     :pep:`3120`
         Using UTF-8 as the Default Source Encoding
 
@@ -246,7 +249,7 @@ ABC hierarchy::
 
    .. abstractmethod:: find_module(fullname, path=None)
 
-      An abstact method for finding a :term:`loader` for the specified
+      An abstract method for finding a :term:`loader` for the specified
       module.  Originally specified in :pep:`302`, this method was meant
       for use in :data:`sys.meta_path` and in the path-based import subsystem.
 
@@ -366,6 +369,13 @@ ABC hierarchy::
     An abstract base class for a :term:`loader`.
     See :pep:`302` for the exact definition for a loader.
 
+    Loaders that wish to support resource reading should implement a
+    ``get_resource_reader(fullname)`` method as specified by
+    :class:`importlib.abc.ResourceReader`.
+
+    .. versionchanged:: 3.7
+       Introduced the optional ``get_resource_reader()`` method.
+
     .. method:: create_module(spec)
 
        A method that returns the module object to use when
@@ -465,11 +475,87 @@ ABC hierarchy::
            The import machinery now takes care of this automatically.
 
 
+.. class:: ResourceReader
+
+    An :term:`abstract base class` to provide the ability to read
+    *resources*.
+
+    From the perspective of this ABC, a *resource* is a binary
+    artifact that is shipped within a package. Typically this is
+    something like a data file that lives next to the ``__init__.py``
+    file of the package. The purpose of this class is to help abstract
+    out the accessing of such data files so that it does not matter if
+    the package and its data file(s) are stored in a e.g. zip file
+    versus on the file system.
+
+    For any of methods of this class, a *resource* argument is
+    expected to be a :term:`path-like object` which represents
+    conceptually just a file name. This means that no subdirectory
+    paths should be included in the *resource* argument. This is
+    because the location of the package the reader is for, acts as the
+    "directory". Hence the metaphor for directories and file
+    names is packages and resources, respectively. This is also why
+    instances of this class are expected to directly correlate to
+    a specific package (instead of potentially representing multiple
+    packages or a module).
+
+    Loaders that wish to support resource reading are expected to
+    provide a method called ``get_resource_loader(fullname)`` which
+    returns an object implementing this ABC's interface. If the module
+    specified by fullname is not a package, this method should return
+    :const:`None`. An object compatible with this ABC should only be
+    returned when the specified module is a package.
+
+    .. versionadded:: 3.7
+
+    .. abstractmethod:: open_resource(resource)
+
+        Returns an opened, :term:`file-like object` for binary reading
+        of the *resource*.
+
+        If the resource cannot be found, :exc:`FileNotFoundError` is
+        raised.
+
+    .. abstractmethod:: resource_path(resource)
+
+        Returns the file system path to the *resource*.
+
+        If the resource does not concretely exist on the file system,
+        raise :exc:`FileNotFoundError`.
+
+    .. abstractmethod:: is_resource(name)
+
+        Returns ``True`` if the named *name* is considered a resource.
+        :exc:`FileNotFoundError` is raised if *name* does not exist.
+
+    .. abstractmethod:: contents()
+
+        Returns an :term:`iterable` of strings over the contents of
+        the package. Do note that it is not required that all names
+        returned by the iterator be actual resources, e.g. it is
+        acceptable to return names for which :meth:`is_resource` would
+        be false.
+
+        Allowing non-resource names to be returned is to allow for
+        situations where how a package and its resources are stored
+        are known a priori and the non-resource names would be useful.
+        For instance, returning subdirectory names is allowed so that
+        when it is known that the package and resources are stored on
+        the file system then those subdirectory names can be used
+        directly.
+
+        The abstract method returns an iterable of no items.
+
+
 .. class:: ResourceLoader
 
     An abstract base class for a :term:`loader` which implements the optional
     :pep:`302` protocol for loading arbitrary resources from the storage
     back-end.
+
+    .. deprecated:: 3.7
+       This ABC is deprecated in favour of supporting resource loading
+       through :class:`importlib.abc.ResourceReader`.
 
     .. abstractmethod:: get_data(path)
 
@@ -706,6 +792,148 @@ ABC hierarchy::
         itself does not end in ``__init__``.
 
 
+:mod:`importlib.resources` -- Resources
+---------------------------------------
+
+.. module:: importlib.resources
+    :synopsis: Package resource reading, opening, and access
+
+**Source code:** :source:`Lib/importlib/resources.py`
+
+--------------
+
+.. versionadded:: 3.7
+
+This module leverages Python's import system to provide access to *resources*
+within *packages*.  If you can import a package, you can access resources
+within that package.  Resources can be opened or read, in either binary or
+text mode.
+
+Resources are roughly akin to files inside directories, though it's important
+to keep in mind that this is just a metaphor.  Resources and packages **do
+not** have to exist as physical files and directories on the file system.
+
+.. note::
+
+   This module provides functionality similar to `pkg_resources
+   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html>`_ `Basic
+   Resource Access
+   <http://setuptools.readthedocs.io/en/latest/pkg_resources.html#basic-resource-access>`_
+   without the performance overhead of that package.  This makes reading
+   resources included in packages easier, with more stable and consistent
+   semantics.
+
+   The standalone backport of this module provides more information
+   on `using importlib.resources
+   <http://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
+   `migrating from pkg_resources to importlib.resources
+   <http://importlib-resources.readthedocs.io/en/latest/migration.html>`_.
+
+Loaders that wish to support resource reading should implement a
+``get_resource_reader(fullname)`` method as specified by
+:class:`importlib.abc.ResourceReader`.
+
+The following types are defined.
+
+.. data:: Package
+
+    The ``Package`` type is defined as ``Union[str, ModuleType]``.  This means
+    that where the function describes accepting a ``Package``, you can pass in
+    either a string or a module.  Module objects must have a resolvable
+    ``__spec__.submodule_search_locations`` that is not ``None``.
+
+.. data:: Resource
+
+    This type describes the resource names passed into the various functions
+    in this package.  This is defined as ``Union[str, os.PathLike]``.
+
+
+The following functions are available.
+
+.. function:: open_binary(package, resource)
+
+    Open for binary reading the *resource* within *package*.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  This function returns a
+    ``typing.BinaryIO`` instance, a binary I/O stream open for reading.
+
+
+.. function:: open_text(package, resource, encoding='utf-8', errors='strict')
+
+    Open for text reading the *resource* within *package*.  By default, the
+    resource is opened for reading as UTF-8.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  *encoding* and *errors*
+    have the same meaning as with built-in :func:`open`.
+
+    This function returns a ``typing.TextIO`` instance, a text I/O stream open
+    for reading.
+
+
+.. function:: read_binary(package, resource)
+
+    Read and return the contents of the *resource* within *package* as
+    ``bytes``.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  This function returns the
+    contents of the resource as :class:`bytes`.
+
+
+.. function:: read_text(package, resource, encoding='utf-8', errors='strict')
+
+    Read and return the contents of *resource* within *package* as a ``str``.
+    By default, the contents are read as strict UTF-8.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).  *encoding* and *errors*
+    have the same meaning as with built-in :func:`open`.  This function
+    returns the contents of the resource as :class:`str`.
+
+
+.. function:: path(package, resource)
+
+    Return the path to the *resource* as an actual file system path.  This
+    function returns a context manager for use in a :keyword:`with` statement.
+    The context manager provides a :class:`pathlib.Path` object.
+
+    Exiting the context manager cleans up any temporary file created when the
+    resource needs to be extracted from e.g. a zip file.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.  *resource* is the name of the resource to open
+    within *package*; it may not contain path separators and it may not have
+    sub-resources (i.e. it cannot be a directory).
+
+
+.. function:: is_resource(package, name)
+
+    Return ``True`` if there is a resource named *name* in the package,
+    otherwise ``False``.  Remember that directories are *not* resources!
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.
+
+
+.. function:: contents(package)
+
+    Return an iterable over the named items within the package.  The iterable
+    returns :class:`str` resources (e.g. files) and non-resources
+    (e.g. directories).  The iterable does not recurse into subdirectories.
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.
+
+
 :mod:`importlib.machinery` -- Importers and path hooks
 ------------------------------------------------------
 
@@ -802,7 +1030,7 @@ find and load modules.
 .. class:: WindowsRegistryFinder
 
    :term:`Finder` for modules declared in the Windows registry.  This class
-   implements the :class:`importlib.abc.Finder` ABC.
+   implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
    Only class methods are defined by this class to alleviate the need for
    instantiation.
@@ -853,7 +1081,12 @@ find and load modules.
    .. classmethod:: invalidate_caches()
 
       Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
-      finders stored in :attr:`sys.path_importer_cache`.
+      finders stored in :data:`sys.path_importer_cache` that define the method.
+      Otherwise entries in :data:`sys.path_importer_cache` set to ``None`` are
+      deleted.
+
+      .. versionchanged:: 3.7
+         Entries of ``None`` in :data:`sys.path_importer_cache` are deleted.
 
    .. versionchanged:: 3.4
       Calls objects in :data:`sys.path_hooks` with the current working
@@ -1080,7 +1313,7 @@ find and load modules.
    Name of the place from which the module is loaded, e.g. "builtin" for
    built-in modules and the filename for modules loaded from source.
    Normally "origin" should be set, but it may be ``None`` (the default)
-   which indicates it is unspecified.
+   which indicates it is unspecified (e.g. for namespace packages).
 
    .. attribute:: submodule_search_locations
 
@@ -1326,6 +1559,14 @@ an :term:`importer`.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+.. function:: source_hash(source_bytes)
+
+   Return the hash of *source_bytes* as bytes. A hash-based ``.pyc`` file embeds
+   the :func:`source_hash` of the corresponding source file's contents in its
+   header.
+
+   .. versionadded:: 3.7
 
 .. class:: LazyLoader(loader)
 

@@ -53,7 +53,7 @@ with a tool such as `SWIG <http://www.swig.org>`_.  `SIP
 <https://riverbankcomputing.com/software/sip/intro>`__, `CXX
 <http://cxx.sourceforge.net/>`_ `Boost
 <http://www.boost.org/libs/python/doc/index.html>`_, or `Weave
-<https://scipy.github.io/devdocs/tutorial/weave.html>`_ are also
+<https://github.com/scipy/weave>`_ are also
 alternatives for wrapping C++ libraries.
 
 
@@ -62,7 +62,7 @@ How can I execute arbitrary Python statements from C?
 
 The highest-level function to do this is :c:func:`PyRun_SimpleString` which takes
 a single string argument to be executed in the context of the module
-``__main__`` and returns 0 for success and -1 when an exception occurred
+``__main__`` and returns ``0`` for success and ``-1`` when an exception occurred
 (including ``SyntaxError``).  If you want more control, use
 :c:func:`PyRun_String`; see the source for :c:func:`PyRun_SimpleString` in
 ``Python/pythonrun.c``.

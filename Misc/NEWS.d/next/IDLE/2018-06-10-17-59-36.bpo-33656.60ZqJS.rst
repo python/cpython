@@ -1,0 +1,4 @@
+On Windows, add API call saying that tk scales for DPI. On Windows
+8.1+ or 10, with DPI compatibility properties of the Python binary
+unchanged, and a monitor resolution greater than 96 DPI, this should
+make text and lines sharper.  It should otherwise have no effect.

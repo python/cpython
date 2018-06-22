@@ -1,3 +1,0 @@
-BytesWarning no longer emitted when the *fromlist* argument of
-``__import__()`` or the ``__all__`` attribute of the module contain bytes
-instances.

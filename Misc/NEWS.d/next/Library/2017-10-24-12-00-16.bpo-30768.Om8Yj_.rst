@@ -1,3 +1,0 @@
-Fix the pthread+semaphore implementation of PyThread_acquire_lock_timed() when
-called with timeout > 0 and intr_flag=0: recompute the timeout if
-sem_timedwait() is interrupted by a signal (EINTR). See also the :pep:`475`.

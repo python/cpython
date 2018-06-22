@@ -539,6 +539,17 @@ PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, struct _Py_Identifier *);
 PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObject *);
 PyAPI_FUNC(int) _PyObject_HasAttrId(PyObject *, struct _Py_Identifier *);
+/* Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which
+   don't raise AttributeError.
+
+   Return 1 and set *result != NULL if an attribute is found.
+   Return 0 and set *result == NULL if an attribute is not found;
+   an AttributeError is silenced.
+   Return -1 and set *result == NULL if an error other than AttributeError
+   is raised.
+*/
+PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, struct _Py_Identifier *, PyObject **);
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);
@@ -567,7 +578,7 @@ PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
 /* Same as PyObject_Generic{Get,Set}Attr, but passing the attributes
    dict as the last parameter. */
 PyAPI_FUNC(PyObject *)
-_PyObject_GenericGetAttrWithDict(PyObject *, PyObject *, PyObject *);
+_PyObject_GenericGetAttrWithDict(PyObject *, PyObject *, PyObject *, int);
 PyAPI_FUNC(int)
 _PyObject_GenericSetAttrWithDict(PyObject *, PyObject *,
                                  PyObject *, PyObject *);
@@ -604,7 +615,7 @@ introducing new functionality between major revisions (to avoid mid-version
 changes in the PYTHON_API_VERSION).
 
 Arbitration of the flag bit positions will need to be coordinated among
-all extension writers who publically release their extensions (this will
+all extension writers who publicly release their extensions (this will
 be fewer than you might expect!)..
 
 Most flags were removed as of Python 3.0 to make room for new flags.  (Some
@@ -728,7 +739,6 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 /* Py_REF_DEBUG also controls the display of refcounts and memory block
  * allocations at the interactive prompt and at interpreter shutdown
  */
-PyAPI_FUNC(PyObject *) _PyDebug_XOptionShowRefCount(void);
 PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
 #else
 #define _Py_INC_REFTOTAL

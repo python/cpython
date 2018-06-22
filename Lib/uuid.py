@@ -342,11 +342,30 @@ def _popen(command, *args):
                             env=env)
     return proc
 
+# For MAC (a.k.a. IEEE 802, or EUI-48) addresses, the second least significant
+# bit of the first octet signifies whether the MAC address is universally (0)
+# or locally (1) administered.  Network cards from hardware manufacturers will
+# always be universally administered to guarantee global uniqueness of the MAC
+# address, but any particular machine may have other interfaces which are
+# locally administered.  An example of the latter is the bridge interface to
+# the Touch Bar on MacBook Pros.
+#
+# This bit works out to be the 42nd bit counting from 1 being the least
+# significant, or 1<<41.  We'll prefer universally administered MAC addresses
+# over locally administered ones since the former are globally unique, but
+# we'll return the first of the latter found if that's all the machine has.
+#
+# See https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local
+
+def _is_universal(mac):
+    return not (mac & (1 << 41))
+
 def _find_mac(command, args, hw_identifiers, get_index):
+    first_local_mac = None
     try:
         proc = _popen(command, *args.split())
         if not proc:
-            return
+            return None
         with proc:
             for line in proc.stdout:
                 words = line.lower().rstrip().split()
@@ -355,8 +374,9 @@ def _find_mac(command, args, hw_identifiers, get_index):
                         try:
                             word = words[get_index(i)]
                             mac = int(word.replace(b':', b''), 16)
-                            if mac:
+                            if _is_universal(mac):
                                 return mac
+                            first_local_mac = first_local_mac or mac
                         except (ValueError, IndexError):
                             # Virtual interfaces, such as those provided by
                             # VPNs, do not have a colon-delimited MAC address
@@ -366,21 +386,25 @@ def _find_mac(command, args, hw_identifiers, get_index):
                             pass
     except OSError:
         pass
+    return first_local_mac or None
 
 def _ifconfig_getnode():
     """Get the hardware address on Unix by running ifconfig."""
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
+    keywords = (b'hwaddr', b'ether', b'address:', b'lladdr')
     for args in ('', '-a', '-av'):
-        mac = _find_mac('ifconfig', args, [b'hwaddr', b'ether'], lambda i: i+1)
+        mac = _find_mac('ifconfig', args, keywords, lambda i: i+1)
         if mac:
             return mac
+        return None
 
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
     # This works on Linux with iproute2.
-    mac = _find_mac('ip', 'link list', [b'link/ether'], lambda i: i+1)
+    mac = _find_mac('ip', 'link', [b'link/ether'], lambda i: i+1)
     if mac:
         return mac
+    return None
 
 def _arp_getnode():
     """Get the hardware address on Unix by running arp."""
@@ -391,7 +415,22 @@ def _arp_getnode():
         return None
 
     # Try getting the MAC addr from arp based on our IP address (Solaris).
-    return _find_mac('arp', '-an', [os.fsencode(ip_addr)], lambda i: -1)
+    mac = _find_mac('arp', '-an', [os.fsencode(ip_addr)], lambda i: -1)
+    if mac:
+        return mac
+
+    # This works on OpenBSD
+    mac = _find_mac('arp', '-an', [os.fsencode(ip_addr)], lambda i: i+1)
+    if mac:
+        return mac
+
+    # This works on Linux, FreeBSD and NetBSD
+    mac = _find_mac('arp', '-an', [os.fsencode('(%s)' % ip_addr)],
+                    lambda i: i+2)
+    # Return None instead of 0.
+    if mac:
+        return mac
+    return None
 
 def _lanscan_getnode():
     """Get the hardware address on Unix by running lanscan."""
@@ -401,32 +440,36 @@ def _lanscan_getnode():
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
     # This might work on AIX, Tru64 UNIX.
+    first_local_mac = None
     try:
         proc = _popen('netstat', '-ia')
         if not proc:
-            return
+            return None
         with proc:
             words = proc.stdout.readline().rstrip().split()
             try:
                 i = words.index(b'Address')
             except ValueError:
-                return
+                return None
             for line in proc.stdout:
                 try:
                     words = line.rstrip().split()
                     word = words[i]
                     if len(word) == 17 and word.count(b':') == 5:
                         mac = int(word.replace(b':', b''), 16)
-                        if mac:
+                        if _is_universal(mac):
                             return mac
+                        first_local_mac = first_local_mac or mac
                 except (ValueError, IndexError):
                     pass
     except OSError:
         pass
+    return first_local_mac or None
 
 def _ipconfig_getnode():
     """Get the hardware address on Windows by running ipconfig.exe."""
-    import os, re
+    import os, re, subprocess
+    first_local_mac = None
     dirs = ['', r'c:\windows\system32', r'c:\winnt\system32']
     try:
         import ctypes
@@ -437,25 +480,32 @@ def _ipconfig_getnode():
         pass
     for dir in dirs:
         try:
-            pipe = os.popen(os.path.join(dir, 'ipconfig') + ' /all')
+            proc = subprocess.Popen([os.path.join(dir, 'ipconfig'), '/all'],
+                                    stdout=subprocess.PIPE,
+                                    encoding="oem")
         except OSError:
             continue
-        with pipe:
-            for line in pipe:
+        with proc:
+            for line in proc.stdout:
                 value = line.split(':')[-1].strip().lower()
-                if re.match('([0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
-                    return int(value.replace('-', ''), 16)
+                if re.fullmatch('(?:[0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
+                    mac = int(value.replace('-', ''), 16)
+                    if _is_universal(mac):
+                        return mac
+                    first_local_mac = first_local_mac or mac
+    return first_local_mac or None
 
 def _netbios_getnode():
     """Get the hardware address on Windows using NetBIOS calls.
     See http://support.microsoft.com/kb/118623 for details."""
     import win32wnet, netbios
+    first_local_mac = None
     ncb = netbios.NCB()
     ncb.Command = netbios.NCBENUM
     ncb.Buffer = adapters = netbios.LANA_ENUM()
     adapters._pack()
     if win32wnet.Netbios(ncb) != 0:
-        return
+        return None
     adapters._unpack()
     for i in range(adapters.length):
         ncb.Reset()
@@ -474,7 +524,11 @@ def _netbios_getnode():
         bytes = status.adapter_address[:6]
         if len(bytes) != 6:
             continue
-        return int.from_bytes(bytes, 'big')
+        mac = int.from_bytes(bytes, 'big')
+        if _is_universal(mac):
+            return mac
+        first_local_mac = first_local_mac or mac
+    return first_local_mac or None
 
 
 _generate_time_safe = _UuidCreate = None
@@ -587,14 +641,29 @@ def _windll_getnode():
         return UUID(bytes=bytes_(_buffer.raw)).node
 
 def _random_getnode():
-    """Get a random node ID, with eighth bit set as suggested by RFC 4122."""
+    """Get a random node ID."""
+    # RFC 4122, $4.1.6 says "For systems with no IEEE address, a randomly or
+    # pseudo-randomly generated value may be used; see Section 4.5.  The
+    # multicast bit must be set in such addresses, in order that they will
+    # never conflict with addresses obtained from network cards."
+    #
+    # The "multicast bit" of a MAC address is defined to be "the least
+    # significant bit of the first octet".  This works out to be the 41st bit
+    # counting from 1 being the least significant bit, or 1<<40.
+    #
+    # See https://en.wikipedia.org/wiki/MAC_address#Unicast_vs._multicast
     import random
-    return random.getrandbits(48) | 0x010000000000
+    return random.getrandbits(48) | (1 << 40)
 
 
 _node = None
 
-def getnode():
+_NODE_GETTERS_WIN32 = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+
+_NODE_GETTERS_UNIX = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
+                      _arp_getnode, _lanscan_getnode, _netstat_getnode]
+
+def getnode(*, getters=None):
     """Get the hardware address as a 48-bit positive integer.
 
     The first time this runs, it may launch a separate program, which could
@@ -607,18 +676,18 @@ def getnode():
         return _node
 
     if sys.platform == 'win32':
-        getters = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+        getters = _NODE_GETTERS_WIN32
     else:
-        getters = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
-                   _arp_getnode, _lanscan_getnode, _netstat_getnode]
+        getters = _NODE_GETTERS_UNIX
 
     for getter in getters + [_random_getnode]:
         try:
             _node = getter()
         except:
             continue
-        if _node is not None:
+        if (_node is not None) and (0 <= _node < (1 << 48)):
             return _node
+    assert False, '_random_getnode() returned invalid value: {}'.format(_node)
 
 
 _last_timestamp = None

@@ -1,0 +1,2 @@
+Change mainmenu.menudefs key 'windows' to 'window'. Every other menudef key
+is lowercase version of main menu entry.
