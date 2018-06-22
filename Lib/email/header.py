@@ -35,12 +35,11 @@ ecre = re.compile(r'''
   =\?                   # literal =?
   (?P<charset>[^?]*?)   # non-greedy up to the next ? is the charset
   \?                    # literal ?
-  (?P<encoding>[qb])    # either a "q" or a "b", case insensitive
+  (?P<encoding>[qQbB])  # either a "q" or a "b", case insensitive
   \?                    # literal ?
   (?P<encoded>.*?)      # non-greedy up to the next ?= is the encoded string
   \?=                   # literal ?=
-  (?=[ \t]|$)           # whitespace or the end of the string
-  ''', re.VERBOSE | re.IGNORECASE | re.MULTILINE)
+  ''', re.VERBOSE | re.MULTILINE)
 
 # Field name regexp, including trailing colon, but not separating whitespace,
 # according to RFC 2822.  Character range is from tilde to exclamation mark.
