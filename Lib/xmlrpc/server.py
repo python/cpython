@@ -114,7 +114,6 @@ import sys
 import os
 import re
 import pydoc
-import inspect
 import traceback
 try:
     import fcntl
