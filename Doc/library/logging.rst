@@ -1151,23 +1151,27 @@ functions.
    |              | using the specified filename, rather than a |
    |              | StreamHandler.                              |
    +--------------+---------------------------------------------+
-   | ``filemode`` | Specifies the mode to open the file, if     |
-   |              | filename is specified (if filemode is       |
-   |              | unspecified, it defaults to 'a').           |
+   | ``filemode`` | Specifies the :ref:`mode <filemodes>` to    |
+   |              | open the file, if                           |
+   |              | filename is specified. Defaults to          |
+   |              | ``'a'``.                                    |
    +--------------+---------------------------------------------+
    | ``format``   | Use the specified format string for the     |
    |              | handler.                                    |
    +--------------+---------------------------------------------+
-   | ``datefmt``  | Use the specified date/time format.         |
+   | ``datefmt``  | Use the specified :func:`time.strftime`     |
+   |              | style date/time format.                     |
    +--------------+---------------------------------------------+
    | ``style``    | If ``format`` is specified, use this style  |
    |              | for the format string. One of '%', '{' or   |
-   |              | '$' for %-formatting, :meth:`str.format` or |
+   |              | '$' for :ref:`printf-style                  |
+   |              | <old-string-formatting>`,                   |
+   |              | :meth:`str.format` or                       |
    |              | :class:`string.Template` respectively, and  |
    |              | defaulting to '%' if not specified.         |
    +--------------+---------------------------------------------+
    | ``level``    | Set the root logger level to the specified  |
-   |              | level.                                      |
+   |              | :ref:`level <levels>`.                      |
    +--------------+---------------------------------------------+
    | ``stream``   | Use the specified stream to initialize the  |
    |              | StreamHandler. Note that this argument is   |
