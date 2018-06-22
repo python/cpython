@@ -1,7 +1,7 @@
-"""A calltip window class for Tkinter/IDLE.
+"""A call-tip window class for Tkinter/IDLE.
 
-After tooltip.py, which uses ideas gleaned from PySol
-Used by calltip.
+After tooltip.py, which uses ideas gleaned from PySol.
+Used by calltip.py.
 """
 from tkinter import Label, LEFT, SOLID, TclError
 
@@ -20,22 +20,28 @@ class CalltipWindow(TooltipBase):
     """a call-tip widget for tkinter text widgets"""
 
     def __init__(self, text_widget):
+        """Create a call-tip.
+
+        text_widget: a Text widget with code for which call-tips are desired
+
+        Note that a widget will only be shown when showtip() is called.
+        """
+        # Note: The Text widget will be accessible as self.anchor_widget
         super(CalltipWindow, self).__init__(text_widget)
+
         self.label = self.text = None
         self.parenline = self.parencol = self.lastline = None
         self.hideid = self.checkhideid = None
         self.checkhide_after_id = None
 
-    def __del__(self):
-        super(CalltipWindow, self).__del__()
-
     def get_position(self):
-        """Choose the position of the calltip"""
+        """Choose the position of the call-tip."""
         curline = int(self.anchor_widget.index("insert").split('.')[0])
         if curline == self.parenline:
-            box = self.anchor_widget.bbox("%d.%d" % (self.parenline, self.parencol))
+            anchor_index = (self.parenline, self.parencol)
         else:
-            box = self.anchor_widget.bbox("%d.0" % curline)
+            anchor_index = (curline, 0)
+        box = self.anchor_widget.bbox("%d.%d" % anchor_index)
         if not box:
             box = list(self.anchor_widget.bbox("insert"))
             # align to left of window
@@ -53,7 +59,12 @@ class CalltipWindow(TooltipBase):
         super(CalltipWindow, self).position_window()
 
     def showtip(self, text, parenleft, parenright):
-        """Show the calltip, bind events which will close it and reposition it.
+        """Show the call-tip, bind events which will close it and reposition it.
+
+        text: the text to display in the call-tip
+        parenleft: index of the opening parenthesis in the text widget
+        parenright: index of the closing parenthesis in the text widget,
+                    or the end of the line if there is no closing parenthesis
         """
         # Only called in calltip.Calltip, where lines are truncated
         self.text = text
@@ -69,32 +80,41 @@ class CalltipWindow(TooltipBase):
         self._bind_events()
 
     def showcontents(self):
+        """create the call-tip widget"""
         self.label = Label(self.tipwindow, text=self.text, justify=LEFT,
                            background="#ffffe0", relief=SOLID, borderwidth=1,
                            font=self.anchor_widget['font'])
         self.label.pack()
 
     def checkhide_event(self, event=None):
+        """recurring check whether to hide the call-tip"""
         if not self.tipwindow:
-            # If the event was triggered by the same event that unbinded
+            # If the event was triggered by the same event that unbound
             # this function, the function will be called nevertheless,
             # so do nothing in this case.
             return None
+
+        # Hide the call-tip if the insertion cursor moves outside of the
+        # parenthesis.
         curline, curcol = map(int, self.anchor_widget.index("insert").split('.'))
         if curline < self.parenline or \
            (curline == self.parenline and curcol <= self.parencol) or \
            self.anchor_widget.compare("insert", ">", MARK_RIGHT):
             self.hidetip()
             return "break"
-        else:
-            self.position_window()
-            if self.checkhide_after_id is not None:
-                self.anchor_widget.after_cancel(self.checkhide_after_id)
-            self.checkhide_after_id = \
-                self.anchor_widget.after(CHECKHIDE_TIME, self.checkhide_event)
-            return None
+
+        # Not hiding the call-tip.
+
+        self.position_window()
+        # Re-schedule this function to be called again in a short while.
+        if self.checkhide_after_id is not None:
+            self.anchor_widget.after_cancel(self.checkhide_after_id)
+        self.checkhide_after_id = \
+            self.anchor_widget.after(CHECKHIDE_TIME, self.checkhide_event)
+        return None
 
     def hide_event(self, event):
+        """event handler for hiding the call-tip"""
         if not self.tipwindow:
             # See the explanation in checkhide_event.
             return None
@@ -102,6 +122,7 @@ class CalltipWindow(TooltipBase):
         return "break"
 
     def hidetip(self):
+        """hide the call-tip"""
         if not self.tipwindow:
             return
 
@@ -126,17 +147,19 @@ class CalltipWindow(TooltipBase):
         super(CalltipWindow, self).hidetip()
 
     def _bind_events(self):
+        """internal method for binding event handlers"""
         self.checkhideid = self.anchor_widget.bind(CHECKHIDE_EVENT,
-                                                  self.checkhide_event)
+                                                   self.checkhide_event)
         for seq in CHECKHIDE_SEQUENCES:
             self.anchor_widget.event_add(CHECKHIDE_EVENT, seq)
         self.anchor_widget.after(CHECKHIDE_TIME, self.checkhide_event)
         self.hideid = self.anchor_widget.bind(HIDE_EVENT,
-                                             self.hide_event)
+                                              self.hide_event)
         for seq in HIDE_SEQUENCES:
             self.anchor_widget.event_add(HIDE_EVENT, seq)
 
     def _unbind_events(self):
+        """internal method for unbinding event handlers"""
         for seq in CHECKHIDE_SEQUENCES:
             self.anchor_widget.event_delete(CHECKHIDE_EVENT, seq)
         self.anchor_widget.unbind(CHECKHIDE_EVENT, self.checkhideid)
@@ -151,7 +174,7 @@ def _calltip_window(parent):  # htest #
     from tkinter import Toplevel, Text, LEFT, BOTH
 
     top = Toplevel(parent)
-    top.title("Test calltips")
+    top.title("Test call-tips")
     x, y = map(int, parent.geometry().split('+')[1:])
     top.geometry("200x100+%d+%d" % (x + 250, y + 175))
     text = Text(top)
