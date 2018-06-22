@@ -85,6 +85,7 @@ __all__ = [
 
 import os as _os
 import re as _re
+import six as _six
 import sys as _sys
 
 from gettext import gettext as _, ngettext
@@ -1227,6 +1228,9 @@ class Namespace(_AttributeHolder):
         for name in kwargs:
             setattr(self, name, kwargs[name])
 
+    def __iter__(self):
+        return _six.iteritems(self.__dict__)
+
     def __eq__(self, other):
         if not isinstance(other, Namespace):
             return NotImplemented
@@ -1234,6 +1238,12 @@ class Namespace(_AttributeHolder):
 
     def __contains__(self, key):
         return key in self.__dict__
+
+    def __getitem__(self, key):
+        return self.__dict__.get(key)
+
+    def keys(self):
+        return list(self.__dict__.keys())
 
 
 class _ActionsContainer(object):
