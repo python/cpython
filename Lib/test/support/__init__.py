@@ -803,10 +803,12 @@ requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
-if not MS_WINDOWS:
-    unix_shell = '/system/bin/sh' if ANDROID else '/bin/sh'
-else:
+if MS_WINDOWS:
     unix_shell = None
+elif ANDROID:
+    unix_shell = '/system/bin/sh'
+else:
+    unix_shell = '/bin/sh'
 
 # Filename used for testing
 if os.name == 'java':
