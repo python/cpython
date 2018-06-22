@@ -895,6 +895,11 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 _PyInitError
 _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 {
+    if (_PyRuntime.initialized) {
+        /* bpo-33932: Calling Py_Initialize() twice does nothing. */
+        return _Py_INIT_OK();
+    }
+
     _PyCoreConfig config = _PyCoreConfig_INIT;
     _PyInitError err;
 
