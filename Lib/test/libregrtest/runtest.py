@@ -150,6 +150,17 @@ def post_test_cleanup():
     support.reap_children()
 
 
+def unittest_test_runner(loader_name, name):
+    """Run unittest tests using `loader_name`"""
+    loader = unittest.TestLoader()
+    tests = getattr(loader, loader_name)(name)
+    for error in loader.errors:
+        print(error, file=sys.stderr)
+    if loader.errors:
+        raise Exception("errors while loading tests")
+    support.run_unittest(tests)
+
+
 def runtest_inner(ns, test, display_failure=True):
     support.unload(test)
 
@@ -160,19 +171,18 @@ def runtest_inner(ns, test, display_failure=True):
         clear_caches()
         with saved_test_environment(test, ns.verbose, ns.quiet, pgo=ns.pgo) as environment:
             start_time = time.time()
-            the_module = importlib.import_module(abstest)
-            # If the test has a test_main, that will run the appropriate
-            # tests.  If not, use normal unittest test loading.
-            test_runner = getattr(the_module, "test_main", None)
-            if test_runner is None:
+            try:
+                the_module = importlib.import_module(abstest)
+            except ModuleNotFoundError:
                 def test_runner():
-                    loader = unittest.TestLoader()
-                    tests = loader.loadTestsFromModule(the_module)
-                    for error in loader.errors:
-                        print(error, file=sys.stderr)
-                    if loader.errors:
-                        raise Exception("errors while loading tests")
-                    support.run_unittest(tests)
+                    unittest_test_runner('loadTestsFromName', abstest)
+            else:
+                # If the test has a test_main, that will run the appropriate
+                # tests.  If not, use normal unittest test loading.
+                test_runner = getattr(the_module, "test_main", None)
+                if test_runner is None:
+                    def test_runner():
+                        unittest_test_runner('loadTestsFromModule', the_module)
             test_runner()
             if ns.huntrleaks:
                 refleak = dash_R(the_module, test, test_runner, ns.huntrleaks)
