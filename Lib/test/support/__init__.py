@@ -90,7 +90,7 @@ __all__ = [
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_unless_bind_unix_socket",
     # sys
-    "is_jython", "ANDROID", "check_impl_detail", "unix_shell",
+    "JYTHON", "ANDROID", "check_impl_detail", "unix_shell",
     "setswitchinterval", "MS_WINDOWS", "MACOS",
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
@@ -115,8 +115,11 @@ MS_WINDOWS = (sys.platform == 'win32')
 # True if Python is running on Apple macOS.
 MACOS = (sys.platform == 'darwin')
 
-is_jython = sys.platform.startswith('java')
+# True if Python runs on Jython
+# (Python implemented in Java running in a Java VM)
+JYTHON = sys.platform.startswith('java')
 
+# True if Python runs on Android
 ANDROID = hasattr(sys, 'getandroidapilevel')
 
 
@@ -1531,7 +1534,7 @@ def gc_collect():
     objects to disappear.
     """
     gc.collect()
-    if is_jython:
+    if JYTHON:
         time.sleep(0.1)
     gc.collect()
     gc.collect()
