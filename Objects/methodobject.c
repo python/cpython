@@ -252,11 +252,7 @@ meth_hash(PyCFunctionObject *a)
 {
     Py_hash_t x, y;
     x = _Py_HashPointer(a->m_self);
-    if (x == -1)
-        return -1;
     y = _Py_HashPointer((void*)(a->m_ml->ml_meth));
-    if (y == -1)
-        return -1;
     x ^= y;
     if (x == -1)
         x = -2;

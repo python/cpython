@@ -1066,11 +1066,7 @@ wrapper_hash(wrapperobject *wp)
 {
     Py_hash_t x, y;
     x = _Py_HashPointer(wp->self);
-    if (x == -1)
-        return -1;
     y = _Py_HashPointer(wp->descr);
-    if (y == -1)
-        return -1;
     x = x ^ y;
     if (x == -1)
         x = -2;
