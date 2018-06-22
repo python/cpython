@@ -1,0 +1,3 @@
+Attributes ``use_hash_seed`` and ``hash_seed`` have been added to
+``sys.hash_info``.  These reflect the setting of the
+:envvar:`PYTHONHASHSEED` environment variable.

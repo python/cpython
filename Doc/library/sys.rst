@@ -729,33 +729,40 @@ always available.
    implementation.  For more details about hashing of numeric types, see
    :ref:`numeric-hash`.
 
-   +---------------------+--------------------------------------------------+
-   | attribute           | explanation                                      |
-   +=====================+==================================================+
-   | :const:`width`      | width in bits used for hash values               |
-   +---------------------+--------------------------------------------------+
-   | :const:`modulus`    | prime modulus P used for numeric hash scheme     |
-   +---------------------+--------------------------------------------------+
-   | :const:`inf`        | hash value returned for a positive infinity      |
-   +---------------------+--------------------------------------------------+
-   | :const:`nan`        | hash value returned for a nan                    |
-   +---------------------+--------------------------------------------------+
-   | :const:`imag`       | multiplier used for the imaginary part of a      |
-   |                     | complex number                                   |
-   +---------------------+--------------------------------------------------+
-   | :const:`algorithm`  | name of the algorithm for hashing of str, bytes, |
-   |                     | and memoryview                                   |
-   +---------------------+--------------------------------------------------+
-   | :const:`hash_bits`  | internal output size of the hash algorithm       |
-   +---------------------+--------------------------------------------------+
-   | :const:`seed_bits`  | size of the seed key of the hash algorithm       |
-   +---------------------+--------------------------------------------------+
+   +------------------------+-----------------------------------------------+
+   | attribute              | explanation                                   |
+   +========================+===============================================+
+   | :const:`width`         | width in bits used for hash values            |
+   +------------------------+-----------------------------------------------+
+   | :const:`modulus`       | prime modulus P used for numeric hash scheme  |
+   +------------------------+-----------------------------------------------+
+   | :const:`inf`           | hash value returned for a positive infinity   |
+   +------------------------+-----------------------------------------------+
+   | :const:`nan`           | hash value returned for a nan                 |
+   +------------------------+-----------------------------------------------+
+   | :const:`imag`          | multiplier used for the imaginary part of a   |
+   |                        | complex number                                |
+   +------------------------+-----------------------------------------------+
+   | :const:`algorithm`     | name of the algorithm for hashing of str,     |
+   |                        | bytes, and memoryview                         |
+   +------------------------+-----------------------------------------------+
+   | :const:`hash_bits`     | internal output size of the hash algorithm    |
+   +------------------------+-----------------------------------------------+
+   | :const:`seed_bits`     | size of the seed key of the hash algorithm    |
+   +------------------------+-----------------------------------------------+
+   | :const:`use_hash_seed` | Whether to use :envvar:`PYTHONHASHSEED`       |
+   +------------------------+-----------------------------------------------+
+   | :const:`hash_seed`     | The value from :envvar:`PYTHONHASHSEED`       |
+   +------------------------+-----------------------------------------------+
 
 
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
       Added *algorithm*, *hash_bits* and *seed_bits*
+
+   .. versionchanged:: 3.8
+      Added *use_hash_seed* and *hash_seed*
 
 
 .. data:: hexversion

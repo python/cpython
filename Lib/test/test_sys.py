@@ -427,7 +427,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(type(sys.int_info.sizeof_digit), int)
         self.assertIsInstance(sys.hexversion, int)
 
-        self.assertEqual(len(sys.hash_info), 9)
+        self.assertEqual(len(sys.hash_info), 11)
         self.assertLess(sys.hash_info.modulus, 2**sys.hash_info.width)
         # sys.hash_info.modulus should be a prime; we do a quick
         # probable primality test (doesn't exclude the possibility of
@@ -458,6 +458,8 @@ class SysModuleTest(unittest.TestCase):
             self.assertEqual(algo, 0)
         self.assertGreaterEqual(sys.hash_info.cutoff, 0)
         self.assertLess(sys.hash_info.cutoff, 8)
+        self.assertIsInstance(sys.hash_info.use_hash_seed, bool)
+        self.assertIsInstance(sys.hash_info.hash_seed, int)
 
         self.assertIsInstance(sys.maxsize, int)
         self.assertIsInstance(sys.maxunicode, int)
