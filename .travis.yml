@@ -66,9 +66,13 @@ matrix:
       language: c
       compiler: gcc
       env: OPTIONAL=true
+      addons:
+        apt:
+          packages:
+            - lcov
       before_script:
         - ./configure
-        - make -s -j4
+        - make coverage -s -j4
         # Need a venv that can parse covered code.
         - ./python -m venv venv
         - ./venv/bin/python -m pip install -U coverage
@@ -79,6 +83,7 @@ matrix:
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
         - source ./venv/bin/activate
+        - make coverage-lcov
         - bash <(curl -s https://codecov.io/bash)
 
 
