@@ -52,7 +52,7 @@ a complete program; each statement is executed in the namespace of
    single: command line
    single: standard input
 
-Under Unix and Windows, a complete program can be passed to the interpreter
+A complete program can be passed to the interpreter
 in three forms: with the :option:`-c` *string* command line option, as a file
 passed as the first command line argument, or as standard input.  If the file
 or standard input is a tty device, the interpreter enters interactive mode;
