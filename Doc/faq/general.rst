@@ -294,6 +294,38 @@ Do I have to like "Monty Python's Flying Circus"?
 No, but it helps.  :)
 
 
+
+
+What domain specific Python-like implementations exist?
+-------------------------------------------------------
+
+While CPython is perfectly capable for most use cases, there are a number of
+implementations focused on particular problem domains that might be very useful.
+Note that, while related to Python, you should not expect these implementations
+to follow the Python language reference to the letter.
+
+MicroPython and CircuitPython are optimised to run on microcontrollers and
+constrained environments, with CircuitPython in particular targeting students
+and beginners, with a strong focus on Adafruit's open-hardware boards.  For more
+information see: https://micropython.org and
+https://github.com/adafruit/circuitpython.
+
+Brython, RapydScript and Skulpt are source-to-source compilers for client side
+Web scripting, that, combined with a server-side Python stack, allows you to
+have a solution-wide programming language.  For more information see:
+https://brython.info, https://github.com/atsepkov/RapydScript, and
+http://www.skulpt.org.
+
+VPython focuses on the making of navigable real-time 3D animations which, via
+RapydScript, can easily be run on the Web browser.  For more information see:
+http://vpython.org.
+
+IPython is an interactive shell with support for data visualization and use of
+GUI toolkits other than Tk, that also lets you save instructions in so-called
+"notebooks" that can be run interactively later.  For more information see:
+https://ipython.org.
+
+
 Python in the real world
 ========================
 
@@ -452,3 +484,4 @@ of Python editing environments.
 If you want to discuss Python's use in education, you may be interested in
 joining `the edu-sig mailing list
 <https://www.python.org/community/sigs/current/edu-sig>`_.
+
