@@ -214,7 +214,7 @@ class UTF8ModeTests(unittest.TestCase):
             self.assertEqual(args, ascii(expected), out)
 
         check('utf8', [arg_utf8])
-        if sys.platform == 'darwin' or support.is_android:
+        if support.MACOS or support.ANDROID:
             c_arg = arg_utf8
         else:
             c_arg = arg_ascii

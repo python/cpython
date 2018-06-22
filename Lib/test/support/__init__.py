@@ -90,7 +90,7 @@ __all__ = [
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_unless_bind_unix_socket",
     # sys
-    "is_jython", "is_android", "check_impl_detail", "unix_shell",
+    "is_jython", "ANDROID", "check_impl_detail", "unix_shell",
     "setswitchinterval", "MS_WINDOWS", "MACOS",
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
@@ -117,7 +117,7 @@ MACOS = (sys.platform == 'darwin')
 
 is_jython = sys.platform.startswith('java')
 
-is_android = hasattr(sys, 'getandroidapilevel')
+ANDROID = hasattr(sys, 'getandroidapilevel')
 
 
 class Error(Exception):
@@ -801,7 +801,7 @@ requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
 if not MS_WINDOWS:
-    unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
+    unix_shell = '/system/bin/sh' if ANDROID else '/bin/sh'
 else:
     unix_shell = None
 
@@ -2744,7 +2744,7 @@ def setswitchinterval(interval):
     # Setting a very low gil interval on the Android emulator causes python
     # to hang (issue #26939).
     minimum_interval = 1e-5
-    if is_android and interval < minimum_interval:
+    if ANDROID and interval < minimum_interval:
         global _is_android_emulator
         if _is_android_emulator is None:
             _is_android_emulator = (subprocess.check_output(
