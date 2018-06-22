@@ -6,7 +6,7 @@ import signal
 import subprocess
 import sys
 from test import support
-from test.support import script_helper, is_android
+from test.support import script_helper
 import tempfile
 import threading
 import unittest
@@ -18,7 +18,6 @@ except ImportError:
     _testcapi = None
 
 TIMEOUT = 0.5
-MS_WINDOWS = (os.name == 'nt')
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
@@ -31,7 +30,7 @@ def expected_traceback(lineno1, lineno2, header, min_count=1):
 
 def skip_segfault_on_android(test):
     # Issue #32138: Raising SIGSEGV on Android may not cause a crash.
-    return unittest.skipIf(is_android,
+    return unittest.skipIf(support.ANDROID,
                            'raising SIGSEGV on Android is unreliable')(test)
 
 @contextmanager
@@ -121,7 +120,7 @@ class FaultHandlerTests(unittest.TestCase):
     @unittest.skipIf(sys.platform.startswith('aix'),
                      "the first page of memory is a mapped read-only on AIX")
     def test_read_null(self):
-        if not MS_WINDOWS:
+        if not support.MS_WINDOWS:
             self.check_fatal_error("""
                 import faulthandler
                 faulthandler.enable()
@@ -732,7 +731,7 @@ class FaultHandlerTests(unittest.TestCase):
             with self.check_stderr_none():
                 faulthandler.register(signal.SIGUSR1)
 
-    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    @unittest.skipUnless(support.MS_WINDOWS, 'specific to Windows')
     def test_raise_exception(self):
         for exc, name in (
             ('EXCEPTION_ACCESS_VIOLATION', 'access violation'),
@@ -747,7 +746,7 @@ class FaultHandlerTests(unittest.TestCase):
                 3,
                 name)
 
-    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    @unittest.skipUnless(support.MS_WINDOWS, 'specific to Windows')
     def test_ignore_exception(self):
         for exc_code in (
             0xE06D7363,   # MSC exception ("Emsc")
@@ -763,7 +762,7 @@ class FaultHandlerTests(unittest.TestCase):
             self.assertEqual(output, [])
             self.assertEqual(exitcode, exc_code)
 
-    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    @unittest.skipUnless(support.MS_WINDOWS, 'specific to Windows')
     def test_raise_nonfatal_exception(self):
         # These exceptions are not strictly errors. Letting
         # faulthandler display the traceback when they are
@@ -791,7 +790,7 @@ class FaultHandlerTests(unittest.TestCase):
             self.assertIn(exitcode,
                           (exc, exc & ~0x10000000))
 
-    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    @unittest.skipUnless(support.MS_WINDOWS, 'specific to Windows')
     def test_disable_windows_exc_handler(self):
         code = dedent("""
             import faulthandler
