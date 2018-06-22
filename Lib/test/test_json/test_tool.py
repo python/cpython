@@ -92,6 +92,13 @@ class TestTool(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+    def test_infile_same_outfile(self):
+        infile = self._create_infile()
+        rc, out, err = assert_python_ok('-m', 'json.tool', infile, infile)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
     def test_help_flag(self):
         rc, out, err = assert_python_ok('-m', 'json.tool', '-h')
         self.assertEqual(rc, 0)
