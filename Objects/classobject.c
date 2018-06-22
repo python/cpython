@@ -274,6 +274,8 @@ method_hash(PyMethodObject *a)
     else
         x = _Py_HashPointer(a->im_self);
     y = PyObject_Hash(a->im_func);
+    if (y == -1)
+        return -1;
     x = x ^ y;
     if (x == -1)
         x = -2;
