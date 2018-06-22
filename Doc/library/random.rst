@@ -306,12 +306,17 @@ Alternative Generator
 
 .. class:: Random([seed])
 
-   Class to be subclassed if you want to use a different basic generator of your
-   own devising: in that case, override the :meth:`random`,
-   :meth:`seed`, :meth:`getstate`, and :meth:`setstate`
-   methods. Optionally, a new generator can supply a
-   :meth:`getrandbits` method --- this allows :meth:`randrange` to
-   produce selections over an arbitrarily large range.
+   This class can be subclassed if you want to use a different basic generator
+   of your own devising: in that case, override the :meth:`random`,
+   :meth:`seed`, :meth:`getstate`, and :meth:`setstate` methods. Optionally, a
+   new generator can supply a :meth:`getrandbits` method --- this allows
+   :meth:`randrange` to produce selections over an arbitrarily large range.
+
+   Additionally, you can instantiate your own instances of the
+   :class:`Random` class to get generators that don't share state. The
+   functions supplied by the :mod:`random` module are actually bound methods of
+   a hidden instance of the :class:`Random` class.
+
 
 .. class:: SystemRandom([seed])
 
