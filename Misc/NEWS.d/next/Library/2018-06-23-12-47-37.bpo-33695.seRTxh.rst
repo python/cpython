@@ -1,0 +1,6 @@
+:func:`shutil.copytree` uses :func:`os.scandir` function and all copy
+functions depending from it use cached :func:`os.stat` values. The speedup
+for copying a directory with 8000 files is around +9% on Linux, +20% on
+Windows and + 30% on a Windows SMB share. Also the number of :func:`os.stat`
+syscalls is reduced by 38% making :func:`shutil.copytree` especially faster
+on network filesystems.
