@@ -97,7 +97,7 @@ menudefs = [
    ('_Code Context', '<<toggle-code-context>>'),
    ]),
 
- ('windows', [
+ ('window', [
    ('Zoom Height', '<<zoom-height>>'),
    ]),
 

@@ -1,9 +1,10 @@
-from test.support import verbose, is_android, check_warnings
-import unittest
+import codecs
 import locale
 import sys
-import codecs
+import unittest
 import warnings
+from test import support
+
 
 class BaseLocalizedTest(unittest.TestCase):
     #
@@ -12,7 +13,7 @@ class BaseLocalizedTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if sys.platform == 'darwin':
+        if support.MACOS:
             import os
             tlocs = ("en_US.UTF-8", "en_US.ISO8859-1", "en_US")
             if int(os.uname().release.split('.')[0]) < 10:
@@ -44,7 +45,7 @@ class BaseLocalizedTest(unittest.TestCase):
         oldlocale = locale.setlocale(self.locale_type)
         self.addCleanup(locale.setlocale, self.locale_type, oldlocale)
         locale.setlocale(self.locale_type, self.enUS_locale)
-        if verbose:
+        if support.verbose:
             print("testing with %r..." % self.enUS_locale, end=' ', flush=True)
 
 
@@ -144,7 +145,7 @@ class BaseFormattingTest(object):
             func(format, value, **format_opts), out)
 
     def _test_format(self, format, value, out, **format_opts):
-        with check_warnings(('', DeprecationWarning)):
+        with support.check_warnings(('', DeprecationWarning)):
             self._test_formatfunc(format, value, out,
                 func=locale.format, **format_opts)
 
@@ -233,7 +234,7 @@ class TestFormatPatternArg(unittest.TestCase):
     # Test handling of pattern argument of format
 
     def test_onlyOnePattern(self):
-        with check_warnings(('', DeprecationWarning)):
+        with support.check_warnings(('', DeprecationWarning)):
             # Issue 2522: accept exactly one % pattern, and no extra chars.
             self.assertRaises(ValueError, locale.format, "%f\n", 'foo')
             self.assertRaises(ValueError, locale.format, "%f\r", 'foo')
@@ -365,7 +366,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
         enc = codecs.lookup(locale.getpreferredencoding(False) or 'ascii').name
         if enc not in ('utf-8', 'iso8859-1', 'cp1252'):
             raise unittest.SkipTest('encoding not suitable')
-        if enc != 'iso8859-1' and (sys.platform == 'darwin' or is_android or
+        if enc != 'iso8859-1' and (support.MACOS or support.ANDROID or
                                    sys.platform.startswith('freebsd')):
             raise unittest.SkipTest('wcscoll/wcsxfrm have known bugs')
         BaseLocalizedTest.setUp(self)
@@ -526,7 +527,7 @@ class TestMiscellaneous(unittest.TestCase):
             # Unsupported locale on this system
             self.skipTest('test needs Turkish locale')
         loc = locale.getlocale(locale.LC_CTYPE)
-        if verbose:
+        if support.verbose:
             print('testing with %a' % (loc,), end=' ', flush=True)
         locale.setlocale(locale.LC_CTYPE, loc)
         self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
