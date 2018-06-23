@@ -70,11 +70,11 @@ created.  Socket addresses are represented as follows:
   notation like ``'daring.cwi.nl'`` or an IPv4 address like ``'100.50.200.5'``,
   and *port* is an integer.
   
-  - For IPv4 addresses, two special forms are accepted instead of a host 
+  - For IPv4 addresses, two special forms are accepted instead of a host
     address: ``''`` represents :const:`INADDR_ANY`, which is used to bind to all
-    interfaces, and the string ``'<broadcast>'`` represents 
-    :const:`INADDR_BROADCAST`.  This behavior is not compatible with IPv6, 
-    therefore, you may want to avoid these if you intend to support IPv6 with your 
+    interfaces, and the string ``'<broadcast>'`` represents
+    :const:`INADDR_BROADCAST`.  This behavior is not compatible with IPv6,
+    therefore, you may want to avoid these if you intend to support IPv6 with your
     Python programs.
 
 - For :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
