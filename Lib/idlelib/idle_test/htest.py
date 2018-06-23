@@ -296,16 +296,6 @@ _stack_viewer_spec = {
            "Check that exc_value, exc_tb, and exc_type are correct.\n"
     }
 
-_tabbed_pages_spec = {
-    'file': 'tabbedpages',
-    'kwds': {},
-    'msg': "Toggle between the two tabs 'foo' and 'bar'\n"
-           "Add a tab by entering a suitable name for it.\n"
-           "Remove an existing tab by entering its name.\n"
-           "Remove all existing tabs.\n"
-           "<nothing> is an invalid add page and remove page name.\n"
-    }
-
 _tooltip_spec = {
     'file': 'tooltip',
     'kwds': {},
