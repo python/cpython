@@ -3859,7 +3859,7 @@ PyDoc_STRVAR(os__fcopyfile__doc__,
 "_fcopyfile($module, infd, outfd, flags, /)\n"
 "--\n"
 "\n"
-"Efficiently copy content or metadata of 2 regular file descriptors (OSX).");
+"Efficiently copy content or metadata of 2 regular file descriptors (macOS).");
 
 #define OS__FCOPYFILE_METHODDEF    \
     {"_fcopyfile", (PyCFunction)os__fcopyfile, METH_FASTCALL, os__fcopyfile__doc__},
@@ -6627,4 +6627,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=b5d1ec71bc6f0651 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47fb6a3e88cba6d9 input=a9049054013a1b77]*/

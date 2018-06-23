@@ -27,7 +27,7 @@ EXPECT_COERCION_IN_DEFAULT_LOCALE = True
 
 # Apply some platform dependent overrides
 if sys.platform.startswith("linux"):
-    if test.support.is_android:
+    if test.support.ANDROID:
         # Android defaults to using UTF-8 for all system interfaces
         EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
         EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
@@ -335,7 +335,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             # locale environment variables are undefined or empty. When
             # this code path is run with environ['LC_ALL'] == 'C', then
             # LEGACY_LOCALE_WARNING is printed.
-            if (test.support.is_android and
+            if (test.support.ANDROID and
                     _expected_warnings == [CLI_COERCION_WARNING]):
                 _expected_warnings = None
             self._check_child_encoding_details(base_var_dict,

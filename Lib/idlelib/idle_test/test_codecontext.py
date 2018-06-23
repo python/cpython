@@ -1,16 +1,12 @@
-"""Test idlelib.codecontext.
+"Test codecontext, coverage 100%"
 
-Coverage: 100%
-"""
-
-import re
-
+from idlelib import codecontext
 import unittest
-from unittest import mock
 from test.support import requires
 from tkinter import Tk, Frame, Text, TclError
 
-import idlelib.codecontext as codecontext
+from unittest import mock
+import re
 from idlelib import config
 
 
