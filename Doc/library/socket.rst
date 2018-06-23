@@ -69,6 +69,13 @@ created.  Socket addresses are represented as follows:
   where *host* is a string representing either a hostname in Internet domain
   notation like ``'daring.cwi.nl'`` or an IPv4 address like ``'100.50.200.5'``,
   and *port* is an integer.
+  
+  - For IPv4 addresses, two special forms are accepted instead of a host 
+    address: ``''`` represents :const:`INADDR_ANY`, which is used to bind to all
+    interfaces, and the string ``'<broadcast>'`` represents 
+    :const:`INADDR_BROADCAST`.  This behavior is not compatible with IPv6, 
+    therefore, you may want to avoid these if you intend to support IPv6 with your 
+    Python programs.
 
 - For :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
   scopeid)`` is used, where *flowinfo* and *scopeid* represent the ``sin6_flowinfo``
@@ -170,12 +177,6 @@ created.  Socket addresses are represented as follows:
   support specific representations.
 
   .. XXX document them!
-
-For IPv4 addresses, two special forms are accepted instead of a host address:
-the empty string represents :const:`INADDR_ANY`, and the string
-``'<broadcast>'`` represents :const:`INADDR_BROADCAST`.  This behavior is not
-compatible with IPv6, therefore, you may want to avoid these if you intend
-to support IPv6 with your Python programs.
 
 If you use a hostname in the *host* portion of IPv4/v6 socket address, the
 program may show a nondeterministic behavior, as Python uses the first address
