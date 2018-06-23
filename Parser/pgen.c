@@ -120,7 +120,8 @@ newnfagrammar(void)
 static void
 freenfagrammar(nfagrammar *gr)
 {
-    for (int i = 0; i < gr->gr_nnfas; i++) {
+    int i;
+    for (i = 0; i < gr->gr_nnfas; i++) {
         PyObject_FREE(gr->gr_nfa[i]->nf_state);
     }
     PyObject_FREE(gr->gr_nfa);
