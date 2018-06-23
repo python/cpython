@@ -3024,6 +3024,22 @@ class TestReplace(unittest.TestCase):
 
         replace(c, x=5)
 
+    def test_initvar_is_specified(self):
+        @dataclass
+        class C:
+            x: int
+            y: InitVar[int]
+
+            def __post_init__(self, y):
+                self.x *= y
+
+        c = C(1, 10)
+        self.assertEqual(c.x, 10)
+        with self.assertRaisesRegex(ValueError, r"InitVar 'y' must be "
+                                    "specified with replace()"):
+            replace(c, x=3)
+        c = replace(c, x=3, y=5)
+        self.assertEqual(c.x, 15)
     ## def test_initvar(self):
     ##     @dataclass
     ##     class C:
