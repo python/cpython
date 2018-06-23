@@ -1151,7 +1151,7 @@ functions.
    |              | using the specified filename, rather than a |
    |              | StreamHandler.                              |
    +--------------+---------------------------------------------+
-   | ``filemode`` | If ``filename`` is specified, use this      |
+   | ``filemode`` | If ``filename`` is specified, open the file |
    |              | in this :ref:`mode <filemodes>`. Defaults   |
    |              | to ``'a'``.                                 |
    +--------------+---------------------------------------------+
