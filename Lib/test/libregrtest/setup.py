@@ -66,7 +66,7 @@ def setup_tests(ns):
     # fix is to set the stack limit to 2048.
     # This approach may also be useful for other Unixy platforms that
     # suffer from small default stack limits.
-    if sys.platform == 'darwin':
+    if support.MACOS:
         try:
             import resource
         except ImportError:

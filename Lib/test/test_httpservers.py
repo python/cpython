@@ -384,7 +384,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         reader.close()
         return body
 
-    @unittest.skipIf(sys.platform == 'darwin',
+    @unittest.skipIf(support.MACOS,
                      'undecodable name cannot always be decoded on macOS')
     @unittest.skipIf(sys.platform == 'win32',
                      'undecodable name cannot be decoded on win32')
@@ -396,7 +396,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         with open(os.path.join(self.tempdir, filename), 'wb') as f:
             f.write(support.TESTFN_UNDECODABLE)
         response = self.request(self.base_url + '/')
-        if sys.platform == 'darwin':
+        if support.MACOS:
             # On Mac OS the HFS+ filesystem replaces bytes that aren't valid
             # UTF-8 into a percent-encoded value.
             for name in os.listdir(self.tempdir):

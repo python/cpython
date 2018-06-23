@@ -5,7 +5,7 @@ import subprocess
 import shutil
 from copy import copy
 
-from test.support import (import_module, TESTFN, unlink, check_warnings,
+from test.support import (import_module, TESTFN, unlink, check_warnings, MACOS,
                           captured_stdout, skip_unless_symlink, change_cwd)
 
 import sysconfig
@@ -288,7 +288,7 @@ class TestSysConfig(unittest.TestCase):
 
         self.assertIn(ldflags, ldshared)
 
-    @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
+    @unittest.skipUnless(MACOS, "test only relevant on MacOSX")
     def test_platform_in_subprocess(self):
         my_platform = sysconfig.get_platform()
 
@@ -396,7 +396,7 @@ class TestSysConfig(unittest.TestCase):
             else: # 8 byte pointer size
                 self.assertTrue(suffix.endswith('x86_64-linux-gnu.so'), suffix)
 
-    @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
+    @unittest.skipUnless(MACOS, 'OS X-specific test')
     def test_osx_ext_suffix(self):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)

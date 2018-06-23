@@ -10,7 +10,7 @@ from weakref import proxy
 from functools import wraps
 
 from test.support import (TESTFN, TESTFN_UNICODE, check_warnings, run_unittest,
-                          make_bad_fd, cpython_only, swap_attr)
+                          MACOS, make_bad_fd, cpython_only, swap_attr)
 from collections import UserList
 
 import _io  # C implementation of io
@@ -382,7 +382,7 @@ class OtherFileTests:
                 else:
                     self.assertEqual(f.readable(), False)
                     self.assertEqual(f.writable(), True)
-                    if sys.platform != "darwin" and \
+                    if not MACOS and \
                        'bsd' not in sys.platform and \
                        not sys.platform.startswith(('sunos', 'aix')):
                         # Somehow /dev/tty appears seekable on some BSDs

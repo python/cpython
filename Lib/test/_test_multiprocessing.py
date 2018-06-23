@@ -501,7 +501,7 @@ class _TestProcess(BaseTestCase):
             join_process(p)
         if os.name != 'nt':
             exitcodes = [-signal.SIGTERM]
-            if sys.platform == 'darwin':
+            if support.MACOS:
                 # bpo-31510: On macOS, killing a freshly started process with
                 # SIGTERM sometimes kills the process with SIGKILL.
                 exitcodes.append(-signal.SIGKILL)

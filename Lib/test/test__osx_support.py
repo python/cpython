@@ -12,7 +12,7 @@ import test.support
 
 import _osx_support
 
-@unittest.skipUnless(sys.platform.startswith("darwin"), "requires OS X")
+@unittest.skipUnless(test.support.MACOS, "requires OS X")
 class Test_OSXSupport(unittest.TestCase):
 
     def setUp(self):

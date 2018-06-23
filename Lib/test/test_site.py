@@ -184,7 +184,7 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertEqual(site._getuserbase(), sysconfig._getuserbase())
 
     def test_get_path(self):
-        if sys.platform == 'darwin' and sys._framework:
+        if test.support.MACOS and sys._framework:
             scheme = 'osx_framework_user'
         else:
             scheme = os.name + '_user'
@@ -472,11 +472,11 @@ class StartupImportTests(unittest.TestCase):
         # http://bugs.python.org/issue19205
         re_mods = {'re', '_sre', 'sre_compile', 'sre_constants', 'sre_parse'}
         # _osx_support uses the re module in many placs
-        if sys.platform != 'darwin':
+        if not test.support.MACOS:
             self.assertFalse(modules.intersection(re_mods), stderr)
         # http://bugs.python.org/issue9548
         self.assertNotIn('locale', modules, stderr)
-        if sys.platform != 'darwin':
+        if not test.support.MACOS:
             # http://bugs.python.org/issue19209
             self.assertNotIn('copyreg', modules, stderr)
         # http://bugs.python.org/issue19218>

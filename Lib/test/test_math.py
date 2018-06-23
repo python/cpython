@@ -1298,7 +1298,7 @@ class MathTests(unittest.TestCase):
         SKIP_ON_TIGER = {'tan0064'}
 
         osx_version = None
-        if sys.platform == 'darwin':
+        if support.MACOS:
             version_txt = platform.mac_ver()[0]
             try:
                 osx_version = tuple(map(int, version_txt.split('.')))

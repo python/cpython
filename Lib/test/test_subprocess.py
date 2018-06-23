@@ -1788,8 +1788,7 @@ class POSIXProcessTestCase(BaseTestCase):
             if not enabled:
                 gc.disable()
 
-    @unittest.skipIf(
-        sys.platform == 'darwin', 'setrlimit() seems to fail on OS X')
+    @unittest.skipIf(support.MACOS, 'setrlimit() seems to fail on OS X')
     def test_preexec_fork_failure(self):
         # The internal code did not preserve the previous exception when
         # re-enabling garbage collection

@@ -41,7 +41,7 @@ elif sys.platform.startswith("aix"):
     # AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
     EXPECTED_C_LOCALE_STREAM_ENCODING = "iso8859-1"
     EXPECTED_C_LOCALE_FS_ENCODING = "iso8859-1"
-elif sys.platform == "darwin":
+elif test.support.MACOS:
     # FS encoding is UTF-8 on macOS
     EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
 elif sys.platform == "cygwin":
@@ -75,7 +75,7 @@ _C_UTF8_LOCALES = ("C.UTF-8", "C.utf8", "UTF-8")
 # `locale.nl_langinfo(locale.CODESET)` works, as if it fails, the interpreter
 # will skip locale coercion for that particular target locale
 _check_nl_langinfo_CODESET = bool(
-    sys.platform not in ("darwin", "linux") and
+    (not test.support.MACOS) and sys.platform != "linux" and
     hasattr(locale, "nl_langinfo") and
     hasattr(locale, "CODESET")
 )

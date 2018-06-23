@@ -1,4 +1,4 @@
-from test.support import requires_IEEE_754, cpython_only
+from test.support import requires_IEEE_754, cpython_only, MACOS
 from test.test_math import parse_testfile, test_file
 import test.test_math as test_math
 import unittest
@@ -339,7 +339,7 @@ class CMathTests(unittest.TestCase):
         SKIP_ON_TIGER = {'tan0064'}
 
         osx_version = None
-        if sys.platform == 'darwin':
+        if MACOS:
             version_txt = platform.mac_ver()[0]
             try:
                 osx_version = tuple(map(int, version_txt.split('.')))

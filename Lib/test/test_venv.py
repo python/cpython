@@ -14,7 +14,7 @@ import subprocess
 import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
-                          can_symlink, EnvironmentVarGuard, rmtree)
+                          can_symlink, EnvironmentVarGuard, rmtree, MACOS)
 import threading
 import unittest
 import venv
@@ -41,7 +41,7 @@ class BaseTest(unittest.TestCase):
             self.bindir = 'bin'
             self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
             self.include = 'include'
-        if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in os.environ:
+        if MACOS and '__PYVENV_LAUNCHER__' in os.environ:
             executable = os.environ['__PYVENV_LAUNCHER__']
         else:
             executable = sys.executable
@@ -83,13 +83,13 @@ class BasicTest(BaseTest):
         # Issue 21197
         p = self.get_env_file('lib64')
         conditions = ((struct.calcsize('P') == 8) and (os.name == 'posix') and
-                      (sys.platform != 'darwin'))
+                      (False == MACOS))
         if conditions:
             self.assertTrue(os.path.islink(p))
         else:
             self.assertFalse(os.path.exists(p))
         data = self.get_text_file_contents('pyvenv.cfg')
-        if sys.platform == 'darwin' and ('__PYVENV_LAUNCHER__'
+        if MACOS and ('__PYVENV_LAUNCHER__'
                                          in os.environ):
             executable =  os.environ['__PYVENV_LAUNCHER__']
         else:

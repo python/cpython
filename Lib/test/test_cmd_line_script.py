@@ -494,7 +494,7 @@ class CmdLineTest(unittest.TestCase):
         # Windows allows creating a name with an arbitrary bytes name, but
         # Python cannot a undecodable bytes argument to a subprocess.
         if (support.TESTFN_UNDECODABLE
-        and sys.platform not in ('win32', 'darwin')):
+        and not support.MS_WINDOWS and not support.MACOS):
             name = os.fsdecode(support.TESTFN_UNDECODABLE)
         elif support.TESTFN_NONASCII:
             name = support.TESTFN_NONASCII

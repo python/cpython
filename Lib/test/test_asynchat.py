@@ -77,7 +77,7 @@ class echo_client(asynchat.async_chat):
         def handle_connect(self):
             pass
 
-        if sys.platform == 'darwin':
+        if support.MACOS:
             # select.poll returns a select.POLLHUP at the end of the tests
             # on darwin, so just ignore it
             def handle_expt(self):
