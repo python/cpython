@@ -3549,6 +3549,13 @@ class TextIOWrapperTest(unittest.TestCase):
         expected = 'linesep' + os.linesep + 'LF\nLF\nCR\rCRLF\r\n'
         self.assertEqual(txt.detach().getvalue().decode('ascii'), expected)
 
+    def test_issue25862(self):
+        # tell() shouldn't cause an assertion failure if called after read().
+        t = self.TextIOWrapper(self.BytesIO(b'test'))
+        t.read(1)
+        t.read()
+        t.tell()
+
 
 class MemviewBytesIO(io.BytesIO):
     '''A BytesIO object whose read method returns memoryviews
