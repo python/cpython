@@ -53,6 +53,10 @@ elif _WINDOWS:
 COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 16 * 1024
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
+_HAS_SAMESTAT = hasattr(os.path, 'samestat')
+_HAS_SAMEFILE = hasattr(os.path, 'samefile')
+_HAS_LCHMOD = hasattr(os, 'lchmod')
+_HAS_CHMOD = hasattr(os, 'chmod')
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
@@ -201,13 +205,13 @@ def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
 
 def _samefile(src, dst):
     # Macintosh, Unix.
-    if isinstance(src, os.DirEntry) and hasattr(os.path, 'samestat'):
+    if isinstance(src, os.DirEntry) and _HAS_SAMESTAT:
         try:
             return os.path.samestat(src.stat(), os.stat(dst))
         except OSError:
             return False
 
-    if hasattr(os.path, 'samefile'):
+    if _HAS_SAMEFILE:
         try:
             return os.path.samefile(src, dst)
         except OSError:
@@ -288,11 +292,11 @@ def copymode(src, dst, *, follow_symlinks=True):
 
     """
     if not follow_symlinks and _islink(src) and os.path.islink(dst):
-        if hasattr(os, 'lchmod'):
+        if _HAS_LCHMOD:
             stat_func, chmod_func = os.lstat, os.lchmod
         else:
             return
-    elif hasattr(os, 'chmod'):
+    elif _HAS_CHMOD:
         stat_func, chmod_func = _stat, os.chmod
     else:
         return
