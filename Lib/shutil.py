@@ -491,9 +491,9 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
             if srcentry.is_symlink():
                 linkto = os.readlink(srcname)
                 if symlinks:
-                    # We can't just leave it to `copy_function` because
-                    # legacy code with a custom `copy_function` may rely
-                    # on copytree doing the right thing.
+                    # We can't just leave it to `copy_function` because legacy
+                    # code with a custom `copy_function` may rely on copytree
+                    # doing the right thing.
                     os.symlink(linkto, dstname)
                     copystat(srcentry, dstname, follow_symlinks=not symlinks)
                 else:
