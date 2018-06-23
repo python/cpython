@@ -1,0 +1,1 @@
+Close .pyc files before calling PyEval_EvalCode().
