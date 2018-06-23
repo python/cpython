@@ -227,9 +227,6 @@ def _stat(fn):
 def _islink(fn):
     return fn.is_symlink() if isinstance(fn, os.DirEntry) else os.path.islink(fn)
 
-def _isdir(fn):
-    return fn.is_dir() if isinstance(fn, os.DirEntry) else os.path.isdir(fn)
-
 def copyfile(src, dst, *, follow_symlinks=True):
     """Copy data from src to dst in the most efficient way possible.
 
