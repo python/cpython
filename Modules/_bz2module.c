@@ -652,11 +652,15 @@ _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
     int bzerror;
 
 #ifdef WITH_THREAD
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
+    PyThread_type_lock lock = PyThread_allocate_lock();
+    if (lock == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
         return -1;
     }
+    if (self->lock != NULL) {
+        PyThread_free_lock(self->lock);
+    }
+    self->lock = lock;
 #endif
 
     self->needs_input = 1;
