@@ -60,6 +60,7 @@ class FontPageTest(unittest.TestCase):
         page = cls.page = dialog.fontpage
         dialog.note.select(page)
         page.set_samples = Func()  # Mask instance method.
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -210,6 +211,7 @@ class IndentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.page = dialog.fontpage
+        cls.page.update()
 
     def test_load_tab_cfg(self):
         d = self.page
@@ -240,6 +242,7 @@ class HighPageTest(unittest.TestCase):
         page.paint_theme_sample = Func()
         page.set_highlight_target = Func()
         page.set_color_sample = Func()
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -1085,6 +1088,7 @@ class GenPageTest(unittest.TestCase):
         dialog.note.select(page)
         page.set = page.set_add_delete_state = Func()
         page.upc = page.update_help_changes = Func()
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
