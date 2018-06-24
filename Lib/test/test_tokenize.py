@@ -36,6 +36,14 @@ class TokenizeTest(TestCase):
                          ["    ENCODING   'utf-8'       (0, 0) (0, 0)"] +
                          expected.rstrip().splitlines())
 
+    def test_implicit_newline(self):
+        # Make sure that the tokenizer puts in an implicit NEWLINE
+        # when the input lacks a trailing new line.
+        f = BytesIO("x".encode('utf-8'))
+        tokens = list(tokenize(f.readline))
+        self.assertEqual(tokens[-2].type, NEWLINE)
+        self.assertEqual(tokens[-1].type, ENDMARKER)
+
     def test_basic(self):
         self.check_tokenize("1 + 1", """\
     NUMBER     '1'           (1, 0) (1, 1)
