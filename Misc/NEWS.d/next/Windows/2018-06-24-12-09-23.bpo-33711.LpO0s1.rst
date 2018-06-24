@@ -1,0 +1,1 @@
+Fixed licence generation error when building the installer.
