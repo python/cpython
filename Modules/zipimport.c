@@ -1568,6 +1568,10 @@ get_code_from_data(ZipImporter *self, int ispackage, int isbytecode,
         return NULL;
 
     modpath = PyTuple_GetItem(toc_entry, 0);
+    if (modpath == NULL) {
+        return NULL;
+    }
+
     if (isbytecode) {
         code = unmarshal_code(modpath, data, mtime);
         if (PyCode_Check(code)) {
