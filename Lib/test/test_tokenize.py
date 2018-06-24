@@ -1,7 +1,8 @@
 from test import support
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
-                     open as tokenize_open, Untokenizer, generate_tokens)
+                     open as tokenize_open, Untokenizer, generate_tokens,
+                     NEWLINE)
 from io import BytesIO, StringIO
 import unittest
 from unittest import TestCase, mock
@@ -15,17 +16,20 @@ class TokenizeTest(TestCase):
     # Tests for the tokenize module.
 
     # The tests can be really simple. Given a small fragment of source
-    # code, print out a table with tokens. The ENDMARKER is omitted for
-    # brevity.
+    # code, print out a table with tokens. The ENDMARKER, ENCODING and
+    # final NEWLINE are omitted for brevity.
 
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
-        # The ENDMARKER is omitted.
+        # The ENDMARKER and final NEWLINE are omitted.
         result = []
         f = BytesIO(s.encode('utf-8'))
+        num_lines = len(s.splitlines())
         for type, token, start, end, line in tokenize(f.readline):
             if type == ENDMARKER:
                 break
+            if s[-1] not in '\r\n' and type == NEWLINE and end[0] == num_lines:
+                continue
             type = tok_name[type]
             result.append(f"    {type:10} {token!r:13} {start} {end}")
         self.assertEqual(result,
@@ -922,12 +926,15 @@ async def f():
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
-        # The ENDMARKER is omitted.
+        # The ENDMARKER and final NEWLINE are omitted.
         result = []
         f = StringIO(s)
+        num_lines = len(s.splitlines())
         for type, token, start, end, line in generate_tokens(f.readline):
             if type == ENDMARKER:
                 break
+            if s[-1] not in '\r\n' and type == NEWLINE and end[0] == num_lines:
+                continue
             type = tok_name[type]
             result.append(f"    {type:10} {token!r:13} {start} {end}")
         self.assertEqual(result, expected.rstrip().splitlines())
@@ -1022,8 +1029,8 @@ class Test_Tokenize(TestCase):
             else:
                 return b''
 
-        # skip the initial encoding token and the end token
-        tokens = list(_tokenize(readline, encoding='utf-8'))[1:-1]
+        # skip the initial encoding token and the end tokens
+        tokens = list(_tokenize(readline, encoding='utf-8'))[1:-2]
         expected_tokens = [(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
         self.assertEqual(tokens, expected_tokens,
                          "bytes not decoded with encoding")
@@ -1039,8 +1046,8 @@ class Test_Tokenize(TestCase):
             else:
                 return b''
 
-        # skip the end token
-        tokens = list(_tokenize(readline, encoding=None))[:-1]
+        # skip the end tokens
+        tokens = list(_tokenize(readline, encoding=None))[:-2]
         expected_tokens = [(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
         self.assertEqual(tokens, expected_tokens,
                          "string not tokenized when encoding is None")
@@ -1351,18 +1358,21 @@ class TestTokenize(TestCase):
 
         # Test that 500 consequent, one-line defs is OK
         toks = list(tokenize(BytesIO(buf.encode('utf-8')).readline))
-        self.assertEqual(toks[-2].string, 'OK') # [-1] is always ENDMARKER
+        self.assertEqual(toks[-3].string, 'OK') # [-1] is always ENDMARKER
+                                                # [-2] is always NEWLINE
 
     def assertExactTypeEqual(self, opstr, *optypes):
         tokens = list(tokenize(BytesIO(opstr.encode('utf-8')).readline))
         num_optypes = len(optypes)
-        self.assertEqual(len(tokens), 2 + num_optypes)
+        self.assertEqual(len(tokens), 3 + num_optypes)
         self.assertEqual(tok_name[tokens[0].exact_type],
                          tok_name[ENCODING])
         for i in range(num_optypes):
             self.assertEqual(tok_name[tokens[i + 1].exact_type],
                              tok_name[optypes[i]])
         self.assertEqual(tok_name[tokens[1 + num_optypes].exact_type],
+                         tok_name[token.NEWLINE])
+        self.assertEqual(tok_name[tokens[2 + num_optypes].exact_type],
                          tok_name[token.ENDMARKER])
 
     def test_exact_type(self):
@@ -1515,7 +1525,7 @@ class TestRoundtrip(TestCase):
         self.check_roundtrip("if x == 1:\n"
                              "    print(x)\n")
         self.check_roundtrip("# This is a comment\n"
-                             "# This also")
+                             "# This also\n")
 
         # Some people use different formatting conventions, which makes
         # untokenize a little trickier. Note that this test involves trailing

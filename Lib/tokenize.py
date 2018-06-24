@@ -492,8 +492,11 @@ def _tokenize(readline, encoding):
             # BOM will already have been stripped.
             encoding = "utf-8"
         yield TokenInfo(ENCODING, encoding, (0, 0), (0, 0), '')
+    last_line = b''
+    line = b''
     while True:                                # loop over lines in stream
         try:
+            last_line = line
             line = readline()
         except StopIteration:
             line = b''
@@ -648,6 +651,9 @@ def _tokenize(readline, encoding):
                            (lnum, pos), (lnum, pos+1), line)
                 pos += 1
 
+    # Add an implicit NEWLINE if the input doesn't end in one
+    if len(last_line) > 0 and last_line[-1] not in '\r\n':
+        yield TokenInfo(NEWLINE, '', (lnum - 1, len(last_line)), (lnum - 1, len(last_line) + 1), '')
     for indent in indents[1:]:                 # pop remaining indent levels
         yield TokenInfo(DEDENT, '', (lnum, 0), (lnum, 0), '')
     yield TokenInfo(ENDMARKER, '', (lnum, 0), (lnum, 0), '')
