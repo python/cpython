@@ -1147,43 +1147,43 @@ functions.
    +--------------+---------------------------------------------+
    | Format       | Description                                 |
    +==============+=============================================+
-   | ``filename`` | Specifies that a FileHandler be created,    |
+   | *filename*   | Specifies that a FileHandler be created,    |
    |              | using the specified filename, rather than a |
    |              | StreamHandler.                              |
    +--------------+---------------------------------------------+
-   | ``filemode`` | If ``filename`` is specified, open the file |
+   | *filemode*   | If *filename* is specified, open the file   |
    |              | in this :ref:`mode <filemodes>`. Defaults   |
    |              | to ``'a'``.                                 |
    +--------------+---------------------------------------------+
-   | ``format``   | Use the specified format string for the     |
+   | *format*     | Use the specified format string for the     |
    |              | handler.                                    |
    +--------------+---------------------------------------------+
-   | ``datefmt``  | Use the specified :func:`time.strftime`     |
-   |              | style date/time format.                     |
+   | *datefmt*    | Use the specified date/time format, as      |
+   |              | accepted by :func:`time.strftime`.          |
    +--------------+---------------------------------------------+
-   | ``style``    | If ``format`` is specified, use this style  |
+   | *style*      | If *format* is specified, use this style    |
    |              | for the format string. One of ``'%'``,      |
    |              | ``'{'`` or ``'$'`` for :ref:`printf-style   |
    |              | <old-string-formatting>`,                   |
    |              | :meth:`str.format` or                       |
    |              | :class:`string.Template` respectively.      |
-   |              | Defaults to ``'%'``                         |
+   |              | Defaults to ``'%'``.                        |
    +--------------+---------------------------------------------+
-   | ``level``    | Set the root logger level to the specified  |
+   | *level*      | Set the root logger level to the specified  |
    |              | :ref:`level <levels>`.                      |
    +--------------+---------------------------------------------+
-   | ``stream``   | Use the specified stream to initialize the  |
+   | *stream*     | Use the specified stream to initialize the  |
    |              | StreamHandler. Note that this argument is   |
-   |              | incompatible with ``filename`` - if both    |
+   |              | incompatible with *filename* - if both      |
    |              | are present, a ``ValueError`` is raised.    |
    +--------------+---------------------------------------------+
-   | ``handlers`` | If specified, this should be an iterable of |
+   | *handlers*   | If specified, this should be an iterable of |
    |              | already created handlers to add to the root |
    |              | logger. Any handlers which don't already    |
    |              | have a formatter set will be assigned the   |
    |              | default formatter created in this function. |
    |              | Note that this argument is incompatible     |
-   |              | with ``filename`` or ``stream`` - if both   |
+   |              | with *filename* or *stream* - if both       |
    |              | are present, a ``ValueError`` is raised.    |
    +--------------+---------------------------------------------+
 
