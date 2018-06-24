@@ -49,6 +49,7 @@ steps:
     liblzma-dev
     libffi-dev
     uuid-dev
+    xvfb
   displayName: 'Install dependencies'
 
 - script: ./configure --with-pydebug
@@ -60,5 +61,5 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
-- script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+- script: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
   displayName: 'Tests'

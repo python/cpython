@@ -27,4 +27,5 @@ steps:
     liblzma-dev
     libffi-dev
     uuid-dev
+    xvfb
   displayName: 'Install dependencies'
