@@ -48,6 +48,7 @@ steps:
     liblzma-dev
     libffi-dev
     uuid-dev
+    xvfb
   displayName: 'Install dependencies'
 
 
@@ -64,5 +65,5 @@ steps:
 - script: ./python Tools/scripts/patchcheck.py --travis true
   displayName: 'Run patchcheck.py'
 
-- script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+- script: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
   displayName: 'Tests'
