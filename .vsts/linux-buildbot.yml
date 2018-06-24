@@ -54,6 +54,7 @@ steps:
     liblzma-dev
     libffi-dev
     uuid-dev
+    xvfb
   displayName: 'Install dependencies'
 - script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $(build.sourcesDirectory)/multissl --openssl $(OPENSSL) --system Linux
   displayName: 'python multissltests.py'
@@ -67,5 +68,5 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
-- script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+- script: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
   displayName: 'Tests'

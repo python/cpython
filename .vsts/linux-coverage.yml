@@ -53,6 +53,7 @@ steps:
     liblzma-dev
     libffi-dev
     uuid-dev
+    xvfb
   displayName: 'Install dependencies'
 - script: python3 Tools/ssl/multissltests.py --steps=library --base-directory $(build.sourcesDirectory)/multissl --openssl $(OPENSSL) --system Linux
   displayName: 'python multissltests.py'
@@ -70,7 +71,7 @@ steps:
 - script: ./venv/bin/python -m test.pythoninfo
   displayName: 'Display build info'
 
-- script: ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures
+- script: xvfb-run ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures
   displayName: 'Tests with coverage'
 
 - script: source ./venv/bin/activate && bash <(curl -s https://codecov.io/bash)
