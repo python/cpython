@@ -904,7 +904,7 @@ select.devpoll.poll
 Polls the set of registered file descriptors.
 
 Returns a list containing any descriptors that have events or errors to
-report.
+report, as a list of (fd, event) 2-tuples.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1498,6 +1498,9 @@ select.epoll.poll
       the maximum number of events returned; -1 means no limit
 
 Wait for events on the epoll file descriptor.
+
+Returns a list containing any descriptors that have events to report,
+as a list of (fd, events) 2-tuples.
 [clinic start generated code]*/
 
 static PyObject *
