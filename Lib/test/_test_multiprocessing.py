@@ -4473,9 +4473,24 @@ class TestSemaphoreTracker(unittest.TestCase):
         # bpo-31310: if the semaphore tracker process has died, it should
         # be restarted implicitly.
         from multiprocessing.semaphore_tracker import _semaphore_tracker
-        _semaphore_tracker.ensure_running()
-        pid = _semaphore_tracker._pid
-        time.sleep(1.0) # Give time for the child to register the signal handlers
+        old_stderr = sys.stderr
+        r, w = os.pipe()
+        try:
+            sys.stderr = open(w, "bw")
+            _semaphore_tracker.ensure_running()
+            pid = _semaphore_tracker._pid
+            # Wait until we receive the PONG from the child, indicating that
+            # the signal handlers have been registered. See bpo-33613 for more
+            # information.
+            _semaphore_tracker._send("PING", "")
+            with open(r, "rb") as pipe:
+                data = pipe.readline()
+                if b"PON" not in data:
+                    raise ValueError("Invalid data in stderr!")
+        finally:
+            sys.stderr.close()
+            sys.stderr = old_stderr
+
         os.kill(pid, signum)
         time.sleep(1.0)  # give it time to die
 

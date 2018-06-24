@@ -60,14 +60,14 @@ class SemaphoreTracker(object):
                 fds_to_pass.append(sys.stderr.fileno())
             except Exception:
                 pass
-            cmd = 'from multiprocessing.semaphore_tracker import main;main(%d)'
+            cmd = 'from multiprocessing.semaphore_tracker import main;main({}, {})'
             r, w = os.pipe()
             try:
                 fds_to_pass.append(r)
                 # process will out live us, so no need to wait on pid
                 exe = spawn.get_executable()
                 args = [exe] + util._args_from_interpreter_flags()
-                args += ['-c', cmd % r]
+                args += ['-c', cmd.format(r, sys.stderr.fileno())]
                 pid = util.spawnv_passfds(exe, args, fds_to_pass)
             except:
                 os.close(w)
@@ -105,7 +105,7 @@ unregister = _semaphore_tracker.unregister
 getfd = _semaphore_tracker.getfd
 
 
-def main(fd):
+def main(fd, fd_write):
     '''Run semaphore tracker.'''
     # protect the process from ^C and "killall python" etc
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -128,6 +128,8 @@ def main(fd):
                         cache.add(name)
                     elif cmd == b'UNREGISTER':
                         cache.remove(name)
+                    elif cmd == b'PING':
+                        os.write(fd_write, b"PONG\n")
                     else:
                         raise RuntimeError('unrecognized command %r' % cmd)
                 except Exception:
