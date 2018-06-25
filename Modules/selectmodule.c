@@ -899,8 +899,8 @@ select_devpoll_unregister_impl(devpollObject *self, int fd)
 
 /*[clinic input]
 select.devpoll.poll
-
     timeout as timeout_obj: object = None
+    /
 
 Polls the set of registered file descriptors.
 
