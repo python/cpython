@@ -947,6 +947,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/bytes_methods.h \
 		$(srcdir)/Include/bytearrayobject.h \
 		$(srcdir)/Include/bytesobject.h \
+		$(srcdir)/Include/call.h \
 		$(srcdir)/Include/cellobject.h \
 		$(srcdir)/Include/ceval.h \
 		$(srcdir)/Include/classobject.h \
