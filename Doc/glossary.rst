@@ -641,9 +641,7 @@ Glossary
       This issue can be solved with locks or by using the EAFP approach.
 
    list
-      A built-in Python :term:`sequence`.  Despite its name it is more akin
-      to an array in other languages than to a linked list since access to
-      elements is O(1).
+      A built-in Python :term:`sequence`.
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and
