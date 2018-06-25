@@ -11,8 +11,9 @@ PyDoc_STRVAR(select_select__doc__,
 "The first three arguments are sequences of file descriptors to be waited for:\n"
 "rlist -- wait until ready for reading\n"
 "wlist -- wait until ready for writing\n"
-"xlist -- wait for an ``exceptional condition\'\'\n"
+"xlist -- wait for an \"exceptional condition\"\n"
 "If only one kind of condition is required, pass [] for the other lists.\n"
+"\n"
 "A file descriptor is either a socket or file object, or a small integer\n"
 "gotten from a fileno() method call on one of those.\n"
 "\n"
@@ -313,7 +314,7 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_poll__doc__,
-"poll($self, /, timeout=None)\n"
+"poll($self, timeout=None, /)\n"
 "--\n"
 "\n"
 "Polls the set of registered file descriptors.\n"
@@ -322,20 +323,19 @@ PyDoc_STRVAR(select_devpoll_poll__doc__,
 "report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_DEVPOLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)select_devpoll_poll, METH_FASTCALL|METH_KEYWORDS, select_devpoll_poll__doc__},
+    {"poll", (PyCFunction)select_devpoll_poll, METH_FASTCALL, select_devpoll_poll__doc__},
 
 static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj);
 
 static PyObject *
-select_devpoll_poll(devpollObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+select_devpoll_poll(devpollObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"timeout", NULL};
-    static _PyArg_Parser _parser = {"|O:poll", _keywords, 0};
     PyObject *timeout_obj = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+    if (!_PyArg_UnpackStack(args, nargs, "poll",
+        0, 1,
         &timeout_obj)) {
         goto exit;
     }
@@ -1043,4 +1043,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=541f8a02a606e554 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=43925956cb05f79a input=a9049054013a1b77]*/

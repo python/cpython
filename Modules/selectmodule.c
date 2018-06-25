@@ -243,7 +243,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=c001a7f0663e3865]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=177e72184352df25]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
@@ -910,7 +910,7 @@ report, as a list of (fd, event) 2-tuples.
 
 static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=2654e5457cca0b3c input=546cd1fca3fb1efd]*/
+/*[clinic end generated code: output=2654e5457cca0b3c input=fd0db698d84f0333]*/
 {
     struct dvpoll dvp;
     PyObject *result_list = NULL, *timeout_obj = NULL;
