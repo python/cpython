@@ -1,0 +1,1 @@
+Use NFKC to find duplicate members in make_dataclass.
