@@ -1124,7 +1124,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         if keyword.iskeyword(name):
             raise TypeError(f'Field names must not be keywords: {name!r}')
         if normalized_name in seen:
-            raise TypeError(f'Field name duplicated: {name!r}')
+            raise TypeError(f'Field name duplicated: {normalized_name!r}')
 
         seen.add(normalized_name)
         anns[name] = tp
