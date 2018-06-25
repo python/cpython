@@ -363,7 +363,7 @@ class StrptimeTests(unittest.TestCase):
             _strptime._strptime("-01:30:30:123456", "%z")
         with self.assertRaises(ValueError) as err:
             _strptime._strptime("-01:3030", "%z")
-        self.assertEqual("Unconsistent use of : in -01:3030", str(err.exception))
+        self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
 
     def test_timezone(self):
         # Test timezone directives.
@@ -521,7 +521,7 @@ class CalculationTests(unittest.TestCase):
                         "Calculation of day of the week failed;"
                          "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
 
-    if support.is_android:
+    if support.ANDROID:
         # Issue #26929: strftime() on Android incorrectly formats %V or %G for
         # the last or the first incomplete week in a year.
         _ymd_excluded = ((1905, 1, 1), (1906, 12, 31), (2008, 12, 29),

@@ -153,7 +153,7 @@ AC_ARG_ENABLE(universalsdk,
 [
 	case $enableval in
 	yes)
-		# Locate the best usable SDK, see Mac/README.txt for more
+		# Locate the best usable SDK, see Mac/README for more
 		# information
 		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
 		if ! ( echo $enableval | grep -E '\.sdk' 1>/dev/null )
@@ -555,43 +555,6 @@ EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 # when running configure or make.  The build should not break if they do.
 # BASECFLAGS should generally not be messed with, however.
 
-# XXX shouldn't some/most/all of this code be merged with the stuff later
-# on that fiddles with OPT and BASECFLAGS?
-AC_MSG_CHECKING(for --without-gcc)
-AC_ARG_WITH(gcc,
-            AS_HELP_STRING([--without-gcc], [never use gcc]),
-[
-	case $withval in
-	no)	CC=${CC:-cc}
-		without_gcc=yes;;
-	yes)	CC=gcc
-		without_gcc=no;;
-	*)	CC=$withval
-		without_gcc=$withval;;
-	esac], [
-	case $ac_sys_system in
-	AIX*)   CC=${CC:-xlc_r}
-		without_gcc=;;
-	*)	without_gcc=no;;
-	esac])
-AC_MSG_RESULT($without_gcc)
-
-AC_MSG_CHECKING(for --with-icc)
-AC_ARG_WITH(icc,
-            AS_HELP_STRING([--with-icc], [build with icc]),
-[
-	case $withval in
-	no)	CC=${CC:-cc}
-		with_icc=no;;
-	yes)	CC=icc
-		CXX=icpc
-		with_icc=yes;;
-	*)	CC=$withval
-		with_icc=$withval;;
-	esac], [
-	with_icc=no])
-AC_MSG_RESULT($with_icc)
-
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
 then
@@ -609,7 +572,7 @@ fi
 if test "$ac_sys_system" = "Darwin"
 then
 	# Compiler selection on MacOSX is more complicated than
-	# AC_PROG_CC can handle, see Mac/README.txt for more
+	# AC_PROG_CC can handle, see Mac/README for more
 	# information
 	if test -z "${CC}"
 	then
@@ -781,6 +744,26 @@ cat >> conftest.c <<EOF
         ia64-linux-gnu
 # elif defined(__m68k__) && !defined(__mcoldfire__)
         m68k-linux-gnu
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6el-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6el-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6el-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
 # elif defined(__mips_hard_float) && defined(_MIPSEL)
 #  if _MIPS_SIM == _ABIO32
         mipsel-linux-gnu
@@ -823,6 +806,14 @@ cat >> conftest.c <<EOF
         sparc64-linux-gnu
 # elif defined(__sparc__)
         sparc-linux-gnu
+# elif defined(__riscv)
+#  if __riscv_xlen == 32
+        riscv32-linux-gnu
+#  elif __riscv_xlen == 64
+        riscv64-linux-gnu
+#  else
+#   error unknown platform triplet
+#  endif
 # else
 #   error unknown platform triplet
 # endif
@@ -1311,6 +1302,14 @@ if test "$Py_LTO" = 'true' ; then
       esac
       ;;
   esac
+
+  if test "$ac_cv_prog_cc_g" = "yes"
+  then
+      # bpo-30345: Add -g to LDFLAGS when compiling with LTO
+      # to get debug symbols.
+      LTOFLAGS="$LTOFLAGS -g"
+  fi
+
   CFLAGS="$CFLAGS $LTOFLAGS"
   LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
@@ -1430,9 +1429,6 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test "$CC" != 'g++' ; then
-	    STRICT_PROTO="-Wstrict-prototypes"
-	fi
         # For gcc 4.x we need to use -fwrapv so lets check if its supported
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
@@ -1478,8 +1474,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	OPT="$OPT $STRICT_PROTO"
 
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
@@ -1687,6 +1681,26 @@ yes)
     fi
     AC_MSG_RESULT($ac_cv_enable_unreachable_code_warning)
 
+    AC_MSG_CHECKING(if we can turn on $CC strict-prototypes warning)
+     ac_save_cc="$CC"
+     CC="$CC -Werror -Wstrict-prototypes"
+     AC_CACHE_VAL(ac_cv_enable_enable_strict_prototypes_warning,
+       AC_COMPILE_IFELSE(
+         [
+       AC_LANG_PROGRAM([[]], [[]])
+     ],[
+       ac_cv_enable_strict_prototypes_warning=yes
+     ],[
+       ac_cv_enable_strict_prototypes_warning=no
+     ]))
+     CC="$ac_save_cc"
+    AC_MSG_RESULT($ac_cv_enable_strict_prototypes_warning)
+
+    if test $ac_cv_enable_strict_prototypes_warning = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
+    fi
+
     AC_MSG_CHECKING(if we can make implicit function declaration an error in $CC)
      ac_save_cc="$CC"
      CC="$CC -Werror=implicit-function-declaration"
@@ -1721,7 +1735,6 @@ yes)
 	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
 	    ;;
 
-    # is there any other compiler on Darwin besides gcc?
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
@@ -2208,16 +2221,8 @@ AC_CHECK_SIZEOF(size_t, 4)
 AC_CHECK_SIZEOF(pid_t, 4)
 AC_CHECK_SIZEOF(uintptr_t)
 
-AC_MSG_CHECKING(for long double support)
-have_long_double=no
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[long double x; x = (long double)0;]])],[
-  AC_DEFINE(HAVE_LONG_DOUBLE, 1, [Define this if you have the type long double.])
-  have_long_double=yes
-],[])
-AC_MSG_RESULT($have_long_double)
-if test "$have_long_double" = yes ; then
+AC_TYPE_LONG_DOUBLE
 AC_CHECK_SIZEOF(long double, 16)
-fi
 
 AC_CHECK_SIZEOF(_Bool, 1)
 
@@ -2710,6 +2715,19 @@ void *x = uuid_create
 #endif
 ]])],
   [AC_DEFINE(HAVE_UUID_CREATE, 1, Define if uuid_create() exists.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+# Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
+# stream in big-endian byte-order
+AC_MSG_CHECKING(for uuid_enc_be)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
+#ifndef uuid_enc_be
+void *x = uuid_enc_be
+#endif
+]])],
+  [AC_DEFINE(HAVE_UUID_ENC_BE, 1, Define if uuid_enc_be() exists.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)]
 )
@@ -3446,7 +3464,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
  sched_rr_get_interval \
- sigaction sigaltstack siginterrupt sigpending sigrelse \
+ sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
  sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \

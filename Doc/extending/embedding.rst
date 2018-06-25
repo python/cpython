@@ -323,7 +323,7 @@ options.  In this case, the :mod:`sysconfig` module is a useful tool to
 programmatically extract the configuration values that you will want to
 combine together.  For example:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> import sysconfig
    >>> sysconfig.get_config_var('LIBS')

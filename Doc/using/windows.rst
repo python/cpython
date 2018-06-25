@@ -210,7 +210,9 @@ The options listed above can also be provided in a file named ``unattend.xml``
 alongside the executable. This file specifies a list of options and values.
 When a value is provided as an attribute, it will be converted to a number if
 possible. Values provided as element text are always left as strings. This
-example file sets the same options and the previous example::
+example file sets the same options and the previous example:
+
+.. code-block:: xml
 
     <Options>
         <Option Name="InstallAllUsers" Value="no" />
@@ -343,7 +345,9 @@ Windows allows environment variables to be configured permanently at both the
 User level and the System level, or temporarily in a command prompt.
 
 To temporarily set environment variables, open Command Prompt and use the
-:command:`set` command::
+:command:`set` command:
+
+.. code-block:: doscon
 
     C:\>set PATH=C:\Program Files\Python 3.6;%PATH%
     C:\>set PYTHONPATH=%PYTHONPATH%;C:\My_python_lib
@@ -503,7 +507,7 @@ From a script
 Let's create a test Python script - create a file called ``hello.py`` with the
 following contents
 
-::
+.. code-block:: python
 
     #! python
     import sys
@@ -518,7 +522,7 @@ From the directory in which hello.py lives, execute the command:
 You should notice the version number of your latest Python 2.x installation
 is printed.  Now try changing the first line to be:
 
-::
+.. code-block:: python
 
     #! python3
 
@@ -566,7 +570,7 @@ which interpreter to use.  The supported virtual commands are:
 
 For example, if the first line of your script starts with
 
-::
+.. code-block:: sh
 
   #! /usr/bin/python
 
@@ -592,7 +596,7 @@ Arguments in shebang lines
 The shebang lines can also specify additional options to be passed to the
 Python interpreter.  For example, if you have a shebang line:
 
-::
+.. code-block:: sh
 
   #! /usr/bin/python -v
 
@@ -683,7 +687,7 @@ For example:
 
 * Setting ``PY_PYTHON=3.1`` is equivalent to the INI file containing:
 
-::
+.. code-block:: ini
 
   [defaults]
   python=3.1
@@ -691,7 +695,7 @@ For example:
 * Setting ``PY_PYTHON=3`` and ``PY_PYTHON3=3.1`` is equivalent to the INI file
   containing:
 
-::
+.. code-block:: ini
 
   [defaults]
   python=3
@@ -844,7 +848,7 @@ The Windows-specific standard modules are documented in
 PyWin32
 -------
 
-The `PyWin32 <https://pypi.python.org/pypi/pywin32>`_ module by Mark Hammond
+The `PyWin32 <https://pypi.org/project/pywin32>`_ module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 

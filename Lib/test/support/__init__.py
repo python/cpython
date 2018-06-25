@@ -3,6 +3,7 @@
 if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
+import asyncio.events
 import collections.abc
 import contextlib
 import errno
@@ -89,8 +90,8 @@ __all__ = [
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_unless_bind_unix_socket",
     # sys
-    "is_jython", "is_android", "check_impl_detail", "unix_shell",
-    "setswitchinterval",
+    "JYTHON", "ANDROID", "check_impl_detail", "unix_shell",
+    "setswitchinterval", "MS_WINDOWS", "MACOS",
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
     "bind_unix_socket",
@@ -106,6 +107,21 @@ __all__ = [
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
     ]
+
+
+# True if Python is running on Microsoft Windows.
+MS_WINDOWS = (sys.platform == 'win32')
+
+# True if Python is running on Apple macOS.
+MACOS = (sys.platform == 'darwin')
+
+# True if Python runs on Jython
+# (Python implemented in Java running in a Java VM)
+JYTHON = sys.platform.startswith('java')
+
+# True if Python runs on Android
+ANDROID = hasattr(sys, 'getandroidapilevel')
+
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -363,6 +379,20 @@ if sys.platform.startswith("win"):
                     _force_run(fullname, os.unlink, fullname)
         _waitfor(_rmtree_inner, path, waitall=True)
         _waitfor(lambda p: _force_run(p, os.rmdir, p), path)
+
+    def _longpath(path):
+        try:
+            import ctypes
+        except ImportError:
+            # No ctypes means we can't expands paths.
+            pass
+        else:
+            buffer = ctypes.create_unicode_buffer(len(path) * 2)
+            length = ctypes.windll.kernel32.GetLongPathNameW(path, buffer,
+                                                             len(buffer))
+            if length:
+                return buffer[:length]
+        return path
 else:
     _unlink = os.unlink
     _rmdir = os.rmdir
@@ -388,6 +418,9 @@ else:
                     _force_run(path, os.unlink, fullname)
         _rmtree_inner(path)
         os.rmdir(path)
+
+    def _longpath(path):
+        return path
 
 def unlink(filename):
     try:
@@ -466,7 +499,7 @@ def _is_gui_available():
             raise ctypes.WinError()
         if not bool(uof.dwFlags & WSF_VISIBLE):
             reason = "gui not available (WSF_VISIBLE flag not set)"
-    elif sys.platform == 'darwin':
+    elif MACOS:
         # The Aqua Tk implementations on OS X can abort the process if
         # being called in an environment where a window server connection
         # cannot be made, for instance when invoked by a buildbot or ssh
@@ -582,7 +615,7 @@ def requires_mac_ver(*min_version):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
-            if sys.platform == 'darwin':
+            if MACOS:
                 version_txt = platform.mac_ver()[0]
                 try:
                     version = tuple(map(int, version_txt.split('.')))
@@ -770,14 +803,12 @@ requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
-is_jython = sys.platform.startswith('java')
-
-is_android = hasattr(sys, 'getandroidapilevel')
-
-if sys.platform != 'win32':
-    unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
-else:
+if MS_WINDOWS:
     unix_shell = None
+elif ANDROID:
+    unix_shell = '/system/bin/sh'
+else:
+    unix_shell = '/bin/sh'
 
 # Filename used for testing
 if os.name == 'java':
@@ -836,7 +867,7 @@ for character in (
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN + "-\xe0\xf2\u0258\u0141\u011f"
-if sys.platform == 'darwin':
+if MACOS:
     # In Mac OS X's VFS API file names are, by definition, canonically
     # decomposed Unicode, encoded using UTF-8. See QA1173:
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
@@ -848,7 +879,7 @@ TESTFN_ENCODING = sys.getfilesystemencoding()
 # encoded by the filesystem encoding (in strict mode). It can be None if we
 # cannot generate such filename.
 TESTFN_UNENCODABLE = None
-if os.name == 'nt':
+if MS_WINDOWS:
     # skip win32s (0) or Windows 9x/ME (1)
     if sys.getwindowsversion().platform >= 2:
         # Different kinds of characters from various languages to minimize the
@@ -863,8 +894,8 @@ if os.name == 'nt':
                   'Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
             TESTFN_UNENCODABLE = None
-# Mac OS X denies unencodable filenames (invalid utf-8)
-elif sys.platform != 'darwin':
+# macOS denies unencodable filenames (invalid utf-8)
+elif not MACOS:
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(TESTFN_ENCODING)
@@ -1505,7 +1536,7 @@ def gc_collect():
     objects to disappear.
     """
     gc.collect()
-    if is_jython:
+    if JYTHON:
         time.sleep(0.1)
     gc.collect()
     gc.collect()
@@ -1964,7 +1995,7 @@ def _check_docstrings():
     """Just used to check if docstrings are enabled"""
 
 MISSING_C_DOCSTRINGS = (check_impl_detail() and
-                        sys.platform != 'win32' and
+                        not MS_WINDOWS and
                         not sysconfig.get_config_var('WITH_DOC_STRINGS'))
 
 HAVE_DOCSTRINGS = (_check_docstrings.__doc__ is not None and
@@ -2381,13 +2412,15 @@ def can_xattr():
     if not hasattr(os, "setxattr"):
         can = False
     else:
-        tmp_fp, tmp_name = tempfile.mkstemp()
+        tmp_dir = tempfile.mkdtemp()
+        tmp_fp, tmp_name = tempfile.mkstemp(dir=tmp_dir)
         try:
             with open(TESTFN, "wb") as fp:
                 try:
                     # TESTFN & tempfile may use different file systems with
                     # different capabilities
                     os.setxattr(tmp_fp, b"user.test", b"")
+                    os.setxattr(tmp_name, b"trusted.foo", b"42")
                     os.setxattr(fp.fileno(), b"user.test", b"")
                     # Kernels < 2.6.39 don't respect setxattr flags.
                     kernel_version = platform.release()
@@ -2398,6 +2431,7 @@ def can_xattr():
         finally:
             unlink(TESTFN)
             unlink(tmp_name)
+            rmdir(tmp_dir)
     _can_xattr = can
     return can
 
@@ -2473,7 +2507,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
 
     The 'extra' argument can be a set of names that wouldn't otherwise be
     automatically detected as "public", like objects without a proper
-    '__module__' attriubute. If provided, it will be added to the
+    '__module__' attribute. If provided, it will be added to the
     automatically detected ones.
 
     The 'blacklist' argument can be a set of names that must not be treated
@@ -2571,7 +2605,7 @@ class SuppressCrashReport:
                 except (ValueError, OSError):
                     pass
 
-            if sys.platform == 'darwin':
+            if MACOS:
                 # Check if the 'Crash Reporter' on OSX was configured
                 # in 'Developer' mode and warn that it will get triggered
                 # when it is.
@@ -2715,7 +2749,7 @@ def setswitchinterval(interval):
     # Setting a very low gil interval on the Android emulator causes python
     # to hang (issue #26939).
     minimum_interval = 1e-5
-    if is_android and interval < minimum_interval:
+    if ANDROID and interval < minimum_interval:
         global _is_android_emulator
         if _is_android_emulator is None:
             _is_android_emulator = (subprocess.check_output(
@@ -2747,12 +2781,21 @@ def fd_count():
     if sys.platform.startswith(('linux', 'freebsd')):
         try:
             names = os.listdir("/proc/self/fd")
-            return len(names)
+            # Substract one because listdir() opens internally a file
+            # descriptor to list the content of the /proc/self/fd/ directory.
+            return len(names) - 1
         except FileNotFoundError:
             pass
 
+    MAXFD = 256
+    if hasattr(os, 'sysconf'):
+        try:
+            MAXFD = os.sysconf("SC_OPEN_MAX")
+        except OSError:
+            pass
+
     old_modes = None
-    if sys.platform == 'win32':
+    if MS_WINDOWS:
         # bpo-25306, bpo-31009: Call CrtSetReportMode() to not kill the process
         # on invalid file descriptor if Python is compiled in debug mode
         try:
@@ -2767,13 +2810,6 @@ def fd_count():
                                 msvcrt.CRT_ERROR,
                                 msvcrt.CRT_ASSERT):
                 old_modes[report_type] = msvcrt.CrtSetReportMode(report_type, 0)
-
-    MAXFD = 256
-    if hasattr(os, 'sysconf'):
-        try:
-            MAXFD = os.sysconf("SC_OPEN_MAX")
-        except OSError:
-            pass
 
     try:
         count = 0
@@ -2800,7 +2836,7 @@ def fd_count():
 
 class SaveSignals:
     """
-    Save an restore signal handlers.
+    Save and restore signal handlers.
 
     This class is only able to save/restore signal handlers registered
     by the Python signal module: see bpo-13285 for "external" signal
@@ -2810,7 +2846,7 @@ class SaveSignals:
     def __init__(self):
         import signal
         self.signal = signal
-        self.signals = list(range(1, signal.NSIG))
+        self.signals = signal.valid_signals()
         # SIGKILL and SIGSTOP signals cannot be ignored nor caught
         for signame in ('SIGKILL', 'SIGSTOP'):
             try:
@@ -2858,3 +2894,8 @@ class FakePath:
             raise self.path
         else:
             return self.path
+
+
+def maybe_get_event_loop_policy():
+    """Return the global event loop policy if one is set, else return None."""
+    return asyncio.events._event_loop_policy

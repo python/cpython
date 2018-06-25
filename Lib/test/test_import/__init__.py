@@ -20,7 +20,7 @@ import contextlib
 
 import test.support
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
+    EnvironmentVarGuard, TESTFN, check_warnings, forget, JYTHON,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
     unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
     temp_dir, DirsOnSysPath)
@@ -90,13 +90,14 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(cm.exception.path, os.__file__)
         self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'os' \(.*os.py\)")
 
+    @cpython_only
     def test_from_import_missing_attr_has_name_and_so_path(self):
-        import select
+        import _testcapi
         with self.assertRaises(ImportError) as cm:
-            from select import i_dont_exist
-        self.assertEqual(cm.exception.name, 'select')
-        self.assertEqual(cm.exception.path, select.__file__)
-        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'select' \(.*\.(so|pyd)\)")
+            from _testcapi import i_dont_exist
+        self.assertEqual(cm.exception.name, '_testcapi')
+        self.assertEqual(cm.exception.path, _testcapi.__file__)
+        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)")
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
@@ -110,6 +111,27 @@ class ImportTests(unittest.TestCase):
             from os.path import i_dont_exist
         self.assertIn(cm.exception.name, {'posixpath', 'ntpath'})
         self.assertIsNotNone(cm.exception)
+
+    def test_from_import_star_invalid_type(self):
+        import re
+        with _ready_to_import() as (name, path):
+            with open(path, 'w') as f:
+                f.write("__all__ = [b'invalid_type']")
+            globals = {}
+            with self.assertRaisesRegex(
+                TypeError, f"{re.escape(name)}\\.__all__ must be str"
+            ):
+                exec(f"from {name} import *", globals)
+            self.assertNotIn(b"invalid_type", globals)
+        with _ready_to_import() as (name, path):
+            with open(path, 'w') as f:
+                f.write("globals()[b'invalid_type'] = object()")
+            globals = {}
+            with self.assertRaisesRegex(
+                TypeError, f"{re.escape(name)}\\.__dict__ must be str"
+            ):
+                exec(f"from {name} import *", globals)
+            self.assertNotIn(b"invalid_type", globals)
 
     def test_case_sensitivity(self):
         # Brief digression to test that import is case-sensitive:  if we got
@@ -126,7 +148,7 @@ class ImportTests(unittest.TestCase):
         def test_with_extension(ext):
             # The extension is normally ".py", perhaps ".pyw".
             source = TESTFN + ext
-            if is_jython:
+            if JYTHON:
                 pyc = TESTFN + "$py.class"
             else:
                 pyc = TESTFN + ".pyc"
@@ -826,8 +848,11 @@ class PycacheTests(unittest.TestCase):
         unload(TESTFN)
         importlib.invalidate_caches()
         m = __import__(TESTFN)
-        self.assertEqual(m.__file__,
-                         os.path.join(os.curdir, os.path.relpath(pyc_file)))
+        try:
+            self.assertEqual(m.__file__,
+                             os.path.join(os.curdir, os.path.relpath(pyc_file)))
+        finally:
+            os.remove(pyc_file)
 
     def test___cached__(self):
         # Modules now also have an __cached__ that points to the pyc file.

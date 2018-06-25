@@ -2345,9 +2345,10 @@ class TestDateTime(TestDate):
         t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
         self.assertEqual(t.strftime("%m %d %y %f %S %M %H %j"),
                                     "12 31 04 000047 33 22 06 366")
-        tz = timezone(-timedelta(hours=2, seconds=33, microseconds=123))
-        t = t.replace(tzinfo=tz)
-        self.assertEqual(t.strftime("%z"), "-020033.000123")
+        for (s, us), z in [((33, 123), "33.000123"), ((33, 0), "33"),]:
+            tz = timezone(-timedelta(hours=2, seconds=s, microseconds=us))
+            t = t.replace(tzinfo=tz)
+            self.assertEqual(t.strftime("%z"), "-0200" + z)
 
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
@@ -2413,31 +2414,38 @@ class TestDateTime(TestDate):
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
 
+    @support.run_with_tz('EDT4')
     def test_astimezone(self):
-        return  # The rest is no longer applicable
-        # Pretty boring!  The TZ test is more interesting here.  astimezone()
-        # simply can't be applied to a naive object.
         dt = self.theclass.now()
-        f = FixedOffset(44, "")
-        self.assertRaises(ValueError, dt.astimezone) # naive
+        f = FixedOffset(44, "0044")
+        dt_utc = dt.replace(tzinfo=timezone(timedelta(hours=-4), 'EDT'))
+        self.assertEqual(dt.astimezone(), dt_utc) # naive
         self.assertRaises(TypeError, dt.astimezone, f, f) # too many args
         self.assertRaises(TypeError, dt.astimezone, dt) # arg wrong type
-        self.assertRaises(ValueError, dt.astimezone, f) # naive
-        self.assertRaises(ValueError, dt.astimezone, tz=f)  # naive
+        dt_f = dt.replace(tzinfo=f) + timedelta(hours=4, minutes=44)
+        self.assertEqual(dt.astimezone(f), dt_f) # naive
+        self.assertEqual(dt.astimezone(tz=f), dt_f) # naive
 
         class Bogus(tzinfo):
             def utcoffset(self, dt): return None
             def dst(self, dt): return timedelta(0)
         bog = Bogus()
         self.assertRaises(ValueError, dt.astimezone, bog)   # naive
-        self.assertRaises(ValueError,
-                          dt.replace(tzinfo=bog).astimezone, f)
+        self.assertEqual(dt.replace(tzinfo=bog).astimezone(f), dt_f)
 
         class AlsoBogus(tzinfo):
             def utcoffset(self, dt): return timedelta(0)
             def dst(self, dt): return None
         alsobog = AlsoBogus()
         self.assertRaises(ValueError, dt.astimezone, alsobog) # also naive
+
+        class Broken(tzinfo):
+            def utcoffset(self, dt): return 1
+            def dst(self, dt): return 1
+        broken = Broken()
+        dt_broken = dt.replace(tzinfo=broken)
+        with self.assertRaises(TypeError):
+            dt_broken.astimezone()
 
     def test_subclass_datetime(self):
 
@@ -3647,6 +3655,9 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         t2 = self.theclass.min
         self.assertNotEqual(t1, t2)
         self.assertEqual(t2, t2)
+        # and > comparison should fail
+        with self.assertRaises(TypeError):
+            t1 > t2
 
         # It's also naive if it has tzinfo but tzinfo.utcoffset() is None.
         class Naive(tzinfo):
@@ -5073,11 +5084,13 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         t_fold = datetime(2002, 10, 27, 1, 45, tzinfo=Eastern2)
         t_fold_utc = t_fold.astimezone(timezone.utc)
         self.assertNotEqual(t_fold, t_fold_utc)
+        self.assertNotEqual(t_fold_utc, t_fold)
 
     def test_mixed_compare_gap(self):
         t_gap = datetime(2002, 4, 7, 2, 45, tzinfo=Eastern2)
         t_gap_utc = t_gap.astimezone(timezone.utc)
         self.assertNotEqual(t_gap, t_gap_utc)
+        self.assertNotEqual(t_gap_utc, t_gap)
 
     def test_hash_aware(self):
         t = datetime(2000, 1, 1, tzinfo=Eastern2)

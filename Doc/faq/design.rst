@@ -2,6 +2,11 @@
 Design and History FAQ
 ======================
 
+.. only:: html
+
+   .. contents::
+
+
 Why does Python use indentation for grouping of statements?
 -----------------------------------------------------------
 
@@ -495,11 +500,7 @@ on the key and a per-process seed; for example, "Python" could hash to
 to 1142331976.  The hash code is then used to calculate a location in an
 internal array where the value will be stored.  Assuming that you're storing
 keys that all have different hash values, this means that dictionaries take
-constant time -- O(1), in computer science notation -- to retrieve a key.  It
-also means that no sorted order of the keys is maintained, and traversing the
-array as the ``.keys()`` and ``.items()`` do will output the dictionary's
-content in some arbitrary jumbled order that can change with every invocation of
-a program.
+constant time -- O(1), in computer science notation -- to retrieve a key.
 
 
 Why must dictionary keys be immutable?

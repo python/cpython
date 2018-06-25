@@ -734,6 +734,13 @@ class MmapTests(unittest.TestCase):
         self.assertRaises(ValueError, m.write_byte, 42)
         self.assertRaises(ValueError, m.write, b'abc')
 
+    def test_concat_repeat_exception(self):
+        m = mmap.mmap(-1, 16)
+        with self.assertRaises(TypeError):
+            m + m
+        with self.assertRaises(TypeError):
+            m * 2
+
     @unittest.skipUnless(hasattr(mmap.mmap, 'madvise'), 'needs madvise')
     def test_madvise(self):
         size = 8192

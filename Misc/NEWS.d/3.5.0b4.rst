@@ -224,8 +224,8 @@ segment.
 .. nonce: hwXwCH
 .. section: Library
 
-SMTP.auth() and SMTP.login() now support RFC 4954's optional initial-
-response argument to the SMTP AUTH command.
+SMTP.auth() and SMTP.login() now support RFC 4954's optional
+initial-response argument to the SMTP AUTH command.
 
 ..
 

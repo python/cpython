@@ -103,8 +103,6 @@ else:
 HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
 
-WIN32 = (sys.platform == "win32")
-
 from multiprocessing.connection import wait
 
 def wait_for_handle(handle, timeout):
@@ -1056,6 +1054,24 @@ class _TestQueue(BaseTestCase):
             self.assertTrue(q.get(timeout=1.0))
             close_queue(q)
 
+        with test.support.captured_stderr():
+            # bpo-33078: verify that the queue size is correctly handled
+            # on errors.
+            q = self.Queue(maxsize=1)
+            q.put(NotSerializable())
+            q.put(True)
+            try:
+                self.assertEqual(q.qsize(), 1)
+            except NotImplementedError:
+                # qsize is not available on all platform as it
+                # relies on sem_getvalue
+                pass
+            # bpo-30595: use a timeout of 1 second for slow buildbots
+            self.assertTrue(q.get(timeout=1.0))
+            # Check that the size of the queue is correct
+            self.assertTrue(q.empty())
+            close_queue(q)
+
     def test_queue_feeder_on_queue_feeder_error(self):
         # bpo-30006: verify feeder handles exceptions using the
         # _on_queue_feeder_error hook.
@@ -1086,7 +1102,7 @@ class _TestQueue(BaseTestCase):
             q = SafeQueue(ctx=multiprocessing.get_context())
             q.put(not_serializable_obj)
 
-            # Verify that q is still functionning correctly
+            # Verify that q is still functioning correctly
             q.put(True)
             self.assertTrue(q.get(timeout=1.0))
 
@@ -3354,10 +3370,24 @@ class _TestHeap(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
 
+    def setUp(self):
+        super().setUp()
+        # Make pristine heap for these tests
+        self.old_heap = multiprocessing.heap.BufferWrapper._heap
+        multiprocessing.heap.BufferWrapper._heap = multiprocessing.heap.Heap()
+
+    def tearDown(self):
+        multiprocessing.heap.BufferWrapper._heap = self.old_heap
+        super().tearDown()
+
     def test_heap(self):
         iterations = 5000
         maxblocks = 50
         blocks = []
+
+        # get the heap object
+        heap = multiprocessing.heap.BufferWrapper._heap
+        heap._DISCARD_FREE_SPACE_LARGER_THAN = 0
 
         # create and destroy lots of blocks of different sizes
         for i in range(iterations):
@@ -3367,31 +3397,52 @@ class _TestHeap(BaseTestCase):
             if len(blocks) > maxblocks:
                 i = random.randrange(maxblocks)
                 del blocks[i]
-
-        # get the heap object
-        heap = multiprocessing.heap.BufferWrapper._heap
+            del b
 
         # verify the state of the heap
-        all = []
-        occupied = 0
-        heap._lock.acquire()
-        self.addCleanup(heap._lock.release)
-        for L in list(heap._len_to_seq.values()):
-            for arena, start, stop in L:
-                all.append((heap._arenas.index(arena), start, stop,
-                            stop-start, 'free'))
-        for arena, start, stop in heap._allocated_blocks:
-            all.append((heap._arenas.index(arena), start, stop,
-                        stop-start, 'occupied'))
-            occupied += (stop-start)
+        with heap._lock:
+            all = []
+            free = 0
+            occupied = 0
+            for L in list(heap._len_to_seq.values()):
+                # count all free blocks in arenas
+                for arena, start, stop in L:
+                    all.append((heap._arenas.index(arena), start, stop,
+                                stop-start, 'free'))
+                    free += (stop-start)
+            for arena, arena_blocks in heap._allocated_blocks.items():
+                # count all allocated blocks in arenas
+                for start, stop in arena_blocks:
+                    all.append((heap._arenas.index(arena), start, stop,
+                                stop-start, 'occupied'))
+                    occupied += (stop-start)
 
-        all.sort()
+            self.assertEqual(free + occupied,
+                             sum(arena.size for arena in heap._arenas))
 
-        for i in range(len(all)-1):
-            (arena, start, stop) = all[i][:3]
-            (narena, nstart, nstop) = all[i+1][:3]
-            self.assertTrue((arena != narena and nstart == 0) or
-                            (stop == nstart))
+            all.sort()
+
+            for i in range(len(all)-1):
+                (arena, start, stop) = all[i][:3]
+                (narena, nstart, nstop) = all[i+1][:3]
+                if arena != narena:
+                    # Two different arenas
+                    self.assertEqual(stop, heap._arenas[arena].size)  # last block
+                    self.assertEqual(nstart, 0)         # first block
+                else:
+                    # Same arena: two adjacent blocks
+                    self.assertEqual(stop, nstart)
+
+        # test free'ing all blocks
+        random.shuffle(blocks)
+        while blocks:
+            blocks.pop()
+
+        self.assertEqual(heap._n_frees, heap._n_mallocs)
+        self.assertEqual(len(heap._pending_free_blocks), 0)
+        self.assertEqual(len(heap._arenas), 0)
+        self.assertEqual(len(heap._allocated_blocks), 0, heap._allocated_blocks)
+        self.assertEqual(len(heap._len_to_seq), 0)
 
     def test_free_from_gc(self):
         # Check that freeing of blocks by the garbage collector doesn't deadlock
@@ -3753,7 +3804,7 @@ class _TestPollEintr(BaseTestCase):
 
 class TestInvalidHandle(unittest.TestCase):
 
-    @unittest.skipIf(WIN32, "skipped on Windows")
+    @unittest.skipIf(support.MS_WINDOWS, "skipped on Windows")
     def test_invalid_handles(self):
         conn = multiprocessing.connection.Connection(44977608)
         # check that poll() doesn't crash
@@ -4081,12 +4132,12 @@ class TestWait(unittest.TestCase):
 
 class TestInvalidFamily(unittest.TestCase):
 
-    @unittest.skipIf(WIN32, "skipped on Windows")
+    @unittest.skipIf(support.MS_WINDOWS, "skipped on Windows")
     def test_invalid_family(self):
         with self.assertRaises(ValueError):
             multiprocessing.connection.Listener(r'\\.\test')
 
-    @unittest.skipUnless(WIN32, "skipped on non-Windows platforms")
+    @unittest.skipUnless(support.MS_WINDOWS, "skipped on non-Windows platforms")
     def test_invalid_family_win32(self):
         with self.assertRaises(ValueError):
             multiprocessing.connection.Listener('/var/test.pipe')
@@ -4212,7 +4263,7 @@ class TestForkAwareThreadLock(unittest.TestCase):
 class TestCloseFds(unittest.TestCase):
 
     def get_high_socket_fd(self):
-        if WIN32:
+        if support.MS_WINDOWS:
             # The child process will not have any socket handles, so
             # calling socket.fromfd() should produce WSAENOTSOCK even
             # if there is a handle of the same number.
@@ -4230,7 +4281,7 @@ class TestCloseFds(unittest.TestCase):
             return fd
 
     def close(self, fd):
-        if WIN32:
+        if support.MS_WINDOWS:
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=fd).close()
         else:
             os.close(fd)
@@ -4277,6 +4328,9 @@ class TestCloseFds(unittest.TestCase):
 
 class TestIgnoreEINTR(unittest.TestCase):
 
+    # Sending CONN_MAX_SIZE bytes into a multiprocessing pipe must block
+    CONN_MAX_SIZE = max(support.PIPE_MAX_SIZE, support.SOCK_MAX_SIZE)
+
     @classmethod
     def _test_ignore(cls, conn):
         def handler(signum, frame):
@@ -4285,7 +4339,7 @@ class TestIgnoreEINTR(unittest.TestCase):
         conn.send('ready')
         x = conn.recv()
         conn.send(x)
-        conn.send_bytes(b'x' * (1024 * 1024))   # sending 1 MiB should block
+        conn.send_bytes(b'x' * cls.CONN_MAX_SIZE)
 
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore(self):
@@ -4304,7 +4358,7 @@ class TestIgnoreEINTR(unittest.TestCase):
             self.assertEqual(conn.recv(), 1234)
             time.sleep(0.1)
             os.kill(p.pid, signal.SIGUSR1)
-            self.assertEqual(conn.recv_bytes(), b'x'*(1024*1024))
+            self.assertEqual(conn.recv_bytes(), b'x' * self.CONN_MAX_SIZE)
             time.sleep(0.1)
             p.join()
         finally:

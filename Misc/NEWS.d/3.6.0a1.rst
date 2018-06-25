@@ -728,8 +728,8 @@ Fixed a number of bugs in UTF-7 decoding of misformed data.
 .. section: Core and Builtins
 
 The UTF-8 encoder is now up to 75 times as fast for error handlers:
-``ignore``, ``replace``, ``surrogateescape``, ``surrogatepass``. Patch co-
-written with Serhiy Storchaka.
+``ignore``, ``replace``, ``surrogateescape``, ``surrogatepass``. Patch
+co-written with Serhiy Storchaka.
 
 ..
 
@@ -761,8 +761,8 @@ by Serhiy Storchaka.
 
 On Solaris 11.3 or newer, os.urandom() now uses the getrandom() function
 instead of the getentropy() function. The getentropy() function is blocking
-to generate very good quality entropy, os.urandom() doesn't need such high-
-quality entropy.
+to generate very good quality entropy, os.urandom() doesn't need such
+high-quality entropy.
 
 ..
 
@@ -891,9 +891,9 @@ string.  Original fix by Ján Janech.
 .. section: Library
 
 The "urllib.request" module now percent-encodes non-ASCII bytes found in
-redirect target URLs.  Some servers send Location header fields with non-
-ASCII bytes, but "http.client" requires the request target to be ASCII-
-encodable, otherwise a UnicodeEncodeError is raised.  Based on patch by
+redirect target URLs.  Some servers send Location header fields with
+non-ASCII bytes, but "http.client" requires the request target to be
+ASCII-encodable, otherwise a UnicodeEncodeError is raised.  Based on patch by
 Christian Heimes.
 
 ..
@@ -3328,10 +3328,10 @@ them a 'sheet'.  Patch by Mark Roseman.
 .. nonce: -j_BV7
 .. section: IDLE
 
-Enhance the initial html viewer now used for Idle Help. * Properly indent
-fixed-pitch text (patch by Mark Roseman). * Give code snippet a very Sphinx-
-like light blueish-gray background. * Re-use initial width and height set by
-users for shell and editor. * When the Table of Contents (TOC) menu is used,
+Enhance the initial html viewer now used for Idle Help. Properly indent
+fixed-pitch text (patch by Mark Roseman). Give code snippet a very
+Sphinx-like light blueish-gray background. Re-use initial width and height set by
+users for shell and editor. When the Table of Contents (TOC) menu is used,
 put the section header at the top of the screen.
 
 ..
@@ -3651,8 +3651,8 @@ particular on Android).  Patch by Chi Hsuan Yen.
 .. nonce: HDjM4s
 .. section: Build
 
-Disable the rules for running _freeze_importlib and pgen when cross-
-compiling.  The output of these programs is normally saved with the source
+Disable the rules for running _freeze_importlib and pgen when
+cross-compiling.  The output of these programs is normally saved with the source
 code anyway, and is still regenerated when doing a native build. Patch by
 Xavier de Gaye.
 

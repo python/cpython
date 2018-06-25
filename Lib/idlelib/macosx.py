@@ -128,7 +128,7 @@ def overrideRootMenu(root, flist):
     # menu.
     from tkinter import Menu
     from idlelib import mainmenu
-    from idlelib import windows
+    from idlelib import window
 
     closeItem = mainmenu.menudefs[0][1][-2]
 
@@ -148,7 +148,7 @@ def overrideRootMenu(root, flist):
     root.configure(menu=menubar)
     menudict = {}
 
-    menudict['windows'] = menu = Menu(menubar, name='windows', tearoff=0)
+    menudict['window'] = menu = Menu(menubar, name='window', tearoff=0)
     menubar.add_cascade(label='Window', menu=menu, underline=0)
 
     def postwindowsmenu(menu=menu):

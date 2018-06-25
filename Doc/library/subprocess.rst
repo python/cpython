@@ -39,7 +39,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   shell=False, cwd=None, timeout=None, check=False, \
-                  encoding=None, errors=None, text=None)
+                  encoding=None, errors=None, text=None, env=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -77,6 +77,11 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    specified *encoding* and *errors* or the :class:`io.TextIOWrapper` default.
    The *universal_newlines* argument is equivalent  to *text* and is provided
    for backwards compatibility. By default, file objects are opened in binary mode.
+
+   If *env* is not ``None``, it must be a mapping that defines the environment
+   variables for the new process; these are used instead of the default
+   behavior of inheriting the current process' environment. It is passed directly
+   to :class:`Popen`.
 
    Examples::
 
@@ -459,7 +464,10 @@ functions.
       common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed.
+   :const:`2` will be closed before the child process is executed.  Otherwise
+   when *close_fds* is false, file descriptors obey their inheritable flag
+   as described in :ref:`fd_inheritance`.
+
    On Windows, if *close_fds* is true then no handles will be inherited by the
    child process unless explicitly passed in the ``handle_list`` element of
    :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.

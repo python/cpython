@@ -100,8 +100,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     int line = 0;                       /* (ditto) */
     int addr = 0;                       /* (ditto) */
     int delta_iblock = 0;               /* Scanning the SETUPs and POPs */
-    int for_loop_delta = 0;             /* (ditto) */
-    int delta;
+    int delta = 0;
     int blockstack[CO_MAXBLOCKS];       /* Walking the 'finally' blocks */
     int blockstack_top = 0;             /* (ditto) */
 
@@ -256,14 +255,16 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
                 return -1;
             }
             if (first_in && !second_in) {
-                if (op == FOR_ITER && !delta_iblock) {
-                    for_loop_delta++;
-                }
-                if (op != FOR_ITER) {
+                if (op != FOR_ITER && code[target_addr] != END_ASYNC_FOR) {
                     delta_iblock++;
                 }
+                else if (!delta_iblock) {
+                    /* Pop the iterators of any 'for' and 'async for' loop
+                     * we're jumping out of. */
+                    delta++;
+                }
             }
-            if (op != FOR_ITER) {
+            if (op != FOR_ITER && code[target_addr] != END_ASYNC_FOR) {
                 blockstack[blockstack_top++] = target_addr;
             }
             break;
@@ -276,8 +277,12 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             int first_in = target_addr <= f->f_lasti && f->f_lasti <= addr;
             int second_in = target_addr <= new_lasti && new_lasti <= addr;
             if (first_in != second_in) {
-                PyErr_SetString(PyExc_ValueError,
-                                "can't jump into or out of a 'finally' block");
+                op = code[target_addr];
+                PyErr_Format(PyExc_ValueError,
+                             "can't jump %s %s block",
+                             second_in ? "into" : "out of",
+                             (op == DUP_TOP || op == POP_TOP) ?
+                                "an 'except'" : "a 'finally'");
                 return -1;
             }
             break;
@@ -289,11 +294,10 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     assert(blockstack_top == 0);
 
     /* Pop any blocks that we're jumping out of. */
-    delta = 0;
     if (delta_iblock > 0) {
         f->f_iblock -= delta_iblock;
         PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-        delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
+        delta += (int)(f->f_stacktop - f->f_valuestack) - b->b_level;
         if (b->b_type == SETUP_FINALLY &&
             code[b->b_handler] == WITH_CLEANUP_START)
         {
@@ -301,9 +305,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             delta++;
         }
     }
-    /* Pop the iterators of any 'for' loop we're jumping out of. */
-    delta += for_loop_delta;
-
     while (delta > 0) {
         PyObject *v = (*--f->f_stacktop);
         Py_DECREF(v);
@@ -499,7 +500,7 @@ frame_tp_clear(PyFrameObject *f)
 }
 
 static PyObject *
-frame_clear(PyFrameObject *f)
+frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     if (f->f_executing) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -518,7 +519,7 @@ PyDoc_STRVAR(clear__doc__,
 "F.clear(): clear most references held by the frame");
 
 static PyObject *
-frame_sizeof(PyFrameObject *f)
+frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res, extras, ncells, nfrees;
 

@@ -6,6 +6,7 @@ import sys
 import platform
 import signal
 import io
+import itertools
 import os
 import errno
 import tempfile
@@ -34,13 +35,11 @@ except ImportError:
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
-mswindows = (sys.platform == "win32")
-
 #
 # Depends on the following external programs: Python
 #
 
-if mswindows:
+if support.MS_WINDOWS:
     SETBINARY = ('import msvcrt; msvcrt.setmode(sys.stdout.fileno(), '
                                                 'os.O_BINARY);')
 else:
@@ -313,7 +312,7 @@ class ProcessTestCase(BaseTestCase):
                           self._assert_python, pre_args,
                           executable=NONEXISTING_CMD[0])
 
-    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    @unittest.skipIf(support.MS_WINDOWS, "executable argument replaces shell")
     def test_executable_replaces_shell(self):
         # Check that the executable argument replaces the default shell
         # when shell=True.
@@ -362,7 +361,7 @@ class ProcessTestCase(BaseTestCase):
         temp_dir = self._normalize_cwd(temp_dir)
         self._assert_cwd(temp_dir, sys.executable, cwd=FakePath(temp_dir))
 
-    @unittest.skipIf(mswindows, "pending resolution of issue #15533")
+    @unittest.skipIf(support.MS_WINDOWS, "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
         # Check that Popen looks for args[0] relative to cwd if args[0]
         # is relative.
@@ -378,7 +377,7 @@ class ProcessTestCase(BaseTestCase):
             python_dir = self._normalize_cwd(python_dir)
             self._assert_cwd(python_dir, rel_python, cwd=python_dir)
 
-    @unittest.skipIf(mswindows, "pending resolution of issue #15533")
+    @unittest.skipIf(support.MS_WINDOWS, "pending resolution of issue #15533")
     def test_cwd_with_relative_executable(self):
         # Check that Popen looks for executable relative to cwd if executable
         # is relative (and that executable takes precedence over args[0]).
@@ -1007,7 +1006,7 @@ class ProcessTestCase(BaseTestCase):
 
     def test_no_leaking(self):
         # Make sure we leak no resources
-        if not mswindows:
+        if not support.MS_WINDOWS:
             max_handles = 1026 # too much for most UNIX systems
         else:
             max_handles = 2050 # too much for (at least some) Windows setups
@@ -1243,7 +1242,7 @@ class ProcessTestCase(BaseTestCase):
         t = threading.Timer(0.2, kill_proc_timer_thread)
         t.start()
 
-        if mswindows:
+        if support.MS_WINDOWS:
             expected_errorcode = 1
         else:
             # Should be -9 because of the proc.kill() from the thread.
@@ -1364,13 +1363,13 @@ class ProcessTestCase(BaseTestCase):
         fds_after_exception = os.listdir(fd_directory)
         self.assertEqual(fds_before_popen, fds_after_exception)
 
-    @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
+    @unittest.skipIf(support.MS_WINDOWS, "behavior currently not supported on Windows")
     def test_file_not_found_includes_filename(self):
         with self.assertRaises(FileNotFoundError) as c:
             subprocess.call(['/opt/nonexistent_binary', 'with', 'some', 'args'])
         self.assertEqual(c.exception.filename, '/opt/nonexistent_binary')
 
-    @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
+    @unittest.skipIf(support.MS_WINDOWS, "behavior currently not supported on Windows")
     def test_file_not_found_with_bad_cwd(self):
         with self.assertRaises(FileNotFoundError) as c:
             subprocess.Popen(['exit', '0'], cwd='/some/nonexistent/directory')
@@ -1504,7 +1503,7 @@ class RunFuncTestCase(BaseTestCase):
         self.assertIn('capture_output', c.exception.args[0])
 
 
-@unittest.skipIf(mswindows, "POSIX specific tests")
+@unittest.skipIf(support.MS_WINDOWS, "POSIX specific tests")
 class POSIXProcessTestCase(BaseTestCase):
 
     def setUp(self):
@@ -1616,13 +1615,29 @@ class POSIXProcessTestCase(BaseTestCase):
 
         self.assertIn(repr(error_data), str(e.exception))
 
-
+    @unittest.skipIf(not os.path.exists('/proc/self/status'),
+                     "need /proc/self/status")
     def test_restore_signals(self):
-        # Code coverage for both values of restore_signals to make sure it
-        # at least does not blow up.
-        # A test for behavior would be complex.  Contributions welcome.
-        subprocess.call([sys.executable, "-c", ""], restore_signals=True)
-        subprocess.call([sys.executable, "-c", ""], restore_signals=False)
+        # Blindly assume that cat exists on systems with /proc/self/status...
+        default_proc_status = subprocess.check_output(
+                ['cat', '/proc/self/status'],
+                restore_signals=False)
+        for line in default_proc_status.splitlines():
+            if line.startswith(b'SigIgn'):
+                default_sig_ign_mask = line
+                break
+        else:
+            self.skipTest("SigIgn not found in /proc/self/status.")
+        restored_proc_status = subprocess.check_output(
+                ['cat', '/proc/self/status'],
+                restore_signals=True)
+        for line in restored_proc_status.splitlines():
+            if line.startswith(b'SigIgn'):
+                restored_sig_ign_mask = line
+                break
+        self.assertNotEqual(default_sig_ign_mask, restored_sig_ign_mask,
+                            msg="restore_signals=True should've unblocked "
+                            "SIGPIPE and friends.")
 
     def test_start_new_session(self):
         # For code coverage of calling setsid().  We don't care if we get an
@@ -2133,6 +2148,55 @@ class POSIXProcessTestCase(BaseTestCase):
         self.check_swap_fds(1, 2, 0)
         self.check_swap_fds(2, 0, 1)
         self.check_swap_fds(2, 1, 0)
+
+    def _check_swap_std_fds_with_one_closed(self, from_fds, to_fds):
+        saved_fds = self._save_fds(range(3))
+        try:
+            for from_fd in from_fds:
+                with tempfile.TemporaryFile() as f:
+                    os.dup2(f.fileno(), from_fd)
+
+            fd_to_close = (set(range(3)) - set(from_fds)).pop()
+            os.close(fd_to_close)
+
+            arg_names = ['stdin', 'stdout', 'stderr']
+            kwargs = {}
+            for from_fd, to_fd in zip(from_fds, to_fds):
+                kwargs[arg_names[to_fd]] = from_fd
+
+            code = textwrap.dedent(r'''
+                import os, sys
+                skipped_fd = int(sys.argv[1])
+                for fd in range(3):
+                    if fd != skipped_fd:
+                        os.write(fd, str(fd).encode('ascii'))
+            ''')
+
+            skipped_fd = (set(range(3)) - set(to_fds)).pop()
+
+            rc = subprocess.call([sys.executable, '-c', code, str(skipped_fd)],
+                                 **kwargs)
+            self.assertEqual(rc, 0)
+
+            for from_fd, to_fd in zip(from_fds, to_fds):
+                os.lseek(from_fd, 0, os.SEEK_SET)
+                read_bytes = os.read(from_fd, 1024)
+                read_fds = list(map(int, read_bytes.decode('ascii')))
+                msg = textwrap.dedent(f"""
+                    When testing {from_fds} to {to_fds} redirection,
+                    parent descriptor {from_fd} got redirected
+                    to descriptor(s) {read_fds} instead of descriptor {to_fd}.
+                """)
+                self.assertEqual([to_fd], read_fds, msg)
+        finally:
+            self._restore_fds(saved_fds)
+
+    # Check that subprocess can remap std fds correctly even
+    # if one of them is closed (#32844).
+    def test_swap_std_fds_with_one_closed(self):
+        for from_fds in itertools.combinations(range(3), 2):
+            for to_fds in itertools.permutations(range(3), 2):
+                self._check_swap_std_fds_with_one_closed(from_fds, to_fds)
 
     def test_surrogates_error_message(self):
         def prepare():
@@ -2722,7 +2786,7 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertEqual(returncode, -3)
 
 
-@unittest.skipUnless(mswindows, "Windows specific tests")
+@unittest.skipUnless(support.MS_WINDOWS, "Windows specific tests")
 class Win32ProcessTestCase(BaseTestCase):
 
     def test_startupinfo(self):
@@ -3027,7 +3091,7 @@ class MiscTests(unittest.TestCase):
             dir = tempfile.mkdtemp()
             name = os.path.join(dir, "foo")
             status, output = subprocess.getstatusoutput(
-                ("type " if mswindows else "cat ") + name)
+                ("type " if support.MS_WINDOWS else "cat ") + name)
             self.assertNotEqual(status, 0)
         finally:
             if dir is not None:
@@ -3061,7 +3125,7 @@ class ProcessTestCaseNoPoll(ProcessTestCase):
         ProcessTestCase.tearDown(self)
 
 
-@unittest.skipUnless(mswindows, "Windows-specific tests")
+@unittest.skipUnless(support.MS_WINDOWS, "Windows-specific tests")
 class CommandsWithSpaces (BaseTestCase):
 
     def setUp(self):

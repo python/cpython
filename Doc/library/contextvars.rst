@@ -8,7 +8,7 @@
 
 --------------
 
-This module provides APIs to manage, store, and access non-local
+This module provides APIs to manage, store, and access context-local
 state.  The :class:`~contextvars.ContextVar` class is used to declare
 and work with *Context Variables*.  The :func:`~contextvars.copy_context`
 function and the :class:`~contextvars.Context` class should be used to
@@ -253,7 +253,7 @@ client::
         addr = writer.transport.get_extra_info('socket').getpeername()
         client_addr_var.set(addr)
 
-        # In any code that we call is is now possible to get
+        # In any code that we call is now possible to get
         # client's address by calling 'client_addr_var.get()'.
 
         while True:
