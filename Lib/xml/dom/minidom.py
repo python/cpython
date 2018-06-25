@@ -851,6 +851,11 @@ class Element(Node):
         return (namespaceURI, localName) in self._attrsNS
 
     def getElementsByTagName(self, name):
+        """Returns all descendant elements with the given tag name.
+
+        Returns the list of all descendant elements (not direct children
+        only) with the specified tag name.
+        """
         return _get_elements_by_tagName_helper(self, name, NodeList())
 
     def getElementsByTagNameNS(self, namespaceURI, localName):
