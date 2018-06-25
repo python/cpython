@@ -2024,7 +2024,7 @@ select_kqueue_fromfd_impl(PyTypeObject *type, int fd)
 {
     SOCKET s_fd = (SOCKET)fd;
 
-    return newKqueue_Object((PyTypeObject*)cls, s_fd);
+    return newKqueue_Object(type, s_fd);
 }
 
 /*[clinic input]
