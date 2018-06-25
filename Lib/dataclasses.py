@@ -4,6 +4,7 @@ import copy
 import types
 import inspect
 import keyword
+import unicodedata
 
 __all__ = ['dataclass',
            'field',
@@ -1108,6 +1109,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     for item in fields:
         if isinstance(item, str):
             name = item
+            normalized_name = unicodedata.normalize('NFKC', name)
             tp = 'typing.Any'
         elif len(item) == 2:
             name, tp, = item
@@ -1121,10 +1123,10 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
             raise TypeError(f'Field names must be valid identifers: {name!r}')
         if keyword.iskeyword(name):
             raise TypeError(f'Field names must not be keywords: {name!r}')
-        if name in seen:
+        if normalized_name in seen:
             raise TypeError(f'Field name duplicated: {name!r}')
 
-        seen.add(name)
+        seen.add(normalized_name)
         anns[name] = tp
 
     namespace['__annotations__'] = anns
