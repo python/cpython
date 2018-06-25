@@ -77,8 +77,9 @@ class TestEPoll(unittest.TestCase):
         if hasattr(select, "EPOLL_CLOEXEC"):
             select.epoll(select.EPOLL_CLOEXEC).close()
             select.epoll(flags=select.EPOLL_CLOEXEC).close()
-            select.epoll(flags=0).close()
-            self.assertRaises(OSError, select.epoll, flags=12356)
+        select.epoll(flags=0).close()
+        # the flags parameter is now ignored
+        select.epoll(flags=12356).close()
 
     def test_badcreate(self):
         self.assertRaises(TypeError, select.epoll, 1, 2, 3)
