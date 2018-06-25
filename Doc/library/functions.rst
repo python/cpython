@@ -957,6 +957,11 @@ are always available.  They are listed here in alphabetical order.
    encoding. (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
 
+   .. _filemodes:
+
+   .. index::
+      pair: file; modes
+
    ========= ===============================================================
    Character Meaning
    ========= ===============================================================
