@@ -909,7 +909,7 @@ report, as a list of (fd, event) 2-tuples.
 
 static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=2654e5457cca0b3c input=fecb272f2f670025]*/
+/*[clinic end generated code: output=2654e5457cca0b3c input=546cd1fca3fb1efd]*/
 {
     struct dvpoll dvp;
     PyObject *result_list = NULL, *timeout_obj = NULL;
@@ -1506,7 +1506,7 @@ as a list of (fd, events) 2-tuples.
 static PyObject *
 select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
                        int maxevents)
-/*[clinic end generated code: output=e02d121a20246c6c input=6fd19c94e3ac0b66]*/
+/*[clinic end generated code: output=e02d121a20246c6c input=33d34a5ea430fd5b]*/
 {
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;

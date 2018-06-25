@@ -319,7 +319,7 @@ PyDoc_STRVAR(select_devpoll_poll__doc__,
 "Polls the set of registered file descriptors.\n"
 "\n"
 "Returns a list containing any descriptors that have events or errors to\n"
-"report.");
+"report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_DEVPOLL_POLL_METHODDEF    \
     {"poll", (PyCFunction)select_devpoll_poll, METH_FASTCALL|METH_KEYWORDS, select_devpoll_poll__doc__},
@@ -690,7 +690,10 @@ PyDoc_STRVAR(select_epoll_poll__doc__,
 "    the maximum time to wait in seconds (as float);\n"
 "    a timeout of None or -1 makes poll wait indefinitely\n"
 "  maxevents\n"
-"    the maximum number of events returned; -1 means no limit");
+"    the maximum number of events returned; -1 means no limit\n"
+"\n"
+"Returns a list containing any descriptors that have events to report,\n"
+"as a list of (fd, events) 2-tuples.");
 
 #define SELECT_EPOLL_POLL_METHODDEF    \
     {"poll", (PyCFunction)select_epoll_poll, METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
@@ -1040,4 +1043,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=317c96d0d6aadcc3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=541f8a02a606e554 input=a9049054013a1b77]*/
