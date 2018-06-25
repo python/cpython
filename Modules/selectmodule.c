@@ -2452,7 +2452,7 @@ static PyTypeObject kqueue_queue_Type = {
     0,                                                  /* tp_dictoffset */
     0,                                                  /* tp_init */
     0,                                                  /* tp_alloc */
-    select_kqueue_new,                                  /* tp_new */
+    select_kqueue,                                      /* tp_new */
     0,                                                  /* tp_free */
 };
 
