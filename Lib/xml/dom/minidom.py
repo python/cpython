@@ -718,6 +718,14 @@ class Element(Node):
         Node.unlink(self)
 
     def getAttribute(self, attname):
+        """Returns the value of the specified attribute.
+
+        Returns the value of the element's attribute named attname as
+        a string. An empty string is returned if the element does not
+        have such an attribute. Note that an empty string may also be
+        returned as an explicitly given attribute value, use the
+        hasAttribute method to distinguish these two cases.
+        """
         if self._attrs is None:
             return ""
         try:
@@ -828,6 +836,11 @@ class Element(Node):
     removeAttributeNodeNS = removeAttributeNode
 
     def hasAttribute(self, name):
+        """Checks whether the element has an attribute with the specified name.
+
+        Returns True if the element has an attribute with the specified name.
+        Otherwise, returns False.
+        """
         if self._attrs is None:
             return False
         return name in self._attrs
