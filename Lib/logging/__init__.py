@@ -1793,7 +1793,8 @@ def basicConfig(**kwargs):
     Do basic configuration for the logging system.
 
     This function does nothing if the root logger already has handlers
-    configured. It is a convenience method intended for use by simple scripts
+    configured, unless the keyword argument *force* is set to ``True``.
+    It is a convenience method intended for use by simple scripts
     to do one-shot configuration of the logging package.
 
     The default behaviour is to create a StreamHandler which writes to
@@ -1821,12 +1822,18 @@ def basicConfig(**kwargs):
               handlers, which will be added to the root handler. Any handler
               in the list which does not have a formatter assigned will be
               assigned the formatter created in this function.
-
+    force     If this keyword  is specified as true, any existing handlers
+              attached to the root logger are removed and closed, before
+              carrying out the configuration as specified by the other
+              arguments.
     Note that you could specify a stream created using open(filename, mode)
     rather than passing the filename and mode in. However, it should be
     remembered that StreamHandler does not close its stream (since it may be
     using sys.stdout or sys.stderr), whereas FileHandler closes its stream
     when the handler is closed.
+
+    .. versionchanged:: 3.8
+       Added the ``force`` parameter.
 
     .. versionchanged:: 3.2
        Added the ``style`` parameter.
@@ -1842,6 +1849,11 @@ def basicConfig(**kwargs):
     # basicConfig() from multiple threads
     _acquireLock()
     try:
+        force = kwargs.pop('force', False)
+        if force:
+            for h in root.handlers[:]:
+                root.removeHandler(h)
+                h.close()
         if len(root.handlers) == 0:
             handlers = kwargs.pop("handlers", None)
             if handlers is None:

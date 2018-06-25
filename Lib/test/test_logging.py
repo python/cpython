@@ -3901,6 +3901,27 @@ class BasicConfigTest(unittest.TestCase):
         self.assertIs(handlers[2].formatter, f)
         self.assertIs(handlers[0].formatter, handlers[1].formatter)
 
+    def test_force(self):
+        old_string_io = io.StringIO()
+        new_string_io = io.StringIO()
+        old_handlers = [logging.StreamHandler(old_string_io)]
+        new_handlers = [logging.StreamHandler(new_string_io)]
+        logging.basicConfig(level=logging.WARNING, handlers=old_handlers)
+        logging.warning('warn')
+        logging.info('info')
+        logging.debug('debug')
+        self.assertEqual(len(logging.root.handlers), 1)
+        logging.basicConfig(level=logging.INFO, handlers=new_handlers,
+                            force=True)
+        logging.warning('warn')
+        logging.info('info')
+        logging.debug('debug')
+        self.assertEqual(len(logging.root.handlers), 1)
+        self.assertEqual(old_string_io.getvalue().strip(),
+                         'WARNING:root:warn')
+        self.assertEqual(new_string_io.getvalue().strip(),
+                         'WARNING:root:warn\nINFO:root:info')
+
     def _test_log(self, method, level=None):
         # logging.root has no handlers so basicConfig should be called
         called = []
