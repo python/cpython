@@ -1306,12 +1306,18 @@ pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (sizehint == -1) {
         sizehint = FD_SETSIZE - 1;
     }
-    else if (sizehint < -1) {
-        PyErr_SetString(PyExc_ValueError, "sizehint must be positive, 0 or -1");
+    else if (sizehint <= 0) {
+        PyErr_SetString(PyExc_ValueError, "sizehint must be positive or -1");
         return NULL;
     }
 
-    return newPyEpoll_Object(type, sizehint, -1);
+#ifdef HAVE_EPOLL_CREATE1
+    if (flags && flags != EPOLL_CLOEXEC) {
+        PyErr_SetString(PyExc_OSError, "invalid flags");
+        return NULL;
+    }
+#endif
+     return newPyEpoll_Object(type, sizehint, -1);
 }
 
 
