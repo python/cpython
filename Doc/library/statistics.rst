@@ -169,6 +169,10 @@ However, for reading convenience, most of the examples show sorted sequences.
    This is suited for when your data is discrete, and you don't mind that the
    median may not be an actual data point.
 
+   If your data is ordinal (supports order operations) but not numeric (doesn't
+   support addition), you should use :func:`median_low` or :func:`median_high`
+   instead.
+
    .. seealso:: :func:`median_low`, :func:`median_high`, :func:`median_grouped`
 
 
