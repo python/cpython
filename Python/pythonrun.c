@@ -431,6 +431,9 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     }
     flush_io();
     if (v == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_SystemExit)) {
+            Py_DECREF(m);
+        }
         PyErr_Print();
         goto done;
     }

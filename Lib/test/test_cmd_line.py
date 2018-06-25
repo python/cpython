@@ -453,6 +453,24 @@ class CmdLineTest(unittest.TestCase):
             print("del sys.modules['__main__']", file=script)
         assert_python_ok(filename)
 
+    def test_global_del_SystemExit(self):
+        code = '''if 1:
+            class ClassWithDel:
+                def __del__(self):
+                    print('__del__ called')
+            a = ClassWithDel()
+            a.link = a
+            raise SystemExit(0)'''
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+        with open(filename, "w") as script:
+            script.write(code)
+        p = subprocess.run((sys.executable, filename),
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           universal_newlines=True)
+        self.assertEqual(p.stdout.rstrip(), '__del__ called')
+
     def test_unknown_options(self):
         rc, out, err = assert_python_failure('-E', '-z')
         self.assertIn(b'Unknown option: -z', err)

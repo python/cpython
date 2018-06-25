@@ -1,0 +1,3 @@
+When a :exc:`SystemExit` exception occurs in
+:c:func:`PyRun_SimpleFileExFlags`, decref the module object before calling
+:c:func:`PyErr_Print()`.  Patch by Zackery Spytz.
