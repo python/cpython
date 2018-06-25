@@ -59,16 +59,13 @@ Is there a tool to help find bugs or perform static analysis?
 
 Yes.
 
-`Mypy <http://mypy-lang.org/>`_ is an optional static type checker for Python
-that aims to combine the benefits of duck typing and static typing.  It
-combines the expressive power and convenience of Python with a powerful type
-system and compile-time type checking.  Mypy type checks standard Python
-programs; run them using any Python VM with basically no runtime overhead.
-
-`Pytype <https://github.com/google/pytype>`_ is a static analyzer that helps
-find type errors in Python code.  It can type-check code with or without type
-hints, as well as insert them.  Pytype runs under Python 2.7 or 3.6 and
-analyzes both Python 2 and Python 3 code.
+Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
+`Pyre <https://pyre-check.org/>`_, and
+`Pytype <https://github.com/google/pytype>`_ look for type hints in Python source
+code and report any mismatch they find, and tools like 
+`PyAnnotate <https://github.com/dropbox/pyannotate>`_ automatically insert these
+type hints based on call arguments and return types observed at
+runtime.
 
 `PyChecker <http://pychecker.sourceforge.net/>`_ is a static analysis tool that
 finds bugs in Python source code and warns about code complexity and style.
@@ -80,10 +77,6 @@ PyChecker performs, Pylint offers some additional features such as checking line
 length, whether variable names are well-formed according to your coding
 standard, whether declared interfaces are fully implemented, and more.
 https://docs.pylint.org/ provides a full list of Pylint's features.
-
-`PyAnnotate <https://github.com/dropbox/pyannotate>`_ inserts type hints into
-source code based on call arguments and return types observed at runtime,
-which can be used by tools such as mypy or pytype for static analysis.
 
 How can I create a stand-alone binary from a Python script?
 -----------------------------------------------------------
