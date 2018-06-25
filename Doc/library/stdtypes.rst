@@ -1381,7 +1381,7 @@ string functions based on regular expressions.
 .. method:: str.upper()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   uppercase.  Note that ``str.upper().isupper()`` might be ``False`` if ``s``
+   uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter, titlecase).
 
