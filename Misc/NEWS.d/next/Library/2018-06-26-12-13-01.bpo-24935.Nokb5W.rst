@@ -1,0 +1,4 @@
+Derive LDSHARED from CC for OSX and Linux
+
+If the CC environmental variable is set, but LDSHARED is unset, sysconfig
+used to derive LDSHARED from CC, but only for OSX.
