@@ -1,0 +1,4 @@
+Fix a bug in ``regrtest`` that caused an extra test to run if
+--huntrleaks/-R was used. Exit with error in case that invalid
+parameters are specified to --huntrleaks/-R (at least one warmup
+run and one repetition must be used).
