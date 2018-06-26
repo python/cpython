@@ -90,8 +90,8 @@ __all__ = [
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_unless_bind_unix_socket",
     # sys
-    "JYTHON", "ANDROID", "check_impl_detail", "unix_shell",
-    "setswitchinterval", "MS_WINDOWS", "MACOS",
+    "is_jython", "is_android", "check_impl_detail", "unix_shell",
+    "setswitchinterval",
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
     "bind_unix_socket",
@@ -107,21 +107,6 @@ __all__ = [
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
     ]
-
-
-# True if Python is running on Microsoft Windows.
-MS_WINDOWS = (sys.platform == 'win32')
-
-# True if Python is running on Apple macOS.
-MACOS = (sys.platform == 'darwin')
-
-# True if Python runs on Jython
-# (Python implemented in Java running in a Java VM)
-JYTHON = sys.platform.startswith('java')
-
-# True if Python runs on Android
-ANDROID = hasattr(sys, 'getandroidapilevel')
-
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -499,7 +484,7 @@ def _is_gui_available():
             raise ctypes.WinError()
         if not bool(uof.dwFlags & WSF_VISIBLE):
             reason = "gui not available (WSF_VISIBLE flag not set)"
-    elif MACOS:
+    elif sys.platform == 'darwin':
         # The Aqua Tk implementations on OS X can abort the process if
         # being called in an environment where a window server connection
         # cannot be made, for instance when invoked by a buildbot or ssh
@@ -615,7 +600,7 @@ def requires_mac_ver(*min_version):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
-            if MACOS:
+            if sys.platform == 'darwin':
                 version_txt = platform.mac_ver()[0]
                 try:
                     version = tuple(map(int, version_txt.split('.')))
@@ -803,12 +788,14 @@ requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
-if MS_WINDOWS:
-    unix_shell = None
-elif ANDROID:
-    unix_shell = '/system/bin/sh'
+is_jython = sys.platform.startswith('java')
+
+is_android = hasattr(sys, 'getandroidapilevel')
+
+if sys.platform != 'win32':
+    unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
-    unix_shell = '/bin/sh'
+    unix_shell = None
 
 # Filename used for testing
 if os.name == 'java':
@@ -867,7 +854,7 @@ for character in (
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN + "-\xe0\xf2\u0258\u0141\u011f"
-if MACOS:
+if sys.platform == 'darwin':
     # In Mac OS X's VFS API file names are, by definition, canonically
     # decomposed Unicode, encoded using UTF-8. See QA1173:
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
@@ -879,7 +866,7 @@ TESTFN_ENCODING = sys.getfilesystemencoding()
 # encoded by the filesystem encoding (in strict mode). It can be None if we
 # cannot generate such filename.
 TESTFN_UNENCODABLE = None
-if MS_WINDOWS:
+if os.name == 'nt':
     # skip win32s (0) or Windows 9x/ME (1)
     if sys.getwindowsversion().platform >= 2:
         # Different kinds of characters from various languages to minimize the
@@ -894,8 +881,8 @@ if MS_WINDOWS:
                   'Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
             TESTFN_UNENCODABLE = None
-# macOS denies unencodable filenames (invalid utf-8)
-elif not MACOS:
+# Mac OS X denies unencodable filenames (invalid utf-8)
+elif sys.platform != 'darwin':
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(TESTFN_ENCODING)
@@ -1536,7 +1523,7 @@ def gc_collect():
     objects to disappear.
     """
     gc.collect()
-    if JYTHON:
+    if is_jython:
         time.sleep(0.1)
     gc.collect()
     gc.collect()
@@ -1995,7 +1982,7 @@ def _check_docstrings():
     """Just used to check if docstrings are enabled"""
 
 MISSING_C_DOCSTRINGS = (check_impl_detail() and
-                        not MS_WINDOWS and
+                        sys.platform != 'win32' and
                         not sysconfig.get_config_var('WITH_DOC_STRINGS'))
 
 HAVE_DOCSTRINGS = (_check_docstrings.__doc__ is not None and
@@ -2605,7 +2592,7 @@ class SuppressCrashReport:
                 except (ValueError, OSError):
                     pass
 
-            if MACOS:
+            if sys.platform == 'darwin':
                 # Check if the 'Crash Reporter' on OSX was configured
                 # in 'Developer' mode and warn that it will get triggered
                 # when it is.
@@ -2749,7 +2736,7 @@ def setswitchinterval(interval):
     # Setting a very low gil interval on the Android emulator causes python
     # to hang (issue #26939).
     minimum_interval = 1e-5
-    if ANDROID and interval < minimum_interval:
+    if is_android and interval < minimum_interval:
         global _is_android_emulator
         if _is_android_emulator is None:
             _is_android_emulator = (subprocess.check_output(
@@ -2795,7 +2782,7 @@ def fd_count():
             pass
 
     old_modes = None
-    if MS_WINDOWS:
+    if sys.platform == 'win32':
         # bpo-25306, bpo-31009: Call CrtSetReportMode() to not kill the process
         # on invalid file descriptor if Python is compiled in debug mode
         try:
