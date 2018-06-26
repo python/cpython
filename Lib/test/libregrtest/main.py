@@ -462,6 +462,13 @@ class Regrtest:
                    or self.tests or self.ns.args)):
             self.display_header()
 
+        if self.ns.huntrleaks:
+            warmup, repetitions, _ = self.ns.huntrleaks
+            if warmup < 3:
+                msg = ("WARNING: Running tests with --huntrleaks/-R and less than "
+                        "3 warmup repetitions can give false positives!")
+                print(msg, file=sys.stdout, flush=True)
+
         if self.ns.randomize:
             print("Using random seed", self.ns.random_seed)
 
@@ -525,6 +532,15 @@ class Regrtest:
 
     def _main(self, tests, kwargs):
         self.ns = self.parse_args(kwargs)
+
+        if self.ns.huntrleaks:
+            warmup, repetitions, _ = self.ns.huntrleaks
+            if warmup < 1 or repetitions < 1:
+                msg = ("Invalid values for the --huntrleaks/-R parameters. The "
+                       "number of warmups and repetitions must be at least 1 "
+                       "each (1:1).")
+                print(msg, file=sys.stderr, flush=True)
+                sys.exit(2)
 
         if self.ns.slaveargs is not None:
             from test.libregrtest.runtest_mp import run_tests_slave
