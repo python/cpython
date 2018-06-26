@@ -1025,6 +1025,23 @@ As we can easily check, our array is sorted now::
    1 5 7 33 99
    >>>
 
+The function factories can be used as decorator factories, so we may as well
+write::
+
+   >>> @CFUNCTYPE(c_int, POINTER(c_int), POINTER(c_int))
+   ... def py_cmp_func(*args):
+   ...    (a, b,) = (t[0] for t in args)
+   ...    print("py_cmp_func", a, b)
+   ...    return a - b
+   ...
+   >>> qsort(ia, len(ia), sizeof(c_int), py_cmp_func)
+   py_cmp_func 5 1
+   py_cmp_func 33 99
+   py_cmp_func 7 33
+   py_cmp_func 1 7
+   py_cmp_func 5 7
+   >>>
+
 .. note::
 
    Make sure you keep references to :func:`CFUNCTYPE` objects as long as they
@@ -1582,7 +1599,7 @@ type and the argument types of the function.
 
 .. function:: CFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
-   The returned function prototype creates functions that use the standard C
+   Returns a function prototype which creates functions that use the standard C
    calling convention.  The function will release the GIL during the call.  If
    *use_errno* is set to true, the ctypes private copy of the system
    :data:`errno` variable is exchanged with the real :data:`errno` value before
@@ -1592,7 +1609,7 @@ type and the argument types of the function.
 
 .. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
-   Windows only: The returned function prototype creates functions that use the
+   Windows only: Returns a function prototype which creates functions that use the
    ``stdcall`` calling convention, except on Windows CE where
    :func:`WINFUNCTYPE` is the same as :func:`CFUNCTYPE`.  The function will
    release the GIL during the call.  *use_errno* and *use_last_error* have the
@@ -1601,8 +1618,11 @@ type and the argument types of the function.
 
 .. function:: PYFUNCTYPE(restype, *argtypes)
 
-   The returned function prototype creates functions that use the Python calling
+   Returns a function prototype which creates functions that use the Python calling
    convention.  The function will *not* release the GIL during the call.
+
+These factory functions can be used as decorator factories, and as such, be applied
+to functions through the ``@wrapper`` syntax.
 
 Function prototypes created by these factory functions can be instantiated in
 different ways, depending on the type and number of the parameters in the call:
