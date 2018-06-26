@@ -173,9 +173,10 @@ def runtest_inner(ns, test, display_failure=True):
                     if loader.errors:
                         raise Exception("errors while loading tests")
                     support.run_unittest(tests)
-            test_runner()
             if ns.huntrleaks:
                 refleak = dash_R(the_module, test, test_runner, ns.huntrleaks)
+            else:
+                test_runner()
             test_time = time.time() - start_time
         post_test_cleanup()
     except support.ResourceDenied as msg:
