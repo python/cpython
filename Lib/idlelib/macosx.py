@@ -158,8 +158,8 @@ def overrideRootMenu(root, flist):
 
         if end > 0:
             menu.delete(0, end)
-        windows.add_windows_to_menu(menu)
-    windows.register_callback(postwindowsmenu)
+        window.add_windows_to_menu(menu)
+    window.register_callback(postwindowsmenu)
 
     def about_dialog(event=None):
         "Handle Help 'About IDLE' event."
