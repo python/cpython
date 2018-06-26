@@ -405,6 +405,7 @@ makedfa(nfagrammar *gr, nfa *nf, dfa *d)
     int istate, jstate, iarc, jarc, ibit;
     nfastate *st;
     nfaarc *ar;
+    int i, j;
 
     ss = newbitset(nbits);
     addclosure(ss, nf, nf->nf_start);
@@ -499,8 +500,8 @@ makedfa(nfagrammar *gr, nfa *nf, dfa *d)
 
     convert(d, xx_nstates, xx_state);
 
-    for (int i = 0; i < xx_nstates; i++) {
-        for (int j = 0; j < xx_state[i].ss_narcs; j++)
+    for (i = 0; i < xx_nstates; i++) {
+        for (j = 0; j < xx_state[i].ss_narcs; j++)
             delbitset(xx_state[i].ss_arc[j].sa_bitset);
         PyObject_FREE(xx_state[i].ss_arc);
     }
