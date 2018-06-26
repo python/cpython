@@ -461,7 +461,7 @@ class CommonTest(GenericTest):
         # UTF-8 name. Windows allows creating a directory with an
         # arbitrary bytes name, but fails to enter this directory
         # (when the bytes name is used).
-        and sys.platform not in ('win32', 'darwin')):
+        and not support.MACOS and not support.MS_WINDOWS):
             name = support.TESTFN_UNDECODABLE
         elif support.TESTFN_NONASCII:
             name = support.TESTFN_NONASCII

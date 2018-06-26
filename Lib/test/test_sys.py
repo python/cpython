@@ -648,7 +648,7 @@ class SysModuleTest(unittest.TestCase):
 
     def test_getfilesystemencoding(self):
         fs_encoding = sys.getfilesystemencoding()
-        if sys.platform == 'darwin':
+        if test.support.MACOS:
             expected = 'utf-8'
         else:
             expected = None

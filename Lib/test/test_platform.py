@@ -211,7 +211,7 @@ class PlatformTest(unittest.TestCase):
     def test_mac_ver(self):
         res = platform.mac_ver()
 
-        if platform.uname().system == 'Darwin':
+        if support.MACOS:
             # We're on a MacOSX system, check that
             # the right version information is returned
             fd = os.popen('sw_vers', 'r')
@@ -241,7 +241,7 @@ class PlatformTest(unittest.TestCase):
                 self.assertEqual(res[2], 'PowerPC')
 
 
-    @unittest.skipUnless(sys.platform == 'darwin', "OSX only test")
+    @unittest.skipUnless(support.MACOS, "OSX only test")
     def test_mac_ver_with_fork(self):
         # Issue7895: platform.mac_ver() crashes when using fork without exec
         #

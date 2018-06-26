@@ -22,7 +22,7 @@ from test import support, mock_socket
 from test.support import HOST, HOSTv4, HOSTv6
 
 
-if sys.platform == 'darwin':
+if support.MACOS:
     # select.poll returns a select.POLLHUP at the end of the tests
     # on darwin, so just ignore it
     def handle_expt(self):

@@ -1,5 +1,6 @@
-from test.support import (TESTFN, run_unittest, import_module, unlink,
-                          requires, _2G, _4G, gc_collect, cpython_only)
+from test.support import (TESTFN, run_unittest, import_module, unlink, MACOS,
+                          MS_WINDOWS, requires, _2G, _4G,
+                          gc_collect, cpython_only)
 import unittest
 import os
 import re
@@ -751,7 +752,7 @@ class LargeMmapTests(unittest.TestCase):
         unlink(TESTFN)
 
     def _make_test_file(self, num_zeroes, tail):
-        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
+        if MS_WINDOWS or MACOS:
             requires('largefile',
                 'test requires %s bytes and a long time to run' % str(0x180000000))
         f = open(TESTFN, 'w+b')

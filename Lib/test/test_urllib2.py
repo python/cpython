@@ -1423,7 +1423,7 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
 
-    @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
+    @unittest.skipUnless(support.MACOS, "only relevant for OSX")
     def test_osx_proxy_bypass(self):
         bypass = {
             'exclude_simple': False,

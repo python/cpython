@@ -484,7 +484,7 @@ class ScalableSelectorMixIn:
         try:
             fds = s.select()
         except OSError as e:
-            if e.errno == errno.EINVAL and sys.platform == 'darwin':
+            if e.errno == errno.EINVAL and support.MACOS:
                 # unexplainable errors on macOS don't need to fail the test
                 self.skipTest("Invalid argument error calling poll()")
             raise

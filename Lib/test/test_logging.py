@@ -547,7 +547,7 @@ class HandlerTest(BaseTest):
     def test_builtin_handlers(self):
         # We can't actually *use* too many handlers in the tests,
         # but we can try instantiating them with various options
-        if sys.platform in ('linux', 'darwin'):
+        if support.MACOS or sys.platform == 'linux':
             for existing in (True, False):
                 fd, fn = tempfile.mkstemp()
                 os.close(fd)
@@ -572,7 +572,7 @@ class HandlerTest(BaseTest):
                 h.close()
                 if existing:
                     os.unlink(fn)
-            if sys.platform == 'darwin':
+            if support.MACOS:
                 sockname = '/var/run/syslog'
             else:
                 sockname = '/dev/log'
@@ -613,7 +613,7 @@ class HandlerTest(BaseTest):
                     (logging.handlers.RotatingFileHandler, (pfn, 'a')),
                     (logging.handlers.TimedRotatingFileHandler, (pfn, 'h')),
                 )
-        if sys.platform in ('linux', 'darwin'):
+        if support.MACOS or sys.platform == 'linux':
             cases += ((logging.handlers.WatchedFileHandler, (pfn, 'w')),)
         for cls, args in cases:
             h = cls(*args)

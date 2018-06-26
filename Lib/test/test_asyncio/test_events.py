@@ -43,7 +43,7 @@ def tearDownModule():
 
 def osx_tiger():
     """Return True if the platform is Mac OS 10.4 or older."""
-    if sys.platform != 'darwin':
+    if not support.MACOS:
         return False
     version = platform.mac_ver()[0]
     version = tuple(map(int, version.split('.')))

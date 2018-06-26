@@ -970,7 +970,7 @@ class PosixTester(unittest.TestCase):
             raise unittest.SkipTest("need working 'id -G'")
 
         # Issues 16698: OS X ABIs prior to 10.6 have limits on getgroups()
-        if sys.platform == 'darwin':
+        if support.MACOS:
             import sysconfig
             dt = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') or '10.0'
             if tuple(int(n) for n in dt.split('.')[0:2]) < (10, 6):
@@ -1214,7 +1214,7 @@ class PosixTester(unittest.TestCase):
         self.assertIsInstance(hi, int)
         self.assertGreaterEqual(hi, lo)
         # OSX evidently just returns 15 without checking the argument.
-        if sys.platform != "darwin":
+        if not support.MACOS:
             self.assertRaises(OSError, posix.sched_get_priority_min, -23)
             self.assertRaises(OSError, posix.sched_get_priority_max, -23)
 
@@ -1393,7 +1393,7 @@ class PosixGroupsTester(unittest.TestCase):
             raise unittest.SkipTest("not enough privileges")
         if not hasattr(posix, 'getgroups'):
             raise unittest.SkipTest("need posix.getgroups")
-        if sys.platform == 'darwin':
+        if support.MACOS:
             raise unittest.SkipTest("getgroups(2) is broken on OSX")
         self.saved_groups = posix.getgroups()
 
