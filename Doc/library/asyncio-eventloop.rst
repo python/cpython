@@ -359,7 +359,7 @@ Creating connections
    * *sock*, if given, should be an existing, already connected
      :class:`socket.socket` object to be used by the transport.
      If *sock* is given, none of *host*, *port*, *family*, *proto*, *flags*,
-     *delay*, *interleave*
+     *happy_eyeballs_delay*, *interleave*
      and *local_addr* should be specified.
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
@@ -372,7 +372,7 @@ Creating connections
 
    .. versionadded:: 3.8
 
-      The *delay* and *interleave* parameters.
+      The *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionadded:: 3.7
 

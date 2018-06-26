@@ -1,2 +1,3 @@
 Implemented Happy Eyeballs in `asyncio.create_connection()`. Added two new
-arguments, *delay* and *interleave*, to specify Happy Eyeballs behavior.
+arguments, *happy_eyeballs_delay* and *interleave*,
+to specify Happy Eyeballs behavior.
