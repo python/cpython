@@ -187,8 +187,8 @@ class CmdLineTest(unittest.TestCase):
         if not stdout.startswith(pattern):
             raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
 
-    @unittest.skipUnless((support.MACOS or support.ANDROID),
-                         'test specific to macOS and Android')
+    @unittest.skipUnless((sys.platform == 'darwin' or
+                support.is_android), 'test specific to Mac OS X and Android')
     def test_osx_android_utf8(self):
         def check_output(text):
             decoded = text.decode('utf-8', 'surrogateescape')

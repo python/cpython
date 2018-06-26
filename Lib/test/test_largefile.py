@@ -5,7 +5,6 @@ import os
 import stat
 import sys
 import unittest
-from test import support
 from test.support import TESTFN, requires, unlink
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
@@ -146,7 +145,7 @@ def setUpModule():
     # takes a long time to build the >2 GiB file and takes >2 GiB of disk
     # space therefore the resource must be enabled to run this test.
     # If not, nothing after this line stanza will be executed.
-    if support.MS_WINDOWS or support.MACOS:
+    if sys.platform[:3] == 'win' or sys.platform == 'darwin':
         requires('largefile',
                  'test requires %s bytes and a long time to run' % str(size))
     else:

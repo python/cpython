@@ -11,6 +11,9 @@ from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 
+MS_WINDOWS = (sys.platform == 'win32')
+
+
 class UTF8ModeTests(unittest.TestCase):
     DEFAULT_ENV = {
         'PYTHONUTF8': '',
@@ -32,7 +35,7 @@ class UTF8ModeTests(unittest.TestCase):
             out = out[1]
         return out.decode().rstrip("\n\r")
 
-    @unittest.skipIf(support.MS_WINDOWS, 'Windows has no POSIX locale')
+    @unittest.skipIf(MS_WINDOWS, 'Windows has no POSIX locale')
     def test_posix_locale(self):
         code = 'import sys; print(sys.flags.utf8_mode)'
 
@@ -52,7 +55,7 @@ class UTF8ModeTests(unittest.TestCase):
         out = self.get_output('-X', 'utf8=0', '-c', code)
         self.assertEqual(out, '0')
 
-        if support.MS_WINDOWS:
+        if MS_WINDOWS:
             # PYTHONLEGACYWINDOWSFSENCODING disables the UTF-8 Mode
             # and has the priority over -X utf8
             out = self.get_output('-X', 'utf8', '-c', code,
@@ -72,7 +75,7 @@ class UTF8ModeTests(unittest.TestCase):
         out = self.get_output('-X', 'utf8=0', '-c', code, PYTHONUTF8='1')
         self.assertEqual(out, '0')
 
-        if support.MS_WINDOWS:
+        if MS_WINDOWS:
             # PYTHONLEGACYWINDOWSFSENCODING disables the UTF-8 mode
             # and has the priority over PYTHONUTF8
             out = self.get_output('-X', 'utf8', '-c', code, PYTHONUTF8='1',
@@ -98,7 +101,7 @@ class UTF8ModeTests(unittest.TestCase):
                                  sys.getfilesystemencodeerrors()))
         ''')
 
-        if support.MS_WINDOWS:
+        if MS_WINDOWS:
             expected = 'utf-8/surrogatepass'
         else:
             expected = 'utf-8/surrogateescape'
@@ -106,7 +109,7 @@ class UTF8ModeTests(unittest.TestCase):
         out = self.get_output('-X', 'utf8', '-c', code)
         self.assertEqual(out, expected)
 
-        if support.MS_WINDOWS:
+        if MS_WINDOWS:
             # PYTHONLEGACYWINDOWSFSENCODING disables the UTF-8 mode
             # and has the priority over -X utf8 and PYTHONUTF8
             out = self.get_output('-X', 'utf8', '-c', code,
@@ -201,7 +204,7 @@ class UTF8ModeTests(unittest.TestCase):
         out = self.get_output('-X', 'utf8', '-c', code, LC_ALL='C')
         self.assertEqual(out, 'UTF-8 UTF-8')
 
-    @unittest.skipIf(support.MS_WINDOWS, 'test specific to Unix')
+    @unittest.skipIf(MS_WINDOWS, 'test specific to Unix')
     def test_cmd_line(self):
         arg = 'h\xe9\u20ac'.encode('utf-8')
         arg_utf8 = arg.decode('utf-8')
@@ -214,7 +217,7 @@ class UTF8ModeTests(unittest.TestCase):
             self.assertEqual(args, ascii(expected), out)
 
         check('utf8', [arg_utf8])
-        if support.MACOS or support.ANDROID:
+        if sys.platform == 'darwin' or support.is_android:
             c_arg = arg_utf8
         else:
             c_arg = arg_ascii

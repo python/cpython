@@ -270,7 +270,9 @@ class PlatformTest(unittest.TestCase):
         res = platform.libc_ver(executable)
 
     def test_popen(self):
-        if support.MS_WINDOWS:
+        mswindows = (sys.platform == "win32")
+
+        if mswindows:
             command = '"{}" -c "print(\'Hello\')"'.format(sys.executable)
         else:
             command = "'{}' -c 'print(\"Hello\")'".format(sys.executable)
@@ -282,7 +284,7 @@ class PlatformTest(unittest.TestCase):
                 self.assertEqual(hello, "Hello")
 
         data = 'plop'
-        if support.MS_WINDOWS:
+        if mswindows:
             command = '"{}" -c "import sys; data=sys.stdin.read(); exit(len(data))"'
         else:
             command = "'{}' -c 'import sys; data=sys.stdin.read(); exit(len(data))'"

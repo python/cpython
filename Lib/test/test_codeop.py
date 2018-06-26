@@ -3,12 +3,12 @@
    Nick Mathewson
 """
 import unittest
-from test import support
+from test.support import is_jython
 
 from codeop import compile_command, PyCF_DONT_IMPLY_DEDENT
 import io
 
-if support.JYTHON:
+if is_jython:
     import sys
 
     def unify_callables(d):
@@ -21,7 +21,7 @@ class CodeopTests(unittest.TestCase):
 
     def assertValid(self, str, symbol='single'):
         '''succeed iff str is a valid piece of code'''
-        if support.JYTHON:
+        if is_jython:
             code = compile_command(str, "<input>", symbol)
             self.assertTrue(code)
             if symbol == "single":
@@ -60,7 +60,7 @@ class CodeopTests(unittest.TestCase):
         av = self.assertValid
 
         # special case
-        if not support.JYTHON:
+        if not is_jython:
             self.assertEqual(compile_command(""),
                              compile("pass", "<input>", 'single',
                                      PyCF_DONT_IMPLY_DEDENT))

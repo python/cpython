@@ -1038,7 +1038,7 @@ class GeneralModuleTests(unittest.TestCase):
             eq(udpport, port)
         # Now make sure the lookup by port returns the same service name
         # Issue #26936: Android getservbyport() is broken.
-        if not support.ANDROID:
+        if not support.is_android:
             eq(socket.getservbyport(port2), service)
         eq(socket.getservbyport(port, 'tcp'), service)
         if udpport is not None:
