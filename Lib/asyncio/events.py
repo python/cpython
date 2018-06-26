@@ -306,7 +306,7 @@ class AbstractEventLoop:
             flags=0, sock=None, local_addr=None,
             server_hostname=None,
             ssl_handshake_timeout=None,
-            delay=None, interleave=None):
+            happy_eyeballs_delay=None, interleave=None):
         raise NotImplementedError
 
     async def create_server(
