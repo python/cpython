@@ -36,7 +36,10 @@ def main():
         except ValueError as e:
             raise SystemExit(e)
 
-    outfile = sys.stdout if options.outfile == '-' else open(options.outfile, 'w')
+    try:
+        outfile = sys.stdout if options.outfile == '-' else open(options.outfile, 'w')
+    except IOError as e:
+        parser.error("can't open '{}': {}".format(options.outfile, str(e)))
     with outfile:
         json.dump(obj, outfile, sort_keys=sort_keys, indent=4)
         outfile.write('\n')
