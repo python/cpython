@@ -31,6 +31,11 @@
 #include "pydtrace.h"
 #include "pytime.h"             /* for _PyTime_GetMonotonicClock() */
 
+/*[clinic input]
+module gc
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5c9690ecc842d79]*/
+
 #define GC_DEBUG (0)  /* More asserts */
 
 // Bit 0 of gc_prev is used for _PyGC_PREV_MASK_FINALIZED in objimpl.h
@@ -80,11 +85,6 @@ gc_decref(PyGC_Head *g)
     assert(gc_get_refs(g) > 0);
     g->gc.gc_prev -= 1 << _PyGC_PREV_SHIFT;
 }
-
-/*[clinic input]
-module gc
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5c9690ecc842d79]*/
 
 /* Get an object's GC head */
 #define AS_GC(o) ((PyGC_Head *)(o)-1)
