@@ -9,13 +9,10 @@
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 \ul \ulc0 Which installer variant should I use? [CHANGED in 3.6.5]
+\b \cf0 \ul \ulc0 Which installer variant should I use? [CHANGED in 3.6.6]
 \b0 \ulnone \
 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-
-\b \cf0 **NEW**
-\b0  With Python 3.6.5, the python.org website now provides two installer variants for download: one that installs a 
+With Python 3.6.5, the python.org website now provides two installer variants for download: one that installs a 
 \i 64-bit-only 
 \i0 Python capable of running on 
 \i macOS 10.9 (Mavericks)
@@ -26,9 +23,14 @@
 \i0  or later.  (This ReadMe was installed with the 
 \i $MACOSX_DEPLOYMENT_TARGET
 \i0  variant.)  Previous Python 3.6.x releases only provided the 10.6 or later installer. If you are running on macOS 10.9 or later and if you have no need for compatibility with older systems, use the 10.9 variant.  Use the 10.6 variant if you are running on macOS 10.6 through 10.8, if you need to maintain compatibility with previous 3.6.x releases, or if you want to produce standalone applications that can run on systems from 10.6.  The Pythons installed by these installers are built with private copies of some third-party libraries not included with or newer than those in macOS itself.  The list of these libraries varies by installer variant and is included at the end of the License.rtf file.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
+
+\b \cf0 CHANGED in 3.6.6:
+\b0   the 10.9+ 64-bit-only installer variant is now the default download.  The 10.6+ variant is available from the $FULL_VERSION release page.\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 \ul \ulc0 \
+\b \cf0 \ul \
 Certificate verification and OpenSSL\
 
 \b0 \ulnone \
@@ -56,13 +58,19 @@ The bundled
 \
 The 10.9+ installer variant comes with its own private version of Tcl/Tk 8.6. It does not use system-supplied or third-party supplied versions of Tcl/Tk.\
 \
-For the 10.6+ variant, you continue to need to install a newer third-party version of the 
+For the 10.6+ variant in 3.6.6, you continue to need to install a newer third-party version of the 
 \i Tcl/Tk
 \i0  8.5 (not 8.6) frameworks to use IDLE or other programs that use the Tkinter graphical user interface toolkit.  Visit {\field{\*\fldinst{HYPERLINK "https://www.python.org/download/mac/tcltk/"}}{\fldrslt https://www.python.org/download/mac/tcltk/}} for current information about supported and recommended versions of 
 \i Tcl/Tk
 \i0  for this version of Python and of macOS.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \ul \
+\b \cf0 NOTE: 
+\b0 As of the next 3.6.x release, 3.6.7, the 10.6+ variant will also include Tcl/Tk 8.6.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\b \cf0 \ul \
 Other changes\
 
 \b0 \ulnone \
