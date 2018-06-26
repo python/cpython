@@ -20,7 +20,7 @@ import contextlib
 
 import test.support
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, forget, JYTHON,
+    EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
     unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
     temp_dir, DirsOnSysPath)
@@ -148,7 +148,7 @@ class ImportTests(unittest.TestCase):
         def test_with_extension(ext):
             # The extension is normally ".py", perhaps ".pyw".
             source = TESTFN + ext
-            if JYTHON:
+            if is_jython:
                 pyc = TESTFN + "$py.class"
             else:
                 pyc = TESTFN + ".pyc"
