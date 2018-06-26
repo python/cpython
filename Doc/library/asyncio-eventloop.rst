@@ -345,7 +345,8 @@ Creating connections
      be a floating-point number representing the amount of time in seconds
      to wait for a connection attempt to complete, before starting the next
      attempt in parallel. This is the "Connection Attempt Delay" as defined
-     in RFC 8305.
+     in RFC 8305. A sensible default value recommended by the RFC is 0.25
+     (250 milliseconds).
 
    * *interleave* controls address reordering when a host name resolves to
      multiple IP addresses.
