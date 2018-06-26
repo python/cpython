@@ -516,6 +516,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         except ValueError:
             pass
 
+    if huntrleaks:
+        warmup, repetitions, _ = huntrleaks
+        if warmup < 1 or repetitions < 1:
+            msg = ("Invalid values for the --huntrleaks/-R parameters. The "
+                   "number of warmups and repetitions must be at least 1 "
+                   "each (1:1).")
+            print >>sys.stderr, msg
+            sys.exit(2)
+
     if slaveargs is not None:
         args, kwargs = json.loads(slaveargs)
         if kwargs['huntrleaks']:
@@ -1308,11 +1317,12 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=Non
                 # being imported.  For tests based on unittest or doctest,
                 # explicitly invoke their test_main() function (if it exists).
                 indirect_test = getattr(the_module, "test_main", None)
-                if indirect_test is not None:
-                    indirect_test()
                 if huntrleaks:
                     refleak = dash_R(the_module, test, indirect_test,
                         huntrleaks)
+                else:
+                    if indirect_test is not None:
+                        indirect_test()
                 test_time = time.time() - start_time
             post_test_cleanup()
         finally:
