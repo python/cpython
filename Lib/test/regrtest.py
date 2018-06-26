@@ -174,20 +174,21 @@ Pattern examples:
 import StringIO
 import datetime
 import getopt
+import imp
 import json
+import math
 import os
+import platform
 import random
 import re
 import shutil
 import sys
+import sysconfig
+import tempfile
 import time
 import traceback
-import warnings
 import unittest
-import tempfile
-import imp
-import platform
-import sysconfig
+import warnings
 
 
 # Some times __path__ and __file__ are not absolute (e.g. while running from
@@ -270,17 +271,25 @@ def usage(code, msg=''):
 
 
 def format_duration(seconds):
-    if seconds < 1.0:
-        return '%.0f ms' % (seconds * 1e3)
-    if seconds < 60.0:
-        return '%.0f sec' % seconds
+    ms = int(math.ceil(seconds * 1e3))
+    seconds, ms = divmod(ms, 1000)
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
 
-    minutes, seconds = divmod(seconds, 60.0)
-    hours, minutes = divmod(minutes, 60.0)
+    parts = []
     if hours:
-        return '%.0f hour %.0f min' % (hours, minutes)
-    else:
-        return '%.0f min %.0f sec' % (minutes, seconds)
+        parts.append('%s hour' % hours)
+    if minutes:
+        parts.append('%s min' % minutes)
+    if seconds:
+        parts.append('%s sec' % seconds)
+    if ms:
+        parts.append('%s ms' % ms)
+    if not parts:
+        return '0 ms'
+
+    parts = parts[:2]
+    return ' '.join(parts)
 
 
 _FORMAT_TEST_RESULT = {
@@ -507,6 +516,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         except ValueError:
             pass
 
+    if huntrleaks:
+        warmup, repetitions, _ = huntrleaks
+        if warmup < 1 or repetitions < 1:
+            msg = ("Invalid values for the --huntrleaks/-R parameters. The "
+                   "number of warmups and repetitions must be at least 1 "
+                   "each (1:1).")
+            print >>sys.stderr, msg
+            sys.exit(2)
+
     if slaveargs is not None:
         args, kwargs = json.loads(slaveargs)
         if kwargs['huntrleaks']:
@@ -682,6 +700,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         if ncpu:
             print "== CPU count:", ncpu
 
+    if huntrleaks:
+        warmup, repetitions, _ = huntrleaks
+        if warmup < 3:
+            print("WARNING: Running tests with --huntrleaks/-R and less than "
+                  "3 warmup repetitions can give false positives!")
+
     if randomize:
         random.seed(random_seed)
         print "Using random seed", random_seed
@@ -809,7 +833,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     if (ok not in (CHILD_ERROR, INTERRUPTED)
                         and test_time >= PROGRESS_MIN_TIME
                         and not pgo):
-                        text += ' (%.0f sec)' % test_time
+                        text += ' (%s)' % format_duration(test_time)
                     running = get_running(workers)
                     if running and not pgo:
                         text += ' -- running: %s' % ', '.join(running)
@@ -1293,11 +1317,12 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=Non
                 # being imported.  For tests based on unittest or doctest,
                 # explicitly invoke their test_main() function (if it exists).
                 indirect_test = getattr(the_module, "test_main", None)
-                if indirect_test is not None:
-                    indirect_test()
                 if huntrleaks:
                     refleak = dash_R(the_module, test, indirect_test,
                         huntrleaks)
+                else:
+                    if indirect_test is not None:
+                        indirect_test()
                 test_time = time.time() - start_time
             post_test_cleanup()
         finally:
