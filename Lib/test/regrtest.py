@@ -691,6 +691,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         if ncpu:
             print "== CPU count:", ncpu
 
+    if huntrleaks:
+        warmup, repetitions, _ = huntrleaks
+        if warmup < 3:
+            print("WARNING: Running tests with --huntrleaks/-R and less than "
+                  "3 warmup repetitions can give false positives!")
+
     if randomize:
         random.seed(random_seed)
         print "Using random seed", random_seed
