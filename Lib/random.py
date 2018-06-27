@@ -361,7 +361,9 @@ class Random(_random.Random):
             raise ValueError('The number of weights does not match the population')
         bisect = _bisect.bisect
         total = cum_weights[-1]
-        return [population[bisect(cum_weights, random() * total)] for i in range(k)]
+        hi = len(cum_weights) - 1
+        return [population[bisect(cum_weights, random() * total, 0, hi)]
+                for i in range(k)]
 
 ## -------------------- real-valued distributions  -------------------
 
