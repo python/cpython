@@ -1,5 +1,5 @@
 .. bpo: 23571
-.. date: 7650
+.. date: 8990
 .. nonce: GTkAkq
 .. release date: 2015-03-09
 .. section: Core and Builtins
@@ -11,7 +11,7 @@ previous exception.
 ..
 
 .. bpo: 22524
-.. date: 7649
+.. date: 8989
 .. nonce: Ks6_2x
 .. section: Library
 
@@ -21,7 +21,7 @@ better and faster directory iterator". Patch written by Ben Hoyt.
 ..
 
 .. bpo: 23103
-.. date: 7648
+.. date: 8988
 .. nonce: I3RLIV
 .. section: Library
 
@@ -30,7 +30,7 @@ Reduced the memory consumption of IPv4Address and IPv6Address.
 ..
 
 .. bpo: 21793
-.. date: 7647
+.. date: 8987
 .. nonce: GQtYMM
 .. section: Library
 
@@ -40,7 +40,7 @@ stringified enum.  Patch by Demian Brecht.
 ..
 
 .. bpo: 23476
-.. date: 7646
+.. date: 8986
 .. nonce: 82QV9I
 .. section: Library
 
@@ -50,7 +50,7 @@ certificate stores when it is available.
 ..
 
 .. bpo: 23576
-.. date: 7645
+.. date: 8985
 .. nonce: 98F-PP
 .. section: Library
 
@@ -60,7 +60,7 @@ the underlying connection hasn't been closed.
 ..
 
 .. bpo: 23504
-.. date: 7644
+.. date: 8984
 .. nonce: o31h5I
 .. section: Library
 
@@ -69,7 +69,7 @@ Added an __all__ to the types module.
 ..
 
 .. bpo: 23563
-.. date: 7643
+.. date: 8983
 .. nonce: iQB-ba
 .. section: Library
 
@@ -78,7 +78,7 @@ Optimized utility functions in urllib.parse.
 ..
 
 .. bpo: 7830
-.. date: 7642
+.. date: 8982
 .. nonce: irvPdC
 .. section: Library
 
@@ -87,7 +87,7 @@ Flatten nested functools.partial.
 ..
 
 .. bpo: 20204
-.. date: 7641
+.. date: 8981
 .. nonce: DorA4b
 .. section: Library
 
@@ -96,7 +96,7 @@ Added the __module__ attribute to _tkinter classes.
 ..
 
 .. bpo: 19980
-.. date: 7640
+.. date: 8980
 .. nonce: whwzL_
 .. section: Library
 
@@ -107,7 +107,7 @@ Lawrence.
 ..
 
 .. bpo: 23521
-.. date: 7639
+.. date: 8979
 .. nonce: HvwFfd
 .. section: Library
 
@@ -119,7 +119,7 @@ Corrected rounding in timedlta true division.
 ..
 
 .. bpo: 21619
-.. date: 7638
+.. date: 8978
 .. nonce: uL0SZh
 .. section: Library
 
@@ -129,7 +129,7 @@ the pipe was broken.  Patch by Martin Panter.
 ..
 
 .. bpo: 22936
-.. date: 7637
+.. date: 8977
 .. nonce: JrhGYd
 .. section: Library
 
@@ -139,7 +139,7 @@ traceback module and unittest.
 ..
 
 .. bpo: 15955
-.. date: 7636
+.. date: 8976
 .. nonce: _8nYPy
 .. section: Library
 
@@ -149,7 +149,7 @@ Nikolaus Rath.
 ..
 
 .. bpo: 6639
-.. date: 7635
+.. date: 8975
 .. nonce: rmjUmG
 .. section: Library
 
@@ -159,7 +159,7 @@ window.
 ..
 
 .. bpo: 814253
-.. date: 7634
+.. date: 8974
 .. nonce: icZb-I
 .. section: Library
 
@@ -169,7 +169,7 @@ assertions in regular expressions. (See also: bpo-9179)
 ..
 
 .. bpo: 23215
-.. date: 7633
+.. date: 8973
 .. nonce: VHVSVX
 .. section: Library
 
@@ -180,7 +180,7 @@ Torhamo.
 ..
 
 .. bpo: 5700
-.. date: 7632
+.. date: 8972
 .. nonce: iA5yzL
 .. section: Library
 
@@ -190,7 +190,7 @@ close() if closefd=False.
 ..
 
 .. bpo: 23374
-.. date: 7631
+.. date: 8971
 .. nonce: 8A9LuZ
 .. section: Library
 
@@ -200,7 +200,7 @@ file system encoding (e.g. on Mac OS).
 ..
 
 .. bpo: 23481
-.. date: 7630
+.. date: 8970
 .. nonce: ZWwliG
 .. section: Library
 
@@ -209,7 +209,7 @@ Remove RC4 from the SSL module's default cipher list.
 ..
 
 .. bpo: 21548
-.. date: 7629
+.. date: 8969
 .. nonce: CmO_Yh
 .. section: Library
 
@@ -218,7 +218,7 @@ Fix pydoc.synopsis() and pydoc.apropos() on modules with empty docstrings.
 ..
 
 .. bpo: 22885
-.. date: 7628
+.. date: 8968
 .. nonce: p8FnYk
 .. section: Library
 
@@ -228,7 +228,7 @@ Original patch by Claudiu Popa.
 ..
 
 .. bpo: 23239
-.. date: 7627
+.. date: 8967
 .. nonce: PGUq7T
 .. section: Library
 
@@ -237,7 +237,7 @@ ssl.match_hostname() now supports matching of IP addresses.
 ..
 
 .. bpo: 23146
-.. date: 7626
+.. date: 8966
 .. nonce: PW-O3u
 .. section: Library
 
@@ -246,7 +246,7 @@ Fix mishandling of absolute Windows paths with forward slashes in pathlib.
 ..
 
 .. bpo: 23096
-.. date: 7625
+.. date: 8965
 .. nonce: Ftrmf3
 .. section: Library
 
@@ -256,7 +256,7 @@ Python and C implementations.
 ..
 
 .. bpo: 19105
-.. date: 7624
+.. date: 8964
 .. nonce: ZK07Ff
 .. section: Library
 
@@ -265,7 +265,7 @@ pprint now more efficiently uses free space at the right.
 ..
 
 .. bpo: 14910
-.. date: 7623
+.. date: 8963
 .. nonce: zueIhP
 .. section: Library
 
@@ -275,7 +275,7 @@ Paugh, Steven Bethard, paul j3 and Daniel Eriksson.
 ..
 
 .. bpo: 21717
-.. date: 7622
+.. date: 8962
 .. nonce: Knut81
 .. section: Library
 
@@ -284,7 +284,7 @@ tarfile.open() now supports 'x' (exclusive creation) mode.
 ..
 
 .. bpo: 23344
-.. date: 7621
+.. date: 8961
 .. nonce: ieu8C1
 .. section: Library
 
@@ -293,7 +293,7 @@ marshal.dumps() is now 20-25% faster on average.
 ..
 
 .. bpo: 20416
-.. date: 7620
+.. date: 8960
 .. nonce: cwEgkL
 .. section: Library
 
@@ -302,7 +302,7 @@ marshal.dumps() with protocols 3 and 4 is now 40-50% faster on average.
 ..
 
 .. bpo: 23421
-.. date: 7619
+.. date: 8959
 .. nonce: eckzoV
 .. section: Library
 
@@ -311,7 +311,7 @@ Fixed compression in tarfile CLI.  Patch by wdv4758h.
 ..
 
 .. bpo: 23367
-.. date: 7618
+.. date: 8958
 .. nonce: kHnFiz
 .. section: Library
 
@@ -320,7 +320,7 @@ Fix possible overflows in the unicodedata module.
 ..
 
 .. bpo: 23361
-.. date: 7617
+.. date: 8957
 .. nonce: I_w0-z
 .. section: Library
 
@@ -329,7 +329,7 @@ Fix possible overflow in Windows subprocess creation code.
 ..
 
 .. bpo: 0
-.. date: 7616
+.. date: 8956
 .. nonce: sfmjTs
 .. section: Library
 
@@ -340,7 +340,7 @@ handler levels into account.
 ..
 
 .. bpo: 19705
-.. date: 7615
+.. date: 8955
 .. nonce: WLzTRV
 .. section: Library
 
@@ -350,7 +350,7 @@ Jason Yeo.
 ..
 
 .. bpo: 23801
-.. date: 7614
+.. date: 8954
 .. nonce: jyJK3z
 .. section: Library
 
@@ -360,7 +360,7 @@ to a multipart body.
 ..
 
 .. bpo: 23445
-.. date: 7613
+.. date: 8953
 .. nonce: 7fmkYO
 .. section: Build
 
@@ -370,7 +370,7 @@ executable faster.
 ..
 
 .. bpo: 23686
-.. date: 7612
+.. date: 8952
 .. nonce: B7jDXY
 .. section: Build
 
@@ -379,7 +379,7 @@ Update OS X 10.5 installer build to use OpenSSL 1.0.2a.
 ..
 
 .. bpo: 20204
-.. date: 7611
+.. date: 8951
 .. nonce: M_jcNK
 .. section: C API
 
@@ -389,7 +389,7 @@ attribute.
 ..
 
 .. bpo: 23465
-.. date: 7610
+.. date: 8950
 .. nonce: qBauCy
 .. section: Windows
 
@@ -399,7 +399,7 @@ Patch by Paul Moore.
 ..
 
 .. bpo: 23437
-.. date: 7609
+.. date: 8949
 .. nonce: ro9X8r
 .. section: Windows
 

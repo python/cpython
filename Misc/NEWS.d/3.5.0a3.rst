@@ -1,5 +1,5 @@
 .. bpo: 23573
-.. date: 7702
+.. date: 9042
 .. nonce: ZpM4D-
 .. release date: 2015-03-28
 .. section: Core and Builtins
@@ -11,7 +11,7 @@ different kinds (UCS1, UCS2, UCS4).
 ..
 
 .. bpo: 23753
-.. date: 7701
+.. date: 9041
 .. nonce: CREjLC
 .. section: Core and Builtins
 
@@ -21,7 +21,7 @@ functions are always required.
 ..
 
 .. bpo: 23681
-.. date: 7700
+.. date: 9040
 .. nonce: kh02TF
 .. section: Core and Builtins
 
@@ -30,7 +30,7 @@ The -b option now affects comparisons of bytes with int.
 ..
 
 .. bpo: 23632
-.. date: 7699
+.. date: 9039
 .. nonce: UVdIZY
 .. section: Core and Builtins
 
@@ -40,7 +40,7 @@ memoryviews).
 ..
 
 .. bpo: 23192
-.. date: 7698
+.. date: 9038
 .. nonce: QKqdow
 .. section: Core and Builtins
 
@@ -49,7 +49,7 @@ Fixed generator lambdas.  Patch by Bruno Cauet.
 ..
 
 .. bpo: 23629
-.. date: 7697
+.. date: 9037
 .. nonce: r9Mt2C
 .. section: Core and Builtins
 
@@ -58,17 +58,17 @@ Fix the default __sizeof__ implementation for variable-sized objects.
 ..
 
 .. bpo: 14260
-.. date: 7696
+.. date: 9036
 .. nonce: b5M04V
 .. section: Library
 
-The groupindex attribute of regular expression pattern object now is
-non-modifiable mapping.
+The groupindex attribute of regular expression pattern object now is non-
+modifiable mapping.
 
 ..
 
 .. bpo: 23792
-.. date: 7695
+.. date: 9035
 .. nonce: Kfm9-f
 .. section: Library
 
@@ -79,7 +79,7 @@ down while the pager itself is still running.
 ..
 
 .. bpo: 23775
-.. date: 7694
+.. date: 9034
 .. nonce: xKGrSQ
 .. section: Library
 
@@ -88,7 +88,7 @@ pprint() of OrderedDict now outputs the same representation as repr().
 ..
 
 .. bpo: 23765
-.. date: 7693
+.. date: 9033
 .. nonce: 2ta_C4
 .. section: Library
 
@@ -97,7 +97,7 @@ Removed IsBadStringPtr calls in ctypes
 ..
 
 .. bpo: 22364
-.. date: 7692
+.. date: 9032
 .. nonce: ejtoKl
 .. section: Library
 
@@ -106,7 +106,7 @@ Improved some re error messages using regex for hints.
 ..
 
 .. bpo: 23742
-.. date: 7691
+.. date: 9031
 .. nonce: _EkAIa
 .. section: Library
 
@@ -115,7 +115,7 @@ ntpath.expandvars() no longer loses unbalanced single quotes.
 ..
 
 .. bpo: 21717
-.. date: 7690
+.. date: 9030
 .. nonce: pKndpx
 .. section: Library
 
@@ -125,7 +125,7 @@ mode.
 ..
 
 .. bpo: 21802
-.. date: 7689
+.. date: 9029
 .. nonce: ygSM2A
 .. section: Library
 
@@ -135,7 +135,7 @@ in BufferedRWPair.close().
 ..
 
 .. bpo: 23622
-.. date: 7688
+.. date: 9028
 .. nonce: 9-ZRqj
 .. section: Library
 
@@ -145,7 +145,7 @@ letter now raise a deprecation warning and will be forbidden in Python 3.6.
 ..
 
 .. bpo: 23671
-.. date: 7687
+.. date: 9027
 .. nonce: zWPm-a
 .. section: Library
 
@@ -156,7 +156,7 @@ argument.  string.Formatter now allows specifying the "self" and the
 ..
 
 .. bpo: 23502
-.. date: 7686
+.. date: 9026
 .. nonce: AH20IQ
 .. section: Library
 
@@ -165,7 +165,7 @@ The pprint module now supports mapping proxies.
 ..
 
 .. bpo: 17530
-.. date: 7685
+.. date: 9025
 .. nonce: PUp8rL
 .. section: Library
 
@@ -174,7 +174,7 @@ pprint now wraps long bytes objects and bytearrays.
 ..
 
 .. bpo: 22687
-.. date: 7684
+.. date: 9024
 .. nonce: zEJPd9
 .. section: Library
 
@@ -184,7 +184,7 @@ complexity in breaking long words.
 ..
 
 .. bpo: 4727
-.. date: 7683
+.. date: 9023
 .. nonce: iDQSpi
 .. section: Library
 
@@ -194,7 +194,7 @@ of instances of classes whose __new__ method takes keyword-only arguments.
 ..
 
 .. bpo: 23491
-.. date: 7682
+.. date: 9022
 .. nonce: P_WKrt
 .. section: Library
 
@@ -205,7 +205,7 @@ archives (PEP 441).
 ..
 
 .. bpo: 23657
-.. date: 7681
+.. date: 9021
 .. nonce: y1OaV-
 .. section: Library
 
@@ -215,7 +215,7 @@ objects as arguments.
 ..
 
 .. bpo: 23688
-.. date: 7680
+.. date: 9020
 .. nonce: d6LVy3
 .. section: Library
 
@@ -226,7 +226,7 @@ Maier.
 ..
 
 .. bpo: 23252
-.. date: 7679
+.. date: 9019
 .. nonce: Goi18g
 .. section: Library
 
@@ -235,7 +235,7 @@ Added support for writing ZIP files to unseekable streams.
 ..
 
 .. bpo: 23647
-.. date: 7678
+.. date: 9018
 .. nonce: pX2qrx
 .. section: Library
 
@@ -244,7 +244,7 @@ Increase impalib's MAXLINE to accommodate modern mailbox sizes.
 ..
 
 .. bpo: 23539
-.. date: 7677
+.. date: 9017
 .. nonce: 5BVUim
 .. section: Library
 
@@ -255,7 +255,7 @@ servers.
 ..
 
 .. bpo: 22351
-.. date: 7676
+.. date: 9016
 .. nonce: agB8Y3
 .. section: Library
 
@@ -265,7 +265,7 @@ until the garbage collector cleans them up.  Patch by Martin Panter.
 ..
 
 .. bpo: 23704
-.. date: 7675
+.. date: 9015
 .. nonce: LTyyxL
 .. section: Library
 
@@ -276,7 +276,7 @@ improves their substitutability for lists.
 ..
 
 .. bpo: 23715
-.. date: 7674
+.. date: 9014
 .. nonce: Yap3tU
 .. section: Library
 
@@ -288,7 +288,7 @@ timeout with a monotonic clock when it is retried.
 ..
 
 .. bpo: 23001
-.. date: 7673
+.. date: 9013
 .. nonce: YSFnam
 .. section: Library
 
@@ -299,7 +299,7 @@ object too.
 ..
 
 .. bpo: 23646
-.. date: 7672
+.. date: 9012
 .. nonce: Tljc1S
 .. section: Library
 
@@ -310,7 +310,7 @@ the recomputed delay, except if the signal handler raises an exception (PEP
 ..
 
 .. bpo: 23136
-.. date: 7671
+.. date: 9011
 .. nonce: 1bnpnb
 .. section: Library
 
@@ -320,7 +320,7 @@ previous year.  Based on patch by Jim Carroll.
 ..
 
 .. bpo: 23700
-.. date: 7670
+.. date: 9010
 .. nonce: VfnWwi
 .. section: Library
 
@@ -330,7 +330,7 @@ instance.  Patch by Bohuslav Kabrda.
 ..
 
 .. bpo: 22903
-.. date: 7669
+.. date: 9009
 .. nonce: 2GjTHY
 .. section: Library
 
@@ -340,7 +340,7 @@ module is now picklable.
 ..
 
 .. bpo: 22181
-.. date: 7668
+.. date: 9008
 .. nonce: 7mnxea
 .. section: Library
 
@@ -352,7 +352,7 @@ kernel has enough entropy.
 ..
 
 .. bpo: 2211
-.. date: 7667
+.. date: 9007
 .. nonce: 17Iz5U
 .. section: Library
 
@@ -367,7 +367,7 @@ Brecht.
 ..
 
 .. bpo: 18983
-.. date: 7666
+.. date: 9006
 .. nonce: vF4i2S
 .. section: Library
 
@@ -376,7 +376,7 @@ Allow selection of output units in timeit. Patch by Julian Gindi.
 ..
 
 .. bpo: 23631
-.. date: 7665
+.. date: 9005
 .. nonce: GfSqNI
 .. section: Library
 
@@ -385,7 +385,7 @@ Fix traceback.format_list when a traceback has been mutated.
 ..
 
 .. bpo: 23568
-.. date: 7664
+.. date: 9004
 .. nonce: ffzJc7
 .. section: Library
 
@@ -394,7 +394,7 @@ Add rdivmod support to MagicMock() objects. Patch by Håkan Lövdahl.
 ..
 
 .. bpo: 2052
-.. date: 7663
+.. date: 9003
 .. nonce: ujNgna
 .. section: Library
 
@@ -403,7 +403,7 @@ Add charset parameter to HtmlDiff.make_file().
 ..
 
 .. bpo: 23668
-.. date: 7662
+.. date: 9002
 .. nonce: nF_jnN
 .. section: Library
 
@@ -412,7 +412,7 @@ Support os.truncate and os.ftruncate on Windows.
 ..
 
 .. bpo: 23138
-.. date: 7661
+.. date: 9001
 .. nonce: 4vMoMZ
 .. section: Library
 
@@ -422,7 +422,7 @@ Demian Brecht.
 ..
 
 .. bpo: 23051
-.. date: 7660
+.. date: 9000
 .. nonce: Vi5tCZ
 .. section: Library
 
@@ -432,7 +432,7 @@ exceptions raised by an iterator.  Patch by Alon Diamant and Davin Potts.
 ..
 
 .. bpo: 23581
-.. date: 7659
+.. date: 8999
 .. nonce: D4Lknl
 .. section: Library
 
@@ -441,7 +441,7 @@ Add matmul support to MagicMock. Patch by Håkan Lövdahl.
 ..
 
 .. bpo: 23566
-.. date: 7658
+.. date: 8998
 .. nonce: F6LSyk
 .. section: Library
 
@@ -451,7 +451,7 @@ of faulthandler now accept file descriptors. Patch by Wei Wu.
 ..
 
 .. bpo: 22928
-.. date: 7657
+.. date: 8997
 .. nonce: q2TmY0
 .. section: Library
 
@@ -461,7 +461,7 @@ Brecht.
 ..
 
 .. bpo: 23615
-.. date: 7656
+.. date: 8996
 .. nonce: 5Kx9k5
 .. section: Library
 
@@ -471,7 +471,7 @@ Patch by Thomas Kluyver.
 ..
 
 .. bpo: 23605
-.. date: 7655
+.. date: 8995
 .. nonce: JUOA_X
 .. section: Library
 
@@ -482,7 +482,7 @@ by Ben Hoyt.
 ..
 
 .. bpo: 23585
-.. date: 7654
+.. date: 8994
 .. nonce: DTIIoI
 .. section: Build
 
@@ -491,7 +491,7 @@ make patchcheck will ensure the interpreter is built.
 ..
 
 .. bpo: 23583
-.. date: 7653
+.. date: 8993
 .. nonce: bY8AbM
 .. section: Tests
 
@@ -500,7 +500,7 @@ Added tests for standard IO streams in IDLE.
 ..
 
 .. bpo: 22289
-.. date: 7652
+.. date: 8992
 .. nonce: ybGcC-
 .. section: Tests
 
@@ -509,7 +509,7 @@ Prevent test_urllib2net failures due to ftp connection timeout.
 ..
 
 .. bpo: 22826
-.. date: 7651
+.. date: 8991
 .. nonce: 3bcoDL
 .. section: Tools/Demos
 

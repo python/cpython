@@ -1,5 +1,5 @@
-This is Python version 3.7.0 candidate 1
-========================================
+This is Python version 3.7.0
+============================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
