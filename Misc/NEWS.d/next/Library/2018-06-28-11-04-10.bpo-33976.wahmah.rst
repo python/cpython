@@ -1,0 +1,1 @@
+Support nested classes in Enum. Patch by Edward Wang.

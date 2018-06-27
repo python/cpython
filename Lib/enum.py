@@ -94,7 +94,10 @@ class _EnumDict(dict):
             raise TypeError('Attempted to reuse key: %r' % key)
         elif key in self._ignore:
             pass
-        elif not _is_descriptor(value):
+        elif _is_descriptor(value):
+            # Don't treat methods, etc as enum values.
+            pass
+        else:
             if key in self:
                 # enum overwriting a descriptor?
                 raise TypeError('%r already defined as: %r' % (key, self[key]))
@@ -102,9 +105,20 @@ class _EnumDict(dict):
                 if value.value == _auto_null:
                     value.value = self._generate_next_value(key, 1, len(self._member_names), self._last_values[:])
                 value = value.value
-            self._member_names.append(key)
-            self._last_values.append(value)
+            self.add_member(key, value)
         super().__setitem__(key, value)
+
+    def add_member(self, key, value):
+        """Add a member by key and value."""
+        self._member_names.append(key)
+        self._last_values.append(value)
+
+    def remove_member(self, key):
+        """Remove a member (reverses add_member() above) by key, if present."""
+        if key in self._member_names:
+            index = self._member_names.index(key)
+            del self._member_names[index]
+            del self._last_values[index]
 
 
 # Dummy value for Enum as EnumMeta explicitly checks for it, but of course
@@ -130,7 +144,21 @@ class EnumMeta(type):
         # cannot be mixed with other types (int, float, etc.) if it has an
         # inherited __new__ unless a new __new__ is defined (or the resulting
         # class will fail).
-        #
+
+        # Get __qualname__ for the class being created.
+        enum_class_qualname = super().__new__(metacls, cls, bases, classdict).__qualname__
+
+        # We want to avoid treating locally-defined nested classes as enum
+        # values, so we use __qualname__ to determine this.
+        # e.g. if a class Bar is defined inside an enum Foo, then say if
+        # enum_class.__qualname__ is Foo, then member.__qualname__ will be Bar.
+        # We have to do it here since __qualname__ of the new Enum isn't
+        # accessible in _EnumDict.__setitem__().
+        for key, member in classdict.items():
+            if isinstance(member, type):
+                if member.__qualname__.startswith(enum_class_qualname):
+                    classdict.remove_member(key)
+
         # remove any keys listed in _ignore_
         classdict.setdefault('_ignore_', []).append('_ignore_')
         ignore = classdict['_ignore_']

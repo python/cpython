@@ -207,7 +207,7 @@ return A::
 .. note::
 
     Attempting to create a member with the same name as an already
-    defined attribute (another member, a method, etc.) or attempting to create
+    defined attribute (another member, a method, a class, etc.) or attempting to create
     an attribute with the same name as a member is not allowed.
 
 
