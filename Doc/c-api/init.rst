@@ -245,13 +245,18 @@ Initializing and finalizing the interpreter
    the table of loaded modules (``sys.modules``), and creates the fundamental
    modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
-   :c:func:`PySys_SetArgvEx` for that.  This is a no-op when called for a second time
-   (without calling :c:func:`Py_FinalizeEx` first).  There is no return value; it is a
+   :c:func:`PySys_SetArgvEx` for that. There is no return value; it is a
    fatal error if the initialization fails.
 
    .. note::
       On Windows, changes the console mode from ``O_TEXT`` to ``O_BINARY``, which will
       also affect non-Python uses of the console using the C Runtime.
+
+   .. versionchanged:: 3.7
+
+      Calling :c:func:`Py_Initialize` or :c:func:`Py_InitializeEx` a second
+      time without an intervening call to :c:func:`Py_FinalizeEx` is deprecated
+      and is expected to become an error in a future release.
 
 
 .. c:function:: void Py_InitializeEx(int initsigs)
