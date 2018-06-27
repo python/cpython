@@ -335,6 +335,39 @@ zlib_Compress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
 
 #if defined(HAVE_ZLIB_COPY)
 
+PyDoc_STRVAR(zlib_Compress___copy____doc__,
+"__copy__($self, /)\n"
+"--\n"
+"\n");
+
+#define ZLIB_COMPRESS___COPY___METHODDEF    \
+    {"__copy__", (PyCFunction)zlib_Compress___copy__, METH_NOARGS, zlib_Compress___copy____doc__},
+
+static PyObject *
+zlib_Compress___copy___impl(compobject *self);
+
+static PyObject *
+zlib_Compress___copy__(compobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return zlib_Compress___copy___impl(self);
+}
+
+#endif /* defined(HAVE_ZLIB_COPY) */
+
+#if defined(HAVE_ZLIB_COPY)
+
+PyDoc_STRVAR(zlib_Compress___deepcopy____doc__,
+"__deepcopy__($self, memo, /)\n"
+"--\n"
+"\n");
+
+#define ZLIB_COMPRESS___DEEPCOPY___METHODDEF    \
+    {"__deepcopy__", (PyCFunction)zlib_Compress___deepcopy__, METH_O, zlib_Compress___deepcopy____doc__},
+
+#endif /* defined(HAVE_ZLIB_COPY) */
+
+#if defined(HAVE_ZLIB_COPY)
+
 PyDoc_STRVAR(zlib_Decompress_copy__doc__,
 "copy($self, /)\n"
 "--\n"
@@ -352,6 +385,39 @@ zlib_Decompress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
 {
     return zlib_Decompress_copy_impl(self);
 }
+
+#endif /* defined(HAVE_ZLIB_COPY) */
+
+#if defined(HAVE_ZLIB_COPY)
+
+PyDoc_STRVAR(zlib_Decompress___copy____doc__,
+"__copy__($self, /)\n"
+"--\n"
+"\n");
+
+#define ZLIB_DECOMPRESS___COPY___METHODDEF    \
+    {"__copy__", (PyCFunction)zlib_Decompress___copy__, METH_NOARGS, zlib_Decompress___copy____doc__},
+
+static PyObject *
+zlib_Decompress___copy___impl(compobject *self);
+
+static PyObject *
+zlib_Decompress___copy__(compobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return zlib_Decompress___copy___impl(self);
+}
+
+#endif /* defined(HAVE_ZLIB_COPY) */
+
+#if defined(HAVE_ZLIB_COPY)
+
+PyDoc_STRVAR(zlib_Decompress___deepcopy____doc__,
+"__deepcopy__($self, memo, /)\n"
+"--\n"
+"\n");
+
+#define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF    \
+    {"__deepcopy__", (PyCFunction)zlib_Decompress___deepcopy__, METH_O, zlib_Decompress___deepcopy____doc__},
 
 #endif /* defined(HAVE_ZLIB_COPY) */
 
@@ -468,7 +534,23 @@ exit:
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
 
+#ifndef ZLIB_COMPRESS___COPY___METHODDEF
+    #define ZLIB_COMPRESS___COPY___METHODDEF
+#endif /* !defined(ZLIB_COMPRESS___COPY___METHODDEF) */
+
+#ifndef ZLIB_COMPRESS___DEEPCOPY___METHODDEF
+    #define ZLIB_COMPRESS___DEEPCOPY___METHODDEF
+#endif /* !defined(ZLIB_COMPRESS___DEEPCOPY___METHODDEF) */
+
 #ifndef ZLIB_DECOMPRESS_COPY_METHODDEF
     #define ZLIB_DECOMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=43dd29b8977765f9 input=a9049054013a1b77]*/
+
+#ifndef ZLIB_DECOMPRESS___COPY___METHODDEF
+    #define ZLIB_DECOMPRESS___COPY___METHODDEF
+#endif /* !defined(ZLIB_DECOMPRESS___COPY___METHODDEF) */
+
+#ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
+    #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
+#endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
+/*[clinic end generated code: output=d46c646770146ade input=a9049054013a1b77]*/
