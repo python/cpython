@@ -140,7 +140,7 @@ class FontPageTest(unittest.TestCase):
     def test_sizelist(self):
         # Click on number should select that number
         d = self.page
-        d.sizelist.variable.set(40)
+        d.sizelist.set(40)
         self.assertEqual(d.font_size.get(), '40')
 
     def test_bold_toggle(self):
@@ -331,7 +331,8 @@ class HighPageTest(unittest.TestCase):
 
         # Not in old_themes, defaults name to first item.
         idleConf.SetOption('main', 'Theme', 'name', 'spam')
-        d.builtinlist.SetMenu(item_list, 'IDLE Dark')
+        d.builtinlist['values'] = item_list
+        d.builtinlist.set('IDLE Dark')
         eq(mainpage, {'Theme': {'name': 'IDLE Classic',
                                 'name2': 'IDLE Dark'}})
         eq(d.theme_message['text'], 'New theme, see Help')
@@ -340,14 +341,16 @@ class HighPageTest(unittest.TestCase):
         # Not in old themes - uses name2.
         changes.clear()
         idleConf.SetOption('main', 'Theme', 'name', 'IDLE New')
-        d.builtinlist.SetMenu(item_list, 'IDLE Dark')
+        d.builtinlist['values'] = item_list
+        d.builtinlist.set('IDLE Dark')
         eq(mainpage, {'Theme': {'name2': 'IDLE Dark'}})
         eq(d.theme_message['text'], 'New theme, see Help')
         eq(d.paint_theme_sample.called, 2)
 
         # Builtin name in old_themes.
         changes.clear()
-        d.builtinlist.SetMenu(item_list, 'IDLE Classic')
+        d.builtinlist['values'] = item_list
+        d.builtinlist.set('IDLE Classic')
         eq(mainpage, {'Theme': {'name': 'IDLE Classic', 'name2': ''}})
         eq(d.theme_message['text'], '')
         eq(d.paint_theme_sample.called, 3)
@@ -356,13 +359,15 @@ class HighPageTest(unittest.TestCase):
         d = self.page
 
         # If no selections, doesn't get added.
-        d.customlist.SetMenu([], '- no custom themes -')
+        d.customlist['values'] = []
+        d.customlist.set('- no custom themes -')
         self.assertNotIn('Theme', mainpage)
         self.assertEqual(d.paint_theme_sample.called, 0)
 
         # Custom name selected.
         changes.clear()
-        d.customlist.SetMenu(['a', 'b', 'c'], 'c')
+        d.customlist['values'] = ['a', 'b', 'c']
+        d.customlist.set('c')
         self.assertEqual(mainpage, {'Theme': {'name': 'c'}})
         self.assertEqual(d.paint_theme_sample.called, 1)
 
@@ -379,7 +384,8 @@ class HighPageTest(unittest.TestCase):
         eq = self.assertEqual
         d = self.page
 
-        d.targetlist.SetMenu(['a', 'b', 'c'], 'c')
+        d.targetlist['values'] = ['a', 'b', 'c']
+        d.targetlist.set('c')
         eq(d.highlight_target.get(), 'c')
         eq(d.set_highlight_target.called, 1)
 
@@ -428,16 +434,16 @@ class HighPageTest(unittest.TestCase):
         # Builtin theme selected.
         d.theme_source.set(True)
         d.set_theme_type()
-        eq(d.builtinlist['state'], NORMAL)
-        eq(d.customlist['state'], DISABLED)
+        eq(d.builtinlist.instate(('disabled',)), False)
+        eq(d.customlist.instate(('disabled',)), True)
         eq(d.button_delete_custom.state(), ('disabled',))
 
         # Custom theme selected.
         d.theme_source.set(False)
         d.set_theme_type()
-        eq(d.builtinlist['state'], DISABLED)
+        eq(d.builtinlist.instate(('disabled',)), True)
         eq(d.custom_theme_on.state(), ('selected',))
-        eq(d.customlist['state'], NORMAL)
+        eq(d.customlist.instate(('disabled',)), False)
         eq(d.button_delete_custom.state(), ())
         d.set_theme_type = Func()
 
@@ -783,7 +789,8 @@ class KeysPageTest(unittest.TestCase):
                      'IDLE Modern UNIX']
 
         # Not in old_keys, defaults name to first item.
-        d.builtinlist.SetMenu(item_list, 'IDLE Modern UNIX')
+        d.builtinlist['values'] = item_list
+        d.builtinlist.set('IDLE Modern UNIX')
         eq(mainpage, {'Keys': {'name': 'IDLE Classic Windows',
                                'name2': 'IDLE Modern UNIX'}})
         eq(d.keys_message['text'], 'New key set, see Help')
@@ -793,7 +800,8 @@ class KeysPageTest(unittest.TestCase):
         # Not in old keys - uses name2.
         changes.clear()
         idleConf.SetOption('main', 'Keys', 'name', 'IDLE Classic Unix')
-        d.builtinlist.SetMenu(item_list, 'IDLE Modern UNIX')
+        d.builtinlist['values'] = item_list
+        d.builtinlist.set('IDLE Modern UNIX')
         eq(mainpage, {'Keys': {'name2': 'IDLE Modern UNIX'}})
         eq(d.keys_message['text'], 'New key set, see Help')
         eq(d.load_keys_list.called, 2)
@@ -801,7 +809,8 @@ class KeysPageTest(unittest.TestCase):
 
         # Builtin name in old_keys.
         changes.clear()
-        d.builtinlist.SetMenu(item_list, 'IDLE Classic OSX')
+        d.builtinlist['values'] = item_list
+        d.builtinlist.set('IDLE Classic OSX')
         eq(mainpage, {'Keys': {'name': 'IDLE Classic OSX', 'name2': ''}})
         eq(d.keys_message['text'], '')
         eq(d.load_keys_list.called, 3)
@@ -811,13 +820,15 @@ class KeysPageTest(unittest.TestCase):
         d = self.page
 
         # If no selections, doesn't get added.
-        d.customlist.SetMenu([], '- no custom keys -')
+        d.customlist['values'] = []
+        d.customlist.set('- no custom keys -')
         self.assertNotIn('Keys', mainpage)
         self.assertEqual(d.load_keys_list.called, 0)
 
         # Custom name selected.
         changes.clear()
-        d.customlist.SetMenu(['a', 'b', 'c'], 'c')
+        d.customlist['values'] = ['a', 'b', 'c']
+        d.customlist.set('c')
         self.assertEqual(mainpage, {'Keys': {'name': 'c'}})
         self.assertEqual(d.load_keys_list.called, 1)
 
@@ -850,16 +861,16 @@ class KeysPageTest(unittest.TestCase):
         # Builtin keyset selected.
         d.keyset_source.set(True)
         d.set_keys_type()
-        eq(d.builtinlist['state'], NORMAL)
-        eq(d.customlist['state'], DISABLED)
+        eq(d.builtinlist.instate(('disabled',)), False)
+        eq(d.customlist.instate(('disabled',)), True)
         eq(d.button_delete_custom_keys.state(), ('disabled',))
 
         # Custom keyset selected.
         d.keyset_source.set(False)
         d.set_keys_type()
-        eq(d.builtinlist['state'], DISABLED)
+        eq(d.builtinlist.instate(('disabled',)), True)
         eq(d.custom_keyset_on.state(), ('selected',))
-        eq(d.customlist['state'], NORMAL)
+        eq(d.customlist.instate(('disabled',)), False)
         eq(d.button_delete_custom_keys.state(), ())
         d.set_keys_type = Func()
 
@@ -1148,7 +1159,7 @@ class GenPageTest(unittest.TestCase):
     def test_parenmatch(self):
         d = self.page
         eq = self.assertEqual
-        d.paren_style_type['menu'].invoke(0)
+        d.paren_style_type.set('opener')
         eq(extpage, {'ParenMatch': {'style': 'opener'}})
         changes.clear()
         d.paren_flash_time.delete(0, 'end')
