@@ -1,0 +1,2 @@
+Improve random.choices() to handle subnormal input weights that could
+occasionally trigger an IndexError.
