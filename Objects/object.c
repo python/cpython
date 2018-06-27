@@ -2122,8 +2122,7 @@ _PyTrash_destroy_chain(void)
         PyObject *op = _PyRuntime.gc.trash_delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
-        _PyRuntime.gc.trash_delete_later =
-            (PyObject*) _Py_AS_GC(op)->gc.gc_prev;
+        _PyRuntime.gc.trash_delete_later = (PyObject*) _Py_AS_GC(op)->_gc_prev;
 
         /* Call the deallocator directly.  This used to try to
          * fool Py_DECREF into calling it indirectly, but
@@ -2160,8 +2159,7 @@ _PyTrash_thread_destroy_chain(void)
         PyObject *op = tstate->trash_delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
-        tstate->trash_delete_later =
-            (PyObject*) _Py_AS_GC(op)->gc.gc_prev;
+        tstate->trash_delete_later = (PyObject*) _Py_AS_GC(op)->_gc_prev;
 
         /* Call the deallocator directly.  This used to try to
          * fool Py_DECREF into calling it indirectly, but

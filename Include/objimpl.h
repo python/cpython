@@ -249,37 +249,44 @@ PyAPI_FUNC(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, Py_ssize_t);
 
 /* GC information is stored BEFORE the object structure. */
 #ifndef Py_LIMITED_API
-typedef union _gc_head {
-    struct {
-        union _gc_head *gc_next;  // NULL means the object is not tracked
-        uintptr_t gc_prev;  // Pointer to previous object in the list.
-                            // Lowest three bits are used for flags.
-    } gc;
-    double dummy;  /* force worst-case alignment */
+typedef struct {
+    // Pointer to next object in the list.
+    // 0 means the object is not tracked
+    uintptr_t _gc_next;
+
+    // Pointer to previous object in the list.
+    // Lowest two bits are used for flags documented later.
+    uintptr_t _gc_prev;
 } PyGC_Head;
 
 extern PyGC_Head *_PyGC_generation0;
 
 #define _Py_AS_GC(o) ((PyGC_Head *)(o)-1)
 
-/* Bit flags for gc_prev */
+/* Bit flags for _gc_prev */
 /* Bit 0 is set when tp_finalize is called */
 #define _PyGC_PREV_MASK_FINALIZED  (1)
-/* Bit 1 and 2 is used in gcmodule.c */
-#define _PyGC_PREV_MASK_INTERNAL   (2 | 4)
-/* The (N-3) most significant bits contain the real address. */
-#define _PyGC_PREV_SHIFT           (3)
+/* Bit 1 is set when the object is in generation which is GCed currently. */
+#define _PyGC_PREV_MASK_COLLECTING (2)
+/* The (N-2) most significant bits contain the real address. */
+#define _PyGC_PREV_SHIFT           (2)
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
-#define _PyGCHead_PREV(g) ((PyGC_Head*)((g)->gc.gc_prev & _PyGC_PREV_MASK))
+// Lowest bit of _gc_next is used for flags only in GC.
+// But it is always 0 for normal code.
+#define _PyGCHead_NEXT(g)        ((PyGC_Head*)(g)->_gc_next)
+#define _PyGCHead_SET_NEXT(g, p) ((g)->_gc_next = (uintptr_t)(p))
+
+// Lowest two bits of _gc_prev is used for flags described below.
+#define _PyGCHead_PREV(g) ((PyGC_Head*)((g)->_gc_prev & _PyGC_PREV_MASK))
 #define _PyGCHead_SET_PREV(g, p) do { \
     assert(((uintptr_t)p & ~_PyGC_PREV_MASK) == 0); \
-    (g)->gc.gc_prev = ((g)->gc.gc_prev & ~_PyGC_PREV_MASK) \
+    (g)->_gc_prev = ((g)->_gc_prev & ~_PyGC_PREV_MASK) \
         | ((uintptr_t)(p)); \
     } while (0)
 
-#define _PyGCHead_FINALIZED(g) (((g)->gc.gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0)
-#define _PyGCHead_SET_FINALIZED(g) ((g)->gc.gc_prev |= _PyGC_PREV_MASK_FINALIZED)
+#define _PyGCHead_FINALIZED(g) (((g)->_gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0)
+#define _PyGCHead_SET_FINALIZED(g) ((g)->_gc_prev |= _PyGC_PREV_MASK_FINALIZED)
 
 #define _PyGC_FINALIZED(o) _PyGCHead_FINALIZED(_Py_AS_GC(o))
 #define _PyGC_SET_FINALIZED(o) _PyGCHead_SET_FINALIZED(_Py_AS_GC(o))
@@ -289,38 +296,41 @@ extern PyGC_Head *_PyGC_generation0;
  * NB: While the object is tracked by the collector, it must be safe to call the
  * ob_traverse method.
  *
- * Internal note: _PyGC_generation0->gc.gc_prev doesn't have any bit flags
- * because it's not object header.  That's why we don't use _PyGCHead_SET_PREV()
- * for it.
+ * Internal note: _PyGC_generation0->_gc_prev doesn't have any bit flags
+ * because it's not object header.  So we don't use _PyGCHead_PREV() and
+ * _PyGCHead_SET_PREV() for it to avoid unnecessary bitwise operations.
  */
 #define _PyObject_GC_TRACK(o) do { \
     PyGC_Head *g = _Py_AS_GC(o); \
-    if (g->gc.gc_next != NULL) \
+    if (g->_gc_next != 0) { \
         Py_FatalError("GC object already tracked"); \
-    assert((g->gc.gc_prev & _PyGC_PREV_MASK_INTERNAL) == 0); \
-    g->gc.gc_next = _PyGC_generation0; \
-    _PyGCHead_SET_PREV(g, _PyGC_generation0->gc.gc_prev); \
-    _PyGCHead_PREV(_PyGC_generation0)->gc.gc_next = g; \
-    _PyGC_generation0->gc.gc_prev = (uintptr_t)g; \
+    } \
+    assert((g->_gc_prev & _PyGC_PREV_MASK_COLLECTING) == 0); \
+    PyGC_Head *last = (PyGC_Head*)(_PyGC_generation0->_gc_prev); \
+    _PyGCHead_SET_NEXT(last, g); \
+    _PyGCHead_SET_PREV(g, last); \
+    _PyGCHead_SET_NEXT(g, _PyGC_generation0); \
+    _PyGC_generation0->_gc_prev = (uintptr_t)g; \
     } while (0);
 
 /* Tell the GC to stop tracking this object.
  *
- * Internal note: This may be called while GC.  So _PyGC_PREV_MASK_INTERNAL must
- * be cleared.  Only _PyGC_PREV_MASK_FINALIZED bit is kept.
+ * Internal note: This may be called while GC.  So _PyGC_PREV_MASK_COLLECTING must
+ * be cleared.  But _PyGC_PREV_MASK_FINALIZED bit is kept.
  */
 #define _PyObject_GC_UNTRACK(o) do { \
     PyGC_Head *g = _Py_AS_GC(o); \
     PyGC_Head *prev = _PyGCHead_PREV(g); \
-    assert(g->gc.gc_next != NULL); \
-    prev->gc.gc_next = g->gc.gc_next; \
-    _PyGCHead_SET_PREV(g->gc.gc_next, prev); \
-    g->gc.gc_next = NULL; \
-    g->gc.gc_prev &= _PyGC_PREV_MASK_FINALIZED; \
+    PyGC_Head *next = _PyGCHead_NEXT(g); \
+    assert(next != NULL); \
+    _PyGCHead_SET_NEXT(prev, next); \
+    _PyGCHead_SET_PREV(next, prev); \
+    g->_gc_next = 0; \
+    g->_gc_prev &= _PyGC_PREV_MASK_FINALIZED; \
     } while (0);
 
 /* True if the object is currently tracked by the GC. */
-#define _PyObject_GC_IS_TRACKED(o) (_Py_AS_GC(o)->gc.gc_next != NULL)
+#define _PyObject_GC_IS_TRACKED(o) (_Py_AS_GC(o)->_gc_next != 0)
 
 /* True if the object may be tracked by the GC in the future, or already is.
    This can be useful to implement some optimizations. */
