@@ -86,7 +86,7 @@ _io__BufferedIOBase_detach(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_io__Buffered_peek__doc__,
-"peek($self, size=0, /)\n"
+"peek($self, size=0, allow_read=True, /)\n"
 "--\n"
 "\n");
 
@@ -94,19 +94,20 @@ PyDoc_STRVAR(_io__Buffered_peek__doc__,
     {"peek", (PyCFunction)_io__Buffered_peek, METH_FASTCALL, _io__Buffered_peek__doc__},
 
 static PyObject *
-_io__Buffered_peek_impl(buffered *self, Py_ssize_t size);
+_io__Buffered_peek_impl(buffered *self, Py_ssize_t size, int allow_read);
 
 static PyObject *
 _io__Buffered_peek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = 0;
+    int allow_read = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:peek",
-        &size)) {
+    if (!_PyArg_ParseStack(args, nargs, "|np:peek",
+        &size, &allow_read)) {
         goto exit;
     }
-    return_value = _io__Buffered_peek_impl(self, size);
+    return_value = _io__Buffered_peek_impl(self, size, allow_read);
 
 exit:
     return return_value;
@@ -476,4 +477,4 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9a20dd4eaabb5d58 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b0f91041c4b36d20 input=a9049054013a1b77]*/

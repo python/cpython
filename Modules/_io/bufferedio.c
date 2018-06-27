@@ -628,7 +628,7 @@ _bufferedreader_reset_buf(buffered *self);
 static void
 _bufferedwriter_reset_buf(buffered *self);
 static PyObject *
-_bufferedreader_peek_unlocked(buffered *self);
+_bufferedreader_peek_unlocked(buffered *self, int);
 static PyObject *
 _bufferedreader_read_all(buffered *self);
 static PyObject *
@@ -843,13 +843,14 @@ buffered_flush(buffered *self, PyObject *args)
 /*[clinic input]
 _io._Buffered.peek
     size: Py_ssize_t = 0
+    allow_read: bool = True
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_io__Buffered_peek_impl(buffered *self, Py_ssize_t size)
-/*[clinic end generated code: output=ba7a097ca230102b input=37ffb97d06ff4adb]*/
+_io__Buffered_peek_impl(buffered *self, Py_ssize_t size, int allow_read)
+/*[clinic end generated code: output=14a0ef8e7da9806a input=97d65e49c07606d3]*/
 {
     PyObject *res = NULL;
 
@@ -865,7 +866,7 @@ _io__Buffered_peek_impl(buffered *self, Py_ssize_t size)
             goto end;
         Py_CLEAR(res);
     }
-    res = _bufferedreader_peek_unlocked(self);
+    res = _bufferedreader_peek_unlocked(self, allow_read);
 
 end:
     LEAVE_BUFFERED(self)
@@ -1725,7 +1726,7 @@ error:
 }
 
 static PyObject *
-_bufferedreader_peek_unlocked(buffered *self)
+_bufferedreader_peek_unlocked(buffered *self, int allow_read)
 {
     Py_ssize_t have, r;
 
@@ -1736,7 +1737,7 @@ _bufferedreader_peek_unlocked(buffered *self)
           to make some place.
        Therefore, we either return `have` bytes (if > 0), or a full buffer.
     */
-    if (have > 0) {
+    if (have > 0 || !allow_read) {
         return PyBytes_FromStringAndSize(self->buffer + self->pos, have);
     }
 

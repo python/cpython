@@ -662,11 +662,14 @@ than raw I/O does.
    :class:`BufferedReader` provides or overrides these methods in addition to
    those from :class:`BufferedIOBase` and :class:`IOBase`:
 
-   .. method:: peek([size])
+   .. method:: peek([size][, allow_read])
 
       Return bytes from the stream without advancing the position.  At most one
       single read on the raw stream is done to satisfy the call. The number of
       bytes returned may be less or more than requested.
+
+      If *allow_read* is supplied and False, only bytes already buffered are
+      returned, and no reads are done on the raw stream.
 
    .. method:: read([size])
 
