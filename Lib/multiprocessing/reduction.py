@@ -104,6 +104,17 @@ if sys.platform == 'win32':
     class DupHandle(object):
         '''Picklable wrapper for a handle.'''
         def __init__(self, handle, access, pid=None):
+            spawning = context.get_spawning_popen()
+            # bpo-33966: Keep the handle open in the parent process. The parent
+            # is responsible to close the handle when the child process
+            # completes.
+            #
+            # Fallback on calling DuplicateHandle() with DUPLICATE_CLOSE_SOURCE
+            # in the child process if popen_spawn_win32.Popen is not used. The
+            # fallback leaks an open handle in the parent process if the child
+            # process is terminated before closing the handle.
+            self._close_source = not(spawning is not None
+                                     and hasattr(spawning, '_open_handles'))
             if pid is None:
                 # We just duplicate the handle in the current process and
                 # let the receiving process steal the handle.
@@ -113,6 +124,8 @@ if sys.platform == 'win32':
                 self._handle = _winapi.DuplicateHandle(
                     _winapi.GetCurrentProcess(),
                     handle, proc, access, False, 0)
+                if not self._close_source:
+                    spawning._open_handles.append(self._handle)
             finally:
                 _winapi.CloseHandle(proc)
             self._access = access
@@ -128,9 +141,13 @@ if sys.platform == 'win32':
             proc = _winapi.OpenProcess(_winapi.PROCESS_DUP_HANDLE, False,
                                        self._pid)
             try:
+                if self._close_source:
+                    flags = _winapi.DUPLICATE_CLOSE_SOURCE
+                else:
+                    flags = 0
                 return _winapi.DuplicateHandle(
                     proc, self._handle, _winapi.GetCurrentProcess(),
-                    self._access, False, _winapi.DUPLICATE_CLOSE_SOURCE)
+                    self._access, False, flags)
             finally:
                 _winapi.CloseHandle(proc)
 
