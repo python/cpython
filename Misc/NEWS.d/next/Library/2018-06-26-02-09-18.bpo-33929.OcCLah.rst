@@ -1,0 +1,5 @@
+multiprocessing: Fix a race condition in Popen of
+multiprocessing.popen_spawn_win32. The child process now duplicates the read
+end of pipe instead of "stealing" it. Previously, the read end of pipe was
+"stolen" by the child process, but it leaked a handle if the child process had
+been terminated before it could steal the handle from the parent process.
