@@ -87,6 +87,7 @@
     <ClInclude Include="..\Include\bytes_methods.h" />
     <ClInclude Include="..\Include\bytearrayobject.h" />
     <ClInclude Include="..\Include\bytesobject.h" />
+    <ClInclude Include="..\Include\call.h" />
     <ClInclude Include="..\Include\cellobject.h" />
     <ClInclude Include="..\Include\ceval.h" />
     <ClInclude Include="..\Include\classobject.h" />

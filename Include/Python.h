@@ -91,6 +91,7 @@
 #include "odictobject.h"
 #include "enumobject.h"
 #include "setobject.h"
+#include "call.h"
 #include "methodobject.h"
 #include "moduleobject.h"
 #include "funcobject.h"
