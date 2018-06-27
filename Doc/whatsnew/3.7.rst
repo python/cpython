@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.7, compared to 3.6.
-
+Python 3.7 was released on June 27, 2018.
 For full details, see the :ref:`changelog <changelog>`.
 
 

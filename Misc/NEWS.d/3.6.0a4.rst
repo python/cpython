@@ -1,5 +1,5 @@
 .. bpo: 27704
-.. date: 9155
+.. date: 9455
 .. nonce: RUxzHf
 .. release date: 2016-08-15
 .. section: Core and Builtins
@@ -10,7 +10,7 @@ Speed up to 3 times for short objects.  Original patch by Naoki Inada.
 ..
 
 .. bpo: 26823
-.. date: 9154
+.. date: 9454
 .. nonce: UWORiU
 .. section: Core and Builtins
 
@@ -21,7 +21,7 @@ rendering. Patch by Emanuel Barry.
 ..
 
 .. bpo: 27574
-.. date: 9153
+.. date: 9453
 .. nonce: q73Tss
 .. section: Core and Builtins
 
@@ -31,7 +31,7 @@ with using Argument Clinic.
 ..
 
 .. bpo: 22557
-.. date: 9152
+.. date: 9452
 .. nonce: Hta2Rz
 .. section: Core and Builtins
 
@@ -40,7 +40,7 @@ Now importing already imported modules is up to 2.5 times faster.
 ..
 
 .. bpo: 17596
-.. date: 9151
+.. date: 9451
 .. nonce: XgbA9V
 .. section: Core and Builtins
 
@@ -49,7 +49,7 @@ Include <wincrypt.h> to help with Min GW building.
 ..
 
 .. bpo: 17599
-.. date: 9150
+.. date: 9450
 .. nonce: noy7o1
 .. section: Core and Builtins
 
@@ -59,7 +59,7 @@ avoid conflicting with the definition from Min GW.
 ..
 
 .. bpo: 27507
-.. date: 9149
+.. date: 9449
 .. nonce: 3pX0Be
 .. section: Core and Builtins
 
@@ -68,7 +68,7 @@ Add integer overflow check in bytearray.extend().  Patch by Xiang Zhang.
 ..
 
 .. bpo: 27581
-.. date: 9148
+.. date: 9448
 .. nonce: KezjNt
 .. section: Core and Builtins
 
@@ -78,7 +78,7 @@ Xiang Zhang.
 ..
 
 .. bpo: 1621
-.. date: 9147
+.. date: 9447
 .. nonce: _FZWTr
 .. section: Core and Builtins
 
@@ -88,7 +88,7 @@ Zhang.
 ..
 
 .. bpo: 27419
-.. date: 9146
+.. date: 9446
 .. nonce: YaGodL
 .. section: Core and Builtins
 
@@ -99,7 +99,7 @@ about unabling to resolve package from __spec__ or __package__.
 ..
 
 .. bpo: 27083
-.. date: 9145
+.. date: 9445
 .. nonce: F4ZT1C
 .. section: Core and Builtins
 
@@ -108,7 +108,7 @@ Respect the PYTHONCASEOK environment variable under Windows.
 ..
 
 .. bpo: 27514
-.. date: 9144
+.. date: 9444
 .. nonce: NLbwPG
 .. section: Core and Builtins
 
@@ -118,7 +118,7 @@ SystemError.
 ..
 
 .. bpo: 27366
-.. date: 9143
+.. date: 9443
 .. nonce: VrInsj
 .. section: Core and Builtins
 
@@ -129,7 +129,7 @@ Descriptors are initialized with __set_name__ after class creation.
 ..
 
 .. bpo: 26027
-.. date: 9142
+.. date: 9442
 .. nonce: nfVMKM
 .. section: Library
 
@@ -139,7 +139,7 @@ code from Jelle Zijlstra. (See also: bpo-27524)
 ..
 
 .. bpo: 27598
-.. date: 9141
+.. date: 9441
 .. nonce: y7PtEV
 .. section: Library
 
@@ -149,7 +149,7 @@ Girdhar.
 ..
 
 .. bpo: 25958
-.. date: 9140
+.. date: 9440
 .. nonce: X-V4U1
 .. section: Library
 
@@ -163,7 +163,7 @@ Ivan Levkivskyi.
 ..
 
 .. bpo: 16764
-.. date: 9139
+.. date: 9439
 .. nonce: cPbNjL
 .. section: Library
 
@@ -172,7 +172,7 @@ Support keyword arguments to zlib.decompress().  Patch by Xiang Zhang.
 ..
 
 .. bpo: 27736
-.. date: 9138
+.. date: 9438
 .. nonce: 8kMhpQ
 .. section: Library
 
@@ -183,7 +183,7 @@ Zhang.
 ..
 
 .. bpo: 25628
-.. date: 9137
+.. date: 9437
 .. nonce: UcQnHF
 .. section: Library
 
@@ -193,7 +193,7 @@ keyword-only.
 ..
 
 .. bpo: 12345
-.. date: 9136
+.. date: 9436
 .. nonce: nbAEM8
 .. section: Library
 
@@ -202,7 +202,7 @@ Add mathematical constant tau to math and cmath. See also PEP 628.
 ..
 
 .. bpo: 26823
-.. date: 9135
+.. date: 9435
 .. nonce: HcO8tR
 .. section: Library
 
@@ -214,7 +214,7 @@ Emanuel Barry.
 ..
 
 .. bpo: 27664
-.. date: 9134
+.. date: 9434
 .. nonce: 6DJPxw
 .. section: Library
 
@@ -224,7 +224,7 @@ a thread name prefix.
 ..
 
 .. bpo: 27181
-.. date: 9133
+.. date: 9433
 .. nonce: 8aw9TZ
 .. section: Library
 
@@ -233,7 +233,7 @@ Add geometric_mean and harmonic_mean to statistics module.
 ..
 
 .. bpo: 27573
-.. date: 9132
+.. date: 9432
 .. nonce: B7XhTs
 .. section: Library
 
@@ -242,7 +242,7 @@ code.interact now prints an message when exiting.
 ..
 
 .. bpo: 6422
-.. date: 9131
+.. date: 9431
 .. nonce: iBSc45
 .. section: Library
 
@@ -251,7 +251,7 @@ Add autorange method to timeit.Timer objects.
 ..
 
 .. bpo: 27773
-.. date: 9130
+.. date: 9430
 .. nonce: hMSSeX
 .. section: Library
 
@@ -260,7 +260,7 @@ Correct some memory management errors server_hostname in _ssl.wrap_socket().
 ..
 
 .. bpo: 26750
-.. date: 9129
+.. date: 9429
 .. nonce: OQn3fr
 .. section: Library
 
@@ -271,7 +271,7 @@ never documented unittest.mock.DescriptorTypes tuple.
 ..
 
 .. bpo: 26754
-.. date: 9128
+.. date: 9428
 .. nonce: XZqomf
 .. section: Library
 
@@ -281,7 +281,7 @@ similar functions is now deprecated.
 ..
 
 .. bpo: 26800
-.. date: 9127
+.. date: 9427
 .. nonce: QDcK8u
 .. section: Library
 
@@ -291,7 +291,7 @@ is now deprecated.
 ..
 
 .. bpo: 26981
-.. date: 9126
+.. date: 9426
 .. nonce: yhNTCf
 .. section: Library
 
@@ -300,7 +300,7 @@ Add _order_ compatibility shim to enum.Enum for Python 2/3 code bases.
 ..
 
 .. bpo: 27661
-.. date: 9125
+.. date: 9425
 .. nonce: 3JZckO
 .. section: Library
 
@@ -309,7 +309,7 @@ Added tzinfo keyword argument to datetime.combine.
 ..
 
 .. bpo: 0
-.. date: 9124
+.. date: 9424
 .. nonce: Ny9oPv
 .. section: Library
 
@@ -319,7 +319,7 @@ passed a negative value.
 ..
 
 .. bpo: 27783
-.. date: 9123
+.. date: 9423
 .. nonce: cR1jXH
 .. section: Library
 
@@ -328,7 +328,7 @@ Fix possible usage of uninitialized memory in operator.methodcaller.
 ..
 
 .. bpo: 27774
-.. date: 9122
+.. date: 9422
 .. nonce: FDcik1
 .. section: Library
 
@@ -337,7 +337,7 @@ Fix possible Py_DECREF on unowned object in _sre.
 ..
 
 .. bpo: 27760
-.. date: 9121
+.. date: 9421
 .. nonce: gxMjp4
 .. section: Library
 
@@ -346,7 +346,7 @@ Fix possible integer overflow in binascii.b2a_qp.
 ..
 
 .. bpo: 27758
-.. date: 9120
+.. date: 9420
 .. nonce: 0NRV03
 .. section: Library
 
@@ -355,7 +355,7 @@ Fix possible integer overflow in the _csv module for large record lengths.
 ..
 
 .. bpo: 27568
-.. date: 9119
+.. date: 9419
 .. nonce: OnuO9s
 .. section: Library
 
@@ -366,7 +366,7 @@ in CGI mode.
 ..
 
 .. bpo: 7063
-.. date: 9118
+.. date: 9418
 .. nonce: nXsVKB
 .. section: Library
 
@@ -375,7 +375,7 @@ Remove dead code from the "array" module's slice handling. Patch by Chuck.
 ..
 
 .. bpo: 27656
-.. date: 9117
+.. date: 9417
 .. nonce: joTscM
 .. section: Library
 
@@ -384,7 +384,7 @@ Do not assume sched.h defines any SCHED_* constants.
 ..
 
 .. bpo: 27130
-.. date: 9116
+.. date: 9416
 .. nonce: SUxwXZ
 .. section: Library
 
@@ -396,7 +396,7 @@ of 4 GiB.
 ..
 
 .. bpo: 24773
-.. date: 9115
+.. date: 9415
 .. nonce: IDW05R
 .. section: Library
 
@@ -405,7 +405,7 @@ Implemented PEP 495 (Local Time Disambiguation).
 ..
 
 .. bpo: 0
-.. date: 9114
+.. date: 9414
 .. nonce: lOkwM8
 .. section: Library
 
@@ -415,7 +415,7 @@ module.
 ..
 
 .. bpo: 27567
-.. date: 9113
+.. date: 9413
 .. nonce: bYOgyw
 .. section: Library
 
@@ -424,7 +424,7 @@ Expose the EPOLLRDHUP and POLLRDHUP constants in the select module.
 ..
 
 .. bpo: 1621
-.. date: 9112
+.. date: 9412
 .. nonce: 0nclmI
 .. section: Library
 
@@ -433,7 +433,7 @@ Avoid signed int negation overflow in the "audioop" module.
 ..
 
 .. bpo: 27533
-.. date: 9111
+.. date: 9411
 .. nonce: iDmKzV
 .. section: Library
 
@@ -442,7 +442,7 @@ Release GIL in nt._isdir
 ..
 
 .. bpo: 17711
-.. date: 9110
+.. date: 9410
 .. nonce: 47AILJ
 .. section: Library
 
@@ -452,7 +452,7 @@ Alexandre Vassalotti.
 ..
 
 .. bpo: 27522
-.. date: 9109
+.. date: 9409
 .. nonce: 8vVz_t
 .. section: Library
 
@@ -461,7 +461,7 @@ Avoid an unintentional reference cycle in email.feedparser.
 ..
 
 .. bpo: 27512
-.. date: 9108
+.. date: 9408
 .. nonce: FaGwup
 .. section: Library
 
@@ -471,7 +471,7 @@ exception. Patch by Xiang Zhang.
 ..
 
 .. bpo: 27714
-.. date: 9107
+.. date: 9407
 .. nonce: bUEDsI
 .. section: IDLE
 
@@ -482,7 +482,7 @@ without -jn.  Fix warning from test_config.
 ..
 
 .. bpo: 27621
-.. date: 9106
+.. date: 9406
 .. nonce: BcpOPU
 .. section: IDLE
 
@@ -493,7 +493,7 @@ Original patch by Mark Roseman.
 ..
 
 .. bpo: 27620
-.. date: 9105
+.. date: 9405
 .. nonce: TXRR6x
 .. section: IDLE
 
@@ -502,7 +502,7 @@ Escape key now closes Query box as cancelled.
 ..
 
 .. bpo: 27609
-.. date: 9104
+.. date: 9404
 .. nonce: MbTuKa
 .. section: IDLE
 
@@ -512,7 +512,7 @@ problem with writing docstrings at least twice indented.
 ..
 
 .. bpo: 27609
-.. date: 9103
+.. date: 9403
 .. nonce: OBYgv_
 .. section: IDLE
 
@@ -522,7 +522,7 @@ reverse a condition and eliminate a return.
 ..
 
 .. bpo: 25507
-.. date: 9102
+.. date: 9402
 .. nonce: lxf68d
 .. section: IDLE
 
@@ -532,7 +532,7 @@ include the same imports required to run directly in Python.
 ..
 
 .. bpo: 27173
-.. date: 9101
+.. date: 9401
 .. nonce: M-fYaV
 .. section: IDLE
 
@@ -542,7 +542,7 @@ depend on the platform. Add tests for the changes to the config module.
 ..
 
 .. bpo: 27452
-.. date: 9100
+.. date: 9400
 .. nonce: RtWnyR
 .. section: IDLE
 
@@ -551,7 +551,7 @@ add line counter and crc to IDLE configHandler test dump.
 ..
 
 .. bpo: 25805
-.. date: 9099
+.. date: 9399
 .. nonce: 9SVxXQ
 .. section: Tests
 
@@ -561,7 +561,7 @@ __main__``. Patch by SilentGhost.
 ..
 
 .. bpo: 27472
-.. date: 9098
+.. date: 9398
 .. nonce: NS3L93
 .. section: Tests
 
@@ -570,7 +570,7 @@ Add test.support.unix_shell as the path to the default shell.
 ..
 
 .. bpo: 27369
-.. date: 9097
+.. date: 9397
 .. nonce: LG7U2D
 .. section: Tests
 
@@ -580,7 +580,7 @@ In test_pyexpat, avoid testing an error message detail that changed in Expat
 ..
 
 .. bpo: 27594
-.. date: 9096
+.. date: 9396
 .. nonce: w3F57B
 .. section: Tests
 
@@ -591,7 +591,7 @@ Levkivskyi.
 ..
 
 .. bpo: 27647
-.. date: 9095
+.. date: 9395
 .. nonce: -1HUR6
 .. section: Windows
 
@@ -600,7 +600,7 @@ Update bundled Tcl/Tk to 8.6.6.
 ..
 
 .. bpo: 27610
-.. date: 9094
+.. date: 9394
 .. nonce: O0o0mB
 .. section: Windows
 
@@ -609,7 +609,7 @@ Adds PEP 514 metadata to Windows installer
 ..
 
 .. bpo: 27469
-.. date: 9093
+.. date: 9393
 .. nonce: 0GwDkX
 .. section: Windows
 
@@ -619,7 +619,7 @@ correctly.
 ..
 
 .. bpo: 27309
-.. date: 9092
+.. date: 9392
 .. nonce: chiOo6
 .. section: Windows
 
@@ -628,7 +628,7 @@ Enables proper Windows styles in python[w].exe manifest.
 ..
 
 .. bpo: 27713
-.. date: 9091
+.. date: 9391
 .. nonce: _3DgXG
 .. section: Build
 
@@ -638,7 +638,7 @@ Patch by Xiang Zhang
 ..
 
 .. bpo: 25825
-.. date: 9090
+.. date: 9390
 .. nonce: MLbdVU
 .. section: Build
 
@@ -648,7 +648,7 @@ references were accidentally changed in 3.5.0a1.
 ..
 
 .. bpo: 27453
-.. date: 9089
+.. date: 9389
 .. nonce: Pb5DBi
 .. section: Build
 
@@ -657,7 +657,7 @@ CPP invocation in configure must use CPPFLAGS. Patch by Chi Hsuan Yen.
 ..
 
 .. bpo: 27641
-.. date: 9088
+.. date: 9388
 .. nonce: eGzgCk
 .. section: Build
 
@@ -667,7 +667,7 @@ pgen and _freeze_importlib executables from being cross-compiled.
 ..
 
 .. bpo: 26662
-.. date: 9087
+.. date: 9387
 .. nonce: XkwRxM
 .. section: Build
 
@@ -677,7 +677,7 @@ generation during the build.
 ..
 
 .. bpo: 10910
-.. date: 9086
+.. date: 9386
 .. nonce: ZdRayb
 .. section: Build
 

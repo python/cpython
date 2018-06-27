@@ -1,5 +1,5 @@
 .. bpo: 27473
-.. date: 9085
+.. date: 9385
 .. nonce: _nOtTA
 .. release date: 2016-07-11
 .. section: Core and Builtins
@@ -10,7 +10,7 @@ Patch by Xiang Zhang.
 ..
 
 .. bpo: 23034
-.. date: 9084
+.. date: 9384
 .. nonce: GWaUqn
 .. section: Core and Builtins
 
@@ -22,7 +22,7 @@ stderr instead of stdout.
 ..
 
 .. bpo: 27443
-.. date: 9083
+.. date: 9383
 .. nonce: 87ZwZ1
 .. section: Core and Builtins
 
@@ -32,7 +32,7 @@ for a resized bytearray.
 ..
 
 .. bpo: 27007
-.. date: 9082
+.. date: 9382
 .. nonce: Gg8Um4
 .. section: Core and Builtins
 
@@ -42,7 +42,7 @@ instance of corresponding subclass.
 ..
 
 .. bpo: 26844
-.. date: 9081
+.. date: 9381
 .. nonce: I0wdnY
 .. section: Library
 
@@ -52,7 +52,7 @@ Fix error message for imp.find_module() to refer to 'path' instead of
 ..
 
 .. bpo: 23804
-.. date: 9080
+.. date: 9380
 .. nonce: ipFvxc
 .. section: Library
 
@@ -62,7 +62,7 @@ unclean EOF.
 ..
 
 .. bpo: 27466
-.. date: 9079
+.. date: 9379
 .. nonce: C_3a8E
 .. section: Library
 
@@ -72,7 +72,7 @@ netscape cookie format and making it consistent with documentation.
 ..
 
 .. bpo: 21708
-.. date: 9078
+.. date: 9378
 .. nonce: RpPYiv
 .. section: Library
 
@@ -82,7 +82,7 @@ a database in 'r' and 'w' modes and modifying a database in 'r' mode.
 ..
 
 .. bpo: 26721
-.. date: 9077
+.. date: 9377
 .. nonce: L37Y7r
 .. section: Library
 
@@ -93,7 +93,7 @@ writes.
 ..
 
 .. bpo: 22115
-.. date: 9076
+.. date: 9376
 .. nonce: vG5UQW
 .. section: Library
 
@@ -107,7 +107,7 @@ strings, tracing in the "u" mode now works.
 ..
 
 .. bpo: 26243
-.. date: 9075
+.. date: 9375
 .. nonce: dBtlhI
 .. section: Library
 
@@ -117,7 +117,7 @@ first argument is positional-only.
 ..
 
 .. bpo: 27038
-.. date: 9074
+.. date: 9374
 .. nonce: yGMV4h
 .. section: Library
 
@@ -126,7 +126,7 @@ Expose the DirEntry type as os.DirEntry. Code patch by Jelle Zijlstra.
 ..
 
 .. bpo: 27186
-.. date: 9073
+.. date: 9373
 .. nonce: OtorpF
 .. section: Library
 
@@ -136,7 +136,7 @@ to be either str or bytes.
 ..
 
 .. bpo: 18726
-.. date: 9072
+.. date: 9372
 .. nonce: eIXHIl
 .. section: Library
 
@@ -147,7 +147,7 @@ now keyword-only.
 ..
 
 .. bpo: 27319
-.. date: 9071
+.. date: 9371
 .. nonce: vDl2zm
 .. section: Library
 
@@ -159,7 +159,7 @@ undocumented ability of calling the selection() method with arguments.
 ..
 
 .. bpo: 27079
-.. date: 9070
+.. date: 9370
 .. nonce: c7d0Ym
 .. section: Library
 
@@ -168,7 +168,7 @@ Fixed curses.ascii functions isblank(), iscntrl() and ispunct().
 ..
 
 .. bpo: 27294
-.. date: 9069
+.. date: 9369
 .. nonce: 0WSp9y
 .. section: Library
 
@@ -178,7 +178,7 @@ a combination of known flags.
 ..
 
 .. bpo: 27177
-.. date: 9068
+.. date: 9368
 .. nonce: U6jRnd
 .. section: Library
 
@@ -188,7 +188,7 @@ indices.  Based on patches by Jeroen Demeyer and Xiang Zhang.
 ..
 
 .. bpo: 26754
-.. date: 9067
+.. date: 9367
 .. nonce: J3n0QW
 .. section: Library
 
@@ -198,7 +198,7 @@ iterable of integers. Now only strings and byte-like objects are accepted.
 ..
 
 .. bpo: 26536
-.. date: 9066
+.. date: 9366
 .. nonce: DgLWm-
 .. section: Library
 
@@ -207,7 +207,7 @@ socket.ioctl now supports SIO_LOOPBACK_FAST_PATH. Patch by Daniel Stokes.
 ..
 
 .. bpo: 27048
-.. date: 9065
+.. date: 9365
 .. nonce: EVe-Bk
 .. section: Library
 
@@ -217,7 +217,7 @@ non-ASCII characters
 ..
 
 .. bpo: 27330
-.. date: 9064
+.. date: 9364
 .. nonce: GJaFCV
 .. section: Library
 
@@ -226,7 +226,7 @@ Fixed possible leaks in the ctypes module.
 ..
 
 .. bpo: 27238
-.. date: 9063
+.. date: 9363
 .. nonce: Q6v6Qv
 .. section: Library
 
@@ -236,7 +236,7 @@ Zijlstra.
 ..
 
 .. bpo: 27122
-.. date: 9062
+.. date: 9362
 .. nonce: 06t7zN
 .. section: Library
 
@@ -249,7 +249,7 @@ issue25782.
 ..
 
 .. bpo: 27278
-.. date: 9061
+.. date: 9361
 .. nonce: y_HkGw
 .. original section: Library
 .. section: Security
@@ -261,7 +261,7 @@ casting a directly Py_ssize_t to int.
 ..
 
 .. bpo: 16864
-.. date: 9060
+.. date: 9360
 .. nonce: W7tJDa
 .. section: Library
 
@@ -271,7 +271,7 @@ Alex LordThorsen.
 ..
 
 .. bpo: 26386
-.. date: 9059
+.. date: 9359
 .. nonce: 9L3Ut4
 .. section: Library
 
@@ -280,7 +280,7 @@ Fixed ttk.TreeView selection operations with item id's containing spaces.
 ..
 
 .. bpo: 8637
-.. date: 9058
+.. date: 9358
 .. nonce: lHiUSA
 .. section: Library
 
@@ -290,7 +290,7 @@ env var PAGER).
 ..
 
 .. bpo: 22636
-.. date: 9057
+.. date: 9357
 .. nonce: 3fQW_g
 .. original section: Library
 .. section: Security
@@ -300,7 +300,7 @@ Avoid shell injection problems with ctypes.util.find_library().
 ..
 
 .. bpo: 16182
-.. date: 9056
+.. date: 9356
 .. nonce: RgFXyr
 .. section: Library
 
@@ -310,7 +310,7 @@ and fix get_begidx() and get_endidx() to return code point indexes.
 ..
 
 .. bpo: 27392
-.. date: 9055
+.. date: 9355
 .. nonce: obfni7
 .. section: Library
 
@@ -319,7 +319,7 @@ Add loop.connect_accepted_socket(). Patch by Jim Fulton.
 ..
 
 .. bpo: 27477
-.. date: 9054
+.. date: 9354
 .. nonce: iEuL-9
 .. section: IDLE
 
@@ -328,7 +328,7 @@ IDLE search dialogs now use ttk widgets.
 ..
 
 .. bpo: 27173
-.. date: 9053
+.. date: 9353
 .. nonce: M-fYaV
 .. section: IDLE
 
@@ -338,7 +338,7 @@ depend on the platform. Add tests for the changes to the config module.
 ..
 
 .. bpo: 27452
-.. date: 9052
+.. date: 9352
 .. nonce: dLxZ8W
 .. section: IDLE
 
@@ -348,7 +348,7 @@ relative when python is started in the file's directory.
 ..
 
 .. bpo: 27452
-.. date: 9051
+.. date: 9351
 .. nonce: RtWnyR
 .. section: IDLE
 
@@ -357,7 +357,7 @@ add line counter and crc to IDLE configHandler test dump.
 ..
 
 .. bpo: 27380
-.. date: 9050
+.. date: 9350
 .. nonce: Q39r9U
 .. section: IDLE
 
@@ -371,7 +371,7 @@ combined into the new one.
 ..
 
 .. bpo: 27372
-.. date: 9049
+.. date: 9349
 .. nonce: k3Wj2V
 .. section: IDLE
 
@@ -380,7 +380,7 @@ Test_idle no longer changes the locale.
 ..
 
 .. bpo: 27365
-.. date: 9048
+.. date: 9348
 .. nonce: y7ys_A
 .. section: IDLE
 
@@ -389,7 +389,7 @@ Allow non-ascii chars in IDLE NEWS.txt, for contributor names.
 ..
 
 .. bpo: 27245
-.. date: 9047
+.. date: 9347
 .. nonce: u9aKO1
 .. section: IDLE
 
@@ -400,7 +400,7 @@ Patch by Serhiy Storchaka.
 ..
 
 .. bpo: 24137
-.. date: 9046
+.. date: 9346
 .. nonce: v8o-IT
 .. section: IDLE
 
@@ -411,7 +411,7 @@ second and redundant root and mainloop.
 ..
 
 .. bpo: 27310
-.. date: 9045
+.. date: 9345
 .. nonce: KiURpC
 .. section: IDLE
 
@@ -420,7 +420,7 @@ Fix IDLE.app failure to launch on OS X due to vestigial import.
 ..
 
 .. bpo: 26754
-.. date: 9044
+.. date: 9344
 .. nonce: Qm_N79
 .. section: C API
 
@@ -430,7 +430,7 @@ integers. Now only strings and byte-like objects are accepted.
 ..
 
 .. bpo: 28066
-.. date: 9043
+.. date: 9343
 .. nonce: _3xImV
 .. section: Build
 
@@ -440,7 +440,7 @@ when building outside the source tree.
 ..
 
 .. bpo: 27442
-.. date: 9042
+.. date: 9342
 .. nonce: S2M0cz
 .. section: Build
 
@@ -450,7 +450,7 @@ sysconfig.get_config_vars() as 'ANDROID_API_LEVEL'.
 ..
 
 .. bpo: 27434
-.. date: 9041
+.. date: 9341
 .. nonce: 4nRZmn
 .. section: Build
 
@@ -460,7 +460,7 @@ same feature version (e.g. 3.6) as the source being built.
 ..
 
 .. bpo: 26930
-.. date: 9040
+.. date: 9340
 .. nonce: 9JUeSD
 .. section: Build
 
@@ -469,20 +469,20 @@ Update Windows builds to use OpenSSL 1.0.2h.
 ..
 
 .. bpo: 23968
-.. date: 9039
+.. date: 9339
 .. nonce: 7AuSK9
 .. section: Build
 
 Rename the platform directory from plat-$(MACHDEP) to
 plat-$(PLATFORM_TRIPLET). Rename the config directory (LIBPL) from
 config-$(LDVERSION) to config-$(LDVERSION)-$(PLATFORM_TRIPLET). Install the
-platform specific _sysconfigdata module into the platform directory and
+platform specifc _sysconfigdata module into the platform directory and
 rename it to include the ABIFLAGS.
 
 ..
 
 .. bpo: 0
-.. date: 9038
+.. date: 9338
 .. nonce: U46i2u
 .. section: Build
 
@@ -491,7 +491,7 @@ Don't use largefile support for GNU/Hurd.
 ..
 
 .. bpo: 27332
-.. date: 9037
+.. date: 9337
 .. nonce: OuRZp9
 .. section: Tools/Demos
 
@@ -501,7 +501,7 @@ Argument Clinic.  Patch by Petr Viktorin.
 ..
 
 .. bpo: 27418
-.. date: 9036
+.. date: 9336
 .. nonce: W2m_8I
 .. section: Tools/Demos
 
@@ -510,7 +510,7 @@ Fixed Tools/importbench/importbench.py.
 ..
 
 .. bpo: 19489
-.. date: 9035
+.. date: 9335
 .. nonce: jvzuO7
 .. section: Documentation
 
@@ -520,7 +520,7 @@ Patch by Ammar Askar.
 ..
 
 .. bpo: 27285
-.. date: 9034
+.. date: 9334
 .. nonce: wZur0b
 .. section: Documentation
 
@@ -530,7 +530,7 @@ on the term "virtual environment". Patch by Steve Piercy.
 ..
 
 .. bpo: 27027
-.. date: 9033
+.. date: 9333
 .. nonce: 5oRSGL
 .. section: Tests
 
