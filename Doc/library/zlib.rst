@@ -232,7 +232,7 @@ Compression objects support the following methods:
 
 
 .. versionchanged:: 3.8
-   Added :func:`copy.copy` and :func:`copy.deepcopy` support to Compression
+   Added :func:`copy.copy` and :func:`copy.deepcopy` support to compression
    objects.
 
 
@@ -304,7 +304,7 @@ Decompression objects support the following methods and attributes:
 
 
 .. versionchanged:: 3.8
-   Added :func:`copy.copy` and :func:`copy.deepcopy` support to Decompression
+   Added :func:`copy.copy` and :func:`copy.deepcopy` support to decompression
    objects.
 
 
