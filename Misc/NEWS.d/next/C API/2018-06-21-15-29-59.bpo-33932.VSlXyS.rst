@@ -1,2 +1,0 @@
-Calling Py_Initialize() twice does nothing, instead of failing with a fatal
-error: restore the Python 3.6 behaviour.

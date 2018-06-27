@@ -1,5 +1,5 @@
 .. bpo: 28147
-.. date: 9496
+.. date: 9795
 .. nonce: CnK_xf
 .. release date: 2016-12-16
 .. section: Core and Builtins
@@ -10,7 +10,7 @@ combined table into split table. Patch written by INADA Naoki.
 ..
 
 .. bpo: 28990
-.. date: 9495
+.. date: 9794
 .. nonce: m8xRMJ
 .. section: Core and Builtins
 
@@ -20,7 +20,7 @@ completed. (Patch by HoHo-Ho)
 ..
 
 .. bpo: 28770
-.. date: 9494
+.. date: 9793
 .. nonce: N9GQsz
 .. section: Tools/Demos
 
@@ -29,7 +29,7 @@ Fix python-gdb.py for fastcalls.
 ..
 
 .. bpo: 28896
-.. date: 9493
+.. date: 9792
 .. nonce: ymAbmH
 .. section: Windows
 
@@ -38,7 +38,7 @@ Deprecate WindowsRegistryFinder.
 ..
 
 .. bpo: 28898
-.. date: 9492
+.. date: 9791
 .. nonce: YGUd_i
 .. section: Build
 
