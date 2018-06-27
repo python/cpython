@@ -65,6 +65,7 @@ autocomplete_w.AutoCompleteWindow
 outwin.OutputWindow (indirectly being tested with grep test)
 '''
 
+import idlelib.pyshell  # Set Windows DPI awareness before Tk().
 from importlib import import_module
 import tkinter as tk
 from tkinter.ttk import Scrollbar
