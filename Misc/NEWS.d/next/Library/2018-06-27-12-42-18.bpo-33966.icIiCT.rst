@@ -1,0 +1,9 @@
+multiprocessing: Fix a handle leak when a pool worker is terminated quickly.
+
+When using a pool of processes on Windows, if the worker is terminated
+quickly, handles created by DupHandle() on reduction.dump() can remain open
+in the parent process, causing a handles leak.
+
+Use a different strategy in the case: keep the handle open in the parent
+process for the lifetime of the worker, and the parent becomes responsible
+to close the handle when the worker completes.

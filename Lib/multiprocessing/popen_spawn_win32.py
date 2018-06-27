@@ -19,7 +19,7 @@ WINEXE = (sys.platform == 'win32' and getattr(sys, 'frozen', False))
 WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
 
 
-def _close_handles(*handles):
+def _close_handles(handles):
     for handle in handles:
         _winapi.CloseHandle(handle)
 
@@ -66,8 +66,11 @@ class Popen(object):
             self.returncode = None
             self._handle = hp
             self.sentinel = int(hp)
+            # List of handles closed by the finalizer. DupHandle adds handles
+            # to this list on reduction.dump().
+            self._open_handles = [self.sentinel, int(rhandle)]
             self.finalizer = util.Finalize(self, _close_handles,
-                                           (self.sentinel, int(rhandle)))
+                                           (self._open_handles,))
 
             # send information to child
             set_spawning_popen(self)
