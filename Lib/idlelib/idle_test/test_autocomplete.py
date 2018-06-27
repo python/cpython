@@ -54,7 +54,7 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertIsNone(self.autocomplete.autocompletewindow)
 
     def test_force_open_completions_event(self):
-        # Test that force_open_completions_event calls _open_completions
+        # Test that force_open_completions_event calls _open_completions.
         o_cs = Func()
         self.autocomplete.open_completions = o_cs
         self.autocomplete.force_open_completions_event('event')
@@ -67,16 +67,16 @@ class AutoCompleteTest(unittest.TestCase):
         o_c_l = Func()
         autocomplete._open_completions_later = o_c_l
 
-        # _open_completions_later should not be called with no text in editor
+        # _open_completions_later should not be called with no text in editor.
         trycompletions('event')
         Equal(o_c_l.args, None)
 
-        # _open_completions_later should be called with COMPLETE_ATTRIBUTES (1)
+        # _open_completions_later should be called with COMPLETE_ATTRIBUTES (1).
         self.text.insert('1.0', 're.')
         trycompletions('event')
         Equal(o_c_l.args, (False, False, False, 1))
 
-        # _open_completions_later should be called with COMPLETE_FILES (2)
+        # _open_completions_later should be called with COMPLETE_FILES (2).
         self.text.delete('1.0', 'end')
         self.text.insert('1.0', '"./Lib/')
         trycompletions('event')
@@ -87,7 +87,7 @@ class AutoCompleteTest(unittest.TestCase):
         autocomplete = self.autocomplete
 
         # Test that the autocomplete event is ignored if user is pressing a
-        # modifier key in addition to the tab key
+        # modifier key in addition to the tab key.
         ev = Event(mc_state=True)
         self.assertIsNone(autocomplete.autocomplete_event(ev))
         del ev.mc_state
@@ -97,15 +97,15 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertIsNone(autocomplete.autocomplete_event(ev))
         self.text.delete('1.0', 'end')
 
-        # If autocomplete window is open, complete() method is called
+        # If autocomplete window is open, complete() method is called.
         self.text.insert('1.0', 're.')
-        # This must call autocomplete._make_autocomplete_window()
+        # This must call autocomplete._make_autocomplete_window().
         Equal(self.autocomplete.autocomplete_event(ev), 'break')
 
         # If autocomplete window is not active or does not exist,
         # open_completions is called. Return depends on its return.
         autocomplete._remove_autocomplete_window()
-        o_cs = Func()  # .result = None
+        o_cs = Func()  # .result = None.
         autocomplete.open_completions = o_cs
         Equal(self.autocomplete.autocomplete_event(ev), None)
         Equal(o_cs.args, (False, True, True))
@@ -114,53 +114,52 @@ class AutoCompleteTest(unittest.TestCase):
         Equal(o_cs.args, (False, True, True))
 
     def test_open_completions_later(self):
-        # Test that autocomplete._delayed_completion_id is set
+        # Test that autocomplete._delayed_completion_id is set.
+        acp = self.autocomplete
+        acp._delayed_completion_id = None
+        acp._open_completions_later(False, False, False, ac.COMPLETE_ATTRIBUTES)
+        cb1 = acp._delayed_completion_id
+        self.assertTrue(cb1.startswith('after'))
 
-        # Test complete attrubites
-        self.autocomplete._delayed_completion_id = None
-        self.autocomplete._open_completions_later(False, False, False, ac.COMPLETE_ATTRIBUTES)
-        self.assertTrue(self.autocomplete._delayed_completion_id)
-
-        # Test complete files
-        self.autocomplete._delayed_completion_id = None
-        self.autocomplete._open_completions_later(False, False, False, ac.COMPLETE_FILES)
-        self.assertTrue(self.autocomplete._delayed_completion_id)
+        # Test that cb1 is cancelled and cb2 is new.
+        acp._open_completions_later(False, False, False, ac.COMPLETE_FILES)
+        self.assertNotIn(cb1, self.root.tk.call('after', 'info'))
+        cb2 = acp._delayed_completion_id
+        self.assertTrue(cb2.startswith('after') and cb2 != cb1)
+        self.text.after_cancel(cb2)
 
     def test_delayed_open_completions(self):
-        # Test that autocomplete._delayed_completion_id set to None and that
-        # open_completions only called if insertion index is the same as
-        # _delayed_completion_index
+        # Test that autocomplete._delayed_completion_id set to None
+        # and that open_completions is not called if the index is not
+        # equal to _delayed_completion_index.
+        acp = self.autocomplete
+        acp.open_completions = Func()
+        acp._delayed_completion_id = 'after'
+        acp._delayed_completion_index = self.text.index('insert+1c')
+        acp._delayed_open_completions(1, 2, 3)
+        self.assertIsNone(acp._delayed_completion_id)
+        self.assertEqual(acp.open_completions.called, 0)
 
-        # Test complete attrubites
-        self.autocomplete._delayed_completion_id = None
-        self.autocomplete._open_completions_later(False, False, False, ac.COMPLETE_ATTRIBUTES)
-        self.assertTrue(self.autocomplete._delayed_completion_id)
-        self.autocomplete._delayed_open_completions(False, False, False, ac.COMPLETE_ATTRIBUTES)
-        self.assertIsNone(self.autocomplete._delayed_completion_id)
-
-        # Test complete files
-        self.autocomplete._delayed_completion_id = None
-        self.autocomplete._open_completions_later(False, False, False, ac.COMPLETE_FILES)
-        self.assertTrue(self.autocomplete._delayed_completion_id)
-        self.autocomplete._delayed_open_completions(False, False, False, ac.COMPLETE_FILES)
-        self.assertIsNone(self.autocomplete._delayed_completion_id)
+        acp._delayed_completion_index = self.text.index('insert')
+        acp._delayed_open_completions(1, 2, 3, ac.COMPLETE_FILES)
+        self.assertEqual(acp.open_completions.args, (1, 2, 3, 2))
 
     def test_open_completions(self):
         # Test completions of files and attributes as well as non-completion
-        # of errors
+        # of errors.
         self.text.insert('1.0', 'pr')
         self.assertTrue(self.autocomplete.open_completions(False, True, True))
         self.text.delete('1.0', 'end')
 
-        # Test files
+        # Test files.
         self.text.insert('1.0', '"t')
         self.assertTrue(self.autocomplete.open_completions(False, True, True))
         self.text.delete('1.0', 'end')
 
-        # Test with blank will failed
+        # Test with blank will failed.
         self.assertFalse(self.autocomplete.open_completions(False, True, True))
 
-        # Test with only string quote will failed
+        # Test with only string quote will failed.
         self.text.insert('1.0', '"')
         self.assertFalse(self.autocomplete.open_completions(False, True, True))
         self.text.delete('1.0', 'end')
@@ -170,7 +169,7 @@ class AutoCompleteTest(unittest.TestCase):
         # For attribute completion, a large list containing all variables, and
         # a small list containing non-private variables.
         # For file completion, a large list containing all files in the path,
-        # and a small list containing files that do not start with '.'
+        # and a small list containing files that do not start with '.'.
         autocomplete = self.autocomplete
 
         # Test attributes
@@ -178,14 +177,14 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertTrue(all(filter(lambda x: x.startswith('_'), s)))
         self.assertTrue(any(filter(lambda x: x.startswith('_'), b)))
 
-        # Test smalll should respect to __all__
+        # Test smalll should respect to __all__.
         with patch.dict('__main__.__dict__', {'__all__': ['a', 'b']}):
             s, b = autocomplete.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
             self.assertEqual(s, ['a', 'b'])
             self.assertIn('__name__', b)    # From __main__.__dict__
             self.assertIn('sum', b)         # From __main__.__builtins__.__dict__
 
-        # Test attributes with name entity
+        # Test attributes with name entity.
         mock = Mock()
         mock._private = Mock()
         with patch.dict('__main__.__dict__', {'foo': mock}):
@@ -197,7 +196,7 @@ class AutoCompleteTest(unittest.TestCase):
 
         # Test files
         def _listdir(path):
-            # This will be patch and used in fetch_completions
+            # This will be patch and used in fetch_completions.
             if path == '.':
                 return ['foo', 'bar', '.hidden']
             return ['monty', 'python', '.hidden']
@@ -213,21 +212,21 @@ class AutoCompleteTest(unittest.TestCase):
 
     def test_get_entity(self):
         # Test that a name is in the namespace of sys.modules and
-        # __main__.__dict__
+        # __main__.__dict__.
         autocomplete = self.autocomplete
         Equal = self.assertEqual
 
-        # Test name from sys.modules
+        # Test name from sys.modules.
         mock = Mock()
         with patch.dict('sys.modules', {'tempfile': mock}):
             Equal(autocomplete.get_entity('tempfile'), mock)
 
-        # Test name from __main__.__dict__
+        # Test name from __main__.__dict__.
         di = {'foo': 10, 'bar': 20}
         with patch.dict('__main__.__dict__', {'d': di}):
             Equal(autocomplete.get_entity('d'), di)
 
-        # Test name not in namespace
+        # Test name not in namespace.
         with patch.dict('__main__.__dict__', {}):
             with self.assertRaises(NameError):
                 autocomplete.get_entity('not_exist')
