@@ -1,0 +1,2 @@
+`json.tool` can now take the same file as input and ouput. Patch by Rémi
+Lapeyre.
