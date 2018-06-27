@@ -1,0 +1,2 @@
+:class:`lib2to3.pytree.Base` sets the `children` attribute to an empty
+list to be more consistent with :class:`lib2to3.pytree.Node`.
