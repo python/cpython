@@ -1217,9 +1217,9 @@ class _TestCondition(BaseTestCase):
             p = self.Process(target=self._test_wait_result, args=(c, pid))
             p.start()
 
-            self.assertTrue(c.wait(10))
+            self.assertTrue(c.wait(60))
             if pid is not None:
-                self.assertRaises(KeyboardInterrupt, c.wait, 10)
+                self.assertRaises(KeyboardInterrupt, c.wait, 60)
 
             p.join()
 
