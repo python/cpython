@@ -2415,7 +2415,7 @@ In preparation for potential future changes to the public CPython runtime
 initialization API (see :pep:`432` for an initial, but somewhat outdated,
 draft), CPython's internal startup
 and configuration management logic has been significantly refactored. While
-these updates are intended to be entirely transparent to both embedding
+these updates are intended to be almost entirely transparent to both embedding
 applications and users of the regular CPython CLI, they're being mentioned
 here as the refactoring changes the internal order of various operations
 during interpreter startup, and hence may uncover previously latent defects,
@@ -2430,7 +2430,11 @@ number of other issues). Some known details affected:
 
 * warnings filters added by an embedding application with
   :c:func:`PySys_AddWarnOption` should now more consistently take precedence
-  over the default filters set by the interpreter
+  over the default filters set by the interpreter.
+
+* calling :c:func:`Py_InitializeEx` a second time (directly or indirectly)
+  without an intervening call to :c:func:`Py_FinalizeEx` is now deprecated,
+  and is expected to become an error in a future release.
 
 Due to changes in the way the default warnings filters are configured,
 setting :c:data:`Py_BytesWarningFlag` to a value greater than one is no longer
