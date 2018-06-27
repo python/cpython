@@ -95,10 +95,6 @@ class Popen(object):
                     code = -signal.SIGTERM
                 self.returncode = code
 
-                # bpo-33929: Don't trigger the finalizer yet since
-                # self.sentinel is a public attribute and is expected
-                # to remain valid until close() is called explicitly.
-
         return self.returncode
 
     def poll(self):
