@@ -1599,13 +1599,13 @@ class KeysPage(Frame):
     def set_keys_type(self):
         "Set available screen options based on builtin or custom key set."
         if self.keyset_source.get():
-            self.builtinlist.state('!disabled')
-            self.customlist.state('disabled')
+            self.builtinlist.state(('!disabled',))
+            self.customlist.state(('disabled',))
             self.button_delete_custom_keys.state(('disabled',))
         else:
-            self.builtinlist.state('disabled')
+            self.builtinlist.state(('disabled',))
             self.custom_keyset_on.state(('!disabled',))
-            self.customlist.state('!disabled')
+            self.customlist.state(('!disabled',))
             self.button_delete_custom_keys.state(('!disabled',))
 
     def get_new_keys(self):
