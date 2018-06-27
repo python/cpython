@@ -932,6 +932,8 @@ static PyStructSequence_Field hash_info_fields[] = {
     {"hash_bits", "internal output size of hash algorithm"},
     {"seed_bits", "seed size of hash algorithm"},
     {"cutoff", "small string optimization cutoff"},
+    {"use_hash_seed", "whether the hash seed should be used or not"},
+    {"hash_seed", "the value of the hash seed"},
     {NULL, NULL}
 };
 
@@ -939,18 +941,20 @@ static PyStructSequence_Desc hash_info_desc = {
     "sys.hash_info",
     hash_info_doc,
     hash_info_fields,
-    9,
+    11,
 };
 
 static PyObject *
 get_hash_info(void)
 {
+    _PyCoreConfig *core_config = &_PyGILState_GetInterpreterStateUnsafe()->core_config;
     PyObject *hash_info;
     int field = 0;
     PyHash_FuncDef *hashfunc;
     hash_info = PyStructSequence_New(&Hash_InfoType);
     if (hash_info == NULL)
         return NULL;
+
     hashfunc = PyHash_GetFuncDef();
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(8*sizeof(Py_hash_t)));
@@ -970,6 +974,10 @@ get_hash_info(void)
                               PyLong_FromLong(hashfunc->seed_bits));
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(Py_HASH_CUTOFF));
+    PyStructSequence_SET_ITEM(hash_info, field++,
+                              PyBool_FromLong(core_config->use_hash_seed));
+    PyStructSequence_SET_ITEM(hash_info, field++,
+                              PyLong_FromLong(core_config->hash_seed));
     if (PyErr_Occurred()) {
         Py_CLEAR(hash_info);
         return NULL;
