@@ -58,6 +58,9 @@ aliases = {
     'ibm037'             : 'cp037',
     'ibm039'             : 'cp037',
 
+    # cp1006 codec
+    '1006'               : 'cp1006',
+
     # cp1026 codec
     '1026'               : 'cp1026',
     'csibm1026'          : 'cp1026',
@@ -132,6 +135,15 @@ aliases = {
     'ebcdic_cp_ch'       : 'cp500',
     'ibm500'             : 'cp500',
 
+    # cp65001 codec
+    '65001'              : 'cp65001',
+
+    # cp720 codec
+    '720'                : 'cp720',
+
+    # cp737 codec
+    '737'                : 'cp737',
+
     # cp775 codec
     '775'                : 'cp775',
     'cspc775baltic'      : 'cp775',
@@ -151,6 +163,9 @@ aliases = {
     '855'                : 'cp855',
     'csibm855'           : 'cp855',
     'ibm855'             : 'cp855',
+
+    # cp856 codec
+    '856'                : 'cp856',
 
     # cp857 codec
     '857'                : 'cp857',
@@ -203,6 +218,12 @@ aliases = {
     'cp_gr'              : 'cp869',
     'csibm869'           : 'cp869',
     'ibm869'             : 'cp869',
+
+    # cp874 codec
+    '874'                : 'cp874',
+
+    # cp875 codec
+    '875'                : 'cp875',
 
     # cp932 codec
     '932'                : 'cp932',
