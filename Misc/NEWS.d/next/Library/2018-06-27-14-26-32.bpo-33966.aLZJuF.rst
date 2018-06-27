@@ -1,0 +1,4 @@
+multiprocess: On Windows, if a worker is terminated too quickly, handles
+created by DupHandle() on reduction.dump() remain open in the parent process,
+causing a handles leak. Pool now waits using events until all new workers
+started  to make sure that the workers closed handles inherited by DupHandle.

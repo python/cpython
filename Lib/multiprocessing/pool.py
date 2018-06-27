@@ -91,7 +91,7 @@ class MaybeEncodingError(Exception):
 
 
 def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
-           wrap_exception=False):
+           wrap_exception=False, event=None):
     if (maxtasks is not None) and not (isinstance(maxtasks, int)
                                        and maxtasks >= 1):
         raise AssertionError("Maxtasks {!r} is not valid".format(maxtasks))
@@ -103,6 +103,9 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
 
     if initializer is not None:
         initializer(*initargs)
+
+    if event is not None:
+        event.set()
 
     completed = 0
     while maxtasks is None or (maxtasks and completed < maxtasks):
@@ -228,18 +231,30 @@ class Pool(object):
         """Bring the number of pool processes up to the specified number,
         for use after reaping workers which have exited.
         """
+        events = []
         for i in range(self._processes - len(self._pool)):
+            event = self._ctx.Event()
+            events.append(event)
             w = self.Process(target=worker,
                              args=(self._inqueue, self._outqueue,
                                    self._initializer,
                                    self._initargs, self._maxtasksperchild,
-                                   self._wrap_exception)
+                                   self._wrap_exception,
+                                   event)
                             )
             self._pool.append(w)
             w.name = w.name.replace('Process', 'PoolWorker')
             w.daemon = True
             w.start()
             util.debug('added worker')
+
+        # bpo-33966: On Windows, if the worker is terminated too quickly,
+        # handles created by DupHandle() on reduction.dump() remain open in
+        # the parent process, causing a handles leak. Wait until all new
+        # workers started to make sure that the workers closed handles
+        # inherited by DupHandle.
+        for event in events:
+            event.wait()
 
     def _maintain_pool(self):
         """Clean up any exited workers and start replacements for them.
