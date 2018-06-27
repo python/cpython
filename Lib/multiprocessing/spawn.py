@@ -103,8 +103,12 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
                 _winapi.PROCESS_DUP_HANDLE, False, parent_pid)
         else:
             source_process = None
-        new_handle = reduction.duplicate(pipe_handle,
-                                         source_process=source_process)
+        try:
+            new_handle = reduction.duplicate(pipe_handle,
+                                             source_process=source_process)
+        finally:
+            if source_process is not None:
+                _winapi.CloseHandle(source_process)
         fd = msvcrt.open_osfhandle(new_handle, os.O_RDONLY)
     else:
         from . import semaphore_tracker
