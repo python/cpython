@@ -431,80 +431,34 @@ _rounding_modes = (ROUND_DOWN, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_CEILING,
 ##### Context Functions ##################################################
 
 # The getcontext() and setcontext() function manage access to a thread-local
-# current context.  Py2.4 offers direct support for thread locals.  If that
-# is not available, use threading.current_thread() which is slower but will
-# work for older Pythons.  If threads are not part of the build, create a
-# mock threading object with threading.local() returning the module namespace.
+# current context.
 
-try:
-    import threading
-except ImportError:
-    # Python was compiled without threads; create a mock object instead
-    class MockThreading(object):
-        def local(self, sys=sys):
-            return sys.modules[__xname__]
-    threading = MockThreading()
-    del MockThreading
+import contextvars
 
-try:
-    threading.local
+_current_context_var = contextvars.ContextVar('decimal_context')
 
-except AttributeError:
+def getcontext():
+    """Returns this thread's context.
 
-    # To fix reloading, force it to create a new context
-    # Old contexts have different exceptions in their dicts, making problems.
-    if hasattr(threading.current_thread(), '__decimal_context__'):
-        del threading.current_thread().__decimal_context__
+    If this thread does not yet have a context, returns
+    a new context and sets this thread's context.
+    New contexts are copies of DefaultContext.
+    """
+    try:
+        return _current_context_var.get()
+    except LookupError:
+        context = Context()
+        _current_context_var.set(context)
+        return context
 
-    def setcontext(context):
-        """Set this thread's context to context."""
-        if context in (DefaultContext, BasicContext, ExtendedContext):
-            context = context.copy()
-            context.clear_flags()
-        threading.current_thread().__decimal_context__ = context
+def setcontext(context):
+    """Set this thread's context to context."""
+    if context in (DefaultContext, BasicContext, ExtendedContext):
+        context = context.copy()
+        context.clear_flags()
+    _current_context_var.set(context)
 
-    def getcontext():
-        """Returns this thread's context.
-
-        If this thread does not yet have a context, returns
-        a new context and sets this thread's context.
-        New contexts are copies of DefaultContext.
-        """
-        try:
-            return threading.current_thread().__decimal_context__
-        except AttributeError:
-            context = Context()
-            threading.current_thread().__decimal_context__ = context
-            return context
-
-else:
-
-    local = threading.local()
-    if hasattr(local, '__decimal_context__'):
-        del local.__decimal_context__
-
-    def getcontext(_local=local):
-        """Returns this thread's context.
-
-        If this thread does not yet have a context, returns
-        a new context and sets this thread's context.
-        New contexts are copies of DefaultContext.
-        """
-        try:
-            return _local.__decimal_context__
-        except AttributeError:
-            context = Context()
-            _local.__decimal_context__ = context
-            return context
-
-    def setcontext(context, _local=local):
-        """Set this thread's context to context."""
-        if context in (DefaultContext, BasicContext, ExtendedContext):
-            context = context.copy()
-            context.clear_flags()
-        _local.__decimal_context__ = context
-
-    del threading, local        # Don't contaminate the namespace
+del contextvars        # Don't contaminate the namespace
 
 def localcontext(ctx=None):
     """Return a context manager for a copy of the supplied context

@@ -1,8 +1,16 @@
+# added for local development
+.buildaix/
+Modules/python.exp
+buildaix/
+installp/
+.gitignore
+
 # Two-trick pony for OSX and other case insensitive file systems:
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
 /python
 !/Python/
 *.cover
+*.iml
 *.o
 *.orig
 *.pyc
@@ -18,6 +26,9 @@
 .gdb_history
 Doc/build/
 Doc/venv/
+Doc/.venv/
+Doc/env/
+Doc/.env/
 Include/pydtrace_probes.h
 Lib/distutils/command/*.pdb
 Lib/lib2to3/*.pickle
@@ -59,7 +70,7 @@ PCbuild/*.VC.opendb
 PCbuild/.vs/
 PCbuild/amd64/
 PCbuild/obj/
-PCBuild/win32/
+PCbuild/win32/
 .purify
 Parser/pgen
 Parser/pgen.exe
@@ -74,6 +85,7 @@ config.status.lineno
 core
 db_home
 .hg/
+.idea/
 ipch/
 libpython*.a
 libpython*.so*
@@ -101,3 +113,5 @@ Tools/ssl/amd64
 Tools/ssl/win32
 .vs/
 .vscode/
+gmon.out
+.mypy_cache/

@@ -5,9 +5,7 @@
 #include "Python.h"
 #include "structmember.h"
 
-#ifdef WITH_THREAD
 #include "pythread.h"
-#endif
 
 #include <bzlib.h>
 #include <stdio.h>
@@ -23,7 +21,6 @@
 #endif  /* ! BZ_CONFIG_ERROR */
 
 
-#ifdef WITH_THREAD
 #define ACQUIRE_LOCK(obj) do { \
     if (!PyThread_acquire_lock((obj)->lock, 0)) { \
         Py_BEGIN_ALLOW_THREADS \
@@ -31,19 +28,13 @@
         Py_END_ALLOW_THREADS \
     } } while (0)
 #define RELEASE_LOCK(obj) PyThread_release_lock((obj)->lock)
-#else
-#define ACQUIRE_LOCK(obj)
-#define RELEASE_LOCK(obj)
-#endif
 
 
 typedef struct {
     PyObject_HEAD
     bz_stream bzs;
     int flushed;
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
-#endif
 } BZ2Compressor;
 
 typedef struct {
@@ -59,9 +50,7 @@ typedef struct {
        separately. Conversion and looping is encapsulated in
        decompress_buf() */
     size_t bzs_avail_in_real;
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
-#endif
 } BZ2Decompressor;
 
 static PyTypeObject BZ2Compressor_Type;
@@ -325,13 +314,11 @@ _bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel)
         return -1;
     }
 
-#ifdef WITH_THREAD
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
         return -1;
     }
-#endif
 
     self->bzs.opaque = NULL;
     self->bzs.bzalloc = BZ2_Malloc;
@@ -343,10 +330,8 @@ _bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel)
     return 0;
 
 error:
-#ifdef WITH_THREAD
     PyThread_free_lock(self->lock);
     self->lock = NULL;
-#endif
     return -1;
 }
 
@@ -354,10 +339,8 @@ static void
 BZ2Compressor_dealloc(BZ2Compressor *self)
 {
     BZ2_bzCompressEnd(&self->bzs);
-#ifdef WITH_THREAD
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
-#endif
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -651,19 +634,21 @@ _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
 {
     int bzerror;
 
-#ifdef WITH_THREAD
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
+    PyThread_type_lock lock = PyThread_allocate_lock();
+    if (lock == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
         return -1;
     }
-#endif
+    if (self->lock != NULL) {
+        PyThread_free_lock(self->lock);
+    }
+    self->lock = lock;
 
     self->needs_input = 1;
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
+    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
     if (self->unused_data == NULL)
         goto error;
 
@@ -675,10 +660,8 @@ _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
 
 error:
     Py_CLEAR(self->unused_data);
-#ifdef WITH_THREAD
     PyThread_free_lock(self->lock);
     self->lock = NULL;
-#endif
     return -1;
 }
 
@@ -689,10 +672,8 @@ BZ2Decompressor_dealloc(BZ2Decompressor *self)
         PyMem_Free(self->input_buffer);
     BZ2_bzDecompressEnd(&self->bzs);
     Py_CLEAR(self->unused_data);
-#ifdef WITH_THREAD
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
-#endif
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 

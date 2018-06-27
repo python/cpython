@@ -121,6 +121,9 @@ or on combining URL components into a URL string.
    an invalid port is specified in the URL.  See section
    :ref:`urlparse-result-object` for more information on the result object.
 
+   Unmatched square brackets in the :attr:`netloc` attribute will raise a
+   :exc:`ValueError`.
+
    .. versionchanged:: 3.2
       Added IPv6 URL parsing capabilities.
 
@@ -238,6 +241,9 @@ or on combining URL components into a URL string.
    Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
    an invalid port is specified in the URL.  See section
    :ref:`urlparse-result-object` for more information on the result object.
+
+   Unmatched square brackets in the :attr:`netloc` attribute will raise a
+   :exc:`ValueError`.
 
    .. versionchanged:: 3.6
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
@@ -462,7 +468,7 @@ task isn't already covered by the URL parsing functions above.
    *string* may be either a :class:`str` or a :class:`bytes`.
 
    .. versionchanged:: 3.7
-      Moved from RFC 2396 to RFC 3986 for quoting URL strings. "~" is now
+      Moved from :rfc:`2396` to :rfc:`3986` for quoting URL strings. "~" is now
       included in the set of reserved characters.
 
    The optional *encoding* and *errors* parameters specify how to deal with

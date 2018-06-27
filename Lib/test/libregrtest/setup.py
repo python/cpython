@@ -14,17 +14,26 @@ from test.libregrtest.refleak import warm_caches
 
 
 def setup_tests(ns):
-    # Display the Python traceback on fatal errors (e.g. segfault)
-    faulthandler.enable(all_threads=True)
+    try:
+        stderr_fd = sys.__stderr__.fileno()
+    except (ValueError, AttributeError):
+        # Catch ValueError to catch io.UnsupportedOperation on TextIOBase
+        # and ValueError on a closed stream.
+        #
+        # Catch AttributeError for stderr being None.
+        stderr_fd = None
+    else:
+        # Display the Python traceback on fatal errors (e.g. segfault)
+        faulthandler.enable(all_threads=True, file=stderr_fd)
 
-    # Display the Python traceback on SIGALRM or SIGUSR1 signal
-    signals = []
-    if hasattr(signal, 'SIGALRM'):
-        signals.append(signal.SIGALRM)
-    if hasattr(signal, 'SIGUSR1'):
-        signals.append(signal.SIGUSR1)
-    for signum in signals:
-        faulthandler.register(signum, chain=True)
+        # Display the Python traceback on SIGALRM or SIGUSR1 signal
+        signals = []
+        if hasattr(signal, 'SIGALRM'):
+            signals.append(signal.SIGALRM)
+        if hasattr(signal, 'SIGUSR1'):
+            signals.append(signal.SIGUSR1)
+        for signum in signals:
+            faulthandler.register(signum, chain=True, file=stderr_fd)
 
     replace_stdout()
     support.record_original_stdout(sys.stdout)
@@ -48,7 +57,7 @@ def setup_tests(ns):
         if hasattr(module, '__path__'):
             for index, path in enumerate(module.__path__):
                 module.__path__[index] = os.path.abspath(path)
-        if hasattr(module, '__file__'):
+        if getattr(module, '__file__', None):
             module.__file__ = os.path.abspath(module.__file__)
 
     # MacOSX (a.k.a. Darwin) has a default stack size that is too small
@@ -109,7 +118,17 @@ def replace_stdout():
     """Set stdout encoder error handler to backslashreplace (as stderr error
     handler) to avoid UnicodeEncodeError when printing a traceback"""
     stdout = sys.stdout
-    sys.stdout = open(stdout.fileno(), 'w',
+    try:
+        fd = stdout.fileno()
+    except ValueError:
+        # On IDLE, sys.stdout has no file descriptor and is not a TextIOWrapper
+        # object. Leaving sys.stdout unchanged.
+        #
+        # Catch ValueError to catch io.UnsupportedOperation on TextIOBase
+        # and ValueError on a closed stream.
+        return
+
+    sys.stdout = open(fd, 'w',
         encoding=stdout.encoding,
         errors="backslashreplace",
         closefd=False,

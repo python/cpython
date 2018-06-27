@@ -67,7 +67,7 @@ Here are the methods of the :class:`Message` class:
 
       Return the entire message flattened as a string.  When optional *unixfrom*
       is true, the envelope header is included in the returned string.
-      *unixfrom* defaults to ``False``.  For backward compabitility reasons,
+      *unixfrom* defaults to ``False``.  For backward compatibility reasons,
       *maxheaderlen* defaults to ``0``, so if you want a different value you
       must override it explicitly (the value specified for *max_line_length* in
       the policy will be ignored by this method).  The *policy* argument may be

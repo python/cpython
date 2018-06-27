@@ -1,0 +1,1 @@
+End framing at the end of C implementation of :func:`pickle.Pickler.dump`.

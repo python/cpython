@@ -53,7 +53,7 @@ over channels that are not "8 bit clean".
    :data:`~email.policy.compat32` policy and ``False`` for all others).
    *mangle_from_* is intended for use when messages are stored in unix mbox
    format (see :mod:`mailbox` and `WHY THE CONTENT-LENGTH FORMAT IS BAD
-   <http://www.jwz.org/doc/content-length.html>`_).
+   <https://www.jwz.org/doc/content-length.html>`_).
 
    If *maxheaderlen* is not ``None``, refold any header lines that are longer
    than *maxheaderlen*, or if ``0``, do not rewrap any headers.  If
@@ -88,8 +88,8 @@ over channels that are not "8 bit clean".
       If ``cte_type`` is ``7bit``, convert the bytes with the high bit set as
       needed using an ASCII-compatible :mailheader:`Content-Transfer-Encoding`.
       That is, transform parts with non-ASCII
-      :mailheader:`Cotnent-Transfer-Encoding`
-      (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatibile
+      :mailheader:`Content-Transfer-Encoding`
+      (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatible
       :mailheader:`Content-Transfer-Encoding`, and encode RFC-invalid non-ASCII
       bytes in headers using the MIME ``unknown-8bit`` character set, thus
       rendering them RFC-compliant.
@@ -154,7 +154,7 @@ to be using :class:`BytesGenerator`, and not :class:`Generator`.
    :data:`~email.policy.compat32` policy and ``False`` for all others).
    *mangle_from_* is intended for use when messages are stored in unix mbox
    format (see :mod:`mailbox` and `WHY THE CONTENT-LENGTH FORMAT IS BAD
-   <http://www.jwz.org/doc/content-length.html>`_).
+   <https://www.jwz.org/doc/content-length.html>`_).
 
    If *maxheaderlen* is not ``None``, refold any header lines that are longer
    than *maxheaderlen*, or if ``0``, do not rewrap any headers.  If
@@ -185,7 +185,7 @@ to be using :class:`BytesGenerator`, and not :class:`Generator`.
       Convert any bytes with the high bit set as needed using an
       ASCII-compatible :mailheader:`Content-Transfer-Encoding`.  That is,
       transform parts with non-ASCII :mailheader:`Cotnent-Transfer-Encoding`
-      (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatibile
+      (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatible
       :mailheader:`Content-Transfer-Encoding`, and encode RFC-invalid non-ASCII
       bytes in headers using the MIME ``unknown-8bit`` character set, thus
       rendering them RFC-compliant.

@@ -38,10 +38,7 @@ from test.support import (import_fresh_module, TestFailed,
                           run_with_locale, cpython_only)
 import random
 import inspect
-try:
-    import threading
-except ImportError:
-    threading = None
+import threading
 
 
 C = import_fresh_module('decimal', fresh=['_decimal'])
@@ -1621,14 +1618,17 @@ class ThreadingTest(unittest.TestCase):
         for sig in Signals[self.decimal]:
             self.assertFalse(DefaultContext.flags[sig])
 
+        th1.join()
+        th2.join()
+
         DefaultContext.prec = save_prec
         DefaultContext.Emax = save_emax
         DefaultContext.Emin = save_emin
 
-@unittest.skipUnless(threading, 'threading required')
+
 class CThreadingTest(ThreadingTest):
     decimal = C
-@unittest.skipUnless(threading, 'threading required')
+
 class PyThreadingTest(ThreadingTest):
     decimal = P
 
@@ -4454,19 +4454,19 @@ class Coverage(unittest.TestCase):
     def test_round(self):
         # Python3 behavior: round() returns Decimal
         Decimal = self.decimal.Decimal
-        getcontext = self.decimal.getcontext
+        localcontext = self.decimal.localcontext
 
-        c = getcontext()
-        c.prec = 28
+        with localcontext() as c:
+            c.prec = 28
 
-        self.assertEqual(str(Decimal("9.99").__round__()), "10")
-        self.assertEqual(str(Decimal("9.99e-5").__round__()), "0")
-        self.assertEqual(str(Decimal("1.23456789").__round__(5)), "1.23457")
-        self.assertEqual(str(Decimal("1.2345").__round__(10)), "1.2345000000")
-        self.assertEqual(str(Decimal("1.2345").__round__(-10)), "0E+10")
+            self.assertEqual(str(Decimal("9.99").__round__()), "10")
+            self.assertEqual(str(Decimal("9.99e-5").__round__()), "0")
+            self.assertEqual(str(Decimal("1.23456789").__round__(5)), "1.23457")
+            self.assertEqual(str(Decimal("1.2345").__round__(10)), "1.2345000000")
+            self.assertEqual(str(Decimal("1.2345").__round__(-10)), "0E+10")
 
-        self.assertRaises(TypeError, Decimal("1.23").__round__, "5")
-        self.assertRaises(TypeError, Decimal("1.23").__round__, 5, 8)
+            self.assertRaises(TypeError, Decimal("1.23").__round__, "5")
+            self.assertRaises(TypeError, Decimal("1.23").__round__, 5, 8)
 
     def test_create_decimal(self):
         c = self.decimal.Context()
@@ -5410,7 +5410,7 @@ class CWhitebox(unittest.TestCase):
 
             # SSIZE_MIN
             x = (1, (), -sys.maxsize-1)
-            self.assertEqual(str(c.create_decimal(x)), '-0E-1000026')
+            self.assertEqual(str(c.create_decimal(x)), '-0E-1000007')
             self.assertRaises(InvalidOperation, Decimal, x)
 
             x = (1, (0, 1, 2), -sys.maxsize-1)

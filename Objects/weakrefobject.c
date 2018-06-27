@@ -332,7 +332,7 @@ weakref___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *tmp;
 
-    if (!_PyArg_NoKeywords("ref()", kwargs))
+    if (!_PyArg_NoKeywords("ref", kwargs))
         return -1;
 
     if (parse_weakref_init_args("__init__", args, kwargs, &tmp, &tmp))
@@ -452,7 +452,7 @@ proxy_checkref(PyWeakReference *proxy)
 
 #define WRAP_METHOD(method, special) \
     static PyObject * \
-    method(PyObject *proxy) { \
+    method(PyObject *proxy, PyObject *Py_UNUSED(ignored)) { \
             _Py_IDENTIFIER(special); \
             UNWRAP(proxy); \
                 return _PyObject_CallMethodId(proxy, &PyId_##special, NULL); \
@@ -602,7 +602,7 @@ WRAP_METHOD(proxy_bytes, __bytes__)
 
 
 static PyMethodDef proxy_methods[] = {
-        {"__bytes__", (PyCFunction)proxy_bytes, METH_NOARGS},
+        {"__bytes__", proxy_bytes, METH_NOARGS},
         {NULL, NULL}
 };
 

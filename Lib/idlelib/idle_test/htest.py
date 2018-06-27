@@ -8,7 +8,7 @@ callable in the module named in the spec.  Close the window to skip or
 end the test.
 
 In a tested module, let X be a global name bound to a callable (class
-or function) whose .__name__ attrubute is also X (the usual situation).
+or function) whose .__name__ attribute is also X (the usual situation).
 The first parameter of X must be 'parent'.  When called, the parent
 argument will be the root window.  X must create a child Toplevel
 window (or subclass thereof).  The Toplevel may be a test widget or
@@ -86,7 +86,7 @@ _calltip_window_spec = {
            "Typing ') should hide the calltip.\n"
     }
 
-_class_browser_spec = {
+_module_browser_spec = {
     'file': 'browser',
     'kwds': {},
     'msg': "Inspect names of module, class(with superclass if "
@@ -296,25 +296,6 @@ _stack_viewer_spec = {
            "Check that exc_value, exc_tb, and exc_type are correct.\n"
     }
 
-_tabbed_pages_spec = {
-    'file': 'tabbedpages',
-    'kwds': {},
-    'msg': "Toggle between the two tabs 'foo' and 'bar'\n"
-           "Add a tab by entering a suitable name for it.\n"
-           "Remove an existing tab by entering its name.\n"
-           "Remove all existing tabs.\n"
-           "<nothing> is an invalid add page and remove page name.\n"
-    }
-
-TextViewer_spec = {
-    'file': 'textview',
-    'kwds': {'title': 'Test textview',
-             'text':'The quick brown fox jumps over the lazy dog.\n'*35,
-             '_htest': True},
-    'msg': "Test for read-only property of text.\n"
-           "Text is selectable. Window is scrollable.",
-     }
-
 _tooltip_spec = {
     'file': 'tooltip',
     'kwds': {},
@@ -337,6 +318,15 @@ _undo_delegator_spec = {
            "Click [Dump] to dump the current state "
            "by printing to the console or the IDLE shell.\n"
     }
+
+ViewWindow_spec = {
+    'file': 'textview',
+    'kwds': {'title': 'Test textview',
+             'text': 'The quick brown fox jumps over the lazy dog.\n'*35,
+             '_htest': True},
+    'msg': "Test for read-only property of text.\n"
+           "Select text, scroll window, close"
+     }
 
 _widget_redirector_spec = {
     'file': 'redirector',

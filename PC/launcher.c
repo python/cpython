@@ -61,6 +61,7 @@ debug(wchar_t * format, ...)
     if (log_fp != NULL) {
         va_start(va, format);
         vfwprintf_s(log_fp, format, va);
+        va_end(va);
     }
 }
 
@@ -83,6 +84,7 @@ error(int rc, wchar_t * format, ... )
 
     va_start(va, format);
     len = _vsnwprintf_s(message, MSGSIZE, _TRUNCATE, format, va);
+    va_end(va);
 
     if (rc == 0) {  /* a Windows error */
         winerror(GetLastError(), win_message, MSGSIZE);
@@ -169,11 +171,11 @@ static size_t num_installed_pythons = 0;
 
 static wchar_t * location_checks[] = {
     L"\\",
-    L"\\PCBuild\\win32\\",
-    L"\\PCBuild\\amd64\\",
-    // To support early 32bit versions of Python that stuck the build binaries
-    // directly in PCBuild...
-    L"\\PCBuild\\",
+    L"\\PCbuild\\win32\\",
+    L"\\PCbuild\\amd64\\",
+    /* To support early 32bit versions of Python that stuck the build binaries
+    * directly in PCbuild... */
+    L"\\PCbuild\\",
     NULL
 };
 
@@ -234,7 +236,7 @@ locate_pythons_for_key(HKEY root, REGSAM flags)
                 status = RegOpenKeyExW(root, ip_path, 0, flags, &ip_key);
                 if (status != ERROR_SUCCESS) {
                     winerror(status, message, MSGSIZE);
-                    // Note: 'message' already has a trailing \n
+                    /* Note: 'message' already has a trailing \n*/
                     debug(L"%ls\\%ls: %ls", key_name, ip_path, message);
                     continue;
                 }
@@ -340,12 +342,12 @@ static void
 locate_all_pythons()
 {
 #if defined(_M_X64)
-    // If we are a 64bit process, first hit the 32bit keys.
+    /* If we are a 64bit process, first hit the 32bit keys. */
     debug(L"locating Pythons in 32bit registry\n");
     locate_pythons_for_key(HKEY_CURRENT_USER, KEY_READ | KEY_WOW64_32KEY);
     locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ | KEY_WOW64_32KEY);
 #else
-    // If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.
+    /* If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.*/
     BOOL f64 = FALSE;
     if (IsWow64Process(GetCurrentProcess(), &f64) && f64) {
         debug(L"locating Pythons in 64bit registry\n");
@@ -353,7 +355,7 @@ locate_all_pythons()
         locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ | KEY_WOW64_64KEY);
     }
 #endif
-    // now hit the "native" key for this process bittedness.
+    /* now hit the "native" key for this process bittedness. */
     debug(L"locating Pythons in native registry\n");
     locate_pythons_for_key(HKEY_CURRENT_USER, KEY_READ);
     locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ);
@@ -370,8 +372,14 @@ find_python_by_version(wchar_t const * wanted_ver)
     size_t wlen = wcslen(wanted_ver);
     int bits = 0;
 
-    if (wcsstr(wanted_ver, L"-32"))
+    if (wcsstr(wanted_ver, L"-32")) {
         bits = 32;
+        wlen -= wcslen(L"-32");
+    }
+    else if (wcsstr(wanted_ver, L"-64")) { /* Added option to select 64 bit explicitly */
+        bits = 64;
+        wlen -= wcslen(L"-64");
+    }
     for (i = 0; i < num_installed_pythons; i++, ip++) {
         n = wcslen(ip->version);
         if (n > wlen)
@@ -608,14 +616,16 @@ run_child(wchar_t * cmdline)
     PROCESS_INFORMATION pi;
 
 #if defined(_WINDOWS)
-    // When explorer launches a Windows (GUI) application, it displays
-    // the "app starting" (the "pointer + hourglass") cursor for a number
-    // of seconds, or until the app does something UI-ish (eg, creating a
-    // window, or fetching a message).  As this launcher doesn't do this
-    // directly, that cursor remains even after the child process does these
-    // things.  We avoid that by doing a simple post+get message.
-    // See http://bugs.python.org/issue17290 and
-    // https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
+    /*
+    When explorer launches a Windows (GUI) application, it displays
+    the "app starting" (the "pointer + hourglass") cursor for a number
+    of seconds, or until the app does something UI-ish (eg, creating a
+    window, or fetching a message).  As this launcher doesn't do this
+    directly, that cursor remains even after the child process does these
+    things.  We avoid that by doing a simple post+get message.
+    See http://bugs.python.org/issue17290 and
+    https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
+    */
     MSG msg;
 
     PostMessage(0, 0, 0, 0);
@@ -1040,32 +1050,49 @@ find_terminator(char * buffer, int len, BOM *bom)
 static BOOL
 validate_version(wchar_t * p)
 {
-    BOOL result = TRUE;
+    /*
+    Version information should start with one of 2 or 3,
+    Optionally followed by a period and a minor version,
+    Optionally followed by a minus and one of 32 or 64.
+    Valid examples:
+      2
+      3
+      2.7
+      3.6
+      2.7-32
+      The intent is to add to the valid patterns:
+      3.10
+      3-32
+      3.6-64
+      3-64
+    */
+    BOOL result = (p != NULL); /* Default to False if null pointer. */
 
-    if (!isdigit(*p))               /* expect major version */
-        result = FALSE;
-    else if (*++p) {                /* more to do */
-        if (*p != L'.')             /* major/minor separator */
+    result = result && iswdigit(*p);  /* Result = False if fist string element is not a digit. */
+
+    while (result && iswdigit(*p))   /* Require a major version */
+        ++p;  /* Skip all leading digit(s) */
+    if (result && (*p == L'.'))     /* Allow . for major minor separator.*/
+    {
+        result = iswdigit(*++p);     /* Must be at least one digit */
+        while (result && iswdigit(*++p)) ; /* Skip any more Digits */
+    }
+    if (result && (*p == L'-')) {   /* Allow - for Bits Separator */
+        switch(*++p){
+        case L'3':                            /* 3 is OK */
+            result = (*++p == L'2') && !*++p; /* only if followed by 2 and ended.*/
+            break;
+        case L'6':                            /* 6 is OK */
+            result = (*++p == L'4') && !*++p; /* only if followed by 4 and ended.*/
+            break;
+        default:
             result = FALSE;
-        else {
-            ++p;
-            if (!isdigit(*p))       /* expect minor version */
-                result = FALSE;
-            else {
-                ++p;
-                if (*p) {           /* more to do */
-                    if (*p != L'-')
-                        result = FALSE;
-                    else {
-                        ++p;
-                        if ((*p != '3') && (*++p != '2') && !*++p)
-                            result = FALSE;
-                    }
-                }
-            }
+            break;
         }
     }
+    result = result && !*p; /* Must have reached EOS */
     return result;
+
 }
 
 typedef struct {
@@ -1091,6 +1118,7 @@ static PYC_MAGIC magic_values[] = {
     { 3320, 3351, L"3.5" },
     { 3360, 3379, L"3.6" },
     { 3390, 3399, L"3.7" },
+    { 3400, 3409, L"3.8" },
     { 0 }
 };
 
@@ -1346,6 +1374,89 @@ get_version_info(wchar_t * version_text, size_t size)
     }
 }
 
+static void
+show_help_text(wchar_t ** argv)
+{
+    wchar_t version_text [MAX_PATH];
+#if defined(_M_X64)
+    BOOL canDo64bit = TRUE;
+#else
+    /* If we are a 32bit process on a 64bit Windows, first hit the 64bit keys. */
+    BOOL canDo64bit = FALSE;
+    IsWow64Process(GetCurrentProcess(), &canDo64bit);
+#endif
+
+    get_version_info(version_text, MAX_PATH);
+    fwprintf(stdout, L"\
+Python Launcher for Windows Version %ls\n\n", version_text);
+    fwprintf(stdout, L"\
+usage:\n\
+%ls [launcher-args] [python-args] script [script-args]\n\n", argv[0]);
+    fputws(L"\
+Launcher arguments:\n\n\
+-2     : Launch the latest Python 2.x version\n\
+-3     : Launch the latest Python 3.x version\n\
+-X.Y   : Launch the specified Python version\n", stdout);
+    if (canDo64bit) {
+        fputws(L"\
+     The above all default to 64 bit if a matching 64 bit python is present.\n\
+-X.Y-32: Launch the specified 32bit Python version\n\
+-X-32  : Launch the latest 32bit Python X version\n\
+-X.Y-64: Launch the specified 64bit Python version\n\
+-X-64  : Launch the latest 64bit Python X version", stdout);
+    }
+    fputws(L"\n-0  --list       : List the available pythons", stdout);
+    fputws(L"\n-0p --list-paths : List with paths", stdout);
+    fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
+    fflush(stdout);
+}
+
+static BOOL
+show_python_list(wchar_t ** argv)
+{
+    /*
+     * Display options -0
+     */
+    INSTALLED_PYTHON * result = NULL;
+    INSTALLED_PYTHON * ip = installed_pythons; /* List of installed pythons */
+    INSTALLED_PYTHON * defpy = locate_python(L"", FALSE);
+    size_t i = 0;
+    wchar_t *p = argv[1];
+    wchar_t *fmt = L"\n -%ls-%d"; /* print VER-BITS */
+    wchar_t *defind = L" *"; /* Default indicator */
+
+    /*
+    * Output informational messages to stderr to keep output
+    * clean for use in pipes, etc.
+    */
+    fwprintf(stderr,
+             L"Installed Pythons found by %s Launcher for Windows", argv[0]);
+    if (!_wcsicmp(p, L"-0p") || !_wcsicmp(p, L"--list-paths")) /* Show path? */
+        fmt = L"\n -%ls-%d\t%ls"; /* print VER-BITS path */
+
+    if (num_installed_pythons == 0) /* We have somehow got here without searching for pythons */
+        locate_all_pythons(); /* Find them, Populates installed_pythons */
+
+    if (num_installed_pythons == 0) /* No pythons found */
+        fwprintf(stderr, L"\nNo Installed Pythons Found!");
+    else
+    {
+        for (i = 0; i < num_installed_pythons; i++, ip++) {
+            fwprintf(stdout, fmt, ip->version, ip->bits, ip->executable);
+            /* If there is a default indicate it */
+            if ((defpy != NULL) && !_wcsicmp(ip->executable, defpy->executable))
+                fwprintf(stderr, defind);
+        }
+    }
+
+    if ((defpy == NULL) && (num_installed_pythons > 0))
+        /* We have pythons but none is the default */
+        fwprintf(stderr, L"\n\nCan't find a Default Python.\n\n");
+    else
+        fwprintf(stderr, L"\n\n"); /* End with a blank line */
+    return(FALSE); /* If this has been called we cannot continue */
+}
+
 static int
 process(int argc, wchar_t ** argv)
 {
@@ -1355,12 +1466,12 @@ process(int argc, wchar_t ** argv)
     wchar_t * p;
     int rc = 0;
     size_t plen;
+    size_t slen;
     INSTALLED_PYTHON * ip;
     BOOL valid;
     DWORD size, attrs;
     HRESULT hr;
     wchar_t message[MSGSIZE];
-    wchar_t version_text [MAX_PATH];
     void * version_data;
     VS_FIXEDFILEINFO * file_info;
     UINT block_size;
@@ -1491,12 +1602,22 @@ process(int argc, wchar_t ** argv)
     else {
         p = argv[1];
         plen = wcslen(p);
-        valid = (*p == L'-') && validate_version(&p[1]);
+        if (argc == 2) {
+            slen = wcslen(L"-0");
+            if(!wcsncmp(p, L"-0", slen)) /* Starts with -0 */
+                valid = show_python_list(argv); /* Check for -0 FIRST */
+        }
+        valid = valid && (*p == L'-') && validate_version(&p[1]);
         if (valid) {
             ip = locate_python(&p[1], FALSE);
             if (ip == NULL)
+            {
+                fwprintf(stdout, \
+                         L"Python %ls not found!\n", &p[1]);
+                valid = show_python_list(argv);
                 error(RC_NO_PYTHON, L"Requested Python version (%ls) not \
-installed", &p[1]);
+installed, use -0 for available pythons", &p[1]);
+            }
             executable = ip->executable;
             command += wcslen(p);
             command = skip_whitespace(command);
@@ -1515,44 +1636,28 @@ installed", &p[1]);
 #endif
 
     if (!valid) {
-        /* Look for an active virtualenv */
-        executable = find_python_by_venv();
+        if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help")))
+            show_help_text(argv);
+        if ((argc == 2) && (!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"-0p")))
+            executable = NULL; /* Info call only */
+        else
+        {
+            /* Look for an active virtualenv */
+            executable = find_python_by_venv();
 
-        /* If we didn't find one, look for the default Python */
-        if (executable == NULL) {
-            ip = locate_python(L"", FALSE);
-            if (ip == NULL)
-                error(RC_NO_PYTHON, L"Can't find a default Python.");
-            executable = ip->executable;
-        }
-        if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help"))) {
-#if defined(_M_X64)
-            BOOL canDo64bit = TRUE;
-#else
-    // If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.
-            BOOL canDo64bit = FALSE;
-            IsWow64Process(GetCurrentProcess(), &canDo64bit);
-#endif
-
-            get_version_info(version_text, MAX_PATH);
-            fwprintf(stdout, L"\
-Python Launcher for Windows Version %ls\n\n", version_text);
-            fwprintf(stdout, L"\
-usage: %ls [ launcher-arguments ] [ python-arguments ] script [ script-arguments ]\n\n", argv[0]);
-            fputws(L"\
-Launcher arguments:\n\n\
--2     : Launch the latest Python 2.x version\n\
--3     : Launch the latest Python 3.x version\n\
--X.Y   : Launch the specified Python version\n", stdout);
-            if (canDo64bit) {
-                fputws(L"\
--X.Y-32: Launch the specified 32bit Python version", stdout);
+            /* If we didn't find one, look for the default Python */
+            if (executable == NULL) {
+                ip = locate_python(L"", FALSE);
+                if (ip == NULL)
+                    error(RC_NO_PYTHON, L"Can't find a default Python.");
+                executable = ip->executable;
             }
-            fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
-            fflush(stdout);
         }
     }
-    invoke_child(executable, NULL, command);
+    if (executable != NULL)
+        invoke_child(executable, NULL, command);
+    else
+        rc = RC_NO_PYTHON;
     return rc;
 }
 

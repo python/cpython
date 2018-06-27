@@ -9,6 +9,7 @@ Copyright (c) Corporation for National Research Initiatives.
    ------------------------------------------------------------------------ */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "ucnhash.h"
 #include <ctype.h>
 
@@ -77,8 +78,6 @@ PyObject *normalizestring(const char *string)
     }
     p[i] = '\0';
     v = PyUnicode_FromString(p);
-    if (v == NULL)
-        return NULL;
     PyMem_Free(p);
     return v;
 }
@@ -539,15 +538,11 @@ PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
      * attribute.
      */
     if (!PyTuple_CheckExact(codec)) {
-        attr = _PyObject_GetAttrId(codec, &PyId__is_text_encoding);
-        if (attr == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                PyErr_Clear();
-            } else {
-                Py_DECREF(codec);
-                return NULL;
-            }
-        } else {
+        if (_PyObject_LookupAttrId(codec, &PyId__is_text_encoding, &attr) < 0) {
+            Py_DECREF(codec);
+            return NULL;
+        }
+        if (attr != NULL) {
             is_text_codec = PyObject_IsTrue(attr);
             Py_DECREF(attr);
             if (is_text_codec <= 0) {

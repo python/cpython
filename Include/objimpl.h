@@ -56,7 +56,7 @@ must use the platform malloc heap(s), or shared memory, or C++ local storage or
 operator new), you must first allocate the object with your custom allocator,
 then pass its pointer to PyObject_{Init, InitVar} for filling in its Python-
 specific fields:  reference count, type pointer, possibly others.  You should
-be aware that Python no control over these objects because they don't
+be aware that Python has no control over these objects because they don't
 cooperate with the Python memory manager.  Such objects may not be eligible
 for automatic garbage collection and you have to make sure that they are
 released accordingly whenever their destructor gets called (cf. the specific
@@ -109,7 +109,7 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
 /* Macros */
 #ifdef WITH_PYMALLOC
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyObject_DebugMallocStats(FILE *out);
+PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
 #endif /* #ifndef Py_LIMITED_API */
 #endif
 
@@ -240,8 +240,10 @@ PyAPI_FUNC(Py_ssize_t) _PyGC_CollectIfEnabled(void);
 #define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
 /* Test if an object has a GC head */
+#ifndef Py_LIMITED_API
 #define PyObject_IS_GC(o) (PyType_IS_GC(Py_TYPE(o)) && \
     (Py_TYPE(o)->tp_is_gc == NULL || Py_TYPE(o)->tp_is_gc(o)))
+#endif
 
 PyAPI_FUNC(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, Py_ssize_t);
 #define PyObject_GC_Resize(type, op, n) \
@@ -359,10 +361,12 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
 
 
 /* Test if a type supports weak references */
+#ifndef Py_LIMITED_API
 #define PyType_SUPPORTS_WEAKREFS(t) ((t)->tp_weaklistoffset > 0)
 
 #define PyObject_GET_WEAKREFS_LISTPTR(o) \
     ((PyObject **) (((char *) (o)) + Py_TYPE(o)->tp_weaklistoffset))
+#endif
 
 #ifdef __cplusplus
 }

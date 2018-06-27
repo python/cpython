@@ -100,7 +100,7 @@ Here are two ways to write a table of squares and cubes::
    10 100 1000
 
 (Note that in the first example, one space between each column was added by the
-way :func:`print` works: it always adds spaces between its arguments.)
+way :func:`print` works: by default it adds spaces between its arguments.)
 
 This example demonstrates the :meth:`str.rjust` method of string
 objects, which right-justifies a string in a field of a given width by padding
@@ -262,6 +262,35 @@ to file data is fine for text files, but will corrupt binary data like that in
 :file:`JPEG` or :file:`EXE` files.  Be very careful to use binary mode when
 reading and writing such files.
 
+It is good practice to use the :keyword:`with` keyword when dealing
+with file objects.  The advantage is that the file is properly closed
+after its suite finishes, even if an exception is raised at some
+point.  Using :keyword:`with` is also much shorter than writing
+equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
+
+    >>> with open('workfile') as f:
+    ...     read_data = f.read()
+    >>> f.closed
+    True
+
+If you're not using the :keyword:`with` keyword, then you should call
+``f.close()`` to close the file and immediately free up any system
+resources used by it. If you don't explicitly close a file, Python's
+garbage collector will eventually destroy the object and close the
+open file for you, but the file may stay open for a while.  Another
+risk is that different Python implementations will do this clean-up at
+different times.
+
+After a file object is closed, either by a :keyword:`with` statement
+or by calling ``f.close()``, attempts to use the file object will
+automatically fail. ::
+
+   >>> f.close()
+   >>> f.read()
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   ValueError: I/O operation on closed file
+
 
 .. _tut-filemethods:
 
@@ -354,27 +383,6 @@ to the very file end with ``seek(0, 2)``) and the only valid *offset* values are
 those returned from the ``f.tell()``, or zero. Any other *offset* value produces
 undefined behaviour.
 
-
-When you're done with a file, call ``f.close()`` to close it and free up any
-system resources taken up by the open file.  After calling ``f.close()``,
-attempts to use the file object will automatically fail. ::
-
-   >>> f.close()
-   >>> f.read()
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   ValueError: I/O operation on closed file
-
-It is good practice to use the :keyword:`with` keyword when dealing with file
-objects.  This has the advantage that the file is properly closed after its
-suite finishes, even if an exception is raised on the way.  It is also much
-shorter than writing equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
-
-    >>> with open('workfile', 'r') as f:
-    ...     read_data = f.read()
-    >>> f.closed
-    True
-
 File objects have some additional methods, such as :meth:`~file.isatty` and
 :meth:`~file.truncate` which are less frequently used; consult the Library
 Reference for a complete guide to file objects.
@@ -412,6 +420,7 @@ sent over a network connection to some distant machine.
 If you have an object ``x``, you can view its JSON string representation with a
 simple line of code::
 
+   >>> import json
    >>> json.dumps([1, 'simple', 'list'])
    '[1, "simple", "list"]'
 

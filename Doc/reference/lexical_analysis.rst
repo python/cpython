@@ -47,11 +47,12 @@ Physical lines
 --------------
 
 A physical line is a sequence of characters terminated by an end-of-line
-sequence.  In source files, any of the standard platform line termination
-sequences can be used - the Unix form using ASCII LF (linefeed), the Windows
-form using the ASCII sequence CR LF (return followed by linefeed), or the old
-Macintosh form using the ASCII CR (return) character.  All of these forms can be
-used equally, regardless of platform.
+sequence.  In source files and strings, any of the standard platform line
+termination sequences can be used - the Unix form using ASCII LF (linefeed),
+the Windows form using the ASCII sequence CR LF (return followed by linefeed),
+or the old Macintosh form using the ASCII CR (return) character.  All of these
+forms can be used equally, regardless of platform. The end of input also serves
+as an implicit terminator for the final physical line.
 
 When embedding Python, source code strings should be passed to Python APIs using
 the standard C conventions for newline characters (the ``\n`` character,
@@ -313,7 +314,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <http://www.unicode.org/Public/8.0.0/ucd/PropList.txt>`_ to support backwards
+  <http://www.unicode.org/Public/11.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -340,13 +341,13 @@ exactly as written here:
 
 .. sourcecode:: text
 
-   False      class      finally    is         return
-   None       continue   for        lambda     try
-   True       def        from       nonlocal   while
-   and        del        global     not        with
-   as         elif       if         or         yield
-   assert     else       import     pass
-   break      except     in         raise
+   False      await      else       import     pass
+   None       break      except     in         raise
+   True       class      finally    is         return
+   and        continue   for        lambda     try
+   as         def        from       nonlocal   while
+   assert     del        global     not        with
+   async      elif       if         or         yield
 
 .. _id-classes:
 
@@ -445,9 +446,6 @@ Bytes literals are always prefixed with ``'b'`` or ``'B'``; they produce an
 instance of the :class:`bytes` type instead of the :class:`str` type.  They
 may only contain ASCII characters; bytes with a numeric value of 128 or greater
 must be expressed with escapes.
-
-As of Python 3.3 it is possible again to prefix string literals with a
-``u`` prefix to simplify maintenance of dual 2.x and 3.x codebases.
 
 Both string and bytes literals may optionally be prefixed with a letter ``'r'``
 or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
@@ -574,7 +572,7 @@ that a single backslash followed by a newline is interpreted as those two
 characters as part of the literal, *not* as a line continuation.
 
 
-.. _string-catenation:
+.. _string-concatenation:
 
 String literal concatenation
 ----------------------------
@@ -657,9 +655,11 @@ expression or conversion result.  An empty string is passed when the
 format specifier is omitted.  The formatted result is then included in
 the final value of the whole string.
 
-Top-level format specifiers may include nested replacement fields.
-These nested fields may include their own conversion fields and
-format specifiers, but may not include more deeply-nested replacement fields.
+Top-level format specifiers may include nested replacement fields. These nested
+fields may include their own conversion fields and :ref:`format specifiers
+<formatspec>`, but may not include more deeply-nested replacement fields. The
+:ref:`format specifier mini-language <formatspec>` is the same as that used by
+the string .format() method.
 
 Formatted string literals may be concatenated, but replacement fields
 cannot be split across literals.
@@ -676,6 +676,12 @@ Some examples of formatted string literals::
    >>> value = decimal.Decimal("12.34567")
    >>> f"result: {value:{width}.{precision}}"  # nested fields
    'result:      12.35'
+   >>> today = datetime(year=2017, month=1, day=27)
+   >>> f"{today:%B %d, %Y}"  # using date format specifier
+   'January 27, 2017'
+   >>> number = 1024
+   >>> f"{number:#0x}"  # using integer format specifier
+   '0x400'
 
 A consequence of sharing the same syntax as regular string literals is
 that characters in the replacement fields must not conflict with the
@@ -793,10 +799,6 @@ Some examples of floating point literals::
 
    3.14    10.    .001    1e100    3.14e-10    0e0    3.14_15_93
 
-Note that numeric literals do not include a sign; a phrase like ``-1`` is
-actually an expression composed of the unary operator ``-`` and the literal
-``1``.
-
 .. versionchanged:: 3.6
    Underscores are now allowed for grouping purposes in literals.
 
@@ -875,4 +877,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/8.0.0/ucd/NameAliases.txt
+.. [#] http://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt

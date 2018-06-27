@@ -45,6 +45,7 @@ class TestCgitb(unittest.TestCase):
         out = out.decode(sys.getfilesystemencoding())
         self.assertIn("ValueError", out)
         self.assertIn("Hello World", out)
+        self.assertIn("<strong>&lt;module&gt;</strong>", out)
         # By default we emit HTML markup.
         self.assertIn('<p>', out)
         self.assertIn('</p>', out)

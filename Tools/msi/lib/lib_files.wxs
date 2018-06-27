@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <?define exts=pyexpat;select;unicodedata;winsound;_bz2;_elementtree;_socket;_ssl;_msi;_ctypes;_hashlib;_multiprocessing;_lzma;_decimal;_overlapped;_sqlite3;_asyncio ?>
+    <?define exts=pyexpat;select;unicodedata;winsound;_bz2;_elementtree;_socket;_ssl;_msi;_ctypes;_hashlib;_multiprocessing;_lzma;_decimal;_overlapped;_sqlite3;_asyncio;_queue;_distutils_findvs;_contextvars ?>
     <Fragment>
         <ComponentGroup Id="lib_extensions">
             <?foreach ext in $(var.exts)?>
@@ -13,6 +13,12 @@
             
             <Component Id="sqlite3.dll" Directory="DLLs" Guid="*">
                 <File Name="sqlite3.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="libcrypto.dll" Directory="DLLs" Guid="*">
+                <File Name="libcrypto$(var.ssltag).dll" KeyPath="yes" />
+            </Component>
+            <Component Id="libssl.dll" Directory="DLLs" Guid="*">
+                <File Name="libssl$(var.ssltag).dll" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
@@ -29,6 +35,12 @@
             
             <Component Id="sqlite3.pdb" Directory="DLLs" Guid="*">
                 <File Name="sqlite3.pdb" />
+            </Component>
+            <Component Id="libcrypto.pdb" Directory="DLLs" Guid="*">
+                <File Name="libcrypto$(var.ssltag).pdb" KeyPath="yes" />
+            </Component>
+            <Component Id="libssl.pdb" Directory="DLLs" Guid="*">
+                <File Name="libssl$(var.ssltag).pdb" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>

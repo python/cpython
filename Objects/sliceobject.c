@@ -14,6 +14,8 @@ this type and there is exactly one in existence.
 */
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 
 static PyObject *
@@ -34,13 +36,13 @@ ellipsis_repr(PyObject *op)
 }
 
 static PyObject *
-ellipsis_reduce(PyObject *op)
+ellipsis_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     return PyUnicode_FromString("Ellipsis");
 }
 
 static PyMethodDef ellipsis_methods[] = {
-    {"__reduce__", (PyCFunction)ellipsis_reduce, METH_NOARGS, NULL},
+    {"__reduce__", ellipsis_reduce, METH_NOARGS, NULL},
     {NULL, NULL}
 };
 
@@ -297,7 +299,7 @@ slice_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     start = stop = step = NULL;
 
-    if (!_PyArg_NoKeywords("slice()", kw))
+    if (!_PyArg_NoKeywords("slice", kw))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "slice", 1, 3, &start, &stop, &step))
@@ -544,7 +546,7 @@ S. Out of bounds indices are clipped in a manner consistent with the\n\
 handling of normal slices.");
 
 static PyObject *
-slice_reduce(PySliceObject* self)
+slice_reduce(PySliceObject* self, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("O(OOO)", Py_TYPE(self), self->start, self->stop, self->step);
 }

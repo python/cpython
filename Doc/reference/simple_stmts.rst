@@ -587,7 +587,7 @@ printed::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
-   ZeroDivisionError: int division or modulo by zero
+   ZeroDivisionError: division by zero
 
    The above exception was the direct cause of the following exception:
 
@@ -606,7 +606,7 @@ attached as the new exception's :attr:`__context__` attribute::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
-   ZeroDivisionError: int division or modulo by zero
+   ZeroDivisionError: division by zero
 
    During handling of the above exception, another exception occurred:
 
@@ -614,9 +614,27 @@ attached as the new exception's :attr:`__context__` attribute::
      File "<stdin>", line 4, in <module>
    RuntimeError: Something bad happened
 
+Exception chaining can be explicitly suppressed by specifying :const:`None` in
+the ``from`` clause::
+
+   >>> try:
+   ...     print(1 / 0)
+   ... except:
+   ...     raise RuntimeError("Something bad happened") from None
+   ...
+   Traceback (most recent call last):
+     File "<stdin>", line 4, in <module>
+   RuntimeError: Something bad happened
+
 Additional information on exceptions can be found in section :ref:`exceptions`,
 and information about handling exceptions is in section :ref:`try`.
 
+.. versionchanged:: 3.3
+    :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
+
+.. versionadded:: 3.3
+    The ``__suppress_context__`` attribute to suppress automatic display of the
+    exception context.
 
 .. _break:
 
@@ -668,9 +686,8 @@ The :keyword:`continue` statement
    continue_stmt: "continue"
 
 :keyword:`continue` may only occur syntactically nested in a :keyword:`for` or
-:keyword:`while` loop, but not nested in a function or class definition or
-:keyword:`finally` clause within that loop.  It continues with the next
-cycle of the nearest enclosing loop.
+:keyword:`while` loop, but not nested in a function or class definition within
+that loop.  It continues with the next cycle of the nearest enclosing loop.
 
 When :keyword:`continue` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`finally` clause is executed before
@@ -835,12 +852,15 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
-.. XXX change this if future is cleaned out
+The only feature in Python 3.7 that requires using the future statement is
+``annotations``.
 
-The features recognized by Python 3.0 are ``absolute_import``, ``division``,
-``generators``, ``unicode_literals``, ``print_function``, ``nested_scopes`` and
-``with_statement``.  They are all redundant because they are always enabled, and
-only kept for backwards compatibility.
+All historical features enabled by the future statement are still recognized
+by Python 3.  The list includes ``absolute_import``, ``division``,
+``generators``, ``generator_stop``, ``unicode_literals``,
+``print_function``, ``nested_scopes`` and ``with_statement``.  They are
+all redundant because they are always enabled, and only kept for
+backwards compatibility.
 
 A future statement is recognized and treated specially at compile time: Changes
 to the semantics of core constructs are often implemented by generating
@@ -913,7 +933,7 @@ annotation.
 
 .. impl-detail::
 
-   The current implementation does not enforce some of these restriction, but
+   The current implementation does not enforce some of these restrictions, but
    programs should not abuse this freedom, as future implementations may enforce
    them or silently change the meaning of the program.
 

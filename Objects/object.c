@@ -2,6 +2,8 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "internal/pystate.h"
+#include "internal/context.h"
 #include "frameobject.h"
 
 #ifdef __cplusplus
@@ -30,18 +32,10 @@ _Py_GetRefTotal(void)
 
 void
 _PyDebug_PrintTotalRefs(void) {
-    PyObject *xoptions, *value;
-    _Py_IDENTIFIER(showrefcount);
-
-    xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
-        return;
-    value = _PyDict_GetItemId(xoptions, &PyId_showrefcount);
-    if (value == Py_True)
-        fprintf(stderr,
-                "[%" PY_FORMAT_SIZE_T "d refs, "
-                "%" PY_FORMAT_SIZE_T "d blocks]\n",
-                _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
+    fprintf(stderr,
+            "[%" PY_FORMAT_SIZE_T "d refs, "
+            "%" PY_FORMAT_SIZE_T "d blocks]\n",
+            _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
 }
 #endif /* Py_REF_DEBUG */
 
@@ -102,17 +96,12 @@ extern Py_ssize_t null_strings, one_strings;
 void
 dump_counts(FILE* f)
 {
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    if (!interp->core_config.show_alloc_count) {
+        return;
+    }
+
     PyTypeObject *tp;
-    PyObject *xoptions, *value;
-    _Py_IDENTIFIER(showalloccount);
-
-    xoptions = PySys_GetXOptions();
-    if (xoptions == NULL)
-        return;
-    value = _PyDict_GetItemId(xoptions, &PyId_showalloccount);
-    if (value != Py_True)
-        return;
-
     for (tp = type_list; tp; tp = tp->tp_next)
         fprintf(f, "%s alloc'd: %" PY_FORMAT_SIZE_T "d, "
             "freed: %" PY_FORMAT_SIZE_T "d, "
@@ -327,9 +316,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     _Py_NewReference(self);
     self->ob_refcnt = refcnt;
 
-    if (PyType_IS_GC(Py_TYPE(self))) {
-        assert(_PyGC_REFS(self) != _PyGC_REFS_UNTRACKED);
-    }
+    assert(!PyType_IS_GC(Py_TYPE(self)) || _PyObject_GC_IS_TRACKED(self));
     /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
      * we need to undo that. */
     _Py_DEC_REFTOTAL;
@@ -428,23 +415,17 @@ _PyObject_Dump(PyObject* op)
     if (op == NULL)
         fprintf(stderr, "NULL\n");
     else {
-#ifdef WITH_THREAD
         PyGILState_STATE gil;
-#endif
         PyObject *error_type, *error_value, *error_traceback;
 
         fprintf(stderr, "object  : ");
-#ifdef WITH_THREAD
         gil = PyGILState_Ensure();
-#endif
 
         PyErr_Fetch(&error_type, &error_value, &error_traceback);
         (void)PyObject_Print(op, stderr, 0);
         PyErr_Restore(error_type, error_value, error_traceback);
 
-#ifdef WITH_THREAD
         PyGILState_Release(gil);
-#endif
         /* XXX(twouters) cast refcount to long until %zd is
            universally available */
         fprintf(stderr, "\n"
@@ -482,7 +463,12 @@ PyObject_Repr(PyObject *v)
     assert(!PyErr_Occurred());
 #endif
 
+    /* It is possible for a type to have a tp_repr representation that loops
+       infinitely. */
+    if (Py_EnterRecursiveCall(" while getting the repr of an object"))
+        return NULL;
     res = (*v->ob_type->tp_repr)(v);
+    Py_LeaveRecursiveCall();
     if (res == NULL)
         return NULL;
     if (!PyUnicode_Check(res)) {
@@ -830,16 +816,11 @@ _PyObject_IsAbstract(PyObject *obj)
     if (obj == NULL)
         return 0;
 
-    isabstract = _PyObject_GetAttrId(obj, &PyId___isabstractmethod__);
-    if (isabstract == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            return 0;
-        }
-        return -1;
+    res = _PyObject_LookupAttrId(obj, &PyId___isabstractmethod__, &isabstract);
+    if (res > 0) {
+        res = PyObject_IsTrue(isabstract);
+        Py_DECREF(isabstract);
     }
-    res = PyObject_IsTrue(isabstract);
-    Py_DECREF(isabstract);
     return res;
 }
 
@@ -902,15 +883,78 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 }
 
 int
-PyObject_HasAttr(PyObject *v, PyObject *name)
+_PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
 {
-    PyObject *res = PyObject_GetAttr(v, name);
-    if (res != NULL) {
-        Py_DECREF(res);
+    PyTypeObject *tp = Py_TYPE(v);
+
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     name->ob_type->tp_name);
+        *result = NULL;
+        return -1;
+    }
+
+    if (tp->tp_getattro == PyObject_GenericGetAttr) {
+        *result = _PyObject_GenericGetAttrWithDict(v, name, NULL, 1);
+        if (*result != NULL) {
+            return 1;
+        }
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+    if (tp->tp_getattro != NULL) {
+        *result = (*tp->tp_getattro)(v, name);
+    }
+    else if (tp->tp_getattr != NULL) {
+        const char *name_str = PyUnicode_AsUTF8(name);
+        if (name_str == NULL) {
+            *result = NULL;
+            return -1;
+        }
+        *result = (*tp->tp_getattr)(v, (char *)name_str);
+    }
+    else {
+        *result = NULL;
+        return 0;
+    }
+
+    if (*result != NULL) {
         return 1;
+    }
+    if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        return -1;
     }
     PyErr_Clear();
     return 0;
+}
+
+int
+_PyObject_LookupAttrId(PyObject *v, _Py_Identifier *name, PyObject **result)
+{
+    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+    if (!oname) {
+        *result = NULL;
+        return -1;
+    }
+    return  _PyObject_LookupAttr(v, oname, result);
+}
+
+int
+PyObject_HasAttr(PyObject *v, PyObject *name)
+{
+    PyObject *res;
+    if (_PyObject_LookupAttr(v, name, &res) < 0) {
+        PyErr_Clear();
+        return 0;
+    }
+    if (res == NULL) {
+        return 0;
+    }
+    Py_DECREF(res);
+    return 1;
 }
 
 int
@@ -1112,10 +1156,13 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
 /* Generic GetAttr functions - put these in your tp_[gs]etattro slot. */
 
 PyObject *
-_PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
+_PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
+                                 PyObject *dict, int suppress)
 {
     /* Make sure the logic of _PyObject_GetMethod is in sync with
        this method.
+
+       When suppress=1, this function suppress AttributeError.
     */
 
     PyTypeObject *tp = Py_TYPE(obj);
@@ -1146,6 +1193,10 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
         f = descr->ob_type->tp_descr_get;
         if (f != NULL && PyDescr_IsData(descr)) {
             res = f(descr, obj, (PyObject *)obj->ob_type);
+            if (res == NULL && suppress &&
+                    PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            }
             goto done;
         }
     }
@@ -1185,6 +1236,10 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
 
     if (f != NULL) {
         res = f(descr, obj, (PyObject *)Py_TYPE(obj));
+        if (res == NULL && suppress &&
+                PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
         goto done;
     }
 
@@ -1194,9 +1249,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
         goto done;
     }
 
-    PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
-                 tp->tp_name, name);
+    if (!suppress) {
+        PyErr_Format(PyExc_AttributeError,
+                     "'%.50s' object has no attribute '%U'",
+                     tp->tp_name, name);
+    }
   done:
     Py_XDECREF(descr);
     Py_DECREF(name);
@@ -1206,7 +1263,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
 PyObject *
 PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 {
-    return _PyObject_GenericGetAttrWithDict(obj, name, NULL);
+    return _PyObject_GenericGetAttrWithDict(obj, name, NULL, 0);
 }
 
 int
@@ -1560,13 +1617,13 @@ NotImplemented_repr(PyObject *op)
 }
 
 static PyObject *
-NotImplemented_reduce(PyObject *op)
+NotImplemented_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     return PyUnicode_FromString("NotImplemented");
 }
 
 static PyMethodDef notimplemented_methods[] = {
-    {"__reduce__", (PyCFunction)NotImplemented_reduce, METH_NOARGS, NULL},
+    {"__reduce__", NotImplemented_reduce, METH_NOARGS, NULL},
     {NULL, NULL}
 };
 
@@ -2028,14 +2085,6 @@ finally:
 
 /* Trashcan support. */
 
-/* Current call-stack depth of tp_dealloc calls. */
-int _PyTrash_delete_nesting = 0;
-
-/* List of objects that still need to be cleaned up, singly linked via their
- * gc headers' gc_prev pointers.
- */
-PyObject *_PyTrash_delete_later = NULL;
-
 /* Add op to the _PyTrash_delete_later list.  Called when the current
  * call-stack depth gets large.  op must be a currently untracked gc'ed
  * object, with refcount 0.  Py_DECREF must already have been called on it.
@@ -2044,10 +2093,10 @@ void
 _PyTrash_deposit_object(PyObject *op)
 {
     assert(PyObject_IS_GC(op));
-    assert(_PyGC_REFS(op) == _PyGC_REFS_UNTRACKED);
+    assert(!_PyObject_GC_IS_TRACKED(op));
     assert(op->ob_refcnt == 0);
-    _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyTrash_delete_later;
-    _PyTrash_delete_later = op;
+    _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyRuntime.gc.trash_delete_later;
+    _PyRuntime.gc.trash_delete_later = op;
 }
 
 /* The equivalent API, using per-thread state recursion info */
@@ -2056,7 +2105,7 @@ _PyTrash_thread_deposit_object(PyObject *op)
 {
     PyThreadState *tstate = PyThreadState_GET();
     assert(PyObject_IS_GC(op));
-    assert(_PyGC_REFS(op) == _PyGC_REFS_UNTRACKED);
+    assert(!_PyObject_GC_IS_TRACKED(op));
     assert(op->ob_refcnt == 0);
     _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *) tstate->trash_delete_later;
     tstate->trash_delete_later = op;
@@ -2068,11 +2117,11 @@ _PyTrash_thread_deposit_object(PyObject *op)
 void
 _PyTrash_destroy_chain(void)
 {
-    while (_PyTrash_delete_later) {
-        PyObject *op = _PyTrash_delete_later;
+    while (_PyRuntime.gc.trash_delete_later) {
+        PyObject *op = _PyRuntime.gc.trash_delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
-        _PyTrash_delete_later =
+        _PyRuntime.gc.trash_delete_later =
             (PyObject*) _Py_AS_GC(op)->gc.gc_prev;
 
         /* Call the deallocator directly.  This used to try to
@@ -2082,9 +2131,9 @@ _PyTrash_destroy_chain(void)
          * up distorting allocation statistics.
          */
         assert(op->ob_refcnt == 0);
-        ++_PyTrash_delete_nesting;
+        ++_PyRuntime.gc.trash_delete_nesting;
         (*dealloc)(op);
-        --_PyTrash_delete_nesting;
+        --_PyRuntime.gc.trash_delete_nesting;
     }
 }
 
@@ -2093,6 +2142,19 @@ void
 _PyTrash_thread_destroy_chain(void)
 {
     PyThreadState *tstate = PyThreadState_GET();
+    /* We need to increase trash_delete_nesting here, otherwise,
+       _PyTrash_thread_destroy_chain will be called recursively
+       and then possibly crash.  An example that may crash without
+       increase:
+           N = 500000  # need to be large enough
+           ob = object()
+           tups = [(ob,) for i in range(N)]
+           for i in range(49):
+               tups = [(tup,) for tup in tups]
+           del tups
+    */
+    assert(tstate->trash_delete_nesting == 0);
+    ++tstate->trash_delete_nesting;
     while (tstate->trash_delete_later) {
         PyObject *op = tstate->trash_delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
@@ -2107,10 +2169,10 @@ _PyTrash_thread_destroy_chain(void)
          * up distorting allocation statistics.
          */
         assert(op->ob_refcnt == 0);
-        ++tstate->trash_delete_nesting;
         (*dealloc)(op);
-        --tstate->trash_delete_nesting;
+        assert(tstate->trash_delete_nesting == 1);
     }
+    --tstate->trash_delete_nesting;
 }
 
 #ifndef Py_TRACE_REFS

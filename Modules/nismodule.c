@@ -137,7 +137,7 @@ nis_foreach (int instatus, char *inkey, int inkeylen, char *inval,
 }
 
 static PyObject *
-nis_get_default_domain (PyObject *self)
+nis_get_default_domain (PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     char *domain;
     int err;
@@ -169,6 +169,7 @@ nis_match (PyObject *self, PyObject *args, PyObject *kwdict)
         return NULL;
     if ((bkey = PyUnicode_EncodeFSDefault(ukey)) == NULL)
         return NULL;
+    /* check for embedded null bytes */
     if (PyBytes_AsStringAndSize(bkey, &key, &keylen) == -1) {
         Py_DECREF(bkey);
         return NULL;
@@ -431,7 +432,7 @@ static PyMethodDef nis_methods[] = {
     {"maps",                    (PyCFunction)nis_maps,
                                     METH_VARARGS | METH_KEYWORDS,
                                     maps__doc__},
-    {"get_default_domain",      (PyCFunction)nis_get_default_domain,
+    {"get_default_domain",      nis_get_default_domain,
                                     METH_NOARGS,
                                     get_default_domain__doc__},
     {NULL,                      NULL}            /* Sentinel */

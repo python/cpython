@@ -6,7 +6,8 @@
     <OutDir>$(BuildPath)</OutDir>
     <OutDir Condition="!HasTrailingSlash($(OutDir))">$(OutDir)\</OutDir>
     <Py_IntDir Condition="'$(Py_IntDir)' == ''">$(MSBuildThisFileDirectory)obj\</Py_IntDir>
-    <IntDir>$(Py_IntDir)\$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir>$(IntDir.Replace(`\\`, `\`))</IntDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
     <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
     <GenerateManifest>false</GenerateManifest>
@@ -147,12 +148,28 @@ foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses
              Targets="CleanAll" />
   </Target>
 
+  <Target Name="CopyPGCFiles" BeforeTargets="PrepareForBuild" Condition="$(Configuration) == 'PGUpdate'">
+    <ItemGroup>
+      <_PGCFiles Include="$(OutDir)instrumented\$(TargetName)!*.pgc" />
+      <_PGDFile Include="$(OutDir)instrumented\$(TargetName).pgd" />
+      <_CopyFiles Include="@(_PGCFiles);@(_PGDFile)" Condition="Exists(%(FullPath))" />
+    </ItemGroup>
+    <Delete Files="@(_CopyFiles->'$(OutDir)%(Filename)%(Extension)')" />
+    <Error Text="PGO run did not succeed (no $(TargetName)!*.pgc files) and there is no data to merge"
+           Condition="$(RequirePGCFiles) == 'true' and @(_PGCFiles) == ''" />
+    <Copy SourceFiles="@(_CopyFiles)"
+          DestinationFolder="$(OutDir)"
+          UseHardLinksIfPossible="true"
+          OverwriteReadOnlyFiles="true" />
+  </Target>
+
   <PropertyGroup>
-    <SdkBinPath Condition="'$(SdkBinPath)' == '' or !Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot10)\bin\x86</SdkBinPath>
+    <SdkBinPath Condition="'$(SdkBinPath)' == '' or !Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot10)\bin\$(DefaultWindowsSDKVersion)\x86</SdkBinPath>
+    <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot10)\bin\x86</SdkBinPath>
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot81)\bin\x86</SdkBinPath>
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot)\bin\x86</SdkBinPath>
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A@InstallationFolder)\Bin\</SdkBinPath>
-    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificate)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /q /n "$(SigningCertificate)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
+    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificate)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /q /a /n "$(SigningCertificate)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
     <_MakeCatCommand Condition="Exists($(SdkBinPath))">"$(SdkBinPath)\makecat.exe"</_MakeCatCommand>
   </PropertyGroup>
   

@@ -57,6 +57,24 @@ _testfunc_large_struct_update_value(Test in)
     ((volatile Test *)&in)->third = 0x0badf00d;
 }
 
+typedef struct {
+    unsigned int first;
+    unsigned int second;
+} TestReg;
+
+
+EXPORT(TestReg) last_tfrsuv_arg = {0};
+
+
+EXPORT(void)
+_testfunc_reg_struct_update_value(TestReg in)
+{
+    last_tfrsuv_arg = in;
+    ((volatile TestReg *)&in)->first = 0x0badf00d;
+    ((volatile TestReg *)&in)->second = 0x0badf00d;
+}
+
+
 EXPORT(void)testfunc_array(int values[4])
 {
     printf("testfunc_array %d %d %d %d\n",
@@ -392,8 +410,8 @@ EXPORT(void) _py_func(void)
 {
 }
 
-EXPORT(long long) last_tf_arg_s;
-EXPORT(unsigned long long) last_tf_arg_u;
+EXPORT(long long) last_tf_arg_s = 0;
+EXPORT(unsigned long long) last_tf_arg_u = 0;
 
 struct BITS {
     int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;

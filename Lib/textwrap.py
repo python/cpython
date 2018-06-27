@@ -450,8 +450,6 @@ def dedent(text):
                 if x != y:
                     margin = margin[:i]
                     break
-            else:
-                margin = margin[:len(indent)]
 
     # sanity check (testing/debugging only)
     if 0 and margin:

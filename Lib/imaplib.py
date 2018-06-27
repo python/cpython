@@ -318,9 +318,12 @@ class IMAP4:
         self.file.close()
         try:
             self.sock.shutdown(socket.SHUT_RDWR)
-        except OSError as e:
-            # The server might already have closed the connection
-            if e.errno != errno.ENOTCONN:
+        except OSError as exc:
+            # The server might already have closed the connection.
+            # On Windows, this may result in WSAEINVAL (error 10022):
+            # An invalid operation was attempted.
+            if (exc.errno != errno.ENOTCONN
+               and getattr(exc, 'winerror', 0) != 10022):
                 raise
         finally:
             self.sock.close()
@@ -1163,7 +1166,7 @@ class IMAP4:
         self.mo = cre.match(s)
         if __debug__:
             if self.mo is not None and self.debug >= 5:
-                self._mesg("\tmatched r'%r' => %r" % (cre.pattern, self.mo.groups()))
+                self._mesg("\tmatched %r => %r" % (cre.pattern, self.mo.groups()))
         return self.mo is not None
 
 

@@ -6,6 +6,8 @@
 Streams (coroutine based API)
 +++++++++++++++++++++++++++++
 
+**Source code:** :source:`Lib/asyncio/streams.py`
+
 Stream functions
 ================
 
@@ -16,7 +18,7 @@ Stream functions
    exactly what you want, feel free to copy their code.
 
 
-.. coroutinefunction:: open_connection(host=None, port=None, \*, loop=None, limit=None, \*\*kwds)
+.. coroutinefunction:: open_connection(host=None, port=None, \*, loop=None, limit=None, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None, ssl_handshake_timeout=None)
 
    A wrapper for :meth:`~AbstractEventLoop.create_connection()` returning a (reader,
    writer) pair.
@@ -24,63 +26,101 @@ Stream functions
    The reader returned is a :class:`StreamReader` instance; the writer is
    a :class:`StreamWriter` instance.
 
-   The arguments are all the usual arguments to
-   :meth:`AbstractEventLoop.create_connection` except *protocol_factory*; most
-   common are positional host and port, with various optional keyword arguments
-   following.
+   When specified, the *loop* argument determines which event loop to use,
+   and the *limit* argument determines the buffer size limit used by the
+   returned :class:`StreamReader` instance.
 
-   Additional optional keyword arguments are *loop* (to set the event loop
-   instance to use) and *limit* (to set the buffer limit passed to the
-   :class:`StreamReader`).
+   The rest of the arguments are passed directly to
+   :meth:`AbstractEventLoop.create_connection`.
 
    This function is a :ref:`coroutine <coroutine>`.
 
-.. coroutinefunction:: start_server(client_connected_cb, host=None, port=None, \*, loop=None, limit=None, \*\*kwds)
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* parameter.
+
+.. coroutinefunction:: start_server(client_connected_cb, host=None, port=None, \*, loop=None, limit=None, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None, ssl_handshake_timeout=None, start_serving=True)
 
    Start a socket server, with a callback for each client connected. The return
    value is the same as :meth:`~AbstractEventLoop.create_server()`.
 
-   The *client_connected_cb* parameter is called with two parameters:
-   *client_reader*, *client_writer*.  *client_reader* is a
-   :class:`StreamReader` object, while *client_writer* is a
-   :class:`StreamWriter` object.  The *client_connected_cb* parameter can
-   either be a plain callback function or a :ref:`coroutine function
-   <coroutine>`; if it is a coroutine function, it will be automatically
-   converted into a :class:`Task`.
+   The *client_connected_cb* callback is called whenever a new client
+   connection is established.  It receives a reader/writer pair as two
+   arguments, the first is a :class:`StreamReader` instance,
+   and the second is a :class:`StreamWriter` instance.
 
-   The rest of the arguments are all the usual arguments to
-   :meth:`~AbstractEventLoop.create_server()` except *protocol_factory*; most
-   common are positional *host* and *port*, with various optional keyword
-   arguments following.
+   *client_connected_cb* accepts a plain callable or a
+   :ref:`coroutine function <coroutine>`; if it is a coroutine function,
+   it will be automatically converted into a :class:`Task`.
 
-   Additional optional keyword arguments are *loop* (to set the event loop
-   instance to use) and *limit* (to set the buffer limit passed to the
-   :class:`StreamReader`).
+   When specified, the *loop* argument determines which event loop to use,
+   and the *limit* argument determines the buffer size limit used by the
+   :class:`StreamReader` instance passed to *client_connected_cb*.
+
+   The rest of the arguments are passed directly to
+   :meth:`~AbstractEventLoop.create_server()`.
 
    This function is a :ref:`coroutine <coroutine>`.
 
-.. coroutinefunction:: open_unix_connection(path=None, \*, loop=None, limit=None, **kwds)
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* and *start_serving* parameters.
+
+.. coroutinefunction:: open_unix_connection(path=None, \*, loop=None, limit=None, ssl=None, sock=None, server_hostname=None, ssl_handshake_timeout=None)
 
    A wrapper for :meth:`~AbstractEventLoop.create_unix_connection()` returning
    a (reader, writer) pair.
 
-   See :func:`open_connection` for information about return value and other
-   details.
+   When specified, the *loop* argument determines which event loop to use,
+   and the *limit* argument determines the buffer size limit used by the
+   returned :class:`StreamReader` instance.
+
+   The rest of the arguments are passed directly to
+   :meth:`~AbstractEventLoop.create_unix_connection()`.
 
    This function is a :ref:`coroutine <coroutine>`.
 
    Availability: UNIX.
 
-.. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \*, loop=None, limit=None, **kwds)
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* parameter.
+
+   .. versionchanged:: 3.7
+
+      The *path* parameter can now be a :term:`path-like object`
+
+.. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \*, loop=None, limit=None, sock=None, backlog=100, ssl=None, ssl_handshake_timeout=None, start_serving=True)
 
    Start a UNIX Domain Socket server, with a callback for each client connected.
 
-   See :func:`start_server` for information about return value and other
-   details.
+   The *client_connected_cb* callback is called whenever a new client
+   connection is established.  It receives a reader/writer pair as two
+   arguments, the first is a :class:`StreamReader` instance,
+   and the second is a :class:`StreamWriter` instance.
+
+   *client_connected_cb* accepts a plain callable or a
+   :ref:`coroutine function <coroutine>`; if it is a coroutine function,
+   it will be automatically converted into a :class:`Task`.
+
+   When specified, the *loop* argument determines which event loop to use,
+   and the *limit* argument determines the buffer size limit used by the
+   :class:`StreamReader` instance passed to *client_connected_cb*.
+
+   The rest of the arguments are passed directly to
+   :meth:`~AbstractEventLoop.create_unix_server()`.
 
    This function is a :ref:`coroutine <coroutine>`.
 
    Availability: UNIX.
+
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* and *start_serving* parameters.
+
+   .. versionchanged:: 3.7
+
+      The *path* parameter can now be a :term:`path-like object`.
 
 
 StreamReader
@@ -199,6 +239,21 @@ StreamWriter
 
       Close the transport: see :meth:`BaseTransport.close`.
 
+   .. method:: is_closing()
+
+      Return ``True`` if the writer is closing or is closed.
+
+      .. versionadded:: 3.7
+
+   .. coroutinemethod:: wait_closed()
+
+      Wait until the writer is closed.
+
+      Should be called after :meth:`close`  to wait until the underlying
+      connection (and the associated transport/protocol pair) is closed.
+
+      .. versionadded:: 3.7
+
    .. coroutinemethod:: drain()
 
       Let the write buffer of the underlying transport a chance to be flushed.
@@ -206,7 +261,7 @@ StreamWriter
       The intended use is to write::
 
           w.write(data)
-          yield from w.drain()
+          await w.drain()
 
       When the size of the transport buffer reaches the high-water limit (the
       protocol is paused), block until the size of the buffer is drained down
@@ -299,15 +354,14 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
     import asyncio
 
-    @asyncio.coroutine
-    def tcp_echo_client(message, loop):
-        reader, writer = yield from asyncio.open_connection('127.0.0.1', 8888,
-                                                            loop=loop)
+    async def tcp_echo_client(message, loop):
+        reader, writer = await asyncio.open_connection('127.0.0.1', 8888,
+                                                       loop=loop)
 
         print('Send: %r' % message)
         writer.write(message.encode())
 
-        data = yield from reader.read(100)
+        data = await reader.read(100)
         print('Received: %r' % data.decode())
 
         print('Close the socket')
@@ -333,16 +387,15 @@ TCP echo server using the :func:`asyncio.start_server` function::
 
     import asyncio
 
-    @asyncio.coroutine
-    def handle_echo(reader, writer):
-        data = yield from reader.read(100)
+    async def handle_echo(reader, writer):
+        data = await reader.read(100)
         message = data.decode()
         addr = writer.get_extra_info('peername')
         print("Received %r from %r" % (message, addr))
 
         print("Send: %r" % message)
         writer.write(data)
-        yield from writer.drain()
+        await writer.drain()
 
         print("Close the client socket")
         writer.close()
@@ -385,13 +438,13 @@ Simple example querying HTTP headers of the URL passed on the command line::
             connect = asyncio.open_connection(url.hostname, 443, ssl=True)
         else:
             connect = asyncio.open_connection(url.hostname, 80)
-        reader, writer = yield from connect
+        reader, writer = await connect
         query = ('HEAD {path} HTTP/1.0\r\n'
                  'Host: {hostname}\r\n'
                  '\r\n').format(path=url.path or '/', hostname=url.hostname)
         writer.write(query.encode('latin-1'))
         while True:
-            line = yield from reader.readline()
+            line = await reader.readline()
             if not line:
                 break
             line = line.decode('latin1').rstrip()
@@ -424,24 +477,20 @@ Coroutine waiting until a socket receives data using the
 :func:`open_connection` function::
 
     import asyncio
-    try:
-        from socket import socketpair
-    except ImportError:
-        from asyncio.windows_utils import socketpair
+    from socket import socketpair
 
-    @asyncio.coroutine
-    def wait_for_data(loop):
+    async def wait_for_data(loop):
         # Create a pair of connected sockets
         rsock, wsock = socketpair()
 
         # Register the open socket to wait for data
-        reader, writer = yield from asyncio.open_connection(sock=rsock, loop=loop)
+        reader, writer = await asyncio.open_connection(sock=rsock, loop=loop)
 
         # Simulate the reception of data from the network
         loop.call_soon(wsock.send, 'abc'.encode())
 
         # Wait for data
-        data = yield from reader.read(100)
+        data = await reader.read(100)
 
         # Got data, we are done: close the socket
         print("Received:", data.decode())
@@ -464,4 +513,3 @@ Coroutine waiting until a socket receives data using the
    <asyncio-watch-read-event>` example uses the low-level
    :meth:`AbstractEventLoop.add_reader` method to register the file descriptor of a
    socket.
-

@@ -4,6 +4,12 @@
 Classes
 *******
 
+Classes provide a means of bundling data and functionality together.  Creating
+a new class creates a new *type* of object, allowing new *instances* of that
+type to be made.  Each class instance can have attributes attached to it for
+maintaining its state.  Class instances can also have methods (defined by its
+class) for modifying its state.
+
 Compared with other programming languages, Python's class mechanism adds classes
 with a minimum of new syntax and semantics.  It is a mixture of the class
 mechanisms found in C++ and Modula-3.  Python classes provide all the standard
@@ -870,9 +876,9 @@ Generator Expressions
 =====================
 
 Some simple generators can be coded succinctly as expressions using a syntax
-similar to list comprehensions but with parentheses instead of brackets.  These
-expressions are designed for situations where the generator is used right away
-by an enclosing function.  Generator expressions are more compact but less
+similar to list comprehensions but with parentheses instead of square brackets.
+These expressions are designed for situations where the generator is used right
+away by an enclosing function.  Generator expressions are more compact but less
 versatile than full generator definitions and tend to be more memory friendly
 than equivalent list comprehensions.
 
@@ -886,10 +892,7 @@ Examples::
    >>> sum(x*y for x,y in zip(xvec, yvec))         # dot product
    260
 
-   >>> from math import pi, sin
-   >>> sine_table = {x: sin(x*pi/180) for x in range(0, 91)}
-
-   >>> unique_words = set(word  for line in page  for word in line.split())
+   >>> unique_words = set(word for line in page  for word in line.split())
 
    >>> valedictorian = max((student.gpa, student.name) for student in graduates)
 

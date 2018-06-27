@@ -3,13 +3,18 @@ Dialog for building Tkinter accelerator key bindings
 """
 from tkinter import *
 from tkinter.ttk import Scrollbar
-import tkinter.messagebox as tkMessageBox
+from tkinter import messagebox
 import string
 import sys
 
+
 class GetKeysDialog(Toplevel):
+
+    # Dialog title for invalid key sequence
+    keyerror_title = 'Key Sequence Error'
+
     def __init__(self, parent, title, action, currentKeySequences,
-                 _htest=False, _utest=False):
+                 *, _htest=False, _utest=False):
         """
         action - string, the name of the virtual event these keys will be
                  mapped to
@@ -53,6 +58,10 @@ class GetKeysDialog(Toplevel):
         if not _utest:
             self.deiconify() #geometry set, unhide
             self.wait_window()
+
+    def showerror(self, *args, **kwargs):
+        # Make testing easier.  Replace in #30751.
+        messagebox.showerror(*args, **kwargs)
 
     def CreateWidgets(self):
         frameMain = Frame(self,borderwidth=2,relief=SUNKEN)
@@ -186,7 +195,7 @@ class GetKeysDialog(Toplevel):
 
     def LoadFinalKeyList(self):
         #these tuples are also available for use in validity checks
-        self.functionKeys=('F1','F2','F2','F4','F5','F6','F7','F8','F9',
+        self.functionKeys=('F1','F2','F3','F4','F5','F6','F7','F8','F9',
                 'F10','F11','F12')
         self.alphanumKeys=tuple(string.ascii_lowercase+string.digits)
         self.punctuationKeys=tuple('~!@#%^&*()_-+={}[]|;:,.<>/?')
@@ -219,53 +228,71 @@ class GetKeysDialog(Toplevel):
         return key
 
     def OK(self, event=None):
-        if self.advanced or self.KeysOK():  # doesn't check advanced string yet
-            self.result=self.keyString.get()
-            self.destroy()
+        keys = self.keyString.get().strip()
+        if not keys:
+            self.showerror(title=self.keyerror_title, parent=self,
+                           message="No key specified.")
+            return
+        if (self.advanced or self.KeysOK(keys)) and self.bind_ok(keys):
+            self.result = keys
+        self.destroy()
 
     def Cancel(self, event=None):
         self.result=''
         self.destroy()
 
-    def KeysOK(self):
+    def KeysOK(self, keys):
         '''Validity check on user's 'basic' keybinding selection.
 
         Doesn't check the string produced by the advanced dialog because
         'modifiers' isn't set.
 
         '''
-        keys = self.keyString.get()
-        keys.strip()
         finalKey = self.listKeysFinal.get(ANCHOR)
         modifiers = self.GetModifiers()
-        # create a key sequence list for overlap check:
-        keySequence = keys.split()
         keysOK = False
-        title = 'Key Sequence Error'
-        if not keys:
-            tkMessageBox.showerror(title=title, parent=self,
-                                   message='No keys specified.')
-        elif not keys.endswith('>'):
-            tkMessageBox.showerror(title=title, parent=self,
-                                   message='Missing the final Key')
+        title = self.keyerror_title
+        key_sequences = [key for keylist in self.currentKeySequences
+                             for key in keylist]
+        if not keys.endswith('>'):
+            self.showerror(title, parent=self,
+                           message='Missing the final Key')
         elif (not modifiers
               and finalKey not in self.functionKeys + self.moveKeys):
-            tkMessageBox.showerror(title=title, parent=self,
-                                   message='No modifier key(s) specified.')
+            self.showerror(title=title, parent=self,
+                           message='No modifier key(s) specified.')
         elif (modifiers == ['Shift']) \
                  and (finalKey not in
                       self.functionKeys + self.moveKeys + ('Tab', 'Space')):
             msg = 'The shift modifier by itself may not be used with'\
                   ' this key symbol.'
-            tkMessageBox.showerror(title=title, parent=self, message=msg)
-        elif keySequence in self.currentKeySequences:
+            self.showerror(title=title, parent=self, message=msg)
+        elif keys in key_sequences:
             msg = 'This key combination is already in use.'
-            tkMessageBox.showerror(title=title, parent=self, message=msg)
+            self.showerror(title=title, parent=self, message=msg)
         else:
             keysOK = True
         return keysOK
 
+    def bind_ok(self, keys):
+        "Return True if Tcl accepts the new keys else show message."
+
+        try:
+            binding = self.bind(keys, lambda: None)
+        except TclError as err:
+            self.showerror(
+                    title=self.keyerror_title, parent=self,
+                    message=(f'The entered key sequence is not accepted.\n\n'
+                             f'Error: {err}'))
+            return False
+        else:
+            self.unbind(keys, binding)
+            return True
+
 
 if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_config_key', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(GetKeysDialog)

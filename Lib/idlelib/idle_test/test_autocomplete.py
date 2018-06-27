@@ -1,21 +1,16 @@
-''' Test autocomplete and autocomple_w
+"Test autocomplete, coverage 57%."
 
-Coverage of autocomple: 56%
-'''
-import os
 import unittest
 from unittest.mock import Mock, patch
 from test.support import requires
 from tkinter import Tk, Text
+import os
 
 import idlelib.autocomplete as ac
 import idlelib.autocomplete_w as acw
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Event
 
-class AutoCompleteWindow:
-    def complete():
-        return
 
 class DummyEditwin:
     def __init__(self, root, text):

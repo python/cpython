@@ -38,16 +38,21 @@ highlight_language = 'python3'
 needs_sphinx = '1.2'
 
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['venv/*', 'README.rst']
+venvdir = os.getenv('VENVDIR', 'venv')
+exclude_patterns = [venvdir+'/*', 'README.rst']
 
 
 # Options for HTML output
 # -----------------------
 
 # Use our custom theme.
-html_theme = 'pydoctheme'
+html_theme = 'python_docs_theme'
 html_theme_path = ['tools']
-html_theme_options = {'collapsiblesidebar': True}
+html_theme_options = {
+    'collapsiblesidebar': True,
+    'issues_url': 'https://docs.python.org/3/bugs.html',
+    'root_include_title': False   # We use the version switcher instead.
+}
 
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
@@ -89,14 +94,17 @@ html_split_index = True
 # Options for LaTeX output
 # ------------------------
 
+latex_engine = 'xelatex'
+
 # Get LaTeX to handle Unicode correctly
-latex_elements = {'inputenc': r'\usepackage[utf8x]{inputenc}', 'utf8extra': ''}
+latex_elements = {
+}
 
 # Additional stuff for the LaTeX preamble.
 latex_elements['preamble'] = r'''
 \authoraddress{
-  \strong{Python Software Foundation}\\
-  Email: \email{docs@python.org}
+  \sphinxstrong{Python Software Foundation}\\
+  Email: \sphinxemail{docs@python.org}
 }
 \let\Verbatim=\OriginalVerbatim
 \let\endVerbatim=\endOriginalVerbatim
@@ -106,7 +114,7 @@ latex_elements['preamble'] = r'''
 latex_elements['papersize'] = 'a4'
 
 # The font size ('10pt', '11pt' or '12pt').
-latex_elements['font_size'] = '10pt'
+latex_elements['pointsize'] = '10pt'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).

@@ -14,7 +14,7 @@ the standard audio interface for Linux and recent versions of FreeBSD.
 .. Things will get more complicated for future Linux versions, since
    ALSA is in the standard kernel as of 2.5.x.  Presumably if you
    use ALSA, you'll have to make sure its OSS compatibility layer
-   is active to use ossaudiodev, but you're gonna need it for the vast
+   is active to use ossaudiodev, but you're going to need it for the vast
    majority of Linux audio apps anyway.
 
    Sounds like things are also complicated for other BSDs.  In response
@@ -447,4 +447,3 @@ The remaining methods are specific to audio mixing:
    microphone input::
 
       mixer.setrecsrc (1 << ossaudiodev.SOUND_MIXER_MIC)
-

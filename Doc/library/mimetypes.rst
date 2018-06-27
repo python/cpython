@@ -186,78 +186,78 @@ than one MIME-type database; it provides an interface similar to the one of the
    loaded "on top" of the default database.
 
 
-.. attribute:: MimeTypes.suffix_map
+   .. attribute:: MimeTypes.suffix_map
 
-   Dictionary mapping suffixes to suffixes.  This is used to allow recognition of
-   encoded files for which the encoding and the type are indicated by the same
-   extension.  For example, the :file:`.tgz` extension is mapped to :file:`.tar.gz`
-   to allow the encoding and type to be recognized separately.  This is initially a
-   copy of the global :data:`suffix_map` defined in the module.
-
-
-.. attribute:: MimeTypes.encodings_map
-
-   Dictionary mapping filename extensions to encoding types.  This is initially a
-   copy of the global :data:`encodings_map` defined in the module.
+      Dictionary mapping suffixes to suffixes.  This is used to allow recognition of
+      encoded files for which the encoding and the type are indicated by the same
+      extension.  For example, the :file:`.tgz` extension is mapped to :file:`.tar.gz`
+      to allow the encoding and type to be recognized separately.  This is initially a
+      copy of the global :data:`suffix_map` defined in the module.
 
 
-.. attribute:: MimeTypes.types_map
+   .. attribute:: MimeTypes.encodings_map
 
-   Tuple containing two dictionaries, mapping filename extensions to MIME types:
-   the first dictionary is for the non-standards types and the second one is for
-   the standard types. They are initialized by :data:`common_types` and
-   :data:`types_map`.
+      Dictionary mapping filename extensions to encoding types.  This is initially a
+      copy of the global :data:`encodings_map` defined in the module.
 
 
-.. attribute:: MimeTypes.types_map_inv
+   .. attribute:: MimeTypes.types_map
 
-   Tuple containing two dictionaries, mapping MIME types to a list of filename
-   extensions: the first dictionary is for the non-standards types and the
-   second one is for the standard types. They are initialized by
-   :data:`common_types` and :data:`types_map`.
-
-
-.. method:: MimeTypes.guess_extension(type, strict=True)
-
-   Similar to the :func:`guess_extension` function, using the tables stored as part
-   of the object.
+      Tuple containing two dictionaries, mapping filename extensions to MIME types:
+      the first dictionary is for the non-standards types and the second one is for
+      the standard types. They are initialized by :data:`common_types` and
+      :data:`types_map`.
 
 
-.. method:: MimeTypes.guess_type(url, strict=True)
+   .. attribute:: MimeTypes.types_map_inv
 
-   Similar to the :func:`guess_type` function, using the tables stored as part of
-   the object.
-
-
-.. method:: MimeTypes.guess_all_extensions(type, strict=True)
-
-   Similar to the :func:`guess_all_extensions` function, using the tables stored
-   as part of the object.
+      Tuple containing two dictionaries, mapping MIME types to a list of filename
+      extensions: the first dictionary is for the non-standards types and the
+      second one is for the standard types. They are initialized by
+      :data:`common_types` and :data:`types_map`.
 
 
-.. method:: MimeTypes.read(filename, strict=True)
+   .. method:: MimeTypes.guess_extension(type, strict=True)
 
-   Load MIME information from a file named *filename*.  This uses :meth:`readfp` to
-   parse the file.
-
-   If *strict* is ``True``, information will be added to list of standard types,
-   else to the list of non-standard types.
+      Similar to the :func:`guess_extension` function, using the tables stored as part
+      of the object.
 
 
-.. method:: MimeTypes.readfp(fp, strict=True)
+   .. method:: MimeTypes.guess_type(url, strict=True)
 
-   Load MIME type information from an open file *fp*.  The file must have the format of
-   the standard :file:`mime.types` files.
-
-   If *strict* is ``True``, information will be added to the list of standard
-   types, else to the list of non-standard types.
+      Similar to the :func:`guess_type` function, using the tables stored as part of
+      the object.
 
 
-.. method:: MimeTypes.read_windows_registry(strict=True)
+   .. method:: MimeTypes.guess_all_extensions(type, strict=True)
 
-   Load MIME type information from the Windows registry.  Availability: Windows.
+      Similar to the :func:`guess_all_extensions` function, using the tables stored
+      as part of the object.
 
-   If *strict* is ``True``, information will be added to the list of standard
-   types, else to the list of non-standard types.
 
-   .. versionadded:: 3.2
+   .. method:: MimeTypes.read(filename, strict=True)
+
+      Load MIME information from a file named *filename*.  This uses :meth:`readfp` to
+      parse the file.
+
+      If *strict* is ``True``, information will be added to list of standard types,
+      else to the list of non-standard types.
+
+
+   .. method:: MimeTypes.readfp(fp, strict=True)
+
+      Load MIME type information from an open file *fp*.  The file must have the format of
+      the standard :file:`mime.types` files.
+
+      If *strict* is ``True``, information will be added to the list of standard
+      types, else to the list of non-standard types.
+
+
+   .. method:: MimeTypes.read_windows_registry(strict=True)
+
+      Load MIME type information from the Windows registry.  Availability: Windows.
+
+      If *strict* is ``True``, information will be added to the list of standard
+      types, else to the list of non-standard types.
+
+      .. versionadded:: 3.2

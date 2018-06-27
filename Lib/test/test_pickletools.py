@@ -2,10 +2,9 @@ import pickle
 import pickletools
 from test import support
 from test.pickletester import AbstractPickleTests
-from test.pickletester import AbstractPickleModuleTests
 import unittest
 
-class OptimizedPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
+class OptimizedPickleTests(AbstractPickleTests):
 
     def dumps(self, arg, proto=None):
         return pickletools.optimize(pickle.dumps(arg, proto))
@@ -15,6 +14,9 @@ class OptimizedPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
 
     # Test relies on precise output of dumps()
     test_pickle_to_2x = None
+
+    # Test relies on writing by chunks into a file object.
+    test_framed_write_sizes_with_delayed_writer = None
 
     def test_optimize_long_binget(self):
         data = [str(i) for i in range(257)]
