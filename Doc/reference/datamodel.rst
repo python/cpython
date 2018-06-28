@@ -2109,7 +2109,7 @@ Emulating callable objects
 
    Called when the instance is "called" as a function; if this method is defined,
    ``x(arguments)`` invokes ``x``'s class :meth:`__call__` method, passing
-   it ``x`` and all specified arguments.
+   it ``x`` and all specified ``arguments``.
 
 
 .. _sequence-types:
