@@ -175,7 +175,7 @@ handshake to hang or fail.
 
 ..
 
-.. bpo: 31467
+.. bpo: 31647
 .. date: 2018-05-28-18-40-26
 .. nonce: s4Fad3
 .. section: Library
