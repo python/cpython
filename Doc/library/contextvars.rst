@@ -48,6 +48,8 @@ Context Variables
 
       The name of the variable.  This is a read-only property.
 
+      .. versionadded:: 3.7.1
+
    .. method:: get([default])
 
       Return a value for the context variable for the current context.
