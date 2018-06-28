@@ -1,0 +1,3 @@
+Restore running PyOS_InputHook while waiting for user input at the prompt.
+The restores integration of interactive GUI windows (such as Matplotlib
+figures) with the prompt on Windows.
