@@ -2108,8 +2108,8 @@ Emulating callable objects
    .. index:: pair: call; instance
 
    Called when the instance is "called" as a function; if this method is defined,
-   ``x(arguments)`` invokes the instance's class :meth:`__call__` method, passing
-   it the instance object and all specified arguments.
+   ``x(arguments)`` invokes ``x``'s class :meth:`__call__` method, passing
+   it ``x`` and all specified arguments.
 
 
 .. _sequence-types:
