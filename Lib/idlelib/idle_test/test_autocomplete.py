@@ -1,4 +1,4 @@
-"Test autocomplete, coverage 57%."
+"Test autocomplete, coverage 87%."
 
 import unittest
 from unittest.mock import Mock, patch
@@ -140,7 +140,7 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertIsNone(acp._delayed_completion_id)
         self.assertEqual(acp.open_completions.called, 0)
 
-        # Test that open_completions is call if indexes match.
+        # Test that open_completions is called if indexes match.
         acp._delayed_completion_index = self.text.index('insert')
         acp._delayed_open_completions(1, 2, 3, ac.COMPLETE_FILES)
         self.assertEqual(acp.open_completions.args, (1, 2, 3, 2))
