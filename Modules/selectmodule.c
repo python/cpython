@@ -1317,7 +1317,7 @@ pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #endif
-     return newPyEpoll_Object(type, sizehint, -1);
+    return newPyEpoll_Object(type, sizehint, -1);
 }
 
 
