@@ -156,7 +156,7 @@ class EnumMeta(type):
         # accessible in _EnumDict.__setitem__().
         for key, member in classdict.items():
             if isinstance(member, type):
-                if member.__qualname__.startswith(enum_class_qualname):
+                if member.__qualname__.startswith(enum_class_qualname + "."):
                     classdict.remove_member(key)
 
         # remove any keys listed in _ignore_

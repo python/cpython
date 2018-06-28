@@ -419,6 +419,11 @@ class TestEnum(unittest.TestCase):
             b = Bar
         self.assertEqual(MyTypes2.a.value, Foo)
         self.assertEqual(MyTypes2.b.value, Bar)
+        class SpamEnumNotInner:
+            pass
+        class SpamEnum(Enum):
+            spam = SpamEnumNotInner
+        self.assertEqual(SpamEnum.spam.value, SpamEnumNotInner)
 
     def test_nested_classes_in_enum(self):
         """Support locally-defined nested classes."""
