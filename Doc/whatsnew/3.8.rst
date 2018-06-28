@@ -151,6 +151,8 @@ Removed
 * ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from :mod:`cgi`
   module.  They are deprecated from Python 3.2 or older.
 
+* ``filemode`` function is removed from :mod:`tarfile` module.
+  It is not documented and deprecated since Python 3.3.
 
 
 Porting to Python 3.8
