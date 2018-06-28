@@ -2108,7 +2108,8 @@ Emulating callable objects
    .. index:: pair: call; instance
 
    Called when the instance is "called" as a function; if this method is defined,
-   ``x(arg1, arg2, ...)`` is a shorthand for ``x.__call__(arg1, arg2, ...)``.
+   ``x(arguments)`` invokes the instance's class __call__ method, passing it the
+   instance object and all specified arguments.
 
 
 .. _sequence-types:
