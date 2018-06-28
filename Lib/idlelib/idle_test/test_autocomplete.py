@@ -33,6 +33,7 @@ class AutoCompleteTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         del cls.editor, cls.text
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
 
