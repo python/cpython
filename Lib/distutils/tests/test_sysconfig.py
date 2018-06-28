@@ -91,6 +91,40 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         sysconfig.customize_compiler(comp)
         self.assertEqual(comp.exes['archiver'], 'my_ar -arflags')
 
+    @unittest.skipUnless(get_default_compiler() == 'unix',
+                         'not testing if default compiler is not unix')
+    def test_customize_compiler_flag_inclusion(self):
+        # Clear out environment variables to ensure calls to `get_config_var()`
+        # pick up the flags captured during `./configure`.
+        os.environ.pop('CPPFLAGS', None)
+        os.environ.pop('CFLAGS', None)
+        os.environ.pop('LDSHARED', None)
+
+        cppflags = sysconfig.get_config_var('CPPFLAGS')
+        cflags = sysconfig.get_config_var('CFLAGS')
+        ldflags = sysconfig.get_config_var('LDSHARED')
+
+        class compiler:
+            compiler_type = 'unix'
+
+            def set_executables(self, **kw):
+                self.exes = kw
+
+        comp = compiler()
+        sysconfig.customize_compiler(comp)
+
+        # Ensure CPPFLAGS are present.
+        self.assertIn(cppflags, comp.exes['preprocessor'])
+        self.assertIn(cppflags, comp.exes['compiler'])
+        self.assertIn(cppflags, comp.exes['compiler_so'])
+        self.assertIn(cppflags, comp.exes['linker_so'])
+
+        # Ensure CFLAGS are present.
+        self.assertIn(cflags, comp.exes['compiler'])
+
+        # Ensure LDSHARED are present.
+        self.assertIn(ldflags, comp.exes['linker_so'])
+
     def test_parse_makefile_base(self):
         self.makefile = TESTFN
         fd = open(self.makefile, 'w')
