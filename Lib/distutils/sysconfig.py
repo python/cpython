@@ -170,8 +170,8 @@ def customize_compiler(compiler):
                 _osx_support.customize_compiler(_config_vars)
                 _config_vars['CUSTOMIZED_OSX_COMPILER'] = 'True'
 
-        (cc, cxx, opt, cflags, ccshared, ldshared, shlib_suffix, ar, ar_flags) = \
-            get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
+        (cc, cxx, opt, cppflags, cflags, ccshared, ldshared, shlib_suffix, ar, ar_flags) = \
+            get_config_vars('CC', 'CXX', 'OPT', 'CPPFLAGS', 'CFLAGS',
                             'CCSHARED', 'LDSHARED', 'SHLIB_SUFFIX', 'AR', 'ARFLAGS')
 
         if 'CC' in os.environ:
@@ -197,9 +197,7 @@ def customize_compiler(compiler):
             cflags = opt + ' ' + os.environ['CFLAGS']
             ldshared = ldshared + ' ' + os.environ['CFLAGS']
         if 'CPPFLAGS' in os.environ:
-            cpp = cpp + ' ' + os.environ['CPPFLAGS']
-            cflags = cflags + ' ' + os.environ['CPPFLAGS']
-            ldshared = ldshared + ' ' + os.environ['CPPFLAGS']
+            cppflags = os.environ['CPPFLAGS']
         if 'AR' in os.environ:
             ar = os.environ['AR']
         if 'ARFLAGS' in os.environ:
@@ -207,7 +205,9 @@ def customize_compiler(compiler):
         else:
             archiver = ar + ' ' + ar_flags
 
-        cc_cmd = cc + ' ' + cflags
+        cpp = cpp + ' ' + cppflags
+        ldshared = ldshared + ' ' + cppflags
+        cc_cmd = cc + ' ' + cppflags + ' ' + cflags
         compiler.set_executables(
             preprocessor=cpp,
             compiler=cc_cmd,
