@@ -1,0 +1,3 @@
+Add the captured ``CPPFLAGS`` passed during ``./configure`` to the
+executables when customizing the compiler command in
+``sysconfig.cusomize_compiler`` for building C/C++ Python extensions.
