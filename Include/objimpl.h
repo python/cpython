@@ -277,7 +277,7 @@ extern PyGC_Head *_PyGC_generation0;
 #define _PyGCHead_NEXT(g)        ((PyGC_Head*)(g)->_gc_next)
 #define _PyGCHead_SET_NEXT(g, p) ((g)->_gc_next = (uintptr_t)(p))
 
-// Lowest two bits of _gc_prev is used for flags described below.
+// Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
 #define _PyGCHead_PREV(g) ((PyGC_Head*)((g)->_gc_prev & _PyGC_PREV_MASK))
 #define _PyGCHead_SET_PREV(g, p) do { \
     assert(((uintptr_t)p & ~_PyGC_PREV_MASK) == 0); \
