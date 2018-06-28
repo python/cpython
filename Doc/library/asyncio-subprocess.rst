@@ -112,7 +112,8 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
      *shell*, which should not be specified at all.
 
    Returns a pair of ``(transport, protocol)``, where *transport* is an
-   instance of :class:`BaseSubprocessTransport`.
+   instance of :class:`SubprocessTransport` and *protocol* is an object
+   instantiated by the *protocol_factory*.
 
    This method is a :ref:`coroutine <coroutine>`.
 
@@ -132,7 +133,8 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    the remaining arguments.
 
    Returns a pair of ``(transport, protocol)``, where *transport* is an
-   instance of :class:`BaseSubprocessTransport`.
+   instance of :class:`SubprocessTransport` and *protocol* is an object
+   instantiated by the *protocol_factory*.
 
    It is the application's responsibility to ensure that all whitespace and
    metacharacters are quoted appropriately to avoid `shell injection

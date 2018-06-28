@@ -247,10 +247,10 @@ DatagramTransport
    called with :const:`None` as its argument.
 
 
-BaseSubprocessTransport
------------------------
+SubprocessTransport
+-------------------
 
-.. class:: BaseSubprocessTransport
+.. class:: SubprocessTransport
 
    .. method:: get_pid()
 
