@@ -1088,7 +1088,14 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 srv.close()
                 await srv.wait_closed()
 
-        self.loop.run_until_complete(main())
+        try:
+            self.loop.run_until_complete(main())
+        except OSError as ex:
+            if (hasattr(errno, 'EADDRNOTAVAIL') and
+                    ex.errno == errno.EADDRNOTAVAIL):
+                self.skipTest('failed to bind to ::1')
+            else:
+                raise
 
     def test_create_datagram_endpoint_wrong_sock(self):
         sock = socket.socket(socket.AF_INET)
