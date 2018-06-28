@@ -140,6 +140,7 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertIsNone(acp._delayed_completion_id)
         self.assertEqual(acp.open_completions.called, 0)
 
+        # Test that open_completions is call if indexes match.
         acp._delayed_completion_index = self.text.index('insert')
         acp._delayed_open_completions(1, 2, 3, ac.COMPLETE_FILES)
         self.assertEqual(acp.open_completions.args, (1, 2, 3, 2))
@@ -156,10 +157,10 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertTrue(self.autocomplete.open_completions(False, True, True))
         self.text.delete('1.0', 'end')
 
-        # Test with blank will failed.
+        # Test with blank will fail.
         self.assertFalse(self.autocomplete.open_completions(False, True, True))
 
-        # Test with only string quote will failed.
+        # Test with only string quote will fail.
         self.text.insert('1.0', '"')
         self.assertFalse(self.autocomplete.open_completions(False, True, True))
         self.text.delete('1.0', 'end')
