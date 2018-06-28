@@ -141,10 +141,8 @@ class Group:
         if self.display_name is None and len(self.addresses)==1:
             return str(self.addresses[0])
         disp = self.display_name
-        if disp is not None:
-            nameset = set(disp)
-            if len(nameset) > len(nameset-parser.SPECIALS):
-                disp = parser.quote_string(disp)
+        if disp is not None and set(disp) & parser.SPECIALS:
+            disp = parser.quote_string(disp)
         adrstr = ", ".join(str(x) for x in self.addresses)
         adrstr = ' ' + adrstr if adrstr else adrstr
         return "{}:{};".format(disp, adrstr)
