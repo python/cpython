@@ -150,8 +150,8 @@ The :mod:`csv` module defines the following classes:
                       dialect='excel', *args, **kwds)
 
    Create an object that operates like a regular reader but maps the
-   information in each row to a ``dict`` whose keys are given by the optional
-   *fieldnames* parameter.
+   information in each row to a :class:`dict` whose keys are given by the
+   optional *fieldnames* parameter.
 
    The *fieldnames* parameter is a :term:`sequence`.  If *fieldnames* is
    omitted, the values in the first row of file *f* will be used as the
