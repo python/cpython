@@ -36,12 +36,19 @@ module gc
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5c9690ecc842d79]*/
 
-#define GC_DEBUG (0)  /* More asserts */
+#define GC_DEBUG (0)  /* Enable more asserts */
 
 #define GC_NEXT _PyGCHead_NEXT
 #define GC_PREV _PyGCHead_PREV
 
-// Bit 0 of _gc_prev is used for _PyGC_PREV_MASK_FINALIZED in objimpl.h
+// update_refs() set this bit for all objects in current generation.
+// subtract_refs() and move_unreachable() uses this to distinguish
+// visited object is in GCing or not.
+//
+// move_unreachable() removes this flag from reachable objects.
+// Only unreachable objects have this flag.
+//
+// No objects in interpreter have this flag after GC ends.
 #define PREV_MASK_COLLECTING   _PyGC_PREV_MASK_COLLECTING
 
 // Lowest bit of _gc_next is used for UNREACHABLE flag.
@@ -52,8 +59,7 @@ module gc
 // doesn't clear this flag to skip unnecessary iteration.
 // move_legacy_finalizers() removes this flag instead.
 // Between them, unreachable list is not normal list and we can not use
-// most gc_list_* functions for it.  We should manually tweaking unreachable
-// list in these two functions.
+// most gc_list_* functions for it.
 #define NEXT_MASK_UNREACHABLE  (1)
 
 static inline int
