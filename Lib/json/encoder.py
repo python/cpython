@@ -331,6 +331,30 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             del markers[markerid]
 
     def _iterencode_dict(dct, _current_indent_level):
+        def _coerce_key(key):
+            if isinstance(key, str):
+                return key
+            # JavaScript is weakly typed for these, so it makes sense to
+            # also allow them.  Many encoders seem to do something like this.
+            if isinstance(key, float):
+                # see comment for int/float in _make_iterencode
+                return _floatstr(key)
+            if key is True:
+                return 'true'
+            if key is False:
+                return 'false'
+            if key is None:
+                return 'null'
+            if isinstance(key, int):
+                # see comment for int/float in _make_iterencode
+                return _intstr(key)
+
+            if _skipkeys:
+                return None
+            else:
+                raise TypeError(f'keys must be str, int, float, bool or None, '
+                                f'not {key.__class__.__name__}')
+
         if not dct:
             yield '{}'
             return
@@ -349,32 +373,17 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             newline_indent = None
             item_separator = _item_separator
         first = True
+
+        # Coerce keys to strings (or None if _skipkeys)
+        items = ((_coerce_key(k), v) for (k,v) in dct.items())
+
         if _sort_keys:
-            items = sorted(dct.items(), key=lambda kv: kv[0])
-        else:
-            items = dct.items()
+            items = sorted((k,v) for (k,v) in items if k is not None)
+
         for key, value in items:
-            if isinstance(key, str):
-                pass
-            # JavaScript is weakly typed for these, so it makes sense to
-            # also allow them.  Many encoders seem to do something like this.
-            elif isinstance(key, float):
-                # see comment for int/float in _make_iterencode
-                key = _floatstr(key)
-            elif key is True:
-                key = 'true'
-            elif key is False:
-                key = 'false'
-            elif key is None:
-                key = 'null'
-            elif isinstance(key, int):
-                # see comment for int/float in _make_iterencode
-                key = _intstr(key)
-            elif _skipkeys:
+            if key is None:
+                # If specified, skip keys that we weren't able to coerce to strings
                 continue
-            else:
-                raise TypeError(f'keys must be str, int, float, bool or None, '
-                                f'not {key.__class__.__name__}')
             if first:
                 first = False
             else:
