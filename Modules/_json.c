@@ -1562,7 +1562,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
     PyObject *ident = NULL;
     PyObject *it = NULL;
     PyObject *items;
-	PyObject *coerced_items;
+    PyObject *coerced_items;
     PyObject *item = NULL;
     Py_ssize_t idx;
 
@@ -1609,63 +1609,63 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
     if (items == NULL)
         goto bail;
 
-	coerced_items = PyList_New(0);
-	it = PyObject_GetIter(items);
-	Py_DECREF(items);
-	if (it == NULL)
-		goto bail;
+    coerced_items = PyList_New(0);
+    it = PyObject_GetIter(items);
+    Py_DECREF(items);
+    if (it == NULL)
+        goto bail;
 
-	while ((item = PyIter_Next(it)) != NULL) {
-		PyObject *key, *value, *coerced_item;
-		if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
-			PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
-			goto bail;
-		}
-		key = PyTuple_GET_ITEM(item, 0);
-		if (PyUnicode_Check(key)) {
-			Py_INCREF(key);
-			kstr = key;
-		}
-		else if (PyFloat_Check(key)) {
-			kstr = encoder_encode_float(s, key);
-			if (kstr == NULL)
-				goto bail;
-		}
-		else if (key == Py_True || key == Py_False || key == Py_None) {
-			/* This must come before the PyLong_Check because
-			True and False are also 1 and 0.*/
-			kstr = _encoded_const(key);
-			if (kstr == NULL)
-				goto bail;
-		}
-		else if (PyLong_Check(key)) {
-			kstr = PyLong_Type.tp_str(key);
-			if (kstr == NULL) {
-				goto bail;
-			}
-		}
-		else if (s->skipkeys) {
-			Py_DECREF(item);
-			continue;
-		}
-		else {
-			PyErr_Format(PyExc_TypeError,
-				"keys must be str, int, float, bool or None, "
-				"not %.100s", key->ob_type->tp_name);
-			goto bail;
-		}
+    while ((item = PyIter_Next(it)) != NULL) {
+        PyObject *key, *value, *coerced_item;
+        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
+            PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
+            goto bail;
+        }
+        key = PyTuple_GET_ITEM(item, 0);
+        if (PyUnicode_Check(key)) {
+            Py_INCREF(key);
+            kstr = key;
+        }
+        else if (PyFloat_Check(key)) {
+            kstr = encoder_encode_float(s, key);
+            if (kstr == NULL)
+                goto bail;
+        }
+        else if (key == Py_True || key == Py_False || key == Py_None) {
+            /* This must come before the PyLong_Check because
+            True and False are also 1 and 0.*/
+            kstr = _encoded_const(key);
+            if (kstr == NULL)
+                goto bail;
+        }
+        else if (PyLong_Check(key)) {
+            kstr = PyLong_Type.tp_str(key);
+            if (kstr == NULL) {
+                goto bail;
+            }
+        }
+        else if (s->skipkeys) {
+            Py_DECREF(item);
+            continue;
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                "keys must be str, int, float, bool or None, "
+                "not %.100s", key->ob_type->tp_name);
+            goto bail;
+        }
 
-		value = PyTuple_GET_ITEM(item, 1);
-		coerced_item = PyTuple_Pack(2, kstr, value);
-		if (coerced_item == NULL) {
-			goto bail;
-		}
-		/* Append instead of set because skipkeys=True may 
-		   "shrink" the number of items */
-		if (-1 == PyList_Append(coerced_items, coerced_item))
-			goto bail;
-	}
-	
+        value = PyTuple_GET_ITEM(item, 1);
+        coerced_item = PyTuple_Pack(2, kstr, value);
+        if (coerced_item == NULL) {
+            goto bail;
+        }
+        /* Append instead of set because skipkeys=True may 
+           "shrink" the number of items */
+        if (-1 == PyList_Append(coerced_items, coerced_item))
+            goto bail;
+    }
+    
     if (s->sort_keys && PyList_Sort(coerced_items) < 0) {
         Py_DECREF(coerced_items);
         goto bail;
@@ -1730,7 +1730,7 @@ bail:
     Py_XDECREF(item);
     Py_XDECREF(kstr);
     Py_XDECREF(ident);
-	Py_XDECREF(coerced_items);
+    Py_XDECREF(coerced_items);
     return -1;
 }
 
