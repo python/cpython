@@ -54,9 +54,6 @@ PyAPI_FUNC(PyObject *) PyImport_AddModuleObject(
     PyObject *name
     );
 #endif
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyImport_AddModuleObject(PyObject *, PyObject *);
-#endif
 PyAPI_FUNC(PyObject *) PyImport_AddModule(
     const char *name            /* UTF-8 encoded string */
     );
