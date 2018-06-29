@@ -281,7 +281,7 @@ class Cmd:
     def get_names(self):
         # This method used to pull in base class attributes
         # at a time dir() didn't do it yet.
-        return dir(self.__class__)
+        return dir(self)
 
     def complete_help(self, *args):
         commands = set(self.completenames(*args))

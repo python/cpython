@@ -218,6 +218,43 @@ class TestAlternateInput(unittest.TestCase):
              "(Cmd) \n"
              "(Cmd) *** Unknown syntax: EOF\n"))
 
+    def test_dynamic_commands(self):
+        input = io.StringIO("help")
+        output = io.StringIO()
+        cmd = self.simplecmd(stdin=input, stdout=output)
+        cmd.use_rawinput = False
+        cmd.do_echo = lambda line: print(line)
+        cmd.cmdloop()
+        self.assertMultiLineEqual(output.getvalue(),
+            ("(Cmd) \n"
+            "Documented commands (type help <topic>):\n"
+            "========================================\n"
+            "help\n"
+            "\n"
+            "Undocumented commands:\n"
+            "======================\n"
+            "EOF  echo  print\n"
+            "\n"
+            "(Cmd) "))
+
+    def test_dynamic_documentation(self):
+        input = io.StringIO("help")
+        output = io.StringIO()
+        cmd = self.simplecmd(stdin=input, stdout=output)
+        cmd.use_rawinput = False
+        cmd.help_print = lambda: print("documented")
+        cmd.cmdloop()
+        self.assertMultiLineEqual(output.getvalue(),
+            ("(Cmd) \n"
+             "Documented commands (type help <topic>):\n"
+             "========================================\n"
+             "help  print\n"
+             "\n"
+             "Undocumented commands:\n"
+             "======================\n"
+             "EOF\n"
+             "\n"
+             "(Cmd) "))
 
 def test_main(verbose=None):
     from test import test_cmd

@@ -1,0 +1,2 @@
+cmd.Cmd now support commands added directly to instances. Patch by Rémi
+Lapeyre.
