@@ -1,0 +1,2 @@
+xmlrpc module now uses inspect.signature instead of deprecated function
+inspect.formatargspec. Patch by Rémi Lapeyre.
