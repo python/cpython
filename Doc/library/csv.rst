@@ -150,12 +150,12 @@ The :mod:`csv` module defines the following classes:
                       dialect='excel', *args, **kwds)
 
    Create an object that operates like a regular reader but maps the
-   information in each row to an :mod:`OrderedDict <collections.OrderedDict>`
-   whose keys are given by the optional *fieldnames* parameter.
+   information in each row to a ``dict`` whose keys are given by the optional
+   *fieldnames* parameter.
 
    The *fieldnames* parameter is a :term:`sequence`.  If *fieldnames* is
    omitted, the values in the first row of file *f* will be used as the
-   fieldnames.  Regardless of how the fieldnames are determined, the ordered
+   fieldnames.  Regardless of how the fieldnames are determined, the
    dictionary preserves their original ordering.
 
    If a row has more fields than fieldnames, the remaining data is put in a
@@ -166,8 +166,8 @@ The :mod:`csv` module defines the following classes:
    All other optional or keyword arguments are passed to the underlying
    :class:`reader` instance.
 
-   .. versionchanged:: 3.6
-      Returned rows are now of type :class:`OrderedDict`.
+   .. versionchanged:: 3.8
+      Returned rows are now of type :class:`dict`.
 
    A short usage example::
 
@@ -181,7 +181,7 @@ The :mod:`csv` module defines the following classes:
        John Cleese
 
        >>> print(row)
-       OrderedDict([('first_name', 'John'), ('last_name', 'Cleese')])
+       {'first_name': 'John', 'last_name': 'Cleese'}
 
 
 .. class:: DictWriter(f, fieldnames, restval='', extrasaction='raise', \
