@@ -70,8 +70,8 @@ class Address:
         according to RFC 5322 rules, but with no Content Transfer Encoding.
         """
         lp = self.username
-        if parser.DOT_ATOM_ENDS.intersection(lp):
-            lp = parser.quote_string(self.username)
+        if not parser.DOT_ATOM_ENDS.isdisjoint(lp):
+            lp = parser.quote_string(lp)
         if self.domain:
             return lp + '@' + self.domain
         if not lp:
@@ -85,7 +85,7 @@ class Address:
 
     def __str__(self):
         disp = self.display_name
-        if parser.SPECIALS.intersection(disp):
+        if not parser.SPECIALS.isdisjoint(disp):
             disp = parser.quote_string(disp)
         if disp:
             addr_spec = '' if self.addr_spec=='<>' else self.addr_spec
@@ -137,7 +137,7 @@ class Group:
         if self.display_name is None and len(self.addresses)==1:
             return str(self.addresses[0])
         disp = self.display_name
-        if disp is not None and parser.SPECIALS.intersection(disp):
+        if disp is not None and not parser.SPECIALS.isdisjoint(disp):
             disp = parser.quote_string(disp)
         adrstr = ", ".join(str(x) for x in self.addresses)
         adrstr = ' ' + adrstr if adrstr else adrstr
