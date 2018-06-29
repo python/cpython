@@ -1730,7 +1730,6 @@ bail:
     Py_XDECREF(item);
     Py_XDECREF(kstr);
     Py_XDECREF(ident);
-    Py_XDECREF(coerced_items);
     return -1;
 }
 
