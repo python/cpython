@@ -1,10 +1,13 @@
+import io
 import os
 import sys
 import textwrap
 import unittest
+import types
 from subprocess import Popen, PIPE
 from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from unittest import mock
 
 
 class TestTool(unittest.TestCase):
@@ -121,3 +124,55 @@ class TestTool(unittest.TestCase):
         self.assertEqual(out.splitlines(),
                          self.expect_without_sort_keys.encode().splitlines())
         self.assertEqual(err, b'')
+
+    def test_no_fd_leak_infile_outfile(self):
+        closed = []
+        opened = []
+        io_open = io.open
+
+        def open(*args, **kwargs):
+            fd = io_open(*args, **kwargs)
+            opened.append(fd)
+            fd_close = fd.close
+            def close(self):
+                closed.append(self)
+                fd_close()
+            fd.close = types.MethodType(close, fd)
+            return fd
+
+        infile = self._create_infile()
+        with mock.patch('builtins.open', side_effect=open):
+            with mock.patch.object(sys, 'argv', ['tool.py', infile, infile + '.out']):
+                import json.tool
+                json.tool.main()
+
+        os.unlink(infile + '.out')
+        self.assertEqual(opened, closed)
+        self.assertEqual(len(opened), len(closed))
+
+    def test_no_fd_leak_same_infile_outfile(self):
+        closed = []
+        opened = []
+        io_open = io.open
+
+        def open(*args, **kwargs):
+            fd = io_open(*args, **kwargs)
+            opened.append(fd)
+            fd_close = fd.close
+            def close(self):
+                closed.append(self)
+                fd_close()
+            fd.close = types.MethodType(close, fd)
+            return fd
+
+        infile = self._create_infile()
+        with mock.patch('builtins.open', side_effect=open):
+            with mock.patch.object(sys, 'argv', ['tool.py', infile, infile]):
+                try:
+                    import json.tool
+                    json.tool.main()
+                except SystemExit:  # We expect SystemExit to happen on c9d43c
+                    pass
+
+        self.assertEqual(opened, closed)
+        self.assertEqual(len(opened), len(closed))
