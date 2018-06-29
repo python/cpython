@@ -1,0 +1,2 @@
+namedtuple._asdict returns dict instead of OrderedDict. Patch by Michael
+Selik.
