@@ -1,0 +1,2 @@
+Close resources before deleting logging handlers. Patch by Karthikeyan
+Singaravelan.
