@@ -355,6 +355,13 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 raise TypeError(f'keys must be str, int, float, bool or None, '
                                 f'not {key.__class__.__name__}')
 
+        def _coerce_items(items):
+            for (k,v) in items:
+                k = _coerce_key(k)  # Coerce or throw
+                if k is None:
+                    continue
+                yield (k,v)
+
         if not dct:
             yield '{}'
             return
@@ -374,16 +381,13 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             item_separator = _item_separator
         first = True
 
-        # Coerce keys to strings (or None if _skipkeys)
-        items = ((_coerce_key(k), v) for (k,v) in dct.items())
+        # Coerce keys to strings
+        items = _coerce_items(dct.items())
 
         if _sort_keys:
-            items = sorted((k,v) for (k,v) in items if k is not None)
+            items = sorted(items)
 
         for key, value in items:
-            if key is None:
-                # If specified, skip keys that we weren't able to coerce to strings
-                continue
             if first:
                 first = False
             else:
