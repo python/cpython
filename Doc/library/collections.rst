@@ -886,17 +886,20 @@ field names, the method and attribute names start with an underscore.
 
 .. method:: somenamedtuple._asdict()
 
-    Return a new :class:`OrderedDict` which maps field names to their corresponding
+    Return a new :class:`dict` which maps field names to their corresponding
     values:
 
     .. doctest::
 
         >>> p = Point(x=11, y=22)
         >>> p._asdict()
-        OrderedDict([('x', 11), ('y', 22)])
+        {'x': 11, 'y': 22}
 
     .. versionchanged:: 3.1
         Returns an :class:`OrderedDict` instead of a regular :class:`dict`.
+
+    .. versionchanged:: 3.8
+        Returns an :class:`dict` instead of a regular :class:`OrderedDict`.
 
 .. method:: somenamedtuple._replace(**kwargs)
 
