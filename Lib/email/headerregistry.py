@@ -69,11 +69,9 @@ class Address:
         """The addr_spec (username@domain) portion of the address, quoted
         according to RFC 5322 rules, but with no Content Transfer Encoding.
         """
-        nameset = set(self.username)
-        if len(nameset) > len(nameset-parser.DOT_ATOM_ENDS):
+        lp = self.username
+        if parser.DOT_ATOM_ENDS.intersection(lp):
             lp = parser.quote_string(self.username)
-        else:
-            lp = self.username
         if self.domain:
             return lp + '@' + self.domain
         if not lp:
@@ -86,11 +84,9 @@ class Address:
                         self.display_name, self.username, self.domain)
 
     def __str__(self):
-        nameset = set(self.display_name)
-        if len(nameset) > len(nameset-parser.SPECIALS):
-            disp = parser.quote_string(self.display_name)
-        else:
-            disp = self.display_name
+        disp = self.display_name
+        if parser.SPECIALS.intersection(disp):
+            disp = parser.quote_string(disp)
         if disp:
             addr_spec = '' if self.addr_spec=='<>' else self.addr_spec
             return "{} <{}>".format(disp, addr_spec)
@@ -141,7 +137,7 @@ class Group:
         if self.display_name is None and len(self.addresses)==1:
             return str(self.addresses[0])
         disp = self.display_name
-        if disp is not None and set(disp) & parser.SPECIALS:
+        if disp is not None and parser.SPECIALS.intersection(disp):
             disp = parser.quote_string(disp)
         adrstr = ", ".join(str(x) for x in self.addresses)
         adrstr = ' ' + adrstr if adrstr else adrstr
