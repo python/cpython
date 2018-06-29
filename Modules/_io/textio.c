@@ -707,6 +707,8 @@ typedef struct
     PyObject *dict;
 } textio;
 
+static void
+textiowrapper_set_decoded_chars(textio *self, PyObject *chars);
 
 /* A couple of specialized cases in order to bypass the slow incremental
    encoding methods for the most popular encodings. */
@@ -1329,6 +1331,7 @@ textiowrapper_write(textio *self, PyObject *args)
         Py_DECREF(ret);
     }
 
+    textiowrapper_set_decoded_chars(self, NULL);
     Py_CLEAR(self->snapshot);
 
     if (self->decoder) {
@@ -1534,6 +1537,7 @@ textiowrapper_read(textio *self, PyObject *args)
         if (final == NULL)
             goto fail;
 
+        textiowrapper_set_decoded_chars(self, NULL);
         Py_CLEAR(self->snapshot);
         return final;
     }
