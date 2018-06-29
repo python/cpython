@@ -1089,6 +1089,7 @@ class ConfigFileTest(BaseTest):
 
     """Reading logging config from a .ini-style config file."""
 
+    check_no_resource_warning = support.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -1297,6 +1298,27 @@ class ConfigFileTest(BaseTest):
     datefmt=
     """
 
+    # config 8, check for resource warning
+    config8 = """
+    [loggers]
+    keys=root
+
+    [handlers]
+    keys=file_handler
+
+    [formatters]
+    keys=
+
+    [logger_root]
+    level=DEBUG
+    handlers=file_handler
+
+    [handler_file_handler]
+    class=FileHandler
+    level=DEBUG
+    args=("{tempfile}",)
+    """
+
     disable_test = """
     [loggers]
     keys=root
@@ -1441,6 +1463,12 @@ class ConfigFileTest(BaseTest):
             ], stream=output)
             # Original logger output is empty.
             self.assert_log_lines([])
+
+    def test_config8_ok(self):
+        with self.check_no_resource_warning():
+            with tempfile.NamedTemporaryFile() as f:
+                self.apply_config(self.config8.format(tempfile=f.name))
+                self.apply_config(self.config8.format(tempfile=f.name))
 
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
@@ -2022,6 +2050,7 @@ class ConfigDictTest(BaseTest):
 
     """Reading logging config from a dictionary."""
 
+    check_no_resource_warning = support.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -2895,6 +2924,25 @@ class ConfigDictTest(BaseTest):
             self.assertEqual(h.terminator, '!\n')
             logging.warning('Exclamation')
             self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
+
+    def test_config15_ok(self):
+        with tempfile.NamedTemporaryFile() as f:
+            config = {
+                "version": 1,
+                "handlers": {
+                    "file": {
+                        "class": "logging.FileHandler",
+                        "filename": f.name
+                    }
+                },
+                "root": {
+                    "handlers": ["file"]
+                }
+            }
+
+            with self.check_no_resource_warning():
+                self.apply_config(config)
+                self.apply_config(config)
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
