@@ -17,14 +17,12 @@ MARK_RIGHT = "calltipwindowregion_right"
 
 
 class CalltipWindow(TooltipBase):
-    """a call-tip widget for tkinter text widgets"""
+    """A call-tip widget for tkinter text widgets."""
 
     def __init__(self, text_widget):
-        """Create a call-tip.
+        """Create a call-tip; shown by showtip().
 
         text_widget: a Text widget with code for which call-tips are desired
-
-        Note that a widget will only be shown when showtip() is called.
         """
         # Note: The Text widget will be accessible as self.anchor_widget
         super(CalltipWindow, self).__init__(text_widget)
@@ -50,7 +48,7 @@ class CalltipWindow(TooltipBase):
         return box[0] + 2, box[1] + box[3]
 
     def position_window(self):
-        """Check if needs to reposition the window, and if so - do it."""
+        "Reposition the window if needed."
         curline = int(self.anchor_widget.index("insert").split('.')[0])
         if curline == self.lastline:
             return
@@ -80,14 +78,14 @@ class CalltipWindow(TooltipBase):
         self._bind_events()
 
     def showcontents(self):
-        """create the call-tip widget"""
+        """Create the call-tip widget."""
         self.label = Label(self.tipwindow, text=self.text, justify=LEFT,
                            background="#ffffe0", relief=SOLID, borderwidth=1,
                            font=self.anchor_widget['font'])
         self.label.pack()
 
     def checkhide_event(self, event=None):
-        """recurring check whether to hide the call-tip"""
+        """Handle CHECK_HIDE_EVENT: call hidetip or reschedule."""
         if not self.tipwindow:
             # If the event was triggered by the same event that unbound
             # this function, the function will be called nevertheless,
@@ -114,7 +112,7 @@ class CalltipWindow(TooltipBase):
         return None
 
     def hide_event(self, event):
-        """event handler for hiding the call-tip"""
+        """Handle HIDE_EVENT by calling hidetip."""
         if not self.tipwindow:
             # See the explanation in checkhide_event.
             return None
@@ -122,7 +120,7 @@ class CalltipWindow(TooltipBase):
         return "break"
 
     def hidetip(self):
-        """hide the call-tip"""
+        """Hide the call-tip."""
         if not self.tipwindow:
             return
 
@@ -147,7 +145,7 @@ class CalltipWindow(TooltipBase):
         super(CalltipWindow, self).hidetip()
 
     def _bind_events(self):
-        """internal method for binding event handlers"""
+        """Bind event handlers."""
         self.checkhideid = self.anchor_widget.bind(CHECKHIDE_EVENT,
                                                    self.checkhide_event)
         for seq in CHECKHIDE_SEQUENCES:
@@ -159,7 +157,7 @@ class CalltipWindow(TooltipBase):
             self.anchor_widget.event_add(HIDE_EVENT, seq)
 
     def _unbind_events(self):
-        """internal method for unbinding event handlers"""
+        """Unbind event handlers."""
         for seq in CHECKHIDE_SEQUENCES:
             self.anchor_widget.event_delete(CHECKHIDE_EVENT, seq)
         self.anchor_widget.unbind(CHECKHIDE_EVENT, self.checkhideid)
