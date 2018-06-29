@@ -176,7 +176,7 @@ def _calltip_window(parent):  # htest #
     top = Toplevel(parent)
     top.title("Test call-tips")
     x, y = map(int, parent.geometry().split('+')[1:])
-    top.geometry("200x100+%d+%d" % (x + 250, y + 175))
+    top.geometry("250x100+%d+%d" % (x + 175, y + 150))
     text = Text(top)
     text.pack(side=LEFT, fill=BOTH, expand=1)
     text.insert("insert", "string.split")
