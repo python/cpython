@@ -2741,6 +2741,17 @@ class TextIOWrapperTest(unittest.TestCase):
         with self.maybeRaises(TypeError):
             t.read(42)
 
+    def test_issue25862(self):
+        # Assertion failures occurred in tell() after read() and write().
+        t = self.TextIOWrapper(self.BytesIO(b'test'), encoding='ascii')
+        t.read(1)
+        t.read()
+        t.tell()
+        t = self.TextIOWrapper(self.BytesIO(b'test'), encoding='ascii')
+        t.read(1)
+        t.write('x')
+        t.tell()
+
 
 class CTextIOWrapperTest(TextIOWrapperTest):
 
