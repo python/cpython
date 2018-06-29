@@ -97,11 +97,11 @@ class BaseEventTests(test_utils.TestCase):
             base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
 
         self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1)),
+            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
             base_events._ipaddr_info('::3', 1, INET6, STREAM, TCP))
 
         self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1)),
+            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
             base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
 
         # IPv6 address with family IPv4.
@@ -1076,6 +1076,26 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             srv = self.loop.run_until_complete(coro)
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
+
+    @unittest.skipUnless(hasattr(socket, 'AF_INET6'), 'no IPv6 support')
+    def test_create_server_ipv6(self):
+        async def main():
+            srv = await asyncio.start_server(
+                lambda: None, '::1', 0, loop=self.loop)
+            try:
+                self.assertGreater(len(srv.sockets), 0)
+            finally:
+                srv.close()
+                await srv.wait_closed()
+
+        try:
+            self.loop.run_until_complete(main())
+        except OSError as ex:
+            if (hasattr(errno, 'EADDRNOTAVAIL') and
+                    ex.errno == errno.EADDRNOTAVAIL):
+                self.skipTest('failed to bind to ::1')
+            else:
+                raise
 
     def test_create_datagram_endpoint_wrong_sock(self):
         sock = socket.socket(socket.AF_INET)
