@@ -464,6 +464,7 @@ class Pool(object):
     @staticmethod
     def _handle_results(outqueue, get, cache):
         thread = threading.current_thread()
+        sentinel_counter = 0
 
         while 1:
             try:
@@ -479,6 +480,7 @@ class Pool(object):
 
             if task is None:
                 util.debug('result handler got sentinel')
+                sentinel_counter += 1
                 break
 
             job, i, obj = task
@@ -497,6 +499,7 @@ class Pool(object):
 
             if task is None:
                 util.debug('result handler ignoring extra sentinel')
+                sentinel_counter += 1
                 continue
             job, i, obj = task
             try:
@@ -511,10 +514,12 @@ class Pool(object):
             # attempts to add the sentinel (None) to outqueue may
             # block.  There is guaranteed to be no more than 2 sentinels.
             try:
-                for i in range(10):
+                while sentinel_counter < 2:
                     if not outqueue._reader.poll():
                         break
-                    get()
+                    task = get()
+                    if task is None:
+                        sentinel_counter += 1
             except (OSError, EOFError):
                 pass
 
