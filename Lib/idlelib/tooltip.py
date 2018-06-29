@@ -77,10 +77,6 @@ class TooltipBase(object):
             except TclError:
                 pass
 
-    def is_active(self):
-        """tell whether the tooltip is currently displayed"""
-        return bool(self.tipwindow)
-
 
 class OnHoverTooltipBase(TooltipBase):
     """abstract base class for tooltips, with delayed on-hover display"""

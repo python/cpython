@@ -90,15 +90,6 @@ class TextToolTipTest(unittest.TestCase):
         tooltip.hidetip()
         self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
 
-    def test_is_active(self):
-        tooltip = TextTooltip(self.button, 'ToolTip text')
-        self.addCleanup(tooltip.hidetip)
-        self.assertFalse(tooltip.is_active())
-        tooltip.showtip()
-        self.assertTrue(tooltip.is_active())
-        tooltip.hidetip()
-        self.assertFalse(tooltip.is_active())
-
     def test_showtip_on_mouse_enter_no_delay(self):
         tooltip = TextTooltip(self.button, 'ToolTip text', hover_delay=None)
         self.addCleanup(tooltip.hidetip)
