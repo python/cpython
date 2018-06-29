@@ -11,7 +11,6 @@ from _csv import Error, __version__, writer, reader, register_dialect, \
                  __doc__
 from _csv import Dialect as _Dialect
 
-from collections import OrderedDict
 from io import StringIO
 
 __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
@@ -117,7 +116,7 @@ class DictReader:
         # values
         while row == []:
             row = next(self.reader)
-        d = OrderedDict(zip(self.fieldnames, row))
+        d = dict(zip(self.fieldnames, row))
         lf = len(self.fieldnames)
         lr = len(row)
         if lf < lr:
@@ -148,7 +147,7 @@ class DictWriter:
             wrong_fields = rowdict.keys() - self.fieldnames
             if wrong_fields:
                 raise ValueError("dict contains fields not in fieldnames: "
-                                 + ", ".join([repr(x) for x in wrong_fields]))
+                                 + ", ".join(repr(x) for x in wrong_fields))
         return (rowdict.get(key, self.restval) for key in self.fieldnames)
 
     def writerow(self, rowdict):
