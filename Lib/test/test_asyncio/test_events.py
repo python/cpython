@@ -2,6 +2,7 @@
 
 import collections.abc
 import concurrent.futures
+import contextvars
 import functools
 import io
 import os
@@ -368,6 +369,38 @@ class EventLoopTestsMixin:
         self.loop.call_soon_threadsafe = patched_call_soon
         time.sleep(0.4)
         self.assertFalse(called)
+
+    def test_run_in_executor_no_context(self):
+        def run():
+            return foo.get()
+
+        foo = contextvars.ContextVar('foo')
+        foo.set('bar')
+        f = self.loop.run_in_executor(None, run)
+        res = self.loop.run_until_complete(f)
+        self.assertEqual(res, 'bar')
+
+    def test_run_in_executor_context(self):
+        def run():
+            return foo.get()
+
+        foo = contextvars.ContextVar('foo')
+        foo.set('bar')
+        context = contextvars.copy_context()
+        f = self.loop.run_in_executor(None, run, context=context)
+        res = self.loop.run_until_complete(f)
+        self.assertEqual(res, 'bar')
+
+    def test_run_in_executor_context_args(self):
+        def run(arg):
+            return (arg, foo.get())
+
+        foo = contextvars.ContextVar('foo')
+        foo.set('bar')
+        context = contextvars.copy_context()
+        f = self.loop.run_in_executor(None, run, 'yo', context=context)
+        res = self.loop.run_until_complete(f)
+        self.assertEqual(res, ('yo', 'bar'))
 
     def test_reader_callback(self):
         r, w = socket.socketpair()
