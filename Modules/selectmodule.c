@@ -1302,14 +1302,17 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, int flags, SOCKET fd)
 static PyObject *
 pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    int flags = 0, sizehint = FD_SETSIZE - 1;
+    int flags = 0, sizehint = -1;
     static char *kwlist[] = {"sizehint", "flags", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii:epoll", kwlist,
                                      &sizehint, &flags))
         return NULL;
-    if (sizehint < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative sizehint");
+    if (sizehint == -1) {
+        sizehint = FD_SETSIZE - 1;
+    }
+    else if (sizehint <= 0) {
+        PyErr_SetString(PyExc_ValueError, "sizehint must be positive or -1");
         return NULL;
     }
 
