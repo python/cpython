@@ -149,6 +149,13 @@ static int test_pre_initialization_api(void)
     _Py_EMBED_PREINIT_CHECK("Checking Py_SetProgramName\n");
     Py_SetProgramName(program);
 
+    _Py_EMBED_PREINIT_CHECK("Checking Py_IsInitialized\n");
+    if (Py_IsInitialized()) {
+        fprintf(stderr, "Fatal error: initialized before initialization!\n");
+        return 1;
+    }
+
+
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
     Py_Initialize();
     _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");

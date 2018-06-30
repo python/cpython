@@ -19,6 +19,12 @@ a few functions and the :ref:`global configuration variables
 
 The following functions can be safely called before Python is initialized:
 
+* Functions that initialize the interpreter:
+
+  * :c:func:`Py_Initialize`
+  * :c:func:`Py_InitializeEx`
+  * :c:func:`Py_Main`
+
 * Configuration functions:
 
   * :c:func:`PyImport_AppendInittab`
@@ -44,6 +50,7 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`Py_GetCopyright`
   * :c:func:`Py_GetPlatform`
   * :c:func:`Py_GetVersion`
+  * :c:func:`Py_IsInitialized`
 
 * Utilities:
 
@@ -305,6 +312,34 @@ Initializing and finalizing the interpreter
 
    This is a backwards-compatible version of :c:func:`Py_FinalizeEx` that
    disregards the return value.
+
+
+.. c:function:: int Py_Main(int argc, wchar_t **argv)
+
+   The main program for the standard interpreter, encapsulating a full
+   ``Py_Initalize()/Py_Finalize()`` cycle, as well as additional behaviour
+   to implement reading configurations settings from the standard environment.
+   This is made available for programs which wish to emulate the full Python
+   CLI, rather than just embedding a Python runtime in a larger application.
+
+   The *argc* and *argv* parameters should be
+   prepared exactly as those which are passed to a C program's :c:func:`main`
+   function (converted to wchar_t according to the user's locale).  It is
+   important to note that the argument list may be modified (but the contents of
+   the strings pointed to by the argument list are not). The return value will
+   be ``0`` if the interpreter exits normally (i.e., without an exception),
+   ``1`` if the interpreter exits due to an exception, or ``2`` if the parameter
+   list does not represent a valid Python command line.
+
+   Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
+   function will not return ``1``, but exit the process, as long as
+   ``Py_InspectFlag`` is not set (if ``Py_InspectFlag`` is set it will drop
+   into interactive Python prompt, at which point a second otherwise unhandled
+   :exc:`SystemExit` will still exit the process).
+
+   If this function is called after a separate :c:func:`Py_Initialize` or
+   :c:func:`Py_InitializeEx` call, then exactly which environmental and
+   command line configuration settings will be respected is version dependent.
 
 
 Process-wide parameters

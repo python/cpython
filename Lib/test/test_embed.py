@@ -195,6 +195,10 @@ class EmbeddingTests(unittest.TestCase):
         """
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
         out, err = self.run_embedded_interpreter("pre_initialization_api", env=env)
+        if support.verbose > 1:
+            print()
+            print(out)
+            print(err)
         if sys.platform == "win32":
             expected_path = self.test_exe
         else:
@@ -211,6 +215,10 @@ class EmbeddingTests(unittest.TestCase):
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
         out, err = self.run_embedded_interpreter(
                         "pre_initialization_sys_options", env=env)
+        if support.verbose > 1:
+            print()
+            print(out)
+            print(err)
         expected_output = (
             "sys.warnoptions: ['once', 'module', 'default']\n"
             "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"
