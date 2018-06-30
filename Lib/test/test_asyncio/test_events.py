@@ -37,6 +37,9 @@ from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test import support
 
+foo_ctx = contextvars.ContextVar('foo')
+foo_ctx.set('bar')
+
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
@@ -370,22 +373,32 @@ class EventLoopTestsMixin:
         time.sleep(0.4)
         self.assertFalse(called)
 
+    def test_run_in_executor_hierarchy(self):
+        def run():
+            foo_ctx.set('foo')
+            res = foo_ctx.get()
+            self.assertEqual(res, 'foo')
+            return res
+
+        f = self.loop.run_in_executor(None, run)
+        res = self.loop.run_until_complete(f)
+        self.assertEqual(res, 'foo')
+
+        res = foo_ctx.get()
+        self.assertEqual(res, 'bar')
+
     def test_run_in_executor_no_context(self):
         def run():
-            return foo.get()
+            return foo_ctx.get()
 
-        foo = contextvars.ContextVar('foo')
-        foo.set('bar')
         f = self.loop.run_in_executor(None, run)
         res = self.loop.run_until_complete(f)
         self.assertEqual(res, 'bar')
 
     def test_run_in_executor_context(self):
         def run():
-            return foo.get()
+            return foo_ctx.get()
 
-        foo = contextvars.ContextVar('foo')
-        foo.set('bar')
         context = contextvars.copy_context()
         f = self.loop.run_in_executor(None, run, context=context)
         res = self.loop.run_until_complete(f)
@@ -393,10 +406,8 @@ class EventLoopTestsMixin:
 
     def test_run_in_executor_context_args(self):
         def run(arg):
-            return (arg, foo.get())
+            return (arg, foo_ctx.get())
 
-        foo = contextvars.ContextVar('foo')
-        foo.set('bar')
         context = contextvars.copy_context()
         f = self.loop.run_in_executor(None, run, 'yo', context=context)
         res = self.loop.run_until_complete(f)
