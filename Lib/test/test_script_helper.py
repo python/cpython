@@ -81,6 +81,7 @@ class TestScriptHelperEnvironment(unittest.TestCase):
         # Reset the private cached state.
         script_helper.__dict__['__cached_interp_requires_environment'] = None
 
+    @mock.patch('os.environ', {})
     @mock.patch('subprocess.check_call')
     def test_interpreter_requires_environment_true(self, mock_check_call):
         mock_check_call.side_effect = subprocess.CalledProcessError('', '')
@@ -88,6 +89,7 @@ class TestScriptHelperEnvironment(unittest.TestCase):
         self.assertTrue(script_helper.interpreter_requires_environment())
         self.assertEqual(1, mock_check_call.call_count)
 
+    @mock.patch('os.environ', {})
     @mock.patch('subprocess.check_call')
     def test_interpreter_requires_environment_false(self, mock_check_call):
         # The mocked subprocess.check_call fakes a no-error process.
@@ -95,6 +97,7 @@ class TestScriptHelperEnvironment(unittest.TestCase):
         self.assertFalse(script_helper.interpreter_requires_environment())
         self.assertEqual(1, mock_check_call.call_count)
 
+    @mock.patch('os.environ', {})
     @mock.patch('subprocess.check_call')
     def test_interpreter_requires_environment_details(self, mock_check_call):
         script_helper.interpreter_requires_environment()
@@ -104,6 +107,14 @@ class TestScriptHelperEnvironment(unittest.TestCase):
         check_call_command = mock_check_call.call_args[0][0]
         self.assertEqual(sys.executable, check_call_command[0])
         self.assertIn('-E', check_call_command)
+
+    @mock.patch('os.environ', {'PYTHONHOME': 'MockedHome'})
+    @mock.patch('subprocess.check_call')
+    def test_interpreter_requires_environment_with_pythonhome(self, mock_check_call):
+        # There is PYTHONHOME in the environment, expecting no call to check_call
+        self.assertTrue(script_helper.interpreter_requires_environment())
+        self.assertTrue(script_helper.interpreter_requires_environment())
+        self.assertEqual(0, mock_check_call.call_count)
 
 
 if __name__ == '__main__':
