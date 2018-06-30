@@ -24,7 +24,7 @@ use different libraries, so care should be taken that :c:type:`FILE\*` parameter
 are only passed to these functions if it is certain that they were created by
 the same library that the Python runtime is using.
 
-.. note:
+.. _note:
 
    The documentation for :c:func:`Py_Main` that previously appeared in this
    section has been moved to :ref:`initialization`.
