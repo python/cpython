@@ -452,9 +452,13 @@ PyDoc_STRVAR(select_epoll__doc__,
 "Returns an epolling object.\n"
 "\n"
 "  sizehint\n"
-"    sizehint must be a positive integer or -1 for the default size. The\n"
-"    sizehint is used to optimize internal data structures. It doesn\'t limit\n"
-"    the maximum number of monitored events.");
+"    The expected number of events to be registered.  It must be positive,\n"
+"    or -1 to use the default.  It is only used on older systems where\n"
+"    epoll_create1() is not available; otherwise it has no effect (though its\n"
+"    value is still checked).\n"
+"  flags\n"
+"    Deprecated and completely ignored.  However, when supplied, its value\n"
+"    must be 0 or select.EPOLL_CLOEXEC, otherwise OSError is raised.");
 
 static PyObject *
 select_epoll_impl(PyTypeObject *type, int sizehint, int flags);
@@ -465,7 +469,7 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sizehint", "flags", NULL};
     static _PyArg_Parser _parser = {"|ii:epoll", _keywords, 0};
-    int sizehint = FD_SETSIZE - 1;
+    int sizehint = -1;
     int flags = 0;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
@@ -1043,4 +1047,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=43925956cb05f79a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3e425445d49c49e2 input=a9049054013a1b77]*/

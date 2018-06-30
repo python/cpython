@@ -1,0 +1,1 @@
+Remove ``tarfile.filemode`` which is deprecated since Python 3.3.

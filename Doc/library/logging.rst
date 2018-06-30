@@ -1131,7 +1131,7 @@ functions.
    if no handlers are defined for the root logger.
 
    This function does nothing if the root logger already has handlers
-   configured for it.
+   configured, unless the keyword argument *force* is set to ``True``.
 
    .. note:: This function should be called from the main thread
       before other threads are started. In versions of Python prior to
@@ -1147,42 +1147,54 @@ functions.
    +--------------+---------------------------------------------+
    | Format       | Description                                 |
    +==============+=============================================+
-   | ``filename`` | Specifies that a FileHandler be created,    |
+   | *filename*   | Specifies that a FileHandler be created,    |
    |              | using the specified filename, rather than a |
    |              | StreamHandler.                              |
    +--------------+---------------------------------------------+
-   | ``filemode`` | Specifies the mode to open the file, if     |
-   |              | filename is specified (if filemode is       |
-   |              | unspecified, it defaults to 'a').           |
+   | *filemode*   | If *filename* is specified, open the file   |
+   |              | in this :ref:`mode <filemodes>`. Defaults   |
+   |              | to ``'a'``.                                 |
    +--------------+---------------------------------------------+
-   | ``format``   | Use the specified format string for the     |
+   | *format*     | Use the specified format string for the     |
    |              | handler.                                    |
    +--------------+---------------------------------------------+
-   | ``datefmt``  | Use the specified date/time format.         |
+   | *datefmt*    | Use the specified date/time format, as      |
+   |              | accepted by :func:`time.strftime`.          |
    +--------------+---------------------------------------------+
-   | ``style``    | If ``format`` is specified, use this style  |
-   |              | for the format string. One of '%', '{' or   |
-   |              | '$' for %-formatting, :meth:`str.format` or |
-   |              | :class:`string.Template` respectively, and  |
-   |              | defaulting to '%' if not specified.         |
+   | *style*      | If *format* is specified, use this style    |
+   |              | for the format string. One of ``'%'``,      |
+   |              | ``'{'`` or ``'$'`` for :ref:`printf-style   |
+   |              | <old-string-formatting>`,                   |
+   |              | :meth:`str.format` or                       |
+   |              | :class:`string.Template` respectively.      |
+   |              | Defaults to ``'%'``.                        |
    +--------------+---------------------------------------------+
-   | ``level``    | Set the root logger level to the specified  |
-   |              | level.                                      |
+   | *level*      | Set the root logger level to the specified  |
+   |              | :ref:`level <levels>`.                      |
    +--------------+---------------------------------------------+
-   | ``stream``   | Use the specified stream to initialize the  |
+   | *stream*     | Use the specified stream to initialize the  |
    |              | StreamHandler. Note that this argument is   |
-   |              | incompatible with 'filename' - if both are  |
-   |              | present, a ``ValueError`` is raised.        |
+   |              | incompatible with *filename* - if both      |
+   |              | are present, a ``ValueError`` is raised.    |
    +--------------+---------------------------------------------+
-   | ``handlers`` | If specified, this should be an iterable of |
+   | *handlers*   | If specified, this should be an iterable of |
    |              | already created handlers to add to the root |
    |              | logger. Any handlers which don't already    |
    |              | have a formatter set will be assigned the   |
    |              | default formatter created in this function. |
    |              | Note that this argument is incompatible     |
-   |              | with 'filename' or 'stream' - if both are   |
-   |              | present, a ``ValueError`` is raised.        |
+   |              | with *filename* or *stream* - if both       |
+   |              | are present, a ``ValueError`` is raised.    |
    +--------------+---------------------------------------------+
+   | ``force``    | If this keyword argument is specified as    |
+   |              | true, any existing handlers attached to the |
+   |              | root logger are removed and closed, before  |
+   |              | carrying out the configuration as specified |
+   |              | by the other arguments.                     |
+   +--------------+---------------------------------------------+
+
+   .. versionchanged:: 3.8
+      The ``force`` argument was added.
 
    .. versionchanged:: 3.2
       The ``style`` argument was added.

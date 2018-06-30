@@ -1289,20 +1289,26 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
 @classmethod
 select.epoll.__new__
 
-    sizehint: int(c_default="FD_SETSIZE - 1") = -1
-      sizehint must be a positive integer or -1 for the default size. The
-      sizehint is used to optimize internal data structures. It doesn't limit
-      the maximum number of monitored events.
+    sizehint: int = -1
+      The expected number of events to be registered.  It must be positive,
+      or -1 to use the default.  It is only used on older systems where
+      epoll_create1() is not available; otherwise it has no effect (though its
+      value is still checked).
     flags: int = 0
+      Deprecated and completely ignored.  However, when supplied, its value
+      must be 0 or select.EPOLL_CLOEXEC, otherwise OSError is raised.
 
 Returns an epolling object.
 [clinic start generated code]*/
 
 static PyObject *
 select_epoll_impl(PyTypeObject *type, int sizehint, int flags)
-/*[clinic end generated code: output=c87404e705013bb5 input=15bd182fdfa3557c]*/
+/*[clinic end generated code: output=c87404e705013bb5 input=303e3295e7975e43]*/
 {
-    if (sizehint < 0) {
+    if (sizehint == -1) {
+        sizehint = FD_SETSIZE - 1;
+    }
+    else if (sizehint <= 0) {
         PyErr_SetString(PyExc_ValueError, "negative sizehint");
         return NULL;
     }

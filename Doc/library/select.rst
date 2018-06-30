@@ -57,7 +57,16 @@ The module defines the following:
 
    (Only supported on Linux 2.5.44 and newer.) Return an edge polling object,
    which can be used as Edge or Level Triggered interface for I/O
-   events. *sizehint* and *flags* are deprecated and completely ignored.
+   events.
+
+   *sizehint* informs epoll about the expected number of events to be
+   registered.  It must be positive, or `-1` to use the default. It is only
+   used on older systems where :c:func:`epoll_create1` is not available;
+   otherwise it has no effect (though its value is still checked).
+
+   *flags* is deprecated and completely ignored.  However, when supplied, its
+   value must be ``0`` or ``select.EPOLL_CLOEXEC``, otherwise ``OSError`` is
+   raised.
 
    See the :ref:`epoll-objects` section below for the methods supported by
    epolling objects.
