@@ -351,7 +351,7 @@ Edge and Level Trigger Polling (epoll) Objects
    Remove a registered file descriptor from the epoll object.
 
 
-.. method:: epoll.poll(timeout=-1, maxevents=-1)
+.. method:: epoll.poll(timeout=None, maxevents=-1)
 
    Wait for events. timeout in seconds (float)
 
