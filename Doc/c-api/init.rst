@@ -317,29 +317,39 @@ Initializing and finalizing the interpreter
 .. c:function:: int Py_Main(int argc, wchar_t **argv)
 
    The main program for the standard interpreter, encapsulating a full
-   ``Py_Initalize()/Py_Finalize()`` cycle, as well as additional behaviour
-   to implement reading configurations settings from the standard environment.
-   This is made available for programs which wish to emulate the full Python
-   CLI, rather than just embedding a Python runtime in a larger application.
+   :c:func:`Py_Initialize`/:c:func:`Py_Finalize` cycle, as well as additional
+   behaviour to implement reading configurations settings from the environment
+   and command line, and then executing ``__main__`` in accordance with
+   :ref:`using-on-cmdline`.
 
-   The *argc* and *argv* parameters should be
-   prepared exactly as those which are passed to a C program's :c:func:`main`
-   function (converted to wchar_t according to the user's locale).  It is
-   important to note that the argument list may be modified (but the contents of
-   the strings pointed to by the argument list are not). The return value will
-   be ``0`` if the interpreter exits normally (i.e., without an exception),
-   ``1`` if the interpreter exits due to an exception, or ``2`` if the parameter
-   list does not represent a valid Python command line.
+   This is made available for programs which wish to support the full CPython
+   command line interface, rather than just embedding a Python runtime in a
+   larger application.
+
+   The *argc* and *argv* parameters should be prepared exactly as those which
+   are passed to a C program's :c:func:`main` function (converted to ``wchar_t``
+   :c:func:`Py_DecodeLocale`).  It is important to note that the argument list
+   may be modified (but the contents of the strings pointed to by the argument
+   list are not).
+
+   The return value will be ``0`` if the interpreter exits normally (i.e.,
+   without an exception), ``1`` if the interpreter exits due to an exception,
+   or ``2`` if the argument list does not represent a valid Python command
+   line.
 
    Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
    function will not return ``1``, but exit the process, as long as
-   ``Py_InspectFlag`` is not set (if ``Py_InspectFlag`` is set it will drop
-   into interactive Python prompt, at which point a second otherwise unhandled
-   :exc:`SystemExit` will still exit the process).
+   ``Py_InspectFlag`` is not set. If ``Py_InspectFlag`` is set, execution will
+   drop into interactive Python prompt, at which point a second otherwise
+   unhandled :exc:`SystemExit` will still exit the process, while any other
+   means of exiting will set the return value as described above.
 
    If this function is called after a separate :c:func:`Py_Initialize` or
    :c:func:`Py_InitializeEx` call, then exactly which environmental and
-   command line configuration settings will be respected is version dependent.
+   command line configuration settings will be respected is version dependent
+   (since it depends on which settings are handled in the now skipped implicit
+   call to ``Py_Initialize``, and which are handled directly in ``Py_Main``
+   itself).
 
 
 Process-wide parameters
