@@ -1304,8 +1304,8 @@ Host name validation can be customized with
 .. note::
    The improved host name check requires a *libssl* implementation compatible
    with OpenSSL 1.0.2 or 1.1.  Consequently, OpenSSL 0.9.8 and 1.0.1 are no
-   longer supported.  The ssl module is mostly compatible with LibreSSL 2.7.2
-   and newer.
+   longer supported (see :ref:`37-platform-support-removals` for more details).
+   The ssl module is mostly compatible with LibreSSL 2.7.2 and newer.
 
 The ``ssl`` module no longer sends IP addresses in SNI TLS extension.
 (Contributed by Christian Heimes in :issue:`32185`.)
@@ -2069,10 +2069,24 @@ or higher.  (Contributed by Serhiy Storchaka in :issue:`27867`.)
 (Contributed by Antoine Pitrou in :issue:`16500`.)
 
 
+.. _37-platform-support-removals:
+
 Platform Support Removals
 =========================
 
-FreeBSD 9 and older are no longer officially supported.
+* FreeBSD 9 and older are no longer officially supported.
+* For full Unicode support, including within extension modules, \*nix platforms
+  are now expected to provide at least one of ``C.UTF-8`` (full locale),
+  ``C.utf8`` (full locale) or ``UTF-8`` (``LC_CTYPE``-only locale) as an
+  alternative to the legacy ``ASCII``-only ``C`` locale.
+* OpenSSL 0.9.8 and 1.0.1 are no longer supported, which means building Python
+  3.7 on platforms using these versions will require custom build options that
+  link to a more recent OpenSSL. This affects projects testing on Ubuntu 14.04
+  (the "dist: trusty" build environment on Travis CI), where the simplest
+  resolution may be to update to using Ubuntu 16.04 (the "dist: xenial" build
+  environment). For cases where that isn't an option, see
+  :source:`Tools/ssl/multissltests.py` for examples of building custom
+  versions of SSL/TLS libraries, and linking Python against them.
 
 
 API and Feature Removals
