@@ -1,0 +1,6 @@
+Clearly document that we expect Py_Main to be called instead of
+Py_Initialize rather than after it (since Py_Main makes its own call to
+Py_Initialize).
+
+Add Py_IsInitialized to the list of APIs that are safe to call before the
+interpreter is initialized.
