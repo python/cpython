@@ -1605,11 +1605,6 @@ a module object to a subclass of :class:`types.ModuleType`. For example::
 Implementing Descriptors
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. sidebar:: Important
-
-   This section contains the API reference information.  For a more gentle
-   introduction to descriptors, have a look at the :ref:`descriptors-howto`.
-
 The following methods only apply when an instance of the class containing the
 method (a so-called *descriptor* class) appears in an *owner* class (the
 descriptor must be in either the owner's class dictionary or in the class
@@ -1653,6 +1648,10 @@ For callables, it may indicate that an instance of the given type (or a
 subclass) is expected or required as the first positional argument (for example,
 CPython sets this attribute for unbound methods that are implemented in C).
 
+.. seealso::
+
+   :ref:`descriptors-howto`
+      A more gentle introduction for implementing descriptors.
 
 .. _descriptor-invocation:
 
