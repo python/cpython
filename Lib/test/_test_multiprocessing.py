@@ -4479,8 +4479,13 @@ class TestSemaphoreTracker(unittest.TestCase):
             time.sleep(0.5)  # give it time to die
         old_stderr = sys.stderr
         r, w = os.pipe()
+        # Make the pipe non blocking to not hang indefinitely
+        if sys.platform != "win32":
+            import fcntl
+            fcntl.fcntl(r, fcntl.F_SETFL,
+                    fcntl.fcntl(r, fcntl.F_GETFL) | os.O_NONBLOCK)
+        sys.stderr = open(w, "bw")
         try:
-            sys.stderr = open(w, "bw")
             with warnings.catch_warnings(record=True) as all_warn:
                 _semaphore_tracker.ensure_running()
             pid = _semaphore_tracker._pid
@@ -4488,10 +4493,18 @@ class TestSemaphoreTracker(unittest.TestCase):
             # the signal handlers have been registered. See bpo-33613 for more
             # information.
             _semaphore_tracker._send("PING", "")
+            deadline = time.monotonic() + 5
             with open(r, "rb") as pipe:
-                data = pipe.readline()
-                if b"PONG" not in data:
-                    raise ValueError("Invalid data in stderr!")
+                while True:
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError("Reading data "
+                                           "from pipe took too long")
+                    data = pipe.readline()
+                    if not data:
+                        continue
+                    if b"PONG" not in data:
+                        raise ValueError("Invalid data in stderr!")
+                    break
         finally:
             sys.stderr.close()
             sys.stderr = old_stderr
