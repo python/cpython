@@ -744,12 +744,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             context = contextvars.copy_context()
 
         if args:
-            fn = functools.partial(func, *args)
-        else:
-            fn = func
+            func = functools.partial(func, *args)
 
         return futures.wrap_future(
-            executor.submit(context.run, fn), loop=self)
+            executor.submit(context.run, func), loop=self)
 
     def set_default_executor(self, executor):
         self._default_executor = executor
