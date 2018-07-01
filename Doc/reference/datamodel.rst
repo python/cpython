@@ -1605,13 +1605,17 @@ a module object to a subclass of :class:`types.ModuleType`. For example::
 Implementing Descriptors
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. sidebar:: Important
+
+   This section contains the API reference information.  For a more gentle
+   introduction to descriptors, have a look at the :ref:`descriptors-howto`.
+
 The following methods only apply when an instance of the class containing the
 method (a so-called *descriptor* class) appears in an *owner* class (the
 descriptor must be in either the owner's class dictionary or in the class
 dictionary for one of its parents).  In the examples below, "the attribute"
 refers to the attribute whose name is the key of the property in the owner
 class' :attr:`~object.__dict__`.
-
 
 .. method:: object.__get__(self, instance, owner)
 
