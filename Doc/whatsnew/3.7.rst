@@ -2078,8 +2078,8 @@ Platform Support Removals
 * For full Unicode support, including within extension modules, \*nix platforms
   are now expected to provide at least one of ``C.UTF-8`` (full locale),
   ``C.utf8`` (full locale) or ``UTF-8`` (``LC_CTYPE``-only locale) as an
-  alternative to the legacy ``ASCII``-only ``C`` locale.
-* OpenSSL 0.9.8 and 1.0.1 are no longer supported, which means building Python
+  alternative to the legacy ``ASCII``-based ``C`` locale.
+* OpenSSL 0.9.8 and 1.0.1 are no longer supported, which means building CPython
   3.7 with SSL/TLS support on older platforms still using these versions
   requires custom build options that link to a more recent version of OpenSSL.
 
