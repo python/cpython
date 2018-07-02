@@ -134,7 +134,6 @@ if NOT "%PAPER%" == "" (
 if "%1" EQU "htmlhelp" (
     set SPHINXOPTS=-D html_theme_options.body_max_width=none %SPHINXOPTS%
 )
-
 cmd /S /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . "%BUILDDIR%\%1" %2 %3 %4 %5 %6 %7 %8 %9"
 
 if "%1" EQU "htmlhelp" (
