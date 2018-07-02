@@ -184,12 +184,12 @@ serve:
 
 # for development releases: always build
 autobuild-dev:
-	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A versionswitcher=1'
+	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A switcher=1'
 	-make suspicious
 
 # for quick rebuilds (HTML only)
 autobuild-dev-html:
-	make html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A versionswitcher=1'
+	make html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A switcher=1'
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage
