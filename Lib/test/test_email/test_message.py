@@ -798,7 +798,6 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         m.set_content(content_manager=cm)
         self.assertNotIn('MIME-Version', m)
 
-    
     def test_string_payload_with_multipart_content_type(self):
         m = message_from_string(textwrap.dedent("""\
             Subject: Ayons asperges pour le
