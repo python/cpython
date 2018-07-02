@@ -1076,6 +1076,7 @@ class ConfigFileTest(BaseTest):
 
     """Reading logging config from a .ini-style config file."""
 
+    check_no_resource_warning = support.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -1284,6 +1285,27 @@ class ConfigFileTest(BaseTest):
     datefmt=
     """
 
+    # config 8, check for resource warning
+    config8 = r"""
+    [loggers]
+    keys=root
+
+    [handlers]
+    keys=file
+
+    [formatters]
+    keys=
+
+    [logger_root]
+    level=DEBUG
+    handlers=file
+
+    [handler_file]
+    class=FileHandler
+    level=DEBUG
+    args=("{tempfile}",)
+    """
+
     disable_test = """
     [loggers]
     keys=root
@@ -1428,6 +1450,29 @@ class ConfigFileTest(BaseTest):
             ], stream=output)
             # Original logger output is empty.
             self.assert_log_lines([])
+
+    def test_config8_ok(self):
+
+        def cleanup(h1, fn):
+            h1.close()
+            os.remove(fn)
+
+        with self.check_no_resource_warning():
+            fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
+            os.close(fd)
+
+            # Replace single backslash with double backslash in windows
+            # to avoid unicode error during string formatting
+            if os.name == "nt":
+                fn = fn.replace("\\", "\\\\")
+
+            config8 = self.config8.format(tempfile=fn)
+
+            self.apply_config(config8)
+            self.apply_config(config8)
+
+        handler = logging.root.handlers[0]
+        self.addCleanup(cleanup, handler, fn)
 
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
@@ -1977,6 +2022,7 @@ class ConfigDictTest(BaseTest):
 
     """Reading logging config from a dictionary."""
 
+    check_no_resource_warning = support.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -2850,6 +2896,35 @@ class ConfigDictTest(BaseTest):
             self.assertEqual(h.terminator, '!\n')
             logging.warning('Exclamation')
             self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
+
+    def test_config15_ok(self):
+
+        def cleanup(h1, fn):
+            h1.close()
+            os.remove(fn)
+
+        with self.check_no_resource_warning():
+            fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
+            os.close(fd)
+
+            config = {
+                "version": 1,
+                "handlers": {
+                    "file": {
+                        "class": "logging.FileHandler",
+                        "filename": fn
+                    }
+                },
+                "root": {
+                    "handlers": ["file"]
+                }
+            }
+
+            self.apply_config(config)
+            self.apply_config(config)
+
+        handler = logging.root.handlers[0]
+        self.addCleanup(cleanup, handler, fn)
 
     @unittest.skipUnless(threading, 'listen() needs threading to work')
     def setup_via_listener(self, text, verify=None):
