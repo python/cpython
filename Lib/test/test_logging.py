@@ -1465,15 +1465,27 @@ class ConfigFileTest(BaseTest):
             self.assert_log_lines([])
 
     def test_config8_ok(self):
+
+        def cleanup(h1, fn):
+            h1.close()
+            os.remove(fn)
+
         with self.check_no_resource_warning():
             fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
             os.close(fd)
+
+            # Replace single backslash with double backslash in windows
+            # to avoid unicode error during string formatting
+            if os.name == "nt":
+                fn = fn.replace("\\", "\\\\")
+
             config8 = self.config8.format(tempfile=fn)
 
             self.apply_config(config8)
             self.apply_config(config8)
 
-            os.unlink(fn)
+        handler = logging.root.handlers[0]
+        self.addCleanup(cleanup, handler, fn)
 
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
@@ -2931,6 +2943,11 @@ class ConfigDictTest(BaseTest):
             self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
 
     def test_config15_ok(self):
+
+        def cleanup(h1, fn):
+            h1.close()
+            os.remove(fn)
+
         with self.check_no_resource_warning():
             fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
             os.close(fd)
@@ -2951,7 +2968,8 @@ class ConfigDictTest(BaseTest):
             self.apply_config(config)
             self.apply_config(config)
 
-            os.unlink(fn)
+        handler = logging.root.handlers[0]
+        self.addCleanup(cleanup, handler, fn)
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
