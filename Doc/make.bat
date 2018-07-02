@@ -131,6 +131,10 @@ if exist ..\Misc\NEWS (
 if NOT "%PAPER%" == "" (
     set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )
+if "%1" EQU "htmlhelp" (
+    set SPHINXOPTS=-D html_theme_options.body_max_width=none %SPHINXOPTS%
+)
+
 cmd /S /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . "%BUILDDIR%\%1" %2 %3 %4 %5 %6 %7 %8 %9"
 
 if "%1" EQU "htmlhelp" (
@@ -152,7 +156,6 @@ goto end
 if NOT "%2" EQU "" (
     echo.Can't specify filenames to build with htmlview target, ignoring.
 )
-set SPHINXOPTS=-D html_theme_options.body_max_width=none %SPHINXOPTS%
 cmd /C %this% html
 
 if EXIST "%BUILDDIR%\html\index.html" (
