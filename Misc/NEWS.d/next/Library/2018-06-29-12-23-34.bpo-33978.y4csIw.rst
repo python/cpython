@@ -1,2 +1,2 @@
-Close resources before deleting logging handlers. Patch by Karthikeyan
-Singaravelan.
+Closed existing logging handlers before reconfiguration via fileConfig
+and dictConfig. Patch by Karthikeyan Singaravelan.
