@@ -1097,6 +1097,7 @@ class ContextTests(unittest.TestCase):
             ctx.maximum_version,
             {ssl.TLSVersion.TLSv1, ssl.TLSVersion.SSLv3}
         )
+        ctx.maximum_version = ssl.TLSVersion.MAXIMUM_SUPPORTED
 
         ctx.minimum_version = ssl.TLSVersion.MAXIMUM_SUPPORTED
         self.assertIn(
@@ -3572,8 +3573,8 @@ class ThreadedTests(unittest.TestCase):
                 self.assertEqual(s.version(), 'TLSv1.1')
 
         # client 1.0, server 1.2 (mismatch)
-        server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         server_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         client_context.minimum_version = ssl.TLSVersion.TLSv1
         client_context.maximum_version = ssl.TLSVersion.TLSv1
         with ThreadedEchoServer(context=server_context) as server:
