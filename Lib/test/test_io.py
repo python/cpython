@@ -583,7 +583,7 @@ class IOTest(unittest.TestCase):
         # On Windows and Mac OSX this test consumes large resources; It takes
         # a long time to build the >2 GiB file and takes >2 GiB of disk space
         # therefore the resource must be enabled to run this test.
-        if support.MS_WINDOWS or support.MACOS:
+        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
             support.requires(
                 'largefile',
                 'test requires %s bytes and a long time to run' % self.LARGE)
@@ -3548,6 +3548,17 @@ class TextIOWrapperTest(unittest.TestCase):
         txt.write('CRLF\n')
         expected = 'linesep' + os.linesep + 'LF\nLF\nCR\rCRLF\r\n'
         self.assertEqual(txt.detach().getvalue().decode('ascii'), expected)
+
+    def test_issue25862(self):
+        # Assertion failures occurred in tell() after read() and write().
+        t = self.TextIOWrapper(self.BytesIO(b'test'), encoding='ascii')
+        t.read(1)
+        t.read()
+        t.tell()
+        t = self.TextIOWrapper(self.BytesIO(b'test'), encoding='ascii')
+        t.read(1)
+        t.write('x')
+        t.tell()
 
 
 class MemviewBytesIO(io.BytesIO):

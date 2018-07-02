@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.7, compared to 3.6.
-
+Python 3.7 was released on June 27, 2018.
 For full details, see the :ref:`changelog <changelog>`.
 
 
@@ -320,7 +320,8 @@ PEP 562: Customization of Access to Module Attributes
 -----------------------------------------------------
 
 Python 3.7 allows defining :meth:`__getattr__` on modules and will call
-it whenever a module attribute is otherwise not found.
+it whenever a module attribute is otherwise not found.  Defining
+:meth:`__dir__` on modules is now also allowed.
 
 A typical example of where this may be useful is module attribute deprecation
 and lazy loading.
@@ -336,8 +337,11 @@ and lazy loading.
 PEP 564: New Time Functions With Nanosecond Resolution
 ------------------------------------------------------
 
-:pep:`564` adds six new "nanosecond" variants of existing functions
-to the :mod:`time` module:
+The resolution of clocks in modern systems can exceed the limited precision
+of a floating point number returned by the :func:`time.time` function
+and its variants.  To avoid loss of precision, :pep:`564` adds six new
+"nanosecond" variants of the existing timer functions to the :mod:`time`
+module:
 
 * :func:`time.clock_gettime_ns`
 * :func:`time.clock_settime_ns`
@@ -346,12 +350,11 @@ to the :mod:`time` module:
 * :func:`time.process_time_ns`
 * :func:`time.time_ns`
 
-The new functions are similar in function to the existing functions
-without the ``_ns`` suffix.  They differ by returning nanoseconds as
-integers instead of fractional seconds.
+The new functions return the number of nanoseconds as an integer value.
 
-On Linux and Windows the resolution of :func:`time.time_ns` is 3 times
-better than that of :func:`time.time`.
+`Measurements <https://www.python.org/dev/peps/pep-0564/#annex-clocks-resolution-in-python>`_
+show that on Linux and Windows the resolution of :func:`time.time_ns` is
+approximately 3 times better than that of :func:`time.time`.
 
 .. seealso::
 
@@ -418,19 +421,6 @@ fixed.
       PEP written and implemented by Ivan Levkivskyi
 
 
-.. _whatsnew37-devmode:
-
-Development Runtime Mode: -X dev
---------------------------------
-
-The new :option:`-X` ``dev`` command line option or the new
-:envvar:`PYTHONDEVMODE` environment variable can be used to enable
-CPython's *development mode*.  When in development mode, CPython performs
-additional runtime checks which are too expensive to be enabled by default.
-See :option:`-X` ``dev`` documentation for the full description of the effects
-of this mode.
-
-
 .. _whatsnew37-pep552:
 
 PEP 552: Hash-based .pyc Files
@@ -460,6 +450,11 @@ keeping ``.pyc`` files up-to-date.
 
 See :ref:`pyc-invalidation` for more information.
 
+.. seealso::
+
+   :pep:`552` -- Deterministic pycs
+      PEP written and implemented by Benjamin Peterson
+
 
 .. _whatsnew37-pep545:
 
@@ -480,6 +475,19 @@ Three new translations have been added:
    :pep:`545` -- Python Documentation Translations
       PEP written and implemented by Julien Palard, Inada Naoki, and
       Victor Stinner.
+
+
+.. _whatsnew37-devmode:
+
+Development Runtime Mode: -X dev
+--------------------------------
+
+The new :option:`-X` ``dev`` command line option or the new
+:envvar:`PYTHONDEVMODE` environment variable can be used to enable
+CPython's *development mode*.  When in development mode, CPython performs
+additional runtime checks that are too expensive to be enabled by default.
+See :option:`-X` ``dev`` documentation for the full description of the effects
+of this mode.
 
 
 Other Language Changes
