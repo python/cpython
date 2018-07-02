@@ -5879,6 +5879,10 @@ PyInit__ssl(void)
                             PY_PROTO_MINIMUM_SUPPORTED);
     PyModule_AddIntConstant(m, "PROTO_MAXIMUM_SUPPORTED",
                             PY_PROTO_MAXIMUM_SUPPORTED);
+    PyModule_AddIntConstant(m, "PROTO_MINIMUM_AVAILABLE",
+                            PY_PROTO_MINIMUM_AVAILABLE);
+    PyModule_AddIntConstant(m, "PROTO_MAXIMUM_AVAILABLE",
+                            PY_PROTO_MAXIMUM_AVAILABLE);
     PyModule_AddIntConstant(m, "PROTO_SSLv3", PY_PROTO_SSLv3);
     PyModule_AddIntConstant(m, "PROTO_TLSv1", PY_PROTO_TLSv1);
     PyModule_AddIntConstant(m, "PROTO_TLSv1_1", PY_PROTO_TLSv1_1);

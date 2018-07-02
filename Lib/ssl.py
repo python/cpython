@@ -157,12 +157,16 @@ _SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
 
 class TLSVersion(_IntEnum):
     MINIMUM_SUPPORTED = _ssl.PROTO_MINIMUM_SUPPORTED
+    if OPENSSL_VERSION.startswith('LibreSSL'):
+        MINIMUM_AVAILABLE = _ssl.PROTO_MINIMUM_AVAILABLE
     SSLv3 = _ssl.PROTO_SSLv3
     TLSv1 = _ssl.PROTO_TLSv1
     TLSv1_1 = _ssl.PROTO_TLSv1_1
     TLSv1_2 = _ssl.PROTO_TLSv1_2
     TLSv1_3 = _ssl.PROTO_TLSv1_3
     MAXIMUM_SUPPORTED = _ssl.PROTO_MAXIMUM_SUPPORTED
+    if OPENSSL_VERSION.startswith('LibreSSL'):
+        MAXIMUM_AVAILABLE = _ssl.PROTO_MAXIMUM_AVAILABLE
 
 
 if sys.platform == "win32":
