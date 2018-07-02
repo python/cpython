@@ -3383,6 +3383,8 @@ set_verify_flags(PySSLContext *self, PyObject *arg, void *c)
 static int
 set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
 {
+    long min;
+    long max;
     long v;
     int result;
 
@@ -3408,6 +3410,7 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
     }
 
     if (what == 0) {
+        /* set_minimum_version */
         switch(v) {
         case PY_PROTO_MINIMUM_SUPPORTED:
             v = 0;
@@ -3419,9 +3422,20 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
         default:
             break;
         }
+        max = SSL_CTX_get_max_proto_version(self->ctx);
+        if(v > PY_PROTO_MAXIMUM_AVAILABLE ||
+          (max != 0 && v > max)) {
+            PyErr_SetString(
+                PyExc_ValueError,
+                "SSLContext.minimum_version cannot be greater than "
+                "SSLContext.maximum_version."
+            );
+            return -1;
+        }
         result = SSL_CTX_set_min_proto_version(self->ctx, v);
     }
     else {
+        /* set_maximum_version */
         switch(v) {
         case PY_PROTO_MAXIMUM_SUPPORTED:
             v = 0;
@@ -3432,6 +3446,16 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
             break;
         default:
             break;
+        }
+        min = SSL_CTX_get_min_proto_version(self->ctx);
+        if(v != 0 && (v < PY_PROTO_MINIMUM_AVAILABLE ||
+          (min != 0 && v < min))) {
+            PyErr_SetString(
+                PyExc_ValueError,
+                "SSLContext.minimum_version cannot be greater than "
+                "SSLContext.maximum_version."
+            );
+            return -1;
         }
         result = SSL_CTX_set_max_proto_version(self->ctx, v);
     }
