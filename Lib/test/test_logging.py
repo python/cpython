@@ -1304,16 +1304,16 @@ class ConfigFileTest(BaseTest):
     keys=root
 
     [handlers]
-    keys=file_handler
+    keys=file
 
     [formatters]
     keys=
 
     [logger_root]
     level=DEBUG
-    handlers=file_handler
+    handlers=file
 
-    [handler_file_handler]
+    [handler_file]
     class=FileHandler
     level=DEBUG
     args=("{tempfile}",)
@@ -1466,9 +1466,14 @@ class ConfigFileTest(BaseTest):
 
     def test_config8_ok(self):
         with self.check_no_resource_warning():
-            with tempfile.NamedTemporaryFile() as f:
-                self.apply_config(self.config8.format(tempfile=f.name))
-                self.apply_config(self.config8.format(tempfile=f.name))
+            fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
+            os.close(fd)
+            config8 = self.config8.format(tempfile=fn)
+
+            self.apply_config(config8)
+            self.apply_config(config8)
+
+            os.unlink(fn)
 
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
@@ -2926,13 +2931,16 @@ class ConfigDictTest(BaseTest):
             self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
 
     def test_config15_ok(self):
-        with tempfile.NamedTemporaryFile() as f:
+        with self.check_no_resource_warning():
+            fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
+            os.close(fd)
+
             config = {
                 "version": 1,
                 "handlers": {
                     "file": {
                         "class": "logging.FileHandler",
-                        "filename": f.name
+                        "filename": fn
                     }
                 },
                 "root": {
@@ -2940,9 +2948,10 @@ class ConfigDictTest(BaseTest):
                 }
             }
 
-            with self.check_no_resource_warning():
-                self.apply_config(config)
-                self.apply_config(config)
+            self.apply_config(config)
+            self.apply_config(config)
+
+            os.unlink(fn)
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
