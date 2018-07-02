@@ -1299,7 +1299,7 @@ class ConfigFileTest(BaseTest):
     """
 
     # config 8, check for resource warning
-    config8 = """
+    config8 = r"""
     [loggers]
     keys=root
 
