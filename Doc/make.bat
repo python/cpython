@@ -152,6 +152,7 @@ goto end
 if NOT "%2" EQU "" (
     echo.Can't specify filenames to build with htmlview target, ignoring.
 )
+set SPHINXOPTS=-D html_theme_options.body_max_width=none %SPHINXOPTS%
 cmd /C %this% html
 
 if EXIST "%BUILDDIR%\html\index.html" (
