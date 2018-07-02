@@ -1,0 +1,2 @@
+Add checks for protocol version bounds when the ssl module is built using
+LibreSSL.
