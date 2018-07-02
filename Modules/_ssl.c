@@ -3386,6 +3386,8 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
     long min;
     long max;
     long v;
+    long prev;
+    long new;
     int result;
 
     if (!PyArg_Parse(arg, "l", &v))
@@ -3432,7 +3434,18 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
             );
             return -1;
         }
+        prev = SSL_CTX_get_min_proto_version(self->ctx);
         result = SSL_CTX_set_min_proto_version(self->ctx, v);
+        new = SSL_CTX_get_min_proto_version(self->ctx);
+#if defined(LIBRESSL_VERSION_NUMBER)
+        if((v != 0 && v != new) ||
+          (v == 0 && PY_PROTO_MINIMUM_AVAILABLE != new)) {
+            PyErr_Format(PyExc_ValueError,
+                         "Unsupported protocol version 0x%x", v);
+            SSL_CTX_set_min_proto_version(self->ctx, prev);
+            return -1;
+        }
+#endif
     }
     else {
         /* set_maximum_version */
@@ -3457,7 +3470,18 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
             );
             return -1;
         }
+        prev = SSL_CTX_get_max_proto_version(self->ctx);
         result = SSL_CTX_set_max_proto_version(self->ctx, v);
+        new = SSL_CTX_get_max_proto_version(self->ctx);
+#if defined(LIBRESSL_VERSION_NUMBER)
+        if((v != 0 && v != SSL_CTX_get_max_proto_version(self->ctx)) ||
+          (v == 0 && PY_PROTO_MAXIMUM_AVAILABLE != SSL_CTX_get_max_proto_version(self->ctx))) {
+            PyErr_Format(PyExc_ValueError,
+                         "Unsupported protocol version 0x%x", v);
+            result = SSL_CTX_set_max_proto_version(self->ctx, prev);
+            return -1;
+        }
+#endif
     }
     if (result == 0) {
         PyErr_Format(PyExc_ValueError,
