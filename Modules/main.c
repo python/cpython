@@ -2144,6 +2144,7 @@ config_init_module_search_paths(_PyCoreConfig *config)
 static _PyInitError
 config_init_path_config(_PyCoreConfig *config)
 {
+    /* FIXME: this method has side effect: modify _Py_path_config */
     _PyInitError err = _PyPathConfig_Init(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
@@ -2696,9 +2697,13 @@ pymain_main(_PyMain *pymain)
 
     pymain_init_stdio(pymain);
 
-    pymain->err = _Py_InitializeCore(&pymain->config);
-    if (_Py_INIT_FAILED(pymain->err)) {
-        _Py_FatalInitError(pymain->err);
+    /* bpo-34008: For backward compatibility reasons, calling Py_Main() after
+       Py_Initialize() ignores the new configuration. */
+    if (!_PyRuntime.initialized) {
+        pymain->err = _Py_InitializeCore(&pymain->config);
+        if (_Py_INIT_FAILED(pymain->err)) {
+            _Py_FatalInitError(pymain->err);
+        }
     }
 
     if (pymain_init_python_main(pymain) < 0) {
