@@ -199,6 +199,11 @@ PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
 #define USE_STACKCHECK
 #endif
 
+#if defined(__APPLE__)
+/* Enable stack checking under macOS */
+#define USE_STACKCHECK
+#endif
+
 #ifdef USE_STACKCHECK
 /* Check that we aren't overflowing our stack */
 PyAPI_FUNC(int) PyOS_CheckStack(void);

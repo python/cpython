@@ -1,0 +1,2 @@
+A interpreter on macOS system now supports USE_STACKCHECK.
+The interpreter detects running out of stack space and raise MemoryError.

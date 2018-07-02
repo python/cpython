@@ -1649,6 +1649,70 @@ PyOS_CheckStack(void)
 
 #endif /* WIN32 && _MSC_VER */
 
+#if defined(__APPLE__)
+
+#define MAC_OS_10_9 13
+#define MAC_OS_10_10 14
+#define MAC_OS_10_11 15
+
+#include <sys/utsname.h>
+
+/*
+ * Return non-zero when we run out of memory on the stack; zero otherwise.
+ */
+
+__thread size_t last_remains = 0; /* Size of the last stack remain space */ 
+__thread size_t stack_space = 0; /* Size of a thread stack space */
+
+int
+PyOS_CheckStack(void)
+{
+    const pthread_t p_thread = pthread_self();
+    const uintptr_t end = (uintptr_t)pthread_get_stackaddr_np(p_thread);
+    const uintptr_t frame = (uintptr_t)__builtin_frame_address(0);
+
+    if (stack_space == 0) {
+        if (pthread_main_np() == 1) {
+            // On macOS 10.09 - 10.11 pthread_get_stacksize_np 
+            // returns wrong stack size on main thread.
+            // ref: https://github.com/rust-lang/rust/issues/43347#issuecomment-316783599
+            // ref: https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8020753
+            struct utsname sysinfo;
+            uname(&sysinfo);
+            const int major_version = atoi(sysinfo.release);
+            if (major_version == MAC_OS_10_9  ||
+                major_version == MAC_OS_10_10 ||
+                major_version == MAC_OS_10_11) {
+                struct rlimit limit;
+                getrlimit(RLIMIT_STACK, &limit);
+                stack_space = limit.rlim_cur;
+            } else {
+                stack_space = pthread_get_stacksize_np(p_thread);
+            }
+        } else {
+            stack_space = pthread_get_stacksize_np(p_thread);
+        }
+    }
+
+    const size_t remains = stack_space - (end - frame);
+    size_t required_stack_space = PYOS_STACK_MARGIN * sizeof(void*);
+
+    // Estimate a required stack space based on last remain space.
+    if(last_remains > 0) {
+        if(last_remains > remains) {
+            required_stack_space = last_remains - remains;
+        } else if (last_remains < remains) {
+            required_stack_space = remains - last_remains;
+        }
+    }
+    last_remains = remains;
+    if (remains >= required_stack_space) {
+        return 0;
+    }
+    return 1;
+}
+#endif /* __APPLE__ */
+
 /* Alternate implementations can be added here... */
 
 #endif /* USE_STACKCHECK */

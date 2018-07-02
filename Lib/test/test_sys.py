@@ -234,6 +234,18 @@ class SysModuleTest(unittest.TestCase):
         finally:
             sys.setrecursionlimit(oldlimit)
 
+    @unittest.skipUnless(sys.platform == 'darwin', 'macOS only')
+    def test_setrecursion_with_memory_error(self):
+        oldlimit = sys.getrecursionlimit()
+        def f():
+            f()
+        try:
+            sys.setrecursionlimit(1 << 30)
+            with self.assertRaisesRegex(MemoryError, r'Stack overflow'):
+                f()
+        finally:
+            sys.setrecursionlimit(oldlimit)
+
     @test.support.cpython_only
     def test_setrecursionlimit_recursion_depth(self):
         # Issue #25274: Setting a low recursion limit must be blocked if the
