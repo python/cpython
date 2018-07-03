@@ -23,6 +23,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import unittest
+import unittest.mock
 import sqlite3 as sqlite
 
 def func_returntext():
@@ -274,6 +275,14 @@ class FunctionTests(unittest.TestCase):
         cur.execute("select spam(?, ?)", (1, 2))
         val = cur.fetchone()[0]
         self.assertEqual(val, 2)
+
+    def CheckFuncDeterministic(self):
+        mock = unittest.mock.Mock()
+        mock.return_value = None
+        self.con.create_function("deterministic", 0, mock, deterministic=True)
+        cur = self.con.cursor()
+        cur.execute("select deterministic(), deterministic()")
+        self.assertEqual(mock.call_count, 2 if sqlite.sqlite_version_info < (3, 8, 3) else 1)
 
 
 class AggregateTests(unittest.TestCase):
