@@ -1044,7 +1044,8 @@ class MIMEPart(Message):
         try:
             parts = self.get_payload().copy()
         except AttributeError:
-            raise TypeError('Expected payload as list, got %s' % type(self._payload))
+            raise TypeError(f'Expected multipart to have a payload of type list' 
+                ' not {type(self._payload)}') from None
         if maintype == 'multipart' and subtype == 'related':
             # For related, we treat everything but the root as an attachment.
             # The root may be indicated by 'start'; if there's no start or we

@@ -798,7 +798,6 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         m.set_content(content_manager=cm)
         self.assertNotIn('MIME-Version', m)
 
-    
     def test_string_payload_with_multipart_content_type(self):
         m = message_from_string(textwrap.dedent("""\
             Subject: Ayons asperges pour le
@@ -810,8 +809,7 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
             sample text
             """), policy=policy.default)
         with self.assertRaises(TypeError) as ar:
-            for a in m.iter_attachments():
-                pass
+            next(m.iter_attachments())
 
 
 if __name__ == '__main__':
