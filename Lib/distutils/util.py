@@ -416,7 +416,7 @@ byte_compile(files, optimize=%r, force=%r,
     else:
         from py_compile import compile
 
-        for file in py_files:
+        for file in sorted(py_files):
             if file[-3:] != ".py":
                 # This lets us be lazy and not filter filenames in
                 # the "install_lib" command.
