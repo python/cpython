@@ -15585,6 +15585,7 @@ static struct PyModuleDef _string_module = {
 PyMODINIT_FUNC
 PyInit__string(void)
 {
+    PyStructSequence_InitType(&FormatterIterResultType, &formatter_iter_result_desc);
     return PyModule_Create(&_string_module);
 }
 

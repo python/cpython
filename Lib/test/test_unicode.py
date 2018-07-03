@@ -2871,13 +2871,29 @@ class StringModuleTest(unittest.TestCase):
         def parse(format):
             return list(_string.formatter_parser(format))
 
+        formatter = next(_string.formatter_parser("test"))
+        self.assertEqual(formatter.n_fields, 4)
+        self.assertEqual(formatter.n_unnamed_fields, 0)
+        self.assertEqual(formatter.n_sequence_fields, 4)
+        self.assertNotEqual(formatter.__class__, tuple)
+        self.assertIsInstance(formatter, tuple)
+        self.assertEqual(formatter.__class__.__name__, "FormatterItem")
+
         formatter = parse("prefix {2!s}xxx{0:^+10.3f}{obj.attr!s} {z[0]!s:10}")
-        self.assertEqual(formatter, [
+        expected_formatter = [
             ('prefix ', '2', '', 's'),
             ('xxx', '0', '^+10.3f', None),
             ('', 'obj.attr', '', 's'),
             (' ', 'z[0]', '10', 's'),
-        ])
+            ]
+
+        self.assertEqual(formatter, expected_formatter)
+
+        for result, expected in zip(formatter, expected_formatter):
+            self.assertEqual(result.literal_text, expected[0])
+            self.assertEqual(result.field_name, expected[1])
+            self.assertEqual(result.format_spec, expected[2])
+            self.assertEqual(result.conversion, expected[3])
 
         formatter = parse("prefix {} suffix")
         self.assertEqual(formatter, [

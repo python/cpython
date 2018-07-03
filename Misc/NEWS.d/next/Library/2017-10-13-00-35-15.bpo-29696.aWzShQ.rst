@@ -1,0 +1,2 @@
+Use named tuple (structseq object) in string.Formatter.parse iterator
+response.

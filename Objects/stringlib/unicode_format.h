@@ -989,6 +989,27 @@ formatteriter_dealloc(formatteriterobject *it)
    format_spec is the string after the ':'.  mibht be None
    conversion is either None, or the string after the '!'
 */
+
+static PyStructSequence_Field formatter_iter_result_fields[] = {
+    {"literal_text", "Span of literal text."},
+    {"field_name", "Specifies the object whose value is to be formatted."},
+    {"format_spec", "Contains a specification of how the value \
+    should be presented."},
+    {"conversion", "The conversion to be used. One of: ‘s’ (str),\
+    ‘r’ (repr) and ‘a’ (ascii)."},
+    {NULL}
+};
+
+static PyTypeObject FormatterIterResultType;
+
+static PyStructSequence_Desc formatter_iter_result_desc = {
+    "string.FormatterItem",
+    NULL,
+    formatter_iter_result_fields,
+    4
+};
+
+
 static PyObject *
 formatteriter_next(formatteriterobject *it)
 {
@@ -1013,15 +1034,15 @@ formatteriter_next(formatteriterobject *it)
         PyObject *field_name_str = NULL;
         PyObject *format_spec_str = NULL;
         PyObject *conversion_str = NULL;
-        PyObject *tuple = NULL;
+        PyObject *res;
 
         literal_str = SubString_new_object(&literal);
         if (literal_str == NULL)
-            goto done;
+            goto error;
 
         field_name_str = SubString_new_object(&field_name);
         if (field_name_str == NULL)
-            goto done;
+            goto error;
 
         /* if field_name is non-zero length, return a string for
            format_spec (even if zero length), else return None */
@@ -1029,7 +1050,7 @@ formatteriter_next(formatteriterobject *it)
                            SubString_new_object_or_empty :
                            SubString_new_object)(&format_spec);
         if (format_spec_str == NULL)
-            goto done;
+            goto error;
 
         /* if the conversion is not specified, return a None,
            otherwise create a one length string with the conversion
@@ -1042,16 +1063,27 @@ formatteriter_next(formatteriterobject *it)
             conversion_str = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
                                                        &conversion, 1);
         if (conversion_str == NULL)
-            goto done;
+            goto error;
 
-        tuple = PyTuple_Pack(4, literal_str, field_name_str, format_spec_str,
-                             conversion_str);
-    done:
+        Py_INCREF((PyObject *) &FormatterIterResultType);
+        res = PyStructSequence_New(&FormatterIterResultType);
+
+        if (res == NULL)
+            goto error;
+
+        PyStructSequence_SET_ITEM(res, 0, literal_str); 
+        PyStructSequence_SET_ITEM(res, 1, field_name_str);
+        PyStructSequence_SET_ITEM(res, 2, format_spec_str); 
+        PyStructSequence_SET_ITEM(res, 3, conversion_str); 
+
+        return res;
+
+    error:
         Py_XDECREF(literal_str);
         Py_XDECREF(field_name_str);
         Py_XDECREF(format_spec_str);
         Py_XDECREF(conversion_str);
-        return tuple;
+        return NULL;
     }
 }
 
