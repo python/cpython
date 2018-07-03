@@ -1612,7 +1612,6 @@ dictionary for one of its parents).  In the examples below, "the attribute"
 refers to the attribute whose name is the key of the property in the owner
 class' :attr:`~object.__dict__`.
 
-
 .. method:: object.__get__(self, instance, owner)
 
    Called to get the attribute of the owner class (class attribute access) or of an
@@ -1649,6 +1648,10 @@ For callables, it may indicate that an instance of the given type (or a
 subclass) is expected or required as the first positional argument (for example,
 CPython sets this attribute for unbound methods that are implemented in C).
 
+.. seealso::
+
+   :ref:`descriptors-howto`
+      A more gentle introduction for implementing descriptors.
 
 .. _descriptor-invocation:
 

@@ -1,3 +1,5 @@
+.. _descriptors-howto:
+
 ======================
 Descriptor HowTo Guide
 ======================
