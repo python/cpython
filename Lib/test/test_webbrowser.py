@@ -170,23 +170,23 @@ class OperaCommandTest(CommandTestMixin, unittest.TestCase):
 
     def test_open(self):
         self._test('open',
-                   options=['-remote'],
-                   arguments=['openURL({})'.format(URL)])
+                   options=[],
+                   arguments=[URL])
 
     def test_open_with_autoraise_false(self):
         self._test('open', kw=dict(autoraise=False),
-                   options=['-remote', '-noraise'],
-                   arguments=['openURL({})'.format(URL)])
+                   options=[],
+                   arguments=[URL])
 
     def test_open_new(self):
         self._test('open_new',
-                   options=['-remote'],
-                   arguments=['openURL({},new-window)'.format(URL)])
+                   options=['--new-window'],
+                   arguments=[URL])
 
     def test_open_new_tab(self):
         self._test('open_new_tab',
-                   options=['-remote'],
-                   arguments=['openURL({},new-page)'.format(URL)])
+                   options=[],
+                   arguments=[URL])
 
 
 class ELinksCommandTest(CommandTestMixin, unittest.TestCase):
