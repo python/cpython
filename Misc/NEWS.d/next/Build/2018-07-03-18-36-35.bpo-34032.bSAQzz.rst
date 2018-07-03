@@ -1,0 +1,3 @@
+Build system has been modified to allow /usr/lib64 as well as /usr/lib into
+install path as well as to the search path for the Linux distributions which
+distinguish between 32bit and 64bit libraries.
