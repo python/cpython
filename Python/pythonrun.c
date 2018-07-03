@@ -431,6 +431,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     }
     flush_io();
     if (v == NULL) {
+        Py_CLEAR(m);
         PyErr_Print();
         goto done;
     }
@@ -439,7 +440,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
   done:
     if (set_file_name && PyDict_DelItemString(d, "__file__"))
         PyErr_Clear();
-    Py_DECREF(m);
+    Py_XDECREF(m);
     return ret;
 }
 
