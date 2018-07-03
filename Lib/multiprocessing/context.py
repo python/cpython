@@ -5,7 +5,7 @@ import threading
 from . import process
 from . import reduction
 
-__all__ = []
+__all__ = ()
 
 #
 # Exceptions
