@@ -1106,6 +1106,23 @@ class ContextTests(unittest.TestCase):
         )
 
         with self.assertRaises(ValueError):
+            ctx.maximum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+
+        self.assertEqual(
+            ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
+        )
+
+        ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+        ctx.maximum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+
+        with self.assertRaises(ValueError):
+            ctx.minimum_version = ssl.TLSVersion.MAXIMUM_SUPPORTED
+
+        self.assertEqual(
+            ctx.minimum_version, ssl.TLSVersion.MINIMUM_SUPPORTED
+        )
+
+        with self.assertRaises(ValueError):
             ctx.minimum_version = 42
 
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
