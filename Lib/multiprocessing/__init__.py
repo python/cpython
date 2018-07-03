@@ -19,7 +19,7 @@ from . import context
 # Copy stuff from default context
 #
 
-__all__ = [x for x in dir(context._default_context) if not x[0].startswith('_')]
+__all__ = [x for x in dir(context._default_context) if not x.startswith('_')]
 globals().update((name, getattr(context._default_context, name)) for name in __all__)
 
 #
