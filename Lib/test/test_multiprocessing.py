@@ -1260,10 +1260,10 @@ class _TestPool(BaseTestCase):
         self.assertRaises(SayWhenError, it.next)
 
     def test_imap_unordered(self):
-        it = self.pool.imap_unordered(sqr, range(1000))
-        self.assertEqual(sorted(it), map(sqr, range(1000)))
+        it = self.pool.imap_unordered(sqr, range(100))
+        self.assertEqual(sorted(it), map(sqr, range(100)))
 
-        it = self.pool.imap_unordered(sqr, range(1000), chunksize=53)
+        it = self.pool.imap_unordered(sqr, range(1000), chunksize=100)
         self.assertEqual(sorted(it), map(sqr, range(1000)))
 
     def test_imap_unordered_handle_iterable_exception(self):
