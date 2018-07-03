@@ -496,9 +496,10 @@ def _tokenize(readline, encoding):
     line = b''
     while True:                                # loop over lines in stream
         try:
-            # This loop has multiple points where it can break out so we
-            # pick up the value for the last_line here, at one unified
-            # point to keep things simple.
+            # We capture the value of the line variable here because 
+            # readline uses the empty string '' to signal end of input,
+            # hence `line` itself will always be overwritten at the end
+            # of this loop.
             last_line = line
             line = readline()
         except StopIteration:
