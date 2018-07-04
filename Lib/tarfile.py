@@ -513,21 +513,10 @@ class _Stream:
             raise StreamError("seeking backwards is not allowed")
         return self.pos
 
-    def read(self, size=None):
-        """Return the next size number of bytes from the stream.
-           If size is not defined, return all bytes of the stream
-           up to EOF.
-        """
-        if size is None:
-            t = []
-            while True:
-                buf = self._read(self.bufsize)
-                if not buf:
-                    break
-                t.append(buf)
-            buf = b"".join(t)
-        else:
-            buf = self._read(size)
+    def read(self, size):
+        """Return the next size number of bytes from the stream."""
+        assert size is not None
+        buf = self._read(size)
         self.pos += len(buf)
         return buf
 
@@ -540,9 +529,14 @@ class _Stream:
         c = len(self.dbuf)
         t = [self.dbuf]
         while c < size:
-            buf = self.__read(self.bufsize)
-            if not buf:
-                break
+            # Skip underlaying buffer to avoid unaligned double
+            # buffering.
+            if self.buf:
+                buf, self.buf = self.buf, b""
+            else:
+                buf = self.fileobj.read(self.bufsize)
+                if not buf:
+                    break
             try:
                 buf = self.cmp.decompress(buf)
             except self.exception:
