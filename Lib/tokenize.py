@@ -496,7 +496,7 @@ def _tokenize(readline, encoding):
     line = b''
     while True:                                # loop over lines in stream
         try:
-            # We capture the value of the line variable here because 
+            # We capture the value of the line variable here because
             # readline uses the empty string '' to signal end of input,
             # hence `line` itself will always be overwritten at the end
             # of this loop.
