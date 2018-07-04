@@ -40,6 +40,7 @@ General notes on the underlying Mersenne Twister core generator:
 from warnings import warn as _warn
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
+from operator import index as _index
 from os import urandom as _urandom
 from _collections_abc import Set as _Set, Sequence as _Sequence
 from hashlib import sha512 as _sha512
@@ -190,49 +191,43 @@ class Random(_random.Random):
 
 ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=1, _int=int):
+    def randrange(self, start, stop=None, step=1, _int=_index):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
         endpoint; in Python this is usually not what you want.
 
         """
-
-        # This code is a bit messy to make it fast for the
-        # common case while still doing adequate error checking.
-        istart = _int(start)
-        if istart != start:
-            raise ValueError("non-integer arg 1 for randrange()")
+        start = _int(start)
+        
         if stop is None:
-            if istart > 0:
-                return self._randbelow(istart)
-            raise ValueError("empty range for randrange()")
-
-        # stop argument supplied.
-        istop = _int(stop)
-        if istop != stop:
-            raise ValueError("non-integer stop for randrange()")
-        width = istop - istart
-        if step == 1 and width > 0:
-            return istart + self._randbelow(width)
-        if step == 1:
-            raise ValueError("empty range for randrange() (%d,%d, %d)" % (istart, istop, width))
+            if start < 1:
+                raise ValueError("empty range for randrange()")
+            if step == 1:
+                    return self._randbelow(start)
+            width = start
+            start = 0
+        else:
+            width = _int(stop) - start
+            if step == 1:
+                if width > 0:
+                    return start + self._randbelow(width)
+                raise ValueError("empty range for randrange() (%d,%d, %d)"
+                                 % (start, stop, width))
 
         # Non-unit step argument supplied.
-        istep = _int(step)
-        if istep != step:
-            raise ValueError("non-integer step for randrange()")
-        if istep > 0:
-            n = (width + istep - 1) // istep
-        elif istep < 0:
-            n = (width + istep + 1) // istep
+        step = _int(step)
+        if step > 0:
+            n = (width + step - 1) // step
+        elif step < 0:
+            n = (width + step + 1) // step
         else:
             raise ValueError("zero step for randrange()")
 
-        if n <= 0:
+        if n < 1:
             raise ValueError("empty range for randrange()")
-
-        return istart + istep*self._randbelow(n)
+        
+        return start + step*self._randbelow(n)
 
     def randint(self, a, b):
         """Return random integer in range [a, b], including both end points.
