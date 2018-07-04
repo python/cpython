@@ -2083,25 +2083,20 @@ Platform Support Removals
   3.7 with SSL/TLS support on older platforms still using these versions
   requires custom build options that link to a more recent version of OpenSSL.
 
-  Notably, this issue affects the Debian 8 and Ubuntu 14.04 LTS Linux
-  distributions, as they still use OpenSSL 1.0.1 by default. Debian 9 and
-  Ubuntu 16.04, as well as recent releases of other LTS Linux releases
-  (e.g. RHEL/CentOS 7.5, SLES 12-SP3), use OpenSSL 1.0.2 or later, and remain
-  supported in the default build configuration.
+  Notably, this issue affects the Debian 8 (aka "jessie") and Ubuntu 14.04
+  (aka "Trusty") LTS Linux distributions, as they still use OpenSSL 1.0.1 by
+  default.
 
-  For projects using the Ubuntu 14.04 (``dist: trusty``) environment in
-  Travis CI, CPython's own :source:`CI configuration file <.travis.yml>`
-  provides an example of using the SSL
+  Debian 9 ("stretch") and Ubuntu 16.04 ("xenial"), as well as recent releases
+  of other LTS Linux releases (e.g. RHEL/CentOS 7.5, SLES 12-SP3), use OpenSSL
+  1.0.2 or later, and remain supported in the default build configuration.
+
+  CPython's own :source:`CI configuration file <.travis.yml>` provides an
+  example of using the SSL
   :source:`compatibility testing infrastructure <Tools/ssl/multissltests.py>` in
-  CPython's test suite to build and link against OpenSSL 1.1.0 rather than the
+  CPython's test suite to build and link against OpenSSL 1.1.0 rather than an
   outdated system provided OpenSSL.
 
-  There is an `open ticket with Travis CI <travis-ci-openssl-ticket>`_
-  requesting either an Ubuntu 14.04 compatible build of CPython 3.7, or else
-  an update on the availability of a reliable ``dist: xenial`` (Ubuntu 16.04)
-  testing environment.
-
-.. _travis-ci-openssl-ticket: https://github.com/travis-ci/travis-ci/issues/9069
 
 API and Feature Removals
 ========================
