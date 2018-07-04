@@ -281,8 +281,11 @@ class FunctionTests(unittest.TestCase):
         mock.return_value = None
         self.con.create_function("deterministic", 0, mock, deterministic=True)
         cur = self.con.cursor()
-        cur.execute("select deterministic(), deterministic()")
-        self.assertEqual(mock.call_count, 2 if sqlite.sqlite_version_info < (3, 8, 3) else 1)
+        cur.execute("select deterministic() = deterministic()")
+        self.assertEqual(
+            mock.call_count,
+            2 if sqlite.sqlite_version_info < (3, 8, 3) else 1,
+        )
 
 
 class AggregateTests(unittest.TestCase):
