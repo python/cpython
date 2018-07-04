@@ -588,10 +588,7 @@ class RawIOBase(IOBase):
     def readall(self):
         """Read until EOF, using multiple read() call."""
         res = bytearray()
-        while True:
-            data = self.read(DEFAULT_BUFFER_SIZE)
-            if not data:
-                break
+        while (data := self.read(DEFAULT_BUFFER_SIZE)):
             res += data
         if res:
             return bytes(res)

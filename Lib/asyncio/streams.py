@@ -629,10 +629,7 @@ class StreamReader:
             # deadlock if the subprocess sends more than self.limit
             # bytes.  So just call self.read(self._limit) until EOF.
             blocks = []
-            while True:
-                block = await self.read(self._limit)
-                if not block:
-                    break
+            while (block := await self.read(self._limit)):
                 blocks.append(block)
             return b''.join(blocks)
 

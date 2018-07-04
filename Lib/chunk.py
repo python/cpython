@@ -31,10 +31,7 @@ while True:
     except EOFError:
         break
     chunktype = chunk.getname()
-    while True:
-        data = chunk.read(nbytes)
-        if not data:
-            pass
+    while (data := chunk.read(nbytes)):
         # do something with data
 
 The interface is file-like.  The implemented methods are:

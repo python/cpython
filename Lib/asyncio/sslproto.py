@@ -196,11 +196,8 @@ class _SSLPipe(object):
 
             if self._state == _WRAPPED:
                 # Main state: read data from SSL until close_notify
-                while True:
-                    chunk = self._sslobj.read(self.max_size)
+                while (chunk := self._sslobj.read(self.max_size)):
                     appdata.append(chunk)
-                    if not chunk:  # close_notify
-                        break
 
             elif self._state == _SHUTDOWN:
                 # Call shutdown() until it doesn't raise anymore.

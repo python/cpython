@@ -102,10 +102,7 @@ def win_getpass(prompt='Password: ', stream=None):
     for c in prompt:
         msvcrt.putwch(c)
     pw = ""
-    while 1:
-        c = msvcrt.getwch()
-        if c == '\r' or c == '\n':
-            break
+    while (c := msvcrt.getwch()) not in ('\r', '\n'):
         if c == '\003':
             raise KeyboardInterrupt
         if c == '\b':

@@ -349,13 +349,7 @@ class Scanner:
         append = result.append
         match = self.scanner.scanner(string).match
         i = 0
-        while True:
-            m = match()
-            if not m:
-                break
-            j = m.end()
-            if i == j:
-                break
+        while (m := match()) and (j := m.end()) == i:
             action = self.lexicon[m.lastindex-1][1]
             if callable(action):
                 self.match = m
