@@ -178,10 +178,7 @@ def main(args=None):
         args = sys.argv[1:]
     rv = 0
     if args == ['-']:
-        while True:
-            filename = sys.stdin.readline()
-            if not filename:
-                break
+        while (filename := sys.stdin.readline()):
             filename = filename.rstrip('\n')
             try:
                 compile(filename, doraise=True)

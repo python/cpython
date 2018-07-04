@@ -481,19 +481,13 @@ class _NNTPBase:
             if file is not None:
                 # XXX lines = None instead?
                 terminators = (b'.' + _CRLF, b'.\n')
-                while 1:
-                    line = self._getline(False)
-                    if line in terminators:
-                        break
+                while (line := self._getline(False)) not in terminators:
                     if line.startswith(b'..'):
                         line = line[1:]
                     file.write(line)
             else:
                 terminator = b'.'
-                while 1:
-                    line = self._getline()
-                    if line == terminator:
-                        break
+                while (line := self._getline()) != terminator:
                     if line.startswith(b'..'):
                         line = line[1:]
                     lines.append(line)

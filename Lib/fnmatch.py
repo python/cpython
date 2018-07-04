@@ -103,10 +103,7 @@ def translate(pat):
                 else:
                     chunks = []
                     k = i+2 if pat[i] == '!' else i+1
-                    while True:
-                        k = pat.find('-', k, j)
-                        if k < 0:
-                            break
+                    while (k := pat.find('-', k, j)) >= 0:
                         chunks.append(pat[i:k])
                         i = k+1
                         k = k+3

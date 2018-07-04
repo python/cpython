@@ -679,11 +679,8 @@ class _singlefileMailbox(Mailbox):
                 self._file.seek(start)
                 self._pre_message_hook(new_file)
                 new_start = new_file.tell()
-                while True:
-                    buffer = self._file.read(min(4096,
-                                                 stop - self._file.tell()))
-                    if not buffer:
-                        break
+                while (buffer := self._file.read(min(4096,
+                                                     stop - self._file.tell()))):
                     new_file.write(buffer)
                 new_toc[key] = (new_start, new_file.tell())
                 self._post_message_hook(new_file)
@@ -1422,10 +1419,8 @@ class Babyl(_singlefileMailbox):
                     self._file.write(line.replace(b'\n', linesep))
                     if line == b'\n' or not line:
                         break
-            while True:
-                buffer = orig_buffer.read(4096) # Buffer size is arbitrary.
-                if not buffer:
-                    break
+            # Buffer size is arbitrary.
+            while (buffer := orig_buffer.read(4096)):
                 self._file.write(buffer.replace(b'\n', linesep))
         elif isinstance(message, (bytes, str, io.StringIO)):
             if isinstance(message, io.StringIO):
@@ -1465,10 +1460,7 @@ class Babyl(_singlefileMailbox):
                         message.seek(original_pos)
                     else:
                         break
-            while True:
-                line = message.readline()
-                if not line:
-                    break
+            while (line := message.readline()):
                 # Universal newline support.
                 if line.endswith(b'\r\n'):
                     line = line[:-2] + linesep
@@ -1953,10 +1945,7 @@ class _ProxyFile:
 
     def __iter__(self):
         """Iterate over lines."""
-        while True:
-            line = self.readline()
-            if not line:
-                return
+        while (line := self.readline()):
             yield line
 
     def tell(self):

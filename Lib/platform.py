@@ -572,10 +572,7 @@ def _platform(*args):
     platform = platform.replace('unknown', '')
 
     # Fold '--'s and remove trailing '-'
-    while 1:
-        cleaned = platform.replace('--', '-')
-        if cleaned == platform:
-            break
+    while (cleaned := platform.replace('--', '-')) != platform:
         platform = cleaned
     while platform[-1] == '-':
         platform = platform[:-1]
