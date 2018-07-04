@@ -242,7 +242,7 @@ class OtherFileTests:
         for methodname, args in methods:
             f = self.open(TESTFN, 'rb')
             if next(f) != filler:
-                self.fail, "Broken testfile"
+                self.fail("Broken testfile")
             meth = getattr(f, methodname)
             meth(*args)  # This simply shouldn't fail
             f.close()
