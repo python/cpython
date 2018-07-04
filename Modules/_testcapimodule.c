@@ -5199,7 +5199,7 @@ static PyMethodDef generic_alias_methods[] = {
     {NULL}  /* sentinel */
 };
 
-PyTypeObject GenericAlias_Type = {
+static PyTypeObject GenericAlias_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "GenericAlias",
     sizeof(PyGenericAliasObject),
@@ -5236,7 +5236,7 @@ static PyMethodDef generic_methods[] = {
     {NULL}  /* sentinel */
 };
 
-PyTypeObject Generic_Type = {
+static PyTypeObject Generic_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "Generic",
     sizeof(PyGenericObject),
