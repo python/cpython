@@ -808,10 +808,6 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
     Py_SETREF(self->cursors, new_list);
 }
 
-#ifndef SQLITE_DETERMINISTIC
-#define SQLITE_DETERMINISTIC 0x800
-#endif
-
 PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
     static char *kwlist[] = {"name", "narg", "func", "deterministic", NULL};
@@ -833,8 +829,21 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
         return NULL;
     }
 
-    if (deterministic && sqlite3_libversion_number() >= 3008003) {
-        eTextRep |= SQLITE_DETERMINISTIC;
+    if (deterministic) {
+#if SQLITE_VERSION_NUMBER < 3008003
+        PyErr_SetString(pysqlite_NotSupportedError,
+                        "should be built with SQLite 3.8.3 or higher");
+        return NULL;
+#else
+        if (sqlite3_libversion_number() < 3008003) {
+            PyErr_SetString(pysqlite_NotSupportedError,
+                            "requires SQLite 3.8.3 or higher");
+            return NULL;
+        }
+        else {
+            eTextRep |= SQLITE_DETERMINISTIC;
+        }
+#endif
     }
 
     rc = sqlite3_create_function(self->db,
