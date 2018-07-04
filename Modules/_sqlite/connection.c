@@ -833,7 +833,7 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
         return NULL;
     }
 
-    if (deterministic) {
+    if (deterministic && sqlite3_libversion_number() >= 3008003) {
         eTextRep |= SQLITE_DETERMINISTIC;
     }
 
