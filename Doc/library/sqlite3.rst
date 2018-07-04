@@ -352,7 +352,6 @@ Connection Objects
       float and ``None``.
 
       .. versionchanged:: 3.8
-
         The *deterministic* parameter was added.
 
       Example:
