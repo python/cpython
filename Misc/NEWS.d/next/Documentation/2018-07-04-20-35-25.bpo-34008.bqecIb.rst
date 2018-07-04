@@ -1,0 +1,2 @@
+The Py_Main documentation moved from the Very High Level API section to the
+Initializationa and Finalization section.
