@@ -96,7 +96,8 @@ class EmbeddingTests(unittest.TestCase):
             # Parse the line from the loop.  The first line is the main
             # interpreter and the 3 afterward are subinterpreters.
             interp = Interp(*match.groups())
-            if support.verbose > 1:
+            if support.verbose > 2:
+                # 5 lines per pass is super-spammy, so limit that to -vvv
                 print(interp)
             self.assertTrue(interp.interp)
             self.assertTrue(interp.tstate)
