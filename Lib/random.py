@@ -371,19 +371,19 @@ class Random(_random.Random):
 
         """
         random = self.random
+        n = len(population)
         if cum_weights is None:
             if weights is None:
                 _int = int
-                total = len(population)
-                return [population[_int(random() * total)] for i in range(k)]
+                return [population[_int(random() * n)] for i in range(k)]
             cum_weights = list(_itertools.accumulate(weights))
         elif weights is not None:
             raise TypeError('Cannot specify both weights and cumulative weights')
-        if len(cum_weights) != len(population):
+        if len(cum_weights) != n:
             raise ValueError('The number of weights does not match the population')
         bisect = _bisect.bisect
         total = cum_weights[-1]
-        hi = len(cum_weights) - 1
+        hi = n - 1
         return [population[bisect(cum_weights, random() * total, 0, hi)]
                 for i in range(k)]
 
