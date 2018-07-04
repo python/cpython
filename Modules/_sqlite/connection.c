@@ -827,7 +827,7 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
         return NULL;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "siO|p", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "siO|$p", kwlist,
                                      &name, &narg, &func, &deterministic))
     {
         return NULL;
