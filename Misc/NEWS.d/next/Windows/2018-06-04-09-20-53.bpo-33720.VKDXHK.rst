@@ -1,2 +1,1 @@
-Increased the maximum marshal recursion depth on Windows debug builds.
-It is now the same on all platforms.
+Reduces maximum marshal recursion depth on release builds.

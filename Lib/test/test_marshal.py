@@ -222,7 +222,13 @@ class BugsTestCase(unittest.TestCase):
         # Create a deeply nested structure.
         head = last = []
         # The max stack depth should match the value in Python/marshal.c.
-        MAX_MARSHAL_STACK_DEPTH = 2000
+        # BUG: https://bugs.python.org/issue33720
+        # Windows always limits the maximum depth on release and debug builds
+        #if os.name == 'nt' and hasattr(sys, 'gettotalrefcount'):
+        if os.name == 'nt':
+            MAX_MARSHAL_STACK_DEPTH = 1000
+        else:
+            MAX_MARSHAL_STACK_DEPTH = 2000
         for i in range(MAX_MARSHAL_STACK_DEPTH - 2):
             last.append([0])
             last = last[-1]
