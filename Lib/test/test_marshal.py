@@ -210,13 +210,24 @@ class BugsTestCase(unittest.TestCase):
             except Exception:
                 pass
 
-    def test_loads_2x_code(self):
-        s = b'c' + (b'X' * 4*4) + b'{' * 2**20
-        self.assertRaises(ValueError, marshal.loads, s)
-
     def test_loads_recursion(self):
-        s = b'c' + (b'X' * 4*5) + b'{' * 2**20
-        self.assertRaises(ValueError, marshal.loads, s)
+        def run_tests(N, check):
+            # (((...None...),),)
+            check(b')\x01' * N + b'N')
+            check(b'(\x01\x00\x00\x00' * N + b'N')
+            # [[[...None...]]]
+            check(b'[\x01\x00\x00\x00' * N + b'N')
+            # {None: {None: {None: ...None...}}}
+            check(b'{N' * N + b'N' + b'0' * N)
+            # frozenset([frozenset([frozenset([...None...])])])
+            check(b'>\x01\x00\x00\x00' * N + b'N')
+        # Check that the generated marshal data is valid and marshal.loads()
+        # works for moderately deep nesting
+        run_tests(100, marshal.loads)
+        # Very deeply nested structure shouldn't blow the stack
+        def check(s):
+            self.assertRaises(ValueError, marshal.loads, s)
+        run_tests(2**20, check)
 
     def test_recursion_limit(self):
         # Create a deeply nested structure.
