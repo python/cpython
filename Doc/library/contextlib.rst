@@ -110,7 +110,7 @@ Functions and classes provided:
       async def get_connection():
           conn = await acquire_db_connection()
           try:
-              yield
+              yield conn
           finally:
               await release_db_connection(conn)
 
