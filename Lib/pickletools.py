@@ -216,8 +216,7 @@ def read_uint1(f):
     255
     """
 
-    data = f.read(1)
-    if data:
+    if (data := f.read(1)):
         return data[0]
     raise ValueError("not enough data in stream to read uint1")
 

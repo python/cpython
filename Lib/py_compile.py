@@ -142,8 +142,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
             sys.stderr.write(py_exc.msg + '\n')
             return
     try:
-        dirname = os.path.dirname(cfile)
-        if dirname:
+        if (dirname := os.path.dirname(cfile)):
             os.makedirs(dirname)
     except FileExistsError:
         pass

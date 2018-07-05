@@ -681,12 +681,10 @@ def _get_decompressor(compress_type):
         return bz2.BZ2Decompressor()
     elif compress_type == ZIP_LZMA:
         return LZMADecompressor()
+    elif (descr := compressor_names.get(compress_type)):
+        raise NotImplementedError("compression type %d (%s)" % (compress_type, descr))
     else:
-        descr = compressor_names.get(compress_type)
-        if descr:
-            raise NotImplementedError("compression type %d (%s)" % (compress_type, descr))
-        else:
-            raise NotImplementedError("compression type %d" % (compress_type,))
+        raise NotImplementedError("compression type %d" % (compress_type,))
 
 
 class _SharedFile:
@@ -900,11 +898,9 @@ class ZipExtFile(io.BufferedIOBase):
             buf = self._readbuffer[self._offset:]
             self._readbuffer = b''
             self._offset = 0
-            while not self._eof:
-                data = self._read1(self.MAX_N)
-                if data:
-                    buf += data
-                    break
+            while not self._eof and (data := self._read1(self.MAX_N)):
+                buf += data
+                break
             return buf
 
         end = n + self._offset

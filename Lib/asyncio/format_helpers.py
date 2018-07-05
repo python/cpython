@@ -21,8 +21,7 @@ def _get_function_source(func):
 
 def _format_callback_source(func, args):
     func_repr = _format_callback(func, args, None)
-    source = _get_function_source(func)
-    if source:
+    if (source := _get_function_source(func)):
         func_repr += f' at {source[0]}:{source[1]}'
     return func_repr
 

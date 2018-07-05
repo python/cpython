@@ -313,8 +313,7 @@ class GzipFile(_compression.BaseStream):
             elif self.mode == READ:
                 self._buffer.close()
         finally:
-            myfileobj = self.myfileobj
-            if myfileobj:
+            if (myfileobj := self.myfileobj):
                 self.myfileobj = None
                 myfileobj.close()
 

@@ -924,8 +924,7 @@ class IMAP4:
 
 
     def _check_bye(self):
-        bye = self.untagged_responses.get('BYE')
-        if bye:
+        if (bye := self.untagged_responses.get('BYE')):
             raise self.abort(bye[-1].decode(self._encoding, 'replace'))
 
 
@@ -1389,8 +1388,7 @@ class _Authenticator:
             else:
                 t = inp
                 inp = b''
-            e = binascii.b2a_base64(t)
-            if e:
+            if (e := binascii.b2a_base64(t)):
                 oup = oup + e[:-1]
         return oup
 

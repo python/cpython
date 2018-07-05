@@ -886,8 +886,7 @@ class Decimal(object):
         self, other = _convert_for_comparison(self, other)
         if other is NotImplemented:
             return other
-        ans = self._compare_check_nans(other, context)
-        if ans:
+        if self._compare_check_nans(other, context):
             return False
         return self._cmp(other) < 0
 
@@ -895,8 +894,7 @@ class Decimal(object):
         self, other = _convert_for_comparison(self, other)
         if other is NotImplemented:
             return other
-        ans = self._compare_check_nans(other, context)
-        if ans:
+        if self._compare_check_nans(other, context):
             return False
         return self._cmp(other) <= 0
 
@@ -904,8 +902,7 @@ class Decimal(object):
         self, other = _convert_for_comparison(self, other)
         if other is NotImplemented:
             return other
-        ans = self._compare_check_nans(other, context)
-        if ans:
+        if self._compare_check_nans(other, context):
             return False
         return self._cmp(other) > 0
 
@@ -913,8 +910,7 @@ class Decimal(object):
         self, other = _convert_for_comparison(self, other)
         if other is NotImplemented:
             return other
-        ans = self._compare_check_nans(other, context)
-        if ans:
+        if self._compare_check_nans(other, context):
             return False
         return self._cmp(other) >= 0
 
@@ -930,8 +926,7 @@ class Decimal(object):
 
         # Compare(NaN, NaN) = NaN
         if (self._is_special or other and other._is_special):
-            ans = self._check_nans(other, context)
-            if ans:
+            if (ans := self._check_nans(other, context)):
                 return ans
 
         return Decimal(self._cmp(other))
@@ -1090,10 +1085,8 @@ class Decimal(object):
 
         Rounds, if it has reason.
         """
-        if self._is_special:
-            ans = self._check_nans(context=context)
-            if ans:
-                return ans
+        if self._is_special and (ans := self._check_nans(context=context)):
+            return ans
 
         if context is None:
             context = getcontext()
@@ -1112,10 +1105,8 @@ class Decimal(object):
 
         Rounds the number (if more than precision digits)
         """
-        if self._is_special:
-            ans = self._check_nans(context=context)
-            if ans:
-                return ans
+        if self._is_special and (ans := self._check_nans(context=context)):
+            return ans
 
         if context is None:
             context = getcontext()
@@ -1138,10 +1129,8 @@ class Decimal(object):
         if not round:
             return self.copy_abs()
 
-        if self._is_special:
-            ans = self._check_nans(context=context)
-            if ans:
-                return ans
+        if self._is_special and (ans := self._check_nans(context=context)):
+            return ans
 
         if self._sign:
             ans = self.__neg__(context=context)
@@ -1163,8 +1152,7 @@ class Decimal(object):
             context = getcontext()
 
         if self._is_special or other._is_special:
-            ans = self._check_nans(other, context)
-            if ans:
+            if (ans := self._check_nans(other, context)):
                 return ans
 
             if self._isinfinity():
@@ -1244,10 +1232,9 @@ class Decimal(object):
         if other is NotImplemented:
             return other
 
-        if self._is_special or other._is_special:
-            ans = self._check_nans(other, context=context)
-            if ans:
-                return ans
+        if (self._is_special or other._is_special
+           and (ans := self._check_nans(other, context=context))):
+            return ans
 
         # self - other is computed as self + other.copy_negate()
         return self.__add__(other.copy_negate(), context=context)
@@ -1275,8 +1262,7 @@ class Decimal(object):
         resultsign = self._sign ^ other._sign
 
         if self._is_special or other._is_special:
-            ans = self._check_nans(other, context)
-            if ans:
+            if (ans := self._check_nans(other, context)):
                 return ans
 
             if self._isinfinity():
@@ -1329,8 +1315,7 @@ class Decimal(object):
         sign = self._sign ^ other._sign
 
         if self._is_special or other._is_special:
-            ans = self._check_nans(other, context)
-            if ans:
+            if (ans := self._check_nans(other, context)):
                 return ans
 
             if self._isinfinity() and other._isinfinity():
@@ -1427,8 +1412,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
 
-        ans = self._check_nans(other, context)
-        if ans:
+        if (ans := self._check_nans(other, context)):
             return (ans, ans)
 
         sign = self._sign ^ other._sign
@@ -1470,8 +1454,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
 
-        ans = self._check_nans(other, context)
-        if ans:
+        if (ans := self._check_nans(other, context)):
             return ans
 
         if self._isinfinity():
@@ -1502,8 +1485,7 @@ class Decimal(object):
 
         other = _convert_other(other, raiseit=True)
 
-        ans = self._check_nans(other, context)
-        if ans:
+        if (ans := self._check_nans(other, context)):
             return ans
 
         # self == +/-infinity -> InvalidOperation
@@ -1577,8 +1559,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
 
-        ans = self._check_nans(other, context)
-        if ans:
+        if (ans := self._check_nans(other, context)):
             return ans
 
         if self._isinfinity():
@@ -2316,8 +2297,7 @@ class Decimal(object):
             context = getcontext()
 
         # either argument is a NaN => result is NaN
-        ans = self._check_nans(other, context)
-        if ans:
+        if (ans := self._check_nans(other, context)):
             return ans
 
         # 0**0 = NaN (!), x**0 = 1 for nonzero x (including +/-Infinity)
@@ -2511,8 +2491,7 @@ class Decimal(object):
             context = getcontext()
 
         if self._is_special:
-            ans = self._check_nans(context=context)
-            if ans:
+            if (ans := self._check_nans(context=context)):
                 return ans
 
         dup = self._fix(context)
@@ -2542,8 +2521,7 @@ class Decimal(object):
             rounding = context.rounding
 
         if self._is_special or exp._is_special:
-            ans = self._check_nans(exp, context)
-            if ans:
+            if (ans := self._check_nans(exp, context)):
                 return ans
 
             if exp._isinfinity() or self._isinfinity():
@@ -2673,8 +2651,7 @@ class Decimal(object):
         this method except that it doesn't raise Inexact or Rounded.
         """
         if self._is_special:
-            ans = self._check_nans(context=context)
-            if ans:
+            if (ans := self._check_nans(context=context)):
                 return ans
             return Decimal(self)
         if self._exp >= 0:
@@ -2698,8 +2675,7 @@ class Decimal(object):
         if rounding is None:
             rounding = context.rounding
         if self._is_special:
-            ans = self._check_nans(context=context)
-            if ans:
+            if (ans := self._check_nans(context=context)):
                 return ans
             return Decimal(self)
         if self._exp >= 0:
@@ -2716,8 +2692,7 @@ class Decimal(object):
             context = getcontext()
 
         if self._is_special:
-            ans = self._check_nans(context=context)
-            if ans:
+            if (ans := self._check_nans(context=context)):
                 return ans
 
             if self._isinfinity() and self._sign == 0:
@@ -2923,8 +2898,7 @@ class Decimal(object):
         NaNs taking precedence over quiet NaNs.
         """
         other = _convert_other(other, raiseit = True)
-        ans = self._compare_check_nans(other, context)
-        if ans:
+        if (ans := self._compare_check_nans(other, context)):
             return ans
         return self.compare(other, context=context)
 
@@ -3036,8 +3010,7 @@ class Decimal(object):
             context = getcontext()
 
         # exp(NaN) = NaN
-        ans = self._check_nans(context=context)
-        if ans:
+        if (ans := self._check_nans(context=context)):
             return ans
 
         # exp(-Infinity) = 0
@@ -3192,8 +3165,7 @@ class Decimal(object):
             context = getcontext()
 
         # ln(NaN) = NaN
-        ans = self._check_nans(context=context)
-        if ans:
+        if (ans := self._check_nans(context=context)):
             return ans
 
         # ln(0.0) == -Infinity
@@ -3272,8 +3244,7 @@ class Decimal(object):
             context = getcontext()
 
         # log10(NaN) = NaN
-        ans = self._check_nans(context=context)
-        if ans:
+        if (ans := self._check_nans(context=context)):
             return ans
 
         # log10(0.0) == -Infinity
@@ -3325,8 +3296,7 @@ class Decimal(object):
         without limiting the resulting exponent).
         """
         # logb(NaN) = NaN
-        ans = self._check_nans(context=context)
-        if ans:
+        if (ans := self._check_nans(context=context)):
             return ans
 
         if context is None:
@@ -3496,8 +3466,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
 
-        ans = self._check_nans(context=context)
-        if ans:
+        if (ans := self._check_nans(context=context)):
             return ans
 
         if self._isinfinity() == -1:
@@ -3519,8 +3488,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
 
-        ans = self._check_nans(context=context)
-        if ans:
+        if (ans := self._check_nans(context=context)):
             return ans
 
         if self._isinfinity() == 1:
@@ -3551,8 +3519,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
 
-        ans = self._check_nans(other, context)
-        if ans:
+        if (ans := self._check_nans(other, context)):
             return ans
 
         comparison = self._cmp(other)
@@ -3636,8 +3603,7 @@ class Decimal(object):
 
         other = _convert_other(other, raiseit=True)
 
-        ans = self._check_nans(other, context)
-        if ans:
+        if (ans := self._check_nans(other, context)):
             return ans
 
         if other._exp != 0:
@@ -3669,8 +3635,7 @@ class Decimal(object):
 
         other = _convert_other(other, raiseit=True)
 
-        ans = self._check_nans(other, context)
-        if ans:
+        if (ans := self._check_nans(other, context)):
             return ans
 
         if other._exp != 0:
@@ -3694,8 +3659,7 @@ class Decimal(object):
 
         other = _convert_other(other, raiseit=True)
 
-        ans = self._check_nans(other, context)
-        if ans:
+        if (ans := self._check_nans(other, context)):
             return ans
 
         if other._exp != 0:

@@ -250,8 +250,7 @@ def test():
             print("No viewer found for", type)
         else:
             print("Executing:", command)
-            sts = os.system(command)
-            if sts:
+            if (sts := os.system(command)):
                 print("Exit status:", sts)
 
 def show(caps):

@@ -950,8 +950,7 @@ class _NNTPBase:
             if usenetrc and not user:
                 import netrc
                 credentials = netrc.netrc()
-                auth = credentials.authenticators(self.host)
-                if auth:
+                if (auth := credentials.authenticators(self.host)):
                     user = auth[0]
                     password = auth[2]
         except OSError:

@@ -562,8 +562,7 @@ class SSLProtocol(protocols.Protocol):
             self._wakeup_waiter(ConnectionResetError)
 
             if not self._in_handshake:
-                keep_open = self._app_protocol.eof_received()
-                if keep_open:
+                if self._app_protocol.eof_received():
                     logger.warning('returning true from eof_received() '
                                    'has no effect when using ssl')
         finally:

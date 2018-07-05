@@ -164,8 +164,7 @@ def _candidate_tempdir_list():
 
     # First, try the environment.
     for envname in 'TMPDIR', 'TEMP', 'TMP':
-        dirname = _os.getenv(envname)
-        if dirname: dirlist.append(dirname)
+        if (dirname := _os.getenv(envname)): dirlist.append(dirname)
 
     # Failing that, try OS-specific locations.
     if _os.name == 'nt':

@@ -132,8 +132,7 @@ def _raw_input(prompt="", stream=None, input=None):
         stream = sys.stderr
     if not input:
         input = sys.stdin
-    prompt = str(prompt)
-    if prompt:
+    if (prompt := str(prompt)):
         try:
             stream.write(prompt)
         except UnicodeEncodeError:
@@ -160,8 +159,7 @@ def getuser():
     """
 
     for name in ('LOGNAME', 'USER', 'LNAME', 'USERNAME'):
-        user = os.environ.get(name)
-        if user:
+        if (user := os.environ.get(name)):
             return user
 
     # If this fails, the exception will "explain" why

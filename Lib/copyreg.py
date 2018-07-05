@@ -128,8 +128,7 @@ def _slotnames(cls):
                         continue
                     # mangled names
                     elif name.startswith('__') and not name.endswith('__'):
-                        stripped = c.__name__.lstrip('_')
-                        if stripped:
+                        if (stripped := c.__name__.lstrip('_')):
                             names.append('_%s%s' % (stripped, name))
                         else:
                             names.append(name)

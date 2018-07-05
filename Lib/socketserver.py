@@ -229,8 +229,7 @@ class BaseServer:
                 selector.register(self, selectors.EVENT_READ)
 
                 while not self.__shutdown_request:
-                    ready = selector.select(poll_interval)
-                    if ready:
+                    if selector.select(poll_interval):
                         self._handle_request_noblock()
 
                     self.service_actions()
@@ -288,8 +287,7 @@ class BaseServer:
             selector.register(self, selectors.EVENT_READ)
 
             while True:
-                ready = selector.select(timeout)
-                if ready:
+                if selector.select(timeout):
                     return self._handle_request_noblock()
                 else:
                     if timeout is not None:
@@ -597,8 +595,7 @@ if hasattr(os, "fork"):
 
         def process_request(self, request, client_address):
             """Fork a new subprocess to process the request."""
-            pid = os.fork()
-            if pid:
+            if (pid := os.fork()):
                 # Parent process
                 if self.active_children is None:
                     self.active_children = set()
