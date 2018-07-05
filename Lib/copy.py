@@ -87,19 +87,14 @@ def copy(x):
     if copier:
         return copier(x)
 
-    reductor = dispatch_table.get(cls)
-    if reductor:
+    if (reductor := dispatch_table.get(cls)):
         rv = reductor(x)
+    elif (reductor := getattr(x, "__reduce_ex__", None)):
+        rv = reductor(4)
+    elif (reductor := getattr(x, "__reduce__", None)):
+        rv = reductor()
     else:
-        reductor = getattr(x, "__reduce_ex__", None)
-        if reductor:
-            rv = reductor(4)
-        else:
-            reductor = getattr(x, "__reduce__", None)
-            if reductor:
-                rv = reductor()
-            else:
-                raise Error("un(shallow)copyable object of type %s" % cls)
+        raise Error("un(shallow)copyable object of type %s" % cls)
 
     if isinstance(rv, str):
         return x

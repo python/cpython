@@ -681,12 +681,10 @@ def _get_decompressor(compress_type):
         return bz2.BZ2Decompressor()
     elif compress_type == ZIP_LZMA:
         return LZMADecompressor()
+    elif descr := compressor_names.get(compress_type):
+        raise NotImplementedError("compression type %d (%s)" % (compress_type, descr))
     else:
-        descr = compressor_names.get(compress_type)
-        if descr:
-            raise NotImplementedError("compression type %d (%s)" % (compress_type, descr))
-        else:
-            raise NotImplementedError("compression type %d" % (compress_type,))
+        raise NotImplementedError("compression type %d" % (compress_type,))
 
 
 class _SharedFile:
