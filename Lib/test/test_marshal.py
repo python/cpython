@@ -192,8 +192,8 @@ class BugsTestCase(unittest.TestCase):
         marshal.dumps([128] * 1000)
 
     def test_patch_873224(self):
-        self.assertRaises(Exception, marshal.loads, '0')
-        self.assertRaises(Exception, marshal.loads, 'f')
+        self.assertRaises(Exception, marshal.loads, b'0')
+        self.assertRaises(Exception, marshal.loads, b'f')
         self.assertRaises(Exception, marshal.loads, marshal.dumps(2**65)[:-1])
 
     def test_version_argument(self):
@@ -204,7 +204,8 @@ class BugsTestCase(unittest.TestCase):
     def test_fuzz(self):
         # simple test that it's at least not *totally* trivial to
         # crash from bad marshal data
-        for c in [chr(i) for i in range(256)]:
+        for i in range(256):
+            c = bytes([i])
             try:
                 marshal.loads(c)
             except Exception:
@@ -315,7 +316,7 @@ class BugsTestCase(unittest.TestCase):
             self.assertRaises(ValueError, marshal.load,
                               BadReader(marshal.dumps(value)))
 
-    def _test_eof(self):
+    def test_eof(self):
         data = marshal.dumps(("hello", "dolly", None))
         for i in range(len(data)):
             self.assertRaises(EOFError, marshal.loads, data[0: i])
