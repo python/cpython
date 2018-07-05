@@ -1235,12 +1235,5 @@ class FutureTests(BaseTestCase):
         self.assertEqual(f.exception(), e)
 
 
-@test.support.reap_threads
-def test_main():
-    try:
-        test.support.run_unittest(__name__)
-    finally:
-        test.support.reap_children()
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
