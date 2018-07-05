@@ -532,7 +532,8 @@ class _Stream:
             # Skip underlaying buffer to avoid unaligned double
             # buffering.
             if self.buf:
-                buf, self.buf = self.buf, b""
+                buf = self.buf
+                self.buf = b""
             else:
                 buf = self.fileobj.read(self.bufsize)
                 if not buf:
