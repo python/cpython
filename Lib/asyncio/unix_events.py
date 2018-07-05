@@ -461,9 +461,8 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         info.append(f'fd={self._fileno}')
         selector = getattr(self._loop, '_selector', None)
         if self._pipe is not None and selector is not None:
-            polling = selector_events._test_selector_event(
-                selector, self._fileno, selectors.EVENT_READ)
-            if polling:
+            if selector_events._test_selector_event(selector, self._fileno, 
+                                                    selectors.EVENT_READ):
                 info.append('polling')
             else:
                 info.append('idle')
@@ -594,9 +593,8 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         info.append(f'fd={self._fileno}')
         selector = getattr(self._loop, '_selector', None)
         if self._pipe is not None and selector is not None:
-            polling = selector_events._test_selector_event(
-                selector, self._fileno, selectors.EVENT_WRITE)
-            if polling:
+            if selector_events._test_selector_event(selector, self._fileno, 
+                                                    selectors.EVENT_WRITE):
                 info.append('polling')
             else:
                 info.append('idle')

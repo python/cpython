@@ -777,8 +777,7 @@ def findsource(object):
         if not (file.startswith('<') and file.endswith('>')):
             raise OSError('source code not available')
 
-    module = getmodule(object, file)
-    if module:
+    if (module := getmodule(object, file)):
         lines = linecache.getlines(file, module.__dict__)
     else:
         lines = linecache.getlines(file)
@@ -796,8 +795,7 @@ def findsource(object):
         # that's most probably not inside a function definition.
         candidates = []
         for i in range(len(lines)):
-            match = pat.match(lines[i])
-            if match:
+            if (match := pat.match(lines[i])):
                 # if it's at toplevel, it's already the best one
                 if lines[i][0] == 'c':
                     return lines, i
@@ -1978,10 +1976,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     module = None
     module_dict = {}
-    module_name = getattr(obj, '__module__', None)
-    if module_name:
-        module = sys.modules.get(module_name, None)
-        if module:
+    if (module_name := getattr(obj, '__module__', None)):
+        if (module := sys.modules.get(module_name, None)):
             module_dict = module.__dict__
     sys_module_dict = sys.modules
 

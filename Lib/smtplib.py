@@ -460,8 +460,7 @@ class SMTP:
             # 1) Else our SMTP feature parser gets confused.
             # 2) There are some servers that only advertise the auth methods we
             #    support using the old style.
-            auth_match = OLDSTYLE_AUTH.match(each)
-            if auth_match:
+            if (auth_match := OLDSTYLE_AUTH.match(each)):
                 # This doesn't remove duplicates, but that's no problem
                 self.esmtp_features["auth"] = self.esmtp_features.get("auth", "") \
                         + " " + auth_match.groups(0)[0]

@@ -326,8 +326,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # Called before loop, handles display expressions
     def preloop(self):
-        displaying = self.displaying.get(self.curframe)
-        if displaying:
+        if (displaying := self.displaying.get(self.curframe)):
             for expr, oldvalue in displaying.items():
                 newvalue = self._getval_except(expr)
                 # check for identity first; this prevents custom __eq__ to
@@ -674,11 +673,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if not filename:
             filename = self.defaultFile()
         # Check for reasonable breakpoint
-        line = self.checkline(filename, lineno)
-        if line:
+        if (line := self.checkline(filename, lineno)):
             # now set the break point
-            err = self.set_break(filename, line, temporary, cond, funcname)
-            if err:
+            if (err := self.set_break(filename, line, temporary, cond, funcname)):
                 self.error(err)
             else:
                 bp = self.get_breaks(filename, line)[-1]
@@ -733,8 +730,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             # More than one part.
             # First is module, second is method/class
-            f = self.lookupmodule(parts[0])
-            if f:
+            if (f := self.lookupmodule(parts[0])):
                 fname = f
             item = parts[1]
         answer = find_function(item, fname)

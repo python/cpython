@@ -182,8 +182,7 @@ class PrettyPrinter:
         write('{')
         if self._indent_per_level > 1:
             write((self._indent_per_level - 1) * ' ')
-        length = len(object)
-        if length:
+        if len(object):
             items = sorted(object.items(), key=_safe_tuple)
             self._format_dict_items(items, stream, indent, allowance + 1,
                                     context, level)

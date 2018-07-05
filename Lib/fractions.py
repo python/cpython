@@ -137,18 +137,15 @@ class Fraction(numbers.Rational):
                     raise ValueError('Invalid literal for Fraction: %r' %
                                      numerator)
                 numerator = int(m.group('num') or '0')
-                denom = m.group('denom')
-                if denom:
+                if (denom := m.group('denom')):
                     denominator = int(denom)
                 else:
                     denominator = 1
-                    decimal = m.group('decimal')
-                    if decimal:
+                    if (decimal := m.group('decimal')):
                         scale = 10**len(decimal)
                         numerator = numerator * scale + int(decimal)
                         denominator *= scale
-                    exp = m.group('exp')
-                    if exp:
+                    if (exp := m.group('exp')):
                         exp = int(exp)
                         if exp >= 0:
                             numerator *= 10**exp

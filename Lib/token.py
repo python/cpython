@@ -115,8 +115,7 @@ def _main():
     tokens = {}
     prev_val = None
     for line in lines:
-        match = prog.match(line)
-        if match:
+        if (match := prog.match(line)):
             name, val = match.group(1, 2)
             val = int(val)
             tokens[val] = {'token': name}          # reverse so we can sort them...

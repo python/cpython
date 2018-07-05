@@ -60,8 +60,7 @@ def whathdr(filename):
     with open(filename, 'rb') as f:
         h = f.read(512)
         for tf in tests:
-            res = tf(h, f)
-            if res:
+            if (res := tf(h, f)):
                 return SndHeaders(*res)
         return None
 
@@ -129,8 +128,7 @@ tests.append(test_au)
 def test_hcom(h, f):
     if h[65:69] != b'FSSD' or h[128:132] != b'HCOM':
         return None
-    divisor = get_long_be(h[144:148])
-    if divisor:
+    if (divisor := get_long_be(h[144:148])):
         rate = 22050 / divisor
     else:
         rate = 0

@@ -294,11 +294,9 @@ class Tokenizer:
 
 def _class_escape(source, escape):
     # handle escape code inside character class
-    code = ESCAPES.get(escape)
-    if code:
+    if (code := ESCAPES.get(escape)):
         return code
-    code = CATEGORIES.get(escape)
-    if code and code[0] is IN:
+    if (code := CATEGORIES.get(escape)) and code[0] is IN:
         return code
     try:
         c = escape[1:2]
@@ -354,11 +352,9 @@ def _class_escape(source, escape):
 
 def _escape(source, escape, state):
     # handle escape code in expression
-    code = CATEGORIES.get(escape)
-    if code:
+    if (code := CATEGORIES.get(escape)):
         return code
-    code = ESCAPES.get(escape)
-    if code:
+    if (code := ESCAPES.get(escape)):
         return code
     try:
         c = escape[1:2]

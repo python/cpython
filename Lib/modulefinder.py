@@ -174,15 +174,13 @@ class ModuleFinder:
             qname = "%s.%s" % (parent.__name__, head)
         else:
             qname = head
-        q = self.import_module(head, qname, parent)
-        if q:
+        if (q := self.import_module(head, qname, parent)):
             self.msgout(4, "find_head_package ->", (q, tail))
             return q, tail
         if parent:
             qname = head
             parent = None
-            q = self.import_module(head, qname, parent)
-            if q:
+            if (q := self.import_module(head, qname, parent)):
                 self.msgout(4, "find_head_package ->", (q, tail))
                 return q, tail
         self.msgout(4, "raise ImportError: No module named", qname)
@@ -208,8 +206,7 @@ class ModuleFinder:
         for sub in fromlist:
             if sub == "*":
                 if not recursive:
-                    all = self.find_all_submodules(m)
-                    if all:
+                    if (all := self.find_all_submodules(m)):
                         self.ensure_fromlist(m, all, 1)
             elif not hasattr(m, sub):
                 subname = "%s.%s" % (m.__name__, sub)
@@ -408,8 +405,7 @@ class ModuleFinder:
 
     def load_package(self, fqname, pathname):
         self.msgin(2, "load_package", fqname, pathname)
-        newname = replacePackageMap.get(fqname)
-        if newname:
+        if (newname := replacePackageMap.get(fqname)):
             fqname = newname
         m = self.add_module(fqname)
         m.__file__ = pathname

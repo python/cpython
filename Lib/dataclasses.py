@@ -599,8 +599,7 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
 
-    match = _MODULE_IDENTIFIER_RE.match(annotation)
-    if match:
+    if (match := _MODULE_IDENTIFIER_RE.match(annotation)):
         ns = None
         module_name = match.group(1)
         if not module_name:
@@ -656,8 +655,7 @@ def _get_field(cls, a_name, a_type):
     # annotation to be a ClassVar.  So, only look for ClassVar if
     # typing has been imported by any module (not necessarily cls's
     # module).
-    typing = sys.modules.get('typing')
-    if typing:
+    if (typing := sys.modules.get('typing')):
         if (_is_classvar(a_type, typing)
             or (isinstance(f.type, str)
                 and _is_type(f.type, cls, typing, typing.ClassVar,
@@ -774,8 +772,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     for b in cls.__mro__[-1:0:-1]:
         # Only process classes that have been processed by our
         # decorator.  That is, they have a _FIELDS attribute.
-        base_fields = getattr(b, _FIELDS, None)
-        if base_fields:
+        if (base_fields := getattr(b, _FIELDS, None)):
             has_dataclass_bases = True
             for f in base_fields.values():
                 fields[f.name] = f
@@ -914,11 +911,10 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                                 f'in class {cls.__name__}')
 
     # Decide if/how we're going to create a hash function.
-    hash_action = _hash_action[bool(unsafe_hash),
+    if (hash_action := _hash_action[bool(unsafe_hash),
                                bool(eq),
                                bool(frozen),
-                               has_explicit_hash]
-    if hash_action:
+                               has_explicit_hash]):
         # No need to call _set_new_attribute here, since by the time
         # we're here the overwriting is unconditional.
         cls.__hash__ = hash_action(cls, field_list)

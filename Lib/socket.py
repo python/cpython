@@ -174,14 +174,12 @@ class socket(_socket.socket):
                self.proto)
         if not closed:
             try:
-                laddr = self.getsockname()
-                if laddr:
+                if (laddr := self.getsockname()):
                     s += ", laddr=%s" % str(laddr)
             except error:
                 pass
             try:
-                raddr = self.getpeername()
-                if raddr:
+                if (raddr := self.getpeername()):
                     s += ", raddr=%s" % str(raddr)
             except error:
                 pass

@@ -516,8 +516,7 @@ def system_alias(system, release, version):
             # These releases use the old name SunOS
             return system, release, version
         # Modify release (marketing release = SunOS release - 3)
-        l = release.split('.')
-        if l:
+        if (l := release.split('.')):
             try:
                 major = int(l[0])
             except ValueError:

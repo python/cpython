@@ -466,8 +466,7 @@ def hexbin(inp, out):
             ofp.write(d)
     ifp.close_data()
 
-    d = ifp.read_rsrc(128000)
-    if d:
+    if (d := ifp.read_rsrc(128000)):
         ofp = openrsrc(out, 'wb')
         ofp.write(d)
         while True:

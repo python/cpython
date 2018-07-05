@@ -158,8 +158,7 @@ class async_chat(asyncore.dispatcher):
                 # 3) end of buffer does not match any prefix:
                 #    collect data
                 terminator_len = len(terminator)
-                index = self.ac_in_buffer.find(terminator)
-                if index != -1:
+                if (index := self.ac_in_buffer.find(terminator)) != -1:
                     # we found the terminator
                     if index > 0:
                         # don't bother reporting the empty string
@@ -169,19 +168,17 @@ class async_chat(asyncore.dispatcher):
                     # This does the Right Thing if the terminator
                     # is changed here.
                     self.found_terminator()
+                # check for a prefix of the terminator
+                elif (index := find_prefix_at_end(self.ac_in_buffer, terminator)):
+                    if index != lb:
+                        # we found a prefix, collect up to the prefix
+                        self.collect_incoming_data(self.ac_in_buffer[:-index])
+                        self.ac_in_buffer = self.ac_in_buffer[-index:]
+                    break
                 else:
-                    # check for a prefix of the terminator
-                    index = find_prefix_at_end(self.ac_in_buffer, terminator)
-                    if index:
-                        if index != lb:
-                            # we found a prefix, collect up to the prefix
-                            self.collect_incoming_data(self.ac_in_buffer[:-index])
-                            self.ac_in_buffer = self.ac_in_buffer[-index:]
-                        break
-                    else:
-                        # no prefix, collect it all
-                        self.collect_incoming_data(self.ac_in_buffer)
-                        self.ac_in_buffer = b''
+                    # no prefix, collect it all
+                    self.collect_incoming_data(self.ac_in_buffer)
+                    self.ac_in_buffer = b''
 
     def handle_write(self):
         self.initiate_send()
@@ -236,8 +233,7 @@ class async_chat(asyncore.dispatcher):
             try:
                 data = first[:obs]
             except TypeError:
-                data = first.more()
-                if data:
+                if (data := first.more()):
                     self.producer_fifo.appendleft(data)
                 else:
                     del self.producer_fifo[0]

@@ -1849,8 +1849,7 @@ def basicConfig(**kwargs):
     # basicConfig() from multiple threads
     _acquireLock()
     try:
-        force = kwargs.pop('force', False)
-        if force:
+        if kwargs.pop('force', False):
             for h in root.handlers[:]:
                 root.removeHandler(h)
                 h.close()
@@ -2002,8 +2001,7 @@ def shutdown(handlerList=_handlerList):
         #errors might occur, for example, if files are locked
         #we just ignore them if raiseExceptions is not set
         try:
-            h = wr()
-            if h:
+            if (h := wr()):
                 try:
                     h.acquire()
                     h.flush()

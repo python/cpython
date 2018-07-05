@@ -71,8 +71,7 @@ def copy(x):
 
     cls = type(x)
 
-    copier = _copy_dispatch.get(cls)
-    if copier:
+    if (copier := _copy_dispatch.get(cls)):
         return copier(x)
 
     try:
@@ -83,8 +82,7 @@ def copy(x):
         # treat it as a regular class:
         return _copy_immutable(x)
 
-    copier = getattr(cls, "__copy__", None)
-    if copier:
+    if (copier := getattr(cls, "__copy__", None)):
         return copier(x)
 
     if (reductor := dispatch_table.get(cls)):
@@ -140,8 +138,7 @@ def deepcopy(x, memo=None, _nil=[]):
 
     cls = type(x)
 
-    copier = _deepcopy_dispatch.get(cls)
-    if copier:
+    if (copier := _deepcopy_dispatch.get(cls)):
         y = copier(x, memo)
     else:
         try:
@@ -151,24 +148,18 @@ def deepcopy(x, memo=None, _nil=[]):
         if issc:
             y = _deepcopy_atomic(x, memo)
         else:
-            copier = getattr(x, "__deepcopy__", None)
-            if copier:
+            if (copier := getattr(x, "__deepcopy__", None)):
                 y = copier(memo)
             else:
-                reductor = dispatch_table.get(cls)
-                if reductor:
+                if (reductor := dispatch_table.get(cls)):
                     rv = reductor(x)
+                elif (reductor := getattr(x, "__reduce_ex__", None)):
+                    rv = reductor(4)
+                elif (reductor := getattr(x, "__reduce__", None)):
+                    rv = reductor()
                 else:
-                    reductor = getattr(x, "__reduce_ex__", None)
-                    if reductor:
-                        rv = reductor(4)
-                    else:
-                        reductor = getattr(x, "__reduce__", None)
-                        if reductor:
-                            rv = reductor()
-                        else:
-                            raise Error(
-                                "un(deep)copyable object of type %s" % cls)
+                    raise Error("un(deep)copyable object of type %s" % cls)
+
                 if isinstance(rv, str):
                     y = x
                 else:
