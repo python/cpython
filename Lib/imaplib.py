@@ -1577,9 +1577,10 @@ if __name__ == '__main__':
             run(cmd, args)
 
         for ml in run('list', ('/tmp/', 'yy%')):
-            mo = re.match(r'.*"([^"]+)"$', ml)
-            if mo: path = mo.group(1)
-            else: path = ml.split()[-1]
+            if (mo := re.match(r'.*"([^"]+)"$', ml)):
+                path = mo.group(1)
+            else:
+                path = ml.split()[-1]
             run('delete', (path,))
 
         for cmd,args in test_seq2:

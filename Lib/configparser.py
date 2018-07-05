@@ -1059,8 +1059,7 @@ class RawConfigParser(MutableMapping):
             else:
                 indent_level = cur_indent_level
                 # is it a section header?
-                mo = self.SECTCRE.match(value)
-                if mo:
+                if (mo := self.SECTCRE.match(value)):
                     sectname = mo.group('header')
                     if sectname in self._sections:
                         if self._strict and sectname in elements_added:
@@ -1082,8 +1081,7 @@ class RawConfigParser(MutableMapping):
                     raise MissingSectionHeaderError(fpname, lineno, line)
                 # an option line?
                 else:
-                    mo = self._optcre.match(value)
-                    if mo:
+                    if (mo := self._optcre.match(value)):
                         optname, vi, optval = mo.group('option', 'vi', 'value')
                         if not optname:
                             e = self._handle_error(e, fpname, lineno, line)

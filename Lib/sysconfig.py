@@ -454,9 +454,8 @@ def parse_config_h(fp, vars=None):
             except ValueError:
                 pass
             vars[n] = v
-        else:
-            if (m := undef_rx.match(line)):
-                vars[m.group(1)] = 0
+        elif (m := undef_rx.match(line)):
+            vars[m.group(1)] = 0
     return vars
 
 
