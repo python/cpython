@@ -287,8 +287,7 @@ def _check_for_unavailable_sdk(_config_vars):
     # to /usr and /System/Library by either a standalone CLT
     # package or the CLT component within Xcode.
     cflags = _config_vars.get('CFLAGS', '')
-    m = re.search(r'-isysroot\s+(\S+)', cflags)
-    if m is not None:
+    if (m := re.search(r'-isysroot\s+(\S+)', cflags)) is not None:
         sdk = m.group(1)
         if not os.path.exists(sdk):
             for cv in _UNIVERSAL_CONFIG_VARS:

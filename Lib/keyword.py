@@ -74,8 +74,7 @@ def main():
         lines = []
         for line in fp:
             if '{1, "' in line:
-                match = strprog.search(line)
-                if match:
+                if (match := strprog.search(line)):
                     lines.append("        '" + match.group(1) + "'," + nl)
     lines.sort()
 

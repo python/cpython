@@ -796,8 +796,7 @@ def findsource(object):
         # that's most probably not inside a function definition.
         candidates = []
         for i in range(len(lines)):
-            match = pat.match(lines[i])
-            if match:
+            if (match := pat.match(lines[i])):
                 # if it's at toplevel, it's already the best one
                 if lines[i][0] == 'c':
                     return lines, i
