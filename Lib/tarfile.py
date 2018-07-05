@@ -529,8 +529,7 @@ class _Stream:
         c = len(self.dbuf)
         t = [self.dbuf]
         while c < size:
-            # Skip underlaying buffer to avoid unaligned double
-            # buffering.
+            # Skip underlying buffer to avoid unaligned double buffering.
             if self.buf:
                 buf = self.buf
                 self.buf = b""
