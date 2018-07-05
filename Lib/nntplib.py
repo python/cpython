@@ -843,11 +843,9 @@ class _NNTPBase:
                       DeprecationWarning, 2)
         line_pat = re.compile('^([^ \t]+)[ \t]+(.*)$')
         resp, raw_lines = self._longcmdstring('XGTITLE ' + group, file)
-        lines = []
-        for raw_line in raw_lines:
-            match = line_pat.search(raw_line.strip())
-            if match:
-                lines.append(match.group(1, 2))
+        lines = [match.group(1, 2)
+                 for raw_line in raw_lines
+                 if (match := line_pat.search(raw_line.strip()))]
         return resp, lines
 
     def xpath(self, id):
