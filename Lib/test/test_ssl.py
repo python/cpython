@@ -4145,7 +4145,7 @@ def test_main(verbose=False):
                 'ignore',
                 r'dist\(\) and linux_distribution\(\) '
                 'functions are deprecated .*',
-                PendingDeprecationWarning,
+                DeprecationWarning,
             )
             for name, func in plats.items():
                 plat = func()

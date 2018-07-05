@@ -265,7 +265,7 @@ class PlatformTest(unittest.TestCase):
                 'ignore',
                 r'dist\(\) and linux_distribution\(\) '
                 'functions are deprecated .*',
-                PendingDeprecationWarning,
+                DeprecationWarning,
             )
             res = platform.dist()
 
@@ -341,7 +341,7 @@ class PlatformTest(unittest.TestCase):
                         'ignore',
                         r'dist\(\) and linux_distribution\(\) '
                         'functions are deprecated .*',
-                        PendingDeprecationWarning,
+                        DeprecationWarning,
                     )
                     distname, version, distid = platform.linux_distribution()
 
