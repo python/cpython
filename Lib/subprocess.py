@@ -137,18 +137,16 @@ if _mswindows:
             self.lpAttributeList = lpAttributeList or {"handle_list": []}
 
         def copy(self):
-            attribute_list = {}
-            for key, value in self.lpAttributeList.items():
-                if key == 'handle_list':
-                    value = list(value)
-                attribute_list[key] = value
+            attr_list = self.lpAttributeList.copy()
+            if 'handle_list' in attr_list:
+                attr_list['handle_list'] = list(attr_list['handle_list'])
 
             return STARTUPINFO(dwFlags=self.dwFlags,
                                hStdInput=self.hStdInput,
                                hStdOutput=self.hStdOutput,
                                hStdError=self.hStdError,
                                wShowWindow=self.wShowWindow,
-                               lpAttributeList=attribute_list)
+                               lpAttributeList=attr_list)
 
 else:
     import _posixsubprocess
