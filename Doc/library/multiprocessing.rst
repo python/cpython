@@ -246,11 +246,13 @@ Synchronization between processes
 primitives from :mod:`threading`.  For instance one can use a lock to ensure
 that only one process prints to standard output at a time::
 
+   import time
    from multiprocessing import Process, Lock
 
    def f(l, i):
        l.acquire()
        try:
+           time.sleep(0.1)
            print('hello world', i)
        finally:
            l.release()
