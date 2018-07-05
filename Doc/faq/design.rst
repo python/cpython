@@ -348,7 +348,7 @@ each Python stack frame.  Also, extensions can call back into Python at almost
 random moments.  Therefore, a complete threads implementation requires thread
 support for C.
 
-Answer 2: Fortunately, there is `Stackless Python <https://bitbucket.org/stackless-dev/stackless/wiki/Home>`_,
+Answer 2: Fortunately, there is `Stackless Python <https://github.com/stackless-dev/stackless/wiki>`_,
 which has a completely redesigned interpreter loop that avoids the C stack.
 
 
