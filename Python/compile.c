@@ -161,6 +161,7 @@ struct compiler {
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
 
+    PyObject *c_const_cache;     /* all constants, including names tuple */
     struct compiler_unit *u; /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
@@ -285,9 +286,16 @@ compiler_init(struct compiler *c)
 {
     memset(c, 0, sizeof(struct compiler));
 
-    c->c_stack = PyList_New(0);
-    if (!c->c_stack)
+    c->c_const_cache = PyDict_New();
+    if (!c->c_const_cache) {
         return 0;
+    }
+
+    c->c_stack = PyList_New(0);
+    if (!c->c_stack) {
+        Py_DECREF(c->c_const_cache);
+        return 0;
+    }
 
     return 1;
 }
@@ -387,6 +395,7 @@ compiler_free(struct compiler *c)
     if (c->c_future)
         PyObject_Free(c->c_future);
     Py_XDECREF(c->c_filename);
+    Py_DECREF(c->c_const_cache);
     Py_DECREF(c->c_stack);
 }
 
@@ -1179,18 +1188,121 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
     return arg;
 }
 
+// Merge const *o* recursively and return constant key object.
+static PyObject*
+merge_consts(struct compiler *c, PyObject *o)
+{
+    // None and Ellipsis are singleton, and key is the singleton.
+    // No need to merge object and key.
+    if (o == Py_None || o == Py_Ellipsis) {
+        Py_INCREF(o);
+        return o;
+    }
+
+    PyObject *key = _PyCode_ConstantKey(o);
+    if (key == NULL) {
+        return NULL;
+    }
+
+    // t is borrowed reference
+    PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
+    if (t != key) {
+        Py_INCREF(t);
+        Py_DECREF(key);
+        return t;
+    }
+
+    if (PyTuple_CheckExact(o)) {
+        Py_ssize_t i, len = PyTuple_GET_SIZE(o);
+        for (i = 0; i < len; i++) {
+            PyObject *item = PyTuple_GET_ITEM(o, i);
+            PyObject *u = merge_consts(c, item);
+            if (u == NULL) {
+                Py_DECREF(key);
+                return NULL;
+            }
+
+            // See _PyCode_ConstantKey()
+            PyObject *v;  // borrowed
+            if (PyTuple_CheckExact(u)) {
+                v = PyTuple_GET_ITEM(u, 1);
+            }
+            else {
+                v = u;
+            }
+            if (v != item) {
+                Py_INCREF(v);
+                PyTuple_SET_ITEM(o, i, v);
+                Py_DECREF(item);
+            }
+
+            Py_DECREF(u);
+        }
+    }
+    else if (PyFrozenSet_CheckExact(o)) {
+        // We register items in the frozenset, but don't rewrite
+        // the frozenset when the item is already registered
+        // because frozenset is rare and difficult.
+
+        // *key* is tuple. And it's first item is frozenset of
+        // constant keys.
+        // See _PyCode_ConstantKey() for detail.
+        assert(PyTuple_CheckExact(key));
+        assert(PyTuple_GET_SIZE(key) == 2);
+
+        Py_ssize_t len = PySet_GET_SIZE(o);
+        if (len == 0) {
+            return key;
+        }
+        PyObject *tuple = PyTuple_New(len);
+        if (tuple == NULL) {
+            Py_DECREF(key);
+            return NULL;
+        }
+        Py_ssize_t i = 0, pos = 0;
+        PyObject *item;
+        Py_hash_t hash;
+        while (_PySet_NextEntry(o, &pos, &item, &hash)) {
+            PyObject *k = merge_consts(c, item);
+            if (k == NULL) {
+                Py_DECREF(tuple);
+                Py_DECREF(key);
+                return NULL;
+            }
+            PyObject *u;
+            if (PyTuple_CheckExact(k)) {
+                u = PyTuple_GET_ITEM(k, 1);
+            }
+            else {
+                u = k;
+            }
+            Py_INCREF(u);
+            PyTuple_SET_ITEM(tuple, i, u);
+            i++;
+        }
+
+        PyObject *new = PyFrozenSet_New(tuple);
+        Py_DECREF(tuple);
+        if (new == NULL) {
+            Py_DECREF(key);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(key, 1, new);
+    }
+
+    return key;
+}
+
 static Py_ssize_t
 compiler_add_const(struct compiler *c, PyObject *o)
 {
-    PyObject *t;
-    Py_ssize_t arg;
-
-    t = _PyCode_ConstantKey(o);
-    if (t == NULL)
+    PyObject *key = merge_consts(c, o);
+    if (key == NULL) {
         return -1;
+    }
 
-    arg = compiler_add_o(c, c->u->u_consts, t);
-    Py_DECREF(t);
+    Py_ssize_t arg = compiler_add_o(c, c->u->u_consts, key);
+    Py_DECREF(key);
     return arg;
 }
 
@@ -5401,6 +5513,38 @@ compute_code_flags(struct compiler *c)
     return flags;
 }
 
+// Merge *tuple* with constant cache.
+// Unlike merge_consts(), this function doesn't work recursively.
+static int
+merge_const_tuple(struct compiler *c, PyObject **tuple)
+{
+    Py_ssize_t len = PyTuple_GET_SIZE(*tuple);
+    if (len == 0) {
+        return 1;
+    }
+
+    PyObject *key = _PyCode_ConstantKey(*tuple);
+    if (key == NULL) {
+        return 0;
+    }
+
+    // t is borrowed reference
+    PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
+    Py_DECREF(key);
+    if (t == NULL) {
+        return 0;
+    }
+    if (t == key) {  // tuple is new constant.
+        return 1;
+    }
+
+    PyObject *u = PyTuple_GET_ITEM(t, 1);
+    Py_INCREF(u);
+    Py_DECREF(*tuple);
+    *tuple = u;
+    return 1;
+}
+
 static PyCodeObject *
 makecode(struct compiler *c, struct assembler *a)
 {
@@ -5431,6 +5575,14 @@ makecode(struct compiler *c, struct assembler *a)
     if (!freevars)
         goto error;
 
+    if (!merge_const_tuple(c, &names) ||
+            !merge_const_tuple(c, &varnames) ||
+            !merge_const_tuple(c, &cellvars) ||
+            !merge_const_tuple(c, &freevars))
+    {
+        goto error;
+    }
+
     nlocals = PyDict_GET_SIZE(c->u->u_varnames);
     assert(nlocals < INT_MAX);
     nlocals_int = Py_SAFE_DOWNCAST(nlocals, Py_ssize_t, int);
@@ -5448,6 +5600,9 @@ makecode(struct compiler *c, struct assembler *a)
         goto error;
     Py_DECREF(consts);
     consts = tmp;
+    if (!merge_const_tuple(c, &consts)) {
+        goto error;
+    }
 
     argcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
