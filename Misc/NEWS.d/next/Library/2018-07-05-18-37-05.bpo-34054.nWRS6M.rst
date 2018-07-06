@@ -1,0 +1,3 @@
+The multiprocessing module now uses the monotonic clock
+:func:`time.monotonic` instead of the system clock :func:`time.time` to
+implement timeout.
