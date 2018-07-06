@@ -142,6 +142,8 @@ class _HackedGetData:
     def get_data(self, path):
         """Gross hack to contort loader to deal w/ load_*()'s bad API."""
         if self.file and path == self.path:
+            # The contract of get_data() requires us to return bytes. Reopen the
+            # file in binary mode if needed.
             if not self.file.closed:
                 file = self.file
                 if 'b' not in file.mode:
