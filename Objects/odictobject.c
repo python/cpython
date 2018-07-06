@@ -67,7 +67,7 @@ Linked-List API
 As noted, the linked-list implemented here does not have all the bells and
 whistles.  However, we recognize that the implementation may need to
 change to accommodate performance improvements or extra functionality.  To
-that end, We use a simple API to interact with the linked-list.  Here's a
+that end, we use a simple API to interact with the linked-list.  Here's a
 summary of the methods/macros:
 
 Node info:
@@ -444,7 +444,7 @@ Potential Optimizations
   - Set node->key to NULL to indicate the node is not-in-use.
   - Add _odict_EXISTS()?
   - How to maintain consistency across resizes?  Existing node pointers
-    would be invalidate after a resize, which is particularly problematic
+    would be invalidated after a resize, which is particularly problematic
     for the iterators.
 * Use a more stream-lined implementation of update() and, likely indirectly,
   __init__().
