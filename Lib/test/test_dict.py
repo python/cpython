@@ -299,24 +299,6 @@ class DictTest(unittest.TestCase):
                 self.assertNotEqual(d, d2)
                 self.assertEqual(len(d2), len(d) + 1)
 
-    @unittest.skipUnless(hasattr(sys, 'gettotalrefcount'),
-                         'debug build required')
-    def test_copy_global_refcount(self):
-        # See issue #34042 for more details.
-        first_ref_count = second_ref_count = None
-        gettotalrefcount = sys.gettotalrefcount
-        dct = {'a': 1}
-
-        for i in range(10):
-            dct.copy()
-            first_ref_count = gettotalrefcount()
-
-        for i in range(10):
-            dct.copy()
-            second_ref_count = gettotalrefcount()
-
-        self.assertEqual(first_ref_count, second_ref_count)
-
     def test_copy_maintains_tracking(self):
         class A:
             pass
