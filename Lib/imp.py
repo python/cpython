@@ -144,15 +144,12 @@ class _HackedGetData:
         if self.file and path == self.path:
             if not self.file.closed:
                 file = self.file
-            else:
-                self.file = file = open(self.path, 'r')
+                if 'b' not in file.mode:
+                    file.close()
+            if self.file.closed:
+                self.file = file = open(self.path, 'rb')
 
             with file:
-                # Technically should be returning bytes, but
-                # SourceLoader.get_code() just passed what is returned to
-                # compile() which can handle str. And converting to bytes would
-                # require figuring out the encoding to decode to and
-                # tokenize.detect_encoding() only accepts bytes.
                 return file.read()
         else:
             return super().get_data(path)
