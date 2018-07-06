@@ -1,32 +1,54 @@
 from test import test_support
-from tokenize import (untokenize, generate_tokens, NUMBER, NAME, OP,
+from tokenize import (untokenize, generate_tokens, NUMBER, NAME, OP, NEWLINE,
                      STRING, ENDMARKER, tok_name, Untokenizer, tokenize)
 from StringIO import StringIO
 import os
 from unittest import TestCase
 
 
+# Converts a source string into a list of textual representation
+# of the tokens such as:
+# `    NAME       'if'          (1, 0) (1, 2)`
+# to make writing tests easier.
+def stringify_tokens_from_source(token_generator, source_string):
+    result = []
+    num_lines = len(source_string.splitlines())
+    missing_trailing_nl = source_string[-1] not in '\r\n'
+
+    for type, token, start, end, line in token_generator:
+        if type == ENDMARKER:
+            break
+        # Ignore the new line on the last line if the input lacks one
+        if missing_trailing_nl and type == NEWLINE and end[0] == num_lines:
+            continue
+        type = tok_name[type]
+        result.append("    %(type)-10.10s %(token)-13.13r %(start)s %(end)s" %
+                          locals())
+
+    return result
+
 class TokenizeTest(TestCase):
     # Tests for the tokenize module.
 
     # The tests can be really simple. Given a small fragment of source
-    # code, print out a table with tokens. The ENDMARKER is omitted for
-    # brevity.
+    # code, print out a table with tokens. The ENDMARKER, ENCODING and
+    # final NEWLINE are omitted for brevity.
 
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
-        # The ENDMARKER is omitted.
-        result = []
         f = StringIO(s)
-        for type, token, start, end, line in generate_tokens(f.readline):
-            if type == ENDMARKER:
-                break
-            type = tok_name[type]
-            result.append("    %(type)-10.10s %(token)-13.13r %(start)s %(end)s" %
-                          locals())
+        result = stringify_tokens_from_source(generate_tokens(f.readline), s)
+
         self.assertEqual(result,
                          expected.rstrip().splitlines())
 
+    def test_implicit_newline(self):
+        # Make sure that the tokenizer puts in an implicit NEWLINE
+        # when the input lacks a trailing new line.
+        f = StringIO("x")
+        tokens = list(generate_tokens(f.readline))
+        self.assertEqual(tokens[-2][0], NEWLINE)
+        self.assertEqual(tokens[-1][0], ENDMARKER)
 
     def test_basic(self):
         self.check_tokenize("1 + 1", """\
@@ -616,7 +638,7 @@ class TestRoundtrip(TestCase):
         self.check_roundtrip("if x == 1:\n"
                              "    print x\n")
         self.check_roundtrip("# This is a comment\n"
-                             "# This also")
+                             "# This also\n")
 
         # Some people use different formatting conventions, which makes
         # untokenize a little trickier. Note that this test involves trailing
