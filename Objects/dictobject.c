@@ -656,6 +656,13 @@ clone_combined_dict(PyDictObject *orig)
         /* Maintain tracking. */
         _PyObject_GC_TRACK(new);
     }
+
+    /* Since we copied the keys table we now have an extra reference
+       in the system.  Manually call _Py_INC_REFTOTAL to signal that
+       we have it now; calling DK_INCREF would be an error as
+       keys->dk_refcnt is already set to 1 (after memcpy). */
+    _Py_INC_REFTOTAL;
+
     return (PyObject *)new;
 }
 
