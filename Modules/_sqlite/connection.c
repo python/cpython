@@ -817,7 +817,7 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
     int narg;
     int rc;
     int deterministic = 0;
-    int eTextRep = SQLITE_UTF8;
+    int flags = SQLITE_UTF8;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -841,7 +841,7 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
             return NULL;
         }
         else {
-            eTextRep |= SQLITE_DETERMINISTIC;
+            flags |= SQLITE_DETERMINISTIC;
         }
 #endif
     }
@@ -849,7 +849,7 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
     rc = sqlite3_create_function(self->db,
                                  name,
                                  narg,
-                                 eTextRep,
+                                 flags,
                                  (void*)func,
                                  _pysqlite_func_callback,
                                  NULL,

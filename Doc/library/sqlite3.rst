@@ -346,13 +346,14 @@ Connection Objects
       called as the SQL function. If *deterministic* is true, the created function
       is marked as `deterministic <https://sqlite.org/deterministic.html>`_, which
       allows SQLite to perform additional optimizations. This flag is supported by
-      SQLite 3.8.3 or higher and has no effect on older versions.
+      SQLite 3.8.3 or higher, ``sqlite3.NotSupportedError`` will be raised if used
+      with older versions.
 
       The function can return any of the types supported by SQLite: bytes, str, int,
       float and ``None``.
 
       .. versionchanged:: 3.8
-        The *deterministic* parameter was added.
+         The *deterministic* parameter was added.
 
       Example:
 

@@ -1,2 +1,0 @@
-Add the parameter *deterministic* to the
-sqlite3.Connection.create_function().
