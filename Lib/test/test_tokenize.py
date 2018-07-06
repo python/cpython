@@ -12,6 +12,26 @@ import os
 import token
 
 
+# Converts a source string into a list of textual representation
+# of the tokens such as:
+# `    NAME       'if'          (1, 0) (1, 2)`
+# to make writing tests easier.
+def stringify_tokens_from_source(token_generator, source_string):
+    result = []
+    num_lines = len(source_string.splitlines())
+    missing_trailing_nl = source_string[-1] not in '\r\n'
+
+    for type, token, start, end, line in token_generator:
+        if type == ENDMARKER:
+            break
+        # Ignore the new line on the last line if the input lacks one
+        if missing_trailing_nl and type == NEWLINE and end[0] == num_lines:
+            continue
+        type = tok_name[type]
+        result.append(f"    {type:10} {token!r:13} {start} {end}")
+
+    return result
+
 class TokenizeTest(TestCase):
     # Tests for the tokenize module.
 
@@ -22,16 +42,9 @@ class TokenizeTest(TestCase):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
         # The ENDMARKER and final NEWLINE are omitted.
-        result = []
         f = BytesIO(s.encode('utf-8'))
-        num_lines = len(s.splitlines())
-        for type, token, start, end, line in tokenize(f.readline):
-            if type == ENDMARKER:
-                break
-            if s[-1] not in '\r\n' and type == NEWLINE and end[0] == num_lines:
-                continue
-            type = tok_name[type]
-            result.append(f"    {type:10} {token!r:13} {start} {end}")
+        result = stringify_tokens_from_source(tokenize(f.readline), s)
+
         self.assertEqual(result,
                          ["    ENCODING   'utf-8'       (0, 0) (0, 0)"] +
                          expected.rstrip().splitlines())
@@ -935,16 +948,8 @@ class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
         # The ENDMARKER and final NEWLINE are omitted.
-        result = []
         f = StringIO(s)
-        num_lines = len(s.splitlines())
-        for type, token, start, end, line in generate_tokens(f.readline):
-            if type == ENDMARKER:
-                break
-            if s[-1] not in '\r\n' and type == NEWLINE and end[0] == num_lines:
-                continue
-            type = tok_name[type]
-            result.append(f"    {type:10} {token!r:13} {start} {end}")
+        result = stringify_tokens_from_source(generate_tokens(f.readline), s)
         self.assertEqual(result, expected.rstrip().splitlines())
 
 
