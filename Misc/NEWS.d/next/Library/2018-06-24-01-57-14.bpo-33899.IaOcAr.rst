@@ -1,0 +1,3 @@
+Tokenize module now implicitly emits a NEWLINE when provided with input that
+does not have a trailing new line.  This behavior now matches what the C
+tokenizer does internally.  Contributed by Ammar Askar.
