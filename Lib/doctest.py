@@ -275,15 +275,14 @@ def _ellipsis_match(want, got):
 
     # Deal with exact matches possibly needed at one or both ends.
     startpos, endpos = 0, len(got)
-    w = ws[0]
-    if w:   # starts with exact match
+    if (w := ws[0]):   # starts with exact match
         if got.startswith(w):
             startpos = len(w)
             del ws[0]
         else:
             return False
-    w = ws[-1]
-    if w:   # ends with exact match
+
+    if (w := ws[-1]):   # ends with exact match
         if got.endswith(w):
             endpos -= len(w)
             del ws[-1]
@@ -311,8 +310,7 @@ def _ellipsis_match(want, got):
 
 def _comment_line(line):
     "Return a commented form of the given line"
-    line = line.rstrip()
-    if line:
+    if (line := line.rstrip()):
         return '# '+line
     else:
         return '#'
@@ -715,8 +713,7 @@ class DocTestParser:
         want = '\n'.join([wl[indent:] for wl in want_lines])
 
         # If `want` contains a traceback message, then extract it.
-        m = self._EXCEPTION_RE.match(want)
-        if m:
+        if (m := self._EXCEPTION_RE.match(want)):
             exc_msg = m.group('msg')
         else:
             exc_msg = None
@@ -2571,8 +2568,7 @@ def script_from_examples(s):
             # Add the example's source code (strip trailing NL)
             output.append(piece.source[:-1])
             # Add the expected output:
-            want = piece.want
-            if want:
+            if (want := piece.want):
                 output.append('# Expected:')
                 output += ['## '+l for l in want.split('\n')[:-1]]
         else:

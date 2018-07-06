@@ -481,19 +481,13 @@ class _NNTPBase:
             if file is not None:
                 # XXX lines = None instead?
                 terminators = (b'.' + _CRLF, b'.\n')
-                while 1:
-                    line = self._getline(False)
-                    if line in terminators:
-                        break
+                while (line := self._getline(False)) not in terminators:
                     if line.startswith(b'..'):
                         line = line[1:]
                     file.write(line)
             else:
                 terminator = b'.'
-                while 1:
-                    line = self._getline()
-                    if line == terminator:
-                        break
+                while (line := self._getline()) != terminator:
                     if line.startswith(b'..'):
                         line = line[1:]
                     lines.append(line)
@@ -619,8 +613,7 @@ class _NNTPBase:
             resp, lines = self._longcmdstring('XGTITLE ' + group_pattern)
         groups = {}
         for raw_line in lines:
-            match = line_pat.search(raw_line.strip())
-            if match:
+            if (match := line_pat.search(raw_line.strip())):
                 name, desc = match.group(1, 2)
                 if not return_all:
                     return desc
@@ -843,11 +836,9 @@ class _NNTPBase:
                       DeprecationWarning, 2)
         line_pat = re.compile('^([^ \t]+)[ \t]+(.*)$')
         resp, raw_lines = self._longcmdstring('XGTITLE ' + group, file)
-        lines = []
-        for raw_line in raw_lines:
-            match = line_pat.search(raw_line.strip())
-            if match:
-                lines.append(match.group(1, 2))
+        lines = [match.group(1, 2)
+                 for raw_line in raw_lines
+                 if (match := line_pat.search(raw_line.strip()))]
         return resp, lines
 
     def xpath(self, id):
@@ -950,8 +941,7 @@ class _NNTPBase:
             if usenetrc and not user:
                 import netrc
                 credentials = netrc.netrc()
-                auth = credentials.authenticators(self.host)
-                if auth:
+                if (auth := credentials.authenticators(self.host)):
                     user = auth[0]
                     password = auth[2]
         except OSError:

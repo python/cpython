@@ -595,9 +595,7 @@ class HTMLDoc(Doc):
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
                                 r'(self\.)?(\w+))')
-        while True:
-            match = pattern.search(text, here)
-            if not match: break
+        while (match := pattern.search(text, here)):
             start, end = match.span()
             results.append(escape(text[here:start]))
 
@@ -1242,8 +1240,7 @@ location listed above.
             if argspec and argspec != '()':
                 push(name + argspec + '\n')
 
-        doc = getdoc(object)
-        if doc:
+        if (doc := getdoc(object)):
             push(doc + '\n')
 
         # List the mro, if non-trivial.

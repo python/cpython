@@ -102,10 +102,7 @@ def win_getpass(prompt='Password: ', stream=None):
     for c in prompt:
         msvcrt.putwch(c)
     pw = ""
-    while 1:
-        c = msvcrt.getwch()
-        if c == '\r' or c == '\n':
-            break
+    while (c := msvcrt.getwch()) not in ('\r', '\n'):
         if c == '\003':
             raise KeyboardInterrupt
         if c == '\b':
@@ -132,8 +129,7 @@ def _raw_input(prompt="", stream=None, input=None):
         stream = sys.stderr
     if not input:
         input = sys.stdin
-    prompt = str(prompt)
-    if prompt:
+    if (prompt := str(prompt)):
         try:
             stream.write(prompt)
         except UnicodeEncodeError:
@@ -160,8 +156,7 @@ def getuser():
     """
 
     for name in ('LOGNAME', 'USER', 'LNAME', 'USERNAME'):
-        user = os.environ.get(name)
-        if user:
+        if (user := os.environ.get(name)):
             return user
 
     # If this fails, the exception will "explain" why

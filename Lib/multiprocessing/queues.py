@@ -133,8 +133,7 @@ class Queue(object):
         try:
             self._reader.close()
         finally:
-            close = self._close
-            if close:
+            if (close := self._close):
                 self._close = None
                 close()
 

@@ -586,8 +586,7 @@ class SocketHandler(logging.Handler):
         Pickles the record in binary format with a length prefix, and
         returns it ready for transmission across the socket.
         """
-        ei = record.exc_info
-        if ei:
+        if record.exc_info:
             # just to get traceback text into record.exc_text ...
             dummy = self.format(record)
         # See issue #14436: If msg or args are objects, they may not be
@@ -638,8 +637,7 @@ class SocketHandler(logging.Handler):
         """
         self.acquire()
         try:
-            sock = self.sock
-            if sock:
+            if (sock := self.sock):
                 self.sock = None
                 sock.close()
             logging.Handler.close(self)

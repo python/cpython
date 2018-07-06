@@ -196,11 +196,8 @@ class _SSLPipe(object):
 
             if self._state == _WRAPPED:
                 # Main state: read data from SSL until close_notify
-                while True:
-                    chunk = self._sslobj.read(self.max_size)
+                while (chunk := self._sslobj.read(self.max_size)):
                     appdata.append(chunk)
-                    if not chunk:  # close_notify
-                        break
 
             elif self._state == _SHUTDOWN:
                 # Call shutdown() until it doesn't raise anymore.
@@ -562,8 +559,7 @@ class SSLProtocol(protocols.Protocol):
             self._wakeup_waiter(ConnectionResetError)
 
             if not self._in_handshake:
-                keep_open = self._app_protocol.eof_received()
-                if keep_open:
+                if self._app_protocol.eof_received():
                     logger.warning('returning true from eof_received() '
                                    'has no effect when using ssl')
         finally:

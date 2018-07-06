@@ -314,8 +314,7 @@ class SequenceMatcher:
 
         # Purge junk elements
         self.bjunk = junk = set()
-        isjunk = self.isjunk
-        if isjunk:
+        if (isjunk := self.isjunk):
             for elt in b2j.keys():
                 if isjunk(elt):
                     junk.add(elt)

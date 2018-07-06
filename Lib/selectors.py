@@ -332,8 +332,7 @@ class SelectSelector(_BaseSelectorImpl):
             if fd in w:
                 events |= EVENT_WRITE
 
-            key = self._key_from_fd(fd)
-            if key:
+            if (key := self._key_from_fd(fd)):
                 ready.append((key, events & key.events))
         return ready
 
@@ -422,8 +421,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             if event & ~self._EVENT_WRITE:
                 events |= EVENT_READ
 
-            key = self._key_from_fd(fd)
-            if key:
+            if (key := self._key_from_fd(fd)):
                 ready.append((key, events & key.events))
         return ready
 
@@ -475,8 +473,7 @@ if hasattr(select, 'epoll'):
                 if event & ~select.EPOLLOUT:
                     events |= EVENT_READ
 
-                key = self._key_from_fd(fd)
-                if key:
+                if (key := self._key_from_fd(fd)):
                     ready.append((key, events & key.events))
             return ready
 
@@ -567,8 +564,7 @@ if hasattr(select, 'kqueue'):
                 if flag == select.KQ_FILTER_WRITE:
                     events |= EVENT_WRITE
 
-                key = self._key_from_fd(fd)
-                if key:
+                if (key := self._key_from_fd(fd)):
                     ready.append((key, events & key.events))
             return ready
 

@@ -313,8 +313,7 @@ class GzipFile(_compression.BaseStream):
             elif self.mode == READ:
                 self._buffer.close()
         finally:
-            myfileobj = self.myfileobj
-            if myfileobj:
+            if (myfileobj := self.myfileobj):
                 self.myfileobj = None
                 myfileobj.close()
 
@@ -560,10 +559,7 @@ def _test():
             else:
                 f = builtins.open(arg, "rb")
                 g = open(arg + ".gz", "wb")
-        while True:
-            chunk = f.read(1024)
-            if not chunk:
-                break
+        while (chunk := f.read(1024)):
             g.write(chunk)
         if g is not sys.stdout.buffer:
             g.close()

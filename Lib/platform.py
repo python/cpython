@@ -516,8 +516,7 @@ def system_alias(system, release, version):
             # These releases use the old name SunOS
             return system, release, version
         # Modify release (marketing release = SunOS release - 3)
-        l = release.split('.')
-        if l:
+        if (l := release.split('.')):
             try:
                 major = int(l[0])
             except ValueError:
@@ -572,10 +571,7 @@ def _platform(*args):
     platform = platform.replace('unknown', '')
 
     # Fold '--'s and remove trailing '-'
-    while 1:
-        cleaned = platform.replace('--', '-')
-        if cleaned == platform:
-            break
+    while (cleaned := platform.replace('--', '-')) != platform:
         platform = cleaned
     while platform[-1] == '-':
         platform = platform[:-1]

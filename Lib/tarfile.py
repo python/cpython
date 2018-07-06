@@ -483,15 +483,11 @@ class _Stream:
             xlen = ord(self.__read(1)) + 256 * ord(self.__read(1))
             self.read(xlen)
         if flag & 8:
-            while True:
-                s = self.__read(1)
-                if not s or s == NUL:
-                    break
+            while (s := self.__read(1)) and s != NUL:
+                pass
         if flag & 16:
-            while True:
-                s = self.__read(1)
-                if not s or s == NUL:
-                    break
+            while (s := self.__read(1)) and (s != NUL):
+                pass
         if flag & 2:
             self.__read(2)
 
@@ -520,10 +516,7 @@ class _Stream:
         """
         if size is None:
             t = []
-            while True:
-                buf = self._read(self.bufsize)
-                if not buf:
-                    break
+            while (buf := self._read(self.bufsize)):
                 t.append(buf)
             buf = b"".join(t)
         else:
@@ -997,10 +990,7 @@ class TarInfo(object):
 
             l = len(keyword) + len(value) + 3   # ' ' + '=' + '\n'
             n = p = 0
-            while True:
-                n = l + len(str(p))
-                if n == p:
-                    break
+            while (n := l + len(str(p))) != p:
                 p = n
             records += bytes(str(p), "ascii") + b" " + keyword + b"=" + value + b"\n"
 
@@ -1200,8 +1190,7 @@ class TarInfo(object):
         # these fields are UTF-8 encoded but since POSIX.1-2008 tar
         # implementations are allowed to store them as raw binary strings if
         # the translation to UTF-8 fails.
-        match = re.search(br"\d+ hdrcharset=([^\n]+)\n", buf)
-        if match is not None:
+        if (match := re.search(br"\d+ hdrcharset=([^\n]+)\n", buf)) is not None:
             pax_headers["hdrcharset"] = match.group(1).decode("utf-8")
 
         # For the time being, we don't care about anything other than "BINARY".
@@ -1219,11 +1208,7 @@ class TarInfo(object):
         # the newline. keyword and value are both UTF-8 encoded strings.
         regex = re.compile(br"(\d+) ([^=]+)=")
         pos = 0
-        while True:
-            match = regex.match(buf, pos)
-            if not match:
-                break
-
+        while (match := regex.match(buf, pos)):
             length, keyword = match.groups()
             length = int(length)
             value = buf[match.end(2) + 1:match.start(1) + length - 1]
@@ -2339,10 +2324,8 @@ class TarFile(object):
         """Read through the entire archive file and look for readable
            members.
         """
-        while True:
-            tarinfo = self.next()
-            if tarinfo is None:
-                break
+        while (tarinfo := self.next()) is not None:
+            pass
         self._loaded = True
 
     def _check(self, mode=None):

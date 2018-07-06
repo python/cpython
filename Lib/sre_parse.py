@@ -294,11 +294,9 @@ class Tokenizer:
 
 def _class_escape(source, escape):
     # handle escape code inside character class
-    code = ESCAPES.get(escape)
-    if code:
+    if (code := ESCAPES.get(escape)):
         return code
-    code = CATEGORIES.get(escape)
-    if code and code[0] is IN:
+    if (code := CATEGORIES.get(escape)) and code[0] is IN:
         return code
     try:
         c = escape[1:2]
@@ -354,11 +352,9 @@ def _class_escape(source, escape):
 
 def _escape(source, escape, state):
     # handle escape code in expression
-    code = CATEGORIES.get(escape)
-    if code:
+    if (code := CATEGORIES.get(escape)):
         return code
-    code = ESCAPES.get(escape)
-    if code:
+    if (code := ESCAPES.get(escape)):
         return code
     try:
         c = escape[1:2]
@@ -507,13 +503,8 @@ def _parse(source, state, verbose, nested, first=False):
     _len = len
     _ord = ord
 
-    while True:
-
-        this = source.next
-        if this is None:
-            break # end of pattern
-        if this in "|)":
-            break # end of subpattern
+    # test for end of pattern or end of subpattern
+    while (this := source.next) is not None and (this not in "|)"):
         sourceget()
 
         if verbose:
@@ -521,10 +512,8 @@ def _parse(source, state, verbose, nested, first=False):
             if this in WHITESPACE:
                 continue
             if this == "#":
-                while True:
-                    this = sourceget()
-                    if this is None or this == "\n":
-                        break
+                while (this := sourceget()) is not None and (this != "\n"):
+                    pass
                 continue
 
         if this[0] == "\\":
@@ -990,10 +979,8 @@ def parse_template(source, pattern):
         groups.append((len(literals), index))
         literals.append(None)
     groupindex = pattern.groupindex
-    while True:
-        this = sget()
-        if this is None:
-            break # end of replacement string
+    # check for end of replacement string
+    while (this := sget()) is not None:
         if this[0] == "\\":
             # group
             c = this[1]

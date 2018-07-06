@@ -178,11 +178,8 @@ def _copyfileobj_readinto(fsrc, fdst, length=COPY_BUFSIZE):
     fsrc_readinto = fsrc.readinto
     fdst_write = fdst.write
     with memoryview(bytearray(length)) as mv:
-        while True:
-            n = fsrc_readinto(mv)
-            if not n:
-                break
-            elif n < length:
+        while (n := fsrc_readinto(mv)):
+            if n < length:
                 with mv[:n] as smv:
                     fdst.write(smv)
             else:
@@ -193,10 +190,7 @@ def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
     # Localize variable access to minimize overhead.
     fsrc_read = fsrc.read
     fdst_write = fdst.write
-    while True:
-        buf = fsrc_read(length)
-        if not buf:
-            break
+    while (buf := fsrc_read(length)):
         fdst_write(buf)
 
 def _samefile(src, dst):

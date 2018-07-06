@@ -562,10 +562,7 @@ class Telnet:
         """Multithreaded version of interact()."""
         import _thread
         _thread.start_new_thread(self.listener, ())
-        while 1:
-            line = sys.stdin.readline()
-            if not line:
-                break
+        while (line := sys.stdin.readline()):
             self.write(line.encode('ascii'))
 
     def listener(self):
@@ -617,8 +614,7 @@ class Telnet:
             while not self.eof:
                 self.process_rawq()
                 for i in indices:
-                    m = list[i].search(self.cookedq)
-                    if m:
+                    if (m := list[i].search(self.cookedq)):
                         e = m.end()
                         text = self.cookedq[:e]
                         self.cookedq = self.cookedq[e:]

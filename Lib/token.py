@@ -115,17 +115,14 @@ def _main():
     tokens = {}
     prev_val = None
     for line in lines:
-        match = prog.match(line)
-        if match:
+        if (match := prog.match(line)):
             name, val = match.group(1, 2)
             val = int(val)
             tokens[val] = {'token': name}          # reverse so we can sort them...
             prev_val = val
-        else:
-            comment_match = comment_regex.match(line)
-            if comment_match and prev_val is not None:
-                comment = comment_match.group(1)
-                tokens[prev_val]['comment'] = comment
+        elif (comment_match := comment_regex.match(line)) and prev_val is not None:
+            comment = comment_match.group(1)
+            tokens[prev_val]['comment'] = comment
     keys = sorted(tokens.keys())
     # load the output skeleton from the target:
     try:

@@ -301,10 +301,7 @@ def expandvars(path):
         end = '}'
         environ = os.environ
     i = 0
-    while True:
-        m = search(path, i)
-        if not m:
-            break
+    while (m := search(path, i)):
         i, j = m.span(0)
         name = m.group(1)
         if name.startswith(start) and name.endswith(end):

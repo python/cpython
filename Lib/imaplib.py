@@ -924,8 +924,7 @@ class IMAP4:
 
 
     def _check_bye(self):
-        bye = self.untagged_responses.get('BYE')
-        if bye:
+        if (bye := self.untagged_responses.get('BYE')):
             raise self.abort(bye[-1].decode(self._encoding, 'replace'))
 
 
@@ -1389,8 +1388,7 @@ class _Authenticator:
             else:
                 t = inp
                 inp = b''
-            e = binascii.b2a_base64(t)
-            if e:
+            if (e := binascii.b2a_base64(t)):
                 oup = oup + e[:-1]
         return oup
 
@@ -1579,9 +1577,10 @@ if __name__ == '__main__':
             run(cmd, args)
 
         for ml in run('list', ('/tmp/', 'yy%')):
-            mo = re.match(r'.*"([^"]+)"$', ml)
-            if mo: path = mo.group(1)
-            else: path = ml.split()[-1]
+            if (mo := re.match(r'.*"([^"]+)"$', ml)):
+                path = mo.group(1)
+            else:
+                path = ml.split()[-1]
             run('delete', (path,))
 
         for cmd,args in test_seq2:

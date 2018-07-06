@@ -20,8 +20,7 @@ def what(file, h=None):
                 h = file.read(32)
                 file.seek(location)
         for tf in tests:
-            res = tf(h, f)
-            if res:
+            if (res := tf(h, f)):
                 return res
     finally:
         if f: f.close()

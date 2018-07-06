@@ -440,10 +440,7 @@ class FTP:
         """
         self.voidcmd('TYPE I')
         with self.transfercmd(cmd, rest) as conn:
-            while 1:
-                data = conn.recv(blocksize)
-                if not data:
-                    break
+            while (data := conn.recv(blocksize)):
                 callback(data)
             # shutdown ssl layer
             if _SSLSocket is not None and isinstance(conn, _SSLSocket):
@@ -502,10 +499,7 @@ class FTP:
         """
         self.voidcmd('TYPE I')
         with self.transfercmd(cmd, rest) as conn:
-            while 1:
-                buf = fp.read(blocksize)
-                if not buf:
-                    break
+            while (buf := fp.read(blocksize)):
                 conn.sendall(buf)
                 if callback:
                     callback(buf)

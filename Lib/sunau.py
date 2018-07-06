@@ -298,8 +298,7 @@ class Au_read:
         self._soundpos = pos
 
     def close(self):
-        file = self._file
-        if file:
+        if (file := self._file):
             self._file = None
             if self._opened:
                 file.close()

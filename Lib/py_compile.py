@@ -142,8 +142,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
             sys.stderr.write(py_exc.msg + '\n')
             return
     try:
-        dirname = os.path.dirname(cfile)
-        if dirname:
+        if (dirname := os.path.dirname(cfile)):
             os.makedirs(dirname)
     except FileExistsError:
         pass
@@ -178,10 +177,7 @@ def main(args=None):
         args = sys.argv[1:]
     rv = 0
     if args == ['-']:
-        while True:
-            filename = sys.stdin.readline()
-            if not filename:
-                break
+        while (filename := sys.stdin.readline()):
             filename = filename.rstrip('\n')
             try:
                 compile(filename, doraise=True)

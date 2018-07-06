@@ -181,8 +181,7 @@ def _get_default_scheme():
 # NOTE: site.py has copy of this function.
 # Sync it when modify this function.
 def _getuserbase():
-    env_base = os.environ.get("PYTHONUSERBASE", None)
-    if env_base:
+    if (env_base := os.environ.get("PYTHONUSERBASE", None)):
         return env_base
 
     def joinuser(*args):
@@ -224,8 +223,7 @@ def _parse_makefile(filename, vars=None):
     for line in lines:
         if line.startswith('#') or line.strip() == '':
             continue
-        m = _variable_rx.match(line)
-        if m:
+        if (m := _variable_rx.match(line)):
             n, v = m.group(1, 2)
             v = v.strip()
             # `$$' is a literal `$' in make
@@ -445,22 +443,16 @@ def parse_config_h(fp, vars=None):
     define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
     undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
 
-    while True:
-        line = fp.readline()
-        if not line:
-            break
-        m = define_rx.match(line)
-        if m:
+    while (line := fp.readline()):
+        if (m := define_rx.match(line)):
             n, v = m.group(1, 2)
             try:
                 v = int(v)
             except ValueError:
                 pass
             vars[n] = v
-        else:
-            m = undef_rx.match(line)
-            if m:
-                vars[m.group(1)] = 0
+        elif (m := undef_rx.match(line)):
+            vars[m.group(1)] = 0
     return vars
 
 
@@ -659,8 +651,7 @@ def get_platform():
         osname = "cygwin"
         import re
         rel_re = re.compile(r'[\d.]+')
-        m = rel_re.match(release)
-        if m:
+        if (m := rel_re.match(release)):
             release = m.group()
     elif osname[:6] == "darwin":
         import _osx_support

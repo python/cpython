@@ -120,8 +120,7 @@ class Template(metaclass=_TemplateMetaclass):
         # Helper function for .sub()
         def convert(mo):
             # Check the most common path first.
-            named = mo.group('named') or mo.group('braced')
-            if named is not None:
+            if (named := mo.group('named') or mo.group('braced')) is not None:
                 return str(mapping[named])
             if mo.group('escaped') is not None:
                 return self.delimiter

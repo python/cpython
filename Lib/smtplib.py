@@ -460,8 +460,7 @@ class SMTP:
             # 1) Else our SMTP feature parser gets confused.
             # 2) There are some servers that only advertise the auth methods we
             #    support using the old style.
-            auth_match = OLDSTYLE_AUTH.match(each)
-            if auth_match:
+            if (auth_match := OLDSTYLE_AUTH.match(each)):
                 # This doesn't remove duplicates, but that's no problem
                 self.esmtp_features["auth"] = self.esmtp_features.get("auth", "") \
                         + " " + auth_match.groups(0)[0]
@@ -471,8 +470,7 @@ class SMTP:
             # It's actually stricter, in that only spaces are allowed between
             # parameters, but were not going to check for that here.  Note
             # that the space isn't present if there are no parameters.
-            m = re.match(r'(?P<feature>[A-Za-z0-9][A-Za-z0-9\-]*) ?', each)
-            if m:
+            if (m := re.match(r'(?P<feature>[A-Za-z0-9][A-Za-z0-9\-]*) ?', each)):
                 feature = m.group("feature").lower()
                 params = m.string[m.end("feature"):].strip()
                 if feature == "auth":
@@ -1103,10 +1101,7 @@ if __name__ == '__main__':
     toaddrs = prompt("To").split(',')
     print("Enter message, end with ^D:")
     msg = ''
-    while 1:
-        line = sys.stdin.readline()
-        if not line:
-            break
+    while (line := sys.stdin.readline()):
         msg = msg + line
     print("Message length is %d" % len(msg))
 
