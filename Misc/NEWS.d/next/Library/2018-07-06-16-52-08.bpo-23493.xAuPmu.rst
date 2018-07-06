@@ -1,1 +1,0 @@
-Optimize ``sort_keys`` option of pure Python JSON encoder.
