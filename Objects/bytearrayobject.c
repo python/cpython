@@ -2138,7 +2138,7 @@ bytearray_methods[] = {
     BYTEARRAY_APPEND_METHODDEF
     {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
-    {"center", (PyCFunction)stringlib_center, METH_VARARGS, _Py_center__doc__},
+    STRINGLIB_CENTER_METHODDEF
     BYTEARRAY_CLEAR_METHODDEF
     BYTEARRAY_COPY_METHODDEF
     {"count", (PyCFunction)bytearray_count, METH_VARARGS,
@@ -2146,8 +2146,7 @@ bytearray_methods[] = {
     BYTEARRAY_DECODE_METHODDEF
     {"endswith", (PyCFunction)bytearray_endswith, METH_VARARGS,
      _Py_endswith__doc__},
-    {"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS | METH_KEYWORDS,
-     _Py_expandtabs__doc__},
+    STRINGLIB_EXPANDTABS_METHODDEF
     BYTEARRAY_EXTEND_METHODDEF
     {"find", (PyCFunction)bytearray_find, METH_VARARGS,
      _Py_find__doc__},
@@ -2172,7 +2171,7 @@ bytearray_methods[] = {
     {"isupper", stringlib_isupper, METH_NOARGS,
      _Py_isupper__doc__},
     BYTEARRAY_JOIN_METHODDEF
-    {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, _Py_ljust__doc__},
+    STRINGLIB_LJUST_METHODDEF
     {"lower", stringlib_lower, METH_NOARGS, _Py_lower__doc__},
     BYTEARRAY_LSTRIP_METHODDEF
     BYTEARRAY_MAKETRANS_METHODDEF
@@ -2183,7 +2182,7 @@ bytearray_methods[] = {
     BYTEARRAY_REVERSE_METHODDEF
     {"rfind", (PyCFunction)bytearray_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytearray_rindex, METH_VARARGS, _Py_rindex__doc__},
-    {"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, _Py_rjust__doc__},
+    STRINGLIB_RJUST_METHODDEF
     BYTEARRAY_RPARTITION_METHODDEF
     BYTEARRAY_RSPLIT_METHODDEF
     BYTEARRAY_RSTRIP_METHODDEF
@@ -2197,7 +2196,7 @@ bytearray_methods[] = {
     {"title", stringlib_title, METH_NOARGS, _Py_title__doc__},
     BYTEARRAY_TRANSLATE_METHODDEF
     {"upper", stringlib_upper, METH_NOARGS, _Py_upper__doc__},
-    {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, _Py_zfill__doc__},
+    STRINGLIB_ZFILL_METHODDEF
     {NULL}
 };
 
