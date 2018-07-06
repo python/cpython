@@ -6,6 +6,7 @@ time zone and DST data sources.
 
 import time as _time
 import math as _math
+import sys
 
 def _cmp(x, y):
     return 0 if x == y else 1 if x > y else -1
@@ -1577,11 +1578,8 @@ class datetime(date):
             # thus we can't perform fold detection for values of time less
             # than the max time fold. See comments in _datetimemodule's
             # version of this method for more details.
-            try:
-                converter(-1)
-            except OSError:
-                if t < max_fold_seconds:
-                    return result
+            if sys.platform.startswith("win") and t < max_fold_seconds:
+                return result
 
             y, m, d, hh, mm, ss = converter(t - max_fold_seconds)[:6]
             probe1 = cls(y, m, d, hh, mm, ss, us, tz)
