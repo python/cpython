@@ -2778,12 +2778,8 @@ class Decimal(object):
 
         # find n = floor(sqrt(c)) using Newton's method
         n = 10**prec
-        while True:
-            q = c//n
-            if n <= q:
-                break
-            else:
-                n = n + q >> 1
+        while (q := c//n) < n:
+            n = n + q >> 1
         exact = exact and n*n == c
 
         if exact:

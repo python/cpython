@@ -699,10 +699,7 @@ class IocpProactor:
             if ms >= INFINITE:
                 raise ValueError("timeout too big")
 
-        while True:
-            status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
-            if status is None:
-                break
+        while (status := _overlapped.GetQueuedCompletionStatus(self._iocp, ms)) is not None:
             ms = 0
 
             err, transferred, key, address = status

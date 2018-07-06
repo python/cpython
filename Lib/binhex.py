@@ -237,16 +237,12 @@ def binhex(inp, out):
 
     with io.open(inp, 'rb') as ifp:
         # XXXX Do textfile translation on non-mac systems
-        while True:
-            d = ifp.read(128000)
-            if not d: break
+        while (d := ifp.read(128000)):
             ofp.write(d)
         ofp.close_data()
 
     ifp = openrsrc(inp, 'rb')
-    while True:
-        d = ifp.read(128000)
-        if not d: break
+    while (d := ifp.read(128000)):
         ofp.write_rsrc(d)
     ofp.close()
     ifp.close()
@@ -460,9 +456,7 @@ def hexbin(inp, out):
 
     with io.open(out, 'wb') as ofp:
         # XXXX Do translation on non-mac systems
-        while True:
-            d = ifp.read(128000)
-            if not d: break
+        while (d := ifp.read(128000)):
             ofp.write(d)
     ifp.close_data()
 
@@ -470,9 +464,7 @@ def hexbin(inp, out):
     if d:
         ofp = openrsrc(out, 'wb')
         ofp.write(d)
-        while True:
-            d = ifp.read_rsrc(128000)
-            if not d: break
+        while (d := ifp.read_rsrc(128000)):
             ofp.write(d)
         ofp.close()
 

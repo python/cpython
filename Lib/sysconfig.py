@@ -445,10 +445,7 @@ def parse_config_h(fp, vars=None):
     define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
     undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
 
-    while True:
-        line = fp.readline()
-        if not line:
-            break
+    while (line := fp.readline()):
         m = define_rx.match(line)
         if m:
             n, v = m.group(1, 2)
