@@ -1,0 +1,1 @@
+Optimize tarfile uncompress performance about 15% when gzip is used.
