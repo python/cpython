@@ -610,7 +610,7 @@ class Counter(dict):
     @classmethod
     def fromkeys(cls, iterable, v=None):
         # There is no equivalent method for counters because the semantics
-        # would be ambiguous in cases such as Counter('aaabbc', v=2).
+        # would be ambiguous in cases such as Counter.fromkeys('aaabbc', v=2).
         # Initializing counters to zero values isn't necessary because zero
         # is already the default value for counter lookups.  Initializing
         # to one is easily accomplished with Counter(set(iterable)).  For
