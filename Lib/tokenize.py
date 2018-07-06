@@ -306,8 +306,15 @@ def generate_tokens(readline):
     contline = None
     indents = [0]
 
+    last_line = b''
+    line = b''
     while 1:                                   # loop over lines in stream
         try:
+            # We capture the value of the line variable here because
+            # readline uses the empty string '' to signal end of input,
+            # hence `line` itself will always be overwritten at the end
+            # of this loop.
+            last_line = line
             line = readline()
         except StopIteration:
             line = ''
@@ -437,6 +444,9 @@ def generate_tokens(readline):
                            (lnum, pos), (lnum, pos+1), line)
                 pos += 1
 
+    # Add an implicit NEWLINE if the input doesn't end in one
+    if last_line and last_line[-1] not in '\r\n':
+        yield (NEWLINE, '', (lnum - 1, len(last_line)), (lnum - 1, len(last_line) + 1), '')
     for indent in indents[1:]:                 # pop remaining indent levels
         yield (DEDENT, '', (lnum, 0), (lnum, 0), '')
     yield (ENDMARKER, '', (lnum, 0), (lnum, 0), '')
