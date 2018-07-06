@@ -832,17 +832,15 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
     if (deterministic) {
 #if SQLITE_VERSION_NUMBER < 3008003
         PyErr_SetString(pysqlite_NotSupportedError,
-                        "should be built with SQLite 3.8.3 or higher");
+                        "deterministic=True requires SQLite 3.8.3 or higher");
         return NULL;
 #else
         if (sqlite3_libversion_number() < 3008003) {
             PyErr_SetString(pysqlite_NotSupportedError,
-                            "requires SQLite 3.8.3 or higher");
+                            "deterministic=True requires SQLite 3.8.3 or higher");
             return NULL;
         }
-        else {
-            flags |= SQLITE_DETERMINISTIC;
-        }
+        flags |= SQLITE_DETERMINISTIC;
 #endif
     }
 
