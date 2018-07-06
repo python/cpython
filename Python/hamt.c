@@ -2348,7 +2348,7 @@ _PyHamt_Without(PyHamtObject *o, PyObject *key)
         return NULL;
     }
 
-    PyHamtNode *new_root;
+    PyHamtNode *new_root = NULL;
 
     hamt_without_t res = hamt_node_without(
         (PyHamtNode *)(o->h_root),
