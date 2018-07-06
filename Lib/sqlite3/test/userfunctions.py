@@ -291,7 +291,7 @@ class FunctionTests(unittest.TestCase):
             self.con.create_function("deterministic", 0, int, deterministic=True)
 
     def CheckFuncDeterministicKwOnly(self):
-         with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError):
             self.con.create_function("deterministic", 0, int, True)
 
 
