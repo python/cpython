@@ -23,11 +23,10 @@ Example_traverse(ExampleObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static int
+static void
 Example_finalize(ExampleObject *self)
 {
     Py_CLEAR(self->x_attr);
-    return 0;
 }
 
 static PyObject *
@@ -237,7 +236,7 @@ static int execfunc(PyObject *m)
 
 #define TEST_MODULE_DEF(name, slots, methods) TEST_MODULE_DEF_EX(name, slots, methods, 0, NULL)
 
-PyModuleDef_Slot main_slots[] = {
+static PyModuleDef_Slot main_slots[] = {
     {Py_mod_exec, execfunc},
     {0, NULL},
 };
@@ -487,7 +486,7 @@ createfunc_null(PyObject *spec, PyModuleDef *def)
     return NULL;
 }
 
-PyModuleDef_Slot slots_create_null[] = {
+static PyModuleDef_Slot slots_create_null[] = {
     {Py_mod_create, createfunc_null},
     {0, NULL},
 };

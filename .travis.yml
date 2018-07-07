@@ -12,7 +12,7 @@ cache:
 
 env:
   global:
-    - OPENSSL=1.1.0g
+    - OPENSSL=1.1.0h
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
     # Use -O3 because we don't use debugger on Travis-CI
@@ -60,15 +60,19 @@ matrix:
       env: OPTIONAL=true
       before_install:
         # Python 3 is needed for Argument Clinic and multissl
-        - brew install xz python3
+        - HOMEBREW_NO_AUTO_UPDATE=1 brew install xz python3
         - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
     - os: linux
       language: c
       compiler: gcc
       env: OPTIONAL=true
+      addons:
+        apt:
+          packages:
+            - lcov
       before_script:
         - ./configure
-        - make -s -j4
+        - make coverage -s -j4
         # Need a venv that can parse covered code.
         - ./python -m venv venv
         - ./venv/bin/python -m pip install -U coverage
@@ -79,6 +83,7 @@ matrix:
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
         - source ./venv/bin/activate
+        - make coverage-lcov
         - bash <(curl -s https://codecov.io/bash)
 
 

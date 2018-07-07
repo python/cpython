@@ -1,0 +1,1 @@
+:class:`unittest.mock.MagicMock` now supports the ``__round__`` magic method.

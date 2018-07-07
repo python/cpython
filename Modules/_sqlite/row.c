@@ -176,11 +176,6 @@ PyObject* pysqlite_row_keys(pysqlite_Row* self, PyObject *Py_UNUSED(ignored))
     return list;
 }
 
-static int pysqlite_row_print(pysqlite_Row* self, FILE *fp, int flags)
-{
-    return (&PyTuple_Type)->tp_print(self->data, fp, flags);
-}
-
 static PyObject* pysqlite_iter(pysqlite_Row* self)
 {
     return PyObject_GetIter(self->data);
@@ -235,7 +230,7 @@ PyTypeObject pysqlite_RowType = {
         sizeof(pysqlite_Row),                           /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)pysqlite_row_dealloc,               /* tp_dealloc */
-        (printfunc)pysqlite_row_print,                  /* tp_print */
+        0,                                              /* tp_print */
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */
         0,                                              /* tp_reserved */

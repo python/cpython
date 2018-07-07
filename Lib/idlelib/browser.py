@@ -16,7 +16,7 @@ import sys
 from idlelib.config import idleConf
 from idlelib import pyshell
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
-from idlelib.windows import ListedToplevel
+from idlelib.window import ListedToplevel
 
 
 file_open = None  # Method...Item and Class...Item use this.

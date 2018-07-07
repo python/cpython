@@ -16,7 +16,7 @@ from .log import logger
 from .tasks import sleep
 
 
-_DEFAULT_LIMIT = 2 ** 16
+_DEFAULT_LIMIT = 2 ** 16  # 64 KiB
 
 
 class IncompleteReadError(EOFError):
