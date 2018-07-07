@@ -724,7 +724,7 @@ Text I/O
 
       .. versionadded:: 2.7
 
-   .. method:: read(n)
+   .. method:: read(n=-1)
 
       Read and return at most *n* characters from the stream as a single
       :class:`unicode`.  If *n* is negative or ``None``, reads until EOF.
