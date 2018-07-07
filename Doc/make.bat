@@ -13,10 +13,17 @@ if not defined SPHINXBUILD (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
-        %PYTHON% -m pip install sphinx python-docs-theme
+        %PYTHON% -m pip install sphinx
         if errorlevel 1 exit /B
     )
-    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sphinx.main()"
+    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sys.exit(sphinx.main())"
+)
+
+%PYTHON% -c "import python_docs_theme" > nul 2> nul
+if errorlevel 1 (
+    echo Installing python-docs-theme with %PYTHON%
+    %PYTHON% -m pip install python-docs-theme
+    if errorlevel 1 exit /B
 )
 
 if not defined BLURB (
@@ -28,9 +35,6 @@ if not defined BLURB (
     )
     set BLURB=%PYTHON% -m blurb
 )
-
-if not defined SPHINXBUILD set SPHINXBUILD=sphinx-build
-if not defined BLURB set BLURB=blurb
 
 if "%1" NEQ "htmlhelp" goto :skiphhcsearch
 if exist "%HTMLHELP%" goto :skiphhcsearch
@@ -127,6 +131,9 @@ if exist ..\Misc\NEWS (
 if NOT "%PAPER%" == "" (
     set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )
+if "%1" EQU "htmlhelp" (
+    set SPHINXOPTS=-D html_theme_options.body_max_width=none %SPHINXOPTS%
+)
 cmd /S /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . "%BUILDDIR%\%1" %2 %3 %4 %5 %6 %7 %8 %9"
 
 if "%1" EQU "htmlhelp" (
@@ -152,7 +159,7 @@ cmd /C %this% html
 
 if EXIST "%BUILDDIR%\html\index.html" (
     echo.Opening "%BUILDDIR%\html\index.html" in the default web browser...
-    start "%BUILDDIR%\html\index.html"
+    start "" "%BUILDDIR%\html\index.html"
 )
 
 goto end

@@ -1,0 +1,3 @@
+Do not simplify arguments to `typing.Union`. Now `Union[Manager, Employee]`
+is not simplified to `Employee` at runtime. Such simplification previously
+caused several bugs and limited possibilities for introspection.

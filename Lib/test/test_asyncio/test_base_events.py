@@ -24,6 +24,10 @@ MOCK_ANY = mock.ANY
 PY34 = sys.version_info >= (3, 4)
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 def mock_socket_module():
     m_socket = mock.MagicMock(spec=socket)
     for name in (
@@ -93,11 +97,11 @@ class BaseEventTests(test_utils.TestCase):
             base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
 
         self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1)),
+            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
             base_events._ipaddr_info('::3', 1, INET6, STREAM, TCP))
 
         self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1)),
+            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
             base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
 
         # IPv6 address with family IPv4.
@@ -1073,6 +1077,26 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
+    @unittest.skipUnless(hasattr(socket, 'AF_INET6'), 'no IPv6 support')
+    def test_create_server_ipv6(self):
+        async def main():
+            srv = await asyncio.start_server(
+                lambda: None, '::1', 0, loop=self.loop)
+            try:
+                self.assertGreater(len(srv.sockets), 0)
+            finally:
+                srv.close()
+                await srv.wait_closed()
+
+        try:
+            self.loop.run_until_complete(main())
+        except OSError as ex:
+            if (hasattr(errno, 'EADDRNOTAVAIL') and
+                    ex.errno == errno.EADDRNOTAVAIL):
+                self.skipTest('failed to bind to ::1')
+            else:
+                raise
+
     def test_create_datagram_endpoint_wrong_sock(self):
         sock = socket.socket(socket.AF_INET)
         with sock:
@@ -1818,12 +1842,15 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.__old_bufsize = constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 16
         with open(support.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = cls.__old_bufsize
         support.unlink(support.TESTFN)
         super().tearDownClass()
 
@@ -1848,22 +1875,21 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     def prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
-        af = socket.AF_UNSPEC if support.IPV6_ENABLED else socket.AF_INET
         server = self.run_loop(self.loop.create_server(
-            lambda: proto, support.HOST, 0, family=af))
-        port = server.sockets[0].getsockname()[1]
+            lambda: proto, support.HOST, 0, family=socket.AF_INET))
+        addr = server.sockets[0].getsockname()
 
         for _ in range(10):
             try:
-                self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+                self.run_loop(self.loop.sock_connect(sock, addr))
             except OSError:
-                time.sleep(0.5)
+                self.run_loop(asyncio.sleep(0.5))
                 continue
             else:
                 break
         else:
             # One last try, so we get the exception
-            self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+            self.run_loop(self.loop.sock_connect(sock, addr))
 
         def cleanup():
             server.close()

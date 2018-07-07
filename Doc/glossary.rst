@@ -14,8 +14,9 @@ Glossary
 
    ``...``
       The default Python prompt of the interactive shell when entering code for
-      an indented code block or within a pair of matching left and right
-      delimiters (parentheses, square brackets or curly braces).
+      an indented code block, when within a pair of matching left and right
+      delimiters (parentheses, square brackets, curly braces or triple quotes),
+      or after specifying a decorator.
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
@@ -40,16 +41,18 @@ Glossary
       ABCs with the :mod:`abc` module.
 
    annotation
-      A metadata value associated with a global variable, a class attribute or a
-      function or method parameter or return value, that stores a
-      :term:`type hint`.
+      A label associated with a variable, a class
+      attribute or a function parameter or return value,
+      used by convention as a :term:`type hint`.
 
-      Annotations are stored in the :attr:`__annotations__` special attribute
-      of a module (when annotating a global variable), class (when annotating
-      one of its attributes) or function or method (when annotating a parameter or a
-      return value) and can be accessed using :func:`typing.get_type_hints`.
+      Annotations of local variables cannot be accessed at runtime, but
+      annotations of global variables, class attributes, and functions
+      are stored in the :attr:`__annotations__`
+      special attribute of modules, classes, and functions,
+      respectively.
 
-      See :pep:`484` and :pep:`526` which describe this functionality.
+      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
+      and :pep:`526`, which describe this functionality.
 
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
@@ -112,7 +115,7 @@ Glossary
       location execution state (including local variables and pending
       try-statements).  When the *asynchronous generator iterator* effectively
       resumes with another awaitable returned by :meth:`__anext__`, it
-      picks-up where it left-off.  See :pep:`492` and :pep:`525`.
+      picks up where it left off.  See :pep:`492` and :pep:`525`.
 
    asynchronous iterable
       An object, that can be used in an :keyword:`async for` statement.
@@ -148,8 +151,8 @@ Glossary
       :data:`sys.stdout.buffer`, and instances of :class:`io.BytesIO` and
       :class:`gzip.GzipFile`.
 
-      .. seealso::
-         A :term:`text file` reads and writes :class:`str` objects.
+      See also :term:`text file` for a file object able to read and write
+      :class:`str` objects.
 
    bytes-like object
       An object that supports the :ref:`bufferobjects` and can
@@ -190,11 +193,6 @@ Glossary
    class variable
       A variable defined in a class and intended to be modified only at
       class level (i.e., not in an instance of the class).
-
-      Class variables can be specified as such through
-      :term:`type hints <type hint>`.
-
-      See :pep:`526` which describes class variable annotations.
 
    coercion
       The implicit conversion of an instance of one type to another during an
@@ -388,19 +386,20 @@ Glossary
       and the :ref:`function` section.
 
    function annotation
-      An :term:`annotation` of a function, or a method.
+      An :term:`annotation` of a function parameter or return value.
 
-      For example, this function has its parameters annotated as taking
-      :class:`int` arguments and its return value annotated as being an
-      :class:`int` as well::
+      Function annotations are usually used for
+      :term:`type hints <type hint>`: for example this function is expected to take two
+      :class:`int` arguments and is also expected to have an :class:`int`
+      return value::
 
          def sum_two_numbers(a: int, b: int) -> int:
             return a + b
 
-      Its syntax is explained in section :ref:`function`.
+      Function annotation syntax is explained in section :ref:`function`.
 
-      See also the :term:`variable annotation` glossary entry, and :pep:`484`,
-      which describes this functionality.
+      See :term:`variable annotation` and :pep:`484`,
+      which describe this functionality.
 
    __future__
       A pseudo-module which programmers can use to enable new language features
@@ -437,8 +436,8 @@ Glossary
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
       location execution state (including local variables and pending
-      try-statements).  When the *generator iterator* resumes, it picks-up where
-      it left-off (in contrast to functions which start fresh on every
+      try-statements).  When the *generator iterator* resumes, it picks up where
+      it left off (in contrast to functions which start fresh on every
       invocation).
 
       .. index:: single: generator expression
@@ -627,7 +626,7 @@ Glossary
    lambda
       An anonymous inline function consisting of a single :term:`expression`
       which is evaluated when the function is called.  The syntax to create
-      a lambda function is ``lambda [arguments]: expression``
+      a lambda function is ``lambda [parameters]: expression``
 
    LBYL
       Look before you leap.  This coding style explicitly tests for
@@ -644,7 +643,7 @@ Glossary
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
-      elements are O(1).
+      elements is O(1).
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and
@@ -1030,8 +1029,8 @@ Glossary
       :data:`sys.stdin`, :data:`sys.stdout`, and instances of
       :class:`io.StringIO`.
 
-      .. seealso::
-         A :term:`binary file` reads and write :class:`bytes` objects.
+      See also :term:`binary file` for a file object able to read and write
+      :term:`bytes-like objects <bytes-like object>`.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark
@@ -1048,17 +1047,42 @@ Glossary
       :attr:`~instance.__class__` attribute or can be retrieved with
       ``type(obj)``.
 
-   type hint
-      A specification about the expected type for a global variable, class
-      variable, function or method parameter or return value.
+   type alias
+      A synonym for a type, created by assigning the type to an identifier.
 
-      While type hints are optional and are not enforced by Python when used,
-      they are useful for static type analysis tools, and aid IDEs on code
+      Type aliases are useful for simplifying :term:`type hints <type hint>`.
+      For example::
+
+         from typing import List, Tuple
+
+         def remove_gray_shades(
+                 colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
+             pass
+
+      could be made more readable like this::
+
+         from typing import List, Tuple
+
+         Color = Tuple[int, int, int]
+
+         def remove_gray_shades(colors: List[Color]) -> List[Color]:
+             pass
+
+      See :mod:`typing` and :pep:`484`, which describe this functionality.
+
+   type hint
+      An :term:`annotation` that specifies the expected type for a variable, a class
+      attribute, or a function parameter or return value.
+
+      Type hints are optional and are not enforced by Python but
+      they are useful to static type analysis tools, and aid IDEs with code
       completion and refactoring.
 
-      Type hints are stored in :term:`annotations <annotation>`.
+      Type hints of global variables, class attributes, and functions,
+      but not local variables, can be accessed using
+      :func:`typing.get_type_hints`.
 
-      See also :pep:`483` which describe this functionality.
+      See :mod:`typing` and :pep:`484`, which describe this functionality.
 
    universal newlines
       A manner of interpreting text streams in which all of the following are
@@ -1068,21 +1092,23 @@ Glossary
       :func:`bytes.splitlines` for an additional use.
 
    variable annotation
-      An :term:`annotation` of a global variable, or a class attribute.
+      An :term:`annotation` of a variable or a class attribute.
 
-      For example, this variable is annotated as taking :class:`int` values::
+      When annotating a variable or a class attribute, assignment is optional::
+
+         class C:
+             field: 'annotation'
+
+      Variable annotations are usually used for
+      :term:`type hints <type hint>`: for example this variable is expected to take
+      :class:`int` values::
 
          count: int = 0
 
-      When annotating variables, assignment is optional::
+      Variable annotation syntax is explained in section :ref:`annassign`.
 
-         class C:
-             field: int
-
-      Its syntax is explained in section :ref:`annassign`.
-
-      See also the :term:`function annotation` glossary entry, and :pep:`484`
-      and :pep:`526` which describe this functionality.
+      See :term:`function annotation`, :pep:`484`
+      and :pep:`526`, which describe this functionality.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users

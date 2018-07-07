@@ -153,7 +153,7 @@ AC_ARG_ENABLE(universalsdk,
 [
 	case $enableval in
 	yes)
-		# Locate the best usable SDK, see Mac/README.txt for more
+		# Locate the best usable SDK, see Mac/README for more
 		# information
 		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
 		if ! ( echo $enableval | grep -E '\.sdk' 1>/dev/null )
@@ -572,7 +572,7 @@ fi
 if test "$ac_sys_system" = "Darwin"
 then
 	# Compiler selection on MacOSX is more complicated than
-	# AC_PROG_CC can handle, see Mac/README.txt for more
+	# AC_PROG_CC can handle, see Mac/README for more
 	# information
 	if test -z "${CC}"
 	then
@@ -1302,6 +1302,14 @@ if test "$Py_LTO" = 'true' ; then
       esac
       ;;
   esac
+
+  if test "$ac_cv_prog_cc_g" = "yes"
+  then
+      # bpo-30345: Add -g to LDFLAGS when compiling with LTO
+      # to get debug symbols.
+      LTOFLAGS="$LTOFLAGS -g"
+  fi
+
   CFLAGS="$CFLAGS $LTOFLAGS"
   LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
@@ -1421,9 +1429,6 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test "$CC" != 'g++' ; then
-	    STRICT_PROTO="-Wstrict-prototypes"
-	fi
         # For gcc 4.x we need to use -fwrapv so lets check if its supported
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
@@ -1469,8 +1474,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	OPT="$OPT $STRICT_PROTO"
 
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
@@ -1677,6 +1680,26 @@ yes)
       ac_cv_enable_unreachable_code_warning=no
     fi
     AC_MSG_RESULT($ac_cv_enable_unreachable_code_warning)
+
+    AC_MSG_CHECKING(if we can turn on $CC strict-prototypes warning)
+     ac_save_cc="$CC"
+     CC="$CC -Werror -Wstrict-prototypes"
+     AC_CACHE_VAL(ac_cv_enable_enable_strict_prototypes_warning,
+       AC_COMPILE_IFELSE(
+         [
+       AC_LANG_PROGRAM([[]], [[]])
+     ],[
+       ac_cv_enable_strict_prototypes_warning=yes
+     ],[
+       ac_cv_enable_strict_prototypes_warning=no
+     ]))
+     CC="$ac_save_cc"
+    AC_MSG_RESULT($ac_cv_enable_strict_prototypes_warning)
+
+    if test $ac_cv_enable_strict_prototypes_warning = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
+    fi
 
     AC_MSG_CHECKING(if we can make implicit function declaration an error in $CC)
      ac_save_cc="$CC"
@@ -2692,6 +2715,19 @@ void *x = uuid_create
 #endif
 ]])],
   [AC_DEFINE(HAVE_UUID_CREATE, 1, Define if uuid_create() exists.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+# Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
+# stream in big-endian byte-order
+AC_MSG_CHECKING(for uuid_enc_be)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
+#ifndef uuid_enc_be
+void *x = uuid_enc_be
+#endif
+]])],
+  [AC_DEFINE(HAVE_UUID_ENC_BE, 1, Define if uuid_enc_be() exists.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)]
 )

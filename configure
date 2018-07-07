@@ -626,7 +626,6 @@ ac_subst_vars='LTLIBOBJS
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
-PKG_CONFIG
 ENSUREPIP
 SRCDIRS
 THREADHEADERS
@@ -654,6 +653,9 @@ LDLAST
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
+PKG_CONFIG_LIBDIR
+PKG_CONFIG_PATH
+PKG_CONFIG
 SHLIBS
 CFLAGSFORSHARED
 LINKFORSHARED
@@ -847,7 +849,10 @@ CFLAGS
 LDFLAGS
 LIBS
 CPPFLAGS
-CPP'
+CPP
+PKG_CONFIG
+PKG_CONFIG_PATH
+PKG_CONFIG_LIBDIR'
 
 
 # Initialize some variables set by options.
@@ -1547,6 +1552,11 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
+  PKG_CONFIG  path to pkg-config utility
+  PKG_CONFIG_PATH
+              directories to add to pkg-config's search path
+  PKG_CONFIG_LIBDIR
+              path overriding pkg-config's built-in search path
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -2990,7 +3000,7 @@ if test "${enable_universalsdk+set}" = set; then :
   enableval=$enable_universalsdk;
 	case $enableval in
 	yes)
-		# Locate the best usable SDK, see Mac/README.txt for more
+		# Locate the best usable SDK, see Mac/README for more
 		# information
 		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
 		if ! ( echo $enableval | grep -E '\.sdk' 1>/dev/null )
@@ -3445,7 +3455,7 @@ fi
 if test "$ac_sys_system" = "Darwin"
 then
 	# Compiler selection on MacOSX is more complicated than
-	# AC_PROG_CC can handle, see Mac/README.txt for more
+	# AC_PROG_CC can handle, see Mac/README for more
 	# information
 	if test -z "${CC}"
 	then
@@ -6417,6 +6427,14 @@ if test "$Py_LTO" = 'true' ; then
       esac
       ;;
   esac
+
+  if test "$ac_cv_prog_cc_g" = "yes"
+  then
+      # bpo-30345: Add -g to LDFLAGS when compiling with LTO
+      # to get debug symbols.
+      LTOFLAGS="$LTOFLAGS -g"
+  fi
+
   CFLAGS="$CFLAGS $LTOFLAGS"
   LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
@@ -6666,9 +6684,6 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test "$CC" != 'g++' ; then
-	    STRICT_PROTO="-Wstrict-prototypes"
-	fi
         # For gcc 4.x we need to use -fwrapv so lets check if its supported
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
@@ -6714,8 +6729,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	OPT="$OPT $STRICT_PROTO"
 
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
@@ -7083,6 +7096,47 @@ fi
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_unreachable_code_warning" >&5
 $as_echo "$ac_cv_enable_unreachable_code_warning" >&6; }
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC strict-prototypes warning" >&5
+$as_echo_n "checking if we can turn on $CC strict-prototypes warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Werror -Wstrict-prototypes"
+     if ${ac_cv_enable_enable_strict_prototypes_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+       ac_cv_enable_strict_prototypes_warning=yes
+
+else
+
+       ac_cv_enable_strict_prototypes_warning=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_strict_prototypes_warning" >&5
+$as_echo "$ac_cv_enable_strict_prototypes_warning" >&6; }
+
+    if test $ac_cv_enable_strict_prototypes_warning = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
+    fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can make implicit function declaration an error in $CC" >&5
 $as_echo_n "checking if we can make implicit function declaration an error in $CC... " >&6; }
@@ -9574,6 +9628,38 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+# Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
+# stream in big-endian byte-order
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_enc_be" >&5
+$as_echo_n "checking for uuid_enc_be... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <uuid.h>
+int
+main ()
+{
+
+#ifndef uuid_enc_be
+void *x = uuid_enc_be
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_UUID_ENC_BE 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
 # pthread (first!) on Linux
@@ -9906,7 +9992,126 @@ $as_echo "no" >&6; }
 fi
 
 
-PKG_PROG_PKG_CONFIG
+
+
+
+
+
+
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+$as_echo "$PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_PKG_CONFIG"; then
+  ac_pt_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
+if test -n "$ac_pt_PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
+$as_echo "$ac_pt_PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_pt_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
+fi
+
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=0.9.0
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
+$as_echo_n "checking pkg-config is at least version $_pkg_min_version... " >&6; }
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+		PKG_CONFIG=""
+	fi
+fi
 
 # Check for use of the system expat library
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-expat" >&5

@@ -23,12 +23,18 @@ PROGRAM_CAT = [
               'data = sys.stdin.buffer.read()',
               'sys.stdout.buffer.write(data)'))]
 
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
     def _start(self, *args, **kwargs):
         self._proc = mock.Mock()
         self._proc.stdin = None
         self._proc.stdout = None
         self._proc.stderr = None
+        self._proc.pid = -1
 
 
 class SubprocessTransportTests(test_utils.TestCase):
@@ -71,6 +77,29 @@ class SubprocessTransportTests(test_utils.TestCase):
         self.assertRaises(ProcessLookupError, transport.terminate)
         self.assertRaises(ProcessLookupError, transport.kill)
 
+        transport.close()
+
+    def test_subprocess_repr(self):
+        waiter = asyncio.Future(loop=self.loop)
+        transport, protocol = self.create_transport(waiter)
+        transport._process_exited(6)
+        self.loop.run_until_complete(waiter)
+
+        self.assertEqual(
+            repr(transport),
+            "<TestSubprocessTransport pid=-1 returncode=6>"
+        )
+        transport._returncode = None
+        self.assertEqual(
+            repr(transport),
+            "<TestSubprocessTransport pid=-1 running>"
+        )
+        transport._pid = None
+        transport._returncode = None
+        self.assertEqual(
+            repr(transport),
+            "<TestSubprocessTransport not started>"
+        )
         transport.close()
 
 
@@ -204,6 +233,7 @@ class SubprocessMixin:
         proc, large_data = self.prepare_broken_pipe_test()
 
         async def write_stdin(proc, data):
+            await asyncio.sleep(0.5, loop=self.loop)
             proc.stdin.write(data)
             await proc.stdin.drain()
 

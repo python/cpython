@@ -13,6 +13,11 @@ This is Python version 3.8.0 alpha 0
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
 
+.. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
+   :alt: Python Zulip chat
+   :target: https://python.zulipchat.com
+  
+
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
 2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
 reserved.
@@ -61,6 +66,11 @@ This will install Python as python3.
 You can pass many options to the configure script; run ``./configure --help``
 to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
+
+If you are running on macOS with the latest updates installed, make sure to install
+openSSL or some other SSL software along with Homebrew or another package manager.
+If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more 
+information. 
 
 On macOS, if you have configured Python with ``--enable-framework``, you
 should use ``make frameworkinstall`` to do the installation.  Note that this

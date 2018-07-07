@@ -2051,7 +2051,7 @@ expression support in the :mod:`re` module).
 .. method:: str.upper()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   uppercase.  Note that ``str.upper().isupper()`` might be ``False`` if ``s``
+   uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
@@ -2315,7 +2315,7 @@ data and are closely related to string objects in a variety of other ways.
    While bytes literals and representations are based on ASCII text, bytes
    objects actually behave like immutable sequences of integers, with each
    value in the sequence restricted such that ``0 <= x < 256`` (attempts to
-   violate this restriction will trigger :exc:`ValueError`. This is done
+   violate this restriction will trigger :exc:`ValueError`). This is done
    deliberately to emphasise that while many binary formats include ASCII based
    elements and can be usefully manipulated with some text-oriented algorithms,
    this is not generally the case for arbitrary binary data (blindly applying
@@ -3388,7 +3388,10 @@ Notes:
    The bytearray version of this method does *not* operate in place - it
    always produces a new object, even if no changes were made.
 
-.. seealso:: :pep:`461`.
+.. seealso::
+
+   :pep:`461` - Adding % formatting to bytes and bytearray
+
 .. versionadded:: 3.5
 
 .. _typememoryview:
@@ -4248,6 +4251,28 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    value)`` pairs. Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.
 
+   Dictionaries preserve insertion order.  Note that updating a key does not
+   affect the order.  Keys added after deletion are inserted at the end. ::
+
+      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
+      >>> d
+      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
+      >>> list(d)
+      ['one', 'two', 'three', 'four']
+      >>> list(d.values())
+      [1, 2, 3, 4]
+      >>> d["one"] = 42
+      >>> d
+      {'one': 42, 'two': 2, 'three': 3, 'four': 4}
+      >>> del d["two"]
+      >>> d["two"] = None
+      >>> d
+      {'one': 42, 'three': 3, 'four': 4, 'two': None}
+
+   .. versionchanged:: 3.7
+      Dictionary order is guaranteed to be insertion order.  This behavior was
+      implementation detail of CPython from 3.6.
+
 .. seealso::
    :class:`types.MappingProxyType` can be used to create a read-only view
    of a :class:`dict`.
@@ -4284,7 +4309,7 @@ support membership tests:
    a :exc:`RuntimeError` or fail to iterate over all entries.
 
    .. versionchanged:: 3.7
-      Dict order is guaranteed to be insertion order.
+      Dictionary order is guaranteed to be insertion order.
 
 .. describe:: x in dictview
 
@@ -4698,3 +4723,4 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
+
