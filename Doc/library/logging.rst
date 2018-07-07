@@ -1170,14 +1170,13 @@ functions.
    +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2
-      The ``style`` argument was added.
+      The *style* argument was added.
 
    .. versionchanged:: 3.3
-      The ``handlers`` argument was added. Additional checks were added to
+      The *handlers* argument was added. Additional checks were added to
       catch situations where incompatible arguments are specified (e.g.
-      ``handlers`` together with ``stream`` or ``filename``, or ``stream``
-      together with ``filename``).
-
+      *handlers* together with *stream* or *filename*, or *stream*
+      together with *filename*).
 
 .. function:: shutdown()
 
