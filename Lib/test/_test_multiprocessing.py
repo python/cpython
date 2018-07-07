@@ -4478,13 +4478,9 @@ class TestSemaphoreTracker(unittest.TestCase):
             os.kill(pid, signal.SIGKILL)
             time.sleep(0.5)  # give it time to die
         old_stderr = sys.stderr
-        r, w = os.pipe()
-        # Make the pipe non blocking to not hang indefinitely
-        if sys.platform != "win32":
-            import fcntl
-            fcntl.fcntl(r, fcntl.F_SETFL,
-                    fcntl.fcntl(r, fcntl.F_GETFL) | os.O_NONBLOCK)
-        sys.stderr = open(w, "bw")
+        testfn = test.support.TESTFN
+        self.addCleanup(test.support.unlink, testfn)
+        sys.stderr = open(testfn, "bw")
         try:
             with warnings.catch_warnings(record=True) as all_warn:
                 _semaphore_tracker.ensure_running()
@@ -4494,7 +4490,7 @@ class TestSemaphoreTracker(unittest.TestCase):
             # information.
             _semaphore_tracker._send("PING", "")
             deadline = time.monotonic() + 5
-            with open(r, "rb") as pipe:
+            with open(testfn, "rb") as pipe:
                 while True:
                     if time.monotonic() >= deadline:
                         raise TimeoutError("Reading data "
