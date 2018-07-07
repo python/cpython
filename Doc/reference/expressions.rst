@@ -816,7 +816,7 @@ or list).  Slicings may be used as expressions or as targets in assignment or
    slicing: `primary` "[" `slice_list` "]"
    slice_list: `slice_item` ("," `slice_item`)* [","]
    slice_item: `expression` | `proper_slice`
-   proper_slice: [`lower_bound`] ":" [`upper_bound`] [":" [`stride`]]
+   proper_slice: [`lower_bound`] ":" [`upper_bound`] [ ":" [`stride`] ]
    lower_bound: `expression`
    upper_bound: `expression`
    stride: `expression`
@@ -862,7 +862,7 @@ series of :term:`arguments <argument>`:
 .. productionlist::
    call: `primary` "(" [`argument_list` [","] | `comprehension`] ")"
    argument_list: `positional_arguments` ["," `starred_and_keywords`]
-                : ["," `keywords_arguments`]
+                :   ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
    positional_arguments: ["*"] `expression` ("," ["*"] `expression`)*
