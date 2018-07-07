@@ -142,6 +142,7 @@ Remove the STORE_ANNOTATION bytecode.
 .. section: Core and Builtins
 
 Expose posix_spawn as a low level API in the os module.
+(removed before 3.7.0rc1)
 
 ..
 
@@ -180,8 +181,8 @@ longer raises ``RecursionError``; OrderedDict similarly.  Instead, use
 .. section: Core and Builtins
 
 Py_Initialize() now creates the GIL. The GIL is no longer created "on
-demand" to fix a race condition when PyGILState_Ensure() is called in a non-
-Python thread.
+demand" to fix a race condition when PyGILState_Ensure() is called in a
+non-Python thread.
 
 ..
 
@@ -746,6 +747,8 @@ Add a new "_xxsubinterpreters" extension module that exposes the existing
 subinterpreter C-API and a new cross-interpreter data sharing mechanism. The
 module is primarily intended for more thorough testing of the existing
 subinterpreter support.
+
+Note that the _xxsubinterpreters module has been removed in 3.7.0rc1.
 
 ..
 

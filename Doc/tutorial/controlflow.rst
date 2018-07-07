@@ -678,8 +678,8 @@ Function Annotations
    single: -> (return annotation assignment)
 
 :ref:`Function annotations <function>` are completely optional metadata
-information about the types used by user-defined functions (see :pep:`484`
-for more information).
+information about the types used by user-defined functions (see :pep:`3107` and
+:pep:`484` for more information).
 
 Annotations are stored in the :attr:`__annotations__` attribute of the function
 as a dictionary and have no effect on any other part of the function.  Parameter

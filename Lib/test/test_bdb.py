@@ -417,15 +417,17 @@ class TracerRun():
         self.dry_run = test_case.dry_run
         self.tracer = Tracer(test_case.expect_set, skip=skip,
                              dry_run=self.dry_run, test_case=test_case.id())
+        self._original_tracer = None
 
     def __enter__(self):
         # test_pdb does not reset Breakpoint class attributes on exit :-(
         reset_Breakpoint()
+        self._original_tracer = sys.gettrace()
         return self.tracer
 
     def __exit__(self, type_=None, value=None, traceback=None):
         reset_Breakpoint()
-        sys.settrace(None)
+        sys.settrace(self._original_tracer)
 
         not_empty = ''
         if self.tracer.set_list:
@@ -524,13 +526,13 @@ def run_test(modules, set_list, skip=None):
     test.id = lambda : None
     test.expect_set = list(gen(repeat(()), iter(sl)))
     with create_modules(modules):
-        sys.path.append(os.getcwd())
         with TracerRun(test, skip=skip) as tracer:
             tracer.runcall(tfunc_import)
 
 @contextmanager
 def create_modules(modules):
     with test.support.temp_cwd():
+        sys.path.append(os.getcwd())
         try:
             for m in modules:
                 fname = m + '.py'
@@ -542,6 +544,7 @@ def create_modules(modules):
         finally:
             for m in modules:
                 test.support.forget(m)
+            sys.path.pop()
 
 def break_in_func(funcname, fname=__file__, temporary=False, cond=None):
     return 'break', (fname, None, temporary, cond, funcname)

@@ -171,7 +171,6 @@ static void compiler_free(struct compiler *);
 static basicblock *compiler_new_block(struct compiler *);
 static int compiler_next_instr(struct compiler *, basicblock *);
 static int compiler_addop(struct compiler *, int);
-static int compiler_addop_o(struct compiler *, int, PyObject *, PyObject *);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
 static int compiler_error(struct compiler *, const char *);
@@ -409,14 +408,11 @@ list2dict(PyObject *list)
             return NULL;
         }
         k = PyList_GET_ITEM(list, i);
-        k = _PyCode_ConstantKey(k);
-        if (k == NULL || PyDict_SetItem(dict, k, v) < 0) {
-            Py_XDECREF(k);
+        if (PyDict_SetItem(dict, k, v) < 0) {
             Py_DECREF(v);
             Py_DECREF(dict);
             return NULL;
         }
-        Py_DECREF(k);
         Py_DECREF(v);
     }
     return dict;
@@ -465,23 +461,20 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
         scope = (vi >> SCOPE_OFFSET) & SCOPE_MASK;
 
         if (scope == scope_type || vi & flag) {
-            PyObject *tuple, *item = PyLong_FromSsize_t(i);
+            PyObject *item = PyLong_FromSsize_t(i);
             if (item == NULL) {
                 Py_DECREF(sorted_keys);
                 Py_DECREF(dest);
                 return NULL;
             }
             i++;
-            tuple = _PyCode_ConstantKey(k);
-            if (!tuple || PyDict_SetItem(dest, tuple, item) < 0) {
+            if (PyDict_SetItem(dest, k, item) < 0) {
                 Py_DECREF(sorted_keys);
                 Py_DECREF(item);
                 Py_DECREF(dest);
-                Py_XDECREF(tuple);
                 return NULL;
             }
             Py_DECREF(item);
-            Py_DECREF(tuple);
         }
     }
     Py_DECREF(sorted_keys);
@@ -567,7 +560,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
         _Py_IDENTIFIER(__class__);
-        PyObject *tuple, *name;
+        PyObject *name;
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
         assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
@@ -576,13 +569,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
             compiler_unit_free(u);
             return 0;
         }
-        tuple = _PyCode_ConstantKey(name);
-        if (!tuple) {
-            compiler_unit_free(u);
-            return 0;
-        }
-        res = PyDict_SetItem(u->u_cellvars, tuple, _PyLong_Zero);
-        Py_DECREF(tuple);
+        res = PyDict_SetItem(u->u_cellvars, name, _PyLong_Zero);
         if (res < 0) {
             compiler_unit_free(u);
             return 0;
@@ -874,6 +861,10 @@ static int
 stack_effect(int opcode, int oparg, int jump)
 {
     switch (opcode) {
+        case NOP:
+        case EXTENDED_ARG:
+            return 0;
+
         /* Stack manipulation */
         case POP_TOP:
             return -1;
@@ -1160,27 +1151,20 @@ compiler_addop(struct compiler *c, int opcode)
 static Py_ssize_t
 compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 {
-    PyObject *t, *v;
+    PyObject *v;
     Py_ssize_t arg;
 
-    t = _PyCode_ConstantKey(o);
-    if (t == NULL)
-        return -1;
-
-    v = PyDict_GetItem(dict, t);
+    v = PyDict_GetItemWithError(dict, o);
     if (!v) {
         if (PyErr_Occurred()) {
-            Py_DECREF(t);
             return -1;
         }
         arg = PyDict_GET_SIZE(dict);
         v = PyLong_FromSsize_t(arg);
         if (!v) {
-            Py_DECREF(t);
             return -1;
         }
-        if (PyDict_SetItem(dict, t, v) < 0) {
-            Py_DECREF(t);
+        if (PyDict_SetItem(dict, o, v) < 0) {
             Py_DECREF(v);
             return -1;
         }
@@ -1188,8 +1172,31 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
     }
     else
         arg = PyLong_AsLong(v);
+    return arg;
+}
+
+static Py_ssize_t
+compiler_add_const(struct compiler *c, PyObject *o)
+{
+    PyObject *t;
+    Py_ssize_t arg;
+
+    t = _PyCode_ConstantKey(o);
+    if (t == NULL)
+        return -1;
+
+    arg = compiler_add_o(c, c->u->u_consts, t);
     Py_DECREF(t);
     return arg;
+}
+
+static int
+compiler_addop_load_const(struct compiler *c, PyObject *o)
+{
+    Py_ssize_t arg = compiler_add_const(c, o);
+    if (arg < 0)
+        return 0;
+    return compiler_addop_i(c, LOAD_CONST, arg);
 }
 
 static int
@@ -1290,6 +1297,24 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
         compiler_exit_scope(c); \
         return 0; \
     } \
+}
+
+#define ADDOP_LOAD_CONST(C, O) { \
+    if (!compiler_addop_load_const((C), (O))) \
+        return 0; \
+}
+
+/* Same as ADDOP_LOAD_CONST, but steals a reference. */
+#define ADDOP_LOAD_CONST_NEW(C, O) { \
+    PyObject *__new_const = (O); \
+    if (__new_const == NULL) { \
+        return 0; \
+    } \
+    if (!compiler_addop_load_const((C), __new_const)) { \
+        Py_DECREF(__new_const); \
+        return 0; \
+    } \
+    Py_DECREF(__new_const); \
 }
 
 #define ADDOP_O(C, OP, O, TYPE) { \
@@ -1536,7 +1561,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             ADDOP(c, WITH_CLEANUP_START);
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP(c, GET_AWAITABLE);
-                ADDOP_O(c, LOAD_CONST, Py_None, consts);
+                ADDOP_LOAD_CONST(c, Py_None);
                 ADDOP(c, YIELD_FROM);
             }
             ADDOP(c, WITH_CLEANUP_FINISH);
@@ -1564,27 +1589,41 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
    and for annotations. */
 
 static int
-compiler_body(struct compiler *c, asdl_seq *stmts, string docstring)
+compiler_body(struct compiler *c, asdl_seq *stmts)
 {
+    int i = 0;
+    stmt_ty st;
+    PyObject *docstring;
+
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
        coincide with the line number of first "real" statement in module.
        If body is empy, then lineno will be set later in assemble. */
     if (c->u->u_scope_type == COMPILER_SCOPE_MODULE &&
         !c->u->u_lineno && asdl_seq_LEN(stmts)) {
-        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+        st = (stmt_ty)asdl_seq_GET(stmts, 0);
         c->u->u_lineno = st->lineno;
     }
     /* Every annotated class and module should have __annotations__. */
     if (find_ann(stmts)) {
         ADDOP(c, SETUP_ANNOTATIONS);
     }
+    if (!asdl_seq_LEN(stmts))
+        return 1;
     /* if not -OO mode, set docstring */
-    if (c->c_optimize < 2 && docstring) {
-        ADDOP_O(c, LOAD_CONST, docstring, consts);
-        ADDOP_NAME(c, STORE_NAME, __doc__, names);
+    if (c->c_optimize < 2) {
+        docstring = _PyAST_GetDocString(stmts);
+        if (docstring) {
+            i = 1;
+            st = (stmt_ty)asdl_seq_GET(stmts, 0);
+            assert(st->kind == Expr_kind);
+            VISIT(c, expr, st->v.Expr.value);
+            if (!compiler_nameop(c, __doc__, Store))
+                return 0;
+        }
     }
-    VISIT_SEQ(c, stmt, stmts);
+    for (; i < asdl_seq_LEN(stmts); i++)
+        VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
     return 1;
 }
 
@@ -1604,7 +1643,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
         return NULL;
     switch (mod->kind) {
     case Module_kind:
-        if (!compiler_body(c, mod->v.Module.body, mod->v.Module.docstring)) {
+        if (!compiler_body(c, mod->v.Module.body)) {
             compiler_exit_scope(c);
             return 0;
         }
@@ -1670,12 +1709,8 @@ get_ref_type(struct compiler *c, PyObject *name)
 static int
 compiler_lookup_arg(PyObject *dict, PyObject *name)
 {
-    PyObject *k, *v;
-    k = _PyCode_ConstantKey(name);
-    if (k == NULL)
-        return -1;
-    v = PyDict_GetItem(dict, k);
-    Py_DECREF(k);
+    PyObject *v;
+    v = PyDict_GetItem(dict, name);
     if (v == NULL)
         return -1;
     return PyLong_AS_LONG(v);
@@ -1723,8 +1758,8 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
         flags |= 0x08;
         ADDOP_I(c, BUILD_TUPLE, free);
     }
-    ADDOP_O(c, LOAD_CONST, (PyObject*)co, consts);
-    ADDOP_O(c, LOAD_CONST, qualname, consts);
+    ADDOP_LOAD_CONST(c, (PyObject*)co);
+    ADDOP_LOAD_CONST(c, qualname);
     ADDOP_I(c, MAKE_FUNCTION, flags);
     return 1;
 }
@@ -1786,10 +1821,7 @@ compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
         Py_ssize_t default_count = PyList_GET_SIZE(keys);
         PyObject *keys_tuple = PyList_AsTuple(keys);
         Py_DECREF(keys);
-        if (keys_tuple == NULL) {
-            return 0;
-        }
-        ADDOP_N(c, LOAD_CONST, keys_tuple, consts);
+        ADDOP_LOAD_CONST_NEW(c, keys_tuple);
         ADDOP_I(c, BUILD_CONST_KEY_MAP, default_count);
         assert(default_count > 0);
         return 1;
@@ -1806,12 +1838,7 @@ error:
 static int
 compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 {
-    PyObject *ann_as_str;
-    ann_as_str = _PyAST_ExprAsUnicode(annotation, 1);
-    if (!ann_as_str) {
-        return 0;
-    }
-    ADDOP_N(c, LOAD_CONST, ann_as_str, consts);
+    ADDOP_LOAD_CONST_NEW(c, _PyAST_ExprAsUnicode(annotation));
     return 1;
 }
 
@@ -1898,10 +1925,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
     if (len) {
         PyObject *keytuple = PyList_AsTuple(names);
         Py_DECREF(names);
-        if (keytuple == NULL) {
-            return 0;
-        }
-        ADDOP_N(c, LOAD_CONST, keytuple, consts);
+        ADDOP_LOAD_CONST_NEW(c, keytuple);
         ADDOP_I(c, BUILD_CONST_KEY_MAP, len);
         return 1;
     }
@@ -1949,7 +1973,7 @@ static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
-    PyObject *qualname, *docstring = Py_None;
+    PyObject *qualname, *docstring = NULL;
     arguments_ty args;
     expr_ty returns;
     identifier name;
@@ -2002,16 +2026,16 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     /* if not -OO mode, add docstring */
-    if (c->c_optimize < 2 && s->v.FunctionDef.docstring)
-        docstring = s->v.FunctionDef.docstring;
-    if (compiler_add_o(c, c->u->u_consts, docstring) < 0) {
+    if (c->c_optimize < 2) {
+        docstring = _PyAST_GetDocString(body);
+    }
+    if (compiler_add_const(c, docstring ? docstring : Py_None) < 0) {
         compiler_exit_scope(c);
         return 0;
     }
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
-    /* if there was a docstring, we need to skip the first statement */
     VISIT_SEQ_IN_SCOPE(c, stmt, body);
     co = assemble(c, 1);
     qualname = c->u->u_qualname;
@@ -2084,7 +2108,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         Py_DECREF(str);
         assert(c->u->u_qualname);
-        ADDOP_O(c, LOAD_CONST, c->u->u_qualname, consts);
+        ADDOP_LOAD_CONST(c, c->u->u_qualname);
         str = PyUnicode_InternFromString("__qualname__");
         if (!str || !compiler_nameop(c, str, Store)) {
             Py_XDECREF(str);
@@ -2093,7 +2117,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         Py_DECREF(str);
         /* compile the body proper */
-        if (!compiler_body(c, s->v.ClassDef.body, s->v.ClassDef.docstring)) {
+        if (!compiler_body(c, s->v.ClassDef.body)) {
             compiler_exit_scope(c);
             return 0;
         }
@@ -2126,7 +2150,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         else {
             /* No methods referenced __class__, so just return None */
             assert(PyDict_GET_SIZE(c->u->u_cellvars) == 0);
-            ADDOP_O(c, LOAD_CONST, Py_None, consts);
+            ADDOP_LOAD_CONST(c, Py_None);
         }
         ADDOP_IN_SCOPE(c, RETURN_VALUE);
         /* create the code object */
@@ -2145,7 +2169,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     Py_DECREF(co);
 
     /* 4. load class name */
-    ADDOP_O(c, LOAD_CONST, s->v.ClassDef.name, consts);
+    ADDOP_LOAD_CONST(c, s->v.ClassDef.name);
 
     /* 5. generate the rest of the code for the call */
     if (!compiler_call_helper(c, 2,
@@ -2338,7 +2362,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
 
     /* Make None the first constant, so the lambda can't have a
        docstring. */
-    if (compiler_add_o(c, c->u->u_consts, Py_None) < 0)
+    if (compiler_add_const(c, Py_None) < 0)
         return 0;
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
@@ -2439,6 +2463,10 @@ static int
 compiler_async_for(struct compiler *c, stmt_ty s)
 {
     basicblock *start, *except, *end;
+    if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
+        return compiler_error(c, "'async for' outside async function");
+    }
+
     start = compiler_new_block(c);
     except = compiler_new_block(c);
     end = compiler_new_block(c);
@@ -2456,7 +2484,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     /* SETUP_FINALLY to guard the __anext__ call */
     ADDOP_JREL(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
     ADDOP(c, POP_BLOCK);  /* for SETUP_FINALLY */
 
@@ -2555,7 +2583,7 @@ compiler_return(struct compiler *c, stmt_ty s)
             return 0;
     }
     if (s->v.Return.value == NULL) {
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
+        ADDOP_LOAD_CONST(c, Py_None);
     }
     else if (!preserve_tos) {
         VISIT(c, expr, s->v.Return.value);
@@ -2778,7 +2806,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
                 return 0;
 
             /* name = None; del name */
-            ADDOP_O(c, LOAD_CONST, Py_None, consts);
+            ADDOP_LOAD_CONST(c, Py_None);
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
 
@@ -2845,8 +2873,7 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
             attr = PyUnicode_Substring(name, pos, (dot != -1) ? dot : len);
             if (!attr)
                 return 0;
-            ADDOP_O(c, IMPORT_FROM, attr, names);
-            Py_DECREF(attr);
+            ADDOP_N(c, IMPORT_FROM, attr, names);
             if (dot == -1) {
                 break;
             }
@@ -2878,8 +2905,8 @@ compiler_import(struct compiler *c, stmt_ty s)
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.Import.names, i);
         int r;
 
-        ADDOP_O(c, LOAD_CONST, _PyLong_Zero, consts);
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
+        ADDOP_LOAD_CONST(c, _PyLong_Zero);
+        ADDOP_LOAD_CONST(c, Py_None);
         ADDOP_NAME(c, IMPORT_NAME, alias->name, names);
 
         if (alias->asname) {
@@ -2911,9 +2938,7 @@ static int
 compiler_from_import(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t i, n = asdl_seq_LEN(s->v.ImportFrom.names);
-
-    PyObject *names = PyTuple_New(n);
-    PyObject *level;
+    PyObject *names;
     static PyObject *empty_string;
 
     if (!empty_string) {
@@ -2922,14 +2947,11 @@ compiler_from_import(struct compiler *c, stmt_ty s)
             return 0;
     }
 
+    ADDOP_LOAD_CONST_NEW(c, PyLong_FromLong(s->v.ImportFrom.level));
+
+    names = PyTuple_New(n);
     if (!names)
         return 0;
-
-    level = PyLong_FromLong(s->v.ImportFrom.level);
-    if (!level) {
-        Py_DECREF(names);
-        return 0;
-    }
 
     /* build up the names */
     for (i = 0; i < n; i++) {
@@ -2940,16 +2962,12 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
     if (s->lineno > c->c_future->ff_lineno && s->v.ImportFrom.module &&
         _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__")) {
-        Py_DECREF(level);
         Py_DECREF(names);
         return compiler_error(c, "from __future__ imports must occur "
                               "at the beginning of the file");
     }
+    ADDOP_LOAD_CONST_NEW(c, names);
 
-    ADDOP_O(c, LOAD_CONST, level, consts);
-    Py_DECREF(level);
-    ADDOP_O(c, LOAD_CONST, names, consts);
-    Py_DECREF(names);
     if (s->v.ImportFrom.module) {
         ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
     }
@@ -2972,7 +2990,6 @@ compiler_from_import(struct compiler *c, stmt_ty s)
             store_name = alias->asname;
 
         if (!compiler_nameop(c, store_name, Store)) {
-            Py_DECREF(names);
             return 0;
         }
     }
@@ -3302,8 +3319,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
                             "param invalid for local variable");
             return 0;
         }
-        ADDOP_O(c, op, mangled, varnames);
-        Py_DECREF(mangled);
+        ADDOP_N(c, op, mangled, varnames);
         return 1;
     case OP_GLOBAL:
         switch (ctx) {
@@ -3506,7 +3522,7 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
             Py_INCREF(key);
             PyTuple_SET_ITEM(keys, i - begin, key);
         }
-        ADDOP_N(c, LOAD_CONST, keys, consts);
+        ADDOP_LOAD_CONST_NEW(c, keys);
         ADDOP_I(c, BUILD_CONST_KEY_MAP, n);
     }
     else {
@@ -3716,14 +3732,14 @@ compiler_subkwargs(struct compiler *c, asdl_seq *keywords, Py_ssize_t begin, Py_
             Py_INCREF(key);
             PyTuple_SET_ITEM(keys, i - begin, key);
         }
-        ADDOP_N(c, LOAD_CONST, keys, consts);
+        ADDOP_LOAD_CONST_NEW(c, keys);
         ADDOP_I(c, BUILD_CONST_KEY_MAP, n);
     }
     else {
         /* a for loop only executes once */
         for (i = begin; i < end; i++) {
             kw = asdl_seq_GET(keywords, i);
-            ADDOP_O(c, LOAD_CONST, kw->arg, consts);
+            ADDOP_LOAD_CONST(c, kw->arg);
             VISIT(c, expr, kw->value);
         }
         ADDOP_I(c, BUILD_MAP, n);
@@ -3833,7 +3849,7 @@ compiler_call_helper(struct compiler *c,
             Py_INCREF(kw->arg);
             PyTuple_SET_ITEM(names, i, kw->arg);
         }
-        ADDOP_N(c, LOAD_CONST, names, consts);
+        ADDOP_LOAD_CONST_NEW(c, names);
         ADDOP_I(c, CALL_FUNCTION_KW, n + nelts + nkwelts);
         return 1;
     }
@@ -4028,7 +4044,7 @@ compiler_async_comprehension_generator(struct compiler *c,
 
     ADDOP_JREL(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
     ADDOP(c, POP_BLOCK);
     VISIT(c, expr, gen->target);
@@ -4169,7 +4185,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP(c, GET_AWAITABLE);
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
+        ADDOP_LOAD_CONST(c, Py_None);
         ADDOP(c, YIELD_FROM);
     }
 
@@ -4187,7 +4203,7 @@ compiler_genexp(struct compiler *c, expr_ty e)
 {
     static identifier name;
     if (!name) {
-        name = PyUnicode_FromString("<genexpr>");
+        name = PyUnicode_InternFromString("<genexpr>");
         if (!name)
             return 0;
     }
@@ -4202,7 +4218,7 @@ compiler_listcomp(struct compiler *c, expr_ty e)
 {
     static identifier name;
     if (!name) {
-        name = PyUnicode_FromString("<listcomp>");
+        name = PyUnicode_InternFromString("<listcomp>");
         if (!name)
             return 0;
     }
@@ -4217,7 +4233,7 @@ compiler_setcomp(struct compiler *c, expr_ty e)
 {
     static identifier name;
     if (!name) {
-        name = PyUnicode_FromString("<setcomp>");
+        name = PyUnicode_InternFromString("<setcomp>");
         if (!name)
             return 0;
     }
@@ -4233,7 +4249,7 @@ compiler_dictcomp(struct compiler *c, expr_ty e)
 {
     static identifier name;
     if (!name) {
-        name = PyUnicode_FromString("<dictcomp>");
+        name = PyUnicode_InternFromString("<dictcomp>");
         if (!name)
             return 0;
     }
@@ -4298,6 +4314,9 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
+    if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
+        return compiler_error(c, "'async with' outside async function");
+    }
 
     block = compiler_new_block(c);
     finally = compiler_new_block(c);
@@ -4309,7 +4328,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     ADDOP(c, BEFORE_ASYNC_WITH);
     ADDOP(c, GET_AWAITABLE);
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
 
     ADDOP_JREL(c, SETUP_ASYNC_WITH, finally);
@@ -4350,7 +4369,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, WITH_CLEANUP_START);
 
     ADDOP(c, GET_AWAITABLE);
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
 
     ADDOP(c, WITH_CLEANUP_FINISH);
@@ -4491,7 +4510,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
             VISIT(c, expr, e->v.Yield.value);
         }
         else {
-            ADDOP_O(c, LOAD_CONST, Py_None, consts);
+            ADDOP_LOAD_CONST(c, Py_None);
         }
         ADDOP(c, YIELD_VALUE);
         break;
@@ -4504,7 +4523,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 
         VISIT(c, expr, e->v.YieldFrom.value);
         ADDOP(c, GET_YIELD_FROM_ITER);
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
+        ADDOP_LOAD_CONST(c, Py_None);
         ADDOP(c, YIELD_FROM);
         break;
     case Await_kind:
@@ -4517,7 +4536,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 
         VISIT(c, expr, e->v.Await.value);
         ADDOP(c, GET_AWAITABLE);
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
+        ADDOP_LOAD_CONST(c, Py_None);
         ADDOP(c, YIELD_FROM);
         break;
     case Compare_kind:
@@ -4525,26 +4544,26 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
     case Call_kind:
         return compiler_call(c, e);
     case Constant_kind:
-        ADDOP_O(c, LOAD_CONST, e->v.Constant.value, consts);
+        ADDOP_LOAD_CONST(c, e->v.Constant.value);
         break;
     case Num_kind:
-        ADDOP_O(c, LOAD_CONST, e->v.Num.n, consts);
+        ADDOP_LOAD_CONST(c, e->v.Num.n);
         break;
     case Str_kind:
-        ADDOP_O(c, LOAD_CONST, e->v.Str.s, consts);
+        ADDOP_LOAD_CONST(c, e->v.Str.s);
         break;
     case JoinedStr_kind:
         return compiler_joined_str(c, e);
     case FormattedValue_kind:
         return compiler_formatted_value(c, e);
     case Bytes_kind:
-        ADDOP_O(c, LOAD_CONST, e->v.Bytes.s, consts);
+        ADDOP_LOAD_CONST(c, e->v.Bytes.s);
         break;
     case Ellipsis_kind:
-        ADDOP_O(c, LOAD_CONST, Py_Ellipsis, consts);
+        ADDOP_LOAD_CONST(c, Py_Ellipsis);
         break;
     case NameConstant_kind:
-        ADDOP_O(c, LOAD_CONST, e->v.NameConstant.value, consts);
+        ADDOP_LOAD_CONST(c, e->v.NameConstant.value);
         break;
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
@@ -4773,10 +4792,6 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
-            mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
-            if (!mangled) {
-                return 0;
-            }
             if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
                 VISIT(c, annexpr, s->v.AnnAssign.annotation)
             }
@@ -4784,8 +4799,8 @@ compiler_annassign(struct compiler *c, stmt_ty s)
                 VISIT(c, expr, s->v.AnnAssign.annotation);
             }
             ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
-            ADDOP_O(c, LOAD_CONST, mangled, consts);
-            Py_DECREF(mangled);
+            mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
+            ADDOP_LOAD_CONST_NEW(c, mangled);
             ADDOP(c, STORE_SUBSCR);
         }
         break;
@@ -4885,14 +4900,14 @@ compiler_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
         VISIT(c, expr, s->v.Slice.lower);
     }
     else {
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
+        ADDOP_LOAD_CONST(c, Py_None);
     }
 
     if (s->v.Slice.upper) {
         VISIT(c, expr, s->v.Slice.upper);
     }
     else {
-        ADDOP_O(c, LOAD_CONST, Py_None, consts);
+        ADDOP_LOAD_CONST(c, Py_None);
     }
 
     if (s->v.Slice.step) {
@@ -5342,16 +5357,37 @@ dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
         return NULL;
     while (PyDict_Next(dict, &pos, &k, &v)) {
         i = PyLong_AS_LONG(v);
-        /* The keys of the dictionary are tuples. (see compiler_add_o
-         * and _PyCode_ConstantKey). The object we want is always second,
-         * though. */
-        k = PyTuple_GET_ITEM(k, 1);
         Py_INCREF(k);
         assert((i - offset) < size);
         assert((i - offset) >= 0);
         PyTuple_SET_ITEM(tuple, i - offset, k);
     }
     return tuple;
+}
+
+static PyObject *
+consts_dict_keys_inorder(PyObject *dict)
+{
+    PyObject *consts, *k, *v;
+    Py_ssize_t i, pos = 0, size = PyDict_GET_SIZE(dict);
+
+    consts = PyList_New(size);   /* PyCode_Optimize() requires a list */
+    if (consts == NULL)
+        return NULL;
+    while (PyDict_Next(dict, &pos, &k, &v)) {
+        i = PyLong_AS_LONG(v);
+        /* The keys of the dictionary can be tuples wrapping a contant.
+         * (see compiler_add_o and _PyCode_ConstantKey). In that case
+         * the object we want is always second. */
+        if (PyTuple_CheckExact(k)) {
+            k = PyTuple_GET_ITEM(k, 1);
+        }
+        Py_INCREF(k);
+        assert(i < size);
+        assert(i >= 0);
+        PyList_SET_ITEM(consts, i, k);
+    }
+    return consts;
 }
 
 static int
@@ -5398,12 +5434,7 @@ makecode(struct compiler *c, struct assembler *a)
     int flags;
     int argcount, kwonlyargcount, maxdepth;
 
-    tmp = dict_keys_inorder(c->u->u_consts, 0);
-    if (!tmp)
-        goto error;
-    consts = PySequence_List(tmp); /* optimize_code requires a list */
-    Py_DECREF(tmp);
-
+    consts = consts_dict_keys_inorder(c->u->u_consts);
     names = dict_keys_inorder(c->u->u_names, 0);
     varnames = dict_keys_inorder(c->u->u_varnames, 0);
     if (!consts || !names || !varnames)
@@ -5412,7 +5443,7 @@ makecode(struct compiler *c, struct assembler *a)
     cellvars = dict_keys_inorder(c->u->u_cellvars, 0);
     if (!cellvars)
         goto error;
-    freevars = dict_keys_inorder(c->u->u_freevars, PyTuple_Size(cellvars));
+    freevars = dict_keys_inorder(c->u->u_freevars, PyTuple_GET_SIZE(cellvars));
     if (!freevars)
         goto error;
 
@@ -5508,7 +5539,7 @@ assemble(struct compiler *c, int addNone)
     if (!c->u->u_curblock->b_return) {
         NEXT_BLOCK(c);
         if (addNone)
-            ADDOP_O(c, LOAD_CONST, Py_None, consts);
+            ADDOP_LOAD_CONST(c, Py_None);
         ADDOP(c, RETURN_VALUE);
     }
 

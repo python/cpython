@@ -1,0 +1,1 @@
+Fix potential memory leak in ``normalizestring()``.

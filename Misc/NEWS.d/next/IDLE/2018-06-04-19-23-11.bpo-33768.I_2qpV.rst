@@ -1,0 +1,1 @@
+Clicking on a context line moves that line to the top of the editor window.

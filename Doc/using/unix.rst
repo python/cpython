@@ -118,7 +118,9 @@ Miscellaneous
 =============
 
 To easily use Python scripts on Unix, you need to make them executable,
-e.g. with ::
+e.g. with
+
+.. code-block:: shell-session
 
    $ chmod +x script
 

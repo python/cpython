@@ -1653,79 +1653,6 @@ PREFIX(predefinedEntityName)(const ENCODING *UNUSED_P(enc), const char *ptr,
   return 0;
 }
 
-/* This function does not appear to be called from anywhere within the
- * library code.  It is used via the macro XmlSameName(), which is
- * defined but never used.  Since it appears in the encoding function
- * table, removing it is not a thing to be undertaken lightly.  For
- * the moment, we simply exclude it from coverage tests.
- *
- * LCOV_EXCL_START
- */
-static int PTRCALL
-PREFIX(sameName)(const ENCODING *enc, const char *ptr1, const char *ptr2)
-{
-  for (;;) {
-    switch (BYTE_TYPE(enc, ptr1)) {
-#define LEAD_CASE(n) \
-    case BT_LEAD ## n: \
-      if (*ptr1++ != *ptr2++) \
-        return 0;
-    LEAD_CASE(4) LEAD_CASE(3) LEAD_CASE(2)
-#undef LEAD_CASE
-      /* fall through */
-      if (*ptr1++ != *ptr2++)
-        return 0;
-      break;
-    case BT_NONASCII:
-    case BT_NMSTRT:
-#ifdef XML_NS
-    case BT_COLON:
-#endif
-    case BT_HEX:
-    case BT_DIGIT:
-    case BT_NAME:
-    case BT_MINUS:
-      if (*ptr2++ != *ptr1++)
-        return 0;
-      if (MINBPC(enc) > 1) {
-        if (*ptr2++ != *ptr1++)
-          return 0;
-        if (MINBPC(enc) > 2) {
-          if (*ptr2++ != *ptr1++)
-            return 0;
-          if (MINBPC(enc) > 3) {
-            if (*ptr2++ != *ptr1++)
-              return 0;
-          }
-        }
-      }
-      break;
-    default:
-      if (MINBPC(enc) == 1 && *ptr1 == *ptr2)
-        return 1;
-      switch (BYTE_TYPE(enc, ptr2)) {
-      case BT_LEAD2:
-      case BT_LEAD3:
-      case BT_LEAD4:
-      case BT_NONASCII:
-      case BT_NMSTRT:
-#ifdef XML_NS
-      case BT_COLON:
-#endif
-      case BT_HEX:
-      case BT_DIGIT:
-      case BT_NAME:
-      case BT_MINUS:
-        return 0;
-      default:
-        return 1;
-      }
-    }
-  }
-  /* not reached */
-}
-/* LCOV_EXCL_STOP */
-
 static int PTRCALL
 PREFIX(nameMatchesAscii)(const ENCODING *UNUSED_P(enc), const char *ptr1,
                          const char *end1, const char *ptr2)
@@ -1733,7 +1660,7 @@ PREFIX(nameMatchesAscii)(const ENCODING *UNUSED_P(enc), const char *ptr1,
   for (; *ptr2; ptr1 += MINBPC(enc), ptr2++) {
     if (end1 - ptr1 < MINBPC(enc)) {
       /* This line cannot be executed.  THe incoming data has already
-       * been tokenized once, so incomplete characters like this have
+       * been tokenized once, so imcomplete characters like this have
        * already been eliminated from the input.  Retaining the
        * paranoia check is still valuable, however.
        */

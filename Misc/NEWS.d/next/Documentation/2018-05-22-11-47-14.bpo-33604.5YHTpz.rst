@@ -1,0 +1,1 @@
+Update HMAC md5 default to a DeprecationWarning, bump removal to 3.8.

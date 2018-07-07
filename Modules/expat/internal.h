@@ -116,7 +116,7 @@ extern "C" {
 
 
 void
-align_limit_to_full_utf8_characters(const char * from, const char ** fromLimRef);
+_INTERNAL_trim_to_complete_utf8_characters(const char * from, const char ** fromLimRef);
 
 
 #ifdef __cplusplus
