@@ -91,7 +91,7 @@ The :keyword:`if` statement is used for conditional execution:
 
 .. productionlist::
    if_stmt: "if" `expression` ":" `suite`
-          : ( "elif" `expression` ":" `suite` )*
+          : ("elif" `expression` ":" `suite`)*
           : ["else" ":" `suite`]
 
 It selects exactly one of the suites by evaluating the expressions one by one
@@ -235,7 +235,7 @@ The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
 .. productionlist::
-   try_stmt: try1_stmt | try2_stmt
+   try_stmt: `try1_stmt` | `try2_stmt`
    try1_stmt: "try" ":" `suite`
             : ("except" [`expression` ["as" `identifier`]] ":" `suite`)+
             : ["else" ":" `suite`]
@@ -384,7 +384,7 @@ This allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally`
 usage patterns to be encapsulated for convenient reuse.
 
 .. productionlist::
-   with_stmt: "with" with_item ("," with_item)* ":" `suite`
+   with_stmt: "with" `with_item` ("," `with_item`)* ":" `suite`
    with_item: `expression` ["as" `target`]
 
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
@@ -468,14 +468,15 @@ A function definition defines a user-defined function object (see section
 :ref:`types`):
 
 .. productionlist::
-   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")" ["->" `expression`] ":" `suite`
+   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
+          : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
    decorator: "@" `dotted_name` ["(" [`argument_list` [","]] ")"] NEWLINE
    dotted_name: `identifier` ("." `identifier`)*
    parameter_list: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                  : | `parameter_list_starargs`
    parameter_list_starargs: "*" [`parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
-                         : | "**" `parameter` [","]
+                          : | "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
    defparameter: `parameter` ["=" `expression`]
    funcname: `identifier`
@@ -698,7 +699,8 @@ Coroutine function definition
 -----------------------------
 
 .. productionlist::
-   async_funcdef: [`decorators`] "async" "def" `funcname` "(" [`parameter_list`] ")" ["->" `expression`] ":" `suite`
+   async_funcdef: [`decorators`] "async" "def" `funcname` "(" [`parameter_list`] ")"
+                : ["->" `expression`] ":" `suite`
 
 .. index::
    keyword: async
