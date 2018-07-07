@@ -65,6 +65,7 @@ autocomplete_w.AutoCompleteWindow
 outwin.OutputWindow (indirectly being tested with grep test)
 '''
 
+import idlelib.pyshell  # Set Windows DPI awareness before Tk().
 from importlib import import_module
 import tkinter as tk
 from tkinter.ttk import Scrollbar
@@ -294,16 +295,6 @@ _stack_viewer_spec = {
     'msg': "A stacktrace for a NameError exception.\n"
            "Expand 'idlelib ...' and '<locals>'.\n"
            "Check that exc_value, exc_tb, and exc_type are correct.\n"
-    }
-
-_tabbed_pages_spec = {
-    'file': 'tabbedpages',
-    'kwds': {},
-    'msg': "Toggle between the two tabs 'foo' and 'bar'\n"
-           "Add a tab by entering a suitable name for it.\n"
-           "Remove an existing tab by entering its name.\n"
-           "Remove all existing tabs.\n"
-           "<nothing> is an invalid add page and remove page name.\n"
     }
 
 _tooltip_spec = {

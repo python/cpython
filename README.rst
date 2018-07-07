@@ -13,6 +13,11 @@ This is Python version 3.8.0 alpha 0
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
 
+.. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
+   :alt: Python Zulip chat
+   :target: https://python.zulipchat.com
+  
+
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
 2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
 reserved.
@@ -62,6 +67,11 @@ You can pass many options to the configure script; run ``./configure --help``
 to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
 
+If you are running on macOS with the latest updates installed, make sure to install
+openSSL or some other SSL software along with Homebrew or another package manager.
+If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more 
+information. 
+
 On macOS, if you have configured Python with ``--enable-framework``, you
 should use ``make frameworkinstall`` to do the installation.  Note that this
 installs the Python executable in a place that is not normally on your PATH,
@@ -93,25 +103,26 @@ Profile Guided Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 PGO takes advantage of recent versions of the GCC or Clang compilers.  If used,
-either via ``configure --enable-optimizations`` above or by manually running
-``make profile-opt`` regardless of configure flags it will do several steps.
+either via ``configure --enable-optimizations`` or by manually running
+``make profile-opt`` regardless of configure flags, the optimized build
+process will perform the following steps:
 
-First, the entire Python directory is cleaned of temporary files that may have
-resulted in a previous compilation.
+The entire Python directory is cleaned of temporary files that may have
+resulted from a previous compilation.
 
-Then, an instrumented version of the interpreter is built, using suitable
-compiler flags for each flavour. Note that this is just an intermediary step.
-The binary resulting from this step is not good for real life workloads as
-it has profiling instructions embedded inside.
+An instrumented version of the interpreter is built, using suitable compiler
+flags for each flavour. Note that this is just an intermediary step.  The
+binary resulting from this step is not good for real life workloads as it has
+profiling instructions embedded inside.
 
-After this instrumented version of the interpreter is built, the Makefile will
-automatically run a training workload. This is necessary in order to profile
-the interpreter execution. Note also that any output, both stdout and stderr,
-that may appear at this step is suppressed.
+After the instrumented interpreter is built, the Makefile will run a training
+workload.  This is necessary in order to profile the interpreter execution.
+Note also that any output, both stdout and stderr, that may appear at this step
+is suppressed.
 
-Finally, the last step is to rebuild the interpreter, using the information
-collected in the previous one. The end result will be a Python binary that is
-optimized and suitable for distribution or production installation.
+The final step is to build the actual interpreter, using the information
+collected from the instrumented one.  The end result will be a Python binary
+that is optimized; suitable for distribution or production installation.
 
 
 Link Time Optimization

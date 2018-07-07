@@ -263,6 +263,19 @@ static int test_bpo20891(void)
     return 0;
 }
 
+static int test_initialize_twice(void)
+{
+    _testembed_Py_Initialize();
+
+    /* bpo-33932: Calling Py_Initialize() twice should do nothing
+     * (and not crash!). */
+    Py_Initialize();
+
+    Py_Finalize();
+
+    return 0;
+}
+
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -288,6 +301,7 @@ static struct TestCase TestCases[] = {
     { "pre_initialization_api", test_pre_initialization_api },
     { "pre_initialization_sys_options", test_pre_initialization_sys_options },
     { "bpo20891", test_bpo20891 },
+    { "initialize_twice", test_initialize_twice },
     { NULL, NULL }
 };
 

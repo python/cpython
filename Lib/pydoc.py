@@ -1747,8 +1747,9 @@ class Helper:
     }
     # Either add symbols to this dictionary or to the symbols dictionary
     # directly: Whichever is easier. They are merged later.
+    _strprefixes = [p + q for p in ('b', 'f', 'r', 'u') for q in ("'", '"')]
     _symbols_inverse = {
-        'STRINGS' : ("'", "'''", "r'", "b'", '"""', '"', 'r"', 'b"'),
+        'STRINGS' : ("'", "'''", '"', '"""', *_strprefixes),
         'OPERATORS' : ('+', '-', '*', '**', '/', '//', '%', '<<', '>>', '&',
                        '|', '^', '~', '<', '>', '<=', '>=', '==', '!=', '<>'),
         'COMPARISON' : ('<', '>', '<=', '>=', '==', '!=', '<>'),
@@ -1910,7 +1911,13 @@ has the same effect as typing a particular string at the help> prompt.
                 if not request: break
             except (KeyboardInterrupt, EOFError):
                 break
-            request = replace(request, '"', '', "'", '').strip()
+            request = request.strip()
+
+            # Make sure significant trailing quoting marks of literals don't
+            # get deleted while cleaning input
+            if (len(request) > 2 and request[0] == request[-1] in ("'", '"')
+                    and request[0] not in request[1:-1]):
+                request = request[1:-1]
             if request.lower() in ('q', 'quit'): break
             if request == 'help':
                 self.intro()

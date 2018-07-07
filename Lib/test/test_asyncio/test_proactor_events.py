@@ -16,6 +16,10 @@ from test import support
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 def close_transport(transport):
     # Don't call transport.close() because the event loop and the IOCP proactor
     # are mocked
@@ -334,7 +338,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
     def test_pause_resume_reading(self):
         tr = self.socket_transport()
         futures = []
-        for msg in [b'data1', b'data2', b'data3', b'data4', b'']:
+        for msg in [b'data1', b'data2', b'data3', b'data4', b'data5', b'']:
             f = asyncio.Future(loop=self.loop)
             f.set_result(msg)
             futures.append(f)
@@ -364,6 +368,13 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.protocol.data_received.assert_called_with(b'data3')
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data4')
+
+        tr.pause_reading()
+        tr.resume_reading()
+        self.loop.call_exception_handler = mock.Mock()
+        self.loop._run_once()
+        self.loop.call_exception_handler.assert_not_called()
+        self.protocol.data_received.assert_called_with(b'data5')
         tr.close()
 
         self.assertFalse(tr.is_reading())
@@ -448,6 +459,8 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.assertFalse(self.protocol.pause_writing.called)
 
 
+@unittest.skip('FIXME: bpo-33694: these tests are too close '
+               'to the implementation and should be refactored or removed')
 class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
 
     def setUp(self):
@@ -458,8 +471,8 @@ class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
         self.loop._proactor = self.proactor
 
         self.protocol = test_utils.make_test_protocol(asyncio.BufferedProtocol)
-        self.buf = mock.Mock()
-        self.protocol.get_buffer.side_effect = lambda: self.buf
+        self.buf = bytearray(1)
+        self.protocol.get_buffer.side_effect = lambda hint: self.buf
 
         self.sock = mock.Mock(socket.socket)
 
@@ -497,6 +510,66 @@ class ProactorSocketTransportBufferedProtoTests(test_utils.TestCase):
         self.assertTrue(transport._fatal_error.called)
         self.assertTrue(self.protocol.get_buffer.called)
         self.assertFalse(self.protocol.buffer_updated.called)
+
+    def test_get_buffer_zerosized(self):
+        transport = self.socket_transport()
+        transport._fatal_error = mock.Mock()
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.protocol.get_buffer.side_effect = lambda hint: bytearray(0)
+
+        transport._loop_reading()
+
+        self.assertTrue(transport._fatal_error.called)
+        self.assertTrue(self.protocol.get_buffer.called)
+        self.assertFalse(self.protocol.buffer_updated.called)
+
+    def test_proto_type_switch(self):
+        self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
+        tr = self.socket_transport()
+
+        res = asyncio.Future(loop=self.loop)
+        res.set_result(b'data')
+
+        tr = self.socket_transport()
+        tr._read_fut = res
+        tr._loop_reading(res)
+        self.loop._proactor.recv.assert_called_with(self.sock, 32768)
+        self.protocol.data_received.assert_called_with(b'data')
+
+        # switch protocol to a BufferedProtocol
+
+        buf_proto = test_utils.make_test_protocol(asyncio.BufferedProtocol)
+        buf = bytearray(4)
+        buf_proto.get_buffer.side_effect = lambda hint: buf
+
+        tr.set_protocol(buf_proto)
+        test_utils.run_briefly(self.loop)
+        res = asyncio.Future(loop=self.loop)
+        res.set_result(4)
+
+        tr._read_fut = res
+        tr._loop_reading(res)
+        self.loop._proactor.recv_into.assert_called_with(self.sock, buf)
+        buf_proto.buffer_updated.assert_called_with(4)
+
+    @unittest.skip('FIXME: bpo-33694: this test is too close to the '
+                   'implementation and should be refactored or removed')
+    def test_proto_buf_switch(self):
+        tr = self.socket_transport()
+        test_utils.run_briefly(self.loop)
+        self.protocol.get_buffer.assert_called_with(-1)
+
+        # switch protocol to *another* BufferedProtocol
+
+        buf_proto = test_utils.make_test_protocol(asyncio.BufferedProtocol)
+        buf = bytearray(4)
+        buf_proto.get_buffer.side_effect = lambda hint: buf
+        tr._read_fut.done.side_effect = lambda: False
+        tr.set_protocol(buf_proto)
+        self.assertFalse(buf_proto.get_buffer.called)
+        test_utils.run_briefly(self.loop)
+        buf_proto.get_buffer.assert_called_with(-1)
 
     def test_buffer_updated_error(self):
         transport = self.socket_transport()

@@ -102,18 +102,16 @@ class Random(_random.Random):
         ranges.
         """
 
-        if (cls.random is _random.Random.random) or (
-            cls.getrandbits is not _random.Random.getrandbits):
-            # The original random() builtin method has not been overridden
-            # or a new getrandbits() was supplied.
-            # The subclass can use the getrandbits-dependent implementation
-            # of _randbelow().
-            cls._randbelow = cls._randbelow_with_getrandbits
-        else:
-            # There's an overridden random() method but no new getrandbits(),
-            # so the subclass can only use the getrandbits-independent
-            # implementation of _randbelow().
-            cls._randbelow = cls._randbelow_without_getrandbits
+        for c in cls.__mro__:
+            if '_randbelow' in c.__dict__:
+                # just inherit it
+                break
+            if 'getrandbits' in c.__dict__:
+                cls._randbelow = cls._randbelow_with_getrandbits
+                break
+            if 'random' in c.__dict__:
+                cls._randbelow = cls._randbelow_without_getrandbits
+                break
 
     def seed(self, a=None, version=2):
         """Initialize internal state from hashable object.
@@ -373,19 +371,21 @@ class Random(_random.Random):
 
         """
         random = self.random
+        n = len(population)
         if cum_weights is None:
             if weights is None:
                 _int = int
-                total = len(population)
-                return [population[_int(random() * total)] for i in range(k)]
+                return [population[_int(random() * n)] for i in range(k)]
             cum_weights = list(_itertools.accumulate(weights))
         elif weights is not None:
             raise TypeError('Cannot specify both weights and cumulative weights')
-        if len(cum_weights) != len(population):
+        if len(cum_weights) != n:
             raise ValueError('The number of weights does not match the population')
         bisect = _bisect.bisect
         total = cum_weights[-1]
-        return [population[bisect(cum_weights, random() * total)] for i in range(k)]
+        hi = n - 1
+        return [population[bisect(cum_weights, random() * total, 0, hi)]
+                for i in range(k)]
 
 ## -------------------- real-valued distributions  -------------------
 

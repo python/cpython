@@ -5,7 +5,6 @@ import os
 import time
 import pickle
 import warnings
-import logging
 from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
@@ -227,6 +226,14 @@ class TestBasicOps:
             choices([], weights=[], k=1)
         with self.assertRaises(IndexError):
             choices([], cum_weights=[], k=5)
+
+    def test_choices_subnormal(self):
+        # Subnormal weights would occassionally trigger an IndexError
+        # in choices() when the value returned by random() was large
+        # enough to make `random() * total` round up to the total.
+        # See https://bugs.python.org/msg275594 for more detail.
+        choices = self.gen.choices
+        choices(population=[1, 2], weights=[1e-323, 1e-323], k=5000)
 
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
@@ -940,6 +947,7 @@ class TestDistributions(unittest.TestCase):
         gammavariate_mock.return_value = 0.0
         self.assertEqual(0.0, random.betavariate(2.71828, 3.14159))
 
+
 class TestRandomSubclassing(unittest.TestCase):
     def test_random_subclass_with_kwargs(self):
         # SF bug #1486663 -- this used to erroneously raise a TypeError
@@ -958,30 +966,80 @@ class TestRandomSubclassing(unittest.TestCase):
         # randrange
         class SubClass1(random.Random):
             def random(self):
-                return super().random()
+                called.add('SubClass1.random')
+                return random.Random.random(self)
 
             def getrandbits(self, n):
-                logging.getLogger('getrandbits').info('used getrandbits')
-                return super().getrandbits(n)
-        with self.assertLogs('getrandbits'):
-            SubClass1().randrange(42)
+                called.add('SubClass1.getrandbits')
+                return random.Random.getrandbits(self, n)
+        called = set()
+        SubClass1().randrange(42)
+        self.assertEqual(called, {'SubClass1.getrandbits'})
 
         # subclass providing only random => can only use random for randrange
         class SubClass2(random.Random):
             def random(self):
-                logging.getLogger('random').info('used random')
-                return super().random()
-        with self.assertLogs('random'):
-            SubClass2().randrange(42)
+                called.add('SubClass2.random')
+                return random.Random.random(self)
+        called = set()
+        SubClass2().randrange(42)
+        self.assertEqual(called, {'SubClass2.random'})
 
         # subclass defining getrandbits to complement its inherited random
         # => can now rely on getrandbits for randrange again
         class SubClass3(SubClass2):
             def getrandbits(self, n):
-                logging.getLogger('getrandbits').info('used getrandbits')
-                return super().getrandbits(n)
-        with self.assertLogs('getrandbits'):
-            SubClass3().randrange(42)
+                called.add('SubClass3.getrandbits')
+                return random.Random.getrandbits(self, n)
+        called = set()
+        SubClass3().randrange(42)
+        self.assertEqual(called, {'SubClass3.getrandbits'})
+
+        # subclass providing only random and inherited getrandbits
+        # => random takes precedence
+        class SubClass4(SubClass3):
+            def random(self):
+                called.add('SubClass4.random')
+                return random.Random.random(self)
+        called = set()
+        SubClass4().randrange(42)
+        self.assertEqual(called, {'SubClass4.random'})
+
+        # Following subclasses don't define random or getrandbits directly,
+        # but inherit them from classes which are not subclasses of Random
+        class Mixin1:
+            def random(self):
+                called.add('Mixin1.random')
+                return random.Random.random(self)
+        class Mixin2:
+            def getrandbits(self, n):
+                called.add('Mixin2.getrandbits')
+                return random.Random.getrandbits(self, n)
+
+        class SubClass5(Mixin1, random.Random):
+            pass
+        called = set()
+        SubClass5().randrange(42)
+        self.assertEqual(called, {'Mixin1.random'})
+
+        class SubClass6(Mixin2, random.Random):
+            pass
+        called = set()
+        SubClass6().randrange(42)
+        self.assertEqual(called, {'Mixin2.getrandbits'})
+
+        class SubClass7(Mixin1, Mixin2, random.Random):
+            pass
+        called = set()
+        SubClass7().randrange(42)
+        self.assertEqual(called, {'Mixin1.random'})
+
+        class SubClass8(Mixin2, Mixin1, random.Random):
+            pass
+        called = set()
+        SubClass8().randrange(42)
+        self.assertEqual(called, {'Mixin2.getrandbits'})
+
 
 class TestModule(unittest.TestCase):
     def testMagicConstants(self):

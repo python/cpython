@@ -654,20 +654,46 @@ static struct PyModuleDef _gdbmmodule = {
 
 PyMODINIT_FUNC
 PyInit__gdbm(void) {
-    PyObject *m, *d, *s;
+    PyObject *m;
 
     if (PyType_Ready(&Dbmtype) < 0)
             return NULL;
     m = PyModule_Create(&_gdbmmodule);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
-    d = PyModule_GetDict(m);
-    DbmError = PyErr_NewException("_gdbm.error", PyExc_OSError, NULL);
-    if (DbmError != NULL) {
-        PyDict_SetItemString(d, "error", DbmError);
-        s = PyUnicode_FromString(dbmmodule_open_flags);
-        PyDict_SetItemString(d, "open_flags", s);
-        Py_DECREF(s);
     }
+
+    DbmError = PyErr_NewException("_gdbm.error", PyExc_OSError, NULL);
+    if (DbmError == NULL) {
+        goto error;
+    }
+    Py_INCREF(DbmError);
+    if (PyModule_AddObject(m, "error", DbmError) < 0) {
+        Py_DECREF(DbmError);
+        goto error;
+    }
+
+    if (PyModule_AddStringConstant(m, "open_flags",
+                                   dbmmodule_open_flags) < 0) {
+        goto error;
+    }
+
+#if defined(GDBM_VERSION_MAJOR) && defined(GDBM_VERSION_MINOR) && \
+    defined(GDBM_VERSION_PATCH)
+    PyObject *obj = Py_BuildValue("iii", GDBM_VERSION_MAJOR,
+                                  GDBM_VERSION_MINOR, GDBM_VERSION_PATCH);
+    if (obj == NULL) {
+        goto error;
+    }
+    if (PyModule_AddObject(m, "_GDBM_VERSION", obj) < 0) {
+        Py_DECREF(obj);
+        goto error;
+    }
+#endif
+
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }

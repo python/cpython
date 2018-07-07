@@ -2348,7 +2348,7 @@ _PyHamt_Without(PyHamtObject *o, PyObject *key)
         return NULL;
     }
 
-    PyHamtNode *new_root;
+    PyHamtNode *new_root = NULL;
 
     hamt_without_t res = hamt_node_without(
         (PyHamtNode *)(o->h_root),
@@ -2476,6 +2476,8 @@ hamt_alloc(void)
     if (o == NULL) {
         return NULL;
     }
+    o->h_count = 0;
+    o->h_root = NULL;
     o->h_weakreflist = NULL;
     PyObject_GC_Track(o);
     return o;
