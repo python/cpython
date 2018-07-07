@@ -470,10 +470,10 @@ you can always change a list's elements.  Only immutable elements can be used as
 dictionary keys, and hence only tuples and not lists can be used as keys.
 
 
-How are lists implemented?
---------------------------
+How are lists implemented in CPython?
+-------------------------------------
 
-Python's lists are really variable-length arrays, not Lisp-style linked lists.
+CPython's lists are really variable-length arrays, not Lisp-style linked lists.
 The implementation uses a contiguous array of references to other objects, and
 keeps a pointer to this array and the array's length in a list head structure.
 
@@ -486,10 +486,10 @@ when the array must be grown, some extra space is allocated so the next few
 times don't require an actual resize.
 
 
-How are dictionaries implemented?
----------------------------------
+How are dictionaries implemented in CPython?
+--------------------------------------------
 
-Python's dictionaries are implemented as resizable hash tables.  Compared to
+CPython's dictionaries are implemented as resizable hash tables.  Compared to
 B-trees, this gives better performance for lookup (the most common operation by
 far) under most circumstances, and the implementation is simpler.
 
