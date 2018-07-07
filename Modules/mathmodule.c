@@ -56,6 +56,73 @@ raised for division by zero and mod by zero.
 #include "_math.h"
 
 #include "clinic/mathmodule.c.h"
+#include <stdio.h>
+
+/* Notes:
+
+    if (!Py_IS_FINITE(x)) {
+        if (Py_IS_NAN(x) || x > 0.0)
+
+    ? FPE protection
+
+    ? Don't scale if max == 0.0
+
+    ? If only one value, it is the hypot.
+
+    Any infinity gives infinity
+    If no infinity, any NaN gives a NaN
+
+    hypot(x=1) -> TypeError  // no keyword args
+    hypot(-10.5) -> 10.5     // flip the sign to positive
+    hypot(-Inf) -> Inf;      // flip the sign to positive
+    hypot() -> 0.0           // degrade like sum([])
+*/
+
+
+/* AC: cannot convert yet, waiting for *args support */
+static PyObject *
+m_hypot(PyObject *self, PyObject *args)
+{
+    Py_ssize_t i, n;
+    double max = 0.0;
+    double x;
+    double csum = 0.0;
+    double **farray;
+    PyObject *item;
+
+    n = PyTuple_GET_SIZE(args);
+    farray = PyMem_Malloc(n * sizeof(double));
+    if (farray == NULL) {
+        return NULL;
+    }
+    for (i=0 ; i<n ; i++) {
+        fprintf(stderr, "[%lu]", i);
+        item = PyTuple_GET_ITEM(args, i);
+        x = PyFloat_AsDouble(item);
+        if (x == -1.0 && PyErr_Occurred()) {
+            PyMem_Free(farray);
+            fprintf(stderr, "Ouch");
+            return NULL;
+        }
+        fprintf(stderr, "<%lf>\n", x);
+        x = fabs(x);
+        fprintf(stderr, "|%lf|\n", x);
+        (*farray)[i] = x;
+        if (x > max) {
+            max = x;
+        }
+    }
+    if (n <= 1 || max == 0.0) {
+        PyMem_Free(farray);
+        return PyFloat_FromDouble(max);
+    }
+    for (i=0 ; i<n ; i++) {
+        x = (*farray[i]) / max;
+        csum += x * x;
+    }
+    PyMem_Free(farray);
+    return PyFloat_FromDouble(csum);
+}
 
 /*[clinic input]
 module math
@@ -2345,6 +2412,7 @@ static PyMethodDef math_methods[] = {
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
     MATH_GCD_METHODDEF
+    {"mh",              m_hypot, METH_VARARGS,   math_remainder_doc},
     MATH_HYPOT_METHODDEF
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
