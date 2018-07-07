@@ -15,15 +15,15 @@ are always available.  They are listed here in alphabetical order.
 :func:`any`          :func:`dir`        :func:`hex`         :func:`next`        :func:`slice`
 :func:`ascii`        :func:`divmod`     :func:`id`          :func:`object`      :func:`sorted`
 :func:`bin`          :func:`enumerate`  :func:`input`       :func:`oct`         :func:`staticmethod`
-:func:`bool`         :func:`eval`       :func:`int`         :func:`open`        |func-str|_
+:func:`bool`         :func:`eval`       |func-int|_         :func:`open`        |func-str|_
 :func:`breakpoint`   :func:`exec`       :func:`isinstance`  :func:`ord`         :func:`sum`
 |func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`         :func:`super`
-|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`       |func-tuple|_
+|func-bytes|_        |func-float|_      :func:`iter`        :func:`print`       |func-tuple|_
 :func:`callable`     :func:`format`     :func:`len`         :func:`property`    :func:`type`
 :func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_       :func:`vars`
 :func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`        :func:`zip`
 :func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`    :func:`__import__`
-:func:`complex`      :func:`hasattr`    :func:`max`         :func:`round`
+|func-complex|_      :func:`hasattr`    :func:`max`         :func:`round`
 ===================  =================  ==================  ==================  ====================
 
 .. using :func:`dict` would create a link to another page, so local targets are
@@ -39,6 +39,9 @@ are always available.  They are listed here in alphabetical order.
 .. |func-range| replace:: ``range()``
 .. |func-bytearray| replace:: ``bytearray()``
 .. |func-bytes| replace:: ``bytes()``
+.. |func-complex| replace:: ``complex()``
+.. |func-float| replace:: ``float()``
+.. |func-int| replace:: ``int()``
 
 .. function:: abs(x)
 
@@ -132,46 +135,22 @@ are always available.  They are listed here in alphabetical order.
 .. class:: bytearray([source[, encoding[, errors]]])
    :noindex:
 
-   Return a new array of bytes.  The :class:`bytearray` class is a mutable
-   sequence of integers in the range 0 <= x < 256.  It has most of the usual
-   methods of mutable sequences, described in :ref:`typesseq-mutable`, as well
-   as most methods that the :class:`bytes` type has, see :ref:`bytes-methods`.
+   Return a new "bytearray" object, which is a mutable counterpart to a
+   :class:`bytes` object.
 
-   The optional *source* parameter can be used to initialize the array in a few
-   different ways:
-
-   * If it is a *string*, you must also give the *encoding* (and optionally,
-     *errors*) parameters; :func:`bytearray` then converts the string to
-     bytes using :meth:`str.encode`.
-
-   * If it is an *integer*, the array will have that size and will be
-     initialized with null bytes.
-
-   * If it is an object conforming to the *buffer* interface, a read-only buffer
-     of the object will be used to initialize the bytes array.
-
-   * If it is an *iterable*, it must be an iterable of integers in the range
-     ``0 <= x < 256``, which are used as the initial contents of the array.
-
-   Without an argument, an array of size 0 is created.
-
-   See also :ref:`binaryseq` and :ref:`typebytearray`.
+   See :ref:`binaryseq`, :ref:`typebytearray`, and :ref:`bytes-methods` for the
+   documentation of this class.
 
 
 .. _func-bytes:
 .. class:: bytes([source[, encoding[, errors]]])
    :noindex:
 
-   Return a new "bytes" object, which is an immutable sequence of integers in
-   the range ``0 <= x < 256``.  :class:`bytes` is an immutable version of
-   :class:`bytearray` -- it has the same non-mutating methods and the same
-   indexing and slicing behavior.
+   Return a new "bytes" object, which is an immutable sequence of integers
+   in the range ``0 <= x < 256``.
 
-   Accordingly, constructor arguments are interpreted as for :func:`bytearray`.
-
-   Bytes objects can also be created with literals, see :ref:`strings`.
-
-   See also :ref:`binaryseq`, :ref:`typebytes`, and :ref:`bytes-methods`.
+   See :ref:`binaryseq`, :ref:`typebytes`, and :ref:`bytes-methods` for the
+   documentation of this class.
 
 
 .. function:: callable(object)
@@ -290,28 +269,15 @@ are always available.  They are listed here in alphabetical order.
       in *source*.
 
 
+.. _func-complex:
 .. class:: complex([real[, imag]])
+   :noindex:
 
    Return a complex number with the value *real* + *imag*\*1j or convert a string
-   or number to a complex number.  If the first parameter is a string, it will
-   be interpreted as a complex number and the function must be called without a
-   second parameter.  The second parameter can never be a string. Each argument
-   may be any numeric type (including complex).  If *imag* is omitted, it
-   defaults to zero and the constructor serves as a numeric conversion like
-   :class:`int` and :class:`float`.  If both arguments are omitted, returns
-   ``0j``.
+   or number to a complex number.
 
-   .. note::
-
-      When converting from a string, the string must not contain whitespace
-      around the central ``+`` or ``-`` operator.  For example,
-      ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
-      :exc:`ValueError`.
-
-   The complex type is described in :ref:`typesnumeric`.
-
-   .. versionchanged:: 3.6
-      Grouping digits with underscores as in code literals is allowed.
+   See :ref:`typesnumeric` and :ref:`types-complex` for documentation about this
+   class.
 
 
 .. function:: delattr(object, name)
@@ -520,61 +486,13 @@ are always available.  They are listed here in alphabetical order.
    elements of *iterable* for which *function* returns false.
 
 
+.. _func-float:
 .. class:: float([x])
-
-   .. index::
-      single: NaN
-      single: Infinity
+   :noindex:
 
    Return a floating point number constructed from a number or string *x*.
 
-   If the argument is a string, it should contain a decimal number, optionally
-   preceded by a sign, and optionally embedded in whitespace.  The optional
-   sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
-   produced.  The argument may also be a string representing a NaN
-   (not-a-number), or a positive or negative infinity.  More precisely, the
-   input must conform to the following grammar after leading and trailing
-   whitespace characters are removed:
-
-   .. productionlist::
-      sign: "+" | "-"
-      infinity: "Infinity" | "inf"
-      nan: "nan"
-      numeric_value: `floatnumber` | `infinity` | `nan`
-      numeric_string: [`sign`] `numeric_value`
-
-   Here ``floatnumber`` is the form of a Python floating-point literal,
-   described in :ref:`floating`.  Case is not significant, so, for example,
-   "inf", "Inf", "INFINITY" and "iNfINity" are all acceptable spellings for
-   positive infinity.
-
-   Otherwise, if the argument is an integer or a floating point number, a
-   floating point number with the same value (within Python's floating point
-   precision) is returned.  If the argument is outside the range of a Python
-   float, an :exc:`OverflowError` will be raised.
-
-   For a general Python object ``x``, ``float(x)`` delegates to
-   ``x.__float__()``.
-
-   If no argument is given, ``0.0`` is returned.
-
-   Examples::
-
-      >>> float('+1.23')
-      1.23
-      >>> float('   -12345\n')
-      -12345.0
-      >>> float('1e-003')
-      0.001
-      >>> float('+1E6')
-      1000000.0
-      >>> float('-Infinity')
-      -inf
-
-   The float type is described in :ref:`typesnumeric`.
-
-   .. versionchanged:: 3.6
-      Grouping digits with underscores as in code literals is allowed.
+   See :ref:`typesnumeric` and :ref:`types-float` for documentation about this class.
 
 
 .. index::
@@ -727,39 +645,15 @@ are always available.  They are listed here in alphabetical order.
    to provide elaborate line editing and history features.
 
 
+.. _func-int:
 .. class:: int(x=0)
            int(x, base=10)
+   :noindex:
 
    Return an integer object constructed from a number or string *x*, or return
-   ``0`` if no arguments are given.  If *x* defines :meth:`__int__`,
-   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__trunc__`,
-   it returns ``x.__trunc__()``.
-   For floating point numbers, this truncates towards zero.
+   ``0`` if no arguments are given.
 
-   If *x* is not a number or if *base* is given, then *x* must be a string,
-   :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
-   literal <integers>` in radix *base*.  Optionally, the literal can be
-   preceded by ``+`` or ``-`` (with no space in between) and surrounded by
-   whitespace.  A base-n literal consists of the digits 0 to n-1, with ``a``
-   to ``z`` (or ``A`` to ``Z``) having
-   values 10 to 35.  The default *base* is 10. The allowed values are 0 and 2--36.
-   Base-2, -8, and -16 literals can be optionally prefixed with ``0b``/``0B``,
-   ``0o``/``0O``, or ``0x``/``0X``, as with integer literals in code.  Base 0
-   means to interpret exactly as a code literal, so that the actual base is 2,
-   8, 10, or 16, and so that ``int('010', 0)`` is not legal, while
-   ``int('010')`` is, as well as ``int('010', 8)``.
-
-   The integer type is described in :ref:`typesnumeric`.
-
-   .. versionchanged:: 3.4
-      If *base* is not an instance of :class:`int` and the *base* object has a
-      :meth:`base.__index__ <object.__index__>` method, that method is called
-      to obtain an integer for the base.  Previous versions used
-      :meth:`base.__int__ <object.__int__>` instead of :meth:`base.__index__
-      <object.__index__>`.
-
-   .. versionchanged:: 3.6
-      Grouping digits with underscores as in code literals is allowed.
+   See :ref:`typesnumeric` and :ref:`types-int` for documentation about this class.
 
 
 .. function:: isinstance(object, classinfo)

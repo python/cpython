@@ -211,37 +211,13 @@ Numeric Types --- :class:`int`, :class:`float`, :class:`complex`
    object: integer
    object: floating point
    object: complex number
-   pair: C; language
 
-There are three distinct numeric types: :dfn:`integers`, :dfn:`floating
-point numbers`, and :dfn:`complex numbers`.  In addition, Booleans are a
-subtype of integers.  Integers have unlimited precision.  Floating point
-numbers are usually implemented using :c:type:`double` in C; information
-about the precision and internal representation of floating point
-numbers for the machine on which your program is running is available
-in :data:`sys.float_info`.  Complex numbers have a real and imaginary
-part, which are each a floating point number.  To extract these parts
-from a complex number *z*, use ``z.real`` and ``z.imag``. (The standard
-library includes additional numeric types, :mod:`fractions` that hold
+There are three distinct numeric types: :ref:`integers <types-int>` (of which Booleans are a subtype), :ref:`floating
+point numbers <types-float>`, and :ref:`complex numbers <types-complex>`.
+
+The standard library includes additional numeric types, :mod:`fractions` that hold
 rationals, and :mod:`decimal` that hold floating-point numbers with
-user-definable precision.)
-
-.. index::
-   pair: numeric; literals
-   pair: integer; literals
-   pair: floating point; literals
-   pair: complex number; literals
-   pair: hexadecimal; literals
-   pair: octal; literals
-   pair: binary; literals
-
-Numbers are created by numeric literals or as the result of built-in functions
-and operators.  Unadorned integer literals (including hex, octal and binary
-numbers) yield integers.  Numeric literals containing a decimal point or an
-exponent sign yield floating point numbers.  Appending ``'j'`` or ``'J'`` to a
-numeric literal yields an imaginary number (a complex number with a zero real
-part) which you can add to an integer or float to get a complex number with real
-and imaginary parts.
+user-definable precision.
 
 .. index::
    single: arithmetic
@@ -260,8 +236,7 @@ Python fully supports mixed arithmetic: when a binary arithmetic operator has
 operands of different numeric types, the operand with the "narrower" type is
 widened to that of the other, where integer is narrower than floating point,
 which is narrower than complex.  Comparisons between numbers of mixed type use
-the same rule. [2]_ The constructors :func:`int`, :func:`float`, and
-:func:`complex` can be used to produce numbers of a specific type.
+the same rule. [2]_
 
 All numeric types (except complex) support the following operations, sorted by
 ascending priority (all numeric operations have a higher priority than
@@ -352,7 +327,6 @@ Notes:
    See http://www.unicode.org/Public/10.0.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
-
 All :class:`numbers.Real` types (:class:`int` and :class:`float`) also include
 the following operations:
 
@@ -378,72 +352,60 @@ modules.
 
 .. XXXJH exceptions: overflow (when? what operations?) zerodivision
 
+.. _types-int:
 
-.. _bitstring-ops:
+Integers
+--------
 
-Bitwise Operations on Integer Types
---------------------------------------
+Integers implement the :class:`numbers.Integral` :term:`abstract base
+class`, and have unlimited precision.
 
 .. index::
-   triple: operations on; integer; types
-   pair: bitwise; operations
-   pair: shifting; operations
-   pair: masking; operations
-   operator: |
-   operator: ^
-   operator: &
-   operator: <<
-   operator: >>
-   operator: ~
+   pair: integer; literals
+   pair: hexadecimal; literals
+   pair: octal; literals
+   pair: binary; literals
 
-Bitwise operations only make sense for integers.  Negative numbers are treated
-as their 2's complement value (this assumes that there are enough bits so that
-no overflow occurs during the operation).
+Integers can be created through unadorned integer literals (including hexadecimal,
+octal and binary numbers), or by calling the constructor.
 
-The priorities of the binary bitwise operations are all lower than the numeric
-operations and higher than the comparisons; the unary operation ``~`` has the
-same priority as the other unary numeric operations (``+`` and ``-``).
+.. class:: int(x=0)
+           int(x, base=10)
 
-This table lists the bitwise operations sorted in ascending priority:
-
-+------------+--------------------------------+----------+
-| Operation  | Result                         | Notes    |
-+============+================================+==========+
-| ``x | y``  | bitwise :dfn:`or` of *x* and   |          |
-|            | *y*                            |          |
-+------------+--------------------------------+----------+
-| ``x ^ y``  | bitwise :dfn:`exclusive or` of |          |
-|            | *x* and *y*                    |          |
-+------------+--------------------------------+----------+
-| ``x & y``  | bitwise :dfn:`and` of *x* and  |          |
-|            | *y*                            |          |
-+------------+--------------------------------+----------+
-| ``x << n`` | *x* shifted left by *n* bits   | (1)(2)   |
-+------------+--------------------------------+----------+
-| ``x >> n`` | *x* shifted right by *n* bits  | (1)(3)   |
-+------------+--------------------------------+----------+
-| ``~x``     | the bits of *x* inverted       |          |
-+------------+--------------------------------+----------+
-
-Notes:
-
-(1)
-   Negative shift counts are illegal and cause a :exc:`ValueError` to be raised.
-
-(2)
-   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``
-   without overflow check.
-
-(3)
-   A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
-   overflow check.
-
+   Return an integer object constructed from a number or string *x*, or return
+   ``0`` if no arguments are given.  If *x* defines :meth:`__int__`,
+   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__trunc__`,
+   it returns ``x.__trunc__()``.
+   For floating point numbers, this truncates towards zero.
+   
+   If *x* is not a number or if *base* is given, then *x* must be a string,
+   :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
+   literal <integers>` in radix *base*.  Optionally, the literal can be
+   preceded by ``+`` or ``-`` (with no space in between) and surrounded by
+   whitespace.  A base-n literal consists of the digits 0 to n-1, with ``a``
+   to ``z`` (or ``A`` to ``Z``) having
+   values 10 to 35.  The default *base* is 10. The allowed values are 0 and 2--36.
+   Base-2, -8, and -16 literals can be optionally prefixed with ``0b``/``0B``,
+   ``0o``/``0O``, or ``0x``/``0X``, as with integer literals in code.  Base 0
+   means to interpret exactly as a code literal, so that the actual base is 2,
+   8, 10, or 16, and so that ``int('010', 0)`` is not legal, while
+   ``int('010')`` is, as well as ``int('010', 8)``.
+   
+   .. versionchanged:: 3.4
+      If *base* is not an instance of :class:`int` and the *base* object has a
+      :meth:`base.__index__ <object.__index__>` method, that method is called
+      to obtain an integer for the base.  Previous versions used
+      :meth:`base.__int__ <object.__int__>` instead of :meth:`base.__index__
+      <object.__index__>`.
+   
+   .. versionchanged:: 3.6
+      Grouping digits with underscores as in code literals is allowed.
 
 Additional Methods on Integer Types
------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The int type implements the :class:`numbers.Integral` :term:`abstract base
-class`. In addition, it provides a few more methods:
+In addition to the :class:`numbers.Integral` :term:`abstract base
+class`, integer types provide a few more methods:
 
 .. method:: int.bit_length()
 
@@ -533,12 +495,147 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.2
 
+.. _bitstring-ops:
 
-Additional Methods on Float
----------------------------
+Bitwise Operations on Integer Types
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The float type implements the :class:`numbers.Real` :term:`abstract base
-class`. float also has the following additional methods.
+.. index::
+   triple: operations on; integer; types
+   pair: bitwise; operations
+   pair: shifting; operations
+   pair: masking; operations
+   operator: |
+   operator: ^
+   operator: &
+   operator: <<
+   operator: >>
+   operator: ~
+
+Bitwise operations only make sense for integers.  Negative numbers are treated
+as their 2's complement value (this assumes that there are enough bits so that
+no overflow occurs during the operation).
+
+The priorities of the binary bitwise operations are all lower than the numeric
+operations and higher than the comparisons; the unary operation ``~`` has the
+same priority as the other unary numeric operations (``+`` and ``-``).
+
+This table lists the bitwise operations sorted in ascending priority:
+
++------------+--------------------------------+----------+
+| Operation  | Result                         | Notes    |
++============+================================+==========+
+| ``x | y``  | bitwise :dfn:`or` of *x* and   |          |
+|            | *y*                            |          |
++------------+--------------------------------+----------+
+| ``x ^ y``  | bitwise :dfn:`exclusive or` of |          |
+|            | *x* and *y*                    |          |
++------------+--------------------------------+----------+
+| ``x & y``  | bitwise :dfn:`and` of *x* and  |          |
+|            | *y*                            |          |
++------------+--------------------------------+----------+
+| ``x << n`` | *x* shifted left by *n* bits   | (1)(2)   |
++------------+--------------------------------+----------+
+| ``x >> n`` | *x* shifted right by *n* bits  | (1)(3)   |
++------------+--------------------------------+----------+
+| ``~x``     | the bits of *x* inverted       |          |
++------------+--------------------------------+----------+
+
+Notes:
+
+(1)
+   Negative shift counts are illegal and cause a :exc:`ValueError` to be raised.
+
+(2)
+   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``
+   without overflow check.
+
+(3)
+   A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
+   overflow check.
+
+.. index::
+   pair: C; language
+
+.. _types-float:
+
+Floating point numbers
+----------------------
+
+Floating point numbers implement the :class:`numbers.Real` :term:`abstract
+base class`.
+
+Floating point
+numbers are usually implemented using :c:type:`double` in C; information
+about the precision and internal representation of floating point
+numbers for the machine on which your program is running is available
+in :data:`sys.float_info`
+
+.. index::
+   pair: floating point; literals
+
+Floating point numbers can be created through numeric literals containing a
+decimal point or an exponent sign, or by calling the constructor.
+
+.. class:: float([x])
+
+   .. index::
+      single: NaN
+      single: Infinity
+
+   Return a floating point number constructed from a number or string *x*.
+   
+   If the argument is a string, it should contain a decimal number, optionally
+   preceded by a sign, and optionally embedded in whitespace.  The optional
+   sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
+   produced.  The argument may also be a string representing a NaN
+   (not-a-number), or a positive or negative infinity.  More precisely, the
+   input must conform to the following grammar after leading and trailing
+   whitespace characters are removed:
+   
+   .. productionlist::
+      sign: "+" | "-"
+      infinity: "Infinity" | "inf"
+      nan: "nan"
+      numeric_value: `floatnumber` | `infinity` | `nan`
+      numeric_string: [`sign`] `numeric_value`
+   
+   Here ``floatnumber`` is the form of a Python floating-point literal,
+   described in :ref:`floating`.  Case is not significant, so, for example,
+   "inf", "Inf", "INFINITY" and "iNfINity" are all acceptable spellings for
+   positive infinity.
+   
+   Otherwise, if the argument is an integer or a floating point number, a
+   floating point number with the same value (within Python's floating point
+   precision) is returned.  If the argument is outside the range of a Python
+   float, an :exc:`OverflowError` will be raised.
+   
+   For a general Python object ``x``, ``float(x)`` delegates to
+   ``x.__float__()``.
+   
+   If no argument is given, ``0.0`` is returned.
+   
+   Examples::
+   
+      >>> float('+1.23')
+      1.23
+      >>> float('   -12345\n')
+      -12345.0
+      >>> float('1e-003')
+      0.001
+      >>> float('+1E6')
+      1000000.0
+      >>> float('-Infinity')
+      -inf
+   
+   .. versionchanged:: 3.6
+      Grouping digits with underscores as in code literals is allowed.
+
+Additional Methods on Float Types
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In addition to the :class:`numbers.Real` :term:`abstract base
+class`, float types provide a few more methods:
 
 .. method:: float.as_integer_ratio()
 
@@ -565,7 +662,6 @@ contrast, hexadecimal strings allow exact representation and
 specification of floating-point numbers.  This can be useful when
 debugging, and in numerical work.
 
-
 .. method:: float.hex()
 
    Return a representation of a floating-point number as a hexadecimal
@@ -573,13 +669,11 @@ debugging, and in numerical work.
    will always include a leading ``0x`` and a trailing ``p`` and
    exponent.
 
-
 .. classmethod:: float.fromhex(s)
 
    Class method to return the float represented by a hexadecimal
    string *s*.  The string *s* may have leading and trailing
    whitespace.
-
 
 Note that :meth:`float.hex` is an instance method, while
 :meth:`float.fromhex` is a class method.
@@ -600,7 +694,6 @@ C or Java code, and hexadecimal strings produced by C's ``%a`` format
 character or Java's ``Double.toHexString`` are accepted by
 :meth:`float.fromhex`.
 
-
 Note that the exponent is written in decimal rather than hexadecimal,
 and that it gives the power of 2 by which to multiply the coefficient.
 For example, the hexadecimal string ``0x3.a7p10`` represents the
@@ -610,13 +703,50 @@ floating-point number ``(3 + 10./16 + 7./16**2) * 2.0**10``, or
    >>> float.fromhex('0x3.a7p10')
    3740.0
 
-
 Applying the reverse conversion to ``3740.0`` gives a different
 hexadecimal string representing the same number::
 
    >>> float.hex(3740.0)
    '0x1.d380000000000p+11'
 
+.. _types-complex:
+
+Complex numbers
+---------------
+
+Complex numbers implement the :class:`numbers.Complex` :term:`abstract
+base class`, and have a real and imaginary part, which are each a floating point
+number.
+
+.. index::
+   pair: complex number; literals
+
+Complex numbers can be created by appending ``'j'`` or ``'J'`` to a numeric
+literal (with that value as the imaginary part, and a real part of 0), or by
+calling the constructor.
+
+To extract each part from a complex number *z*, use ``z.real`` and ``z.imag``.
+
+.. class:: complex([real[, imag]])
+
+   Return a complex number with the value *real* + *imag*\*1j or convert a string
+   or number to a complex number.  If the first parameter is a string, it will
+   be interpreted as a complex number and the function must be called without a
+   second parameter.  The second parameter can never be a string. Each argument
+   may be any numeric type (including complex).  If *imag* is omitted, it
+   defaults to zero and the constructor serves as a numeric conversion like
+   :class:`int` and :class:`float`.  If both arguments are omitted, returns
+   ``0j``.
+   
+   .. note::
+   
+      When converting from a string, the string must not contain whitespace
+      around the central ``+`` or ``-`` operator.  For example,
+      ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
+      :exc:`ValueError`.
+
+   .. versionchanged:: 3.6
+      Grouping digits with underscores as in code literals is allowed.
 
 .. _numeric-hash:
 
@@ -2295,41 +2425,59 @@ binary protocols are based on the ASCII text encoding, bytes objects offer
 several methods that are only valid when working with ASCII compatible
 data and are closely related to string objects in a variety of other ways.
 
+Bytes objects can be created with bytes literals whose syntax is largely
+the same as that for string literals, except that a ``b`` prefix is added:
+
+* Single quotes: ``b'still allows embedded "double" quotes'``
+* Double quotes: ``b"still allows embedded 'single' quotes"``.
+* Triple quoted: ``b'''3 single quotes'''``, ``b"""3 double quotes"""``
+
+Only ASCII characters are permitted in bytes literals (regardless of the
+declared source code encoding). Any binary values over 127 must be entered
+into bytes literals using the appropriate escape sequence.
+
+As with string literals, bytes literals may also use a ``r`` prefix to disable
+processing of escape sequences. See :ref:`strings` for more about the various
+forms of bytes literal, including supported escape sequences.
+
+While bytes literals and representations are based on ASCII text, bytes
+objects actually behave like immutable sequences of integers, with each
+value in the sequence restricted such that ``0 <= x < 256`` (attempts to
+violate this restriction will trigger :exc:`ValueError`). This is done
+deliberately to emphasise that while many binary formats include ASCII based
+elements and can be usefully manipulated with some text-oriented algorithms,
+this is not generally the case for arbitrary binary data (blindly applying
+text processing algorithms to binary data formats that are not ASCII
+compatible will usually lead to data corruption).
+
+In addition to the literal forms, bytes objects can be created in a number of
+other ways through the constructor:
+
+* A zero-filled bytes object of a specified length: ``bytes(10)``
+* From an iterable of integers: ``bytes(range(20))``
+* Copying existing binary data via the buffer protocol:  ``bytes(obj)``
+
 .. class:: bytes([source[, encoding[, errors]]])
 
-   Firstly, the syntax for bytes literals is largely the same as that for string
-   literals, except that a ``b`` prefix is added:
+   Return a new "bytes" object.
 
-   * Single quotes: ``b'still allows embedded "double" quotes'``
-   * Double quotes: ``b"still allows embedded 'single' quotes"``.
-   * Triple quoted: ``b'''3 single quotes'''``, ``b"""3 double quotes"""``
+   The optional *source* parameter can be used to initialize the array in a few
+   different ways:
 
-   Only ASCII characters are permitted in bytes literals (regardless of the
-   declared source code encoding). Any binary values over 127 must be entered
-   into bytes literals using the appropriate escape sequence.
+   * If it is a *string*, you must also give the *encoding* (and optionally,
+     *errors*) parameters; :class:`bytes` then converts the string to
+     bytes using :meth:`str.encode`.
 
-   As with string literals, bytes literals may also use a ``r`` prefix to disable
-   processing of escape sequences. See :ref:`strings` for more about the various
-   forms of bytes literal, including supported escape sequences.
+   * If it is an *integer*, the array will have that size and will be
+     initialized with null bytes.
 
-   While bytes literals and representations are based on ASCII text, bytes
-   objects actually behave like immutable sequences of integers, with each
-   value in the sequence restricted such that ``0 <= x < 256`` (attempts to
-   violate this restriction will trigger :exc:`ValueError`. This is done
-   deliberately to emphasise that while many binary formats include ASCII based
-   elements and can be usefully manipulated with some text-oriented algorithms,
-   this is not generally the case for arbitrary binary data (blindly applying
-   text processing algorithms to binary data formats that are not ASCII
-   compatible will usually lead to data corruption).
+   * If it is an object conforming to the *buffer* interface, a read-only buffer
+     of the object will be used to initialize the bytes array.
 
-   In addition to the literal forms, bytes objects can be created in a number of
-   other ways:
+   * If it is an *iterable*, it must be an iterable of integers in the range
+     ``0 <= x < 256``, which are used as the initial contents of the array.
 
-   * A zero-filled bytes object of a specified length: ``bytes(10)``
-   * From an iterable of integers: ``bytes(range(20))``
-   * Copying existing binary data via the buffer protocol:  ``bytes(obj)``
-
-   Also see the :ref:`bytes <func-bytes>` built-in.
+   Without an argument, an array of size 0 is created.
 
    Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
    numbers are a commonly used format for describing binary data. Accordingly,
@@ -2391,21 +2539,39 @@ Bytearray Objects
 :class:`bytearray` objects are a mutable counterpart to :class:`bytes`
 objects.
 
+As bytearray objects are mutable, they support the
+:ref:`mutable <typesseq-mutable>` sequence operations in addition to the
+common bytes and bytearray operations described in :ref:`bytes-methods`.
+
+There is no dedicated literal syntax for bytearray objects, instead
+they are created by calling the constructor:
+
+* Creating an empty instance: ``bytearray()``
+* Creating a zero-filled instance with a given length: ``bytearray(10)``
+* From an iterable of integers: ``bytearray(range(20))``
+* Copying existing binary data via the buffer protocol:  ``bytearray(b'Hi!')``
+
 .. class:: bytearray([source[, encoding[, errors]]])
 
-   There is no dedicated literal syntax for bytearray objects, instead
-   they are always created by calling the constructor:
+   Return a new "bytesarray" object.
 
-   * Creating an empty instance: ``bytearray()``
-   * Creating a zero-filled instance with a given length: ``bytearray(10)``
-   * From an iterable of integers: ``bytearray(range(20))``
-   * Copying existing binary data via the buffer protocol:  ``bytearray(b'Hi!')``
+   The optional *source* parameter can be used to initialize the array in a few
+   different ways:
 
-   As bytearray objects are mutable, they support the
-   :ref:`mutable <typesseq-mutable>` sequence operations in addition to the
-   common bytes and bytearray operations described in :ref:`bytes-methods`.
+   * If it is a *string*, you must also give the *encoding* (and optionally,
+     *errors*) parameters; :class:`bytearray` then converts the string to
+     bytes using :meth:`str.encode`.
 
-   Also see the :ref:`bytearray <func-bytearray>` built-in.
+   * If it is an *integer*, the array will have that size and will be
+     initialized with null bytes.
+
+   * If it is an object conforming to the *buffer* interface, a read-only buffer
+     of the object will be used to initialize the bytes array.
+
+   * If it is an *iterable*, it must be an iterable of integers in the range
+     ``0 <= x < 256``, which are used as the initial contents of the array.
+
+   Without an argument, an array of size 0 is created.
 
    Since 2 hexadecimal digits correspond precisely to a single byte, hexadecimal
    numbers are a commonly used format for describing binary data. Accordingly,
