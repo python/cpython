@@ -1013,7 +1013,7 @@ The power operator binds more tightly than unary operators on its left; it binds
 less tightly than unary operators on its right.  The syntax is:
 
 .. productionlist::
-   power: ( `await_expr` | `primary` ) ["**" `u_expr`]
+   power: (`await_expr` | `primary`) ["**" `u_expr`]
 
 Thus, in an unparenthesized sequence of power and unary operators, the operators
 are evaluated from right to left (this does not constrain the evaluation order
@@ -1085,7 +1085,7 @@ operators and one for additive operators:
 
 .. productionlist::
    m_expr: `u_expr` | `m_expr` "*" `u_expr` | `m_expr` "@" `m_expr` |
-         : `m_expr` "//" `u_expr`| `m_expr` "/" `u_expr` |
+         : `m_expr` "//" `u_expr` | `m_expr` "/" `u_expr` |
          : `m_expr` "%" `u_expr`
    a_expr: `m_expr` | `a_expr` "+" `m_expr` | `a_expr` "-" `m_expr`
 
@@ -1165,7 +1165,7 @@ Shifting operations
 The shifting operations have lower priority than the arithmetic operations:
 
 .. productionlist::
-   shift_expr: `a_expr` | `shift_expr` ( "<<" | ">>" ) `a_expr`
+   shift_expr: `a_expr` | `shift_expr` ("<<" | ">>") `a_expr`
 
 These operators accept integers as arguments.  They shift the first argument to
 the left or right by the number of bits given by the second argument.
@@ -1230,7 +1230,7 @@ C, expressions like ``a < b < c`` have the interpretation that is conventional
 in mathematics:
 
 .. productionlist::
-   comparison: `or_expr` ( `comp_operator` `or_expr` )*
+   comparison: `or_expr` (`comp_operator` `or_expr`)*
    comp_operator: "<" | ">" | "==" | ">=" | "<=" | "!="
                 : | "is" ["not"] | ["not"] "in"
 
@@ -1594,9 +1594,9 @@ Expression lists
 .. index:: pair: expression; list
 
 .. productionlist::
-   expression_list: `expression` ( "," `expression` )* [","]
-   starred_list: `starred_item` ( "," `starred_item` )* [","]
-   starred_expression: `expression` | ( `starred_item` "," )* [`starred_item`]
+   expression_list: `expression` ("," `expression`)* [","]
+   starred_list: `starred_item` ("," `starred_item`)* [","]
+   starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
    starred_item: `expression` | "*" `or_expr`
 
 .. index:: object: tuple
