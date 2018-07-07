@@ -125,7 +125,7 @@ class TestTranforms(unittest.TestCase):
             ('a = 13 | 7', '(15)'),                 # binary or
             ):
             asm = dis_single(line)
-            self.assertIn(elem, asm, asm)
+            self.assertIn(elem, asm, (elem, asm))
             self.assertNotIn('BINARY_', asm)
 
         # Verify that unfoldables are skipped
@@ -134,8 +134,24 @@ class TestTranforms(unittest.TestCase):
         self.assertIn("('b')", asm)
 
         # Verify that large sequences do not result from folding
-        asm = dis_single('a="x"*1000')
+        asm = dis_single('a="x"*10000')
+        self.assertIn('(10000)', asm)
+        self.assertNotIn('(%r)' % ("x"*10000), asm)
+        asm = dis_single('a="x"*10000L')
+        self.assertIn('(10000L)', asm)
+        self.assertNotIn('(%r)' % ("x"*10000L), asm)
+        asm = dis_single('a=1<<1000')
         self.assertIn('(1000)', asm)
+        self.assertNotIn('(%r)' % (1<<1000), asm)
+        asm = dis_single('a=1<<1000L')
+        self.assertIn('(1000L)', asm)
+        self.assertNotIn('(%r)' % (1<<1000L), asm)
+        asm = dis_single('a=2**1000')
+        self.assertIn('(1000)', asm)
+        self.assertNotIn('(%r)' % (2**1000), asm)
+        asm = dis_single('a=2**1000L')
+        self.assertIn('(1000L)', asm)
+        self.assertNotIn('(%r)' % (2**1000L), asm)
 
     def test_binary_subscr_on_unicode(self):
         # unicode strings don't get optimized

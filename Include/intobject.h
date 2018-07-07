@@ -28,7 +28,10 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyInt_Type;
 
 #define PyInt_Check(op) \
-		 PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_INT_SUBCLASS)
+                 PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_INT_SUBCLASS)
+#define _PyAnyInt_Check(op) \
+                 PyType_FastSubclass(Py_TYPE(op), \
+                    Py_TPFLAGS_INT_SUBCLASS|Py_TPFLAGS_LONG_SUBCLASS)
 #define PyInt_CheckExact(op) (Py_TYPE(op) == &PyInt_Type)
 
 PyAPI_FUNC(PyObject *) PyInt_FromString(char*, char**, int);
