@@ -13,6 +13,7 @@ from test.libregrtest.runtest import (
     runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME,
     format_test_result)
 from test.libregrtest.setup import setup_tests
+from test.libregrtest.utils import format_duration
 
 
 # Display the running tests if nothing happened last N seconds
@@ -167,7 +168,8 @@ def run_tests_multiprocess(regrtest):
                 continue
             dt = time.monotonic() - worker.start_time
             if dt >= PROGRESS_MIN_TIME:
-                running.append('%s (%.0f sec)' % (current_test, dt))
+                text = '%s (%s)' % (current_test, format_duration(dt))
+                running.append(text)
         return running
 
     finished = 0
@@ -183,7 +185,7 @@ def run_tests_multiprocess(regrtest):
             except queue.Empty:
                 running = get_running(workers)
                 if running and not regrtest.ns.pgo:
-                    print('running: %s' % ', '.join(running))
+                    print('running: %s' % ', '.join(running), flush=True)
                 continue
 
             test, stdout, stderr, result = item
@@ -198,7 +200,7 @@ def run_tests_multiprocess(regrtest):
             if (ok not in (CHILD_ERROR, INTERRUPTED)
                 and test_time >= PROGRESS_MIN_TIME
                 and not regrtest.ns.pgo):
-                text += ' (%.0f sec)' % test_time
+                text += ' (%s)' % format_duration(test_time)
             elif ok == CHILD_ERROR:
                 text = '%s (%s)' % (text, test_time)
             running = get_running(workers)
@@ -235,6 +237,6 @@ def run_tests_multiprocess(regrtest):
         line = "Waiting for %s (%s tests)" % (', '.join(running), len(running))
         if dt >= WAIT_PROGRESS:
             line = "%s since %.0f sec" % (line, dt)
-        print(line)
+        print(line, flush=True)
         for worker in workers:
             worker.join(WAIT_PROGRESS)

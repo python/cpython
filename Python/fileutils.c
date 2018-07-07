@@ -431,7 +431,7 @@ decode_error:
    can be decoded as a surrogate character, escape the bytes using the
    surrogateescape error handler instead of decoding them.
 
-   On sucess, return 0 and write the newly allocated wide character string into
+   On success, return 0 and write the newly allocated wide character string into
    *wstr (use PyMem_RawFree() to free the memory). If wlen is not NULL, write
    the number of wide characters excluding the null character into *wlen.
 

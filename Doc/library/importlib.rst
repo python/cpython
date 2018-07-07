@@ -249,7 +249,7 @@ ABC hierarchy::
 
    .. abstractmethod:: find_module(fullname, path=None)
 
-      An abstact method for finding a :term:`loader` for the specified
+      An abstract method for finding a :term:`loader` for the specified
       module.  Originally specified in :pep:`302`, this method was meant
       for use in :data:`sys.meta_path` and in the path-based import subsystem.
 
@@ -530,7 +530,7 @@ ABC hierarchy::
 
     .. abstractmethod:: contents()
 
-        Returns an :term:`iterator` of strings over the contents of
+        Returns an :term:`iterable` of strings over the contents of
         the package. Do note that it is not required that all names
         returned by the iterator be actual resources, e.g. it is
         acceptable to return names for which :meth:`is_resource` would
@@ -544,7 +544,7 @@ ABC hierarchy::
         the file system then those subdirectory names can be used
         directly.
 
-        The abstract method returns an iterator of no items.
+        The abstract method returns an iterable of no items.
 
 
 .. class:: ResourceLoader
@@ -926,9 +926,9 @@ The following functions are available.
 
 .. function:: contents(package)
 
-    Return an iterator over the named items within the package.  The iterator
+    Return an iterable over the named items within the package.  The iterable
     returns :class:`str` resources (e.g. files) and non-resources
-    (e.g. directories).  The iterator does not recurse into subdirectories.
+    (e.g. directories).  The iterable does not recurse into subdirectories.
 
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
@@ -1081,7 +1081,12 @@ find and load modules.
    .. classmethod:: invalidate_caches()
 
       Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
-      finders stored in :attr:`sys.path_importer_cache`.
+      finders stored in :data:`sys.path_importer_cache` that define the method.
+      Otherwise entries in :data:`sys.path_importer_cache` set to ``None`` are
+      deleted.
+
+      .. versionchanged:: 3.7
+         Entries of ``None`` in :data:`sys.path_importer_cache` are deleted.
 
    .. versionchanged:: 3.4
       Calls objects in :data:`sys.path_hooks` with the current working

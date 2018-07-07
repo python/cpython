@@ -2,6 +2,7 @@ import importlib
 import importlib.util
 import os
 import os.path
+import py_compile
 import sys
 from test import support
 from test.support import script_helper
@@ -349,6 +350,20 @@ class ImportTests(unittest.TestCase):
             ]
             res = script_helper.assert_python_ok(*args)
             self.assertEqual(res.out.strip().decode('utf-8'), expected)
+
+    def test_find_and_load_checked_pyc(self):
+        # issue 34056
+        with support.temp_cwd():
+            with open('mymod.py', 'wb') as fp:
+                fp.write(b'x = 42\n')
+            py_compile.compile(
+                'mymod.py',
+                doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+            )
+            file, path, description = imp.find_module('mymod', path=['.'])
+            mod = imp.load_module('mymod', file, path, description)
+        self.assertEqual(mod.x, 42)
 
 
 class ReloadTests(unittest.TestCase):

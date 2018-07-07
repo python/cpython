@@ -1,0 +1,1 @@
+Fix ctypes.util.find_library regression on macOS.

@@ -8,6 +8,10 @@ Build Status
 
   + `Stable buildbots <http://buildbot.python.org/3.x.stable/>`_
 
+- 3.7
+
+  + `Stable buildbots <http://buildbot.python.org/3.7.stable/>`_
+
 - 3.6
 
   + `Stable buildbots <http://buildbot.python.org/3.6.stable/>`_

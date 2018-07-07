@@ -49,6 +49,9 @@ For more sophisticated applications, the :class:`ssl.SSLContext` class
 helps manage settings and certificates, which can then be inherited
 by SSL sockets created through the :meth:`SSLContext.wrap_socket` method.
 
+.. versionchanged:: 3.5.3
+   Updated to support linking with OpenSSL 1.1.0
+
 .. versionchanged:: 3.6
 
    OpenSSL 0.9.8, 1.0.0 and 1.0.1 are deprecated and no longer supported.
@@ -168,11 +171,6 @@ purposes.
      ChaCha20/Poly1305 was added to the default cipher string.
 
      3DES was dropped from the default cipher string.
-
-   .. versionchanged:: 3.7
-
-     TLS 1.3 cipher suites TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384,
-     and TLS_CHACHA20_POLY1305_SHA256 were added to the default cipher string.
 
 
 Exceptions
@@ -543,20 +541,28 @@ Constants
 .. data:: CERT_NONE
 
    Possible value for :attr:`SSLContext.verify_mode`, or the ``cert_reqs``
-   parameter to :func:`wrap_socket`.  In this mode (the default), no
-   certificates will be required from the other side of the socket connection.
-   If a certificate is received from the other end, no attempt to validate it
-   is made.
+   parameter to :func:`wrap_socket`.  Except for :const:`PROTOCOL_TLS_CLIENT`,
+   it is the default mode.  With client-side sockets, just about any
+   cert is accepted.  Validation errors, such as untrusted or expired cert,
+   are ignored and do not abort the TLS/SSL handshake.
+
+   In server mode, no certificate is requested from the client, so the client
+   does not send any for client cert authentication.
 
    See the discussion of :ref:`ssl-security` below.
 
 .. data:: CERT_OPTIONAL
 
    Possible value for :attr:`SSLContext.verify_mode`, or the ``cert_reqs``
-   parameter to :func:`wrap_socket`.  In this mode no certificates will be
-   required from the other side of the socket connection; but if they
-   are provided, validation will be attempted and an :class:`SSLError`
-   will be raised on failure.
+   parameter to :func:`wrap_socket`.  In client mode, :const:`CERT_OPTIONAL`
+   has the same meaning as :const:`CERT_REQUIRED`. It is recommended to
+   use :const:`CERT_REQUIRED` for client-side sockets instead.
+
+   In server mode, a client certificate request is sent to the client.  The
+   client may either ignore the request or send a certificate in order
+   perform TLS client cert authentication.  If the client chooses to send
+   a certificate, it is verified.  Any verification error immediately aborts
+   the TLS handshake.
 
    Use of this setting requires a valid set of CA certificates to
    be passed, either to :meth:`SSLContext.load_verify_locations` or as a
@@ -568,6 +574,15 @@ Constants
    parameter to :func:`wrap_socket`.  In this mode, certificates are
    required from the other side of the socket connection; an :class:`SSLError`
    will be raised if no certificate is provided, or if its validation fails.
+   This mode is **not** sufficient to verify a certificate in client mode as
+   it does not match hostnames.  :attr:`~SSLContext.check_hostname` must be
+   enabled as well to verify the authenticity of a cert.
+   :const:`PROTOCOL_TLS_CLIENT` uses :const:`CERT_REQUIRED` and
+   enables :attr:`~SSLContext.check_hostname` by default.
+
+   With server socket, this mode provides mandatory TLS client cert
+   authentication.  A client certificate request is sent to the client and
+   the client must provide a valid and trusted certificate.
 
    Use of this setting requires a valid set of CA certificates to
    be passed, either to :meth:`SSLContext.load_verify_locations` or as a
@@ -802,6 +817,15 @@ Constants
    .. deprecated:: 3.7
       The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15,
       3.6.3 and 3.7.0 for backwards compatibility with OpenSSL 1.0.2.
+
+.. data:: OP_NO_RENEGOTIATION
+
+   Disable all renegotiation in TLSv1.2 and earlier. Do not send
+   HelloRequest messages, and ignore renegotiation requests via ClientHello.
+
+   This option is only available with OpenSSL 1.1.0h and later.
+
+   .. versionadded:: 3.7
 
 .. data:: OP_CIPHER_SERVER_PREFERENCE
 
@@ -1592,6 +1616,9 @@ to speed up repeated connections from the same clients.
       when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       give the currently selected cipher.
 
+      OpenSSL 1.1.1 has TLS 1.3 cipher suites enabled by default. The suites
+      cannot be disabled with :meth:`~SSLContext.set_ciphers`.
+
 .. method:: SSLContext.set_alpn_protocols(protocols)
 
    Specify which protocols the socket should advertise during the SSL/TLS
@@ -1964,7 +1991,7 @@ message with one of the parts, you can decrypt it with the other part, and
 
 A certificate contains information about two principals.  It contains the name
 of a *subject*, and the subject's public key.  It also contains a statement by a
-second principal, the *issuer*, that the subject is who he claims to be, and
+second principal, the *issuer*, that the subject is who they claim to be, and
 that this is indeed the subject's public key.  The issuer's statement is signed
 with the issuer's private key, which only the issuer knows.  However, anyone can
 verify the issuer's statement by finding the issuer's public key, decrypting the
@@ -2158,9 +2185,9 @@ Visual inspection shows that the certificate does identify the desired service
                 (('commonName', 'www.python.org'),)),
     'subjectAltName': (('DNS', 'www.python.org'),
                        ('DNS', 'python.org'),
-                       ('DNS', 'pypi.python.org'),
+                       ('DNS', 'pypi.org'),
                        ('DNS', 'docs.python.org'),
-                       ('DNS', 'testpypi.python.org'),
+                       ('DNS', 'testpypi.org'),
                        ('DNS', 'bugs.python.org'),
                        ('DNS', 'wiki.python.org'),
                        ('DNS', 'hg.python.org'),
@@ -2527,11 +2554,6 @@ In server mode, if you want to authenticate your clients using the SSL layer
 (rather than using a higher-level authentication mechanism), you'll also have
 to specify :const:`CERT_REQUIRED` and similarly check the client certificate.
 
-   .. note::
-
-      In client mode, :const:`CERT_OPTIONAL` and :const:`CERT_REQUIRED` are
-      equivalent unless anonymous ciphers are enabled (they are disabled
-      by default).
 
 Protocol versions
 '''''''''''''''''
@@ -2580,7 +2602,33 @@ successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
 :func:`~ssl.RAND_pseudo_bytes` is sufficient.
 
 
-.. ssl-libressl:
+.. _ssl-tlsv1_3:
+
+TLS 1.3
+-------
+
+.. versionadded:: 3.7
+
+Python has provisional and experimental support for TLS 1.3 with OpenSSL
+1.1.1.  The new protocol behaves slightly differently than previous version
+of TLS/SSL.  Some new TLS 1.3 features are not yet available.
+
+- TLS 1.3 uses a disjunct set of cipher suites. All AES-GCM and
+  ChaCha20 cipher suites are enabled by default.  The method
+  :meth:`SSLContext.set_ciphers` cannot enable or disable any TLS 1.3
+  ciphers yet, but :meth:`SSLContext.get_cipers` returns them.
+- Session tickets are no longer sent as part of the initial handshake and
+  are handled differently.  :attr:`SSLSocket.session` and :class:`SSLSession`
+  are not compatible with TLS 1.3.
+- Client-side certificates are also no longer verified during the initial
+  handshake.  A server can request a certificate at any time.  Clients
+  process certificate requests while they send or receive application data
+  from the server.
+- TLS 1.3 features like early data, deferred TLS client cert request,
+  signature algorithm configuration, and rekeying are not supported yet.
+
+
+.. _ssl-libressl:
 
 LibreSSL support
 ----------------
@@ -2605,25 +2653,25 @@ with LibreSSL.
    `SSL/TLS Strong Encryption: An Introduction <https://httpd.apache.org/docs/trunk/en/ssl/ssl_intro.html>`_
        Intro from the Apache HTTP Server documentation
 
-   `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <https://www.ietf.org/rfc/rfc1422>`_
+   :rfc:`RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <1422>`
        Steve Kent
 
-   `RFC 4086: Randomness Requirements for Security <https://datatracker.ietf.org/doc/rfc4086/>`_
+   :rfc:`RFC 4086: Randomness Requirements for Security <4086>`
        Donald E., Jeffrey I. Schiller
 
-   `RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <https://datatracker.ietf.org/doc/rfc5280/>`_
+   :rfc:`RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <5280>`
        D. Cooper
 
-   `RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <https://tools.ietf.org/html/rfc5246>`_
+   :rfc:`RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <5246>`
        T. Dierks et. al.
 
-   `RFC 6066: Transport Layer Security (TLS) Extensions <https://tools.ietf.org/html/rfc6066>`_
+   :rfc:`RFC 6066: Transport Layer Security (TLS) Extensions <6066>`
        D. Eastlake
 
    `IANA TLS: Transport Layer Security (TLS) Parameters <https://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
        IANA
 
-   `RFC 7525: Recommendations for Secure Use of Transport Layer Security (TLS) and Datagram Transport Layer Security (DTLS) <https://tools.ietf.org/html/rfc7525>`_
+   :rfc:`RFC 7525: Recommendations for Secure Use of Transport Layer Security (TLS) and Datagram Transport Layer Security (DTLS) <7525>`
        IETF
 
    `Mozilla's Server Side TLS recommendations <https://wiki.mozilla.org/Security/Server_Side_TLS>`_

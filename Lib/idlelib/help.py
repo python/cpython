@@ -271,5 +271,8 @@ def show_idlehelp(parent):
     HelpWindow(parent, filename, 'IDLE Help (%s)' % python_version())
 
 if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_help', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(show_idlehelp)

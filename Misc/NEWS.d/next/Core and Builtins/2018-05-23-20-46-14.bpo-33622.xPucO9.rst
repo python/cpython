@@ -1,0 +1,4 @@
+Fixed a leak when the garbage collector fails to add an object with the
+``__del__`` method or referenced by it into the :data:`gc.garbage` list.
+:c:func:`PyGC_Collect` can now be called when an exception is set and
+preserves it.

@@ -33,17 +33,17 @@ handler.  Code to create and run the server looks like this::
    :attr:`server_port`. The server is accessible by the handler, typically
    through the handler's :attr:`server` instance variable.
 
-.. class:: ThreadedHTTPServer(server_address, RequestHandlerClass)
+.. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
    This class is identical to HTTPServer but uses threads to handle
-   requests by using the :class:`~socketserver.ThreadingMixin`. This
+   requests by using the :class:`~socketserver.ThreadingMixIn`. This
    is useful to handle web browsers pre-opening sockets, on which
    :class:`HTTPServer` would wait indefinitely.
 
    .. versionadded:: 3.7
 
 
-The :class:`HTTPServer` and :class:`ThreadedHTTPServer` must be given
+The :class:`HTTPServer` and :class:`ThreadingHTTPServer` must be given
 a *RequestHandlerClass* on instantiation, of which this module
 provides three different variants:
 
