@@ -99,16 +99,12 @@ m_hypot(PyObject *self, PyObject *args)
             max = x;
         }
     }
-    if (n <= 1 || max == 0.0) {
-        return PyFloat_FromDouble(max);
+    if (max == 0.0) {
+        return PyFloat_FromDouble(0.0);
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(args, i);
-        x = PyFloat_AsDouble(item);
-        if (x == -1.0 && PyErr_Occurred()) {
-            return NULL;
-        }
-        x /= max;
+        x = PyFloat_AsDouble(item) / max;
         csum += x * x;
     }
     return PyFloat_FromDouble(max * sqrt(csum));       // XXX Handle overflow
