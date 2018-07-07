@@ -4,10 +4,10 @@
 .. module:: enum
    :synopsis: Implementation of an enumeration class.
 
-.. :moduleauthor:: Ethan Furman <ethan@stoneleaf.us>
-.. :sectionauthor:: Barry Warsaw <barry@python.org>,
-.. :sectionauthor:: Eli Bendersky <eliben@gmail.com>,
-.. :sectionauthor:: Ethan Furman <ethan@stoneleaf.us>
+.. moduleauthor:: Ethan Furman <ethan@stoneleaf.us>
+.. sectionauthor:: Barry Warsaw <barry@python.org>
+.. sectionauthor:: Eli Bendersky <eliben@gmail.com>
+.. sectionauthor:: Ethan Furman <ethan@stoneleaf.us>
 
 .. versionadded:: 3.4
 
