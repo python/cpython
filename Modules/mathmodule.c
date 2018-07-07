@@ -56,7 +56,6 @@ raised for division by zero and mod by zero.
 #include "_math.h"
 
 #include "clinic/mathmodule.c.h"
-#include <stdio.h>
 
 /* Notes:
 
@@ -78,50 +77,41 @@ raised for division by zero and mod by zero.
     hypot() -> 0.0           // degrade like sum([])
 */
 
-
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
 m_hypot(PyObject *self, PyObject *args)
 {
     Py_ssize_t i, n;
-    double max = 0.0;
-    double x;
-    double csum = 0.0;
-    double **farray;
     PyObject *item;
+    double max = 0.0;
+    double csum = 0.0;
+    double x;
 
     n = PyTuple_GET_SIZE(args);
-    farray = PyMem_Malloc(n * sizeof(double));
-    if (farray == NULL) {
-        return NULL;
-    }
     for (i=0 ; i<n ; i++) {
-        fprintf(stderr, "[%lu]", i);
         item = PyTuple_GET_ITEM(args, i);
         x = PyFloat_AsDouble(item);
         if (x == -1.0 && PyErr_Occurred()) {
-            PyMem_Free(farray);
-            fprintf(stderr, "Ouch");
             return NULL;
         }
-        fprintf(stderr, "<%lf>\n", x);
         x = fabs(x);
-        fprintf(stderr, "|%lf|\n", x);
-        (*farray)[i] = x;
         if (x > max) {
             max = x;
         }
     }
     if (n <= 1 || max == 0.0) {
-        PyMem_Free(farray);
         return PyFloat_FromDouble(max);
     }
     for (i=0 ; i<n ; i++) {
-        x = (*farray[i]) / max;
+        item = PyTuple_GET_ITEM(args, i);
+        x = PyFloat_AsDouble(item);
+        if (x == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
+        x /= max;
         csum += x * x;
     }
-    PyMem_Free(farray);
-    return PyFloat_FromDouble(csum);
+    return PyFloat_FromDouble(max * sqrt(csum));       // XXX Handle overflow
 }
 
 /*[clinic input]
