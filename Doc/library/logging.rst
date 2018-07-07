@@ -1186,25 +1186,24 @@ functions.
    |              | with *filename* or *stream* - if both       |
    |              | are present, a ``ValueError`` is raised.    |
    +--------------+---------------------------------------------+
-   | ``force``    | If this keyword argument is specified as    |
+   | *force*      | If this keyword argument is specified as    |
    |              | true, any existing handlers attached to the |
    |              | root logger are removed and closed, before  |
    |              | carrying out the configuration as specified |
    |              | by the other arguments.                     |
    +--------------+---------------------------------------------+
 
-   .. versionchanged:: 3.8
-      The ``force`` argument was added.
-
    .. versionchanged:: 3.2
-      The ``style`` argument was added.
+      The *style* argument was added.
 
    .. versionchanged:: 3.3
-      The ``handlers`` argument was added. Additional checks were added to
+      The *handlers* argument was added. Additional checks were added to
       catch situations where incompatible arguments are specified (e.g.
-      ``handlers`` together with ``stream`` or ``filename``, or ``stream``
-      together with ``filename``).
+      *handlers* together with *stream* or *filename*, or *stream*
+      together with *filename*).
 
+   .. versionchanged:: 3.8
+      The *force* argument was added.
 
 .. function:: shutdown()
 
