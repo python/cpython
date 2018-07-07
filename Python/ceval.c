@@ -928,11 +928,18 @@ main_loop:
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) {
-            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY ||
-                _Py_OPCODE(*next_instr) == YIELD_FROM) {
-                /* Two cases where we skip running signal handlers and other
+            opcode = _Py_OPCODE(*next_instr);
+            if (opcode == SETUP_FINALLY ||
+                opcode == SETUP_WITH ||
+                opcode == BEFORE_ASYNC_WITH ||
+                opcode == YIELD_FROM) {
+                /* Few cases where we skip running signal handlers and other
                    pending calls:
-                   - If we're about to enter the try: of a try/finally (not
+                   - If we're about to enter the 'with:'. It will prevent
+                     emitting a resource warning in the common idiom
+                     'with open(path) as file:'.
+                   - If we're about to enter the 'async with:'.
+                   - If we're about to enter the 'try:' of a try/finally (not
                      *very* useful, but might help in some cases and it's
                      traditional)
                    - If we're resuming a chain of nested 'yield from' or
