@@ -168,6 +168,11 @@ called "displays", each of them in two flavors:
 * they are computed via a set of looping and filtering instructions, called a
   :dfn:`comprehension`.
 
+A comprehension-based display is functionally equivalent to a `generator expression`__
+whose output sequence is passed to the constructor of the corresponding type.
+
+__ genexpr_
+
 Common syntax elements for comprehensions are:
 
 .. productionlist::
@@ -327,11 +332,11 @@ Generator expressions
 A generator expression is a compact generator notation in parentheses:
 
 .. productionlist::
-   generator_expression: "(" `expression` `comp_for` ")"
+   generator_expression: "(" `comprehension` ")"
 
-A generator expression yields a new generator object.  Its syntax is the same as
-for comprehensions, except that it is enclosed in parentheses instead of
-brackets or curly braces.
+A generator expression yields a new generator object.  The syntax in the
+parentheses is called a :dfn:`comprehension` and is described in
+`comprehensions`_.
 
 Variables used in the generator expression are evaluated lazily when the
 :meth:`~generator.__next__` method is called for the generator object (in the same
