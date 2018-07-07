@@ -509,7 +509,7 @@ class TypeVar(_Final, _Immutable, _root=True):
     At runtime, isinstance(x, T) and issubclass(C, T) will raise TypeError.
 
     Type variables defined with covariant=True or contravariant=True
-    can be used do declare covariant or contravariant generic types.
+    can be used to declare covariant or contravariant generic types.
     See PEP 484 for more details. By default generic types are invariant
     in all type variables.
 
