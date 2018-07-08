@@ -831,9 +831,10 @@ Exceptions
 .. exception:: NotSupportedError
 
    Exception raised in case a method or database API was used which is not
-   supported by the database, e.g. requesting a .rollback() on a connection
-   that does not support transaction or has transactions turned off.
-   It must be a subclass of :exc:`DatabaseError`.
+   supported by the database, e.g. calling the :meth:`Connection.rollback`
+   on a connection that does not support transaction or has transactions
+   turned off. It is a subclass of :exc:`DatabaseError`.
+
 
 .. _sqlite3-types:
 
