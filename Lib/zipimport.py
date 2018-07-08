@@ -88,7 +88,7 @@ class zipimporter:
         except KeyError:
             files = _read_directory(path)
             _zip_directory_cache[path] = files
-        self.files = files
+        self._files = files
         self.archive = path
         # a prefix directory following the ZIP file path.
         self.prefix = _bootstrap_external._path_join(*prefix[::-1])
@@ -170,7 +170,7 @@ class zipimporter:
             key = pathname[len1 + 1:]
 
         try:
-            toc_entry = self.files[key]
+            toc_entry = self._files[key]
         except KeyError:
             raise OSError(0, '', key)
         return _get_data(self.archive, toc_entry)
@@ -206,7 +206,7 @@ class zipimporter:
             fullpath = path + '.py'
 
         try:
-            toc_entry = self.files[fullpath]
+            toc_entry = self._files[fullpath]
         except KeyError:
             # we have the module, but no source
             return None
@@ -302,15 +302,15 @@ def _is_dir(self, path):
     # of a namespace package. We test by seeing if the name, with an
     # appended path separator, exists.
     dirpath = path + path_sep
-    # If dirpath is present in self.files, we have a directory.
-    return dirpath in self.files
+    # If dirpath is present in self._files, we have a directory.
+    return dirpath in self._files
 
 # Return some information about a module.
 def _get_module_info(self, fullname):
     path = _get_module_path(self, fullname)
     for suffix, isbytecode, ispackage in _zip_searchorder:
         fullpath = path + suffix
-        if fullpath in self.files:
+        if fullpath in self._files:
             return ispackage
     return None
 
@@ -611,7 +611,7 @@ def _get_mtime_of_source(self, path):
         # strip 'c' or 'o' from *.py[co]
         assert path[-1:] in ('c', 'o')
         path = path[:-1]
-        toc_entry = self.files[path]
+        toc_entry = self._files[path]
         # fetch the time stamp of the .py file for comparison
         # with an embedded pyc time stamp
         time = toc_entry[5]
@@ -628,7 +628,7 @@ def _get_module_code(self, fullname):
         fullpath = path + suffix
         _bootstrap._verbose_message('trying {}{}{}', self.archive, path_sep, fullpath, verbosity=2)
         try:
-            toc_entry = self.files[fullpath]
+            toc_entry = self._files[fullpath]
         except KeyError:
             pass
         else:
