@@ -111,11 +111,8 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
         if (adapted == Py_None) {
             Py_DECREF(adapted);
         }
-        else if (adapted) {
+        else if (adapted || !PyErr_ExceptionMatches(PyExc_TypeError)) {
             return adapted;
-        }
-        else if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
-            return NULL;
         }
         else {
             PyErr_Clear();
@@ -133,11 +130,8 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
         if (adapted == Py_None) {
             Py_DECREF(adapted);
         }
-        else if (adapted) {
+        else if (adapted || !PyErr_ExceptionMatches(PyExc_TypeError)) {
             return adapted;
-        }
-        else if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
-            return NULL;
         }
         else {
             PyErr_Clear();

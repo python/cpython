@@ -252,13 +252,13 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
         return NULL;
 
     for (i = 0; i < numcols; i++) {
-        if (self->connection->detect_types) {
-            converter = PyList_GetItem(self->row_cast_map, i);
-            if (!converter) {
-                PyErr_Clear();
-                converter = Py_None;
-            }
-        } else {
+        if (self->connection->detect_types
+                && self->row_cast_map != NULL
+                && i < PyList_GET_SIZE(self->row_cast_map))
+        {
+            converter = PyList_GET_ITEM(self->row_cast_map, i);
+        }
+        else {
             converter = Py_None;
         }
 
@@ -291,7 +291,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 nbytes = sqlite3_column_bytes(self->statement->st, i);
                 if (self->connection->text_factory == (PyObject*)&PyUnicode_Type) {
                     converted = PyUnicode_FromStringAndSize(val_str, nbytes);
-                    if (!converted) {
+                    if (!converted && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
                         PyErr_Clear();
                         colname = sqlite3_column_name(self->statement->st, i);
                         if (!colname) {
