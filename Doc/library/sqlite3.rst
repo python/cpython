@@ -346,7 +346,7 @@ Connection Objects
       called as the SQL function. If *deterministic* is true, the created function
       is marked as `deterministic <https://sqlite.org/deterministic.html>`_, which
       allows SQLite to perform additional optimizations. This flag is supported by
-      SQLite 3.8.3 or higher, ``sqlite3.NotSupportedError`` will be raised if used
+      SQLite 3.8.3 or higher, :exc:`NotSupportedError` will be raised if used
       with older versions.
 
       The function can return any of the types supported by SQLite: bytes, str, int,
@@ -834,6 +834,13 @@ Exceptions
    and not necessarily under the control of the programmer, e.g. an unexpected
    disconnect occurs, the data source name is not found, a transaction could
    not be processed, etc.  It is a subclass of :exc:`DatabaseError`.
+
+.. exception:: NotSupportedError
+
+   Exception raised in case a method or database API was used which is not
+   supported by the database, e.g. calling the :meth:`~Connection.rollback`
+   method on a connection that does not support transaction or has
+   transactions turned off.  It is a subclass of :exc:`DatabaseError`.
 
 
 .. _sqlite3-types:
