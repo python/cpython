@@ -161,24 +161,22 @@ def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
         # here to work around problems with Cygwin not being
         # able to open symlinks for reading
         executable = os.path.realpath(executable)
-    eof = False
     with open(executable, 'rb') as f:
         binary = f.read(chunksize)
         pos = 0
-        while 1:
+        while pos < len(binary):
             if b'libc' in binary or b'GLIBC' in binary:
                 m = _libc_search.search(binary, pos)
             else:
                 m = None
-            if not m or (not eof and m.end() == len(binary)):
+            if not m or m.end() == len(binary):
                 chunk = f.read(chunksize)
-                if not chunk:
-                    if not m:
-                        break
-                    eof = True
-                binary = binary[max(pos, len(binary) - 1000):] + chunk
-                pos = 0
-                continue
+                if chunk:
+                    binary = binary[max(pos, len(binary) - 1000):] + chunk
+                    pos = 0
+                    continue
+                if not m:
+                    break
             libcinit, glibc, glibcversion, so, threads, soversion = [
                 s.decode('latin1') if s is not None else s
                 for s in m.groups()]
