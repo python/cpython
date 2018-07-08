@@ -1,0 +1,2 @@
+functools.singledispatch now raises TypeError instead of IndexError when no
+positional arguments are passed.
