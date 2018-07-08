@@ -2429,7 +2429,8 @@ static int _pending_callback(void *arg)
 /* The following requests n callbacks to _pending_callback.  It can be
  * run from any python thread.
  */
-PyObject *pending_threadfunc(PyObject *self, PyObject *arg)
+static PyObject *
+pending_threadfunc(PyObject *self, PyObject *arg)
 {
     PyObject *callable;
     int r;
@@ -5193,7 +5194,7 @@ static PyMethodDef generic_alias_methods[] = {
     {NULL}  /* sentinel */
 };
 
-PyTypeObject GenericAlias_Type = {
+static PyTypeObject GenericAlias_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "GenericAlias",
     sizeof(PyGenericAliasObject),
@@ -5230,7 +5231,7 @@ static PyMethodDef generic_methods[] = {
     {NULL}  /* sentinel */
 };
 
-PyTypeObject Generic_Type = {
+static PyTypeObject Generic_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "Generic",
     sizeof(PyGenericObject),

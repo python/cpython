@@ -418,7 +418,6 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
             goto done;
         }
         v = run_pyc_file(pyc_fp, filename, d, d, flags);
-        fclose(pyc_fp);
     } else {
         /* When running from stdin, leave __main__.__loader__ alone */
         if (strcmp(filename, "<stdin>") != 0 &&
@@ -432,6 +431,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     }
     flush_io();
     if (v == NULL) {
+        Py_CLEAR(m);
         PyErr_Print();
         goto done;
     }
@@ -440,7 +440,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
   done:
     if (set_file_name && PyDict_DelItemString(d, "__file__"))
         PyErr_Clear();
-    Py_DECREF(m);
+    Py_XDECREF(m);
     return ret;
 }
 
@@ -1051,28 +1051,32 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_RuntimeError,
                        "Bad magic number in .pyc file");
-        return NULL;
+        goto error;
     }
     /* Skip the rest of the header. */
     (void) PyMarshal_ReadLongFromFile(fp);
     (void) PyMarshal_ReadLongFromFile(fp);
     (void) PyMarshal_ReadLongFromFile(fp);
-    if (PyErr_Occurred())
-        return NULL;
-
+    if (PyErr_Occurred()) {
+        goto error;
+    }
     v = PyMarshal_ReadLastObjectFromFile(fp);
     if (v == NULL || !PyCode_Check(v)) {
         Py_XDECREF(v);
         PyErr_SetString(PyExc_RuntimeError,
                    "Bad code object in .pyc file");
-        return NULL;
+        goto error;
     }
+    fclose(fp);
     co = (PyCodeObject *)v;
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
     if (v && flags)
         flags->cf_flags |= (co->co_flags & PyCF_MASK);
     Py_DECREF(co);
     return v;
+error:
+    fclose(fp);
+    return NULL;
 }
 
 PyObject *

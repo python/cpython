@@ -651,13 +651,17 @@ class _TestProcess(BaseTestCase):
         from multiprocessing.forkserver import _forkserver
         _forkserver.ensure_running()
 
+        # First process sleeps 500 ms
+        delay = 0.5
+
         evt = self.Event()
-        proc = self.Process(target=self._sleep_and_set_event, args=(evt, 1.0))
+        proc = self.Process(target=self._sleep_and_set_event, args=(evt, delay))
         proc.start()
 
         pid = _forkserver._forkserver_pid
         os.kill(pid, signum)
-        time.sleep(1.0)  # give it time to die
+        # give time to the fork server to die and time to proc to complete
+        time.sleep(delay * 2.0)
 
         evt2 = self.Event()
         proc2 = self.Process(target=self._sleep_and_set_event, args=(evt2,))
@@ -1035,9 +1039,9 @@ class _TestQueue(BaseTestCase):
         start = time.time()
         self.assertRaises(pyqueue.Empty, q.get, True, 0.200)
         delta = time.time() - start
-        # Tolerate a delta of 30 ms because of the bad clock resolution on
+        # Tolerate a delta of 50 ms because of the bad clock resolution on
         # Windows (usually 15.6 ms)
-        self.assertGreaterEqual(delta, 0.170)
+        self.assertGreaterEqual(delta, 0.150)
         close_queue(q)
 
     def test_queue_feeder_donot_stop_onexc(self):
@@ -1482,9 +1486,9 @@ class _TestCondition(BaseTestCase):
             p = self.Process(target=self._test_wait_result, args=(c, pid))
             p.start()
 
-            self.assertTrue(c.wait(10))
+            self.assertTrue(c.wait(60))
             if pid is not None:
-                self.assertRaises(KeyboardInterrupt, c.wait, 10)
+                self.assertRaises(KeyboardInterrupt, c.wait, 60)
 
             p.join()
 
@@ -2351,10 +2355,10 @@ class _TestPool(BaseTestCase):
         self.assertRaises(SayWhenError, it.__next__)
 
     def test_imap_unordered(self):
-        it = self.pool.imap_unordered(sqr, list(range(1000)))
-        self.assertEqual(sorted(it), list(map(sqr, list(range(1000)))))
+        it = self.pool.imap_unordered(sqr, list(range(10)))
+        self.assertEqual(sorted(it), list(map(sqr, list(range(10)))))
 
-        it = self.pool.imap_unordered(sqr, list(range(1000)), chunksize=53)
+        it = self.pool.imap_unordered(sqr, list(range(1000)), chunksize=100)
         self.assertEqual(sorted(it), list(map(sqr, list(range(1000)))))
 
     def test_imap_unordered_handle_iterable_exception(self):
@@ -2666,7 +2670,9 @@ class _TestMyManager(BaseTestCase):
     def test_mymanager_context(self):
         with MyManager() as manager:
             self.common(manager)
-        self.assertEqual(manager._process.exitcode, 0)
+        # bpo-30356: BaseManager._finalize_manager() sends SIGTERM
+        # to the manager process if it takes longer than 1 second to stop.
+        self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     def test_mymanager_context_prestarted(self):
         manager = MyManager()

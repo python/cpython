@@ -2,6 +2,11 @@
 Design and History FAQ
 ======================
 
+.. only:: html
+
+   .. contents::
+
+
 Why does Python use indentation for grouping of statements?
 -----------------------------------------------------------
 
@@ -343,7 +348,7 @@ each Python stack frame.  Also, extensions can call back into Python at almost
 random moments.  Therefore, a complete threads implementation requires thread
 support for C.
 
-Answer 2: Fortunately, there is `Stackless Python <https://bitbucket.org/stackless-dev/stackless/wiki/Home>`_,
+Answer 2: Fortunately, there is `Stackless Python <https://github.com/stackless-dev/stackless/wiki>`_,
 which has a completely redesigned interpreter loop that avoids the C stack.
 
 
@@ -465,10 +470,10 @@ you can always change a list's elements.  Only immutable elements can be used as
 dictionary keys, and hence only tuples and not lists can be used as keys.
 
 
-How are lists implemented?
---------------------------
+How are lists implemented in CPython?
+-------------------------------------
 
-Python's lists are really variable-length arrays, not Lisp-style linked lists.
+CPython's lists are really variable-length arrays, not Lisp-style linked lists.
 The implementation uses a contiguous array of references to other objects, and
 keeps a pointer to this array and the array's length in a list head structure.
 
@@ -481,10 +486,10 @@ when the array must be grown, some extra space is allocated so the next few
 times don't require an actual resize.
 
 
-How are dictionaries implemented?
----------------------------------
+How are dictionaries implemented in CPython?
+--------------------------------------------
 
-Python's dictionaries are implemented as resizable hash tables.  Compared to
+CPython's dictionaries are implemented as resizable hash tables.  Compared to
 B-trees, this gives better performance for lookup (the most common operation by
 far) under most circumstances, and the implementation is simpler.
 
@@ -495,7 +500,7 @@ on the key and a per-process seed; for example, "Python" could hash to
 to 1142331976.  The hash code is then used to calculate a location in an
 internal array where the value will be stored.  Assuming that you're storing
 keys that all have different hash values, this means that dictionaries take
-constant time -- O(1), in computer science notation -- to retrieve a key.
+constant time -- O(1), in Big-O notation -- to retrieve a key.
 
 
 Why must dictionary keys be immutable?

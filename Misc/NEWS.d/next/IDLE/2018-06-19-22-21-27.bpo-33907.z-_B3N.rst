@@ -1,0 +1,3 @@
+For consistency and clarity, rename an IDLE module and classes.
+Module calltips and its class CallTips are now calltip and Calltip.
+In module calltip_w, class CallTip is now CalltipWindow.

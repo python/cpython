@@ -257,7 +257,7 @@ class Field:
 
     # This is used to support the PEP 487 __set_name__ protocol in the
     # case where we're using a field that contains a descriptor as a
-    # defaul value.  For details on __set_name__, see
+    # default value.  For details on __set_name__, see
     # https://www.python.org/dev/peps/pep-0487/#implementation-details.
     #
     # Note that in _process_class, this Field object is overwritten
@@ -1173,6 +1173,9 @@ def replace(obj, **changes):
             continue
 
         if f.name not in changes:
+            if f._field_type is _FIELD_INITVAR:
+                raise ValueError(f"InitVar {f.name!r} "
+                                 'must be specified with replace()')
             changes[f.name] = getattr(obj, f.name)
 
     # Create the new object, which calls __init__() and
