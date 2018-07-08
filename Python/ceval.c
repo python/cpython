@@ -69,6 +69,7 @@ static PyObject * unicode_concatenate(PyObject *, PyObject *,
 static PyObject * special_lookup(PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyObject *func, PyObject *vararg);
 static void format_kwargs_mapping_error(PyObject *func, PyObject *kwargs);
+static void format_awaitable_error(PyTypeObject *, int);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -1735,6 +1736,11 @@ main_loop:
         TARGET(GET_AWAITABLE) {
             PyObject *iterable = TOP();
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
+
+            if (iter == NULL) {
+                format_awaitable_error(Py_TYPE(iterable),
+                                       _Py_OPCODE(next_instr[-2]));
+            }
 
             Py_DECREF(iterable);
 
@@ -3655,7 +3661,7 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
 }
 
 /* This is gonna seem *real weird*, but if you put some other code between
-   PyEval_EvalFrame() and PyEval_EvalCodeEx() you will need to adjust
+   PyEval_EvalFrame() and _PyEval_EvalFrameDefault() you will need to adjust
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
 
 PyObject *
@@ -4982,6 +4988,25 @@ format_exc_unbound(PyCodeObject *co, int oparg)
                                 PyTuple_GET_SIZE(co->co_cellvars));
         format_exc_check_arg(PyExc_NameError,
                              UNBOUNDFREE_ERROR_MSG, name);
+    }
+}
+
+static void
+format_awaitable_error(PyTypeObject *type, int prevopcode)
+{
+    if (type->tp_as_async == NULL || type->tp_as_async->am_await == NULL) {
+        if (prevopcode == BEFORE_ASYNC_WITH) {
+            PyErr_Format(PyExc_TypeError,
+                         "'async with' received an object from __aenter__ "
+                         "that does not implement __await__: %.100s",
+                         type->tp_name);
+        }
+        else if (prevopcode == WITH_CLEANUP_START) {
+            PyErr_Format(PyExc_TypeError,
+                         "'async with' received an object from __aexit__ "
+                         "that does not implement __await__: %.100s",
+                         type->tp_name);
+        }
     }
 }
 

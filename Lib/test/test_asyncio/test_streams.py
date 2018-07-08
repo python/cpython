@@ -19,6 +19,10 @@ import asyncio
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class StreamTests(test_utils.TestCase):
 
     DATA = b'line1\nline2\nline3\n'

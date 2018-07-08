@@ -597,8 +597,10 @@ class _SelectorTransport(transports._FlowControlMixin,
                 self._extra['peername'] = None
         self._sock = sock
         self._sock_fd = sock.fileno()
-        self._protocol = protocol
-        self._protocol_connected = True
+
+        self._protocol_connected = False
+        self.set_protocol(protocol)
+
         self._server = server
         self._buffer = self._buffer_factory()
         self._conn_lost = 0  # Set when call to connection_lost scheduled.
@@ -640,6 +642,7 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     def set_protocol(self, protocol):
         self._protocol = protocol
+        self._protocol_connected = True
 
     def get_protocol(self):
         return self._protocol
@@ -706,6 +709,12 @@ class _SelectorTransport(transports._FlowControlMixin,
     def get_write_buffer_size(self):
         return len(self._buffer)
 
+    def _add_reader(self, fd, callback, *args):
+        if self._closing:
+            return
+
+        self._loop._add_reader(fd, callback, *args)
+
 
 class _SelectorSocketTransport(_SelectorTransport):
 
@@ -715,11 +724,7 @@ class _SelectorSocketTransport(_SelectorTransport):
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None):
 
-        if protocols._is_buffered_protocol(protocol):
-            self._read_ready = self._read_ready__get_buffer
-        else:
-            self._read_ready = self._read_ready__data_received
-
+        self._read_ready_cb = None
         super().__init__(loop, sock, protocol, extra, server)
         self._eof = False
         self._paused = False
@@ -732,12 +737,20 @@ class _SelectorSocketTransport(_SelectorTransport):
 
         self._loop.call_soon(self._protocol.connection_made, self)
         # only start reading when connection_made() has been called
-        self._loop.call_soon(self._loop._add_reader,
+        self._loop.call_soon(self._add_reader,
                              self._sock_fd, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(futures._set_result_unless_cancelled,
                                  waiter, None)
+
+    def set_protocol(self, protocol):
+        if isinstance(protocol, protocols.BufferedProtocol):
+            self._read_ready_cb = self._read_ready__get_buffer
+        else:
+            self._read_ready_cb = self._read_ready__data_received
+
+        super().set_protocol(protocol)
 
     def is_reading(self):
         return not self._paused and not self._closing
@@ -754,16 +767,21 @@ class _SelectorSocketTransport(_SelectorTransport):
         if self._closing or not self._paused:
             return
         self._paused = False
-        self._loop._add_reader(self._sock_fd, self._read_ready)
+        self._add_reader(self._sock_fd, self._read_ready)
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
+
+    def _read_ready(self):
+        self._read_ready_cb()
 
     def _read_ready__get_buffer(self):
         if self._conn_lost:
             return
 
         try:
-            buf = self._protocol.get_buffer()
+            buf = self._protocol.get_buffer(-1)
+            if not len(buf):
+                raise RuntimeError('get_buffer() returned an empty buffer')
         except Exception as exc:
             self._fatal_error(
                 exc, 'Fatal error: protocol.get_buffer() call failed.')
@@ -893,7 +911,7 @@ class _SelectorSocketTransport(_SelectorTransport):
                     self._sock.shutdown(socket.SHUT_WR)
 
     def write_eof(self):
-        if self._eof:
+        if self._closing or self._eof:
             return
         self._eof = True
         if not self._buffer:
@@ -930,7 +948,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
         self._address = address
         self._loop.call_soon(self._protocol.connection_made, self)
         # only start reading when connection_made() has been called
-        self._loop.call_soon(self._loop._add_reader,
+        self._loop.call_soon(self._add_reader,
                              self._sock_fd, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called

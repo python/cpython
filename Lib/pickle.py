@@ -57,9 +57,9 @@ compatible_formats = ["1.0",            # Original protocol 0
 HIGHEST_PROTOCOL = 4
 
 # The protocol we write by default.  May be less than HIGHEST_PROTOCOL.
-# We intentionally write a protocol that Python 2.x cannot read;
-# there are too many issues with that.
-DEFAULT_PROTOCOL = 3
+# Only bump this if the oldest still supported version of Python already
+# includes it.
+DEFAULT_PROTOCOL = 4
 
 class PickleError(Exception):
     """A common base class for the other pickling exceptions."""
@@ -376,8 +376,8 @@ class _Pickler:
 
         The optional *protocol* argument tells the pickler to use the
         given protocol; supported protocols are 0, 1, 2, 3 and 4.  The
-        default protocol is 3; a backward-incompatible protocol designed
-        for Python 3.
+        default protocol is 4. It was introduced in Python 3.4, it is
+        incompatible with previous versions.
 
         Specifying a negative protocol version selects the highest
         protocol version supported.  The higher the protocol used, the

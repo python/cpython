@@ -49,8 +49,8 @@
     <sqlite3Dir>$(ExternalsDir)sqlite-3.21.0.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
-    <opensslDir>$(ExternalsDir)openssl-1.1.0f\</opensslDir>
-    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.0f\$(ArchName)\</opensslOutDir>
+    <opensslDir>$(ExternalsDir)openssl-1.1.0h\</opensslDir>
+    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.0h\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir>$(ExternalsDir)\zlib-1.2.11\</zlibDir>
@@ -77,7 +77,8 @@
     -->
     <_RegistryVersion>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
     <_RegistryVersion Condition="$(_RegistryVersion) == ''">$(Registry:HKEY_LOCAL_MACHINE\WOW6432Node\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
-    <DefaultWindowsSDKVersion>10.0.16299.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion>10.0.17134.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.16299'">10.0.16299.0</DefaultWindowsSDKVersion>
     <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
     <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
     <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>

@@ -166,16 +166,18 @@ static int test_pre_initialization_api(void)
 /* bpo-33042: Ensure embedding apps can predefine sys module options */
 static int test_pre_initialization_sys_options(void)
 {
-    /* We allocate a couple of the option dynamically, and then delete
+    /* We allocate a couple of the options dynamically, and then delete
      * them before calling Py_Initialize. This ensures the interpreter isn't
      * relying on the caller to keep the passed in strings alive.
      */
-    wchar_t *static_warnoption = L"once";
-    wchar_t *static_xoption = L"also_not_an_option=2";
+    const wchar_t *static_warnoption = L"once";
+    const wchar_t *static_xoption = L"also_not_an_option=2";
     size_t warnoption_len = wcslen(static_warnoption);
     size_t xoption_len = wcslen(static_xoption);
-    wchar_t *dynamic_once_warnoption = calloc(warnoption_len+1, sizeof(wchar_t));
-    wchar_t *dynamic_xoption = calloc(xoption_len+1, sizeof(wchar_t));
+    wchar_t *dynamic_once_warnoption = \
+             (wchar_t *) calloc(warnoption_len+1, sizeof(wchar_t));
+    wchar_t *dynamic_xoption = \
+             (wchar_t *) calloc(xoption_len+1, sizeof(wchar_t));
     wcsncpy(dynamic_once_warnoption, static_warnoption, warnoption_len+1);
     wcsncpy(dynamic_xoption, static_xoption, xoption_len+1);
 
@@ -261,6 +263,19 @@ static int test_bpo20891(void)
     return 0;
 }
 
+static int test_initialize_twice(void)
+{
+    _testembed_Py_Initialize();
+
+    /* bpo-33932: Calling Py_Initialize() twice should do nothing
+     * (and not crash!). */
+    Py_Initialize();
+
+    Py_Finalize();
+
+    return 0;
+}
+
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -286,6 +301,7 @@ static struct TestCase TestCases[] = {
     { "pre_initialization_api", test_pre_initialization_api },
     { "pre_initialization_sys_options", test_pre_initialization_sys_options },
     { "bpo20891", test_bpo20891 },
+    { "initialize_twice", test_initialize_twice },
     { NULL, NULL }
 };
 

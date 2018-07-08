@@ -8,9 +8,12 @@ import pickle
 import inspect
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar
+from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
+
+import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
+import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
@@ -133,8 +136,8 @@ class TestCase(unittest.TestCase):
         self.assertEqual(hash(C(10)), hash((10,)))
 
         # Creating this class should generate an exception, because
-        # __hash__ exists and is not None, which it would be if it had
-        # been auto-generated do due __eq__ being defined.
+        #  __hash__ exists and is not None, which it would be if it
+        #  had been auto-generated due to __eq__ being defined.
         with self.assertRaisesRegex(TypeError,
                                     'Cannot overwrite attribute __hash__'):
             @dataclass(unsafe_hash=True)
@@ -144,7 +147,6 @@ class TestCase(unittest.TestCase):
                     pass
                 def __hash__(self):
                     pass
-
 
     def test_overwrite_fields_in_derived_class(self):
         # Note that x from C1 replaces x in Base, but the order remains
@@ -601,7 +603,6 @@ class TestCase(unittest.TestCase):
                 class C:
                     x: ClassVar[typ] = Subclass()
 
-
     def test_deliberately_mutable_defaults(self):
         # If a mutable default isn't in the known list of
         #  (list, dict, set), then it's okay.
@@ -624,7 +625,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(o1.x, o2.x)
 
     def test_no_options(self):
-        # call with dataclass()
+        # Call with dataclass().
         @dataclass()
         class C:
             x: int
@@ -639,7 +640,7 @@ class TestCase(unittest.TestCase):
             y: int
         self.assertNotEqual(Point(1, 2), (1, 2))
 
-        # And that we can't compare to another unrelated dataclass
+        # And that we can't compare to another unrelated dataclass.
         @dataclass
         class C:
             x: int
@@ -664,7 +665,7 @@ class TestCase(unittest.TestCase):
         self.assertNotEqual(Point3D(2017, 6, 3), Date(2017, 6, 3))
         self.assertNotEqual(Point3D(1, 2, 3), (1, 2, 3))
 
-        # Make sure we can't unpack
+        # Make sure we can't unpack.
         with self.assertRaisesRegex(TypeError, 'unpack'):
             x, y, z = Point3D(4, 5, 6)
 
@@ -695,7 +696,7 @@ class TestCase(unittest.TestCase):
             # Verify __init__.
 
             signature = inspect.signature(cls.__init__)
-            # Check the return type, should be None
+            # Check the return type, should be None.
             self.assertIs(signature.return_annotation, None)
 
             # Check each parameter.
@@ -716,12 +717,12 @@ class TestCase(unittest.TestCase):
             param = next(params)
             self.assertEqual(param.name, 'k')
             self.assertIs   (param.annotation, F)
-            # Don't test for the default, since it's set to MISSING
+            # Don't test for the default, since it's set to MISSING.
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             param = next(params)
             self.assertEqual(param.name, 'l')
             self.assertIs   (param.annotation, float)
-            # Don't test for the default, since it's set to MISSING
+            # Don't test for the default, since it's set to MISSING.
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             self.assertRaises(StopIteration, next, params)
 
@@ -867,7 +868,7 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(C().x, 5)
 
-        # Now call super(), and it will raise
+        # Now call super(), and it will raise.
         @dataclass
         class C(B):
             def __post_init__(self):
@@ -925,14 +926,16 @@ class TestCase(unittest.TestCase):
             z: ClassVar[int] = 1000
             w: ClassVar[int] = 2000
             t: ClassVar[int] = 3000
+            s: ClassVar      = 4000
 
         c = C(5)
         self.assertEqual(repr(c), 'TestCase.test_class_var.<locals>.C(x=5, y=10)')
-        self.assertEqual(len(fields(C)), 2)                 # We have 2 fields
-        self.assertEqual(len(C.__annotations__), 5)         # And 3 ClassVars
+        self.assertEqual(len(fields(C)), 2)                 # We have 2 fields.
+        self.assertEqual(len(C.__annotations__), 6)         # And 4 ClassVars.
         self.assertEqual(c.z, 1000)
         self.assertEqual(c.w, 2000)
         self.assertEqual(c.t, 3000)
+        self.assertEqual(c.s, 4000)
         C.z += 1
         self.assertEqual(c.z, 1001)
         c = C(20)
@@ -940,6 +943,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(c.z, 1001)
         self.assertEqual(c.w, 2000)
         self.assertEqual(c.t, 3000)
+        self.assertEqual(c.s, 4000)
 
     def test_class_var_no_default(self):
         # If a ClassVar has no default value, it should not be set on the class.
@@ -1205,14 +1209,13 @@ class TestCase(unittest.TestCase):
         d = D(4, 5)
         self.assertEqual((d.x, d.z), (4, 5))
 
-
-    def x_test_classvar_default_factory(self):
-        # XXX: it's an error for a ClassVar to have a factory function
-        @dataclass
-        class C:
-            x: ClassVar[int] = field(default_factory=int)
-
-        self.assertIs(C().x, int)
+    def test_classvar_default_factory(self):
+        # It's an error for a ClassVar to have a factory function.
+        with self.assertRaisesRegex(TypeError,
+                                    'cannot have a default factory'):
+            @dataclass
+            class C:
+                x: ClassVar[int] = field(default_factory=int)
 
     def test_is_dataclass(self):
         class NotDataClass:
@@ -1264,7 +1267,7 @@ class TestCase(unittest.TestCase):
             fields(C())
 
     def test_helper_asdict(self):
-        # Basic tests for asdict(), it should return a new dictionary
+        # Basic tests for asdict(), it should return a new dictionary.
         @dataclass
         class C:
             x: int
@@ -1279,7 +1282,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(asdict(c)), dict)
 
     def test_helper_asdict_raises_on_classes(self):
-        # asdict() should raise on a class object
+        # asdict() should raise on a class object.
         @dataclass
         class C:
             x: int
@@ -1377,7 +1380,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(d), OrderedDict)
 
     def test_helper_astuple(self):
-        # Basic tests for astuple(), it should return a new tuple
+        # Basic tests for astuple(), it should return a new tuple.
         @dataclass
         class C:
             x: int
@@ -1392,7 +1395,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(astuple(c)), tuple)
 
     def test_helper_astuple_raises_on_classes(self):
-        # astuple() should raise on a class object
+        # astuple() should raise on a class object.
         @dataclass
         class C:
             x: int
@@ -1489,7 +1492,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(t), NT)
 
     def test_dynamic_class_creation(self):
-        cls_dict = {'__annotations__': {'x':int, 'y':int},
+        cls_dict = {'__annotations__': {'x': int, 'y': int},
                     }
 
         # Create the class.
@@ -1502,7 +1505,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(asdict(cls(1, 2)), {'x': 1, 'y': 2})
 
     def test_dynamic_class_creation_using_field(self):
-        cls_dict = {'__annotations__': {'x':int, 'y':int},
+        cls_dict = {'__annotations__': {'x': int, 'y': int},
                     'y': field(default=5),
                     }
 
@@ -1569,8 +1572,8 @@ class TestCase(unittest.TestCase):
 
     def test_alternate_classmethod_constructor(self):
         # Since __post_init__ can't take params, use a classmethod
-        # alternate constructor. This is mostly an example to show how
-        # to use this technique.
+        #  alternate constructor.  This is mostly an example to show
+        #  how to use this technique.
         @dataclass
         class C:
             x: int
@@ -1604,7 +1607,7 @@ class TestCase(unittest.TestCase):
             class C:
                 i: int = field(metadata=0)
 
-        # Make sure an empty dict works
+        # Make sure an empty dict works.
         @dataclass
         class C:
             i: int = field(metadata={})
@@ -1666,7 +1669,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(box.content, 42)
         self.assertEqual(box.label, '<unknown>')
 
-        # subscripting the resulting class should work, etc.
+        # Subscripting the resulting class should work, etc.
         Alias = List[LabeledBox[int]]
 
     def test_generic_extending(self):
@@ -1692,90 +1695,22 @@ class TestCase(unittest.TestCase):
         c = Alias(10, 1.0)
         self.assertEqual(c.new_method(), 1.0)
 
-    def test_helper_replace(self):
-        @dataclass(frozen=True)
-        class C:
-            x: int
-            y: int
+    def test_generic_dynamic(self):
+        T = TypeVar('T')
 
-        c = C(1, 2)
-        c1 = replace(c, x=3)
-        self.assertEqual(c1.x, 3)
-        self.assertEqual(c1.y, 2)
-
-    def test_helper_replace_frozen(self):
-        @dataclass(frozen=True)
-        class C:
-            x: int
-            y: int
-            z: int = field(init=False, default=10)
-            t: int = field(init=False, default=100)
-
-        c = C(1, 2)
-        c1 = replace(c, x=3)
-        self.assertEqual((c.x, c.y, c.z, c.t), (1, 2, 10, 100))
-        self.assertEqual((c1.x, c1.y, c1.z, c1.t), (3, 2, 10, 100))
-
-
-        with self.assertRaisesRegex(ValueError, 'init=False'):
-            replace(c, x=3, z=20, t=50)
-        with self.assertRaisesRegex(ValueError, 'init=False'):
-            replace(c, z=20)
-            replace(c, x=3, z=20, t=50)
-
-        # Make sure the result is still frozen.
-        with self.assertRaisesRegex(FrozenInstanceError, "cannot assign to field 'x'"):
-            c1.x = 3
-
-        # Make sure we can't replace an attribute that doesn't exist,
-        #  if we're also replacing one that does exist.  Test this
-        #  here, because setting attributes on frozen instances is
-        #  handled slightly differently from non-frozen ones.
-        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
-                                             "keyword argument 'a'"):
-            c1 = replace(c, x=20, a=5)
-
-    def test_helper_replace_invalid_field_name(self):
-        @dataclass(frozen=True)
-        class C:
-            x: int
-            y: int
-
-        c = C(1, 2)
-        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
-                                    "keyword argument 'z'"):
-            c1 = replace(c, z=3)
-
-    def test_helper_replace_invalid_object(self):
-        @dataclass(frozen=True)
-        class C:
-            x: int
-            y: int
-
-        with self.assertRaisesRegex(TypeError, 'dataclass instance'):
-            replace(C, x=3)
-
-        with self.assertRaisesRegex(TypeError, 'dataclass instance'):
-            replace(0, x=3)
-
-    def test_helper_replace_no_init(self):
         @dataclass
-        class C:
-            x: int
-            y: int = field(init=False, default=10)
-
-        c = C(1)
-        c.y = 20
-
-        # Make sure y gets the default value.
-        c1 = replace(c, x=5)
-        self.assertEqual((c1.x, c1.y), (5, 10))
-
-        # Trying to replace y is an error.
-        with self.assertRaisesRegex(ValueError, 'init=False'):
-            replace(c, x=2, y=30)
-            with self.assertRaisesRegex(ValueError, 'init=False'):
-                replace(c, y=30)
+        class Parent(Generic[T]):
+            x: T
+        Child = make_dataclass('Child', [('y', T), ('z', Optional[T], None)],
+                               bases=(Parent[int], Generic[T]), namespace={'other': 42})
+        self.assertIs(Child[int](1, 2).z, None)
+        self.assertEqual(Child[int](1, 2, 3).z, 3)
+        self.assertEqual(Child[int](1, 2, 3).other, 42)
+        # Check that type aliases work correctly.
+        Alias = Child[T]
+        self.assertEqual(Alias[int](1, 2).x, 1)
+        # Check MRO resolution.
+        self.assertEqual(Child.__mro__, (Child, Parent, Generic, object))
 
     def test_dataclassses_pickleable(self):
         global P, Q, R
@@ -1806,114 +1741,6 @@ class TestCase(unittest.TestCase):
                     self.assertEqual(new_sample.x, another_new_sample.x)
                     self.assertEqual(sample.y, another_new_sample.y)
 
-    def test_helper_make_dataclass(self):
-        C = make_dataclass('C',
-                           [('x', int),
-                            ('y', int, field(default=5))],
-                           namespace={'add_one': lambda self: self.x + 1})
-        c = C(10)
-        self.assertEqual((c.x, c.y), (10, 5))
-        self.assertEqual(c.add_one(), 11)
-
-
-    def test_helper_make_dataclass_no_mutate_namespace(self):
-        # Make sure a provided namespace isn't mutated.
-        ns = {}
-        C = make_dataclass('C',
-                           [('x', int),
-                            ('y', int, field(default=5))],
-                           namespace=ns)
-        self.assertEqual(ns, {})
-
-    def test_helper_make_dataclass_base(self):
-        class Base1:
-            pass
-        class Base2:
-            pass
-        C = make_dataclass('C',
-                           [('x', int)],
-                           bases=(Base1, Base2))
-        c = C(2)
-        self.assertIsInstance(c, C)
-        self.assertIsInstance(c, Base1)
-        self.assertIsInstance(c, Base2)
-
-    def test_helper_make_dataclass_base_dataclass(self):
-        @dataclass
-        class Base1:
-            x: int
-        class Base2:
-            pass
-        C = make_dataclass('C',
-                           [('y', int)],
-                           bases=(Base1, Base2))
-        with self.assertRaisesRegex(TypeError, 'required positional'):
-            c = C(2)
-        c = C(1, 2)
-        self.assertIsInstance(c, C)
-        self.assertIsInstance(c, Base1)
-        self.assertIsInstance(c, Base2)
-
-        self.assertEqual((c.x, c.y), (1, 2))
-
-    def test_helper_make_dataclass_init_var(self):
-        def post_init(self, y):
-            self.x *= y
-
-        C = make_dataclass('C',
-                           [('x', int),
-                            ('y', InitVar[int]),
-                            ],
-                           namespace={'__post_init__': post_init},
-                           )
-        c = C(2, 3)
-        self.assertEqual(vars(c), {'x': 6})
-        self.assertEqual(len(fields(c)), 1)
-
-    def test_helper_make_dataclass_class_var(self):
-        C = make_dataclass('C',
-                           [('x', int),
-                            ('y', ClassVar[int], 10),
-                            ('z', ClassVar[int], field(default=20)),
-                            ])
-        c = C(1)
-        self.assertEqual(vars(c), {'x': 1})
-        self.assertEqual(len(fields(c)), 1)
-        self.assertEqual(C.y, 10)
-        self.assertEqual(C.z, 20)
-
-    def test_helper_make_dataclass_other_params(self):
-        C = make_dataclass('C',
-                           [('x', int),
-                            ('y', ClassVar[int], 10),
-                            ('z', ClassVar[int], field(default=20)),
-                            ],
-                           init=False)
-        # Make sure we have a repr, but no init.
-        self.assertNotIn('__init__', vars(C))
-        self.assertIn('__repr__', vars(C))
-
-        # Make sure random other params don't work.
-        with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
-            C = make_dataclass('C',
-                               [],
-                               xxinit=False)
-
-    def test_helper_make_dataclass_no_types(self):
-        C = make_dataclass('Point', ['x', 'y', 'z'])
-        c = C(1, 2, 3)
-        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
-                                             'y': 'typing.Any',
-                                             'z': 'typing.Any'})
-
-        C = make_dataclass('Point', ['x', ('y', int), 'z'])
-        c = C(1, 2, 3)
-        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
-                                             'y': int,
-                                             'z': 'typing.Any'})
-
 
 class TestFieldNoAnnotation(unittest.TestCase):
     def test_field_without_annotation(self):
@@ -1931,7 +1758,7 @@ class TestFieldNoAnnotation(unittest.TestCase):
         with self.assertRaisesRegex(TypeError,
                                     "'f' is a field but has no type annotation"):
             # This is still an error: make sure we don't pick up the
-            # type annotation in the base class.
+            #  type annotation in the base class.
             @dataclass
             class C(B):
                 f = field()
@@ -1944,7 +1771,7 @@ class TestFieldNoAnnotation(unittest.TestCase):
         with self.assertRaisesRegex(TypeError,
                                     "'f' is a field but has no type annotation"):
             # This is still an error: make sure we don't pick up the
-            # type annotation in the base class.
+            #  type annotation in the base class.
             @dataclass
             class C(B):
                 f = field()
@@ -2174,33 +2001,6 @@ class TestRepr(unittest.TestCase):
             def __repr__(self):
                 return 'x'
         self.assertEqual(repr(C(0)), 'x')
-
-
-class TestFrozen(unittest.TestCase):
-    def test_overwriting_frozen(self):
-        # frozen uses __setattr__ and __delattr__
-        with self.assertRaisesRegex(TypeError,
-                                    'Cannot overwrite attribute __setattr__'):
-            @dataclass(frozen=True)
-            class C:
-                x: int
-                def __setattr__(self):
-                    pass
-
-        with self.assertRaisesRegex(TypeError,
-                                    'Cannot overwrite attribute __delattr__'):
-            @dataclass(frozen=True)
-            class C:
-                x: int
-                def __delattr__(self):
-                    pass
-
-        @dataclass(frozen=False)
-        class C:
-            x: int
-            def __setattr__(self, name, value):
-                self.__dict__['x'] = value * 2
-        self.assertEqual(C(10).x, 20)
 
 
 class TestEq(unittest.TestCase):
@@ -2473,16 +2273,16 @@ class TestHash(unittest.TestCase):
 
     def test_hash_no_args(self):
         # Test dataclasses with no hash= argument.  This exists to
-        # make sure that if the @dataclass parameter name is changed
-        # or the non-default hashing behavior changes, the default
-        # hashability keeps working the same way.
+        #  make sure that if the @dataclass parameter name is changed
+        #  or the non-default hashing behavior changes, the default
+        #  hashability keeps working the same way.
 
         class Base:
             def __hash__(self):
                 return 301
 
         # If frozen or eq is None, then use the default value (do not
-        # specify any value in the decorator).
+        #  specify any value in the decorator).
         for frozen, eq,    base,   expected       in [
             (None,  None,  object, 'unhashable'),
             (None,  None,  Base,   'unhashable'),
@@ -2534,9 +2334,9 @@ class TestHash(unittest.TestCase):
 
                 elif expected == 'object':
                     # I'm not sure what test to use here.  object's
-                    # hash isn't based on id(), so calling hash()
-                    # won't tell us much.  So, just check the function
-                    # used is object's.
+                    #  hash isn't based on id(), so calling hash()
+                    #  won't tell us much.  So, just check the
+                    #  function used is object's.
                     self.assertIs(C.__hash__, object.__hash__)
 
                 elif expected == 'tuple':
@@ -2657,6 +2457,44 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(s.y, 10)
         self.assertEqual(s.cached, True)
 
+    def test_overwriting_frozen(self):
+        # frozen uses __setattr__ and __delattr__.
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __setattr__'):
+            @dataclass(frozen=True)
+            class C:
+                x: int
+                def __setattr__(self):
+                    pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'Cannot overwrite attribute __delattr__'):
+            @dataclass(frozen=True)
+            class C:
+                x: int
+                def __delattr__(self):
+                    pass
+
+        @dataclass(frozen=False)
+        class C:
+            x: int
+            def __setattr__(self, name, value):
+                self.__dict__['x'] = value * 2
+        self.assertEqual(C(10).x, 20)
+
+    def test_frozen_hash(self):
+        @dataclass(frozen=True)
+        class C:
+            x: Any
+
+        # If x is immutable, we can compute the hash.  No exception is
+        # raised.
+        hash(C(3))
+
+        # If x is mutable, computing the hash is an error.
+        with self.assertRaisesRegex(TypeError, 'unhashable type'):
+            hash(C({}))
+
 
 class TestSlots(unittest.TestCase):
     def test_simple(self):
@@ -2665,8 +2503,9 @@ class TestSlots(unittest.TestCase):
             __slots__ = ('x',)
             x: Any
 
-        # There was a bug where a variable in a slot was assumed
-        #  to also have a default value (of type types.MemberDescriptorType).
+        # There was a bug where a variable in a slot was assumed to
+        #  also have a default value (of type
+        #  types.MemberDescriptorType).
         with self.assertRaisesRegex(TypeError,
                                     r"__init__\(\) missing 1 required positional argument: 'x'"):
             C()
@@ -2698,6 +2537,522 @@ class TestSlots(unittest.TestCase):
 
         # We can add a new field to the derived instance.
         d.z = 10
+
+class TestDescriptors(unittest.TestCase):
+    def test_set_name(self):
+        # See bpo-33141.
+
+        # Create a descriptor.
+        class D:
+            def __set_name__(self, owner, name):
+                self.name = name + 'x'
+            def __get__(self, instance, owner):
+                if instance is not None:
+                    return 1
+                return self
+
+        # This is the case of just normal descriptor behavior, no
+        #  dataclass code is involved in initializing the descriptor.
+        @dataclass
+        class C:
+            c: int=D()
+        self.assertEqual(C.c.name, 'cx')
+
+        # Now test with a default value and init=False, which is the
+        #  only time this is really meaningful.  If not using
+        #  init=False, then the descriptor will be overwritten, anyway.
+        @dataclass
+        class C:
+            c: int=field(default=D(), init=False)
+        self.assertEqual(C.c.name, 'cx')
+        self.assertEqual(C().c, 1)
+
+    def test_non_descriptor(self):
+        # PEP 487 says __set_name__ should work on non-descriptors.
+        # Create a descriptor.
+
+        class D:
+            def __set_name__(self, owner, name):
+                self.name = name + 'x'
+
+        @dataclass
+        class C:
+            c: int=field(default=D(), init=False)
+        self.assertEqual(C.c.name, 'cx')
+
+    def test_lookup_on_instance(self):
+        # See bpo-33175.
+        class D:
+            pass
+
+        d = D()
+        # Create an attribute on the instance, not type.
+        d.__set_name__ = Mock()
+
+        # Make sure d.__set_name__ is not called.
+        @dataclass
+        class C:
+            i: int=field(default=d, init=False)
+
+        self.assertEqual(d.__set_name__.call_count, 0)
+
+    def test_lookup_on_class(self):
+        # See bpo-33175.
+        class D:
+            pass
+        D.__set_name__ = Mock()
+
+        # Make sure D.__set_name__ is called.
+        @dataclass
+        class C:
+            i: int=field(default=D(), init=False)
+
+        self.assertEqual(D.__set_name__.call_count, 1)
+
+
+class TestStringAnnotations(unittest.TestCase):
+    def test_classvar(self):
+        # Some expressions recognized as ClassVar really aren't.  But
+        #  if you're using string annotations, it's not an exact
+        #  science.
+        # These tests assume that both "import typing" and "from
+        # typing import *" have been run in this file.
+        for typestr in ('ClassVar[int]',
+                        'ClassVar [int]'
+                        ' ClassVar [int]',
+                        'ClassVar',
+                        ' ClassVar ',
+                        'typing.ClassVar[int]',
+                        'typing.ClassVar[str]',
+                        ' typing.ClassVar[str]',
+                        'typing .ClassVar[str]',
+                        'typing. ClassVar[str]',
+                        'typing.ClassVar [str]',
+                        'typing.ClassVar [ str]',
+
+                        # Not syntactically valid, but these will
+                        #  be treated as ClassVars.
+                        'typing.ClassVar.[int]',
+                        'typing.ClassVar+',
+                        ):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is a ClassVar, so C() takes no args.
+                C()
+
+                # And it won't appear in the class's dict because it doesn't
+                # have a default.
+                self.assertNotIn('x', C.__dict__)
+
+    def test_isnt_classvar(self):
+        for typestr in ('CV',
+                        't.ClassVar',
+                        't.ClassVar[int]',
+                        'typing..ClassVar[int]',
+                        'Classvar',
+                        'Classvar[int]',
+                        'typing.ClassVarx[int]',
+                        'typong.ClassVar[int]',
+                        'dataclasses.ClassVar[int]',
+                        'typingxClassVar[str]',
+                        ):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is not a ClassVar, so C() takes one arg.
+                self.assertEqual(C(10).x, 10)
+
+    def test_initvar(self):
+        # These tests assume that both "import dataclasses" and "from
+        #  dataclasses import *" have been run in this file.
+        for typestr in ('InitVar[int]',
+                        'InitVar [int]'
+                        ' InitVar [int]',
+                        'InitVar',
+                        ' InitVar ',
+                        'dataclasses.InitVar[int]',
+                        'dataclasses.InitVar[str]',
+                        ' dataclasses.InitVar[str]',
+                        'dataclasses .InitVar[str]',
+                        'dataclasses. InitVar[str]',
+                        'dataclasses.InitVar [str]',
+                        'dataclasses.InitVar [ str]',
+
+                        # Not syntactically valid, but these will
+                        #  be treated as InitVars.
+                        'dataclasses.InitVar.[int]',
+                        'dataclasses.InitVar+',
+                        ):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is an InitVar, so doesn't create a member.
+                with self.assertRaisesRegex(AttributeError,
+                                            "object has no attribute 'x'"):
+                    C(1).x
+
+    def test_isnt_initvar(self):
+        for typestr in ('IV',
+                        'dc.InitVar',
+                        'xdataclasses.xInitVar',
+                        'typing.xInitVar[int]',
+                        ):
+            with self.subTest(typestr=typestr):
+                @dataclass
+                class C:
+                    x: typestr
+
+                # x is not an InitVar, so there will be a member x.
+                self.assertEqual(C(10).x, 10)
+
+    def test_classvar_module_level_import(self):
+        from . import dataclass_module_1
+        from . import dataclass_module_1_str
+        from . import dataclass_module_2
+        from . import dataclass_module_2_str
+
+        for m in (dataclass_module_1, dataclass_module_1_str,
+                  dataclass_module_2, dataclass_module_2_str,
+                  ):
+            with self.subTest(m=m):
+                # There's a difference in how the ClassVars are
+                # interpreted when using string annotations or
+                # not. See the imported modules for details.
+                if m.USING_STRINGS:
+                    c = m.CV(10)
+                else:
+                    c = m.CV()
+                self.assertEqual(c.cv0, 20)
+
+
+                # There's a difference in how the InitVars are
+                # interpreted when using string annotations or
+                # not. See the imported modules for details.
+                c = m.IV(0, 1, 2, 3, 4)
+
+                for field_name in ('iv0', 'iv1', 'iv2', 'iv3'):
+                    with self.subTest(field_name=field_name):
+                        with self.assertRaisesRegex(AttributeError, f"object has no attribute '{field_name}'"):
+                            # Since field_name is an InitVar, it's
+                            # not an instance field.
+                            getattr(c, field_name)
+
+                if m.USING_STRINGS:
+                    # iv4 is interpreted as a normal field.
+                    self.assertIn('not_iv4', c.__dict__)
+                    self.assertEqual(c.not_iv4, 4)
+                else:
+                    # iv4 is interpreted as an InitVar, so it
+                    # won't exist on the instance.
+                    self.assertNotIn('not_iv4', c.__dict__)
+
+
+class TestMakeDataclass(unittest.TestCase):
+    def test_simple(self):
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', int, field(default=5))],
+                           namespace={'add_one': lambda self: self.x + 1})
+        c = C(10)
+        self.assertEqual((c.x, c.y), (10, 5))
+        self.assertEqual(c.add_one(), 11)
+
+
+    def test_no_mutate_namespace(self):
+        # Make sure a provided namespace isn't mutated.
+        ns = {}
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', int, field(default=5))],
+                           namespace=ns)
+        self.assertEqual(ns, {})
+
+    def test_base(self):
+        class Base1:
+            pass
+        class Base2:
+            pass
+        C = make_dataclass('C',
+                           [('x', int)],
+                           bases=(Base1, Base2))
+        c = C(2)
+        self.assertIsInstance(c, C)
+        self.assertIsInstance(c, Base1)
+        self.assertIsInstance(c, Base2)
+
+    def test_base_dataclass(self):
+        @dataclass
+        class Base1:
+            x: int
+        class Base2:
+            pass
+        C = make_dataclass('C',
+                           [('y', int)],
+                           bases=(Base1, Base2))
+        with self.assertRaisesRegex(TypeError, 'required positional'):
+            c = C(2)
+        c = C(1, 2)
+        self.assertIsInstance(c, C)
+        self.assertIsInstance(c, Base1)
+        self.assertIsInstance(c, Base2)
+
+        self.assertEqual((c.x, c.y), (1, 2))
+
+    def test_init_var(self):
+        def post_init(self, y):
+            self.x *= y
+
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', InitVar[int]),
+                            ],
+                           namespace={'__post_init__': post_init},
+                           )
+        c = C(2, 3)
+        self.assertEqual(vars(c), {'x': 6})
+        self.assertEqual(len(fields(c)), 1)
+
+    def test_class_var(self):
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', ClassVar[int], 10),
+                            ('z', ClassVar[int], field(default=20)),
+                            ])
+        c = C(1)
+        self.assertEqual(vars(c), {'x': 1})
+        self.assertEqual(len(fields(c)), 1)
+        self.assertEqual(C.y, 10)
+        self.assertEqual(C.z, 20)
+
+    def test_other_params(self):
+        C = make_dataclass('C',
+                           [('x', int),
+                            ('y', ClassVar[int], 10),
+                            ('z', ClassVar[int], field(default=20)),
+                            ],
+                           init=False)
+        # Make sure we have a repr, but no init.
+        self.assertNotIn('__init__', vars(C))
+        self.assertIn('__repr__', vars(C))
+
+        # Make sure random other params don't work.
+        with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
+            C = make_dataclass('C',
+                               [],
+                               xxinit=False)
+
+    def test_no_types(self):
+        C = make_dataclass('Point', ['x', 'y', 'z'])
+        c = C(1, 2, 3)
+        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
+        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+                                             'y': 'typing.Any',
+                                             'z': 'typing.Any'})
+
+        C = make_dataclass('Point', ['x', ('y', int), 'z'])
+        c = C(1, 2, 3)
+        self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
+        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+                                             'y': int,
+                                             'z': 'typing.Any'})
+
+    def test_invalid_type_specification(self):
+        for bad_field in [(),
+                          (1, 2, 3, 4),
+                          ]:
+            with self.subTest(bad_field=bad_field):
+                with self.assertRaisesRegex(TypeError, r'Invalid field: '):
+                    make_dataclass('C', ['a', bad_field])
+
+        # And test for things with no len().
+        for bad_field in [float,
+                          lambda x:x,
+                          ]:
+            with self.subTest(bad_field=bad_field):
+                with self.assertRaisesRegex(TypeError, r'has no len\(\)'):
+                    make_dataclass('C', ['a', bad_field])
+
+    def test_duplicate_field_names(self):
+        for field in ['a', 'ab']:
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(TypeError, 'Field name duplicated'):
+                    make_dataclass('C', [field, 'a', field])
+
+    def test_keyword_field_names(self):
+        for field in ['for', 'async', 'await', 'as']:
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(TypeError, 'must not be keywords'):
+                    make_dataclass('C', ['a', field])
+                with self.assertRaisesRegex(TypeError, 'must not be keywords'):
+                    make_dataclass('C', [field])
+                with self.assertRaisesRegex(TypeError, 'must not be keywords'):
+                    make_dataclass('C', [field, 'a'])
+
+    def test_non_identifier_field_names(self):
+        for field in ['()', 'x,y', '*', '2@3', '', 'little johnny tables']:
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                    make_dataclass('C', ['a', field])
+                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                    make_dataclass('C', [field])
+                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                    make_dataclass('C', [field, 'a'])
+
+    def test_underscore_field_names(self):
+        # Unlike namedtuple, it's okay if dataclass field names have
+        # an underscore.
+        make_dataclass('C', ['_', '_a', 'a_a', 'a_'])
+
+    def test_funny_class_names_names(self):
+        # No reason to prevent weird class names, since
+        # types.new_class allows them.
+        for classname in ['()', 'x,y', '*', '2@3', '']:
+            with self.subTest(classname=classname):
+                C = make_dataclass(classname, ['a', 'b'])
+                self.assertEqual(C.__name__, classname)
+
+class TestReplace(unittest.TestCase):
+    def test(self):
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            y: int
+
+        c = C(1, 2)
+        c1 = replace(c, x=3)
+        self.assertEqual(c1.x, 3)
+        self.assertEqual(c1.y, 2)
+
+    def test_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            y: int
+            z: int = field(init=False, default=10)
+            t: int = field(init=False, default=100)
+
+        c = C(1, 2)
+        c1 = replace(c, x=3)
+        self.assertEqual((c.x, c.y, c.z, c.t), (1, 2, 10, 100))
+        self.assertEqual((c1.x, c1.y, c1.z, c1.t), (3, 2, 10, 100))
+
+
+        with self.assertRaisesRegex(ValueError, 'init=False'):
+            replace(c, x=3, z=20, t=50)
+        with self.assertRaisesRegex(ValueError, 'init=False'):
+            replace(c, z=20)
+            replace(c, x=3, z=20, t=50)
+
+        # Make sure the result is still frozen.
+        with self.assertRaisesRegex(FrozenInstanceError, "cannot assign to field 'x'"):
+            c1.x = 3
+
+        # Make sure we can't replace an attribute that doesn't exist,
+        #  if we're also replacing one that does exist.  Test this
+        #  here, because setting attributes on frozen instances is
+        #  handled slightly differently from non-frozen ones.
+        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
+                                             "keyword argument 'a'"):
+            c1 = replace(c, x=20, a=5)
+
+    def test_invalid_field_name(self):
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            y: int
+
+        c = C(1, 2)
+        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
+                                    "keyword argument 'z'"):
+            c1 = replace(c, z=3)
+
+    def test_invalid_object(self):
+        @dataclass(frozen=True)
+        class C:
+            x: int
+            y: int
+
+        with self.assertRaisesRegex(TypeError, 'dataclass instance'):
+            replace(C, x=3)
+
+        with self.assertRaisesRegex(TypeError, 'dataclass instance'):
+            replace(0, x=3)
+
+    def test_no_init(self):
+        @dataclass
+        class C:
+            x: int
+            y: int = field(init=False, default=10)
+
+        c = C(1)
+        c.y = 20
+
+        # Make sure y gets the default value.
+        c1 = replace(c, x=5)
+        self.assertEqual((c1.x, c1.y), (5, 10))
+
+        # Trying to replace y is an error.
+        with self.assertRaisesRegex(ValueError, 'init=False'):
+            replace(c, x=2, y=30)
+
+        with self.assertRaisesRegex(ValueError, 'init=False'):
+            replace(c, y=30)
+
+    def test_classvar(self):
+        @dataclass
+        class C:
+            x: int
+            y: ClassVar[int] = 1000
+
+        c = C(1)
+        d = C(2)
+
+        self.assertIs(c.y, d.y)
+        self.assertEqual(c.y, 1000)
+
+        # Trying to replace y is an error: can't replace ClassVars.
+        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an "
+                                    "unexpected keyword argument 'y'"):
+            replace(c, y=30)
+
+        replace(c, x=5)
+
+    def test_initvar_is_specified(self):
+        @dataclass
+        class C:
+            x: int
+            y: InitVar[int]
+
+            def __post_init__(self, y):
+                self.x *= y
+
+        c = C(1, 10)
+        self.assertEqual(c.x, 10)
+        with self.assertRaisesRegex(ValueError, r"InitVar 'y' must be "
+                                    "specified with replace()"):
+            replace(c, x=3)
+        c = replace(c, x=3, y=5)
+        self.assertEqual(c.x, 15)
+    ## def test_initvar(self):
+    ##     @dataclass
+    ##     class C:
+    ##         x: int
+    ##         y: InitVar[int]
+
+    ##     c = C(1, 10)
+    ##     d = C(2, 20)
+
+    ##     # In our case, replacing an InitVar is a no-op
+    ##     self.assertEqual(c, replace(c, y=5))
+
+    ##     replace(c, x=5)
 
 
 if __name__ == '__main__':

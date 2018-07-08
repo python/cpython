@@ -11,6 +11,7 @@ import pkgutil
 import re
 import stat
 import string
+import tempfile
 import test.support
 import time
 import types
@@ -1084,6 +1085,71 @@ class PydocWithMetaClasses(unittest.TestCase):
         self.assertIn('class Enum', helptext)
 
 
+class TestInternalUtilities(unittest.TestCase):
+
+    def setUp(self):
+        tmpdir = tempfile.TemporaryDirectory()
+        self.argv0dir = tmpdir.name
+        self.argv0 = os.path.join(tmpdir.name, "nonexistent")
+        self.addCleanup(tmpdir.cleanup)
+        self.abs_curdir = abs_curdir = os.getcwd()
+        self.curdir_spellings = ["", os.curdir, abs_curdir]
+
+    def _get_revised_path(self, given_path, argv0=None):
+        # Checking that pydoc.cli() actually calls pydoc._get_revised_path()
+        # is handled via code review (at least for now).
+        if argv0 is None:
+            argv0 = self.argv0
+        return pydoc._get_revised_path(given_path, argv0)
+
+    def _get_starting_path(self):
+        # Get a copy of sys.path without the current directory.
+        clean_path = sys.path.copy()
+        for spelling in self.curdir_spellings:
+            for __ in range(clean_path.count(spelling)):
+                clean_path.remove(spelling)
+        return clean_path
+
+    def test_sys_path_adjustment_adds_missing_curdir(self):
+        clean_path = self._get_starting_path()
+        expected_path = [self.abs_curdir] + clean_path
+        self.assertEqual(self._get_revised_path(clean_path), expected_path)
+
+    def test_sys_path_adjustment_removes_argv0_dir(self):
+        clean_path = self._get_starting_path()
+        expected_path = [self.abs_curdir] + clean_path
+        leading_argv0dir = [self.argv0dir] + clean_path
+        self.assertEqual(self._get_revised_path(leading_argv0dir), expected_path)
+        trailing_argv0dir = clean_path + [self.argv0dir]
+        self.assertEqual(self._get_revised_path(trailing_argv0dir), expected_path)
+
+
+    def test_sys_path_adjustment_protects_pydoc_dir(self):
+        def _get_revised_path(given_path):
+            return self._get_revised_path(given_path, argv0=pydoc.__file__)
+        clean_path = self._get_starting_path()
+        leading_argv0dir = [self.argv0dir] + clean_path
+        expected_path = [self.abs_curdir] + leading_argv0dir
+        self.assertEqual(_get_revised_path(leading_argv0dir), expected_path)
+        trailing_argv0dir = clean_path + [self.argv0dir]
+        expected_path = [self.abs_curdir] + trailing_argv0dir
+        self.assertEqual(_get_revised_path(trailing_argv0dir), expected_path)
+
+    def test_sys_path_adjustment_when_curdir_already_included(self):
+        clean_path = self._get_starting_path()
+        for spelling in self.curdir_spellings:
+            with self.subTest(curdir_spelling=spelling):
+                # If curdir is already present, no alterations are made at all
+                leading_curdir = [spelling] + clean_path
+                self.assertIsNone(self._get_revised_path(leading_curdir))
+                trailing_curdir = clean_path + [spelling]
+                self.assertIsNone(self._get_revised_path(trailing_curdir))
+                leading_argv0dir = [self.argv0dir] + leading_curdir
+                self.assertIsNone(self._get_revised_path(leading_argv0dir))
+                trailing_argv0dir = trailing_curdir + [self.argv0dir]
+                self.assertIsNone(self._get_revised_path(trailing_argv0dir))
+
+
 @reap_threads
 def test_main():
     try:
@@ -1094,6 +1160,7 @@ def test_main():
                                   PydocUrlHandlerTest,
                                   TestHelper,
                                   PydocWithMetaClasses,
+                                  TestInternalUtilities,
                                   )
     finally:
         reap_children()
