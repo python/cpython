@@ -828,6 +828,13 @@ Exceptions
    disconnect occurs, the data source name is not found, a transaction could
    not be processed, etc.  It is a subclass of :exc:`DatabaseError`.
 
+.. exception:: NotSupportedError
+
+   Exception raised in case a method or database API was used which is not
+   supported by the database, e.g. calling the :meth:`~Connection.rollback`
+   method on a connection that does not support transaction or has
+   transactions turned off.  It is a subclass of :exc:`DatabaseError`.
+
 
 .. _sqlite3-types:
 
