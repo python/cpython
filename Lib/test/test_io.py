@@ -37,6 +37,7 @@ from collections import deque, UserList
 from itertools import cycle, count
 from test import support
 from test.support.script_helper import assert_python_ok, run_python_until_end
+from test.support import FakePath
 
 import codecs
 import io  # C implementation of io
@@ -891,13 +892,6 @@ class IOTest(unittest.TestCase):
                 self.assertEqual(bytes(buffer), b"12345")
 
     def test_fspath_support(self):
-        class PathLike:
-            def __init__(self, path):
-                self.path = path
-
-            def __fspath__(self):
-                return self.path
-
         def check_path_succeeds(path):
             with self.open(path, "w") as f:
                 f.write("egg\n")
@@ -905,16 +899,25 @@ class IOTest(unittest.TestCase):
             with self.open(path, "r") as f:
                 self.assertEqual(f.read(), "egg\n")
 
-        check_path_succeeds(PathLike(support.TESTFN))
-        check_path_succeeds(PathLike(support.TESTFN.encode('utf-8')))
+        check_path_succeeds(FakePath(support.TESTFN))
+        check_path_succeeds(FakePath(support.TESTFN.encode('utf-8')))
 
-        bad_path = PathLike(TypeError)
+        with self.open(support.TESTFN, "w") as f:
+            bad_path = FakePath(f.fileno())
+            with self.assertRaises(TypeError):
+                self.open(bad_path, 'w')
+
+        bad_path = FakePath(None)
         with self.assertRaises(TypeError):
+            self.open(bad_path, 'w')
+
+        bad_path = FakePath(FloatingPointError)
+        with self.assertRaises(FloatingPointError):
             self.open(bad_path, 'w')
 
         # ensure that refcounting is correct with some error conditions
         with self.assertRaisesRegex(ValueError, 'read/write/append mode'):
-            self.open(PathLike(support.TESTFN), 'rwxa')
+            self.open(FakePath(support.TESTFN), 'rwxa')
 
     def test_RawIOBase_readall(self):
         # Exercise the default unlimited RawIOBase.read() and readall()
@@ -1513,6 +1516,7 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     def test_garbage_collection(self):
         # C BufferedReader objects are collected.
         # The Python version has __del__, so it ends into gc.garbage instead
+        self.addCleanup(support.unlink, support.TESTFN)
         with support.check_warnings(('', ResourceWarning)):
             rawio = self.FileIO(support.TESTFN, "w+b")
             f = self.tp(rawio)
@@ -1715,6 +1719,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 
     def test_truncate(self):
         # Truncate implicitly flushes the buffer.
+        self.addCleanup(support.unlink, support.TESTFN)
         with self.open(support.TESTFN, self.write_mode, buffering=0) as raw:
             bufio = self.tp(raw, 8)
             bufio.write(b"abcdef")
@@ -1727,6 +1732,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         # Ensure that truncate preserves the file position after
         # writes longer than the buffer size.
         # Issue: https://bugs.python.org/issue32228
+        self.addCleanup(support.unlink, support.TESTFN)
         with self.open(support.TESTFN, "wb") as f:
             # Fill with some buffer
             f.write(b'\x00' * 10000)
@@ -1848,6 +1854,7 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
         # C BufferedWriter objects are collected, and collecting them flushes
         # all data to disk.
         # The Python version has __del__, so it ends into gc.garbage instead
+        self.addCleanup(support.unlink, support.TESTFN)
         with support.check_warnings(('', ResourceWarning)):
             rawio = self.FileIO(support.TESTFN, "w+b")
             f = self.tp(rawio)
@@ -3541,6 +3548,17 @@ class TextIOWrapperTest(unittest.TestCase):
         txt.write('CRLF\n')
         expected = 'linesep' + os.linesep + 'LF\nLF\nCR\rCRLF\r\n'
         self.assertEqual(txt.detach().getvalue().decode('ascii'), expected)
+
+    def test_issue25862(self):
+        # Assertion failures occurred in tell() after read() and write().
+        t = self.TextIOWrapper(self.BytesIO(b'test'), encoding='ascii')
+        t.read(1)
+        t.read()
+        t.tell()
+        t = self.TextIOWrapper(self.BytesIO(b'test'), encoding='ascii')
+        t.read(1)
+        t.write('x')
+        t.tell()
 
 
 class MemviewBytesIO(io.BytesIO):

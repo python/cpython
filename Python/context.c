@@ -8,7 +8,7 @@
 
 #define CONTEXT_FREELIST_MAXLEN 255
 static PyContext *ctx_freelist = NULL;
-static Py_ssize_t ctx_freelist_len = 0;
+static int ctx_freelist_len = 0;
 
 
 #include "clinic/context.c.h"
@@ -940,6 +940,10 @@ contextvar_cls_getitem(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyMemberDef PyContextVar_members[] = {
+    {"name", T_OBJECT, offsetof(PyContextVar, var_name), READONLY},
+    {NULL}
+};
 
 static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_GET_METHODDEF
@@ -955,6 +959,7 @@ PyTypeObject PyContextVar_Type = {
     "ContextVar",
     sizeof(PyContextVar),
     .tp_methods = PyContextVar_methods,
+    .tp_members = PyContextVar_members,
     .tp_dealloc = (destructor)contextvar_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
@@ -1177,7 +1182,7 @@ get_token_missing(void)
 int
 PyContext_ClearFreeList(void)
 {
-    Py_ssize_t size = ctx_freelist_len;
+    int size = ctx_freelist_len;
     while (ctx_freelist_len) {
         PyContext *ctx = ctx_freelist;
         ctx_freelist = (PyContext *)ctx->ctx_weakreflist;

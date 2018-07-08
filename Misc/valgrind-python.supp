@@ -8,7 +8,7 @@
 #		./python -E ./Lib/test/regrtest.py -u gui,network
 #
 # You must edit Objects/obmalloc.c and uncomment Py_USING_MEMORY_DEBUGGER
-# to use the preferred suppressions with Py_ADDRESS_IN_RANGE.
+# to use the preferred suppressions with address_in_range.
 #
 # If you do not want to recompile Python, you can uncomment
 # suppressions for PyObject_Free and PyObject_Realloc.
@@ -19,25 +19,25 @@
 {
    ADDRESS_IN_RANGE/Invalid read of size 4
    Memcheck:Addr4
-   fun:Py_ADDRESS_IN_RANGE
+   fun:address_in_range
 }
 
 {
    ADDRESS_IN_RANGE/Invalid read of size 4
    Memcheck:Value4
-   fun:Py_ADDRESS_IN_RANGE
+   fun:address_in_range
 }
 
 {
    ADDRESS_IN_RANGE/Invalid read of size 8 (x86_64 aka amd64)
    Memcheck:Value8
-   fun:Py_ADDRESS_IN_RANGE
+   fun:address_in_range
 }
 
 {
    ADDRESS_IN_RANGE/Conditional jump or move depends on uninitialised value
    Memcheck:Cond
-   fun:Py_ADDRESS_IN_RANGE
+   fun:address_in_range
 }
 
 #

@@ -323,6 +323,9 @@ static const IntConstantPair _int_constants[] = {
 #if SQLITE_VERSION_NUMBER >= 3008003
     {"SQLITE_RECURSIVE", SQLITE_RECURSIVE},
 #endif
+#if SQLITE_VERSION_NUMBER >= 3006011
+    {"SQLITE_DONE", SQLITE_DONE},
+#endif
     {(char*)NULL, 0}
 };
 

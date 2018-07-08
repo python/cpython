@@ -1,4 +1,3 @@
-
 /* Thread and interpreter state structures and their interfaces */
 
 
@@ -7,6 +6,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "pythread.h"
 
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
@@ -42,6 +43,7 @@ typedef struct {
     int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
     int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
     int utf8_mode;          /* PYTHONUTF8, -X utf8; -1 means unknown */
+    wchar_t *pycache_prefix; /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
 
     wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
     int argc;               /* Number of command line arguments,
@@ -99,6 +101,7 @@ typedef struct {
     PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
     PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
     PyObject *module_search_path;  /* sys.path list */
+    PyObject *pycache_prefix;      /* sys.pycache_prefix str, can be NULL */
 } _PyMainInterpreterConfig;
 
 #define _PyMainInterpreterConfig_INIT \
@@ -111,6 +114,8 @@ typedef struct _is {
     struct _ts *tstate_head;
 
     int64_t id;
+    int64_t id_refcount;
+    PyThread_type_lock id_mutex;
 
     PyObject *modules;
     PyObject *modules_by_index;

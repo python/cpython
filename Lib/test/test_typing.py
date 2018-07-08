@@ -253,10 +253,11 @@ class UnionTests(BaseTestCase):
     def test_union_object(self):
         u = Union[object]
         self.assertEqual(u, object)
-        u = Union[int, object]
-        self.assertEqual(u, object)
-        u = Union[object, int]
-        self.assertEqual(u, object)
+        u1 = Union[int, object]
+        u2 = Union[object, int]
+        self.assertEqual(u1, u2)
+        self.assertNotEqual(u1, object)
+        self.assertNotEqual(u2, object)
 
     def test_unordered(self):
         u1 = Union[int, float]
@@ -267,13 +268,11 @@ class UnionTests(BaseTestCase):
         t = Union[Employee]
         self.assertIs(t, Employee)
 
-    def test_base_class_disappears(self):
-        u = Union[Employee, Manager, int]
-        self.assertEqual(u, Union[int, Employee])
-        u = Union[Manager, int, Employee]
-        self.assertEqual(u, Union[int, Employee])
+    def test_base_class_kept(self):
         u = Union[Employee, Manager]
-        self.assertIs(u, Employee)
+        self.assertNotEqual(u, Employee)
+        self.assertIn(Employee, u.__args__)
+        self.assertIn(Manager, u.__args__)
 
     def test_union_union(self):
         u = Union[int, float]
@@ -317,7 +316,8 @@ class UnionTests(BaseTestCase):
     def test_union_generalization(self):
         self.assertFalse(Union[str, typing.Iterable[int]] == str)
         self.assertFalse(Union[str, typing.Iterable[int]] == typing.Iterable[int])
-        self.assertTrue(Union[str, typing.Iterable] == typing.Iterable)
+        self.assertIn(str, Union[str, typing.Iterable[int]].__args__)
+        self.assertIn(typing.Iterable[int], Union[str, typing.Iterable[int]].__args__)
 
     def test_union_compare_other(self):
         self.assertNotEqual(Union, object)
@@ -761,8 +761,8 @@ class GenericTests(BaseTestCase):
         self.assertIsInstance(1, C)
         C[int]
         self.assertIsInstance(1, C)
-        C._abc_registry.clear()
-        C._abc_cache.clear()  # To keep refleak hunting mode clean
+        C._abc_registry_clear()
+        C._abc_caches_clear()  # To keep refleak hunting mode clean
 
     def test_false_subclasses(self):
         class MyMapping(MutableMapping[str, str]): pass
@@ -917,7 +917,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Union[T, U][int, Union[int, str]], Union[int, str])
         class Base: ...
         class Derived(Base): ...
-        self.assertEqual(Union[T, Base][Derived], Base)
+        self.assertEqual(Union[T, Base][Union[Base, Derived]], Union[Base, Derived])
         with self.assertRaises(TypeError):
             Union[T, int][1]
 
@@ -1057,20 +1057,21 @@ class GenericTests(BaseTestCase):
             self.assertEqual(x.foo, 42)
             self.assertEqual(x.bar, 'abc')
             self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
-        samples = [Any, Union, Tuple, Callable, ClassVar]
+        samples = [Any, Union, Tuple, Callable, ClassVar,
+                   Union[int, str], ClassVar[List], Tuple[int, ...], Callable[[str], bytes],
+                   typing.DefaultDict, typing.FrozenSet[int]]
         for s in samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 z = pickle.dumps(s, proto)
                 x = pickle.loads(z)
                 self.assertEqual(s, x)
-        more_samples = [List, typing.Iterable, typing.Type]
+        more_samples = [List, typing.Iterable, typing.Type, List[int],
+                        typing.Type[typing.Mapping], typing.AbstractSet[Tuple[int, str]]]
         for s in more_samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 z = pickle.dumps(s, proto)
                 x = pickle.loads(z)
-                self.assertEqual(repr(s), repr(x))  # TODO: fix this
-                                                # see also comment in test_copy_and_deepcopy
-                                                # the issue is typing/#512
+                self.assertEqual(s, x)
 
     def test_copy_and_deepcopy(self):
         T = TypeVar('T')
@@ -1082,7 +1083,27 @@ class GenericTests(BaseTestCase):
                   Union['T', int], List['T'], typing.Mapping['T', int]]
         for t in things + [Any]:
             self.assertEqual(t, copy(t))
-            self.assertEqual(repr(t), repr(deepcopy(t))) # Use repr() because of TypeVars
+            self.assertEqual(t, deepcopy(t))
+
+    def test_immutability_by_copy_and_pickle(self):
+        # Special forms like Union, Any, etc., generic aliases to containers like List,
+        # Mapping, etc., and type variabcles are considered immutable by copy and pickle.
+        global TP, TPB, TPV  # for pickle
+        TP = TypeVar('TP')
+        TPB = TypeVar('TPB', bound=int)
+        TPV = TypeVar('TPV', bytes, str)
+        for X in [TP, TPB, TPV, List, typing.Mapping, ClassVar, typing.Iterable,
+                  Union, Any, Tuple, Callable]:
+            self.assertIs(copy(X), X)
+            self.assertIs(deepcopy(X), X)
+            self.assertIs(pickle.loads(pickle.dumps(X)), X)
+        # Check that local type variables are copyable.
+        TL = TypeVar('TL')
+        TLB = TypeVar('TLB', bound=int)
+        TLV = TypeVar('TLV', bytes, str)
+        for X in [TL, TLB, TLV]:
+            self.assertIs(copy(X), X)
+            self.assertIs(deepcopy(X), X)
 
     def test_copy_generic_instances(self):
         T = TypeVar('T')
@@ -1212,6 +1233,25 @@ class GenericTests(BaseTestCase):
         class C(List[int], B): ...
         self.assertEqual(C.__mro__, (C, list, B, Generic, object))
 
+    def test_init_subclass_super_called(self):
+        class FinalException(Exception):
+            pass
+
+        class Final:
+            def __init_subclass__(cls, **kwargs) -> None:
+                for base in cls.__bases__:
+                    if base is not Final and issubclass(base, Final):
+                        raise FinalException(base)
+                super().__init_subclass__(**kwargs)
+        class Test(Generic[T], Final):
+            pass
+        with self.assertRaises(FinalException):
+            class Subclass(Test):
+                pass
+        with self.assertRaises(FinalException):
+            class Subclass(Test[int]):
+                pass
+
     def test_nested(self):
 
         G = Generic
@@ -1283,6 +1323,75 @@ class GenericTests(BaseTestCase):
             D[Any]
         with self.assertRaises(Exception):
             D[T]
+
+    def test_new_with_args(self):
+
+        class A(Generic[T]):
+            pass
+
+        class B:
+            def __new__(cls, arg):
+                # call object
+                obj = super().__new__(cls)
+                obj.arg = arg
+                return obj
+
+        # mro: C, A, Generic, B, object
+        class C(A, B):
+            pass
+
+        c = C('foo')
+        self.assertEqual(c.arg, 'foo')
+
+    def test_new_with_args2(self):
+
+        class A:
+            def __init__(self, arg):
+                self.from_a = arg
+                # call object
+                super().__init__()
+
+        # mro: C, Generic, A, object
+        class C(Generic[T], A):
+            def __init__(self, arg):
+                self.from_c = arg
+                # call Generic
+                super().__init__(arg)
+
+        c = C('foo')
+        self.assertEqual(c.from_a, 'foo')
+        self.assertEqual(c.from_c, 'foo')
+
+    def test_new_no_args(self):
+
+        class A(Generic[T]):
+            pass
+
+        with self.assertRaises(TypeError):
+            A('foo')
+
+        class B:
+            def __new__(cls):
+                # call object
+                obj = super().__new__(cls)
+                obj.from_b = 'b'
+                return obj
+
+        # mro: C, A, Generic, B, object
+        class C(A, B):
+            def __init__(self, arg):
+                self.arg = arg
+
+            def __new__(cls, arg):
+                # call A
+                obj = super().__new__(cls)
+                obj.from_c = 'c'
+                return obj
+
+        c = C('foo')
+        self.assertEqual(c.arg, 'foo')
+        self.assertEqual(c.from_b, 'b')
+        self.assertEqual(c.from_c, 'c')
 
 
 class ClassVarTests(BaseTestCase):
@@ -1489,6 +1598,30 @@ class ForwardRefTests(BaseTestCase):
             c = C
         # verify that @no_type_check never affects bases
         self.assertEqual(get_type_hints(C.meth), {'x': int})
+
+    def test_no_type_check_forward_ref_as_string(self):
+        class C:
+            foo: typing.ClassVar[int] = 7
+        class D:
+            foo: ClassVar[int] = 7
+        class E:
+            foo: 'typing.ClassVar[int]' = 7
+        class F:
+            foo: 'ClassVar[int]' = 7
+
+        expected_result = {'foo': typing.ClassVar[int]}
+        for clazz in [C, D, E, F]:
+            self.assertEqual(get_type_hints(clazz), expected_result)
+
+    def test_nested_classvar_fails_forward_ref_check(self):
+        class E:
+            foo: 'typing.ClassVar[typing.ClassVar[int]]' = 7
+        class F:
+            foo: ClassVar['ClassVar[int]'] = 7
+
+        for clazz in [E, F]:
+            with self.assertRaises(TypeError):
+                get_type_hints(clazz)
 
     def test_meta_no_type_check(self):
 
@@ -1697,6 +1830,8 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(HasForeignBaseClass),
                          {'some_xrepr': XRepr, 'other_a': mod_generics_cache.A,
                           'some_b': mod_generics_cache.B})
+        self.assertEqual(gth(XRepr.__new__),
+                         {'x': int, 'y': int})
         self.assertEqual(gth(mod_generics_cache.B),
                          {'my_inner_a1': mod_generics_cache.B.A,
                           'my_inner_a2': mod_generics_cache.B.A,

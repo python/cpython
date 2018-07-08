@@ -369,8 +369,8 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    self->name = name_obj;
-    Py_INCREF(self->name);
+    Py_INCREF(name_obj);
+    Py_XSETREF(self->name, name_obj);
 
     if (data_obj) {
         if (view.len >= HASHLIB_GIL_MINSIZE) {

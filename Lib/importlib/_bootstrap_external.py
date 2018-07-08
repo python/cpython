@@ -102,6 +102,15 @@ def _path_isdir(path):
     return _path_is_mode_type(path, 0o040000)
 
 
+def _path_isabs(path):
+    """Replacement for os.path.isabs.
+
+    Considers a Windows drive-relative path (no drive, but starts with slash) to
+    still be "absolute".
+    """
+    return path.startswith(path_separators) or path[1:3] in _pathseps_with_colon
+
+
 def _write_atomic(path, data, mode=0o666):
     """Best-effort function to write data to a path atomically.
     Be prepared to handle a FileExistsError if concurrent writing of the
@@ -197,52 +206,59 @@ _code_type = type(_write_atomic.__code__)
 #                    3101 (merge from 2.6a0, see 62151)
 #                    3103 (__file__ points to source file)
 #     Python 3.0a4: 3111 (WITH_CLEANUP optimization).
-#     Python 3.0a5: 3131 (lexical exception stacking, including POP_EXCEPT)
-#     Python 3.1a0: 3141 (optimize list, set and dict comprehensions:
-#             change LIST_APPEND and SET_ADD, add MAP_ADD)
-#     Python 3.1a0: 3151 (optimize conditional branches:
-#             introduce POP_JUMP_IF_FALSE and POP_JUMP_IF_TRUE)
-#     Python 3.2a0: 3160 (add SETUP_WITH)
+#     Python 3.0b1: 3131 (lexical exception stacking, including POP_EXCEPT
+                          #3021)
+#     Python 3.1a1: 3141 (optimize list, set and dict comprehensions:
+#                         change LIST_APPEND and SET_ADD, add MAP_ADD #2183)
+#     Python 3.1a1: 3151 (optimize conditional branches:
+#                         introduce POP_JUMP_IF_FALSE and POP_JUMP_IF_TRUE
+                          #4715)
+#     Python 3.2a1: 3160 (add SETUP_WITH #6101)
 #                   tag: cpython-32
-#     Python 3.2a1: 3170 (add DUP_TOP_TWO, remove DUP_TOPX and ROT_FOUR)
+#     Python 3.2a2: 3170 (add DUP_TOP_TWO, remove DUP_TOPX and ROT_FOUR #9225)
 #                   tag: cpython-32
-#     Python 3.2a2  3180 (add DELETE_DEREF)
-#     Python 3.3a0  3190 __class__ super closure changed
-#     Python 3.3a0  3200 (__qualname__ added)
-#                      3210 (added size modulo 2**32 to the pyc header)
-#     Python 3.3a1  3220 (changed PEP 380 implementation)
-#     Python 3.3a4  3230 (revert changes to implicit __class__ closure)
+#     Python 3.2a3  3180 (add DELETE_DEREF #4617)
+#     Python 3.3a1  3190 (__class__ super closure changed)
+#     Python 3.3a1  3200 (PEP 3155 __qualname__ added #13448)
+#     Python 3.3a1  3210 (added size modulo 2**32 to the pyc header #13645)
+#     Python 3.3a2  3220 (changed PEP 380 implementation #14230)
+#     Python 3.3a4  3230 (revert changes to implicit __class__ closure #14857)
 #     Python 3.4a1  3250 (evaluate positional default arguments before
-#                        keyword-only defaults)
+#                        keyword-only defaults #16967)
 #     Python 3.4a1  3260 (add LOAD_CLASSDEREF; allow locals of class to override
-#                        free vars)
-#     Python 3.4a1  3270 (various tweaks to the __class__ closure)
+#                        free vars #17853)
+#     Python 3.4a1  3270 (various tweaks to the __class__ closure #12370)
 #     Python 3.4a1  3280 (remove implicit class argument)
-#     Python 3.4a4  3290 (changes to __qualname__ computation)
-#     Python 3.4a4  3300 (more changes to __qualname__ computation)
-#     Python 3.4rc2 3310 (alter __qualname__ computation)
-#     Python 3.5a0  3320 (matrix multiplication operator)
-#     Python 3.5b1  3330 (PEP 448: Additional Unpacking Generalizations)
+#     Python 3.4a4  3290 (changes to __qualname__ computation #19301)
+#     Python 3.4a4  3300 (more changes to __qualname__ computation #19301)
+#     Python 3.4rc2 3310 (alter __qualname__ computation #20625)
+#     Python 3.5a1  3320 (PEP 465: Matrix multiplication operator #21176)
+#     Python 3.5b1  3330 (PEP 448: Additional Unpacking Generalizations #2292)
 #     Python 3.5b2  3340 (fix dictionary display evaluation order #11205)
-#     Python 3.5b2  3350 (add GET_YIELD_FROM_ITER opcode #24400)
+#     Python 3.5b3  3350 (add GET_YIELD_FROM_ITER opcode #24400)
 #     Python 3.5.2  3351 (fix BUILD_MAP_UNPACK_WITH_CALL opcode #27286)
-#     Python 3.6a0  3360 (add FORMAT_VALUE opcode #25483
-#     Python 3.6a0  3361 (lineno delta of code.co_lnotab becomes signed)
-#     Python 3.6a1  3370 (16 bit wordcode)
-#     Python 3.6a1  3371 (add BUILD_CONST_KEY_MAP opcode #27140)
-#     Python 3.6a1  3372 (MAKE_FUNCTION simplification, remove MAKE_CLOSURE
+#     Python 3.6a0  3360 (add FORMAT_VALUE opcode #25483)
+#     Python 3.6a1  3361 (lineno delta of code.co_lnotab becomes signed #26107)
+#     Python 3.6a2  3370 (16 bit wordcode #26647)
+#     Python 3.6a2  3371 (add BUILD_CONST_KEY_MAP opcode #27140)
+#     Python 3.6a2  3372 (MAKE_FUNCTION simplification, remove MAKE_CLOSURE
 #                         #27095)
 #     Python 3.6b1  3373 (add BUILD_STRING opcode #27078)
 #     Python 3.6b1  3375 (add SETUP_ANNOTATIONS and STORE_ANNOTATION opcodes
 #                         #27985)
-#     Python 3.6b1  3376 (simplify CALL_FUNCTIONs & BUILD_MAP_UNPACK_WITH_CALL)
+#     Python 3.6b1  3376 (simplify CALL_FUNCTIONs & BUILD_MAP_UNPACK_WITH_CALL
+                          #27213)
 #     Python 3.6b1  3377 (set __class__ cell from type.__new__ #23722)
 #     Python 3.6b2  3378 (add BUILD_TUPLE_UNPACK_WITH_CALL #28257)
 #     Python 3.6rc1 3379 (more thorough __class__ validation #23722)
-#     Python 3.7a0  3390 (add LOAD_METHOD and CALL_METHOD opcodes)
-#     Python 3.7a0  3391 (update GET_AITER #31709)
-#     Python 3.7a0  3392 (PEP 552: Deterministic pycs)
-#     Python 3.7a0  3393 (remove  STORE_ANNOTATION opcode)
+#     Python 3.7a1  3390 (add LOAD_METHOD and CALL_METHOD opcodes #26110)
+#     Python 3.7a2  3391 (update GET_AITER #31709)
+#     Python 3.7a4  3392 (PEP 552: Deterministic pycs #31650)
+#     Python 3.7b1  3393 (remove STORE_ANNOTATION opcode #32550)
+#     Python 3.7b5  3394 (restored docstring as the firts stmt in the body;
+#                         this might affected the first line number #32911)
+#     Python 3.8a1  3400 (move frame block handling to compiler #17611)
+#     Python 3.8a1  3401 (add END_ASYNC_FOR #33041)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -251,7 +267,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3393).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3401).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -305,7 +321,33 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
         if not optimization.isalnum():
             raise ValueError('{!r} is not alphanumeric'.format(optimization))
         almost_filename = '{}.{}{}'.format(almost_filename, _OPT, optimization)
-    return _path_join(head, _PYCACHE, almost_filename + BYTECODE_SUFFIXES[0])
+    filename = almost_filename + BYTECODE_SUFFIXES[0]
+    if sys.pycache_prefix is not None:
+        # We need an absolute path to the py file to avoid the possibility of
+        # collisions within sys.pycache_prefix, if someone has two different
+        # `foo/bar.py` on their system and they import both of them using the
+        # same sys.pycache_prefix. Let's say sys.pycache_prefix is
+        # `C:\Bytecode`; the idea here is that if we get `Foo\Bar`, we first
+        # make it absolute (`C:\Somewhere\Foo\Bar`), then make it root-relative
+        # (`Somewhere\Foo\Bar`), so we end up placing the bytecode file in an
+        # unambiguous `C:\Bytecode\Somewhere\Foo\Bar\`.
+        if not _path_isabs(head):
+            head = _path_join(_os.getcwd(), head)
+
+        # Strip initial drive from a Windows path. We know we have an absolute
+        # path here, so the second part of the check rules out a POSIX path that
+        # happens to contain a colon at the second character.
+        if head[1] == ':' and head[0] not in path_separators:
+            head = head[2:]
+
+        # Strip initial path separator from `head` to complete the conversion
+        # back to a root-relative path before joining.
+        return _path_join(
+            sys.pycache_prefix,
+            head.lstrip(path_separators),
+            filename,
+        )
+    return _path_join(head, _PYCACHE, filename)
 
 
 def source_from_cache(path):
@@ -321,23 +363,29 @@ def source_from_cache(path):
         raise NotImplementedError('sys.implementation.cache_tag is None')
     path = _os.fspath(path)
     head, pycache_filename = _path_split(path)
-    head, pycache = _path_split(head)
-    if pycache != _PYCACHE:
-        raise ValueError('{} not bottom-level directory in '
-                         '{!r}'.format(_PYCACHE, path))
+    found_in_pycache_prefix = False
+    if sys.pycache_prefix is not None:
+        stripped_path = sys.pycache_prefix.rstrip(path_separators)
+        if head.startswith(stripped_path + path_sep):
+            head = head[len(stripped_path):]
+            found_in_pycache_prefix = True
+    if not found_in_pycache_prefix:
+        head, pycache = _path_split(head)
+        if pycache != _PYCACHE:
+            raise ValueError(f'{_PYCACHE} not bottom-level directory in '
+                             f'{path!r}')
     dot_count = pycache_filename.count('.')
     if dot_count not in {2, 3}:
-        raise ValueError('expected only 2 or 3 dots in '
-                         '{!r}'.format(pycache_filename))
+        raise ValueError(f'expected only 2 or 3 dots in {pycache_filename!r}')
     elif dot_count == 3:
         optimization = pycache_filename.rsplit('.', 2)[-2]
         if not optimization.startswith(_OPT):
             raise ValueError("optimization portion of filename does not start "
-                             "with {!r}".format(_OPT))
+                             f"with {_OPT!r}")
         opt_level = optimization[len(_OPT):]
         if not opt_level.isalnum():
-            raise ValueError("optimization level {!r} is not an alphanumeric "
-                             "value".format(optimization))
+            raise ValueError(f"optimization level {optimization!r} is not an "
+                             "alphanumeric value")
     base_filename = pycache_filename.partition('.')[0]
     return _path_join(head, base_filename + SOURCE_SUFFIXES[0])
 
@@ -1176,8 +1224,10 @@ class PathFinder:
     def invalidate_caches(cls):
         """Call the invalidate_caches() method on all path entry finders
         stored in sys.path_importer_caches (where implemented)."""
-        for finder in sys.path_importer_cache.values():
-            if hasattr(finder, 'invalidate_caches'):
+        for name, finder in list(sys.path_importer_cache.items()):
+            if finder is None:
+                del sys.path_importer_cache[name]
+            elif hasattr(finder, 'invalidate_caches'):
                 finder.invalidate_caches()
 
     @classmethod
@@ -1524,6 +1574,7 @@ def _setup(_bootstrap_module):
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
     setattr(self_module, 'path_separators', ''.join(path_separators))
+    setattr(self_module, '_pathseps_with_colon', {f':{s}' for s in path_separators})
 
     # Directly load the _thread module (needed during bootstrap).
     thread_module = _bootstrap._builtin_from_name('_thread')

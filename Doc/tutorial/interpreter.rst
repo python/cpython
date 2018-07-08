@@ -148,14 +148,14 @@ where *encoding* is one of the valid :mod:`codecs` supported by Python.
 For example, to declare that Windows-1252 encoding is to be used, the first
 line of your source code file should be::
 
-   # -*- coding: cp-1252 -*-
+   # -*- coding: cp1252 -*-
 
 One exception to the *first line* rule is when the source code starts with a
 :ref:`UNIX "shebang" line <tut-scripts>`.  In this case, the encoding
 declaration should be added as the second line of the file.  For example::
 
    #!/usr/bin/env python3
-   # -*- coding: cp-1252 -*-
+   # -*- coding: cp1252 -*-
 
 .. rubric:: Footnotes
 

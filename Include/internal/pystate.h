@@ -69,6 +69,10 @@ PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
 
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(PY_INT64_T);
 
+PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+
 
 /* cross-interpreter data */
 
@@ -76,7 +80,7 @@ struct _xid;
 
 // _PyCrossInterpreterData is similar to Py_buffer as an effectively
 // opaque struct that holds data outside the object machinery.  This
-// is necessary to pass between interpreters in the same process.
+// is necessary to pass safely between interpreters in the same process.
 typedef struct _xid {
     // data is the cross-interpreter-safe derivation of a Python object
     // (see _PyObject_GetCrossInterpreterData).  It will be NULL if the
@@ -85,8 +89,9 @@ typedef struct _xid {
     // obj is the Python object from which the data was derived.  This
     // is non-NULL only if the data remains bound to the object in some
     // way, such that the object must be "released" (via a decref) when
-    // the data is released.  In that case it is automatically
-    // incref'ed (to match the automatic decref when releaed).
+    // the data is released.  In that case the code that sets the field,
+    // likely a registered "crossinterpdatafunc", is responsible for
+    // ensuring it owns the reference (i.e. incref).
     PyObject *obj;
     // interp is the ID of the owning interpreter of the original
     // object.  It corresponds to the active interpreter when

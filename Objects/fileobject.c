@@ -398,7 +398,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 }
 
 static PyObject *
-stdprinter_fileno(PyStdPrinter_Object *self)
+stdprinter_fileno(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong((long) self->fd);
 }
@@ -411,13 +411,13 @@ stdprinter_repr(PyStdPrinter_Object *self)
 }
 
 static PyObject *
-stdprinter_noop(PyStdPrinter_Object *self)
+stdprinter_noop(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 {
     Py_RETURN_NONE;
 }
 
 static PyObject *
-stdprinter_isatty(PyStdPrinter_Object *self)
+stdprinter_isatty(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 {
     long res;
     if (self->fd < 0) {

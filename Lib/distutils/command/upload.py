@@ -57,7 +57,8 @@ class upload(PyPIRCCommand):
 
     def run(self):
         if not self.distribution.dist_files:
-            msg = "No dist file created in earlier command"
+            msg = ("Must create and upload files in one command "
+                   "(e.g. setup.py sdist upload)")
             raise DistutilsOptionError(msg)
         for command, pyversion, filename in self.distribution.dist_files:
             self.upload_file(command, pyversion, filename)

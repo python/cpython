@@ -1089,6 +1089,7 @@ class ConfigFileTest(BaseTest):
 
     """Reading logging config from a .ini-style config file."""
 
+    check_no_resource_warning = support.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -1297,6 +1298,27 @@ class ConfigFileTest(BaseTest):
     datefmt=
     """
 
+    # config 8, check for resource warning
+    config8 = r"""
+    [loggers]
+    keys=root
+
+    [handlers]
+    keys=file
+
+    [formatters]
+    keys=
+
+    [logger_root]
+    level=DEBUG
+    handlers=file
+
+    [handler_file]
+    class=FileHandler
+    level=DEBUG
+    args=("{tempfile}",)
+    """
+
     disable_test = """
     [loggers]
     keys=root
@@ -1442,6 +1464,29 @@ class ConfigFileTest(BaseTest):
             # Original logger output is empty.
             self.assert_log_lines([])
 
+    def test_config8_ok(self):
+
+        def cleanup(h1, fn):
+            h1.close()
+            os.remove(fn)
+
+        with self.check_no_resource_warning():
+            fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
+            os.close(fd)
+
+            # Replace single backslash with double backslash in windows
+            # to avoid unicode error during string formatting
+            if os.name == "nt":
+                fn = fn.replace("\\", "\\\\")
+
+            config8 = self.config8.format(tempfile=fn)
+
+            self.apply_config(config8)
+            self.apply_config(config8)
+
+        handler = logging.root.handlers[0]
+        self.addCleanup(cleanup, handler, fn)
+
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
         logger = logging.getLogger('some_pristine_logger')
@@ -1450,6 +1495,49 @@ class ConfigFileTest(BaseTest):
         self.assertTrue(logger.disabled)
         self.apply_config(self.disable_test, disable_existing_loggers=False)
         self.assertFalse(logger.disabled)
+
+    def test_defaults_do_no_interpolation(self):
+        """bpo-33802 defaults should not get interpolated"""
+        ini = textwrap.dedent("""
+            [formatters]
+            keys=default
+
+            [formatter_default]
+
+            [handlers]
+            keys=console
+
+            [handler_console]
+            class=logging.StreamHandler
+            args=tuple()
+
+            [loggers]
+            keys=root
+
+            [logger_root]
+            formatter=default
+            handlers=console
+            """).strip()
+        fd, fn = tempfile.mkstemp(prefix='test_logging_', suffix='.ini')
+        try:
+            os.write(fd, ini.encode('ascii'))
+            os.close(fd)
+            logging.config.fileConfig(
+                fn,
+                defaults=dict(
+                    version=1,
+                    disable_existing_loggers=False,
+                    formatters={
+                        "generic": {
+                            "format": "%(asctime)s [%(process)d] [%(levelname)s] %(message)s",
+                            "datefmt": "[%Y-%m-%d %H:%M:%S %z]",
+                            "class": "logging.Formatter"
+                        },
+                    },
+                )
+            )
+        finally:
+            os.unlink(fn)
 
 
 class SocketHandlerTest(BaseTest):
@@ -1979,6 +2067,7 @@ class ConfigDictTest(BaseTest):
 
     """Reading logging config from a dictionary."""
 
+    check_no_resource_warning = support.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -2852,6 +2941,35 @@ class ConfigDictTest(BaseTest):
             self.assertEqual(h.terminator, '!\n')
             logging.warning('Exclamation')
             self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
+
+    def test_config15_ok(self):
+
+        def cleanup(h1, fn):
+            h1.close()
+            os.remove(fn)
+
+        with self.check_no_resource_warning():
+            fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
+            os.close(fd)
+
+            config = {
+                "version": 1,
+                "handlers": {
+                    "file": {
+                        "class": "logging.FileHandler",
+                        "filename": fn
+                    }
+                },
+                "root": {
+                    "handlers": ["file"]
+                }
+            }
+
+            self.apply_config(config)
+            self.apply_config(config)
+
+        handler = logging.root.handlers[0]
+        self.addCleanup(cleanup, handler, fn)
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
@@ -3858,6 +3976,27 @@ class BasicConfigTest(unittest.TestCase):
         self.assertIs(handlers[2].formatter, f)
         self.assertIs(handlers[0].formatter, handlers[1].formatter)
 
+    def test_force(self):
+        old_string_io = io.StringIO()
+        new_string_io = io.StringIO()
+        old_handlers = [logging.StreamHandler(old_string_io)]
+        new_handlers = [logging.StreamHandler(new_string_io)]
+        logging.basicConfig(level=logging.WARNING, handlers=old_handlers)
+        logging.warning('warn')
+        logging.info('info')
+        logging.debug('debug')
+        self.assertEqual(len(logging.root.handlers), 1)
+        logging.basicConfig(level=logging.INFO, handlers=new_handlers,
+                            force=True)
+        logging.warning('warn')
+        logging.info('info')
+        logging.debug('debug')
+        self.assertEqual(len(logging.root.handlers), 1)
+        self.assertEqual(old_string_io.getvalue().strip(),
+                         'WARNING:root:warn')
+        self.assertEqual(new_string_io.getvalue().strip(),
+                         'WARNING:root:warn\nINFO:root:info')
+
     def _test_log(self, method, level=None):
         # logging.root has no handlers so basicConfig should be called
         called = []
@@ -4057,6 +4196,37 @@ class LoggerTest(BaseTest):
         self.assertEqual(len(called), 1)
         self.assertEqual('Stack (most recent call last):\n', called[0])
 
+    def test_find_caller_with_stacklevel(self):
+        the_level = 1
+
+        def innermost():
+            self.logger.warning('test', stacklevel=the_level)
+
+        def inner():
+            innermost()
+
+        def outer():
+            inner()
+
+        records = self.recording.records
+        outer()
+        self.assertEqual(records[-1].funcName, 'innermost')
+        lineno = records[-1].lineno
+        the_level += 1
+        outer()
+        self.assertEqual(records[-1].funcName, 'inner')
+        self.assertGreater(records[-1].lineno, lineno)
+        lineno = records[-1].lineno
+        the_level += 1
+        outer()
+        self.assertEqual(records[-1].funcName, 'outer')
+        self.assertGreater(records[-1].lineno, lineno)
+        lineno = records[-1].lineno
+        the_level += 1
+        outer()
+        self.assertEqual(records[-1].funcName, 'test_find_caller_with_stacklevel')
+        self.assertGreater(records[-1].lineno, lineno)
+
     def test_make_record_with_extra_overwrite(self):
         name = 'my record'
         level = 13
@@ -4095,6 +4265,18 @@ class LoggerTest(BaseTest):
         old_disable = self.logger.manager.disable
         self.logger.manager.disable = 23
         self.addCleanup(setattr, self.logger.manager, 'disable', old_disable)
+        self.assertFalse(self.logger.isEnabledFor(22))
+
+    def test_is_enabled_for_disabled_logger(self):
+        old_disabled = self.logger.disabled
+        old_disable = self.logger.manager.disable
+
+        self.logger.disabled = True
+        self.logger.manager.disable = 21
+
+        self.addCleanup(setattr, self.logger, 'disabled', old_disabled)
+        self.addCleanup(setattr, self.logger.manager, 'disable', old_disable)
+
         self.assertFalse(self.logger.isEnabledFor(22))
 
     def test_root_logger_aliases(self):

@@ -77,10 +77,11 @@ def simple_server_sslcontext():
     return server_context
 
 
-def simple_client_sslcontext():
+def simple_client_sslcontext(*, disable_verify=True):
     client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     client_context.check_hostname = False
-    client_context.verify_mode = ssl.CERT_NONE
+    if disable_verify:
+        client_context.verify_mode = ssl.CERT_NONE
     return client_context
 
 

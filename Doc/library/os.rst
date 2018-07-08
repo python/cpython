@@ -1082,20 +1082,81 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: pread(fd, buffersize, offset)
+.. function:: pread(fd, n, offset)
 
-   Read from a file descriptor, *fd*, at a position of *offset*. It will read up
-   to *buffersize* number of bytes. The file offset remains unchanged.
+   Read at most *n* bytes from file descriptor *fd* at a position of *offset*,
+   leaving the file offset unchanged.
+
+   Return a bytestring containing the bytes read. If the end of the file
+   referred to by *fd* has been reached, an empty bytes object is returned.
 
    Availability: Unix.
 
    .. versionadded:: 3.3
 
 
+.. function:: preadv(fd, buffers, offset, flags=0)
+
+   Read from a file descriptor *fd* at a position of *offset* into mutable
+   :term:`bytes-like objects <bytes-like object>` *buffers*, leaving the file
+   offset unchanged.  Transfer data into each buffer until it is full and then
+   move on to the next buffer in the sequence to hold the rest of the data.
+
+   The flags argument contains a bitwise OR of zero or more of the following
+   flags:
+
+   - :data:`RWF_HIPRI`
+   - :data:`RWF_NOWAIT`
+
+   Return the total number of bytes actually read which can be less than the
+   total capacity of all the objects.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
+
+   Combine the functionality of :func:`os.readv` and :func:`os.pread`.
+
+   Availability: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
+   OpenBSD 2.7 and newer. Using flags requires Linux 4.6 or newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_NOWAIT
+
+   Do not wait for data which is not immediately available. If this flag is
+   specified, the system call will return instantly if it would have to read
+   data from the backing storage or wait for a lock.
+
+   If some data was successfully read, it will return the number of bytes read.
+   If no bytes were read, it will return ``-1`` and set errno to
+   :data:`errno.EAGAIN`.
+
+   Availability: Linux 4.14 and newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_HIPRI
+
+   High priority read/write. Allows block-based filesystems to use polling
+   of the device, which provides lower latency, but may use additional
+   resources.
+
+   Currently, on Linux, this feature is usable only on a file descriptor opened
+   using the :data:`O_DIRECT` flag.
+
+   Availability: Linux 4.6 and newer.
+
+   .. versionadded:: 3.7
+
+
 .. function:: pwrite(fd, str, offset)
 
-   Write *bytestring* to a file descriptor, *fd*, from *offset*,
-   leaving the file offset unchanged.
+   Write the bytestring in *str* to file descriptor *fd* at position of
+   *offset*, leaving the file offset unchanged.
+
+   Return the number of bytes actually written.
 
    Availability: Unix.
 
@@ -1104,48 +1165,57 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: pwritev(fd, buffers, offset, flags=0)
 
-   Combines the functionality of :func:`os.writev` and :func:`os.pwrite`. It
-   writes the contents of *buffers* to file descriptor *fd* at offset *offset*.
-   *buffers* must be a sequence of :term:`bytes-like objects <bytes-like object>`.
-   Buffers are processed in array order. Entire contents of first buffer is written
-   before proceeding to second, and so on. The operating system may set a limit
-   (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
-   :func:`~os.pwritev` writes the contents of each object to the file descriptor
-   and returns the total number of bytes written.
+   Write the *buffers* contents to file descriptor *fd* at a offset *offset*,
+   leaving the file offset unchanged.  *buffers* must be a sequence of
+   :term:`bytes-like objects <bytes-like object>`. Buffers are processed in
+   array order. Entire contents of the first buffer is written before
+   proceeding to the second, and so on.
 
-   The *flags* argument contains a bitwise OR of zero or more of the following
+   The flags argument contains a bitwise OR of zero or more of the following
    flags:
 
-   - RWF_DSYNC
-   - RWF_SYNC
+   - :data:`RWF_DSYNC`
+   - :data:`RWF_SYNC`
 
-   Using non-zero flags requires Linux 4.7 or newer.
+   Return the total number of bytes actually written.
 
-   Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
-   OpenBSD (version 2.7 and newer).
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
-   .. versionadded:: 3.7
+   Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
 
-.. data:: RWF_DSYNC (since Linux 4.7)
-   Provide a per-write equivalent of the O_DSYNC open(2) flag. This flag
-   is meaningful only for pwritev2(), and its effect applies only to the
-   data range written by the system call.
+   Availability: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
+   OpenBSD 2.7 and newer. Using flags requires Linux 4.7 or newer.
 
    .. versionadded:: 3.7
 
-.. data:: RWF_SYNC (since Linux 4.7)
-   Provide a per-write equivalent of the O_SYNC open(2) flag. This flag is
-   meaningful only for pwritev2(), and its effect applies only to the data
-   range written by the system call.
+
+.. data:: RWF_DSYNC
+
+   Provide a per-write equivalent of the :data:`O_DSYNC` ``open(2)`` flag. This
+   flag effect applies only to the data range written by the system call.
+
+   Availability: Linux 4.7 and newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_SYNC
+
+   Provide a per-write equivalent of the :data:`O_SYNC` ``open(2)`` flag. This
+   flag effect applies only to the data range written by the system call.
+
+   Availability: Linux 4.7 and newer.
 
    .. versionadded:: 3.7
 
 
 .. function:: read(fd, n)
 
-   Read at most *n* bytes from file descriptor *fd*. Return a bytestring containing the
-   bytes read.  If the end of the file referred to by *fd* has been reached, an
-   empty bytes object is returned.
+   Read at most *n* bytes from file descriptor *fd*.
+
+   Return a bytestring containing the bytes read. If the end of the file
+   referred to by *fd* has been reached, an empty bytes object is returned.
 
    .. note::
 
@@ -1224,60 +1294,19 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 .. function:: readv(fd, buffers)
 
    Read from a file descriptor *fd* into a number of mutable :term:`bytes-like
-   objects <bytes-like object>` *buffers*. :func:`~os.readv` will transfer data
-   into each buffer until it is full and then move on to the next buffer in the
-   sequence to hold the rest of the data. :func:`~os.readv` returns the total
-   number of bytes read (which may be less than the total capacity of all the
-   objects).
+   objects <bytes-like object>` *buffers*. Transfer data into each buffer until
+   it is full and then move on to the next buffer in the sequence to hold the
+   rest of the data.
+
+   Return the total number of bytes actually read which can be less than the
+   total capacity of all the objects.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
    Availability: Unix.
 
    .. versionadded:: 3.3
-
-
-.. function:: preadv(fd, buffers, offset, flags=0)
-
-   Combines the functionality of :func:`os.readv` and :func:`os.pread`. It
-   reads from a file descriptor *fd* into a number of mutable :term:`bytes-like
-   objects <bytes-like object>` *buffers*. As :func:`os.readv`, it will transfer
-   data into each buffer until it is full and then move on to the next buffer in
-   the sequence to hold the rest of the data. Its fourth argument, *offset*,
-   specifies the file offset at which the input operation is to be performed.
-   :func:`~os.preadv` return the total number of bytes read (which can be less than
-   the total capacity of all the objects).
-
-   The flags argument contains a bitwise OR of zero or more of the following
-   flags:
-
-   - RWF_HIPRI
-   - RWF_NOWAIT
-
-   Using non-zero flags requires Linux 4.6 or newer.
-
-   Availability: Linux (version 2.6.30), FreeBSD 6.0 and newer,
-   OpenBSD (version 2.7 and newer).
-
-   .. versionadded:: 3.7
-
-
-.. data:: RWF_HIPRI (since Linux 4.6)
-   High priority read/write. Allows block-based filesystems to use polling
-   of the device, which provides lower latency, but may use additional
-   resources. (Currently, this feature is usable only on a file descriptor
-   opened using the O_DIRECT flag.)
-
-   .. versionadded:: 3.7
-
-
-.. data:: RWF_NOWAIT (since Linux 4.14)
-   Do not wait for data which is not immediately available. If this flag
-   is  specified, the preadv2() system call will return instantly
-   if it would have to read data from the backing storage or wait for a lock.
-   If some data was successfully read, it will return the number of bytes
-   read. If no bytes were read, it will return -1 and set errno to EAGAIN.
-   Currently, this flag is meaningful only for preadv2().
-
-   .. versionadded:: 3.7
 
 
 .. function:: tcgetpgrp(fd)
@@ -1307,8 +1336,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: write(fd, str)
 
-   Write the bytestring in *str* to file descriptor *fd*. Return the number of
-   bytes actually written.
+   Write the bytestring in *str* to file descriptor *fd*.
+
+   Return the number of bytes actually written.
 
    .. note::
 
@@ -1326,14 +1356,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: writev(fd, buffers)
 
-   Write the contents of *buffers* to file descriptor *fd*. *buffers* must be a
-   sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
-   processed in array order. Entire contents of first buffer is written before
-   proceeding to second, and so on. The operating system may set a limit
-   (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
+   Write the contents of *buffers* to file descriptor *fd*. *buffers* must be
+   a sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
+   processed in array order. Entire contents of the first buffer is written
+   before proceeding to the second, and so on.
 
-   :func:`~os.writev` writes the contents of each object to the file descriptor
-   and returns the total number of bytes written.
+   Returns the total number of bytes actually written.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
    Availability: Unix.
 
@@ -2366,7 +2397,13 @@ features:
 
    .. attribute:: st_ino
 
-      Inode number.
+      Platform dependent, but if non-zero, uniquely identifies the
+      file for a given value of ``st_dev``. Typically:
+
+      * the inode number on Unix,
+      * the `file index
+        <https://msdn.microsoft.com/en-us/library/aa363788>`_ on
+        Windows
 
    .. attribute:: st_dev
 
@@ -2524,6 +2561,10 @@ features:
 
    .. versionadded:: 3.5
       Added the :attr:`st_file_attributes` member on Windows.
+
+   .. versionchanged:: 3.5
+      Windows now returns the file index as :attr:`st_ino` when
+      available.
 
    .. versionadded:: 3.7
       Added the :attr:`st_fstype` member to Solaris/derivatives.
@@ -2756,14 +2797,12 @@ features:
 
    It is an error to specify tuples for both *times* and *ns*.
 
-   Whether a directory can be given for *path*
-   depends on whether the operating system implements directories as files
-   (for example, Windows does not).  Note that the exact times you set here may
-   not be returned by a subsequent :func:`~os.stat` call, depending on the
-   resolution with which your operating system records access and modification
-   times; see :func:`~os.stat`.  The best way to preserve exact times is to
-   use the *st_atime_ns* and *st_mtime_ns* fields from the :func:`os.stat`
-   result object with the *ns* parameter to `utime`.
+   Note that the exact times you set here may not be returned by a subsequent
+   :func:`~os.stat` call, depending on the resolution with which your operating
+   system records access and modification times; see :func:`~os.stat`. The best
+   way to preserve exact times is to use the *st_atime_ns* and *st_mtime_ns*
+   fields from the :func:`os.stat` result object with the *ns* parameter to
+   `utime`.
 
    This function can support :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>` and :ref:`not
@@ -2812,7 +2851,7 @@ features:
    no effect on the behavior of the walk, because in bottom-up mode the directories
    in *dirnames* are generated before *dirpath* itself is generated.
 
-   By default, errors from the :func:`listdir` call are ignored.  If optional
+   By default, errors from the :func:`scandir` call are ignored.  If optional
    argument *onerror* is specified, it should be a function; it will be called with
    one argument, an :exc:`OSError` instance.  It can report the error to continue
    with the walk, or raise the exception to abort the walk.  Note that the filename
@@ -3351,6 +3390,47 @@ written in Python, such as a mail server's external command delivery program.
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
+
+
+.. function:: posix_spawn(path, argv, env, file_actions=None)
+
+   Wraps the :c:func:`posix_spawn` C library API for use from Python.
+
+   Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
+
+   The *path*, *args*, and *env* arguments are similar to :func:`execve`.
+
+   The *file_actions* argument may be a sequence of tuples describing actions
+   to take on specific file descriptors in the child process between the C
+   library implementation's :c:func:`fork` and :c:func:`exec` steps.
+   The first item in each tuple must be one of the three type indicator
+   listed below describing the remaining tuple elements:
+
+   .. data:: POSIX_SPAWN_OPEN
+
+      (``os.POSIX_SPAWN_OPEN``, *fd*, *path*, *flags*, *mode*)
+
+      Performs ``os.dup2(os.open(path, flags, mode), fd)``.
+
+   .. data:: POSIX_SPAWN_CLOSE
+
+      (``os.POSIX_SPAWN_CLOSE``, *fd*)
+
+      Performs ``os.close(fd)``.
+
+   .. data:: POSIX_SPAWN_DUP2
+
+      (``os.POSIX_SPAWN_DUP2``, *fd*, *new_fd*)
+
+      Performs ``os.dup2(fd, new_fd)``.
+
+   These tuples correspond to the C library
+   :c:func:`posix_spawn_file_actions_addopen`,
+   :c:func:`posix_spawn_file_actions_addclose`, and
+   :c:func:`posix_spawn_file_actions_adddup2` API calls used to prepare
+   for the :c:func:`posix_spawn` call itself.
+
+   .. versionadded:: 3.7
 
 
 .. function:: register_at_fork(*, before=None, after_in_parent=None, \

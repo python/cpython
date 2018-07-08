@@ -530,7 +530,7 @@ def add_callers(target, source):
         if func in new_callers:
             if isinstance(caller, tuple):
                 # format used by cProfile
-                new_callers[func] = tuple(i[0] + i[1] for i in zip(caller, new_callers[func]))
+                new_callers[func] = tuple(i + j for i, j in zip(caller, new_callers[func]))
             else:
                 # format used by profile
                 new_callers[func] += caller
