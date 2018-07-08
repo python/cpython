@@ -1117,9 +1117,15 @@ stack_effect(int opcode, int oparg, int jump)
 }
 
 int
-PyCompile_OpcodeStackEffect(int opcode, int oparg, int jump)
+PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
 {
     return stack_effect(opcode, oparg, jump);
+}
+
+int
+PyCompile_OpcodeStackEffect(int opcode, int oparg)
+{
+    return stack_effect(opcode, oparg, -1);
 }
 
 /* Add an opcode with no argument.
