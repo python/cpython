@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(_opcode_stack_effect__doc__,
-"stack_effect($module, opcode, oparg=None, /, jump=None)\n"
+"stack_effect($module, opcode, oparg=None, /, *, jump=None)\n"
 "--\n"
 "\n"
 "Compute the stack effect of the opcode.");
@@ -20,7 +20,7 @@ _opcode_stack_effect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", "jump", NULL};
-    static _PyArg_Parser _parser = {"i|OO:stack_effect", _keywords, 0};
+    static _PyArg_Parser _parser = {"i|O$O:stack_effect", _keywords, 0};
     int opcode;
     PyObject *oparg = Py_None;
     PyObject *jump = Py_None;
@@ -39,4 +39,4 @@ _opcode_stack_effect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4773d6a4221eb554 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bbf6c4cfc91edc29 input=a9049054013a1b77]*/

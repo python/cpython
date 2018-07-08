@@ -15,6 +15,7 @@ _opcode.stack_effect -> int
   opcode: int
   oparg: object = None
   /
+  *
   jump: object = None
 
 Compute the stack effect of the opcode.
@@ -23,7 +24,7 @@ Compute the stack effect of the opcode.
 static int
 _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
                           PyObject *jump)
-/*[clinic end generated code: output=64a18f2ead954dbb input=d5e3992a62215be5]*/
+/*[clinic end generated code: output=64a18f2ead954dbb input=461c9d4a44851898]*/
 {
     int effect;
     int oparg_int = 0;
