@@ -276,25 +276,25 @@ class FunctionTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, 2)
 
-    def CheckFuncDeterministic(self):
-        mock = unittest.mock.Mock()
-        mock.return_value = None
-        query = "select deterministic() = deterministic()"
-
+    def CheckFuncNonDeterministic(self):
+        mock = unittest.mock.Mock(return_value=None)
         self.con.create_function("deterministic", 0, mock, deterministic=False)
-        self.con.execute(query)
+        self.con.execute("select deterministic() = deterministic()")
         self.assertEqual(mock.call_count, 2)
 
-        if sqlite.sqlite_version_info < (3, 8, 3):
-            with self.assertRaises(sqlite.NotSupportedError):
-                self.con.create_function("deterministic", 0, mock, deterministic=True)
-        else:
-            self.con.create_function("deterministic", 0, mock, deterministic=True)
-            mock.reset_mock()
-            self.con.execute(query)
-            self.assertEqual(mock.call_count, 1)
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "deterministic parameter not supported")
+    def CheckFuncDeterministic(self):
+        mock = unittest.mock.Mock(return_value=None)
+        self.con.create_function("deterministic", 0, mock, deterministic=True)
+        self.con.execute("select deterministic() = deterministic()")
+        self.assertEqual(mock.call_count, 1)
 
-    def CheckFuncDeterministicKwOnly(self):
+    @unittest.skipIf(sqlite.sqlite_version_info >= (3, 8, 3), "SQLite < 3.8.3 needed")
+    def CheckFuncDeterministicNotSupported(self):
+        with self.assertRaises(sqlite.NotSupportedError):
+            self.con.create_function("deterministic", 0, int, deterministic=True)
+
+    def CheckFuncDeterministicKeywordOnly(self):
         with self.assertRaises(TypeError):
             self.con.create_function("deterministic", 0, int, True)
 
