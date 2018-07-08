@@ -468,7 +468,7 @@ task isn't already covered by the URL parsing functions above.
    *string* may be either a :class:`str` or a :class:`bytes`.
 
    .. versionchanged:: 3.7
-      Moved from RFC 2396 to RFC 3986 for quoting URL strings. "~" is now
+      Moved from :rfc:`2396` to :rfc:`3986` for quoting URL strings. "~" is now
       included in the set of reserved characters.
 
    The optional *encoding* and *errors* parameters specify how to deal with

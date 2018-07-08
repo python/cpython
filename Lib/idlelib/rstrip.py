@@ -1,6 +1,6 @@
 'Provides "Strip trailing whitespace" under the "Format" menu.'
 
-class RstripExtension:
+class Rstrip:
 
     def __init__(self, editwin):
         self.editwin = editwin
@@ -25,5 +25,5 @@ class RstripExtension:
         undo.undo_block_stop()
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_rstrip', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_rstrip', verbosity=2,)

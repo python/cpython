@@ -810,24 +810,48 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 
 PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
-    static char *kwlist[] = {"name", "narg", "func", NULL, NULL};
+    static char *kwlist[] = {"name", "narg", "func", "deterministic", NULL};
 
     PyObject* func;
     char* name;
     int narg;
     int rc;
+    int deterministic = 0;
+    int flags = SQLITE_UTF8;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "siO", kwlist,
-                                     &name, &narg, &func))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "siO|$p", kwlist,
+                                     &name, &narg, &func, &deterministic))
     {
         return NULL;
     }
 
-    rc = sqlite3_create_function(self->db, name, narg, SQLITE_UTF8, (void*)func, _pysqlite_func_callback, NULL, NULL);
+    if (deterministic) {
+#if SQLITE_VERSION_NUMBER < 3008003
+        PyErr_SetString(pysqlite_NotSupportedError,
+                        "deterministic=True requires SQLite 3.8.3 or higher");
+        return NULL;
+#else
+        if (sqlite3_libversion_number() < 3008003) {
+            PyErr_SetString(pysqlite_NotSupportedError,
+                            "deterministic=True requires SQLite 3.8.3 or higher");
+            return NULL;
+        }
+        flags |= SQLITE_DETERMINISTIC;
+#endif
+    }
+
+    rc = sqlite3_create_function(self->db,
+                                 name,
+                                 narg,
+                                 flags,
+                                 (void*)func,
+                                 _pysqlite_func_callback,
+                                 NULL,
+                                 NULL);
 
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
@@ -1461,15 +1485,31 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
     const char *name = "main";
     int rc;
     int callback_error = 0;
-    double sleep_secs = 0.250;
+    PyObject *sleep_obj = NULL;
+    int sleep_ms = 250;
     sqlite3 *bck_conn;
     sqlite3_backup *bck_handle;
     static char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|$iOsd:backup", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|$iOsO:backup", keywords,
                                      &pysqlite_ConnectionType, &target,
-                                     &pages, &progress, &name, &sleep_secs)) {
+                                     &pages, &progress, &name, &sleep_obj)) {
         return NULL;
+    }
+
+    if (sleep_obj != NULL) {
+        _PyTime_t sleep_secs;
+        if (_PyTime_FromSecondsObject(&sleep_secs, sleep_obj,
+                                      _PyTime_ROUND_TIMEOUT)) {
+            return NULL;
+        }
+        _PyTime_t ms = _PyTime_AsMilliseconds(sleep_secs,
+                                              _PyTime_ROUND_TIMEOUT);
+        if (ms < INT_MIN || ms > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "sleep is too large");
+            return NULL;
+        }
+        sleep_ms = (int)ms;
     }
 
     if (!pysqlite_check_connection((pysqlite_Connection *)target)) {
@@ -1531,7 +1571,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
                the engine could not make any progress */
             if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
                 Py_BEGIN_ALLOW_THREADS
-                sqlite3_sleep(sleep_secs * 1000.0);
+                sqlite3_sleep(sleep_ms);
                 Py_END_ALLOW_THREADS
             }
         } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);

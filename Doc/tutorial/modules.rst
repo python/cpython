@@ -249,7 +249,7 @@ Some tips for experts:
   directory.
 
 * There is more detail on this process, including a flow chart of the
-  decisions, in PEP 3147.
+  decisions, in :pep:`3147`.
 
 
 .. _tut-standardmodules:
@@ -382,7 +382,7 @@ module names".  For example, the module name :mod:`A.B` designates a submodule
 named ``B`` in a package named ``A``.  Just like the use of modules saves the
 authors of different modules from having to worry about each other's global
 variable names, the use of dotted module names saves the authors of multi-module
-packages like NumPy or the Python Imaging Library from having to worry about
+packages like NumPy or Pillow from having to worry about
 each other's module names.
 
 Suppose you want to design a collection of modules (a "package") for the uniform

@@ -2198,6 +2198,11 @@ Samuele
 ...     "Return first n items of the iterable as a list"
 ...     return list(islice(iterable, n))
 
+>>> def prepend(value, iterator):
+...     "Prepend a single value in front of an iterator"
+...     # prepend(1, [2, 3, 4]) -> 1 2 3 4
+...     return chain([value], iterator)
+
 >>> def enumerate(iterable, start=0):
 ...     return zip(count(start), iterable)
 
@@ -2349,6 +2354,9 @@ perform as purported.
 
 >>> take(10, count())
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+>>> list(prepend(1, [2, 3, 4]))
+[1, 2, 3, 4]
 
 >>> list(enumerate('abc'))
 [(0, 'a'), (1, 'b'), (2, 'c')]

@@ -208,7 +208,7 @@ class EmbeddingTests(unittest.TestCase):
         Checks that sys.warnoptions and sys._xoptions can be set before the
         runtime is initialized (otherwise they won't be effective).
         """
-        env = dict(PYTHONPATH=os.pathsep.join(sys.path))
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
         out, err = self.run_embedded_interpreter(
                         "pre_initialization_sys_options", env=env)
         expected_output = (
@@ -226,6 +226,15 @@ class EmbeddingTests(unittest.TestCase):
         call PyEval_InitThreads() for us in this case.
         """
         out, err = self.run_embedded_interpreter("bpo20891")
+        self.assertEqual(out, '')
+        self.assertEqual(err, '')
+
+    def test_initialize_twice(self):
+        """
+        bpo-33932: Calling Py_Initialize() twice should do nothing (and not
+        crash!).
+        """
+        out, err = self.run_embedded_interpreter("initialize_twice")
         self.assertEqual(out, '')
         self.assertEqual(err, '')
 

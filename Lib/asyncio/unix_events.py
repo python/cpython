@@ -20,6 +20,7 @@ from . import coroutines
 from . import events
 from . import futures
 from . import selector_events
+from . import tasks
 from . import transports
 from .log import logger
 
@@ -167,8 +168,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         if not isinstance(sig, int):
             raise TypeError(f'sig must be an int, not {sig!r}')
 
-        if not (1 <= sig < signal.NSIG):
-            raise ValueError(f'sig {sig} out of range(1, {signal.NSIG})')
+        if sig not in signal.valid_signals():
+            raise ValueError(f'invalid signal number {sig}')
 
     def _make_read_pipe_transport(self, pipe, protocol, waiter=None,
                                   extra=None):
@@ -308,6 +309,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                     ssl, backlog, ssl_handshake_timeout)
         if start_serving:
             server._start_serving()
+            # Skip one loop iteration so that all 'loop.add_reader'
+            # go through.
+            await tasks.sleep(0, loop=self)
 
         return server
 
