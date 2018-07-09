@@ -107,7 +107,7 @@ static PyObject *
 sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
     assert(!PyErr_Occurred());
-    const char *envar = Py_GETENV("PYTHONBREAKPOINT");
+    char *envar = Py_GETENV("PYTHONBREAKPOINT");
 
     if (envar == NULL || strlen(envar) == 0) {
         envar = "pdb.set_trace";
@@ -115,6 +115,11 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     else if (!strcmp(envar, "0")) {
         /* The breakpoint is explicitly no-op'd. */
         Py_RETURN_NONE;
+    }
+    envar = _PyMem_RawStrdup(envar);
+    if (envar == NULL) {
+        PyErr_NoMemory();
+        return NULL;
     }
     const char *last_dot = strrchr(envar, '.');
     const char *attrname = NULL;
@@ -131,12 +136,14 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         attrname = last_dot + 1;
     }
     if (modulepath == NULL) {
+        PyMem_RawFree(envar);
         return NULL;
     }
 
     PyObject *fromlist = Py_BuildValue("(s)", attrname);
     if (fromlist == NULL) {
         Py_DECREF(modulepath);
+        PyMem_RawFree(envar);
         return NULL;
     }
     PyObject *module = PyImport_ImportModuleLevelObject(
@@ -145,11 +152,13 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_DECREF(fromlist);
 
     if (module == NULL) {
+        PyMem_RawFree(envar);
         goto error;
     }
 
     PyObject *hook = PyObject_GetAttrString(module, attrname);
     Py_DECREF(module);
+    PyMem_RawFree(envar);
 
     if (hook == NULL) {
         goto error;
