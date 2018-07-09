@@ -862,7 +862,8 @@ class NonCallableMock(Base):
                 not_found.append(kall)
         if not_found:
             raise AssertionError(
-                '%r not all found in call list' % (tuple(not_found),)
+                '%r not all found in call list: %r' % (tuple(not_found),
+                    all_calls)
             ) from cause
 
 
