@@ -1,1 +1,2 @@
-func:`unittest.mock.mock_open` now supports iteration over the file contents. Patch by Tony Flury
+:func:`unittest.mock.mock_open` now supports iteration over the file
+contents. Patch by Tony Flury.
