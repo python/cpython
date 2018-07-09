@@ -207,10 +207,10 @@ class TestMockOpen(unittest.TestCase):
             result = h.readline()
         self.assertEqual(result, 'foo')
         self.assertEqual(h.readline(), '')
-      
-    
+
+
     def test_dunder_iter_data(self):
-        # Check that __iter__ will return all the lines from the fake file.
+        # Check that dunder_iter will return all the lines from the fake file.
         mock = mock_open(read_data='foo\nbar\nbaz\n')
         with patch('%s.open' % __name__, mock, create=True):
             h = open('bar')
