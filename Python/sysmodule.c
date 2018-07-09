@@ -116,6 +116,10 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         /* The breakpoint is explicitly no-op'd. */
         Py_RETURN_NONE;
     }
+    /* According to POSIX the string returned by getenv() might be invalidated
+     * or the string content might be overwritten by a subsequent call to
+     * getenv().  Since importing a module can performs the getenv() calls,
+     * we need to save a copy of envar. */
     envar = _PyMem_RawStrdup(envar);
     if (envar == NULL) {
         PyErr_NoMemory();
@@ -152,17 +156,16 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_DECREF(fromlist);
 
     if (module == NULL) {
-        PyMem_RawFree(envar);
         goto error;
     }
 
     PyObject *hook = PyObject_GetAttrString(module, attrname);
     Py_DECREF(module);
-    PyMem_RawFree(envar);
 
     if (hook == NULL) {
         goto error;
     }
+    PyMem_RawFree(envar);
     PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
@@ -173,6 +176,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     int status = PyErr_WarnFormat(
         PyExc_RuntimeWarning, 0,
         "Ignoring unimportable $PYTHONBREAKPOINT: \"%s\"", envar);
+    PyMem_RawFree(envar);
     if (status < 0) {
         /* Printing the warning raised an exception. */
         return NULL;
