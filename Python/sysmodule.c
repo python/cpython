@@ -107,7 +107,7 @@ static PyObject *
 sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
     assert(!PyErr_Occurred());
-    const char *envar = Py_GETENV("PYTHONBREAKPOINT");
+    char *envar = Py_GETENV("PYTHONBREAKPOINT");
 
     if (envar == NULL || strlen(envar) == 0) {
         envar = "pdb.set_trace";
@@ -115,6 +115,15 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     else if (!strcmp(envar, "0")) {
         /* The breakpoint is explicitly no-op'd. */
         Py_RETURN_NONE;
+    }
+    /* According to POSIX the string returned by getenv() might be invalidated
+     * or the string content might be overwritten by a subsequent call to
+     * getenv().  Since importing a module can performs the getenv() calls,
+     * we need to save a copy of envar. */
+    envar = _PyMem_RawStrdup(envar);
+    if (envar == NULL) {
+        PyErr_NoMemory();
+        return NULL;
     }
     const char *last_dot = strrchr(envar, '.');
     const char *attrname = NULL;
@@ -131,12 +140,14 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         attrname = last_dot + 1;
     }
     if (modulepath == NULL) {
+        PyMem_RawFree(envar);
         return NULL;
     }
 
     PyObject *fromlist = Py_BuildValue("(s)", attrname);
     if (fromlist == NULL) {
         Py_DECREF(modulepath);
+        PyMem_RawFree(envar);
         return NULL;
     }
     PyObject *module = PyImport_ImportModuleLevelObject(
@@ -154,6 +165,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (hook == NULL) {
         goto error;
     }
+    PyMem_RawFree(envar);
     PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
@@ -164,6 +176,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     int status = PyErr_WarnFormat(
         PyExc_RuntimeWarning, 0,
         "Ignoring unimportable $PYTHONBREAKPOINT: \"%s\"", envar);
+    PyMem_RawFree(envar);
     if (status < 0) {
         /* Printing the warning raised an exception. */
         return NULL;
