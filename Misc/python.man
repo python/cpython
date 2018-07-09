@@ -469,7 +469,7 @@ If this environment variable is set to a non-empty string,
 is called at startup: install a handler for SIGSEGV, SIGFPE, SIGABRT, SIGBUS
 and SIGILL signals to dump the Python traceback.
 .IP
-This is equivalent to the \fB-X "faulthandler"\fP option.
+This is equivalent to the \fB-X faulthandler\fP option.
 .IP PYTHONEXECUTABLE
 If this environment variable is set,
 .IB sys.argv[0]
@@ -480,6 +480,10 @@ Defines the user base directory, which is used to compute the path of the user
 .IR site-packages
 directory and Distutils installation paths for
 .IR "python setup\.py install \-\-user" .
+.IP PYTHONPROFILEIMPORTTIME
+If this environment variable is set to a non-empty string, Python will
+show how long each import takes. This is exactly equivalent to setting
+\fB\-X importtime\fP on the command line.
 .SS Debug-mode variables
 Setting these variables only has an effect in a debug build of Python, that is,
 if Python was configured with the
