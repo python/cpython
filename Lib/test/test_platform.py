@@ -270,7 +270,6 @@ class PlatformTest(unittest.TestCase):
             res = platform.dist()
 
     def test_libc_ver(self):
-        import os
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
             # Cygwin horror
@@ -278,6 +277,13 @@ class PlatformTest(unittest.TestCase):
         else:
             executable = sys.executable
         res = platform.libc_ver(executable)
+
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, 'wb') as f:
+            f.write(b'x'*(16384-10))
+            f.write(b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0')
+        self.assertEqual(platform.libc_ver(support.TESTFN),
+                         ('glibc', '1.23.4'))
 
     def test_parse_release_file(self):
 
