@@ -2131,6 +2131,28 @@ And for reading files:
     >>> m.assert_called_once_with('foo')
     >>> assert result == 'bibble'
 
+Note that, as the mock created by :func:`mock_open` does not define the
+:meth:`__iter__` method, it cannot be iterated::
+
+   >>> m = mock_open(read_data='bibble')
+   >>> with patch('__main__.open', m):
+   ...     with open('foo') as h:
+   ...         for line in h:
+   ...             print(line)
+   ...
+   >>>
+
+This can be overcomed by iterating on :meth:`~io.IOBase.readlines` instead::
+
+   >>> m = mock_open(read_data='bibble')
+   >>> with patch('__main__.open', m):
+   ...     with open('foo') as h:
+   ...         for line in h.readlines():
+   ...             print(line)
+   ...
+   bibble
+   >>>
+
 
 .. _auto-speccing:
 
