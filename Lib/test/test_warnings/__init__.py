@@ -149,9 +149,9 @@ class FilterTests(BaseTest):
             self.module.filterwarnings("always", category=UserWarning)
             message = "FilterTests.test_always"
             self.module.warn(message, UserWarning)
-            self.assertTrue(message, w[-1].message)
+            self.assertEqual(message, w[-1].message.args[0])
             self.module.warn(message, UserWarning)
-            self.assertTrue(w[-1].message, message)
+            self.assertEqual(w[-1].message.args[0], message)
 
     def test_always_after_default(self):
         with original_warnings.catch_warnings(record=True,
