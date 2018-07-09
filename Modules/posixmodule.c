@@ -6176,20 +6176,22 @@ error:
 #endif
 
 #if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX)
+#ifdef __APPLE__
+#ifdef HAVE_UTIL_H
+#include <util.h>
+#endif /* HAVE_UTIL_H */
+#else
 #ifdef HAVE_PTY_H
 #include <pty.h>
 #else
 #ifdef HAVE_LIBUTIL_H
 #include <libutil.h>
-#else
-#ifdef HAVE_UTIL_H
-#include <util.h>
-#endif /* HAVE_UTIL_H */
 #endif /* HAVE_LIBUTIL_H */
 #endif /* HAVE_PTY_H */
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
+#endif /* __APPLE__ */
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX) */
 
 
