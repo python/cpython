@@ -138,7 +138,7 @@ class TestPkg(unittest.TestCase):
 
         s = """
             from t2 import *
-            self.assertTrue(dir(), ['self', 'sub'])
+            self.assertEqual(dir(), ['self', 'sub'])
             """
         self.run_code(s)
 

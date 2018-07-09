@@ -264,7 +264,7 @@ class TestSupport(unittest.TestCase):
         with support.temp_cwd(name=TESTFN):
             self.assertEqual(os.path.basename(os.getcwd()), TESTFN)
         self.assertFalse(os.path.exists(TESTFN))
-        self.assertTrue(os.path.basename(os.getcwd()), here)
+        self.assertEqual(os.getcwd(), here)
 
 
     def test_temp_cwd__name_none(self):
