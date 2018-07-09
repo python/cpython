@@ -159,7 +159,7 @@ Functions and classes provided:
       def myfunction(arg, ignore_exceptions=False):
           if ignore_exceptions:
               # Use suppress to ignore all exceptions.
-              cm = contextlib.suppress(BaseException)
+              cm = contextlib.suppress(Exception)
           else:
               # Do not ignore any exceptions, cm has no effect.
               cm = contextlib.nullcontext()
