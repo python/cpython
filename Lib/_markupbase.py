@@ -49,8 +49,7 @@ class ParserBase:
         if i >= j:
             return j
         rawdata = self.rawdata
-        nlines = rawdata.count("\n", i, j)
-        if nlines:
+        if (nlines := rawdata.count("\n", i, j)):
             self.lineno = self.lineno + nlines
             pos = rawdata.rindex("\n", i, j) # Should not fail
             self.offset = j-(pos+1)
@@ -291,8 +290,7 @@ class ParserBase:
             if not c:
                 return -1
             if c in "'\"":
-                m = _declstringlit_match(rawdata, j)
-                if m:
+                if (m := _declstringlit_match(rawdata, j)):
                     j = m.end()
                 else:
                     return -1
@@ -359,8 +357,7 @@ class ParserBase:
             if not c:
                 return -1
             if c in "'\"":
-                m = _declstringlit_match(rawdata, j)
-                if m:
+                if (m := _declstringlit_match(rawdata, j)):
                     j = m.end()
                 else:
                     return -1    # incomplete
@@ -378,8 +375,7 @@ class ParserBase:
         n = len(rawdata)
         if i == n:
             return None, -1
-        m = _declname_match(rawdata, i)
-        if m:
+        if (m := _declname_match(rawdata, i)):
             s = m.group()
             name = s.strip()
             if (i + len(s)) == n:

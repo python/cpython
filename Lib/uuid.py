@@ -393,16 +393,14 @@ def _ifconfig_getnode():
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
     keywords = (b'hwaddr', b'ether', b'address:', b'lladdr')
     for args in ('', '-a', '-av'):
-        mac = _find_mac('ifconfig', args, keywords, lambda i: i+1)
-        if mac:
+        if (mac := _find_mac('ifconfig', args, keywords, lambda i: i+1)):
             return mac
         return None
 
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
     # This works on Linux with iproute2.
-    mac = _find_mac('ip', 'link', [b'link/ether'], lambda i: i+1)
-    if mac:
+    if (mac := _find_mac('ip', 'link', [b'link/ether'], lambda i: i+1)):
         return mac
     return None
 

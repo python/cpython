@@ -243,8 +243,7 @@ def check_enableusersite():
 
 # Copy of sysconfig._getuserbase()
 def _getuserbase():
-    env_base = os.environ.get("PYTHONUSERBASE", None)
-    if env_base:
+    if (env_base := os.environ.get("PYTHONUSERBASE", None)):
         return env_base
 
     def joinuser(*args):

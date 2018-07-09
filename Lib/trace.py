@@ -471,8 +471,7 @@ class Trace:
 
     def file_module_function_of(self, frame):
         code = frame.f_code
-        filename = code.co_filename
-        if filename:
+        if (filename := code.co_filename):
             modulename = _modname(filename)
         else:
             modulename = None
@@ -538,8 +537,7 @@ class Trace:
         """
         if why == 'call':
             code = frame.f_code
-            filename = frame.f_globals.get('__file__', None)
-            if filename:
+            if (filename := frame.f_globals.get('__file__', None)):
                 # XXX _modname() doesn't work right for packages, so
                 # the ignore support won't work right for packages
                 modulename = _modname(filename)

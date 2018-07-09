@@ -227,8 +227,7 @@ def _wrap_strftime(object, format, timetuple):
                                 h, rest = divmod(offset, timedelta(hours=1))
                                 m, rest = divmod(rest, timedelta(minutes=1))
                                 s = rest.seconds
-                                u = offset.microseconds
-                                if u:
+                                if (u := offset.microseconds):
                                     zreplace = '%c%02d%02d%02d.%06d' % (sign, h, m, s, u)
                                 elif s:
                                     zreplace = '%c%02d%02d%02d' % (sign, h, m, s)
@@ -1131,13 +1130,11 @@ class tzinfo:
     # Pickle support.
 
     def __reduce__(self):
-        getinitargs = getattr(self, "__getinitargs__", None)
-        if getinitargs:
+        if (getinitargs := getattr(self, "__getinitargs__", None)):
             args = getinitargs()
         else:
             args = ()
-        getstate = getattr(self, "__getstate__", None)
-        if getstate:
+        if (getstate := getattr(self, "__getstate__", None)):
             state = getstate()
         else:
             state = getattr(self, "__dict__", None) or None
@@ -1352,8 +1349,7 @@ class time:
         """
         s = _format_time(self._hour, self._minute, self._second,
                           self._microsecond, timespec)
-        tz = self._tzstr()
-        if tz:
+        if (tz := self._tzstr()):
             s += tz
         return s
 
@@ -1707,8 +1703,7 @@ class datetime(date):
 
     def utctimetuple(self):
         "Return UTC time tuple compatible with time.gmtime()."
-        offset = self.utcoffset()
-        if offset:
+        if (offset := self.utcoffset()):
             self -= offset
         y, m, d = self.year, self.month, self.day
         hh, mm, ss = self.hour, self.minute, self.second
@@ -1821,8 +1816,7 @@ class datetime(date):
                           self._microsecond, timespec))
 
         off = self.utcoffset()
-        tz = _format_offset(off)
-        if tz:
+        if (tz := _format_offset(off)):
             s += tz
 
         return s
@@ -2195,8 +2189,7 @@ class timezone(tzinfo):
         hours, rest = divmod(delta, timedelta(hours=1))
         minutes, rest = divmod(rest, timedelta(minutes=1))
         seconds = rest.seconds
-        microseconds = rest.microseconds
-        if microseconds:
+        if (microseconds := rest.microseconds):
             return (f'UTC{sign}{hours:02d}:{minutes:02d}:{seconds:02d}'
                     f'.{microseconds:06d}')
         if seconds:

@@ -113,8 +113,7 @@ def _create_formatters(cp):
         dfs = cp.get(sectname, "datefmt", raw=True, fallback=None)
         stl = cp.get(sectname, "style", raw=True, fallback='%')
         c = logging.Formatter
-        class_name = cp[sectname].get("class")
-        if class_name:
+        if (class_name := cp[sectname].get("class")):
             c = _resolve(class_name)
         f = c(fs, dfs, stl)
         formatters[form] = f
@@ -425,6 +424,7 @@ class BaseConfigurator(object):
                                 d = d[n]
                             except TypeError:
                                 d = d[idx]
+
                 if m:
                     rest = rest[m.end():]
                 else:
@@ -450,12 +450,10 @@ class BaseConfigurator(object):
             value = ConvertingTuple(value)
             value.configurator = self
         elif isinstance(value, str): # str for py3k
-            m = self.CONVERT_PATTERN.match(value)
-            if m:
+            if (m := self.CONVERT_PATTERN.match(value)):
                 d = m.groupdict()
                 prefix = d['prefix']
-                converter = self.value_converters.get(prefix, None)
-                if converter:
+                if (converter := self.value_converters.get(prefix, None)):
                     suffix = d['suffix']
                     converter = getattr(self, converter)
                     value = converter(suffix)
@@ -509,8 +507,7 @@ class DictConfigurator(BaseConfigurator):
                         try:
                             handler = logging._handlers[name]
                             handler_config = handlers[name]
-                            level = handler_config.get('level', None)
-                            if level:
+                            if (level := handler_config.get('level', None)):
                                 handler.setLevel(logging._checkLevel(level))
                         except Exception as e:
                             raise ValueError('Unable to configure handler '
@@ -522,8 +519,7 @@ class DictConfigurator(BaseConfigurator):
                     except Exception as e:
                         raise ValueError('Unable to configure logger '
                                          '%r' % name) from e
-                root = config.get('root', None)
-                if root:
+                if (root := config.get('root', None)):
                     try:
                         self.configure_root(root, True)
                     except Exception as e:
@@ -635,8 +631,7 @@ class DictConfigurator(BaseConfigurator):
                                          disable_existing)
 
                 # And finally, do the root logger
-                root = config.get('root', None)
-                if root:
+                if (root := config.get('root', None)):
                     try:
                         self.configure_root(root)
                     except Exception as e:
@@ -772,11 +767,9 @@ class DictConfigurator(BaseConfigurator):
             #Remove any existing handlers
             for h in logger.handlers[:]:
                 logger.removeHandler(h)
-            handlers = config.get('handlers', None)
-            if handlers:
+            if (handlers := config.get('handlers', None)):
                 self.add_handlers(logger, handlers)
-            filters = config.get('filters', None)
-            if filters:
+            if (filters := config.get('filters', None)):
                 self.add_filters(logger, filters)
 
     def configure_logger(self, name, config, incremental=False):

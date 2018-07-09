@@ -249,8 +249,7 @@ class FileInput:
 
     def __next__(self):
         while True:
-            line = self._readline()
-            if line:
+            if (line := self._readline()):
                 self._filelineno += 1
                 return line
             if not self._file:

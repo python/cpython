@@ -220,8 +220,7 @@ class Sniffer:
                       r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)',   # ,".*?"
                       r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'):                            #  ".*?" (no delim, no space)
             regexp = re.compile(restr, re.DOTALL | re.MULTILINE)
-            matches = regexp.findall(data)
-            if matches:
+            if (matches := regexp.findall(data)):
                 break
 
         if not matches:
@@ -233,8 +232,7 @@ class Sniffer:
         groupindex = regexp.groupindex
         for m in matches:
             n = groupindex['quote'] - 1
-            key = m[n]
-            if key:
+            if (key := m[n]):
                 quotes[key] = quotes.get(key, 0) + 1
             try:
                 n = groupindex['delim'] - 1

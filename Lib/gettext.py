@@ -478,8 +478,7 @@ def find(domain, localedir=None, languages=None, all=False):
     if languages is None:
         languages = []
         for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
-            val = os.environ.get(envar)
-            if val:
+            if (val := os.environ.get(envar)):
                 languages = val.split(':')
                 break
         if 'C' not in languages:

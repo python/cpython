@@ -422,8 +422,7 @@ def detect_encoding(readline):
     if not first:
         return default, []
 
-    encoding = find_cookie(first)
-    if encoding:
+    if (encoding := find_cookie(first)):
         return encoding, [first]
     if not blank_re.match(first):
         return default, [first]
@@ -432,8 +431,7 @@ def detect_encoding(readline):
     if not second:
         return default, [first]
 
-    encoding = find_cookie(second)
-    if encoding:
+    if (encoding := find_cookie(second)):
         return encoding, [first, second]
 
     return default, [first, second]
@@ -513,8 +511,7 @@ def _tokenize(readline, encoding):
         if contstr:                            # continued string
             if not line:
                 raise TokenError("EOF in multi-line string", strstart)
-            endmatch = endprog.match(line)
-            if endmatch:
+            if (endmatch := endprog.match(line)):
                 pos = end = endmatch.end(0)
                 yield TokenInfo(STRING, contstr + line[:end],
                        strstart, (lnum, end), contline + line)
@@ -576,8 +573,7 @@ def _tokenize(readline, encoding):
             continued = 0
 
         while pos < max:
-            pseudomatch = _compile(PseudoToken).match(line, pos)
-            if pseudomatch:                                # scan for tokens
+            if (pseudomatch := _compile(PseudoToken).match(line, pos)):                                # scan for tokens
                 start, end = pseudomatch.span(1)
                 spos, epos, pos = (lnum, start), (lnum, end), end
                 if start == end:
@@ -599,8 +595,7 @@ def _tokenize(readline, encoding):
 
                 elif token in triple_quoted:
                     endprog = _compile(endpats[token])
-                    endmatch = endprog.match(line, pos)
-                    if endmatch:                           # all on one line
+                    if (endmatch := endprog.match(line, pos)):                           # all on one line
                         pos = endmatch.end(0)
                         token = line[start:pos]
                         yield TokenInfo(STRING, token, spos, (lnum, pos), line)

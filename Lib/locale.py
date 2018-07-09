@@ -311,13 +311,11 @@ def delocalize(string):
     conv = localeconv()
 
     #First, get rid of the grouping
-    ts = conv['thousands_sep']
-    if ts:
+    if (ts := conv['thousands_sep']):
         string = string.replace(ts, '')
 
     #next, replace the decimal point with a dot
-    dd = conv['decimal_point']
-    if dd:
+    if (dd := conv['decimal_point']):
         string = string.replace(dd, '.')
     return string
 

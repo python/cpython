@@ -549,8 +549,7 @@ class SMTPChannel(asynchat.async_chat):
             elif smtputf8 is not False:
                 self.push('501 Error: SMTPUTF8 takes no arguments')
                 return
-        size = params.pop('SIZE', None)
-        if size:
+        if (size := params.pop('SIZE', None)):
             if not size.isdigit():
                 self.push(syntaxerr)
                 return

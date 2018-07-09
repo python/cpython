@@ -188,8 +188,7 @@ class Wave_read:
 
     def close(self):
         self._file = None
-        file = self._i_opened_the_file
-        if file:
+        if (file := self._i_opened_the_file):
             self._i_opened_the_file = None
             file.close()
 
@@ -448,8 +447,7 @@ class Wave_write:
                 self._file.flush()
         finally:
             self._file = None
-            file = self._i_opened_the_file
-            if file:
+            if (file := self._i_opened_the_file):
                 self._i_opened_the_file = None
                 file.close()
 

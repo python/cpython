@@ -206,8 +206,7 @@ class UnixBrowser(BaseBrowser):
         if remote and self.raise_opts:
             # use autoraise argument only for remote invocation
             autoraise = int(autoraise)
-            opt = self.raise_opts[autoraise]
-            if opt: raise_opt = [opt]
+            if (opt := self.raise_opts[autoraise]): raise_opt = [opt]
 
         cmdline = [self.name] + raise_opt + args
 

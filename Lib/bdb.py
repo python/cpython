@@ -558,8 +558,7 @@ class Bdb:
             rv = frame.f_locals['__return__']
             s += '->'
             s += reprlib.repr(rv)
-        line = linecache.getline(filename, lineno, frame.f_globals)
-        if line:
+        if (line := linecache.getline(filename, lineno, frame.f_globals)):
             s += lprefix + line.strip()
         return s
 
@@ -818,8 +817,7 @@ def effective(file, line, frame):
             # Ignore count applies only to those bpt hits where the
             # condition evaluates to true.
             try:
-                val = eval(b.cond, frame.f_globals, frame.f_locals)
-                if val:
+                if eval(b.cond, frame.f_globals, frame.f_locals):
                     if b.ignore > 0:
                         b.ignore -= 1
                         # continue

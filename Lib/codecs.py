@@ -565,8 +565,7 @@ class StreamReader(Codec):
                     data += self.read(size=1, chars=1)
 
             line += data
-            lines = line.splitlines(keepends=True)
-            if lines:
+            if (lines := line.splitlines(keepends=True)):
                 if len(lines) > 1:
                     # More than one line result; the first line is a full line
                     # to return
@@ -642,8 +641,7 @@ class StreamReader(Codec):
     def __next__(self):
 
         """ Return the next decoded line from the input stream."""
-        line = self.readline()
-        if line:
+        if (line := self.readline()):
             return line
         raise StopIteration
 
@@ -1021,11 +1019,9 @@ def iterencode(iterator, encoding, errors='strict', **kwargs):
     """
     encoder = getincrementalencoder(encoding)(errors, **kwargs)
     for input in iterator:
-        output = encoder.encode(input)
-        if output:
+        if (output := encoder.encode(input)):
             yield output
-    output = encoder.encode("", True)
-    if output:
+    if (output := encoder.encode("", True)):
         yield output
 
 def iterdecode(iterator, encoding, errors='strict', **kwargs):
@@ -1039,11 +1035,9 @@ def iterdecode(iterator, encoding, errors='strict', **kwargs):
     """
     decoder = getincrementaldecoder(encoding)(errors, **kwargs)
     for input in iterator:
-        output = decoder.decode(input)
-        if output:
+        if (output := decoder.decode(input)):
             yield output
-    output = decoder.decode(b"", True)
-    if output:
+    if (output := decoder.decode(b"", True)):
         yield output
 
 ### Helpers for charmap-based codecs
@@ -1099,8 +1093,7 @@ except LookupError:
 
 # Tell modulefinder that using codecs probably needs the encodings
 # package
-_false = 0
-if _false:
+if (_false := 0):
     import encodings
 
 ### Tests

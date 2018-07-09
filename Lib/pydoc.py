@@ -1242,8 +1242,7 @@ location listed above.
             if argspec and argspec != '()':
                 push(name + argspec + '\n')
 
-        doc = getdoc(object)
-        if doc:
+        if (doc := getdoc(object)):
             push(doc + '\n')
 
         # List the mro, if non-trivial.
