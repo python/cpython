@@ -1360,7 +1360,7 @@ class TestTokenize(TestCase):
             tokenize_module.detect_encoding = orig_detect_encoding
             tokenize_module._tokenize = orig__tokenize
 
-        self.assertTrue(encoding_used, encoding)
+        self.assertEqual(encoding_used, encoding)
 
     def test_oneline_defs(self):
         buf = []
