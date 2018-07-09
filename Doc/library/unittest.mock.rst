@@ -2136,7 +2136,6 @@ And for reading files:
     >>> assert result == 'bibble'
 
 
-
 .. _auto-speccing:
 
 Autospeccing
