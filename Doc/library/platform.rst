@@ -243,7 +243,7 @@ Mac OS Platform
 Unix Platforms
 --------------
 
-.. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=2048)
+.. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=16384)
 
    Tries to determine the libc version against which the file executable (defaults
    to the Python interpreter) is linked.  Returns a tuple of strings ``(lib,
