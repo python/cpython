@@ -111,6 +111,7 @@ static PyObject *
 sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
     assert(!PyErr_Occurred());
+    PyObject *hook;
     char *envar = Py_GETENV("PYTHONBREAKPOINT");
 
     if (envar == NULL || strlen(envar) == 0) {
@@ -130,41 +131,29 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         return NULL;
     }
     const char *last_dot = strrchr(envar, '.');
-    const char *attrname = NULL;
-    PyObject *modulepath = NULL;
 
     if (last_dot == NULL) {
         /* The breakpoint is a built-in, e.g. PYTHONBREAKPOINT=int */
-        modulepath = PyUnicode_FromString("builtins");
-        attrname = envar;
+        hook = _PyObject_GetBuiltin(envar);
     }
     else {
         /* Split on the last dot; */
-        modulepath = PyUnicode_FromStringAndSize(envar, last_dot - envar);
-        attrname = last_dot + 1;
-    }
-    if (modulepath == NULL) {
-        PyMem_RawFree(envar);
-        return NULL;
-    }
+        PyObject *modulepath = PyUnicode_FromStringAndSize(envar, last_dot - envar);
+        if (modulepath == NULL) {
+            PyMem_RawFree(envar);
+            return NULL;
+        }
 
-    PyObject *fromlist = Py_BuildValue("(s)", attrname);
-    if (fromlist == NULL) {
+        PyObject *module = PyImport_ImportModuleLevelObject(
+            modulepath, NULL, NULL, NULL, 0);
         Py_DECREF(modulepath);
-        PyMem_RawFree(envar);
-        return NULL;
-    }
-    PyObject *module = PyImport_ImportModuleLevelObject(
-        modulepath, NULL, NULL, fromlist, 0);
-    Py_DECREF(modulepath);
-    Py_DECREF(fromlist);
+        if (module == NULL) {
+            goto error;
+        }
 
-    if (module == NULL) {
-        goto error;
+        hook = PyObject_GetAttrString(module, last_dot + 1);
+        Py_DECREF(module);
     }
-
-    PyObject *hook = PyObject_GetAttrString(module, attrname);
-    Py_DECREF(module);
 
     if (hook == NULL) {
         goto error;
@@ -175,6 +164,12 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     return retval;
 
   error:
+    if (!PyErr_ExceptionMatches(PyExc_ImportError)
+        && !PyErr_ExceptionMatches(PyExc_AttributeError))
+    {
+        PyMem_RawFree(envar);
+        return NULL;
+    }
     /* If any of the imports went wrong, then warn and ignore. */
     PyErr_Clear();
     int status = PyErr_WarnFormat(
