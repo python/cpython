@@ -2303,6 +2303,14 @@ skipitem(const char **p_format, va_list *p_va, int flags)
 
     /* string codes */
 
+    case 'w': /* buffer, read-write */
+        if (*format != '*') {
+            /* after 'w', only '*' is allowed */
+            goto err;
+        }
+        format++;
+        break;
+
     case 'e': /* string with encoding */
         {
             if (p_va != NULL) {
@@ -2320,7 +2328,6 @@ skipitem(const char **p_format, va_list *p_va, int flags)
     case 'y': /* bytes */
     case 'u': /* unicode string */
     case 'Z': /* unicode string or None */
-    case 'w': /* buffer, read-write */
         {
             if (p_va != NULL) {
                 (void) va_arg(*p_va, char **);

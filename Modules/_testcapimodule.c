@@ -1437,6 +1437,77 @@ getargs_Z(PyObject *self, PyObject *args)
         Py_RETURN_NONE;
 }
 
+/* Test the old w and w# codes that no longer work */
+static PyObject *
+test_w_code_invalid(PyObject *self)
+{
+    static const char * const keywords[] = {"a", "b", "c", "d", NULL};
+    char *formats_3[] = {"O|w#$O",
+                         "O|w$O",
+                         "O|w#O",
+                         "O|wO",
+                         NULL};
+    char *formats_4[] = {"O|w#O$O",
+                         "O|wO$O",
+                         "O|Ow#O",
+                         "O|OwO",
+                         "O|Ow#$O",
+                         "O|Ow$O",
+                         NULL};
+    size_t n;
+    PyObject *args;
+    PyObject *kwargs;
+    PyObject *tmp;
+
+    if (!(args = PyTuple_Pack(1, Py_None))) {
+        return NULL;
+    }
+
+    if (!(kwargs = PyDict_New()) || PyDict_SetItemString(kwargs, "c", Py_None)) {
+        Py_DECREF(args);
+        Py_XDECREF(kwargs);
+        return NULL;
+    }
+
+    for (n = 0;formats_3[n];++n) {
+        if (PyArg_ParseTupleAndKeywords(args, kwargs, formats_3[n],
+                                        (char**) keywords,
+                                        &tmp, &tmp, &tmp)) {
+            Py_DECREF(args);
+            return raiseTestError("test_w_code_invalid_suffix",
+                                  formats_3[n]);
+        }
+        else {
+            PyErr_Clear();
+        }
+    }
+
+    if (PyDict_DelItemString(kwargs, "c") ||
+        PyDict_SetItemString(kwargs, "d", Py_None)) {
+
+        Py_DECREF(kwargs);
+        Py_DECREF(args);
+        return NULL;
+    }
+
+    for (n = 0;formats_4[n];++n) {
+        if (PyArg_ParseTupleAndKeywords(args, kwargs, formats_4[n],
+                                        (char**) keywords,
+                                        &tmp, &tmp, &tmp, &tmp)) {
+            Py_DECREF(args);
+            return raiseTestError("test_w_code_invalid_suffix",
+                                  formats_4[n]);
+        }
+        else {
+            PyErr_Clear();
+        }
+    }
+
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+    Py_RETURN_NONE;
+}
+
 static PyObject *
 getargs_Z_hash(PyObject *self, PyObject *args)
 {
