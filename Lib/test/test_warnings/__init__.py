@@ -148,9 +148,13 @@ class FilterTests(BaseTest):
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
             message = "FilterTests.test_always"
-            self.module.warn(message, UserWarning)
-            self.assertEqual(message, w[-1].message.args[0])
-            self.module.warn(message, UserWarning)
+            def f():
+                self.module.warn(message, UserWarning)
+            f()
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[-1].message.args[0], message)
+            f()
+            self.assertEqual(len(w), 2)
             self.assertEqual(w[-1].message.args[0], message)
 
     def test_always_after_default(self):
