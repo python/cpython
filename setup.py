@@ -675,9 +675,6 @@ class PyBuildExt(build_ext):
         if lib:
             time_libs.append(lib)
 
-        # time operations and variables
-        exts.append( Extension('time', ['timemodule.c'],
-                               libraries=time_libs) )
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
         exts.append( Extension('_datetime', ['_datetimemodule.c'],
@@ -690,8 +687,6 @@ class PyBuildExt(build_ext):
         exts.append( Extension("_heapq", ["_heapqmodule.c"]) )
         # C-optimized pickle replacement
         exts.append( Extension("_pickle", ["_pickle.c"]) )
-        # atexit
-        exts.append( Extension("atexit", ["atexitmodule.c"]) )
         # _json speedups
         exts.append( Extension("_json", ["_json.c"]) )
         # Python C API test module
@@ -712,8 +707,6 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_opcode', ['_opcode.c']) )
         # asyncio speedups
         exts.append( Extension("_asyncio", ["_asynciomodule.c"]) )
-        # _abc speedups
-        exts.append( Extension("_abc", ["_abc.c"]) )
         # _queue module
         exts.append( Extension("_queue", ["_queuemodule.c"]) )
 
@@ -727,8 +720,6 @@ class PyBuildExt(build_ext):
             # May be necessary on AIX for flock function
             libs = ['bsd']
         exts.append( Extension('fcntl', ['fcntlmodule.c'], libraries=libs) )
-        # pwd(3)
-        exts.append( Extension('pwd', ['pwdmodule.c']) )
         # grp(3)
         exts.append( Extension('grp', ['grpmodule.c']) )
         # spwd, shadow passwords

@@ -31,6 +31,31 @@ extern PyObject* PyInit__ast(void);
 extern PyObject* _PyWarnings_Init(void);
 extern PyObject* PyInit__string(void);
 
+/* extension modules always included */
+extern PyObject* PyInit__abc(void);
+extern PyObject* PyInit__codecs(void);
+extern PyObject* PyInit__collections(void);
+extern PyObject* PyInit__functools(void);
+extern PyObject* PyInit__io(void);
+extern PyObject* PyInit__locale(void);
+extern PyObject* PyInit__operator(void);
+extern PyObject* PyInit__signal(void);
+extern PyObject* PyInit__sre(void);
+extern PyObject* PyInit__stat(void);
+extern PyObject* PyInit__symtable(void);
+extern PyObject* PyInit__thread(void);
+extern PyObject* PyInit__tracemalloc(void);
+extern PyObject* PyInit__weakref(void);
+extern PyObject* PyInit_atexit(void);
+extern PyObject* PyInit_errno(void);
+extern PyObject* PyInit_faulthandler(void);
+extern PyObject* PyInit_itertools(void);
+extern PyObject* PyInit_posix(void);
+extern PyObject* PyInit_pwd(void);
+extern PyObject* PyInit_time(void);
+extern PyObject* PyInit_xxsubtype(void);
+extern PyObject* PyInit_zipimport(void);
+
 struct _inittab _PyImport_Inittab[] = {
 
 /* -- ADDMODULE MARKER 2 -- */
@@ -56,6 +81,78 @@ struct _inittab _PyImport_Inittab[] = {
 
     /* This lives in Objects/unicodeobject.c */
     {"_string", PyInit__string},
+
+    /* extensions below are always included, see EXTENSION_OBJS in the
+     * Makefile */
+
+    /* abstract base classes */
+    {"_abc", PyInit__abc},
+
+    /* access to the builtin codecs and codec registry */
+    {"_codecs", PyInit__codecs},
+
+    /* container types */
+    {"_collections", PyInit__collections},
+
+    /* Tools for working with functions and callable objects */
+    {"_functools", PyInit__functools},
+
+    /* Standard I/O baseline */
+    {"_io", PyInit__io},
+
+    /* access to ISO C locale support */
+    {"_locale", PyInit__locale},
+
+    /* operator.add() and similar goodies */
+    {"_operator", PyInit__operator},
+
+    {"_signal", PyInit__signal},
+
+    /* Fredrik Lundh's new regular expressions */
+    {"_sre", PyInit__sre},
+
+    /* stat.h interface */
+    {"_stat", PyInit__stat},
+
+    /* The Python symtable module depends on .h files that setup.py
+     * doesn't track */
+    {"_symtable", PyInit__symtable},
+
+    /* low-level threading interface */
+    {"_thread", PyInit__thread},
+
+    /* debug tool to trace memory blocks allocated by Python */
+    {"_tracemalloc", PyInit__tracemalloc},
+
+    /* weak references */
+    {"_weakref", PyInit__weakref},
+
+    /* Register functions to be run at interpreter-shutdown */
+    {"atexit", PyInit_atexit},
+
+    /* posix (UNIX) errno values */
+    {"errno", PyInit_errno},
+
+    {"faulthandler", PyInit_faulthandler},
+
+    {"itertools", PyInit_itertools},
+
+    /* posix (UNIX system calls */
+    {"posix", PyInit_posix},
+
+    /* needed to find out the user's home dir if $HOME is not set */
+    {"pwd", PyInit_pwd},
+
+    /* time operations and variables */
+    {"time", PyInit_time},
+
+    /* example, shows subtyping in action */
+    {"xxsubtype", PyInit_xxsubtype},
+
+    /* The zipimport module is always imported at startup. Having it as a
+       builtin module avoids some bootstrapping problems and reduces
+       overhead. */
+    {"zipimport", PyInit_zipimport},
 
     /* Sentinel */
     {0, 0}

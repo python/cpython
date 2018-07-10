@@ -261,11 +261,6 @@ COVERAGE_REPORT_OPTIONS=--no-branch-coverage --title "CPython lcov report"
 
 ##########################################################################
 # Modules
-MODULE_OBJS=	\
-		Modules/config.o \
-		Modules/getpath.o \
-		Modules/main.o \
-		Modules/gcmodule.o
 
 IO_H=		Modules/_io/_iomodule.h
 
@@ -277,6 +272,46 @@ IO_OBJS=	\
 		Modules/_io/textio.o \
 		Modules/_io/bytesio.o \
 		Modules/_io/stringio.o
+
+# Extension modules that we always include.  These are needed in order to run
+# setup.py.  Note that to add another extension, you must also edit
+# Modules/setup.c.in.
+#
+# These extensions were previously part of the *static* section of
+# Modules/Setup.  They are now included here so that Setup.dist contains no
+# extensions that are enabled by default.
+EXTENSION_OBJS= \
+		$(IO_OBJS) \
+		Modules/_abc.o \
+		Modules/_codecsmodule.o \
+		Modules/_collectionsmodule.o \
+		Modules/_functoolsmodule.o \
+		Modules/_localemodule.o \
+		Modules/_operator.o \
+		Modules/_sre.o \
+		Modules/_stat.o \
+		Modules/_threadmodule.o \
+		Modules/_tracemalloc.o Modules/hashtable.o \
+		Modules/_weakref.o \
+		Modules/atexitmodule.o \
+		Modules/errnomodule.o \
+		Modules/faulthandler.o \
+		Modules/itertoolsmodule.o \
+		Modules/posixmodule.o \
+		Modules/pwdmodule.o \
+		Modules/signalmodule.o \
+		Modules/symtablemodule.o \
+		Modules/timemodule.o \
+		Modules/xxsubtype.o \
+		Modules/zipimport.o
+
+MODULE_OBJS=	\
+		Modules/config.o \
+		Modules/getpath.o \
+		Modules/main.o \
+		Modules/gcmodule.o \
+		$(EXTENSION_OBJS)
+
 
 ##########################################################################
 
