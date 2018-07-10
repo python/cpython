@@ -2078,6 +2078,13 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(len(td), 0)
         functools.WeakKeyDictionary = _orig_wkd
 
+    def test_invalid_positional_argument(self):
+        @functools.singledispatch
+        def f(*args):
+            pass
+        msg = 'f requires at least 1 positional argument'
+        with self.assertRaisesRegexp(TypeError, msg):
+            f()
 
 if __name__ == '__main__':
     unittest.main()
