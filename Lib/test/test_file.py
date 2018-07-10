@@ -247,8 +247,7 @@ class OtherFileTests(unittest.TestCase):
         # Test for appropriate errors mixing read* and iteration
         for methodname, args in methods:
             f = self.open(TESTFN, 'rb')
-            if next(f) != filler:
-                self.fail, "Broken testfile"
+            self.assertEqual(next(f), filler)
             meth = getattr(f, methodname)
             meth(*args)  # This simply shouldn't fail
             f.close()
