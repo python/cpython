@@ -244,6 +244,39 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
 
 
 static int
+call_registrycleared(PyObject *registry)
+{
+    PyObject *_registrycleared, *res;
+    _Py_IDENTIFIER(_registrycleared);
+
+    _registrycleared = get_warnings_attr(&PyId__registrycleared, 0);
+    if (_registrycleared == NULL) {
+        if (PyErr_Occurred())
+            return -1;
+        return 0;
+    }
+
+    if (!PyCallable_Check(_registrycleared)) {
+        PyErr_SetString(PyExc_TypeError,
+                "warnings._registrycleared() must be set to a callable");
+        goto error;
+    }
+
+    res = PyObject_CallFunctionObjArgs(_registrycleared, registry, NULL);
+    Py_DECREF(_registrycleared);
+
+    if (res == NULL);
+        return -1;
+
+    Py_DECREF(res);
+    return 0;
+
+error:
+    Py_XDECREF(_registrycleared);
+    return -1;
+}
+
+static int
 already_warned(PyObject *registry, PyObject *key, int should_set)
 {
     PyObject *version_obj, *already_warned;
@@ -256,6 +289,7 @@ already_warned(PyObject *registry, PyObject *key, int should_set)
     if (version_obj == NULL
         || !PyLong_CheckExact(version_obj)
         || PyLong_AsLong(version_obj) != _PyRuntime.warnings.filters_version) {
+        call_registrycleared(registry);
         PyDict_Clear(registry);
         version_obj = PyLong_FromLong(_PyRuntime.warnings.filters_version);
         if (version_obj == NULL)
@@ -910,7 +944,19 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 warnings_filters_mutated(PyObject *self, PyObject *args)
 {
-    _PyRuntime.warnings.filters_version++;
+    return PyLong_FromLong(_PyRuntime.warnings.filters_version++);
+}
+
+static PyObject *
+warnings_set_filters_version(PyObject *self, PyObject *args)
+{
+    long filters_version;
+
+    if (!PyArg_ParseTuple(args, "l:_set_filters_version", &filters_version))
+        return NULL;
+
+    _PyRuntime.warnings.filters_version = filters_version;
+
     Py_RETURN_NONE;
 }
 
@@ -1154,6 +1200,8 @@ static PyMethodDef warnings_functions[] = {
         METH_VARARGS | METH_KEYWORDS, warn_explicit_doc},
     {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS,
         NULL},
+    {"_set_filters_version", (PyCFunction)warnings_set_filters_version,
+        METH_VARARGS, NULL},
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}                /* sentinel */

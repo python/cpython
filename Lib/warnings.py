@@ -116,6 +116,9 @@ def _formatwarnmsg(msg):
                       msg.filename, msg.lineno, line=msg.line)
     return _formatwarnmsg_impl(msg)
 
+def _registrycleared(registry):
+    """Hook that notifies when a module warning registry is cleared."""
+
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
                    append=False):
     """Insert an entry into the list of warnings filters (at the front).
@@ -328,6 +331,7 @@ def warn_explicit(message, category, filename, lineno,
     if registry is None:
         registry = {}
     if registry.get('version', 0) != _filters_version:
+        _registrycleared(registry)
         registry.clear()
         registry['version'] = _filters_version
     if isinstance(message, Warning):
@@ -438,6 +442,7 @@ class catch_warnings(object):
         self._record = record
         self._module = sys.modules['warnings'] if module is None else module
         self._entered = False
+        self._old_registries = []
 
     def __repr__(self):
         args = []
@@ -454,7 +459,9 @@ class catch_warnings(object):
         self._entered = True
         self._filters = self._module.filters
         self._module.filters = self._filters[:]
-        self._module._filters_mutated()
+        self._orig_registrycleared = self._module._registrycleared
+        self._module._registrycleared = self._registrycleared
+        self._filters_version = self._module._filters_mutated()
         self._showwarning = self._module.showwarning
         self._showwarnmsg_impl = self._module._showwarnmsg_impl
         if self._record:
@@ -471,9 +478,16 @@ class catch_warnings(object):
         if not self._entered:
             raise RuntimeError("Cannot exit %r without entering first" % self)
         self._module.filters = self._filters
-        self._module._filters_mutated()
+        self._module._registrycleared = self._orig_registrycleared
+        self._module._set_filters_version(self._filters_version)
+        for registry, registry_copy in self._old_registries:
+            registry.clear()
+            registry.update(registry_copy)
         self._module.showwarning = self._showwarning
         self._module._showwarnmsg_impl = self._showwarnmsg_impl
+
+    def _registrycleared(self, registry):
+        self._old_registries.append((registry, registry.copy()))
 
 
 # Private utility function called by _PyErr_WarnUnawaitedCoroutine
@@ -509,7 +523,8 @@ def _warn_unawaited_coroutine(coro):
 # If either if the compiled regexs are None, match anything.
 try:
     from _warnings import (filters, _defaultaction, _onceregistry,
-                           warn, warn_explicit, _filters_mutated)
+                           warn, warn_explicit, _filters_mutated,
+                           _set_filters_version)
     defaultaction = _defaultaction
     onceregistry = _onceregistry
     _warnings_defaults = True
@@ -522,7 +537,12 @@ except ImportError:
 
     def _filters_mutated():
         global _filters_version
+        old_filters_version = _filters_version
         _filters_version += 1
+        return old_filters_version
+
+    def _set_filters_version(filters_version):
+        _filters_version = filters_version
 
     _warnings_defaults = False
 

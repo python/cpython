@@ -1063,6 +1063,15 @@ class CatchWarningTests(BaseTest):
             with support.check_warnings(('foo', RuntimeWarning)):
                 wmod.warn("foo")
 
+    def test_check_warnings_restore_registries(self):
+        global __warningregistry__
+        wmod = self.module
+        orig_registry = __warningregistry__ = {}
+        with wmod.catch_warnings(module=wmod):
+            wmod.warn("foo")
+            assert len(__warningregistry__) != 0
+        assert len(__warningregistry__) == 0
+
 class CCatchWarningTests(CatchWarningTests, unittest.TestCase):
     module = c_warnings
 
