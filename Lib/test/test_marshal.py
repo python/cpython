@@ -324,6 +324,25 @@ class BugsTestCase(unittest.TestCase):
         for i in range(len(data)):
             self.assertRaises(EOFError, marshal.loads, data[0: i])
 
+    def test_stable_refs(self):
+        """FLAG_REF must be used regardless refcnt"""
+        x = 0x42
+        y = (x,)
+        z = [y, y]
+        dummy = x  # refcnt of x must be >1
+
+        data = marshal.dumps(x)
+        # x is used once, FLAG_REF must not be set.
+        self.assertEqual(b"i\x42\x00\x00\x00", data)
+
+        data = marshal.dumps(z)
+        # y is used twice, but x is used once because y is reused.
+        self.assertEqual(b"[\x02\x00\x00\x00" +     # list(size=2)i\x42\x00\x00\x00", data)
+                         b"\xa9\x01" +              # small tuple(size=1) | FLAG_REF
+                         b"i\x42\x00\x00\x00" +     # int(42)
+                         b"r\x00\x00\x00\x00",      # ref(0)
+                         data)
+
 LARGE_SIZE = 2**31
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4
 

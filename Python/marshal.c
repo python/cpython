@@ -86,6 +86,7 @@ typedef struct {
     char *end;
     char *buf;
     _Py_hashtable_t *hashtable;
+    int last_index;
     int version;
 } WFILE;
 
@@ -276,37 +277,35 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         return 0; /* not writing object references */
 
     /* if it has only one reference, it definitely isn't shared */
-    if (Py_REFCNT(v) == 1)
+    if (Py_REFCNT(v) == 1) {
         return 0;
+    }
 
     entry = _Py_HASHTABLE_GET_ENTRY(p->hashtable, v);
-    if (entry != NULL) {
-        /* write the reference index to the stream */
-        _Py_HASHTABLE_ENTRY_READ_DATA(p->hashtable, entry, w);
+    if (entry == NULL) {
+        return 0;
+    }
+
+    _Py_HASHTABLE_ENTRY_READ_DATA(p->hashtable, entry, w);
+    // w >= 0: index written by previous w_ref()
+    // w < 0 : refcnt counted by w_count_refs()
+    if (w == -1) {
+        // This object is used only once.
+        return 0;
+    }
+
+    if (w >= 0) {
         /* we don't store "long" indices in the dict */
         assert(0 <= w && w <= 0x7fffffff);
         w_byte(TYPE_REF, p);
         w_long(w, p);
         return 1;
     } else {
-        size_t s = p->hashtable->entries;
-        /* we don't support long indices */
-        if (s >= 0x7fffffff) {
-            PyErr_SetString(PyExc_ValueError, "too many objects");
-            goto err;
-        }
-        w = (int)s;
-        Py_INCREF(v);
-        if (_Py_HASHTABLE_SET(p->hashtable, v, w) < 0) {
-            Py_DECREF(v);
-            goto err;
-        }
+        w = p->last_index++;
+        _Py_HASHTABLE_ENTRY_WRITE_DATA(p->hashtable, entry, w);
         *flag |= FLAG_REF;
         return 0;
     }
-err:
-    p->error = WFERR_UNMARSHALLABLE;
-    return 1;
 }
 
 static void
@@ -584,18 +583,135 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
 }
 
 static int
-w_init_refs(WFILE *wf, int version)
+w_count_refs(PyObject *v, WFILE *p)
 {
-    if (version >= 3) {
-        wf->hashtable = _Py_hashtable_new(sizeof(PyObject *), sizeof(int),
-                                          _Py_hashtable_hash_ptr,
-                                          _Py_hashtable_compare_direct);
-        if (wf->hashtable == NULL) {
-            PyErr_NoMemory();
-            return -1;
+    if (p->depth > MAX_MARSHAL_STACK_DEPTH) {
+        PyErr_SetString(PyExc_ValueError,
+                        "object too deeply nested to marshal");
+        goto err;
+    }
+
+    if (v == NULL ||
+            v == Py_None ||
+            v == PyExc_StopIteration ||
+            v == Py_Ellipsis ||
+            v == Py_False ||
+            v == Py_True) {
+        return 0;
+    }
+
+    /* if it has only one reference, it definitely isn't shared */
+    if (Py_REFCNT(v) > 1) {
+        // Use negative number to count refs
+        _Py_hashtable_entry_t *entry = _Py_HASHTABLE_GET_ENTRY(p->hashtable, v);
+        if (entry != NULL) {
+            int w;
+            _Py_HASHTABLE_ENTRY_READ_DATA(p->hashtable, entry, w);
+            assert(w < 0);
+            w--;
+            _Py_HASHTABLE_ENTRY_WRITE_DATA(p->hashtable, entry, w);
+            return 0;
+        }
+        else {
+            size_t s = p->hashtable->entries;
+            /* we don't support long indices */
+            if (s >= 0x7fffffff) {
+                PyErr_SetString(PyExc_ValueError, "too many objects");
+                goto err;
+            }
+            int w = -1;
+            Py_INCREF(v);
+            if (_Py_HASHTABLE_SET(p->hashtable, v, w) < 0) {
+                Py_DECREF(v);
+                goto err;
+            }
         }
     }
+
+    // These logic should be same to w_object()
+    p->depth++;
+
+    Py_ssize_t i, n;
+    if (PyTuple_CheckExact(v)) {
+        n = PyTuple_Size(v);
+        for (i = 0; i < n; i++) {
+            w_count_refs(PyTuple_GET_ITEM(v, i), p);
+        }
+    }
+    else if (PyList_CheckExact(v)) {
+        n = PyList_GET_SIZE(v);
+        for (i = 0; i < n; i++) {
+            w_count_refs(PyList_GET_ITEM(v, i), p);
+        }
+    }
+    else if (PyDict_CheckExact(v)) {
+        PyObject *key, *value;
+        i = 0;
+        while (PyDict_Next(v, &i, &key, &value)) {
+            w_count_refs(key, p);
+            w_count_refs(value, p);
+        }
+    }
+    else if (PyAnySet_CheckExact(v)) {
+        PyObject *value, *it;
+
+        it = PyObject_GetIter(v);
+        if (it == NULL) {
+            p->depth--;
+            goto err;
+        }
+        while ((value = PyIter_Next(it)) != NULL) {
+            w_count_refs(value, p);
+            Py_DECREF(value);
+        }
+        Py_DECREF(it);
+        if (PyErr_Occurred()) {
+            p->depth--;
+            goto err;
+        }
+    }
+    else if (PyCode_Check(v)) {
+        PyCodeObject *co = (PyCodeObject *)v;
+        w_count_refs(co->co_code, p);
+        w_count_refs(co->co_consts, p);
+        w_count_refs(co->co_names, p);
+        w_count_refs(co->co_varnames, p);
+        w_count_refs(co->co_freevars, p);
+        w_count_refs(co->co_cellvars, p);
+        w_count_refs(co->co_filename, p);
+        w_count_refs(co->co_name, p);
+        w_count_refs(co->co_lnotab, p);
+    }
+
+    p->depth--;
+
+    if (p->error == WFERR_UNMARSHALLABLE) {
+        return 1;
+    }
     return 0;
+
+err:
+    p->error = WFERR_UNMARSHALLABLE;
+    return 1;
+}
+
+static int
+w_init_refs(WFILE *wf, int version, PyObject *x)
+{
+    if (version < 3) {
+        return 0;
+    }
+
+    wf->hashtable = _Py_hashtable_new(sizeof(PyObject *), sizeof(int),
+                                      _Py_hashtable_hash_ptr,
+                                      _Py_hashtable_compare_direct);
+    if (wf->hashtable == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    wf->last_index = 0;
+
+    return w_count_refs(x, wf);
 }
 
 static int
@@ -645,8 +761,9 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     wf.end = wf.ptr + sizeof(buf);
     wf.error = WFERR_OK;
     wf.version = version;
-    if (w_init_refs(&wf, version))
+    if (w_init_refs(&wf, version, x)) {
         return; /* caller mush check PyErr_Occurred() */
+    }
     w_object(x, &wf);
     w_clear_refs(&wf);
     w_flush(&wf);
@@ -1621,7 +1738,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     wf.end = wf.ptr + PyBytes_Size(wf.str);
     wf.error = WFERR_OK;
     wf.version = version;
-    if (w_init_refs(&wf, version)) {
+    if (w_init_refs(&wf, version, x)) {
         Py_DECREF(wf.str);
         return NULL;
     }
