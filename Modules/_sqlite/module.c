@@ -46,8 +46,8 @@ PyObject *pysqlite_IntegrityError = NULL;
 PyObject *pysqlite_DataError = NULL;
 PyObject *pysqlite_NotSupportedError = NULL;
 
-PyObject* converters = NULL;
-int _enable_callback_tracebacks = 0;
+PyObject* _pysqlite_converters = NULL;
+int _pysqlite_enable_callback_tracebacks = 0;
 int pysqlite_BaseTypeAdapted = 0;
 
 static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
@@ -204,7 +204,7 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
         goto error;
     }
 
-    if (PyDict_SetItem(converters, name, callable) != 0) {
+    if (PyDict_SetItem(_pysqlite_converters, name, callable) != 0) {
         goto error;
     }
 
@@ -222,7 +222,7 @@ Registers a converter with pysqlite. Non-standard.");
 
 static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args)
 {
-    if (!PyArg_ParseTuple(args, "i", &_enable_callback_tracebacks)) {
+    if (!PyArg_ParseTuple(args, "i", &_pysqlite_enable_callback_tracebacks)) {
         return NULL;
     }
 
@@ -236,12 +236,12 @@ Enable or disable callback functions throwing errors to stderr.");
 
 static void converters_init(PyObject* dict)
 {
-    converters = PyDict_New();
-    if (!converters) {
+    _pysqlite_converters = PyDict_New();
+    if (!_pysqlite_converters) {
         return;
     }
 
-    PyDict_SetItemString(dict, "converters", converters);
+    PyDict_SetItemString(dict, "converters", _pysqlite_converters);
 }
 
 static PyMethodDef module_methods[] = {
