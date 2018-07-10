@@ -1,0 +1,1 @@
+Reduce ``PyGC_Head`` size from 3 words to 2 words.
