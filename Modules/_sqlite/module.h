@@ -44,9 +44,9 @@ extern PyObject* pysqlite_OptimizedUnicode;
  * functions, that convert the SQL value to the appropriate Python value.
  * The key is uppercase.
  */
-extern PyObject* converters;
+extern PyObject* _pysqlite_converters;
 
-extern int _enable_callback_tracebacks;
+extern int _pysqlite_enable_callback_tracebacks;
 extern int pysqlite_BaseTypeAdapted;
 
 #define PARSE_DECLTYPES 1
