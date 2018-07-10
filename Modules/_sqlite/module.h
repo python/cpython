@@ -40,10 +40,6 @@ extern PyObject* pysqlite_NotSupportedError;
 
 extern PyObject* pysqlite_OptimizedUnicode;
 
-/* the functions time.time() and time.sleep() */
-extern PyObject* time_time;
-extern PyObject* time_sleep;
-
 /* A dictionary, mapping colum types (INTEGER, VARCHAR, etc.) to converter
  * functions, that convert the SQL value to the appropriate Python value.
  * The key is uppercase.
