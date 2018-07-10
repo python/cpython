@@ -1,7 +1,7 @@
 import unittest
 import os
 import sys
-from test.support import TESTFN, import_fresh_module, android_not_root
+from test.support import TESTFN, import_fresh_module
 
 c_stat = import_fresh_module('stat', fresh=['_stat'])
 py_stat = import_fresh_module('stat', blocked=['_stat'])
@@ -168,9 +168,11 @@ class TestFilemode:
             self.assertS_IS("LNK", st_mode)
 
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'os.mkfifo not available')
-    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_fifo(self):
-        os.mkfifo(TESTFN, 0o700)
+        try:
+            os.mkfifo(TESTFN, 0o700)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
         st_mode, modestr = self.get_mode()
         self.assertEqual(modestr, 'prwx------')
         self.assertS_IS("FIFO", st_mode)

@@ -1,4 +1,4 @@
-This is Python version 3.7.0 alpha 1
+This is Python version 3.8.0 alpha 0
 ====================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
@@ -13,8 +13,13 @@ This is Python version 3.7.0 alpha 1
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
 
+.. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
+   :alt: Python Zulip chat
+   :target: https://python.zulipchat.com
+  
+
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation.  All rights
+2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
 reserved.
 
 See the end of this file for further copyright and license information.
@@ -62,6 +67,11 @@ You can pass many options to the configure script; run ``./configure --help``
 to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
 
+If you are running on macOS with the latest updates installed, make sure to install
+openSSL or some other SSL software along with Homebrew or another package manager.
+If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more 
+information. 
+
 On macOS, if you have configured Python with ``--enable-framework``, you
 should use ``make frameworkinstall`` to do the installation.  Note that this
 installs the Python executable in a place that is not normally on your PATH,
@@ -92,25 +102,27 @@ below.
 Profile Guided Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-PGO takes advantage of recent versions of the GCC or Clang compilers.  If ran,
-``make profile-opt`` will do several steps.
+PGO takes advantage of recent versions of the GCC or Clang compilers.  If used,
+either via ``configure --enable-optimizations`` or by manually running
+``make profile-opt`` regardless of configure flags, the optimized build
+process will perform the following steps:
 
-First, the entire Python directory is cleaned of temporary files that may have
-resulted in a previous compilation.
+The entire Python directory is cleaned of temporary files that may have
+resulted from a previous compilation.
 
-Then, an instrumented version of the interpreter is built, using suitable
-compiler flags for each flavour. Note that this is just an intermediary step
-and the binary resulted after this step is not good for real life workloads, as
-it has profiling instructions embedded inside.
+An instrumented version of the interpreter is built, using suitable compiler
+flags for each flavour. Note that this is just an intermediary step.  The
+binary resulting from this step is not good for real life workloads as it has
+profiling instructions embedded inside.
 
-After this instrumented version of the interpreter is built, the Makefile will
-automatically run a training workload. This is necessary in order to profile
-the interpreter execution. Note also that any output, both stdout and stderr,
-that may appear at this step is suppressed.
+After the instrumented interpreter is built, the Makefile will run a training
+workload.  This is necessary in order to profile the interpreter execution.
+Note also that any output, both stdout and stderr, that may appear at this step
+is suppressed.
 
-Finally, the last step is to rebuild the interpreter, using the information
-collected in the previous one. The end result will be a Python binary that is
-optimized and suitable for distribution or production installation.
+The final step is to build the actual interpreter, using the information
+collected from the instrumented one.  The end result will be a Python binary
+that is optimized; suitable for distribution or production installation.
 
 
 Link Time Optimization
@@ -126,7 +138,7 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.7 <https://docs.python.org/3.7/whatsnew/3.7.html>`_ document.  For a more
+3.8 <https://docs.python.org/3.8/whatsnew/3.8.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
@@ -139,7 +151,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.7 <https://docs.python.org/3.7/>`_ is online,
+`Documentation for Python 3.8 <https://docs.python.org/3.8/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -172,9 +184,10 @@ something is wrong.
 By default, tests are prevented from overusing resources like disk space and
 memory.  To enable these tests, run ``make testall``.
 
-If any tests fail, you can re-run the failing test(s) in verbose mode::
+If any tests fail, you can re-run the failing test(s) in verbose mode.  For
+example, if ``test_os`` and ``test_gdb`` failed, you can run::
 
-    make test TESTOPTS="-v test_that_failed"
+    make test TESTOPTS="-v test_os test_gdb"
 
 If the failure persists and appears to be a problem with Python rather than
 your environment, you can `file a bug report <https://bugs.python.org>`_ and
@@ -195,8 +208,8 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.7 with 3.7 being the
-primary version, you would execute ``make install`` in your 3.7 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.8 with 3.8 being the
+primary version, you would execute ``make install`` in your 3.8 build directory
 and ``make altinstall`` in the others.
 
 
@@ -226,14 +239,14 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`537` for Python 3.7 release details.
+See :pep:`569` for Python 3.8 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation.  All rights
+2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
 reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.

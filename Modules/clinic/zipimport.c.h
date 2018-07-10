@@ -65,7 +65,7 @@ zipimport_zipimporter_find_module_impl(ZipImporter *self, PyObject *fullname,
                                        PyObject *path);
 
 static PyObject *
-zipimport_zipimporter_find_module(ZipImporter *self, PyObject **args, Py_ssize_t nargs)
+zipimport_zipimporter_find_module(ZipImporter *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *fullname;
@@ -101,7 +101,7 @@ zipimport_zipimporter_find_loader_impl(ZipImporter *self, PyObject *fullname,
                                        PyObject *path);
 
 static PyObject *
-zipimport_zipimporter_find_loader(ZipImporter *self, PyObject **args, Py_ssize_t nargs)
+zipimport_zipimporter_find_loader(ZipImporter *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *fullname;
@@ -291,4 +291,35 @@ zipimport_zipimporter_get_source(ZipImporter *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bac6c9144950eaec input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(zipimport_zipimporter_get_resource_reader__doc__,
+"get_resource_reader($self, fullname, /)\n"
+"--\n"
+"\n"
+"Return the ResourceReader for a package in a zip file.\n"
+"\n"
+"If \'fullname\' is a package within the zip file, return the \'ResourceReader\'\n"
+"object for the package.  Otherwise return None.");
+
+#define ZIPIMPORT_ZIPIMPORTER_GET_RESOURCE_READER_METHODDEF    \
+    {"get_resource_reader", (PyCFunction)zipimport_zipimporter_get_resource_reader, METH_O, zipimport_zipimporter_get_resource_reader__doc__},
+
+static PyObject *
+zipimport_zipimporter_get_resource_reader_impl(ZipImporter *self,
+                                               PyObject *fullname);
+
+static PyObject *
+zipimport_zipimporter_get_resource_reader(ZipImporter *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *fullname;
+
+    if (!PyArg_Parse(arg, "U:get_resource_reader", &fullname)) {
+        goto exit;
+    }
+    return_value = zipimport_zipimporter_get_resource_reader_impl(self, fullname);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=0b57adfe21373512 input=a9049054013a1b77]*/

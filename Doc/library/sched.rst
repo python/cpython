@@ -69,7 +69,7 @@ Scheduler Objects
    Schedule a new event. The *time* argument should be a numeric type compatible
    with the return value of the *timefunc* function passed  to the constructor.
    Events scheduled for the same *time* will be executed in the order of their
-   *priority*.
+   *priority*. A lower number represents a higher priority.
 
    Executing the event means executing ``action(*argument, **kwargs)``.
    *argument* is a sequence holding the positional arguments for *action*.
@@ -81,7 +81,7 @@ Scheduler Objects
    .. versionchanged:: 3.3
       *argument* parameter is optional.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       *kwargs* parameter was added.
 
 
@@ -94,7 +94,7 @@ Scheduler Objects
    .. versionchanged:: 3.3
       *argument* parameter is optional.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       *kwargs* parameter was added.
 
 .. method:: scheduler.cancel(event)
@@ -128,7 +128,7 @@ Scheduler Objects
    the calling code is responsible for canceling  events which are no longer
    pertinent.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       *blocking* parameter was added.
 
 .. attribute:: scheduler.queue

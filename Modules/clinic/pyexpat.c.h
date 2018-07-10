@@ -18,7 +18,7 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
                              int isfinal);
 
 static PyObject *
-pyexpat_xmlparser_Parse(xmlparseobject *self, PyObject **args, Py_ssize_t nargs)
+pyexpat_xmlparser_Parse(xmlparseobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *data;
@@ -124,7 +124,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
                                                   const char *encoding);
 
 static PyObject *
-pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyObject **args, Py_ssize_t nargs)
+pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *context;
@@ -191,7 +191,7 @@ static PyObject *
 pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, int flag);
 
 static PyObject *
-pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyObject **args, Py_ssize_t nargs)
+pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int flag = 1;
@@ -240,7 +240,7 @@ pyexpat_ParserCreate_impl(PyObject *module, const char *encoding,
                           const char *namespace_separator, PyObject *intern);
 
 static PyObject *
-pyexpat_ParserCreate(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"encoding", "namespace_separator", "intern", NULL};
@@ -289,4 +289,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=5d2e355f2b48e6c3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=34d02345deee104c input=a9049054013a1b77]*/

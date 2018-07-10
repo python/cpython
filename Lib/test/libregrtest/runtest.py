@@ -102,7 +102,7 @@ def runtest(ns, test):
     if use_timeout:
         faulthandler.dump_traceback_later(ns.timeout, exit=True)
     try:
-        support.match_tests = ns.match_tests
+        support.set_match_tests(ns.match_tests)
         # reset the environment_altered flag to detect if a test altered
         # the environment
         support.environment_altered = False
@@ -173,9 +173,10 @@ def runtest_inner(ns, test, display_failure=True):
                     if loader.errors:
                         raise Exception("errors while loading tests")
                     support.run_unittest(tests)
-            test_runner()
             if ns.huntrleaks:
                 refleak = dash_R(the_module, test, test_runner, ns.huntrleaks)
+            else:
+                test_runner()
             test_time = time.time() - start_time
         post_test_cleanup()
     except support.ResourceDenied as msg:

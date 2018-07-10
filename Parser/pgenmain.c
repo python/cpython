@@ -27,12 +27,10 @@
 int Py_DebugFlag;
 int Py_VerboseFlag;
 int Py_IgnoreEnvironmentFlag;
-_PyRuntimeState _PyRuntime = {0, 0};
+_PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
 
 /* Forward */
 grammar *getgrammar(const char *filename);
-
-void Py_Exit(int) _Py_NO_RETURN;
 
 void
 Py_Exit(int sts)
@@ -62,8 +60,6 @@ main(int argc, char **argv)
     filename = argv[1];
     graminit_h = argv[2];
     graminit_c = argv[3];
-    _PyObject_Initialize(&_PyRuntime.obj);
-    _PyMem_Initialize(&_PyRuntime.mem);
     g = getgrammar(filename);
     fp = fopen(graminit_c, "w");
     if (fp == NULL) {

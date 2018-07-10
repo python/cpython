@@ -1,0 +1,3 @@
+Rewrite confusing message from setup.py upload from
+"No dist file created in earlier command" to the more helpful
+"Must create and upload files in one command".

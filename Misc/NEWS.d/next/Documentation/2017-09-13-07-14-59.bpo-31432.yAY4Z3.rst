@@ -1,0 +1,2 @@
+Clarify meaning of CERT_NONE, CERT_OPTIONAL, and CERT_REQUIRED flags for
+ssl.SSLContext.verify_mode.

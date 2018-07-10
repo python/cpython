@@ -53,7 +53,7 @@ static PyObject *
 float___round___impl(PyObject *self, PyObject *o_ndigits);
 
 static PyObject *
-float___round__(PyObject *self, PyObject **args, Py_ssize_t nargs)
+float___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *o_ndigits = NULL;
@@ -263,7 +263,7 @@ float___set_format___impl(PyTypeObject *type, const char *typestr,
                           const char *fmt);
 
 static PyObject *
-float___set_format__(PyTypeObject *type, PyObject **args, Py_ssize_t nargs)
+float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *typestr;
@@ -305,4 +305,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=90c06ea9d72130cc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a3c366a156be61f9 input=a9049054013a1b77]*/

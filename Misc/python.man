@@ -74,6 +74,11 @@ python \- an interpreted, interactive, object-oriented programming language
 ]
 .br
        [
+.B \--check-hash-based-pycs
+\'default\'|\'always\'|\'never\'
+]
+.br
+       [
 .B \-c
 .I command
 |
@@ -123,8 +128,11 @@ Specify the command to execute (see next section).
 This terminates the option list (following options are passed as
 arguments to the command).
 .TP
+.BI "\-\-check-hash-based-pycs " mode
+Configure how Python evaluates the up-to-dateness of hash-based .pyc files.
+.TP
 .B \-d
-Turn on parser debugging output (for wizards only, depending on
+Turn on parser debugging output (for expert only, depending on
 compilation options).
 .TP
 .B \-E
@@ -156,10 +164,13 @@ for the named module and runs the corresponding
 file as a script.
 .TP
 .B \-O
-Turn on basic optimizations.  Given twice, causes docstrings to be discarded.
+Remove assert statements and any code conditional on the value of
+__debug__; augment the filename for compiled (bytecode) files by
+adding .opt-1 before the .pyc extension.
 .TP
 .B \-OO
-Discard docstrings in addition to the \fB-O\fP optimizations.
+Do \fB-O\fP and also discard docstrings; change the filename for
+compiled (bytecode) files by adding .opt-2 before the .pyc extension.
 .TP
 .B \-q
 Do not print the version and copyright messages. These messages are
@@ -178,13 +189,8 @@ that it entails.  Also disable these manipulations if
 is explicitly imported later.
 .TP
 .B \-u
-Force the binary I/O layers of stdout and stderr to be unbuffered.
-stdin is always buffered.
-The text I/O layer will still be line-buffered.
-.\" Note that there is internal buffering in readlines() and
-.\" file-object iterators ("for line in sys.stdin") which is not
-.\" influenced by this option.  To work around this, you will want to use
-.\" "sys.stdin.readline()" inside a "while 1:" loop.
+Force the stdout and stderr streams to be unbuffered.
+This option has no effect on the stdin stream.
 .TP
 .B \-v
 Print a message each time a module is initialized, showing the place
@@ -431,6 +437,73 @@ values.
 
 The integer must be a decimal number in the range [0,4294967295].  Specifying
 the value 0 will disable hash randomization.
+.IP PYTHONMALLOC
+Set the Python memory allocators and/or install debug hooks. The available
+memory allocators are
+.IR malloc
+and
+.IR pymalloc .
+The available debug hooks are
+.IR debug ,
+.IR malloc_debug ,
+and
+.IR pymalloc_debug .
+.IP
+When Python is compiled in debug mode, the default is
+.IR pymalloc_debug
+and the debug hooks are automatically used. Otherwise, the default is
+.IR pymalloc .
+.IP PYTHONMALLOCSTATS
+If set to a non-empty string, Python will print statistics of the pymalloc
+memory allocator every time a new pymalloc object arena is created, and on
+shutdown.
+.IP
+This variable is ignored if the
+.RB $ PYTHONMALLOC
+environment variable is used to force the
+.BR malloc (3)
+allocator of the C library, or if Python is configured without pymalloc support.
+.IP PYTHONASYNCIODEBUG
+If this environment variable is set to a non-empty string, enable the debug
+mode of the asyncio module.
+.IP PYTHONTRACEMALLOC
+If this environment variable is set to a non-empty string, start tracing
+Python memory allocations using the tracemalloc module.
+.IP
+The value of the variable is the maximum number of frames stored in a
+traceback of a trace. For example,
+.IB PYTHONTRACEMALLOC=1
+stores only the most recent frame.
+.IP PYTHONFAULTHANDLER
+If this environment variable is set to a non-empty string,
+.IR faulthandler.enable()
+is called at startup: install a handler for SIGSEGV, SIGFPE, SIGABRT, SIGBUS
+and SIGILL signals to dump the Python traceback.
+.IP
+This is equivalent to the \fB-X faulthandler\fP option.
+.IP PYTHONEXECUTABLE
+If this environment variable is set,
+.IB sys.argv[0]
+will be set to its value instead of the value got through the C runtime. Only
+works on Mac OS X.
+.IP PYTHONUSERBASE
+Defines the user base directory, which is used to compute the path of the user
+.IR site-packages
+directory and Distutils installation paths for
+.IR "python setup\.py install \-\-user" .
+.IP PYTHONPROFILEIMPORTTIME
+If this environment variable is set to a non-empty string, Python will
+show how long each import takes. This is exactly equivalent to setting
+\fB\-X importtime\fP on the command line.
+.SS Debug-mode variables
+Setting these variables only has an effect in a debug build of Python, that is,
+if Python was configured with the
+\fB\--with-pydebug\fP build option.
+.IP PYTHONTHREADDEBUG
+If this environment variable is set, Python will print threading debug info.
+.IP PYTHONDUMPREFS
+If this environment variable is set, Python will dump objects and reference
+counts still alive after shutting down the interpreter.
 .SH AUTHOR
 The Python Software Foundation: https://www.python.org/psf/
 .SH INTERNET RESOURCES
@@ -442,7 +515,7 @@ Developer resources:  https://devguide.python.org/
 .br
 Downloads:  https://www.python.org/downloads/
 .br
-Module repository:  https://pypi.python.org/
+Module repository:  https://pypi.org/
 .br
 Newsgroups:  comp.lang.python, comp.lang.python.announce
 .SH LICENSING

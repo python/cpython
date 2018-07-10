@@ -239,7 +239,7 @@ spam_bench(PyObject *self, PyObject *args)
     int n = 1000;
     time_t t0, t1;
 
-    if (!PyArg_ParseTuple(args, "OS|i", &obj, &name, &n))
+    if (!PyArg_ParseTuple(args, "OU|i", &obj, &name, &n))
         return NULL;
     t0 = clock();
     while (--n >= 0) {

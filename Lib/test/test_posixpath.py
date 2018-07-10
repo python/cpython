@@ -4,6 +4,7 @@ import unittest
 import warnings
 from posixpath import realpath, abspath, dirname, basename
 from test import support, test_genericpath
+from test.support import FakePath
 
 try:
     import posix
@@ -152,27 +153,20 @@ class PosixPathTest(unittest.TestCase):
     def test_islink(self):
         self.assertIs(posixpath.islink(support.TESTFN + "1"), False)
         self.assertIs(posixpath.lexists(support.TESTFN + "2"), False)
-        f = open(support.TESTFN + "1", "wb")
-        try:
+        with open(support.TESTFN + "1", "wb") as f:
             f.write(b"foo")
-            f.close()
-            self.assertIs(posixpath.islink(support.TESTFN + "1"), False)
-            if support.can_symlink():
-                os.symlink(support.TESTFN + "1", support.TESTFN + "2")
-                self.assertIs(posixpath.islink(support.TESTFN + "2"), True)
-                os.remove(support.TESTFN + "1")
-                self.assertIs(posixpath.islink(support.TESTFN + "2"), True)
-                self.assertIs(posixpath.exists(support.TESTFN + "2"), False)
-                self.assertIs(posixpath.lexists(support.TESTFN + "2"), True)
-        finally:
-            if not f.close():
-                f.close()
+        self.assertIs(posixpath.islink(support.TESTFN + "1"), False)
+        if support.can_symlink():
+            os.symlink(support.TESTFN + "1", support.TESTFN + "2")
+            self.assertIs(posixpath.islink(support.TESTFN + "2"), True)
+            os.remove(support.TESTFN + "1")
+            self.assertIs(posixpath.islink(support.TESTFN + "2"), True)
+            self.assertIs(posixpath.exists(support.TESTFN + "2"), False)
+            self.assertIs(posixpath.lexists(support.TESTFN + "2"), True)
 
     def test_ismount(self):
         self.assertIs(posixpath.ismount("/"), True)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            self.assertIs(posixpath.ismount(b"/"), True)
+        self.assertIs(posixpath.ismount(b"/"), True)
 
     def test_ismount_non_existent(self):
         # Non-existent mountpoint.
@@ -600,18 +594,9 @@ class PathLikeTests(unittest.TestCase):
 
     path = posixpath
 
-    class PathLike:
-        def __init__(self, path=''):
-            self.path = path
-        def __fspath__(self):
-            if isinstance(self.path, BaseException):
-                raise self.path
-            else:
-                return self.path
-
     def setUp(self):
         self.file_name = support.TESTFN.lower()
-        self.file_path = self.PathLike(support.TESTFN)
+        self.file_path = FakePath(support.TESTFN)
         self.addCleanup(support.unlink, self.file_name)
         with open(self.file_name, 'xb', 0) as file:
             file.write(b"test_posixpath.PathLikeTests")
@@ -626,7 +611,7 @@ class PathLikeTests(unittest.TestCase):
         self.assertPathEqual(self.path.isabs)
 
     def test_path_join(self):
-        self.assertEqual(self.path.join('a', self.PathLike('b'), 'c'),
+        self.assertEqual(self.path.join('a', FakePath('b'), 'c'),
                          self.path.join('a', 'b', 'c'))
 
     def test_path_split(self):

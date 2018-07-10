@@ -34,6 +34,7 @@ class ForkServer(object):
     def __init__(self):
         self._forkserver_address = None
         self._forkserver_alive_fd = None
+        self._forkserver_pid = None
         self._inherited_fds = None
         self._lock = threading.Lock()
         self._preload_modules = ['__main__']
@@ -90,8 +91,17 @@ class ForkServer(object):
         '''
         with self._lock:
             semaphore_tracker.ensure_running()
-            if self._forkserver_alive_fd is not None:
-                return
+            if self._forkserver_pid is not None:
+                # forkserver was launched before, is it still running?
+                pid, status = os.waitpid(self._forkserver_pid, os.WNOHANG)
+                if not pid:
+                    # still alive
+                    return
+                # dead, launch it again
+                os.close(self._forkserver_alive_fd)
+                self._forkserver_address = None
+                self._forkserver_alive_fd = None
+                self._forkserver_pid = None
 
             cmd = ('from multiprocessing.forkserver import main; ' +
                    'main(%d, %d, %r, **%r)')
@@ -127,6 +137,7 @@ class ForkServer(object):
                     os.close(alive_r)
                 self._forkserver_address = address
                 self._forkserver_alive_fd = alive_w
+                self._forkserver_pid = pid
 
 #
 #
@@ -157,11 +168,11 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
         # Dummy signal handler, doesn't do anything
         pass
 
-    # letting SIGINT through avoids KeyboardInterrupt tracebacks
-    # unblocking SIGCHLD allows the wakeup fd to notify our event loop
     handlers = {
+        # unblocking SIGCHLD allows the wakeup fd to notify our event loop
         signal.SIGCHLD: sigchld_handler,
-        signal.SIGINT: signal.SIG_DFL,
+        # protect the process from ^C
+        signal.SIGINT: signal.SIG_IGN,
         }
     old_handlers = {sig: signal.signal(sig, val)
                     for (sig, val) in handlers.items()}

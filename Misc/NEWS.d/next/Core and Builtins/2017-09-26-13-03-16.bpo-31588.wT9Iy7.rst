@@ -1,2 +1,0 @@
-Raise a `TypeError` with a helpful error message when class creation fails
-due to a metaclass with a bad ``__prepare__()`` method. Patch by Oren Milman.

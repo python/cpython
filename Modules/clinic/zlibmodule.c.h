@@ -20,7 +20,7 @@ static PyObject *
 zlib_compress_impl(PyObject *module, Py_buffer *data, int level);
 
 static PyObject *
-zlib_compress(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "level", NULL};
@@ -64,7 +64,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize);
 
 static PyObject *
-zlib_decompress(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "wbits", "bufsize", NULL};
@@ -126,7 +126,7 @@ zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
                       int memLevel, int strategy, Py_buffer *zdict);
 
 static PyObject *
-zlib_compressobj(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"level", "method", "wbits", "memLevel", "strategy", "zdict", NULL};
@@ -172,7 +172,7 @@ static PyObject *
 zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict);
 
 static PyObject *
-zlib_decompressobj(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_decompressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"wbits", "zdict", NULL};
@@ -254,7 +254,7 @@ zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
                                 Py_ssize_t max_length);
 
 static PyObject *
-zlib_Decompress_decompress(compobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress_decompress(compobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "max_length", NULL};
@@ -296,7 +296,7 @@ static PyObject *
 zlib_Compress_flush_impl(compobject *self, int mode);
 
 static PyObject *
-zlib_Compress_flush(compobject *self, PyObject **args, Py_ssize_t nargs)
+zlib_Compress_flush(compobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int mode = Z_FINISH;
@@ -335,6 +335,39 @@ zlib_Compress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
 
 #if defined(HAVE_ZLIB_COPY)
 
+PyDoc_STRVAR(zlib_Compress___copy____doc__,
+"__copy__($self, /)\n"
+"--\n"
+"\n");
+
+#define ZLIB_COMPRESS___COPY___METHODDEF    \
+    {"__copy__", (PyCFunction)zlib_Compress___copy__, METH_NOARGS, zlib_Compress___copy____doc__},
+
+static PyObject *
+zlib_Compress___copy___impl(compobject *self);
+
+static PyObject *
+zlib_Compress___copy__(compobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return zlib_Compress___copy___impl(self);
+}
+
+#endif /* defined(HAVE_ZLIB_COPY) */
+
+#if defined(HAVE_ZLIB_COPY)
+
+PyDoc_STRVAR(zlib_Compress___deepcopy____doc__,
+"__deepcopy__($self, memo, /)\n"
+"--\n"
+"\n");
+
+#define ZLIB_COMPRESS___DEEPCOPY___METHODDEF    \
+    {"__deepcopy__", (PyCFunction)zlib_Compress___deepcopy__, METH_O, zlib_Compress___deepcopy____doc__},
+
+#endif /* defined(HAVE_ZLIB_COPY) */
+
+#if defined(HAVE_ZLIB_COPY)
+
 PyDoc_STRVAR(zlib_Decompress_copy__doc__,
 "copy($self, /)\n"
 "--\n"
@@ -355,6 +388,39 @@ zlib_Decompress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_ZLIB_COPY) */
 
+#if defined(HAVE_ZLIB_COPY)
+
+PyDoc_STRVAR(zlib_Decompress___copy____doc__,
+"__copy__($self, /)\n"
+"--\n"
+"\n");
+
+#define ZLIB_DECOMPRESS___COPY___METHODDEF    \
+    {"__copy__", (PyCFunction)zlib_Decompress___copy__, METH_NOARGS, zlib_Decompress___copy____doc__},
+
+static PyObject *
+zlib_Decompress___copy___impl(compobject *self);
+
+static PyObject *
+zlib_Decompress___copy__(compobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return zlib_Decompress___copy___impl(self);
+}
+
+#endif /* defined(HAVE_ZLIB_COPY) */
+
+#if defined(HAVE_ZLIB_COPY)
+
+PyDoc_STRVAR(zlib_Decompress___deepcopy____doc__,
+"__deepcopy__($self, memo, /)\n"
+"--\n"
+"\n");
+
+#define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF    \
+    {"__deepcopy__", (PyCFunction)zlib_Decompress___deepcopy__, METH_O, zlib_Decompress___deepcopy____doc__},
+
+#endif /* defined(HAVE_ZLIB_COPY) */
+
 PyDoc_STRVAR(zlib_Decompress_flush__doc__,
 "flush($self, length=zlib.DEF_BUF_SIZE, /)\n"
 "--\n"
@@ -371,7 +437,7 @@ static PyObject *
 zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length);
 
 static PyObject *
-zlib_Decompress_flush(compobject *self, PyObject **args, Py_ssize_t nargs)
+zlib_Decompress_flush(compobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t length = DEF_BUF_SIZE;
@@ -404,7 +470,7 @@ static PyObject *
 zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value);
 
 static PyObject *
-zlib_adler32(PyObject *module, PyObject **args, Py_ssize_t nargs)
+zlib_adler32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -443,7 +509,7 @@ static PyObject *
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value);
 
 static PyObject *
-zlib_crc32(PyObject *module, PyObject **args, Py_ssize_t nargs)
+zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -467,4 +533,24 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=e0184313eb431e95 input=a9049054013a1b77]*/
+
+#ifndef ZLIB_COMPRESS___COPY___METHODDEF
+    #define ZLIB_COMPRESS___COPY___METHODDEF
+#endif /* !defined(ZLIB_COMPRESS___COPY___METHODDEF) */
+
+#ifndef ZLIB_COMPRESS___DEEPCOPY___METHODDEF
+    #define ZLIB_COMPRESS___DEEPCOPY___METHODDEF
+#endif /* !defined(ZLIB_COMPRESS___DEEPCOPY___METHODDEF) */
+
+#ifndef ZLIB_DECOMPRESS_COPY_METHODDEF
+    #define ZLIB_DECOMPRESS_COPY_METHODDEF
+#endif /* !defined(ZLIB_DECOMPRESS_COPY_METHODDEF) */
+
+#ifndef ZLIB_DECOMPRESS___COPY___METHODDEF
+    #define ZLIB_DECOMPRESS___COPY___METHODDEF
+#endif /* !defined(ZLIB_DECOMPRESS___COPY___METHODDEF) */
+
+#ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
+    #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
+#endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
+/*[clinic end generated code: output=d46c646770146ade input=a9049054013a1b77]*/

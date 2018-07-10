@@ -53,7 +53,7 @@ _io_IncrementalNewlineDecoder_decode_impl(nldecoder_object *self,
                                           PyObject *input, int final);
 
 static PyObject *
-_io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"input", "final", NULL};
@@ -149,7 +149,7 @@ PyDoc_STRVAR(_io_TextIOWrapper___init____doc__,
 
 static int
 _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
-                                const char *encoding, const char *errors,
+                                const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through);
 
@@ -158,10 +158,10 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"buffer", "encoding", "errors", "newline", "line_buffering", "write_through", NULL};
-    static _PyArg_Parser _parser = {"O|zzzii:TextIOWrapper", _keywords, 0};
+    static _PyArg_Parser _parser = {"O|zOzii:TextIOWrapper", _keywords, 0};
     PyObject *buffer;
     const char *encoding = NULL;
-    const char *errors = NULL;
+    PyObject *errors = Py_None;
     const char *newline = NULL;
     int line_buffering = 0;
     int write_through = 0;
@@ -177,7 +177,8 @@ exit:
 }
 
 PyDoc_STRVAR(_io_TextIOWrapper_reconfigure__doc__,
-"reconfigure($self, /, *, line_buffering=None, write_through=None)\n"
+"reconfigure($self, /, *, encoding=None, errors=None, newline=None,\n"
+"            line_buffering=None, write_through=None)\n"
 "--\n"
 "\n"
 "Reconfigure the text stream with new parameters.\n"
@@ -188,24 +189,28 @@ PyDoc_STRVAR(_io_TextIOWrapper_reconfigure__doc__,
     {"reconfigure", (PyCFunction)_io_TextIOWrapper_reconfigure, METH_FASTCALL|METH_KEYWORDS, _io_TextIOWrapper_reconfigure__doc__},
 
 static PyObject *
-_io_TextIOWrapper_reconfigure_impl(textio *self,
+_io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
+                                   PyObject *errors, PyObject *newline_obj,
                                    PyObject *line_buffering_obj,
                                    PyObject *write_through_obj);
 
 static PyObject *
-_io_TextIOWrapper_reconfigure(textio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_io_TextIOWrapper_reconfigure(textio *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"line_buffering", "write_through", NULL};
-    static _PyArg_Parser _parser = {"|$OO:reconfigure", _keywords, 0};
+    static const char * const _keywords[] = {"encoding", "errors", "newline", "line_buffering", "write_through", NULL};
+    static _PyArg_Parser _parser = {"|$OOOOO:reconfigure", _keywords, 0};
+    PyObject *encoding = Py_None;
+    PyObject *errors = Py_None;
+    PyObject *newline_obj = NULL;
     PyObject *line_buffering_obj = Py_None;
     PyObject *write_through_obj = Py_None;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &line_buffering_obj, &write_through_obj)) {
+        &encoding, &errors, &newline_obj, &line_buffering_obj, &write_through_obj)) {
         goto exit;
     }
-    return_value = _io_TextIOWrapper_reconfigure_impl(self, line_buffering_obj, write_through_obj);
+    return_value = _io_TextIOWrapper_reconfigure_impl(self, encoding, errors, newline_obj, line_buffering_obj, write_through_obj);
 
 exit:
     return return_value;
@@ -266,7 +271,7 @@ static PyObject *
 _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n);
 
 static PyObject *
-_io_TextIOWrapper_read(textio *self, PyObject **args, Py_ssize_t nargs)
+_io_TextIOWrapper_read(textio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
@@ -293,7 +298,7 @@ static PyObject *
 _io_TextIOWrapper_readline_impl(textio *self, Py_ssize_t size);
 
 static PyObject *
-_io_TextIOWrapper_readline(textio *self, PyObject **args, Py_ssize_t nargs)
+_io_TextIOWrapper_readline(textio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -320,7 +325,7 @@ static PyObject *
 _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence);
 
 static PyObject *
-_io_TextIOWrapper_seek(textio *self, PyObject **args, Py_ssize_t nargs)
+_io_TextIOWrapper_seek(textio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *cookieObj;
@@ -365,7 +370,7 @@ static PyObject *
 _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos);
 
 static PyObject *
-_io_TextIOWrapper_truncate(textio *self, PyObject **args, Py_ssize_t nargs)
+_io_TextIOWrapper_truncate(textio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *pos = Py_None;
@@ -499,4 +504,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=937989df0a8abfc3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b5be870b0039d577 input=a9049054013a1b77]*/

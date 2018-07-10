@@ -16,7 +16,7 @@ _symtable_symtable_impl(PyObject *module, const char *str,
                         PyObject *filename, const char *startstr);
 
 static PyObject *
-_symtable_symtable(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *str;
@@ -32,4 +32,4 @@ _symtable_symtable(PyObject *module, PyObject **args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ef379e514fde8477 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c18565060a6cae04 input=a9049054013a1b77]*/

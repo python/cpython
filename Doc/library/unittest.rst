@@ -56,7 +56,7 @@ test runner
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
 
-   `Nose <https://nose.readthedocs.org/en/latest/>`_ and `py.test <http://pytest.org>`_
+   `Nose <https://nose.readthedocs.io/>`_ and `py.test <https://docs.pytest.org/>`_
       Third-party unittest frameworks with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
@@ -219,6 +219,22 @@ Command-line options
 
    Stop the test run on the first error or failure.
 
+.. cmdoption:: -k
+
+   Only run test methods and classes that match the pattern or substring.
+   This option may be used multiple times, in which case all test cases that
+   match of the given patterns are included.
+
+   Patterns that contain a wildcard character (``*``) are matched against the
+   test name using :meth:`fnmatch.fnmatchcase`; otherwise simple case-sensitive
+   substring matching is used.
+
+   Patterns are matched against the fully qualified test method name as
+   imported by the test loader.
+
+   For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
+   ``bar_tests.SomeTest.test_foo``, but not ``bar_tests.FooTest.test_something``.
+
 .. cmdoption:: --locals
 
    Show local variables in tracebacks.
@@ -228,6 +244,9 @@ Command-line options
 
 .. versionadded:: 3.5
    The command-line option ``--locals``.
+
+.. versionadded:: 3.7
+   The command-line option ``-k``.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -342,8 +361,9 @@ testing code::
 
 Note that in order to test something, we use one of the :meth:`assert\*`
 methods provided by the :class:`TestCase` base class.  If the test fails, an
-exception will be raised, and :mod:`unittest` will identify the test case as a
-:dfn:`failure`.  Any other exceptions will be treated as :dfn:`errors`.
+exception will be raised with an explanatory message, and :mod:`unittest`
+will identify the test case as a :dfn:`failure`.  Any other exceptions will be
+treated as :dfn:`errors`.
 
 Tests can be numerous, and their set-up can be repetitive.  Luckily, we
 can factor out set-up code by implementing a method called
@@ -389,22 +409,31 @@ after the test method has been run::
 If :meth:`~TestCase.setUp` succeeded, :meth:`~TestCase.tearDown` will be
 run whether the test method succeeded or not.
 
-Such a working environment for the testing code is called a :dfn:`fixture`.
+Such a working environment for the testing code is called a
+:dfn:`test fixture`.  A new TestCase instance is created as a unique
+test fixture used to execute each individual test method.  Thus
+`~TestCase.setUp`, `~TestCase.tearDown`, and `~TestCase.__init__`
+will be called once per test.
 
-Test case instances are grouped together according to the features they test.
-:mod:`unittest` provides a mechanism for this: the :dfn:`test suite`,
-represented by :mod:`unittest`'s :class:`TestSuite` class.  In most cases,
-calling :func:`unittest.main` will do the right thing and collect all the
-module's test cases for you, and then execute them.
+It is recommended that you use TestCase implementations to group tests together
+according to the features they test.  :mod:`unittest` provides a mechanism for
+this: the :dfn:`test suite`, represented by :mod:`unittest`'s
+:class:`TestSuite` class.  In most cases, calling :func:`unittest.main` will do
+the right thing and collect all the module's test cases for you and execute
+them.
 
 However, should you want to customize the building of your test suite,
 you can do it yourself::
 
    def suite():
        suite = unittest.TestSuite()
-       suite.addTest(WidgetTestCase('test_default_size'))
-       suite.addTest(WidgetTestCase('test_resize'))
+       suite.addTest(WidgetTestCase('test_default_widget_size'))
+       suite.addTest(WidgetTestCase('test_widget_resize'))
        return suite
+
+   if __name__ == '__main__':
+       runner = unittest.TextTestRunner()
+       runner.run(suite())
 
 You can place the definitions of test cases and test suites in the same modules
 as the code they are to test (such as :file:`widget.py`), but there are several
@@ -1741,6 +1770,21 @@ Loading and running tests
 
       This affects all the :meth:`loadTestsFrom\*` methods.
 
+   .. attribute:: testNamePatterns
+
+      List of Unix shell-style wildcard test name patterns that test methods
+      have to match to be included in test suites (see ``-v`` option).
+
+      If this attribute is not ``None`` (the default), all test methods to be
+      included in test suites must match one of the patterns in this list.
+      Note that matches are always performed using :meth:`fnmatch.fnmatchcase`,
+      so unlike patterns passed to the ``-v`` option, simple substring patterns
+      will have to be converted using ``*`` wildcards.
+
+      This affects all the :meth:`loadTestsFrom\*` methods.
+
+      .. versionadded:: 3.7
+
 
 .. class:: TestResult
 
@@ -2278,7 +2322,7 @@ handling functionality within test frameworks.
 
    When called without arguments this function removes the control-c handler
    if it has been installed. This function can also be used as a test decorator
-   to temporarily remove the handler whilst the test is being executed::
+   to temporarily remove the handler while the test is being executed::
 
       @unittest.removeHandler
       def test_signal_handling(self):

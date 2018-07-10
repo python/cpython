@@ -124,12 +124,20 @@ PyCode_New(int argcount, int kwonlyargcount,
     if (PyUnicode_READY(filename) < 0)
         return NULL;
 
-    n_cellvars = PyTuple_GET_SIZE(cellvars);
     intern_strings(names);
     intern_strings(varnames);
     intern_strings(freevars);
     intern_strings(cellvars);
     intern_string_constants(consts);
+
+    /* Check for any inner or outer closure references */
+    n_cellvars = PyTuple_GET_SIZE(cellvars);
+    if (!n_cellvars && !PyTuple_GET_SIZE(freevars)) {
+        flags |= CO_NOFREE;
+    } else {
+        flags &= ~CO_NOFREE;
+    }
+
     /* Create mapping between cells and arguments if needed. */
     if (n_cellvars) {
         Py_ssize_t total_args = argcount + kwonlyargcount +
@@ -480,14 +488,21 @@ _PyCode_ConstantKey(PyObject *op)
 {
     PyObject *key;
 
-    /* Py_None and Py_Ellipsis are singleton */
+    /* Py_None and Py_Ellipsis are singletons. */
     if (op == Py_None || op == Py_Ellipsis
        || PyLong_CheckExact(op)
-       || PyBool_Check(op)
-       || PyBytes_CheckExact(op)
        || PyUnicode_CheckExact(op)
           /* code_richcompare() uses _PyCode_ConstantKey() internally */
-       || PyCode_Check(op)) {
+       || PyCode_Check(op))
+    {
+        /* Objects of these types are always different from object of other
+         * type and from tuples. */
+        Py_INCREF(op);
+        key = op;
+    }
+    else if (PyBool_Check(op) || PyBytes_CheckExact(op)) {
+        /* Make booleans different from integers 0 and 1.
+         * Avoid BytesWarning from comparing bytes with strings. */
         key = PyTuple_Pack(2, Py_TYPE(op), op);
     }
     else if (PyFloat_CheckExact(op)) {

@@ -1,0 +1,3 @@
+Fix output of cover files for ``trace`` module command-line tool.
+Previously emitted cover files only when ``--missing`` option was used.
+Patch by Michael Selik.

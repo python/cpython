@@ -61,7 +61,7 @@ void
 PyThread_init_thread(void)
 {
 #ifdef Py_DEBUG
-    char *p = Py_GETENV("PYTHONTHREADDEBUG");
+    const char *p = Py_GETENV("PYTHONTHREADDEBUG");
 
     if (p) {
         if (*p)

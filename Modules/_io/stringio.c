@@ -812,7 +812,7 @@ _io_StringIO_seekable_impl(stringio *self)
 */
 
 static PyObject *
-stringio_getstate(stringio *self)
+stringio_getstate(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *initvalue = _io_StringIO_getvalue_impl(self);
     PyObject *dict;
@@ -826,8 +826,10 @@ stringio_getstate(stringio *self)
     }
     else {
         dict = PyDict_Copy(self->dict);
-        if (dict == NULL)
+        if (dict == NULL) {
+            Py_DECREF(initvalue);
             return NULL;
+        }
     }
 
     state = Py_BuildValue("(OOnN)", initvalue,

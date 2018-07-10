@@ -1,6 +1,7 @@
 import unittest
 from test import support
 import binascii
+import copy
 import pickle
 import random
 import sys
@@ -72,7 +73,7 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(binascii.crc32(b'spam'), zlib.crc32(b'spam'))
 
 
-# Issue #10276 - check that inputs >=4GB are handled correctly.
+# Issue #10276 - check that inputs >=4 GiB are handled correctly.
 class ChecksumBigBufferTestCase(unittest.TestCase):
 
     @bigmemtest(size=_4G + 4, memuse=1, dry_run=False)
@@ -130,7 +131,7 @@ class ExceptionTestCase(unittest.TestCase):
 class BaseCompressTestCase(object):
     def check_big_compress_buffer(self, size, compress_func):
         _1M = 1024 * 1024
-        # Generate 10MB worth of random, and expand it by repeating it.
+        # Generate 10 MiB worth of random, and expand it by repeating it.
         # The assumption is that zlib's memory is not big enough to exploit
         # such spread out redundancy.
         data = b''.join([random.getrandbits(8 * _1M).to_bytes(_1M, 'little')
@@ -434,7 +435,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_flushes(self):
         # Test flush() with the various options, using all the
         # different levels in order to provide more variations.
-        sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH']
+        sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH',
+                    'Z_PARTIAL_FLUSH', 'Z_BLOCK']
         sync_opt = [getattr(zlib, opt) for opt in sync_opt
                     if hasattr(zlib, opt)]
         data = HAMLET_SCENE * 8
@@ -625,23 +627,24 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         # Test copying a compression object
         data0 = HAMLET_SCENE
         data1 = bytes(str(HAMLET_SCENE, "ascii").swapcase(), "ascii")
-        c0 = zlib.compressobj(zlib.Z_BEST_COMPRESSION)
-        bufs0 = []
-        bufs0.append(c0.compress(data0))
+        for func in lambda c: c.copy(), copy.copy, copy.deepcopy:
+            c0 = zlib.compressobj(zlib.Z_BEST_COMPRESSION)
+            bufs0 = []
+            bufs0.append(c0.compress(data0))
 
-        c1 = c0.copy()
-        bufs1 = bufs0[:]
+            c1 = func(c0)
+            bufs1 = bufs0[:]
 
-        bufs0.append(c0.compress(data0))
-        bufs0.append(c0.flush())
-        s0 = b''.join(bufs0)
+            bufs0.append(c0.compress(data0))
+            bufs0.append(c0.flush())
+            s0 = b''.join(bufs0)
 
-        bufs1.append(c1.compress(data1))
-        bufs1.append(c1.flush())
-        s1 = b''.join(bufs1)
+            bufs1.append(c1.compress(data1))
+            bufs1.append(c1.flush())
+            s1 = b''.join(bufs1)
 
-        self.assertEqual(zlib.decompress(s0),data0+data0)
-        self.assertEqual(zlib.decompress(s1),data0+data1)
+            self.assertEqual(zlib.decompress(s0),data0+data0)
+            self.assertEqual(zlib.decompress(s1),data0+data1)
 
     @requires_Compress_copy
     def test_badcompresscopy(self):
@@ -650,6 +653,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         c.compress(HAMLET_SCENE)
         c.flush()
         self.assertRaises(ValueError, c.copy)
+        self.assertRaises(ValueError, copy.copy, c)
+        self.assertRaises(ValueError, copy.deepcopy, c)
 
     @requires_Decompress_copy
     def test_decompresscopy(self):
@@ -659,21 +664,22 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         # Test type of return value
         self.assertIsInstance(comp, bytes)
 
-        d0 = zlib.decompressobj()
-        bufs0 = []
-        bufs0.append(d0.decompress(comp[:32]))
+        for func in lambda c: c.copy(), copy.copy, copy.deepcopy:
+            d0 = zlib.decompressobj()
+            bufs0 = []
+            bufs0.append(d0.decompress(comp[:32]))
 
-        d1 = d0.copy()
-        bufs1 = bufs0[:]
+            d1 = func(d0)
+            bufs1 = bufs0[:]
 
-        bufs0.append(d0.decompress(comp[32:]))
-        s0 = b''.join(bufs0)
+            bufs0.append(d0.decompress(comp[32:]))
+            s0 = b''.join(bufs0)
 
-        bufs1.append(d1.decompress(comp[32:]))
-        s1 = b''.join(bufs1)
+            bufs1.append(d1.decompress(comp[32:]))
+            s1 = b''.join(bufs1)
 
-        self.assertEqual(s0,s1)
-        self.assertEqual(s0,data)
+            self.assertEqual(s0,s1)
+            self.assertEqual(s0,data)
 
     @requires_Decompress_copy
     def test_baddecompresscopy(self):
@@ -683,6 +689,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         d.decompress(data)
         d.flush()
         self.assertRaises(ValueError, d.copy)
+        self.assertRaises(ValueError, copy.copy, d)
+        self.assertRaises(ValueError, copy.deepcopy, d)
 
     def test_compresspickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -751,10 +759,15 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_wbits(self):
         # wbits=0 only supported since zlib v1.2.3.5
         # Register "1.2.3" as "1.2.3.0"
-        v = (zlib.ZLIB_RUNTIME_VERSION + ".0").split(".", 4)
-        supports_wbits_0 = int(v[0]) > 1 or int(v[0]) == 1 \
-            and (int(v[1]) > 2 or int(v[1]) == 2
-            and (int(v[2]) > 3 or int(v[2]) == 3 and int(v[3]) >= 5))
+        # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
+        v = zlib.ZLIB_RUNTIME_VERSION.split('-', 1)[0].split('.')
+        if len(v) < 4:
+            v.append('0')
+        elif not v[-1].isnumeric():
+            v[-1] = '0'
+
+        v = tuple(map(int, v))
+        supports_wbits_0 = v >= (1, 2, 3, 5)
 
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()

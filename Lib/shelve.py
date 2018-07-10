@@ -235,7 +235,7 @@ def open(filename, flag='c', protocol=None, writeback=False):
     filename and more than one file may be created.  The optional flag
     parameter has the same interpretation as the flag parameter of
     dbm.open(). The optional protocol parameter specifies the
-    version of the pickle protocol (0, 1, or 2).
+    version of the pickle protocol.
 
     See the module's __doc__ string for an overview of the interface.
     """

@@ -31,7 +31,7 @@
 #if BUFSIZ < (16*1024)
 #define SMALLCHUNK (2*1024)
 #elif (BUFSIZ >= (2 << 25))
-#error "unreasonable BUFSIZ > 64MB defined"
+#error "unreasonable BUFSIZ > 64 MiB defined"
 #else
 #define SMALLCHUNK BUFSIZ
 #endif
@@ -964,6 +964,9 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     if (!self->writable)
         return err_mode("writing");
 
+    if (!b->len) {
+        return PyLong_FromLong(0);
+    }
     if (b->len > BUFMAX)
         len = BUFMAX;
     else
@@ -1054,7 +1057,7 @@ _io__WindowsConsoleIO_isatty_impl(winconsoleio *self)
 }
 
 static PyObject *
-winconsoleio_getstate(winconsoleio *self)
+winconsoleio_getstate(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 {
     PyErr_Format(PyExc_TypeError,
                  "cannot serialize '%s' object", Py_TYPE(self)->tp_name);

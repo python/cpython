@@ -47,11 +47,12 @@ Physical lines
 --------------
 
 A physical line is a sequence of characters terminated by an end-of-line
-sequence.  In source files, any of the standard platform line termination
-sequences can be used - the Unix form using ASCII LF (linefeed), the Windows
-form using the ASCII sequence CR LF (return followed by linefeed), or the old
-Macintosh form using the ASCII CR (return) character.  All of these forms can be
-used equally, regardless of platform.
+sequence.  In source files and strings, any of the standard platform line
+termination sequences can be used - the Unix form using ASCII LF (linefeed),
+the Windows form using the ASCII sequence CR LF (return followed by linefeed),
+or the old Macintosh form using the ASCII CR (return) character.  All of these
+forms can be used equally, regardless of platform. The end of input also serves
+as an implicit terminator for the final physical line.
 
 When embedding Python, source code strings should be passed to Python APIs using
 the standard C conventions for newline characters (the ``\n`` character,
@@ -313,7 +314,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <http://www.unicode.org/Public/10.0.0/ucd/PropList.txt>`_ to support backwards
+  <http://www.unicode.org/Public/11.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -340,13 +341,13 @@ exactly as written here:
 
 .. sourcecode:: text
 
-   False      class      finally    is         return
-   None       continue   for        lambda     try
-   True       def        from       nonlocal   while
-   and        del        global     not        with
-   as         elif       if         or         yield
-   assert     else       import     pass
-   break      except     in         raise
+   False      await      else       import     pass
+   None       break      except     in         raise
+   True       class      finally    is         return
+   and        continue   for        lambda     try
+   as         def        from       nonlocal   while
+   assert     del        global     not        with
+   async      elif       if         or         yield
 
 .. _id-classes:
 
@@ -571,7 +572,7 @@ that a single backslash followed by a newline is interpreted as those two
 characters as part of the literal, *not* as a line continuation.
 
 
-.. _string-catenation:
+.. _string-concatenation:
 
 String literal concatenation
 ----------------------------
@@ -654,9 +655,11 @@ expression or conversion result.  An empty string is passed when the
 format specifier is omitted.  The formatted result is then included in
 the final value of the whole string.
 
-Top-level format specifiers may include nested replacement fields.
-These nested fields may include their own conversion fields and
-format specifiers, but may not include more deeply-nested replacement fields.
+Top-level format specifiers may include nested replacement fields. These nested
+fields may include their own conversion fields and :ref:`format specifiers
+<formatspec>`, but may not include more deeply-nested replacement fields. The
+:ref:`format specifier mini-language <formatspec>` is the same as that used by
+the string .format() method.
 
 Formatted string literals may be concatenated, but replacement fields
 cannot be split across literals.
@@ -674,7 +677,7 @@ Some examples of formatted string literals::
    >>> f"result: {value:{width}.{precision}}"  # nested fields
    'result:      12.35'
    >>> today = datetime(year=2017, month=1, day=27)
-   >>> f"{today:%b %d, %Y}"  # using date format specifier
+   >>> f"{today:%B %d, %Y}"  # using date format specifier
    'January 27, 2017'
    >>> number = 1024
    >>> f"{number:#0x}"  # using integer format specifier
@@ -874,4 +877,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/10.0.0/ucd/NameAliases.txt
+.. [#] http://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt

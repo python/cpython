@@ -1650,8 +1650,9 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
             continue;
         }
         else {
-            /* TODO: include repr of key */
-            PyErr_SetString(PyExc_TypeError, "keys must be a string");
+            PyErr_Format(PyExc_TypeError,
+                         "keys must be str, int, float, bool or None, "
+                         "not %.100s", key->ob_type->tp_name);
             goto bail;
         }
 

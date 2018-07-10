@@ -24,7 +24,7 @@ Queue
    A queue, useful for coordinating producer and consumer coroutines.
 
    If *maxsize* is less than or equal to zero, the queue size is infinite. If
-   it is an integer greater than ``0``, then ``yield from put()`` will block
+   it is an integer greater than ``0``, then ``await put()`` will block
    when the queue reaches *maxsize*, until an item is removed by :meth:`get`.
 
    Unlike the standard library :mod:`queue`, you can reliably know this Queue's

@@ -122,7 +122,6 @@ user_signals
 posix_constants_confstr
 posix_constants_pathconf
 posix_constants_sysconf
-_stat_float_times  # deprecated, __main__-only
 structseq_new
 ticks_per_second
 
@@ -394,7 +393,6 @@ Py_NoUserSiteDirectory
 Py_OptimizeFlag
 Py_QuietFlag
 Py_UnbufferedStdioFlag
-Py_UseClassExceptionsFlag
 Py_VerboseFlag
 
 

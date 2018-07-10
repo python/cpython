@@ -88,7 +88,7 @@ static PyObject *
 builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec);
 
 static PyObject *
-builtin_format(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_format(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -158,7 +158,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      int optimize);
 
 static PyObject *
-builtin_compile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", NULL};
@@ -193,7 +193,7 @@ static PyObject *
 builtin_divmod_impl(PyObject *module, PyObject *x, PyObject *y);
 
 static PyObject *
-builtin_divmod(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_divmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *x;
@@ -230,7 +230,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals);
 
 static PyObject *
-builtin_eval(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_eval(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *source;
@@ -268,7 +268,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals);
 
 static PyObject *
-builtin_exec(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *source;
@@ -322,7 +322,7 @@ static PyObject *
 builtin_hasattr_impl(PyObject *module, PyObject *obj, PyObject *name);
 
 static PyObject *
-builtin_hasattr(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_hasattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *obj;
@@ -367,7 +367,7 @@ builtin_setattr_impl(PyObject *module, PyObject *obj, PyObject *name,
                      PyObject *value);
 
 static PyObject *
-builtin_setattr(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_setattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *obj;
@@ -400,7 +400,7 @@ static PyObject *
 builtin_delattr_impl(PyObject *module, PyObject *obj, PyObject *name);
 
 static PyObject *
-builtin_delattr(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_delattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *obj;
@@ -509,7 +509,7 @@ static PyObject *
 builtin_pow_impl(PyObject *module, PyObject *x, PyObject *y, PyObject *z);
 
 static PyObject *
-builtin_pow(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *x;
@@ -546,7 +546,7 @@ static PyObject *
 builtin_input_impl(PyObject *module, PyObject *prompt);
 
 static PyObject *
-builtin_input(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_input(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *prompt = NULL;
@@ -573,6 +573,40 @@ PyDoc_STRVAR(builtin_repr__doc__,
 #define BUILTIN_REPR_METHODDEF    \
     {"repr", (PyCFunction)builtin_repr, METH_O, builtin_repr__doc__},
 
+PyDoc_STRVAR(builtin_round__doc__,
+"round($module, /, number, ndigits=None)\n"
+"--\n"
+"\n"
+"Round a number to a given precision in decimal digits.\n"
+"\n"
+"The return value is an integer if ndigits is omitted or None.  Otherwise\n"
+"the return value has the same type as the number.  ndigits may be negative.");
+
+#define BUILTIN_ROUND_METHODDEF    \
+    {"round", (PyCFunction)builtin_round, METH_FASTCALL|METH_KEYWORDS, builtin_round__doc__},
+
+static PyObject *
+builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits);
+
+static PyObject *
+builtin_round(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"number", "ndigits", NULL};
+    static _PyArg_Parser _parser = {"O|O:round", _keywords, 0};
+    PyObject *number;
+    PyObject *ndigits = NULL;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &number, &ndigits)) {
+        goto exit;
+    }
+    return_value = builtin_round_impl(module, number, ndigits);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_sum__doc__,
 "sum($module, iterable, start=0, /)\n"
 "--\n"
@@ -590,7 +624,7 @@ static PyObject *
 builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start);
 
 static PyObject *
-builtin_sum(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable;
@@ -625,7 +659,7 @@ builtin_isinstance_impl(PyObject *module, PyObject *obj,
                         PyObject *class_or_tuple);
 
 static PyObject *
-builtin_isinstance(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_isinstance(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *obj;
@@ -660,7 +694,7 @@ builtin_issubclass_impl(PyObject *module, PyObject *cls,
                         PyObject *class_or_tuple);
 
 static PyObject *
-builtin_issubclass(PyObject *module, PyObject **args, Py_ssize_t nargs)
+builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *cls;
@@ -676,4 +710,4 @@ builtin_issubclass(PyObject *module, PyObject **args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=09752daa8cdd6ec7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9f17c7a87d740374 input=a9049054013a1b77]*/

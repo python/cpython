@@ -25,8 +25,14 @@ module marshal
  * and risks coring the interpreter.  When the object stack gets this deep,
  * raise an exception instead of continuing.
  * On Windows debug builds, reduce this value.
+ *
+ * BUG: https://bugs.python.org/issue33720
+ * On Windows PGO builds, the r_object function overallocates its stack and
+ * can cause a stack overflow. We reduce the maximum depth for all Windows
+ * releases to protect against this.
+ * #if defined(MS_WINDOWS) && defined(_DEBUG)
  */
-#if defined(MS_WINDOWS) && defined(_DEBUG)
+#if defined(MS_WINDOWS)
 #define MAX_MARSHAL_STACK_DEPTH 1000
 #else
 #define MAX_MARSHAL_STACK_DEPTH 2000
@@ -39,6 +45,9 @@ module marshal
 #define TYPE_STOPITER           'S'
 #define TYPE_ELLIPSIS           '.'
 #define TYPE_INT                'i'
+/* TYPE_INT64 is not generated anymore.
+   Supported for backward compatibility only. */
+#define TYPE_INT64              'I'
 #define TYPE_FLOAT              'f'
 #define TYPE_BINARY_FLOAT       'g'
 #define TYPE_COMPLEX            'x'
@@ -783,6 +792,19 @@ r_long(RFILE *p)
     return x;
 }
 
+/* r_long64 deals with the TYPE_INT64 code. */
+static PyObject *
+r_long64(RFILE *p)
+{
+    const unsigned char *buffer = (const unsigned char *) r_string(8, p);
+    if (buffer == NULL) {
+        return NULL;
+    }
+    return _PyLong_FromByteArray(buffer, 8,
+                                 1 /* little endian */,
+                                 1 /* signed */);
+}
+
 static PyObject *
 r_PyLong(RFILE *p)
 {
@@ -979,6 +1001,11 @@ r_object(RFILE *p)
     case TYPE_INT:
         n = r_long(p);
         retval = PyErr_Occurred() ? NULL : PyLong_FromLong(n);
+        R_REF(retval);
+        break;
+
+    case TYPE_INT64:
+        retval = r_long64(p);
         R_REF(retval);
         break;
 

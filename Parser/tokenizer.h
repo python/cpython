@@ -47,9 +47,6 @@ struct tok_state {
        (Grammar/Grammar). */
     PyObject *filename;
 #endif
-    int altwarning;     /* Issue warning if alternate tabs don't match */
-    int alterror;       /* Issue error if alternate tabs don't match */
-    int alttabsize;     /* Alternate tab spacing */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
     enum decoding_state decoding_state;

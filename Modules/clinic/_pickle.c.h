@@ -207,7 +207,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
                                   PyObject *global_name);
 
 static PyObject *
-_pickle_Unpickler_find_class(UnpicklerObject *self, PyObject **args, Py_ssize_t nargs)
+_pickle_Unpickler_find_class(UnpicklerObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *module_name;
@@ -367,8 +367,9 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "be more efficient.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
-"protocol supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 3; a backward-incompatible protocol designed for Python 3.\n"
+"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
+"protocol is 4. It was introduced in Python 3.4, it is incompatible\n"
+"with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
 "version supported.  The higher the protocol used, the more recent the\n"
@@ -391,7 +392,7 @@ _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports);
 
 static PyObject *
-_pickle_dump(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "file", "protocol", "fix_imports", NULL};
@@ -419,7 +420,8 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
 "protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 3; a backward-incompatible protocol designed for Python 3.\n"
+"protocol is 4. It was introduced in Python 3.4, it is incompatible\n"
+"with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
 "version supported.  The higher the protocol used, the more recent the\n"
@@ -437,7 +439,7 @@ _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports);
 
 static PyObject *
-_pickle_dumps(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "protocol", "fix_imports", NULL};
@@ -493,7 +495,7 @@ _pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
                   const char *encoding, const char *errors);
 
 static PyObject *
-_pickle_load(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
@@ -541,7 +543,7 @@ _pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
                    const char *encoding, const char *errors);
 
 static PyObject *
-_pickle_loads(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "fix_imports", "encoding", "errors", NULL};
@@ -560,4 +562,4 @@ _pickle_loads(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a6243aaa6ea98732 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6fc104b8299c82dd input=a9049054013a1b77]*/

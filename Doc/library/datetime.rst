@@ -241,7 +241,7 @@ Supported operations:
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 - t3``               | Difference of *t2* and *t3*. Afterwards *t1*  |
 |                                | == *t2* - *t3* and *t2* == *t1* + *t3* are    |
-|                                | true. (1)                                     |
+|                                | true. (1)(6)                                  |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 * i or t1 = i * t2`` | Delta multiplied by an integer.               |
 |                                | Afterwards *t1* // i == *t2* is true,         |
@@ -317,6 +317,11 @@ Notes:
   >>> print(_)
   -1 day, 19:00:00
 
+(6)
+   The expression ``t2 - t3`` will always be equal to the expression ``t2 + (-t3)`` except
+   when t3 is equal to ``timedelta.max``; in that case the former will produce a result
+   while the latter will overflow.
+
 In addition to the operations listed above :class:`timedelta` objects support
 certain additions and subtractions with :class:`date` and :class:`.datetime`
 objects (see below).
@@ -365,13 +370,13 @@ Example usage:
     True
     >>> ten_years = 10 * year
     >>> ten_years, ten_years.days // 365
-    (datetime.timedelta(3650), 10)
+    (datetime.timedelta(days=3650), 10)
     >>> nine_years = ten_years - year
     >>> nine_years, nine_years.days // 365
-    (datetime.timedelta(3285), 9)
+    (datetime.timedelta(days=3285), 9)
     >>> three_years = nine_years // 3
     >>> three_years, three_years.days // 365
-    (datetime.timedelta(1095), 3)
+    (datetime.timedelta(days=1095), 3)
     >>> abs(three_years - ten_years) == 2 * three_years + year
     True
 
@@ -436,6 +441,21 @@ Other constructors, all class methods:
    d``.
 
 
+.. classmethod:: date.fromisoformat(date_string)
+
+  Return a :class:`date` corresponding to a *date_string* in the format emitted
+  by :meth:`date.isoformat`. Specifically, this function supports strings in
+  the format(s) ``YYYY-MM-DD``.
+
+  .. caution::
+
+    This does not support parsing arbitrary ISO 8601 strings - it is only intended
+    as the inverse operation of :meth:`date.isoformat`.
+
+  .. versionadded:: 3.7
+
+
+
 Class attributes:
 
 .. attribute:: date.min
@@ -498,8 +518,6 @@ Notes:
    :const:`MINYEAR` or larger than :const:`MAXYEAR`.
 
 (2)
-   This isn't quite equivalent to date1 + (-timedelta), because -timedelta in
-   isolation can overflow in cases where date1 - timedelta does not.
    ``timedelta.seconds`` and ``timedelta.microseconds`` are ignored.
 
 (3)
@@ -819,6 +837,21 @@ Other constructors, all class methods:
       Added the *tzinfo* argument.
 
 
+.. classmethod:: datetime.fromisoformat(date_string)
+
+  Return a :class:`datetime` corresponding to a *date_string* in one of the
+  formats emitted by :meth:`date.isoformat` and :meth:`datetime.isoformat`.
+  Specifically, this function supports strings in the format(s)
+  ``YYYY-MM-DD[*HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]]``,
+  where ``*`` can match any single character.
+
+  .. caution::
+
+    This does not support parsing arbitrary ISO 8601 strings - it is only intended
+    as the inverse operation of :meth:`datetime.isoformat`.
+
+  .. versionadded:: 3.7
+
 .. classmethod:: datetime.strptime(date_string, format)
 
    Return a :class:`.datetime` corresponding to *date_string*, parsed according to
@@ -931,8 +964,6 @@ Supported operations:
    Computes the datetime2 such that datetime2 + timedelta == datetime1. As for
    addition, the result has the same :attr:`~.datetime.tzinfo` attribute as the input
    datetime, and no time zone adjustments are done even if the input is aware.
-   This isn't quite equivalent to datetime1 + (-timedelta), because -timedelta
-   in isolation can overflow in cases where datetime1 - timedelta does not.
 
 (3)
    Subtraction of a :class:`.datetime` from a :class:`.datetime` is defined only if
@@ -1028,8 +1059,7 @@ Instance methods:
 
    If provided, *tz* must be an instance of a :class:`tzinfo` subclass, and its
    :meth:`utcoffset` and :meth:`dst` methods must not return ``None``.  If *self*
-   is naive (``self.tzinfo is None``), it is presumed to represent time in the
-   system timezone.
+   is naive, it is presumed to represent time in the system timezone.
 
    If called without arguments (or with ``tz=None``) the system local
    timezone is assumed for the target timezone.  The ``.tzinfo`` attribute of the converted
@@ -1354,12 +1384,12 @@ Using datetime with tzinfo:
     >>> dt1.dst()
     datetime.timedelta(0)
     >>> dt1.utcoffset()
-    datetime.timedelta(0, 3600)
+    datetime.timedelta(seconds=3600)
     >>> dt2 = datetime(2006, 6, 14, 13, 0, tzinfo=gmt1)
     >>> dt2.dst()
-    datetime.timedelta(0, 3600)
+    datetime.timedelta(seconds=3600)
     >>> dt2.utcoffset()
-    datetime.timedelta(0, 7200)
+    datetime.timedelta(seconds=7200)
     >>> # Convert datetime to another time zone
     >>> dt3 = dt2.astimezone(GMT2())
     >>> dt3     # doctest: +ELLIPSIS
@@ -1486,6 +1516,23 @@ In boolean contexts, a :class:`.time` object is always considered to be true.
    error-prone and has been removed in Python 3.5.  See :issue:`13936` for full
    details.
 
+
+Other constructor:
+
+.. classmethod:: time.fromisoformat(time_string)
+
+  Return a :class:`time` corresponding to a *time_string* in one of the
+  formats emitted by :meth:`time.isoformat`. Specifically, this function supports
+  strings in the format(s) ``HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]``.
+
+  .. caution::
+
+    This does not support parsing arbitrary ISO 8601 strings - it is only intended
+    as the inverse operation of :meth:`time.isoformat`.
+
+  .. versionadded:: 3.7
+
+
 Instance methods:
 
 .. method:: time.replace(hour=self.hour, minute=self.minute, second=self.second, \
@@ -1586,7 +1633,6 @@ Instance methods:
    If :attr:`.tzinfo` is ``None``, returns ``None``, else returns
    ``self.tzinfo.tzname(None)``, or raises an exception if the latter doesn't
    return ``None`` or a string object.
-
 
 Example:
 
@@ -2163,8 +2209,8 @@ Notes:
       :meth:`utcoffset` is transformed into a string of the form
       ±HHMM[SS[.uuuuuu]], where HH is a 2-digit string giving the number of UTC
       offset hours, and MM is a 2-digit string giving the number of UTC offset
-      minutes, SS is a 2-digit string string giving the number of UTC offset
-      seconds and uuuuuu is a 2-digit string string giving the number of UTC
+      minutes, SS is a 2-digit string giving the number of UTC offset
+      seconds and uuuuuu is a 2-digit string giving the number of UTC
       offset microseconds.  The uuuuuu part is omitted when the offset is a
       whole number of minutes and both the uuuuuu and the SS parts are omitted
       when the offset is a whole number of minutes.  For example, if
@@ -2173,6 +2219,13 @@ Notes:
 
    .. versionchanged:: 3.7
       The UTC offset is not restricted to a whole number of minutes.
+
+   .. versionchanged:: 3.7
+      When the ``%z`` directive is provided to the  :meth:`strptime` method,
+      the UTC offsets can have a colon as a separator between hours, minutes
+      and seconds.
+      For example, ``'+01:00:00'`` will be parsed as an offset of one hour.
+      In addition, providing ``'Z'`` is identical to ``'+00:00'``.
 
    ``%Z``
       If :meth:`tzname` returns ``None``, ``%Z`` is replaced by an empty

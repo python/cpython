@@ -285,7 +285,7 @@ def iterfind(elem, path, namespaces=None):
             try:
                 selector.append(ops[token[0]](next, token))
             except StopIteration:
-                raise SyntaxError("invalid path")
+                raise SyntaxError("invalid path") from None
             try:
                 token = next()
                 if token[0] == "/":

@@ -37,6 +37,112 @@ struct _gilstate_runtime_state {
 #define _PyGILState_check_enabled _PyRuntime.gilstate.check_enabled
 
 
+typedef struct {
+    /* Full path to the Python program */
+    wchar_t *program_full_path;
+    wchar_t *prefix;
+#ifdef MS_WINDOWS
+    wchar_t *dll_path;
+#else
+    wchar_t *exec_prefix;
+#endif
+    /* Set by Py_SetPath(), or computed by _PyPathConfig_Init() */
+    wchar_t *module_search_path;
+    /* Python program name */
+    wchar_t *program_name;
+    /* Set by Py_SetPythonHome() or PYTHONHOME environment variable */
+    wchar_t *home;
+} _PyPathConfig;
+
+#define _PyPathConfig_INIT {.module_search_path = NULL}
+/* Note: _PyPathConfig_INIT sets other fields to 0/NULL */
+
+PyAPI_DATA(_PyPathConfig) _Py_path_config;
+
+PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate(
+    _PyPathConfig *config,
+    const _PyCoreConfig *core_config);
+PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
+
+
+/* interpreter state */
+
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(PY_INT64_T);
+
+PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+
+
+/* cross-interpreter data */
+
+struct _xid;
+
+// _PyCrossInterpreterData is similar to Py_buffer as an effectively
+// opaque struct that holds data outside the object machinery.  This
+// is necessary to pass safely between interpreters in the same process.
+typedef struct _xid {
+    // data is the cross-interpreter-safe derivation of a Python object
+    // (see _PyObject_GetCrossInterpreterData).  It will be NULL if the
+    // new_object func (below) encodes the data.
+    void *data;
+    // obj is the Python object from which the data was derived.  This
+    // is non-NULL only if the data remains bound to the object in some
+    // way, such that the object must be "released" (via a decref) when
+    // the data is released.  In that case the code that sets the field,
+    // likely a registered "crossinterpdatafunc", is responsible for
+    // ensuring it owns the reference (i.e. incref).
+    PyObject *obj;
+    // interp is the ID of the owning interpreter of the original
+    // object.  It corresponds to the active interpreter when
+    // _PyObject_GetCrossInterpreterData() was called.  This should only
+    // be set by the cross-interpreter machinery.
+    //
+    // We use the ID rather than the PyInterpreterState to avoid issues
+    // with deleted interpreters.
+    int64_t interp;
+    // new_object is a function that returns a new object in the current
+    // interpreter given the data.  The resulting object (a new
+    // reference) will be equivalent to the original object.  This field
+    // is required.
+    PyObject *(*new_object)(struct _xid *);
+    // free is called when the data is released.  If it is NULL then
+    // nothing will be done to free the data.  For some types this is
+    // okay (e.g. bytes) and for those types this field should be set
+    // to NULL.  However, for most the data was allocated just for
+    // cross-interpreter use, so it must be freed when
+    // _PyCrossInterpreterData_Release is called or the memory will
+    // leak.  In that case, at the very least this field should be set
+    // to PyMem_RawFree (the default if not explicitly set to NULL).
+    // The call will happen with the original interpreter activated.
+    void (*free)(void *);
+} _PyCrossInterpreterData;
+
+typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
+PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
+
+PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
+PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
+PyAPI_FUNC(void) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
+
+/* cross-interpreter data registry */
+
+/* For now we use a global registry of shareable classes.  An
+   alternative would be to add a tp_* slot for a class's
+   crossinterpdatafunc. It would be simpler and more efficient. */
+
+PyAPI_FUNC(int) _PyCrossInterpreterData_Register_Class(PyTypeObject *, crossinterpdatafunc);
+PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
+
+struct _xidregitem;
+
+struct _xidregitem {
+    PyTypeObject *cls;
+    crossinterpdatafunc getdata;
+    struct _xidregitem *next;
+};
+
+
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
@@ -58,15 +164,17 @@ typedef struct pyruntimestate {
            using a Python int. */
         int64_t next_id;
     } interpreters;
+    // XXX Remove this field once we have a tp_* slot.
+    struct _xidregistry {
+        PyThread_type_lock mutex;
+        struct _xidregitem *head;
+    } xidregistry;
 
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
-    void (*pyexitfunc)(void);
 
-    struct _pyobj_runtime_state obj;
     struct _gc_runtime_state gc;
-    struct _pymem_runtime_state mem;
     struct _warnings_runtime_state warnings;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
@@ -74,9 +182,16 @@ typedef struct pyruntimestate {
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
+#define _PyRuntimeState_INIT {.initialized = 0, .core_initialized = 0}
+/* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
+
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
-PyAPI_FUNC(void) _PyRuntimeState_Init(_PyRuntimeState *);
+PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
+
+/* Initialize _PyRuntimeState.
+   Return NULL on success, or return an error message on failure. */
+PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 
 #define _Py_CURRENTLY_FINALIZING(tstate) \
     (_PyRuntime.finalizing == tstate)
@@ -84,7 +199,7 @@ PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
 
 /* Other */
 
-PyAPI_FUNC(void) _PyInterpreterState_Enable(_PyRuntimeState *);
+PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
 
 #ifdef __cplusplus
 }

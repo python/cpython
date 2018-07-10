@@ -129,7 +129,7 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(sizeof(XX), 0)
 
     def test_fields(self):
-        # test the offset and size attributes of Structure/Unoin fields.
+        # test the offset and size attributes of Structure/Union fields.
         class X(Structure):
             _fields_ = [("x", c_int),
                         ("y", c_char)]
