@@ -209,19 +209,18 @@ are always available.  They are listed here in alphabetical order.
           @classmethod
           def f(cls, arg1, arg2, ...): ...
 
-   The ``@classmethod`` form is a function :term:`decorator` -- see the description
-   of function definitions in :ref:`function` for details.
+   The ``@classmethod`` form is a function :term:`decorator` -- see
+   :ref:`function` for details.
 
-   It can be called either on the class (such as ``C.f()``) or on an instance (such
-   as ``C().f()``).  The instance is ignored except for its class. If a class
-   method is called for a derived class, the derived class object is passed as the
-   implied first argument.
+   A class method can be called either on the class (such as ``C.f()``) or on an
+   instance (such as ``C().f()``).  The instance is ignored except for its
+   class.  If a class method is called for a derived class, the derived class
+   object is passed as the implied first argument.
 
    Class methods are different than C++ or Java static methods. If you want those,
-   see :func:`staticmethod` in this section.
+   see :func:`staticmethod`.
 
-   For more information on class methods, consult the documentation on the standard
-   type hierarchy in :ref:`types`.
+   For more information on class methods, see :ref:`types`.
 
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
@@ -1423,11 +1422,11 @@ are always available.  They are listed here in alphabetical order.
           @staticmethod
           def f(arg1, arg2, ...): ...
 
-   The ``@staticmethod`` form is a function :term:`decorator` -- see the
-   description of function definitions in :ref:`function` for details.
+   The ``@staticmethod`` form is a function :term:`decorator` -- see
+   :ref:`function` for details.
 
-   It can be called either on the class (such as ``C.f()``) or on an instance (such
-   as ``C().f()``).  The instance is ignored except for its class.
+   A static method can be called either on the class (such as ``C.f()``) or on
+   an instance (such as ``C().f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also see
    :func:`classmethod` for a variant that is useful for creating alternate class
@@ -1442,8 +1441,7 @@ are always available.  They are listed here in alphabetical order.
       class C:
           builtin_open = staticmethod(open)
 
-   For more information on static methods, consult the documentation on the
-   standard type hierarchy in :ref:`types`.
+   For more information on static methods, see :ref:`types`.
 
 
 .. index::
