@@ -1324,6 +1324,8 @@ static void
 err_free(perrdetail *err)
 {
     Py_CLEAR(err->filename);
+    PyObject_Free(err->text);
+    err->text = NULL;
 }
 
 /* Set the error appropriate to the given input error code (see errcode.h) */
@@ -1446,7 +1448,7 @@ err_input(perrdetail *err)
 cleanup:
     Py_XDECREF(msg_obj);
     if (err->text != NULL) {
-        PyObject_FREE(err->text);
+        PyObject_Free(err->text);
         err->text = NULL;
     }
 }
