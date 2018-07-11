@@ -246,8 +246,6 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             else if ((ps->p_flags & CO_FUTURE_BARRY_AS_BDFL) &&
                             strcmp(str, "<>")) {
                 PyObject_FREE(str);
-                err_ret->text = "with Barry as BDFL, use '<>' "
-                                "instead of '!='";
                 err_ret->error = E_SYNTAX;
                 break;
             }
@@ -322,7 +320,10 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             assert(tok->cur - tok->buf < INT_MAX);
             err_ret->offset = (int)(tok->cur - tok->buf);
             len = tok->inp - tok->buf;
-            err_ret->text = (char *) PyObject_MALLOC(len + 1);
+            /* make sure that we don't leak memory if text has been
+               set previously */
+            assert(err_ret->text == NULL);
+            err_ret->text = (char *) PyObject_Malloc(len + 1);
             if (err_ret->text != NULL) {
                 if (len > 0)
                     strncpy(err_ret->text, tok->buf, len);
