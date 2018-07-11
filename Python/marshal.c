@@ -88,6 +88,7 @@ typedef struct {
     _Py_hashtable_t *hashtable;
     int last_index;
     int version;
+    int stable;
 } WFILE;
 
 #define w_byte(c, p) do {                               \
@@ -282,29 +283,61 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     }
 
     entry = _Py_HASHTABLE_GET_ENTRY(p->hashtable, v);
-    if (entry == NULL) {
-        return 0;
-    }
 
-    _Py_HASHTABLE_ENTRY_READ_DATA(p->hashtable, entry, w);
-    // w >= 0: index written by previous w_ref()
-    // w < 0 : refcnt counted by w_count_refs()
-    if (w == -1) {
-        // This object is used only once.
-        return 0;
-    }
+    if (p->stable) {
+        if (entry == NULL) {
+            return 0;
+        }
 
-    if (w >= 0) {
-        /* we don't store "long" indices in the dict */
-        assert(0 <= w && w <= 0x7fffffff);
-        w_byte(TYPE_REF, p);
-        w_long(w, p);
+        _Py_HASHTABLE_ENTRY_READ_DATA(p->hashtable, entry, w);
+        // w >= 0: index written by previous w_ref()
+        // w < 0 : refcnt counted by w_count_refs()
+        if (w == -1) {
+            // This object is used only once.
+            return 0;
+        }
+
+        if (w >= 0) {
+            /* we don't store "long" indices in the dict */
+            assert(0 <= w && w <= 0x7fffffff);
+            w_byte(TYPE_REF, p);
+            w_long(w, p);
+            return 1;
+        } else {
+            w = p->last_index++;
+            _Py_HASHTABLE_ENTRY_WRITE_DATA(p->hashtable, entry, w);
+            *flag |= FLAG_REF;
+            return 0;
+        }
+    }
+    else {
+        if (entry != NULL) {
+            /* write the reference index to the stream */
+            _Py_HASHTABLE_ENTRY_READ_DATA(p->hashtable, entry, w);
+            /* we don't store "long" indices in the dict */
+            assert(0 <= w && w <= 0x7fffffff);
+            w_byte(TYPE_REF, p);
+            w_long(w, p);
+            return 1;
+        } else {
+            size_t s = p->hashtable->entries;
+            /* we don't support long indices */
+            if (s >= 0x7fffffff) {
+                PyErr_SetString(PyExc_ValueError, "too many objects");
+                goto err;
+            }
+            w = (int)s;
+            Py_INCREF(v);
+            if (_Py_HASHTABLE_SET(p->hashtable, v, w) < 0) {
+                Py_DECREF(v);
+                goto err;
+            }
+            *flag |= FLAG_REF;
+            return 0;
+        }
+err:
+        p->error = WFERR_UNMARSHALLABLE;
         return 1;
-    } else {
-        w = p->last_index++;
-        _Py_HASHTABLE_ENTRY_WRITE_DATA(p->hashtable, entry, w);
-        *flag |= FLAG_REF;
-        return 0;
     }
 }
 
@@ -711,7 +744,10 @@ w_init_refs(WFILE *wf, int version, PyObject *x)
     }
     wf->last_index = 0;
 
-    return w_count_refs(x, wf);
+    if (wf->stable) {
+        return w_count_refs(x, wf);
+    }
+    return 0;
 }
 
 static int
@@ -1725,19 +1761,17 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     return result;
 }
 
-PyObject *
-PyMarshal_WriteObjectToString(PyObject *x, int version)
+static PyObject *
+marshal_to_string(PyObject *x, int version, int stable)
 {
-    WFILE wf;
+    WFILE wf = {.stable=stable, .version=version};
 
-    memset(&wf, 0, sizeof(wf));
     wf.str = PyBytes_FromStringAndSize((char *)NULL, 50);
     if (wf.str == NULL)
         return NULL;
     wf.ptr = wf.buf = PyBytes_AS_STRING((PyBytesObject *)wf.str);
     wf.end = wf.ptr + PyBytes_Size(wf.str);
     wf.error = WFERR_OK;
-    wf.version = version;
     if (w_init_refs(&wf, version, x)) {
         Py_DECREF(wf.str);
         return NULL;
@@ -1768,6 +1802,12 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     return wf.str;
 }
 
+PyObject *
+PyMarshal_WriteObjectToString(PyObject *x, int version)
+{
+    return marshal_to_string(x, version, 0);
+}
+
 /* And an interface for Python programs... */
 /*[clinic input]
 marshal.dump
@@ -1778,6 +1818,8 @@ marshal.dump
         Must be a writeable binary file.
     version: int(c_default="Py_MARSHAL_VERSION") = version
         Indicates the data format that dump should use.
+    stable: bool = False
+        Generate stable output as possible.
     /
 
 Write the value on the open file.
@@ -1789,15 +1831,15 @@ to the file. The object will not be properly read back by load().
 
 static PyObject *
 marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
-                  int version)
-/*[clinic end generated code: output=aaee62c7028a7cb2 input=6c7a3c23c6fef556]*/
+                  int version, int stable)
+/*[clinic end generated code: output=b472bdb1b466baa1 input=89780da6b9530e4b]*/
 {
     /* XXX Quick hack -- need to do this differently */
     PyObject *s;
     PyObject *res;
     _Py_IDENTIFIER(write);
 
-    s = PyMarshal_WriteObjectToString(value, version);
+    s = marshal_to_string(value, version, stable);
     if (s == NULL)
         return NULL;
     res = _PyObject_CallMethodIdObjArgs(file, &PyId_write, s, NULL);
@@ -1871,6 +1913,8 @@ marshal.dumps
         Must be a supported type.
     version: int(c_default="Py_MARSHAL_VERSION") = version
         Indicates the data format that dumps should use.
+    stable: bool = False
+        Generate stable output as possible.
     /
 
 Return the bytes object that would be written to a file by dump(value, file).
@@ -1880,10 +1924,11 @@ unsupported type.
 [clinic start generated code]*/
 
 static PyObject *
-marshal_dumps_impl(PyObject *module, PyObject *value, int version)
-/*[clinic end generated code: output=9c200f98d7256cad input=a2139ea8608e9b27]*/
+marshal_dumps_impl(PyObject *module, PyObject *value, int version,
+                   int stable)
+/*[clinic end generated code: output=87276039e6c75faf input=afce1546a470f153]*/
 {
-    return PyMarshal_WriteObjectToString(value, version);
+    return marshal_to_string(value, version, stable);
 }
 
 /*[clinic input]

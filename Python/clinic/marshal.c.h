@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(marshal_dump__doc__,
-"dump($module, value, file, version=version, /)\n"
+"dump($module, value, file, version=version, stable=False, /)\n"
 "--\n"
 "\n"
 "Write the value on the open file.\n"
@@ -14,6 +14,8 @@ PyDoc_STRVAR(marshal_dump__doc__,
 "    Must be a writeable binary file.\n"
 "  version\n"
 "    Indicates the data format that dump should use.\n"
+"  stable\n"
+"    Generate stable output as possible.\n"
 "\n"
 "If the value has (or contains an object that has) an unsupported type, a\n"
 "ValueError exception is raised - but garbage data will also be written\n"
@@ -24,7 +26,7 @@ PyDoc_STRVAR(marshal_dump__doc__,
 
 static PyObject *
 marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
-                  int version);
+                  int version, int stable);
 
 static PyObject *
 marshal_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -33,12 +35,13 @@ marshal_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *value;
     PyObject *file;
     int version = Py_MARSHAL_VERSION;
+    int stable = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "OO|i:dump",
-        &value, &file, &version)) {
+    if (!_PyArg_ParseStack(args, nargs, "OO|ip:dump",
+        &value, &file, &version, &stable)) {
         goto exit;
     }
-    return_value = marshal_dump_impl(module, value, file, version);
+    return_value = marshal_dump_impl(module, value, file, version, stable);
 
 exit:
     return return_value;
@@ -64,7 +67,7 @@ PyDoc_STRVAR(marshal_load__doc__,
     {"load", (PyCFunction)marshal_load, METH_O, marshal_load__doc__},
 
 PyDoc_STRVAR(marshal_dumps__doc__,
-"dumps($module, value, version=version, /)\n"
+"dumps($module, value, version=version, stable=False, /)\n"
 "--\n"
 "\n"
 "Return the bytes object that would be written to a file by dump(value, file).\n"
@@ -73,6 +76,8 @@ PyDoc_STRVAR(marshal_dumps__doc__,
 "    Must be a supported type.\n"
 "  version\n"
 "    Indicates the data format that dumps should use.\n"
+"  stable\n"
+"    Generate stable output as possible.\n"
 "\n"
 "Raise a ValueError exception if value has (or contains an object that has) an\n"
 "unsupported type.");
@@ -81,7 +86,8 @@ PyDoc_STRVAR(marshal_dumps__doc__,
     {"dumps", (PyCFunction)marshal_dumps, METH_FASTCALL, marshal_dumps__doc__},
 
 static PyObject *
-marshal_dumps_impl(PyObject *module, PyObject *value, int version);
+marshal_dumps_impl(PyObject *module, PyObject *value, int version,
+                   int stable);
 
 static PyObject *
 marshal_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -89,12 +95,13 @@ marshal_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *value;
     int version = Py_MARSHAL_VERSION;
+    int stable = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|i:dumps",
-        &value, &version)) {
+    if (!_PyArg_ParseStack(args, nargs, "O|ip:dumps",
+        &value, &version, &stable)) {
         goto exit;
     }
-    return_value = marshal_dumps_impl(module, value, version);
+    return_value = marshal_dumps_impl(module, value, version, stable);
 
 exit:
     return return_value;
@@ -134,4 +141,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=584eb2222d86fdc3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eece7b65d6cb500a input=a9049054013a1b77]*/

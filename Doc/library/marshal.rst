@@ -54,7 +54,7 @@ bytes-like objects.
 The module defines these functions:
 
 
-.. function:: dump(value, file[, version])
+.. function:: dump(value, file[, version [, stable]])
 
    Write the value on the open file.  The value must be a supported type.  The
    file must be a writeable :term:`binary file`.
@@ -65,6 +65,13 @@ The module defines these functions:
 
    The *version* argument indicates the data format that ``dump`` should use
    (see below).
+
+   The *stable* argument makes generated data more stable as possible.
+   It guarantees ``dump(value1, 4, True) == dump(value2, 4, True)``
+   for ``value1 is value2``, but not for ``value1 == value2``.
+
+   .. versionadded:: 3.8
+      *stable* option is added.
 
 
 .. function:: load(file)
@@ -80,7 +87,7 @@ The module defines these functions:
       :func:`load` will substitute ``None`` for the unmarshallable type.
 
 
-.. function:: dumps(value[, version])
+.. function:: dumps(value[, version [, stable]])
 
    Return the bytes object that would be written to a file by ``dump(value, file)``.  The
    value must be a supported type.  Raise a :exc:`ValueError` exception if value
@@ -88,6 +95,13 @@ The module defines these functions:
 
    The *version* argument indicates the data format that ``dumps`` should use
    (see below).
+
+   The *stable* argument makes generated data more stable as possible.
+   It guarantees ``dump(value1, 4, True) == dump(value2, 4, True)``
+   for ``value1 is value2``, but not for ``value1 == value2``.
+
+   .. versionadded:: 3.8
+      *stable* option is added.
 
 
 .. function:: loads(bytes)

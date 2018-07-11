@@ -331,11 +331,11 @@ class BugsTestCase(unittest.TestCase):
         z = [y, y]
         dummy = x  # refcnt of x must be >1
 
-        data = marshal.dumps(x)
         # x is used once, FLAG_REF must not be set.
+        data = marshal.dumps(x, 4, True)
         self.assertEqual(b"i\x42\x00\x00\x00", data)
 
-        data = marshal.dumps(z)
+        data = marshal.dumps(z, 4, True)
         # y is used twice, but x is used once because y is reused.
         self.assertEqual(b"[\x02\x00\x00\x00" +     # list(size=2)i\x42\x00\x00\x00", data)
                          b"\xa9\x01" +              # small tuple(size=1) | FLAG_REF
