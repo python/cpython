@@ -36,7 +36,7 @@ TESTFN2 = TESTFN + "2"
 
 MACOS = sys.platform.startswith("darwin")
 if MACOS:
-  MACOS_VERS = tuple(int(x) for x in os.uname().release.split('.'))
+    MACOS_VERS = tuple(int(x) for x in os.uname().release.split('.'))
 
 try:
     import grp
@@ -479,15 +479,15 @@ class TestShutil(unittest.TestCase):
     @unittest.skipUnless(MACOS and MACOS_VERS >= (14, 0, 0),
                          "requires macOS 10.10 or newer")
     def test_copystat_macos_restricted(self):
-      # A sample restricted file. This file has always been present on macOS.
-      src = '/System/Library/CoreServices/SystemVersion.plist'
-      dst = os.path.join(self.mkdtemp(), 'file1')
-      write_file(dst, 'foo')
+        # A sample restricted file. This file has always been present on macOS.
+        src = '/System/Library/CoreServices/SystemVersion.plist'
+        dst = os.path.join(self.mkdtemp(), 'file1')
+        write_file(dst, 'foo')
 
-      # Check that the file is restricted befre, but not after copying
-      self.assertNotEqual(os.stat(src).st_flags & stat.SF_RESTRICTED, 0)
-      shutil.copystat(src, dst)
-      self.assertEqual(os.stat(dst).st_flags & stat.SF_RESTRICTED, 0)
+        # Check that the file is restricted befre, but not after copying
+        self.assertNotEqual(os.stat(src).st_flags & stat.SF_RESTRICTED, 0)
+        shutil.copystat(src, dst)
+        self.assertEqual(os.stat(dst).st_flags & stat.SF_RESTRICTED, 0)
 
     @support.skip_unless_xattr
     def test_copyxattr(self):
