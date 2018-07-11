@@ -2766,6 +2766,10 @@ class _TestMyManager(BaseTestCase):
 
         self.assertEqual(foo.f(), 'f()')
         self.assertRaises(ValueError, foo.g)
+        with self.assertRaises(ValueError) as ctx:
+            foo._callmethod('g')
+        cause = ctx.exception.__cause__
+        self.assertIsInstance(cause, multiprocessing.pool.RemoteTraceback)
         self.assertEqual(foo._callmethod('f'), 'f()')
         self.assertRaises(RemoteError, foo._callmethod, '_h')
 
