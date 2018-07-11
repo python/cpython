@@ -1598,7 +1598,6 @@ factories, and as such, be applied to functions through the ``@wrapper`` syntax.
 See :ref:`ctypes-callback-functions` for examples.
 
 
-
 .. function:: CFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
    The returned function prototype creates functions that use the standard C
