@@ -43,7 +43,7 @@ This module defines the following constants and functions:
 
 .. function:: start_new_thread(function, args[, kwargs])
 
-   Start a new thread and return its identifier.  The thread executes the function
+   Start a new thread and return its identifier.  The thread executes the
    *function* with the argument list *args* (which must be a tuple).  The optional
    *kwargs* argument specifies a dictionary of keyword arguments. When the function
    returns, the thread silently exits.  When the function terminates with an
