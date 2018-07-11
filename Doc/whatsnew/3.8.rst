@@ -127,6 +127,10 @@ Optimizations
   first introduced in Python 3.4.  It offers better performance and smaller
   size compared to Protocol 3 available since Python 3.0.
 
+* Removed one ``Py_ssize_t`` member from ``PyGC_Head``.  All GC tracked
+  objects (e.g. tuple, list, dict) size is reduced 4 or 8 bytes.
+  (Contributed by Inada Naoki in :issue:`33597`)
+
 
 Build and C API Changes
 =======================
@@ -200,6 +204,10 @@ Changes in the Python API
 
 * :func:`shutil.copyfile` default buffer size on Windows was changed from
   16 KiB to 1 MiB.
+
+* ``PyGC_Head`` struct is changed completely.  All code touched the
+  struct member should be rewritten.  (See :issue:`33597`)
+
 
 CPython bytecode changes
 ------------------------
