@@ -533,7 +533,7 @@ Mutable default values
      class C:
          x = []
          def add(self, element):
-             self.x += element
+             self.x.append(element)
 
      o1 = C()
      o2 = C()
