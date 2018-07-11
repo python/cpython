@@ -338,7 +338,7 @@ automatically fail. ::
    >>> f.read()
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: I/O operation on closed file
+   ValueError: I/O operation on closed file.
 
 
 .. _tut-filemethods:
