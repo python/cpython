@@ -1,0 +1,4 @@
+A suite of code has been removed which copied across DLLs and init.tcl from
+the system Python location into a venv being created. This code was seen to
+be required when the original venv code was developed, but is no longer
+necessary.
