@@ -40,6 +40,10 @@ matrix:
       # compiler here and the other to run the coverage build. Clang is preferred
       # in this instance for its better error messages.
       env: TESTING=cpython
+      addons:
+        apt:
+          packages:
+            - xvfb
     - os: linux
       language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
@@ -70,6 +74,7 @@ matrix:
         apt:
           packages:
             - lcov
+            - xvfb
       before_script:
         - ./configure
         - make coverage -s -j4
@@ -79,7 +84,7 @@ matrix:
         - ./venv/bin/python -m test.pythoninfo
       script:
         # Skip tests that re-run the entire test suite.
-        - ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures
+        - xvfb-run ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
         - source ./venv/bin/activate
@@ -150,7 +155,7 @@ script:
   # Check that all symbols exported by libpython start with "Py" or "_Py"
   - make smelly
   # `-r -w` implicitly provided through `make buildbottest`.
-  - make buildbottest TESTOPTS="-j4 -uall,-cpu"
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then XVFB_RUN=xvfb-run; fi; $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
 notifications:
   email: false
