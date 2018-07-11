@@ -1327,9 +1327,6 @@
 /* Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0 */
 #undef PY_SSL_DEFAULT_CIPHER_STRING
 
-/* Define to emit a locale compatibility warning in the C locale */
-#undef PY_WARN_ON_C_LOCALE
-
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
 
