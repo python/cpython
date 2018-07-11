@@ -273,23 +273,24 @@ dictionary's keys::
 
     >>> m = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
     ...      'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
-    >>> for key in m:  #doctest: +SKIP
+    >>> for key in m:
     ...     print(key, m[key])
-    Mar 3
+    Jan 1
     Feb 2
-    Aug 8
-    Sep 9
+    Mar 3
     Apr 4
+    May 5
     Jun 6
     Jul 7
-    Jan 1
-    May 5
+    Aug 8
+    Sep 9
+    Oct 10
     Nov 11
     Dec 12
-    Oct 10
 
-Note that the order is essentially random, because it's based on the hash
-ordering of the objects in the dictionary.
+Note that starting with Python 3.7, dictionary iteration order is guaranteed
+to be the same as the insertion order. In earlier versions, the behaviour was
+unspecified and could vary between implementations.
 
 Applying :func:`iter` to a dictionary always loops over the keys, but
 dictionaries have methods that return other iterators.  If you want to iterate
@@ -301,8 +302,8 @@ The :func:`dict` constructor can accept an iterator that returns a finite stream
 of ``(key, value)`` tuples:
 
     >>> L = [('Italy', 'Rome'), ('France', 'Paris'), ('US', 'Washington DC')]
-    >>> dict(iter(L))  #doctest: +SKIP
-    {'Italy': 'Rome', 'US': 'Washington DC', 'France': 'Paris'}
+    >>> dict(iter(L))
+    {'Italy': 'Rome', 'France': 'Paris', 'US': 'Washington DC'}
 
 Files also support iteration by calling the :meth:`~io.TextIOBase.readline`
 method until there are no more lines in the file.  This means you can read each
