@@ -100,11 +100,13 @@ UF_IMMUTABLE = 0x00000002  # file may not be changed
 UF_APPEND    = 0x00000004  # file may only be appended to
 UF_OPAQUE    = 0x00000008  # directory is opaque when viewed through a union stack
 UF_NOUNLINK  = 0x00000010  # file may not be renamed or deleted
-UF_COMPRESSED = 0x00000020 # OS X: file is hfs-compressed
-UF_HIDDEN    = 0x00008000  # OS X: file should not be displayed
+UF_COMPRESSED = 0x00000020 # macOS: file is compressed (some file-systems)
+UF_TRACKED   = 0x00000040  # macOS: file renames and deletes are tracked
+UF_HIDDEN    = 0x00008000  # macOS: file should not be displayed
 SF_ARCHIVED  = 0x00010000  # file may be archived
 SF_IMMUTABLE = 0x00020000  # file may not be changed
 SF_APPEND    = 0x00040000  # file may only be appended to
+SF_RESTRICTED = 0x00080000 # macOS: entitlement required for writing
 SF_NOUNLINK  = 0x00100000  # file may not be renamed or deleted
 SF_SNAPSHOT  = 0x00200000  # file is a snapshot file
 
