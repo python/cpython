@@ -1,0 +1,2 @@
+Fixed a memory leak in the compiler when it raised some uncommon errors
+during tokenizing.
