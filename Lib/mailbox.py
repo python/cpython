@@ -268,7 +268,7 @@ class Maildir(Mailbox):
 
     def __init__(self, dirname, factory=None, create=True):
         """Initialize a Maildir instance."""
-        Mailbox.__init__(self, dirname, factory, create)
+        super().__init__(dirname, factory, create)
         self._paths = {
             'tmp': os.path.join(self._path, 'tmp'),
             'new': os.path.join(self._path, 'new'),
@@ -576,7 +576,7 @@ class _singlefileMailbox(Mailbox):
 
     def __init__(self, path, factory=None, create=True):
         """Initialize a single-file mailbox."""
-        Mailbox.__init__(self, path, factory, create)
+        super().__init__(path, factory, create)
         try:
             f = open(self._path, 'rb+')
         except OSError as e:
@@ -844,7 +844,7 @@ class mbox(_mboxMMDF):
     def __init__(self, path, factory=None, create=True):
         """Initialize an mbox mailbox."""
         self._message_factory = mboxMessage
-        _mboxMMDF.__init__(self, path, factory, create)
+        super().__init__(path, factory, create)
 
     def _post_message_hook(self, f):
         """Called after writing each message to file f."""
@@ -890,7 +890,7 @@ class MMDF(_mboxMMDF):
     def __init__(self, path, factory=None, create=True):
         """Initialize an MMDF mailbox."""
         self._message_factory = MMDFMessage
-        _mboxMMDF.__init__(self, path, factory, create)
+        super().__init__(path, factory, create)
 
     def _pre_message_hook(self, f):
         """Called before writing each message to file f."""
@@ -934,7 +934,7 @@ class MH(Mailbox):
 
     def __init__(self, path, factory=None, create=True):
         """Initialize an MH instance."""
-        Mailbox.__init__(self, path, factory, create)
+        super().__init__(path, factory, create)
         if not os.path.exists(self._path):
             if create:
                 os.mkdir(self._path, 0o700)
@@ -1242,25 +1242,25 @@ class Babyl(_singlefileMailbox):
 
     def __init__(self, path, factory=None, create=True):
         """Initialize a Babyl mailbox."""
-        _singlefileMailbox.__init__(self, path, factory, create)
+        super().__init__(path, factory, create)
         self._labels = {}
 
     def add(self, message):
         """Add message and return assigned key."""
-        key = _singlefileMailbox.add(self, message)
+        key = super().add(message)
         if isinstance(message, BabylMessage):
             self._labels[key] = message.get_labels()
         return key
 
     def remove(self, key):
         """Remove the keyed message; raise KeyError if it doesn't exist."""
-        _singlefileMailbox.remove(self, key)
+        super().remove(key)
         if key in self._labels:
             del self._labels[key]
 
     def __setitem__(self, key, message):
         """Replace the keyed message; raise KeyError if it doesn't exist."""
-        _singlefileMailbox.__setitem__(self, key, message)
+        super().__setitem__(key, message)
         if isinstance(message, BabylMessage):
             self._labels[key] = message.get_labels()
 
@@ -1501,7 +1501,7 @@ class Message(email.message.Message):
         elif hasattr(message, "read"):
             self._become_message(email.message_from_binary_file(message))
         elif message is None:
-            email.message.Message.__init__(self)
+            super().__init__()
         else:
             raise TypeError('Invalid message type: %s' % type(message))
 
@@ -1530,7 +1530,7 @@ class MaildirMessage(Message):
         self._subdir = 'new'
         self._info = ''
         self._date = time.time()
-        Message.__init__(self, message)
+        super().__init__(message)
 
     def get_subdir(self):
         """Return 'new' or 'cur'."""
@@ -1641,7 +1641,7 @@ class _mboxMMDFMessage(Message):
             unixfrom = message.get_unixfrom()
             if unixfrom is not None and unixfrom.startswith('From '):
                 self.set_from(unixfrom[5:])
-        Message.__init__(self, message)
+        super().__init__(message)
 
     def get_from(self):
         """Return contents of "From " line."""
@@ -1754,7 +1754,7 @@ class MHMessage(Message):
     def __init__(self, message=None):
         """Initialize an MHMessage instance."""
         self._sequences = []
-        Message.__init__(self, message)
+        super().__init__(message)
 
     def get_sequences(self):
         """Return a list of sequences that include the message."""
@@ -1827,7 +1827,7 @@ class BabylMessage(Message):
         """Initialize a BabylMessage instance."""
         self._labels = []
         self._visible = Message()
-        Message.__init__(self, message)
+        super().__init__(message)
 
     def get_labels(self):
         """Return a list of labels on the message."""
@@ -2021,13 +2021,13 @@ class _PartialFile(_ProxyFile):
 
     def __init__(self, f, start=None, stop=None):
         """Initialize a _PartialFile."""
-        _ProxyFile.__init__(self, f, start)
+        super().__init__(f, start)
         self._start = start
         self._stop = stop
 
     def tell(self):
         """Return the position with respect to start."""
-        return _ProxyFile.tell(self) - self._start
+        return super().tell() - self._start
 
     def seek(self, offset, whence=0):
         """Change position, possibly with respect to start or stop."""
@@ -2037,7 +2037,7 @@ class _PartialFile(_ProxyFile):
         elif whence == 2:
             self._pos = self._stop
             whence = 1
-        _ProxyFile.seek(self, offset, whence)
+        super().seek(offset, whence)
 
     def _read(self, size, read_method):
         """Read size bytes using read_method, honoring start and stop."""
@@ -2046,7 +2046,7 @@ class _PartialFile(_ProxyFile):
             return b''
         if size is None or size < 0 or size > remaining:
             size = remaining
-        return _ProxyFile._read(self, size, read_method)
+        return super()._read(size, read_method)
 
     def close(self):
         # do *not* close the underlying file object for partial files,
