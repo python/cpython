@@ -1029,10 +1029,9 @@ The function factories can be used as decorator factories, so we may as well
 write::
 
    >>> @CFUNCTYPE(c_int, POINTER(c_int), POINTER(c_int))
-   ... def py_cmp_func(*args):
-   ...     (a, b,) = (t[0] for t in args)
-   ...     print("py_cmp_func", a, b)
-   ...     return a - b
+   ... def py_cmp_func(a, b):
+   ...     print("py_cmp_func", a[0], b[0])
+   ...     return a[0] - b[0]
    ...
    >>> qsort(ia, len(ia), sizeof(c_int), py_cmp_func)
    py_cmp_func 5 1
@@ -1594,12 +1593,15 @@ Foreign functions can also be created by instantiating function prototypes.
 Function prototypes are similar to function prototypes in C; they describe a
 function (return type, argument types, calling convention) without defining an
 implementation.  The factory functions must be called with the desired result
-type and the argument types of the function.
+type and the argument types of the function, and can be used as decorator
+factories, and as such, be applied to functions through the ``@wrapper`` syntax.
+See :ref:`ctypes-callback-functions` for examples.
+
 
 
 .. function:: CFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
-   Returns a function prototype which creates functions that use the standard C
+   The returned function prototype creates functions that use the standard C
    calling convention.  The function will release the GIL during the call.  If
    *use_errno* is set to true, the ctypes private copy of the system
    :data:`errno` variable is exchanged with the real :data:`errno` value before
@@ -1609,7 +1611,7 @@ type and the argument types of the function.
 
 .. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
-   Windows only: Returns a function prototype which creates functions that use the
+   Windows only: The returned function prototype creates functions that use the
    ``stdcall`` calling convention, except on Windows CE where
    :func:`WINFUNCTYPE` is the same as :func:`CFUNCTYPE`.  The function will
    release the GIL during the call.  *use_errno* and *use_last_error* have the
@@ -1618,11 +1620,8 @@ type and the argument types of the function.
 
 .. function:: PYFUNCTYPE(restype, *argtypes)
 
-   Returns a function prototype which creates functions that use the Python calling
+   The returned function prototype creates functions that use the Python calling
    convention.  The function will *not* release the GIL during the call.
-
-These factory functions can be used as decorator factories, and as such, be applied
-to functions through the ``@wrapper`` syntax.
 
 Function prototypes created by these factory functions can be instantiated in
 different ways, depending on the type and number of the parameters in the call:
