@@ -313,27 +313,23 @@ else:
         pass
 
 if sys.platform == 'darwin':
-    # As of macOS 10.10, the `copyfile` API changed to not copy certain flags
-    mac_ver = tuple(int(x) for x in platform.mac_ver()[0].split('.'))
-    if mac_ver >= (10, 10, 0):
+    # As of macOS 10.10, the `copyfile` API changed to not copy certain flags.
+    # This corresponds to kernel version 14.0.
+    mac_ver = tuple(int(x) for x in os.uname().release.split('.'))
+    if mac_ver >= (14, 0, 0):
         def _fix_flags(dst, flags, follow_symlinks):
             """Perform any modifications to `flags` before they can be applied
             to `dst` with `chflags()`.
 
             """
-
-            # From xnu's bsd/sys/stat.h
-            UF_TRACKED    = 0x00000040
-            SF_RESTRICTED = 0x00080000
-
             # Based on copyfile's copyfile_stat()
-            omit_flags = (UF_TRACKED | SF_RESTRICTED)
+            omit_flags = (stat.UF_TRACKED | stat.SF_RESTRICTED)
             add_flags  = 0
 
             # If the kernel automatically put SF_RESTRICTED on the destination
             # already, we don't want to clear it
             st = os.stat(dst, follow_symlinks=follow_symlinks)
-            add_flags |= (st.st_flags & SF_RESTRICTED)
+            add_flags |= (st.st_flags & stat.SF_RESTRICTED)
 
             return (flags & ~omit_flags) | add_flags
 
