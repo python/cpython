@@ -719,28 +719,14 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 oldsharedmods: $(SHAREDMODS)
 
 
-Makefile Modules/config.c: Makefile.pre \
-				$(srcdir)/Modules/config.c.in \
-				$(MAKESETUP) \
-				Modules/Setup \
-				Modules/Setup.local
+# Generate Makefile and Modules/config.c
+makesetup:
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
 				Modules/Setup
 	@mv config.c Modules
 	@echo "The Makefile was updated, you may need to re-run make."
-
-
-Modules/Setup: $(srcdir)/Modules/Setup.dist
-	@if test -f Modules/Setup; then \
-		echo "-----------------------------------------------"; \
-		echo "Modules/Setup.dist is newer than Modules/Setup;"; \
-		echo "check to make sure you have all the updates you"; \
-		echo "need in your Modules/Setup file."; \
-		echo "Usually, copying Modules/Setup.dist to Modules/Setup will work."; \
-		echo "-----------------------------------------------"; \
-	fi
 
 Programs/_testembed: Programs/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
 	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
@@ -1802,7 +1788,7 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck clean clobber distclean
 .PHONY: smelly funny patchcheck touch altmaninstall commoninstall
-.PHONY: gdbhooks
+.PHONY: gdbhooks makesetup
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
 # Local Variables:
