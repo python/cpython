@@ -63,7 +63,7 @@ static PyObject *run_mod(mod_ty, PyObject *, PyObject *, PyObject *,
                           PyCompilerFlags *, PyArena *);
 static PyObject *run_pyc_file(FILE *, const char *, PyObject *, PyObject *,
                               PyCompilerFlags *);
-static void err_input(perrdetail *);
+static void err_input(const perrdetail *);
 static void err_free(perrdetail *);
 static int PyRun_InteractiveOneObjectEx(FILE *, PyObject *, PyCompilerFlags *);
 
@@ -1331,7 +1331,7 @@ err_free(perrdetail *err)
 /* Set the error appropriate to the given input error code (see errcode.h) */
 
 static void
-err_input(perrdetail *err)
+err_input(const perrdetail *err)
 {
     PyObject *v, *w, *errtype, *errtext;
     PyObject *msg_obj = NULL;
@@ -1447,10 +1447,6 @@ err_input(perrdetail *err)
     Py_XDECREF(w);
 cleanup:
     Py_XDECREF(msg_obj);
-    if (err->text != NULL) {
-        PyObject_Free(err->text);
-        err->text = NULL;
-    }
 }
 
 
