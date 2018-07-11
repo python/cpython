@@ -829,7 +829,6 @@ enable_ipv6
 with_doc_strings
 with_pymalloc
 with_c_locale_coercion
-with_c_locale_warning
 with_valgrind
 with_dtrace
 with_libm
@@ -1522,9 +1521,6 @@ Optional Packages:
   --with(out)-pymalloc    disable/enable specialized mallocs
   --with(out)-c-locale-coercion
                           disable/enable C locale coercion to a UTF-8 based
-                          locale
-  --with(out)-c-locale-warning
-                          disable/enable locale compatibility warning in the C
                           locale
   --with-valgrind         Enable Valgrind support
   --with(out)-dtrace      disable/enable DTrace support
@@ -11045,29 +11041,6 @@ $as_echo "#define PY_COERCE_C_LOCALE 1" >>confdefs.h
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_c_locale_coercion" >&5
 $as_echo "$with_c_locale_coercion" >&6; }
-
-# Check for --with-c-locale-warning
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-c-locale-warning" >&5
-$as_echo_n "checking for --with-c-locale-warning... " >&6; }
-
-# Check whether --with-c-locale-warning was given.
-if test "${with_c_locale_warning+set}" = set; then :
-  withval=$with_c_locale_warning;
-fi
-
-
-if test -z "$with_c_locale_warning"
-then
-    with_c_locale_warning="yes"
-fi
-if test "$with_c_locale_warning" != "no"
-then
-
-$as_echo "#define PY_WARN_ON_C_LOCALE 1" >>confdefs.h
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_c_locale_warning" >&5
-$as_echo "$with_c_locale_warning" >&6; }
 
 # Check for Valgrind support
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-valgrind" >&5
