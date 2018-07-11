@@ -3319,23 +3319,6 @@ then
 fi
 AC_MSG_RESULT($with_c_locale_coercion)
 
-# Check for --with-c-locale-warning
-AC_MSG_CHECKING(for --with-c-locale-warning)
-AC_ARG_WITH(c-locale-warning,
-            AS_HELP_STRING([--with(out)-c-locale-warning],
-              [disable/enable locale compatibility warning in the C locale]))
-
-if test -z "$with_c_locale_warning"
-then
-    with_c_locale_warning="yes"
-fi
-if test "$with_c_locale_warning" != "no"
-then
-    AC_DEFINE(PY_WARN_ON_C_LOCALE, 1,
-      [Define to emit a locale compatibility warning in the C locale])
-fi
-AC_MSG_RESULT($with_c_locale_warning)
-
 # Check for Valgrind support
 AC_MSG_CHECKING([for --with-valgrind])
 AC_ARG_WITH([valgrind],
