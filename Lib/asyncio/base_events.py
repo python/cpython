@@ -21,6 +21,7 @@ import itertools
 import logging
 import os
 import socket
+import stat
 import subprocess
 import threading
 import time
@@ -1162,6 +1163,17 @@ class BaseEventLoop(events.AbstractEventLoop):
                 for addr in (local_addr, remote_addr):
                     if addr is not None and not isinstance(addr, str):
                         raise TypeError('string is expected')
+
+                if local_addr and local_addr not in (0, '\x00'):
+                    try:
+                        if stat.S_ISSOCK(os.stat(local_addr).st_mode):
+                            os.remove(local_addr)
+                    except FileNotFoundError:
+                        pass
+                    except OSError as err:
+                        # Directory may have permissions only to create socket.
+                        logger.error('Unable to check or remove stale UNIX socket %r: %r', local_addr, err)
+
                 addr_pairs_info = (((family, proto),
                                     (local_addr, remote_addr)), )
             else:
