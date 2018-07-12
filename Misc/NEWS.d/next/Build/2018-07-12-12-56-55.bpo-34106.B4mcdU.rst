@@ -1,0 +1,4 @@
+The 'configure' script now accepts a --with-module-config=<file> option.  By
+default, the Modules/Setup file is used.  By providing this option, a
+customized Setup file can be provided.  The file will be used by
+Modules/makesetup to generate the makefile and Modules/config.c.

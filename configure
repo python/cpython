@@ -623,6 +623,7 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+MODULES_SETUP
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
@@ -840,6 +841,7 @@ with_computed_gotos
 with_ensurepip
 with_openssl
 with_ssl_default_suites
+with_modules_setup
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1553,6 +1555,8 @@ Optional Packages:
                           Python's preferred selection (default), openssl:
                           leave OpenSSL's defaults untouched, STRING: use a
                           custom string, PROTOCOL_SSLv2 ignores the setting
+  --with-modules-setup=FILE
+                          Modules Setup file, default is Modules/Setup
 
 Some influential environment variables:
   MACHDEP     name for machine-dependent library files
@@ -17062,6 +17066,25 @@ $as_echo "#define PY_SSL_DEFAULT_CIPHERS 1" >>confdefs.h
 fi
 
 
+# Allow custom Modules/Setup file
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-modules-setup=FILE" >&5
+$as_echo_n "checking for --with-modules-setup=FILE... " >&6; }
+
+# Check whether --with-modules-setup was given.
+if test "${with_modules_setup+set}" = set; then :
+  withval=$with_modules_setup;
+	MODULES_SETUP="$withval"
+
+else
+
+	MODULES_SETUP="$srcdir/Modules/Setup"
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MODULES_SETUP" >&5
+$as_echo "$MODULES_SETUP" >&6; }
+
 
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-config.sh"
@@ -18376,7 +18399,7 @@ fi
 echo "creating Makefile" >&6
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup
+			Modules/Setup.local "$MODULES_SETUP"
 mv config.c Modules
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then

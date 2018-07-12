@@ -5559,6 +5559,19 @@ AC_MSG_RESULT(python)
 AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
 ])
 
+# Allow custom Modules/Setup file
+AC_SUBST(MODULES_SETUP)
+AC_MSG_CHECKING(for --with-modules-setup=FILE)
+AC_ARG_WITH(modules-setup,
+	    AS_HELP_STRING([--with-modules-setup=FILE],
+			   [Modules Setup file, default is Modules/Setup]),
+[
+	MODULES_SETUP="$withval"
+], [
+	MODULES_SETUP="$srcdir/Modules/Setup"
+])
+AC_MSG_RESULT($MODULES_SETUP)
+
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-config.sh)
@@ -5574,7 +5587,7 @@ fi
 echo "creating Makefile" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup
+			Modules/Setup.local "$MODULES_SETUP"
 mv config.c Modules
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
