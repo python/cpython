@@ -1,0 +1,7 @@
+The 'configure' script no longer copies Modules/Setup.dist to Modules/Setup.
+If Modules/Setup exists, it will be used in preference to Modules/Setup.dist
+(this fallback logic is done by the Modules/makesetup script).  Remove the
+makefile rules to re-generate Makefile and Modules/config.c if Modules/Setup
+or Modules/config.c.in changes.  To re-generate, you must run "make
+makesetup".  Normally that is not required since 'configure' already runs
+makesetup.

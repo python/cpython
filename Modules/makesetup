@@ -98,11 +98,23 @@ CYGWIN*) if test $libdir = .
 esac
 
 # Main loop
-for i in ${*-Setup}
+for setupfile in ${*-Setup}
 do
-	case $i in
+	# Check if Setup file does not exist.  In that case, use
+	# Setup.dist from libdir (source) folder.  In the normal case,
+	# the user does not create or modify Setup and so Setup.dist
+	# from the source distribution is used as-is.
+	case $setupfile in
+	*/Setup)
+		if ! test -f $setupfile; then
+			setupfile=$libdir/Setup.dist
+		fi
+		;;
+	esac
+
+	case $setupfile in
 	-n)	echo '*noobjects*';;
-	*)	echo '*doconfig*'; cat "$i";;
+	*)	echo '*doconfig*'; cat "$setupfile";;
 	esac
 done |
 sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |

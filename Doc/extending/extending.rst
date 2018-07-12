@@ -450,8 +450,8 @@ of an unpacked source distribution, add a line to the file
 and rebuild the interpreter by running :program:`make` in the toplevel
 directory.  You can also run :program:`make` in the :file:`Modules/`
 subdirectory, but then you must first rebuild :file:`Makefile` there by running
-':program:`make` Makefile'.  (This is necessary each time you change the
-:file:`Setup` file.)
+':program:`make` makesetup'.  (This is necessary each time you change the
+:file:`Setup.local` file.)
 
 If your module requires additional libraries to link with, these can be listed
 on the line in the configuration file as well, for instance:
