@@ -529,19 +529,10 @@ class TimeTestCase(unittest.TestCase):
         # on Windows
         self.assertLess(stop - start, 0.020)
 
-        # thread_time() should include CPU time spent in current thread...
-        start = time.thread_time()
-        busy_wait(0.100)
-        stop = time.thread_time()
-        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
-
-        # ...but not in other threads
-        t = threading.Thread(target=busy_wait, args=(0.100,))
-        start = time.thread_time()
-        t.start()
-        t.join()
-        stop = time.thread_time()
-        self.assertLess(stop - start, 0.020)
+        # bpo-33723: Previously, there were functional tests to make sure that
+        # time.thread_time() doesn't account time of a busy loop in a different
+        # thread, but these tests have been removed because they were too
+        # fragile.
 
         info = time.get_clock_info('thread_time')
         self.assertTrue(info.monotonic)
