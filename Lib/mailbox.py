@@ -1341,9 +1341,9 @@ class Babyl(_singlefileMailbox):
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(linesep))
                 starts.append(next_pos)
-                labels = [label.strip() for label
-                                        in self._file.readline()[1:].split(b',')
-                                        if label.strip()]
+                labels = [slabel for label
+                          in self._file.readline()[1:].split(b',')
+                          if (slabel := label.strip())]
                 label_lists.append(labels)
             elif line == b'\037' or line == b'\037' + linesep:
                 if len(stops) < len(starts):
