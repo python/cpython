@@ -79,7 +79,7 @@ class ExecutorMixin:
     def setUp(self):
         super().setUp()
 
-        self.t1 = time.time()
+        self.t1 = time.monotonic()
         try:
             self.executor = self.executor_type(max_workers=self.worker_count)
         except NotImplementedError as e:
@@ -90,10 +90,10 @@ class ExecutorMixin:
         self.executor.shutdown(wait=True)
         self.executor = None
 
-        dt = time.time() - self.t1
+        dt = time.monotonic() - self.t1
         if test.support.verbose:
             print("%.2fs" % dt, end=' ')
-        self.assertLess(dt, 60, "synchronization issue: test lasted too long")
+        self.assertLess(dt, 300, "synchronization issue: test lasted too long")
 
         super().tearDown()
 
