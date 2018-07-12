@@ -96,7 +96,10 @@ class BufferedSubFile(object):
     def push(self, data):
         """Push some new data into this object."""
         # Crack into lines, but preserve the linesep characters on the end of each
-        parts = data.splitlines(True)
+        if data is None:
+            parts = []
+        else:
+            parts = data.splitlines(True)
 
         if not parts or not parts[0].endswith(('\n', '\r')):
             # No new complete lines, so just accumulate partials
