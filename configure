@@ -18376,7 +18376,7 @@ fi
 echo "creating Makefile" >&6
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup
 mv config.c Modules
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
