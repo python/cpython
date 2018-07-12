@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import sys
+import sysconfig
 import types
 
 logger = logging.getLogger(__name__)
@@ -207,10 +208,36 @@ class EnvBuilder:
                     copier(context.env_exe, path, relative_symlinks_ok=True)
                     if not os.path.islink(path):
                         os.chmod(path, 0o755)
-        # there was an else condition here which copied files from the DLLs
-        # subdirectory and init.tcl, because that was necessary when this code
-        # was initially developed. However, those copies are no longer necessary
-        # and that code has been deleted, and this comment left in its place.
+        elif sysconfig.is_python_build(True):
+            # See bpo-34011. This copying code should only be needed when a
+            # venv is created from a source Python build (i.e. not an installed
+            # Python)
+            subdir = 'DLLs'
+            include = self.include_binary
+            files = [f for f in os.listdir(dirname) if include(f)]
+            for f in files:
+                src = os.path.join(dirname, f)
+                dst = os.path.join(binpath, f)
+                if dst != context.env_exe:  # already done, above
+                    copier(src, dst)
+            dirname = os.path.join(dirname, subdir)
+            if os.path.isdir(dirname):
+                files = [f for f in os.listdir(dirname) if include(f)]
+                for f in files:
+                    src = os.path.join(dirname, f)
+                    dst = os.path.join(binpath, f)
+                    copier(src, dst)
+            # copy init.tcl over
+            for root, dirs, files in os.walk(context.python_dir):
+                if 'init.tcl' in files:
+                    tcldir = os.path.basename(root)
+                    tcldir = os.path.join(context.env_dir, 'Lib', tcldir)
+                    if not os.path.exists(tcldir):
+                        os.makedirs(tcldir)
+                    src = os.path.join(root, 'init.tcl')
+                    dst = os.path.join(tcldir, 'init.tcl')
+                    shutil.copyfile(src, dst)
+                    break
 
     def _setup_pip(self, context):
         """Installs or upgrades pip in a virtual environment"""
