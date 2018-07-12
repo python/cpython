@@ -599,8 +599,7 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
 
-    match = _MODULE_IDENTIFIER_RE.match(annotation)
-    if match:
+    if (match := _MODULE_IDENTIFIER_RE.match(annotation)):
         ns = None
         module_name = match.group(1)
         if not module_name:

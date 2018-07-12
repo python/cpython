@@ -378,8 +378,7 @@ class ParserBase:
         n = len(rawdata)
         if i == n:
             return None, -1
-        m = _declname_match(rawdata, i)
-        if m:
+        if (m := _declname_match(rawdata, i)):
             s = m.group()
             name = s.strip()
             if (i + len(s)) == n:

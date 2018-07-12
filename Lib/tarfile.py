@@ -1194,8 +1194,7 @@ class TarInfo(object):
         # these fields are UTF-8 encoded but since POSIX.1-2008 tar
         # implementations are allowed to store them as raw binary strings if
         # the translation to UTF-8 fails.
-        match = re.search(br"\d+ hdrcharset=([^\n]+)\n", buf)
-        if match is not None:
+        if (match := re.search(br"\d+ hdrcharset=([^\n]+)\n", buf)) is not None:
             pax_headers["hdrcharset"] = match.group(1).decode("utf-8")
 
         # For the time being, we don't care about anything other than "BINARY".
