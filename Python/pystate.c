@@ -135,6 +135,13 @@ PyInterpreterState_New(void)
     memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
     interp->check_interval = 100;
+
+    interp->ceval.pending.lock = PyThread_allocate_lock();
+    if (interp->ceval.pending.lock == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to create interpreter ceval pending mutex");
+        return NULL;
+    }
     interp->core_config = _PyCoreConfig_INIT;
     interp->config = _PyMainInterpreterConfig_INIT;
     interp->eval_frame = _PyEval_EvalFrameDefault;
@@ -242,6 +249,9 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     HEAD_UNLOCK();
     if (interp->id_mutex != NULL) {
         PyThread_free_lock(interp->id_mutex);
+    }
+    if (interp->ceval.pending.lock != NULL) {
+        PyThread_free_lock(interp->ceval.pending.lock);
     }
     PyMem_RawFree(interp);
 }
