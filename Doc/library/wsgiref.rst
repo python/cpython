@@ -26,8 +26,8 @@ for implementing WSGI servers, a demo HTTP server that serves WSGI applications,
 and a validation tool that checks WSGI servers and applications for conformance
 to the WSGI specification (:pep:`3333`).
 
-See https://wsgi.readthedocs.org/ for more information about WSGI, and links to
-tutorials and other resources.
+See `wsgi.readthedocs.io <https://wsgi.readthedocs.io/>`_ for more information about WSGI, and links
+to tutorials and other resources.
 
 .. XXX If you're just trying to write a web application...
 
@@ -397,7 +397,7 @@ Paste" library.
    Wrap *application* and return a new WSGI application object.  The returned
    application will forward all requests to the original *application*, and will
    check that both the *application* and the server invoking it are conforming to
-   the WSGI specification and to RFC 2616.
+   the WSGI specification and to :rfc:`2616`.
 
    Any detected nonconformance results in an :exc:`AssertionError` being raised;
    note, however, that how these errors are handled is server-dependent.  For

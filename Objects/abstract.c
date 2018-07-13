@@ -171,16 +171,14 @@ PyObject_GetItem(PyObject *o, PyObject *key)
     if (PyType_Check(o)) {
         PyObject *meth, *result, *stack[1] = {key};
         _Py_IDENTIFIER(__class_getitem__);
-        meth = _PyObject_GetAttrId(o, &PyId___class_getitem__);
+        if (_PyObject_LookupAttrId(o, &PyId___class_getitem__, &meth) < 0) {
+            return NULL;
+        }
         if (meth) {
             result = _PyObject_FastCall(meth, stack, 1);
             Py_DECREF(meth);
             return result;
         }
-        else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            return NULL;
-        }
-        PyErr_Clear();
     }
 
     return type_error("'%.200s' object is not subscriptable", o);
@@ -1246,6 +1244,15 @@ PyNumber_Absolute(PyObject *o)
     return type_error("bad operand type for abs(): '%.200s'", o);
 }
 
+#undef PyIndex_Check
+
+int
+PyIndex_Check(PyObject *obj)
+{
+    return obj->ob_type->tp_as_number != NULL &&
+           obj->ob_type->tp_as_number->nb_index != NULL;
+}
+
 /* Return a Python int from the object item.
    Raise TypeError if the result is not an int
    or if the object cannot be interpreted as an index.
@@ -2268,14 +2275,9 @@ abstract_get_bases(PyObject *cls)
     PyObject *bases;
 
     Py_ALLOW_RECURSION
-    bases = _PyObject_GetAttrId(cls, &PyId___bases__);
+    (void)_PyObject_LookupAttrId(cls, &PyId___bases__, &bases);
     Py_END_ALLOW_RECURSION
-    if (bases == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
-            PyErr_Clear();
-        return NULL;
-    }
-    if (!PyTuple_Check(bases)) {
+    if (bases != NULL && !PyTuple_Check(bases)) {
         Py_DECREF(bases);
         return NULL;
     }
@@ -2338,26 +2340,23 @@ static int
 recursive_isinstance(PyObject *inst, PyObject *cls)
 {
     PyObject *icls;
-    int retval = 0;
+    int retval;
     _Py_IDENTIFIER(__class__);
 
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
-            PyObject *c = _PyObject_GetAttrId(inst, &PyId___class__);
-            if (c == NULL) {
-                if (PyErr_ExceptionMatches(PyExc_AttributeError))
-                    PyErr_Clear();
-                else
-                    retval = -1;
-            }
-            else {
-                if (c != (PyObject *)(inst->ob_type) &&
-                    PyType_Check(c))
+            retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
+            if (icls != NULL) {
+                if (icls != (PyObject *)(inst->ob_type) && PyType_Check(icls)) {
                     retval = PyType_IsSubtype(
-                        (PyTypeObject *)c,
+                        (PyTypeObject *)icls,
                         (PyTypeObject *)cls);
-                Py_DECREF(c);
+                }
+                else {
+                    retval = 0;
+                }
+                Py_DECREF(icls);
             }
         }
     }
@@ -2365,14 +2364,8 @@ recursive_isinstance(PyObject *inst, PyObject *cls)
         if (!check_class(cls,
             "isinstance() arg 2 must be a type or tuple of types"))
             return -1;
-        icls = _PyObject_GetAttrId(inst, &PyId___class__);
-        if (icls == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError))
-                PyErr_Clear();
-            else
-                retval = -1;
-        }
-        else {
+        retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
+        if (icls != NULL) {
             retval = abstract_issubclass(icls, cls);
             Py_DECREF(icls);
         }
@@ -2549,6 +2542,14 @@ PyObject_GetIter(PyObject *o)
         }
         return res;
     }
+}
+
+#undef PyIter_Check
+
+int PyIter_Check(PyObject *obj)
+{
+    return obj->ob_type->tp_iternext != NULL &&
+           obj->ob_type->tp_iternext != &_PyObject_NextNotImplemented;
 }
 
 /* Return next item.

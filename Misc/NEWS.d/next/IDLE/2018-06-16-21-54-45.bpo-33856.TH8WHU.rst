@@ -1,0 +1,1 @@
+Add "help" in the welcome message of IDLE

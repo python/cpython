@@ -418,11 +418,11 @@ tmtotuple(struct tm *p
     SET(8, p->tm_isdst);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     PyStructSequence_SET_ITEM(v, 9,
-        _PyUnicode_DecodeCurrentLocale(p->tm_zone, "surrogateescape"));
+        PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
     SET(10, p->tm_gmtoff);
 #else
     PyStructSequence_SET_ITEM(v, 9,
-        _PyUnicode_DecodeCurrentLocale(zone, "surrogateescape"));
+        PyUnicode_DecodeLocale(zone, "surrogateescape"));
     PyStructSequence_SET_ITEM(v, 10, _PyLong_FromTime_t(gmtoff));
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
 #undef SET
@@ -809,8 +809,7 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = _PyUnicode_DecodeCurrentLocaleAndSize(outbuf, buflen,
-                                                        "surrogateescape");
+            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, "surrogateescape");
 #endif
             PyMem_Free(outbuf);
             break;
@@ -1193,11 +1192,13 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
             if (freq != -1) {
                 /* check that _PyTime_MulDiv(t, SEC_TO_NS, ticks_per_second)
                    cannot overflow below */
+#if LONG_MAX > _PyTime_MAX / SEC_TO_NS
                 if ((_PyTime_t)freq > _PyTime_MAX / SEC_TO_NS) {
                     PyErr_SetString(PyExc_OverflowError,
                                     "_SC_CLK_TCK is too large");
                     return -1;
                 }
+#endif
 
                 ticks_per_second = freq;
             }
@@ -1541,8 +1542,8 @@ PyInit_timezone(PyObject *m) {
     PyModule_AddIntConstant(m, "altzone", timezone-3600);
 #endif
     PyModule_AddIntConstant(m, "daylight", daylight);
-    otz0 = _PyUnicode_DecodeCurrentLocale(tzname[0], "surrogateescape");
-    otz1 = _PyUnicode_DecodeCurrentLocale(tzname[1], "surrogateescape");
+    otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
+    otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
     PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
     {

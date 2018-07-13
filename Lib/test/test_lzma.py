@@ -4,6 +4,8 @@ import os
 import pathlib
 import pickle
 import random
+import sys
+from test import support
 import unittest
 
 from test.support import (
@@ -363,6 +365,15 @@ class CompressorDecompressorTestCase(unittest.TestCase):
                 pickle.dumps(LZMACompressor(), proto)
             with self.assertRaises(TypeError):
                 pickle.dumps(LZMADecompressor(), proto)
+
+    @support.refcount_test
+    def test_refleaks_in_decompressor___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        lzd = LZMADecompressor()
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            lzd.__init__()
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):

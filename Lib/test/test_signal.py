@@ -43,6 +43,8 @@ class PosixTests(unittest.TestCase):
         self.assertRaises(ValueError, signal.signal, 4242,
                           self.trivial_signal_handler)
 
+        self.assertRaises(ValueError, signal.strsignal, 4242)
+
     def test_setting_signal_handler_to_none_raises_error(self):
         self.assertRaises(TypeError, signal.signal,
                           signal.SIGUSR1, None)
@@ -55,18 +57,38 @@ class PosixTests(unittest.TestCase):
         signal.signal(signal.SIGHUP, hup)
         self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
 
+    def test_strsignal(self):
+        self.assertIn("Interrupt", signal.strsignal(signal.SIGINT))
+        self.assertIn("Terminated", signal.strsignal(signal.SIGTERM))
+
     # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform=='freebsd6',
-        'inter process signals not reliable (do not mix well with threading) '
-        'on freebsd6')
     def test_interprocess_signal(self):
         dirname = os.path.dirname(__file__)
         script = os.path.join(dirname, 'signalinterproctester.py')
         assert_python_ok(script)
 
+    def test_valid_signals(self):
+        s = signal.valid_signals()
+        self.assertIsInstance(s, set)
+        self.assertIn(signal.Signals.SIGINT, s)
+        self.assertIn(signal.Signals.SIGALRM, s)
+        self.assertNotIn(0, s)
+        self.assertNotIn(signal.NSIG, s)
+        self.assertLess(len(s), signal.NSIG)
+
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
 class WindowsSignalTests(unittest.TestCase):
+
+    def test_valid_signals(self):
+        s = signal.valid_signals()
+        self.assertIsInstance(s, set)
+        self.assertGreaterEqual(len(s), 6)
+        self.assertIn(signal.Signals.SIGINT, s)
+        self.assertNotIn(0, s)
+        self.assertNotIn(signal.NSIG, s)
+        self.assertLess(len(s), signal.NSIG)
+
     def test_issue9324(self):
         # Updated for issue #10003, adding SIGBREAK
         handler = lambda x, y: None
@@ -651,7 +673,7 @@ class ItimerTest(unittest.TestCase):
         self.assertEqual(self.hndl_called, True)
 
     # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform in ('freebsd6', 'netbsd5'),
+    @unittest.skipIf(sys.platform in ('netbsd5',),
         'itimer not reliable (does not mix well with threading) on some BSDs.')
     def test_itimer_virtual(self):
         self.itimer = signal.ITIMER_VIRTUAL
@@ -673,9 +695,6 @@ class ItimerTest(unittest.TestCase):
         # and the handler should have been called
         self.assertEqual(self.hndl_called, True)
 
-    # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform=='freebsd6',
-        'itimer not reliable (does not mix well with threading) on freebsd6')
     def test_itimer_prof(self):
         self.itimer = signal.ITIMER_PROF
         signal.signal(signal.SIGPROF, self.sig_prof)
@@ -761,16 +780,6 @@ class PendingSignalsTests(unittest.TestCase):
                 1/0
 
             signal.signal(signum, handler)
-
-            if sys.platform == 'freebsd6':
-                # Issue #12392 and #12469: send a signal to the main thread
-                # doesn't work before the creation of the first thread on
-                # FreeBSD 6
-                def noop():
-                    pass
-                thread = threading.Thread(target=noop)
-                thread.start()
-                thread.join()
 
             tid = threading.get_ident()
             try:
@@ -932,6 +941,21 @@ class PendingSignalsTests(unittest.TestCase):
         self.assertRaises(TypeError, signal.pthread_sigmask, 1)
         self.assertRaises(TypeError, signal.pthread_sigmask, 1, 2, 3)
         self.assertRaises(OSError, signal.pthread_sigmask, 1700, [])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [signal.NSIG])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [0])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [1<<1000])
+
+    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                         'need signal.pthread_sigmask()')
+    def test_pthread_sigmask_valid_signals(self):
+        s = signal.pthread_sigmask(signal.SIG_BLOCK, signal.valid_signals())
+        self.addCleanup(signal.pthread_sigmask, signal.SIG_SETMASK, s)
+        # Get current blocked set
+        s = signal.pthread_sigmask(signal.SIG_UNBLOCK, signal.valid_signals())
+        self.assertLessEqual(s, signal.valid_signals())
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
@@ -1010,9 +1034,6 @@ class PendingSignalsTests(unittest.TestCase):
         """
         assert_python_ok('-c', code)
 
-    @unittest.skipIf(sys.platform == 'freebsd6',
-        "issue #12392: send a signal to the main thread doesn't work "
-        "before the creation of the first thread on FreeBSD 6")
     @unittest.skipUnless(hasattr(signal, 'pthread_kill'),
                          'need signal.pthread_kill()')
     def test_pthread_kill_main_thread(self):

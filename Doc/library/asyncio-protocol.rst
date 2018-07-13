@@ -333,6 +333,16 @@ Protocol classes
    The base class for implementing streaming protocols (for use with
    e.g. TCP and SSL transports).
 
+.. class:: BufferedProtocol
+
+   A base class for implementing streaming protocols with manual
+   control of the receive buffer.
+
+   .. versionadded:: 3.7
+      **Important:** this has been added to asyncio in Python 3.7
+      *on a provisional basis*!  Treat it as an experimental API that
+      might be changed or removed in Python 3.8.
+
 .. class:: DatagramProtocol
 
    The base class for implementing datagram protocols (for use with
@@ -428,10 +438,75 @@ and, if called, :meth:`data_received` won't be called after it.
 
 State machine:
 
-    start -> :meth:`~BaseProtocol.connection_made`
-    [-> :meth:`~Protocol.data_received` \*]
-    [-> :meth:`~Protocol.eof_received` ?]
-    -> :meth:`~BaseProtocol.connection_lost` -> end
+.. code-block:: none
+
+    start -> connection_made
+        [-> data_received]*
+        [-> eof_received]?
+    -> connection_lost -> end
+
+
+Streaming protocols with manual receive buffer control
+------------------------------------------------------
+
+.. versionadded:: 3.7
+   **Important:** :class:`BufferedProtocol` has been added to
+   asyncio in Python 3.7 *on a provisional basis*!  Consider it as an
+   experimental API that might be changed or removed in Python 3.8.
+
+
+Event methods, such as :meth:`AbstractEventLoop.create_server` and
+:meth:`AbstractEventLoop.create_connection`, accept factories that
+return protocols that implement this interface.
+
+The idea of BufferedProtocol is that it allows to manually allocate
+and control the receive buffer.  Event loops can then use the buffer
+provided by the protocol to avoid unnecessary data copies.  This
+can result in noticeable performance improvement for protocols that
+receive big amounts of data.  Sophisticated protocols implementations
+can allocate the buffer only once at creation time.
+
+The following callbacks are called on :class:`BufferedProtocol`
+instances:
+
+.. method:: BufferedProtocol.get_buffer(sizehint)
+
+   Called to allocate a new receive buffer.
+
+   *sizehint* is a recommended minimal size for the returned
+   buffer.  It is acceptable to return smaller or bigger buffers
+   than what *sizehint* suggests.  When set to -1, the buffer size
+   can be arbitrary. It is an error to return a zero-sized buffer.
+
+   Must return an object that implements the
+   :ref:`buffer protocol <bufferobjects>`.
+
+.. method:: BufferedProtocol.buffer_updated(nbytes)
+
+   Called when the buffer was updated with the received data.
+
+   *nbytes* is the total number of bytes that were written to the buffer.
+
+.. method:: BufferedProtocol.eof_received()
+
+   See the documentation of the :meth:`Protocol.eof_received` method.
+
+
+:meth:`get_buffer` can be called an arbitrary number of times during
+a connection.  However, :meth:`eof_received` is called at most once
+and, if called, :meth:`get_buffer` and :meth:`buffer_updated`
+won't be called after it.
+
+State machine:
+
+.. code-block:: none
+
+    start -> connection_made
+        [-> get_buffer
+            [-> buffer_updated]?
+        ]*
+        [-> eof_received]?
+    -> connection_lost -> end
 
 
 Datagram protocols

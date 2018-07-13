@@ -347,6 +347,15 @@ class TestParser(TestParserMixin, TestEmailBase):
              errors.InvalidBase64PaddingDefect],
             '')
 
+    def test_get_unstructured_invalid_base64_length(self):
+        # bpo-27397: Return the encoded string since there's no way to decode.
+        self._test_get_x(self._get_unst,
+            '=?utf-8?b?abcde?=',
+            'abcde',
+            'abcde',
+            [errors.InvalidBase64LengthDefect],
+            '')
+
     def test_get_unstructured_no_whitespace_between_ews(self):
         self._test_get_x(self._get_unst,
             '=?utf-8?q?foo?==?utf-8?q?bar?=',
@@ -489,6 +498,10 @@ class TestParser(TestParserMixin, TestEmailBase):
             parser.get_bare_quoted_string('foo"')
         with self.assertRaises(errors.HeaderParseError):
             parser.get_bare_quoted_string('  "foo"')
+
+    def test_get_bare_quoted_string_only_quotes(self):
+        self._test_get_x(parser.get_bare_quoted_string,
+                         '""', '""', '', [], '')
 
     def test_get_bare_quoted_string_following_wsp_preserved(self):
         self._test_get_x(parser.get_bare_quoted_string,
@@ -1466,6 +1479,19 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertIsNone(angle_addr.domain)
         self.assertIsNone(angle_addr.route)
         self.assertEqual(angle_addr.addr_spec, '<>')
+
+    def test_get_angle_addr_qs_only_quotes(self):
+        angle_addr = self._test_get_x(parser.get_angle_addr,
+            '<""@example.com>',
+            '<""@example.com>',
+            '<""@example.com>',
+            [],
+            '')
+        self.assertEqual(angle_addr.token_type, 'angle-addr')
+        self.assertEqual(angle_addr.local_part, '')
+        self.assertEqual(angle_addr.domain, 'example.com')
+        self.assertIsNone(angle_addr.route)
+        self.assertEqual(angle_addr.addr_spec, '""@example.com')
 
     def test_get_angle_addr_with_cfws(self):
         angle_addr = self._test_get_x(parser.get_angle_addr,

@@ -404,6 +404,9 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
 class NetmaskTestMixin_v4(CommonTestMixin_v4):
     """Input validation on interfaces and networks is very similar"""
 
+    def test_no_mask(self):
+        self.assertEqual(str(self.factory('1.2.3.4')), '1.2.3.4/32')
+
     def test_split_netmask(self):
         addr = "1.2.3.4/32/24"
         with self.assertAddressError("Only one '/' permitted in %r" % addr):
@@ -1124,10 +1127,30 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.IPv4Address('1.2.3.1'), hosts[0])
         self.assertEqual(ipaddress.IPv4Address('1.2.3.254'), hosts[-1])
 
+        ipv6_network = ipaddress.IPv6Network('2001:658:22a:cafe::/120')
+        hosts = list(ipv6_network.hosts())
+        self.assertEqual(255, len(hosts))
+        self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), hosts[0])
+        self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::ff'), hosts[-1])
+
         # special case where only 1 bit is left for address
-        self.assertEqual([ipaddress.IPv4Address('2.0.0.0'),
-                          ipaddress.IPv4Address('2.0.0.1')],
-                         list(ipaddress.ip_network('2.0.0.0/31').hosts()))
+        addrs = [ipaddress.IPv4Address('2.0.0.0'),
+                 ipaddress.IPv4Address('2.0.0.1')]
+        str_args = '2.0.0.0/31'
+        tpl_args = ('2.0.0.0', 31)
+        self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
+        self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
+        self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
+                         list(ipaddress.ip_network(tpl_args).hosts()))
+
+        addrs = [ipaddress.IPv6Address('2001:658:22a:cafe::'),
+                 ipaddress.IPv6Address('2001:658:22a:cafe::1')]
+        str_args = '2001:658:22a:cafe::/127'
+        tpl_args = ('2001:658:22a:cafe::', 127)
+        self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
+        self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
+        self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
+                         list(ipaddress.ip_network(tpl_args).hosts()))
 
     def testFancySubnetting(self):
         self.assertEqual(sorted(self.ipv4_network.subnets(prefixlen_diff=3)),

@@ -21,7 +21,7 @@
 #endif /* HAVE_SYS_STAT_H */
 
 #ifdef MS_WINDOWS
-#include <consoleapi.h>
+#include <Windows.h>
 #endif
 
 /* Various interned strings */
@@ -36,6 +36,7 @@ PyObject *_PyIO_str_getstate = NULL;
 PyObject *_PyIO_str_isatty = NULL;
 PyObject *_PyIO_str_newlines = NULL;
 PyObject *_PyIO_str_nl = NULL;
+PyObject *_PyIO_str_peek = NULL;
 PyObject *_PyIO_str_read = NULL;
 PyObject *_PyIO_str_read1 = NULL;
 PyObject *_PyIO_str_readable = NULL;
@@ -740,6 +741,7 @@ PyInit__io(void)
     ADD_INTERNED(getstate)
     ADD_INTERNED(isatty)
     ADD_INTERNED(newlines)
+    ADD_INTERNED(peek)
     ADD_INTERNED(read)
     ADD_INTERNED(read1)
     ADD_INTERNED(readable)

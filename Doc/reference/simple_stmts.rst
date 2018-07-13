@@ -686,9 +686,8 @@ The :keyword:`continue` statement
    continue_stmt: "continue"
 
 :keyword:`continue` may only occur syntactically nested in a :keyword:`for` or
-:keyword:`while` loop, but not nested in a function or class definition or
-:keyword:`finally` clause within that loop.  It continues with the next
-cycle of the nearest enclosing loop.
+:keyword:`while` loop, but not nested in a function or class definition within
+that loop.  It continues with the next cycle of the nearest enclosing loop.
 
 When :keyword:`continue` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`finally` clause is executed before
@@ -708,15 +707,14 @@ The :keyword:`import` statement
    keyword: from
 
 .. productionlist::
-   import_stmt: "import" `module` ["as" `name`] ( "," `module` ["as" `name`] )*
-              : | "from" `relative_module` "import" `identifier` ["as" `name`]
-              : ( "," `identifier` ["as" `name`] )*
-              : | "from" `relative_module` "import" "(" `identifier` ["as" `name`]
-              : ( "," `identifier` ["as" `name`] )* [","] ")"
+   import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
+              : | "from" `relative_module` "import" `identifier` ["as" `identifier`]
+              : ("," `identifier` ["as" `identifier`])*
+              : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
+              : ("," `identifier` ["as" `identifier`])* [","] ")"
               : | "from" `module` "import" "*"
    module: (`identifier` ".")* `identifier`
    relative_module: "."* `module` | "."+
-   name: `identifier`
 
 The basic import statement (no :keyword:`from` clause) is executed in two
 steps:
@@ -838,12 +836,11 @@ features on a per-module basis before the release in which the feature becomes
 standard.
 
 .. productionlist:: *
-   future_statement: "from" "__future__" "import" feature ["as" name]
-                   : ("," feature ["as" name])*
-                   : | "from" "__future__" "import" "(" feature ["as" name]
-                   : ("," feature ["as" name])* [","] ")"
-   feature: identifier
-   name: identifier
+   future_stmt: "from" "__future__" "import" `feature` ["as" `identifier`]
+              : ("," `feature` ["as" `identifier`])*
+              : | "from" "__future__" "import" "(" `feature` ["as" `identifier`]
+              : ("," `feature` ["as" `identifier`])* [","] ")"
+   feature: `identifier`
 
 A future statement must appear near the top of the module.  The only lines that
 can appear before a future statement are:
@@ -853,12 +850,15 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
-.. XXX change this if future is cleaned out
+The only feature in Python 3.7 that requires using the future statement is
+``annotations``.
 
-The features recognized by Python 3.0 are ``absolute_import``, ``division``,
-``generators``, ``unicode_literals``, ``print_function``, ``nested_scopes`` and
-``with_statement``.  They are all redundant because they are always enabled, and
-only kept for backwards compatibility.
+All historical features enabled by the future statement are still recognized
+by Python 3.  The list includes ``absolute_import``, ``division``,
+``generators``, ``generator_stop``, ``unicode_literals``,
+``print_function``, ``nested_scopes`` and ``with_statement``.  They are
+all redundant because they are always enabled, and only kept for
+backwards compatibility.
 
 A future statement is recognized and treated specially at compile time: Changes
 to the semantics of core constructs are often implemented by generating

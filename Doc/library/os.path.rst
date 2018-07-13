@@ -240,8 +240,9 @@ the :mod:`glob` module.)
 
 .. function:: isfile(path)
 
-   Return ``True`` if *path* is an existing regular file.  This follows symbolic
-   links, so both :func:`islink` and :func:`isfile` can be true for the same path.
+   Return ``True`` if *path* is an :func:`existing <exists>` regular file.
+   This follows symbolic links, so both :func:`islink` and :func:`isfile` can
+   be true for the same path.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -249,8 +250,9 @@ the :mod:`glob` module.)
 
 .. function:: isdir(path)
 
-   Return ``True`` if *path* is an existing directory.  This follows symbolic
-   links, so both :func:`islink` and :func:`isdir` can be true for the same path.
+   Return ``True`` if *path* is an :func:`existing <exists>` directory.  This
+   follows symbolic links, so both :func:`islink` and :func:`isdir` can be true
+   for the same path.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -258,8 +260,9 @@ the :mod:`glob` module.)
 
 .. function:: islink(path)
 
-   Return ``True`` if *path* refers to a directory entry that is a symbolic link.
-   Always ``False`` if symbolic links are not supported by the Python runtime.
+   Return ``True`` if *path* refers to an :func:`existing <exists>` directory
+   entry that is a symbolic link.  Always ``False`` if symbolic links are not
+   supported by the Python runtime.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.

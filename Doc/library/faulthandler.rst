@@ -152,10 +152,10 @@ these functions again each time that the file is replaced.
 Example
 -------
 
-.. highlight:: sh
-
 Example of a segmentation fault on Linux with and without enabling the fault
-handler::
+handler:
+
+.. code-block:: shell-session
 
     $ python3 -c "import ctypes; ctypes.string_at(0)"
     Segmentation fault

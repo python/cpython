@@ -19,9 +19,9 @@ class CommonTextTests(util.CommonResourceTests, unittest.TestCase):
 
 class OpenTests:
     def test_open_binary(self):
-        with resources.open_binary(self.data, 'utf-8.file') as fp:
+        with resources.open_binary(self.data, 'binary.file') as fp:
             result = fp.read()
-            self.assertEqual(result, b'Hello, UTF-8 world!\n')
+            self.assertEqual(result, b'\x00\x01\x02\x03')
 
     def test_open_text_default_encoding(self):
         with resources.open_text(self.data, 'utf-8.file') as fp:

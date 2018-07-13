@@ -31,6 +31,8 @@ from datetime import timezone
 from datetime import date, datetime
 import time as _time
 
+import _testcapi
+
 # Needed by test_datetime
 import _strptime
 #
@@ -1552,6 +1554,50 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(dt1.toordinal(), dt2.toordinal())
         self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month - 7)
 
+    def test_subclass_alternate_constructors(self):
+        # Test that alternate constructors call the constructor
+        class DateSubclass(self.theclass):
+            def __new__(cls, *args, **kwargs):
+                result = self.theclass.__new__(cls, *args, **kwargs)
+                result.extra = 7
+
+                return result
+
+        args = (2003, 4, 14)
+        d_ord = 731319              # Equivalent ordinal date
+        d_isoformat = '2003-04-14'  # Equivalent isoformat()
+
+        base_d = DateSubclass(*args)
+        self.assertIsInstance(base_d, DateSubclass)
+        self.assertEqual(base_d.extra, 7)
+
+        # Timestamp depends on time zone, so we'll calculate the equivalent here
+        ts = datetime.combine(base_d, time(0)).timestamp()
+
+        test_cases = [
+            ('fromordinal', (d_ord,)),
+            ('fromtimestamp', (ts,)),
+            ('fromisoformat', (d_isoformat,)),
+        ]
+
+        for constr_name, constr_args in test_cases:
+            for base_obj in (DateSubclass, base_d):
+                # Test both the classmethod and method
+                with self.subTest(base_obj_type=type(base_obj),
+                                  constr_name=constr_name):
+                    constr = getattr(base_obj, constr_name)
+
+                    dt = constr(*constr_args)
+
+                    # Test that it creates the right subclass
+                    self.assertIsInstance(dt, DateSubclass)
+
+                    # Test that it's equal to the base object
+                    self.assertEqual(dt, base_d)
+
+                    # Test that it called the constructor
+                    self.assertEqual(dt.extra, 7)
+
     def test_pickling_subclass_date(self):
 
         args = 6, 7, 23
@@ -1815,7 +1861,7 @@ class TestDateTime(TestDate):
 
         # Make sure comparison doesn't forget microseconds, and isn't done
         # via comparing a float timestamp (an IEEE double doesn't have enough
-        # precision to span microsecond resolution across years 1 thru 9999,
+        # precision to span microsecond resolution across years 1 through 9999,
         # so comparing via timestamp necessarily calls some distinct values
         # equal).
         dt1 = self.theclass(MAXYEAR, 12, 31, 23, 59, 59, 999998)
@@ -2299,9 +2345,10 @@ class TestDateTime(TestDate):
         t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
         self.assertEqual(t.strftime("%m %d %y %f %S %M %H %j"),
                                     "12 31 04 000047 33 22 06 366")
-        tz = timezone(-timedelta(hours=2, seconds=33, microseconds=123))
-        t = t.replace(tzinfo=tz)
-        self.assertEqual(t.strftime("%z"), "-020033.000123")
+        for (s, us), z in [((33, 123), "33.000123"), ((33, 0), "33"),]:
+            tz = timezone(-timedelta(hours=2, seconds=s, microseconds=us))
+            t = t.replace(tzinfo=tz)
+            self.assertEqual(t.strftime("%z"), "-0200" + z)
 
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
@@ -2367,31 +2414,38 @@ class TestDateTime(TestDate):
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
 
+    @support.run_with_tz('EDT4')
     def test_astimezone(self):
-        return  # The rest is no longer applicable
-        # Pretty boring!  The TZ test is more interesting here.  astimezone()
-        # simply can't be applied to a naive object.
         dt = self.theclass.now()
-        f = FixedOffset(44, "")
-        self.assertRaises(ValueError, dt.astimezone) # naive
+        f = FixedOffset(44, "0044")
+        dt_utc = dt.replace(tzinfo=timezone(timedelta(hours=-4), 'EDT'))
+        self.assertEqual(dt.astimezone(), dt_utc) # naive
         self.assertRaises(TypeError, dt.astimezone, f, f) # too many args
         self.assertRaises(TypeError, dt.astimezone, dt) # arg wrong type
-        self.assertRaises(ValueError, dt.astimezone, f) # naive
-        self.assertRaises(ValueError, dt.astimezone, tz=f)  # naive
+        dt_f = dt.replace(tzinfo=f) + timedelta(hours=4, minutes=44)
+        self.assertEqual(dt.astimezone(f), dt_f) # naive
+        self.assertEqual(dt.astimezone(tz=f), dt_f) # naive
 
         class Bogus(tzinfo):
             def utcoffset(self, dt): return None
             def dst(self, dt): return timedelta(0)
         bog = Bogus()
         self.assertRaises(ValueError, dt.astimezone, bog)   # naive
-        self.assertRaises(ValueError,
-                          dt.replace(tzinfo=bog).astimezone, f)
+        self.assertEqual(dt.replace(tzinfo=bog).astimezone(f), dt_f)
 
         class AlsoBogus(tzinfo):
             def utcoffset(self, dt): return timedelta(0)
             def dst(self, dt): return None
         alsobog = AlsoBogus()
         self.assertRaises(ValueError, dt.astimezone, alsobog) # also naive
+
+        class Broken(tzinfo):
+            def utcoffset(self, dt): return 1
+            def dst(self, dt): return 1
+        broken = Broken()
+        dt_broken = dt.replace(tzinfo=broken)
+        with self.assertRaises(TypeError):
+            dt_broken.astimezone()
 
     def test_subclass_datetime(self):
 
@@ -2419,6 +2473,54 @@ class TestDateTime(TestDate):
         self.assertEqual(dt1.toordinal(), dt2.toordinal())
         self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month +
                                           dt1.second - 7)
+
+    def test_subclass_alternate_constructors_datetime(self):
+        # Test that alternate constructors call the constructor
+        class DateTimeSubclass(self.theclass):
+            def __new__(cls, *args, **kwargs):
+                result = self.theclass.__new__(cls, *args, **kwargs)
+                result.extra = 7
+
+                return result
+
+        args = (2003, 4, 14, 12, 30, 15, 123456)
+        d_isoformat = '2003-04-14T12:30:15.123456'      # Equivalent isoformat()
+        utc_ts = 1050323415.123456                      # UTC timestamp
+
+        base_d = DateTimeSubclass(*args)
+        self.assertIsInstance(base_d, DateTimeSubclass)
+        self.assertEqual(base_d.extra, 7)
+
+        # Timestamp depends on time zone, so we'll calculate the equivalent here
+        ts = base_d.timestamp()
+
+        test_cases = [
+            ('fromtimestamp', (ts,)),
+            # See https://bugs.python.org/issue32417
+            # ('fromtimestamp', (ts, timezone.utc)),
+            ('utcfromtimestamp', (utc_ts,)),
+            ('fromisoformat', (d_isoformat,)),
+            ('strptime', (d_isoformat, '%Y-%m-%dT%H:%M:%S.%f')),
+            ('combine', (date(*args[0:3]), time(*args[3:]))),
+        ]
+
+        for constr_name, constr_args in test_cases:
+            for base_obj in (DateTimeSubclass, base_d):
+                # Test both the classmethod and method
+                with self.subTest(base_obj_type=type(base_obj),
+                                  constr_name=constr_name):
+                    constr = getattr(base_obj, constr_name)
+
+                    dt = constr(*constr_args)
+
+                    # Test that it creates the right subclass
+                    self.assertIsInstance(dt, DateTimeSubclass)
+
+                    # Test that it's equal to the base object
+                    self.assertEqual(dt, base_d.replace(tzinfo=None))
+
+                    # Test that it called the constructor
+                    self.assertEqual(dt.extra, 7)
 
     def test_fromisoformat_datetime(self):
         # Test that isoformat() is reversible
@@ -3553,6 +3655,9 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         t2 = self.theclass.min
         self.assertNotEqual(t1, t2)
         self.assertEqual(t2, t2)
+        # and > comparison should fail
+        with self.assertRaises(TypeError):
+            t1 > t2
 
         # It's also naive if it has tzinfo but tzinfo.utcoffset() is None.
         class Naive(tzinfo):
@@ -4979,11 +5084,13 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
         t_fold = datetime(2002, 10, 27, 1, 45, tzinfo=Eastern2)
         t_fold_utc = t_fold.astimezone(timezone.utc)
         self.assertNotEqual(t_fold, t_fold_utc)
+        self.assertNotEqual(t_fold_utc, t_fold)
 
     def test_mixed_compare_gap(self):
         t_gap = datetime(2002, 4, 7, 2, 45, tzinfo=Eastern2)
         t_gap_utc = t_gap.astimezone(timezone.utc)
         self.assertNotEqual(t_gap, t_gap_utc)
+        self.assertNotEqual(t_gap_utc, t_gap)
 
     def test_hash_aware(self):
         t = datetime(2000, 1, 1, tzinfo=Eastern2)
@@ -5350,6 +5457,207 @@ class ZoneInfoCompleteTest(unittest.TestSuite):
 # Iran had a sub-minute UTC offset before 1946.
 class IranTest(ZoneInfoTest):
     zonename = 'Asia/Tehran'
+
+
+class CapiTest(unittest.TestCase):
+    def setUp(self):
+        # Since the C API is not present in the _Pure tests, skip all tests
+        if self.__class__.__name__.endswith('Pure'):
+            self.skipTest('Not relevant in pure Python')
+
+        # This *must* be called, and it must be called first, so until either
+        # restriction is loosened, we'll call it as part of test setup
+        _testcapi.test_datetime_capi()
+
+    def test_utc_capi(self):
+        for use_macro in (True, False):
+            capi_utc = _testcapi.get_timezone_utc_capi(use_macro)
+
+            with self.subTest(use_macro=use_macro):
+                self.assertIs(capi_utc, timezone.utc)
+
+    def test_timezones_capi(self):
+        est_capi, est_macro, est_macro_nn = _testcapi.make_timezones_capi()
+
+        exp_named = timezone(timedelta(hours=-5), "EST")
+        exp_unnamed = timezone(timedelta(hours=-5))
+
+        cases = [
+            ('est_capi', est_capi, exp_named),
+            ('est_macro', est_macro, exp_named),
+            ('est_macro_nn', est_macro_nn, exp_unnamed)
+        ]
+
+        for name, tz_act, tz_exp in cases:
+            with self.subTest(name=name):
+                self.assertEqual(tz_act, tz_exp)
+
+                dt1 = datetime(2000, 2, 4, tzinfo=tz_act)
+                dt2 = datetime(2000, 2, 4, tzinfo=tz_exp)
+
+                self.assertEqual(dt1, dt2)
+                self.assertEqual(dt1.tzname(), dt2.tzname())
+
+                dt_utc = datetime(2000, 2, 4, 5, tzinfo=timezone.utc)
+
+                self.assertEqual(dt1.astimezone(timezone.utc), dt_utc)
+
+    def test_timezones_offset_zero(self):
+        utc0, utc1, non_utc = _testcapi.get_timezones_offset_zero()
+
+        with self.subTest(testname="utc0"):
+            self.assertIs(utc0, timezone.utc)
+
+        with self.subTest(testname="utc1"):
+            self.assertIs(utc1, timezone.utc)
+
+        with self.subTest(testname="non_utc"):
+            self.assertIsNot(non_utc, timezone.utc)
+
+            non_utc_exp = timezone(timedelta(hours=0), "")
+
+            self.assertEqual(non_utc, non_utc_exp)
+
+            dt1 = datetime(2000, 2, 4, tzinfo=non_utc)
+            dt2 = datetime(2000, 2, 4, tzinfo=non_utc_exp)
+
+            self.assertEqual(dt1, dt2)
+            self.assertEqual(dt1.tzname(), dt2.tzname())
+
+    def test_check_date(self):
+        class DateSubclass(date):
+            pass
+
+        d = date(2011, 1, 1)
+        ds = DateSubclass(2011, 1, 1)
+        dt = datetime(2011, 1, 1)
+
+        is_date = _testcapi.datetime_check_date
+
+        # Check the ones that should be valid
+        self.assertTrue(is_date(d))
+        self.assertTrue(is_date(dt))
+        self.assertTrue(is_date(ds))
+        self.assertTrue(is_date(d, True))
+
+        # Check that the subclasses do not match exactly
+        self.assertFalse(is_date(dt, True))
+        self.assertFalse(is_date(ds, True))
+
+        # Check that various other things are not dates at all
+        args = [tuple(), list(), 1, '2011-01-01',
+                timedelta(1), timezone.utc, time(12, 00)]
+        for arg in args:
+            for exact in (True, False):
+                with self.subTest(arg=arg, exact=exact):
+                    self.assertFalse(is_date(arg, exact))
+
+    def test_check_time(self):
+        class TimeSubclass(time):
+            pass
+
+        t = time(12, 30)
+        ts = TimeSubclass(12, 30)
+
+        is_time = _testcapi.datetime_check_time
+
+        # Check the ones that should be valid
+        self.assertTrue(is_time(t))
+        self.assertTrue(is_time(ts))
+        self.assertTrue(is_time(t, True))
+
+        # Check that the subclass does not match exactly
+        self.assertFalse(is_time(ts, True))
+
+        # Check that various other things are not times
+        args = [tuple(), list(), 1, '2011-01-01',
+                timedelta(1), timezone.utc, date(2011, 1, 1)]
+
+        for arg in args:
+            for exact in (True, False):
+                with self.subTest(arg=arg, exact=exact):
+                    self.assertFalse(is_time(arg, exact))
+
+    def test_check_datetime(self):
+        class DateTimeSubclass(datetime):
+            pass
+
+        dt = datetime(2011, 1, 1, 12, 30)
+        dts = DateTimeSubclass(2011, 1, 1, 12, 30)
+
+        is_datetime = _testcapi.datetime_check_datetime
+
+        # Check the ones that should be valid
+        self.assertTrue(is_datetime(dt))
+        self.assertTrue(is_datetime(dts))
+        self.assertTrue(is_datetime(dt, True))
+
+        # Check that the subclass does not match exactly
+        self.assertFalse(is_datetime(dts, True))
+
+        # Check that various other things are not datetimes
+        args = [tuple(), list(), 1, '2011-01-01',
+                timedelta(1), timezone.utc, date(2011, 1, 1)]
+
+        for arg in args:
+            for exact in (True, False):
+                with self.subTest(arg=arg, exact=exact):
+                    self.assertFalse(is_datetime(arg, exact))
+
+    def test_check_delta(self):
+        class TimeDeltaSubclass(timedelta):
+            pass
+
+        td = timedelta(1)
+        tds = TimeDeltaSubclass(1)
+
+        is_timedelta = _testcapi.datetime_check_delta
+
+        # Check the ones that should be valid
+        self.assertTrue(is_timedelta(td))
+        self.assertTrue(is_timedelta(tds))
+        self.assertTrue(is_timedelta(td, True))
+
+        # Check that the subclass does not match exactly
+        self.assertFalse(is_timedelta(tds, True))
+
+        # Check that various other things are not timedeltas
+        args = [tuple(), list(), 1, '2011-01-01',
+                timezone.utc, date(2011, 1, 1), datetime(2011, 1, 1)]
+
+        for arg in args:
+            for exact in (True, False):
+                with self.subTest(arg=arg, exact=exact):
+                    self.assertFalse(is_timedelta(arg, exact))
+
+    def test_check_tzinfo(self):
+        class TZInfoSubclass(tzinfo):
+            pass
+
+        tzi = tzinfo()
+        tzis = TZInfoSubclass()
+        tz = timezone(timedelta(hours=-5))
+
+        is_tzinfo = _testcapi.datetime_check_tzinfo
+
+        # Check the ones that should be valid
+        self.assertTrue(is_tzinfo(tzi))
+        self.assertTrue(is_tzinfo(tz))
+        self.assertTrue(is_tzinfo(tzis))
+        self.assertTrue(is_tzinfo(tzi, True))
+
+        # Check that the subclasses do not match exactly
+        self.assertFalse(is_tzinfo(tz, True))
+        self.assertFalse(is_tzinfo(tzis, True))
+
+        # Check that various other things are not tzinfos
+        args = [tuple(), list(), 1, '2011-01-01',
+                date(2011, 1, 1), datetime(2011, 1, 1)]
+
+        for arg in args:
+            for exact in (True, False):
+                with self.subTest(arg=arg, exact=exact):
+                    self.assertFalse(is_tzinfo(arg, exact))
 
 def load_tests(loader, standard_tests, pattern):
     standard_tests.addTest(ZoneInfoCompleteTest())

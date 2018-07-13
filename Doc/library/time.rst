@@ -792,7 +792,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    High-resolution per-process timer from the CPU.
 
-   Availability: FreeBSD 3 or later, NetBSD 7 or later, OpenBSD.
+   Availability: FreeBSD, NetBSD 7 or later, OpenBSD.
 
    .. versionadded:: 3.7
 
@@ -812,7 +812,7 @@ These constants are used as parameters for :func:`clock_getres` and
    suspended, providing accurate uptime measurement, both absolute and
    interval.
 
-   Availability: FreeBSD 7 or later, OpenBSD 5.5 or later.
+   Availability: FreeBSD, OpenBSD 5.5 or later.
 
    .. versionadded:: 3.7
 
