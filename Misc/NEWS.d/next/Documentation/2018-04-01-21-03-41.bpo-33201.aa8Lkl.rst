@@ -1,0 +1,1 @@
+Modernize documentation for writing C extension types.

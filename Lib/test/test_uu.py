@@ -6,7 +6,7 @@ Nick Mathewson
 import unittest
 from test import support
 
-import sys, os
+import sys
 import uu
 import io
 
@@ -162,113 +162,61 @@ class UUStdIOTest(unittest.TestCase):
 
 class UUFileTest(unittest.TestCase):
 
-    def _kill(self, f):
-        # close and remove file
-        if f is None:
-            return
-        try:
-            f.close()
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except:
-            pass
-        try:
-            os.unlink(f.name)
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except:
-            pass
-
     def setUp(self):
         self.tmpin  = support.TESTFN + "i"
         self.tmpout = support.TESTFN + "o"
-
-    def tearDown(self):
-        del self.tmpin
-        del self.tmpout
+        self.addCleanup(support.unlink, self.tmpin)
+        self.addCleanup(support.unlink, self.tmpout)
 
     def test_encode(self):
-        fin = fout = None
-        try:
-            support.unlink(self.tmpin)
-            fin = open(self.tmpin, 'wb')
+        with open(self.tmpin, 'wb') as fin:
             fin.write(plaintext)
-            fin.close()
 
-            fin = open(self.tmpin, 'rb')
-            fout = open(self.tmpout, 'wb')
-            uu.encode(fin, fout, self.tmpin, mode=0o644)
-            fin.close()
-            fout.close()
+        with open(self.tmpin, 'rb') as fin:
+            with open(self.tmpout, 'wb') as fout:
+                uu.encode(fin, fout, self.tmpin, mode=0o644)
 
-            fout = open(self.tmpout, 'rb')
+        with open(self.tmpout, 'rb') as fout:
             s = fout.read()
-            fout.close()
-            self.assertEqual(s, encodedtextwrapped(0o644, self.tmpin))
+        self.assertEqual(s, encodedtextwrapped(0o644, self.tmpin))
 
-            # in_file and out_file as filenames
-            uu.encode(self.tmpin, self.tmpout, self.tmpin, mode=0o644)
-            fout = open(self.tmpout, 'rb')
+        # in_file and out_file as filenames
+        uu.encode(self.tmpin, self.tmpout, self.tmpin, mode=0o644)
+        with open(self.tmpout, 'rb') as fout:
             s = fout.read()
-            fout.close()
-            self.assertEqual(s, encodedtextwrapped(0o644, self.tmpin))
-
-        finally:
-            self._kill(fin)
-            self._kill(fout)
+        self.assertEqual(s, encodedtextwrapped(0o644, self.tmpin))
 
     def test_decode(self):
-        f = None
-        try:
-            support.unlink(self.tmpin)
-            f = open(self.tmpin, 'wb')
+        with open(self.tmpin, 'wb') as f:
             f.write(encodedtextwrapped(0o644, self.tmpout))
-            f.close()
 
-            f = open(self.tmpin, 'rb')
+        with open(self.tmpin, 'rb') as f:
             uu.decode(f)
-            f.close()
 
-            f = open(self.tmpout, 'rb')
+        with open(self.tmpout, 'rb') as f:
             s = f.read()
-            f.close()
-            self.assertEqual(s, plaintext)
-            # XXX is there an xp way to verify the mode?
-        finally:
-            self._kill(f)
+        self.assertEqual(s, plaintext)
+        # XXX is there an xp way to verify the mode?
 
     def test_decode_filename(self):
-        f = None
-        try:
-            support.unlink(self.tmpin)
-            f = open(self.tmpin, 'wb')
+        with open(self.tmpin, 'wb') as f:
             f.write(encodedtextwrapped(0o644, self.tmpout))
-            f.close()
 
-            uu.decode(self.tmpin)
+        uu.decode(self.tmpin)
 
-            f = open(self.tmpout, 'rb')
+        with open(self.tmpout, 'rb') as f:
             s = f.read()
-            f.close()
-            self.assertEqual(s, plaintext)
-        finally:
-            self._kill(f)
+        self.assertEqual(s, plaintext)
 
     def test_decodetwice(self):
         # Verify that decode() will refuse to overwrite an existing file
-        f = None
-        try:
-            f = io.BytesIO(encodedtextwrapped(0o644, self.tmpout))
-
-            f = open(self.tmpin, 'rb')
+        with open(self.tmpin, 'wb') as f:
+            f.write(encodedtextwrapped(0o644, self.tmpout))
+        with open(self.tmpin, 'rb') as f:
             uu.decode(f)
-            f.close()
 
-            f = open(self.tmpin, 'rb')
+        with open(self.tmpin, 'rb') as f:
             self.assertRaises(uu.Error, uu.decode, f)
-            f.close()
-        finally:
-            self._kill(f)
 
 
 if __name__=="__main__":

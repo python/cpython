@@ -45,7 +45,7 @@ fine-tuning parameters.
 
 .. seealso::
 
-   The third-party `regex <https://pypi.python.org/pypi/regex/>`_ module,
+   The third-party `regex <https://pypi.org/project/regex/>`_ module,
    which has an API compatible with the standard library :mod:`re` module,
    but offers additional functionality and a more thorough Unicode support.
 
@@ -67,8 +67,8 @@ string *pq* will match AB.  This holds unless *A* or *B* contain low precedence
 operations; boundary conditions between *A* and *B*; or have numbered group
 references.  Thus, complex expressions can easily be constructed from simpler
 primitive expressions like the ones described here.  For details of the theory
-and implementation of regular expressions, consult the Friedl book referenced
-above, or almost any textbook about compiler construction.
+and implementation of regular expressions, consult the Friedl book [Frie09]_,
+or almost any textbook about compiler construction.
 
 A brief explanation of the format of regular expressions follows.  For further
 information and a gentler presentation, consult the :ref:`regex-howto`.
@@ -491,14 +491,6 @@ three digits in length.
 .. versionchanged:: 3.8
    The ``'\N{name}'`` escape sequence has been added. As in string literals,
    it expands to the named Unicode character (e.g. ``'\N{EM DASH}'``).
-
-.. seealso::
-
-   Mastering Regular Expressions
-      Book on regular expressions by Jeffrey Friedl, published by O'Reilly.  The
-      second edition of the book no longer covers Python at all, but the first
-      edition covered writing good regular expression patterns in great detail.
-
 
 
 .. _contents-of-module-re:
@@ -1458,8 +1450,8 @@ Finding all Adverbs
 ^^^^^^^^^^^^^^^^^^^
 
 :func:`findall` matches *all* occurrences of a pattern, not just the first
-one as :func:`search` does.  For example, if one was a writer and wanted to
-find all of the adverbs in some text, he or she might use :func:`findall` in
+one as :func:`search` does.  For example, if a writer wanted to
+find all of the adverbs in some text, they might use :func:`findall` in
 the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
@@ -1473,8 +1465,8 @@ Finding all Adverbs and their Positions
 If one wants more information about all matches of a pattern than the matched
 text, :func:`finditer` is useful as it provides :ref:`match objects
 <match-objects>` instead of strings.  Continuing with the previous example, if
-one was a writer who wanted to find all of the adverbs *and their positions* in
-some text, he or she would use :func:`finditer` in the following manner::
+a writer wanted to find all of the adverbs *and their positions* in
+some text, they would use :func:`finditer` in the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
    >>> for m in re.finditer(r"\w+ly", text):
@@ -1585,3 +1577,9 @@ The tokenizer produces the following output::
     Token(typ='END', value=';', line=4, column=27)
     Token(typ='ENDIF', value='ENDIF', line=5, column=4)
     Token(typ='END', value=';', line=5, column=9)
+
+
+.. [Frie09] Friedl, Jeffrey. Mastering Regular Expressions. 3rd ed., O'Reilly
+   Media, 2009. The third edition of the book no longer covers Python at all,
+   but the first edition covered writing good regular expression patterns in
+   great detail.

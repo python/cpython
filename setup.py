@@ -1,7 +1,7 @@
 # Autodetecting setup.py script for building the Python extensions
 #
 
-import sys, os, importlib.machinery, re, optparse
+import sys, os, importlib.machinery, re, argparse
 from glob import glob
 import importlib._bootstrap
 import importlib.util
@@ -560,24 +560,9 @@ class PyBuildExt(build_ext):
                 ('CPPFLAGS', '-I', self.compiler.include_dirs)):
             env_val = sysconfig.get_config_var(env_var)
             if env_val:
-                # To prevent optparse from raising an exception about any
-                # options in env_val that it doesn't know about we strip out
-                # all double dashes and any dashes followed by a character
-                # that is not for the option we are dealing with.
-                #
-                # Please note that order of the regex is important!  We must
-                # strip out double-dashes first so that we don't end up with
-                # substituting "--Long" to "-Long" and thus lead to "ong" being
-                # used for a library directory.
-                env_val = re.sub(r'(^|\s+)-(-|(?!%s))' % arg_name[1],
-                                 ' ', env_val)
-                parser = optparse.OptionParser()
-                # Make sure that allowing args interspersed with options is
-                # allowed
-                parser.allow_interspersed_args = True
-                parser.error = lambda msg: None
-                parser.add_option(arg_name, dest="dirs", action="append")
-                options = parser.parse_args(env_val.split())[0]
+                parser = argparse.ArgumentParser()
+                parser.add_argument(arg_name, dest="dirs", action="append")
+                options, _ = parser.parse_known_args(env_val.split())
                 if options.dirs:
                     for directory in reversed(options.dirs):
                         add_dir_to_list(dir_list, directory)
@@ -2005,6 +1990,10 @@ class PyBuildExt(build_ext):
             ext.libraries.append(ffi_lib)
             self.use_system_libffi = True
 
+        if sysconfig.get_config_var('HAVE_LIBDL'):
+            # for dlopen, see bpo-32647
+            ext.libraries.append('dl')
+
     def _decimal_ext(self):
         extra_compile_args = []
         undef_macros = []
@@ -2287,7 +2276,7 @@ class PyBuildScripts(build_scripts):
         newoutfiles = []
         newupdated_files = []
         for filename in outfiles:
-            if filename.endswith(('2to3', 'pyvenv')):
+            if filename.endswith('2to3'):
                 newfilename = filename + fullversion
             else:
                 newfilename = filename + minoronly
@@ -2355,7 +2344,7 @@ def main():
           # check the PyBuildScripts command above, and change the links
           # created by the bininstall target in Makefile.pre.in
           scripts = ["Tools/scripts/pydoc3", "Tools/scripts/idle3",
-                     "Tools/scripts/2to3", "Tools/scripts/pyvenv"]
+                     "Tools/scripts/2to3"]
         )
 
 # --install-platlib

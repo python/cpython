@@ -39,7 +39,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   shell=False, cwd=None, timeout=None, check=False, \
-                  encoding=None, errors=None, text=None)
+                  encoding=None, errors=None, text=None, env=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -77,6 +77,11 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    specified *encoding* and *errors* or the :class:`io.TextIOWrapper` default.
    The *universal_newlines* argument is equivalent  to *text* and is provided
    for backwards compatibility. By default, file objects are opened in binary mode.
+
+   If *env* is not ``None``, it must be a mapping that defines the environment
+   variables for the new process; these are used instead of the default
+   behavior of inheriting the current process' environment. It is passed directly
+   to :class:`Popen`.
 
    Examples::
 
@@ -339,12 +344,12 @@ functions.
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
-   *args* should be a sequence of program arguments or else a single string or
-   :term:`path-like object`. By default, the program to execute is the first
-   item in *args* if *args* is a sequence. If *args* is a string, the
-   interpretation is platform-dependent and described below.  See the *shell*
-   and *executable* arguments for additional differences from the default
-   behavior.  Unless otherwise stated, it is recommended to pass *args* as a sequence.
+   *args* should be a sequence of program arguments or else a single string.
+   By default, the program to execute is the first item in *args* if *args* is
+   a sequence.  If *args* is a string, the interpretation is
+   platform-dependent and described below.  See the *shell* and *executable*
+   arguments for additional differences from the default behavior.  Unless
+   otherwise stated, it is recommended to pass *args* as a sequence.
 
    On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
@@ -459,7 +464,10 @@ functions.
       common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed.
+   :const:`2` will be closed before the child process is executed.  Otherwise
+   when *close_fds* is false, file descriptors obey their inheritable flag
+   as described in :ref:`fd_inheritance`.
+
    On Windows, if *close_fds* is true then no handles will be inherited by the
    child process unless explicitly passed in the ``handle_list`` element of
    :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.
@@ -477,7 +485,7 @@ functions.
    between the parent and child.  Providing any *pass_fds* forces
    *close_fds* to be :const:`True`.  (POSIX only)
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       The *pass_fds* parameter was added.
 
    If *cwd* is not ``None``, the function changes the working directory to
@@ -557,10 +565,6 @@ functions.
    .. versionchanged:: 3.6
       Popen destructor now emits a :exc:`ResourceWarning` warning if the child
       process is still running.
-
-   .. versionchanged:: 3.7
-      *args*, or the first element of *args* if *args* is a sequence, can now
-      be a :term:`path-like object`.
 
 
 Exceptions

@@ -1,0 +1,2 @@
+Fix assertion failures in the ``tell()`` method of ``io.TextIOWrapper``.
+Patch by Zackery Spytz.

@@ -686,9 +686,8 @@ The :keyword:`continue` statement
    continue_stmt: "continue"
 
 :keyword:`continue` may only occur syntactically nested in a :keyword:`for` or
-:keyword:`while` loop, but not nested in a function or class definition or
-:keyword:`finally` clause within that loop.  It continues with the next
-cycle of the nearest enclosing loop.
+:keyword:`while` loop, but not nested in a function or class definition within
+that loop.  It continues with the next cycle of the nearest enclosing loop.
 
 When :keyword:`continue` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`finally` clause is executed before
@@ -708,15 +707,14 @@ The :keyword:`import` statement
    keyword: from
 
 .. productionlist::
-   import_stmt: "import" `module` ["as" `name`] ( "," `module` ["as" `name`] )*
-              : | "from" `relative_module` "import" `identifier` ["as" `name`]
-              : ( "," `identifier` ["as" `name`] )*
-              : | "from" `relative_module` "import" "(" `identifier` ["as" `name`]
-              : ( "," `identifier` ["as" `name`] )* [","] ")"
+   import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
+              : | "from" `relative_module` "import" `identifier` ["as" `identifier`]
+              : ("," `identifier` ["as" `identifier`])*
+              : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
+              : ("," `identifier` ["as" `identifier`])* [","] ")"
               : | "from" `module` "import" "*"
    module: (`identifier` ".")* `identifier`
    relative_module: "."* `module` | "."+
-   name: `identifier`
 
 The basic import statement (no :keyword:`from` clause) is executed in two
 steps:
@@ -838,12 +836,11 @@ features on a per-module basis before the release in which the feature becomes
 standard.
 
 .. productionlist:: *
-   future_statement: "from" "__future__" "import" feature ["as" name]
-                   : ("," feature ["as" name])*
-                   : | "from" "__future__" "import" "(" feature ["as" name]
-                   : ("," feature ["as" name])* [","] ")"
-   feature: identifier
-   name: identifier
+   future_stmt: "from" "__future__" "import" `feature` ["as" `identifier`]
+              : ("," `feature` ["as" `identifier`])*
+              : | "from" "__future__" "import" "(" `feature` ["as" `identifier`]
+              : ("," `feature` ["as" `identifier`])* [","] ")"
+   feature: `identifier`
 
 A future statement must appear near the top of the module.  The only lines that
 can appear before a future statement are:

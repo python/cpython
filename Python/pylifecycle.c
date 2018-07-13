@@ -325,11 +325,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
 
     /* Install importlib as the implementation of import */
     value = PyObject_CallMethod(importlib, "_install", "OO", sysmod, impmod);
-    if (value != NULL) {
-        Py_DECREF(value);
-        value = PyObject_CallMethod(importlib,
-                                    "_install_external_importers", "");
-    }
     if (value == NULL) {
         PyErr_Print();
         return _Py_INIT_ERR("importlib install failed");
@@ -690,9 +685,6 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
 
     _Py_ReadyTypes();
 
-    if (!_PyFrame_Init())
-        return _Py_INIT_ERR("can't init frames");
-
     if (!_PyLong_Init())
         return _Py_INIT_ERR("can't init longs");
 
@@ -900,6 +892,11 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 _PyInitError
 _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 {
+    if (_PyRuntime.initialized) {
+        /* bpo-33932: Calling Py_Initialize() twice does nothing. */
+        return _Py_INIT_OK();
+    }
+
     _PyCoreConfig config = _PyCoreConfig_INIT;
     _PyInitError err;
 

@@ -1,6 +1,6 @@
 """Define partial Python code Parser used by editor and hyperparser.
 
-Instances of StringTranslatePseudoMapping are used with str.translate.
+Instances of ParseMap are used with str.translate.
 
 The following bound search and match functions are defined:
 _synchre - start of popular statement;
@@ -10,7 +10,6 @@ _itemre - line that may have bracket structure start;
 _closere - line that must be followed by dedent.
 _chew_ordinaryre - non-special characters.
 """
-from collections.abc import Mapping
 import re
 import sys
 
@@ -101,46 +100,27 @@ _chew_ordinaryre = re.compile(r"""
 """, re.VERBOSE).match
 
 
-class StringTranslatePseudoMapping(Mapping):
-    r"""Utility class to be used with str.translate()
+class ParseMap(dict):
+    r"""Dict subclass that maps anything not in dict to 'x'.
 
-    This Mapping class wraps a given dict. When a value for a key is
-    requested via __getitem__() or get(), the key is looked up in the
-    given dict. If found there, the value from the dict is returned.
-    Otherwise, the default value given upon initialization is returned.
+    This is designed to be used with str.translate in study1.
+    Anything not specifically mapped otherwise becomes 'x'.
+    Example: replace everything except whitespace with 'x'.
 
-    This allows using str.translate() to make some replacements, and to
-    replace all characters for which no replacement was specified with
-    a given character instead of leaving them as-is.
-
-    For example, to replace everything except whitespace with 'x':
-
-    >>> whitespace_chars = ' \t\n\r'
-    >>> preserve_dict = {ord(c): ord(c) for c in whitespace_chars}
-    >>> mapping = StringTranslatePseudoMapping(preserve_dict, ord('x'))
-    >>> text = "a + b\tc\nd"
-    >>> text.translate(mapping)
+    >>> keepwhite = ParseMap((ord(c), ord(c)) for c in ' \t\n\r')
+    >>> "a + b\tc\nd".translate(keepwhite)
     'x x x\tx\nx'
     """
-    def __init__(self, non_defaults, default_value):
-        self._non_defaults = non_defaults
-        self._default_value = default_value
+    # Calling this triples access time; see bpo-32940
+    def __missing__(self, key):
+        return 120  # ord('x')
 
-        def _get(key, _get=non_defaults.get, _default=default_value):
-            return _get(key, _default)
-        self._get = _get
 
-    def __getitem__(self, item):
-        return self._get(item)
-
-    def __len__(self):
-        return len(self._non_defaults)
-
-    def __iter__(self):
-        return iter(self._non_defaults)
-
-    def get(self, key, default=None):
-        return self._get(key)
+# Map all ascii to 120 to avoid __missing__ call, then replace some.
+trans = ParseMap.fromkeys(range(128), 120)
+trans.update((ord(c), ord('(')) for c in "({[")  # open brackets => '(';
+trans.update((ord(c), ord(')')) for c in ")}]")  # close brackets => ')'.
+trans.update((ord(c), ord(c)) for c in "\"'\\\n#")  # Keep these.
 
 
 class Parser:
@@ -224,16 +204,6 @@ class Parser:
         if lo > 0:
             self.code = self.code[lo:]
 
-    # Build a translation table to map uninteresting chars to 'x', open
-    # brackets to '(', close brackets to ')' while preserving quotes,
-    # backslashes, newlines and hashes. This is to be passed to
-    # str.translate() in _study1().
-    _tran = {}
-    _tran.update((ord(c), ord('(')) for c in "({[")
-    _tran.update((ord(c), ord(')')) for c in ")}]")
-    _tran.update((ord(c), ord(c)) for c in "\"'\\\n#")
-    _tran = StringTranslatePseudoMapping(_tran, default_value=ord('x'))
-
     def _study1(self):
         """Find the line numbers of non-continuation lines.
 
@@ -250,7 +220,7 @@ class Parser:
         # uninteresting characters.  This can cut the number of chars
         # by a factor of 10-40, and so greatly speed the following loop.
         code = self.code
-        code = code.translate(self._tran)
+        code = code.translate(trans)
         code = code.replace('xxxxxxxx', 'x')
         code = code.replace('xxxx', 'x')
         code = code.replace('xx', 'x')
@@ -624,6 +594,6 @@ class Parser:
         return self.stmt_bracketing
 
 
-if __name__ == '__main__':  #pragma: nocover
-    import unittest
-    unittest.main('idlelib.idle_test.test_pyparse', verbosity=2)
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_pyparse', verbosity=2)

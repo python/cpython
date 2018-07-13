@@ -1,51 +1,24 @@
-"""Unittest for idlelib.pyparse.py.
+"Test pyparse, coverage 96%."
 
-Coverage: 97%
-"""
-
-from collections import namedtuple
-import unittest
 from idlelib import pyparse
+import unittest
+from collections import namedtuple
 
 
-class StringTranslatePseudoMappingTest(unittest.TestCase):
+class ParseMapTest(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        whitespace_chars = ' \t\n\r'
-        cls.preserve_dict = {ord(c): ord(c) for c in whitespace_chars}
-        cls.default = ord('x')
-        cls.mapping = pyparse.StringTranslatePseudoMapping(
-                                cls.preserve_dict, default_value=ord('x'))
+    def test_parsemap(self):
+        keepwhite = {ord(c): ord(c) for c in ' \t\n\r'}
+        mapping = pyparse.ParseMap(keepwhite)
+        self.assertEqual(mapping[ord('\t')], ord('\t'))
+        self.assertEqual(mapping[ord('a')], ord('x'))
+        self.assertEqual(mapping[1000], ord('x'))
 
-    @classmethod
-    def tearDownClass(cls):
-        del cls.preserve_dict, cls.default, cls.mapping
-
-    def test__init__(self):
-        m = self.mapping
-        self.assertEqual(m._non_defaults, self.preserve_dict)
-        self.assertEqual(m._default_value, self.default)
-
-    def test__get_item__(self):
-        self.assertEqual(self.mapping[ord('\t')], ord('\t'))
-        self.assertEqual(self.mapping[ord('a')], self.default)
-
-    def test__len__(self):
-        self.assertEqual(len(self.mapping), len(self.preserve_dict))
-
-    def test__iter__(self):
-        count = 0
-        for key, value in self.mapping.items():
-            self.assertIn(key, self.preserve_dict)
-            count += 1
-        self.assertEqual(count, len(self.mapping))
-
-    def test_get(self):
-        self.assertEqual(self.mapping.get(ord('\t')), ord('\t'))
-        self.assertEqual(self.mapping.get('a'), self.default)
-        # Default is a parameter, but it isn't used.
-        self.assertEqual(self.mapping.get('a', default=500), self.default)
+    def test_trans(self):
+        # trans is the production instance of ParseMap, used in _study1
+        parser = pyparse.Parser(4, 4)
+        self.assertEqual('\t a([{b}])b"c\'d\n'.translate(pyparse.trans),
+                          'xxx(((x)))x"x\'x\n')
 
 
 class PyParseTest(unittest.TestCase):
@@ -151,10 +124,6 @@ class PyParseTest(unittest.TestCase):
         # An index that is preceded by a newline.
         p.set_lo(44)
         self.assertEqual(p.code, code[44:])
-
-    def test_tran(self):
-        self.assertEqual('\t a([{b}])b"c\'d\n'.translate(self.parser._tran),
-                          'xxx(((x)))x"x\'x\n')
 
     def test_study1(self):
         eq = self.assertEqual

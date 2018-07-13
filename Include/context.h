@@ -65,7 +65,7 @@ PyAPI_FUNC(PyContextToken *) PyContextVar_Set(
 
 
 /* Reset a variable to its previous value.
-   Returns 0 on sucess, -1 on error.
+   Returns 0 on success, -1 on error.
 */
 PyAPI_FUNC(int) PyContextVar_Reset(
     PyContextVar *var, PyContextToken *token);

@@ -4,6 +4,7 @@ import _overlapped
 import _winapi
 import errno
 import math
+import msvcrt
 import socket
 import struct
 import weakref
@@ -20,7 +21,8 @@ from .log import logger
 
 __all__ = (
     'SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
-    'DefaultEventLoopPolicy',
+    'DefaultEventLoopPolicy', 'WindowsSelectorEventLoopPolicy',
+    'WindowsProactorEventLoopPolicy',
 )
 
 
@@ -527,6 +529,27 @@ class IocpProactor:
 
         return self._register(ov, conn, finish_connect)
 
+    def sendfile(self, sock, file, offset, count):
+        self._register_with_iocp(sock)
+        ov = _overlapped.Overlapped(NULL)
+        offset_low = offset & 0xffff_ffff
+        offset_high = (offset >> 32) & 0xffff_ffff
+        ov.TransmitFile(sock.fileno(),
+                        msvcrt.get_osfhandle(file.fileno()),
+                        offset_low, offset_high,
+                        count, 0, 0)
+
+        def finish_sendfile(trans, key, ov):
+            try:
+                return ov.getresult()
+            except OSError as exc:
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
+                    raise ConnectionResetError(*exc.args)
+                else:
+                    raise
+        return self._register(ov, sock, finish_sendfile)
+
     def accept_pipe(self, pipe):
         self._register_with_iocp(pipe)
         ov = _overlapped.Overlapped(NULL)
@@ -779,8 +802,12 @@ class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 SelectorEventLoop = _WindowsSelectorEventLoop
 
 
-class _WindowsDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+class WindowsSelectorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     _loop_factory = SelectorEventLoop
 
 
-DefaultEventLoopPolicy = _WindowsDefaultEventLoopPolicy
+class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+    _loop_factory = ProactorEventLoop
+
+
+DefaultEventLoopPolicy = WindowsSelectorEventLoopPolicy

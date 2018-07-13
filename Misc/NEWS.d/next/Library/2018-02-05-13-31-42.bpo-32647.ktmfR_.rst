@@ -1,0 +1,2 @@
+The ctypes module used to depend on indirect linking for dlopen. The shared
+extension is now explicitly linked against libdl on platforms with dl.

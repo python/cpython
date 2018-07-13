@@ -44,7 +44,8 @@ are always available.  They are listed here in alphabetical order.
 
    Return the absolute value of a number.  The argument may be an
    integer or a floating point number.  If the argument is a complex number, its
-   magnitude is returned.
+   magnitude is returned. If *x* defines :meth:`__abs__`,
+   ``abs(x)`` returns ``x.__abs__()``.
 
 
 .. function:: all(iterable)
@@ -98,7 +99,7 @@ are always available.  They are listed here in alphabetical order.
       >>> f'{14:#b}', f'{14:b}'
       ('0b1110', '1110')
 
-  See also :func:`format` for more information.
+   See also :func:`format` for more information.
 
 
 .. class:: bool([x])
@@ -240,8 +241,8 @@ are always available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
 
-   The optional arguments *flags* and *dont_inherit* control which future
-   statements (see :pep:`236`) affect the compilation of *source*.  If neither
+   The optional arguments *flags* and *dont_inherit* control which :ref:`future
+   statements <future>` affect the compilation of *source*.  If neither
    is present (or both are zero) the code is compiled with those future
    statements that are in effect in the code that is calling :func:`compile`.  If the
    *flags* argument is given and *dont_inherit* is not (or is zero) then the
@@ -273,6 +274,12 @@ are always available.  They are listed here in alphabetical order.
       ``'eval'`` mode, input must be terminated by at least one newline
       character.  This is to facilitate detection of incomplete and complete
       statements in the :mod:`code` module.
+
+   .. warning::
+
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string when compiling to an AST
+      object due to stack depth limitations in Python's AST compiler.
 
    .. versionchanged:: 3.2
       Allowed use of Windows and Mac newlines.  Also input in ``'exec'`` mode
@@ -640,11 +647,11 @@ are always available.  They are listed here in alphabetical order.
    dictionary lookup.  Numeric values that compare equal have the same hash
    value (even if they are of different types, as is the case for 1 and 1.0).
 
-  .. note::
+   .. note::
 
-    For objects with custom :meth:`__hash__` methods, note that :func:`hash`
-    truncates the return value based on the bit width of the host machine.
-    See :meth:`__hash__` for details.
+      For objects with custom :meth:`__hash__` methods, note that :func:`hash`
+      truncates the return value based on the bit width of the host machine.
+      See :meth:`__hash__` for details.
 
 .. function:: help([object])
 
@@ -665,8 +672,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: hex(x)
 
    Convert an integer number to a lowercase hexadecimal string prefixed with
-   "0x". If x is not a Python :class:`int` object, it has to define an
-   __index__() method that returns an integer. Some examples:
+   "0x". If *x* is not a Python :class:`int` object, it has to define an
+   :meth:`__index__` method that returns an integer. Some examples:
 
       >>> hex(255)
       '0xff'
@@ -724,9 +731,10 @@ are always available.  They are listed here in alphabetical order.
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
-   ``0`` if no arguments are given.  If *x* is a number, return
-   :meth:`x.__int__() <object.__int__>`.  For floating point numbers, this
-   truncates towards zero.
+   ``0`` if no arguments are given.  If *x* defines :meth:`__int__`,
+   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__trunc__`,
+   it returns ``x.__trunc__()``.
+   For floating point numbers, this truncates towards zero.
 
    If *x* is not a number or if *base* is given, then *x* must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
@@ -963,6 +971,11 @@ are always available.  They are listed here in alphabetical order.
    ``locale.getpreferredencoding(False)`` is called to get the current locale
    encoding. (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
+
+   .. _filemodes:
+
+   .. index::
+      pair: file; modes
 
    ========= ===============================================================
    Character Meaning
@@ -1322,11 +1335,12 @@ are always available.  They are listed here in alphabetical order.
    equally close, rounding is done toward the even choice (so, for example,
    both ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is
    ``2``).  Any integer value is valid for *ndigits* (positive, zero, or
-   negative).  The return value is an integer if called with one argument,
-   otherwise of the same type as *number*.
+   negative).  The return value is an integer if *ndigits* is omitted or
+   ``None``.
+   Otherwise the return value has the same type as *number*.
 
-   For a general Python object ``number``, ``round(number, ndigits)`` delegates to
-   ``number.__round__(ndigits)``.
+   For a general Python object ``number``, ``round`` delegates to
+   ``number.__round__``.
 
    .. note::
 

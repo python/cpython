@@ -264,7 +264,7 @@ class TestSupport(unittest.TestCase):
         with support.temp_cwd(name=TESTFN):
             self.assertEqual(os.path.basename(os.getcwd()), TESTFN)
         self.assertFalse(os.path.exists(TESTFN))
-        self.assertTrue(os.path.basename(os.getcwd()), here)
+        self.assertEqual(os.getcwd(), here)
 
 
     def test_temp_cwd__name_none(self):
@@ -569,6 +569,17 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
 
+    def test_fd_count(self):
+        # We cannot test the absolute value of fd_count(): on old Linux
+        # kernel or glibc versions, os.urandom() keeps a FD open on
+        # /dev/urandom device and Python has 4 FD opens instead of 3.
+        start = support.fd_count()
+        fd = os.open(__file__, os.O_RDONLY)
+        try:
+            more = support.fd_count()
+        finally:
+            os.close(fd)
+        self.assertEqual(more - start, 1)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

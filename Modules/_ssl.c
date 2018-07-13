@@ -136,6 +136,12 @@ static void _PySSLFixErrno(void) {
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
 #  define OPENSSL_VERSION_1_1 1
+#  define PY_OPENSSL_1_1_API 1
+#endif
+
+/* LibreSSL 2.7.0 provides necessary OpenSSL 1.1.0 APIs */
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x2070000fL
+#  define PY_OPENSSL_1_1_API 1
 #endif
 
 /* Openssl comes with TLSv1.1 and TLSv1.2 between 1.0.0h and 1.0.1
@@ -157,20 +163,42 @@ static void _PySSLFixErrno(void) {
 #endif
 
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-# define HAVE_ALPN
+# define HAVE_ALPN 1
+#else
+# define HAVE_ALPN 0
+#endif
+
+/* We cannot rely on OPENSSL_NO_NEXTPROTONEG because LibreSSL 2.6.1 dropped
+ * NPN support but did not set OPENSSL_NO_NEXTPROTONEG for compatibility
+ * reasons. The check for TLSEXT_TYPE_next_proto_neg works with
+ * OpenSSL 1.0.1+ and LibreSSL.
+ * OpenSSL 1.1.1-pre1 dropped NPN but still has TLSEXT_TYPE_next_proto_neg.
+ */
+#ifdef OPENSSL_NO_NEXTPROTONEG
+# define HAVE_NPN 0
+#elif (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
+# define HAVE_NPN 0
+#elif defined(TLSEXT_TYPE_next_proto_neg)
+# define HAVE_NPN 1
+#else
+# define HAVE_NPN 0
 #endif
 
 #ifndef INVALID_SOCKET /* MS defines this */
 #define INVALID_SOCKET (-1)
 #endif
 
-#ifdef OPENSSL_VERSION_1_1
-/* OpenSSL 1.1.0+ */
-#ifndef OPENSSL_NO_SSL2
+/* OpenSSL 1.0.2 and LibreSSL needs extra code for locking */
+#ifndef OPENSSL_VERSION_1_1
+#define HAVE_OPENSSL_CRYPTO_LOCK
+#endif
+
+#if defined(OPENSSL_VERSION_1_1) && !defined(OPENSSL_NO_SSL2)
 #define OPENSSL_NO_SSL2
 #endif
-#else /* OpenSSL < 1.1.0 */
-#define HAVE_OPENSSL_CRYPTO_LOCK
+
+#ifndef PY_OPENSSL_1_1_API
+/* OpenSSL 1.1 API shims for OpenSSL < 1.1.0 and LibreSSL < 2.7.0 */
 
 #define TLS_method SSLv23_method
 #define TLS_client_method SSLv23_client_method
@@ -232,7 +260,7 @@ SSL_SESSION_get_ticket_lifetime_hint(const SSL_SESSION *s)
     return s->tlsext_tick_lifetime_hint;
 }
 
-#endif /* OpenSSL < 1.1.0 or LibreSSL */
+#endif /* OpenSSL < 1.1.0 or LibreSSL < 2.7.0 */
 
 /* Default cipher suites */
 #ifndef PY_SSL_DEFAULT_CIPHERS
@@ -302,6 +330,53 @@ enum py_ssl_version {
     PY_SSL_VERSION_TLS_SERVER,
 };
 
+enum py_proto_version {
+    PY_PROTO_MINIMUM_SUPPORTED = -2,
+    PY_PROTO_SSLv3 = SSL3_VERSION,
+    PY_PROTO_TLSv1 = TLS1_VERSION,
+    PY_PROTO_TLSv1_1 = TLS1_1_VERSION,
+    PY_PROTO_TLSv1_2 = TLS1_2_VERSION,
+#ifdef TLS1_3_VERSION
+    PY_PROTO_TLSv1_3 = TLS1_3_VERSION,
+#else
+    PY_PROTO_TLSv1_3 = 0x304,
+#endif
+    PY_PROTO_MAXIMUM_SUPPORTED = -1,
+
+/* OpenSSL has no dedicated API to set the minimum version to the maximum
+ * available version, and the other way around. We have to figure out the
+ * minimum and maximum available version on our own and hope for the best.
+ */
+#if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
+    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_SSLv3,
+#elif defined(TLS1_VERSION) && !defined(OPENSSL_NO_TLS1)
+    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1,
+#elif defined(TLS1_1_VERSION) && !defined(OPENSSL_NO_TLS1_1)
+    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1_1,
+#elif defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
+    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1_2,
+#elif defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
+    PY_PROTO_MINIMUM_AVAILABLE = PY_PROTO_TLSv1_3,
+#else
+    #error "PY_PROTO_MINIMUM_AVAILABLE not found"
+#endif
+
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
+    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1_3,
+#elif defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
+    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1_2,
+#elif defined(TLS1_1_VERSION) && !defined(OPENSSL_NO_TLS1_1)
+    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1_1,
+#elif defined(TLS1_VERSION) && !defined(OPENSSL_NO_TLS1)
+    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_TLSv1,
+#elif defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
+    PY_PROTO_MAXIMUM_AVAILABLE = PY_PROTO_SSLv3,
+#else
+    #error "PY_PROTO_MAXIMUM_AVAILABLE not found"
+#endif
+};
+
+
 /* serves as a flag to see whether we've initialized the SSL thread support. */
 /* 0 means no, greater than 0 means yes */
 
@@ -328,11 +403,11 @@ static unsigned int _ssl_locks_count = 0;
 typedef struct {
     PyObject_HEAD
     SSL_CTX *ctx;
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#if HAVE_NPN
     unsigned char *npn_protocols;
     int npn_protocols_len;
 #endif
-#ifdef HAVE_ALPN
+#if HAVE_ALPN
     unsigned char *alpn_protocols;
     unsigned int alpn_protocols_len;
 #endif
@@ -408,6 +483,8 @@ class _ssl.SSLSession "PySSLSession *" "&PySSLSession_Type"
 
 static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
 
+static int PySSL_set_owner(PySSLSocket *, PyObject *, void *);
+static int PySSL_set_session(PySSLSocket *, PyObject *, void *);
 #define PySSLSocket_Check(v)    (Py_TYPE(v) == &PySSLSocket_Type)
 #define PySSLMemoryBIO_Check(v)    (Py_TYPE(v) == &PySSLMemoryBIO_Type)
 #define PySSLSession_Check(v)   (Py_TYPE(v) == &PySSLSession_Type)
@@ -775,7 +852,8 @@ _ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
     if (self->ctx->check_hostname) {
         X509_VERIFY_PARAM *param = SSL_get0_param(self->ssl);
         if (ip == NULL) {
-            if (!X509_VERIFY_PARAM_set1_host(param, server_hostname, 0)) {
+            if (!X509_VERIFY_PARAM_set1_host(param, server_hostname,
+                                             strlen(server_hostname))) {
                 _setSSLError(NULL, 0, __FILE__, __LINE__);
                 goto error;
             }
@@ -799,11 +877,11 @@ static PySSLSocket *
 newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
                enum py_ssl_server_or_client socket_type,
                char *server_hostname,
+               PyObject *owner, PyObject *session,
                PySSLMemoryBIO *inbio, PySSLMemoryBIO *outbio)
 {
     PySSLSocket *self;
     SSL_CTX *ctx = sslctx->ctx;
-    long mode;
 
     self = PyObject_New(PySSLSocket, &PySSLSocket_Type);
     if (self == NULL)
@@ -823,7 +901,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 #endif
 
     /* Make sure the SSL error state is initialized */
-    (void) ERR_get_state();
     ERR_clear_error();
 
     PySSL_BEGIN_ALLOW_THREADS
@@ -840,11 +917,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         BIO_up_ref(outbio->bio);
         SSL_set_bio(self->ssl, inbio->bio, outbio->bio);
     }
-    mode = SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER;
-#ifdef SSL_MODE_AUTO_RETRY
-    mode |= SSL_MODE_AUTO_RETRY;
-#endif
-    SSL_set_mode(self->ssl, mode);
+    SSL_set_mode(self->ssl,
+                 SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_AUTO_RETRY);
 
     if (server_hostname != NULL) {
         if (_ssl_configure_hostname(self, server_hostname) < 0) {
@@ -871,6 +945,18 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     if (sock != NULL) {
         self->Socket = PyWeakref_NewRef((PyObject *) sock, NULL);
         if (self->Socket == NULL) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
+    if (owner && owner != Py_None) {
+        if (PySSL_set_owner(self, owner, NULL) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
+    if (session && session != Py_None) {
+        if (PySSL_set_session(self, session, NULL) == -1) {
             Py_DECREF(self);
             return NULL;
         }
@@ -1677,7 +1763,7 @@ _ssl__test_decode_cert_impl(PyObject *module, PyObject *path)
 
 
 /*[clinic input]
-_ssl._SSLSocket.peer_certificate
+_ssl._SSLSocket.getpeercert
     der as binary_mode: bool = False
     /
 
@@ -1693,8 +1779,8 @@ return the certificate even if it wasn't validated.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl__SSLSocket_peer_certificate_impl(PySSLSocket *self, int binary_mode)
-/*[clinic end generated code: output=f0dc3e4d1d818a1d input=8281bd1d193db843]*/
+_ssl__SSLSocket_getpeercert_impl(PySSLSocket *self, int binary_mode)
+/*[clinic end generated code: output=1f0ab66dfb693c88 input=c0fbe802e57629b7]*/
 {
     int verification;
     X509 *peer_cert;
@@ -1894,7 +1980,7 @@ _ssl__SSLSocket_version_impl(PySSLSocket *self)
     return PyUnicode_FromString(version);
 }
 
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#if HAVE_NPN
 /*[clinic input]
 _ssl._SSLSocket.selected_npn_protocol
 [clinic start generated code]*/
@@ -1915,7 +2001,7 @@ _ssl__SSLSocket_selected_npn_protocol_impl(PySSLSocket *self)
 }
 #endif
 
-#ifdef HAVE_ALPN
+#if HAVE_ALPN
 /*[clinic input]
 _ssl._SSLSocket.selected_alpn_protocol
 [clinic start generated code]*/
@@ -2395,13 +2481,11 @@ error:
 _ssl._SSLSocket.shutdown
 
 Does the SSL shutdown handshake with the remote end.
-
-Returns the underlying socket object.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
-/*[clinic end generated code: output=ca1aa7ed9d25ca42 input=ede2cc1a2ddf0ee4]*/
+/*[clinic end generated code: output=ca1aa7ed9d25ca42 input=11d39e69b0a2bf4a]*/
 {
     int err, sockstate, nonblocking;
     int zeros = 0;
@@ -2506,37 +2590,48 @@ error:
 }
 
 /*[clinic input]
-_ssl._SSLSocket.tls_unique_cb
+_ssl._SSLSocket.get_channel_binding
+   cb_type: str = "tls-unique"
 
-Returns the 'tls-unique' channel binding data, as defined by RFC 5929.
+Get channel binding data for current connection.
 
-If the TLS handshake is not yet complete, None is returned.
+Raise ValueError if the requested `cb_type` is not supported.  Return bytes
+of the data or None if the data is not available (e.g. before the handshake).
+Only 'tls-unique' channel binding data from RFC 5929 is supported.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl__SSLSocket_tls_unique_cb_impl(PySSLSocket *self)
-/*[clinic end generated code: output=f3a832d603f586af input=439525c7b3d8d34d]*/
+_ssl__SSLSocket_get_channel_binding_impl(PySSLSocket *self,
+                                         const char *cb_type)
+/*[clinic end generated code: output=34bac9acb6a61d31 input=08b7e43b99c17d41]*/
 {
-    PyObject *retval = NULL;
     char buf[PySSL_CB_MAXLEN];
     size_t len;
 
-    if (SSL_session_reused(self->ssl) ^ !self->socket_type) {
-        /* if session is resumed XOR we are the client */
-        len = SSL_get_finished(self->ssl, buf, PySSL_CB_MAXLEN);
+    if (strcmp(cb_type, "tls-unique") == 0) {
+        if (SSL_session_reused(self->ssl) ^ !self->socket_type) {
+            /* if session is resumed XOR we are the client */
+            len = SSL_get_finished(self->ssl, buf, PySSL_CB_MAXLEN);
+        }
+        else {
+            /* if a new session XOR we are the server */
+            len = SSL_get_peer_finished(self->ssl, buf, PySSL_CB_MAXLEN);
+        }
     }
     else {
-        /* if a new session XOR we are the server */
-        len = SSL_get_peer_finished(self->ssl, buf, PySSL_CB_MAXLEN);
+        PyErr_Format(
+            PyExc_ValueError,
+            "'%s' channel binding type not implemented",
+            cb_type
+        );
+        return NULL;
     }
 
     /* It cannot be negative in current OpenSSL version as of July 2011 */
     if (len == 0)
         Py_RETURN_NONE;
 
-    retval = PyBytes_FromStringAndSize(buf, len);
-
-    return retval;
+    return PyBytes_FromStringAndSize(buf, len);
 }
 
 #ifdef OPENSSL_VERSION_1_1
@@ -2706,7 +2801,8 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_WRITE_METHODDEF
     _SSL__SSLSOCKET_READ_METHODDEF
     _SSL__SSLSOCKET_PENDING_METHODDEF
-    _SSL__SSLSOCKET_PEER_CERTIFICATE_METHODDEF
+    _SSL__SSLSOCKET_GETPEERCERT_METHODDEF
+    _SSL__SSLSOCKET_GET_CHANNEL_BINDING_METHODDEF
     _SSL__SSLSOCKET_CIPHER_METHODDEF
     _SSL__SSLSOCKET_SHARED_CIPHERS_METHODDEF
     _SSL__SSLSOCKET_VERSION_METHODDEF
@@ -2714,7 +2810,6 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
     _SSL__SSLSOCKET_COMPRESSION_METHODDEF
     _SSL__SSLSOCKET_SHUTDOWN_METHODDEF
-    _SSL__SSLSOCKET_TLS_UNIQUE_CB_METHODDEF
     {NULL, NULL}
 };
 
@@ -2850,10 +2945,10 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->ctx = ctx;
     self->hostflags = X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS;
     self->protocol = proto_version;
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#if HAVE_NPN
     self->npn_protocols = NULL;
 #endif
-#ifdef HAVE_ALPN
+#if HAVE_ALPN
     self->alpn_protocols = NULL;
 #endif
 #ifndef OPENSSL_NO_TLSEXT
@@ -2989,10 +3084,10 @@ context_dealloc(PySSLContext *self)
     PyObject_GC_UnTrack(self);
     context_clear(self);
     SSL_CTX_free(self->ctx);
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#if HAVE_NPN
     PyMem_FREE(self->npn_protocols);
 #endif
-#ifdef HAVE_ALPN
+#if HAVE_ALPN
     PyMem_FREE(self->alpn_protocols);
 #endif
     Py_TYPE(self)->tp_free(self);
@@ -3067,7 +3162,7 @@ _ssl__SSLContext_get_ciphers_impl(PySSLContext *self)
 #endif
 
 
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG) || defined(HAVE_ALPN)
+#if HAVE_NPN || HAVE_ALPN
 static int
 do_protocol_selection(int alpn, unsigned char **out, unsigned char *outlen,
                       const unsigned char *server_protocols, unsigned int server_protocols_len,
@@ -3093,7 +3188,7 @@ do_protocol_selection(int alpn, unsigned char **out, unsigned char *outlen,
 }
 #endif
 
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#if HAVE_NPN
 /* this callback gets passed to SSL_CTX_set_next_protos_advertise_cb */
 static int
 _advertiseNPN_cb(SSL *s,
@@ -3136,7 +3231,7 @@ _ssl__SSLContext__set_npn_protocols_impl(PySSLContext *self,
                                          Py_buffer *protos)
 /*[clinic end generated code: output=72b002c3324390c6 input=319fcb66abf95bd7]*/
 {
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
+#if HAVE_NPN
     PyMem_Free(self->npn_protocols);
     self->npn_protocols = PyMem_Malloc(protos->len);
     if (self->npn_protocols == NULL)
@@ -3161,7 +3256,7 @@ _ssl__SSLContext__set_npn_protocols_impl(PySSLContext *self,
 #endif
 }
 
-#ifdef HAVE_ALPN
+#if HAVE_ALPN
 static int
 _selectALPN_cb(SSL *s,
               const unsigned char **out, unsigned char *outlen,
@@ -3186,7 +3281,7 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
                                           Py_buffer *protos)
 /*[clinic end generated code: output=87599a7f76651a9b input=9bba964595d519be]*/
 {
-#ifdef HAVE_ALPN
+#if HAVE_ALPN
     if ((size_t)protos->len > UINT_MAX) {
         PyErr_Format(PyExc_OverflowError,
             "protocols longer than %d bytes", UINT_MAX);
@@ -3280,6 +3375,106 @@ set_verify_flags(PySSLContext *self, PyObject *arg, void *c)
     }
     return 0;
 }
+
+/* Getter and setter for protocol version */
+#if defined(SSL_CTRL_GET_MAX_PROTO_VERSION)
+
+
+static int
+set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
+{
+    long v;
+    int result;
+
+    if (!PyArg_Parse(arg, "l", &v))
+        return -1;
+    if (v > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "Option is too long");
+        return -1;
+    }
+
+    switch(self->protocol) {
+    case PY_SSL_VERSION_TLS_CLIENT:  /* fall through */
+    case PY_SSL_VERSION_TLS_SERVER:  /* fall through */
+    case PY_SSL_VERSION_TLS:
+        break;
+    default:
+        PyErr_SetString(
+            PyExc_ValueError,
+            "The context's protocol doesn't support modification of "
+            "highest and lowest version."
+        );
+        return -1;
+    }
+
+    if (what == 0) {
+        switch(v) {
+        case PY_PROTO_MINIMUM_SUPPORTED:
+            v = 0;
+            break;
+        case PY_PROTO_MAXIMUM_SUPPORTED:
+            /* Emulate max for set_min_proto_version */
+            v = PY_PROTO_MAXIMUM_AVAILABLE;
+            break;
+        default:
+            break;
+        }
+        result = SSL_CTX_set_min_proto_version(self->ctx, v);
+    }
+    else {
+        switch(v) {
+        case PY_PROTO_MAXIMUM_SUPPORTED:
+            v = 0;
+            break;
+        case PY_PROTO_MINIMUM_SUPPORTED:
+            /* Emulate max for set_min_proto_version */
+            v = PY_PROTO_MINIMUM_AVAILABLE;
+            break;
+        default:
+            break;
+        }
+        result = SSL_CTX_set_max_proto_version(self->ctx, v);
+    }
+    if (result == 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "Unsupported protocol version 0x%x", v);
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject *
+get_minimum_version(PySSLContext *self, void *c)
+{
+    int v = SSL_CTX_ctrl(self->ctx, SSL_CTRL_GET_MIN_PROTO_VERSION, 0, NULL);
+    if (v == 0) {
+        v = PY_PROTO_MINIMUM_SUPPORTED;
+    }
+    return PyLong_FromLong(v);
+}
+
+static int
+set_minimum_version(PySSLContext *self, PyObject *arg, void *c)
+{
+    return set_min_max_proto_version(self, arg, 0);
+}
+
+static PyObject *
+get_maximum_version(PySSLContext *self, void *c)
+{
+    int v = SSL_CTX_ctrl(self->ctx, SSL_CTRL_GET_MAX_PROTO_VERSION, 0, NULL);
+    if (v == 0) {
+        v = PY_PROTO_MAXIMUM_SUPPORTED;
+    }
+    return PyLong_FromLong(v);
+}
+
+static int
+set_maximum_version(PySSLContext *self, PyObject *arg, void *c)
+{
+    return set_min_max_proto_version(self, arg, 1);
+}
+#endif /* SSL_CTRL_GET_MAX_PROTO_VERSION */
 
 static PyObject *
 get_options(PySSLContext *self, void *c)
@@ -3810,19 +4005,23 @@ _ssl._SSLContext._wrap_socket
     sock: object(subclass_of="PySocketModule.Sock_Type")
     server_side: int
     server_hostname as hostname_obj: object = None
+    *
+    owner: object = None
+    session: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext__wrap_socket_impl(PySSLContext *self, PyObject *sock,
-                                   int server_side, PyObject *hostname_obj)
-/*[clinic end generated code: output=6973e4b60995e933 input=83859b9156ddfc63]*/
+                                   int server_side, PyObject *hostname_obj,
+                                   PyObject *owner, PyObject *session)
+/*[clinic end generated code: output=f103f238633940b4 input=957d5006183d1894]*/
 {
     char *hostname = NULL;
     PyObject *res;
 
     /* server_hostname is either None (or absent), or to be encoded
-       as IDN A-label (ASCII str). */
+       as IDN A-label (ASCII str) without NULL bytes. */
     if (hostname_obj != Py_None) {
         if (!PyArg_Parse(hostname_obj, "es", "ascii", &hostname))
             return NULL;
@@ -3830,6 +4029,7 @@ _ssl__SSLContext__wrap_socket_impl(PySSLContext *self, PyObject *sock,
 
     res = (PyObject *) newPySSLSocket(self, (PySocketSockObject *)sock,
                                       server_side, hostname,
+                                      owner, session,
                                       NULL, NULL);
     if (hostname != NULL)
         PyMem_Free(hostname);
@@ -3842,26 +4042,31 @@ _ssl._SSLContext._wrap_bio
     outgoing: object(subclass_of="&PySSLMemoryBIO_Type", type="PySSLMemoryBIO *")
     server_side: int
     server_hostname as hostname_obj: object = None
+    *
+    owner: object = None
+    session: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext__wrap_bio_impl(PySSLContext *self, PySSLMemoryBIO *incoming,
                                 PySSLMemoryBIO *outgoing, int server_side,
-                                PyObject *hostname_obj)
-/*[clinic end generated code: output=4fe4ba75ad95940d input=17725ecdac0bf220]*/
+                                PyObject *hostname_obj, PyObject *owner,
+                                PyObject *session)
+/*[clinic end generated code: output=5c5d6d9b41f99332 input=8cf22f4d586ac56a]*/
 {
     char *hostname = NULL;
     PyObject *res;
 
     /* server_hostname is either None (or absent), or to be encoded
-       as IDN A-label (ASCII str). */
+       as IDN A-label (ASCII str) without NULL bytes. */
     if (hostname_obj != Py_None) {
         if (!PyArg_Parse(hostname_obj, "es", "ascii", &hostname))
             return NULL;
     }
 
     res = (PyObject *) newPySSLSocket(self, NULL, server_side, hostname,
+                                      owner, session,
                                       incoming, outgoing);
 
     PyMem_Free(hostname);
@@ -4237,8 +4442,14 @@ static PyGetSetDef context_getsetlist[] = {
                        (setter) set_check_hostname, NULL},
     {"_host_flags", (getter) get_host_flags,
                     (setter) set_host_flags, NULL},
+#if SSL_CTRL_GET_MAX_PROTO_VERSION
+    {"minimum_version", (getter) get_minimum_version,
+                        (setter) set_minimum_version, NULL},
+    {"maximum_version", (getter) get_maximum_version,
+                        (setter) set_maximum_version, NULL},
+#endif
     {"sni_callback", (getter) get_sni_callback,
-                       (setter) set_sni_callback, PySSLContext_sni_callback_doc},
+                     (setter) set_sni_callback, PySSLContext_sni_callback_doc},
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
     {"protocol", (getter) get_protocol,
@@ -5629,6 +5840,14 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "OP_NO_COMPRESSION",
                             SSL_OP_NO_COMPRESSION);
 #endif
+#ifdef SSL_OP_ENABLE_MIDDLEBOX_COMPAT
+    PyModule_AddIntConstant(m, "OP_ENABLE_MIDDLEBOX_COMPAT",
+                            SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+#endif
+#ifdef SSL_OP_NO_RENEGOTIATION
+    PyModule_AddIntConstant(m, "OP_NO_RENEGOTIATION",
+                            SSL_OP_NO_RENEGOTIATION);
+#endif
 
 #ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
     PyModule_AddIntConstant(m, "HOSTFLAG_ALWAYS_CHECK_SUBJECT",
@@ -5655,49 +5874,82 @@ PyInit__ssl(void)
                             X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS);
 #endif
 
+    /* protocol versions */
+    PyModule_AddIntConstant(m, "PROTO_MINIMUM_SUPPORTED",
+                            PY_PROTO_MINIMUM_SUPPORTED);
+    PyModule_AddIntConstant(m, "PROTO_MAXIMUM_SUPPORTED",
+                            PY_PROTO_MAXIMUM_SUPPORTED);
+    PyModule_AddIntConstant(m, "PROTO_SSLv3", PY_PROTO_SSLv3);
+    PyModule_AddIntConstant(m, "PROTO_TLSv1", PY_PROTO_TLSv1);
+    PyModule_AddIntConstant(m, "PROTO_TLSv1_1", PY_PROTO_TLSv1_1);
+    PyModule_AddIntConstant(m, "PROTO_TLSv1_2", PY_PROTO_TLSv1_2);
+    PyModule_AddIntConstant(m, "PROTO_TLSv1_3", PY_PROTO_TLSv1_3);
+
+#define addbool(m, v, b) \
+    Py_INCREF((b) ? Py_True : Py_False); \
+    PyModule_AddObject((m), (v), (b) ? Py_True : Py_False);
+
 #if HAVE_SNI
-    r = Py_True;
+    addbool(m, "HAS_SNI", 1);
 #else
-    r = Py_False;
+    addbool(m, "HAS_SNI", 0);
 #endif
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_SNI", r);
 
-    r = Py_True;
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_TLS_UNIQUE", r);
+    addbool(m, "HAS_TLS_UNIQUE", 1);
 
-#ifdef OPENSSL_NO_ECDH
-    r = Py_False;
+#ifndef OPENSSL_NO_ECDH
+    addbool(m, "HAS_ECDH", 1);
 #else
-    r = Py_True;
+    addbool(m, "HAS_ECDH", 0);
 #endif
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_ECDH", r);
 
-#if defined(OPENSSL_NPN_NEGOTIATED) && !defined(OPENSSL_NO_NEXTPROTONEG)
-    r = Py_True;
+#if HAVE_NPN
+    addbool(m, "HAS_NPN", 1);
 #else
-    r = Py_False;
+    addbool(m, "HAS_NPN", 0);
 #endif
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_NPN", r);
 
-#ifdef HAVE_ALPN
-    r = Py_True;
+#if HAVE_ALPN
+    addbool(m, "HAS_ALPN", 1);
 #else
-    r = Py_False;
+    addbool(m, "HAS_ALPN", 0);
 #endif
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_ALPN", r);
+
+#if defined(SSL2_VERSION) && !defined(OPENSSL_NO_SSL2)
+    addbool(m, "HAS_SSLv2", 1);
+#else
+    addbool(m, "HAS_SSLv2", 0);
+#endif
+
+#if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
+    addbool(m, "HAS_SSLv3", 1);
+#else
+    addbool(m, "HAS_SSLv3", 0);
+#endif
+
+#if defined(TLS1_VERSION) && !defined(OPENSSL_NO_TLS1)
+    addbool(m, "HAS_TLSv1", 1);
+#else
+    addbool(m, "HAS_TLSv1", 0);
+#endif
+
+#if defined(TLS1_1_VERSION) && !defined(OPENSSL_NO_TLS1_1)
+    addbool(m, "HAS_TLSv1_1", 1);
+#else
+    addbool(m, "HAS_TLSv1_1", 0);
+#endif
+
+#if defined(TLS1_2_VERSION) && !defined(OPENSSL_NO_TLS1_2)
+    addbool(m, "HAS_TLSv1_2", 1);
+#else
+    addbool(m, "HAS_TLSv1_2", 0);
+#endif
 
 #if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
-    r = Py_True;
+    addbool(m, "HAS_TLSv1_3", 1);
 #else
-    r = Py_False;
+    addbool(m, "HAS_TLSv1_3", 0);
 #endif
-    Py_INCREF(r);
-    PyModule_AddObject(m, "HAS_TLSv1_3", r);
 
     /* Mappings for error codes */
     err_codes_to_names = PyDict_New();
