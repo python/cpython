@@ -3365,7 +3365,15 @@ find_class(PyObject *py_module_name, PyObject *py_global_name, PyObject *fc)
     if (module == NULL)
         return NULL;
 
+    _PyImport_AcquireLock();
     module = PyDict_GetItem(module, py_module_name);
+    if (_PyImport_ReleaseLock() < 0) {
+        Py_XDECREF(module);
+        PyErr_SetString(PyExc_RuntimeError,
+                        "not holding the import lock");
+        return NULL;
+    }
+
     if (module == NULL) {
         module = PyImport_Import(py_module_name);
         if (!module)

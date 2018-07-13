@@ -1,0 +1,2 @@
+Fix module load problem of cPickle in case of multithreading. Patch by 
+Guoqiang Zhang.
