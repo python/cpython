@@ -98,16 +98,16 @@ static long dxp[256];
    the GIL eventually anyway. */
 #define COMPUTE_EVAL_BREAKER() \
     _Py_atomic_store_relaxed( \
-        &_PyRuntime.ceval.eval_breaker, \
+        &PyThreadState_Get()->interp->ceval.eval_breaker, \
         GIL_REQUEST | \
         _Py_atomic_load_relaxed(&_PyRuntime.ceval.signals_pending) | \
-        _Py_atomic_load_relaxed(&_PyRuntime.ceval.pending.calls_to_do) | \
-        _PyRuntime.ceval.pending.async_exc)
+        _Py_atomic_load_relaxed(&PyThreadState_Get()->interp->ceval.pending.calls_to_do) | \
+        PyThreadState_Get()->interp->ceval.pending.async_exc)
 
 #define SET_GIL_DROP_REQUEST() \
     do { \
         _Py_atomic_store_relaxed(&_PyRuntime.ceval.gil_drop_request, 1); \
-        _Py_atomic_store_relaxed(&_PyRuntime.ceval.eval_breaker, 1); \
+        _Py_atomic_store_relaxed(&PyThreadState_Get()->interp->ceval.eval_breaker, 1); \
     } while (0)
 
 #define RESET_GIL_DROP_REQUEST() \
@@ -119,20 +119,20 @@ static long dxp[256];
 /* Pending calls are only modified under pending_lock */
 #define SIGNAL_PENDING_CALLS() \
     do { \
-        _Py_atomic_store_relaxed(&_PyRuntime.ceval.pending.calls_to_do, 1); \
-        _Py_atomic_store_relaxed(&_PyRuntime.ceval.eval_breaker, 1); \
+        _Py_atomic_store_relaxed(&PyThreadState_Get()->interp->ceval.pending.calls_to_do, 1); \
+        _Py_atomic_store_relaxed(&PyThreadState_Get()->interp->ceval.eval_breaker, 1); \
     } while (0)
 
 #define UNSIGNAL_PENDING_CALLS() \
     do { \
-        _Py_atomic_store_relaxed(&_PyRuntime.ceval.pending.calls_to_do, 0); \
+        _Py_atomic_store_relaxed(&PyThreadState_Get()->interp->ceval.pending.calls_to_do, 0); \
         COMPUTE_EVAL_BREAKER(); \
     } while (0)
 
 #define SIGNAL_PENDING_SIGNALS() \
     do { \
         _Py_atomic_store_relaxed(&_PyRuntime.ceval.signals_pending, 1); \
-        _Py_atomic_store_relaxed(&_PyRuntime.ceval.eval_breaker, 1); \
+        _Py_atomic_store_relaxed(&_PyRuntime.interpreters.main->ceval.eval_breaker, 1); \
     } while (0)
 
 #define UNSIGNAL_PENDING_SIGNALS() \
@@ -143,13 +143,13 @@ static long dxp[256];
 
 #define SIGNAL_ASYNC_EXC() \
     do { \
-        _PyRuntime.ceval.pending.async_exc = 1; \
-        _Py_atomic_store_relaxed(&_PyRuntime.ceval.eval_breaker, 1); \
+        PyThreadState_Get()->interp->ceval.pending.async_exc = 1; \
+        _Py_atomic_store_relaxed(&PyThreadState_Get()->interp->ceval.eval_breaker, 1); \
     } while (0)
 
 #define UNSIGNAL_ASYNC_EXC() \
     do { \
-        _PyRuntime.ceval.pending.async_exc = 0; \
+        PyThreadState_Get()->interp->ceval.pending.async_exc = 0; \
         COMPUTE_EVAL_BREAKER(); \
     } while (0)
 
@@ -177,10 +177,7 @@ PyEval_InitThreads(void)
     create_gil();
     take_gil(_PyThreadState_GET());
 
-    _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
-    if (_PyRuntime.ceval.pending.lock == NULL) {
-        Py_FatalError("Can't initialize threads for pending calls");
-    }
+    // The pending calls mutex is initialized in PyInterpreterState_New().
 }
 
 void
@@ -256,8 +253,10 @@ PyEval_ReInitThreads(void)
     recreate_gil();
     take_gil(current_tstate);
 
-    _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
-    if (_PyRuntime.ceval.pending.lock == NULL) {
+    // Only the main interpreter remains, so ignore the rest.
+    PyInterpreterState *interp = _PyRuntime.interpreters.main;
+    interp->ceval.pending.lock = PyThread_allocate_lock();
+    if (interp->ceval.pending.lock == NULL) {
         Py_FatalError("Can't initialize threads for pending calls");
     }
 
@@ -374,9 +373,9 @@ _pop_pending_call(struct _pending_calls *pending,
  */
 
 int
-Py_AddPendingCall(int (*func)(void *), void *arg)
+_Py_AddPendingCall(PyInterpreterState *interp, int (*func)(void *), void *arg)
 {
-    struct _pending_calls *pending = &_PyRuntime.ceval.pending;
+    struct _pending_calls *pending = &interp->ceval.pending;
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
     if (pending->finishing) {
@@ -397,6 +396,15 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
     /* signal main loop */
     SIGNAL_PENDING_CALLS();
     return result;
+}
+
+/* Py_AddPendingCall() is a simple wrapper for the sake
+   of backward-compatibility. */
+int
+Py_AddPendingCall(int (*func)(void *), void *arg)
+{
+    PyInterpreterState *interp = _PyRuntime.interpreters.main;
+    return _Py_AddPendingCall(interp, func, arg);
 }
 
 static int
@@ -428,11 +436,6 @@ static int
 make_pending_calls(struct _pending_calls* pending)
 {
     static int busy = 0;
-
-    /* only service pending calls on main thread */
-    if (PyThread_get_thread_ident() != _PyRuntime.main_thread) {
-        return 0;
-    }
 
     /* don't perform recursive pending calls */
     if (busy) {
@@ -474,9 +477,9 @@ error:
 }
 
 void
-_Py_FinishPendingCalls(void)
+_Py_FinishPendingCalls(PyInterpreterState *interp)
 {
-    struct _pending_calls *pending = &_PyRuntime.ceval.pending;
+    struct _pending_calls *pending = &interp->ceval.pending;
 
     assert(PyGILState_Check());
 
@@ -497,6 +500,14 @@ _Py_FinishPendingCalls(void)
     }
 }
 
+int
+_Py_MakePendingCalls(PyInterpreterState *interp)
+{
+    assert(PyGILState_Check());
+
+    return make_pending_calls(&interp->ceval.pending);
+}
+
 /* Py_MakePendingCalls() is a simple wrapper for the sake
    of backward-compatibility. */
 int
@@ -511,12 +522,8 @@ Py_MakePendingCalls(void)
         return res;
     }
 
-    res = make_pending_calls(&_PyRuntime.ceval.pending);
-    if (res != 0) {
-        return res;
-    }
-
-    return 0;
+    PyInterpreterState *interp = _PyRuntime.interpreters.main;
+    return make_pending_calls(&interp->ceval.pending);
 }
 
 /* The interpreter's recursion limit */
@@ -638,7 +645,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     PyObject **fastlocals, **freevars;
     PyObject *retval = NULL;            /* Return value */
     PyThreadState *tstate = _PyThreadState_GET();
-    _Py_atomic_int *eval_breaker = &_PyRuntime.ceval.eval_breaker;
+    _Py_atomic_int *eval_breaker = &tstate->interp->ceval.eval_breaker;
     PyCodeObject *co;
 
     /* when tracing we set things up so that
@@ -1059,9 +1066,9 @@ main_loop:
                 }
             }
             if (_Py_atomic_load_relaxed(
-                        &_PyRuntime.ceval.pending.calls_to_do))
+                        &tstate->interp->ceval.pending.calls_to_do))
             {
-                if (make_pending_calls(&_PyRuntime.ceval.pending) != 0) {
+                if (make_pending_calls(&tstate->interp->ceval.pending) != 0) {
                     goto error;
                 }
             }

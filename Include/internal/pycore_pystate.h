@@ -12,6 +12,7 @@ extern "C" {
 #include "pystate.h"
 #include "pythread.h"
 
+#include "pycore_atomic.h"
 #include "pycore_ceval.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"
@@ -43,6 +44,15 @@ struct _is {
 
     /* Used in Python/sysmodule.c. */
     int check_interval;
+
+#ifdef Py_BUILD_CORE
+    struct _ceval {
+        /* This single variable consolidates all requests to break out of
+           the fast path in the eval loop. */
+        _Py_atomic_int eval_breaker;
+        struct _pending_calls pending;
+    } ceval;
+#endif
 
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
