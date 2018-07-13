@@ -9080,6 +9080,7 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
         }
     }
 
+    assert(_PyUnicode_CheckConsistency(result, 1));
     return result;
 }
 
