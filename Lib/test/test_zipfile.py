@@ -549,6 +549,12 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(ValueError, zipfp.write, TESTFN)
 
+    def test_add_file_before_1980_no_strict_timestamps(self):
+        # Set atime and mtime to 1970-01-01
+        os.utime(TESTFN, (0, 0))
+        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+            zipfp.write(TESTFN, strict_timestamps=False)
+
 
 @requires_zlib
 class DeflateTestsWithSourceFile(AbstractTestsWithSourceFile,
