@@ -485,7 +485,7 @@ class ZipInfo (object):
         mtime = time.localtime(st.st_mtime)
         date_time = mtime[0:6]
         if not strict_timestamps and date_time[0] < 1980:
-            date_time = (1980,) + date_time[1:]
+            date_time = (1980, 1, 1, 0, 0, 0)
         # Create ZipInfo instance to store file information
         if arcname is None:
             arcname = filename

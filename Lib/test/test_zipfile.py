@@ -554,6 +554,8 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         os.utime(TESTFN, (0, 0))
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             zipfp.write(TESTFN, strict_timestamps=False)
+            zinfo = zipfp.getinfo(TESTFN)
+            self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
 
 
 @requires_zlib
