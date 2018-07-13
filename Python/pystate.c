@@ -189,6 +189,8 @@ void
 PyInterpreterState_Clear(PyInterpreterState *interp)
 {
     PyThreadState *p;
+    // XXX Also ensure that all pending calls have been made.  Disallow
+    // registration of more pending calls.
     HEAD_LOCK();
     for (p = interp->tstate_head; p != NULL; p = p->next)
         PyThreadState_Clear(p);
@@ -210,6 +212,9 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
+    // XXX Once we have one allocator per interpreter (i.e.
+    // per-interpreter GC) we must ensure that all of the interpreter's
+    // objects have been cleaned up at the point.
 }
 
 
