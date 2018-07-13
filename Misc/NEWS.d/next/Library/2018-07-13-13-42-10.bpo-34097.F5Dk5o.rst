@@ -1,0 +1,2 @@
+ZipFile can zip files older than 1/1/1980 at the cost of mangling the
+timestamp.
