@@ -9,6 +9,10 @@ extern "C" {
 
 #include "pythread.h"
 #include "coreconfig.h"
+#ifdef Py_BUILD_CORE
+#include "pyatomic.h"
+#include "internal/ceval.h"
+#endif
 
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
@@ -64,6 +68,15 @@ typedef struct _is {
 
     /* Used in Python/sysmodule.c. */
     int check_interval;
+
+#ifdef Py_BUILD_CORE
+    struct _ceval {
+        /* This single variable consolidates all requests to break out of
+           the fast path in the eval loop. */
+        _Py_atomic_int eval_breaker;
+        struct _pending_calls pending;
+    } ceval;
+#endif
 
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
