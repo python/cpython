@@ -1147,15 +1147,15 @@ Py_FinalizeEx(void)
         return status;
     }
 
+    /* Get current thread state and interpreter pointer */
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyInterpreterState *interp = tstate->interp;
+
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
 
     // Make any remaining pending calls.
-    _PyEval_FinishPendingCalls(runtime);
-
-    /* Get current thread state and interpreter pointer */
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    PyInterpreterState *interp = tstate->interp;
+    _PyEval_FinishPendingCalls(interp);
 
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
@@ -1579,6 +1579,9 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
+
+    // Make any remaining pending calls.
+    _PyEval_FinishPendingCalls(interp);
 
     call_py_exitfuncs(interp);
 

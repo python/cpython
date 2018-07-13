@@ -15,6 +15,7 @@ extern "C" {
 #include "sysmodule.h"
 
 #include "pycore_gil.h"   /* _gil_runtime_state  */
+//#include "pycore_atomic.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"
 #include "pycore_warnings.h"
@@ -53,14 +54,20 @@ struct _ceval_runtime_state {
     int tracing_possible;
     /* This single variable consolidates all requests to break out of
        the fast path in the eval loop. */
+    // XXX This can move to _ceval_interpreter_state once all parts
+    // from COMPUTE_EVAL_BREAKER have moved under PyInterpreterState.
     _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
-    struct _pending_calls pending;
     /* Request for checking signals. */
     _Py_atomic_int signals_pending;
     struct _gil_runtime_state gil;
 };
+
+struct _ceval_interpreter_state {
+    struct _pending_calls pending;
+};
+
 
 /* interpreter state */
 
@@ -88,6 +95,8 @@ struct _is {
 
     /* Used in Python/sysmodule.c. */
     int check_interval;
+
+    struct _ceval_interpreter_state ceval;
 
     /* Used in Modules/_threadmodule.c. */
     long num_threads;

@@ -299,7 +299,9 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _PyEval_AddPendingCall(tstate, &runtime->ceval,
+                    _PyEval_AddPendingCall(tstate,
+                                           &runtime->ceval,
+                                           &tstate->interp->ceval,
                                            report_wakeup_send_error,
                                            (void *)(intptr_t) last_error);
                 }
@@ -318,7 +320,9 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _PyEval_AddPendingCall(tstate, &runtime->ceval,
+                    _PyEval_AddPendingCall(tstate,
+                                           &runtime->ceval,
+                                           &tstate->interp->ceval,
                                            report_wakeup_write_error,
                                            (void *)(intptr_t)errno);
                 }

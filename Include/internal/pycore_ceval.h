@@ -20,11 +20,13 @@ PyAPI_FUNC(void) _PyEval_SignalReceived(
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyThreadState *tstate,
     struct _ceval_runtime_state *,
+    struct _ceval_interpreter_state *,
     int (*func)(void *),
     void *arg);
-PyAPI_FUNC(void) _PyEval_FinishPendingCalls(_PyRuntimeState *);
+PyAPI_FUNC(void) _PyEval_FinishPendingCalls(PyInterpreterState *);
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(
-    struct _ceval_runtime_state *);
+    struct _ceval_runtime_state *,
+    struct _ceval_interpreter_state *);
 PyAPI_FUNC(void) _PyEval_ReInitThreads(
     _PyRuntimeState *runtime);
 

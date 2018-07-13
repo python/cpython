@@ -218,6 +218,13 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
+    interp->ceval.pending.lock = PyThread_allocate_lock();
+    if (interp->ceval.pending.lock == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to create interpreter ceval pending mutex");
+        return NULL;
+    }
+
     interp->eval_frame = _PyEval_EvalFrameDefault;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
@@ -344,6 +351,10 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     HEAD_UNLOCK(runtime);
     if (interp->id_mutex != NULL) {
         PyThread_free_lock(interp->id_mutex);
+    }
+    if (interp->ceval.pending.lock != NULL) {
+        PyThread_free_lock(interp->ceval.pending.lock);
+        interp->ceval.pending.lock = NULL;
     }
     PyMem_RawFree(interp);
 }
@@ -1014,7 +1025,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
             p->async_exc = exc;
             HEAD_UNLOCK(runtime);
             Py_XDECREF(old_exc);
-            _PyEval_SignalAsyncExc(&runtime->ceval);
+            _PyEval_SignalAsyncExc(&runtime->ceval, &interp->ceval);
             return 1;
         }
     }
