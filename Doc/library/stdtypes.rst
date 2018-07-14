@@ -438,9 +438,11 @@ Notes:
    overflow check.
 
 (4)
-   Bitwise binary operations are semantically equivalent to calculations
-   using 2's complement in a bit-width of ``1 + max(x.bit_length(), y
-   .bit_length()``.
+   Each bitwise operation has the same result as though carried out in two's
+   complement with an infinite number of sign bits. In practice, performing the
+   calculation with one extra sign extension bit (a bit-width of
+   ``1 + max(x.bit_length(), y.bit_length()``) is sufficient to get the
+   expected result.
 
 
 Additional Methods on Integer Types
