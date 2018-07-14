@@ -1171,6 +1171,36 @@ class TestClassesAndFunctions(unittest.TestCase):
         attrs = [a[0] for a in inspect.getmembers(C)]
         self.assertNotIn('missing', attrs)
 
+    def test_getmembers_with_non_class(self):
+        name = '__inspect_dummy'
+        m = types.ModuleType(name)
+        m.__bases__ = None
+        attrs = [a[0] for a in inspect.getmembers(m)]
+        self.assertIn('__bases__', attrs)
+
+    def test_getmembers_with_custom_getattr(self):
+        class CustomGetattr(object):
+            def __getattr__(self, attr):
+                return None
+
+        CustomGetattr.__test__ = None
+        attrs = [a[0] for a in inspect.getmembers(CustomGetattr())]
+        self.assertIn('__test__', attrs)
+
+    def test_getmembers_with_dynamic_class_attribute(self):
+        class A:
+            @types.DynamicClassAttribute
+            def ham(self):
+                return 'eggs'
+        class B(A): pass
+        class C(B): pass
+
+        attrs = [b[0] for b in inspect.getmembers(B)]
+        self.assertIn('ham', attrs)
+        attrs = [c[0] for c in inspect.getmembers(C)]
+        self.assertIn('ham', attrs)
+
+
 class TestIsDataDescriptor(unittest.TestCase):
 
     def test_custom_descriptors(self):
