@@ -1,0 +1,2 @@
+Fix a bug in :class:`StreamRecoder` where seeking might leave old data in a
+buffer and break subsequent read calls. Patch by Ammar Askar.

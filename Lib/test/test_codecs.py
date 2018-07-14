@@ -1244,6 +1244,29 @@ class RecodingTest(unittest.TestCase):
 
         self.assertTrue(f.closed)
 
+    def test_seeking_read(self):
+        b = io.BytesIO('line1\nline2\nline3\n'.encode('utf-16-le'))
+        s = codecs.EncodedFile(b, 'utf-8', 'utf-16-le')
+
+        self.assertEqual(s.readline(), b'line1\n')
+        s.seek(0)
+        self.assertEqual(s.readline(), b'line1\n')
+        self.assertEqual(s.readline(), b'line2\n')
+        self.assertEqual(s.readline(), b'line3\n')
+        self.assertEqual(s.readline(), b'')
+
+    def test_seeking_write(self):
+        b = io.BytesIO('123456789\n'.encode('utf-16-le'))
+        s = codecs.EncodedFile(b, 'utf-8', 'utf-16-le')
+
+        s.seek(2)
+        s.write(b'\nabc\n')
+        s.seek(0)
+
+        self.assertEqual(s.readline(), b'1\n')
+        self.assertEqual(s.readline(), b'abc\n')
+        self.assertEqual(s.readline(), b'789\n')
+
 # From RFC 3492
 punycode_testcases = [
     # A Arabic (Egyptian):
