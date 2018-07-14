@@ -9076,6 +9076,7 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
             int decimal = Py_UNICODE_TODECIMAL(ch);
             if (decimal < 0) {
                 out[i] = '?';
+                out[i+1] = '\0';
                 _PyUnicode_LENGTH(result) = i + 1;
                 break;
             }
@@ -9083,6 +9084,7 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
         }
     }
 
+    assert(_PyUnicode_CheckConsistency(result, 1));
     return result;
 }
 
