@@ -1,0 +1,2 @@
+In :meth:`io.IOBase.close`, ensure that ``_PyObject_SetAttrId()`` is not
+called with a live exception.  Patch by Zackery Spytz and Serhiy Storchaka.
