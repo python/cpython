@@ -391,6 +391,8 @@ _Py_string_to_number_with_underscores(
     char *dup, *end;
     PyObject *result;
 
+    assert(s[orig_len] == '\0');
+
     if (strchr(s, '_') == NULL) {
         return innerfunc(s, orig_len, arg);
     }
@@ -1060,8 +1062,6 @@ format_float_short(double d, char format_code,
         else {
             /* shouldn't get here: Gay's code should always return
                something starting with a digit, an 'I',  or 'N' */
-            strncpy(p, "ERR", 3);
-            /* p += 3; */
             Py_UNREACHABLE();
         }
         goto exit;

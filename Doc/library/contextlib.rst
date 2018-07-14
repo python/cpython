@@ -152,9 +152,21 @@ Functions and classes provided:
 
 .. function:: nullcontext(enter_result=None)
 
-   Return a context manager that returns enter_result from ``__enter__``, but
+   Return a context manager that returns *enter_result* from ``__enter__``, but
    otherwise does nothing. It is intended to be used as a stand-in for an
    optional context manager, for example::
+
+      def myfunction(arg, ignore_exceptions=False):
+          if ignore_exceptions:
+              # Use suppress to ignore all exceptions.
+              cm = contextlib.suppress(Exception)
+          else:
+              # Do not ignore any exceptions, cm has no effect.
+              cm = contextlib.nullcontext()
+          with cm:
+              # Do something
+
+   An example using *enter_result*::
 
       def process_file(file_or_path):
           if isinstance(file_or_path, str):
@@ -435,6 +447,44 @@ Functions and classes provided:
       callbacks registered, the arguments passed in will indicate that no
       exception occurred.
 
+.. class:: AsyncExitStack()
+
+   An :ref:`asynchronous context manager <async-context-managers>`, similar
+   to :class:`ExitStack`, that supports combining both synchronous and
+   asynchronous context managers, as well as having coroutines for
+   cleanup logic.
+
+   The :meth:`close` method is not implemented, :meth:`aclose` must be used
+   instead.
+
+   .. method:: enter_async_context(cm)
+
+      Similar to :meth:`enter_context` but expects an asynchronous context
+      manager.
+
+   .. method:: push_async_exit(exit)
+
+      Similar to :meth:`push` but expects either an asynchronous context manager
+      or a coroutine.
+
+   .. method:: push_async_callback(callback, *args, **kwds)
+
+      Similar to :meth:`callback` but expects a coroutine.
+
+   .. method:: aclose()
+
+      Similar to :meth:`close` but properly handles awaitables.
+
+   Continuing the example for :func:`asynccontextmanager`::
+
+      async with AsyncExitStack() as stack:
+          connections = [await stack.enter_async_context(get_connection())
+              for i in range(5)]
+          # All opened connections will automatically be released at the end of
+          # the async with statement, even if attempts to open a connection
+          # later in the list raise an exception.
+
+   .. versionadded:: 3.7
 
 Examples and Recipes
 --------------------

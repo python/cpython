@@ -233,7 +233,6 @@ ABC hierarchy::
      |    +-- MetaPathFinder
      |    +-- PathEntryFinder
      +-- Loader
-          +-- ResourceReader
           +-- ResourceLoader --------+
           +-- InspectLoader          |
                +-- ExecutionLoader --+
@@ -250,7 +249,7 @@ ABC hierarchy::
 
    .. abstractmethod:: find_module(fullname, path=None)
 
-      An abstact method for finding a :term:`loader` for the specified
+      An abstract method for finding a :term:`loader` for the specified
       module.  Originally specified in :pep:`302`, this method was meant
       for use in :data:`sys.meta_path` and in the path-based import subsystem.
 
@@ -370,6 +369,13 @@ ABC hierarchy::
     An abstract base class for a :term:`loader`.
     See :pep:`302` for the exact definition for a loader.
 
+    Loaders that wish to support resource reading should implement a
+    ``get_resource_reader(fullname)`` method as specified by
+    :class:`importlib.abc.ResourceReader`.
+
+    .. versionchanged:: 3.7
+       Introduced the optional ``get_resource_reader()`` method.
+
     .. method:: create_module(spec)
 
        A method that returns the module object to use when
@@ -471,8 +477,7 @@ ABC hierarchy::
 
 .. class:: ResourceReader
 
-    An :term:`abstract base class` for :term:`package`
-    :term:`loaders <loader>` to provide the ability to read
+    An :term:`abstract base class` to provide the ability to read
     *resources*.
 
     From the perspective of this ABC, a *resource* is a binary
@@ -487,12 +492,19 @@ ABC hierarchy::
     expected to be a :term:`path-like object` which represents
     conceptually just a file name. This means that no subdirectory
     paths should be included in the *resource* argument. This is
-    because the location of the package that the loader is for acts
-    as the "directory". Hence the metaphor for directories and file
+    because the location of the package the reader is for, acts as the
+    "directory". Hence the metaphor for directories and file
     names is packages and resources, respectively. This is also why
     instances of this class are expected to directly correlate to
     a specific package (instead of potentially representing multiple
     packages or a module).
+
+    Loaders that wish to support resource reading are expected to
+    provide a method called ``get_resource_loader(fullname)`` which
+    returns an object implementing this ABC's interface. If the module
+    specified by fullname is not a package, this method should return
+    :const:`None`. An object compatible with this ABC should only be
+    returned when the specified module is a package.
 
     .. versionadded:: 3.7
 
@@ -518,7 +530,7 @@ ABC hierarchy::
 
     .. abstractmethod:: contents()
 
-        Returns an :term:`iterator` of strings over the contents of
+        Returns an :term:`iterable` of strings over the contents of
         the package. Do note that it is not required that all names
         returned by the iterator be actual resources, e.g. it is
         acceptable to return names for which :meth:`is_resource` would
@@ -529,9 +541,10 @@ ABC hierarchy::
         are known a priori and the non-resource names would be useful.
         For instance, returning subdirectory names is allowed so that
         when it is known that the package and resources are stored on
-        the file system then those subdirectory names can be used.
+        the file system then those subdirectory names can be used
+        directly.
 
-        The abstract method returns an empty iterator.
+        The abstract method returns an iterable of no items.
 
 
 .. class:: ResourceLoader
@@ -539,6 +552,10 @@ ABC hierarchy::
     An abstract base class for a :term:`loader` which implements the optional
     :pep:`302` protocol for loading arbitrary resources from the storage
     back-end.
+
+    .. deprecated:: 3.7
+       This ABC is deprecated in favour of supporting resource loading
+       through :class:`importlib.abc.ResourceReader`.
 
     .. abstractmethod:: get_data(path)
 
@@ -796,8 +813,25 @@ Resources are roughly akin to files inside directories, though it's important
 to keep in mind that this is just a metaphor.  Resources and packages **do
 not** have to exist as physical files and directories on the file system.
 
-Loaders can support resources by implementing the :class:`ResourceReader`
-abstract base class.
+.. note::
+
+   This module provides functionality similar to `pkg_resources
+   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html>`_ `Basic
+   Resource Access
+   <http://setuptools.readthedocs.io/en/latest/pkg_resources.html#basic-resource-access>`_
+   without the performance overhead of that package.  This makes reading
+   resources included in packages easier, with more stable and consistent
+   semantics.
+
+   The standalone backport of this module provides more information
+   on `using importlib.resources
+   <http://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
+   `migrating from pkg_resources to importlib.resources
+   <http://importlib-resources.readthedocs.io/en/latest/migration.html>`_.
+
+Loaders that wish to support resource reading should implement a
+``get_resource_reader(fullname)`` method as specified by
+:class:`importlib.abc.ResourceReader`.
 
 The following types are defined.
 
@@ -892,9 +926,9 @@ The following functions are available.
 
 .. function:: contents(package)
 
-    Return an iterator over the named items within the package.  The iterator
+    Return an iterable over the named items within the package.  The iterable
     returns :class:`str` resources (e.g. files) and non-resources
-    (e.g. directories).  The iterator does not recurse into subdirectories.
+    (e.g. directories).  The iterable does not recurse into subdirectories.
 
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
@@ -996,7 +1030,7 @@ find and load modules.
 .. class:: WindowsRegistryFinder
 
    :term:`Finder` for modules declared in the Windows registry.  This class
-   implements the :class:`importlib.abc.Finder` ABC.
+   implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
    Only class methods are defined by this class to alleviate the need for
    instantiation.
@@ -1047,7 +1081,12 @@ find and load modules.
    .. classmethod:: invalidate_caches()
 
       Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
-      finders stored in :attr:`sys.path_importer_cache`.
+      finders stored in :data:`sys.path_importer_cache` that define the method.
+      Otherwise entries in :data:`sys.path_importer_cache` set to ``None`` are
+      deleted.
+
+      .. versionchanged:: 3.7
+         Entries of ``None`` in :data:`sys.path_importer_cache` are deleted.
 
    .. versionchanged:: 3.4
       Calls objects in :data:`sys.path_hooks` with the current working
@@ -1274,7 +1313,7 @@ find and load modules.
    Name of the place from which the module is loaded, e.g. "builtin" for
    built-in modules and the filename for modules loaded from source.
    Normally "origin" should be set, but it may be ``None`` (the default)
-   which indicates it is unspecified.
+   which indicates it is unspecified (e.g. for namespace packages).
 
    .. attribute:: submodule_search_locations
 

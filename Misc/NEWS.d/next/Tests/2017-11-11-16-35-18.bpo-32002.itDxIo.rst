@@ -1,2 +1,0 @@
-Adjust C locale coercion testing for the empty locale and POSIX locale
-cases to more readily adjust to platform dependent behaviour.

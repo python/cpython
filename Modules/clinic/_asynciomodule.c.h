@@ -110,7 +110,7 @@ PyDoc_STRVAR(_asyncio_Future_set_exception__doc__,
     {"set_exception", (PyCFunction)_asyncio_Future_set_exception, METH_O, _asyncio_Future_set_exception__doc__},
 
 PyDoc_STRVAR(_asyncio_Future_add_done_callback__doc__,
-"add_done_callback($self, fn, /)\n"
+"add_done_callback($self, fn, /, *, context=None)\n"
 "--\n"
 "\n"
 "Add a callback to be run when the future becomes done.\n"
@@ -120,7 +120,30 @@ PyDoc_STRVAR(_asyncio_Future_add_done_callback__doc__,
 "scheduled with call_soon.");
 
 #define _ASYNCIO_FUTURE_ADD_DONE_CALLBACK_METHODDEF    \
-    {"add_done_callback", (PyCFunction)_asyncio_Future_add_done_callback, METH_O, _asyncio_Future_add_done_callback__doc__},
+    {"add_done_callback", (PyCFunction)_asyncio_Future_add_done_callback, METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_add_done_callback__doc__},
+
+static PyObject *
+_asyncio_Future_add_done_callback_impl(FutureObj *self, PyObject *fn,
+                                       PyObject *context);
+
+static PyObject *
+_asyncio_Future_add_done_callback(FutureObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "context", NULL};
+    static _PyArg_Parser _parser = {"O|$O:add_done_callback", _keywords, 0};
+    PyObject *fn;
+    PyObject *context = NULL;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &fn, &context)) {
+        goto exit;
+    }
+    return_value = _asyncio_Future_add_done_callback_impl(self, fn, context);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_asyncio_Future_remove_done_callback__doc__,
 "remove_done_callback($self, fn, /)\n"
@@ -227,23 +250,6 @@ static PyObject *
 _asyncio_Future__repr_info(FutureObj *self, PyObject *Py_UNUSED(ignored))
 {
     return _asyncio_Future__repr_info_impl(self);
-}
-
-PyDoc_STRVAR(_asyncio_Future__schedule_callbacks__doc__,
-"_schedule_callbacks($self, /)\n"
-"--\n"
-"\n");
-
-#define _ASYNCIO_FUTURE__SCHEDULE_CALLBACKS_METHODDEF    \
-    {"_schedule_callbacks", (PyCFunction)_asyncio_Future__schedule_callbacks, METH_NOARGS, _asyncio_Future__schedule_callbacks__doc__},
-
-static PyObject *
-_asyncio_Future__schedule_callbacks_impl(FutureObj *self);
-
-static PyObject *
-_asyncio_Future__schedule_callbacks(FutureObj *self, PyObject *Py_UNUSED(ignored))
-{
-    return _asyncio_Future__schedule_callbacks_impl(self);
 }
 
 PyDoc_STRVAR(_asyncio_Task___init____doc__,
@@ -478,64 +484,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_asyncio_Task__step__doc__,
-"_step($self, /, exc=None)\n"
-"--\n"
-"\n");
-
-#define _ASYNCIO_TASK__STEP_METHODDEF    \
-    {"_step", (PyCFunction)_asyncio_Task__step, METH_FASTCALL|METH_KEYWORDS, _asyncio_Task__step__doc__},
-
-static PyObject *
-_asyncio_Task__step_impl(TaskObj *self, PyObject *exc);
-
-static PyObject *
-_asyncio_Task__step(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"exc", NULL};
-    static _PyArg_Parser _parser = {"|O:_step", _keywords, 0};
-    PyObject *exc = Py_None;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &exc)) {
-        goto exit;
-    }
-    return_value = _asyncio_Task__step_impl(self, exc);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_asyncio_Task__wakeup__doc__,
-"_wakeup($self, /, fut)\n"
-"--\n"
-"\n");
-
-#define _ASYNCIO_TASK__WAKEUP_METHODDEF    \
-    {"_wakeup", (PyCFunction)_asyncio_Task__wakeup, METH_FASTCALL|METH_KEYWORDS, _asyncio_Task__wakeup__doc__},
-
-static PyObject *
-_asyncio_Task__wakeup_impl(TaskObj *self, PyObject *fut);
-
-static PyObject *
-_asyncio_Task__wakeup(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"fut", NULL};
-    static _PyArg_Parser _parser = {"O:_wakeup", _keywords, 0};
-    PyObject *fut;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fut)) {
-        goto exit;
-    }
-    return_value = _asyncio_Task__wakeup_impl(self, fut);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_asyncio_Task_set_result__doc__,
 "set_result($self, result, /)\n"
 "--\n"
@@ -763,4 +711,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=616e814431893dcc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b6148b0134e7a819 input=a9049054013a1b77]*/

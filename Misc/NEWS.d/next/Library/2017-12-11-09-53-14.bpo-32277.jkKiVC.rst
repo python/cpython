@@ -1,3 +1,0 @@
-Raise ``NotImplementedError`` instead of ``SystemError`` on platforms where
-``chmod(..., follow_symlinks=False)`` is not supported.  Patch by Anthony
-Sottile.

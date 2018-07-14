@@ -1,1 +1,0 @@
-The `atexit` module now has its callback stored per interpreter.

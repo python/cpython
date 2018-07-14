@@ -1,0 +1,2 @@
+Fix ``test_embed.test_pre_initialization_sys_options()`` when the interpreter
+is built with ``--enable-shared``.

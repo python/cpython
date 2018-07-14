@@ -71,8 +71,6 @@ class PyPicklerTests(AbstractPickleTests):
 class InMemoryPickleTests(AbstractPickleTests, AbstractUnpickleTests,
                           BigmemPickleTests):
 
-    pickler = pickle._Pickler
-    unpickler = pickle._Unpickler
     bad_stack_errors = (pickle.UnpicklingError, IndexError)
     truncated_errors = (pickle.UnpicklingError, EOFError,
                         AttributeError, ValueError,
@@ -83,6 +81,8 @@ class InMemoryPickleTests(AbstractPickleTests, AbstractUnpickleTests,
 
     def loads(self, buf, **kwds):
         return pickle.loads(buf, **kwds)
+
+    test_framed_write_sizes_with_delayed_writer = None
 
 
 class PersistentPicklerUnpicklerMixin(object):

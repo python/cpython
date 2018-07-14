@@ -14,6 +14,7 @@ from unittest import mock
 import asyncio
 from asyncio import base_events
 from asyncio import constants
+from asyncio import events
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
@@ -21,6 +22,10 @@ from test.support.script_helper import assert_python_ok
 
 MOCK_ANY = mock.ANY
 PY34 = sys.version_info >= (3, 4)
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 def mock_socket_module():
@@ -92,11 +97,11 @@ class BaseEventTests(test_utils.TestCase):
             base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
 
         self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1)),
+            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
             base_events._ipaddr_info('::3', 1, INET6, STREAM, TCP))
 
         self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1)),
+            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
             base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
 
         # IPv6 address with family IPv4.
@@ -191,14 +196,14 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertRaises(RuntimeError, self.loop.run_until_complete, f)
 
     def test__add_callback_handle(self):
-        h = asyncio.Handle(lambda: False, (), self.loop)
+        h = asyncio.Handle(lambda: False, (), self.loop, None)
 
         self.loop._add_callback(h)
         self.assertFalse(self.loop._scheduled)
         self.assertIn(h, self.loop._ready)
 
     def test__add_callback_cancelled_handle(self):
-        h = asyncio.Handle(lambda: False, (), self.loop)
+        h = asyncio.Handle(lambda: False, (), self.loop, None)
         h.cancel()
 
         self.loop._add_callback(h)
@@ -332,9 +337,9 @@ class BaseEventLoopTests(test_utils.TestCase):
 
     def test__run_once(self):
         h1 = asyncio.TimerHandle(time.monotonic() + 5.0, lambda: True, (),
-                                 self.loop)
+                                 self.loop, None)
         h2 = asyncio.TimerHandle(time.monotonic() + 10.0, lambda: True, (),
-                                 self.loop)
+                                 self.loop, None)
 
         h1.cancel()
 
@@ -389,7 +394,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             handle = loop.call_soon(lambda: True)
 
         h = asyncio.TimerHandle(time.monotonic() - 1, cb, (self.loop,),
-                                self.loop)
+                                self.loop, None)
 
         self.loop._process_events = mock.Mock()
         self.loop._scheduled.append(h)
@@ -1071,6 +1076,26 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             srv = self.loop.run_until_complete(coro)
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
+
+    @unittest.skipUnless(hasattr(socket, 'AF_INET6'), 'no IPv6 support')
+    def test_create_server_ipv6(self):
+        async def main():
+            srv = await asyncio.start_server(
+                lambda: None, '::1', 0, loop=self.loop)
+            try:
+                self.assertGreater(len(srv.sockets), 0)
+            finally:
+                srv.close()
+                await srv.wait_closed()
+
+        try:
+            self.loop.run_until_complete(main())
+        except OSError as ex:
+            if (hasattr(errno, 'EADDRNOTAVAIL') and
+                    ex.errno == errno.EADDRNOTAVAIL):
+                self.skipTest('failed to bind to ::1')
+            else:
+                raise
 
     def test_create_datagram_endpoint_wrong_sock(self):
         sock = socket.socket(socket.AF_INET)
@@ -1785,6 +1810,186 @@ class RunningLoopTests(unittest.TestCase):
         finally:
             loop.close()
             outer_loop.close()
+
+
+class BaseLoopSockSendfileTests(test_utils.TestCase):
+
+    DATA = b"12345abcde" * 16 * 1024  # 160 KiB
+
+    class MyProto(asyncio.Protocol):
+
+        def __init__(self, loop):
+            self.started = False
+            self.closed = False
+            self.data = bytearray()
+            self.fut = loop.create_future()
+            self.transport = None
+
+        def connection_made(self, transport):
+            self.started = True
+            self.transport = transport
+
+        def data_received(self, data):
+            self.data.extend(data)
+
+        def connection_lost(self, exc):
+            self.closed = True
+            self.fut.set_result(None)
+            self.transport = None
+
+        async def wait_closed(self):
+            await self.fut
+
+    @classmethod
+    def setUpClass(cls):
+        cls.__old_bufsize = constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 16
+        with open(support.TESTFN, 'wb') as fp:
+            fp.write(cls.DATA)
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        constants.SENDFILE_FALLBACK_READBUFFER_SIZE = cls.__old_bufsize
+        support.unlink(support.TESTFN)
+        super().tearDownClass()
+
+    def setUp(self):
+        from asyncio.selector_events import BaseSelectorEventLoop
+        # BaseSelectorEventLoop() has no native implementation
+        self.loop = BaseSelectorEventLoop()
+        self.set_event_loop(self.loop)
+        self.file = open(support.TESTFN, 'rb')
+        self.addCleanup(self.file.close)
+        super().setUp()
+
+    def make_socket(self, blocking=False):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setblocking(blocking)
+        self.addCleanup(sock.close)
+        return sock
+
+    def run_loop(self, coro):
+        return self.loop.run_until_complete(coro)
+
+    def prepare(self):
+        sock = self.make_socket()
+        proto = self.MyProto(self.loop)
+        server = self.run_loop(self.loop.create_server(
+            lambda: proto, support.HOST, 0, family=socket.AF_INET))
+        addr = server.sockets[0].getsockname()
+
+        for _ in range(10):
+            try:
+                self.run_loop(self.loop.sock_connect(sock, addr))
+            except OSError:
+                self.run_loop(asyncio.sleep(0.5))
+                continue
+            else:
+                break
+        else:
+            # One last try, so we get the exception
+            self.run_loop(self.loop.sock_connect(sock, addr))
+
+        def cleanup():
+            server.close()
+            self.run_loop(server.wait_closed())
+            sock.close()
+            if proto.transport is not None:
+                proto.transport.close()
+                self.run_loop(proto.wait_closed())
+
+        self.addCleanup(cleanup)
+
+        return sock, proto
+
+    def test__sock_sendfile_native_failure(self):
+        sock, proto = self.prepare()
+
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+                                    "sendfile is not available"):
+            self.run_loop(self.loop._sock_sendfile_native(sock, self.file,
+                                                          0, None))
+
+        self.assertEqual(proto.data, b'')
+        self.assertEqual(self.file.tell(), 0)
+
+    def test_sock_sendfile_no_fallback(self):
+        sock, proto = self.prepare()
+
+        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+                                    "sendfile is not available"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file,
+                                                  fallback=False))
+
+        self.assertEqual(self.file.tell(), 0)
+        self.assertEqual(proto.data, b'')
+
+    def test_sock_sendfile_fallback(self):
+        sock, proto = self.prepare()
+
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, len(self.DATA))
+        self.assertEqual(self.file.tell(), len(self.DATA))
+        self.assertEqual(proto.data, self.DATA)
+
+    def test_sock_sendfile_fallback_offset_and_count(self):
+        sock, proto = self.prepare()
+
+        ret = self.run_loop(self.loop.sock_sendfile(sock, self.file,
+                                                    1000, 2000))
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, 2000)
+        self.assertEqual(self.file.tell(), 3000)
+        self.assertEqual(proto.data, self.DATA[1000:3000])
+
+    def test_blocking_socket(self):
+        self.loop.set_debug(True)
+        sock = self.make_socket(blocking=True)
+        with self.assertRaisesRegex(ValueError, "must be non-blocking"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file))
+
+    def test_nonbinary_file(self):
+        sock = self.make_socket()
+        with open(support.TESTFN, 'r') as f:
+            with self.assertRaisesRegex(ValueError, "binary mode"):
+                self.run_loop(self.loop.sock_sendfile(sock, f))
+
+    def test_nonstream_socket(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setblocking(False)
+        self.addCleanup(sock.close)
+        with self.assertRaisesRegex(ValueError, "only SOCK_STREAM type"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file))
+
+    def test_notint_count(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(TypeError,
+                                    "count must be a positive integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, 0, 'count'))
+
+    def test_negative_count(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(ValueError,
+                                    "count must be a positive integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, 0, -1))
+
+    def test_notint_offset(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(TypeError,
+                                    "offset must be a non-negative integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, 'offset'))
+
+    def test_negative_offset(self):
+        sock = self.make_socket()
+        with self.assertRaisesRegex(ValueError,
+                                    "offset must be a non-negative integer"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file, -1))
 
 
 if __name__ == '__main__':

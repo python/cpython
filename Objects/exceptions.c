@@ -126,7 +126,7 @@ BaseException_repr(PyBaseExceptionObject *self)
 
 /* Pickling support */
 static PyObject *
-BaseException_reduce(PyBaseExceptionObject *self)
+BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->args && self->dict)
         return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
@@ -342,6 +342,13 @@ PyException_SetContext(PyObject *self, PyObject *context)
     Py_XSETREF(((PyBaseExceptionObject *)self)->context, context);
 }
 
+#undef PyExceptionClass_Name
+
+const char *
+PyExceptionClass_Name(PyObject *ob)
+{
+    return ((PyTypeObject*)ob)->tp_name;
+}
 
 static struct PyMemberDef BaseException_members[] = {
     {"__suppress_context__", T_BOOL,
@@ -713,7 +720,7 @@ ImportError_getstate(PyImportErrorObject *self)
 
 /* Pickling support */
 static PyObject *
-ImportError_reduce(PyImportErrorObject *self)
+ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *res;
     PyObject *args;
@@ -1123,7 +1130,7 @@ OSError_str(PyOSErrorObject *self)
 }
 
 static PyObject *
-OSError_reduce(PyOSErrorObject *self)
+OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args = self->args;
     PyObject *res = NULL, *tmp;
@@ -2840,23 +2847,34 @@ _PyErr_TrySetFromCause(const char *format, ...)
 static int
 _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
 {
-    PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
-    if (strip_sep_obj == NULL)
-        return -1;
-
-    // PRINT_OFFSET is to remove `print ` word from the data.
+    // PRINT_OFFSET is to remove the `print ` prefix from the data.
     const int PRINT_OFFSET = 6;
+    const int STRIP_BOTH = 2;
+    Py_ssize_t start_pos = start + PRINT_OFFSET;
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
-    PyObject *data = PyUnicode_Substring(self->text, PRINT_OFFSET, text_len);
+    Py_UCS4 semicolon = ';';
+    Py_ssize_t end_pos = PyUnicode_FindChar(self->text, semicolon,
+                                            start_pos, text_len, 1);
+    if (end_pos < -1) {
+      return -1;
+    } else if (end_pos == -1) {
+      end_pos = text_len;
+    }
 
+    PyObject *data = PyUnicode_Substring(self->text, start_pos, end_pos);
     if (data == NULL) {
-        Py_DECREF(strip_sep_obj);
         return -1;
     }
-    PyObject *new_data = _PyUnicode_XStrip(data, 2, strip_sep_obj);
+
+    PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
+    if (strip_sep_obj == NULL) {
+        Py_DECREF(data);
+        return -1;
+    }
+
+    PyObject *new_data = _PyUnicode_XStrip(data, STRIP_BOTH, strip_sep_obj);
     Py_DECREF(data);
     Py_DECREF(strip_sep_obj);
-
     if (new_data == NULL) {
         return -1;
     }

@@ -5,7 +5,6 @@ import os
 import pprint
 import select
 import socket
-import ssl
 import tempfile
 import threading
 
@@ -146,16 +145,19 @@ class TestSocketWrapper:
                   server_side=False,
                   server_hostname=None):
 
-        assert isinstance(ssl_context, ssl.SSLContext)
-
         ssl_sock = ssl_context.wrap_socket(
             self.__sock, server_side=server_side,
             server_hostname=server_hostname,
             do_handshake_on_connect=False)
 
-        ssl_sock.do_handshake()
+        try:
+            ssl_sock.do_handshake()
+        except:
+            ssl_sock.close()
+            raise
+        finally:
+            self.__sock.close()
 
-        self.__sock.close()
         self.__sock = ssl_sock
 
     def __getattr__(self, name):

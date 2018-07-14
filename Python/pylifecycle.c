@@ -4,6 +4,8 @@
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
+#include "internal/context.h"
+#include "internal/hamt.h"
 #include "internal/pystate.h"
 #include "grammar.h"
 #include "node.h"
@@ -108,17 +110,17 @@ _Py_IsFinalizing(void)
 
 /* Global configuration variable declarations are in pydebug.h */
 /* XXX (ncoghlan): move those declarations to pylifecycle.h? */
-int Py_DebugFlag; /* Needed by parser.c */
-int Py_VerboseFlag; /* Needed by import.c */
-int Py_QuietFlag; /* Needed by sysmodule.c */
-int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
-int Py_InspectFlag; /* Needed to determine whether to exit at SystemExit */
+int Py_DebugFlag = 0; /* Needed by parser.c */
+int Py_VerboseFlag = 0; /* Needed by import.c */
+int Py_QuietFlag = 0; /* Needed by sysmodule.c */
+int Py_InteractiveFlag = 0; /* Needed by Py_FdIsInteractive() below */
+int Py_InspectFlag = 0; /* Needed to determine whether to exit at SystemExit */
 int Py_OptimizeFlag = 0; /* Needed by compile.c */
-int Py_NoSiteFlag; /* Suppress 'import site' */
-int Py_BytesWarningFlag; /* Warn on str(bytes) and str(buffer) */
-int Py_FrozenFlag; /* Needed by getpath.c */
-int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
-int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.pyc) */
+int Py_NoSiteFlag = 0; /* Suppress 'import site' */
+int Py_BytesWarningFlag = 0; /* Warn on str(bytes) and str(buffer) */
+int Py_FrozenFlag = 0; /* Needed by getpath.c */
+int Py_IgnoreEnvironmentFlag = 0; /* e.g. PYTHONPATH, PYTHONHOME */
+int Py_DontWriteBytecodeFlag = 0; /* Suppress writing bytecode files (*.pyc) */
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
 int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
@@ -310,7 +312,7 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     Py_INCREF(interp->import_func);
 
     /* Import the _imp module */
-    impmod = PyInit_imp();
+    impmod = PyInit__imp();
     if (impmod == NULL) {
         return _Py_INIT_ERR("can't import _imp");
     }
@@ -323,11 +325,6 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
 
     /* Install importlib as the implementation of import */
     value = PyObject_CallMethod(importlib, "_install", "OO", sysmod, impmod);
-    if (value != NULL) {
-        Py_DECREF(value);
-        value = PyObject_CallMethod(importlib,
-                                    "_install_external_importers", "");
-    }
     if (value == NULL) {
         PyErr_Print();
         return _Py_INIT_ERR("importlib install failed");
@@ -679,13 +676,14 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
        Instead we destroy the previously created GIL here, which ensures
        that we can call Py_Initialize / Py_FinalizeEx multiple times. */
     _PyEval_FiniThreads();
+
     /* Auto-thread-state API */
     _PyGILState_Init(interp, tstate);
 
-    _Py_ReadyTypes();
+    /* Create the GIL */
+    PyEval_InitThreads();
 
-    if (!_PyFrame_Init())
-        return _Py_INIT_ERR("can't init frames");
+    _Py_ReadyTypes();
 
     if (!_PyLong_Init())
         return _Py_INIT_ERR("can't init longs");
@@ -757,6 +755,9 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     if (_PyWarnings_Init() == NULL) {
         return _Py_INIT_ERR("can't initialize warnings");
     }
+
+    if (!_PyContext_Init())
+        return _Py_INIT_ERR("can't init context");
 
     /* This call sets up builtin and frozen import support */
     if (!interp->core_config._disable_importlib) {
@@ -891,6 +892,11 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 _PyInitError
 _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 {
+    if (_PyRuntime.initialized) {
+        /* bpo-33932: Calling Py_Initialize() twice does nothing. */
+        return _Py_INIT_OK();
+    }
+
     _PyCoreConfig config = _PyCoreConfig_INIT;
     _PyInitError err;
 
@@ -1176,6 +1182,7 @@ Py_FinalizeEx(void)
     _Py_HashRandomization_Fini();
     _PyArg_Fini();
     PyAsyncGen_Fini();
+    _PyContext_Fini();
 
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini();

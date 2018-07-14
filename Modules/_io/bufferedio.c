@@ -1292,7 +1292,6 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
         if (res == NULL)
             goto end;
         Py_CLEAR(res);
-        _bufferedwriter_reset_buf(self);
     }
 
     /* TODO: align on block boundary and read buffer if needed? */
@@ -1521,7 +1520,7 @@ static PyObject *
 _bufferedreader_read_all(buffered *self)
 {
     Py_ssize_t current_size;
-    PyObject *res = NULL, *data = NULL, *tmp = NULL, *chunks = NULL;
+    PyObject *res = NULL, *data = NULL, *tmp = NULL, *chunks = NULL, *readall;
 
     /* First copy what we have in the current buffer. */
     current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
@@ -1541,32 +1540,27 @@ _bufferedreader_read_all(buffered *self)
     }
     _bufferedreader_reset_buf(self);
 
-    if (PyObject_HasAttr(self->raw, _PyIO_str_readall)) {
-        tmp = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_readall, NULL);
+    if (_PyObject_LookupAttr(self->raw, _PyIO_str_readall, &readall) < 0) {
+        goto cleanup;
+    }
+    if (readall) {
+        tmp = _PyObject_CallNoArg(readall);
+        Py_DECREF(readall);
         if (tmp == NULL)
             goto cleanup;
         if (tmp != Py_None && !PyBytes_Check(tmp)) {
             PyErr_SetString(PyExc_TypeError, "readall() should return bytes");
             goto cleanup;
         }
-        if (tmp == Py_None) {
-            if (current_size == 0) {
-                res = Py_None;
-                goto cleanup;
-            } else {
-                res = data;
-                goto cleanup;
-            }
-        }
-        else if (current_size) {
-            PyBytes_Concat(&data, tmp);
-            res = data;
-            goto cleanup;
-        }
-        else {
+        if (current_size == 0) {
             res = tmp;
-            goto cleanup;
+        } else {
+            if (tmp != Py_None) {
+                PyBytes_Concat(&data, tmp);
+            }
+            res = data;
         }
+        goto cleanup;
     }
 
     chunks = PyList_New(0);
@@ -1857,8 +1851,6 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     return n;
 }
 
-/* `restore_pos` is 1 if we need to restore the raw stream position at
-   the end, 0 otherwise. */
 static PyObject *
 _bufferedwriter_flush_unlocked(buffered *self)
 {
@@ -1899,9 +1891,18 @@ _bufferedwriter_flush_unlocked(buffered *self)
             goto error;
     }
 
-    _bufferedwriter_reset_buf(self);
 
 end:
+    /* This ensures that after return from this function,
+       VALID_WRITE_BUFFER(self) returns false.
+
+       This is a required condition because when a tell() is called
+       after flushing and if VALID_READ_BUFFER(self) is false, we need
+       VALID_WRITE_BUFFER(self) to be false to have
+       RAW_OFFSET(self) == 0.
+
+       Issue: https://bugs.python.org/issue32228 */
+    _bufferedwriter_reset_buf(self);
     Py_RETURN_NONE;
 
 error:

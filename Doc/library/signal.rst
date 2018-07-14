@@ -207,6 +207,24 @@ The :mod:`signal` module defines the following functions:
    installed from Python.
 
 
+.. function:: strsignal(signalnum)
+
+   Return the system description of the signal *signalnum*, such as
+   "Interrupt", "Segmentation fault", etc. Returns :const:`None` if the signal
+   is not recognized.
+
+   .. versionadded:: 3.8
+
+
+.. function:: valid_signals()
+
+   Return the set of valid signal numbers on this platform.  This can be
+   less than ``range(1, NSIG)`` if some signals are reserved by the system
+   for internal use.
+
+   .. versionadded:: 3.8
+
+
 .. function:: pause()
 
    Cause the process to sleep until a signal is received; the appropriate handler
@@ -259,8 +277,8 @@ The :mod:`signal` module defines the following functions:
      argument.
 
    *mask* is a set of signal numbers (e.g. {:const:`signal.SIGINT`,
-   :const:`signal.SIGTERM`}). Use ``range(1, signal.NSIG)`` for a full mask
-   including all signals.
+   :const:`signal.SIGTERM`}). Use :func:`~signal.valid_signals` for a full
+   mask including all signals.
 
    For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
    signal mask of the calling thread.
