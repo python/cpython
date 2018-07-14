@@ -60,6 +60,9 @@ class GeneralFloatCases(unittest.TestCase):
         # extra long strings should not be a problem
         float(b'.' + b'1'*1000)
         float('.' + '1'*1000)
+        # Invalid unicode string
+        # See bpo-34087
+        self.assertRaises(ValueError, float, '\u3053\u3093\u306b\u3061\u306f')
 
     def test_underscores(self):
         for lit in VALID_UNDERSCORE_LITERALS:
