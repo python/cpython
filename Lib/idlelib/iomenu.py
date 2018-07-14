@@ -487,11 +487,11 @@ class IOBinding:
     opendialog = None
     savedialog = None
 
-    filetypes = [
+    filetypes = (
         ("Python files", "*.py *.pyw", "TEXT"),
         ("Text files", "*.txt", "TEXT"),
         ("All files", "*"),
-        ]
+        )
 
     defaultextension = '.py' if sys.platform == 'darwin' else ''
 
@@ -567,8 +567,8 @@ def _io_binding(parent):  # htest #
     IOBinding(editwin)
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_iomenu', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_iomenu', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_io_binding)

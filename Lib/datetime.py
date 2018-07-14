@@ -173,6 +173,24 @@ def _format_time(hh, mm, ss, us, timespec='auto'):
     else:
         return fmt.format(hh, mm, ss, us)
 
+def _format_offset(off):
+    s = ''
+    if off is not None:
+        if off.days < 0:
+            sign = "-"
+            off = -off
+        else:
+            sign = "+"
+        hh, mm = divmod(off, timedelta(hours=1))
+        mm, ss = divmod(mm, timedelta(minutes=1))
+        s += "%s%02d:%02d" % (sign, hh, mm)
+        if ss or ss.microseconds:
+            s += ":%02d" % ss.seconds
+
+            if ss.microseconds:
+                s += '.%06d' % ss.microseconds
+    return s
+
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
@@ -206,10 +224,16 @@ def _wrap_strftime(object, format, timetuple):
                                 if offset.days < 0:
                                     offset = -offset
                                     sign = '-'
-                                h, m = divmod(offset, timedelta(hours=1))
-                                assert not m % timedelta(minutes=1), "whole minute"
-                                m //= timedelta(minutes=1)
-                                zreplace = '%c%02d%02d' % (sign, h, m)
+                                h, rest = divmod(offset, timedelta(hours=1))
+                                m, rest = divmod(rest, timedelta(minutes=1))
+                                s = rest.seconds
+                                u = offset.microseconds
+                                if u:
+                                    zreplace = '%c%02d%02d%02d.%06d' % (sign, h, m, s, u)
+                                elif s:
+                                    zreplace = '%c%02d%02d%02d' % (sign, h, m, s)
+                                else:
+                                    zreplace = '%c%02d%02d' % (sign, h, m)
                     assert '%' not in zreplace
                     newformat.append(zreplace)
                 elif ch == 'Z':
@@ -231,6 +255,102 @@ def _wrap_strftime(object, format, timetuple):
     newformat = "".join(newformat)
     return _time.strftime(newformat, timetuple)
 
+# Helpers for parsing the result of isoformat()
+def _parse_isoformat_date(dtstr):
+    # It is assumed that this function will only be called with a
+    # string of length exactly 10, and (though this is not used) ASCII-only
+    year = int(dtstr[0:4])
+    if dtstr[4] != '-':
+        raise ValueError('Invalid date separator: %s' % dtstr[4])
+
+    month = int(dtstr[5:7])
+
+    if dtstr[7] != '-':
+        raise ValueError('Invalid date separator')
+
+    day = int(dtstr[8:10])
+
+    return [year, month, day]
+
+def _parse_hh_mm_ss_ff(tstr):
+    # Parses things of the form HH[:MM[:SS[.fff[fff]]]]
+    len_str = len(tstr)
+
+    time_comps = [0, 0, 0, 0]
+    pos = 0
+    for comp in range(0, 3):
+        if (len_str - pos) < 2:
+            raise ValueError('Incomplete time component')
+
+        time_comps[comp] = int(tstr[pos:pos+2])
+
+        pos += 2
+        next_char = tstr[pos:pos+1]
+
+        if not next_char or comp >= 2:
+            break
+
+        if next_char != ':':
+            raise ValueError('Invalid time separator: %c' % next_char)
+
+        pos += 1
+
+    if pos < len_str:
+        if tstr[pos] != '.':
+            raise ValueError('Invalid microsecond component')
+        else:
+            pos += 1
+
+            len_remainder = len_str - pos
+            if len_remainder not in (3, 6):
+                raise ValueError('Invalid microsecond component')
+
+            time_comps[3] = int(tstr[pos:])
+            if len_remainder == 3:
+                time_comps[3] *= 1000
+
+    return time_comps
+
+def _parse_isoformat_time(tstr):
+    # Format supported is HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]
+    len_str = len(tstr)
+    if len_str < 2:
+        raise ValueError('Isoformat time too short')
+
+    # This is equivalent to re.search('[+-]', tstr), but faster
+    tz_pos = (tstr.find('-') + 1 or tstr.find('+') + 1)
+    timestr = tstr[:tz_pos-1] if tz_pos > 0 else tstr
+
+    time_comps = _parse_hh_mm_ss_ff(timestr)
+
+    tzi = None
+    if tz_pos > 0:
+        tzstr = tstr[tz_pos:]
+
+        # Valid time zone strings are:
+        # HH:MM               len: 5
+        # HH:MM:SS            len: 8
+        # HH:MM:SS.ffffff     len: 15
+
+        if len(tzstr) not in (5, 8, 15):
+            raise ValueError('Malformed time zone string')
+
+        tz_comps = _parse_hh_mm_ss_ff(tzstr)
+        if all(x == 0 for x in tz_comps):
+            tzi = timezone.utc
+        else:
+            tzsign = -1 if tstr[tz_pos - 1] == '-' else 1
+
+            td = timedelta(hours=tz_comps[0], minutes=tz_comps[1],
+                           seconds=tz_comps[2], microseconds=tz_comps[3])
+
+            tzi = timezone(tzsign * td)
+
+    time_comps.append(tzi)
+
+    return time_comps
+
+
 # Just raise TypeError if the arg isn't None or a string.
 def _check_tzname(name):
     if name is not None and not isinstance(name, str):
@@ -241,7 +361,7 @@ def _check_tzname(name):
 # offset is what it returned.
 # If offset isn't None or timedelta, raises TypeError.
 # If offset is None, returns None.
-# Else offset is checked for being in range, and a whole # of minutes.
+# Else offset is checked for being in range.
 # If it is, its integer value is returned.  Else ValueError is raised.
 def _check_utc_offset(name, offset):
     assert name in ("utcoffset", "dst")
@@ -250,9 +370,6 @@ def _check_utc_offset(name, offset):
     if not isinstance(offset, timedelta):
         raise TypeError("tzinfo.%s() must return None "
                         "or timedelta, not '%s'" % (name, type(offset)))
-    if offset.microseconds:
-        raise ValueError("tzinfo.%s() must return a whole number "
-                         "of seconds, got %s" % (name, offset))
     if not -timedelta(1) < offset < timedelta(1):
         raise ValueError("%s()=%s, must be strictly between "
                          "-timedelta(hours=24) and timedelta(hours=24)" %
@@ -454,20 +571,18 @@ class timedelta:
         return self
 
     def __repr__(self):
-        if self._microseconds:
-            return "%s.%s(%d, %d, %d)" % (self.__class__.__module__,
-                                          self.__class__.__qualname__,
-                                          self._days,
-                                          self._seconds,
-                                          self._microseconds)
+        args = []
+        if self._days:
+            args.append("days=%d" % self._days)
         if self._seconds:
-            return "%s.%s(%d, %d)" % (self.__class__.__module__,
-                                      self.__class__.__qualname__,
-                                      self._days,
-                                      self._seconds)
-        return "%s.%s(%d)" % (self.__class__.__module__,
+            args.append("seconds=%d" % self._seconds)
+        if self._microseconds:
+            args.append("microseconds=%d" % self._microseconds)
+        if not args:
+            args.append('0')
+        return "%s.%s(%s)" % (self.__class__.__module__,
                               self.__class__.__qualname__,
-                              self._days)
+                              ', '.join(args))
 
     def __str__(self):
         mm, ss = divmod(self._seconds, 60)
@@ -731,6 +846,19 @@ class date:
         y, m, d = _ord2ymd(n)
         return cls(y, m, d)
 
+    @classmethod
+    def fromisoformat(cls, date_string):
+        """Construct a date from the output of date.isoformat()."""
+        if not isinstance(date_string, str):
+            raise TypeError('fromisoformat: argument must be str')
+
+        try:
+            assert len(date_string) == 10
+            return cls(*_parse_isoformat_date(date_string))
+        except Exception:
+            raise ValueError('Invalid isoformat string: %s' % date_string)
+
+
     # Conversions to string
 
     def __repr__(self):
@@ -827,7 +955,7 @@ class date:
             month = self._month
         if day is None:
             day = self._day
-        return date(year, month, day)
+        return type(self)(year, month, day)
 
     # Comparisons of date objects with other.
 
@@ -962,11 +1090,11 @@ class tzinfo:
         raise NotImplementedError("tzinfo subclass must override tzname()")
 
     def utcoffset(self, dt):
-        "datetime -> minutes east of UTC (negative for west of UTC)"
+        "datetime -> timedelta, positive for east of UTC, negative for west of UTC"
         raise NotImplementedError("tzinfo subclass must override utcoffset()")
 
     def dst(self, dt):
-        """datetime -> DST offset in minutes east of UTC.
+        """datetime -> DST offset as timedelta, positive for east of UTC.
 
         Return 0 if DST not in effect.  utcoffset() must include the DST
         offset.
@@ -1189,22 +1317,10 @@ class time:
 
     # Conversion to string
 
-    def _tzstr(self, sep=":"):
-        """Return formatted timezone offset (+xx:xx) or None."""
+    def _tzstr(self):
+        """Return formatted timezone offset (+xx:xx) or an empty string."""
         off = self.utcoffset()
-        if off is not None:
-            if off.days < 0:
-                sign = "-"
-                off = -off
-            else:
-                sign = "+"
-            hh, mm = divmod(off, timedelta(hours=1))
-            mm, ss = divmod(mm, timedelta(minutes=1))
-            assert 0 <= hh < 24
-            off = "%s%02d%s%02d" % (sign, hh, sep, mm)
-            if ss:
-                off += ':%02d' % ss.seconds
-        return off
+        return _format_offset(off)
 
     def __repr__(self):
         """Convert to formal string, for repr()."""
@@ -1243,6 +1359,18 @@ class time:
 
     __str__ = isoformat
 
+    @classmethod
+    def fromisoformat(cls, time_string):
+        """Construct a time from the output of isoformat()."""
+        if not isinstance(time_string, str):
+            raise TypeError('fromisoformat: argument must be str')
+
+        try:
+            return cls(*_parse_isoformat_time(time_string))
+        except Exception:
+            raise ValueError('Invalid isoformat string: %s' % time_string)
+
+
     def strftime(self, fmt):
         """Format using strftime().  The date part of the timestamp passed
         to underlying strftime should not be used.
@@ -1264,8 +1392,8 @@ class time:
     # Timezone functions
 
     def utcoffset(self):
-        """Return the timezone offset in minutes east of UTC (negative west of
-        UTC)."""
+        """Return the timezone offset as timedelta, positive east of UTC
+         (negative west of UTC)."""
         if self._tzinfo is None:
             return None
         offset = self._tzinfo.utcoffset(None)
@@ -1286,8 +1414,8 @@ class time:
         return name
 
     def dst(self):
-        """Return 0 if DST is not in effect, or the DST offset (in minutes
-        eastward) if DST is in effect.
+        """Return 0 if DST is not in effect, or the DST offset (as timedelta
+        positive eastward) if DST is in effect.
 
         This is purely informational; the DST offset has already been added to
         the UTC offset returned by utcoffset() if applicable, so there's no
@@ -1315,7 +1443,7 @@ class time:
             tzinfo = self.tzinfo
         if fold is None:
             fold = self._fold
-        return time(hour, minute, second, microsecond, tzinfo, fold=fold)
+        return type(self)(hour, minute, second, microsecond, tzinfo, fold=fold)
 
     # Pickle support.
 
@@ -1496,6 +1624,31 @@ class datetime(date):
                    time.hour, time.minute, time.second, time.microsecond,
                    tzinfo, fold=time.fold)
 
+    @classmethod
+    def fromisoformat(cls, date_string):
+        """Construct a datetime from the output of datetime.isoformat()."""
+        if not isinstance(date_string, str):
+            raise TypeError('fromisoformat: argument must be str')
+
+        # Split this at the separator
+        dstr = date_string[0:10]
+        tstr = date_string[11:]
+
+        try:
+            date_components = _parse_isoformat_date(dstr)
+        except ValueError:
+            raise ValueError('Invalid isoformat string: %s' % date_string)
+
+        if tstr:
+            try:
+                time_components = _parse_isoformat_time(tstr)
+            except ValueError:
+                raise ValueError('Invalid isoformat string: %s' % date_string)
+        else:
+            time_components = [0, 0, 0, 0, None]
+
+        return cls(*(date_components + time_components))
+
     def timetuple(self):
         "Return local time tuple compatible with time.localtime()."
         dst = self.dst()
@@ -1596,7 +1749,7 @@ class datetime(date):
             tzinfo = self.tzinfo
         if fold is None:
             fold = self.fold
-        return datetime(year, month, day, hour, minute, second,
+        return type(self)(year, month, day, hour, minute, second,
                           microsecond, tzinfo, fold=fold)
 
     def _local_timezone(self):
@@ -1606,17 +1759,10 @@ class datetime(date):
             ts = (self - _EPOCH) // timedelta(seconds=1)
         localtm = _time.localtime(ts)
         local = datetime(*localtm[:6])
-        try:
-            # Extract TZ data if available
-            gmtoff = localtm.tm_gmtoff
-            zone = localtm.tm_zone
-        except AttributeError:
-            delta = local - datetime(*_time.gmtime(ts)[:6])
-            zone = _time.strftime('%Z', localtm)
-            tz = timezone(delta, zone)
-        else:
-            tz = timezone(timedelta(seconds=gmtoff), zone)
-        return tz
+        # Extract TZ data
+        gmtoff = localtm.tm_gmtoff
+        zone = localtm.tm_zone
+        return timezone(timedelta(seconds=gmtoff), zone)
 
     def astimezone(self, tz=None):
         if tz is None:
@@ -1627,14 +1773,17 @@ class datetime(date):
         mytz = self.tzinfo
         if mytz is None:
             mytz = self._local_timezone()
+            myoffset = mytz.utcoffset(self)
+        else:
+            myoffset = mytz.utcoffset(self)
+            if myoffset is None:
+                mytz = self.replace(tzinfo=None)._local_timezone()
+                myoffset = mytz.utcoffset(self)
 
         if tz is mytz:
             return self
 
         # Convert self to UTC, and attach the new time zone object.
-        myoffset = mytz.utcoffset(self)
-        if myoffset is None:
-            raise ValueError("astimezone() requires an aware datetime")
         utc = (self - myoffset).replace(tzinfo=tz)
 
         # Convert from UTC to tz's local time.
@@ -1672,18 +1821,10 @@ class datetime(date):
                           self._microsecond, timespec))
 
         off = self.utcoffset()
-        if off is not None:
-            if off.days < 0:
-                sign = "-"
-                off = -off
-            else:
-                sign = "+"
-            hh, mm = divmod(off, timedelta(hours=1))
-            mm, ss = divmod(mm, timedelta(minutes=1))
-            s += "%s%02d:%02d" % (sign, hh, mm)
-            if ss:
-                assert not ss.microseconds
-                s += ":%02d" % ss.seconds
+        tz = _format_offset(off)
+        if tz:
+            s += tz
+
         return s
 
     def __repr__(self):
@@ -1716,7 +1857,7 @@ class datetime(date):
         return _strptime._strptime_datetime(cls, date_string, format)
 
     def utcoffset(self):
-        """Return the timezone offset in minutes east of UTC (negative west of
+        """Return the timezone offset as timedelta positive east of UTC (negative west of
         UTC)."""
         if self._tzinfo is None:
             return None
@@ -1738,8 +1879,8 @@ class datetime(date):
         return name
 
     def dst(self):
-        """Return 0 if DST is not in effect, or the DST offset (in minutes
-        eastward) if DST is in effect.
+        """Return 0 if DST is not in effect, or the DST offset (as timedelta
+        positive eastward) if DST is in effect.
 
         This is purely informational; the DST offset has already been added to
         the UTC offset returned by utcoffset() if applicable, so there's no
@@ -1964,9 +2105,6 @@ class timezone(tzinfo):
             raise ValueError("offset must be a timedelta "
                              "strictly between -timedelta(hours=24) and "
                              "timedelta(hours=24).")
-        if (offset.microseconds != 0 or offset.seconds % 60 != 0):
-            raise ValueError("offset must be a timedelta "
-                             "representing a whole number of minutes")
         return cls._create(offset, name)
 
     @classmethod
@@ -2055,8 +2193,15 @@ class timezone(tzinfo):
         else:
             sign = '+'
         hours, rest = divmod(delta, timedelta(hours=1))
-        minutes = rest // timedelta(minutes=1)
-        return 'UTC{}{:02d}:{:02d}'.format(sign, hours, minutes)
+        minutes, rest = divmod(rest, timedelta(minutes=1))
+        seconds = rest.seconds
+        microseconds = rest.microseconds
+        if microseconds:
+            return (f'UTC{sign}{hours:02d}:{minutes:02d}:{seconds:02d}'
+                    f'.{microseconds:06d}')
+        if seconds:
+            return f'UTC{sign}{hours:02d}:{minutes:02d}:{seconds:02d}'
+        return f'UTC{sign}{hours:02d}:{minutes:02d}'
 
 timezone.utc = timezone._create(timedelta(0))
 timezone.min = timezone._create(timezone._minoffset)
@@ -2270,8 +2415,10 @@ else:
          _check_date_fields, _check_int_field, _check_time_fields,
          _check_tzinfo_arg, _check_tzname, _check_utc_offset, _cmp, _cmperror,
          _date_class, _days_before_month, _days_before_year, _days_in_month,
-         _format_time, _is_leap, _isoweek1monday, _math, _ord2ymd,
-         _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord)
+         _format_time, _format_offset, _is_leap, _isoweek1monday, _math,
+         _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
+         _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
+         _parse_hh_mm_ss_ff)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and

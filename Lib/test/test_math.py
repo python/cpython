@@ -1423,7 +1423,7 @@ class MathTests(unittest.TestCase):
 
 
 class IsCloseTests(unittest.TestCase):
-    isclose = math.isclose # sublcasses should override this
+    isclose = math.isclose  # subclasses should override this
 
     def assertIsClose(self, a, b, *args, **kwargs):
         self.assertTrue(self.isclose(a, b, *args, **kwargs),

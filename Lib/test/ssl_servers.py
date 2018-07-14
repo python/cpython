@@ -2,13 +2,13 @@ import os
 import sys
 import ssl
 import pprint
+import threading
 import urllib.parse
 # Rename HTTPServer to _HTTPServer so as to avoid confusion with HTTPSServer.
 from http.server import (HTTPServer as _HTTPServer,
     SimpleHTTPRequestHandler, BaseHTTPRequestHandler)
 
 from test import support
-threading = support.import_module("threading")
 
 here = os.path.dirname(__file__)
 

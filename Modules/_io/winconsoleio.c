@@ -31,7 +31,7 @@
 #if BUFSIZ < (16*1024)
 #define SMALLCHUNK (2*1024)
 #elif (BUFSIZ >= (2 << 25))
-#error "unreasonable BUFSIZ > 64MB defined"
+#error "unreasonable BUFSIZ > 64 MiB defined"
 #else
 #define SMALLCHUNK BUFSIZ
 #endif
@@ -101,7 +101,7 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
 
     DWORD length;
     wchar_t name_buf[MAX_PATH], *pname_buf = name_buf;
-    
+
     length = GetFullPathNameW(decoded_wstr, MAX_PATH, pname_buf, NULL);
     if (length > MAX_PATH) {
         pname_buf = PyMem_New(wchar_t, length);
@@ -298,25 +298,17 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     self->fd = fd;
 
     if (fd < 0) {
-        PyObject *decodedname = Py_None;
-        Py_INCREF(decodedname);
+        PyObject *decodedname;
 
         int d = PyUnicode_FSDecoder(nameobj, (void*)&decodedname);
         if (!d)
             return -1;
 
-        Py_ssize_t length;
-        name = PyUnicode_AsWideCharString(decodedname, &length);
+        name = PyUnicode_AsWideCharString(decodedname, NULL);
         console_type = _PyIO_get_console_type(decodedname);
         Py_CLEAR(decodedname);
         if (name == NULL)
             return -1;
-
-        if (wcslen(name) != length) {
-            PyMem_Free(name);
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
-            return -1;
-        }
     }
 
     s = mode;
@@ -972,6 +964,9 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     if (!self->writable)
         return err_mode("writing");
 
+    if (!b->len) {
+        return PyLong_FromLong(0);
+    }
     if (b->len > BUFMAX)
         len = BUFMAX;
     else
@@ -1000,7 +995,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, wbuf, wlen);
     if (wlen) {
         res = WriteConsoleW(self->handle, wbuf, wlen, &n, NULL);
-        if (n < wlen) {
+        if (res && n < wlen) {
             /* Wrote fewer characters than expected, which means our
              * len value may be wrong. So recalculate it from the
              * characters that were written. As this could potentially
@@ -1062,7 +1057,7 @@ _io__WindowsConsoleIO_isatty_impl(winconsoleio *self)
 }
 
 static PyObject *
-winconsoleio_getstate(winconsoleio *self)
+winconsoleio_getstate(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 {
     PyErr_Format(PyExc_TypeError,
                  "cannot serialize '%s' object", Py_TYPE(self)->tp_name);

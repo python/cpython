@@ -3,18 +3,11 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h" /* offsetof */
-
-#ifndef WITH_THREAD
-#error "Error!  The rest of Python is not compiled with thread support."
-#error "Rerun configure, adding a --with-threads option."
-#error "Then run `make clean' followed by `make'."
-#endif
-
 #include "pythread.h"
 
 static PyObject *ThreadError;
-static long nb_threads = 0;
 static PyObject *str_dict;
 
 _Py_IDENTIFIER(stderr);
@@ -111,7 +104,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 
     if (timeout_obj
         && _PyTime_FromSecondsObject(timeout,
-                                     timeout_obj, _PyTime_ROUND_CEILING) < 0)
+                                     timeout_obj, _PyTime_ROUND_TIMEOUT) < 0)
         return -1;
 
     if (!blocking && *timeout != unset_timeout ) {
@@ -129,7 +122,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     else if (*timeout != unset_timeout) {
         _PyTime_t microseconds;
 
-        microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_CEILING);
+        microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_TIMEOUT);
         if (microseconds >= PY_TIMEOUT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "timeout value is too large");
@@ -170,7 +163,7 @@ and the return value reflects whether the lock is acquired.\n\
 The blocking operation is interruptible.");
 
 static PyObject *
-lock_PyThread_release_lock(lockobject *self)
+lock_PyThread_release_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
 {
     /* Sanity check: the lock must be locked */
     if (!self->locked) {
@@ -192,7 +185,7 @@ the lock to acquire the lock.  The lock must be in the locked state,\n\
 but it needn't be locked by the same thread that unlocks it.");
 
 static PyObject *
-lock_locked_lock(lockobject *self)
+lock_locked_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyBool_FromLong((long)self->locked);
 }
@@ -340,7 +333,7 @@ internal counter is simply incremented. If nobody holds the lock,\n\
 the lock is taken and its internal counter initialized to 1.");
 
 static PyObject *
-rlock_release(rlockobject *self)
+rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
     unsigned long tid = PyThread_get_thread_ident();
 
@@ -399,7 +392,7 @@ PyDoc_STRVAR(rlock_acquire_restore_doc,
 For internal use by `threading.Condition`.");
 
 static PyObject *
-rlock_release_save(rlockobject *self)
+rlock_release_save(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
     unsigned long owner;
     unsigned long count;
@@ -425,7 +418,7 @@ For internal use by `threading.Condition`.");
 
 
 static PyObject *
-rlock_is_owned(rlockobject *self)
+rlock_is_owned(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
     unsigned long tid = PyThread_get_thread_ident();
 
@@ -932,13 +925,15 @@ local_getattro(localobject *self, PyObject *name)
 
     if (Py_TYPE(self) != &localtype)
         /* use generic lookup for subtypes */
-        return _PyObject_GenericGetAttrWithDict((PyObject *)self, name, ldict);
+        return _PyObject_GenericGetAttrWithDict(
+            (PyObject *)self, name, ldict, 0);
 
     /* Optimization: just look in dict ourselves */
     value = PyDict_GetItem(ldict, name);
     if (value == NULL)
         /* Fall back on generic to get __class__ and __dict__ */
-        return _PyObject_GenericGetAttrWithDict((PyObject *)self, name, ldict);
+        return _PyObject_GenericGetAttrWithDict(
+            (PyObject *)self, name, ldict, 0);
 
     Py_INCREF(value);
     return value;
@@ -993,7 +988,7 @@ t_bootstrap(void *boot_raw)
     tstate->thread_id = PyThread_get_thread_ident();
     _PyThreadState_Init(tstate);
     PyEval_AcquireThread(tstate);
-    nb_threads++;
+    tstate->interp->num_threads++;
     res = PyObject_Call(boot->func, boot->args, boot->keyw);
     if (res == NULL) {
         if (PyErr_ExceptionMatches(PyExc_SystemExit))
@@ -1020,7 +1015,7 @@ t_bootstrap(void *boot_raw)
     Py_DECREF(boot->args);
     Py_XDECREF(boot->keyw);
     PyMem_DEL(boot_raw);
-    nb_threads--;
+    tstate->interp->num_threads--;
     PyThreadState_Clear(tstate);
     PyThreadState_DeleteCurrent();
     PyThread_exit_thread();
@@ -1092,7 +1087,7 @@ when the function raises an unhandled exception; a stack trace will be\n\
 printed unless the exception is SystemExit.\n");
 
 static PyObject *
-thread_PyThread_exit_thread(PyObject *self)
+thread_PyThread_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyErr_SetNone(PyExc_SystemExit);
     return NULL;
@@ -1106,7 +1101,7 @@ This is synonymous to ``raise SystemExit''.  It will cause the current\n\
 thread to exit silently unless the exception is caught.");
 
 static PyObject *
-thread_PyThread_interrupt_main(PyObject * self)
+thread_PyThread_interrupt_main(PyObject * self, PyObject *Py_UNUSED(ignored))
 {
     PyErr_SetInterrupt();
     Py_RETURN_NONE;
@@ -1122,7 +1117,7 @@ A subthread can use this function to interrupt the main thread."
 static lockobject *newlockobject(void);
 
 static PyObject *
-thread_PyThread_allocate_lock(PyObject *self)
+thread_PyThread_allocate_lock(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return (PyObject *) newlockobject();
 }
@@ -1135,7 +1130,7 @@ Create a new lock object. See help(type(threading.Lock())) for\n\
 information about locks.");
 
 static PyObject *
-thread_get_ident(PyObject *self)
+thread_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     unsigned long ident = PyThread_get_thread_ident();
     if (ident == PYTHREAD_INVALID_THREAD_ID) {
@@ -1157,16 +1152,17 @@ be relied upon, and the number should be seen purely as a magic cookie.\n\
 A thread's identity may be reused for another thread after it exits.");
 
 static PyObject *
-thread__count(PyObject *self)
+thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return PyLong_FromLong(nb_threads);
+    PyThreadState *tstate = PyThreadState_Get();
+    return PyLong_FromLong(tstate->interp->num_threads);
 }
 
 PyDoc_STRVAR(_count_doc,
 "_count() -> integer\n\
 \n\
 \
-Return the number of currently running Python threads, excluding \n\
+Return the number of currently running Python threads, excluding\n\
 the main thread. The returned number comprises all threads created\n\
 through `start_new_thread()` as well as `threading.Thread`, and not\n\
 yet finished.\n\
@@ -1196,7 +1192,7 @@ release_sentinel(void *wr)
 }
 
 static PyObject *
-thread__set_sentinel(PyObject *self)
+thread__set_sentinel(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *wr;
     PyThreadState *tstate = PyThreadState_Get();
@@ -1282,10 +1278,10 @@ exception is raised, and the stack size is unmodified.  32k bytes\n\
 sufficient stack space for the interpreter itself.\n\
 \n\
 Note that some platforms may have particular restrictions on values for\n\
-the stack size, such as requiring a minimum stack size larger than 32kB or\n\
+the stack size, such as requiring a minimum stack size larger than 32 KiB or\n\
 requiring allocation in multiples of the system memory page size\n\
 - platform documentation should be referred to for more information\n\
-(4kB pages are common; using multiples of 4096 for the stack size is\n\
+(4 KiB pages are common; using multiples of 4096 for the stack size is\n\
 the suggested approach in the absence of more specific information).");
 
 static PyMethodDef thread_methods[] = {
@@ -1293,23 +1289,23 @@ static PyMethodDef thread_methods[] = {
      METH_VARARGS, start_new_doc},
     {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
-    {"allocate_lock",           (PyCFunction)thread_PyThread_allocate_lock,
+    {"allocate_lock",           thread_PyThread_allocate_lock,
      METH_NOARGS, allocate_doc},
-    {"allocate",                (PyCFunction)thread_PyThread_allocate_lock,
+    {"allocate",                thread_PyThread_allocate_lock,
      METH_NOARGS, allocate_doc},
-    {"exit_thread",             (PyCFunction)thread_PyThread_exit_thread,
+    {"exit_thread",             thread_PyThread_exit_thread,
      METH_NOARGS, exit_doc},
-    {"exit",                    (PyCFunction)thread_PyThread_exit_thread,
+    {"exit",                    thread_PyThread_exit_thread,
      METH_NOARGS, exit_doc},
-    {"interrupt_main",          (PyCFunction)thread_PyThread_interrupt_main,
+    {"interrupt_main",          thread_PyThread_interrupt_main,
      METH_NOARGS, interrupt_doc},
-    {"get_ident",               (PyCFunction)thread_get_ident,
+    {"get_ident",               thread_get_ident,
      METH_NOARGS, get_ident_doc},
-    {"_count",                  (PyCFunction)thread__count,
+    {"_count",                  thread__count,
      METH_NOARGS, _count_doc},
     {"stack_size",              (PyCFunction)thread_stack_size,
      METH_VARARGS, stack_size_doc},
-    {"_set_sentinel",           (PyCFunction)thread__set_sentinel,
+    {"_set_sentinel",           thread__set_sentinel,
      METH_NOARGS, _set_sentinel_doc},
     {NULL,                      NULL}           /* sentinel */
 };
@@ -1352,6 +1348,7 @@ PyInit__thread(void)
     PyObject *m, *d, *v;
     double time_max;
     double timeout_max;
+    PyThreadState *tstate = PyThreadState_Get();
 
     /* Initialize types: */
     if (PyType_Ready(&localdummytype) < 0)
@@ -1368,9 +1365,11 @@ PyInit__thread(void)
     if (m == NULL)
         return NULL;
 
-    timeout_max = PY_TIMEOUT_MAX / 1000000;
-    time_max = floor(_PyTime_AsSecondsDouble(_PyTime_MAX));
+    timeout_max = (_PyTime_t)PY_TIMEOUT_MAX * 1e-6;
+    time_max = _PyTime_AsSecondsDouble(_PyTime_MAX);
     timeout_max = Py_MIN(timeout_max, time_max);
+    /* Round towards minus infinity */
+    timeout_max = floor(timeout_max);
 
     v = PyFloat_FromDouble(timeout_max);
     if (!v)
@@ -1396,7 +1395,7 @@ PyInit__thread(void)
     if (PyModule_AddObject(m, "_local", (PyObject *)&localtype) < 0)
         return NULL;
 
-    nb_threads = 0;
+    tstate->interp->num_threads = 0;
 
     str_dict = PyUnicode_InternFromString("__dict__");
     if (str_dict == NULL)

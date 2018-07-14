@@ -11,8 +11,17 @@
 # directory.)
 
 # Each line in this file describes one or more optional modules.
-# Modules enabled here will not be compiled by the setup.py script,
+# Modules configured here will not be compiled by the setup.py script,
 # so the file can be used to override setup.py's behavior.
+# Tag lines containing just the word "*static*", "*shared*" or "*disabled*"
+# (without the quotes but with the stars) are used to tag the following module
+# descriptions. Tag lines may alternate throughout this file.  Modules are
+# built statically when they are preceded by a "*static*" tag line or when
+# there is no tag line between the start of the file and the module
+# description.  Modules are built as a shared library when they are preceded by
+# a "*shared*" tag line.  Modules are not built at all, not by the Makefile,
+# nor by the setup.py script, when they are preceded by a "*disabled*" tag
+# line.
 
 # Lines have the following structure:
 #
@@ -34,9 +43,7 @@
 #
 # which defines a Make variable definition inserted into Makefile.in
 #
-# Finally, if a line contains just the word "*shared*" (without the
-# quotes but with the stars), then the following modules will not be
-# built statically.  The build process works like this:
+# The build process works like this:
 #
 # 1. Build all modules that are declared as static in Modules/Setup,
 #    combine them into libpythonxy.a, combine that into python.
@@ -57,10 +64,6 @@
 # toplevel "make install" target.)  (For compatibility,
 # *noconfig* has the same effect as *shared*.)
 #
-# In addition, *static* explicitly declares the following modules to
-# be static.  Lines containing "*static*" and "*shared*" may thus
-# alternate throughout this file.
-
 # NOTE: As a standard policy, as many modules as can be supported by a
 # platform should be present.  The distribution comes with all modules
 # enabled that are supported by most platforms and don't require you
@@ -90,11 +93,7 @@ SITEPATH=
 # Standard path components for test modules
 TESTPATH=
 
-# Path components for machine- or system-dependent modules and shared libraries
-MACHDEPPATH=:$(PLATDIR)
-EXTRAMACHDEPPATH=
-
-COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)$(MACHDEPPATH)$(EXTRAMACHDEPPATH)
+COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)
 PYTHONPATH=$(COREPYTHONPATH)
 
 
@@ -105,31 +104,33 @@ PYTHONPATH=$(COREPYTHONPATH)
 # This only contains the minimal set of modules required to run the
 # setup.py script in the root of the Python source tree.
 
-posix posixmodule.c		# posix (UNIX) system calls
-errno errnomodule.c		# posix (UNIX) errno values
-pwd pwdmodule.c			# this is needed to find out the user's home dir
-				# if $HOME is not set
-_sre _sre.c			# Fredrik Lundh's new regular expressions
-_codecs _codecsmodule.c		# access to the builtin codecs and codec registry
-_weakref _weakref.c		# weak references
-_functools _functoolsmodule.c   # Tools for working with functions and callable objects
-_operator _operator.c	        # operator.add() and similar goodies
-_collections _collectionsmodule.c # Container types
-itertools itertoolsmodule.c    # Functions creating iterators for efficient looping
-atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
-_signal signalmodule.c
-_stat _stat.c			# stat.h interface
-time timemodule.c	# -lm # time operations and variables
+posix -DPy_BUILD_CORE posixmodule.c	# posix (UNIX) system calls
+errno errnomodule.c			# posix (UNIX) errno values
+pwd pwdmodule.c				# this is needed to find out the user's home dir
+					# if $HOME is not set
+_sre _sre.c				# Fredrik Lundh's new regular expressions
+_codecs _codecsmodule.c			# access to the builtin codecs and codec registry
+_weakref _weakref.c			# weak references
+_functools -DPy_BUILD_CORE _functoolsmodule.c   # Tools for working with functions and callable objects
+_operator _operator.c	        	# operator.add() and similar goodies
+_collections _collectionsmodule.c	# Container types
+_abc _abc.c				# Abstract base classes
+itertools itertoolsmodule.c		# Functions creating iterators for efficient looping
+atexit atexitmodule.c			# Register functions to be run at interpreter-shutdown
+_signal -DPy_BUILD_CORE signalmodule.c
+_stat _stat.c				# stat.h interface
+time -DPy_BUILD_CORE timemodule.c	# -lm # time operations and variables
+_thread -DPy_BUILD_CORE _threadmodule.c	# low-level threading interface
 
 # access to ISO C locale support
 _locale _localemodule.c  # -lintl
 
 # Standard I/O baseline
-_io -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
+_io -DPy_BUILD_CORE -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
 
 # The zipimport module is always imported at startup. Having it as a
 # builtin module avoids some bootstrapping problems and reduces overhead.
-zipimport zipimport.c
+zipimport -DPy_BUILD_CORE zipimport.c
 
 # faulthandler module
 faulthandler faulthandler.c
@@ -152,7 +153,7 @@ _symtable symtablemodule.c
 
 # Uncommenting the following line tells makesetup that all following
 # modules are to be built as shared libraries (see above for more
-# detail; also note that *static* reverses this effect):
+# detail; also note that *static* or *disabled* cancels this effect):
 
 #*shared*
 
@@ -172,6 +173,7 @@ _symtable symtablemodule.c
 #array arraymodule.c	# array objects
 #cmath cmathmodule.c _math.c # -lm # complex math library functions
 #math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
+#_contextvars _contextvarsmodule.c  # Context Variables
 #_struct _struct.c	# binary structure packing/unpacking
 #_weakref _weakref.c	# basic weak reference support
 #_testcapi _testcapimodule.c    # Python C API test module
@@ -213,8 +215,6 @@ _symtable symtablemodule.c
 
 # The crypt module is now disabled by default because it breaks builds
 # on many systems (where -lcrypt is needed), e.g. Linux (I believe).
-#
-# First, look at Setup.config; configure may have set this for you.
 
 #_crypt _cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
 
@@ -250,6 +250,7 @@ _symtable symtablemodule.c
 #_sha1 sha1module.c
 #_sha256 sha256module.c
 #_sha512 sha512module.c
+#_sha3 _sha3/sha3module.c
 
 # _blake module
 #_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
@@ -304,8 +305,6 @@ _symtable symtablemodule.c
 # Curses support, requiring the System V version of curses, often
 # provided by the ncurses library.  e.g. on Linux, link with -lncurses
 # instead of -lcurses).
-#
-# First, look at Setup.config; configure may have set this for you.
 
 #_curses _cursesmodule.c -lcurses -ltermcap
 # Wrapper for the panel library that's part of ncurses and SYSV curses.
@@ -319,18 +318,9 @@ _symtable symtablemodule.c
 # implementation independent wrapper for these; dbm/dumb.py provides
 # similar functionality (but slower of course) implemented in Python.
 
-# The standard Unix dbm module has been moved to Setup.config so that
-# it will be compiled as a shared library by default.  Compiling it as
-# a built-in module causes conflicts with the pybsddb3 module since it
-# creates a static dependency on an out-of-date version of db.so.
-#
-# First, look at Setup.config; configure may have set this for you.
-
 #_dbm _dbmmodule.c 	# dbm(3) may require -lndbm or similar
 
 # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
-#
-# First, look at Setup.config; configure may have set this for you.
 
 #_gdbm _gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
 
@@ -341,23 +331,6 @@ _symtable symtablemodule.c
 # Fred Drake's interface to the Python parser
 #parser parsermodule.c
 
-
-# Lee Busby's SIGFPE modules.
-# The library to link fpectl with is platform specific.
-# Choose *one* of the options below for fpectl:
-
-# For SGI IRIX (tested on 5.3):
-#fpectl fpectlmodule.c -lfpe
-
-# For Solaris with SunPro compiler (tested on Solaris 2.5 with SunPro C 4.2):
-# (Without the compiler you don't have -lsunmath.)
-#fpectl fpectlmodule.c -R/opt/SUNWspro/lib -lsunmath -lm
-
-# For other systems: see instructions in fpectlmodule.c.
-#fpectl fpectlmodule.c ...
-
-# Test module for fpectl.  No extra libraries needed.
-#fpetest fpetestmodule.c
 
 # Andrew Kuchling's zlib module.
 # This require zlib 1.1.3 (or later).
@@ -394,3 +367,11 @@ _symtable symtablemodule.c
 
 # Another example -- the 'xxsubtype' module shows C-level subtyping in action
 xxsubtype xxsubtype.c
+
+# Uncommenting the following line tells makesetup that all following modules
+# are not built (see above for more detail).
+#
+#*disabled*
+#
+#_sqlite3 _tkinter _curses pyexpat
+#_codecs_jp _codecs_kr _codecs_tw unicodedata

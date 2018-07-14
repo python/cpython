@@ -10,6 +10,7 @@ import sys
 import select
 import signal
 import socket
+import io # readline
 import unittest
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
@@ -23,13 +24,23 @@ else:
         pass
 
 
+# Note that os.read() is nondeterministic so we need to be very careful
+# to make the test suite deterministic.  A normal call to os.read() may
+# give us less than expected.
+#
+# Beware, on my Linux system, if I put 'foo\n' into a terminal fd, I get
+# back 'foo\r\n' at the other end.  The behavior depends on the termios
+# setting.  The newline translation may be OS-specific.  To make the
+# test suite deterministic and OS-independent, the functions _readline
+# and normalize_output can be used.
+
 def normalize_output(data):
-    # Some operating systems do conversions on newline.  We could possibly
-    # fix that by doing the appropriate termios.tcsetattr()s.  I couldn't
-    # figure out the right combo on Tru64 and I don't have an IRIX box.
-    # So just normalize the output and doc the problem O/Ses by allowing
-    # certain combinations for some platforms, but avoid allowing other
-    # differences (like extra whitespace, trailing garbage, etc.)
+    # Some operating systems do conversions on newline.  We could possibly fix
+    # that by doing the appropriate termios.tcsetattr()s.  I couldn't figure out
+    # the right combo on Tru64.  So, just normalize the output and doc the
+    # problem O/Ses by allowing certain combinations for some platforms, but
+    # avoid allowing other differences (like extra whitespace, trailing garbage,
+    # etc.)
 
     # This is about the best we can do without getting some feedback
     # from someone more knowledgable.
@@ -38,11 +49,16 @@ def normalize_output(data):
     if data.endswith(b'\r\r\n'):
         return data.replace(b'\r\r\n', b'\n')
 
-    # IRIX apparently turns \n into \r\n.
     if data.endswith(b'\r\n'):
         return data.replace(b'\r\n', b'\n')
 
     return data
+
+def _readline(fd):
+    """Read one line.  May block forever if no newline is read."""
+    reader = io.FileIO(fd, mode='rb', closefd=False)
+    return reader.readline()
+
 
 
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
@@ -52,13 +68,10 @@ class PtyTest(unittest.TestCase):
     def setUp(self):
         # isatty() and close() can hang on some platforms.  Set an alarm
         # before running the test to make sure we don't hang forever.
-        self.old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
+        old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
+        self.addCleanup(signal.signal, signal.SIGALRM, old_alarm)
+        self.addCleanup(signal.alarm, 0)
         signal.alarm(10)
-
-    def tearDown(self):
-        # remove alarm, restore old alarm handler
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, self.old_alarm)
 
     def handle_sig(self, sig, frame):
         self.fail("isatty hung")
@@ -98,14 +111,14 @@ class PtyTest(unittest.TestCase):
 
         debug("Writing to slave_fd")
         os.write(slave_fd, TEST_STRING_1)
-        s1 = os.read(master_fd, 1024)
+        s1 = _readline(master_fd)
         self.assertEqual(b'I wish to buy a fish license.\n',
                          normalize_output(s1))
 
         debug("Writing chunked output")
         os.write(slave_fd, TEST_STRING_2[:5])
         os.write(slave_fd, TEST_STRING_2[5:])
-        s2 = os.read(master_fd, 1024)
+        s2 = _readline(master_fd)
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
         os.close(slave_fd)

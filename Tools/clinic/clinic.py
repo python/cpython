@@ -710,7 +710,12 @@ class CLanguage(Language):
 
         parser_prototype_fastcall = normalize_snippet("""
             static PyObject *
-            {c_basename}({self_type}{self_name}, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+            {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs)
+            """)
+
+        parser_prototype_fastcall_keywords = normalize_snippet("""
+            static PyObject *
+            {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
             """)
 
         # parser_body_fields remembers the fields passed in to the
@@ -833,10 +838,6 @@ class CLanguage(Language):
                         {parse_arguments})) {{
                         goto exit;
                     }}
-
-                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
-                        goto exit;
-                    }}
                     """, indent=4))
             else:
                 flags = "METH_VARARGS"
@@ -863,10 +864,6 @@ class CLanguage(Language):
                         {parse_arguments})) {{
                         goto exit;
                     }}
-
-                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
-                        goto exit;
-                    }}
                     """, indent=4))
             else:
                 # positional-only, but no option groups
@@ -883,9 +880,9 @@ class CLanguage(Language):
                     """, indent=4))
 
         elif not new_or_init:
-            flags = "METH_FASTCALL"
+            flags = "METH_FASTCALL|METH_KEYWORDS"
 
-            parser_prototype = parser_prototype_fastcall
+            parser_prototype = parser_prototype_fastcall_keywords
 
             body = normalize_snippet("""
                 if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
@@ -960,8 +957,8 @@ class CLanguage(Language):
             cpp_if = "#if " + conditional
             cpp_endif = "#endif /* " + conditional + " */"
 
-            if methoddef_define and f.name not in clinic.ifndef_symbols:
-                clinic.ifndef_symbols.add(f.name)
+            if methoddef_define and f.full_name not in clinic.ifndef_symbols:
+                clinic.ifndef_symbols.add(f.full_name)
                 methoddef_ifndef = normalize_snippet("""
                     #ifndef {methoddef_name}
                         #define {methoddef_name}
@@ -2559,9 +2556,29 @@ class char_converter(CConverter):
     format_unit = 'c'
     c_ignored_default = "'\0'"
 
+    # characters which need to be escaped in C code
+    _escapes = {x: r'\%d' % x for x in range(7)}
+    _escapes.update({
+        0x07: r'\a',
+        0x08: r'\b',
+        0x09: r'\t',
+        0x0A: r'\n',
+        0x0B: r'\v',
+        0x0C: r'\f',
+        0x0D: r'\r',
+        0x22: r'\"',
+        0x27: r'\'',
+        0x3F: r'\?',
+        0x5C: r'\\',
+    })
+
     def converter_init(self):
-        if isinstance(self.default, self.default_type) and (len(self.default) != 1):
-            fail("char_converter: illegal default value " + repr(self.default))
+        if isinstance(self.default, self.default_type):
+            if len(self.default) != 1:
+                fail("char_converter: illegal default value " + repr(self.default))
+
+            c_ord = self.default[0]
+            self.c_default = "'%s'" % self._escapes.get(c_ord, chr(c_ord))
 
 
 @add_legacy_c_converter('B', bitwise=True)
@@ -4335,7 +4352,10 @@ def main(argv):
     cmdline.add_argument("-o", "--output", type=str)
     cmdline.add_argument("-v", "--verbose", action='store_true')
     cmdline.add_argument("--converters", action='store_true')
-    cmdline.add_argument("--make", action='store_true')
+    cmdline.add_argument("--make", action='store_true',
+                         help="Walk --srcdir to run over all relevant files.")
+    cmdline.add_argument("--srcdir", type=str, default=os.curdir,
+                         help="The directory tree to walk in --make mode.")
     cmdline.add_argument("filename", type=str, nargs="*")
     ns = cmdline.parse_args(argv)
 
@@ -4406,7 +4426,12 @@ def main(argv):
             print()
             cmdline.print_usage()
             sys.exit(-1)
-        for root, dirs, files in os.walk('.'):
+        if not ns.srcdir:
+            print("Usage error: --srcdir must not be empty with --make.")
+            print()
+            cmdline.print_usage()
+            sys.exit(-1)
+        for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
                     dirs.remove(rcs_dir)

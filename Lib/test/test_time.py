@@ -7,11 +7,9 @@ import platform
 import sys
 import sysconfig
 import time
+import threading
 import unittest
-try:
-    import threading
-except ImportError:
-    threading = None
+import warnings
 try:
     import _testcapi
 except ImportError:
@@ -36,6 +34,8 @@ class _PyTime(enum.IntEnum):
     ROUND_CEILING = 1
     # Round to nearest with ties going to nearest even integer
     ROUND_HALF_EVEN = 2
+    # Round away from zero
+    ROUND_UP = 3
 
 # Rounding modes supported by PyTime
 ROUNDING_MODES = (
@@ -43,7 +43,14 @@ ROUNDING_MODES = (
     (_PyTime.ROUND_FLOOR, decimal.ROUND_FLOOR),
     (_PyTime.ROUND_CEILING, decimal.ROUND_CEILING),
     (_PyTime.ROUND_HALF_EVEN, decimal.ROUND_HALF_EVEN),
+    (_PyTime.ROUND_UP, decimal.ROUND_UP),
 )
+
+
+def busy_wait(duration):
+    deadline = time.monotonic() + duration
+    while time.monotonic() < deadline:
+        pass
 
 
 class TimeTestCase(unittest.TestCase):
@@ -63,17 +70,45 @@ class TimeTestCase(unittest.TestCase):
         self.assertFalse(info.monotonic)
         self.assertTrue(info.adjustable)
 
-    def test_clock(self):
-        time.clock()
+    def test_time_ns_type(self):
+        def check_ns(sec, ns):
+            self.assertIsInstance(ns, int)
 
-        info = time.get_clock_info('clock')
+            sec_ns = int(sec * 1e9)
+            # tolerate a difference of 50 ms
+            self.assertLess((sec_ns - ns), 50 ** 6, (sec, ns))
+
+        check_ns(time.time(),
+                 time.time_ns())
+        check_ns(time.monotonic(),
+                 time.monotonic_ns())
+        check_ns(time.perf_counter(),
+                 time.perf_counter_ns())
+        check_ns(time.process_time(),
+                 time.process_time_ns())
+
+        if hasattr(time, 'thread_time'):
+            check_ns(time.thread_time(),
+                     time.thread_time_ns())
+
+        if hasattr(time, 'clock_gettime'):
+            check_ns(time.clock_gettime(time.CLOCK_REALTIME),
+                     time.clock_gettime_ns(time.CLOCK_REALTIME))
+
+    def test_clock(self):
+        with self.assertWarns(DeprecationWarning):
+            time.clock()
+
+        with self.assertWarns(DeprecationWarning):
+            info = time.get_clock_info('clock')
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
     def test_clock_realtime(self):
-        time.clock_gettime(time.CLOCK_REALTIME)
+        t = time.clock_gettime(time.CLOCK_REALTIME)
+        self.assertIsInstance(t, float)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
@@ -83,6 +118,18 @@ class TimeTestCase(unittest.TestCase):
         a = time.clock_gettime(time.CLOCK_MONOTONIC)
         b = time.clock_gettime(time.CLOCK_MONOTONIC)
         self.assertLessEqual(a, b)
+
+    @unittest.skipUnless(hasattr(time, 'pthread_getcpuclockid'),
+                         'need time.pthread_getcpuclockid()')
+    @unittest.skipUnless(hasattr(time, 'clock_gettime'),
+                         'need time.clock_gettime()')
+    def test_pthread_getcpuclockid(self):
+        clk_id = time.pthread_getcpuclockid(threading.get_ident())
+        self.assertTrue(type(clk_id) is int)
+        self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        t1 = time.clock_gettime(clk_id)
+        t2 = time.clock_gettime(clk_id)
+        self.assertLessEqual(t1, t2)
 
     @unittest.skipUnless(hasattr(time, 'clock_getres'),
                          'need time.clock_getres()')
@@ -125,6 +172,10 @@ class TimeTestCase(unittest.TestCase):
                 time.strftime(format, tt)
             except ValueError:
                 self.fail('conversion specifier: %r failed.' % format)
+
+        self.assertRaises(TypeError, time.strftime, b'%S', tt)
+        # embedded null character
+        self.assertRaises(ValueError, time.strftime, '%S\0', tt)
 
     def _bounds_checking(self, func):
         # Make sure that strftime() checks the bounds of the various parts
@@ -411,8 +462,6 @@ class TimeTestCase(unittest.TestCase):
             pass
         self.assertEqual(time.strftime('%Z', tt), tzname)
 
-    @unittest.skipUnless(hasattr(time, 'monotonic'),
-                         'need time.monotonic')
     def test_monotonic(self):
         # monotonic() should not go backward
         times = [time.monotonic() for n in range(100)]
@@ -447,12 +496,62 @@ class TimeTestCase(unittest.TestCase):
         # on Windows
         self.assertLess(stop - start, 0.020)
 
+        # process_time() should include CPU time spent in any thread
+        start = time.process_time()
+        busy_wait(0.100)
+        stop = time.process_time()
+        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+
+        t = threading.Thread(target=busy_wait, args=(0.100,))
+        start = time.process_time()
+        t.start()
+        t.join()
+        stop = time.process_time()
+        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+
         info = time.get_clock_info('process_time')
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 
-    @unittest.skipUnless(hasattr(time, 'monotonic'),
-                         'need time.monotonic')
+    def test_thread_time(self):
+        if not hasattr(time, 'thread_time'):
+            if sys.platform.startswith(('linux', 'win')):
+                self.fail("time.thread_time() should be available on %r"
+                          % (sys.platform,))
+            else:
+                self.skipTest("need time.thread_time")
+
+        # thread_time() should not include time spend during a sleep
+        start = time.thread_time()
+        time.sleep(0.100)
+        stop = time.thread_time()
+        # use 20 ms because thread_time() has usually a resolution of 15 ms
+        # on Windows
+        self.assertLess(stop - start, 0.020)
+
+        # bpo-33723: A busy loop of 100 ms should increase thread_time()
+        # by at least 15 ms
+        min_time = 0.015
+        busy_time = 0.100
+
+        # thread_time() should include CPU time spent in current thread...
+        start = time.thread_time()
+        busy_wait(busy_time)
+        stop = time.thread_time()
+        self.assertGreaterEqual(stop - start, min_time)
+
+        # ...but not in other threads
+        t = threading.Thread(target=busy_wait, args=(busy_time,))
+        start = time.thread_time()
+        t.start()
+        t.join()
+        stop = time.thread_time()
+        self.assertLess(stop - start, min_time)
+
+        info = time.get_clock_info('thread_time')
+        self.assertTrue(info.monotonic)
+        self.assertFalse(info.adjustable)
+
     @unittest.skipUnless(hasattr(time, 'clock_settime'),
                          'need time.clock_settime')
     def test_monotonic_settime(self):
@@ -485,13 +584,20 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(OSError, time.localtime, invalid_time_t)
         self.assertRaises(OSError, time.ctime, invalid_time_t)
 
+        # Issue #26669: check for localtime() failure
+        self.assertRaises(ValueError, time.localtime, float("nan"))
+        self.assertRaises(ValueError, time.ctime, float("nan"))
+
     def test_get_clock_info(self):
-        clocks = ['clock', 'perf_counter', 'process_time', 'time']
-        if hasattr(time, 'monotonic'):
-            clocks.append('monotonic')
+        clocks = ['clock', 'monotonic', 'perf_counter', 'process_time', 'time']
 
         for name in clocks:
-            info = time.get_clock_info(name)
+            if name == 'clock':
+                with self.assertWarns(DeprecationWarning):
+                    info = time.get_clock_info('clock')
+            else:
+                info = time.get_clock_info(name)
+
             #self.assertIsInstance(info, dict)
             self.assertIsInstance(info.implementation, str)
             self.assertNotEqual(info.implementation, '')
@@ -819,6 +925,11 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
                                 lambda secs: secs * SEC_TO_NS,
                                 value_filter=c_int_filter)
 
+        # test nan
+        for time_rnd, _ in ROUNDING_MODES:
+            with self.assertRaises(TypeError):
+                PyTime_FromSeconds(float('nan'))
+
     def test_FromSecondsObject(self):
         from _testcapi import PyTime_FromSecondsObject
 
@@ -829,6 +940,11 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         self.check_float_rounding(
             PyTime_FromSecondsObject,
             lambda ns: self.decimal_round(ns * SEC_TO_NS))
+
+        # test nan
+        for time_rnd, _ in ROUNDING_MODES:
+            with self.assertRaises(ValueError):
+                PyTime_FromSecondsObject(float('nan'), time_rnd)
 
     def test_AsSecondsDouble(self):
         from _testcapi import PyTime_AsSecondsDouble
@@ -842,6 +958,11 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         self.check_int_rounding(lambda ns, rnd: PyTime_AsSecondsDouble(ns),
                                 float_converter,
                                 NS_TO_SEC)
+
+        # test nan
+        for time_rnd, _ in ROUNDING_MODES:
+            with self.assertRaises(TypeError):
+                PyTime_AsSecondsDouble(float('nan'))
 
     def create_decimal_converter(self, denominator):
         denom = decimal.Decimal(denominator)
@@ -948,6 +1069,11 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
                                   self.create_converter(SEC_TO_US),
                                   value_filter=self.time_t_filter)
 
+         # test nan
+        for time_rnd, _ in ROUNDING_MODES:
+            with self.assertRaises(ValueError):
+                pytime_object_to_timeval(float('nan'), time_rnd)
+
     def test_object_to_timespec(self):
         from _testcapi import pytime_object_to_timespec
 
@@ -958,6 +1084,11 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
         self.check_float_rounding(pytime_object_to_timespec,
                                   self.create_converter(SEC_TO_NS),
                                   value_filter=self.time_t_filter)
+
+        # test nan
+        for time_rnd, _ in ROUNDING_MODES:
+            with self.assertRaises(ValueError):
+                pytime_object_to_timespec(float('nan'), time_rnd)
 
 
 if __name__ == "__main__":

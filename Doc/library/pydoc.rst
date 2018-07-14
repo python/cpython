@@ -70,6 +70,12 @@ will start a HTTP server on port 1234, allowing you to browse the
 documentation at ``http://localhost:1234/`` in your preferred Web browser.
 Specifying ``0`` as the port number will select an arbitrary unused port.
 
+:program:`pydoc -n <hostname>` will start the server listening at the given
+hostname.  By default the hostname is 'localhost' but if you want the server to
+be reached from other machines, you may want to change the host name that the
+server responds to.  During development this is especially useful if you want
+to run pydoc from within a container.
+
 :program:`pydoc -b` will start the server and additionally open a web
 browser to a module index page.  Each served page has a navigation bar at the
 top where you can *Get* help on an individual item, *Search* all modules with a
@@ -98,3 +104,6 @@ Reference Manual pages.
    :mod:`pydoc` now uses :func:`inspect.signature` rather than
    :func:`inspect.getfullargspec` to extract signature information from
    callables.
+
+.. versionchanged:: 3.7
+   Added the ``-n`` option.

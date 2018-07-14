@@ -1,8 +1,12 @@
 .. currentmodule:: asyncio
 
-++++++++++++++++++++++++++++++++++++++++++++++
-Transports  and protocols (callback based API)
-++++++++++++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++
+Transports and protocols (callback based API)
++++++++++++++++++++++++++++++++++++++++++++++
+
+**Source code:** :source:`Lib/asyncio/transports.py`
+
+**Source code:** :source:`Lib/asyncio/protocols.py`
 
 .. _asyncio-transport:
 
@@ -114,16 +118,30 @@ ReadTransport
 
    Interface for read-only transports.
 
+   .. method:: is_reading()
+
+      Return ``True`` if the transport is receiving new data.
+
+      .. versionadded:: 3.7
+
    .. method:: pause_reading()
 
       Pause the receiving end of the transport.  No data will be passed to
       the protocol's :meth:`data_received` method until :meth:`resume_reading`
       is called.
 
+      .. versionchanged:: 3.7
+         The method is idempotent, i.e. it can be called when the
+         transport is already paused or closed.
+
    .. method:: resume_reading()
 
       Resume the receiving end.  The protocol's :meth:`data_received` method
       will be called once again if some data is available for reading.
+
+      .. versionchanged:: 3.7
+         The method is idempotent, i.e. it can be called when the
+         transport is already reading.
 
 
 WriteTransport
@@ -163,10 +181,16 @@ WriteTransport
 
       Set the *high*- and *low*-water limits for write flow control.
 
-      These two values control when call the protocol's
+      These two values (measured in number of
+      bytes) control when the protocol's
       :meth:`pause_writing` and :meth:`resume_writing` methods are called.
       If specified, the low-water limit must be less than or equal to the
       high-water limit.  Neither *high* nor *low* can be negative.
+
+      :meth:`pause_writing` is called when the buffer size becomes greater
+      than or equal to the *high* value. If writing has been paused,
+      :meth:`resume_writing` is called when the buffer size becomes less
+      than or equal to the *low* value.
 
       The defaults are implementation-specific.  If only the
       high-water limit is given, the low-water limit defaults to an
@@ -309,6 +333,16 @@ Protocol classes
    The base class for implementing streaming protocols (for use with
    e.g. TCP and SSL transports).
 
+.. class:: BufferedProtocol
+
+   A base class for implementing streaming protocols with manual
+   control of the receive buffer.
+
+   .. versionadded:: 3.7
+      **Important:** this has been added to asyncio in Python 3.7
+      *on a provisional basis*!  Treat it as an experimental API that
+      might be changed or removed in Python 3.8.
+
 .. class:: DatagramProtocol
 
    The base class for implementing datagram protocols (for use with
@@ -404,10 +438,75 @@ and, if called, :meth:`data_received` won't be called after it.
 
 State machine:
 
-    start -> :meth:`~BaseProtocol.connection_made`
-    [-> :meth:`~Protocol.data_received` \*]
-    [-> :meth:`~Protocol.eof_received` ?]
-    -> :meth:`~BaseProtocol.connection_lost` -> end
+.. code-block:: none
+
+    start -> connection_made
+        [-> data_received]*
+        [-> eof_received]?
+    -> connection_lost -> end
+
+
+Streaming protocols with manual receive buffer control
+------------------------------------------------------
+
+.. versionadded:: 3.7
+   **Important:** :class:`BufferedProtocol` has been added to
+   asyncio in Python 3.7 *on a provisional basis*!  Consider it as an
+   experimental API that might be changed or removed in Python 3.8.
+
+
+Event methods, such as :meth:`AbstractEventLoop.create_server` and
+:meth:`AbstractEventLoop.create_connection`, accept factories that
+return protocols that implement this interface.
+
+The idea of BufferedProtocol is that it allows to manually allocate
+and control the receive buffer.  Event loops can then use the buffer
+provided by the protocol to avoid unnecessary data copies.  This
+can result in noticeable performance improvement for protocols that
+receive big amounts of data.  Sophisticated protocols implementations
+can allocate the buffer only once at creation time.
+
+The following callbacks are called on :class:`BufferedProtocol`
+instances:
+
+.. method:: BufferedProtocol.get_buffer(sizehint)
+
+   Called to allocate a new receive buffer.
+
+   *sizehint* is a recommended minimal size for the returned
+   buffer.  It is acceptable to return smaller or bigger buffers
+   than what *sizehint* suggests.  When set to -1, the buffer size
+   can be arbitrary. It is an error to return a zero-sized buffer.
+
+   Must return an object that implements the
+   :ref:`buffer protocol <bufferobjects>`.
+
+.. method:: BufferedProtocol.buffer_updated(nbytes)
+
+   Called when the buffer was updated with the received data.
+
+   *nbytes* is the total number of bytes that were written to the buffer.
+
+.. method:: BufferedProtocol.eof_received()
+
+   See the documentation of the :meth:`Protocol.eof_received` method.
+
+
+:meth:`get_buffer` can be called an arbitrary number of times during
+a connection.  However, :meth:`eof_received` is called at most once
+and, if called, :meth:`get_buffer` and :meth:`buffer_updated`
+won't be called after it.
+
+State machine:
+
+.. code-block:: none
+
+    start -> connection_made
+        [-> get_buffer
+            [-> buffer_updated]?
+        ]*
+        [-> eof_received]?
+    -> connection_lost -> end
 
 
 Datagram protocols
@@ -478,8 +577,9 @@ Coroutines can be scheduled in a protocol method using :func:`ensure_future`,
 but there is no guarantee made about the execution order.  Protocols are not
 aware of coroutines created in protocol methods and so will not wait for them.
 
-To have a reliable execution order, use :ref:`stream objects <asyncio-streams>` in a
-coroutine with ``yield from``. For example, the :meth:`StreamWriter.drain`
+To have a reliable execution order,
+use :ref:`stream objects <asyncio-streams>` in a
+coroutine with ``await``. For example, the :meth:`StreamWriter.drain`
 coroutine can be used to wait until the write buffer is flushed.
 
 
@@ -579,7 +679,7 @@ received data and close the connection::
 
 :meth:`Transport.close` can be called immediately after
 :meth:`WriteTransport.write` even if data are not sent yet on the socket: both
-methods are asynchronous. ``yield from`` is not needed because these transport
+methods are asynchronous. ``await`` is not needed because these transport
 methods are not coroutines.
 
 .. seealso::
@@ -680,10 +780,7 @@ Wait until a socket receives data using the
 the event loop ::
 
     import asyncio
-    try:
-        from socket import socketpair
-    except ImportError:
-        from asyncio.windows_utils import socketpair
+    from socket import socketpair
 
     # Create a pair of connected sockets
     rsock, wsock = socketpair()

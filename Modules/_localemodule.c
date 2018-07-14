@@ -132,15 +132,16 @@ PyDoc_STRVAR(localeconv__doc__,
 "() -> dict. Returns numeric and monetary locale-specific parameters.");
 
 static PyObject*
-PyLocale_localeconv(PyObject* self)
+PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* result;
     struct lconv *l;
     PyObject *x;
 
     result = PyDict_New();
-    if (!result)
+    if (!result) {
         return NULL;
+    }
 
     /* if LC_NUMERIC is different in the C library, use saved value */
     l = localeconv();
@@ -171,12 +172,6 @@ PyLocale_localeconv(PyObject* self)
         RESULT(#i, x); \
     } while (0)
 
-    /* Numeric information */
-    RESULT_STRING(decimal_point);
-    RESULT_STRING(thousands_sep);
-    x = copy_grouping(l->grouping);
-    RESULT("grouping", x);
-
     /* Monetary information */
     RESULT_STRING(int_curr_symbol);
     RESULT_STRING(currency_symbol);
@@ -195,10 +190,36 @@ PyLocale_localeconv(PyObject* self)
     RESULT_INT(n_sep_by_space);
     RESULT_INT(p_sign_posn);
     RESULT_INT(n_sign_posn);
+
+    /* Numeric information */
+    PyObject *decimal_point, *thousands_sep;
+    const char *grouping;
+    if (_Py_GetLocaleconvNumeric(&decimal_point,
+                                 &thousands_sep,
+                                 &grouping) < 0) {
+        goto failed;
+    }
+
+    if (PyDict_SetItemString(result, "decimal_point", decimal_point) < 0) {
+        Py_DECREF(decimal_point);
+        Py_DECREF(thousands_sep);
+        goto failed;
+    }
+    Py_DECREF(decimal_point);
+
+    if (PyDict_SetItemString(result, "thousands_sep", thousands_sep) < 0) {
+        Py_DECREF(thousands_sep);
+        goto failed;
+    }
+    Py_DECREF(thousands_sep);
+
+    x = copy_grouping(grouping);
+    RESULT("grouping", x);
+
     return result;
 
   failed:
-    Py_XDECREF(result);
+    Py_DECREF(result);
     return NULL;
 }
 
@@ -252,6 +273,11 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     s = PyUnicode_AsWideCharString(str, &n1);
     if (s == NULL)
         goto exit;
+    if (wcslen(s) != (size_t)n1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "embedded null character");
+        goto exit;
+    }
 
     /* assume no change in size, first */
     n1 = n1 + 1;
@@ -291,7 +317,7 @@ exit:
 
 #if defined(MS_WINDOWS)
 static PyObject*
-PyLocale_getdefaultlocale(PyObject* self)
+PyLocale_getdefaultlocale(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     char encoding[100];
     char locale[100];
@@ -567,8 +593,9 @@ PyIntl_bind_textdomain_codeset(PyObject* self,PyObject*args)
     if (!PyArg_ParseTuple(args, "sz", &domain, &codeset))
         return NULL;
     codeset = bind_textdomain_codeset(domain, codeset);
-    if (codeset)
+    if (codeset) {
         return PyUnicode_DecodeLocale(codeset, NULL);
+    }
     Py_RETURN_NONE;
 }
 #endif
@@ -578,8 +605,7 @@ PyIntl_bind_textdomain_codeset(PyObject* self,PyObject*args)
 static struct PyMethodDef PyLocale_Methods[] = {
   {"setlocale", (PyCFunction) PyLocale_setlocale,
    METH_VARARGS, setlocale__doc__},
-  {"localeconv", (PyCFunction) PyLocale_localeconv,
-   METH_NOARGS, localeconv__doc__},
+  {"localeconv", PyLocale_localeconv, METH_NOARGS, localeconv__doc__},
 #ifdef HAVE_WCSCOLL
   {"strcoll", (PyCFunction) PyLocale_strcoll,
    METH_VARARGS, strcoll__doc__},
@@ -589,7 +615,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
    METH_VARARGS, strxfrm__doc__},
 #endif
 #if defined(MS_WINDOWS)
-  {"_getdefaultlocale", (PyCFunction) PyLocale_getdefaultlocale, METH_NOARGS},
+  {"_getdefaultlocale", PyLocale_getdefaultlocale, METH_NOARGS},
 #endif
 #ifdef HAVE_LANGINFO_H
   {"nl_langinfo", (PyCFunction) PyLocale_nl_langinfo,

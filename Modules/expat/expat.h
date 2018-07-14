@@ -1,5 +1,33 @@
-/* Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
-   See the file COPYING for copying permission.
+/*
+                            __  __            _
+                         ___\ \/ /_ __   __ _| |_
+                        / _ \\  /| '_ \ / _` | __|
+                       |  __//  \| |_) | (_| | |_
+                        \___/_/\_\ .__/ \__,_|\__|
+                                 |_| XML parser
+
+   Copyright (c) 1997-2000 Thai Open Source Software Center Ltd
+   Copyright (c) 2000-2017 Expat development team
+   Licensed under the MIT license:
+
+   Permission is  hereby granted,  free of charge,  to any  person obtaining
+   a  copy  of  this  software   and  associated  documentation  files  (the
+   "Software"),  to  deal in  the  Software  without restriction,  including
+   without  limitation the  rights  to use,  copy,  modify, merge,  publish,
+   distribute, sublicense, and/or sell copies of the Software, and to permit
+   persons  to whom  the Software  is  furnished to  do so,  subject to  the
+   following conditions:
+
+   The above copyright  notice and this permission notice  shall be included
+   in all copies or substantial portions of the Software.
+
+   THE  SOFTWARE  IS  PROVIDED  "AS  IS",  WITHOUT  WARRANTY  OF  ANY  KIND,
+   EXPRESS  OR IMPLIED,  INCLUDING  BUT  NOT LIMITED  TO  THE WARRANTIES  OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+   NO EVENT SHALL THE AUTHORS OR  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+   DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
+   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+   USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #ifndef Expat_INCLUDED
@@ -24,7 +52,6 @@ extern "C" {
 struct XML_ParserStruct;
 typedef struct XML_ParserStruct *XML_Parser;
 
-/* Should this be defined using stdbool.h when C99 is available? */
 typedef unsigned char XML_Bool;
 #define XML_TRUE   ((XML_Bool) 1)
 #define XML_FALSE  ((XML_Bool) 0)
@@ -95,7 +122,9 @@ enum XML_Error {
   /* Added in 2.0. */
   XML_ERROR_RESERVED_PREFIX_XML,
   XML_ERROR_RESERVED_PREFIX_XMLNS,
-  XML_ERROR_RESERVED_NAMESPACE_URI
+  XML_ERROR_RESERVED_NAMESPACE_URI,
+  /* Added in 2.2.1. */
+  XML_ERROR_INVALID_ARGUMENT
 };
 
 enum XML_Content_Type {
@@ -342,7 +371,7 @@ XML_SetEntityDeclHandler(XML_Parser parser,
                          XML_EntityDeclHandler handler);
 
 /* OBSOLETE -- OBSOLETE -- OBSOLETE
-   This handler has been superceded by the EntityDeclHandler above.
+   This handler has been superseded by the EntityDeclHandler above.
    It is provided here for backward compatibility.
 
    This is called for a declaration of an unparsed (NDATA) entity.
@@ -706,6 +735,7 @@ XML_UseParserAsHandlerArg(XML_Parser parser);
      be called, despite an external subset being parsed.
    Note: If XML_DTD is not defined when Expat is compiled, returns
      XML_ERROR_FEATURE_REQUIRES_XML_DTD.
+   Note: If parser == NULL, returns XML_ERROR_INVALID_ARGUMENT.
 */
 XMLPARSEAPI(enum XML_Error)
 XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD);
@@ -729,15 +759,16 @@ XML_GetBase(XML_Parser parser);
    to the XML_StartElementHandler that were specified in the start-tag
    rather than defaulted. Each attribute/value pair counts as 2; thus
    this correspondds to an index into the atts array passed to the
-   XML_StartElementHandler.
+   XML_StartElementHandler.  Returns -1 if parser == NULL.
 */
 XMLPARSEAPI(int)
 XML_GetSpecifiedAttributeCount(XML_Parser parser);
 
 /* Returns the index of the ID attribute passed in the last call to
-   XML_StartElementHandler, or -1 if there is no ID attribute.  Each
-   attribute/value pair counts as 2; thus this correspondds to an
-   index into the atts array passed to the XML_StartElementHandler.
+   XML_StartElementHandler, or -1 if there is no ID attribute or
+   parser == NULL.  Each attribute/value pair counts as 2; thus this
+   correspondds to an index into the atts array passed to the
+   XML_StartElementHandler.
 */
 XMLPARSEAPI(int)
 XML_GetIdAttributeIndex(XML_Parser parser);
@@ -901,6 +932,7 @@ enum XML_ParamEntityParsing {
    entities is requested; otherwise it will return non-zero.
    Note: If XML_SetParamEntityParsing is called after XML_Parse or
       XML_ParseBuffer, then it has no effect and will always return 0.
+   Note: If parser == NULL, the function will do nothing and return 0.
 */
 XMLPARSEAPI(int)
 XML_SetParamEntityParsing(XML_Parser parser,
@@ -910,12 +942,11 @@ XML_SetParamEntityParsing(XML_Parser parser,
    Helps in preventing DoS attacks based on predicting hash
    function behavior. This must be called before parsing is started.
    Returns 1 if successful, 0 when called after parsing has started.
+   Note: If parser == NULL, the function will do nothing and return 0.
 */
 XMLPARSEAPI(int)
 XML_SetHashSalt(XML_Parser parser,
                 unsigned long hash_salt);
-
-#define XML_HAS_SET_HASH_SALT  /* Python Only: Defined for pyexpat.c. */
 
 /* If XML_Parse or XML_ParseBuffer have returned XML_STATUS_ERROR, then
    XML_GetErrorCode returns information about the error.
@@ -938,6 +969,10 @@ XML_GetErrorCode(XML_Parser parser);
    the location is the location of the character at which the error
    was detected; otherwise the location is the location of the last
    parse event, as described above.
+
+   Note: XML_GetCurrentLineNumber and XML_GetCurrentColumnNumber
+   return 0 to indicate an error.
+   Note: XML_GetCurrentByteIndex returns -1 to indicate an error.
 */
 XMLPARSEAPI(XML_Size) XML_GetCurrentLineNumber(XML_Parser parser);
 XMLPARSEAPI(XML_Size) XML_GetCurrentColumnNumber(XML_Parser parser);
@@ -975,9 +1010,12 @@ XML_FreeContentModel(XML_Parser parser, XML_Content *model);
 
 /* Exposing the memory handling functions used in Expat */
 XMLPARSEAPI(void *)
+XML_ATTR_MALLOC
+XML_ATTR_ALLOC_SIZE(2)
 XML_MemMalloc(XML_Parser parser, size_t size);
 
 XMLPARSEAPI(void *)
+XML_ATTR_ALLOC_SIZE(3)
 XML_MemRealloc(XML_Parser parser, void *ptr, size_t size);
 
 XMLPARSEAPI(void)
@@ -1033,14 +1071,12 @@ XMLPARSEAPI(const XML_Feature *)
 XML_GetFeatureList(void);
 
 
-/* Expat follows the GNU/Linux convention of odd number minor version for
-   beta/development releases and even number minor version for stable
-   releases. Micro is bumped with each release, and set to 0 with each
-   change to major or minor version.
+/* Expat follows the semantic versioning convention.
+   See http://semver.org.
 */
 #define XML_MAJOR_VERSION 2
-#define XML_MINOR_VERSION 1
-#define XML_MICRO_VERSION 1
+#define XML_MINOR_VERSION 2
+#define XML_MICRO_VERSION 5
 
 #ifdef __cplusplus
 }

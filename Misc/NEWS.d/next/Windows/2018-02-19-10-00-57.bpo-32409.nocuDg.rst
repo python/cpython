@@ -1,0 +1,1 @@
+Ensures activate.bat can handle Unicode contents.

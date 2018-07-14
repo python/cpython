@@ -273,23 +273,24 @@ dictionary's keys::
 
     >>> m = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
     ...      'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
-    >>> for key in m:  #doctest: +SKIP
+    >>> for key in m:
     ...     print(key, m[key])
-    Mar 3
+    Jan 1
     Feb 2
-    Aug 8
-    Sep 9
+    Mar 3
     Apr 4
+    May 5
     Jun 6
     Jul 7
-    Jan 1
-    May 5
+    Aug 8
+    Sep 9
+    Oct 10
     Nov 11
     Dec 12
-    Oct 10
 
-Note that the order is essentially random, because it's based on the hash
-ordering of the objects in the dictionary.
+Note that starting with Python 3.7, dictionary iteration order is guaranteed
+to be the same as the insertion order. In earlier versions, the behaviour was
+unspecified and could vary between implementations.
 
 Applying :func:`iter` to a dictionary always loops over the keys, but
 dictionaries have methods that return other iterators.  If you want to iterate
@@ -301,8 +302,8 @@ The :func:`dict` constructor can accept an iterator that returns a finite stream
 of ``(key, value)`` tuples:
 
     >>> L = [('Italy', 'Rome'), ('France', 'Paris'), ('US', 'Washington DC')]
-    >>> dict(iter(L))  #doctest: +SKIP
-    {'Italy': 'Rome', 'US': 'Washington DC', 'France': 'Paris'}
+    >>> dict(iter(L))
+    {'Italy': 'Rome', 'France': 'Paris', 'US': 'Washington DC'}
 
 Files also support iteration by calling the :meth:`~io.TextIOBase.readline`
 method until there are no more lines in the file.  This means you can read each
@@ -653,8 +654,9 @@ This can also be written as a list comprehension:
     [0, 2, 4, 6, 8]
 
 
-:func:`enumerate(iter) <enumerate>` counts off the elements in the iterable,
-returning 2-tuples containing the count and each element. ::
+:func:`enumerate(iter, start=0) <enumerate>` counts off the elements in the
+iterable returning 2-tuples containing the count (from *start*) and
+each element. ::
 
     >>> for item in enumerate(['subject', 'verb', 'object']):
     ...     print(item)
@@ -747,14 +749,16 @@ The module's functions fall into a few broad classes:
 Creating new iterators
 ----------------------
 
-:func:`itertools.count(n) <itertools.count>` returns an infinite stream of
-integers, increasing by 1 each time.  You can optionally supply the starting
-number, which defaults to 0::
+:func:`itertools.count(start, step) <itertools.count>` returns an infinite
+stream of evenly spaced values.  You can optionally supply the starting number,
+which defaults to 0, and the interval between numbers, which defaults to 1::
 
     itertools.count() =>
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...
     itertools.count(10) =>
       10, 11, 12, 13, 14, 15, 16, 17, 18, 19, ...
+    itertools.count(10, 5) =>
+      10, 15, 20, 25, 30, 35, 40, 45, 50, 55, ...
 
 :func:`itertools.cycle(iter) <itertools.cycle>` saves a copy of the contents of
 a provided iterable and returns a new iterator that returns its elements from
@@ -1060,10 +1064,10 @@ write the obvious :keyword:`for` loop::
    for i in [1,2,3]:
        product *= i
 
-A related function is `itertools.accumulate(iterable, func=operator.add) <itertools.accumulate`.
-It performs the same calculation, but instead of returning only the
-final result, :func:`accumulate` returns an iterator that also yields
-each partial result::
+A related function is :func:`itertools.accumulate(iterable, func=operator.add)
+<itertools.accumulate>`.  It performs the same calculation, but instead of
+returning only the final result, :func:`accumulate` returns an iterator that
+also yields each partial result::
 
     itertools.accumulate([1,2,3,4,5]) =>
       1, 3, 6, 10, 15
@@ -1234,6 +1238,8 @@ Python documentation
 --------------------
 
 Documentation for the :mod:`itertools` module.
+
+Documentation for the :mod:`functools` module.
 
 Documentation for the :mod:`operator` module.
 

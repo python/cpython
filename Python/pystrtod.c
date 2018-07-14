@@ -391,6 +391,8 @@ _Py_string_to_number_with_underscores(
     char *dup, *end;
     PyObject *result;
 
+    assert(s[orig_len] == '\0');
+
     if (strchr(s, '_') == NULL) {
         return innerfunc(s, orig_len, arg);
     }
@@ -431,8 +433,8 @@ _Py_string_to_number_with_underscores(
   error:
     PyMem_Free(dup);
     PyErr_Format(PyExc_ValueError,
-		 "could not convert string to %s: "
-		 "%R", what, obj);
+                 "could not convert string to %s: "
+                 "%R", what, obj);
     return NULL;
 }
 
@@ -597,7 +599,8 @@ Py_LOCAL_INLINE(char *)
 ensure_decimal_point(char* buffer, size_t buf_size, int precision)
 {
     int digit_count, insert_count = 0, convert_to_exp = 0;
-    char *chars_to_insert, *digits_start;
+    const char *chars_to_insert;
+    char *digits_start;
 
     /* search for the first non-digit character */
     char *p = buffer;
@@ -1059,9 +1062,7 @@ format_float_short(double d, char format_code,
         else {
             /* shouldn't get here: Gay's code should always return
                something starting with a digit, an 'I',  or 'N' */
-            strncpy(p, "ERR", 3);
-            /* p += 3; */
-            assert(0);
+            Py_UNREACHABLE();
         }
         goto exit;
     }

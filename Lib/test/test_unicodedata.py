@@ -20,7 +20,7 @@ errors = 'surrogatepass'
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = 'c1fa98674a683aa8a8d8dee0c84494f8d36346e6'
+    expectedchecksum = '97a41f208c53d5e08c77c1175187e95386b82b6f'
 
     def test_method_checksum(self):
         h = hashlib.sha1()
@@ -80,7 +80,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = 'f891b1e6430c712531b9bc935a38e22d78ba1bf3'
+    expectedchecksum = '4f73278b19c2ec3099724c132f0b90a1d25c19e4'
     def test_function_checksum(self):
         data = []
         h = hashlib.sha1()
@@ -207,6 +207,19 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         a = 'C\u0338' * 20  + 'C\u0327'
         b = 'C\u0338' * 20  + '\xC7'
         self.assertEqual(self.db.normalize('NFC', a), b)
+
+    def test_issue29456(self):
+        # Fix #29456
+        u1176_str_a = '\u1100\u1176\u11a8'
+        u1176_str_b = '\u1100\u1176\u11a8'
+        u11a7_str_a = '\u1100\u1175\u11a7'
+        u11a7_str_b = '\uae30\u11a7'
+        u11c3_str_a = '\u1100\u1175\u11c3'
+        u11c3_str_b = '\uae30\u11c3'
+        self.assertEqual(self.db.normalize('NFC', u1176_str_a), u1176_str_b)
+        self.assertEqual(self.db.normalize('NFC', u11a7_str_a), u11a7_str_b)
+        self.assertEqual(self.db.normalize('NFC', u11c3_str_a), u11c3_str_b)
+
 
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width

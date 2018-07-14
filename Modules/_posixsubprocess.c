@@ -169,7 +169,7 @@ make_inheritable(PyObject *py_fds_to_keep, int errpipe_write)
                called. */
             continue;
         }
-        if (_Py_set_inheritable((int)fd, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe((int)fd, 1, NULL) < 0)
             return -1;
     }
     return 0;
@@ -220,7 +220,7 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
     Py_ssize_t keep_seq_idx;
     int fd_num;
     /* As py_fds_to_keep is sorted we can loop through the list closing
-     * fds inbetween any in the keep list falling within our range. */
+     * fds in between any in the keep list falling within our range. */
     for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
         PyObject* py_keep_fd = PyTuple_GET_ITEM(py_fds_to_keep, keep_seq_idx);
         int keep_fd = PyLong_AsLong(py_keep_fd);
@@ -424,28 +424,28 @@ child_exec(char *const exec_array[],
        either 0, 1 or 2, it is possible that it is overwritten (#12607). */
     if (c2pwrite == 0)
         POSIX_CALL(c2pwrite = dup(c2pwrite));
-    if (errwrite == 0 || errwrite == 1)
+    while (errwrite == 0 || errwrite == 1)
         POSIX_CALL(errwrite = dup(errwrite));
 
     /* Dup fds for child.
        dup2() removes the CLOEXEC flag but we must do it ourselves if dup2()
        would be a no-op (issue #10806). */
     if (p2cread == 0) {
-        if (_Py_set_inheritable(p2cread, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe(p2cread, 1, NULL) < 0)
             goto error;
     }
     else if (p2cread != -1)
         POSIX_CALL(dup2(p2cread, 0));  /* stdin */
 
     if (c2pwrite == 1) {
-        if (_Py_set_inheritable(c2pwrite, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe(c2pwrite, 1, NULL) < 0)
             goto error;
     }
     else if (c2pwrite != -1)
         POSIX_CALL(dup2(c2pwrite, 1));  /* stdout */
 
     if (errwrite == 2) {
-        if (_Py_set_inheritable(errwrite, 1, NULL) < 0)
+        if (_Py_set_inheritable_async_safe(errwrite, 1, NULL) < 0)
             goto error;
     }
     else if (errwrite != -1)
@@ -559,9 +559,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     int need_to_reenable_gc = 0;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
     Py_ssize_t arg_num;
-#ifdef WITH_THREAD
-    int import_lock_held = 0;
-#endif
+    int need_after_fork = 0;
 
     if (!PyArg_ParseTuple(
             args, "OOpO!OOiiiiiiiiiiO:fork_exec",
@@ -653,16 +651,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             goto cleanup;
     }
 
-    if (preexec_fn != Py_None) {
-        preexec_fn_args_tuple = PyTuple_New(0);
-        if (!preexec_fn_args_tuple)
-            goto cleanup;
-#ifdef WITH_THREAD
-        _PyImport_AcquireLock();
-        import_lock_held = 1;
-#endif
-    }
-
     if (cwd_obj != Py_None) {
         if (PyUnicode_FSConverter(cwd_obj, &cwd_obj2) == 0)
             goto cleanup;
@@ -670,6 +658,17 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     } else {
         cwd = NULL;
         cwd_obj2 = NULL;
+    }
+
+    /* This must be the last thing done before fork() because we do not
+     * want to call PyOS_BeforeFork() if there is any chance of another
+     * error leading to the cleanup: code without calling fork(). */
+    if (preexec_fn != Py_None) {
+        preexec_fn_args_tuple = PyTuple_New(0);
+        if (!preexec_fn_args_tuple)
+            goto cleanup;
+        PyOS_BeforeFork();
+        need_after_fork = 1;
     }
 
     pid = fork();
@@ -686,7 +685,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
              * This call may not be async-signal-safe but neither is calling
              * back into Python.  The user asked us to use hope as a strategy
              * to avoid deadlock... */
-            PyOS_AfterFork();
+            PyOS_AfterFork_Child();
         }
 
         child_exec(exec_array, argv, envp, cwd,
@@ -703,17 +702,10 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         /* Capture the errno exception before errno can be clobbered. */
         PyErr_SetFromErrno(PyExc_OSError);
     }
-#ifdef WITH_THREAD
-    if (preexec_fn != Py_None
-        && _PyImport_ReleaseLock() < 0 && !PyErr_Occurred()) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "not holding the import lock");
-        pid = -1;
-    }
-    import_lock_held = 0;
-#endif
 
     /* Parent process */
+    if (need_after_fork)
+        PyOS_AfterFork_Parent();
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)
@@ -733,10 +725,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     return PyLong_FromPid(pid);
 
 cleanup:
-#ifdef WITH_THREAD
-    if (import_lock_held)
-        _PyImport_ReleaseLock();
-#endif
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)
@@ -787,11 +775,11 @@ static PyMethodDef module_methods[] = {
 
 
 static struct PyModuleDef _posixsubprocessmodule = {
-	PyModuleDef_HEAD_INIT,
-	"_posixsubprocess",
-	module_doc,
-	-1,  /* No memory is needed. */
-	module_methods,
+        PyModuleDef_HEAD_INIT,
+        "_posixsubprocess",
+        module_doc,
+        -1,  /* No memory is needed. */
+        module_methods,
 };
 
 PyMODINIT_FUNC

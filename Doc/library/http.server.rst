@@ -33,9 +33,19 @@ handler.  Code to create and run the server looks like this::
    :attr:`server_port`. The server is accessible by the handler, typically
    through the handler's :attr:`server` instance variable.
 
+.. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
-The :class:`HTTPServer` must be given a *RequestHandlerClass* on instantiation,
-of which this module provides three different variants:
+   This class is identical to HTTPServer but uses threads to handle
+   requests by using the :class:`~socketserver.ThreadingMixIn`. This
+   is useful to handle web browsers pre-opening sockets, on which
+   :class:`HTTPServer` would wait indefinitely.
+
+   .. versionadded:: 3.7
+
+
+The :class:`HTTPServer` and :class:`ThreadingHTTPServer` must be given
+a *RequestHandlerClass* on instantiation, of which this module
+provides three different variants:
 
 .. class:: BaseHTTPRequestHandler(request, client_address, server)
 
@@ -105,7 +115,8 @@ of which this module provides three different variants:
 
       Contains the output stream for writing a response back to the
       client. Proper adherence to the HTTP protocol must be used when writing to
-      this stream.
+      this stream in order to achieve successful interoperation with HTTP
+      clients.
 
       .. versionchanged:: 3.6
          This is an :class:`io.BufferedIOBase` stream.
@@ -299,7 +310,7 @@ of which this module provides three different variants:
          delays, it now always returns the IP address.
 
 
-.. class:: SimpleHTTPRequestHandler(request, client_address, server)
+.. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
 
    This class serves files from the current directory and below, directly
    mapping the directory structure to HTTP requests.
@@ -322,6 +333,10 @@ of which this module provides three different variants:
       signified by an empty string, and is considered to be
       ``application/octet-stream``. The mapping is used case-insensitively,
       and so should contain only lower-cased keys.
+
+   .. attribute:: directory
+
+      If not specified, the directory to serve is the current working directory.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -397,6 +412,14 @@ following command causes the server to bind to localhost only::
 .. versionadded:: 3.4
     ``--bind`` argument was introduced.
 
+By default, server uses the current directory. The option ``-d/--directory``
+specifies a directory to which it should serve the files. For example,
+the following command uses a specific directory::
+
+        python -m http.server --directory /tmp/
+
+.. versionadded:: 3.7
+    ``--directory`` specify alternate directory
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
@@ -442,4 +465,3 @@ following command causes the server to bind to localhost only::
 the ``--cgi`` option::
 
         python -m http.server --cgi 8000
-

@@ -3,88 +3,167 @@ dist: trusty
 sudo: false
 group: beta
 
-# To cache doc-building dependencies.
-cache: pip
+# To cache doc-building dependencies and C compiler output.
+cache:
+  - pip
+  - ccache
+  - directories:
+    - $HOME/multissl
+
+env:
+  global:
+    - OPENSSL=1.1.0h
+    - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
+    - PATH="${OPENSSL_DIR}/bin:$PATH"
+    # Use -O3 because we don't use debugger on Travis-CI
+    - CFLAGS="-I${OPENSSL_DIR}/include -O3"
+    - LDFLAGS="-L${OPENSSL_DIR}/lib"
+    # Set rpath with env var instead of -Wl,-rpath linker flag
+    # OpenSSL ignores LDFLAGS when linking bin/openssl
+    - LD_RUN_PATH="${OPENSSL_DIR}/lib"
 
 branches:
   only:
     - master
     - /^\d\.\d$/
-
-os:
-  - linux
-  # macOS builds are disabled as the machines are under-provisioned on Travis,
-  # adding up to an extra hour completing a full CI run.
-
-compiler:
-  - clang
-  # gcc also works, but to keep the # of concurrent builds down, we use one C
-  # compiler here and the other to run the coverage build.
-
-env:
-  - TESTING=cpython
+    - buildbot-custom
 
 matrix:
   fast_finish: true
   allow_failures:
-    - env:
-       - TESTING=coverage
+    - env: OPTIONAL=true
   include:
+    - os: linux
+      language: c
+      compiler: clang
+      # gcc also works, but to keep the # of concurrent builds down, we use one C
+      # compiler here and the other to run the coverage build. Clang is preferred
+      # in this instance for its better error messages.
+      env: TESTING=cpython
+      addons:
+        apt:
+          packages:
+            - xvfb
     - os: linux
       language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
       python: 3.6
-      env:
-        - TESTING=docs
+      env: TESTING=docs
       before_script:
         - cd Doc
         # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
         # (Updating the version is fine as long as no warnings are raised by doing so.)
-        - python -m pip install sphinx~=1.6.1
+        # The theme used by the docs is stored seperately, so we need to install that as well.
+        - python -m pip install sphinx~=1.6.1 blurb python-docs-theme
       script:
-        - make check suspicious html SPHINXOPTS="-q -W"
+        - make check suspicious html SPHINXOPTS="-q -W -j4"
+    - os: osx
+      language: c
+      compiler: clang
+      # Testing under macOS is optional until testing stability has been demonstrated.
+      env: OPTIONAL=true
+      before_install:
+        # Python 3 is needed for Argument Clinic and multissl
+        - HOMEBREW_NO_AUTO_UPDATE=1 brew install xz python3
+        - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
     - os: linux
       language: c
       compiler: gcc
-      env:
-        - TESTING=coverage
+      env: OPTIONAL=true
+      addons:
+        apt:
+          packages:
+            - lcov
+            - xvfb
       before_script:
-        - |
-            if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)|(^Misc)/'
-            then
-              echo "Only docs were updated, stopping build process."
-              exit
-            fi
-            ./configure
-            make -s -j4
-            # Need a venv that can parse covered code.
-            ./python -m venv venv
-            ./venv/bin/python -m pip install -U coverage
+        - ./configure
+        - make coverage -s -j4
+        # Need a venv that can parse covered code.
+        - ./python -m venv venv
+        - ./venv/bin/python -m pip install -U coverage
+        - ./venv/bin/python -m test.pythoninfo
       script:
         # Skip tests that re-run the entire test suite.
-        - ./venv/bin/python -m coverage run --pylib -m test -uall -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn
+        - xvfb-run ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
         - source ./venv/bin/activate
+        - make coverage-lcov
         - bash <(curl -s https://codecov.io/bash)
 
-# Travis provides only 2 cores, so don't overdue the parallelism and waste memory.
-before_script:
+
+before_install:
+  - set -e
   - |
-      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)|(^Misc)/'
+      # Check short-circuit conditions
+      if [[ "${TESTING}" != "docs" ]]
       then
-        echo "Only docs were updated, stopping build process."
-        exit
+        if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]
+        then
+          echo "Not a PR, doing full build."
+        else
+          # Pull requests are slightly complicated because $TRAVIS_COMMIT_RANGE
+          # may include more changes than desired if the history is convoluted.
+          # Instead, explicitly fetch the base branch and compare against the
+          # merge-base commit.
+          git fetch -q origin +refs/heads/$TRAVIS_BRANCH
+          changes=$(git diff --name-only HEAD $(git merge-base HEAD FETCH_HEAD))
+          echo "Files changed:"
+          echo "$changes"
+          if ! echo "$changes" | grep -qvE '(\.rst$)|(^Doc)|(^Misc)'
+          then
+            echo "Only docs were updated, stopping build process."
+            exit
+          fi
+        fi
       fi
-      ./configure --with-pydebug
-      make -j4
+
+install:
+  - |
+      # Install OpenSSL as necessary
+      if [[ "${TESTING}" != "docs" ]]
+      then
+        # clang complains about unused-parameter a lot, redirect stderr
+        python3 Tools/ssl/multissltests.py --steps=library \
+            --base-directory ${HOME}/multissl \
+            --openssl ${OPENSSL} >/dev/null 2>&1
+      fi
+  - openssl version
+
+# Travis provides only 2 cores, so don't overdo the parallelism and waste memory.
+before_script:
+  - ./configure --with-pydebug
+  - make -j4 regen-all
+  - changes=`git status --porcelain`
+  - |
+      # Check for changes in regenerated files
+      if ! test -z "$changes"
+      then
+        echo "Generated files not up to date"
+        echo "$changes"
+        exit 1
+      fi
+  - make -j4
+  - make pythoninfo
 
 script:
+  # Using the built Python as patchcheck.py is built around the idea of using
+  # a checkout-build of CPython to know things like what base branch the changes
+  # should be compared against.
+  # Only run on Linux as the check only needs to be run once.
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./python Tools/scripts/patchcheck.py --travis $TRAVIS_PULL_REQUEST; fi
+  # Check that all symbols exported by libpython start with "Py" or "_Py"
+  - make smelly
   # `-r -w` implicitly provided through `make buildbottest`.
-  - make buildbottest TESTOPTS="-j4"
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then XVFB_RUN=xvfb-run; fi; $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
 notifications:
   email: false
+  webhooks:
+    urls:
+      - https://python.zulipchat.com/api/v1/external/travis?api_key=QTP4LAknlFml0NuPQmAetvH4KQaokiQE&stream=core%2Ftest+runs
+    on_success: change
+    on_failure: always
   irc:
     channels:
       # This is set to a secure variable to prevent forks from notifying the

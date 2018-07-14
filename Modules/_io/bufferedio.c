@@ -9,6 +9,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "pythread.h"
 #include "_iomodule.h"
@@ -230,10 +231,8 @@ typedef struct {
        isn't ready for writing. */
     Py_off_t write_end;
 
-#ifdef WITH_THREAD
     PyThread_type_lock lock;
     volatile unsigned long owner;
-#endif
 
     Py_ssize_t buffer_size;
     Py_ssize_t buffer_mask;
@@ -267,8 +266,6 @@ typedef struct {
 
 /* These macros protect the buffered object against concurrent operations. */
 
-#ifdef WITH_THREAD
-
 static int
 _enter_buffered_busy(buffered *self)
 {
@@ -279,7 +276,7 @@ _enter_buffered_busy(buffered *self)
                      "reentrant call inside %R", self);
         return 0;
     }
-    relax_locking = (_Py_Finalizing != NULL);
+    relax_locking = _Py_IsFinalizing();
     Py_BEGIN_ALLOW_THREADS
     if (!relax_locking)
         st = PyThread_acquire_lock(self->lock, 1);
@@ -315,11 +312,6 @@ _enter_buffered_busy(buffered *self)
         PyThread_release_lock(self->lock); \
     } while(0);
 
-#else
-#define ENTER_BUFFERED(self) 1
-#define LEAVE_BUFFERED(self)
-#endif
-
 #define CHECK_INITIALIZED(self) \
     if (self->ok <= 0) { \
         if (self->detached) { \
@@ -345,9 +337,10 @@ _enter_buffered_busy(buffered *self)
     }
 
 #define IS_CLOSED(self) \
+    (!self->buffer || \
     (self->fast_closed_checks \
      ? _PyFileIO_closed(self->raw) \
-     : buffered_closed(self))
+     : buffered_closed(self)))
 
 #define CHECK_CLOSED(self, error_msg) \
     if (IS_CLOSED(self)) { \
@@ -401,12 +394,10 @@ buffered_dealloc(buffered *self)
         PyMem_Free(self->buffer);
         self->buffer = NULL;
     }
-#ifdef WITH_THREAD
     if (self->lock) {
         PyThread_free_lock(self->lock);
         self->lock = NULL;
     }
-#endif
     Py_CLEAR(self->dict);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -753,7 +744,6 @@ _buffered_init(buffered *self)
         PyErr_NoMemory();
         return -1;
     }
-#ifdef WITH_THREAD
     if (self->lock)
         PyThread_free_lock(self->lock);
     self->lock = PyThread_allocate_lock();
@@ -762,7 +752,6 @@ _buffered_init(buffered *self)
         return -1;
     }
     self->owner = 0;
-#endif
     /* Find out whether buffer_size is a power of 2 */
     /* XXX is this optimization useful? */
     for (n = self->buffer_size - 1; n & 1; n >>= 1)
@@ -1303,7 +1292,6 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
         if (res == NULL)
             goto end;
         Py_CLEAR(res);
-        _bufferedwriter_reset_buf(self);
     }
 
     /* TODO: align on block boundary and read buffer if needed? */
@@ -1532,7 +1520,7 @@ static PyObject *
 _bufferedreader_read_all(buffered *self)
 {
     Py_ssize_t current_size;
-    PyObject *res = NULL, *data = NULL, *tmp = NULL, *chunks = NULL;
+    PyObject *res = NULL, *data = NULL, *tmp = NULL, *chunks = NULL, *readall;
 
     /* First copy what we have in the current buffer. */
     current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
@@ -1552,32 +1540,27 @@ _bufferedreader_read_all(buffered *self)
     }
     _bufferedreader_reset_buf(self);
 
-    if (PyObject_HasAttr(self->raw, _PyIO_str_readall)) {
-        tmp = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_readall, NULL);
+    if (_PyObject_LookupAttr(self->raw, _PyIO_str_readall, &readall) < 0) {
+        goto cleanup;
+    }
+    if (readall) {
+        tmp = _PyObject_CallNoArg(readall);
+        Py_DECREF(readall);
         if (tmp == NULL)
             goto cleanup;
         if (tmp != Py_None && !PyBytes_Check(tmp)) {
             PyErr_SetString(PyExc_TypeError, "readall() should return bytes");
             goto cleanup;
         }
-        if (tmp == Py_None) {
-            if (current_size == 0) {
-                res = Py_None;
-                goto cleanup;
-            } else {
-                res = data;
-                goto cleanup;
-            }
-        }
-        else if (current_size) {
-            PyBytes_Concat(&data, tmp);
-            res = data;
-            goto cleanup;
-        }
-        else {
+        if (current_size == 0) {
             res = tmp;
-            goto cleanup;
+        } else {
+            if (tmp != Py_None) {
+                PyBytes_Concat(&data, tmp);
+            }
+            res = data;
         }
+        goto cleanup;
     }
 
     chunks = PyList_New(0);
@@ -1868,8 +1851,6 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     return n;
 }
 
-/* `restore_pos` is 1 if we need to restore the raw stream position at
-   the end, 0 otherwise. */
 static PyObject *
 _bufferedwriter_flush_unlocked(buffered *self)
 {
@@ -1910,9 +1891,18 @@ _bufferedwriter_flush_unlocked(buffered *self)
             goto error;
     }
 
-    _bufferedwriter_reset_buf(self);
 
 end:
+    /* This ensures that after return from this function,
+       VALID_WRITE_BUFFER(self) returns false.
+
+       This is a required condition because when a tell() is called
+       after flushing and if VALID_READ_BUFFER(self) is false, we need
+       VALID_WRITE_BUFFER(self) to be false to have
+       RAW_OFFSET(self) == 0.
+
+       Issue: https://bugs.python.org/issue32228 */
+    _bufferedwriter_reset_buf(self);
     Py_RETURN_NONE;
 
 error:
@@ -1934,13 +1924,16 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
     Py_off_t offset;
 
     CHECK_INITIALIZED(self)
-    if (IS_CLOSED(self)) {
-        PyErr_SetString(PyExc_ValueError, "write to closed file");
-        return NULL;
-    }
 
     if (!ENTER_BUFFERED(self))
         return NULL;
+
+    /* Issue #31976: Check for closed file after acquiring the lock. Another
+       thread could be holding the lock while closing the file. */
+    if (IS_CLOSED(self)) {
+        PyErr_SetString(PyExc_ValueError, "write to closed file");
+        goto error;
+    }
 
     /* Fast path: the data to write can be fully buffered. */
     if (!VALID_READ_BUFFER(self) && !VALID_WRITE_BUFFER(self)) {

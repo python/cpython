@@ -25,8 +25,7 @@ PyGrammar_FindDFA(grammar *g, int type)
         if (d->d_type == type)
             return d;
     }
-    assert(0);
-    /* NOTREACHED */
+    Py_UNREACHABLE();
 #endif
 }
 

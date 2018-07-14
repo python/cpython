@@ -1,0 +1,1 @@
+Skip sending/receiving data after SSL transport closing.

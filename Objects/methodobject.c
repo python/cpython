@@ -2,6 +2,8 @@
 /* Method object implementation */
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 
 /* Free list for method objects to safe malloc/free overhead
@@ -99,7 +101,7 @@ meth_dealloc(PyCFunctionObject *m)
 }
 
 static PyObject *
-meth_reduce(PyCFunctionObject *m)
+meth_reduce(PyCFunctionObject *m, PyObject *Py_UNUSED(ignored))
 {
     PyObject *builtins;
     PyObject *getattr;

@@ -43,7 +43,7 @@ Encoding basic Python object hierarchies::
 Compact encoding::
 
     >>> import json
-    >>> json.dumps([1,2,3,{'4': 5, '6': 7}], separators=(',', ':'))
+    >>> json.dumps([1, 2, 3, {'4': 5, '6': 7}], separators=(',', ':'))
     '[1,2,3,{"4":5,"6":7}]'
 
 Pretty printing::
@@ -100,9 +100,9 @@ Extending :class:`JSONEncoder`::
     ['[2.0', ', 1.0', ']']
 
 
-.. highlight:: bash
+Using :mod:`json.tool` from the shell to validate and pretty-print:
 
-Using :mod:`json.tool` from the shell to validate and pretty-print::
+.. code-block:: shell-session
 
     $ echo '{"json":"obj"}' | python -m json.tool
     {
@@ -112,8 +112,6 @@ Using :mod:`json.tool` from the shell to validate and pretty-print::
     Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
 
 See :ref:`json-commandline` for detailed documentation.
-
-.. highlight:: python3
 
 .. note::
 
@@ -217,9 +215,9 @@ Basic Usage
 
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
-   Deserialize *fp* (a ``.read()``-supporting :term:`file-like object`
-   containing a JSON document) to a Python object using this :ref:`conversion
-   table <json-to-py-table>`.
+   Deserialize *fp* (a ``.read()``-supporting :term:`text file` or
+   :term:`binary file` containing a JSON document) to a Python object using
+   this :ref:`conversion table <json-to-py-table>`.
 
    *object_hook* is an optional function that will be called with the result of
    any object literal decoded (a :class:`dict`).  The return value of
@@ -230,10 +228,8 @@ Basic Usage
    *object_pairs_hook* is an optional function that will be called with the
    result of any object literal decoded with an ordered list of pairs.  The
    return value of *object_pairs_hook* will be used instead of the
-   :class:`dict`.  This feature can be used to implement custom decoders that
-   rely on the order that the key and value pairs are decoded (for example,
-   :func:`collections.OrderedDict` will remember the order of insertion). If
-   *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   :class:`dict`.  This feature can be used to implement custom decoders.
+   If *object_hook* is also defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
@@ -265,6 +261,10 @@ Basic Usage
 
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+
+   .. versionchanged:: 3.6
+      *fp* can now be a :term:`binary file`. The input encoding should be
+      UTF-8, UTF-16 or UTF-32.
 
 .. function:: loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
@@ -325,10 +325,8 @@ Encoders and Decoders
    *object_pairs_hook*, if specified will be called with the result of every
    JSON object decoded with an ordered list of pairs.  The return value of
    *object_pairs_hook* will be used instead of the :class:`dict`.  This
-   feature can be used to implement custom decoders that rely on the order
-   that the key and value pairs are decoded (for example,
-   :func:`collections.OrderedDict` will remember the order of insertion). If
-   *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   feature can be used to implement custom decoders.  If *object_hook* is also
+   defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
@@ -503,7 +501,7 @@ Encoders and Decoders
 Exceptions
 ----------
 
-.. exception:: JSONDecodeError(msg, doc, pos, end=None)
+.. exception:: JSONDecodeError(msg, doc, pos)
 
    Subclass of :exc:`ValueError` with the following additional attributes:
 
@@ -651,8 +649,6 @@ when serializing Python :class:`int` values of extremely large magnitude, or
 when serializing instances of "exotic" numerical types such as
 :class:`decimal.Decimal`.
 
-.. highlight:: bash
-
 .. _json-commandline:
 
 Command Line Interface
@@ -669,7 +665,9 @@ The :mod:`json.tool` module provides a simple command line interface to validate
 and pretty-print JSON objects.
 
 If the optional ``infile`` and ``outfile`` arguments are not
-specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively::
+specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively:
+
+.. code-block:: shell-session
 
     $ echo '{"json": "obj"}' | python -m json.tool
     {
@@ -688,7 +686,9 @@ Command line options
 
 .. cmdoption:: infile
 
-   The JSON file to be validated or pretty-printed::
+   The JSON file to be validated or pretty-printed:
+
+   .. code-block:: shell-session
 
       $ python -m json.tool mp_films.json
       [

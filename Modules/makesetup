@@ -29,7 +29,9 @@
 #
 # Copying Makefile.pre to Makefile:
 # - insert an identifying comment at the start
-# - replace _MODNAMES_ by the list of modules from Setup
+# - replace _MODBUILT_NAMES_ by the list of *static* and *shared* modules
+#   from Setup
+# - replace _MODDISABLED_NAMES_ by the list of *disabled* modules from Setup
 # - replace _MODOBJS_ by the list of objects from Setup (except for
 #   Setup files after a -n option)
 # - replace _MODLIBS_ by the list of libraries from Setup
@@ -111,7 +113,8 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 # Rules appended by makedepend
 " >$rulesf
 	DEFS=
-	NAMES=
+	BUILT=
+	DISABLED=
 	MODS=
 	SHAREDMODS=
 	OBJS=
@@ -143,6 +146,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		'*static*')	doconfig=yes; continue;;
 		'*noconfig*')	doconfig=no; continue;;
 		'*shared*')	doconfig=no; continue;;
+		'*disabled*')	doconfig=disabled; continue;;
 		esac
 		srcs=
 		cpps=
@@ -183,7 +187,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
 			-u)		skip=libs; libs="$libs -u";;
-			[a-zA-Z_]*)	NAMES="$NAMES $arg"; mods="$mods $arg";;
+			[a-zA-Z_]*)	mods="$mods $arg";;
 			*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
 			esac
@@ -192,6 +196,14 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		yes)
 			LIBS="$LIBS $libs"
 			MODS="$MODS $mods"
+			BUILT="$BUILT $mods"
+			;;
+		no)
+			BUILT="$BUILT $mods"
+			;;
+		disabled)
+			DISABLED="$DISABLED $mods"
+			continue
 			;;
 		esac
 		case $noobjects in
@@ -221,7 +233,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			case $doconfig in
 			no)	cc="$cc \$(CCSHARED) \$(PY_CFLAGS) \$(PY_CPPFLAGS)";;
 			*)
-				cc="$cc \$(PY_CORE_CFLAGS)";;
+				cc="$cc \$(PY_STDMODULE_CFLAGS)";;
 			esac
 			rule="$obj: $src; $cc $cpps -c $src -o $obj"
 			echo "$rule" >>$rulesf
@@ -282,7 +294,8 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		echo "1i\\" >$sedf
 		str="# Generated automatically from $makepre by makesetup."
 		echo "$str" >>$sedf
-		echo "s%_MODNAMES_%$NAMES%" >>$sedf
+		echo "s%_MODBUILT_NAMES_%$BUILT%" >>$sedf
+		echo "s%_MODDISABLED_NAMES_%$DISABLED%" >>$sedf
 		echo "s%_MODOBJS_%$OBJS%" >>$sedf
 		echo "s%_MODLIBS_%$LIBS%" >>$sedf
 		echo "/Definitions added by makesetup/a$NL$NL$DEFS" >>$sedf

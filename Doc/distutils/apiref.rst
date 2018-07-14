@@ -78,7 +78,7 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    |                    | be built                       | :class:`distutils.core.Extension`                           |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *classifiers*      | A list of categories for the   | a list of strings; valid classifiers are listed on `PyPI    |
-   |                    | package                        | <https://pypi.python.org/pypi?:action=list_classifiers>`_.  |
+   |                    | package                        | <https://pypi.org/classifiers>`_.                           |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *distclass*        | the :class:`Distribution`      | a subclass of                                               |
    |                    | class to use                   | :class:`distutils.core.Distribution`                        |
@@ -285,6 +285,10 @@ the full reference.
    See the :func:`setup` function for a list of keyword arguments accepted  by the
    Distribution constructor. :func:`setup` creates a Distribution instance.
 
+   .. versionchanged:: 3.7
+      :class:`~distutils.core.Distribution` now warns if ``classifiers``,
+      ``keywords`` and ``platforms`` fields are not specified as a list or
+      a string.
 
 .. class:: Command
 
@@ -814,13 +818,13 @@ This module provides the :class:`UnixCCompiler` class, a subclass of
 .. module:: distutils.msvccompiler
    :synopsis: Microsoft Compiler
 
+.. XXX: This is *waaaaay* out of date!
 
 This module provides :class:`MSVCCompiler`, an implementation of the abstract
 :class:`CCompiler` class for Microsoft Visual Studio. Typically, extension
 modules need to be compiled with the same compiler that was used to compile
 Python. For Python 2.3 and earlier, the compiler was Visual Studio 6. For Python
-2.4 and 2.5, the compiler is Visual Studio .NET 2003. The AMD64 and Itanium
-binaries are created using the Platform SDK.
+2.4 and 2.5, the compiler is Visual Studio .NET 2003.
 
 :class:`MSVCCompiler` will normally choose the right compiler, linker etc. on
 its own. To override this choice, the environment variables *DISTUTILS_USE_SDK*
@@ -1086,19 +1090,16 @@ other utility module.
 
    Return a string that identifies the current platform.  This is used mainly to
    distinguish platform-specific build directories and platform-specific built
-   distributions.  Typically includes the OS name and version and the architecture
-   (as supplied by 'os.uname()'), although the exact information included depends
-   on the OS; eg. for IRIX the architecture isn't particularly important (IRIX only
-   runs on SGI hardware), but for Linux the kernel version isn't particularly
-   important.
+   distributions.  Typically includes the OS name and version and the
+   architecture (as supplied by 'os.uname()'), although the exact information
+   included depends on the OS; e.g., on Linux, the kernel version isn't
+   particularly important.
 
    Examples of returned values:
 
    * ``linux-i586``
    * ``linux-alpha``
    * ``solaris-2.6-sun4u``
-   * ``irix-5.3``
-   * ``irix64-6.2``
 
    For non-POSIX platforms, currently just returns ``sys.platform``.
 

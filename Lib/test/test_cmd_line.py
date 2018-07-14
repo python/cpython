@@ -2,14 +2,21 @@
 # Most tests are executed with environment variables ignored
 # See test_cmd_line_script.py for testing of script execution
 
-import test.support, unittest
 import os
-import sys
 import subprocess
+import sys
+import sysconfig
 import tempfile
-from test.support import script_helper, is_android
-from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
-    assert_python_failure)
+import unittest
+from test import support
+from test.support.script_helper import (
+    spawn_python, kill_python, assert_python_ok, assert_python_failure,
+    interpreter_requires_environment
+)
+
+
+# Debug build?
+Py_DEBUG = hasattr(sys, "gettotalrefcount")
 
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
@@ -56,6 +63,8 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-vv')
         self.assertNotIn(b'stack overflow', err)
 
+    @unittest.skipIf(interpreter_requires_environment(),
+                     'Cannot run -E tests when PYTHON env vars are required.')
     def test_xoptions(self):
         def get_xoptions(*args):
             # use subprocess module directly because test.support.script_helper adds
@@ -95,7 +104,7 @@ class CmdLineTest(unittest.TestCase):
         # "-X showrefcount" shows the refcount, but only in debug builds
         rc, out, err = run_python('-X', 'showrefcount', '-c', code)
         self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
-        if hasattr(sys, 'gettotalrefcount'):  # debug build
+        if Py_DEBUG:
             self.assertRegex(err, br'^\[\d+ refs, \d+ blocks\]')
         else:
             self.assertEqual(err, b'')
@@ -132,11 +141,11 @@ class CmdLineTest(unittest.TestCase):
         # All good if execution is successful
         assert_python_ok('-c', 'pass')
 
-    @unittest.skipUnless(test.support.FS_NONASCII, 'need support.FS_NONASCII')
+    @unittest.skipUnless(support.FS_NONASCII, 'need support.FS_NONASCII')
     def test_non_ascii(self):
         # Test handling of non-ascii data
         command = ("assert(ord(%r) == %s)"
-                   % (test.support.FS_NONASCII, ord(test.support.FS_NONASCII)))
+                   % (support.FS_NONASCII, ord(support.FS_NONASCII)))
         assert_python_ok('-c', command)
 
     # On Windows, pass bytes to subprocess doesn't test how Python decodes the
@@ -150,6 +159,7 @@ class CmdLineTest(unittest.TestCase):
         env = os.environ.copy()
         # Use C locale to get ascii for the locale encoding
         env['LC_ALL'] = 'C'
+        env['PYTHONCOERCECLOCALE'] = '0'
         code = (
             b'import locale; '
             b'print(ascii("' + undecodable + b'"), '
@@ -178,7 +188,7 @@ class CmdLineTest(unittest.TestCase):
             raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
 
     @unittest.skipUnless((sys.platform == 'darwin' or
-                is_android), 'test specific to Mac OS X and Android')
+                support.is_android), 'test specific to Mac OS X and Android')
     def test_osx_android_utf8(self):
         def check_output(text):
             decoded = text.decode('utf-8', 'surrogateescape')
@@ -219,13 +229,12 @@ class CmdLineTest(unittest.TestCase):
             rc, out, err = assert_python_ok('-u', '-c', code)
             data = err if stream == 'stderr' else out
             self.assertEqual(data, b'x', "binary %s not unbuffered" % stream)
-            # Text is line-buffered
-            code = ("import os, sys; sys.%s.write('x\\n'); os._exit(0)"
+            # Text is unbuffered
+            code = ("import os, sys; sys.%s.write('x'); os._exit(0)"
                 % stream)
             rc, out, err = assert_python_ok('-u', '-c', code)
             data = err if stream == 'stderr' else out
-            self.assertEqual(data.strip(), b'x',
-                "text %s not line-buffered" % stream)
+            self.assertEqual(data, b'x', "text %s not unbuffered" % stream)
 
     def test_unbuffered_input(self):
         # sys.stdin still works with '-u'
@@ -271,11 +280,7 @@ class CmdLineTest(unittest.TestCase):
 
     def test_displayhook_unencodable(self):
         for encoding in ('ascii', 'latin-1', 'utf-8'):
-            # We are testing a PYTHON environment variable here, so we can't
-            # use -E, -I, or script_helper (which uses them).  So instead we do
-            # poor-man's isolation by deleting the PYTHON vars from env.
-            env = {key:value for (key,value) in os.environ.copy().items()
-                   if not key.startswith('PYTHON')}
+            env = os.environ.copy()
             env['PYTHONIOENCODING'] = encoding
             p = subprocess.Popen(
                 [sys.executable, '-i'],
@@ -385,7 +390,7 @@ class CmdLineTest(unittest.TestCase):
             stderr=subprocess.PIPE,
             preexec_fn=preexec)
         out, err = p.communicate()
-        self.assertEqual(test.support.strip_python_stderr(err), b'')
+        self.assertEqual(support.strip_python_stderr(err), b'')
         self.assertEqual(p.returncode, 42)
 
     def test_no_stdin(self):
@@ -425,16 +430,24 @@ class CmdLineTest(unittest.TestCase):
 
         # Verify that sys.flags contains hash_randomization
         code = 'import sys; print("random is", sys.flags.hash_randomization)'
-        rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(rc, 0)
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='')
+        self.assertIn(b'random is 1', out)
+
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='random')
+        self.assertIn(b'random is 1', out)
+
+        rc, out, err = assert_python_ok('-c', code, PYTHONHASHSEED='0')
+        self.assertIn(b'random is 0', out)
+
+        rc, out, err = assert_python_ok('-R', '-c', code, PYTHONHASHSEED='0')
         self.assertIn(b'random is 1', out)
 
     def test_del___main__(self):
         # Issue #15001: PyRun_SimpleFileExFlags() did crash because it kept a
         # borrowed reference to the dict of __main__ module and later modify
         # the dict whereas the module was destroyed
-        filename = test.support.TESTFN
-        self.addCleanup(test.support.unlink, filename)
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
         with open(filename, "w") as script:
             print("import sys", file=script)
             print("del sys.modules['__main__']", file=script)
@@ -458,7 +471,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(err.splitlines().count(b'Unknown option: -a'), 1)
         self.assertEqual(b'', out)
 
-    @unittest.skipIf(script_helper.interpreter_requires_environment(),
+    @unittest.skipIf(interpreter_requires_environment(),
                      'Cannot run -I tests when PYTHON env vars are required.')
     def test_isolatedmode(self):
         self.verify_valid_flag('-I')
@@ -469,7 +482,7 @@ class CmdLineTest(unittest.TestCase):
             # dummyvar to prevent extraneous -E
             dummyvar="")
         self.assertEqual(out.strip(), b'1 1 1')
-        with test.support.temp_cwd() as tmpdir:
+        with support.temp_cwd() as tmpdir:
             fake = os.path.join(tmpdir, "uuid.py")
             main = os.path.join(tmpdir, "main.py")
             with open(fake, "w") as f:
@@ -485,9 +498,286 @@ class CmdLineTest(unittest.TestCase):
                                           cwd=tmpdir)
             self.assertEqual(out.strip(), b"ok")
 
+    def test_sys_flags_set(self):
+        # Issue 31845: a startup refactoring broke reading flags from env vars
+        for value, expected in (("", 0), ("1", 1), ("text", 1), ("2", 2)):
+            env_vars = dict(
+                PYTHONDEBUG=value,
+                PYTHONOPTIMIZE=value,
+                PYTHONDONTWRITEBYTECODE=value,
+                PYTHONVERBOSE=value,
+            )
+            code = (
+                "import sys; "
+                "sys.stderr.write(str(sys.flags)); "
+                f"""sys.exit(not (
+                    sys.flags.debug == sys.flags.optimize ==
+                    sys.flags.dont_write_bytecode == sys.flags.verbose ==
+                    {expected}
+                ))"""
+            )
+            with self.subTest(envar_value=value):
+                assert_python_ok('-c', code, **env_vars)
+
+    def test_set_pycache_prefix(self):
+        # sys.pycache_prefix can be set from either -X pycache_prefix or
+        # PYTHONPYCACHEPREFIX env var, with the former taking precedence.
+        NO_VALUE = object()  # `-X pycache_prefix` with no `=PATH`
+        cases = [
+            # (PYTHONPYCACHEPREFIX, -X pycache_prefix, sys.pycache_prefix)
+            (None, None, None),
+            ('foo', None, 'foo'),
+            (None, 'bar', 'bar'),
+            ('foo', 'bar', 'bar'),
+            ('foo', '', None),
+            ('foo', NO_VALUE, None),
+        ]
+        for envval, opt, expected in cases:
+            exp_clause = "is None" if expected is None else f'== "{expected}"'
+            code = f"import sys; sys.exit(not sys.pycache_prefix {exp_clause})"
+            args = ['-c', code]
+            env = {} if envval is None else {'PYTHONPYCACHEPREFIX': envval}
+            if opt is NO_VALUE:
+                args[:0] = ['-X', 'pycache_prefix']
+            elif opt is not None:
+                args[:0] = ['-X', f'pycache_prefix={opt}']
+            with self.subTest(envval=envval, opt=opt):
+                with support.temp_cwd():
+                    assert_python_ok(*args, **env)
+
+    def run_xdev(self, *args, check_exitcode=True, xdev=True):
+        env = dict(os.environ)
+        env.pop('PYTHONWARNINGS', None)
+        env.pop('PYTHONDEVMODE', None)
+        # Force malloc() to disable the debug hooks which are enabled
+        # by default for Python compiled in debug mode
+        env['PYTHONMALLOC'] = 'malloc'
+
+        if xdev:
+            args = (sys.executable, '-X', 'dev', *args)
+        else:
+            args = (sys.executable, *args)
+        proc = subprocess.run(args,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              universal_newlines=True,
+                              env=env)
+        if check_exitcode:
+            self.assertEqual(proc.returncode, 0, proc)
+        return proc.stdout.rstrip()
+
+    def test_xdev(self):
+        # sys.flags.dev_mode
+        code = "import sys; print(sys.flags.dev_mode)"
+        out = self.run_xdev("-c", code, xdev=False)
+        self.assertEqual(out, "False")
+        out = self.run_xdev("-c", code)
+        self.assertEqual(out, "True")
+
+        # Warnings
+        code = ("import warnings; "
+                "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
+                                "for f in warnings.filters))")
+        if Py_DEBUG:
+            expected_filters = "default::Warning"
+        else:
+            expected_filters = ("default::Warning "
+                                "default::DeprecationWarning "
+                                "ignore::DeprecationWarning "
+                                "ignore::PendingDeprecationWarning "
+                                "ignore::ImportWarning "
+                                "ignore::ResourceWarning")
+
+        out = self.run_xdev("-c", code)
+        self.assertEqual(out, expected_filters)
+
+        out = self.run_xdev("-b", "-c", code)
+        self.assertEqual(out, f"default::BytesWarning {expected_filters}")
+
+        out = self.run_xdev("-bb", "-c", code)
+        self.assertEqual(out, f"error::BytesWarning {expected_filters}")
+
+        out = self.run_xdev("-Werror", "-c", code)
+        self.assertEqual(out, f"error::Warning {expected_filters}")
+
+        # Memory allocator debug hooks
+        try:
+            import _testcapi
+        except ImportError:
+            pass
+        else:
+            code = "import _testcapi; print(_testcapi.pymem_getallocatorsname())"
+            with support.SuppressCrashReport():
+                out = self.run_xdev("-c", code, check_exitcode=False)
+            if support.with_pymalloc():
+                alloc_name = "pymalloc_debug"
+            else:
+                alloc_name = "malloc_debug"
+            self.assertEqual(out, alloc_name)
+
+        # Faulthandler
+        try:
+            import faulthandler
+        except ImportError:
+            pass
+        else:
+            code = "import faulthandler; print(faulthandler.is_enabled())"
+            out = self.run_xdev("-c", code)
+            self.assertEqual(out, "True")
+
+    def check_warnings_filters(self, cmdline_option, envvar, use_pywarning=False):
+        if use_pywarning:
+            code = ("import sys; from test.support import import_fresh_module; "
+                    "warnings = import_fresh_module('warnings', blocked=['_warnings']); ")
+        else:
+            code = "import sys, warnings; "
+        code += ("print(' '.join('%s::%s' % (f[0], f[2].__name__) "
+                                "for f in warnings.filters))")
+        args = (sys.executable, '-W', cmdline_option, '-bb', '-c', code)
+        env = dict(os.environ)
+        env.pop('PYTHONDEVMODE', None)
+        env["PYTHONWARNINGS"] = envvar
+        proc = subprocess.run(args,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              universal_newlines=True,
+                              env=env)
+        self.assertEqual(proc.returncode, 0, proc)
+        return proc.stdout.rstrip()
+
+    def test_warnings_filter_precedence(self):
+        expected_filters = ("error::BytesWarning "
+                            "once::UserWarning "
+                            "always::UserWarning")
+        if not Py_DEBUG:
+            expected_filters += (" "
+                                 "default::DeprecationWarning "
+                                 "ignore::DeprecationWarning "
+                                 "ignore::PendingDeprecationWarning "
+                                 "ignore::ImportWarning "
+                                 "ignore::ResourceWarning")
+
+        out = self.check_warnings_filters("once::UserWarning",
+                                          "always::UserWarning")
+        self.assertEqual(out, expected_filters)
+
+        out = self.check_warnings_filters("once::UserWarning",
+                                          "always::UserWarning",
+                                          use_pywarning=True)
+        self.assertEqual(out, expected_filters)
+
+    def check_pythonmalloc(self, env_var, name):
+        code = 'import _testcapi; print(_testcapi.pymem_getallocatorsname())'
+        env = dict(os.environ)
+        env.pop('PYTHONDEVMODE', None)
+        if env_var is not None:
+            env['PYTHONMALLOC'] = env_var
+        else:
+            env.pop('PYTHONMALLOC', None)
+        args = (sys.executable, '-c', code)
+        proc = subprocess.run(args,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              universal_newlines=True,
+                              env=env)
+        self.assertEqual(proc.stdout.rstrip(), name)
+        self.assertEqual(proc.returncode, 0)
+
+    def test_pythonmalloc(self):
+        # Test the PYTHONMALLOC environment variable
+        pymalloc = support.with_pymalloc()
+        if pymalloc:
+            default_name = 'pymalloc_debug' if Py_DEBUG else 'pymalloc'
+            default_name_debug = 'pymalloc_debug'
+        else:
+            default_name = 'malloc_debug' if Py_DEBUG else 'malloc'
+            default_name_debug = 'malloc_debug'
+
+        tests = [
+            (None, default_name),
+            ('debug', default_name_debug),
+            ('malloc', 'malloc'),
+            ('malloc_debug', 'malloc_debug'),
+        ]
+        if pymalloc:
+            tests.extend((
+                ('pymalloc', 'pymalloc'),
+                ('pymalloc_debug', 'pymalloc_debug'),
+            ))
+
+        for env_var, name in tests:
+            with self.subTest(env_var=env_var, name=name):
+                self.check_pythonmalloc(env_var, name)
+
+    def test_pythondevmode_env(self):
+        # Test the PYTHONDEVMODE environment variable
+        code = "import sys; print(sys.flags.dev_mode)"
+        env = dict(os.environ)
+        env.pop('PYTHONDEVMODE', None)
+        args = (sys.executable, '-c', code)
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              universal_newlines=True, env=env)
+        self.assertEqual(proc.stdout.rstrip(), 'False')
+        self.assertEqual(proc.returncode, 0, proc)
+
+        env['PYTHONDEVMODE'] = '1'
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              universal_newlines=True, env=env)
+        self.assertEqual(proc.stdout.rstrip(), 'True')
+        self.assertEqual(proc.returncode, 0, proc)
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'bpo-32457 only applies on Windows')
+    def test_argv0_normalization(self):
+        args = sys.executable, '-c', 'print(0)'
+        prefix, exe = os.path.split(sys.executable)
+        executable = prefix + '\\.\\.\\.\\' + exe
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              executable=executable)
+        self.assertEqual(proc.returncode, 0, proc)
+        self.assertEqual(proc.stdout.strip(), b'0')
+
+@unittest.skipIf(interpreter_requires_environment(),
+                 'Cannot run -I tests when PYTHON env vars are required.')
+class IgnoreEnvironmentTest(unittest.TestCase):
+
+    def run_ignoring_vars(self, predicate, **env_vars):
+        # Runs a subprocess with -E set, even though we're passing
+        # specific environment variables
+        # Logical inversion to match predicate check to a zero return
+        # code indicating success
+        code = "import sys; sys.stderr.write(str(sys.flags)); sys.exit(not ({}))".format(predicate)
+        return assert_python_ok('-E', '-c', code, **env_vars)
+
+    def test_ignore_PYTHONPATH(self):
+        path = "should_be_ignored"
+        self.run_ignoring_vars("'{}' not in sys.path".format(path),
+                               PYTHONPATH=path)
+
+    def test_ignore_PYTHONHASHSEED(self):
+        self.run_ignoring_vars("sys.flags.hash_randomization == 1",
+                               PYTHONHASHSEED="0")
+
+    def test_sys_flags_not_set(self):
+        # Issue 31845: a startup refactoring broke reading flags from env vars
+        expected_outcome = """
+            (sys.flags.debug == sys.flags.optimize ==
+             sys.flags.dont_write_bytecode == sys.flags.verbose == 0)
+        """
+        self.run_ignoring_vars(
+            expected_outcome,
+            PYTHONDEBUG="1",
+            PYTHONOPTIMIZE="1",
+            PYTHONDONTWRITEBYTECODE="1",
+            PYTHONVERBOSE="1",
+        )
+
+
 def test_main():
-    test.support.run_unittest(CmdLineTest)
-    test.support.reap_children()
+    support.run_unittest(CmdLineTest, IgnoreEnvironmentTest)
+    support.reap_children()
 
 if __name__ == "__main__":
     test_main()

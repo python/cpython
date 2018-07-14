@@ -18,12 +18,12 @@ import sys
 import threading
 import array
 import queue
+import time
 
-from time import time as _time
 from traceback import format_exc
 
 from . import connection
-from .context import reduction, get_spawning_popen
+from .context import reduction, get_spawning_popen, ProcessError
 from . import pool
 from . import process
 from . import util
@@ -84,14 +84,17 @@ def dispatch(c, id, methodname, args=(), kwds={}):
 def convert_to_error(kind, result):
     if kind == '#ERROR':
         return result
-    elif kind == '#TRACEBACK':
-        assert type(result) is str
-        return  RemoteError(result)
-    elif kind == '#UNSERIALIZABLE':
-        assert type(result) is str
-        return RemoteError('Unserializable message: %s\n' % result)
+    elif kind in ('#TRACEBACK', '#UNSERIALIZABLE'):
+        if not isinstance(result, str):
+            raise TypeError(
+                "Result {0!r} (kind '{1}') type is {2}, not str".format(
+                    result, kind, type(result)))
+        if kind == '#UNSERIALIZABLE':
+            return RemoteError('Unserializable message: %s\n' % result)
+        else:
+            return RemoteError(result)
     else:
-        return ValueError('Unrecognized message type')
+        return ValueError('Unrecognized message type {!r}'.format(kind))
 
 class RemoteError(Exception):
     def __str__(self):
@@ -130,7 +133,10 @@ class Server(object):
               'debug_info', 'number_of_objects', 'dummy', 'incref', 'decref']
 
     def __init__(self, registry, address, authkey, serializer):
-        assert isinstance(authkey, bytes)
+        if not isinstance(authkey, bytes):
+            raise TypeError(
+                "Authkey {0!r} is type {1!s}, not bytes".format(
+                    authkey, type(authkey)))
         self.registry = registry
         self.authkey = process.AuthenticationString(authkey)
         Listener, Client = listener_client[serializer]
@@ -160,7 +166,7 @@ class Server(object):
             except (KeyboardInterrupt, SystemExit):
                 pass
         finally:
-            if sys.stdout != sys.__stdout__:
+            if sys.stdout != sys.__stdout__: # what about stderr?
                 util.debug('resetting stdout, stderr')
                 sys.stdout = sys.__stdout__
                 sys.stderr = sys.__stderr__
@@ -313,6 +319,7 @@ class Server(object):
         '''
         Return some info --- useful to spot problems with refcounting
         '''
+        # Perhaps include debug info about 'c'?
         with self.mutex:
             result = []
             keys = list(self.id_to_refcount.keys())
@@ -353,7 +360,9 @@ class Server(object):
                       self.registry[typeid]
 
             if callable is None:
-                assert len(args) == 1 and not kwds
+                if kwds or (len(args) != 1):
+                    raise ValueError(
+                        "Without callable, must have one non-keyword argument")
                 obj = args[0]
             else:
                 obj = callable(*args, **kwds)
@@ -361,7 +370,10 @@ class Server(object):
             if exposed is None:
                 exposed = public_methods(obj)
             if method_to_typeid is not None:
-                assert type(method_to_typeid) is dict
+                if not isinstance(method_to_typeid, dict):
+                    raise TypeError(
+                        "Method_to_typeid {0!r}: type {1!s}, not dict".format(
+                            method_to_typeid, type(method_to_typeid)))
                 exposed = list(exposed) + list(method_to_typeid)
 
             ident = '%x' % id(obj)  # convert to string because xmlrpclib
@@ -414,7 +426,11 @@ class Server(object):
             return
 
         with self.mutex:
-            assert self.id_to_refcount[ident] >= 1
+            if self.id_to_refcount[ident] <= 0:
+                raise AssertionError(
+                    "Id {0!s} ({1!r}) has refcount {2:n}, not 1+".format(
+                        ident, self.id_to_obj[ident],
+                        self.id_to_refcount[ident]))
             self.id_to_refcount[ident] -= 1
             if self.id_to_refcount[ident] == 0:
                 del self.id_to_refcount[ident]
@@ -477,7 +493,14 @@ class BaseManager(object):
         '''
         Return server object with serve_forever() method and address attribute
         '''
-        assert self._state.value == State.INITIAL
+        if self._state.value != State.INITIAL:
+            if self._state.value == State.STARTED:
+                raise ProcessError("Already started server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
         return Server(self._registry, self._address,
                       self._authkey, self._serializer)
 
@@ -494,7 +517,14 @@ class BaseManager(object):
         '''
         Spawn a server process for this manager object
         '''
-        assert self._state.value == State.INITIAL
+        if self._state.value != State.INITIAL:
+            if self._state.value == State.STARTED:
+                raise ProcessError("Already started server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
 
         if initializer is not None and not callable(initializer):
             raise TypeError('initializer must be a callable')
@@ -590,7 +620,14 @@ class BaseManager(object):
     def __enter__(self):
         if self._state.value == State.INITIAL:
             self.start()
-        assert self._state.value == State.STARTED
+        if self._state.value != State.STARTED:
+            if self._state.value == State.INITIAL:
+                raise ProcessError("Unable to start server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -650,7 +687,7 @@ class BaseManager(object):
                            getattr(proxytype, '_method_to_typeid_', None)
 
         if method_to_typeid:
-            for key, value in list(method_to_typeid.items()):
+            for key, value in list(method_to_typeid.items()): # isinstance?
                 assert type(key) is str, '%r is not a string' % key
                 assert type(value) is str, '%r is not a string' % value
 
@@ -999,8 +1036,8 @@ class ConditionProxy(AcquirerProxy):
     _exposed_ = ('acquire', 'release', 'wait', 'notify', 'notify_all')
     def wait(self, timeout=None):
         return self._callmethod('wait', (timeout,))
-    def notify(self):
-        return self._callmethod('notify')
+    def notify(self, n=1):
+        return self._callmethod('notify', (n,))
     def notify_all(self):
         return self._callmethod('notify_all')
     def wait_for(self, predicate, timeout=None):
@@ -1008,13 +1045,13 @@ class ConditionProxy(AcquirerProxy):
         if result:
             return result
         if timeout is not None:
-            endtime = _time() + timeout
+            endtime = time.monotonic() + timeout
         else:
             endtime = None
             waittime = None
         while not result:
             if endtime is not None:
-                waittime = endtime - _time()
+                waittime = endtime - time.monotonic()
                 if waittime <= 0:
                     break
             self.wait(waittime)

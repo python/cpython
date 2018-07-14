@@ -7,7 +7,6 @@
 /* Standard definitions */
 #include "Python.h"
 #include <stddef.h>
-#include <setjmp.h>
 #include <signal.h>
 #include <errno.h>
 #include <sys/time.h>
@@ -897,13 +896,9 @@ on_startup_hook()
 #endif
 {
     int r;
-#ifdef WITH_THREAD
     PyGILState_STATE gilstate = PyGILState_Ensure();
-#endif
     r = on_hook(readlinestate_global->startup_hook);
-#ifdef WITH_THREAD
     PyGILState_Release(gilstate);
-#endif
     return r;
 }
 
@@ -916,13 +911,9 @@ on_pre_input_hook()
 #endif
 {
     int r;
-#ifdef WITH_THREAD
     PyGILState_STATE gilstate = PyGILState_Ensure();
-#endif
     r = on_hook(readlinestate_global->pre_input_hook);
-#ifdef WITH_THREAD
     PyGILState_Release(gilstate);
-#endif
     return r;
 }
 #endif
@@ -937,9 +928,7 @@ on_completion_display_matches_hook(char **matches,
 {
     int i;
     PyObject *sub, *m=NULL, *s=NULL, *r=NULL;
-#ifdef WITH_THREAD
     PyGILState_STATE gilstate = PyGILState_Ensure();
-#endif
     m = PyList_New(num_matches);
     if (m == NULL)
         goto error;
@@ -968,9 +957,7 @@ on_completion_display_matches_hook(char **matches,
         Py_XDECREF(m);
         Py_XDECREF(r);
     }
-#ifdef WITH_THREAD
     PyGILState_Release(gilstate);
-#endif
 }
 
 #endif
@@ -1003,9 +990,7 @@ on_completion(const char *text, int state)
     char *result = NULL;
     if (readlinestate_global->completer != NULL) {
         PyObject *r = NULL, *t;
-#ifdef WITH_THREAD
         PyGILState_STATE gilstate = PyGILState_Ensure();
-#endif
         rl_attempted_completion_over = 1;
         t = decode(text);
         r = PyObject_CallFunction(readlinestate_global->completer, "Ni", t, state);
@@ -1027,9 +1012,7 @@ on_completion(const char *text, int state)
         PyErr_Clear();
         Py_XDECREF(r);
       done:
-#ifdef WITH_THREAD
         PyGILState_Release(gilstate);
-#endif
         return result;
     }
     return result;
@@ -1046,9 +1029,7 @@ flex_complete(const char *text, int start, int end)
     char saved;
     size_t start_size, end_size;
     wchar_t *s;
-#ifdef WITH_THREAD
     PyGILState_STATE gilstate = PyGILState_Ensure();
-#endif
 #ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
     rl_completion_append_character ='\0';
 #endif
@@ -1081,9 +1062,7 @@ done:
     readlinestate_global->begidx = PyLong_FromLong((long) start);
     readlinestate_global->endidx = PyLong_FromLong((long) end);
     result = completion_matches((char *)text, *on_completion);
-#ifdef WITH_THREAD
     PyGILState_Release(gilstate);
-#endif
     return result;
 }
 
@@ -1098,6 +1077,9 @@ setup_readline(readlinestate *mod_state)
     if (!saved_locale)
         Py_FatalError("not enough memory to save locale");
 #endif
+
+    /* The name must be defined before initialization */
+    rl_readline_name = "python";
 
 #ifdef __APPLE__
     /* the libedit readline emulation resets key bindings etc
@@ -1120,7 +1102,6 @@ setup_readline(readlinestate *mod_state)
 
     using_history();
 
-    rl_readline_name = "python";
     /* Force rebind of TAB to insert-tab */
     rl_bind_key('\t', rl_insert);
     /* Bind both ESC-TAB and ESC-ESC to the completion function */
@@ -1180,10 +1161,7 @@ setup_readline(readlinestate *mod_state)
 
 /* Wrapper around GNU readline that handles signals differently. */
 
-
-#if defined(HAVE_RL_CALLBACK) && defined(HAVE_SELECT)
-
-static  char *completed_input_string;
+static char *completed_input_string;
 static void
 rlhandler(char *text)
 {
@@ -1238,13 +1216,9 @@ readline_until_enter_or_signal(const char *prompt, int *signal)
         }
         else if (err == EINTR) {
             int s;
-#ifdef WITH_THREAD
             PyEval_RestoreThread(_PyOS_ReadlineTState);
-#endif
             s = PyErr_CheckSignals();
-#ifdef WITH_THREAD
             PyEval_SaveThread();
-#endif
             if (s < 0) {
                 rl_free_line_state();
 #if defined(RL_READLINE_VERSION) && RL_READLINE_VERSION >= 0x0700
@@ -1262,47 +1236,6 @@ readline_until_enter_or_signal(const char *prompt, int *signal)
 }
 
 
-#else
-
-/* Interrupt handler */
-
-static jmp_buf jbuf;
-
-/* ARGSUSED */
-static void
-onintr(int sig)
-{
-    longjmp(jbuf, 1);
-}
-
-
-static char *
-readline_until_enter_or_signal(const char *prompt, int *signal)
-{
-    PyOS_sighandler_t old_inthandler;
-    char *p;
-
-    *signal = 0;
-
-    old_inthandler = PyOS_setsig(SIGINT, onintr);
-    if (setjmp(jbuf)) {
-#ifdef HAVE_SIGRELSE
-        /* This seems necessary on SunOS 4.1 (Rasmus Hahn) */
-        sigrelse(SIGINT);
-#endif
-        PyOS_setsig(SIGINT, old_inthandler);
-        *signal = 1;
-        return NULL;
-    }
-    rl_event_hook = PyOS_InputHook;
-    p = readline(prompt);
-    PyOS_setsig(SIGINT, old_inthandler);
-
-    return p;
-}
-#endif /*defined(HAVE_RL_CALLBACK) && defined(HAVE_SELECT) */
-
-
 static char *
 call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
@@ -1314,7 +1247,7 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     char *saved_locale = strdup(setlocale(LC_CTYPE, NULL));
     if (!saved_locale)
         Py_FatalError("not enough memory to save locale");
-    setlocale(LC_CTYPE, "");
+    _Py_SetLocaleFromEnv(LC_CTYPE);
 #endif
 
     if (sys_stdin != rl_instream || sys_stdout != rl_outstream) {
@@ -1347,15 +1280,17 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     if (should_auto_add_history && n > 0) {
         const char *line;
         int length = _py_get_history_length();
-        if (length > 0)
+        if (length > 0) {
+            HIST_ENTRY *hist_ent;
 #ifdef __APPLE__
             if (using_libedit_emulation) {
                 /* handle older 0-based or newer 1-based indexing */
-                line = (const char *)history_get(length + libedit_history_start - 1)->line;
+                hist_ent = history_get(length + libedit_history_start - 1);
             } else
 #endif /* __APPLE__ */
-            line = (const char *)history_get(length)->line;
-        else
+                hist_ent = history_get(length);
+            line = hist_ent ? hist_ent->line : "";
+        } else
             line = "";
         if (strcmp(p, line))
             add_history(p);
@@ -1419,12 +1354,27 @@ PyInit_readline(void)
     if (m == NULL)
         return NULL;
 
+    if (PyModule_AddIntConstant(m, "_READLINE_VERSION",
+                                RL_READLINE_VERSION) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntConstant(m, "_READLINE_RUNTIME_VERSION",
+                                rl_readline_version) < 0) {
+        goto error;
+    }
+    if (PyModule_AddStringConstant(m, "_READLINE_LIBRARY_VERSION",
+                                   rl_library_version) < 0)
+    {
+        goto error;
+    }
+
     mod_state = (readlinestate *) PyModule_GetState(m);
     PyOS_ReadlineFunctionPointer = call_readline;
     setup_readline(mod_state);
 
-    PyModule_AddIntConstant(m, "_READLINE_VERSION", RL_READLINE_VERSION);
-    PyModule_AddIntConstant(m, "_READLINE_RUNTIME_VERSION", rl_readline_version);
-
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }

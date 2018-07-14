@@ -1,7 +1,7 @@
-"""A CallTip window class for Tkinter/IDLE.
+"""A calltip window class for Tkinter/IDLE.
 
 After tooltip.py, which uses ideas gleaned from PySol
-Used by the calltips IDLE extension.
+Used by calltip.
 """
 from tkinter import Toplevel, Label, LEFT, SOLID, TclError
 
@@ -13,7 +13,7 @@ CHECKHIDE_TIME = 100 # milliseconds
 
 MARK_RIGHT = "calltipwindowregion_right"
 
-class CallTip:
+class CalltipWindow:
 
     def __init__(self, widget):
         self.widget = widget
@@ -47,7 +47,7 @@ class CallTip:
     def showtip(self, text, parenleft, parenright):
         """Show the calltip, bind events which will close it and reposition it.
         """
-        # Only called in CallTips, where lines are truncated
+        # Only called in calltip.Calltip, where lines are truncated
         self.text = text
         if self.tipwindow or not self.text:
             return
@@ -89,24 +89,27 @@ class CallTip:
             # If the event was triggered by the same event that unbinded
             # this function, the function will be called nevertheless,
             # so do nothing in this case.
-            return
+            return None
         curline, curcol = map(int, self.widget.index("insert").split('.'))
         if curline < self.parenline or \
            (curline == self.parenline and curcol <= self.parencol) or \
            self.widget.compare("insert", ">", MARK_RIGHT):
             self.hidetip()
+            return "break"
         else:
             self.position_window()
             if self.checkhide_after_id is not None:
                 self.widget.after_cancel(self.checkhide_after_id)
             self.checkhide_after_id = \
                 self.widget.after(CHECKHIDE_TIME, self.checkhide_event)
+            return None
 
     def hide_event(self, event):
         if not self.tipwindow:
             # See the explanation in checkhide_event.
-            return
+            return None
         self.hidetip()
+        return "break"
 
     def hidetip(self):
         if not self.tipwindow:
@@ -144,7 +147,7 @@ def _calltip_window(parent):  # htest #
     text.pack(side=LEFT, fill=BOTH, expand=1)
     text.insert("insert", "string.split")
     top.update()
-    calltip = CallTip(text)
+    calltip = CalltipWindow(text)
 
     def calltip_show(event):
         calltip.showtip("(s=Hello world)", "insert", "end")
@@ -156,6 +159,9 @@ def _calltip_window(parent):  # htest #
     text.bind("<<calltip-hide>>", calltip_hide)
     text.focus_set()
 
-if __name__=='__main__':
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_calltip_w', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_calltip_window)

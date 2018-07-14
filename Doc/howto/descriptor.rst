@@ -58,7 +58,7 @@ That is all there is to it.  Define any of these methods and an object is
 considered a descriptor and can override default behavior upon being looked up
 as an attribute.
 
-If an object defines both :meth:`__get__` and :meth:`__set__`, it is considered
+If an object defines :meth:`__set__` or :meth:`__delete__`, it is considered
 a data descriptor.  Descriptors that only define :meth:`__get__` are called
 non-data descriptors (they are typically used for methods but other uses are
 possible).
@@ -180,7 +180,7 @@ descriptor is useful for monitoring just a few chosen attributes::
 
 The protocol is simple and offers exciting possibilities.  Several use cases are
 so common that they have been packaged into individual function calls.
-Properties, bound and unbound methods, static methods, and class methods are all
+Properties, bound methods, static methods, and class methods are all
 based on the descriptor protocol.
 
 
@@ -252,10 +252,10 @@ to wrap access to the value attribute in a property data descriptor::
 
     class Cell(object):
         . . .
-        def getvalue(self, obj):
-            "Recalculate cell before returning value"
+        def getvalue(self):
+            "Recalculate the cell before returning value"
             self.recalc()
-            return obj._value
+            return self._value
         value = property(getvalue)
 
 
@@ -266,23 +266,24 @@ Python's object oriented features are built upon a function based environment.
 Using non-data descriptors, the two are merged seamlessly.
 
 Class dictionaries store methods as functions.  In a class definition, methods
-are written using :keyword:`def` and :keyword:`lambda`, the usual tools for
-creating functions.  The only difference from regular functions is that the
+are written using :keyword:`def` or :keyword:`lambda`, the usual tools for
+creating functions.  Methods only differ from regular functions in that the
 first argument is reserved for the object instance.  By Python convention, the
 instance reference is called *self* but may be called *this* or any other
 variable name.
 
 To support method calls, functions include the :meth:`__get__` method for
 binding methods during attribute access.  This means that all functions are
-non-data descriptors which return bound or unbound methods depending whether
-they are invoked from an object or a class.  In pure python, it works like
-this::
+non-data descriptors which return bound methods when they are invoked from an
+object.  In pure python, it works like this::
 
     class Function(object):
         . . .
         def __get__(self, obj, objtype=None):
             "Simulate func_descr_get() in Objects/funcobject.c"
-            return types.MethodType(self, obj, objtype)
+            if obj is None:
+                return self
+            return types.MethodType(self, obj)
 
 Running the interpreter shows how the function descriptor works in practice::
 
@@ -291,25 +292,34 @@ Running the interpreter shows how the function descriptor works in practice::
     ...         return x
     ...
     >>> d = D()
-    >>> D.__dict__['f']  # Stored internally as a function
-    <function f at 0x00C45070>
-    >>> D.f              # Get from a class becomes an unbound method
-    <unbound method D.f>
-    >>> d.f              # Get from an instance becomes a bound method
+
+    # Access through the class dictionary does not invoke __get__.
+    # It just returns the underlying function object.
+    >>> D.__dict__['f']
+    <function D.f at 0x00C45070>
+
+    # Dotted access from a class calls __get__() which just returns
+    # the underlying function unchanged.
+    >>> D.f
+    <function D.f at 0x00C45070>
+
+    # The function has a __qualname__ attribute to support introspection
+    >>> D.f.__qualname__
+    'D.f'
+
+    # Dotted access from an instance calls __get__() which returns the
+    # function wrapped in a bound method object
+    >>> d.f
     <bound method D.f of <__main__.D object at 0x00B18C90>>
 
-The output suggests that bound and unbound methods are two different types.
-While they could have been implemented that way, the actual C implementation of
-:c:type:`PyMethod_Type` in :source:`Objects/classobject.c` is a single object
-with two different representations depending on whether the :attr:`im_self`
-field is set or is *NULL* (the C equivalent of ``None``).
-
-Likewise, the effects of calling a method object depend on the :attr:`im_self`
-field. If set (meaning bound), the original function (stored in the
-:attr:`im_func` field) is called as expected with the first argument set to the
-instance.  If unbound, all of the arguments are passed unchanged to the original
-function. The actual C implementation of :func:`instancemethod_call()` is only
-slightly more complex in that it includes some type checking.
+    # Internally, the bound method stores the underlying function,
+    # the bound instance, and the class of the bound instance.
+    >>> d.f.__func__
+    <function D.f at 0x1012e5ae8>
+    >>> d.f.__self__
+    <__main__.D object at 0x1012e1f98>
+    >>> d.f.__class__
+    <class 'method'>
 
 
 Static Methods and Class Methods

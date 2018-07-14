@@ -100,10 +100,8 @@ give you an error::
 There is full support for floating point; operators with mixed type operands
 convert the integer operand to floating point::
 
-   >>> 3 * 3.75 / 1.5
-   7.5
-   >>> 7.0 / 2
-   3.5
+   >>> 4 * 3.75 - 1
+   14.0
 
 In interactive mode, the last printed expression is assigned to the variable
 ``_``.  This means that when you are using Python as a desk calculator, it is
@@ -145,12 +143,12 @@ to escape quotes::
    "doesn't"
    >>> "doesn't"  # ...or use double quotes instead
    "doesn't"
-   >>> '"Yes," he said.'
-   '"Yes," he said.'
-   >>> "\"Yes,\" he said."
-   '"Yes," he said.'
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
+   >>> '"Yes," they said.'
+   '"Yes," they said.'
+   >>> "\"Yes,\" they said."
+   '"Yes," they said.'
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
 
 In the interactive interpreter, the output string is enclosed in quotes and
 special characters are escaped with backslashes.  While this might sometimes
@@ -161,10 +159,10 @@ enclosed in single quotes.  The :func:`print` function produces a more
 readable output, by omitting the enclosing quotes and by printing escaped
 and special characters::
 
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
-   >>> print('"Isn\'t," she said.')
-   "Isn't," she said.
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
+   >>> print('"Isn\'t," they said.')
+   "Isn't," they said.
    >>> s = 'First line.\nSecond line.'  # \n means newline
    >>> s  # without print(), \n is included in the output
    'First line.\nSecond line.'
@@ -214,6 +212,13 @@ to each other are automatically concatenated. ::
    >>> 'Py' 'thon'
    'Python'
 
+This feature is particularly useful when you want to break long strings::
+
+   >>> text = ('Put several strings within parentheses '
+   ...         'to have them joined together.')
+   >>> text
+   'Put several strings within parentheses to have them joined together.'
+
 This only works with two literals though, not with variables or expressions::
 
    >>> prefix = 'Py'
@@ -228,13 +233,6 @@ If you want to concatenate variables or a variable and a literal, use ``+``::
 
    >>> prefix + 'thon'
    'Python'
-
-This feature is particularly useful when you want to break long strings::
-
-   >>> text = ('Put several strings within parentheses '
-   ...         'to have them joined together.')
-   >>> text
-   'Put several strings within parentheses to have them joined together.'
 
 Strings can be *indexed* (subscripted), with the first character having index 0.
 There is no separate character type; a character is simply a string of size
@@ -460,16 +458,18 @@ First Steps Towards Programming
 ===============================
 
 Of course, we can use Python for more complicated tasks than adding two and two
-together.  For instance, we can write an initial sub-sequence of the *Fibonacci*
-series as follows::
+together.  For instance, we can write an initial sub-sequence of the
+`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_number>`_
+as follows::
 
    >>> # Fibonacci series:
    ... # the sum of two elements defines the next
    ... a, b = 0, 1
-   >>> while b < 10:
-   ...     print(b)
+   >>> while a < 10:
+   ...     print(a)
    ...     a, b = b, a+b
    ...
+   0
    1
    1
    2
@@ -485,7 +485,7 @@ This example introduces several new features.
   first before any of the assignments take place.  The right-hand side expressions
   are evaluated  from the left to the right.
 
-* The :keyword:`while` loop executes as long as the condition (here: ``b < 10``)
+* The :keyword:`while` loop executes as long as the condition (here: ``a < 10``)
   remains true.  In Python, like in C, any non-zero integer value is true; zero is
   false.  The condition may also be a string or list value, in fact any sequence;
   anything with a non-zero length is true, empty sequences are false.  The test
@@ -518,11 +518,11 @@ This example introduces several new features.
   or end the output with a different string::
 
      >>> a, b = 0, 1
-     >>> while b < 1000:
-     ...     print(b, end=',')
+     >>> while a < 1000:
+     ...     print(a, end=',')
      ...     a, b = b, a+b
      ...
-     1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,
+     0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,
 
 
 .. rubric:: Footnotes

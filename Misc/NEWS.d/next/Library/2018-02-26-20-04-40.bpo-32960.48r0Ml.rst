@@ -1,0 +1,3 @@
+For dataclasses, disallow inheriting frozen from non-frozen classes, and
+also disallow inheriting non-frozen from frozen classes. This restriction
+will be relaxed at a future date.

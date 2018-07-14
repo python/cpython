@@ -65,8 +65,8 @@ FLAGS = {
     "u": SRE_FLAG_UNICODE,
 }
 
-GLOBAL_FLAGS = (SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE |
-                SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE)
+TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
+GLOBAL_FLAGS = SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE
 
 class Verbose(Exception):
     pass
@@ -264,19 +264,19 @@ class Tokenizer:
             result += c
             self.__next()
         return result
-    def getuntil(self, terminator):
+    def getuntil(self, terminator, name):
         result = ''
         while True:
             c = self.next
             self.__next()
             if c is None:
                 if not result:
-                    raise self.error("missing group name")
+                    raise self.error("missing " + name)
                 raise self.error("missing %s, unterminated name" % terminator,
                                  len(result))
             if c == terminator:
                 if not result:
-                    raise self.error("missing group name", 1)
+                    raise self.error("missing " + name, 1)
                 break
             result += c
         return result
@@ -321,6 +321,18 @@ def _class_escape(source, escape):
                 raise source.error("incomplete escape %s" % escape, len(escape))
             c = int(escape[2:], 16)
             chr(c) # raise ValueError for invalid code
+            return LITERAL, c
+        elif c == "N" and source.istext:
+            import unicodedata
+            # named unicode escape e.g. \N{EM DASH}
+            if not source.match('{'):
+                raise source.error("missing {")
+            charname = source.getuntil('}', 'character name')
+            try:
+                c = ord(unicodedata.lookup(charname))
+            except KeyError:
+                raise source.error("undefined character name %r" % charname,
+                                   len(charname) + len(r'\N{}'))
             return LITERAL, c
         elif c in OCTDIGITS:
             # octal escape (up to three digits)
@@ -369,6 +381,18 @@ def _escape(source, escape, state):
                 raise source.error("incomplete escape %s" % escape, len(escape))
             c = int(escape[2:], 16)
             chr(c) # raise ValueError for invalid code
+            return LITERAL, c
+        elif c == "N" and source.istext:
+            import unicodedata
+            # named unicode escape e.g. \N{EM DASH}
+            if not source.match('{'):
+                raise source.error("missing {")
+            charname = source.getuntil('}', 'character name')
+            try:
+                c = ord(unicodedata.lookup(charname))
+            except KeyError:
+                raise source.error("undefined character name %r" % charname,
+                                   len(charname) + len(r'\N{}'))
             return LITERAL, c
         elif c == "0":
             # octal escape
@@ -517,6 +541,12 @@ def _parse(source, state, verbose, nested, first=False):
             setappend = set.append
 ##          if sourcematch(":"):
 ##              pass # handle character classes
+            if source.next == '[':
+                import warnings
+                warnings.warn(
+                    'Possible nested set at position %d' % source.tell(),
+                    FutureWarning, stacklevel=nested + 6
+                )
             negate = sourcematch("^")
             # check remaining characters
             while True:
@@ -529,6 +559,17 @@ def _parse(source, state, verbose, nested, first=False):
                 elif this[0] == "\\":
                     code1 = _class_escape(source, this)
                 else:
+                    if set and this in '-&~|' and source.next == this:
+                        import warnings
+                        warnings.warn(
+                            'Possible set %s at position %d' % (
+                                'difference' if this == '-' else
+                                'intersection' if this == '&' else
+                                'symmetric difference' if this == '~' else
+                                'union',
+                                source.tell() - 1),
+                            FutureWarning, stacklevel=nested + 6
+                        )
                     code1 = LITERAL, _ord(this)
                 if sourcematch("-"):
                     # potential range
@@ -545,6 +586,13 @@ def _parse(source, state, verbose, nested, first=False):
                     if that[0] == "\\":
                         code2 = _class_escape(source, that)
                     else:
+                        if that == '-':
+                            import warnings
+                            warnings.warn(
+                                'Possible set difference at position %d' % (
+                                    source.tell() - 2),
+                                FutureWarning, stacklevel=nested + 6
+                            )
                         code2 = LITERAL, _ord(that)
                     if code1[0] != LITERAL or code2[0] != LITERAL:
                         msg = "bad character range %s-%s" % (this, that)
@@ -655,13 +703,13 @@ def _parse(source, state, verbose, nested, first=False):
                     # python extensions
                     if sourcematch("<"):
                         # named group: skip forward to end of name
-                        name = source.getuntil(">")
+                        name = source.getuntil(">", "group name")
                         if not name.isidentifier():
                             msg = "bad character in group name %r" % name
                             raise source.error(msg, len(name) + 1)
                     elif sourcematch("="):
                         # named backreference
-                        name = source.getuntil(")")
+                        name = source.getuntil(")", "group name")
                         if not name.isidentifier():
                             msg = "bad character in group name %r" % name
                             raise source.error(msg, len(name) + 1)
@@ -724,7 +772,7 @@ def _parse(source, state, verbose, nested, first=False):
 
                 elif char == "(":
                     # conditional backreference group
-                    condname = source.getuntil(")")
+                    condname = source.getuntil(")", "group name")
                     if condname.isidentifier():
                         condgroup = state.groupdict.get(condname)
                         if condgroup is None:
@@ -765,7 +813,7 @@ def _parse(source, state, verbose, nested, first=False):
                         if not first or subpattern:
                             import warnings
                             warnings.warn(
-                                'Flags not at the start of the expression %s%s' % (
+                                'Flags not at the start of the expression %r%s' % (
                                     source.string[:20],  # truncate long regexes
                                     ' (truncated)' if len(source.string) > 20 else '',
                                 ),
@@ -822,7 +870,19 @@ def _parse_flags(source, state, char):
     del_flags = 0
     if char != "-":
         while True:
-            add_flags |= FLAGS[char]
+            flag = FLAGS[char]
+            if source.istext:
+                if char == 'L':
+                    msg = "bad inline flags: cannot use 'L' flag with a str pattern"
+                    raise source.error(msg)
+            else:
+                if char == 'u':
+                    msg = "bad inline flags: cannot use 'u' flag with a bytes pattern"
+                    raise source.error(msg)
+            add_flags |= flag
+            if (flag & TYPE_FLAGS) and (add_flags & TYPE_FLAGS) != flag:
+                msg = "bad inline flags: flags 'a', 'u' and 'L' are incompatible"
+                raise source.error(msg)
             char = sourceget()
             if char is None:
                 raise source.error("missing -, : or )")
@@ -844,7 +904,11 @@ def _parse_flags(source, state, char):
             msg = "unknown flag" if char.isalpha() else "missing flag"
             raise source.error(msg, len(char))
         while True:
-            del_flags |= FLAGS[char]
+            flag = FLAGS[char]
+            if flag & TYPE_FLAGS:
+                msg = "bad inline flags: cannot turn off flags 'a', 'u' and 'L'"
+                raise source.error(msg)
+            del_flags |= flag
             char = sourceget()
             if char is None:
                 raise source.error("missing :")
@@ -937,7 +1001,7 @@ def parse_template(source, pattern):
                 name = ""
                 if not s.match("<"):
                     raise s.error("missing <")
-                name = s.getuntil(">")
+                name = s.getuntil(">", "group name")
                 if name.isidentifier():
                     try:
                         index = groupindex[name]

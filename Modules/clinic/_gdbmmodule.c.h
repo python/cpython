@@ -15,7 +15,7 @@ static PyObject *
 _gdbm_gdbm_get_impl(dbmobject *self, PyObject *key, PyObject *default_value);
 
 static PyObject *
-_gdbm_gdbm_get(dbmobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_get(dbmobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -24,10 +24,6 @@ _gdbm_gdbm_get(dbmobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     if (!_PyArg_UnpackStack(args, nargs, "get",
         1, 2,
         &key, &default_value)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("get", kwnames)) {
         goto exit;
     }
     return_value = _gdbm_gdbm_get_impl(self, key, default_value);
@@ -50,7 +46,7 @@ _gdbm_gdbm_setdefault_impl(dbmobject *self, PyObject *key,
                            PyObject *default_value);
 
 static PyObject *
-_gdbm_gdbm_setdefault(dbmobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_setdefault(dbmobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -59,10 +55,6 @@ _gdbm_gdbm_setdefault(dbmobject *self, PyObject **args, Py_ssize_t nargs, PyObje
     if (!_PyArg_UnpackStack(args, nargs, "setdefault",
         1, 2,
         &key, &default_value)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("setdefault", kwnames)) {
         goto exit;
     }
     return_value = _gdbm_gdbm_setdefault_impl(self, key, default_value);
@@ -242,27 +234,24 @@ PyDoc_STRVAR(dbmopen__doc__,
     {"open", (PyCFunction)dbmopen, METH_FASTCALL, dbmopen__doc__},
 
 static PyObject *
-dbmopen_impl(PyObject *module, const char *name, const char *flags, int mode);
+dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
+             int mode);
 
 static PyObject *
-dbmopen(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const char *name;
+    PyObject *filename;
     const char *flags = "r";
     int mode = 438;
 
-    if (!_PyArg_ParseStack(args, nargs, "s|si:open",
-        &name, &flags, &mode)) {
+    if (!_PyArg_ParseStack(args, nargs, "U|si:open",
+        &filename, &flags, &mode)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("open", kwnames)) {
-        goto exit;
-    }
-    return_value = dbmopen_impl(module, name, flags, mode);
+    return_value = dbmopen_impl(module, filename, flags, mode);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=03a3a63a814ada93 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dec05ff9c5aeaeae input=a9049054013a1b77]*/

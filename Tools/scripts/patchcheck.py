@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Check proposed changes for common issues."""
 import re
 import sys
 import shutil
@@ -10,7 +11,15 @@ import reindent
 import untabify
 
 
+# Excluded directories which are copies of external libraries:
+# don't check their coding style
+EXCLUDE_DIRS = [os.path.join('Modules', '_ctypes', 'libffi_osx'),
+                os.path.join('Modules', '_ctypes', 'libffi_msvc'),
+                os.path.join('Modules', '_decimal', 'libmpdec'),
+                os.path.join('Modules', 'expat'),
+                os.path.join('Modules', 'zlib')]
 SRCDIR = sysconfig.get_config_var('srcdir')
+
 
 def n_files_str(count):
     """Return 'N file(s)' with the proper plurality on 'file'."""
@@ -33,16 +42,6 @@ def status(message, modal=False, info=None):
             return result
         return call_fxn
     return decorated_fxn
-
-
-def mq_patches_applied():
-    """Check if there are any applied MQ patches."""
-    cmd = 'hg qapplied'
-    with subprocess.Popen(cmd.split(),
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE) as st:
-        bstdout, _ = st.communicate()
-        return st.returncode == 0 and bstdout
 
 
 def get_git_branch():
@@ -89,16 +88,8 @@ def get_base_branch():
 @status("Getting the list of files that have been added/changed",
         info=lambda x: n_files_str(len(x)))
 def changed_files(base_branch=None):
-    """Get the list of changed or added files from Mercurial or git."""
-    if os.path.isdir(os.path.join(SRCDIR, '.hg')):
-        if base_branch is not None:
-            sys.exit('need a git checkout to check PR status')
-        cmd = 'hg status --added --modified --no-status'
-        if mq_patches_applied():
-            cmd += ' --rev qparent'
-        with subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) as st:
-            return [x.decode().rstrip() for x in st.stdout]
-    elif os.path.exists(os.path.join(SRCDIR, '.git')):
+    """Get the list of changed or added files from git."""
+    if os.path.exists(os.path.join(SRCDIR, '.git')):
         # We just use an existence check here as:
         #  directory = normal git checkout/clone
         #  file = git worktree directory
@@ -119,9 +110,19 @@ def changed_files(base_branch=None):
                     # file is renamed
                     filename = filename.split(' -> ', 2)[1].strip()
                 filenames.append(filename)
-        return filenames
     else:
-        sys.exit('need a Mercurial or git checkout to get modified files')
+        sys.exit('need a git checkout to get modified files')
+
+    filenames2 = []
+    for filename in filenames:
+        # Normalize the path to be able to match using .startswith()
+        filename = os.path.normpath(filename)
+        if any(filename.startswith(path) for path in EXCLUDE_DIRS):
+            # Exclude the file
+            continue
+        filenames2.append(filename)
+
+    return filenames2
 
 
 def report_modified_files(file_paths):
@@ -135,7 +136,7 @@ def report_modified_files(file_paths):
         return "\n".join(lines)
 
 
-@status("Fixing whitespace", info=report_modified_files)
+@status("Fixing Python file whitespace", info=report_modified_files)
 def normalize_whitespace(file_paths):
     """Make sure that the whitespace for .py files have been normalized."""
     reindent.makebackup = False  # No need to create backups.
@@ -191,10 +192,11 @@ def credit_given(file_paths):
     return os.path.join('Misc', 'ACKS') in file_paths
 
 
-@status("Misc/NEWS updated", modal=True)
+@status("Misc/NEWS.d updated with `blurb`", modal=True)
 def reported_news(file_paths):
-    """Check if Misc/NEWS has been changed."""
-    return os.path.join('Misc', 'NEWS') in file_paths
+    """Check if Misc/NEWS.d has been changed."""
+    return any(p.startswith(os.path.join('Misc', 'NEWS.d', 'next'))
+               for p in file_paths)
 
 @status("configure regenerated", modal=True, info=str)
 def regenerated_configure(file_paths):
@@ -212,6 +214,27 @@ def regenerated_pyconfig_h_in(file_paths):
     else:
         return "not needed"
 
+def travis(pull_request):
+    if pull_request == 'false':
+        print('Not a pull request; skipping')
+        return
+    base_branch = get_base_branch()
+    file_paths = changed_files(base_branch)
+    python_files = [fn for fn in file_paths if fn.endswith('.py')]
+    c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
+    doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
+                 fn.endswith(('.rst', '.inc'))]
+    fixed = []
+    fixed.extend(normalize_whitespace(python_files))
+    fixed.extend(normalize_c_whitespace(c_files))
+    fixed.extend(normalize_docs_whitespace(doc_files))
+    if not fixed:
+        print('No whitespace issues found')
+    else:
+        print(f'Please fix the {len(fixed)} file(s) with whitespace issues')
+        print('(on UNIX you can run `make patchcheck` to make the fixes)')
+        sys.exit(1)
+
 def main():
     base_branch = get_base_branch()
     file_paths = changed_files(base_branch)
@@ -219,8 +242,7 @@ def main():
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
                  fn.endswith(('.rst', '.inc'))]
-    misc_files = {os.path.join('Misc', 'ACKS'), os.path.join('Misc', 'NEWS')}\
-            & set(file_paths)
+    misc_files = {p for p in file_paths if p.startswith('Misc')}
     # PEP 8 whitespace rules enforcement.
     normalize_whitespace(python_files)
     # C rules enforcement.
@@ -246,4 +268,12 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--travis',
+                        help='Perform pass/fail checks')
+    args = parser.parse_args()
+    if args.travis:
+        travis(args.travis)
+    else:
+        main()

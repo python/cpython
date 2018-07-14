@@ -1,11 +1,9 @@
-'''Test idlelib.macosx.py.
+"Test macosx, coverage 45% on Windows."
 
-Coverage: 71% on Windows.
-'''
 from idlelib import macosx
+import unittest
 from test.support import requires
 import tkinter as tk
-import unittest
 import unittest.mock as mock
 from idlelib.filelist import FileList
 
@@ -77,6 +75,10 @@ class SetupTest(unittest.TestCase):
         requires('gui')
         cls.root = tk.Tk()
         cls.root.withdraw()
+        def cmd(tkpath, func):
+            assert isinstance(tkpath, str)
+            assert isinstance(func, type(cmd))
+        cls.root.createcommand = cmd
 
     @classmethod
     def tearDownClass(cls):

@@ -559,6 +559,17 @@ class MaxLinesTestCase(BaseTestCase):
                         placeholder=' [truncated]...')
         self.check_wrap(self.text, 80, [self.text], placeholder='.' * 1000)
 
+    def test_placeholder_backtrack(self):
+        # Test special case when max_lines insufficient, but what
+        # would be last wrapped line so long the placeholder cannot
+        # be added there without violence. So, textwrap backtracks,
+        # adding placeholder to the penultimate line.
+        text = 'Good grief Python features are advancing quickly!'
+        self.check_wrap(text, 12,
+                        ['Good grief', 'Python*****'],
+                        max_lines=3,
+                        placeholder='*****')
+
 
 class LongWordTestCase (BaseTestCase):
     def setUp(self):
@@ -741,6 +752,22 @@ def foo():
         # Uneven indentation with a whitespace-only line.
         text = "  Foo\n    Bar\n \n   Baz\n"
         expect = "Foo\n  Bar\n\n Baz\n"
+        self.assertEqual(expect, dedent(text))
+
+    def test_dedent_declining(self):
+        # Uneven indentation with declining indent level.
+        text = "     Foo\n    Bar\n"  # 5 spaces, then 4
+        expect = " Foo\nBar\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Declining indent level with blank line.
+        text = "     Foo\n\n    Bar\n"  # 5 spaces, blank, then 4
+        expect = " Foo\n\nBar\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Declining indent level with whitespace only line.
+        text = "     Foo\n    \n    Bar\n"  # 5 spaces, then 4, then 4
+        expect = " Foo\n\nBar\n"
         self.assertEqual(expect, dedent(text))
 
     # dedent() should not mangle internal tabs

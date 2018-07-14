@@ -6,6 +6,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "osdefs.h"
 
@@ -114,19 +116,17 @@ BaseException_str(PyBaseExceptionObject *self)
 static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
-    const char *name;
-    const char *dot;
-
-    name = Py_TYPE(self)->tp_name;
-    dot = (const char *) strrchr(name, '.');
-    if (dot != NULL) name = dot+1;
-
-    return PyUnicode_FromFormat("%s%R", name, self->args);
+    const char *name = _PyType_Name(Py_TYPE(self));
+    if (PyTuple_GET_SIZE(self->args) == 1)
+        return PyUnicode_FromFormat("%s(%R)", name,
+                                    PyTuple_GET_ITEM(self->args, 0));
+    else
+        return PyUnicode_FromFormat("%s%R", name, self->args);
 }
 
 /* Pickling support */
 static PyObject *
-BaseException_reduce(PyBaseExceptionObject *self)
+BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->args && self->dict)
         return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
@@ -342,6 +342,13 @@ PyException_SetContext(PyObject *self, PyObject *context)
     Py_XSETREF(((PyBaseExceptionObject *)self)->context, context);
 }
 
+#undef PyExceptionClass_Name
+
+const char *
+PyExceptionClass_Name(PyObject *ob)
+{
+    return ((PyTypeObject*)ob)->tp_name;
+}
 
 static struct PyMemberDef BaseException_members[] = {
     {"__suppress_context__", T_BOOL,
@@ -713,7 +720,7 @@ ImportError_getstate(PyImportErrorObject *self)
 
 /* Pickling support */
 static PyObject *
-ImportError_reduce(PyImportErrorObject *self)
+ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *res;
     PyObject *args;
@@ -1123,7 +1130,7 @@ OSError_str(PyOSErrorObject *self)
 }
 
 static PyObject *
-OSError_reduce(PyOSErrorObject *self)
+OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args = self->args;
     PyObject *res = NULL, *tmp;
@@ -1352,11 +1359,16 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
 
         Py_DECREF(info);
 
-        /* Issue #21669: Custom error for 'print' & 'exec' as statements */
-        if (self->text && PyUnicode_Check(self->text)) {
-            if (_report_missing_parentheses(self) < 0) {
-                return -1;
-            }
+        /*
+         * Issue #21669: Custom error for 'print' & 'exec' as statements
+         *
+         * Only applies to SyntaxError instances, not to subclasses such
+         * as TabError or IndentationError (see issue #31161)
+         */
+        if ((PyObject*)Py_TYPE(self) == PyExc_SyntaxError &&
+                self->text && PyUnicode_Check(self->text) &&
+                _report_missing_parentheses(self) < 0) {
+            return -1;
         }
     }
     return 0;
@@ -2408,12 +2420,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 
 
 
-/* Pre-computed RecursionError instance for when recursion depth is reached.
-   Meant to be used when normalizing the exception for exceeding the recursion
-   depth will cause its own infinite recursion.
-*/
-PyObject *PyExc_RecursionErrorInst = NULL;
-
 #define PRE_INIT(TYPE) \
     if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
         if (PyType_Ready(&_PyExc_ ## TYPE) < 0) \
@@ -2673,37 +2679,11 @@ _PyExc_Init(PyObject *bltinmod)
     ADD_ERRNO(TimeoutError, ETIMEDOUT)
 
     preallocate_memerrors();
-
-    if (!PyExc_RecursionErrorInst) {
-        PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RecursionError, NULL, NULL);
-        if (!PyExc_RecursionErrorInst)
-            Py_FatalError("Cannot pre-allocate RecursionError instance for "
-                            "recursion errors");
-        else {
-            PyBaseExceptionObject *err_inst =
-                (PyBaseExceptionObject *)PyExc_RecursionErrorInst;
-            PyObject *args_tuple;
-            PyObject *exc_message;
-            exc_message = PyUnicode_FromString("maximum recursion depth exceeded");
-            if (!exc_message)
-                Py_FatalError("cannot allocate argument for RecursionError "
-                                "pre-allocation");
-            args_tuple = PyTuple_Pack(1, exc_message);
-            if (!args_tuple)
-                Py_FatalError("cannot allocate tuple for RecursionError "
-                                "pre-allocation");
-            Py_DECREF(exc_message);
-            if (BaseException_init(err_inst, args_tuple, NULL))
-                Py_FatalError("init of pre-allocated RecursionError failed");
-            Py_DECREF(args_tuple);
-        }
-    }
 }
 
 void
 _PyExc_Fini(void)
 {
-    Py_CLEAR(PyExc_RecursionErrorInst);
     free_preallocated_memerrors();
     Py_CLEAR(errnomap);
 }
@@ -2862,6 +2842,60 @@ _PyErr_TrySetFromCause(const char *format, ...)
  * or minus, using the stream redirection syntax).
  */
 
+
+// Static helper for setting legacy print error message
+static int
+_set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
+{
+    // PRINT_OFFSET is to remove the `print ` prefix from the data.
+    const int PRINT_OFFSET = 6;
+    const int STRIP_BOTH = 2;
+    Py_ssize_t start_pos = start + PRINT_OFFSET;
+    Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text);
+    Py_UCS4 semicolon = ';';
+    Py_ssize_t end_pos = PyUnicode_FindChar(self->text, semicolon,
+                                            start_pos, text_len, 1);
+    if (end_pos < -1) {
+      return -1;
+    } else if (end_pos == -1) {
+      end_pos = text_len;
+    }
+
+    PyObject *data = PyUnicode_Substring(self->text, start_pos, end_pos);
+    if (data == NULL) {
+        return -1;
+    }
+
+    PyObject *strip_sep_obj = PyUnicode_FromString(" \t\r\n");
+    if (strip_sep_obj == NULL) {
+        Py_DECREF(data);
+        return -1;
+    }
+
+    PyObject *new_data = _PyUnicode_XStrip(data, STRIP_BOTH, strip_sep_obj);
+    Py_DECREF(data);
+    Py_DECREF(strip_sep_obj);
+    if (new_data == NULL) {
+        return -1;
+    }
+    // gets the modified text_len after stripping `print `
+    text_len = PyUnicode_GET_LENGTH(new_data);
+    const char *maybe_end_arg = "";
+    if (text_len > 0 && PyUnicode_READ_CHAR(new_data, text_len-1) == ',') {
+        maybe_end_arg = " end=\" \"";
+    }
+    PyObject *error_msg = PyUnicode_FromFormat(
+        "Missing parentheses in call to 'print'. Did you mean print(%U%s)?",
+        new_data, maybe_end_arg
+    );
+    Py_DECREF(new_data);
+    if (error_msg == NULL)
+        return -1;
+
+    Py_XSETREF(self->msg, error_msg);
+    return 1;
+}
+
 static int
 _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
 {
@@ -2897,9 +2931,8 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
     if (PyUnicode_Tailmatch(self->text, print_prefix,
                             start, text_len, -1)) {
-        Py_XSETREF(self->msg,
-                  PyUnicode_FromString("Missing parentheses in call to 'print'"));
-        return 1;
+
+        return _set_legacy_print_statement_msg(self, start);
     }
 
     /* Check for legacy exec statements */

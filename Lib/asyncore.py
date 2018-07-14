@@ -287,7 +287,6 @@ class dispatcher:
 
     def set_socket(self, sock, map=None):
         self.socket = sock
-##        self.__dict__['socket'] = sock
         self._fileno = sock.fileno()
         self.add_channel(map)
 
@@ -619,8 +618,9 @@ if os.name == 'posix':
         def close(self):
             if self.fd < 0:
                 return
-            os.close(self.fd)
+            fd = self.fd
             self.fd = -1
+            os.close(fd)
 
         def fileno(self):
             return self.fd

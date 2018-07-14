@@ -18,6 +18,9 @@
 #include "abstract.h"
 #endif /* PGEN */
 
+/* Alternate tab spacing */
+#define ALTTABSIZE 1
+
 #define is_potential_identifier_start(c) (\
               (c >= 'a' && c <= 'z')\
                || (c >= 'A' && c <= 'Z')\
@@ -103,9 +106,10 @@ const char *_PyParser_TokenNames[] = {
     "ELLIPSIS",
     /* This table must match the #defines in token.h! */
     "OP",
-    "AWAIT",
-    "ASYNC",
     "<ERRORTOKEN>",
+    "COMMENT",
+    "NL",
+    "ENCODING",
     "<N_TOKENS>"
 };
 
@@ -132,9 +136,6 @@ tok_new(void)
     tok->prompt = tok->nextprompt = NULL;
     tok->lineno = 0;
     tok->level = 0;
-    tok->altwarning = 1;
-    tok->alterror = 1;
-    tok->alttabsize = 1;
     tok->altindstack[0] = 0;
     tok->decoding_state = STATE_INIT;
     tok->decoding_erred = 0;
@@ -147,10 +148,6 @@ tok_new(void)
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
 #endif
-
-    tok->async_def = 0;
-    tok->async_def_indent = 0;
-    tok->async_def_nl = 0;
 
     return tok;
 }
@@ -1284,24 +1281,33 @@ PyToken_ThreeChars(int c1, int c2, int c3)
 }
 
 static int
+syntaxerror(struct tok_state *tok, const char *format, ...)
+{
+#ifndef PGEN
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    PyErr_FormatV(PyExc_SyntaxError, format, vargs);
+    va_end(vargs);
+    PyErr_SyntaxLocationObject(tok->filename,
+                               tok->lineno,
+                               tok->cur - tok->line_start);
+    tok->done = E_ERROR;
+#else
+    tok->done = E_TOKEN;
+#endif
+    return ERRORTOKEN;
+}
+
+static int
 indenterror(struct tok_state *tok)
 {
-    if (tok->alterror) {
-        tok->done = E_TABSPACE;
-        tok->cur = tok->inp;
-        return 1;
-    }
-    if (tok->altwarning) {
-#ifdef PGEN
-        PySys_WriteStderr("inconsistent use of tabs and spaces "
-                          "in indentation\n");
-#else
-        PySys_FormatStderr("%U: inconsistent use of tabs and spaces "
-                          "in indentation\n", tok->filename);
-#endif
-        tok->altwarning = 0;
-    }
-    return 0;
+    tok->done = E_TABSPACE;
+    tok->cur = tok->inp;
+    return ERRORTOKEN;
 }
 
 #ifdef PGEN
@@ -1349,8 +1355,8 @@ tok_decimal_tail(struct tok_state *tok)
         }
         c = tok_nextc(tok);
         if (!isdigit(c)) {
-            tok->done = E_TOKEN;
             tok_backup(tok, c);
+            syntaxerror(tok, "invalid decimal literal");
             return 0;
         }
     }
@@ -1381,9 +1387,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 col++, altcol++;
             }
             else if (c == '\t') {
-                col = (col/tok->tabsize + 1) * tok->tabsize;
-                altcol = (altcol/tok->alttabsize + 1)
-                    * tok->alttabsize;
+                col = (col / tok->tabsize + 1) * tok->tabsize;
+                altcol = (altcol / ALTTABSIZE + 1) * ALTTABSIZE;
             }
             else if (c == '\014')  {/* Control-L (formfeed) */
                 col = altcol = 0; /* For Emacs users */
@@ -1412,9 +1417,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             if (col == tok->indstack[tok->indent]) {
                 /* No change */
                 if (altcol != tok->altindstack[tok->indent]) {
-                    if (indenterror(tok)) {
-                        return ERRORTOKEN;
-                    }
+                    return indenterror(tok);
                 }
             }
             else if (col > tok->indstack[tok->indent]) {
@@ -1425,9 +1428,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     return ERRORTOKEN;
                 }
                 if (altcol <= tok->altindstack[tok->indent]) {
-                    if (indenterror(tok)) {
-                        return ERRORTOKEN;
-                    }
+                    return indenterror(tok);
                 }
                 tok->pendin++;
                 tok->indstack[++tok->indent] = col;
@@ -1446,9 +1447,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     return ERRORTOKEN;
                 }
                 if (altcol != tok->altindstack[tok->indent]) {
-                    if (indenterror(tok)) {
-                        return ERRORTOKEN;
-                    }
+                    return indenterror(tok);
                 }
             }
         }
@@ -1466,21 +1465,6 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             tok->pendin--;
             return INDENT;
         }
-    }
-
-    if (tok->async_def
-        && !blankline
-        && tok->level == 0
-        /* There was a NEWLINE after ASYNC DEF,
-           so we're past the signature. */
-        && tok->async_def_nl
-        /* Current indentation level is less than where
-           the async function was defined */
-        && tok->async_def_indent >= tok->indent)
-    {
-        tok->async_def = 0;
-        tok->async_def_indent = 0;
-        tok->async_def_nl = 0;
     }
 
  again:
@@ -1547,43 +1531,6 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         *p_start = tok->start;
         *p_end = tok->cur;
 
-        /* async/await parsing block. */
-        if (tok->cur - tok->start == 5) {
-            /* Current token length is 5. */
-            if (tok->async_def) {
-                /* We're inside an 'async def' function. */
-                if (memcmp(tok->start, "async", 5) == 0) {
-                    return ASYNC;
-                }
-                if (memcmp(tok->start, "await", 5) == 0) {
-                    return AWAIT;
-                }
-            }
-            else if (memcmp(tok->start, "async", 5) == 0) {
-                /* The current token is 'async'.
-                   Look ahead one token.*/
-
-                struct tok_state ahead_tok;
-                char *ahead_tok_start = NULL, *ahead_tok_end = NULL;
-                int ahead_tok_kind;
-
-                memcpy(&ahead_tok, tok, sizeof(ahead_tok));
-                ahead_tok_kind = tok_get(&ahead_tok, &ahead_tok_start,
-                                         &ahead_tok_end);
-
-                if (ahead_tok_kind == NAME
-                    && ahead_tok.cur - ahead_tok.start == 3
-                    && memcmp(ahead_tok.start, "def", 3) == 0)
-                {
-                    /* The next token is going to be 'def', so instead of
-                       returning 'async' NAME token, we return ASYNC. */
-                    tok->async_def_indent = tok->indent;
-                    tok->async_def = 1;
-                    return ASYNC;
-                }
-            }
-        }
-
         return NAME;
     }
 
@@ -1596,11 +1543,6 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         *p_start = tok->start;
         *p_end = tok->cur - 1; /* Leave '\n' out of the string */
         tok->cont_line = 0;
-        if (tok->async_def) {
-            /* We're somewhere inside an 'async def' function, and
-               we've encountered a NEWLINE after its signature. */
-            tok->async_def_nl = 1;
-        }
         return NEWLINE;
     }
 
@@ -1642,9 +1584,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                         c = tok_nextc(tok);
                     }
                     if (!isxdigit(c)) {
-                        tok->done = E_TOKEN;
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        return syntaxerror(tok, "invalid hexadecimal literal");
                     }
                     do {
                         c = tok_nextc(tok);
@@ -1659,14 +1600,23 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                         c = tok_nextc(tok);
                     }
                     if (c < '0' || c >= '8') {
-                        tok->done = E_TOKEN;
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        if (isdigit(c)) {
+                            return syntaxerror(tok,
+                                    "invalid digit '%c' in octal literal", c);
+                        }
+                        else {
+                            return syntaxerror(tok, "invalid octal literal");
+                        }
                     }
                     do {
                         c = tok_nextc(tok);
                     } while ('0' <= c && c < '8');
                 } while (c == '_');
+                if (isdigit(c)) {
+                    return syntaxerror(tok,
+                            "invalid digit '%c' in octal literal", c);
+                }
             }
             else if (c == 'b' || c == 'B') {
                 /* Binary */
@@ -1676,14 +1626,23 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                         c = tok_nextc(tok);
                     }
                     if (c != '0' && c != '1') {
-                        tok->done = E_TOKEN;
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        if (isdigit(c)) {
+                            return syntaxerror(tok,
+                                    "invalid digit '%c' in binary literal", c);
+                        }
+                        else {
+                            return syntaxerror(tok, "invalid binary literal");
+                        }
                     }
                     do {
                         c = tok_nextc(tok);
                     } while (c == '0' || c == '1');
                 } while (c == '_');
+                if (isdigit(c)) {
+                    return syntaxerror(tok,
+                            "invalid digit '%c' in binary literal", c);
+                }
             }
             else {
                 int nonzero = 0;
@@ -1693,9 +1652,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     if (c == '_') {
                         c = tok_nextc(tok);
                         if (!isdigit(c)) {
-                            tok->done = E_TOKEN;
                             tok_backup(tok, c);
-                            return ERRORTOKEN;
+                            return syntaxerror(tok, "invalid decimal literal");
                         }
                     }
                     if (c != '0') {
@@ -1722,9 +1680,11 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 }
                 else if (nonzero) {
                     /* Old-style octal: now disallowed. */
-                    tok->done = E_TOKEN;
                     tok_backup(tok, c);
-                    return ERRORTOKEN;
+                    return syntaxerror(tok,
+                                       "leading zeros in decimal integer "
+                                       "literals are not permitted; "
+                                       "use an 0o prefix for octal integers");
                 }
             }
         }
@@ -1756,9 +1716,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     if (c == '+' || c == '-') {
                         c = tok_nextc(tok);
                         if (!isdigit(c)) {
-                            tok->done = E_TOKEN;
                             tok_backup(tok, c);
-                            return ERRORTOKEN;
+                            return syntaxerror(tok, "invalid decimal literal");
                         }
                     } else if (!isdigit(c)) {
                         tok_backup(tok, c);
