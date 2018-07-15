@@ -63,7 +63,7 @@ Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
 `Pyre <https://pyre-check.org/>`_, and
 `Pytype <https://github.com/google/pytype>`_ look for type hints in Python source
 code and report any mismatch they find, and tools like
-`PyAnnotate <https://github.com/dropbox/pyannotate>`_ automatically insert these
+`PyAnnotate <https://github.com/dropbox/pyannotate>`_ help to insert these
 type hints based on call arguments and return types observed at
 runtime.
 
