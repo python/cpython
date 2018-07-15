@@ -1705,7 +1705,7 @@ _winapi_GetFileType_impl(PyObject *module, HANDLE handle)
 // This constant serves as the damping factor.
 #define LOADAVG_FACTOR_1F 0.9200444146293232478931553241
 // The time interval in seconds between taking load counts
-#define SAMPLING_INTERVAL 1
+#define SAMPLING_INTERVAL 5
 
 double load_1m = 0;
 
