@@ -377,7 +377,7 @@ octal and binary numbers), or by calling the constructor.
    ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__trunc__`,
    it returns ``x.__trunc__()``.
    For floating point numbers, this truncates towards zero.
-   
+
    If *x* is not a number or if *base* is given, then *x* must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
    literal <integers>` in radix *base*.  Optionally, the literal can be
@@ -390,14 +390,14 @@ octal and binary numbers), or by calling the constructor.
    means to interpret exactly as a code literal, so that the actual base is 2,
    8, 10, or 16, and so that ``int('010', 0)`` is not legal, while
    ``int('010')`` is, as well as ``int('010', 8)``.
-   
+
    .. versionchanged:: 3.4
       If *base* is not an instance of :class:`int` and the *base* object has a
       :meth:`base.__index__ <object.__index__>` method, that method is called
       to obtain an integer for the base.  Previous versions used
       :meth:`base.__int__ <object.__int__>` instead of :meth:`base.__index__
       <object.__index__>`.
-   
+
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
 
@@ -584,7 +584,7 @@ decimal point or an exponent sign, or by calling the constructor.
       single: Infinity
 
    Return a floating point number constructed from a number or string *x*.
-   
+
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
    sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
@@ -592,31 +592,31 @@ decimal point or an exponent sign, or by calling the constructor.
    (not-a-number), or a positive or negative infinity.  More precisely, the
    input must conform to the following grammar after leading and trailing
    whitespace characters are removed:
-   
+
    .. productionlist::
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
       numeric_value: `floatnumber` | `infinity` | `nan`
       numeric_string: [`sign`] `numeric_value`
-   
+
    Here ``floatnumber`` is the form of a Python floating-point literal,
    described in :ref:`floating`.  Case is not significant, so, for example,
    "inf", "Inf", "INFINITY" and "iNfINity" are all acceptable spellings for
    positive infinity.
-   
+
    Otherwise, if the argument is an integer or a floating point number, a
    floating point number with the same value (within Python's floating point
    precision) is returned.  If the argument is outside the range of a Python
    float, an :exc:`OverflowError` will be raised.
-   
+
    For a general Python object ``x``, ``float(x)`` delegates to
    ``x.__float__()``.
-   
+
    If no argument is given, ``0.0`` is returned.
-   
+
    Examples::
-   
+
       >>> float('+1.23')
       1.23
       >>> float('   -12345\n')
@@ -627,7 +627,7 @@ decimal point or an exponent sign, or by calling the constructor.
       1000000.0
       >>> float('-Infinity')
       -inf
-   
+
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
 
@@ -737,9 +737,9 @@ To extract each part from a complex number *z*, use ``z.real`` and ``z.imag``.
    defaults to zero and the constructor serves as a numeric conversion like
    :class:`int` and :class:`float`.  If both arguments are omitted, returns
    ``0j``.
-   
+
    .. note::
-   
+
       When converting from a string, the string must not contain whitespace
       around the central ``+`` or ``-`` operator.  For example,
       ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
