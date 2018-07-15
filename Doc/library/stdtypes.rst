@@ -569,7 +569,7 @@ Floating point
 numbers are usually implemented using :c:type:`double` in C; information
 about the precision and internal representation of floating point
 numbers for the machine on which your program is running is available
-in :data:`sys.float_info`
+in :data:`sys.float_info`.
 
 .. index::
    pair: floating point; literals
