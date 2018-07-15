@@ -354,12 +354,14 @@ target, then the interpreter evaluates the target except for the last
 .. seealso::
 
    :pep:`526` - Syntax for Variable Annotations
-      The proposal that added syntax for annotating variables and class
-      attributes.
+      The proposal that added syntax for annotating the types of variables
+      (including class variables and instance variables), instead of expressing
+      them through comments.
 
    :pep:`484` - Type hints
-      The proposal that added the :mod:`typing` module to ease the use of
-      annotations as type hints for static type analysis tools and IDEs.
+      The proposal that added the :mod:`typing` module to provide a standard
+      syntax for type annotations that can be used in static analysis tools and
+      IDEs.
 
 
 .. _assert:
