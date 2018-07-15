@@ -1,1 +1,1 @@
-help() now displays exception's builtin subclasses.
+help() now displays exception's builtin subclasses. Patch by Sanyam Khurana.

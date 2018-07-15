@@ -516,6 +516,37 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(stripid("<type 'exceptions.Exception'>"),
                          "<type 'exceptions.Exception'>")
 
+    def test_builtin_with_more_than_four_children(self):
+        """Tests help on builtin object which have more than four child classes.
+
+        When running help() on a builtin class which has child classes, it
+        should contain a "Built-in subclasses" section and only 4 classes
+        should be displayed with a hint on how many more subclasses are present.
+        For example:
+
+        >>> help(object)
+        Help on class object in module builtins:
+
+        class object
+         |  The most base type
+         |
+         |  Built-in subclasses:
+         |      async_generator
+         |      BaseException
+         |      builtin_function_or_method
+         |      bytearray
+         |      ... and 82 other subclasses
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(object)
+        snip = (" |  Built-in subclasses:\n"
+                " |      async_generator\n"
+                " |      BaseException\n"
+                " |      builtin_function_or_method\n"
+                " |      bytearray\n"
+                " |      ... and 86 other subclasses")
+        self.assertIn(snip, text)
+
     def test_builtin_with_child(self):
         """Tests help on builtin object which have only child classes.
 

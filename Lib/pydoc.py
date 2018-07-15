@@ -1255,14 +1255,21 @@ location listed above.
             push('')
 
         # List the built-in subclasses, if any:
-        subclasses = [
-            cls.__name__ for cls in object.__subclasses__()
-            if cls.__module__ == 'builtins'
-        ]
-        if subclasses and object is not builtins.object:
+        subclasses = sorted(
+            (str(cls.__name__) for cls in object.__subclasses__() \
+            if not cls.__name__.startswith("_") and cls.__module__ == "builtins"),
+            key=str.lower
+        )
+        no_of_subclasses = len(subclasses)
+        MAX_SUBCLASSES_TO_DISPLAY = 4
+        if subclasses:
             push("Built-in subclasses:")
-            for subclassname in sorted(subclasses):
+            for subclassname in subclasses[:MAX_SUBCLASSES_TO_DISPLAY]:
                 push('    ' + subclassname)
+            if no_of_subclasses > MAX_SUBCLASSES_TO_DISPLAY:
+                push('    ... and ' +
+                    str(no_of_subclasses - MAX_SUBCLASSES_TO_DISPLAY) +
+                    ' other subclasses')
             push('')
 
         # Cute little class to pump out a horizontal rule between sections.
