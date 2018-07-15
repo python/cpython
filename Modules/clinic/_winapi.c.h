@@ -941,4 +941,43 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ec7f36eb7efc9d00 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_GetLoadAvg__doc__,
+"GetLoadAvg($module, /)\n"
+"--\n"
+"\n"
+"Gets the 1 minute load average (processor queue length) for the system.\n"
+"\n"
+"InitializeLoadCounter must be called before this function to engage the\n"
+"mechanism that records load values.");
+
+#define _WINAPI_GETLOADAVG_METHODDEF    \
+    {"GetLoadAvg", (PyCFunction)_winapi_GetLoadAvg, METH_NOARGS, _winapi_GetLoadAvg__doc__},
+
+static PyObject *
+_winapi_GetLoadAvg_impl(PyObject *module);
+
+static PyObject *
+_winapi_GetLoadAvg(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _winapi_GetLoadAvg_impl(module);
+}
+
+PyDoc_STRVAR(_winapi_InitializeLoadCounter__doc__,
+"InitializeLoadCounter($module, /)\n"
+"--\n"
+"\n"
+"Initializes instrumentation code to keep track of system load.");
+
+#define _WINAPI_INITIALIZELOADCOUNTER_METHODDEF    \
+    {"InitializeLoadCounter", (PyCFunction)_winapi_InitializeLoadCounter, METH_NOARGS, _winapi_InitializeLoadCounter__doc__},
+
+static PyObject *
+_winapi_InitializeLoadCounter_impl(PyObject *module);
+
+static PyObject *
+_winapi_InitializeLoadCounter(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _winapi_InitializeLoadCounter_impl(module);
+}
+/*[clinic end generated code: output=922a40402540f154 input=a9049054013a1b77]*/

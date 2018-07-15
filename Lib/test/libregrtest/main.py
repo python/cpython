@@ -100,6 +100,18 @@ class Regrtest:
         self.next_single_test = None
         self.next_single_filename = None
 
+        # use the platform specific APIs available
+        # for system load averages
+        self.getloadavg = None
+        try:
+            import _winapi
+            _winapi.InitializeLoadCounter()
+            self.getloadavg = _winapi.GetLoadAvg
+        except ImportError:
+            pass
+        if hasattr(os, 'getloadavg'):
+            self.getloadavg = lambda: os.getloadavg()[0]
+
     def accumulate_result(self, test, result):
         ok, test_time = result
         if ok not in (CHILD_ERROR, INTERRUPTED):
@@ -130,8 +142,8 @@ class Regrtest:
         line = f"[{line}] {test}"
 
         # add the system load prefix: "load avg: 1.80 "
-        if hasattr(os, 'getloadavg'):
-            load_avg_1min = os.getloadavg()[0]
+        if self.getloadavg:
+            load_avg_1min = self.getloadavg()
             line = f"load avg: {load_avg_1min:.2f} {line}"
 
         # add the timestamp prefix:  "0:01:05 "

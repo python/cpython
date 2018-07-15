@@ -39,6 +39,7 @@
 
 #define WINDOWS_LEAN_AND_MEAN
 #include "windows.h"
+#include <pdh.h>
 #include <crtdbg.h>
 #include "winreparse.h"
 
@@ -1699,6 +1700,92 @@ _winapi_GetFileType_impl(PyObject *module, HANDLE handle)
     return result;
 }
 
+// We use an exponentially weighted moving average, just like Unix systems do
+// https://en.wikipedia.org/wiki/Load_(computing)#Unix-style_load_calculation
+// This constant serves as the damping factor.
+#define LOADAVG_FACTOR_1F 0.9200444146293232478931553241
+// The time interval in seconds between taking load counts
+#define SAMPLING_INTERVAL 1
+
+double load_1m = 0;
+
+VOID CALLBACK LoadCallback(PVOID hCounter)
+{
+    PDH_FMT_COUNTERVALUE displayValue;
+    PdhGetFormattedCounterValue((PDH_HCOUNTER) hCounter, PDH_FMT_DOUBLE, 0, &displayValue);
+
+    double currentLoad = displayValue.doubleValue;
+    double newLoad = load_1m * LOADAVG_FACTOR_1F + currentLoad * (1.0 - LOADAVG_FACTOR_1F);
+    load_1m = newLoad;
+}
+
+/*[clinic input]
+_winapi.GetLoadAvg
+
+Gets the 1 minute load average (processor queue length) for the system.
+
+InitializeLoadCounter must be called before this function to engage the
+mechanism that records load values.
+
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetLoadAvg_impl(PyObject *module)
+/*[clinic end generated code: output=e79e25f9f0783a3e input=e874ce4fc553db23]*/
+{
+    PyObject* load = PyFloat_FromDouble(load_1m);
+    return load;
+}
+
+/*[clinic input]
+_winapi.InitializeLoadCounter
+
+Initializes instrumentation code to keep track of system load.
+
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_InitializeLoadCounter_impl(PyObject *module)
+/*[clinic end generated code: output=943e4187b2a20b39 input=3caa0958b4abcea0]*/
+{
+    PDH_STATUS s;
+    HQUERY hQuery;
+    HCOUNTER hCounter;
+
+    if ((s = PdhOpenQueryW(NULL, 0, &hQuery)) != ERROR_SUCCESS)
+    {
+        goto WMIerror;
+    }
+
+    WCHAR *szCounterPath = L"\\System\\Processor Queue Length";
+    if ((s = PdhAddEnglishCounterW(hQuery, szCounterPath, 0, &hCounter)) != ERROR_SUCCESS)
+    {
+        goto WMIerror;
+    }
+
+    HANDLE event = CreateEventW(NULL, FALSE, FALSE, L"LoadUpdateEvent");
+    if (event == NULL) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        return NULL;
+    }
+
+    if ((s = PdhCollectQueryDataEx(hQuery, SAMPLING_INTERVAL, event)) != ERROR_SUCCESS)
+    {
+        goto WMIerror;
+    }
+
+    HANDLE waitHandle;
+    if (RegisterWaitForSingleObject(&waitHandle, event, (WAITORTIMERCALLBACK) LoadCallback, 
+                                    (PVOID) hCounter, INFINITE, WT_EXECUTEDEFAULT) == 0) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+WMIerror:
+    PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
+    return NULL;
+}
 
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
@@ -1727,6 +1814,8 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_WRITEFILE_METHODDEF
     _WINAPI_GETACP_METHODDEF
     _WINAPI_GETFILETYPE_METHODDEF
+    _WINAPI_GETLOADAVG_METHODDEF
+    _WINAPI_INITIALIZELOADCOUNTER_METHODDEF
     {NULL, NULL}
 };
 
