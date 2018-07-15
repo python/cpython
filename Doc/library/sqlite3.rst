@@ -337,16 +337,23 @@ Connection Objects
       :meth:`~Cursor.executescript` method with the given *sql_script*, and
       returns the cursor.
 
-   .. method:: create_function(name, num_params, func)
+   .. method:: create_function(name, num_params, func, *, deterministic=False)
 
       Creates a user-defined function that you can later use from within SQL
       statements under the function name *name*. *num_params* is the number of
       parameters the function accepts (if *num_params* is -1, the function may
       take any number of arguments), and *func* is a Python callable that is
-      called as the SQL function.
+      called as the SQL function. If *deterministic* is true, the created function
+      is marked as `deterministic <https://sqlite.org/deterministic.html>`_, which
+      allows SQLite to perform additional optimizations. This flag is supported by
+      SQLite 3.8.3 or higher, :exc:`NotSupportedError` will be raised if used
+      with older versions.
 
       The function can return any of the types supported by SQLite: bytes, str, int,
       float and ``None``.
+
+      .. versionchanged:: 3.8
+         The *deterministic* parameter was added.
 
       Example:
 
@@ -827,6 +834,13 @@ Exceptions
    and not necessarily under the control of the programmer, e.g. an unexpected
    disconnect occurs, the data source name is not found, a transaction could
    not be processed, etc.  It is a subclass of :exc:`DatabaseError`.
+
+.. exception:: NotSupportedError
+
+   Exception raised in case a method or database API was used which is not
+   supported by the database, e.g. calling the :meth:`~Connection.rollback`
+   method on a connection that does not support transaction or has
+   transactions turned off.  It is a subclass of :exc:`DatabaseError`.
 
 
 .. _sqlite3-types:

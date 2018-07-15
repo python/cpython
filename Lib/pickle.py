@@ -510,11 +510,7 @@ class _Pickler:
             rv = reduce(obj)
         else:
             # Check for a class with a custom metaclass; treat as regular class
-            try:
-                issc = issubclass(t, type)
-            except TypeError: # t is not a class (old Boost; see SF #502085)
-                issc = False
-            if issc:
+            if issubclass(t, type):
                 self.save_global(obj)
                 return
 
