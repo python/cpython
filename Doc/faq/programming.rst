@@ -67,8 +67,9 @@ code and report any mismatch they find, and tools like
 type hints based on call arguments and return types observed at
 runtime.
 
-`PyChecker <http://pychecker.sourceforge.net/>`_ is a static analysis tool that
-finds bugs in Python source code and warns about code complexity and style.
+PyChecker is a static analysis tool that finds bugs in Python source code and
+warns about code complexity and style.  You can get PyChecker from
+http://pychecker.sourceforge.net/.
 
 `Pylint <https://www.pylint.org/>`_ is another tool that checks
 if a module satisfies a coding standard, and also makes it possible to write
