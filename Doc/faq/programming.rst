@@ -78,6 +78,7 @@ length, whether variable names are well-formed according to your coding
 standard, whether declared interfaces are fully implemented, and more.
 https://docs.pylint.org/ provides a full list of Pylint's features.
 
+
 How can I create a stand-alone binary from a Python script?
 -----------------------------------------------------------
 
