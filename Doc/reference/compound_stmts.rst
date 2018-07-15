@@ -685,7 +685,7 @@ can be used to create instance variables with different implementation details.
       and the semantics for how classes with metaclasses are constructed.
 
    :pep:`3129` - Class Decorators
-      The proposal that added syntax for class decorators, as an extension to
+      The proposal that added class decorators, as an extension to
       the function and method decorators introduced in :pep:`318`.
 
 
