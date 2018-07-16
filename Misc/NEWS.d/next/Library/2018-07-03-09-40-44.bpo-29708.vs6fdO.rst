@@ -1,0 +1,2 @@
+distutils: To get reproducible builds, byte_compile() of distutils.util now
+sorts filenames. Patch from OpenSUSE by Bernhard M. Wiedemann.
