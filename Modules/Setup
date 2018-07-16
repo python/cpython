@@ -1,14 +1,11 @@
 # -*- makefile -*-
 # The file Setup is used by the makesetup script to construct the files
 # Makefile and config.c, from Makefile.pre and config.c.in,
-# respectively.  The file Setup itself is initially copied from
-# Setup.dist; once it exists it will not be overwritten, so you can edit
-# Setup to your heart's content.  Note that Makefile.pre is created
-# from Makefile.pre.in by the toplevel configure script.
+# respectively.  Note that Makefile.pre is created from Makefile.pre.in
+# by the toplevel configure script.
 
 # (VPATH notes: Setup and Makefile.pre are in the build directory, as
-# are Makefile and config.c; the *.in and *.dist files are in the source
-# directory.)
+# are Makefile and config.c; the *.in files are in the source directory.)
 
 # Each line in this file describes one or more optional modules.
 # Modules configured here will not be compiled by the setup.py script,
