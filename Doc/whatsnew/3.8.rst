@@ -139,6 +139,21 @@ Build and C API Changes
   ``const char *`` rather of ``char *``.
   (Contributed by Serhiy Storchaka in :issue:`33818`.)
 
+* The duality of ``Modules/Setup.dist`` and ``Modules/Setup`` has been
+  removed.  Previously, when updating the CPython source tree, one had
+  to manually copy ``Modules/Setup.dist`` (inside the source tree) to
+  ``Modules/Setup`` (inside the build tree) in order to reflect any changes
+  upstream.  This was of a small benefit to packagers at the expense of
+  a frequent annoyance to developers following CPython development, as
+  forgetting to copy the file could produce build failures.
+
+  Now the build system always reads from ``Modules/Setup`` inside the source
+  tree.  People who want to customize that file are encouraged to maintain
+  their changes in a git fork of CPython or as patch files, as they would do
+  for any other change to the source tree.
+
+  (Contributed by Antoine Pitrou in :issue:`32430`.)
+
 
 Deprecated
 ==========
