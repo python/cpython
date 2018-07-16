@@ -18339,12 +18339,6 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-echo "creating Modules/Setup" >&6
-if test ! -f Modules/Setup
-then
-	cp $srcdir/Modules/Setup.dist Modules/Setup
-fi
-
 echo "creating Modules/Setup.local" >&6
 if test ! -f Modules/Setup.local
 then
