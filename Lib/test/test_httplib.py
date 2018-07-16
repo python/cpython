@@ -1933,10 +1933,10 @@ class TunnelTests(TestCase):
 
     def test_connect_with_tunnel(self):
         d = {
-            'host': 'destination.com', b'host': b'destination.com',
+            b'host': b'destination.com',
             b'port': client.HTTP_PORT,
         }
-        self.conn.set_tunnel(d['host'])
+        self.conn.set_tunnel(d[b'host'].decode('ascii'))
         self.conn.request('HEAD', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
         self.assertEqual(self.conn.sock.port, self.port)
@@ -1948,10 +1948,10 @@ class TunnelTests(TestCase):
 
     def test_connect_with_tunnel_with_default_port(self):
         d = {
-            'host': 'destination.com', b'host': b'destination.com',
-            'port': client.HTTP_PORT, b'port': client.HTTP_PORT,
+            b'host': b'destination.com',
+            b'port': client.HTTP_PORT,
         }
-        self.conn.set_tunnel(d['host'], port=d['port'])
+        self.conn.set_tunnel(d[b'host'].decode('ascii'), port=d[b'port'])
         self.conn.request('HEAD', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
         self.assertEqual(self.conn.sock.port, self.port)
@@ -1963,10 +1963,10 @@ class TunnelTests(TestCase):
 
     def test_connect_with_tunnel_with_nonstandard_port(self):
         d = {
-            'host': 'destination.com', b'host': b'destination.com',
-            'port': 8888, b'port': 8888,
+            b'host': b'destination.com',
+            b'port': 8888,
         }
-        self.conn.set_tunnel(d['host'], port=d['port'])
+        self.conn.set_tunnel(d[b'host'].decode('ascii'), port=d[b'port'])
         self.conn.request('HEAD', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
         self.assertEqual(self.conn.sock.port, self.port)
@@ -1981,13 +1981,13 @@ class TunnelTests(TestCase):
     # case-insensitivity when injecting Host: headers if they're missing.
     def test_connect_with_tunnel_with_different_host_header(self):
         d = {
-            'host': 'destination.com', b'host': b'destination.com',
-            'tunnel_host_header': 'example.com:9876',
+            b'host': b'destination.com',
             b'tunnel_host_header': b'example.com:9876',
             b'port': client.HTTP_PORT,
         }
         self.conn.set_tunnel(
-            d['host'], headers={'HOST': d['tunnel_host_header']})
+            d[b'host'].decode('ascii'),
+            headers={'HOST': d[b'tunnel_host_header'].decode('ascii')})
         self.conn.request('HEAD', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
         self.assertEqual(self.conn.sock.port, self.port)
@@ -1999,17 +1999,20 @@ class TunnelTests(TestCase):
 
     def test_connect_with_tunnel_different_host(self):
         d = {
-            'host': 'destination.com', b'host': b'destination.com',
-            'port': client.HTTP_PORT, b'port': client.HTTP_PORT,
+            b'host': b'destination.com',
+            b'port': client.HTTP_PORT,
         }
-        self.conn.set_tunnel(d['host'])
+        self.conn.set_tunnel(d[b'host'].decode('ascii'))
         self.conn.request('HEAD', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
         self.assertEqual(self.conn.sock.port, self.port)
-        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\nHost: %(host)s:%(port)d\r\n\r\n' % d, self.conn.sock.data)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'Host: %(host)s:%(port)d\r\n\r\n' % d,
+                      self.conn.sock.data)
         # issue22095
         self.assertNotIn(b'Host: %(host)s:None' % d, self.conn.sock.data)
-        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s\r\n' % d, self.conn.sock.data)
+        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
+                      self.conn.sock.data)
 
     def test_connect_with_tunnel_idna(self):
         dest = '\u03b4\u03c0\u03b8.gr'
@@ -2024,10 +2027,10 @@ class TunnelTests(TestCase):
 
     def test_connect_put_request(self):
         d = {
-            'host': 'destination.com', b'host': b'destination.com',
-            'port': client.HTTP_PORT, b'port': client.HTTP_PORT,
+            b'host': b'destination.com',
+            b'port': client.HTTP_PORT,
         }
-        self.conn.set_tunnel(d['host'])
+        self.conn.set_tunnel(d[b'host'].decode('ascii'))
         self.conn.request('PUT', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
         self.assertEqual(self.conn.sock.port, self.port)
