@@ -5451,7 +5451,6 @@ AC_LINK_IFELSE(
   AC_LANG_SOURCE([[
     #include <stdatomic.h>
     atomic_int value = ATOMIC_VAR_INIT(1);
-    _Atomic void *py_atomic_address = (void*) &value;
     int main() {
       int loaded_value = atomic_load(&value);
       return 0;
@@ -5463,7 +5462,7 @@ AC_MSG_RESULT($have_stdatomic_h)
 
 if test "$have_stdatomic_h" = yes; then
     AC_DEFINE(HAVE_STD_ATOMIC, 1,
-              [Has stdatomic.h, atomic_int and _Atomic void* types work])
+              [Has stdatomic.h with atomic_int])
 fi
 
 # Check for GCC >= 4.7 __atomic builtins
