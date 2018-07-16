@@ -1,0 +1,2 @@
+Handle ``8BITMIME`` (RFC6152) availability automatically in
+``smtplib.SMTP.send_message``.  Patch by Segev Finer.

@@ -514,11 +514,19 @@ An :class:`SMTP` instance has the following methods:
    serialized with a clone of its :mod:`~email.policy` with the
    :attr:`~email.policy.EmailPolicy.utf8` attribute set to ``True``, and
    ``SMTPUTF8`` and ``BODY=8BITMIME`` are added to *mail_options*.
+   If the ``Message`` policy requests an ``'8bit'``
+   :attr:`~email.policy.EmailPolicy.cte_type` and the server supports
+   ``8BITMIME``, the message will be sent using it.  Otherwise the policy
+   will be cloned with ``cte_type`` set to ``'7bit'`` and the message sent
+   using it.
 
    .. versionadded:: 3.2
 
    .. versionadded:: 3.5
       Support for internationalized addresses (``SMTPUTF8``).
+
+   .. versionadded:: 3.8
+      Handling ``8BITMIME`` (:rfc:`6152`) availability automatically.
 
 
 .. method:: SMTP.quit()

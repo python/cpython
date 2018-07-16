@@ -995,7 +995,7 @@ class SMTPHandlerTest(BaseTest):
         self.assertEqual(mailfrom, 'me')
         self.assertEqual(rcpttos, ['you'])
         self.assertIn('\nSubject: Log\n', data)
-        self.assertTrue(data.endswith('\n\nHello \u2713'))
+        self.assertTrue(data.endswith('\n\nSGVsbG8g4pyTCg=='))
         h.close()
 
     def process_message(self, *args):

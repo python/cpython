@@ -1,6 +1,7 @@
 import asyncore
 import base64
 import email.mime.text
+from email import policy
 from email.message import EmailMessage
 from email.base64mime import body_encode as encode_base64
 import email.utils
@@ -1219,6 +1220,8 @@ class SMTPUTF8SimTests(unittest.TestCase):
         self.assertEqual(self.serv.last_rcpt_options, [])
 
     def test_send_message_error_on_non_ascii_addrs_if_no_smtputf8(self):
+        self.serv.enable_SMTPUTF8 = False
+        self.serv._extra_features = []
         msg = EmailMessage()
         msg['From'] = "Páolo <főo@bar.com>"
         msg['To'] = 'Dinsdale'
@@ -1227,7 +1230,103 @@ class SMTPUTF8SimTests(unittest.TestCase):
             HOST, self.port, local_hostname='localhost', timeout=3)
         self.addCleanup(smtp.close)
         self.assertRaises(smtplib.SMTPNotSupportedError,
-                          smtp.send_message(msg))
+                          lambda: smtp.send_message(msg))
+
+    def test_send_message_uses_8bitmime_if_cte_type_8bitmime(self):
+        msg = EmailMessage()
+        msg['From'] = 'Dinsdale <foo@bar.com>'
+        msg['To'] = 'Dinsdale'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        # XXX I don't know why I need two \n's here, but this is an existing
+        # bug (if it is one) and not a problem with the new functionality.
+        msg.set_content("oh là là, know what I mean, know what I mean?\n\n")
+        # XXX smtpd converts received /r/n to /n, so we can't easily test that
+        # we are successfully sending /r/n :(.
+        expected = textwrap.dedent("""\
+            From: Dinsdale <foo@bar.com>
+            To: Dinsdale
+            Subject: Nudge nudge, wink, wink =?utf-8?q?=E1=BD=A09?=
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: 8bit
+            MIME-Version: 1.0
+
+            oh là là, know what I mean, know what I mean?
+            """)
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost', timeout=3)
+        self.addCleanup(smtp.close)
+        self.assertEqual(smtp.send_message(msg), {})
+        self.assertEqual(self.serv.last_mailfrom, 'foo@bar.com')
+        self.assertEqual(self.serv.last_rcpttos, ['Dinsdale'])
+        self.assertEqual(self.serv.last_message.decode(), expected)
+        self.assertIn('BODY=8BITMIME', self.serv.last_mail_options)
+        self.assertNotIn('SMTPUTF8', self.serv.last_mail_options)
+        self.assertEqual(self.serv.last_rcpt_options, [])
+
+    def test_send_message_uses_7bit_if_requested_even_with_8bitmime(self):
+        msg = EmailMessage(policy=policy.default.clone(cte_type='7bit'))
+        msg['From'] = 'Dinsdale <foo@bar.com>'
+        msg['To'] = 'Dinsdale'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        # XXX I don't know why I need two \n's here, but this is an existing
+        # bug (if it is one) and not a problem with the new functionality.
+        msg.set_content("oh là là, know what I mean, know what I mean?\n\n")
+        # XXX smtpd converts received /r/n to /n, so we can't easily test that
+        # we are successfully sending /r/n :(.
+        # XXX This uses quoted-printable but the case below happens to end up
+        # with base64...
+        expected = textwrap.dedent("""\
+            From: Dinsdale <foo@bar.com>
+            To: Dinsdale
+            Subject: Nudge nudge, wink, wink =?utf-8?q?=E1=BD=A09?=
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: quoted-printable
+            MIME-Version: 1.0
+
+            oh l=C3=A0 l=C3=A0, know what I mean, know what I mean?
+            """)
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost', timeout=3)
+        self.addCleanup(smtp.close)
+        self.assertEqual(smtp.send_message(msg), {})
+        self.assertEqual(self.serv.last_mailfrom, 'foo@bar.com')
+        self.assertEqual(self.serv.last_rcpttos, ['Dinsdale'])
+        self.assertEqual(self.serv.last_message.decode(), expected)
+        self.assertNotIn('BODY=8BITMIME', self.serv.last_mail_options)
+        self.assertNotIn('SMTPUTF8', self.serv.last_mail_options)
+        self.assertEqual(self.serv.last_rcpt_options, [])
+
+    def test_send_message_uses_7bit_if_cte_type_8bitmime_but_no_8bitmime(self):
+        self.serv.enable_SMTPUTF8 = False
+        self.serv._extra_features = []
+        msg = EmailMessage()
+        msg['From'] = 'Dinsdale <foo@bar.com>'
+        msg['To'] = 'Dinsdale'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        # XXX I don't know why I need two \n's here, but this is an existing
+        # bug (if it is one) and not a problem with the new functionality.
+        msg.set_content("oh là là, know what I mean, know what I mean?\n\n")
+        # XXX smtpd converts received /r/n to /n, so we can't easily test that
+        # we are successfully sending /r/n :(.
+        expected = textwrap.dedent("""\
+            From: Dinsdale <foo@bar.com>
+            To: Dinsdale
+            Subject: Nudge nudge, wink, wink =?utf-8?q?=E1=BD=A09?=
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: base64
+            MIME-Version: 1.0
+
+            b2ggbMOgIGzDoCwga25vdyB3aGF0IEkgbWVhbiwga25vdyB3aGF0IEkgbWVhbj8KCg==""")
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost', timeout=3)
+        self.addCleanup(smtp.close)
+        self.assertEqual(smtp.send_message(msg), {})
+        self.assertEqual(self.serv.last_mailfrom, 'foo@bar.com')
+        self.assertEqual(self.serv.last_rcpttos, ['Dinsdale'])
+        self.assertEqual(self.serv.last_message.decode(), expected)
+        self.assertNotIn('BODY=8BITMIME', self.serv.last_mail_options)
+        self.assertNotIn('SMTPUTF8', self.serv.last_mail_options)
+        self.assertEqual(self.serv.last_rcpt_options, [])
 
 
 EXPECTED_RESPONSE = encode_base64(b'\0psu\0doesnotexist', eol='')

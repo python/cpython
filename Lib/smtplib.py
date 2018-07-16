@@ -906,8 +906,11 @@ class SMTP:
         SMTPUTF8 capability, the policy is cloned with utf8 set to True for the
         serialization, and SMTPUTF8 and BODY=8BITMIME are asserted on the send.
         If the server does not support SMTPUTF8, an SMTPNotSupported error is
-        raised.  Otherwise the generator is called without modifying the
-        policy.
+        raised.  If the policy requests an '8bit' cte and the server supports
+        8BITMIME, the message will be sent using it.  Otherwise the policy
+        will be cloned with cte_type set to '7bit'.  If we didn't clone the
+        policy as previously described, the generator is called with the
+        original policy.
 
         """
         # 'Resent-Date' is a mandatory field if the Message is resent (RFC 2822
@@ -942,9 +945,10 @@ class SMTP:
             to_addrs = [a[1] for a in email.utils.getaddresses(addr_fields)]
         # Make a local copy so we can delete the bcc headers.
         msg_copy = copy.copy(msg)
+        policy = msg.policy.clone()
+        mail_options = mail_options[:]
         del msg_copy['Bcc']
         del msg_copy['Resent-Bcc']
-        international = False
         try:
             ''.join([from_addr, *to_addrs]).encode('ascii')
         except UnicodeEncodeError:
@@ -953,14 +957,16 @@ class SMTP:
                     "One or more source or delivery addresses require"
                     " internationalized email support, but the server"
                     " does not advertise the required SMTPUTF8 capability")
-            international = True
-        with io.BytesIO() as bytesmsg:
-            if international:
-                g = email.generator.BytesGenerator(
-                    bytesmsg, policy=msg.policy.clone(utf8=True))
-                mail_options += ['SMTPUTF8', 'BODY=8BITMIME']
+            policy = policy.clone(utf8=True)
+            mail_options += ['SMTPUTF8', 'BODY=8BITMIME']
+        if policy.cte_type == '8bit':
+            if self.has_extn('8bitmime'):
+                if 'BODY=8BITMIME' not in mail_options:
+                    mail_options.append('BODY=8BITMIME')
             else:
-                g = email.generator.BytesGenerator(bytesmsg)
+                policy = policy.clone(cte_type='7bit')
+        with io.BytesIO() as bytesmsg:
+            g = email.generator.BytesGenerator(bytesmsg, policy=policy)
             g.flatten(msg_copy, linesep='\r\n')
             flatmsg = bytesmsg.getvalue()
         return self.sendmail(from_addr, to_addrs, flatmsg, mail_options,
