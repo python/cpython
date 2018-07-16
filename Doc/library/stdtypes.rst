@@ -4227,6 +4227,11 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       often used in set algorithms.  If the dictionary is empty, calling
       :meth:`popitem` raises a :exc:`KeyError`.
 
+      .. versionchanged:: 3.7
+
+      LIFO order is now guaranteed. In prior versions, :meth:`popitem` would
+      return an arbitrary key/value pair.
+
    .. method:: setdefault(key[, default])
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
