@@ -1,0 +1,2 @@
+Rename Modules/Setup.dist to Modules/Setup, and remove the necessity to copy
+the former manually to the latter when updating the local source tree.
