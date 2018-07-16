@@ -564,6 +564,8 @@ _list_clear(PyListObject *a)
     return 0;
 }
 
+static PyObject *list_extend(PyListObject *, PyObject *);
+
 /* a[ilow:ihigh] = v if v != NULL.
  * del a[ilow:ihigh] if v == NULL.
  *
@@ -590,28 +592,10 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     Py_ssize_t k;
     size_t s;
     int result = -1;            /* guilty until proved innocent */
-#define b ((PyListObject *)v)
-    if (v == NULL)
-        n = 0;
-    else {
-        if (a == b) {
-            /* Special case "a[i:j] = a" -- copy b first */
-            v = list_slice(b, 0, Py_SIZE(b));
-            if (v == NULL)
-                return result;
-            result = list_ass_slice(a, ilow, ihigh, v);
-            Py_DECREF(v);
-            return result;
-        }
-        v_as_SF = PySequence_Fast(v, "can only assign an iterable");
-        if(v_as_SF == NULL)
-            goto Error;
-        n = PySequence_Fast_GET_SIZE(v_as_SF);
-        vitem = PySequence_Fast_ITEMS(v_as_SF);
-    }
+
     if (ilow < 0)
         ilow = 0;
-    else if (ilow > Py_SIZE(a))
+    else if (ilow >= Py_SIZE(a))
         ilow = Py_SIZE(a);
 
     if (ihigh < ilow)
@@ -621,6 +605,47 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 
     norig = ihigh - ilow;
     assert(norig >= 0);
+#define b ((PyListObject *)v)
+    if (v == NULL)
+        n = 0;
+    else {
+        if (a == b) {
+            /* Special case "a[i:j] = a" -- no need for DECREFs */
+            if (norig == Py_SIZE(a)) {
+                return 0;
+            }
+            Py_ssize_t orig_size = Py_SIZE(a);
+            if (list_resize(a, orig_size + orig_size - norig) != 0) {
+                return -1;
+            }
+            for (k = 0; k < orig_size - ihigh; k++) {
+                PyObject *obj = a->ob_item[ihigh + k];
+                Py_INCREF(obj);
+                a->ob_item[orig_size + ilow + k] = obj;
+            }
+            memmove(a->ob_item + ilow + ilow, a->ob_item + ilow, (orig_size - ilow) * sizeof(PyObject*));
+            for (k = 0; k < ilow; k++) {
+                PyObject *obj = a->ob_item[k];
+                Py_INCREF(obj);
+                a->ob_item[k + ilow] = obj;
+            }
+            return 0;
+        }
+        if (ilow >= Py_SIZE(a)) {
+            PyObject *result = list_extend(a, v);
+            if (result == NULL) {
+                return -1;
+            }
+            Py_DECREF(result);
+            return 0;
+        }
+        v_as_SF = PySequence_Fast(v, "can only assign an iterable");
+        if(v_as_SF == NULL)
+            goto Error;
+        n = PySequence_Fast_GET_SIZE(v_as_SF);
+        vitem = PySequence_Fast_ITEMS(v_as_SF);
+    }
+
     d = n - norig;
     if (Py_SIZE(a) + d == 0) {
         Py_XDECREF(v_as_SF);
@@ -2856,29 +2881,32 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             /* assign slice */
             PyObject *ins, *seq;
             PyObject **garbage, **seqitems, **selfitems;
-            Py_ssize_t cur, i;
+            Py_ssize_t cur, i, size;
 
             /* protect against a[::-1] = a */
             if (self == (PyListObject*)value) {
-                seq = list_slice((PyListObject*)value, 0,
-                                   PyList_GET_SIZE(value));
+                size = Py_SIZE(self);
+                if (step != -1) {
+                    goto WrongSize;
+                }
+                reverse_slice(self->ob_item, self->ob_item + size);
+                return 0;
             }
-            else {
-                seq = PySequence_Fast(value,
-                                      "must assign iterable "
-                                      "to extended slice");
-            }
+            seq = PySequence_Fast(value,
+                                  "must assign iterable "
+                                  "to extended slice");
             if (!seq)
                 return -1;
-
-            if (PySequence_Fast_GET_SIZE(seq) != slicelength) {
+            size = PySequence_Fast_GET_SIZE(seq);
+            if (size != slicelength) {
+                Py_DECREF(seq);
+WrongSize:
                 PyErr_Format(PyExc_ValueError,
                     "attempt to assign sequence of "
                     "size %zd to extended slice of "
                     "size %zd",
-                         PySequence_Fast_GET_SIZE(seq),
+                         size,
                          slicelength);
-                Py_DECREF(seq);
                 return -1;
             }
 
