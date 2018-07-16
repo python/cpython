@@ -85,7 +85,10 @@ def scanvars(reader, frame, locals):
         if ttype == tokenize.NAME and token not in keyword.kwlist:
             if lasttoken == '.':
                 if parent is not __UNDEF__:
-                    value = getattr(parent, token, __UNDEF__)
+                    mangled = '_{0}{1}'.format(
+                        parent.__class__.__name__, token
+                        ) if token.startswith('__') else token
+                    value = getattr(parent, mangled, __UNDEF__)
                     vars.append((prefix + token, prefix, value))
             else:
                 where, value = lookup(token, frame, locals)
