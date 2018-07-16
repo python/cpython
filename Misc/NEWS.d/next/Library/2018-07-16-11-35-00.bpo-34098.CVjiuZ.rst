@@ -1,2 +1,2 @@
 Embed stringification of remote traceback in local traceback when a method
-executed via multiprocessing.BaseManager raises
+executed via ``multiprocessing.BaseManager`` raises.
