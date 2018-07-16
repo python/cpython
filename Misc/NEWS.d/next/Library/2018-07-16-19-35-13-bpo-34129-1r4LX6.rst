@@ -1,0 +1,2 @@
+Added mangling of private variables in cgitb.py. So they are not falsely 
+displayed as undefined anymore. Patch by Pavel Jurkas.
