@@ -4220,7 +4220,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. method:: popitem()
 
-      Remove and return an arbitrary ``(key, value)`` pair from the dictionary.
+      Remove and return a ``(key, value)`` pair from the dictionary.
+      Pairs are returned in :abbr:`LIFO (last-in, first-out)` order.
 
       :meth:`popitem` is useful to destructively iterate over a dictionary, as
       often used in set algorithms.  If the dictionary is empty, calling
