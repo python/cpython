@@ -645,6 +645,8 @@ Glossary
       to an array in other languages than to a linked list since access to
       elements is O(1).
 
+      See :ref:`typesseq`.
+
    list comprehension
       A compact way to process all or part of the elements in a sequence and
       return a list with the results.  ``result = ['{:#04x}'.format(x) for x in
