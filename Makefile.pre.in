@@ -704,7 +704,10 @@ Modules/Setup: $(srcdir)/Modules/Setup.dist
 		echo "check to make sure you have all the updates you"; \
 		echo "need in your Modules/Setup file."; \
 		echo "Usually, copying Modules/Setup.dist to Modules/Setup will work."; \
+		echo "Or if you want to keep your modifications, touch Modules/Setup"; \
+		echo "to skip this warning."; \
 		echo "-----------------------------------------------"; \
+		false; \
 	fi
 
 Programs/_testembed: Programs/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
