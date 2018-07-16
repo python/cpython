@@ -1,3 +1,4 @@
+import copy
 import errno
 from http import client
 import io
@@ -1864,11 +1865,12 @@ class HTTPResponseTest(TestCase):
 class TunnelTests(TestCase):
     def setUp(self):
         response_text = (
-            'HTTP/1.0 200 OK\r\n\r\n' # Reply to CONNECT
+            'HTTP/1.1 200 OK\r\n\r\n' # Reply to CONNECT
             'HTTP/1.1 200 OK\r\n' # Reply to HEAD
             'Content-Length: 42\r\n\r\n'
         )
         self.host = 'proxy.com'
+        self.port = client.HTTP_PORT
         self.conn = client.HTTPConnection(self.host)
         self.conn._create_connection = self._create_connection(response_text)
 
@@ -1880,15 +1882,45 @@ class TunnelTests(TestCase):
             return FakeSocket(response_text, host=address[0], port=address[1])
         return create_connection
 
-    def test_set_tunnel_host_port_headers(self):
+    def test_set_tunnel_host_port_headers_add_host_missing(self):
         tunnel_host = 'destination.com'
         tunnel_port = 8888
         tunnel_headers = {'User-Agent': 'Mozilla/5.0 (compatible, MSIE 11)'}
+        tunnel_headers_after = copy.copy(tunnel_headers)
+        tunnel_headers_after['Host'] = '%s:%d' % (tunnel_host, tunnel_port)
         self.conn.set_tunnel(tunnel_host, port=tunnel_port,
                              headers=tunnel_headers)
         self.conn.request('HEAD', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
-        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertEqual(self.conn._tunnel_host, tunnel_host)
+        self.assertEqual(self.conn._tunnel_port, tunnel_port)
+        self.assertEqual(self.conn._tunnel_headers, tunnel_headers_after)
+
+    def test_set_tunnel_host_port_headers_set_host_identical(self):
+        tunnel_host = 'destination.com'
+        tunnel_port = 8888
+        tunnel_headers = {'User-Agent': 'Mozilla/5.0 (compatible, MSIE 11)',
+                          'Host': '%s:%d' % (tunnel_host, tunnel_port)}
+        self.conn.set_tunnel(tunnel_host, port=tunnel_port,
+                             headers=tunnel_headers)
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertEqual(self.conn._tunnel_host, tunnel_host)
+        self.assertEqual(self.conn._tunnel_port, tunnel_port)
+        self.assertEqual(self.conn._tunnel_headers, tunnel_headers)
+
+    def test_set_tunnel_host_port_headers_set_host_different(self):
+        tunnel_host = 'destination.com'
+        tunnel_port = 8888
+        tunnel_headers = {'User-Agent': 'Mozilla/5.0 (compatible, MSIE 11)',
+                          'Host': '%s:%d' % ('example.com', 4200)}
+        self.conn.set_tunnel(tunnel_host, port=tunnel_port,
+                             headers=tunnel_headers)
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
         self.assertEqual(self.conn._tunnel_host, tunnel_host)
         self.assertEqual(self.conn._tunnel_port, tunnel_port)
         self.assertEqual(self.conn._tunnel_headers, tunnel_headers)
@@ -1900,25 +1932,110 @@ class TunnelTests(TestCase):
                           'destination.com')
 
     def test_connect_with_tunnel(self):
-        self.conn.set_tunnel('destination.com')
+        d = {
+            'host': 'destination.com', b'host': b'destination.com',
+            b'port': client.HTTP_PORT,
+        }
+        self.conn.set_tunnel(d['host'])
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'Host: %(host)s:%(port)d\r\n\r\n' % d,
+                      self.conn.sock.data)
+        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
+                      self.conn.sock.data)
+
+    def test_connect_with_tunnel_with_default_port(self):
+        d = {
+            'host': 'destination.com', b'host': b'destination.com',
+            'port': client.HTTP_PORT, b'port': client.HTTP_PORT,
+        }
+        self.conn.set_tunnel(d['host'], port=d['port'])
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'Host: %(host)s:%(port)d\r\n\r\n' % d,
+                      self.conn.sock.data)
+        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
+                      self.conn.sock.data)
+
+    def test_connect_with_tunnel_with_nonstandard_port(self):
+        d = {
+            'host': 'destination.com', b'host': b'destination.com',
+            'port': 8888, b'port': 8888,
+        }
+        self.conn.set_tunnel(d['host'], port=d['port'])
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'Host: %(host)s:%(port)d\r\n\r\n' % d,
+                      self.conn.sock.data)
+        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s:%(port)d\r\n' % d,
+                      self.conn.sock.data)
+
+    # This request is not RFC-valid, but it's been possible with the library
+    # for years, so don't break it unexpectedly... This also tests
+    # case-insensitivity when injecting Host: headers if they're missing.
+    def test_connect_with_tunnel_with_different_host_header(self):
+        d = {
+            'host': 'destination.com', b'host': b'destination.com',
+            'tunnel_host_header': 'example.com:9876',
+            b'tunnel_host_header': b'example.com:9876',
+            b'port': client.HTTP_PORT,
+        }
+        self.conn.set_tunnel(
+            d['host'], headers={'HOST': d['tunnel_host_header']})
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'HOST: %(tunnel_host_header)s\r\n\r\n' % d,
+                      self.conn.sock.data)
+        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
+                      self.conn.sock.data)
+
+    def test_connect_with_tunnel_different_host(self):
+        d = {
+            'host': 'destination.com', b'host': b'destination.com',
+            'port': client.HTTP_PORT, b'port': client.HTTP_PORT,
+        }
+        self.conn.set_tunnel(d['host'])
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\nHost: %(host)s:%(port)d\r\n\r\n' % d, self.conn.sock.data)
+        # issue22095
+        self.assertNotIn(b'Host: %(host)s:None' % d, self.conn.sock.data)
+        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s\r\n' % d, self.conn.sock.data)
+
+    def test_connect_with_tunnel_idna(self):
+        dest = '\u03b4\u03c0\u03b8.gr'
+        dest_port = b'%s:%d' % (dest.encode('idna'), client.HTTP_PORT)
+        expected = b'CONNECT %s HTTP/1.1\r\nHost: %s\r\n\r\n' % (
+            dest_port, dest_port)
+        self.conn.set_tunnel(dest)
         self.conn.request('HEAD', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
         self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
-        self.assertIn(b'CONNECT destination.com', self.conn.sock.data)
-        # issue22095
-        self.assertNotIn(b'Host: destination.com:None', self.conn.sock.data)
-        self.assertIn(b'Host: destination.com', self.conn.sock.data)
-
-        # This test should be removed when CONNECT gets the HTTP/1.1 blessing
-        self.assertNotIn(b'Host: proxy.com', self.conn.sock.data)
+        self.assertIn(expected, self.conn.sock.data)
 
     def test_connect_put_request(self):
-        self.conn.set_tunnel('destination.com')
+        d = {
+            'host': 'destination.com', b'host': b'destination.com',
+            'port': client.HTTP_PORT, b'port': client.HTTP_PORT,
+        }
+        self.conn.set_tunnel(d['host'])
         self.conn.request('PUT', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
-        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
-        self.assertIn(b'CONNECT destination.com', self.conn.sock.data)
-        self.assertIn(b'Host: destination.com', self.conn.sock.data)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'Host: %(host)s:%(port)d\r\n\r\n' % d,
+                      self.conn.sock.data)
+        self.assertIn(b'PUT / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
+                      self.conn.sock.data)
 
     def test_tunnel_debuglog(self):
         expected_header = 'X-Dummy: 1'

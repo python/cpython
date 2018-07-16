@@ -68,6 +68,7 @@ Req-started-unread-response    _CS_REQ_STARTED    <response_class>
 Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
+import copy
 import email.parser
 import email.message
 import http
@@ -845,11 +846,11 @@ class HTTPConnection:
         self._create_connection = socket.create_connection
 
     def set_tunnel(self, host, port=None, headers=None):
-        """Set up host and port for HTTP CONNECT tunnelling.
+        """Set up host and port for HTTP CONNECT tunneling.
 
-        In a connection that uses HTTP CONNECT tunneling, the host passed to the
-        constructor is used as a proxy server that relays all communication to
-        the endpoint passed to `set_tunnel`. This done by sending an HTTP
+        In a connection that uses HTTP CONNECT tunnelling, the host passed to
+        the constructor is used as a proxy server that relays all communication
+        to the endpoint passed to `set_tunnel`. This done by sending an HTTP
         CONNECT request to the proxy server when the connection is established.
 
         This method must be called before the HTML connection has been
@@ -857,6 +858,13 @@ class HTTPConnection:
 
         The headers argument should be a mapping of extra HTTP headers to send
         with the CONNECT request.
+
+        As HTTP/1.1 is used for HTTP CONNECT tunnelling request, as per the RFC
+        (https://tools.ietf.org/html/rfc7231#section-4.3.6), a HTTP Host:
+        header must be provided, matching the authority-form of the request
+        target provided as the destination for the CONNECT request. If a
+        HTTP Host: header is not provided via the headers argument, one
+        is generated and transmitted automatically.
         """
 
         if self.sock:
@@ -864,9 +872,18 @@ class HTTPConnection:
 
         self._tunnel_host, self._tunnel_port = self._get_hostport(host, port)
         if headers:
-            self._tunnel_headers = headers
+            self._tunnel_headers = copy.copy(headers)
         else:
             self._tunnel_headers.clear()
+
+        saw_host_header = False
+        for header in self._tunnel_headers.keys():
+            if header.lower() == "host":
+                saw_host_header = True
+        if not saw_host_header:
+            encoded_host = self._tunnel_host.encode("idna").decode("ascii")
+            self._tunnel_headers["Host"] = "%s:%d" % (
+                encoded_host, self._tunnel_port)
 
     def _get_hostport(self, host, port):
         if port is None:
@@ -892,9 +909,9 @@ class HTTPConnection:
         self.debuglevel = level
 
     def _tunnel(self):
-        connect_str = "CONNECT %s:%d HTTP/1.0\r\n" % (self._tunnel_host,
-            self._tunnel_port)
-        connect_bytes = connect_str.encode("ascii")
+        connect_bytes = b"CONNECT %s:%d %s\r\n" % (
+            self._tunnel_host.encode("idna"), self._tunnel_port,
+            self._http_vsn_str.encode("ascii"))
         self.send(connect_bytes)
         for header, value in self._tunnel_headers.items():
             header_str = "%s: %s\r\n" % (header, value)

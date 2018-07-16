@@ -320,6 +320,13 @@ HTTPConnection Objects
    The headers argument should be a mapping of extra HTTP headers to send with
    the CONNECT request.
 
+   As HTTP/1.1 is used for HTTP CONNECT tunnelling request, `as per the RFC
+   <https://tools.ietf.org/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``
+   header must be provided, matching the authority-form of the request target
+   provided as the destination for the CONNECT request. If a HTTP ``Host:``
+   header is not provided via the headers argument, one is generated and
+   transmitted automatically.
+
    For example, to tunnel through a HTTPS proxy server running locally on port
    8080, we would pass the address of the proxy to the :class:`HTTPSConnection`
    constructor, and the address of the host that we eventually want to reach to
@@ -332,6 +339,11 @@ HTTPConnection Objects
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.7
+      HTTP CONNECT tunnelling requests use protocol HTTP/1.1, upgraded from
+      protocol HTTP/1.0. ``Host:`` HTTP headers are mandatory for HTTP/1.1, so
+      one will be automatically generated and transmitted if not provided in
+      the headers argument.
 
 .. method:: HTTPConnection.connect()
 
