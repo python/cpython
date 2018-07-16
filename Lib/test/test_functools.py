@@ -2192,7 +2192,7 @@ class TestSingleDispatch(unittest.TestCase):
         def f(*args):
             pass
         msg = 'f requires at least 1 positional argument'
-        with self.assertRaisesRegexp(TypeError, msg):
+        with self.assertRaises(TypeError, msg=msg):
             f()
 
 if __name__ == '__main__':
