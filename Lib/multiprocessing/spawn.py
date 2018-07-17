@@ -96,7 +96,19 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
     assert is_forking(sys.argv), "Not forking"
     if sys.platform == 'win32':
         import msvcrt
-        new_handle = reduction.steal_handle(parent_pid, pipe_handle)
+        import _winapi
+
+        if parent_pid is not None:
+            source_process = _winapi.OpenProcess(
+                _winapi.PROCESS_DUP_HANDLE, False, parent_pid)
+        else:
+            source_process = None
+        try:
+            new_handle = reduction.duplicate(pipe_handle,
+                                             source_process=source_process)
+        finally:
+            if source_process is not None:
+                _winapi.CloseHandle(source_process)
         fd = msvcrt.open_osfhandle(new_handle, os.O_RDONLY)
     else:
         from . import semaphore_tracker

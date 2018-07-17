@@ -1201,7 +1201,7 @@ done:
     PyThread_release_lock(channels->mutex);
 }
 
-int64_t *
+static int64_t *
 _channels_list_all(_channels *channels, int64_t *count)
 {
     int64_t *cids = NULL;
@@ -1545,7 +1545,7 @@ channelid_str(PyObject *self)
     return PyUnicode_FromFormat("%" PRId64 "", cid->id);
 }
 
-PyObject *
+static PyObject *
 channelid_int(PyObject *self)
 {
     channelid *cid = (channelid *)self;

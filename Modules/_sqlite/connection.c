@@ -617,7 +617,7 @@ void _pysqlite_func_callback(sqlite3_context* context, int argc, sqlite3_value**
         Py_DECREF(py_retval);
     }
     if (!ok) {
-        if (_enable_callback_tracebacks) {
+        if (_pysqlite_enable_callback_tracebacks) {
             PyErr_Print();
         } else {
             PyErr_Clear();
@@ -649,7 +649,7 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
 
         if (PyErr_Occurred()) {
             *aggregate_instance = 0;
-            if (_enable_callback_tracebacks) {
+            if (_pysqlite_enable_callback_tracebacks) {
                 PyErr_Print();
             } else {
                 PyErr_Clear();
@@ -673,7 +673,7 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
     Py_DECREF(args);
 
     if (!function_result) {
-        if (_enable_callback_tracebacks) {
+        if (_pysqlite_enable_callback_tracebacks) {
             PyErr_Print();
         } else {
             PyErr_Clear();
@@ -723,7 +723,7 @@ void _pysqlite_final_callback(sqlite3_context* context)
         Py_DECREF(function_result);
     }
     if (!ok) {
-        if (_enable_callback_tracebacks) {
+        if (_pysqlite_enable_callback_tracebacks) {
             PyErr_Print();
         } else {
             PyErr_Clear();
@@ -810,24 +810,48 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 
 PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
-    static char *kwlist[] = {"name", "narg", "func", NULL, NULL};
+    static char *kwlist[] = {"name", "narg", "func", "deterministic", NULL};
 
     PyObject* func;
     char* name;
     int narg;
     int rc;
+    int deterministic = 0;
+    int flags = SQLITE_UTF8;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "siO", kwlist,
-                                     &name, &narg, &func))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "siO|$p", kwlist,
+                                     &name, &narg, &func, &deterministic))
     {
         return NULL;
     }
 
-    rc = sqlite3_create_function(self->db, name, narg, SQLITE_UTF8, (void*)func, _pysqlite_func_callback, NULL, NULL);
+    if (deterministic) {
+#if SQLITE_VERSION_NUMBER < 3008003
+        PyErr_SetString(pysqlite_NotSupportedError,
+                        "deterministic=True requires SQLite 3.8.3 or higher");
+        return NULL;
+#else
+        if (sqlite3_libversion_number() < 3008003) {
+            PyErr_SetString(pysqlite_NotSupportedError,
+                            "deterministic=True requires SQLite 3.8.3 or higher");
+            return NULL;
+        }
+        flags |= SQLITE_DETERMINISTIC;
+#endif
+    }
+
+    rc = sqlite3_create_function(self->db,
+                                 name,
+                                 narg,
+                                 flags,
+                                 (void*)func,
+                                 _pysqlite_func_callback,
+                                 NULL,
+                                 NULL);
 
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
@@ -883,7 +907,7 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
     ret = PyObject_CallFunction((PyObject*)user_arg, "issss", action, arg1, arg2, dbname, access_attempt_source);
 
     if (ret == NULL) {
-        if (_enable_callback_tracebacks)
+        if (_pysqlite_enable_callback_tracebacks)
             PyErr_Print();
         else
             PyErr_Clear();
@@ -894,7 +918,7 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
         if (PyLong_Check(ret)) {
             rc = _PyLong_AsInt(ret);
             if (rc == -1 && PyErr_Occurred()) {
-                if (_enable_callback_tracebacks)
+                if (_pysqlite_enable_callback_tracebacks)
                     PyErr_Print();
                 else
                     PyErr_Clear();
@@ -921,7 +945,7 @@ static int _progress_handler(void* user_arg)
     ret = _PyObject_CallNoArg((PyObject*)user_arg);
 
     if (!ret) {
-        if (_enable_callback_tracebacks) {
+        if (_pysqlite_enable_callback_tracebacks) {
             PyErr_Print();
         } else {
             PyErr_Clear();
@@ -956,7 +980,7 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     if (ret) {
         Py_DECREF(ret);
     } else {
-        if (_enable_callback_tracebacks) {
+        if (_pysqlite_enable_callback_tracebacks) {
             PyErr_Print();
         } else {
             PyErr_Clear();

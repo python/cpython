@@ -6,6 +6,7 @@ import os
 import pickle
 import random
 import re
+import string
 import subprocess
 import sys
 import sysconfig
@@ -488,6 +489,37 @@ class SkipitemTest(unittest.TestCase):
                 "for format unit '{}' ({}), not skipped {}, skipped {}".format(
                     c, i, when_skipped, when_not_skipped))
             self.assertIs(when_skipped, when_not_skipped, message)
+
+    def test_skipitem_with_suffix(self):
+        parse = _testcapi.parse_tuple_and_keywords
+        empty_tuple = ()
+        tuple_1 = (0,)
+        dict_b = {'b':1}
+        keywords = ["a", "b"]
+
+        supported = ('s#', 's*', 'z#', 'z*', 'u#', 'Z#', 'y#', 'y*', 'w#', 'w*')
+        for c in string.ascii_letters:
+            for c2 in '#*':
+                f = c + c2
+                with self.subTest(format=f):
+                    optional_format = "|" + f + "i"
+                    if f in supported:
+                        parse(empty_tuple, dict_b, optional_format, keywords)
+                    else:
+                        with self.assertRaisesRegex(SystemError,
+                                    'impossible<bad format char>'):
+                            parse(empty_tuple, dict_b, optional_format, keywords)
+
+        for c in map(chr, range(32, 128)):
+            f = 'e' + c
+            optional_format = "|" + f + "i"
+            with self.subTest(format=f):
+                if c in 'st':
+                    parse(empty_tuple, dict_b, optional_format, keywords)
+                else:
+                    with self.assertRaisesRegex(SystemError,
+                                'impossible<bad format char>'):
+                        parse(empty_tuple, dict_b, optional_format, keywords)
 
     def test_parse_tuple_and_keywords(self):
         # Test handling errors in the parse_tuple_and_keywords helper itself

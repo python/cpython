@@ -44,7 +44,8 @@ are always available.  They are listed here in alphabetical order.
 
    Return the absolute value of a number.  The argument may be an
    integer or a floating point number.  If the argument is a complex number, its
-   magnitude is returned.
+   magnitude is returned. If *x* defines :meth:`__abs__`,
+   ``abs(x)`` returns ``x.__abs__()``.
 
 
 .. function:: all(iterable)
@@ -98,7 +99,7 @@ are always available.  They are listed here in alphabetical order.
       >>> f'{14:#b}', f'{14:b}'
       ('0b1110', '1110')
 
-  See also :func:`format` for more information.
+   See also :func:`format` for more information.
 
 
 .. class:: bool([x])
@@ -240,8 +241,8 @@ are always available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
 
-   The optional arguments *flags* and *dont_inherit* control which future
-   statements (see :pep:`236`) affect the compilation of *source*.  If neither
+   The optional arguments *flags* and *dont_inherit* control which :ref:`future
+   statements <future>` affect the compilation of *source*.  If neither
    is present (or both are zero) the code is compiled with those future
    statements that are in effect in the code that is calling :func:`compile`.  If the
    *flags* argument is given and *dont_inherit* is not (or is zero) then the
@@ -646,11 +647,11 @@ are always available.  They are listed here in alphabetical order.
    dictionary lookup.  Numeric values that compare equal have the same hash
    value (even if they are of different types, as is the case for 1 and 1.0).
 
-  .. note::
+   .. note::
 
-    For objects with custom :meth:`__hash__` methods, note that :func:`hash`
-    truncates the return value based on the bit width of the host machine.
-    See :meth:`__hash__` for details.
+      For objects with custom :meth:`__hash__` methods, note that :func:`hash`
+      truncates the return value based on the bit width of the host machine.
+      See :meth:`__hash__` for details.
 
 .. function:: help([object])
 
@@ -970,6 +971,11 @@ are always available.  They are listed here in alphabetical order.
    ``locale.getpreferredencoding(False)`` is called to get the current locale
    encoding. (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
+
+   .. _filemodes:
+
+   .. index::
+      pair: file; modes
 
    ========= ===============================================================
    Character Meaning

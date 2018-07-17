@@ -391,6 +391,8 @@ _Py_string_to_number_with_underscores(
     char *dup, *end;
     PyObject *result;
 
+    assert(s[orig_len] == '\0');
+
     if (strchr(s, '_') == NULL) {
         return innerfunc(s, orig_len, arg);
     }

@@ -140,9 +140,7 @@ _libc_search = re.compile(b'(__libc_init)'
                           b'|'
                           br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
 
-def libc_ver(executable=sys.executable, lib='', version='',
-
-             chunksize=16384):
+def libc_ver(executable=sys.executable, lib='', version='', chunksize=16384):
 
     """ Tries to determine the libc version that the file executable
         (which defaults to the Python interpreter) is linked against.
@@ -157,6 +155,7 @@ def libc_ver(executable=sys.executable, lib='', version='',
         The file is read and scanned in chunks of chunksize bytes.
 
     """
+    from distutils.version import LooseVersion as V
     if hasattr(os.path, 'realpath'):
         # Python 2.2 introduced os.path.realpath(); it is used
         # here to work around problems with Cygwin not being
@@ -165,17 +164,19 @@ def libc_ver(executable=sys.executable, lib='', version='',
     with open(executable, 'rb') as f:
         binary = f.read(chunksize)
         pos = 0
-        while 1:
+        while pos < len(binary):
             if b'libc' in binary or b'GLIBC' in binary:
                 m = _libc_search.search(binary, pos)
             else:
                 m = None
-            if not m:
-                binary = f.read(chunksize)
-                if not binary:
+            if not m or m.end() == len(binary):
+                chunk = f.read(chunksize)
+                if chunk:
+                    binary = binary[max(pos, len(binary) - 1000):] + chunk
+                    pos = 0
+                    continue
+                if not m:
                     break
-                pos = 0
-                continue
             libcinit, glibc, glibcversion, so, threads, soversion = [
                 s.decode('latin1') if s is not None else s
                 for s in m.groups()]
@@ -185,12 +186,12 @@ def libc_ver(executable=sys.executable, lib='', version='',
                 if lib != 'glibc':
                     lib = 'glibc'
                     version = glibcversion
-                elif glibcversion > version:
+                elif V(glibcversion) > V(version):
                     version = glibcversion
             elif so:
                 if lib != 'glibc':
                     lib = 'libc'
-                    if soversion and soversion > version:
+                    if soversion and (not version or V(soversion) > V(version)):
                         version = soversion
                     if threads and version[-len(threads):] != threads:
                         version = version + threads
@@ -252,6 +253,7 @@ def popen(cmd, mode='r', bufsize=-1):
     import warnings
     warnings.warn('use os.popen instead', DeprecationWarning, stacklevel=2)
     return os.popen(cmd, mode, bufsize)
+
 
 def _norm_version(version, build=''):
 

@@ -2051,7 +2051,7 @@ expression support in the :mod:`re` module).
 .. method:: str.upper()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   uppercase.  Note that ``str.upper().isupper()`` might be ``False`` if ``s``
+   uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
@@ -2315,7 +2315,7 @@ data and are closely related to string objects in a variety of other ways.
    While bytes literals and representations are based on ASCII text, bytes
    objects actually behave like immutable sequences of integers, with each
    value in the sequence restricted such that ``0 <= x < 256`` (attempts to
-   violate this restriction will trigger :exc:`ValueError`. This is done
+   violate this restriction will trigger :exc:`ValueError`). This is done
    deliberately to emphasise that while many binary formats include ASCII based
    elements and can be usefully manipulated with some text-oriented algorithms,
    this is not generally the case for arbitrary binary data (blindly applying
@@ -4220,11 +4220,17 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. method:: popitem()
 
-      Remove and return an arbitrary ``(key, value)`` pair from the dictionary.
+      Remove and return a ``(key, value)`` pair from the dictionary.
+      Pairs are returned in :abbr:`LIFO (last-in, first-out)` order.
 
       :meth:`popitem` is useful to destructively iterate over a dictionary, as
       often used in set algorithms.  If the dictionary is empty, calling
       :meth:`popitem` raises a :exc:`KeyError`.
+
+      .. versionchanged:: 3.7
+
+      LIFO order is now guaranteed. In prior versions, :meth:`popitem` would
+      return an arbitrary key/value pair.
 
    .. method:: setdefault(key[, default])
 

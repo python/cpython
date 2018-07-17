@@ -963,7 +963,7 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Has stdatomic.h, atomic_int and _Atomic void* types work */
+/* Has stdatomic.h with atomic_int */
 #undef HAVE_STD_ATOMIC
 
 /* Define to 1 if you have the `strdup' function. */
@@ -1326,9 +1326,6 @@
 
 /* Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0 */
 #undef PY_SSL_DEFAULT_CIPHER_STRING
-
-/* Define to emit a locale compatibility warning in the C locale */
-#undef PY_WARN_ON_C_LOCALE
 
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG

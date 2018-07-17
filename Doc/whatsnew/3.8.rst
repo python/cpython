@@ -135,6 +135,10 @@ Optimizations
   first introduced in Python 3.4.  It offers better performance and smaller
   size compared to Protocol 3 available since Python 3.0.
 
+* Removed one ``Py_ssize_t`` member from ``PyGC_Head``.  All GC tracked
+  objects (e.g. tuple, list, dict) size is reduced 4 or 8 bytes.
+  (Contributed by Inada Naoki in :issue:`33597`)
+
 
 Build and C API Changes
 =======================
@@ -142,6 +146,21 @@ Build and C API Changes
 * The result of :c:func:`PyExceptionClass_Name` is now of type
   ``const char *`` rather of ``char *``.
   (Contributed by Serhiy Storchaka in :issue:`33818`.)
+
+* The duality of ``Modules/Setup.dist`` and ``Modules/Setup`` has been
+  removed.  Previously, when updating the CPython source tree, one had
+  to manually copy ``Modules/Setup.dist`` (inside the source tree) to
+  ``Modules/Setup`` (inside the build tree) in order to reflect any changes
+  upstream.  This was of a small benefit to packagers at the expense of
+  a frequent annoyance to developers following CPython development, as
+  forgetting to copy the file could produce build failures.
+
+  Now the build system always reads from ``Modules/Setup`` inside the source
+  tree.  People who want to customize that file are encouraged to maintain
+  their changes in a git fork of CPython or as patch files, as they would do
+  for any other change to the source tree.
+
+  (Contributed by Antoine Pitrou in :issue:`32430`.)
 
 
 Deprecated
@@ -159,6 +178,8 @@ Removed
 * ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from :mod:`cgi`
   module.  They are deprecated from Python 3.2 or older.
 
+* ``filemode`` function is removed from :mod:`tarfile` module.
+  It is not documented and deprecated since Python 3.3.
 
 
 Porting to Python 3.8
@@ -206,6 +227,10 @@ Changes in the Python API
 
 * :func:`shutil.copyfile` default buffer size on Windows was changed from
   16 KiB to 1 MiB.
+
+* ``PyGC_Head`` struct is changed completely.  All code touched the
+  struct member should be rewritten.  (See :issue:`33597`)
+
 
 CPython bytecode changes
 ------------------------

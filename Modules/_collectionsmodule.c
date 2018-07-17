@@ -264,7 +264,7 @@ PyDoc_STRVAR(popleft_doc, "Remove and return the leftmost element.");
 
 #define NEEDS_TRIM(deque, maxlen) ((size_t)(maxlen) < (size_t)(Py_SIZE(deque)))
 
-static int
+static inline int
 deque_append_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
 {
     if (deque->rightindex == BLOCKLEN - 1) {
@@ -301,7 +301,7 @@ deque_append(dequeobject *deque, PyObject *item)
 
 PyDoc_STRVAR(append_doc, "Add an element to the right side of the deque.");
 
-static int
+static inline int
 deque_appendleft_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
 {
     if (deque->leftindex == 0) {
@@ -403,28 +403,10 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        if (deque->rightindex == BLOCKLEN - 1) {
-            block *b = newblock();
-            if (b == NULL) {
-                Py_DECREF(item);
-                Py_DECREF(it);
-                return NULL;
-            }
-            b->leftlink = deque->rightblock;
-            CHECK_END(deque->rightblock->rightlink);
-            deque->rightblock->rightlink = b;
-            deque->rightblock = b;
-            MARK_END(b->rightlink);
-            deque->rightindex = -1;
-        }
-        Py_SIZE(deque)++;
-        deque->rightindex++;
-        deque->rightblock->data[deque->rightindex] = item;
-        if (NEEDS_TRIM(deque, maxlen)) {
-            PyObject *olditem = deque_popleft(deque, NULL);
-            Py_DECREF(olditem);
-        } else {
-            deque->state++;
+        if (deque_append_internal(deque, item, maxlen) == -1) {
+            Py_DECREF(item);
+            Py_DECREF(it);
+            return NULL;
         }
     }
     return finalize_iterator(it);
@@ -468,28 +450,10 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        if (deque->leftindex == 0) {
-            block *b = newblock();
-            if (b == NULL) {
-                Py_DECREF(item);
-                Py_DECREF(it);
-                return NULL;
-            }
-            b->rightlink = deque->leftblock;
-            CHECK_END(deque->leftblock->leftlink);
-            deque->leftblock->leftlink = b;
-            deque->leftblock = b;
-            MARK_END(b->leftlink);
-            deque->leftindex = BLOCKLEN;
-        }
-        Py_SIZE(deque)++;
-        deque->leftindex--;
-        deque->leftblock->data[deque->leftindex] = item;
-        if (NEEDS_TRIM(deque, maxlen)) {
-            PyObject *olditem = deque_pop(deque, NULL);
-            Py_DECREF(olditem);
-        } else {
-            deque->state++;
+        if (deque_appendleft_internal(deque, item, maxlen) == -1) {
+            Py_DECREF(item);
+            Py_DECREF(it);
+            return NULL;
         }
     }
     return finalize_iterator(it);
