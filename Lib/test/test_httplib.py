@@ -1912,6 +1912,16 @@ class TunnelTests(TestCase):
         # This test should be removed when CONNECT gets the HTTP/1.1 blessing
         self.assertNotIn(b'Host: proxy.com', self.conn.sock.data)
 
+    def test_connect_with_tunnel_idna(self):
+        dest = '\u03b4\u03c0\u03b8.gr'
+        expected = 'CONNECT %s:%d HTTP/1.1\r\n'.encode('ascii') % (
+            dest.encode('idna'), client.HTTP_PORT)
+        self.conn.set_tunnel(dest)
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
+        self.assertIn(expected, self.conn.sock.data)
+
     def test_connect_put_request(self):
         self.conn.set_tunnel('destination.com')
         self.conn.request('PUT', '/', '')
