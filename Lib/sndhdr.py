@@ -52,8 +52,13 @@ SndHeaders.sampwidth.__doc__ = ("""Either the sample size in bits or
 
 def what(filename):
     """Guess the type of a sound file."""
-    res = whathdr(filename)
-    return res
+    try:
+        res = whathdr(filename)
+        return res
+    except RuntimeError as e:
+        return None
+    except IndexError as e:
+        return None
 
 
 def whathdr(filename):
@@ -64,7 +69,7 @@ def whathdr(filename):
             res = tf(h, f)
             if res:
                 return SndHeaders(*res)
-        return None
+    return None
 
 
 #-----------------------------------#
