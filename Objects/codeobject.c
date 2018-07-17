@@ -114,7 +114,7 @@ PyCode_New(int argcount, int kwonlyargcount,
 {
     PyCodeObject *co;
     unsigned char *cell2arg = NULL;
-    Py_ssize_t i, n_cellvars;
+    Py_ssize_t i, n_cellvars, n_varnames, total_args;
 
     /* Check argument types */
     if (argcount < 0 || kwonlyargcount < 0 || nlocals < 0 ||
@@ -150,15 +150,29 @@ PyCode_New(int argcount, int kwonlyargcount,
         flags &= ~CO_NOFREE;
     }
 
+    n_varnames = PyTuple_GET_SIZE(varnames);
+    if (argcount <= n_varnames && kwonlyargcount <= n_varnames) {
+        /* Never overflows. */
+        total_args = (Py_ssize_t)argcount + (Py_ssize_t)kwonlyargcount +
+                ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
+    }
+    else {
+        total_args = n_varnames + 1;
+    }
+    if (total_args > n_varnames) {
+        PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
+        return NULL;
+    }
+
     /* Create mapping between cells and arguments if needed. */
     if (n_cellvars) {
-        Py_ssize_t total_args = argcount + kwonlyargcount +
-            ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
         Py_ssize_t alloc_size = sizeof(unsigned char) * n_cellvars;
         bool used_cell2arg = false;
         cell2arg = PyMem_MALLOC(alloc_size);
-        if (cell2arg == NULL)
+        if (cell2arg == NULL) {
+            PyErr_NoMemory();
             return NULL;
+        }
         memset(cell2arg, CO_CELL_NOT_AN_ARG, alloc_size);
         /* Find cells which are also arguments. */
         for (i = 0; i < n_cellvars; i++) {
@@ -166,7 +180,12 @@ PyCode_New(int argcount, int kwonlyargcount,
             PyObject *cell = PyTuple_GET_ITEM(cellvars, i);
             for (j = 0; j < total_args; j++) {
                 PyObject *arg = PyTuple_GET_ITEM(varnames, j);
-                if (!PyUnicode_Compare(cell, arg)) {
+                int cmp = PyUnicode_Compare(cell, arg);
+                if (cmp == -1 && PyErr_Occurred()) {
+                    PyMem_FREE(cell2arg);
+                    return NULL;
+                }
+                if (cmp == 0) {
                     cell2arg[i] = j;
                     used_cell2arg = true;
                     break;
