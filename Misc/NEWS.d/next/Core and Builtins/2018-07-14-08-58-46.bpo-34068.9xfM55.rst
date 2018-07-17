@@ -1,0 +1,3 @@
+In :meth:`io.IOBase.close`, ensure that the :attr:`~io.IOBase.closed`
+attribute is not set with a live exception.  Patch by Zackery Spytz and Serhiy
+Storchaka.
