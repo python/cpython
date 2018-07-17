@@ -49,6 +49,7 @@ of frames or -1.""")
 SndHeaders.sampwidth.__doc__ = ("""Either the sample size in bits or
 'A' for A-LAW or 'U' for u-LAW.""")
 
+
 def what(filename):
     """Guess the type of a sound file."""
     res = whathdr(filename)
@@ -72,6 +73,7 @@ def whathdr(filename):
 
 tests = []
 
+
 def test_aifc(h, f):
     import aifc
     if not h.startswith(b'FORM'):
@@ -90,6 +92,7 @@ def test_aifc(h, f):
     return (fmt, a.getframerate(), a.getnchannels(),
             a.getnframes(), 8 * a.getsampwidth())
 
+
 tests.append(test_aifc)
 
 
@@ -106,7 +109,7 @@ def test_au(h, f):
     encoding = func(h[12:16])
     rate = func(h[16:20])
     nchannels = func(h[20:24])
-    sample_size = 1 # default
+    sample_size = 1  # default
     if encoding == 1:
         sample_bits = 'U'
     elif encoding == 2:
@@ -123,6 +126,7 @@ def test_au(h, f):
         nframe = -1
     return filetype, rate, nchannels, nframe, sample_bits
 
+
 tests.append(test_au)
 
 
@@ -136,6 +140,7 @@ def test_hcom(h, f):
         rate = 0
     return 'hcom', rate, 1, -1, 8
 
+
 tests.append(test_hcom)
 
 
@@ -145,10 +150,11 @@ def test_voc(h, f):
     sbseek = get_short_le(h[20:22])
     rate = 0
     if 0 <= sbseek < 500 and h[sbseek] == 1:
-        ratecode = 256 - h[sbseek+4]
+        ratecode = 256 - h[sbseek + 4]
         if ratecode:
             rate = int(1000000.0 / ratecode)
     return 'voc', rate, 1, -1, 8
+
 
 tests.append(test_voc)
 
@@ -163,8 +169,12 @@ def test_wav(h, f):
         w = wave.open(f, 'r')
     except (EOFError, wave.Error):
         return None
-    return ('wav', w.getframerate(), w.getnchannels(),
-                   w.getnframes(), 8*w.getsampwidth())
+    return ('wav',
+            w.getframerate(),
+            w.getnchannels(),
+            w.getnframes(),
+            8 * w.getsampwidth())
+
 
 tests.append(test_wav)
 
@@ -175,6 +185,7 @@ def test_8svx(h, f):
     # Should decode it to get #channels -- assume always 1
     return '8svx', 0, 1, 0, 8
 
+
 tests.append(test_8svx)
 
 
@@ -184,6 +195,7 @@ def test_sndt(h, f):
         rate = get_short_le(h[20:22])
         return 'sndt', rate, 1, nsamples, 8
 
+
 tests.append(test_sndt)
 
 
@@ -192,6 +204,7 @@ def test_sndr(h, f):
         rate = get_short_le(h[2:4])
         if 4000 <= rate <= 25000:
             return 'sndr', rate, 1, -1, 8
+
 
 tests.append(test_sndr)
 
@@ -203,11 +216,14 @@ tests.append(test_sndr)
 def get_long_be(b):
     return (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]
 
+
 def get_long_le(b):
     return (b[3] << 24) | (b[2] << 16) | (b[1] << 8) | b[0]
 
+
 def get_short_be(b):
     return (b[0] << 8) | b[1]
+
 
 def get_short_le(b):
     return (b[1] << 8) | b[0]
@@ -232,6 +248,7 @@ def test():
         sys.stderr.write('\n[Interrupted]\n')
         sys.exit(1)
 
+
 def testall(list, recursive, toplevel):
     import sys
     import os
@@ -252,6 +269,7 @@ def testall(list, recursive, toplevel):
                 print(what(filename))
             except OSError:
                 print('*** not found ***')
+
 
 if __name__ == '__main__':
     test()
