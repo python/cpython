@@ -36,6 +36,15 @@ class TestCgitb(unittest.TestCase):
             self.assertIn("ValueError", text)
             self.assertIn("Hello World", text)
 
+    def test_variables_mangling(self):
+        # Issue 34129: we were not mangling variables.
+        try:
+            self.__the_ultimate_answer = 42
+            self.__the_ultimate_answer /= 0
+        except:
+            text = cgitb.text(sys.exc_info())
+            self.assertIn("self.__the_ultimate_answer = 42", text)
+
     def test_syshook_no_logdir_default_format(self):
         with temp_dir() as tracedir:
             rc, out, err = assert_python_failure(
