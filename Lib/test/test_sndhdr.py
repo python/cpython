@@ -25,6 +25,16 @@ class TestFormats(unittest.TestCase):
             self.assertEqual(what.nframes, expected[3])
             self.assertEqual(what.sampwidth, expected[4])
 
+    def test_badinputs(self):
+        for filename, expected in (
+                ('FAKE', None),
+                (None, None),
+                (False, None)
+        ):
+            what = sndhdr.what(filename)
+            self.assertEqual(what, expected)
+        return
+
     def test_pickleable(self):
         filename = findfile('sndhdr.aifc', subdir="sndhdrdata")
         what = sndhdr.what(filename)

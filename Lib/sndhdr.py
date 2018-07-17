@@ -55,9 +55,10 @@ def what(filename):
     try:
         res = whathdr(filename)
         return res
-    except RuntimeError as e:
-        return None
-    except IndexError as e:
+    except (TypeError,
+            FileNotFoundError,
+            IndexError,
+            RuntimeError) as e:
         return None
 
 
