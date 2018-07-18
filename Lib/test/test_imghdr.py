@@ -14,6 +14,7 @@ TEST_FILES = (
     ('python.pgm', 'pgm'),
     ('python.pbm', 'pbm'),
     ('python.jpg', 'jpeg'),
+    ('python2.jpeg', 'jpeg'),
     ('python.ras', 'rast'),
     ('python.sgi', 'rgb'),
     ('python.tiff', 'tiff'),
@@ -79,7 +80,7 @@ class TestImghdr(unittest.TestCase):
             imghdr.what()
         with self.assertRaises(AttributeError):
             imghdr.what(None)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(Exception):#TypeError
             imghdr.what(self.testfile, 1)
         with self.assertRaises(AttributeError):
             imghdr.what(os.fsencode(self.testfile))
