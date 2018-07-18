@@ -523,10 +523,9 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
 
     """
     with os.scandir(src) as entries:
-        return _copytree(
-            entries=entries, src=src, dst=dst, symlinks=symlinks,
-            ignore=ignore, copy_function=copy_function,
-            ignore_dangling_symlinks=ignore_dangling_symlinks)
+        return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
+                         ignore=ignore, copy_function=copy_function,
+                         ignore_dangling_symlinks=ignore_dangling_symlinks)
 
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onerror):
