@@ -1,0 +1,1 @@
+Fixed regression in netrc file newline and comment handling.
