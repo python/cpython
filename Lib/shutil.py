@@ -352,8 +352,8 @@ def copystat(src, dst, *, follow_symlinks=True):
                 return fn
             return _nop
 
-    if follow and isinstance(src, os.DirEntry):
-        st = src.stat()
+    if isinstance(src, os.DirEntry):
+        st = src.stat(follow_symlinks=follow)
     else:
         st = lookup("stat")(src, follow_symlinks=follow)
     mode = stat.S_IMODE(st.st_mode)
