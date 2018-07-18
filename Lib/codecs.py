@@ -848,7 +848,7 @@ class StreamRecoder:
         self.writer.reset()
 
     def seek(self, offset, whence=0):
-        # Seeks must be propogated to both the readers and writers
+        # Seeks must be propagated to both the readers and writers
         # as they might need to clear their internal buffers
         self.reader.seek(offset, whence)
         self.writer.seek(offset, whence)
