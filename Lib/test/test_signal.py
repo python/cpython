@@ -367,7 +367,6 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.signal(signum, handler)
 
         read, write = socket.socketpair()
-        read.setblocking(False)
         write.setblocking(False)
         signal.set_wakeup_fd(write.fileno())
 
