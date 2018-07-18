@@ -1,0 +1,1 @@
+Fix bug in imghdr.py: some jpeg files were not detecting.
