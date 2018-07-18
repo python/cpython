@@ -1164,7 +1164,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if addr is not None and not isinstance(addr, str):
                         raise TypeError('string is expected')
 
-                if local_addr and local_addr not in (0, '\x00'):
+                if local_addr and local_addr[0] not in (0, '\x00'):
                     try:
                         if stat.S_ISSOCK(os.stat(local_addr).st_mode):
                             os.remove(local_addr)
