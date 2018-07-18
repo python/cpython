@@ -10,7 +10,6 @@ import stat
 import fnmatch
 import collections
 import errno
-import io
 
 try:
     import zlib
@@ -549,7 +548,7 @@ def _rmtree_unsafe(path, onerror):
                     # os.scandir or entry.is_dir above.
                     raise OSError("Cannot call rmtree on a symbolic link")
             except OSError:
-                onerror(entry.is_symlink, fullname, sys.exc_info())
+                onerror(os.path.islink, fullname, sys.exc_info())
                 continue
             _rmtree_unsafe(fullname, onerror)
         else:
