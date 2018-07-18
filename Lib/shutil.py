@@ -475,11 +475,14 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
 
     os.makedirs(dst)
     errors = []
+    use_srcentry = copy_function is copy2 or copy_function is copy
+
     for srcentry in entries:
         if srcentry.name in ignored_names:
             continue
         srcname = os.path.join(src, srcentry.name)
         dstname = os.path.join(dst, srcentry.name)
+        srcobj = srcentry if use_srcentry else srcname
         try:
             if srcentry.is_symlink():
                 linkto = os.readlink(srcname)
@@ -488,19 +491,19 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                     # code with a custom `copy_function` may rely on copytree
                     # doing the right thing.
                     os.symlink(linkto, dstname)
-                    copystat(srcentry, dstname, follow_symlinks=not symlinks)
+                    copystat(srcobj, dstname, follow_symlinks=not symlinks)
                 else:
                     # ignore dangling symlink if the flag is on
                     if not os.path.exists(linkto) and ignore_dangling_symlinks:
                         continue
                     # otherwise let the copy occurs. copy2 will raise an error
                     if srcentry.is_dir():
-                        copytree(srcentry, dstname, symlinks, ignore,
+                        copytree(srcobj, dstname, symlinks, ignore,
                                  copy_function)
                     else:
-                        copy_function(srcentry, dstname)
+                        copy_function(srcobj, dstname)
             elif srcentry.is_dir():
-                copytree(srcentry, dstname, symlinks, ignore, copy_function)
+                copytree(srcobj, dstname, symlinks, ignore, copy_function)
             else:
                 # Will raise a SpecialFileError for unsupported file types
                 copy_function(srcentry, dstname)
