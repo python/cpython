@@ -3988,6 +3988,8 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         return save_unicode(self, obj);
     }
 
+    /* We're only calling Py_EnterRecursiveCall here so that atomic
+       types above are pickled faster. */
     if (Py_EnterRecursiveCall(" while pickling an object")) {
         return -1;
     }
