@@ -469,13 +469,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     # (will add later)
     entries = os.scandir(src)
     if ignore is not None:
-        ls = []
-        names = set()
-        for entry in entries:
-            ls.append(entry)
-            names.add(entry.name)
-        ignored_names = ignore(src, names)
-        entries = ls
+        ignored_names = ignore(src, set(os.listdir(src)))
     else:
         ignored_names = set()
 
