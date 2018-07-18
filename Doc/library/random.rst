@@ -14,7 +14,7 @@ distributions.
 For integers, there is uniform selection from a range. For sequences, there is
 uniform selection of a random element, a function to generate a random
 permutation of a list in-place, and a function for random sampling without
-replacement.
+replacement [1]_.
 
 On the real line, there are functions to compute uniform, normal (Gaussian),
 lognormal, negative exponential, gamma, and beta distributions. For generating
@@ -141,7 +141,7 @@ Functions for sequences
 
 .. function:: choices(population, weights=None, *, cum_weights=None, k=1)
 
-   Return a *k* sized list of elements chosen from the *population* with replacement.
+   Return a *k* sized list of elements chosen from the *population* with replacement [1]_.
    If the *population* is empty, raises :exc:`IndexError`.
 
    If a *weights* sequence is specified, selections are made according to the
@@ -185,7 +185,7 @@ Functions for sequences
 .. function:: sample(population, k)
 
    Return a *k* length list of unique elements chosen from the population sequence
-   or set. Used for random sampling without replacement.
+   or set. Used for random sampling without replacement [1]_.
 
    Returns a new list containing elements from the population while leaving the
    original population unchanged.  The resulting list is in selection order so that
@@ -389,7 +389,7 @@ Simulations::
 
 Example of `statistical bootstrapping
 <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)>`_ using resampling
-with replacement to estimate a confidence interval for the mean of a sample of
+with replacement [1]_ to estimate a confidence interval for the mean of a sample of
 size five::
 
    # http://statistics.about.com/od/Applications/a/Example-Of-Bootstrapping.htm
@@ -477,3 +477,10 @@ Simulation of arrival times and service deliveries in a single server queue::
    a tutorial by `Peter Norvig <http://norvig.com/bio.html>`_ covering
    the basics of probability theory, how to write simulations, and
    how to perform data analysis using Python.
+
+
+.. rubric:: Footnotes
+
+.. [1] Sampling can be done with or without replacement.  Sampling with
+   replacement may select the same element more than once, while sampling
+   without replacement will not select the same element more than once.
