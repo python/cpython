@@ -967,16 +967,18 @@ the more significant byte last.
 
 .. opcode:: CALL_FUNCTION (argc)
 
-   Calls a function.  The low byte of *argc* indicates the number of positional
-   arguments, the high byte the number of keyword arguments.  The stack contains
-   keyword arguments on top (if any), then the positional arguments below that (if any),
-   then the function to call below that.
-   Each keyword argument is represented with two values on the stack, the argument's
-   name and its value, with the value above the name on the stack.  The positional
-   arguments are pushed in the order that they are passed in to the function,
-   with the right-most positional argument on top.  ``CALL_FUNCTION``
-   pops all arguments and the function off the stack, calls the function with those
-   arguments, and pushes the function's return value.
+   Calls a callable object.  The low byte of *argc* indicates the number of
+   positional arguments, the high byte the number of keyword arguments.
+   The stack contains keyword arguments on top (if any), then the positional
+   arguments below that (if any), then the callable object to call below that.
+   Each keyword argument is represented with two values on the stack:
+   the argument's name, and its value, with the argument's value above the
+   name on the stack.
+   The positional arguments are pushed in the order that they are passed in
+   to the callable object, with the right-most positional argument on top.
+   ``CALL_FUNCTION`` pops all arguments and the callable object off the stack,
+   calls the callable object with those arguments, and pushes the return value
+   returned by the callable object.
 
 
 .. opcode:: MAKE_FUNCTION (argc)
@@ -1022,39 +1024,38 @@ the more significant byte last.
 
 .. opcode:: CALL_FUNCTION_VAR (argc)
 
-   Calls a function, similarly to :opcode:`CALL_FUNCTION`.
+   Calls a callable object, similarly to :opcode:`CALL_FUNCTION`.
    *argc* represents the number of keyword and positional
    arguments, identically to :opcode:`CALL_FUNCTION`.
    The top of the stack contains an iterable object containing additional positional
    arguments.
    Below this are keyword arguments (if any), positional arguments (if any),
-   and function to call, identically to :opcode:`CALL_FUNCTION`.
-   When the function is called, the iterable object at the top of the stack is
-   "unpacked" and its contents are appended to the positional arguments passed
-   in to the function.
+   and a callable object, identically to :opcode:`CALL_FUNCTION`.
+   Before the callable object is called, the iterable object at the top of the stack
+   is "unpacked" and its contents are appended to the positional arguments passed
+   in.
    The iterable object at the top of the stack is ignored when computing
    the value of ``argc``.
 
 
 .. opcode:: CALL_FUNCTION_KW (argc)
 
-   Calls a function, similarly to :opcode:`CALL_FUNCTION`.
+   Calls a callable object, similarly to :opcode:`CALL_FUNCTION`.
    *argc* represents the number of keyword and positional
    arguments, identically to :opcode:`CALL_FUNCTION`.
    The top of the stack contains a mapping object containing additional keyword
    arguments.
    Below this are keyword arguments (if any), positional arguments (if any),
-   and function to call, identically to :opcode:`CALL_FUNCTION`.
-   When the function is called, the mapping object at the top of the stack is
-   "unpacked" and its contents are appended to the keyword arguments passed in
-   to the function.
+   and a callable object, identically to :opcode:`CALL_FUNCTION`.
+   Before the callable is called, the mapping object at the top of the stack is
+   "unpacked" and its contents are appended to the keyword arguments passed in.
    The mapping object at the top of the stack is ignored when computing
    the value of ``argc``.
 
 
 .. opcode:: CALL_FUNCTION_VAR_KW (argc)
 
-   Calls a function, similarly to :opcode:`CALL_FUNCTION_VAR` and
+   Calls a callable object, similarly to :opcode:`CALL_FUNCTION_VAR` and
    :opcode:`CALL_FUNCTION_KW`.
    *argc* represents the number of keyword and positional
    arguments, identically to :opcode:`CALL_FUNCTION`.
@@ -1062,10 +1063,11 @@ the more significant byte last.
    :opcode:`CALL_FUNCTION_KW`.
    Below that is an iterable object, as per :opcode:`CALL_FUNCTION_VAR`.
    Below this are keyword arguments (if any), positional arguments (if any),
-   and function to call, identically to :opcode:`CALL_FUNCTION`.
-   When the function is called, the mapping object and iterable object on the
-   stack are "unpacked" and passed in to the function, identically to
-   :opcode:`CALL_FUNCTION_VAR` and :opcode:`CALL_FUNCTION_KW`.
+   and a callable object, identically to :opcode:`CALL_FUNCTION`.
+   Before the callable is called, the mapping object and iterable object on the
+   stack are each "unpacked" and their contents passed in as keyword and
+   positional arguments respectively,
+   identically to :opcode:`CALL_FUNCTION_VAR` and :opcode:`CALL_FUNCTION_KW`.
    The mapping object and iterable object at the top of the stack
    are both ignored when computing the value of ``argc``.
 
