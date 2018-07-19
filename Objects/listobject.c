@@ -593,15 +593,19 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     size_t s;
     int result = -1;            /* guilty until proved innocent */
 
-    if (ilow < 0)
+    if (ilow < 0) {
         ilow = 0;
-    else if (ilow >= Py_SIZE(a))
+    }
+    else if (ilow >= Py_SIZE(a)) {
         ilow = Py_SIZE(a);
+    }
 
-    if (ihigh < ilow)
+    if (ihigh < ilow) {
         ihigh = ilow;
+    }
     else if (ihigh > Py_SIZE(a))
         ihigh = Py_SIZE(a);
+    }
 
     norig = ihigh - ilow;
     assert(norig >= 0);
@@ -615,7 +619,7 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
                 return 0;
             }
             Py_ssize_t orig_size = Py_SIZE(a);
-            if (list_resize(a, orig_size + orig_size - norig) != 0) {
+            if (list_resize(a, orig_size + orig_size - norig) < 0) {
                 return -1;
             }
             for (k = 0; k < orig_size - ihigh; k++) {
@@ -627,7 +631,7 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
             for (k = 0; k < ilow; k++) {
                 PyObject *obj = a->ob_item[k];
                 Py_INCREF(obj);
-                a->ob_item[k + ilow] = obj;
+                a->ob_item[ilow + k] = obj;
             }
             return 0;
         }
