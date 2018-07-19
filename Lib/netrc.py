@@ -35,13 +35,15 @@ class netrc:
         lexer.commenters = lexer.commenters.replace('#', '')
         while 1:
             # Look for a machine, default, or macdef top-level keyword
-            saved_lineno = lexer.lineno
+            pos = lexer.instream.tell()
             toplevel = tt = lexer.get_token()
             if not tt:
                 break
             elif tt[0] == '#':
-                if lexer.lineno == saved_lineno and len(tt) == 1:
-                    lexer.instream.readline()
+                if len(tt) != 1:
+                    pos = max(pos - 1, 0)
+                lexer.instream.seek(pos)
+                lexer.instream.readline()
                 continue
             elif tt == 'machine':
                 entryname = lexer.get_token()
