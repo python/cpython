@@ -960,7 +960,7 @@ the more significant byte last.
 
 .. opcode:: RAISE_VARARGS (argc)
 
-   Raises an exception. *argc* indicates the number of parameters to the raise
+   Raises an exception. *argc* indicates the number of arguments to the raise
    statement, ranging from 0 to 3.  The handler will find the traceback as TOS2,
    the parameter as TOS1, and the exception as TOS.
 
@@ -968,13 +968,15 @@ the more significant byte last.
 .. opcode:: CALL_FUNCTION (argc)
 
    Calls a function.  The low byte of *argc* indicates the number of positional
-   parameters, the high byte the number of keyword parameters. On the stack, the
-   opcode finds the keyword parameters first.  For each keyword argument, the
-   value is on top of the key.  Below the keyword parameters, the positional
-   parameters are on the stack, with the right-most parameter on top.  Below the
-   parameters, the function object to call is on the stack.  Pops all function
-   arguments, and the function itself off the stack, and pushes the return
-   value.
+   arguments, the high byte the number of keyword arguments.  The stack contains
+   keyword arguments on top (if any), then the positional arguments below that (if any),
+   then the function to call below that.
+   Each keyword argument is represented with two values on the stack, the argument's
+   name and its value, with the value above the name on the stack.  The positional
+   arguments are pushed in the order that they are passed in to the function,
+   with the right-most positional argument on top.  ``CALL_FUNCTION``
+   pops all arguments and the function off the stack, calls the function with those
+   arguments, and pushes the function's return value.
 
 
 .. opcode:: MAKE_FUNCTION (argc)
@@ -982,12 +984,12 @@ the more significant byte last.
    Pushes a new function object on the stack.  From bottom to top, the consumed
    stack must consist of
 
-   * ``argc & 0xFF`` default argument objects in positional order
+   * ``argc & 0xFF`` default argument objects in positional order, for positional parameters
    * ``(argc >> 8) & 0xFF`` pairs of name and default argument, with the name
      just below the object on the stack, for keyword-only parameters
    * ``(argc >> 16) & 0x7FFF`` parameter annotation objects
    * a tuple listing the parameter names for the annotations (only if there are
-     ony annotation objects)
+     any annotation objects)
    * the code associated with the function (at TOS1)
    * the :term:`qualified name` of the function (at TOS)
 
@@ -1020,24 +1022,52 @@ the more significant byte last.
 
 .. opcode:: CALL_FUNCTION_VAR (argc)
 
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The
-   top element on the stack contains the variable argument list, followed by
-   keyword and positional arguments.
+   Calls a function, similarly to :opcode:`CALL_FUNCTION`.
+   *argc* represents the number of keyword and positional
+   arguments, identically to :opcode:`CALL_FUNCTION`.
+   The top of the stack contains an iterable object containing additional positional
+   arguments.
+   Below this are keyword arguments (if any), positional arguments (if any),
+   and function to call, identically to :opcode:`CALL_FUNCTION`.
+   When the function is called, the iterable object at the top of the stack is
+   "unpacked" and its contents are appended to the positional arguments passed
+   in to the function.
+   The iterable object at the top of the stack is ignored when computing
+   the value of ``argc``.
 
 
 .. opcode:: CALL_FUNCTION_KW (argc)
 
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The
-   top element on the stack contains the keyword arguments dictionary, followed
-   by explicit keyword and positional arguments.
+   Calls a function, similarly to :opcode:`CALL_FUNCTION`.
+   *argc* represents the number of keyword and positional
+   arguments, identically to :opcode:`CALL_FUNCTION`.
+   The top of the stack contains a mapping object containing additional keyword
+   arguments.
+   Below this are keyword arguments (if any), positional arguments (if any),
+   and function to call, identically to :opcode:`CALL_FUNCTION`.
+   When the function is called, the mapping object at the top of the stack is
+   "unpacked" and its contents are appended to the keyword arguments passed in
+   to the function.
+   The mapping object at the top of the stack is ignored when computing
+   the value of ``argc``.
 
 
 .. opcode:: CALL_FUNCTION_VAR_KW (argc)
 
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`.  The
-   top element on the stack contains the keyword arguments dictionary, followed
-   by the variable-arguments tuple, followed by explicit keyword and positional
-   arguments.
+   Calls a function, similarly to :opcode:`CALL_FUNCTION_VAR` and
+   :opcode:`CALL_FUNCTION_KW`.
+   *argc* represents the number of keyword and positional
+   arguments, identically to :opcode:`CALL_FUNCTION`.
+   The top of the stack contains a mapping object, as per
+   :opcode:`CALL_FUNCTION_KW`.
+   Below that is an iterable object, as per :opcode:`CALL_FUNCTION_VAR`.
+   Below this are keyword arguments (if any), positional arguments (if any),
+   and function to call, identically to :opcode:`CALL_FUNCTION`.
+   When the function is called, the mapping object and iterable object on the
+   stack are "unpacked" and passed in to the function, identically to
+   :opcode:`CALL_FUNCTION_VAR` and :opcode:`CALL_FUNCTION_KW`.
+   The mapping object and iterable object at the top of the stack
+   are both ignored when computing the value of ``argc``.
 
 
 .. opcode:: HAVE_ARGUMENT
@@ -1071,7 +1101,7 @@ instructions:
 
 .. data:: hasconst
 
-   Sequence of bytecodes that have a constant parameter.
+   Sequence of bytecodes that have a constant argument.
 
 
 .. data:: hasfree
