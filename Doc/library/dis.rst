@@ -1027,14 +1027,16 @@ the more significant byte last.
    Calls a callable object, similarly to :opcode:`CALL_FUNCTION`.
    *argc* represents the number of keyword and positional
    arguments, identically to :opcode:`CALL_FUNCTION`.
-   The top of the stack contains an iterable object containing additional positional
-   arguments.
-   Below this are keyword arguments (if any), positional arguments (if any),
+   The top of the stack contains keyword arguments (if any), stored
+   identically to :opcode:`CALL_FUNCTION`.
+   Below that
+   is an iterable object containing additional positional arguments.
+   Below that are positional arguments (if any)
    and a callable object, identically to :opcode:`CALL_FUNCTION`.
-   Before the callable object is called, the iterable object at the top of the stack
-   is "unpacked" and its contents are appended to the positional arguments passed
-   in.
-   The iterable object at the top of the stack is ignored when computing
+   Before the callable object is called, the iterable object
+   is "unpacked" and its contents are appended to the positional
+   arguments passed in.
+   The iterable object is ignored when computing
    the value of ``argc``.
 
 
@@ -1061,15 +1063,18 @@ the more significant byte last.
    arguments, identically to :opcode:`CALL_FUNCTION`.
    The top of the stack contains a mapping object, as per
    :opcode:`CALL_FUNCTION_KW`.
-   Below that is an iterable object, as per :opcode:`CALL_FUNCTION_VAR`.
-   Below this are keyword arguments (if any), positional arguments (if any),
+   Below that are keyword arguments (if any), stored
+   identically to :opcode:`CALL_FUNCTION`.
+   Below that
+   is an iterable object containing additional positional arguments.
+   Below that are positional arguments (if any)
    and a callable object, identically to :opcode:`CALL_FUNCTION`.
-   Before the callable is called, the mapping object and iterable object on the
-   stack are each "unpacked" and their contents passed in as keyword and
+   Before the callable is called, the mapping object and iterable object
+   are each "unpacked" and their contents passed in as keyword and
    positional arguments respectively,
    identically to :opcode:`CALL_FUNCTION_VAR` and :opcode:`CALL_FUNCTION_KW`.
-   The mapping object and iterable object at the top of the stack
-   are both ignored when computing the value of ``argc``.
+   The mapping object and iterable object are both ignored when computing
+   the value of ``argc``.
 
 
 .. opcode:: HAVE_ARGUMENT
