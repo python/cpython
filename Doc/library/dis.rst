@@ -1108,7 +1108,7 @@ instructions:
 
 .. data:: hasconst
 
-   Sequence of bytecodes that have a constant argument.
+   Sequence of bytecodes that access a constant.
 
 
 .. data:: hasfree
