@@ -405,12 +405,13 @@ class EventTests(BaseTestCase):
         # cleared before the waiting thread is woken up.
         evt = self.eventtype()
         results = []
+        timeout = 0.250
         N = 5
         def f():
-            results.append(evt.wait(1))
+            results.append(evt.wait(timeout * 4))
         b = Bunch(f, N)
         b.wait_for_started()
-        time.sleep(0.5)
+        time.sleep(timeout)
         evt.set()
         evt.clear()
         b.wait_for_finished()
