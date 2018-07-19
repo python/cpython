@@ -603,7 +603,7 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     if (ihigh < ilow) {
         ihigh = ilow;
     }
-    else if (ihigh > Py_SIZE(a))
+    else if (ihigh > Py_SIZE(a)) {
         ihigh = Py_SIZE(a);
     }
 
