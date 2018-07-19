@@ -537,22 +537,23 @@ list_repeat(PyListObject *a, Py_ssize_t n)
     if (np == NULL)
         return NULL;
 
-    items = np->ob_item;
     if (Py_SIZE(a) == 1) {
+        items = np->ob_item;
         elem = a->ob_item[0];
         for (i = 0; i < n; i++) {
             items[i] = elem;
             Py_INCREF(elem);
         }
-        return (PyObject *) np;
     }
-    p = np->ob_item;
-    items = a->ob_item;
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < Py_SIZE(a); j++) {
-            *p = items[j];
-            Py_INCREF(*p);
-            p++;
+    else {
+        p = np->ob_item;
+        items = a->ob_item;
+        for (i = 0; i < n; i++) {
+            for (j = 0; j < Py_SIZE(a); j++) {
+                *p = items[j];
+                Py_INCREF(*p);
+                p++;
+            }
         }
     }
     Py_SIZE(np) = size;
