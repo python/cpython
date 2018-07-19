@@ -114,6 +114,22 @@ class AssociateErrorTestCase(unittest.TestCase):
             dupDB.close()
             self.fail("DBError exception was expected")
 
+    @unittest.skipUnless(db.version() >= (4, 6), 'Needs 4.6+')
+    def test_associateListError(self):
+        db1 = db.DB(self.env)
+        db1.open('bad.db', "a.db", db.DB_BTREE, db.DB_CREATE)
+        db2 = db.DB(self.env)
+        db2.open('bad.db', "b.db", db.DB_BTREE, db.DB_CREATE)
+
+        db1.associate(db2, lambda a, b: [0])
+
+        msg = "TypeError: The list returned by DB->associate callback" \
+              " should be a list of strings."
+        with test_support.captured_output("stderr") as s:
+            db1.put("0", "1")
+        db1.close()
+        db2.close()
+        self.assertEquals(s.getvalue().strip(), msg)
 
 
 #----------------------------------------------------------------------
