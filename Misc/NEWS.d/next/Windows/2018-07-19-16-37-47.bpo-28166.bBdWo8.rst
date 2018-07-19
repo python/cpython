@@ -1,0 +1,1 @@
+Continue reading when SIGINT is ignored.
