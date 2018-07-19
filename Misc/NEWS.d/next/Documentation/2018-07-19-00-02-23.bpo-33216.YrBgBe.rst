@@ -1,0 +1,2 @@
+Clarify the documentation for CALL_FUNCTION_VAR, CALL_FUNCTION_KW, and
+CALL_FUNCTION_VAR_KW.
