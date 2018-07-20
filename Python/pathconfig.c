@@ -29,7 +29,7 @@ copy_wstr(wchar_t **dst, const wchar_t *src)
 }
 
 
-void
+static void
 _PyPathConfig_Clear(_PyPathConfig *config)
 {
     /* _PyMem_SetDefaultAllocator() is needed to get a known memory allocator,
@@ -60,17 +60,11 @@ _PyPathConfig_Clear(_PyPathConfig *config)
 }
 
 
-/* Initialize paths for Py_GetPath(), Py_GetPrefix(), Py_GetExecPrefix()
-   and Py_GetProgramFullPath() */
-_PyInitError
+/* Calculate the path configuration: initialize path_config from core_config */
+static _PyInitError
 _PyPathConfig_Calculate(_PyPathConfig *path_config,
                         const _PyCoreConfig *core_config)
 {
-    if (path_config->module_search_path) {
-        /* Already initialized */
-        return _Py_INIT_OK();
-    }
-
     _PyInitError err;
     _PyPathConfig new_config = _PyPathConfig_INIT;
 
@@ -149,7 +143,14 @@ done:
 }
 
 
-wchar_t*
+void
+_PyPathConfig_ClearGlobal(void)
+{
+    _PyPathConfig_Clear(&_Py_path_config);
+}
+
+
+static wchar_t*
 wstrlist_join(wchar_t sep, int count, wchar_t **list)
 {
     size_t len = 0;

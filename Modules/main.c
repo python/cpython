@@ -650,7 +650,7 @@ pymain_free_raw(_PyMain *pymain)
        configuration options set before Py_Initialize() which should
        remain valid after Py_Finalize(), since
        Py_Initialize()-Py_Finalize() can be called multiple times. */
-    _PyPathConfig_Clear(&_Py_path_config);
+    _PyPathConfig_ClearGlobal();
 
     pymain_clear_config(pymain);
 
