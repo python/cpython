@@ -279,7 +279,7 @@ static int test_initialize_twice(void)
 static int test_initialize_pymain(void)
 {
     wchar_t *argv[] = {L"PYTHON", L"-c",
-                           L"import sys; print(f'Py_Main() after Py_Initialize: sys.argv={sys.argv}')",
+                       L"import sys; print(f'Py_Main() after Py_Initialize: sys.argv={sys.argv}')",
                        L"arg2"};
     _testembed_Py_Initialize();
 
