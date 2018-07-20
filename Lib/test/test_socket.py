@@ -1038,7 +1038,7 @@ class GeneralModuleTests(unittest.TestCase):
             eq(udpport, port)
         # Now make sure the lookup by port returns the same service name
         # Issue #26936: Android getservbyport() is broken.
-        if not support.ANDROID:
+        if not support.is_android:
             eq(socket.getservbyport(port2), service)
         eq(socket.getservbyport(port, 'tcp'), service)
         if udpport is not None:
@@ -5843,7 +5843,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                                  op=socket.ALG_OP_ENCRYPT, iv=iv)
                 enc = op.recv(msglen * multiplier)
             self.assertEqual(len(enc), msglen * multiplier)
-            self.assertTrue(enc[:msglen], ciphertext)
+            self.assertEqual(enc[:msglen], ciphertext)
 
             op, _ = algo.accept()
             with op:

@@ -2333,7 +2333,9 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                         (void) va_arg(*p_va, int *);
                 }
                 format++;
-            } else if ((c == 's' || c == 'z' || c == 'y') && *format == '*') {
+            } else if ((c == 's' || c == 'z' || c == 'y' || c == 'w')
+                       && *format == '*')
+            {
                 format++;
             }
             break;

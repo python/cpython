@@ -257,7 +257,7 @@ class Field:
 
     # This is used to support the PEP 487 __set_name__ protocol in the
     # case where we're using a field that contains a descriptor as a
-    # defaul value.  For details on __set_name__, see
+    # default value.  For details on __set_name__, see
     # https://www.python.org/dev/peps/pep-0487/#implementation-details.
     #
     # Note that in _process_class, this Field object is overwritten

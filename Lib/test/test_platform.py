@@ -260,7 +260,6 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(sts, 0)
 
     def test_libc_ver(self):
-        import os
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
             # Cygwin horror
@@ -269,8 +268,17 @@ class PlatformTest(unittest.TestCase):
             executable = sys.executable
         res = platform.libc_ver(executable)
 
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, 'wb') as f:
+            f.write(b'x'*(16384-10))
+            f.write(b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0')
+        self.assertEqual(platform.libc_ver(support.TESTFN),
+                         ('glibc', '1.23.4'))
+
     def test_popen(self):
-        if support.MS_WINDOWS:
+        mswindows = (sys.platform == "win32")
+
+        if mswindows:
             command = '"{}" -c "print(\'Hello\')"'.format(sys.executable)
         else:
             command = "'{}' -c 'print(\"Hello\")'".format(sys.executable)
@@ -282,7 +290,7 @@ class PlatformTest(unittest.TestCase):
                 self.assertEqual(hello, "Hello")
 
         data = 'plop'
-        if support.MS_WINDOWS:
+        if mswindows:
             command = '"{}" -c "import sys; data=sys.stdin.read(); exit(len(data))"'
         else:
             command = "'{}' -c 'import sys; data=sys.stdin.read(); exit(len(data))'"
