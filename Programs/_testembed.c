@@ -276,6 +276,21 @@ static int test_initialize_twice(void)
     return 0;
 }
 
+static int test_initialize_pymain(void)
+{
+    wchar_t *argv[] = {L"PYTHON", L"-c",
+                       L"import sys; print(f'Py_Main() after Py_Initialize: sys.argv={sys.argv}')",
+                       L"arg2"};
+    _testembed_Py_Initialize();
+
+    /* bpo-34008: Calling Py_Main() after Py_Initialize() must not crash */
+    Py_Main(Py_ARRAY_LENGTH(argv), argv);
+
+    Py_Finalize();
+
+    return 0;
+}
+
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -302,6 +317,7 @@ static struct TestCase TestCases[] = {
     { "pre_initialization_sys_options", test_pre_initialization_sys_options },
     { "bpo20891", test_bpo20891 },
     { "initialize_twice", test_initialize_twice },
+    { "initialize_pymain", test_initialize_pymain },
     { NULL, NULL }
 };
 
