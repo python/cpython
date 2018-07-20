@@ -23,7 +23,7 @@ copy_wstr(wchar_t **dst, const wchar_t *src)
         }
     }
     else {
-        *dst = 0;
+        *dst = NULL;
     }
     return 0;
 }

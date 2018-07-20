@@ -704,6 +704,10 @@ error:
 _PyInitError
 _Py_wstrlist_append(int *len, wchar_t ***list, const wchar_t *str)
 {
+    if (*len == INT_MAX) {
+        /* len+1 would overflow */
+        return _Py_INIT_NO_MEMORY();
+    }
     wchar_t *str2 = _PyMem_RawWcsdup(str);
     if (str2 == NULL) {
         return _Py_INIT_NO_MEMORY();
