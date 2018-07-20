@@ -132,11 +132,11 @@ _PyOS_WindowsConsoleReadline(HANDLE hStdIn)
             err = 0;
             HANDLE hInterruptEvent = _PyOS_SigintEvent();
 			DWORD state = WaitForSingleObjectEx(hInterruptEvent, 100, FALSE);
-            if (state == WAIT_OBJECT_0 || state == WAIT_TIMEOUT) {
-                ResetEvent(hInterruptEvent);
-                PyEval_RestoreThread(_PyOS_ReadlineTState);
-                s = PyErr_CheckSignals();
-                PyEval_SaveThread();
+			if (state == WAIT_OBJECT_0 || state == WAIT_TIMEOUT) {
+				ResetEvent(hInterruptEvent);
+				PyEval_RestoreThread(_PyOS_ReadlineTState);
+				s = PyErr_CheckSignals();
+				PyEval_SaveThread();
 				if (s < 0)
 					goto exit;
 				else
