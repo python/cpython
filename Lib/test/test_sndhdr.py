@@ -1,6 +1,7 @@
 import sndhdr
 import pickle
 import unittest
+import base64
 from test.support import findfile
 
 class TestFormats(unittest.TestCase):
@@ -29,11 +30,26 @@ class TestFormats(unittest.TestCase):
         for filename, expected in (
                 ('FAKE', None),
                 (None, None),
-                (False, None)
         ):
             what = sndhdr.what(filename)
             self.assertEqual(what, expected)
-        return
+
+        # test feeding bad binary data to sound header functions
+        for filename, expected in (
+            ('input1.bad', None),
+            ('input2.bad', None)
+        ):
+
+            filename = findfile(filename, subdir="sndhdrdata")
+
+            for tf in sndhdr.tests:
+                with open(filename, 'rb') as f:
+                    h = f.read(512)
+                    self.assertEqual(tf(h, f), expected)
+
+
+
+
 
     def test_pickleable(self):
         filename = findfile('sndhdr.aifc', subdir="sndhdrdata")

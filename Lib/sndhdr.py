@@ -55,22 +55,23 @@ def what(filename):
     try:
         res = whathdr(filename)
         return res
-    except (TypeError,
-            FileNotFoundError,
-            IndexError,
-            RuntimeError) as e:
+    except (FileNotFoundError) as e:
         return None
 
 
 def whathdr(filename):
     """Recognize sound headers."""
-    with open(filename, 'rb') as f:
-        h = f.read(512)
-        for tf in tests:
-            res = tf(h, f)
-            if res:
-                return SndHeaders(*res)
-    return None
+    try:
+        with open(filename, 'rb') as f:
+            h = f.read(512)
+            for tf in tests:
+                res = tf(h, f)
+                if res:
+                    return SndHeaders(*res)
+        return None
+
+    except(TypeError) as e:
+        return None
 
 
 #-----------------------------------#
@@ -170,10 +171,13 @@ def test_wav(h, f):
     # 'RIFF' <len> 'WAVE' 'fmt ' <len>
     if not h.startswith(b'RIFF') or h[8:12] != b'WAVE' or h[12:16] != b'fmt ':
         return None
-    f.seek(0)
     try:
+        f.seek(0)
         w = wave.open(f, 'r')
-    except (EOFError, wave.Error):
+    except (EOFError,
+            RuntimeError,
+            AttributeError,
+            wave.Error):
         return None
     return ('wav',
             w.getframerate(),
@@ -206,10 +210,13 @@ tests.append(test_sndt)
 
 
 def test_sndr(h, f):
-    if h.startswith(b'\0\0'):
-        rate = get_short_le(h[2:4])
-        if 4000 <= rate <= 25000:
-            return 'sndr', rate, 1, -1, 8
+    try:
+        if h.startswith(b'\0\0'):
+            rate = get_short_le(h[2:4])
+            if 4000 <= rate <= 25000:
+                return 'sndr', rate, 1, -1, 8
+    except (IndexError) as e:
+        return None
 
 
 tests.append(test_sndr)
