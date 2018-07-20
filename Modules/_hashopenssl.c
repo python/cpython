@@ -734,13 +734,12 @@ _hashlib.scrypt
 
     password: Py_buffer
     *
-    salt: Py_buffer = None
-    n as n_obj: object(subclass_of='&PyLong_Type') = None
-    r as r_obj: object(subclass_of='&PyLong_Type') = None
-    p as p_obj: object(subclass_of='&PyLong_Type') = None
+    salt: Py_buffer
+    n as n_obj: object(subclass_of='&PyLong_Type')
+    r as r_obj: object(subclass_of='&PyLong_Type')
+    p as p_obj: object(subclass_of='&PyLong_Type')
     maxmem: long = 0
     dklen: long = 64
-
 
 scrypt password-based key derivation function.
 [clinic start generated code]*/
@@ -749,7 +748,7 @@ static PyObject *
 _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
                      PyObject *n_obj, PyObject *r_obj, PyObject *p_obj,
                      long maxmem, long dklen)
-/*[clinic end generated code: output=14849e2aa2b7b46c input=48a7d63bf3f75c42]*/
+/*[clinic end generated code: output=14849e2aa2b7b46c input=3582ea277868e4f1]*/
 {
     PyObject *key_obj = NULL;
     char *key;
@@ -762,11 +761,6 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         return NULL;
     }
 
-    if (salt->buf == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "salt is required");
-        return NULL;
-    }
     if (salt->len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "salt is too long.");
@@ -858,13 +852,13 @@ _hashlib.hmac_digest
     msg: Py_buffer
     digest: str
 
-Single-shot HMAC
+Single-shot HMAC.
 [clinic start generated code]*/
 
 static PyObject *
 _hashlib_hmac_digest_impl(PyObject *module, Py_buffer *key, Py_buffer *msg,
                           const char *digest)
-/*[clinic end generated code: output=75630e684cdd8762 input=10e964917921e2f2]*/
+/*[clinic end generated code: output=75630e684cdd8762 input=562d2f4249511bd3]*/
 {
     unsigned char md[EVP_MAX_MD_SIZE] = {0};
     unsigned int md_len = 0;

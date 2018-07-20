@@ -5,8 +5,7 @@ preserve
 #if (OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER))
 
 PyDoc_STRVAR(_hashlib_scrypt__doc__,
-"scrypt($module, /, password, *, salt=None, n=None, r=None, p=None,\n"
-"       maxmem=0, dklen=64)\n"
+"scrypt($module, /, password, *, salt, n, r, p, maxmem=0, dklen=64)\n"
 "--\n"
 "\n"
 "scrypt password-based key derivation function.");
@@ -24,12 +23,12 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"password", "salt", "n", "r", "p", "maxmem", "dklen", NULL};
-    static _PyArg_Parser _parser = {"y*|$y*O!O!O!ll:scrypt", _keywords, 0};
+    static _PyArg_Parser _parser = {"y*$y*O!O!O!|ll:scrypt", _keywords, 0};
     Py_buffer password = {NULL, NULL};
     Py_buffer salt = {NULL, NULL};
-    PyObject *n_obj = Py_None;
-    PyObject *r_obj = Py_None;
-    PyObject *p_obj = Py_None;
+    PyObject *n_obj;
+    PyObject *r_obj;
+    PyObject *p_obj;
     long maxmem = 0;
     long dklen = 64;
 
@@ -58,7 +57,7 @@ PyDoc_STRVAR(_hashlib_hmac_digest__doc__,
 "hmac_digest($module, /, key, msg, digest)\n"
 "--\n"
 "\n"
-"Single-shot HMAC");
+"Single-shot HMAC.");
 
 #define _HASHLIB_HMAC_DIGEST_METHODDEF    \
     {"hmac_digest", (PyCFunction)_hashlib_hmac_digest, METH_FASTCALL|METH_KEYWORDS, _hashlib_hmac_digest__doc__},
@@ -99,4 +98,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=b5b90821caf05391 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8cbaabaad6472259 input=a9049054013a1b77]*/

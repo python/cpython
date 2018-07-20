@@ -47,10 +47,10 @@ typedef struct {
 #include "clinic/blake2b_impl.c.h"
 
 /*[clinic input]
-module _blake2b
-class _blake2b.blake2b "BLAKE2bObject *" "&PyBlake2_BLAKE2bType"
+module _blake2
+class _blake2.blake2b "BLAKE2bObject *" "&PyBlake2_BLAKE2bType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6893358c6622aecf]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d47b0527b39c673f]*/
 
 
 static BLAKE2bObject *
@@ -66,17 +66,18 @@ new_BLAKE2bObject(PyTypeObject *type)
 
 /*[clinic input]
 @classmethod
-_blake2b.blake2b.__new__ as py_blake2b_new
-    string as data: object = NULL
+_blake2.blake2b.__new__ as py_blake2b_new
+    data: object(c_default="NULL") = b''
+    /
     *
-    digest_size: int(c_default="BLAKE2B_OUTBYTES") = _blake2b.blake2b.MAX_DIGEST_SIZE
-    key: Py_buffer = None
-    salt: Py_buffer = None
-    person: Py_buffer = None
+    digest_size: int(c_default="BLAKE2B_OUTBYTES") = _blake2.blake2b.MAX_DIGEST_SIZE
+    key: Py_buffer(c_default="NULL", py_default="b''") = None
+    salt: Py_buffer(c_default="NULL", py_default="b''") = None
+    person: Py_buffer(c_default="NULL", py_default="b''") = None
     fanout: int = 1
     depth: int = 1
-    leaf_size as leaf_size_obj: object = NULL
-    node_offset as node_offset_obj: object = NULL
+    leaf_size as leaf_size_obj: object(c_default="NULL") = 0
+    node_offset as node_offset_obj: object(c_default="NULL") = 0
     node_depth: int = 0
     inner_size: int = 0
     last_node: bool = False
@@ -90,7 +91,7 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                     int fanout, int depth, PyObject *leaf_size_obj,
                     PyObject *node_offset_obj, int node_depth,
                     int inner_size, int last_node)
-/*[clinic end generated code: output=7506d8d890e5f13b input=e41548dfa0866031]*/
+/*[clinic end generated code: output=7506d8d890e5f13b input=aca35b33c5612b4b]*/
 {
     BLAKE2bObject *self = NULL;
     Py_buffer buf;
@@ -252,14 +253,14 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
 }
 
 /*[clinic input]
-_blake2b.blake2b.copy
+_blake2.blake2b.copy
 
 Return a copy of the hash object.
 [clinic start generated code]*/
 
 static PyObject *
-_blake2b_blake2b_copy_impl(BLAKE2bObject *self)
-/*[clinic end generated code: output=c89cd33550ab1543 input=4c9c319f18f10747]*/
+_blake2_blake2b_copy_impl(BLAKE2bObject *self)
+/*[clinic end generated code: output=ff6acee5f93656ae input=e383c2d199fd8a2e]*/
 {
     BLAKE2bObject *cpy;
 
@@ -274,21 +275,21 @@ _blake2b_blake2b_copy_impl(BLAKE2bObject *self)
 }
 
 /*[clinic input]
-_blake2b.blake2b.update
+_blake2.blake2b.update
 
-    obj: object
+    data: object
     /
 
-Update this hash object's state with the provided string.
+Update this hash object's state with the provided bytes-like object.
 [clinic start generated code]*/
 
 static PyObject *
-_blake2b_blake2b_update(BLAKE2bObject *self, PyObject *obj)
-/*[clinic end generated code: output=a888f07c4cddbe94 input=3ecb8c13ee4260f2]*/
+_blake2_blake2b_update(BLAKE2bObject *self, PyObject *data)
+/*[clinic end generated code: output=010dfcbe22654359 input=ffc4aa6a6a225d31]*/
 {
     Py_buffer buf;
 
-    GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
+    GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
 
     if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE)
         self->lock = PyThread_allocate_lock();
@@ -308,14 +309,14 @@ _blake2b_blake2b_update(BLAKE2bObject *self, PyObject *obj)
 }
 
 /*[clinic input]
-_blake2b.blake2b.digest
+_blake2.blake2b.digest
 
-Return the digest value as a string of binary data.
+Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
-_blake2b_blake2b_digest_impl(BLAKE2bObject *self)
-/*[clinic end generated code: output=b13a79360d984740 input=ac2fa462ebb1b9c7]*/
+_blake2_blake2b_digest_impl(BLAKE2bObject *self)
+/*[clinic end generated code: output=a5864660f4bfc61a input=7d21659e9c5fff02]*/
 {
     uint8_t digest[BLAKE2B_OUTBYTES];
     blake2b_state state_cpy;
@@ -329,14 +330,14 @@ _blake2b_blake2b_digest_impl(BLAKE2bObject *self)
 }
 
 /*[clinic input]
-_blake2b.blake2b.hexdigest
+_blake2.blake2b.hexdigest
 
 Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
-_blake2b_blake2b_hexdigest_impl(BLAKE2bObject *self)
-/*[clinic end generated code: output=6a503611715b24bd input=d58f0b2f37812e33]*/
+_blake2_blake2b_hexdigest_impl(BLAKE2bObject *self)
+/*[clinic end generated code: output=b5598a87d8794a60 input=76930f6946351f56]*/
 {
     uint8_t digest[BLAKE2B_OUTBYTES];
     blake2b_state state_cpy;
@@ -350,10 +351,10 @@ _blake2b_blake2b_hexdigest_impl(BLAKE2bObject *self)
 
 
 static PyMethodDef py_blake2b_methods[] = {
-    _BLAKE2B_BLAKE2B_COPY_METHODDEF
-    _BLAKE2B_BLAKE2B_DIGEST_METHODDEF
-    _BLAKE2B_BLAKE2B_HEXDIGEST_METHODDEF
-    _BLAKE2B_BLAKE2B_UPDATE_METHODDEF
+    _BLAKE2_BLAKE2B_COPY_METHODDEF
+    _BLAKE2_BLAKE2B_DIGEST_METHODDEF
+    _BLAKE2_BLAKE2B_HEXDIGEST_METHODDEF
+    _BLAKE2_BLAKE2B_UPDATE_METHODDEF
     {NULL, NULL}
 };
 
