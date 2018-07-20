@@ -701,8 +701,8 @@ error:
 }
 
 
-static _PyInitError
-wstrlist_append(int *len, wchar_t ***list, const wchar_t *str)
+_PyInitError
+_Py_wstrlist_append(int *len, wchar_t ***list, const wchar_t *str)
 {
     wchar_t *str2 = _PyMem_RawWcsdup(str);
     if (str2 == NULL) {
@@ -725,7 +725,7 @@ wstrlist_append(int *len, wchar_t ***list, const wchar_t *str)
 static int
 pymain_wstrlist_append(_PyMain *pymain, int *len, wchar_t ***list, const wchar_t *str)
 {
-    _PyInitError err = wstrlist_append(len, list, str);
+    _PyInitError err = _Py_wstrlist_append(len, list, str);
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
@@ -972,9 +972,9 @@ static _PyInitError
 config_add_warnings_optlist(_PyCoreConfig *config, int len, wchar_t **options)
 {
     for (int i = 0; i < len; i++) {
-        _PyInitError err = wstrlist_append(&config->nwarnoption,
-                                           &config->warnoptions,
-                                           options[i]);
+        _PyInitError err = _Py_wstrlist_append(&config->nwarnoption,
+                                               &config->warnoptions,
+                                               options[i]);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1006,9 +1006,9 @@ config_init_warnoptions(_PyCoreConfig *config, _Py_CommandLineDetails *cmdline)
      */
 
     if (config->dev_mode) {
-        err = wstrlist_append(&config->nwarnoption,
-                              &config->warnoptions,
-                              L"default");
+        err = _Py_wstrlist_append(&config->nwarnoption,
+                                  &config->warnoptions,
+                                  L"default");
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1040,9 +1040,9 @@ config_init_warnoptions(_PyCoreConfig *config, _Py_CommandLineDetails *cmdline)
         else {
             filter = L"default::BytesWarning";
         }
-        err = wstrlist_append(&config->nwarnoption,
-                              &config->warnoptions,
-                              filter);
+        err = _Py_wstrlist_append(&config->nwarnoption,
+                                  &config->warnoptions,
+                                  filter);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1077,9 +1077,9 @@ cmdline_init_env_warnoptions(_Py_CommandLineDetails *cmdline)
          warning != NULL;
          warning = WCSTOK(NULL, L",", &context))
     {
-        _PyInitError err = wstrlist_append(&cmdline->nenv_warnoption,
-                                           &cmdline->env_warnoptions,
-                                          warning);
+        _PyInitError err = _Py_wstrlist_append(&cmdline->nenv_warnoption,
+                                               &cmdline->env_warnoptions,
+                                               warning);
         if (_Py_INIT_FAILED(err)) {
             PyMem_RawFree(env);
             return err;
@@ -2099,101 +2099,6 @@ config_init_locale(_PyCoreConfig *config)
 }
 
 
-static _PyInitError
-config_init_module_search_paths(_PyCoreConfig *config)
-{
-    assert(config->module_search_paths == NULL);
-    assert(config->nmodule_search_path < 0);
-
-    config->nmodule_search_path = 0;
-
-    const wchar_t *sys_path = Py_GetPath();
-    const wchar_t delim = DELIM;
-    const wchar_t *p = sys_path;
-    while (1) {
-        p = wcschr(sys_path, delim);
-        if (p == NULL) {
-            p = sys_path + wcslen(sys_path); /* End of string */
-        }
-
-        size_t path_len = (p - sys_path);
-        wchar_t *path = PyMem_RawMalloc((path_len + 1) * sizeof(wchar_t));
-        if (path == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-        memcpy(path, sys_path, path_len * sizeof(wchar_t));
-        path[path_len] = L'\0';
-
-        _PyInitError err = wstrlist_append(&config->nmodule_search_path,
-                                           &config->module_search_paths,
-                                           path);
-        PyMem_RawFree(path);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
-
-        if (*p == '\0') {
-            break;
-        }
-        sys_path = p + 1;
-    }
-    return _Py_INIT_OK();
-}
-
-
-static _PyInitError
-config_init_path_config(_PyCoreConfig *config)
-{
-    _PyInitError err = _PyPathConfig_Init(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    if (config->nmodule_search_path < 0) {
-        err = config_init_module_search_paths(config);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
-    }
-
-    if (config->executable == NULL) {
-        config->executable = _PyMem_RawWcsdup(Py_GetProgramFullPath());
-        if (config->executable == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (config->prefix == NULL) {
-        config->prefix = _PyMem_RawWcsdup(Py_GetPrefix());
-        if (config->prefix == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (config->exec_prefix == NULL) {
-        config->exec_prefix = _PyMem_RawWcsdup(Py_GetExecPrefix());
-        if (config->exec_prefix == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (config->base_prefix == NULL) {
-        config->base_prefix = _PyMem_RawWcsdup(config->prefix);
-        if (config->base_prefix == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (config->base_exec_prefix == NULL) {
-        config->base_exec_prefix = _PyMem_RawWcsdup(config->exec_prefix);
-        if (config->base_exec_prefix == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    return _Py_INIT_OK();
-}
-
 /* Read configuration settings from standard locations
  *
  * This function doesn't make any changes to the interpreter state - it
@@ -2252,7 +2157,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
 
     if (!config->_disable_importlib) {
-        err = config_init_path_config(config);
+        err = _PyCoreConfig_InitPathConfig(config);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -2294,6 +2199,9 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
     CLEAR(config->prefix);
     CLEAR(config->base_prefix);
     CLEAR(config->exec_prefix);
+#ifdef MS_WINDOWS
+    CLEAR(config->dll_path);
+#endif
     CLEAR(config->base_exec_prefix);
 #undef CLEAR
 #undef CLEAR_WSTRLIST
@@ -2356,6 +2264,9 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_STR_ATTR(prefix);
     COPY_STR_ATTR(base_prefix);
     COPY_STR_ATTR(exec_prefix);
+#ifdef MS_WINDOWS
+    COPY_STR_ATTR(dll_path);
+#endif
     COPY_STR_ATTR(base_exec_prefix);
 
 #undef COPY_ATTR

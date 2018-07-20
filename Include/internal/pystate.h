@@ -37,7 +37,7 @@ struct _gilstate_runtime_state {
 #define _PyGILState_check_enabled _PyRuntime.gilstate.check_enabled
 
 
-typedef struct {
+typedef struct _PyPathConfig {
     /* Full path to the Python program */
     wchar_t *program_full_path;
     wchar_t *prefix;
@@ -59,11 +59,15 @@ typedef struct {
 
 PyAPI_DATA(_PyPathConfig) _Py_path_config;
 
-PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate(
+PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate_impl(
     _PyPathConfig *config,
     const _PyCoreConfig *core_config);
 PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
 
+PyAPI_FUNC(_PyInitError) _Py_wstrlist_append(
+    int *len,
+    wchar_t ***list,
+    const wchar_t *str);
 
 /* interpreter state */
 
