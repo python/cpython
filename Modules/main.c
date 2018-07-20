@@ -2144,7 +2144,6 @@ config_init_module_search_paths(_PyCoreConfig *config)
 static _PyInitError
 config_init_path_config(_PyCoreConfig *config)
 {
-    /* FIXME: this method has side effect: modify _Py_path_config */
     _PyInitError err = _PyPathConfig_Init(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
