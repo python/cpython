@@ -1,7 +1,39 @@
-What's New in IDLE 3.7.0 (since 3.6.0)
-Released on 2018-06-18?
+What's New in IDLE 3.8.0 (since 3.7.0)
+Released on 2019-10-20?
 ======================================
 
+
+bpo-33905: Add test for idlelib.stackview.StackBrowser.
+
+bpo-33924: Change mainmenu.menudefs key 'windows' to 'window'.
+Every other menudef key is the lowercase version of the
+corresponding main menu entry (in this case, 'Window').
+
+bpo-33906: Rename idlelib.windows as window
+Match Window on the main menu and remove last plural module name.
+Change imports, test, and attribute references to match new name.
+
+bpo-33917: Fix and document idlelib/idle_test/template.py.
+The revised file compiles, runs, and tests OK.  idle_test/README.txt
+explains how to use it to create new IDLE test files.
+
+bpo-33904: In rstrip module, rename class RstripExtension as Rstrip.
+
+bpo-33907: For consistency and clarity, rename calltip objects.
+Module calltips and its class CallTips are now calltip and Calltip.
+In module calltip_w, class CallTip is now CalltipWindow.
+
+bpo-33855: Minimally test all IDLE modules.
+Standardize the test file format.  Add missing test files that import
+the tested module and perform at least one test.  Check and record the
+coverage of each test.
+
+bpo-33856: Add 'help' to Shell's initial welcome message.
+
+
+What's New in IDLE 3.7.0 (since 3.6.0)
+Released on 2018-06-27
+======================================
 
 bpo-33656: On Windows, add API call saying that tk scales for DPI.
 On Windows 8.1+ or 10, with DPI compatibility properties of the Python
