@@ -846,7 +846,7 @@ class HTTPConnection:
         self._create_connection = socket.create_connection
 
     def set_tunnel(self, host, port=None, headers=None):
-        """Set up host and port for HTTP CONNECT tunneling.
+        """Set up host and port for HTTP CONNECT tunnelling.
 
         In a connection that uses HTTP CONNECT tunnelling, the host passed to
         the constructor is used as a proxy server that relays all communication
