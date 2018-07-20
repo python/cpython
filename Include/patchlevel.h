@@ -23,7 +23,7 @@
 #define PY_RELEASE_SERIAL	1
 
 /* Version as a string */
-#define PY_VERSION      	"3.4.9rc1"
+#define PY_VERSION      	"3.4.9rc1+"
 /*--end constants--*/
 
 /* Version as a single 4-byte hex number, e.g. 0x010502B2 == 1.5.2b2.
