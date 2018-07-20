@@ -159,6 +159,7 @@ wstrlist_join(wchar_t sep, int count, wchar_t **list)
         }
         len += wcslen(list[i]);
     }
+    len++;   /* NUL terminator */
 
     wchar_t *text = PyMem_RawMalloc(len * sizeof(wchar_t));
     if (text == NULL) {
@@ -175,6 +176,7 @@ wstrlist_join(wchar_t sep, int count, wchar_t **list)
         memcpy(str, path, len * sizeof(wchar_t));
         str += len;
     }
+    *str = L'\0';
 
     return text;
 }
