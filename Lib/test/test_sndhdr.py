@@ -47,7 +47,6 @@ class TestFormats(unittest.TestCase):
                     h = f.read(512)
                     self.assertEqual(tf(h, f), expected)
 
-
     def test_pickleable(self):
         filename = findfile('sndhdr.aifc', subdir="sndhdrdata")
         what = sndhdr.what(filename)
