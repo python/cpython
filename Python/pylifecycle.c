@@ -772,6 +772,22 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     return _Py_INIT_OK();
 }
 
+/* Py_Initialize() has already been called: update the main interpreter
+   configuration. Example of bpo-34008: Py_Main() called after
+   Py_Initialize(). */
+static _PyInitError
+_Py_ReconfigureMainInterpreter(PyInterpreterState *interp,
+                               const _PyMainInterpreterConfig *config)
+{
+    if (config->argv != NULL) {
+        int res = PyDict_SetItemString(interp->sysdict, "argv", config->argv);
+        if (res < 0) {
+            return _Py_INIT_ERR("fail to set sys.argv");
+        }
+    }
+    return _Py_INIT_OK();
+}
+
 /* Update interpreter state based on supplied configuration settings
  *
  * After calling this function, most of the restrictions on the interpreter
@@ -793,9 +809,6 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     if (!_PyRuntime.core_initialized) {
         return _Py_INIT_ERR("runtime core not initialized");
     }
-    if (_PyRuntime.initialized) {
-        return _Py_INIT_ERR("main interpreter already initialized");
-    }
 
     /* Get current thread state and interpreter pointer */
     tstate = PyThreadState_GET();
@@ -808,6 +821,10 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     /* Now finish configuring the main interpreter */
     if (_PyMainInterpreterConfig_Copy(&interp->config, config) < 0) {
         return _Py_INIT_ERR("failed to copy main interpreter config");
+    }
+
+    if (_PyRuntime.initialized) {
+        return _Py_ReconfigureMainInterpreter(interp, config);
     }
 
     if (interp->core_config._disable_importlib) {
