@@ -729,17 +729,22 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
 #if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER)
 #define PY_SCRYPT 1
 
+/* XXX: Parameters salt, n, r and p should be required keyword-only parameters.
+   They are optional in the Argument Clinic declaration only due to a
+   limitation of PyArg_ParseTupleAndKeywords. */
+
 /*[clinic input]
 _hashlib.scrypt
 
     password: Py_buffer
     *
-    salt: Py_buffer
-    n as n_obj: object(subclass_of='&PyLong_Type')
-    r as r_obj: object(subclass_of='&PyLong_Type')
-    p as p_obj: object(subclass_of='&PyLong_Type')
+    salt: Py_buffer = None
+    n as n_obj: object(subclass_of='&PyLong_Type') = None
+    r as r_obj: object(subclass_of='&PyLong_Type') = None
+    p as p_obj: object(subclass_of='&PyLong_Type') = None
     maxmem: long = 0
     dklen: long = 64
+
 
 scrypt password-based key derivation function.
 [clinic start generated code]*/
@@ -748,7 +753,7 @@ static PyObject *
 _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
                      PyObject *n_obj, PyObject *r_obj, PyObject *p_obj,
                      long maxmem, long dklen)
-/*[clinic end generated code: output=14849e2aa2b7b46c input=3582ea277868e4f1]*/
+/*[clinic end generated code: output=14849e2aa2b7b46c input=48a7d63bf3f75c42]*/
 {
     PyObject *key_obj = NULL;
     char *key;
@@ -761,6 +766,11 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         return NULL;
     }
 
+    if (salt->buf == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "salt is required");
+        return NULL;
+    }
     if (salt->len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "salt is too long.");
