@@ -133,6 +133,7 @@ _PyPathConfig_SetGlobal(const _PyPathConfig *config)
     COPY_ATTR(home);
 
     _PyPathConfig_Clear(&_Py_path_config);
+    /* Steal new_config strings; don't clear new_config */
     _Py_path_config = new_config;
 
     err = _Py_INIT_OK();
@@ -153,21 +154,19 @@ _PyPathConfig_ClearGlobal(void)
 static wchar_t*
 wstrlist_join(wchar_t sep, int count, wchar_t **list)
 {
-    size_t len = 0;
+    size_t len = 1;   /* NUL terminator */
     for (int i=0; i < count; i++) {
         if (i != 0) {
             len++;
         }
         len += wcslen(list[i]);
     }
-    len++;   /* NUL terminator */
 
     wchar_t *text = PyMem_RawMalloc(len * sizeof(wchar_t));
     if (text == NULL) {
         return NULL;
     }
     wchar_t *str = text;
-    str[0] = L'\0';
     for (int i=0; i < count; i++) {
         wchar_t *path = list[i];
         if (i != 0) {
@@ -183,7 +182,7 @@ wstrlist_join(wchar_t sep, int count, wchar_t **list)
 }
 
 
-/* Set _Py_path_config from core_config configuration */
+/* Set the global path configuration from core_config. */
 _PyInitError
 _PyCoreConfig_SetPathConfig(const _PyCoreConfig *core_config)
 {
@@ -360,7 +359,7 @@ error:
 static void
 pathconfig_global_init(void)
 {
-    if (_Py_path_config.module_search_path) {
+    if (_Py_path_config.module_search_path != NULL) {
         /* Already initialized */
         return;
     }
