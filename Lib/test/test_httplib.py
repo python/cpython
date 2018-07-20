@@ -2009,8 +2009,6 @@ class TunnelTests(TestCase):
         self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
                       b'Host: %(host)s:%(port)d\r\n\r\n' % d,
                       self.conn.sock.data)
-        # issue22095
-        self.assertNotIn(b'Host: %(host)s:None' % d, self.conn.sock.data)
         self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
                       self.conn.sock.data)
 
