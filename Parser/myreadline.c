@@ -18,7 +18,7 @@
 
 
 PyThreadState* _PyOS_ReadlineTState = NULL;
-	
+
 #include "pythread.h"
 static PyThread_type_lock _PyOS_ReadlineLock = NULL;
 
@@ -127,9 +127,8 @@ _PyOS_WindowsConsoleReadline(HANDLE hStdIn)
         if (n_read == 0) {
             int s;
             err = GetLastError();
-            if (err != ERROR_OPERATION_ABORTED) {
+            if (err != ERROR_OPERATION_ABORTED)
                 goto exit;
-            }
             err = 0;
             HANDLE hInterruptEvent = _PyOS_SigintEvent();
 			DWORD state = WaitForSingleObjectEx(hInterruptEvent, 100, FALSE);
