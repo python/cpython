@@ -1,8 +1,8 @@
 import sndhdr
 import pickle
 import unittest
-import base64
 from test.support import findfile
+
 
 class TestFormats(unittest.TestCase):
     def test_data(self):
@@ -46,9 +46,6 @@ class TestFormats(unittest.TestCase):
                 with open(filename, 'rb') as f:
                     h = f.read(512)
                     self.assertEqual(tf(h, f), expected)
-
-
-
 
 
     def test_pickleable(self):
