@@ -624,13 +624,13 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
             }
             for (k = 0; k < orig_size - ihigh; k++) {
                 PyObject *obj = a->ob_item[ihigh + k];
-                Py_INCREF(obj);
+                Py_XINCREF(obj);
                 a->ob_item[orig_size + ilow + k] = obj;
             }
             memmove(a->ob_item + ilow + ilow, a->ob_item + ilow, (orig_size - ilow) * sizeof(PyObject*));
             for (k = 0; k < ilow; k++) {
                 PyObject *obj = a->ob_item[k];
-                Py_INCREF(obj);
+                Py_XINCREF(obj);
                 a->ob_item[ilow + k] = obj;
             }
             return 0;
