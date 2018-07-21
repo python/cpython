@@ -1,0 +1,2 @@
+Fix crashes when profiling certain invalid calls of unbound methods.
+Patch by Jeroen Demeyer.
