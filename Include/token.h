@@ -63,8 +63,9 @@ extern "C" {
 #define ATEQUAL         50
 #define RARROW          51
 #define ELLIPSIS        52
-#define OP              53
-#define ERRORTOKEN      54
+#define COLONEQUAL      53
+#define OP              54
+#define ERRORTOKEN      55
 #define N_TOKENS        58
 #define NT_OFFSET       256
 
