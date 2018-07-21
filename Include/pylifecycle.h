@@ -54,12 +54,18 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 PyAPI_FUNC(_PyInitError) _Py_InitializeCore(const _PyCoreConfig *);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(
+    _PyCoreConfig *config,
+    int *isolated,
+    int *no_site_import);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(int) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(
+    _PyCoreConfig *config,
+    int *isolated,
+    int *no_site_import);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
     const _PyCoreConfig *config);
 

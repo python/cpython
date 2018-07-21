@@ -928,7 +928,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     config._disable_importlib = !install_importlib;
     config.install_signal_handlers = install_sigs;
 
-    err = _PyCoreConfig_Read(&config);
+    err = _PyCoreConfig_Read(&config, &Py_IsolatedFlag, &Py_NoSiteFlag);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }

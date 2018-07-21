@@ -1953,19 +1953,9 @@ pymain_read_conf_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
         return -1;
     }
 
-    /* On Windows, _PyPathConfig_Init() modifies Py_IsolatedFlag and
-       Py_NoSiteFlag variables if a "._pth" file is found. */
-    int init_isolated = Py_IsolatedFlag;
-    int init_no_site = Py_NoSiteFlag;
-    Py_IsolatedFlag = cmdline->isolated;
-    Py_NoSiteFlag = cmdline->no_site_import;
-
-    err = _PyCoreConfig_Read(config);
-
-    cmdline->isolated = Py_IsolatedFlag;
-    cmdline->no_site_import = Py_NoSiteFlag;
-    Py_IsolatedFlag = init_isolated;
-    Py_NoSiteFlag = init_no_site;
+    err = _PyCoreConfig_Read(config,
+                             &cmdline->isolated,
+                             &cmdline->no_site_import);
 
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
@@ -2116,7 +2106,7 @@ config_init_locale(_PyCoreConfig *config)
  */
 
 _PyInitError
-_PyCoreConfig_Read(_PyCoreConfig *config)
+_PyCoreConfig_Read(_PyCoreConfig *config, int *isolated, int *no_site_import)
 {
     _PyInitError err;
 
@@ -2161,7 +2151,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
 
     if (!config->_disable_importlib) {
-        err = _PyCoreConfig_InitPathConfig(config);
+        err = _PyCoreConfig_InitPathConfig(config, isolated, no_site_import);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
