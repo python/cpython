@@ -759,6 +759,13 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     if (!_PyContext_Init())
         return _Py_INIT_ERR("can't init context");
 
+    if (!core_config->_disable_importlib) {
+        err = _PyCoreConfig_SetPathConfig(core_config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
     /* This call sets up builtin and frozen import support */
     if (!interp->core_config._disable_importlib) {
         err = initimport(interp, sysmod);
