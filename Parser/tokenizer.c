@@ -1294,7 +1294,7 @@ syntaxerror(struct tok_state *tok, const char *format, ...)
     va_end(vargs);
     PyErr_SyntaxLocationObject(tok->filename,
                                tok->lineno,
-                               tok->cur - tok->line_start);
+                               (int)(tok->cur - tok->line_start));
     tok->done = E_ERROR;
 #else
     tok->done = E_TOKEN;
