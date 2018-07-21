@@ -2,62 +2,6 @@
 #include "frameobject.h"
 #include "rotatingtree.h"
 
-/*** Selection of a high-precision timer ***/
-
-#ifdef MS_WINDOWS
-
-#include <windows.h>
-
-static long long
-hpTimer(void)
-{
-    LARGE_INTEGER li;
-    QueryPerformanceCounter(&li);
-    return li.QuadPart;
-}
-
-static double
-hpTimerUnit(void)
-{
-    LARGE_INTEGER li;
-    if (QueryPerformanceFrequency(&li))
-        return 1.0 / li.QuadPart;
-    else
-        return 0.000001;  /* unlikely */
-}
-
-#else  /* !MS_WINDOWS */
-
-#ifndef HAVE_GETTIMEOFDAY
-#error "This module requires gettimeofday() on non-Windows platforms!"
-#endif
-
-#include <sys/resource.h>
-#include <sys/times.h>
-
-static long long
-hpTimer(void)
-{
-    struct timeval tv;
-    long long ret;
-#ifdef GETTIMEOFDAY_NO_TZ
-    gettimeofday(&tv);
-#else
-    gettimeofday(&tv, (struct timezone *)NULL);
-#endif
-    ret = tv.tv_sec;
-    ret = ret * 1000000 + tv.tv_usec;
-    return ret;
-}
-
-static double
-hpTimerUnit(void)
-{
-    return 0.000001;
-}
-
-#endif  /* MS_WINDOWS */
-
 /************************************************************/
 /* Written by Brett Rosen and Ted Czotter */
 
@@ -115,12 +59,11 @@ static PyTypeObject PyProfiler_Type;
 /*** External Timers ***/
 
 #define DOUBLE_TIMER_PRECISION   4294967296.0
-static PyObject *empty_tuple;
 
 static long long CallExternalTimer(ProfilerObject *pObj)
 {
     long long result;
-    PyObject *o = PyObject_Call(pObj->externalTimer, empty_tuple, NULL);
+    PyObject *o = _PyObject_CallNoArg(pObj->externalTimer);
     if (o == NULL) {
         PyErr_WriteUnraisable(pObj->externalTimer);
         return 0;
@@ -146,9 +89,17 @@ static long long CallExternalTimer(ProfilerObject *pObj)
     return result;
 }
 
-#define CALL_TIMER(pObj)        ((pObj)->externalTimer ?                \
-                                        CallExternalTimer(pObj) :       \
-                                        hpTimer())
+static inline long long
+call_timer(ProfilerObject *pObj)
+{
+    if (pObj->externalTimer != NULL) {
+        return CallExternalTimer(pObj);
+    }
+    else {
+        return (long long)_PyTime_GetPerfCounter();
+    }
+}
+
 
 /*** ProfilerObject ***/
 
@@ -332,13 +283,13 @@ initContext(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
         if (subentry)
             ++subentry->recursionLevel;
     }
-    self->t0 = CALL_TIMER(pObj);
+    self->t0 = call_timer(pObj);
 }
 
 static void
 Stop(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 {
-    long long tt = CALL_TIMER(pObj) - self->t0;
+    long long tt = call_timer(pObj) - self->t0;
     long long it = tt - self->subt;
     if (self->previous)
         self->previous->subt += tt;
@@ -632,7 +583,7 @@ profiler_getstats(ProfilerObject *pObj, PyObject* noarg)
     if (pending_exception(pObj))
         return NULL;
     if (!pObj->externalTimer)
-        collect.factor = hpTimerUnit();
+        collect.factor = 1e-9;  // _Py_time_t is nanosecond
     else if (pObj->externalTimerUnit > 0.0)
         collect.factor = pObj->externalTimerUnit;
     else
@@ -882,7 +833,6 @@ PyInit__lsprof(void)
                        (PyObject*) &StatsEntryType);
     PyModule_AddObject(module, "profiler_subentry",
                        (PyObject*) &StatsSubEntryType);
-    empty_tuple = PyTuple_New(0);
     initialized = 1;
     return module;
 }
