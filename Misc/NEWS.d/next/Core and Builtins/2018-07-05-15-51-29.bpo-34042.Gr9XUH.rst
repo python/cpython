@@ -1,0 +1,2 @@
+Fix dict.copy() to maintain correct total refcount (as reported by
+sys.gettotalrefcount()).

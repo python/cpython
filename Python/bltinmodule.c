@@ -254,30 +254,19 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         if (cls != NULL && PyType_Check(cls) && PyCell_Check(cell)) {
             PyObject *cell_cls = PyCell_GET(cell);
             if (cell_cls != cls) {
-                /* TODO: In 3.7, DeprecationWarning will become RuntimeError.
-                 *       At that point, cell_error won't be needed.
-                 */
-                int cell_error;
                 if (cell_cls == NULL) {
                     const char *msg =
                         "__class__ not set defining %.200R as %.200R. "
                         "Was __classcell__ propagated to type.__new__?";
-                    cell_error = PyErr_WarnFormat(
-                        PyExc_DeprecationWarning, 1, msg, name, cls);
+                    PyErr_Format(PyExc_RuntimeError, msg, name, cls);
                 } else {
                     const char *msg =
                         "__class__ set to %.200R defining %.200R as %.200R";
                     PyErr_Format(PyExc_TypeError, msg, cell_cls, name, cls);
-                    cell_error = 1;
                 }
-                if (cell_error) {
-                    Py_DECREF(cls);
-                    cls = NULL;
-                    goto error;
-                } else {
-                    /* Fill in the cell, since type.__new__ didn't do it */
-                    PyCell_Set(cell, cls);
-                }
+                Py_DECREF(cls);
+                cls = NULL;
+                goto error;
             }
         }
     }
@@ -619,7 +608,7 @@ filter_next(filterobject *lz)
 }
 
 static PyObject *
-filter_reduce(filterobject *lz)
+filter_reduce(filterobject *lz, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
 }
@@ -1331,7 +1320,7 @@ exit:
 }
 
 static PyObject *
-map_reduce(mapobject *lz)
+map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t numargs = PyTuple_GET_SIZE(lz->iters);
     PyObject *args = PyTuple_New(numargs+1);
@@ -2656,7 +2645,7 @@ zip_next(zipobject *lz)
 }
 
 static PyObject *
-zip_reduce(zipobject *lz)
+zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
 {
     /* Just recreate the zip with the internal iterator tuple */
     return Py_BuildValue("OO", Py_TYPE(lz), lz->ittuple);

@@ -91,7 +91,7 @@ The :keyword:`if` statement is used for conditional execution:
 
 .. productionlist::
    if_stmt: "if" `expression` ":" `suite`
-          : ( "elif" `expression` ":" `suite` )*
+          : ("elif" `expression` ":" `suite`)*
           : ["else" ":" `suite`]
 
 It selects exactly one of the suites by evaluating the expressions one by one
@@ -235,7 +235,7 @@ The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
 .. productionlist::
-   try_stmt: try1_stmt | try2_stmt
+   try_stmt: `try1_stmt` | `try2_stmt`
    try1_stmt: "try" ":" `suite`
             : ("except" [`expression` ["as" `identifier`]] ":" `suite`)+
             : ["else" ":" `suite`]
@@ -321,8 +321,8 @@ not handled, the exception is temporarily saved. The :keyword:`finally` clause
 is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`finally` clause.  If the :keyword:`finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
-If the :keyword:`finally` clause executes a :keyword:`return` or :keyword:`break`
-statement, the saved exception is discarded::
+If the :keyword:`finally` clause executes a :keyword:`return`, :keyword:`break`
+or :keyword:`continue` statement, the saved exception is discarded::
 
    >>> def f():
    ...     try:
@@ -343,10 +343,7 @@ the :keyword:`finally` clause.
 
 When a :keyword:`return`, :keyword:`break` or :keyword:`continue` statement is
 executed in the :keyword:`try` suite of a :keyword:`try`...\ :keyword:`finally`
-statement, the :keyword:`finally` clause is also executed 'on the way out.' A
-:keyword:`continue` statement is illegal in the :keyword:`finally` clause. (The
-reason is a problem with the current implementation --- this restriction may be
-lifted in the future).
+statement, the :keyword:`finally` clause is also executed 'on the way out.'
 
 The return value of a function is determined by the last :keyword:`return`
 statement executed.  Since the :keyword:`finally` clause always executes, a
@@ -366,6 +363,10 @@ Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
 
+.. versionchanged:: 3.8
+   Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
+   :keyword:`finally` clause due to a problem with the implementation.
+
 
 .. _with:
 .. _as:
@@ -383,7 +384,7 @@ This allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally`
 usage patterns to be encapsulated for convenient reuse.
 
 .. productionlist::
-   with_stmt: "with" with_item ("," with_item)* ":" `suite`
+   with_stmt: "with" `with_item` ("," `with_item`)* ":" `suite`
    with_item: `expression` ["as" `target`]
 
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
@@ -467,14 +468,15 @@ A function definition defines a user-defined function object (see section
 :ref:`types`):
 
 .. productionlist::
-   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")" ["->" `expression`] ":" `suite`
+   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
+          : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
    decorator: "@" `dotted_name` ["(" [`argument_list` [","]] ")"] NEWLINE
    dotted_name: `identifier` ("." `identifier`)*
    parameter_list: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                  : | `parameter_list_starargs`
    parameter_list_starargs: "*" [`parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
-                         : | "**" `parameter` [","]
+                          : | "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
    defparameter: `parameter` ["=" `expression`]
    funcname: `identifier`
@@ -683,6 +685,8 @@ can be used to create instance variables with different implementation details.
    :pep:`3129` - Class Decorators
 
 
+.. _async:
+
 Coroutines
 ==========
 
@@ -695,7 +699,8 @@ Coroutine function definition
 -----------------------------
 
 .. productionlist::
-   async_funcdef: [`decorators`] "async" "def" `funcname` "(" [`parameter_list`] ")" ["->" `expression`] ":" `suite`
+   async_funcdef: [`decorators`] "async" "def" `funcname` "(" [`parameter_list`] ")"
+                : ["->" `expression`] ":" `suite`
 
 .. index::
    keyword: async

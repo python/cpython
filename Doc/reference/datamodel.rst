@@ -768,7 +768,7 @@ Custom classes
 
    When a class attribute reference (for class :class:`C`, say) would yield a
    class method object, it is transformed into an instance method object whose
-   :attr:`__self__` attributes is :class:`C`.  When it would yield a static
+   :attr:`__self__` attribute is :class:`C`.  When it would yield a static
    method object, it is transformed into the object wrapped by the static method
    object. See section :ref:`descriptors` for another way in which attributes
    retrieved from a class may differ from those actually contained in its
@@ -1857,10 +1857,26 @@ passed through to all metaclass operations described below.
 
 When a class definition is executed, the following steps occur:
 
+* MRO entries are resolved
 * the appropriate metaclass is determined
 * the class namespace is prepared
 * the class body is executed
 * the class object is created
+
+
+Resolving MRO entries
+^^^^^^^^^^^^^^^^^^^^^
+
+If a base that appears in class definition is not an instance of :class:`type`,
+then an ``__mro_entries__`` method is searched on it. If found, it is called
+with the original bases tuple. This method must return a tuple of classes that
+will be used instead of this base. The tuple may be empty, in such case
+the original base is ignored.
+
+.. seealso::
+
+   :pep:`560` - Core support for typing module and generic types
+
 
 Determining the appropriate metaclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1951,8 +1967,7 @@ current call is identified based on the first argument passed to the method.
    as a ``__classcell__`` entry in the class namespace. If present, this must
    be propagated up to the ``type.__new__`` call in order for the class to be
    initialised correctly.
-   Failing to do so will result in a :exc:`DeprecationWarning` in Python 3.6,
-   and a :exc:`RuntimeWarning` in the future.
+   Failing to do so will result in a :exc:`RuntimeError` in Python 3.8.
 
 When using the default metaclass :class:`type`, or any metaclass that ultimately
 calls ``type.__new__``, the following additional customisation steps are
@@ -2059,6 +2074,27 @@ case the instance is itself a class.
       :meth:`~class.__subclasscheck__`, with motivation for this functionality
       in the context of adding Abstract Base Classes (see the :mod:`abc`
       module) to the language.
+
+
+Emulating generic types
+-----------------------
+
+One can implement the generic class syntax as specified by :pep:`484`
+(for example ``List[int]``) by defining a special method
+
+.. classmethod:: object.__class_getitem__(cls, key)
+
+   Return an object representing the specialization of a generic class
+   by type arguments found in *key*.
+
+This method is looked up on the class object itself, and when defined in
+the class body, this method is implicitly a class method.  Note, this
+mechanism is primarily reserved for use with static type hints, other usage
+is discouraged.
+
+.. seealso::
+
+   :pep:`560` - Core support for typing module and generic types
 
 
 .. _callable-types:

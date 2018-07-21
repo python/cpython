@@ -236,8 +236,8 @@ Module functions and constants
    Registers a callable to convert a bytestring from the database into a custom
    Python type. The callable will be invoked for all database values that are of
    the type *typename*. Confer the parameter *detect_types* of the :func:`connect`
-   function for how the type detection works. Note that the case of *typename* and
-   the name of the type in your query must match!
+   function for how the type detection works. Note that *typename* and the name of
+   the type in your query are matched in case-insensitive manner.
 
 
 .. function:: register_adapter(type, callable)
@@ -337,16 +337,23 @@ Connection Objects
       :meth:`~Cursor.executescript` method with the given *sql_script*, and
       returns the cursor.
 
-   .. method:: create_function(name, num_params, func)
+   .. method:: create_function(name, num_params, func, *, deterministic=False)
 
       Creates a user-defined function that you can later use from within SQL
       statements under the function name *name*. *num_params* is the number of
       parameters the function accepts (if *num_params* is -1, the function may
       take any number of arguments), and *func* is a Python callable that is
-      called as the SQL function.
+      called as the SQL function. If *deterministic* is true, the created function
+      is marked as `deterministic <https://sqlite.org/deterministic.html>`_, which
+      allows SQLite to perform additional optimizations. This flag is supported by
+      SQLite 3.8.3 or higher, :exc:`NotSupportedError` will be raised if used
+      with older versions.
 
       The function can return any of the types supported by SQLite: bytes, str, int,
       float and ``None``.
+
+      .. versionchanged:: 3.8
+         The *deterministic* parameter was added.
 
       Example:
 
@@ -820,6 +827,20 @@ Exceptions
    Exception raised for programming errors, e.g. table not found or already
    exists, syntax error in the SQL statement, wrong number of parameters
    specified, etc.  It is a subclass of :exc:`DatabaseError`.
+
+.. exception:: OperationalError
+
+   Exception raised for errors that are related to the database's operation
+   and not necessarily under the control of the programmer, e.g. an unexpected
+   disconnect occurs, the data source name is not found, a transaction could
+   not be processed, etc.  It is a subclass of :exc:`DatabaseError`.
+
+.. exception:: NotSupportedError
+
+   Exception raised in case a method or database API was used which is not
+   supported by the database, e.g. calling the :meth:`~Connection.rollback`
+   method on a connection that does not support transaction or has
+   transactions turned off.  It is a subclass of :exc:`DatabaseError`.
 
 
 .. _sqlite3-types:

@@ -136,6 +136,12 @@ static void _PySSLFixErrno(void) {
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
 #  define OPENSSL_VERSION_1_1 1
+#  define PY_OPENSSL_1_1_API 1
+#endif
+
+/* LibreSSL 2.7.0 provides necessary OpenSSL 1.1.0 APIs */
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x2070000fL
+#  define PY_OPENSSL_1_1_API 1
 #endif
 
 /* Openssl comes with TLSv1.1 and TLSv1.2 between 1.0.0h and 1.0.1
@@ -182,13 +188,17 @@ static void _PySSLFixErrno(void) {
 #define INVALID_SOCKET (-1)
 #endif
 
-#ifdef OPENSSL_VERSION_1_1
-/* OpenSSL 1.1.0+ */
-#ifndef OPENSSL_NO_SSL2
+/* OpenSSL 1.0.2 and LibreSSL needs extra code for locking */
+#ifndef OPENSSL_VERSION_1_1
+#define HAVE_OPENSSL_CRYPTO_LOCK
+#endif
+
+#if defined(OPENSSL_VERSION_1_1) && !defined(OPENSSL_NO_SSL2)
 #define OPENSSL_NO_SSL2
 #endif
-#else /* OpenSSL < 1.1.0 */
-#define HAVE_OPENSSL_CRYPTO_LOCK
+
+#ifndef PY_OPENSSL_1_1_API
+/* OpenSSL 1.1 API shims for OpenSSL < 1.1.0 and LibreSSL < 2.7.0 */
 
 #define TLS_method SSLv23_method
 #define TLS_client_method SSLv23_client_method
@@ -250,7 +260,7 @@ SSL_SESSION_get_ticket_lifetime_hint(const SSL_SESSION *s)
     return s->tlsext_tick_lifetime_hint;
 }
 
-#endif /* OpenSSL < 1.1.0 or LibreSSL */
+#endif /* OpenSSL < 1.1.0 or LibreSSL < 2.7.0 */
 
 /* Default cipher suites */
 #ifndef PY_SSL_DEFAULT_CIPHERS
@@ -842,7 +852,8 @@ _ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
     if (self->ctx->check_hostname) {
         X509_VERIFY_PARAM *param = SSL_get0_param(self->ssl);
         if (ip == NULL) {
-            if (!X509_VERIFY_PARAM_set1_host(param, server_hostname, 0)) {
+            if (!X509_VERIFY_PARAM_set1_host(param, server_hostname,
+                                             strlen(server_hostname))) {
                 _setSSLError(NULL, 0, __FILE__, __LINE__);
                 goto error;
             }
@@ -871,7 +882,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 {
     PySSLSocket *self;
     SSL_CTX *ctx = sslctx->ctx;
-    long mode;
 
     self = PyObject_New(PySSLSocket, &PySSLSocket_Type);
     if (self == NULL)
@@ -891,7 +901,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 #endif
 
     /* Make sure the SSL error state is initialized */
-    (void) ERR_get_state();
     ERR_clear_error();
 
     PySSL_BEGIN_ALLOW_THREADS
@@ -908,11 +917,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         BIO_up_ref(outbio->bio);
         SSL_set_bio(self->ssl, inbio->bio, outbio->bio);
     }
-    mode = SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER;
-#ifdef SSL_MODE_AUTO_RETRY
-    mode |= SSL_MODE_AUTO_RETRY;
-#endif
-    SSL_set_mode(self->ssl, mode);
+    SSL_set_mode(self->ssl,
+                 SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_AUTO_RETRY);
 
     if (server_hostname != NULL) {
         if (_ssl_configure_hostname(self, server_hostname) < 0) {
@@ -4015,7 +4021,7 @@ _ssl__SSLContext__wrap_socket_impl(PySSLContext *self, PyObject *sock,
     PyObject *res;
 
     /* server_hostname is either None (or absent), or to be encoded
-       as IDN A-label (ASCII str). */
+       as IDN A-label (ASCII str) without NULL bytes. */
     if (hostname_obj != Py_None) {
         if (!PyArg_Parse(hostname_obj, "es", "ascii", &hostname))
             return NULL;
@@ -4053,7 +4059,7 @@ _ssl__SSLContext__wrap_bio_impl(PySSLContext *self, PySSLMemoryBIO *incoming,
     PyObject *res;
 
     /* server_hostname is either None (or absent), or to be encoded
-       as IDN A-label (ASCII str). */
+       as IDN A-label (ASCII str) without NULL bytes. */
     if (hostname_obj != Py_None) {
         if (!PyArg_Parse(hostname_obj, "es", "ascii", &hostname))
             return NULL;
@@ -5837,6 +5843,10 @@ PyInit__ssl(void)
 #ifdef SSL_OP_ENABLE_MIDDLEBOX_COMPAT
     PyModule_AddIntConstant(m, "OP_ENABLE_MIDDLEBOX_COMPAT",
                             SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+#endif
+#ifdef SSL_OP_NO_RENEGOTIATION
+    PyModule_AddIntConstant(m, "OP_NO_RENEGOTIATION",
+                            SSL_OP_NO_RENEGOTIATION);
 #endif
 
 #ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT

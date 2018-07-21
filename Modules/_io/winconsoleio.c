@@ -1057,7 +1057,7 @@ _io__WindowsConsoleIO_isatty_impl(winconsoleio *self)
 }
 
 static PyObject *
-winconsoleio_getstate(winconsoleio *self)
+winconsoleio_getstate(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 {
     PyErr_Format(PyExc_TypeError,
                  "cannot serialize '%s' object", Py_TYPE(self)->tp_name);

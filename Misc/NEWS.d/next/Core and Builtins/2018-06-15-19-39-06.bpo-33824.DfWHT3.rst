@@ -1,0 +1,2 @@
+Fix "LC_ALL=C python3.7 -V": reset properly the command line parser when the
+encoding changes after reading the Python configuration.

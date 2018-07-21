@@ -283,7 +283,7 @@ BLAKE2
 .. index::
    single: blake2b, blake2s
 
-BLAKE2_ is a cryptographic hash function defined in RFC-7693_ that comes in two
+BLAKE2_ is a cryptographic hash function defined in :rfc:`7693` that comes in two
 flavors:
 
 * **BLAKE2b**, optimized for 64-bit platforms and produces digests of any size
@@ -546,7 +546,7 @@ on the hash function used in digital signatures.
     preparer, generates all or part of a message to be signed by a second
     party, the message signer. If the message preparer is able to find
     cryptographic hash function collisions (i.e., two messages producing the
-    same hash value), then she might prepare meaningful versions of the message
+    same hash value), then they might prepare meaningful versions of the message
     that would produce the same hash value and digital signature, but with
     different results (e.g., transferring $1,000,000 to an account, rather than
     $10). Cryptographic hash functions have been designed with collision
@@ -707,7 +707,6 @@ Domain Dedication 1.0 Universal:
 
 * *Alexandr Sokolovskiy*
 
-.. _RFC-7693: https://tools.ietf.org/html/rfc7693
 .. _BLAKE2: https://blake2.net
 .. _HMAC: https://en.wikipedia.org/wiki/Hash-based_message_authentication_code
 .. _BLAKE: https://131002.net/blake/

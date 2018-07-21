@@ -53,6 +53,10 @@ class TimeoutError(Error):
     """The operation exceeded the given deadline."""
     pass
 
+class InvalidStateError(Error):
+    """The operation is not allowed in this state."""
+    pass
+
 class _Waiter(object):
     """Provides the event that wait() and as_completed() block on."""
     def __init__(self):
@@ -513,6 +517,8 @@ class Future(object):
         Should only be used by Executor implementations and unit tests.
         """
         with self._condition:
+            if self._state in {CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED}:
+                raise InvalidStateError('{}: {!r}'.format(self._state, self))
             self._result = result
             self._state = FINISHED
             for waiter in self._waiters:
@@ -526,6 +532,8 @@ class Future(object):
         Should only be used by Executor implementations and unit tests.
         """
         with self._condition:
+            if self._state in {CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED}:
+                raise InvalidStateError('{}: {!r}'.format(self._state, self))
             self._exception = exception
             self._state = FINISHED
             for waiter in self._waiters:

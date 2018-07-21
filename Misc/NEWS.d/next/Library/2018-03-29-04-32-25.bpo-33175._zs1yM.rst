@@ -1,0 +1,2 @@
+In dataclasses, Field.__set_name__ now looks up the __set_name__ special
+method on the class, not the instance, of the default value.

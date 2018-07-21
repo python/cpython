@@ -67,7 +67,7 @@ if os.name == "nt":
                 return fname
         return None
 
-if os.name == "posix" and sys.platform == "darwin":
+elif os.name == "posix" and sys.platform == "darwin":
     from ctypes.macholib.dyld import dyld_find as _dyld_find
     def find_library(name):
         possible = ['lib%s.dylib' % name,
@@ -80,7 +80,7 @@ if os.name == "posix" and sys.platform == "darwin":
                 continue
         return None
 
-if sys.platform.startswith("aix"):
+elif sys.platform.startswith("aix"):
     # AIX has two styles of storing shared libraries
     # GNU auto_tools refer to these as svr4 and aix
     # svr4 (System V Release 4) is a regular file, often with .so as suffix

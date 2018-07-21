@@ -24,6 +24,7 @@ import collections
 import collections.abc
 import contextlib
 import functools
+import operator
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
 import types
@@ -95,6 +96,7 @@ __all__ = [
     'NewType',
     'no_type_check',
     'no_type_check_decorator',
+    'NoReturn',
     'overload',
     'Text',
     'TYPE_CHECKING',
@@ -105,7 +107,7 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _type_check(arg, msg):
+def _type_check(arg, msg, is_argument=True):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
@@ -117,12 +119,16 @@ def _type_check(arg, msg):
 
     We append the repr() of the actual value (truncated to 100 chars).
     """
+    invalid_generic_forms = (Generic, _Protocol)
+    if is_argument:
+        invalid_generic_forms = invalid_generic_forms + (ClassVar, )
+
     if arg is None:
         return type(None)
     if isinstance(arg, str):
         return ForwardRef(arg)
     if (isinstance(arg, _GenericAlias) and
-            arg.__origin__ in (Generic, _Protocol, ClassVar)):
+            arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
     if (isinstance(arg, _SpecialForm) and arg is not Any or
             arg in (Generic, _Protocol)):
@@ -201,8 +207,8 @@ def _check_generic(cls, parameters):
 
 
 def _remove_dups_flatten(parameters):
-    """An internal helper for Union creation and substitution: flatten Union's
-    among parameters, then remove duplicates and strict subclasses.
+    """An internal helper for Union creation and substitution: flatten Unions
+    among parameters, then remove duplicates.
     """
     # Flatten out Union[Union[...], ...].
     params = []
@@ -223,20 +229,7 @@ def _remove_dups_flatten(parameters):
                 all_params.remove(t)
         params = new_params
         assert not all_params, all_params
-    # Weed out subclasses.
-    # E.g. Union[int, Employee, Manager] == Union[int, Employee].
-    # If object is present it will be sole survivor among proper classes.
-    # Never discard type variables.
-    # (In particular, Union[str, AnyStr] != AnyStr.)
-    all_params = set(params)
-    for t1 in params:
-        if not isinstance(t1, type):
-            continue
-        if any((isinstance(t2, type) or
-                isinstance(t2, _GenericAlias) and t2._special) and issubclass(t1, t2)
-               for t2 in all_params - {t1}):
-            all_params.remove(t1)
-    return tuple(t for t in params if t in all_params)
+    return tuple(params)
 
 
 _cleanups = []
@@ -284,20 +277,22 @@ class _Final:
         if '_root' not in kwds:
             raise TypeError("Cannot subclass special typing classes")
 
+class _Immutable:
+    """Mixin to indicate that object should not be copied."""
 
-class _SpecialForm(_Final, _root=True):
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
+
+
+class _SpecialForm(_Final, _Immutable, _root=True):
     """Internal indicator of special typing constructs.
     See _doc instance attribute for specific docs.
     """
 
     __slots__ = ('_name', '_doc')
-
-    def __getstate__(self):
-        return {'name': self._name, 'doc': self._doc}
-
-    def __setstate__(self, state):
-        self._name = state['name']
-        self._doc = state['doc']
 
     def __new__(cls, *args, **kwds):
         """Constructor.
@@ -327,8 +322,8 @@ class _SpecialForm(_Final, _root=True):
     def __repr__(self):
         return 'typing.' + self._name
 
-    def __copy__(self):
-        return self  # Special forms are immutable.
+    def __reduce__(self):
+        return self._name
 
     def __call__(self, *args, **kwds):
         raise TypeError(f"Cannot instantiate {self!r}")
@@ -426,19 +421,6 @@ Union = _SpecialForm('Union', doc=
 
         Union[int, str] == Union[str, int]
 
-    - When two arguments have a subclass relationship, the least
-      derived argument is kept, e.g.::
-
-        class Employee: pass
-        class Manager(Employee): pass
-        Union[int, Employee, Manager] == Union[int, Employee]
-        Union[Manager, int, Employee] == Union[int, Employee]
-        Union[Employee, Manager] == Employee
-
-    - Similar for object::
-
-        Union[int, object] == object
-
     - You cannot subclass or instantiate a union.
     - You can use Optional[X] as a shorthand for Union[X, None].
     """)
@@ -454,9 +436,10 @@ class ForwardRef(_Final, _root=True):
     """Internal wrapper to hold a forward reference."""
 
     __slots__ = ('__forward_arg__', '__forward_code__',
-                 '__forward_evaluated__', '__forward_value__')
+                 '__forward_evaluated__', '__forward_value__',
+                 '__forward_is_argument__')
 
-    def __init__(self, arg):
+    def __init__(self, arg, is_argument=True):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
         try:
@@ -467,6 +450,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_code__ = code
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
+        self.__forward_is_argument__ = is_argument
 
     def _evaluate(self, globalns, localns):
         if not self.__forward_evaluated__ or localns is not globalns:
@@ -478,7 +462,8 @@ class ForwardRef(_Final, _root=True):
                 localns = globalns
             self.__forward_value__ = _type_check(
                 eval(self.__forward_code__, globalns, localns),
-                "Forward references must evaluate to types.")
+                "Forward references must evaluate to types.",
+                is_argument=self.__forward_is_argument__)
             self.__forward_evaluated__ = True
         return self.__forward_value__
 
@@ -495,7 +480,7 @@ class ForwardRef(_Final, _root=True):
         return f'ForwardRef({self.__forward_arg__!r})'
 
 
-class TypeVar(_Final, _root=True):
+class TypeVar(_Final, _Immutable, _root=True):
     """Type variable.
 
     Usage::
@@ -524,7 +509,7 @@ class TypeVar(_Final, _root=True):
     At runtime, isinstance(x, T) and issubclass(C, T) will raise TypeError.
 
     Type variables defined with covariant=True or contravariant=True
-    can be used do declare covariant or contravariant generic types.
+    can be used to declare covariant or contravariant generic types.
     See PEP 484 for more details. By default generic types are invariant
     in all type variables.
 
@@ -535,6 +520,8 @@ class TypeVar(_Final, _root=True):
       T.__covariant__ == False
       T.__contravariant__ = False
       A.__constraints__ == (str, bytes)
+
+    Note that only type variables defined in global scope can be pickled.
     """
 
     __slots__ = ('__name__', '__bound__', '__constraints__',
@@ -557,20 +544,9 @@ class TypeVar(_Final, _root=True):
             self.__bound__ = _type_check(bound, "Bound must be a type.")
         else:
             self.__bound__ = None
-
-    def __getstate__(self):
-        return {'name': self.__name__,
-                'bound': self.__bound__,
-                'constraints': self.__constraints__,
-                'co': self.__covariant__,
-                'contra': self.__contravariant__}
-
-    def __setstate__(self, state):
-        self.__name__ = state['name']
-        self.__bound__ = state['bound']
-        self.__constraints__ = state['constraints']
-        self.__covariant__ = state['co']
-        self.__contravariant__ = state['contra']
+        def_mod = sys._getframe(1).f_globals['__name__']  # for pickling
+        if def_mod != 'typing':
+            self.__module__ = def_mod
 
     def __repr__(self):
         if self.__covariant__:
@@ -581,15 +557,32 @@ class TypeVar(_Final, _root=True):
             prefix = '~'
         return prefix + self.__name__
 
+    def __reduce__(self):
+        return self.__name__
+
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
 # use three special attributes for internal bookkeeping of generic types:
 # * __parameters__ is a tuple of unique free type parameters of a generic
 #   type, for example, Dict[T, T].__parameters__ == (T,);
 # * __origin__ keeps a reference to a type that was subscripted,
-#   e.g., Union[T, int].__origin__ == Union;
+#   e.g., Union[T, int].__origin__ == Union, or the non-generic version of
+#   the type.
 # * __args__ is a tuple of all arguments used in subscripting,
 #   e.g., Dict[T, int].__args__ == (T, int).
+
+
+# Mapping from non-generic type names that have a generic alias in typing
+# but with a different name.
+_normalize_alias = {'list': 'List',
+                    'tuple': 'Tuple',
+                    'dict': 'Dict',
+                    'set': 'Set',
+                    'frozenset': 'FrozenSet',
+                    'deque': 'Deque',
+                    'defaultdict': 'DefaultDict',
+                    'type': 'Type',
+                    'Set': 'AbstractSet'}
 
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
@@ -609,7 +602,7 @@ class _GenericAlias(_Final, _root=True):
         self._special = special
         if special and name is None:
             orig_name = origin.__name__
-            name = orig_name[0].title() + orig_name[1:]
+            name = _normalize_alias.get(orig_name, orig_name)
         self._name = name
         if not isinstance(params, tuple):
             params = (params,)
@@ -699,7 +692,7 @@ class _GenericAlias(_Final, _root=True):
         return (self.__origin__,)
 
     def __getattr__(self, attr):
-        # We are carefull for copy and pickle.
+        # We are careful for copy and pickle.
         # Also for simplicity we just don't relay all dunder names
         if '__origin__' in self.__dict__ and not _is_dunder(attr):
             return getattr(self.__origin__, attr)
@@ -722,6 +715,23 @@ class _GenericAlias(_Final, _root=True):
                 return issubclass(cls.__origin__, self.__origin__)
         raise TypeError("Subscripted generics cannot be used with"
                         " class and instance checks")
+
+    def __reduce__(self):
+        if self._special:
+            return self._name
+
+        if self._name:
+            origin = globals()[self._name]
+        else:
+            origin = self.__origin__
+        if (origin is Callable and
+            not (len(self.__args__) == 2 and self.__args__[0] is Ellipsis)):
+            args = list(self.__args__[:-1]), self.__args__[-1]
+        else:
+            args = tuple(self.__args__)
+            if len(args) == 1 and not isinstance(args[0], tuple):
+                args, = args
+        return operator.getitem, (origin, args)
 
 
 class _VariadicGenericAlias(_GenericAlias, _root=True):
@@ -797,7 +807,11 @@ class Generic:
         if cls is Generic:
             raise TypeError("Type Generic cannot be instantiated; "
                             "it can be used only as a base class")
-        return super().__new__(cls)
+        if super().__new__ is object.__new__ and cls.__init__ is not object.__init__:
+            obj = super().__new__(cls)
+        else:
+            obj = super().__new__(cls, *args, **kwds)
+        return obj
 
     @_tp_cache
     def __class_getitem__(cls, params):
@@ -825,6 +839,7 @@ class Generic:
         return _GenericAlias(cls, params)
 
     def __init_subclass__(cls, *args, **kwargs):
+        super().__init_subclass__(*args, **kwargs)
         tvars = []
         if '__orig_bases__' in cls.__dict__:
             error = Generic in cls.__orig_bases__
@@ -954,7 +969,7 @@ def get_type_hints(obj, globalns=None, localns=None):
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
-                    value = ForwardRef(value)
+                    value = ForwardRef(value, is_argument=False)
                 value = _eval_type(value, base_globals, localns)
                 hints[name] = value
         return hints
@@ -1346,6 +1361,7 @@ class NamedTupleMeta(type):
                                 "follow default field(s) {default_names}"
                                 .format(field_name=field_name,
                                         default_names=', '.join(defaults_dict.keys())))
+        nm_tpl.__new__.__annotations__ = collections.OrderedDict(types)
         nm_tpl.__new__.__defaults__ = tuple(defaults)
         nm_tpl._field_defaults = defaults_dict
         # update from user namespace without overriding special namedtuple attributes

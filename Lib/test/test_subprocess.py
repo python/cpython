@@ -6,6 +6,7 @@ import sys
 import platform
 import signal
 import io
+import itertools
 import os
 import errno
 import tempfile
@@ -1616,13 +1617,29 @@ class POSIXProcessTestCase(BaseTestCase):
 
         self.assertIn(repr(error_data), str(e.exception))
 
-
+    @unittest.skipIf(not os.path.exists('/proc/self/status'),
+                     "need /proc/self/status")
     def test_restore_signals(self):
-        # Code coverage for both values of restore_signals to make sure it
-        # at least does not blow up.
-        # A test for behavior would be complex.  Contributions welcome.
-        subprocess.call([sys.executable, "-c", ""], restore_signals=True)
-        subprocess.call([sys.executable, "-c", ""], restore_signals=False)
+        # Blindly assume that cat exists on systems with /proc/self/status...
+        default_proc_status = subprocess.check_output(
+                ['cat', '/proc/self/status'],
+                restore_signals=False)
+        for line in default_proc_status.splitlines():
+            if line.startswith(b'SigIgn'):
+                default_sig_ign_mask = line
+                break
+        else:
+            self.skipTest("SigIgn not found in /proc/self/status.")
+        restored_proc_status = subprocess.check_output(
+                ['cat', '/proc/self/status'],
+                restore_signals=True)
+        for line in restored_proc_status.splitlines():
+            if line.startswith(b'SigIgn'):
+                restored_sig_ign_mask = line
+                break
+        self.assertNotEqual(default_sig_ign_mask, restored_sig_ign_mask,
+                            msg="restore_signals=True should've unblocked "
+                            "SIGPIPE and friends.")
 
     def test_start_new_session(self):
         # For code coverage of calling setsid().  We don't care if we get an
@@ -2133,6 +2150,55 @@ class POSIXProcessTestCase(BaseTestCase):
         self.check_swap_fds(1, 2, 0)
         self.check_swap_fds(2, 0, 1)
         self.check_swap_fds(2, 1, 0)
+
+    def _check_swap_std_fds_with_one_closed(self, from_fds, to_fds):
+        saved_fds = self._save_fds(range(3))
+        try:
+            for from_fd in from_fds:
+                with tempfile.TemporaryFile() as f:
+                    os.dup2(f.fileno(), from_fd)
+
+            fd_to_close = (set(range(3)) - set(from_fds)).pop()
+            os.close(fd_to_close)
+
+            arg_names = ['stdin', 'stdout', 'stderr']
+            kwargs = {}
+            for from_fd, to_fd in zip(from_fds, to_fds):
+                kwargs[arg_names[to_fd]] = from_fd
+
+            code = textwrap.dedent(r'''
+                import os, sys
+                skipped_fd = int(sys.argv[1])
+                for fd in range(3):
+                    if fd != skipped_fd:
+                        os.write(fd, str(fd).encode('ascii'))
+            ''')
+
+            skipped_fd = (set(range(3)) - set(to_fds)).pop()
+
+            rc = subprocess.call([sys.executable, '-c', code, str(skipped_fd)],
+                                 **kwargs)
+            self.assertEqual(rc, 0)
+
+            for from_fd, to_fd in zip(from_fds, to_fds):
+                os.lseek(from_fd, 0, os.SEEK_SET)
+                read_bytes = os.read(from_fd, 1024)
+                read_fds = list(map(int, read_bytes.decode('ascii')))
+                msg = textwrap.dedent(f"""
+                    When testing {from_fds} to {to_fds} redirection,
+                    parent descriptor {from_fd} got redirected
+                    to descriptor(s) {read_fds} instead of descriptor {to_fd}.
+                """)
+                self.assertEqual([to_fd], read_fds, msg)
+        finally:
+            self._restore_fds(saved_fds)
+
+    # Check that subprocess can remap std fds correctly even
+    # if one of them is closed (#32844).
+    def test_swap_std_fds_with_one_closed(self):
+        for from_fds in itertools.combinations(range(3), 2):
+            for to_fds in itertools.permutations(range(3), 2):
+                self._check_swap_std_fds_with_one_closed(from_fds, to_fds)
 
     def test_surrogates_error_message(self):
         def prepare():
@@ -2755,6 +2821,33 @@ class Win32ProcessTestCase(BaseTestCase):
         # ignored
         subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
                         startupinfo=startupinfo)
+
+    def test_startupinfo_copy(self):
+        # bpo-34044: Popen must not modify input STARTUPINFO structure
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = subprocess.SW_HIDE
+
+        # Call Popen() twice with the same startupinfo object to make sure
+        # that it's not modified
+        for _ in range(2):
+            cmd = [sys.executable, "-c", "pass"]
+            with open(os.devnull, 'w') as null:
+                proc = subprocess.Popen(cmd,
+                                        stdout=null,
+                                        stderr=subprocess.STDOUT,
+                                        startupinfo=startupinfo)
+                with proc:
+                    proc.communicate()
+                self.assertEqual(proc.returncode, 0)
+
+            self.assertEqual(startupinfo.dwFlags,
+                             subprocess.STARTF_USESHOWWINDOW)
+            self.assertIsNone(startupinfo.hStdInput)
+            self.assertIsNone(startupinfo.hStdOutput)
+            self.assertIsNone(startupinfo.hStdError)
+            self.assertEqual(startupinfo.wShowWindow, subprocess.SW_HIDE)
+            self.assertEqual(startupinfo.lpAttributeList, {"handle_list": []})
 
     def test_creationflags(self):
         # creationflags argument

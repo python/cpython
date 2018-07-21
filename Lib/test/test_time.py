@@ -529,19 +529,24 @@ class TimeTestCase(unittest.TestCase):
         # on Windows
         self.assertLess(stop - start, 0.020)
 
+        # bpo-33723: A busy loop of 100 ms should increase thread_time()
+        # by at least 15 ms
+        min_time = 0.015
+        busy_time = 0.100
+
         # thread_time() should include CPU time spent in current thread...
         start = time.thread_time()
-        busy_wait(0.100)
+        busy_wait(busy_time)
         stop = time.thread_time()
-        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+        self.assertGreaterEqual(stop - start, min_time)
 
         # ...but not in other threads
-        t = threading.Thread(target=busy_wait, args=(0.100,))
+        t = threading.Thread(target=busy_wait, args=(busy_time,))
         start = time.thread_time()
         t.start()
         t.join()
         stop = time.thread_time()
-        self.assertLess(stop - start, 0.020)
+        self.assertLess(stop - start, min_time)
 
         info = time.get_clock_info('thread_time')
         self.assertTrue(info.monotonic)

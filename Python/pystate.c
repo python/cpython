@@ -586,7 +586,6 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->exc_state.exc_traceback);
 
     /* The stack of exception states should contain just this thread. */
-    assert(tstate->exc_info->previous_item == NULL);
     if (Py_VerboseFlag && tstate->exc_info != &tstate->exc_state) {
         fprintf(stderr,
           "PyThreadState_Clear: warning: thread still has a generator\n");
@@ -1206,7 +1205,6 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     }
 
     // Fill in the blanks and validate the result.
-    Py_XINCREF(data->obj);
     data->interp = interp->id;
     if (_check_xidata(data) != 0) {
         _PyCrossInterpreterData_Release(data);
@@ -1214,6 +1212,40 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     }
 
     return 0;
+}
+
+static void
+_release_xidata(void *arg)
+{
+    _PyCrossInterpreterData *data = (_PyCrossInterpreterData *)arg;
+    if (data->free != NULL) {
+        data->free(data->data);
+    }
+    Py_XDECREF(data->obj);
+}
+
+static void
+_call_in_interpreter(PyInterpreterState *interp,
+                     void (*func)(void *), void *arg)
+{
+    /* We would use Py_AddPendingCall() if it weren't specific to the
+     * main interpreter (see bpo-33608).  In the meantime we take a
+     * naive approach.
+     */
+    PyThreadState *save_tstate = NULL;
+    if (interp != PyThreadState_Get()->interp) {
+        // XXX Using the "head" thread isn't strictly correct.
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        // XXX Possible GILState issues?
+        save_tstate = PyThreadState_Swap(tstate);
+    }
+
+    func(arg);
+
+    // Switch back.
+    if (save_tstate != NULL) {
+        PyThreadState_Swap(save_tstate);
+    }
 }
 
 void
@@ -1234,24 +1266,8 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         return;
     }
 
-    PyThreadState *save_tstate = NULL;
-    if (interp != PyThreadState_Get()->interp) {
-        // XXX Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        // XXX Possible GILState issues?
-        save_tstate = PyThreadState_Swap(tstate);
-    }
-
     // "Release" the data and/or the object.
-    if (data->free != NULL) {
-        data->free(data->data);
-    }
-    Py_XDECREF(data->obj);
-
-    // Switch back.
-    if (save_tstate != NULL) {
-        PyThreadState_Swap(save_tstate);
-    }
+    _call_in_interpreter(interp, _release_xidata, data);
 }
 
 PyObject *
@@ -1308,6 +1324,10 @@ _PyCrossInterpreterData_Register_Class(PyTypeObject *cls,
     return res;
 }
 
+/* Cross-interpreter objects are looked up by exact match on the class.
+   We can reassess this policy when we move from a global registry to a
+   tp_* slot. */
+
 crossinterpdatafunc
 _PyCrossInterpreterData_Lookup(PyObject *obj)
 {
@@ -1332,19 +1352,81 @@ _PyCrossInterpreterData_Lookup(PyObject *obj)
 
 /* cross-interpreter data for builtin types */
 
+struct _shared_bytes_data {
+    char *bytes;
+    Py_ssize_t len;
+};
+
 static PyObject *
 _new_bytes_object(_PyCrossInterpreterData *data)
 {
-    return PyBytes_FromString((char *)(data->data));
+    struct _shared_bytes_data *shared = (struct _shared_bytes_data *)(data->data);
+    return PyBytes_FromStringAndSize(shared->bytes, shared->len);
 }
 
 static int
 _bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    data->data = (void *)(PyBytes_AS_STRING(obj));
+    struct _shared_bytes_data *shared = PyMem_NEW(struct _shared_bytes_data, 1);
+    if (PyBytes_AsStringAndSize(obj, &shared->bytes, &shared->len) < 0) {
+        return -1;
+    }
+    data->data = (void *)shared;
+    Py_INCREF(obj);
     data->obj = obj;  // Will be "released" (decref'ed) when data released.
     data->new_object = _new_bytes_object;
-    data->free = NULL;  // Do not free the data (it belongs to the object).
+    data->free = PyMem_Free;
+    return 0;
+}
+
+struct _shared_str_data {
+    int kind;
+    const void *buffer;
+    Py_ssize_t len;
+};
+
+static PyObject *
+_new_str_object(_PyCrossInterpreterData *data)
+{
+    struct _shared_str_data *shared = (struct _shared_str_data *)(data->data);
+    return PyUnicode_FromKindAndData(shared->kind, shared->buffer, shared->len);
+}
+
+static int
+_str_shared(PyObject *obj, _PyCrossInterpreterData *data)
+{
+    struct _shared_str_data *shared = PyMem_NEW(struct _shared_str_data, 1);
+    shared->kind = PyUnicode_KIND(obj);
+    shared->buffer = PyUnicode_DATA(obj);
+    shared->len = PyUnicode_GET_LENGTH(obj) - 1;
+    data->data = (void *)shared;
+    Py_INCREF(obj);
+    data->obj = obj;  // Will be "released" (decref'ed) when data released.
+    data->new_object = _new_str_object;
+    data->free = PyMem_Free;
+    return 0;
+}
+
+static PyObject *
+_new_long_object(_PyCrossInterpreterData *data)
+{
+    return PyLong_FromLongLong((int64_t)(data->data));
+}
+
+static int
+_long_shared(PyObject *obj, _PyCrossInterpreterData *data)
+{
+    int64_t value = PyLong_AsLongLong(obj);
+    if (value == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError, "try sending as bytes");
+        }
+        return -1;
+    }
+    data->data = (void *)value;
+    data->obj = NULL;
+    data->new_object = _new_long_object;
+    data->free = NULL;
     return 0;
 }
 
@@ -1374,9 +1456,19 @@ _register_builtins_for_crossinterpreter_data(void)
         Py_FatalError("could not register None for cross-interpreter sharing");
     }
 
+    // int
+    if (_register_xidata(&PyLong_Type, _long_shared) != 0) {
+        Py_FatalError("could not register int for cross-interpreter sharing");
+    }
+
     // bytes
     if (_register_xidata(&PyBytes_Type, _bytes_shared) != 0) {
         Py_FatalError("could not register bytes for cross-interpreter sharing");
+    }
+
+    // str
+    if (_register_xidata(&PyUnicode_Type, _str_shared) != 0) {
+        Py_FatalError("could not register str for cross-interpreter sharing");
     }
 }
 

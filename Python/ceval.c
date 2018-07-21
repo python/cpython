@@ -69,6 +69,7 @@ static PyObject * unicode_concatenate(PyObject *, PyObject *,
 static PyObject * special_lookup(PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyObject *func, PyObject *vararg);
 static void format_kwargs_mapping_error(PyObject *func, PyObject *kwargs);
+static void format_awaitable_error(PyTypeObject *, int);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -927,11 +928,18 @@ main_loop:
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) {
-            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY ||
-                _Py_OPCODE(*next_instr) == YIELD_FROM) {
-                /* Two cases where we skip running signal handlers and other
+            opcode = _Py_OPCODE(*next_instr);
+            if (opcode == SETUP_FINALLY ||
+                opcode == SETUP_WITH ||
+                opcode == BEFORE_ASYNC_WITH ||
+                opcode == YIELD_FROM) {
+                /* Few cases where we skip running signal handlers and other
                    pending calls:
-                   - If we're about to enter the try: of a try/finally (not
+                   - If we're about to enter the 'with:'. It will prevent
+                     emitting a resource warning in the common idiom
+                     'with open(path) as file:'.
+                   - If we're about to enter the 'async with:'.
+                   - If we're about to enter the 'try:' of a try/finally (not
                      *very* useful, but might help in some cases and it's
                      traditional)
                    - If we're resuming a chain of nested 'yield from' or
@@ -1736,6 +1744,11 @@ main_loop:
             PyObject *iterable = TOP();
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
 
+            if (iter == NULL) {
+                format_awaitable_error(Py_TYPE(iterable),
+                                       _Py_OPCODE(next_instr[-2]));
+            }
+
             Py_DECREF(iterable);
 
             if (iter != NULL && PyCoro_CheckExact(iter)) {
@@ -1937,6 +1950,26 @@ main_loop:
             }
             else {
                 assert(PyExceptionClass_Check(exc));
+                PyObject *val = POP();
+                PyObject *tb = POP();
+                PyErr_Restore(exc, val, tb);
+                goto exception_unwind;
+            }
+        }
+
+        TARGET(END_ASYNC_FOR) {
+            PyObject *exc = POP();
+            assert(PyExceptionClass_Check(exc));
+            if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
+                PyTryBlock *b = PyFrame_BlockPop(f);
+                assert(b->b_type == EXCEPT_HANDLER);
+                Py_DECREF(exc);
+                UNWIND_EXCEPT_HANDLER(b);
+                Py_DECREF(POP());
+                JUMPBY(oparg);
+                FAST_DISPATCH();
+            }
+            else {
                 PyObject *val = POP();
                 PyObject *tb = POP();
                 PyErr_Restore(exc, val, tb);
@@ -3635,7 +3668,7 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
 }
 
 /* This is gonna seem *real weird*, but if you put some other code between
-   PyEval_EvalFrame() and PyEval_EvalCodeEx() you will need to adjust
+   PyEval_EvalFrame() and _PyEval_EvalFrameDefault() you will need to adjust
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
 
 PyObject *
@@ -4817,6 +4850,7 @@ import_all_from(PyObject *locals, PyObject *v)
 {
     _Py_IDENTIFIER(__all__);
     _Py_IDENTIFIER(__dict__);
+    _Py_IDENTIFIER(__name__);
     PyObject *all, *dict, *name, *value;
     int skip_leading_underscores = 0;
     int pos, err;
@@ -4849,7 +4883,32 @@ import_all_from(PyObject *locals, PyObject *v)
                 PyErr_Clear();
             break;
         }
-        if (skip_leading_underscores && PyUnicode_Check(name)) {
+        if (!PyUnicode_Check(name)) {
+            PyObject *modname = _PyObject_GetAttrId(v, &PyId___name__);
+            if (modname == NULL) {
+                Py_DECREF(name);
+                err = -1;
+                break;
+            }
+            if (!PyUnicode_Check(modname)) {
+                PyErr_Format(PyExc_TypeError,
+                             "module __name__ must be a string, not %.100s",
+                             Py_TYPE(modname)->tp_name);
+            }
+            else {
+                PyErr_Format(PyExc_TypeError,
+                             "%s in %U.%s must be str, not %.100s",
+                             skip_leading_underscores ? "Key" : "Item",
+                             modname,
+                             skip_leading_underscores ? "__dict__" : "__all__",
+                             Py_TYPE(name)->tp_name);
+            }
+            Py_DECREF(modname);
+            Py_DECREF(name);
+            err = -1;
+            break;
+        }
+        if (skip_leading_underscores) {
             if (PyUnicode_READY(name) == -1) {
                 Py_DECREF(name);
                 err = -1;
@@ -4936,6 +4995,25 @@ format_exc_unbound(PyCodeObject *co, int oparg)
                                 PyTuple_GET_SIZE(co->co_cellvars));
         format_exc_check_arg(PyExc_NameError,
                              UNBOUNDFREE_ERROR_MSG, name);
+    }
+}
+
+static void
+format_awaitable_error(PyTypeObject *type, int prevopcode)
+{
+    if (type->tp_as_async == NULL || type->tp_as_async->am_await == NULL) {
+        if (prevopcode == BEFORE_ASYNC_WITH) {
+            PyErr_Format(PyExc_TypeError,
+                         "'async with' received an object from __aenter__ "
+                         "that does not implement __await__: %.100s",
+                         type->tp_name);
+        }
+        else if (prevopcode == WITH_CLEANUP_START) {
+            PyErr_Format(PyExc_TypeError,
+                         "'async with' received an object from __aexit__ "
+                         "that does not implement __await__: %.100s",
+                         type->tp_name);
+        }
     }
 }
 

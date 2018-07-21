@@ -27,7 +27,7 @@ class OpcodeTest(unittest.TestCase):
             with open(ann_module.__file__) as f:
                 txt = f.read()
             co = compile(txt, ann_module.__file__, 'exec')
-            self.assertEqual(co.co_firstlineno, 8)
+            self.assertEqual(co.co_firstlineno, 6)
         except OSError:
             pass
 

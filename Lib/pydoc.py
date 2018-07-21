@@ -1747,8 +1747,9 @@ class Helper:
     }
     # Either add symbols to this dictionary or to the symbols dictionary
     # directly: Whichever is easier. They are merged later.
+    _strprefixes = [p + q for p in ('b', 'f', 'r', 'u') for q in ("'", '"')]
     _symbols_inverse = {
-        'STRINGS' : ("'", "'''", "r'", "b'", '"""', '"', 'r"', 'b"'),
+        'STRINGS' : ("'", "'''", '"', '"""', *_strprefixes),
         'OPERATORS' : ('+', '-', '*', '**', '/', '//', '%', '<<', '>>', '&',
                        '|', '^', '~', '<', '>', '<=', '>=', '==', '!=', '<>'),
         'COMPARISON' : ('<', '>', '<=', '>=', '==', '!=', '<>'),
@@ -1910,7 +1911,13 @@ has the same effect as typing a particular string at the help> prompt.
                 if not request: break
             except (KeyboardInterrupt, EOFError):
                 break
-            request = replace(request, '"', '', "'", '').strip()
+            request = request.strip()
+
+            # Make sure significant trailing quoting marks of literals don't
+            # get deleted while cleaning input
+            if (len(request) > 2 and request[0] == request[-1] in ("'", '"')
+                    and request[0] not in request[1:-1]):
+                request = request[1:-1]
             if request.lower() in ('q', 'quit'): break
             if request == 'help':
                 self.intro()
@@ -2614,18 +2621,50 @@ def browse(port=0, *, open_browser=True, hostname='localhost'):
 def ispath(x):
     return isinstance(x, str) and x.find(os.sep) >= 0
 
+def _get_revised_path(given_path, argv0):
+    """Ensures current directory is on returned path, and argv0 directory is not
+
+    Exception: argv0 dir is left alone if it's also pydoc's directory.
+
+    Returns a new path entry list, or None if no adjustment is needed.
+    """
+    # Scripts may get the current directory in their path by default if they're
+    # run with the -m switch, or directly from the current directory.
+    # The interactive prompt also allows imports from the current directory.
+
+    # Accordingly, if the current directory is already present, don't make
+    # any changes to the given_path
+    if '' in given_path or os.curdir in given_path or os.getcwd() in given_path:
+        return None
+
+    # Otherwise, add the current directory to the given path, and remove the
+    # script directory (as long as the latter isn't also pydoc's directory.
+    stdlib_dir = os.path.dirname(__file__)
+    script_dir = os.path.dirname(argv0)
+    revised_path = given_path.copy()
+    if script_dir in given_path and not os.path.samefile(script_dir, stdlib_dir):
+        revised_path.remove(script_dir)
+    revised_path.insert(0, os.getcwd())
+    return revised_path
+
+
+# Note: the tests only cover _get_revised_path, not _adjust_cli_path itself
+def _adjust_cli_sys_path():
+    """Ensures current directory is on sys.path, and __main__ directory is not.
+
+    Exception: __main__ dir is left alone if it's also pydoc's directory.
+    """
+    revised_path = _get_revised_path(sys.path, sys.argv[0])
+    if revised_path is not None:
+        sys.path[:] = revised_path
+
+
 def cli():
     """Command-line interface (looks at sys.argv to decide what to do)."""
     import getopt
     class BadUsage(Exception): pass
 
-    # Scripts don't get the current directory in their path by default
-    # unless they are run with the '-m' switch
-    if '' not in sys.path:
-        scriptdir = os.path.dirname(sys.argv[0])
-        if scriptdir in sys.path:
-            sys.path.remove(scriptdir)
-        sys.path.insert(0, '.')
+    _adjust_cli_sys_path()
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'bk:n:p:w')

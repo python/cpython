@@ -114,6 +114,9 @@ _PyOS_WindowsConsoleReadline(HANDLE hStdIn)
     wbuf = wbuf_local;
     wbuflen = sizeof(wbuf_local) / sizeof(wbuf_local[0]) - 1;
     while (1) {
+        if (PyOS_InputHook != NULL) {
+            (void)(PyOS_InputHook)();
+        }
         if (!ReadConsoleW(hStdIn, &wbuf[total_read], wbuflen - total_read, &n_read, NULL)) {
             err = GetLastError();
             goto exit;
