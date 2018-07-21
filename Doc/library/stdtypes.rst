@@ -438,11 +438,10 @@ Notes:
    overflow check.
 
 (4)
-   Each bitwise operation has the same result as though carried out in two's
-   complement with an infinite number of sign bits. In practice, performing the
-   calculation with one extra sign extension bit (a bit-width of
-   ``1 + max(x.bit_length(), y.bit_length()``) is sufficient to get the
-   expected result.
+   Performing these calculations with at least one extra sign extension bit in
+   a finite two's complement representation (a working bit-width of
+   ``1 + max(x.bit_length(), y.bit_length()`` or more) is sufficient to get the
+   same result as if there were an infinite number of sign bits.
 
 
 Additional Methods on Integer Types
