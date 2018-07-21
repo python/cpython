@@ -1130,6 +1130,11 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(repr(repeat('a', times=-1)), "repeat('a', 0)")
         self.assertEqual(repr(repeat('a', times=-2)), "repeat('a', 0)")
 
+    def test_repeat_with_none_times(self):
+        self.assertEqual(repr(repeat('a')), "repeat('a')")
+        self.assertEqual(repr(repeat('a', None)), "repeat('a')")
+        self.assertEqual(repr(repeat('a', times=None)), "repeat('a')")
+
     def test_map(self):
         self.assertEqual(list(map(operator.pow, range(3), range(1,7))),
                          [0**1, 1**2, 2**3])

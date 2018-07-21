@@ -4192,18 +4192,28 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     repeatobject *ro;
     PyObject *element;
-    Py_ssize_t cnt = -1, n_kwds = 0;
+    PyObject *times = NULL;
+    Py_ssize_t cnt = -1;
     static char *kwargs[] = {"object", "times", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:repeat", kwargs,
-                                     &element, &cnt))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:repeat", kwargs,
+                                     &element, &times))
         return NULL;
 
-    if (kwds != NULL)
-        n_kwds = PyDict_GET_SIZE(kwds);
-    /* Does user supply times argument? */
-    if ((PyTuple_Size(args) + n_kwds == 2) && cnt < 0)
-        cnt = 0;
+    if (times != NULL && times != Py_None) {
+        if (PyLong_CheckExact(times)) {
+            cnt = PyLong_AsSsize_t(times);
+            if (cnt == -1 && PyErr_Occurred()) {
+                return NULL;
+            }
+            if (cnt < 0) cnt = 0;
+        } else {
+            PyErr_Format(PyExc_TypeError,
+                         "'times' requires an integer types not %.200s",
+                         Py_TYPE(times)->tp_name);
+            return NULL;
+        }
+    }
 
     ro = (repeatobject *)type->tp_alloc(type, 0);
     if (ro == NULL)
