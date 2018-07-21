@@ -1,0 +1,2 @@
+Report system load when running test suite on Windows. Patch by Ammar Askar.
+Based on prior work by Jeremy Kloth.
