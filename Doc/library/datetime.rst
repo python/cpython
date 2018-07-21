@@ -1219,10 +1219,10 @@ Instance methods:
    YYYY-MM-DDTHH:MM:SS.mmmmmm or, if :attr:`microsecond` is 0,
    YYYY-MM-DDTHH:MM:SS
 
-   If :meth:`utcoffset` does not return ``None``, a 6-character string is
-   appended, giving the UTC offset in (signed) hours and minutes:
-   YYYY-MM-DDTHH:MM:SS.mmmmmm+HH:MM or, if :attr:`microsecond` is 0
-   YYYY-MM-DDTHH:MM:SS+HH:MM
+   If :meth:`utcoffset` does not return ``None``, a string is
+   appended, giving the UTC offset:
+   YYYY-MM-DDTHH:MM:SS.mmmmmm+HH:MM[:SS[.uuuuuu]] or, if :attr:`microsecond`
+   is 0 YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.uuuuuu]].
 
    The optional argument *sep* (default ``'T'``) is a one-character separator,
    placed between the date and time portions of the result.  For example,
@@ -1551,8 +1551,8 @@ Instance methods:
 
    Return a string representing the time in ISO 8601 format, HH:MM:SS.mmmmmm or, if
    :attr:`microsecond` is 0, HH:MM:SS If :meth:`utcoffset` does not return ``None``, a
-   6-character string is appended, giving the UTC offset in (signed) hours and
-   minutes: HH:MM:SS.mmmmmm+HH:MM or, if self.microsecond is 0, HH:MM:SS+HH:MM
+   string is appended, giving the UTC offset: HH:MM:SS.mmmmmm+HH:MM[:SS[.uuuuuu]]
+   or, if self.microsecond is 0, HH:MM:SS+HH:MM[:SS[.uuuuuu]].
 
    The optional argument *timespec* specifies the number of additional
    components of the time to include (the default is ``'auto'``).
@@ -2092,9 +2092,10 @@ format codes.
 |           | number, zero-padded on the     | 999999                 |       |
 |           | left.                          |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%z``    | UTC offset in the form         | (empty), +0000, -0400, | \(6)  |
-|           | ±HHMM[SS] (empty string if the | +1030                  |       |
-|           | object is naive).              |                        |       |
+| ``%z``    | UTC offset in the form         | (empty), +0000,        | \(6)  |
+|           | ±HHMM[SS[.uuuuuu]] (empty      | -0400, +1030,          |       |
+|           | string if the object is        | +063415,               |       |
+|           | naive).                        | -030712.345216         |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%Z``    | Time zone name (empty string   | (empty), UTC, EST, CST |       |
 |           | if the object is naive).       |                        |       |
@@ -2210,7 +2211,7 @@ Notes:
       ±HHMM[SS[.uuuuuu]], where HH is a 2-digit string giving the number of UTC
       offset hours, and MM is a 2-digit string giving the number of UTC offset
       minutes, SS is a 2-digit string giving the number of UTC offset
-      seconds and uuuuuu is a 2-digit string giving the number of UTC
+      seconds and uuuuuu is a 6-digit string giving the number of UTC
       offset microseconds.  The uuuuuu part is omitted when the offset is a
       whole number of minutes and both the uuuuuu and the SS parts are omitted
       when the offset is a whole number of minutes.  For example, if
