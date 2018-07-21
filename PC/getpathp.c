@@ -563,8 +563,8 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
 
     wcscpy_s(prefix, MAXPATHLEN+1, path);
     reduce(prefix);
-    *isolated = 1;
-    *nosite = 1;
+    config->isolated = 1;
+    config->no_site_import = 1;
 
     size_t bufsiz = MAXPATHLEN;
     size_t prefixlen = wcslen(prefix);
@@ -680,11 +680,7 @@ calculate_pth_file(_PyPathConfig *config, wchar_t *prefix)
         return 0;
     }
 
-    /* FIXME, bpo-32030: Global configuration variables should not be modified
-       here, _PyPathConfig_Init() is called early in Python initialization:
-       see pymain_cmdline(). */
-    return read_pth_file(config, prefix, spbuffer,
-                         &Py_IsolatedFlag, &Py_NoSiteFlag);
+    return read_pth_file(config, prefix, spbuffer);
 }
 
 
