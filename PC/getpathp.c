@@ -553,8 +553,7 @@ get_program_full_path(const _PyCoreConfig *core_config,
 
 
 static int
-read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
-              int *isolated, int *nosite)
+read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
 {
     FILE *sp_file = _Py_wfopen(path, L"r");
     if (sp_file == NULL) {
@@ -589,9 +588,10 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
         }
 
         if (strcmp(line, "import site") == 0) {
-            *nosite = 0;
+            config->no_site_import = 0;
             continue;
-        } else if (strncmp(line, "import ", 7) == 0) {
+        }
+        else if (strncmp(line, "import ", 7) == 0) {
             Py_FatalError("only 'import site' is supported in ._pth file");
         }
 
