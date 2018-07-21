@@ -1503,56 +1503,71 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
         else if (PyList_Check(result))
         {
             char* data;
-            Py_ssize_t size;
-            int i, listlen;
+            Py_ssize_t size, listlen, i;
             DBT* dbts;
 
             listlen = PyList_Size(result);
 
-            dbts = (DBT *)malloc(sizeof(DBT) * listlen);
-
-            for (i=0; i<listlen; i++)
-            {
-                if (!PyBytes_Check(PyList_GetItem(result, i)))
-                {
-                    PyErr_SetString(
-                       PyExc_TypeError,
+            if (listlen > PY_SIZE_MAX / sizeof(DBT)) {
+                PyErr_NoMemory();
+                PyErr_Print();
+            }
+            else {
+                dbts = (DBT *)malloc(sizeof(DBT) * listlen);
+                if (dbts == NULL) {
+                    PyErr_NoMemory();
+                    PyErr_Print();
+                }
+                else {
+                    for (i = 0; i < listlen; i++) {
+                        if (!PyBytes_Check(PyList_GetItem(result, i))) {
+                            PyErr_SetString(PyExc_TypeError,
 #if (PY_VERSION_HEX < 0x03000000)
 "The list returned by DB->associate callback should be a list of strings.");
 #else
 "The list returned by DB->associate callback should be a list of bytes.");
 #endif
-                    PyErr_Print();
-                }
+                            break;
+                        }
 
-                PyBytes_AsStringAndSize(
-                    PyList_GetItem(result, i),
-                    &data, &size);
+                        if (PyBytes_AsStringAndSize(PyList_GetItem(result, i),
+                                                    &data, &size) < 0) {
+                            break;
+                        }
 
-                CLEAR_DBT(dbts[i]);
-                dbts[i].data = malloc(size);          /* TODO, check this */
+                        CLEAR_DBT(dbts[i]);
+                        dbts[i].data = malloc(size);
+                        if (dbts[i].data) {
+                            memcpy(dbts[i].data, data, size);
+                            dbts[i].size = size;
+                            dbts[i].ulen = dbts[i].size;
+                            /* DB will free. */
+                            dbts[i].flags = DB_DBT_APPMALLOC;
+                        }
+                        else {
+                            PyErr_SetString(PyExc_MemoryError,
+                                            "malloc failed in "
+                                            "_db_associateCallback (list)");
+                            break;
+                        }
+                    }
+                    if (PyErr_Occurred()) {
+                        PyErr_Print();
+                        while (i--) {
+                            free(dbts[i].data);
+                        }
+                        free(dbts);
+                    }
+                    else {
+                        CLEAR_DBT(*secKey);
 
-                if (dbts[i].data)
-                {
-                    memcpy(dbts[i].data, data, size);
-                    dbts[i].size = size;
-                    dbts[i].ulen = dbts[i].size;
-                    dbts[i].flags = DB_DBT_APPMALLOC;  /* DB will free */
-                }
-                else
-                {
-                    PyErr_SetString(PyExc_MemoryError,
-                        "malloc failed in _db_associateCallback (list)");
-                    PyErr_Print();
+                        secKey->data = dbts;
+                        secKey->size = listlen;
+                        secKey->flags = DB_DBT_APPMALLOC | DB_DBT_MULTIPLE;
+                        retval = 0;
+                    }
                 }
             }
-
-            CLEAR_DBT(*secKey);
-
-            secKey->data = dbts;
-            secKey->size = listlen;
-            secKey->flags = DB_DBT_APPMALLOC | DB_DBT_MULTIPLE;
-            retval = 0;
         }
 #endif
         else {
