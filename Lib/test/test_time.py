@@ -496,18 +496,23 @@ class TimeTestCase(unittest.TestCase):
         # on Windows
         self.assertLess(stop - start, 0.020)
 
+        # bpo-33723: A busy loop of 100 ms should increase process_time()
+        # by at least 15 ms
+        min_time = 0.015
+        busy_time = 0.100
+
         # process_time() should include CPU time spent in any thread
         start = time.process_time()
-        busy_wait(0.100)
+        busy_wait(busy_time)
         stop = time.process_time()
-        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+        self.assertGreaterEqual(stop - start, min_time)
 
-        t = threading.Thread(target=busy_wait, args=(0.100,))
+        t = threading.Thread(target=busy_wait, args=(busy_time,))
         start = time.process_time()
         t.start()
         t.join()
         stop = time.process_time()
-        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+        self.assertGreaterEqual(stop - start, min_time)
 
         info = time.get_clock_info('process_time')
         self.assertTrue(info.monotonic)
