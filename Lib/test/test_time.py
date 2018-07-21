@@ -872,19 +872,19 @@ class CPyTimeTestCase:
         ns_timestamps = self._rounding_values(use_float)
         valid_values = convert_values(ns_timestamps)
         for time_rnd, decimal_rnd in ROUNDING_MODES :
-            context = decimal.getcontext()
-            context.rounding = decimal_rnd
+            with decimal.localcontext() as context:
+                context.rounding = decimal_rnd
 
-            for value in valid_values:
-                debug_info = {'value': value, 'rounding': decimal_rnd}
-                try:
-                    result = pytime_converter(value, time_rnd)
-                    expected = expected_func(value)
-                except Exception as exc:
-                    self.fail("Error on timestamp conversion: %s" % debug_info)
-                self.assertEqual(result,
-                                 expected,
-                                 debug_info)
+                for value in valid_values:
+                    debug_info = {'value': value, 'rounding': decimal_rnd}
+                    try:
+                        result = pytime_converter(value, time_rnd)
+                        expected = expected_func(value)
+                    except Exception as exc:
+                        self.fail("Error on timestamp conversion: %s" % debug_info)
+                    self.assertEqual(result,
+                                     expected,
+                                     debug_info)
 
         # test overflow
         ns = self.OVERFLOW_SECONDS * SEC_TO_NS
