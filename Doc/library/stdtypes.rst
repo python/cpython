@@ -4209,9 +4209,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       :meth:`popitem` raises a :exc:`KeyError`.
 
       .. versionchanged:: 3.7
-
-      LIFO order is now guaranteed. In prior versions, :meth:`popitem` would
-      return an arbitrary key/value pair.
+         LIFO order is now guaranteed. In prior versions, :meth:`popitem` would
+         return an arbitrary key/value pair.
 
    .. method:: setdefault(key[, default])
 
