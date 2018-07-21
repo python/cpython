@@ -71,6 +71,9 @@ typedef struct {
     wchar_t *base_prefix;   /* sys.base_prefix */
     wchar_t *exec_prefix;   /* sys.exec_prefix */
     wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
+#ifdef MS_WINDOWS
+    wchar_t *dll_path;      /* Windows DLL path */
+#endif
 
     /* Private fields */
     int _disable_importlib; /* Needed by freeze_importlib */
