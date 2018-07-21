@@ -1690,6 +1690,17 @@ expression support in the :mod:`re` module).
    Call :func:`keyword.iskeyword` to test whether string ``s`` is a reserved
    identifier, such as :keyword:`def` and :keyword:`class`.
 
+   Example:
+   ::
+
+      >>> from keyword import iskeyword
+
+      >>> 'hello'.isidentifier(), iskeyword('hello')
+      True, False
+      >>> 'def'.isidentifier(), iskeyword('def')
+      True, True
+
+
 .. method:: str.islower()
 
    Return true if all cased characters [4]_ in the string are lowercase and
