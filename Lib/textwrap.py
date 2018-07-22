@@ -428,8 +428,11 @@ def dedent(text):
     # all lines.
     margin = None
     text = _whitespace_only_re.sub('', text)
-    indents = [line[:-len(line.lstrip())] for line in text.splitlines() if
-               line.lstrip()]
+    indents = list()
+    for line in text.splitlines():
+        lstr = line.lstrip()
+        if lstr:
+            indents.append(line[:-len(lstr)])
     for indent in indents:
         if margin is None:
             margin = indent
@@ -458,10 +461,9 @@ def dedent(text):
             assert not line or line.startswith(margin), \
                    "line = %r, margin = %r" % (line, margin)
 
+    margin_length = 0
     if margin:
         margin_length = len(margin)
-    else:
-        margin_length = 0
     text = ''.join([
         line[margin_length:] if line.lstrip()
         else line[len(line.splitlines()[0]):]

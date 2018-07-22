@@ -1,0 +1,2 @@
+Make textwrap.dedent() consistent with str.splitlines(True) and str.strip().
+Patch by Sanyam Khurana.
