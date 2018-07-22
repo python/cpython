@@ -2411,8 +2411,8 @@ unpack_stack(PyObject *const *args, Py_ssize_t nargs, const char *name,
         if (name != NULL)
             PyErr_Format(
                 PyExc_TypeError,
-                "%.200s expected %s%zd arguments, got %zd",
-                name, (min == max ? "" : "at least "), min, nargs);
+                "%.200s expected %s%zd argument%s, got %zd",
+                name, (min == max ? "" : "at least "), min, min == 1 ? "" : "s", nargs);
         else
             PyErr_Format(
                 PyExc_TypeError,
@@ -2430,8 +2430,8 @@ unpack_stack(PyObject *const *args, Py_ssize_t nargs, const char *name,
         if (name != NULL)
             PyErr_Format(
                 PyExc_TypeError,
-                "%.200s expected %s%zd arguments, got %zd",
-                name, (min == max ? "" : "at most "), max, nargs);
+                "%.200s expected %s%zd argument%s, got %zd",
+                name, (min == max ? "" : "at most "), max, max == 1 ? "" : "s", nargs);
         else
             PyErr_Format(
                 PyExc_TypeError,
