@@ -203,6 +203,11 @@ static char *BoolOp_fields[]={
     "op",
     "values",
 };
+static PyTypeObject *NamedExpr_type;
+static char *NamedExpr_fields[]={
+    "target",
+    "value",
+};
 static PyTypeObject *BinOp_type;
 _Py_IDENTIFIER(left);
 _Py_IDENTIFIER(right);
@@ -872,6 +877,8 @@ static int init_types(void)
     if (!add_attributes(expr_type, expr_attributes, 4)) return 0;
     BoolOp_type = make_type("BoolOp", expr_type, BoolOp_fields, 2);
     if (!BoolOp_type) return 0;
+    NamedExpr_type = make_type("NamedExpr", expr_type, NamedExpr_fields, 2);
+    if (!NamedExpr_type) return 0;
     BinOp_type = make_type("BinOp", expr_type, BinOp_fields, 3);
     if (!BinOp_type) return 0;
     UnaryOp_type = make_type("UnaryOp", expr_type, UnaryOp_fields, 2);
@@ -1769,6 +1776,32 @@ BoolOp(boolop_ty op, asdl_seq * values, int lineno, int col_offset, int
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
     p->end_col_offset = end_col_offset;
+    return p;
+}
+
+expr_ty
+NamedExpr(expr_ty target, expr_ty value, int lineno, int col_offset, PyArena
+          *arena)
+{
+    expr_ty p;
+    if (!target) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field target is required for NamedExpr");
+        return NULL;
+    }
+    if (!value) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field value is required for NamedExpr");
+        return NULL;
+    }
+    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = NamedExpr_kind;
+    p->v.NamedExpr.target = target;
+    p->v.NamedExpr.value = value;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
     return p;
 }
 
@@ -3059,6 +3092,20 @@ ast2obj_expr(void* _o)
         value = ast2obj_list(o->v.BoolOp.values, ast2obj_expr);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_values, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case NamedExpr_kind:
+        result = PyType_GenericNew(NamedExpr_type, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(o->v.NamedExpr.target);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_target, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->v.NamedExpr.value);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -5895,6 +5942,44 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (*out == NULL) goto failed;
         return 0;
     }
+    isinstance = PyObject_IsInstance(obj, (PyObject*)NamedExpr_type);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        expr_ty target;
+        expr_ty value;
+
+        if (_PyObject_LookupAttrId(obj, &PyId_target, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from NamedExpr");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &target, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttrId(obj, &PyId_value, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from NamedExpr");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &value, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = NamedExpr(target, value, lineno, col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
     isinstance = PyObject_IsInstance(obj, (PyObject*)BinOp_type);
     if (isinstance == -1) {
         return 1;
@@ -8251,6 +8336,8 @@ PyInit__ast(void)
     if (PyDict_SetItemString(d, "expr", (PyObject*)expr_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "BoolOp", (PyObject*)BoolOp_type) < 0) return
         NULL;
+    if (PyDict_SetItemString(d, "NamedExpr", (PyObject*)NamedExpr_type) < 0)
+        return NULL;
     if (PyDict_SetItemString(d, "BinOp", (PyObject*)BinOp_type) < 0) return
         NULL;
     if (PyDict_SetItemString(d, "UnaryOp", (PyObject*)UnaryOp_type) < 0) return
