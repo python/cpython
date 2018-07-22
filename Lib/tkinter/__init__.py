@@ -2767,10 +2767,10 @@ class Listbox(Widget, XView, YView):
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a listbox widget with the parent MASTER.
 
-        Valid resource names: activestyle, background, bd, bg, borderwidth, 
-        cursor, disabledforeground, exportselection, fg, font, foreground, height, 
-        highlightbackground, highlightcolor, highlightthickness, listvariable, 
-        relief, selectbackground, selectborderwidth, selectforeground, selectmode, 
+        Valid resource names: activestyle, background, bd, bg, borderwidth,
+        cursor, disabledforeground, exportselection, fg, font, foreground, height,
+        highlightbackground, highlightcolor, highlightthickness, listvariable,
+        relief, selectbackground, selectborderwidth, selectforeground, selectmode,
         setgrid, state, takefocus, width, xscrollcommand, yscrollcommand."""
         Widget.__init__(self, master, 'listbox', cnf, kw)
     def activate(self, index):
