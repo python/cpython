@@ -83,6 +83,7 @@ with_item: test ['as' expr]
 except_clause: 'except' [test ['as' NAME]]
 suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
 
+namedexpr_test: test [':=' test]
 test: or_test ['if' or_test 'else' test] | lambdef
 test_nocond: or_test | lambdef_nocond
 lambdef: 'lambda' [varargslist] ':' test
@@ -108,7 +109,7 @@ atom: ('(' [yield_expr|testlist_comp] ')' |
        '[' [testlist_comp] ']' |
        '{' [dictorsetmaker] '}' |
        NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
-testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+testlist_comp: (namedexpr_test|star_expr) ( comp_for | (',' (namedexpr_test|star_expr))* [','] )
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
 subscript: test | [test] ':' [test] [sliceop]
