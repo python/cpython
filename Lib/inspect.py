@@ -176,13 +176,19 @@ def isgeneratorfunction(object):
     return bool((isfunction(object) or ismethod(object)) and
                 object.__code__.co_flags & CO_GENERATOR)
 
+
+#### LISA this should be in another commit
 def iscoroutinefunction(object):
     """Return true if the object is a coroutine function.
 
     Coroutine functions are defined with "async def" syntax.
     """
-    return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_COROUTINE)
+    try:
+        return bool((isfunction(object) or ismethod(object)) and
+                    object.__code__.co_flags & CO_COROUTINE)
+    except AttributeError:
+        pass # FIXME
+
 
 def isasyncgenfunction(object):
     """Return true if the object is an asynchronous generator function.
