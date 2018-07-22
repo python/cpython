@@ -2257,7 +2257,7 @@ static PyObject*
 DB_join(DBObject* self, PyObject* args)
 {
     int err, flags=0;
-    int length, x;
+    Py_ssize_t length, x;
     PyObject* cursorsObj;
     DBC** cursors;
     DBC*  dbc;
@@ -2274,6 +2274,12 @@ DB_join(DBObject* self, PyObject* args)
     }
 
     length = PyObject_Length(cursorsObj);
+    if (length == -1) {
+        return NULL;
+    }
+    if (length >= PY_SSIZE_T_MAX / sizeof(DBC*)) {
+        return PyErr_NoMemory();
+    }
     cursors = malloc((length+1) * sizeof(DBC*));
     if (!cursors) {
         PyErr_NoMemory();
