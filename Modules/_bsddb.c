@@ -2277,7 +2277,7 @@ DB_join(DBObject* self, PyObject* args)
     if (length == -1) {
         return NULL;
     }
-    if (length >= PY_SIZE_MAX / sizeof(DBC*)) {
+    if (length >= PY_SSIZE_T_MAX / sizeof(DBC*)) {
         return PyErr_NoMemory();
     }
     cursors = malloc((length+1) * sizeof(DBC*));
