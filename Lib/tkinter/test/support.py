@@ -1,3 +1,4 @@
+import functools
 import re
 import tkinter
 import unittest
@@ -54,8 +55,19 @@ import _tkinter
 tcl_version = tuple(map(int, _tkinter.TCL_VERSION.split('.')))
 
 def requires_tcl(*version):
-    return unittest.skipUnless(tcl_version >= version,
+    if len(version) <= 2:
+        return unittest.skipUnless(tcl_version >= version,
             'requires Tcl version >= ' + '.'.join(map(str, version)))
+
+    def deco(test):
+        @functools.wraps(test)
+        def newtest(self):
+            if get_tk_patchlevel() < (8, 6, 5):
+                self.skipTest('requires Tcl version >= ' +
+                                '.'.join(map(str, get_tk_patchlevel())))
+            test(self)
+        return newtest
+    return deco
 
 _tk_patchlevel = None
 def get_tk_patchlevel():
