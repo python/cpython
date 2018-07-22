@@ -717,9 +717,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         self.checkEnumParam(widget, 'activestyle',
                             'dotbox', 'none', 'underline')
 
-    @requires_tcl(8, 6, 5)
-    def test_justify(self):
-        AbstractWidgetTest.test_justify(self)
+    test_justify = requires_tcl(8, 6, 5)(StandardOptionsTests.test_justify)
 
     def test_listvariable(self):
         widget = self.create()
