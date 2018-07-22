@@ -4569,6 +4569,11 @@ static int
 compiler_visit_expr1(struct compiler *c, expr_ty e)
 {
     switch (e->kind) {
+    case NamedExpr_kind:
+        VISIT(c, expr, e->v.NamedExpr.value);
+        ADDOP(c, DUP_TOP);
+        VISIT(c, expr, e->v.NamedExpr.target);
+        break;
     case BoolOp_kind:
         return compiler_boolop(c, e);
     case BinOp_kind:

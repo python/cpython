@@ -1692,6 +1692,26 @@ ast_for_decorated(struct compiling *c, const node *n)
 }
 
 static expr_ty
+ast_for_namedexpr(struct compiling *c, const node *n)
+{
+    /* namedexpr_test: test [':=' test] */
+    expr_ty target, value;
+
+    target = ast_for_expr(c, CHILD(n, 0));
+    if (!target)
+        return NULL;
+
+    value = ast_for_expr(c, CHILD(n, 2));
+    if (!value)
+        return NULL;
+
+    if(!set_context(c, target, Store, n))
+        return NULL;
+
+    return NamedExpr(target, value, LINENO(n), n->n_col_offset, c->c_arena);
+}
+
+static expr_ty
 ast_for_lambdef(struct compiling *c, const node *n)
 {
     /* lambdef: 'lambda' [varargslist] ':' test
@@ -2568,6 +2588,7 @@ static expr_ty
 ast_for_expr(struct compiling *c, const node *n)
 {
     /* handle the full range of simple expressions
+       namedexpr_test: test [':=' test]
        test: or_test ['if' or_test 'else' test] | lambdef
        test_nocond: or_test | lambdef_nocond
        or_test: and_test ('or' and_test)*
@@ -2591,6 +2612,11 @@ ast_for_expr(struct compiling *c, const node *n)
 
  loop:
     switch (TYPE(n)) {
+        case namedexpr_test:
+            // If there are 3 children, continue with named expression
+            // XXX write better desc of why
+            if (NCH(n) == 3)
+                return ast_for_namedexpr(c, n);
         case test:
         case test_nocond:
             if (TYPE(CHILD(n, 0)) == lambdef ||
