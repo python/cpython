@@ -1,23 +1,26 @@
 import unittest
-import Tkinter as tkinter
-from Tkinter import TclError
+import tkinter
+from tkinter import TclError
 import os
 import sys
-from test.test_support import requires, run_unittest
+from test.support import requires
 
-from test_ttk.support import (tcl_version, requires_tcl, get_tk_patchlevel,
-                              widget_eq)
-from widget_tests import (
-    add_standard_options, noconv, noconv_meth, int_round, pixels_round,
-    AbstractWidgetTest, StandardOptionsTests,
-    IntegerSizeTests, PixelSizeTests,
+from tkinter.test.support import (tcl_version, requires_tcl,
+                                  get_tk_patchlevel, widget_eq)
+from tkinter.test.widget_tests import (
+    add_standard_options, noconv, pixels_round,
+    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
     setUpModule)
 
 requires('gui')
 
 
+def float_round(x):
+    return float(round(x))
+
+
 class AbstractToplevelTest(AbstractWidgetTest, PixelSizeTests):
-    _conv_pad_pixels = noconv_meth
+    _conv_pad_pixels = noconv
 
     def test_class(self):
         widget = self.create()
@@ -88,10 +91,10 @@ class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
         widget = self.create()
         self.assertEqual(widget['use'], '')
         parent = self.create(container=True)
-        # hex() adds the 'L' suffix for longs
-        wid = '%#x' % parent.winfo_id()
-        widget2 = self.create(use=wid)
-        self.assertEqual(widget2['use'], wid)
+        wid = hex(parent.winfo_id())
+        with self.subTest(wid=wid):
+            widget2 = self.create(use=wid)
+            self.assertEqual(widget2['use'], wid)
 
 
 @add_standard_options(StandardOptionsTests)
@@ -136,7 +139,7 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
 
 
 class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
-    _conv_pixels = noconv_meth
+    _conv_pixels = noconv
 
     def test_highlightthickness(self):
         widget = self.create()
@@ -260,7 +263,7 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         widget = self.create()
         self.checkIntegerParam(widget, 'height', 100, -100, 0, conv=str)
 
-    test_highlightthickness = StandardOptionsTests.test_highlightthickness.im_func
+    test_highlightthickness = StandardOptionsTests.test_highlightthickness
 
     @unittest.skipIf(sys.platform == 'darwin',
                      'crashes with Cocoa Tk (issue19733)')
@@ -622,8 +625,8 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         self.assertIsNone(widget.bbox('end'))
         self.assertRaises(tkinter.TclError, widget.bbox, 'noindex')
         self.assertRaises(tkinter.TclError, widget.bbox, None)
-        self.assertRaises(tkinter.TclError, widget.bbox)
-        self.assertRaises(tkinter.TclError, widget.bbox, '1.1', 'end')
+        self.assertRaises(TypeError, widget.bbox)
+        self.assertRaises(TypeError, widget.bbox, '1.1', 'end')
 
 
 @add_standard_options(PixelSizeTests, StandardOptionsTests)
@@ -641,7 +644,7 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         'yscrollcommand', 'yscrollincrement', 'width',
     )
 
-    _conv_pixels = staticmethod(int_round)
+    _conv_pixels = round
     _stringify = True
 
     def create(self, **kwargs):
@@ -714,7 +717,9 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         self.checkEnumParam(widget, 'activestyle',
                             'dotbox', 'none', 'underline')
 
-    test_justify = requires_tcl(8, 6, 5)(StandardOptionsTests.test_justify.im_func)
+    @requires_tcl(8, 6, 5)
+    def test_justify(self):
+        AbstractWidgetTest.test_justify(self)
 
     def test_listvariable(self):
         widget = self.create()
@@ -734,7 +739,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_itemconfigure(self):
         widget = self.create()
-        with self.assertRaisesRegexp(TclError, 'item number "0" out of range'):
+        with self.assertRaisesRegex(TclError, 'item number "0" out of range'):
             widget.itemconfigure(0)
         colors = 'red orange yellow green blue white violet'.split()
         widget.insert('end', *colors)
@@ -742,7 +747,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
             widget.itemconfigure(i, background=color)
         with self.assertRaises(TypeError):
             widget.itemconfigure()
-        with self.assertRaisesRegexp(TclError, 'bad listbox index "red"'):
+        with self.assertRaisesRegex(TclError, 'bad listbox index "red"'):
             widget.itemconfigure('red')
         self.assertEqual(widget.itemconfigure(0, 'background'),
                          ('background', 'background', 'Background', '', 'red'))
@@ -765,7 +770,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         widget.itemconfigure(0, **{name: value})
         self.assertEqual(widget.itemconfigure(0, name)[4], value)
         self.assertEqual(widget.itemcget(0, name), value)
-        with self.assertRaisesRegexp(TclError, 'unknown color name "spam"'):
+        with self.assertRaisesRegex(TclError, 'unknown color name "spam"'):
             widget.itemconfigure(0, **{name: 'spam'})
 
     def test_itemconfigure_background(self):
@@ -853,7 +858,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_from(self):
         widget = self.create()
-        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=round)
+        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=float_round)
 
     def test_label(self):
         widget = self.create()
@@ -884,14 +889,14 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
     def test_tickinterval(self):
         widget = self.create()
         self.checkFloatParam(widget, 'tickinterval', 1, 4.3, 7.6, 0,
-                             conv=round)
+                             conv=float_round)
         self.checkParam(widget, 'tickinterval', -2, expected=2,
-                        conv=round)
+                        conv=float_round)
 
     def test_to(self):
         widget = self.create()
         self.checkFloatParam(widget, 'to', 300, 14.9, 15.1, -10,
-                             conv=round)
+                             conv=float_round)
 
 
 @add_standard_options(PixelSizeTests, StandardOptionsTests)
@@ -905,7 +910,7 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         'repeatdelay', 'repeatinterval',
         'takefocus', 'troughcolor', 'width',
     )
-    _conv_pixels = staticmethod(int_round)
+    _conv_pixels = round
     _stringify = True
     default_orient = 'vertical'
 
@@ -929,8 +934,9 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         sb = self.create()
         for e in ('arrow1', 'slider', 'arrow2'):
             sb.activate(e)
+            self.assertEqual(sb.activate(), e)
         sb.activate('')
-        self.assertRaises(TypeError, sb.activate)
+        self.assertIsNone(sb.activate())
         self.assertRaises(TypeError, sb.activate, 'arrow1', 'arrow2')
 
     def test_set(self):
@@ -940,8 +946,8 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(TclError, sb.set, 'abc', 'def')
         self.assertRaises(TclError, sb.set, 0.6, 'def')
         self.assertRaises(TclError, sb.set, 0.6, None)
-        self.assertRaises(TclError, sb.set, 0.6)
-        self.assertRaises(TclError, sb.set, 0.6, 0.7, 0.8)
+        self.assertRaises(TypeError, sb.set, 0.6)
+        self.assertRaises(TypeError, sb.set, 0.6, 0.7, 0.8)
 
 
 @add_standard_options(StandardOptionsTests)
@@ -1050,7 +1056,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(conv(p.panecget(b, name)), expected)
 
     def check_paneconfigure_bad(self, p, b, name, msg):
-        with self.assertRaisesRegexp(TclError, msg):
+        with self.assertRaisesRegex(TclError, msg):
             p.paneconfigure(b, **{name: 'badValue'})
 
     def test_paneconfigure_after(self):
@@ -1130,7 +1136,7 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         'postcommand', 'relief', 'selectcolor', 'takefocus',
         'tearoff', 'tearoffcommand', 'title', 'type',
     )
-    _conv_pixels = noconv_meth
+    _conv_pixels = noconv
 
     def create(self, **kwargs):
         return tkinter.Menu(self.root, **kwargs)
@@ -1160,7 +1166,7 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         m1 = self.create()
         m1.add_command(label='test')
         self.assertRaises(TypeError, m1.entryconfigure)
-        with self.assertRaisesRegexp(TclError, 'bad menu entry index "foo"'):
+        with self.assertRaisesRegex(TclError, 'bad menu entry index "foo"'):
             m1.entryconfigure('foo')
         d = m1.entryconfigure(1)
         self.assertIsInstance(d, dict)
@@ -1199,7 +1205,7 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
         'justify', 'padx', 'pady', 'relief',
         'takefocus', 'text', 'textvariable', 'width',
     )
-    _conv_pad_pixels = noconv_meth
+    _conv_pad_pixels = noconv
 
     def create(self, **kwargs):
         return tkinter.Message(self.root, **kwargs)
@@ -1209,13 +1215,13 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
         self.checkIntegerParam(widget, 'aspect', 250, 0, -300)
 
 
-tests_gui = [
+tests_gui = (
         ButtonTest, CanvasTest, CheckbuttonTest, EntryTest,
         FrameTest, LabelFrameTest,LabelTest, ListboxTest,
         MenubuttonTest, MenuTest, MessageTest, OptionMenuTest,
         PanedWindowTest, RadiobuttonTest, ScaleTest, ScrollbarTest,
         SpinboxTest, TextTest, ToplevelTest,
-]
+)
 
 if __name__ == '__main__':
-    run_unittest(*tests_gui)
+    unittest.main()
