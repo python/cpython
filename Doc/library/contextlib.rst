@@ -152,9 +152,21 @@ Functions and classes provided:
 
 .. function:: nullcontext(enter_result=None)
 
-   Return a context manager that returns enter_result from ``__enter__``, but
+   Return a context manager that returns *enter_result* from ``__enter__``, but
    otherwise does nothing. It is intended to be used as a stand-in for an
    optional context manager, for example::
+
+      def myfunction(arg, ignore_exceptions=False):
+          if ignore_exceptions:
+              # Use suppress to ignore all exceptions.
+              cm = contextlib.suppress(Exception)
+          else:
+              # Do not ignore any exceptions, cm has no effect.
+              cm = contextlib.nullcontext()
+          with cm:
+              # Do something
+
+   An example using *enter_result*::
 
       def process_file(file_or_path):
           if isinstance(file_or_path, str):

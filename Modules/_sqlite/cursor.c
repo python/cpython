@@ -118,7 +118,7 @@ _pysqlite_get_converter(const char *keystr, Py_ssize_t keylen)
         return NULL;
     }
 
-    retval = PyDict_GetItemWithError(converters, upcase_key);
+    retval = PyDict_GetItemWithError(_pysqlite_converters, upcase_key);
     Py_DECREF(upcase_key);
 
     return retval;
@@ -529,7 +529,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
             if (PyErr_Occurred()) {
                 /* there was an error that occurred in a user-defined callback */
-                if (_enable_callback_tracebacks) {
+                if (_pysqlite_enable_callback_tracebacks) {
                     PyErr_Print();
                 } else {
                     PyErr_Clear();
