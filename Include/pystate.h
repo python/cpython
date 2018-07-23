@@ -28,7 +28,7 @@ typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 typedef struct {
     int install_signal_handlers;  /* Install signal handlers? -1 means unset */
 
-    int ignore_environment; /* -E, Py_IgnoreEnvironmentFlag */
+    int ignore_environment; /* -E, Py_IgnoreEnvironmentFlag, -1 means unset */
     int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
     const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
@@ -75,6 +75,24 @@ typedef struct {
     wchar_t *dll_path;      /* Windows DLL path */
 #endif
 
+    /* If greater than 0, enable isolated mode sys.path contains
+       neither the script's directory nor the user's site-packages directory.
+       Ignored if set to -1.
+
+       Related to Py_IsolatedFlag global configuration variable and -I command
+       line option. */
+    int isolated;
+
+    /* If equal to zero, disable the import of the module site and the
+       site-dependent manipulations of sys.path that it entails. Also disable
+       these manipulations if site is explicitly imported later (call
+       site.main() if you want them to be triggered).
+       Ignored if set to -1.
+
+       Related to Py_NoSiteFlag global configuration variable and -S command
+       line option. */
+    int site_import;
+
     /* Private fields */
     int _disable_importlib; /* Needed by freeze_importlib */
 } _PyCoreConfig;
@@ -82,11 +100,14 @@ typedef struct {
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
         .install_signal_handlers = -1, \
+        .ignore_environment = -1, \
         .use_hash_seed = -1, \
         .coerce_c_locale = -1, \
         .utf8_mode = -1, \
         .argc = -1, \
-        .nmodule_search_path = -1}
+        .nmodule_search_path = -1, \
+        .isolated = -1, \
+        .site_import = -1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API

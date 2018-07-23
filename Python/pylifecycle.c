@@ -599,12 +599,9 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
 {
     assert(core_config != NULL);
 
-    PyInterpreterState *interp;
-    PyThreadState *tstate;
-    PyObject *bimod, *sysmod, *pstderr;
-    _PyInitError err;
+    _PyCoreConfig_SetGlobalConfig(core_config);
 
-    err = _PyRuntime_Initialize();
+    _PyInitError err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -656,7 +653,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
         return err;
     }
 
-    interp = PyInterpreterState_New();
+    PyInterpreterState *interp = PyInterpreterState_New();
     if (interp == NULL) {
         return _Py_INIT_ERR("can't make main interpreter");
     }
@@ -665,7 +662,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
         return _Py_INIT_ERR("failed to copy core config");
     }
 
-    tstate = PyThreadState_New(interp);
+    PyThreadState *tstate = PyThreadState_New(interp);
     if (tstate == NULL)
         return _Py_INIT_ERR("can't make first thread");
     (void) PyThreadState_Swap(tstate);
@@ -699,6 +696,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
         return _Py_INIT_ERR("can't make modules dictionary");
     interp->modules = modules;
 
+    PyObject *sysmod;
     err = _PySys_BeginInit(&sysmod);
     if (_Py_INIT_FAILED(err)) {
         return err;
@@ -720,7 +718,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     if (_PyStructSequence_Init() < 0)
         return _Py_INIT_ERR("can't initialize structseq");
 
-    bimod = _PyBuiltin_Init();
+    PyObject *bimod = _PyBuiltin_Init();
     if (bimod == NULL)
         return _Py_INIT_ERR("can't initialize builtins modules");
     _PyImport_FixupBuiltin(bimod, "builtins", modules);
@@ -734,7 +732,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
 
     /* Set up a preliminary stderr printer until we have enough
        infrastructure for the io module in place. */
-    pstderr = PyFile_NewStdPrinter(fileno(stderr));
+    PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
     if (pstderr == NULL)
         return _Py_INIT_ERR("can't set preliminary stderr");
     _PySys_SetObjectId(&PyId_stderr, pstderr);
@@ -924,11 +922,10 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     _PyCoreConfig config = _PyCoreConfig_INIT;
     _PyInitError err;
 
-    config.ignore_environment = Py_IgnoreEnvironmentFlag;
     config._disable_importlib = !install_importlib;
     config.install_signal_handlers = install_sigs;
 
-    err = _PyCoreConfig_Read(&config, &Py_IsolatedFlag, &Py_NoSiteFlag);
+    err = _PyCoreConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
