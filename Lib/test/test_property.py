@@ -299,5 +299,6 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(Foo.spam.__doc__, "a new docstring")
 
 
+
 if __name__ == '__main__':
     unittest.main()
