@@ -387,10 +387,6 @@ and off individually.  They are described here in more detail.
 
    Converts :func:`reload` to :func:`importlib.reload`.
 
-   .. versionchanged:: 3.8
-      Updated to use :func:`importlib.reload` instead of deprecated
-      :func:`imp.reload`.
-
 .. 2to3fixer:: renames
 
    Changes :data:`sys.maxint` to :data:`sys.maxsize`.
