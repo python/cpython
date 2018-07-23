@@ -1966,7 +1966,7 @@ class TestRepr(unittest.TestCase):
         @dataclass(repr=False)
         class C:
             x: int
-        self.assertIn('test_dataclasses.TestRepr.test_no_repr.<locals>.C object at',
+        self.assertIn(f'{__name__}.TestRepr.test_no_repr.<locals>.C object at',
                       repr(C(3)))
 
         # Test a class with a __repr__ and repr=False.
@@ -2713,10 +2713,10 @@ class TestStringAnnotations(unittest.TestCase):
                 self.assertEqual(C(10).x, 10)
 
     def test_classvar_module_level_import(self):
-        from . import dataclass_module_1
-        from . import dataclass_module_1_str
-        from . import dataclass_module_2
-        from . import dataclass_module_2_str
+        from test import dataclass_module_1
+        from test import dataclass_module_1_str
+        from test import dataclass_module_2
+        from test import dataclass_module_2_str
 
         for m in (dataclass_module_1, dataclass_module_1_str,
                   dataclass_module_2, dataclass_module_2_str,
