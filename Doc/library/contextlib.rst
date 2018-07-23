@@ -51,7 +51,8 @@ Functions and classes provided:
    resource needs to be managed that isn't a context manager in its own right,
    and doesn't implement a ``close()`` method for use with ``contextlib.closing``
 
-   A example thus would be the following to ensure correct resource management::
+   An abstract example would be the following to ensure correct resource
+   management::
 
       from contextlib import contextmanager
 
