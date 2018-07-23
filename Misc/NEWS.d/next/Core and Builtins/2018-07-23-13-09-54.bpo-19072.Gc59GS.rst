@@ -1,0 +1,2 @@
+The :class:`classmethod` decorator now works correctly when it was wrapped by
+a chained decorator.  Adapted from a patch written by Graham Dumpleton.
