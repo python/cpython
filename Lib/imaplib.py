@@ -79,6 +79,7 @@ Commands = {
         'LOGIN':        ('NONAUTH',),
         'LOGOUT':       ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
         'LSUB':         ('AUTH', 'SELECTED'),
+        'MOVE':         ('SELECTED',),
         'NAMESPACE':    ('AUTH', 'SELECTED'),
         'NOOP':         ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
         'PARTIAL':      ('SELECTED',),                                  # NB: obsolete
