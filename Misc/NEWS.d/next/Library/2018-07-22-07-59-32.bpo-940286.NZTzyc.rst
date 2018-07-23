@@ -1,0 +1,2 @@
+pydoc's ``Helper.showtopic()`` method now prints the cross references of a
+topic correctly.
