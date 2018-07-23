@@ -14,7 +14,6 @@ from test.support.script_helper import assert_python_failure
 #
 
 class RoundtripLegalSyntaxTestCase(unittest.TestCase):
-
     def roundtrip(self, f, s):
         st1 = f(s)
         t = st1.totuple()
@@ -115,6 +114,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_expr("foo * bar")
         self.check_expr("foo / bar")
         self.check_expr("foo // bar")
+        self.check_expr("(foo := 1)")
         self.check_expr("lambda: 0")
         self.check_expr("lambda x: 0")
         self.check_expr("lambda *y: 0")
@@ -421,6 +421,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_expr('{x**2:x[3] for x in seq if condition(x)}')
         self.check_expr('{x:x for x in seq1 for y in seq2 if condition(x, y)}')
 
+    def test_named_expressions(self):
+        self.check_suite("(a := 1)")
 
 #
 #  Second, we take *invalid* trees and make sure we get ParserError
