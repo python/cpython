@@ -1,0 +1,4 @@
+Fixed error messages for :c:func:`PySequence_Size`,
+:c:func:`PySequence_GetItem`, :c:func:`PySequence_SetItem` and
+:c:func:`PySequence_DelItem` called with a mapping and
+:c:func:`PyMapping_Size` called with a sequence.
