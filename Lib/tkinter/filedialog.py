@@ -395,7 +395,10 @@ def askopenfile(mode = "r", encoding = None, **options):
 
     filename = Open(**options).show()
     if filename:
-        return open(filename, mode, encoding=encoding)
+        open_kwargs = {'file': filename, 'mode': mode}
+        if 'b' not in mode:
+            open_kwargs['encoding'] = encoding
+        return open(**open_kwargs)
     return None
 
 def askopenfiles(mode = "r", encoding = None, **options):
@@ -408,9 +411,13 @@ def askopenfiles(mode = "r", encoding = None, **options):
 
     files = askopenfilenames(**options)
     if files:
-        ofiles=[]
+        ofiles = []
+        open_kwargs = {'mode': mode}
+        if 'b' not in mode:
+            open_kwargs['encoding'] = encoding
         for filename in files:
-            ofiles.append(open(filename, mode, encoding=encoding))
+            open_kwargs['file'] = filename
+            ofiles.append(open(**open_kwargs))
         files=ofiles
     return files
 
@@ -420,7 +427,10 @@ def asksaveasfile(mode = "w", encoding = None, **options):
 
     filename = SaveAs(**options).show()
     if filename:
-        return open(filename, mode, encoding=encoding)
+        open_kwargs = {'file': filename, 'mode': mode}
+        if 'b' not in mode:
+            open_kwargs['encoding'] = encoding
+        return open(**open_kwargs)
     return None
 
 def askdirectory (**options):
