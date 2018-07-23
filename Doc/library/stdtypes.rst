@@ -382,7 +382,7 @@ modules.
 .. _bitstring-ops:
 
 Bitwise Operations on Integer Types
---------------------------------------
+-----------------------------------
 
 .. index::
    triple: operations on; integer; types
@@ -396,8 +396,9 @@ Bitwise Operations on Integer Types
    operator: >>
    operator: ~
 
-Bitwise operations only make sense for integers.  Negative numbers are treated
-as their 2's complement value.
+Bitwise operations only make sense for integers. The result of bitwise
+operations is calculated as though carried out in two's complement with an
+infinite number of sign bits.
 
 The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
