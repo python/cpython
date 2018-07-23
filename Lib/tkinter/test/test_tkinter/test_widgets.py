@@ -483,7 +483,7 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         'font', 'foreground', 'height',
         'highlightbackground', 'highlightcolor', 'highlightthickness',
         'inactiveselectbackground', 'insertbackground', 'insertborderwidth',
-        'insertofftime', 'insertontime', 'insertunfocussed', 'insertwidth',
+        'insertofftime', 'insertontime', 'insertunfocused', 'insertwidth',
         'maxundo', 'padx', 'pady', 'relief',
         'selectbackground', 'selectborderwidth', 'selectforeground',
         'setgrid', 'spacing1', 'spacing2', 'spacing3', 'startline', 'state',

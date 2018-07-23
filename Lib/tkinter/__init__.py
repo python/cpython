@@ -3081,10 +3081,10 @@ class Text(Widget, XView, YView):
         STANDARD OPTIONS
 
             background, blockcursor, borderwidth,
-            cursor, endine, exportselection, font, 
+            cursor, endine, exportselection, font,
             foreground, highlightbackground, highlightcolor,
             highlightthickness, inactiveselectbackground,
-            insertbackground, insertborderwidth, 
+            insertbackground, insertborderwidth,
             insertofftime, insertontime, insertunfocused,
             insertwidth, padx, pady, relief, selectbackground,
             selectborderwidth, selectforeground,
