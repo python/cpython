@@ -47,22 +47,28 @@ Functions and classes provided:
    function for :keyword:`with` statement context managers, without needing to
    create a class or separate :meth:`__enter__` and :meth:`__exit__` methods.
 
-   A simple example (this is not recommended as a real way of generating HTML!)::
+   While many objects natively support use in with statements, sometimes a
+   resource needs to be managed that isn't a context manager in its own right,
+   and doesn't implement a ``close()`` method for use with ``contextlib.closing``
+
+   An abstract example would be the following to ensure correct resource
+   management::
 
       from contextlib import contextmanager
 
       @contextmanager
-      def tag(name):
-          print("<%s>" % name)
-          yield
-          print("</%s>" % name)
+      def managed_resource(*args, **kwds):
+          # Code to acquire resource, e.g.:
+          resource = acquire_resource(*args, **kwds)
+          try:
+              yield resource
+          finally:
+              # Code to release resource, e.g.:
+              release_resource(resource)
 
-      >>> with tag("h1"):
-      ...    print("foo")
-      ...
-      <h1>
-      foo
-      </h1>
+      >>> with managed_resource(timeout=3600) as resource:
+      ...     # Resource is released at the end of this block,
+      ...     # even if code in the block raises an exception
 
    The function being decorated must return a :term:`generator`-iterator when
    called. This iterator must yield exactly one value, which will be bound to
