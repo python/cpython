@@ -29,8 +29,7 @@ PyObject* pysqlite_cursor_iternext(pysqlite_Cursor* self);
 
 static const char errmsg_fetch_across_rollback[] = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
 
-static int
-pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject* kwargs)
+static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject* kwargs)
 {
     pysqlite_Connection* connection;
 
@@ -77,8 +76,7 @@ pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject* kwargs)
     return 0;
 }
 
-static void
-pysqlite_cursor_dealloc(pysqlite_Cursor* self)
+static void pysqlite_cursor_dealloc(pysqlite_Cursor* self)
 {
     /* Reset the statement if the user has not closed the cursor */
     if (self->statement) {
@@ -343,8 +341,7 @@ error:
  *
  * 0 => error; 1 => ok
  */
-static int
-check_cursor(pysqlite_Cursor* cur)
+static int check_cursor(pysqlite_Cursor* cur)
 {
     if (!cur->initialized) {
         PyErr_SetString(pysqlite_ProgrammingError, "Base Cursor.__init__ not called.");
