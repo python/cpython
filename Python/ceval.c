@@ -4576,12 +4576,15 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
                profiling. */
             PyObject *self = stack[0];
             func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
-            if (func == NULL) {
-                return NULL;
+            if (func != NULL) {
+                C_TRACE(x, _PyCFunction_FastCallKeywords(func,
+                                                         stack+1, nargs-1,
+                                                         kwnames));
+                Py_DECREF(func);
             }
-            C_TRACE(x, _PyCFunction_FastCallKeywords(func, stack+1, nargs-1,
-                                                     kwnames));
-            Py_DECREF(func);
+            else {
+                x = NULL;
+            }
         }
         else {
             x = _PyMethodDescr_FastCallKeywords(func, stack, nargs, kwnames);
