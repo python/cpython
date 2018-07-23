@@ -2321,8 +2321,8 @@ class Toplevel(BaseWidget, Wm):
 
         Valid resource names: background, bd, bg, borderwidth, class,
         colormap, container, cursor, height, highlightbackground,
-        highlightcolor, highlightthickness, menu, relief, screen, takefocus,
-        use, visual, width."""
+        highlightcolor, highlightthickness, menu, padx, pady, relief,
+        screen, takefocus, use, visual, width."""
         if kw:
             cnf = _cnfmerge((cnf, kw))
         extra = ()
@@ -2634,12 +2634,13 @@ class Checkbutton(Widget):
         """Construct a checkbutton widget with the parent MASTER.
 
         Valid resource names: activebackground, activeforeground, anchor,
-        background, bd, bg, bitmap, borderwidth, command, cursor,
+        background, bd, bg, bitmap, borderwidth, command, compound, cursor,
         disabledforeground, fg, font, foreground, height,
         highlightbackground, highlightcolor, highlightthickness, image,
-        indicatoron, justify, offvalue, onvalue, padx, pady, relief,
-        selectcolor, selectimage, state, takefocus, text, textvariable,
-        underline, variable, width, wraplength."""
+        indicatoron, justify, offrelief, offvalue, onvalue, overrelief,
+        padx, pady, relief, selectcolor, selectimage, state, takefocus,
+        text, textvariable, tristateimage, tristatevalue, underline,
+        variable, width, wraplength."""
         Widget.__init__(self, master, 'checkbutton', cnf, kw)
     def deselect(self):
         """Put the button in off-state."""
@@ -2663,10 +2664,11 @@ class Entry(Widget, XView):
         """Construct an entry widget with the parent MASTER.
 
         Valid resource names: background, bd, bg, borderwidth, cursor,
-        exportselection, fg, font, foreground, highlightbackground,
-        highlightcolor, highlightthickness, insertbackground,
-        insertborderwidth, insertofftime, insertontime, insertwidth,
-        invalidcommand, invcmd, justify, relief, selectbackground,
+        disabledbackground, disabledforeground, exportselection,
+        fg, font, foreground, highlightbackground, highlightcolor,
+        highlightthickness, insertbackground, insertborderwidth,
+        insertofftime, insertontime, insertwidth, invalidcommand,
+        invcmd, justify, readonlybackground, relief, selectbackground,
         selectborderwidth, selectforeground, show, state, takefocus,
         textvariable, validate, validatecommand, vcmd, width,
         xscrollcommand."""
@@ -2728,8 +2730,8 @@ class Frame(Widget):
         """Construct a frame widget with the parent MASTER.
 
         Valid resource names: background, bd, bg, borderwidth, class,
-        colormap, container, cursor, height, highlightbackground,
-        highlightcolor, highlightthickness, relief, takefocus, visual, width."""
+        colormap, container, cursor, height, highlightbackground, highlightcolor,
+        highlightthickness, padx, pady, relief, takefocus, visual, width."""
         cnf = _cnfmerge((cnf, kw))
         extra = ()
         if 'class_' in cnf:
@@ -2748,8 +2750,8 @@ class Label(Widget):
         STANDARD OPTIONS
 
             activebackground, activeforeground, anchor,
-            background, bitmap, borderwidth, cursor,
-            disabledforeground, font, foreground,
+            background, bitmap, borderwidth, compound,
+            cursor, disabledforeground, font, foreground,
             highlightbackground, highlightcolor,
             highlightthickness, image, justify,
             padx, pady, relief, takefocus, text,
@@ -2769,9 +2771,10 @@ class Listbox(Widget, XView, YView):
 
         Valid resource names: activestyle, background, bd, bg, borderwidth,
         cursor, disabledforeground, exportselection, fg, font, foreground, height,
-        highlightbackground, highlightcolor, highlightthickness, listvariable,
-        relief, selectbackground, selectborderwidth, selectforeground, selectmode,
-        setgrid, state, takefocus, width, xscrollcommand, yscrollcommand."""
+        highlightbackground, highlightcolor, highlightthickness, justify,
+        listvariable, relief, selectbackground, selectborderwidth, selectforeground,
+        selectmode, setgrid, state, takefocus, width, xscrollcommand,
+        yscrollcommand."""
         Widget.__init__(self, master, 'listbox', cnf, kw)
     def activate(self, index):
         """Activate item identified by INDEX."""
@@ -2972,12 +2975,12 @@ class Radiobutton(Widget):
         """Construct a radiobutton widget with the parent MASTER.
 
         Valid resource names: activebackground, activeforeground, anchor,
-        background, bd, bg, bitmap, borderwidth, command, cursor,
-        disabledforeground, fg, font, foreground, height,
-        highlightbackground, highlightcolor, highlightthickness, image,
-        indicatoron, justify, padx, pady, relief, selectcolor, selectimage,
-        state, takefocus, text, textvariable, underline, value, variable,
-        width, wraplength."""
+        background, bd, bg, bitmap, borderwidth, command, compound, cursor,
+        disabledforeground, fg, font, foreground, height, highlightbackground,
+        highlightcolor, highlightthickness, image, indicatoron, justify,
+        offrelief, overrelief, padx, pady, relief, selectcolor, selectimage,
+        state, takefocus, text, textvariable, tristateimage, tristatevalue,
+        underline, value, variable, width, wraplength."""
         Widget.__init__(self, master, 'radiobutton', cnf, kw)
     def deselect(self):
         """Put the button in off-state."""
@@ -3077,15 +3080,15 @@ class Text(Widget, XView, YView):
 
         STANDARD OPTIONS
 
-            background, borderwidth, cursor,
-            exportselection, font, foreground,
-            highlightbackground, highlightcolor,
-            highlightthickness, insertbackground,
-            insertborderwidth, insertofftime,
-            insertontime, insertwidth, padx, pady,
-            relief, selectbackground,
+            background, blockcursor, borderwidth,
+            cursor, endine, exportselection, font, 
+            foreground, highlightbackground, highlightcolor,
+            highlightthickness, inactiveselectbackground,
+            insertbackground, insertborderwidth, 
+            insertofftime, insertontime, insertunfocused,
+            insertwidth, padx, pady, relief, selectbackground,
             selectborderwidth, selectforeground,
-            setgrid, takefocus,
+            setgrid, startline, tabstyle, takefocus,
             xscrollcommand, yscrollcommand,
 
         WIDGET-SPECIFIC OPTIONS
@@ -3637,7 +3640,7 @@ class Spinbox(Widget, XView):
             disabledforeground, format, from,
             invalidcommand, increment,
             readonlybackground, state, to,
-            validate, validatecommand values,
+            validate, validatecommand, values,
             width, wrap,
         """
         Widget.__init__(self, master, 'spinbox', cnf, kw)
