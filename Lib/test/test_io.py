@@ -1067,6 +1067,16 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
             self.assertEqual(rawio._extraneous_reads, 0,
                              "failed for {}: {} != 0".format(n, rawio._extraneous_reads))
 
+    def test_read_format_crash(self):
+        class R(self.MockRawIO):
+            def readable(self):
+                return True
+            def readinto(self, b):
+                b.format
+        b = self.tp(R())
+        # This would crash.
+        b.read(1)
+
 
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
@@ -1381,6 +1391,16 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         b.write(b'spam')
         self.assertRaises(IOError, b.close) # exception not swallowed
         self.assertTrue(b.closed)
+
+    def test_write_format_crash(self):
+        class R(self.MockRawIO):
+            def writeable(self):
+                return True
+            def write(self, b):
+                b.format
+        b = self.tp(R())
+        # This would crash.
+        b.write(b'x')
 
 
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):

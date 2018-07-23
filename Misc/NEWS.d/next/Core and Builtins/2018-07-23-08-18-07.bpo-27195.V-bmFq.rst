@@ -1,0 +1,2 @@
+Fix crashes in :class:`io.BufferedReader` and :class:`io.BufferedWriter`.
+Patch by Zackery Spytz.

@@ -1286,7 +1286,7 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     PyObject *memobj, *res;
     Py_ssize_t n;
     /* NOTE: the buffer needn't be released as its object is NULL. */
-    if (PyBuffer_FillInfo(&buf, NULL, start, len, 0, PyBUF_CONTIG) == -1)
+    if (PyBuffer_FillInfo(&buf, NULL, start, len, 0, PyBUF_RECORDS) == -1)
         return -1;
     memobj = PyMemoryView_FromBuffer(&buf);
     if (memobj == NULL)
@@ -1710,7 +1710,7 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     Py_ssize_t n;
     int errnum;
     /* NOTE: the buffer needn't be released as its object is NULL. */
-    if (PyBuffer_FillInfo(&buf, NULL, start, len, 1, PyBUF_CONTIG_RO) == -1)
+    if (PyBuffer_FillInfo(&buf, NULL, start, len, 1, PyBUF_RECORDS_RO) == -1)
         return -1;
     memobj = PyMemoryView_FromBuffer(&buf);
     if (memobj == NULL)
