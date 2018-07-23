@@ -4,7 +4,7 @@ import functools
 from test import support
 import unittest
 
-from .test_contextlib import TestBaseExitStack
+from test.test_contextlib import TestBaseExitStack
 
 
 def _async_test(func):
