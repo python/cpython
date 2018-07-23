@@ -246,8 +246,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             else if ((ps->p_flags & CO_FUTURE_BARRY_AS_BDFL) &&
                             strcmp(str, "<>")) {
                 PyObject_FREE(str);
-                err_ret->text = "with Barry as BDFL, use '<>' "
-                                "instead of '!='";
+                err_ret->expected = NOTEQUAL;
                 err_ret->error = E_SYNTAX;
                 break;
             }
