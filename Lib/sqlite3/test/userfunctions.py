@@ -59,6 +59,17 @@ def func_islonglong(v):
 def func(*args):
     return len(args)
 
+
+class UnhashableFunc:
+    __hash__ = None
+
+    def __init__(self, return_value=None):
+        self.return_value = return_value
+
+    def __call__(self, *args, **kwargs):
+        return self.return_value
+
+
 class AggrNoStep:
     def __init__(self):
         pass
@@ -298,6 +309,14 @@ class FunctionTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.con.create_function("deterministic", 0, int, True)
 
+    def CheckFuncUnhashable(self):
+        func_name = "func_name"
+        with self.assertRaisesRegex(TypeError, "unhashable type"):
+            self.con.create_function(func_name, 0, UnhashableFunc())
+        msg = "no such function: %s" % func_name
+        with self.assertRaisesRegex(sqlite.OperationalError, msg):
+            self.con.execute("SELECT %s()" % func_name)
+
 
 class AggregateTests(unittest.TestCase):
     def setUp(self):
@@ -411,6 +430,18 @@ class AggregateTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, 60)
 
+    def CheckAggrUnhashable(self):
+        class UnhashableType(type):
+            __hash__ = None
+
+        sqlite.enable_callback_tracebacks(True)
+        aggr_name = "aggr_name"
+        with self.assertRaisesRegex(TypeError, "unhashable type"):
+            self.con.create_aggregate(aggr_name, 0, UnhashableType('Aggr', (), {}))
+        msg = "no such function: %s" % aggr_name
+        with self.assertRaisesRegex(sqlite.OperationalError, msg):
+            self.con.execute("SELECT %s()" % aggr_name)
+
 class AuthorizerTests(unittest.TestCase):
     @staticmethod
     def authorizer_cb(action, arg1, arg2, dbname, source):
@@ -475,6 +506,13 @@ class AuthorizerLargeIntegerTests(AuthorizerTests):
         return sqlite.SQLITE_OK
 
 
+class AuthorizerUnhashable(AuthorizerTests):
+    def setUp(self):
+        super().setUp()
+        with self.assertRaisesRegex(TypeError, "unhashable type"):
+            self.con.set_authorizer(UnhashableFunc(sqlite.SQLITE_OK))
+
+
 def suite():
     function_suite = unittest.makeSuite(FunctionTests, "Check")
     aggregate_suite = unittest.makeSuite(AggregateTests, "Check")
@@ -486,6 +524,7 @@ def suite():
             unittest.makeSuite(AuthorizerRaiseExceptionTests),
             unittest.makeSuite(AuthorizerIllegalTypeTests),
             unittest.makeSuite(AuthorizerLargeIntegerTests),
+            unittest.makeSuite(AuthorizerUnhashable),
         ))
 
 def test():
