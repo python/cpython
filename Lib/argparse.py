@@ -1857,6 +1857,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # function to convert arg_strings into an optional action
         def consume_optional(start_index):
 
+            unknown_args = []
+
             # get the optional identified at this index
             option_tuple = option_string_indices[start_index]
             action, option_string, explicit_arg = option_tuple
@@ -1870,7 +1872,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 # if we found no optional action, skip it
                 if action is None:
                     extras.append(arg_strings[start_index])
-                    return start_index + 1
+                    return start_index + 1, unknown_args
 
                 # if there is an explicit argument, try to match the
                 # optional's string arguments to only this
@@ -1891,8 +1893,15 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                             action = optionals_map[option_string]
                             explicit_arg = new_explicit_arg
                         else:
-                            msg = _('ignored explicit argument %r')
-                            raise ArgumentError(action, msg % explicit_arg)
+                            # if we encountered unknown arg
+                            # return it and add later to other
+                            # unknown args
+                            unknown_args.append(option_string)
+                            start_index += 1
+                            explicit_arg = ''.join(explicit_arg[1:])
+                            if explicit_arg == '':
+                                stop = start_index
+                                break
 
                     # if the action expect exactly one argument, we've
                     # successfully matched the option; exit the loop
@@ -1925,7 +1934,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             assert action_tuples
             for action, args, option_string in action_tuples:
                 take_action(action, args, option_string)
-            return stop
+            return stop, unknown_args
 
         # the list of Positionals left to be parsed; this is modified
         # by consume_positionals()
@@ -1984,7 +1993,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 start_index = next_option_string_index
 
             # consume the next optional and any arguments for it
-            start_index = consume_optional(start_index)
+            start_index, unknown_args = consume_optional(start_index)
+            extras.extend(unknown_args)
 
         # consume any positionals following the last Optional
         stop_index = consume_positionals(start_index)
