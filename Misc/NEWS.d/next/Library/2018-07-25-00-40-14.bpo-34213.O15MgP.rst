@@ -1,0 +1,2 @@
+Frozen dataclasses didn't work properly with an attribute called "object".
+Now they do.
