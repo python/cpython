@@ -999,12 +999,13 @@ bytearray_repr(PyByteArrayObject *self)
 static PyObject *
 bytearray_str(PyObject *op)
 {
-        if (Py_BytesWarningFlag) {
-                if (PyErr_WarnEx(PyExc_BytesWarning,
-                                 "str() on a bytearray instance", 1))
-                        return NULL;
+    if (Py_BytesWarningFlag) {
+        if (PyErr_WarnEx(PyExc_BytesWarning,
+                         "str() on a bytearray instance", 1)) {
+                return NULL;
         }
-        return bytearray_repr((PyByteArrayObject*)op);
+    }
+    return bytearray_repr((PyByteArrayObject*)op);
 }
 
 static PyObject *
