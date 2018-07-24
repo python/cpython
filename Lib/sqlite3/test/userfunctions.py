@@ -434,7 +434,6 @@ class AggregateTests(unittest.TestCase):
         class UnhashableType(type):
             __hash__ = None
 
-        sqlite.enable_callback_tracebacks(True)
         aggr_name = "aggr_name"
         with self.assertRaisesRegex(TypeError, "unhashable type"):
             self.con.create_aggregate(aggr_name, 0, UnhashableType('Aggr', (), {}))
