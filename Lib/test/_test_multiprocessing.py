@@ -4490,12 +4490,12 @@ class TestSemaphoreTracker(unittest.TestCase):
             # information.
             _semaphore_tracker._send("PING", "")
             deadline = time.monotonic() + 5
-            with open(testfn, "rb") as pipe:
+            with open(testfn, "rb") as tracker_stderr:
                 while True:
                     if time.monotonic() >= deadline:
                         raise TimeoutError("Reading data "
-                                           "from pipe took too long")
-                    data = pipe.readline()
+                                           "from tracker stderr took too long")
+                    data = tracker_stderr.readline()
                     if not data:
                         continue
                     if b"PONG" not in data:
