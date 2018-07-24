@@ -525,8 +525,10 @@ extern "C" {
  * Usage:
  *    int _Py_NO_INLINE x(void) { return 3; }
  */
-#if defined(__GNUC__) || defined(__clang__)
-#  define _Py_NO_INLINE __attribute__((noinline))
+#if defined(_MSC_VER)
+#  define _Py_NO_INLINE __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#  define _Py_NO_INLINE __attribute__ ((noinline))
 #else
 #  define _Py_NO_INLINE
 #endif
