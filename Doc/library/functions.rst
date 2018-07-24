@@ -869,6 +869,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionadded:: 3.4
       The *default* keyword-only argument.
 
+   .. versionchanged:: 3.8
+      The *key* can be ``None``.
+
 
 .. _func-memoryview:
 .. function:: memoryview(obj)
@@ -902,6 +905,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionadded:: 3.4
       The *default* keyword-only argument.
+
+   .. versionchanged:: 3.8
+      The *key* can be ``None``.
 
 
 .. function:: next(iterator[, default])

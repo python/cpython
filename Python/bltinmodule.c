@@ -1639,6 +1639,10 @@ min_max(PyObject *args, PyObject *kwds, int op)
         return NULL;
     }
 
+    if (keyfunc == Py_None) {
+        keyfunc = NULL;
+    }
+
     maxitem = NULL; /* the result */
     maxval = NULL;  /* the value associated with the result */
     while (( item = PyIter_Next(it) )) {
