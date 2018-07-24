@@ -68,7 +68,6 @@ Req-started-unread-response    _CS_REQ_STARTED    <response_class>
 Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
-import copy
 import email.parser
 import email.message
 import http
@@ -872,7 +871,7 @@ class HTTPConnection:
 
         self._tunnel_host, self._tunnel_port = self._get_hostport(host, port)
         if headers:
-            self._tunnel_headers = copy.copy(headers)
+            self._tunnel_headers = headers.copy()
         else:
             self._tunnel_headers.clear()
 
