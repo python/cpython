@@ -390,15 +390,15 @@ def askopenfilenames(**options):
 
 # FIXME: are the following  perhaps a bit too convenient?
 
-def askopenfile(mode = "r", **options):
+def askopenfile(mode = "r", encoding = None, **options):
     "Ask for a filename to open, and returned the opened file"
 
     filename = Open(**options).show()
     if filename:
-        return open(filename, mode)
+        return open(filename, mode, encoding=encoding)
     return None
 
-def askopenfiles(mode = "r", **options):
+def askopenfiles(mode = "r", encoding = None, **options):
     """Ask for multiple filenames and return the open file
     objects
 
@@ -410,17 +410,17 @@ def askopenfiles(mode = "r", **options):
     if files:
         ofiles=[]
         for filename in files:
-            ofiles.append(open(filename, mode))
+            ofiles.append(open(filename, mode, encoding=encoding))
         files=ofiles
     return files
 
 
-def asksaveasfile(mode = "w", **options):
+def asksaveasfile(mode = "w", , encoding = None, **options):
     "Ask for a filename to save as, and returned the opened file"
 
     filename = SaveAs(**options).show()
     if filename:
-        return open(filename, mode)
+        return open(filename, mode, encoding=encoding)
     return None
 
 def askdirectory (**options):
