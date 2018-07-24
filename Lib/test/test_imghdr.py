@@ -80,7 +80,7 @@ class TestImghdr(unittest.TestCase):
             imghdr.what()
         with self.assertRaises(AttributeError):
             imghdr.what(None)
-        with self.assertRaises(Exception):#TypeError
+        with self.assertRaises(AttributeError):
             imghdr.what(self.testfile, 1)
         with self.assertRaises(AttributeError):
             imghdr.what(os.fsencode(self.testfile))
