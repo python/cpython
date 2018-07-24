@@ -24,9 +24,9 @@
 #include "parsetok.h"
 #include "pgen.h"
 
-int Py_DebugFlag;
-int Py_VerboseFlag;
-int Py_IgnoreEnvironmentFlag;
+int Py_DebugFlag = 0;
+int Py_VerboseFlag = 0;
+int Py_IgnoreEnvironmentFlag = 0;
 _PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
 
 /* Forward */
