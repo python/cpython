@@ -1088,6 +1088,7 @@ buildbottest:	build_all platform
 
 pythoninfo: build_all
 		$(RUNSHARED) ./$(BUILDPYTHON) -m test.pythoninfo
+		$(RUNSHARED) ./$(BUILDPYTHON) -m site
 
 QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 		test_multibytecodec test_urllib2_localnet test_itertools \
