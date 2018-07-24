@@ -422,6 +422,11 @@ class TestNtpath(unittest.TestCase):
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$"))
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$\\"))
 
+    def assertEqualCI(self, s1, s2):
+        """Assert that two strings are equal ignoring case differences
+        """
+        self.assertEqual(s1.lower(), s2.lower())
+
     @unittest.skipUnless(nt, "OS helpers require 'nt' module")
     def test_nt_helpers(self):
         # Trivial validation that the helpers do not break, and support both
@@ -429,8 +434,8 @@ class TestNtpath(unittest.TestCase):
 
         drive, path = ntpath.splitdrive(sys.executable)
         drive = drive.rstrip(ntpath.sep) + ntpath.sep
-        self.assertEqual(drive, nt._getvolumepathname(sys.executable))
-        self.assertEqual(drive.encode(),
+        self.assertEqualCI(drive, nt._getvolumepathname(sys.executable))
+        self.assertEqualCI(drive.encode(),
                          nt._getvolumepathname(sys.executable.encode()))
 
         cap, free = nt._getdiskusage(sys.exec_prefix)
