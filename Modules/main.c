@@ -1906,7 +1906,7 @@ cmdline_get_env_flags(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
 #ifdef MS_WINDOWS
     get_env_flag(config, &config->legacy_windows_fs_encoding,
                  "PYTHONLEGACYWINDOWSFSENCODING");
-    get_env_flag(config, &onfig->legacy_windows_stdio,
+    get_env_flag(config, &config->legacy_windows_stdio,
                  "PYTHONLEGACYWINDOWSSTDIO");
 #endif
 }
