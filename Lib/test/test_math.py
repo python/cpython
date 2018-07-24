@@ -731,6 +731,29 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.hypot(1.0, NAN)))
         self.assertTrue(math.isnan(math.hypot(NAN, -2.0)))
 
+    def test_multi_hypot(self):
+        from decimal import Decimal as D
+
+        hypot = math.mh
+
+        self.assertEqual(hypot(12.0, 5.0), 13.0)   # Float inputs. Exact output.
+        self.assertEqual(hypot(12, 5), 13)         # Int inputs
+        self.assertEqual(hypot(D(12), D(5)), 13)   # Decimal inputs
+
+        self.assertEqual(hypot(0.0, 0.0), 0.0)     # Max input is zero
+        self.assertEqual(hypot(-10.5), 10.5)       # Negative input
+
+        with self.assertRaises(TypeError):
+            hypot(x=1)                             # Reject keyword args
+
+        # Test 0 to 4 dimensional inputs
+        args = math.e, math.pi, math.sqrt(2.0), math.gamma(3.5)
+        for i in range(len(args)+1):
+            self.assertAlmostEqual(
+                hypot(*args[:i]),
+                math.sqrt(sum(s**2 for s in args[:i]))
+            )
+
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
         self.ftest('ldexp(0,1)', math.ldexp(0,1), 0)

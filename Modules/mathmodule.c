@@ -71,10 +71,13 @@ raised for division by zero and mod by zero.
     Any infinity gives infinity
     If no infinity, any NaN gives a NaN
 
-    hypot(x=1) -> TypeError  // no keyword args
-    hypot(-10.5) -> 10.5     // flip the sign to positive
+    * hypot(x=1) -> TypeError  // no keyword args
+    * hypot(-10.5) -> 10.5     // flip the sign to positive
     hypot(-Inf) -> Inf;      // flip the sign to positive
-    hypot() -> 0.0           // degrade like sum([])
+    * hypot() -> 0.0           // degrade like sum([]) or reduce(hypot, sides, 0.0)
+    * hypot(0) -> 0.0          // don't divide by zero
+    * hypot(3, 4)              // ints converted to floats
+    * hypot(D('3.0'), D('4.0'))
 */
 
 /* AC: cannot convert yet, waiting for *args support */
