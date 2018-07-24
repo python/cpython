@@ -220,6 +220,12 @@ class BuildExtTestCase(TempdirManager,
         cmd.finalize_options()
         self.assertEqual(cmd.define, [('one', '1'), ('two', '1')])
 
+        # make sure define accept key=value strings
+        cmd = self.build_ext(dist)
+        cmd.define = 'one=v1,two=k2=v2'
+        cmd.finalize_options()
+        self.assertEqual(cmd.define, [('one', 'v1'), ('two', 'k2=v2')])
+
         # make sure undef is turned into a list of
         # strings if they are ','-separated strings
         cmd = self.build_ext(dist)

@@ -240,12 +240,14 @@ class build_ext(Command):
 
         # The argument parsing will result in self.define being a string, but
         # it has to be a list of 2-tuples.  All the preprocessor symbols
-        # specified by the 'define' option will be set to '1'.  Multiple
-        # symbols can be separated with commas.
+        # without value specified by the 'define' option will be set to '1'.
+        # Multiple symbols can be separated with commas.
 
         if self.define:
-            defines = self.define.split(',')
-            self.define = [(symbol, '1') for symbol in defines]
+            self.define = [
+                tuple(define.split('=', 1)) if '=' in define else (define, '1')
+                for define in self.define.split(',')
+            ]
 
         # The option for macros to undefine is also a string from the
         # option parsing, but has to be a list.  Multiple symbols can also
