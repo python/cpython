@@ -568,7 +568,9 @@ _PyState_ClearModules(void)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
-    if (Py_VerboseFlag && tstate->frame != NULL)
+    int verbose = tstate->interp->core_config.verbose;
+
+    if (verbose && tstate->frame != NULL)
         fprintf(stderr,
           "PyThreadState_Clear: warning: thread still has a frame\n");
 
@@ -586,7 +588,7 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->exc_state.exc_traceback);
 
     /* The stack of exception states should contain just this thread. */
-    if (Py_VerboseFlag && tstate->exc_info != &tstate->exc_state) {
+    if (verbose && tstate->exc_info != &tstate->exc_state) {
         fprintf(stderr,
           "PyThreadState_Clear: warning: thread still has a generator\n");
     }
