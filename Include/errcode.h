@@ -29,6 +29,7 @@ extern "C" {
 #define E_EOFS		23	/* EOF in triple-quoted string */
 #define E_EOLS		24	/* EOL in single-quoted string */
 #define E_LINECONT	25	/* Unexpected characters after a line continuation */
+#define E_IO    	26	/* I/O error */
 
 #ifdef __cplusplus
 }

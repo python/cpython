@@ -1654,6 +1654,9 @@ err_input(perrdetail *err)
         Py_XDECREF(tb);
         break;
     }
+    case E_IO:
+        msg = "I/O error while reading";
+        break;
     case E_LINECONT:
         msg = "unexpected character after line continuation character";
         break;
