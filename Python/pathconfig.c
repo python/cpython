@@ -283,8 +283,7 @@ core_config_init_module_search_paths(_PyCoreConfig *config,
 
 
 _PyInitError
-_PyCoreConfig_InitPathConfig(_PyCoreConfig *config,
-                             int *isolated, int *no_site_import)
+_PyCoreConfig_InitPathConfig(_PyCoreConfig *config)
 {
     _PyPathConfig path_config = _PyPathConfig_INIT;
     _PyInitError err;
@@ -345,11 +344,11 @@ _PyCoreConfig_InitPathConfig(_PyCoreConfig *config,
         }
     }
 
-    if (path_config.isolated != -1 && isolated != NULL) {
-        *isolated = path_config.isolated;
+    if (path_config.isolated != -1) {
+        config->isolated = path_config.isolated;
     }
-    if (path_config.no_site_import != -1 && no_site_import != NULL) {
-        *no_site_import = path_config.no_site_import;
+    if (path_config.site_import != -1) {
+        config->site_import = path_config.site_import;
     }
 
     _PyPathConfig_Clear(&path_config);
@@ -375,10 +374,7 @@ pathconfig_global_init(void)
     _PyInitError err;
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    /* Py_IsolatedFlag and Py_NoSiteFlag are left unchanged: pass NULL.
-       _PyCoreConfig_InitPathConfig() will be called later and will set
-       these flags. */
-    err = _PyCoreConfig_Read(&config, NULL, NULL);
+    err = _PyCoreConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         goto error;
     }
