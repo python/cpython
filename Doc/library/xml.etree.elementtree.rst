@@ -772,13 +772,13 @@ Element Objects
 
    .. method:: getchildren()
 
-      .. deprecated:: 3.2
+      .. deprecated-removed:: 3.2 3.9
          Use ``list(elem)`` or iteration.
 
 
    .. method:: getiterator(tag=None)
 
-      .. deprecated:: 3.2
+      .. deprecated-removed:: 3.2 3.9
          Use method :meth:`Element.iter` instead.
 
 
@@ -888,7 +888,7 @@ ElementTree Objects
 
    .. method:: getiterator(tag=None)
 
-      .. deprecated:: 3.2
+      .. deprecated-removed:: 3.2 3.9
          Use method :meth:`ElementTree.iter` instead.
 
 
@@ -1050,33 +1050,26 @@ XMLParser Objects
 ^^^^^^^^^^^^^^^^^
 
 
-.. class:: XMLParser(html=0, target=None, encoding=None)
+.. class:: XMLParser(*, target=None, encoding=None)
 
    This class is the low-level building block of the module.  It uses
    :mod:`xml.parsers.expat` for efficient, event-based parsing of XML.  It can
    be fed XML data incrementally with the :meth:`feed` method, and parsing
    events are translated to a push API - by invoking callbacks on the *target*
    object.  If *target* is omitted, the standard :class:`TreeBuilder` is used.
-   The *html* argument was historically used for backwards compatibility and is
-   now deprecated.  If *encoding* [1]_ is given, the value overrides the
+   If *encoding* [1]_ is given, the value overrides the
    encoding specified in the XML file.
 
-   .. deprecated:: 3.4
-      The *html* argument.  The remaining arguments should be passed via
-      keyword to prepare for the removal of the *html* argument.
+   .. versionchanged:: 3.8
+      Parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+      The *html* argument no longer supported.
+
 
    .. method:: close()
 
       Finishes feeding data to the parser.  Returns the result of calling the
       ``close()`` method of the *target* passed during construction; by default,
       this is the toplevel document element.
-
-
-   .. method:: doctype(name, pubid, system)
-
-      .. deprecated:: 3.2
-         Define the :meth:`TreeBuilder.doctype` method on a custom TreeBuilder
-         target.
 
 
    .. method:: feed(data)
