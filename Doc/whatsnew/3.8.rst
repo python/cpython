@@ -161,7 +161,7 @@ Deprecated
 * Deprecated methods ``getchildren()`` and ``getiterator()`` in
   the :mod:`~xml.etree.ElementTree` module emit now a
   :exc:`DeprecationWarning` instead of :exc:`PendingDeprecationWarning`.
-  They will be removed in 3.9.
+  They will be removed in Python 3.9.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
 
 
