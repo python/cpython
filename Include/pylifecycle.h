@@ -54,11 +54,20 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 PyAPI_FUNC(_PyInitError) _Py_InitializeCore(const _PyCoreConfig *);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(
+    _PyCoreConfig *config,
+    int *isolated,
+    int *no_site_import);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(int) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(
+    _PyCoreConfig *config,
+    int *isolated,
+    int *no_site_import);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
+    const _PyCoreConfig *config);
 
 PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(
     _PyMainInterpreterConfig *config,
@@ -116,7 +125,11 @@ PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 #ifdef Py_BUILD_CORE
-PyAPI_FUNC(_PyInitError) _PyPathConfig_Init(const _PyCoreConfig *core_config);
+struct _PyPathConfig;
+typedef struct _PyPathConfig _PyPathConfig;
+
+PyAPI_FUNC(_PyInitError) _PyPathConfig_SetGlobal(
+    const _PyPathConfig *config);
 PyAPI_FUNC(PyObject*) _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv);
 PyAPI_FUNC(int) _Py_FindEnvConfigValue(
     FILE *env_file,

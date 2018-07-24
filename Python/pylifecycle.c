@@ -759,6 +759,13 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     if (!_PyContext_Init())
         return _Py_INIT_ERR("can't init context");
 
+    if (!core_config->_disable_importlib) {
+        err = _PyCoreConfig_SetPathConfig(core_config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
     /* This call sets up builtin and frozen import support */
     if (!interp->core_config._disable_importlib) {
         err = initimport(interp, sysmod);
@@ -769,6 +776,22 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
 
     /* Only when we get here is the runtime core fully initialized */
     _PyRuntime.core_initialized = 1;
+    return _Py_INIT_OK();
+}
+
+/* Py_Initialize() has already been called: update the main interpreter
+   configuration. Example of bpo-34008: Py_Main() called after
+   Py_Initialize(). */
+static _PyInitError
+_Py_ReconfigureMainInterpreter(PyInterpreterState *interp,
+                               const _PyMainInterpreterConfig *config)
+{
+    if (config->argv != NULL) {
+        int res = PyDict_SetItemString(interp->sysdict, "argv", config->argv);
+        if (res < 0) {
+            return _Py_INIT_ERR("fail to set sys.argv");
+        }
+    }
     return _Py_INIT_OK();
 }
 
@@ -793,9 +816,6 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     if (!_PyRuntime.core_initialized) {
         return _Py_INIT_ERR("runtime core not initialized");
     }
-    if (_PyRuntime.initialized) {
-        return _Py_INIT_ERR("main interpreter already initialized");
-    }
 
     /* Get current thread state and interpreter pointer */
     tstate = PyThreadState_GET();
@@ -808,6 +828,10 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
     /* Now finish configuring the main interpreter */
     if (_PyMainInterpreterConfig_Copy(&interp->config, config) < 0) {
         return _Py_INIT_ERR("failed to copy main interpreter config");
+    }
+
+    if (_PyRuntime.initialized) {
+        return _Py_ReconfigureMainInterpreter(interp, config);
     }
 
     if (interp->core_config._disable_importlib) {
@@ -892,6 +916,11 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 _PyInitError
 _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 {
+    if (_PyRuntime.initialized) {
+        /* bpo-33932: Calling Py_Initialize() twice does nothing. */
+        return _Py_INIT_OK();
+    }
+
     _PyCoreConfig config = _PyCoreConfig_INIT;
     _PyInitError err;
 
@@ -899,7 +928,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     config._disable_importlib = !install_importlib;
     config.install_signal_handlers = install_sigs;
 
-    err = _PyCoreConfig_Read(&config);
+    err = _PyCoreConfig_Read(&config, &Py_IsolatedFlag, &Py_NoSiteFlag);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }

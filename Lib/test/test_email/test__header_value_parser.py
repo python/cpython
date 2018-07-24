@@ -347,6 +347,15 @@ class TestParser(TestParserMixin, TestEmailBase):
              errors.InvalidBase64PaddingDefect],
             '')
 
+    def test_get_unstructured_invalid_base64_length(self):
+        # bpo-27397: Return the encoded string since there's no way to decode.
+        self._test_get_x(self._get_unst,
+            '=?utf-8?b?abcde?=',
+            'abcde',
+            'abcde',
+            [errors.InvalidBase64LengthDefect],
+            '')
+
     def test_get_unstructured_no_whitespace_between_ews(self):
         self._test_get_x(self._get_unst,
             '=?utf-8?q?foo?==?utf-8?q?bar?=',

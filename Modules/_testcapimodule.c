@@ -2429,7 +2429,8 @@ static int _pending_callback(void *arg)
 /* The following requests n callbacks to _pending_callback.  It can be
  * run from any python thread.
  */
-PyObject *pending_threadfunc(PyObject *self, PyObject *arg)
+static PyObject *
+pending_threadfunc(PyObject *self, PyObject *arg)
 {
     PyObject *callable;
     int r;
@@ -3215,8 +3216,7 @@ slot_tp_del(PyObject *self)
         _Py_NewReference(self);
         self->ob_refcnt = refcnt;
     }
-    assert(!PyType_IS_GC(Py_TYPE(self)) ||
-           _Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
+    assert(!PyType_IS_GC(Py_TYPE(self)) || _PyObject_GC_IS_TRACKED(self));
     /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
      * we need to undo that. */
     _Py_DEC_REFTOTAL;
@@ -5194,7 +5194,7 @@ static PyMethodDef generic_alias_methods[] = {
     {NULL}  /* sentinel */
 };
 
-PyTypeObject GenericAlias_Type = {
+static PyTypeObject GenericAlias_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "GenericAlias",
     sizeof(PyGenericAliasObject),
@@ -5231,7 +5231,7 @@ static PyMethodDef generic_methods[] = {
     {NULL}  /* sentinel */
 };
 
-PyTypeObject Generic_Type = {
+static PyTypeObject Generic_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "Generic",
     sizeof(PyGenericObject),

@@ -97,6 +97,10 @@ corresponding Unix manual entries for more information on calls.");
 #include <sys/sendfile.h>
 #endif
 
+#if defined(__APPLE__)
+#include <copyfile.h>
+#endif
+
 #ifdef HAVE_SCHED_H
 #include <sched.h>
 #endif
@@ -5175,7 +5179,8 @@ enum posix_spawn_file_actions_identifier {
 
 static int
 parse_file_actions(PyObject *file_actions,
-                   posix_spawn_file_actions_t *file_actionsp)
+                   posix_spawn_file_actions_t *file_actionsp,
+                   PyObject *temp_buffer)
 {
     PyObject *seq;
     PyObject *file_action = NULL;
@@ -5220,9 +5225,13 @@ parse_file_actions(PyObject *file_actions,
                 {
                     goto fail;
                 }
+                if (PyList_Append(temp_buffer, path)) {
+                    Py_DECREF(path);
+                    goto fail;
+                }
                 errno = posix_spawn_file_actions_addopen(file_actionsp,
                         fd, PyBytes_AS_STRING(path), oflag, (mode_t)mode);
-                Py_DECREF(path);  /* addopen copied it. */
+                Py_DECREF(path);
                 if (errno) {
                     posix_error();
                     goto fail;
@@ -5305,6 +5314,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     posix_spawn_file_actions_t *file_actionsp = NULL;
     Py_ssize_t argc, envc;
     PyObject *result = NULL;
+    PyObject *temp_buffer = NULL;
     pid_t pid;
     int err_code;
 
@@ -5345,7 +5355,19 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     }
 
     if (file_actions != Py_None) {
-        if (parse_file_actions(file_actions, &file_actions_buf)) {
+        /* There is a bug in old versions of glibc that makes some of the
+         * helper functions for manipulating file actions not copy the provided
+         * buffers. The problem is that posix_spawn_file_actions_addopen does not
+         * copy the value of path for some old versions of glibc (<2.20).
+         * The use of temp_buffer here is a workaround that keeps the
+         * python objects that own the buffers alive until posix_spawn gets called.
+         * Check https://bugs.python.org/issue33630 and
+         * https://sourceware.org/bugzilla/show_bug.cgi?id=17048 for more info.*/
+        temp_buffer = PyList_New(0);
+        if (!temp_buffer) {
+            goto exit;
+        }
+        if (parse_file_actions(file_actions, &file_actions_buf, temp_buffer)) {
             goto exit;
         }
         file_actionsp = &file_actions_buf;
@@ -5372,6 +5394,7 @@ exit:
     if (argvlist) {
         free_string_array(argvlist, argc);
     }
+    Py_XDECREF(temp_buffer);
     return result;
 }
 #endif /* HAVE_POSIX_SPAWN */
@@ -8238,9 +8261,6 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     }
 #endif /* SEEK_END */
 
-    if (PyErr_Occurred())
-        return -1;
-
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
@@ -8743,6 +8763,34 @@ done:
 #endif
 }
 #endif /* HAVE_SENDFILE */
+
+
+#if defined(__APPLE__)
+/*[clinic input]
+os._fcopyfile
+
+    infd: int
+    outfd: int
+    flags: int
+    /
+
+Efficiently copy content or metadata of 2 regular file descriptors (macOS).
+[clinic start generated code]*/
+
+static PyObject *
+os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags)
+/*[clinic end generated code: output=8e8885c721ec38e3 input=69e0770e600cb44f]*/
+{
+    int ret;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = fcopyfile(infd, outfd, NULL, flags);
+    Py_END_ALLOW_THREADS
+    if (ret < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif
 
 
 /*[clinic input]
@@ -12921,6 +12969,7 @@ static PyMethodDef posix_methods[] = {
     OS_UTIME_METHODDEF
     OS_TIMES_METHODDEF
     OS__EXIT_METHODDEF
+    OS__FCOPYFILE_METHODDEF
     OS_EXECV_METHODDEF
     OS_EXECVE_METHODDEF
     OS_SPAWNV_METHODDEF
@@ -13538,6 +13587,10 @@ all_ins(PyObject *m)
 #ifdef HAVE_GETRANDOM_SYSCALL
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
+#endif
+
+#if defined(__APPLE__)
+    if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
 #endif
 
     return 0;

@@ -229,6 +229,23 @@ class EmbeddingTests(unittest.TestCase):
         self.assertEqual(out, '')
         self.assertEqual(err, '')
 
+    def test_initialize_twice(self):
+        """
+        bpo-33932: Calling Py_Initialize() twice should do nothing (and not
+        crash!).
+        """
+        out, err = self.run_embedded_interpreter("initialize_twice")
+        self.assertEqual(out, '')
+        self.assertEqual(err, '')
+
+    def test_initialize_pymain(self):
+        """
+        bpo-34008: Calling Py_Main() after Py_Initialize() must not fail.
+        """
+        out, err = self.run_embedded_interpreter("initialize_pymain")
+        self.assertEqual(out.rstrip(), "Py_Main() after Py_Initialize: sys.argv=['-c', 'arg2']")
+        self.assertEqual(err, '')
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -594,6 +594,6 @@ class Parser:
         return self.stmt_bracketing
 
 
-if __name__ == '__main__':  #pragma: nocover
-    import unittest
-    unittest.main('idlelib.idle_test.test_pyparse', verbosity=2)
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_pyparse', verbosity=2)

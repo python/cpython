@@ -11,6 +11,10 @@ import asyncio
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 # Test that asyncio.iscoroutine() uses collections.abc.Coroutine
 class FakeCoro:
     def send(self, value):
