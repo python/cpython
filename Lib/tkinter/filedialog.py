@@ -415,7 +415,7 @@ def askopenfiles(mode = "r", encoding = None, **options):
     return files
 
 
-def asksaveasfile(mode = "w", , encoding = None, **options):
+def asksaveasfile(mode = "w", encoding = None, **options):
     "Ask for a filename to save as, and returned the opened file"
 
     filename = SaveAs(**options).show()
