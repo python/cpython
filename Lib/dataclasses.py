@@ -186,6 +186,10 @@ _FIELDS = '__dataclass_fields__'
 # @dataclass.
 _PARAMS = '__dataclass_params__'
 
+# The name of an attribute on the class that stores a reference to
+# the object class in case it is shadowed by field name.
+_OBJECT = '__dataclass_object__'
+
 # The name of the function, that if it exists, is called at the end of
 # __init__.
 _POST_INIT_NAME = '__post_init__'
@@ -357,7 +361,7 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     return locals[name]
 
 
-def _field_assign(frozen, name, value, self_name):
+def _field_assign(frozen, name, value, self_name, object_expression):
     # If we're a frozen class, then assign to our fields in __init__
     # via object.__setattr__.  Otherwise, just use a simple
     # assignment.
@@ -365,11 +369,11 @@ def _field_assign(frozen, name, value, self_name):
     # self_name is what "self" is called in this function: don't
     # hard-code "self", since that might be a field name.
     if frozen:
-        return f'object.__setattr__({self_name},{name!r},{value})'
+        return f'{object_expression}.__setattr__({self_name},{name!r},{value})'
     return f'{self_name}.{name}={value}'
 
 
-def _field_init(f, frozen, globals, self_name):
+def _field_init(f, frozen, globals, self_name, object_expression):
     # Return the text of the line in the body of __init__ that will
     # initialize this field.
 
@@ -420,7 +424,7 @@ def _field_init(f, frozen, globals, self_name):
         return None
 
     # Now, actually generate the field assignment.
-    return _field_assign(frozen, f.name, value, self_name)
+    return _field_assign(frozen, f.name, value, self_name, object_expression)
 
 
 def _init_param(f):
@@ -442,7 +446,7 @@ def _init_param(f):
     return f'{f.name}:_type_{f.name}{default}'
 
 
-def _init_fn(fields, frozen, has_post_init, self_name):
+def _init_fn(fields, frozen, has_post_init, self_name, object_expression):
     # fields contains both real fields and InitVar pseudo-fields.
 
     # Make sure we don't have fields without defaults following fields
@@ -465,7 +469,7 @@ def _init_fn(fields, frozen, has_post_init, self_name):
 
     body_lines = []
     for f in fields:
-        line = _field_init(f, frozen, globals, self_name)
+        line = _field_init(f, frozen, globals, self_name, object_expression)
         # line is None means that this field doesn't require
         # initialization (it's a pseudo-field).  Just skip it.
         if line:
@@ -841,6 +845,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     # also marks this class as being a dataclass.
     setattr(cls, _FIELDS, fields)
 
+    # Copy reference to "object" in case it is shadowed by a field name.
+    setattr(cls, _OBJECT, object)
+
     # Was this class defined with an explicit __hash__?  Note that if
     # __eq__ is defined in this class, then python will automatically
     # set __hash__ to None.  This is a heuristic, as it's possible
@@ -862,15 +869,19 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         # Include InitVars and regular fields (so, not ClassVars).
         flds = [f for f in fields.values()
                 if f._field_type in (_FIELD, _FIELD_INITVAR)]
+        # The name to use for the "self" param in __init__.
+        # Use "self" if possible.
+        self_name = '__dataclass_self__' if 'self' in fields else 'self'
+        # The way to refer to "object" in __init__.
+        # Use "object" if possible.
+        object_expression = (f'{self_name}.{_OBJECT}'
+                            if 'object' in fields else 'object')
         _set_new_attribute(cls, '__init__',
                            _init_fn(flds,
                                     frozen,
                                     has_post_init,
-                                    # The name to use for the "self"
-                                    # param in __init__.  Use "self"
-                                    # if possible.
-                                    '__dataclass_self__' if 'self' in fields
-                                            else 'self',
+                                    self_name,
+                                    object_expression,
                           ))
 
     # Get the fields as a list, and include only real fields.  This is

@@ -192,6 +192,20 @@ class TestCase(unittest.TestCase):
         first = next(iter(sig.parameters))
         self.assertEqual('self', first)
 
+    def test_field_named_object(self):
+        @dataclass
+        class C:
+            object: str
+        c=C('foo')
+        self.assertEqual(c.object, 'foo')
+
+    def test_field_named_object_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            object: str
+        c=C('foo')
+        self.assertEqual(c.object, 'foo')
+
     def test_0_field_compare(self):
         # Ensure that order=False is the default.
         @dataclass
