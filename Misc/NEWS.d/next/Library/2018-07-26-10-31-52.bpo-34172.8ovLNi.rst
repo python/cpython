@@ -1,0 +1,3 @@
+Fixed a circular reference issue inside the multiprocessing.Pool
+implementation that caused a resource leak when not closing/terminating the
+pool before deleting it.

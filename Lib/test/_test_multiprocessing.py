@@ -2527,6 +2527,12 @@ class _TestPool(BaseTestCase):
         # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
 
+    def test_del_pool(self):
+        p = self.Pool(1)
+        wr = weakref.ref(p)
+        del p
+        gc.collect()
+        self.assertIsNone(wr())
 
 def raising():
     raise KeyError("key")
