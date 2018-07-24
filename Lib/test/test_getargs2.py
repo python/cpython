@@ -682,11 +682,11 @@ class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
         self.assertEqual(self.getargs(1), (1, -1, -1))
         # required positional arg missing
         with self.assertRaisesRegex(TypeError,
-            r"function takes at least 1 positional arguments \(0 given\)"):
+            r"function takes at least 1 positional argument \(0 given\)"):
             self.getargs()
 
         with self.assertRaisesRegex(TypeError,
-            r"function takes at least 1 positional arguments \(0 given\)"):
+            r"function takes at least 1 positional argument \(0 given\)"):
             self.getargs(keyword=3)
 
     def test_empty_keyword(self):
