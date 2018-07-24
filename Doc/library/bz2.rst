@@ -35,6 +35,10 @@ Here is a summary of the features offered by the bz2 module:
 
 * Thread safety uses individual locking mechanism.
 
+.. note::
+   Handling of multi-stream bzip2 files is not supported.  Packages such as
+   `bz2file <https://github.com/nvawda/bz2file>`_ let you overcome this.
+
 
 (De)compression of files
 ------------------------
