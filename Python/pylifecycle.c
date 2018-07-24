@@ -643,11 +643,6 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
         return err;
     }
 
-    if (!core_config->use_hash_seed || core_config->hash_seed) {
-        /* Random or non-zero hash seed */
-        Py_HashRandomizationFlag = 1;
-    }
-
     err = _PyInterpreterState_Enable(&_PyRuntime);
     if (_Py_INIT_FAILED(err)) {
         return err;
@@ -661,6 +656,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
         return _Py_INIT_ERR("failed to copy core config");
     }
+    core_config = &interp->core_config;
 
     PyThreadState *tstate = PyThreadState_New(interp);
     if (tstate == NULL)
@@ -757,7 +753,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     if (!_PyContext_Init())
         return _Py_INIT_ERR("can't init context");
 
-    if (!core_config->_disable_importlib) {
+    if (core_config->_install_importlib) {
         err = _PyCoreConfig_SetPathConfig(core_config);
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -765,7 +761,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     }
 
     /* This call sets up builtin and frozen import support */
-    if (!interp->core_config._disable_importlib) {
+    if (core_config->_install_importlib) {
         err = initimport(interp, sysmod);
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -807,21 +803,20 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp,
 _PyInitError
 _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 {
-    PyInterpreterState *interp;
-    PyThreadState *tstate;
-    _PyInitError err;
-
     if (!_PyRuntime.core_initialized) {
         return _Py_INIT_ERR("runtime core not initialized");
     }
 
     /* Get current thread state and interpreter pointer */
-    tstate = PyThreadState_GET();
-    if (!tstate)
+    PyThreadState *tstate = PyThreadState_GET();
+    if (!tstate) {
         return _Py_INIT_ERR("failed to read thread state");
-    interp = tstate->interp;
-    if (!interp)
+    }
+    PyInterpreterState *interp = tstate->interp;
+    if (!interp) {
         return _Py_INIT_ERR("failed to get interpreter");
+    }
+    _PyCoreConfig *core_config = &interp->core_config;
 
     /* Now finish configuring the main interpreter */
     if (_PyMainInterpreterConfig_Copy(&interp->config, config) < 0) {
@@ -832,7 +827,7 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return _Py_ReconfigureMainInterpreter(interp, config);
     }
 
-    if (interp->core_config._disable_importlib) {
+    if (!core_config->_install_importlib) {
         /* Special mode for freeze_importlib: run with no import system
          *
          * This means anything which needs support from extension modules
@@ -850,13 +845,13 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         return _Py_INIT_ERR("can't finish initializing sys");
     }
 
-    err = initexternalimport(interp);
+    _PyInitError err = initexternalimport(interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
     /* initialize the faulthandler module */
-    err = _PyFaulthandler_Init(interp->core_config.faulthandler);
+    err = _PyFaulthandler_Init(core_config->faulthandler);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -873,8 +868,9 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
         }
     }
 
-    if (_PyTraceMalloc_Init(interp->core_config.tracemalloc) < 0)
+    if (_PyTraceMalloc_Init(core_config->tracemalloc) < 0) {
         return _Py_INIT_ERR("can't initialize tracemalloc");
+    }
 
     err = add_main_module(interp);
     if (_Py_INIT_FAILED(err)) {
@@ -900,7 +896,7 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 
     _PyRuntime.initialized = 1;
 
-    if (!Py_NoSiteFlag) {
+    if (core_config->site_import) {
         err = initsite(); /* Module site */
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -922,7 +918,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     _PyCoreConfig config = _PyCoreConfig_INIT;
     _PyInitError err;
 
-    config._disable_importlib = !install_importlib;
+    config._install_importlib = install_importlib;
     config.install_signal_handlers = install_sigs;
 
     err = _PyCoreConfig_Read(&config);
@@ -1317,6 +1313,7 @@ new_interpreter(PyThreadState **tstate_p)
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
         return _Py_INIT_ERR("failed to copy core config");
     }
+    core_config = &interp->core_config;
     if (_PyMainInterpreterConfig_Copy(&interp->config, config) < 0) {
         return _Py_INIT_ERR("failed to copy main interpreter config");
     }
@@ -1392,7 +1389,7 @@ new_interpreter(PyThreadState **tstate_p)
             return err;
         }
 
-        if (!Py_NoSiteFlag) {
+        if (core_config->site_import) {
             err = initsite();
             if (_Py_INIT_FAILED(err)) {
                 return err;

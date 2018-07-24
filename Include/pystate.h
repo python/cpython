@@ -75,26 +75,28 @@ typedef struct {
     wchar_t *dll_path;      /* Windows DLL path */
 #endif
 
-    /* If greater than 0, enable isolated mode sys.path contains
+    /* If greater than 0, enable isolated mode: sys.path contains
        neither the script's directory nor the user's site-packages directory.
-       Ignored if set to -1.
 
-       Related to Py_IsolatedFlag global configuration variable and -I command
-       line option. */
+       Set to 1 by the -I command line option. If set to -1 (default), inherit
+       Py_IsolatedFlag value. */
     int isolated;
 
     /* If equal to zero, disable the import of the module site and the
        site-dependent manipulations of sys.path that it entails. Also disable
        these manipulations if site is explicitly imported later (call
        site.main() if you want them to be triggered).
-       Ignored if set to -1.
 
-       Related to Py_NoSiteFlag global configuration variable and -S command
-       line option. */
+       Set to 0 by the -S command line option. If set to -1 (default), set to
+       the negative value of Py_NoSiteFlag. */
     int site_import;
 
-    /* Private fields */
-    int _disable_importlib; /* Needed by freeze_importlib */
+    /* --- Private fields -------- */
+
+    /* Install importlib? If set to 0, importlib is not initialized at all.
+       Needed by freeze_importlib: see install_importlib argument of
+       _Py_InitializeEx_Private(). */
+    int _install_importlib;
 } _PyCoreConfig;
 
 #define _PyCoreConfig_INIT \
@@ -107,7 +109,8 @@ typedef struct {
         .argc = -1, \
         .nmodule_search_path = -1, \
         .isolated = -1, \
-        .site_import = -1}
+        .site_import = -1, \
+        ._install_importlib = 1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API

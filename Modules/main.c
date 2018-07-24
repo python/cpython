@@ -625,6 +625,10 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
     if (config->site_import != -1) {
         Py_NoSiteFlag = !config->site_import;
     }
+
+    /* Random or non-zero hash seed */
+    Py_HashRandomizationFlag = (config->use_hash_seed == 0 ||
+                                config->hash_seed != 0);
 }
 
 
@@ -649,10 +653,6 @@ pymain_set_global_config(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
     Py_LegacyWindowsFSEncodingFlag = cmdline->legacy_windows_fs_encoding;
     Py_LegacyWindowsStdioFlag = cmdline->legacy_windows_stdio;
 #endif
-
-    /* Random or non-zero hash seed */
-    Py_HashRandomizationFlag = (pymain->config.use_hash_seed == 0 ||
-                                pymain->config.hash_seed != 0);
 }
 
 
@@ -728,7 +728,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(ignore_environment);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
-    COPY_ATTR(_disable_importlib);
+    COPY_ATTR(_install_importlib);
     COPY_ATTR(allocator);
     COPY_ATTR(dev_mode);
     COPY_ATTR(faulthandler);
@@ -2309,7 +2309,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         config->install_signal_handlers = 1;
     }
 
-    if (!config->_disable_importlib) {
+    if (config->_install_importlib) {
         err = _PyCoreConfig_InitPathConfig(config);
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -2433,7 +2433,7 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
                       config->argc, config->argv);
     }
 
-    if (!config->_disable_importlib) {
+    if (config->_install_importlib) {
         COPY_WSTR(executable);
         COPY_WSTR(prefix);
         COPY_WSTR(base_prefix);
@@ -2540,7 +2540,6 @@ pymain_init(_PyMain *pymain)
     fedisableexcept(FE_OVERFLOW);
 #endif
 
-    pymain->config._disable_importlib = 0;
     pymain->config.install_signal_handlers = 1;
 }
 
