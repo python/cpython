@@ -236,7 +236,8 @@ def b32decode(s, casefold=False, map01=None):
     if padchars and decoded:
         acc <<= 5 * padchars
         last = acc.to_bytes(5, 'big')
-        decoded[-5:] = last[:-((padchars * 5 + 4) // 8)]
+        leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
+        decoded[-5:] = last[:leftover]
     return bytes(decoded)
 
 
