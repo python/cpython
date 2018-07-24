@@ -127,10 +127,12 @@ From all times, sorting has always been a Great Art! :-)
 __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
            'nlargest', 'nsmallest', 'heappushpop']
 
+
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
     heap.append(item)
-    _siftdown(heap, 0, len(heap)-1)
+    _siftdown(heap, 0, len(heap) - 1)
+
 
 def heappop(heap):
     """Pop the smallest item off the heap, maintaining the heap invariant."""
@@ -141,6 +143,7 @@ def heappop(heap):
         _siftup(heap, 0)
         return returnitem
     return lastelt
+
 
 def heapreplace(heap, item):
     """Pop and return the current smallest value, and add the new item.
@@ -158,12 +161,14 @@ def heapreplace(heap, item):
     _siftup(heap, 0)
     return returnitem
 
+
 def heappushpop(heap, item):
     """Fast version of a heappush followed by a heappop."""
     if heap and heap[0] < item:
         item, heap[0] = heap[0], item
         _siftup(heap, 0)
     return item
+
 
 def heapify(x):
     """Transform list into a heap, in-place, in O(len(x)) time."""
@@ -173,8 +178,9 @@ def heapify(x):
     # or i < (n-1)/2.  If n is even = 2*j, this is (2*j-1)/2 = j-1/2 so
     # j-1 is the largest, which is n//2 - 1.  If n is odd = 2*j+1, this is
     # (2*j+1-1)/2 = j so j-1 is the largest, and that's again n//2-1.
-    for i in reversed(range(n//2)):
+    for i in range(n//2 + 1, -1, -1):
         _siftup(x, i)
+
 
 def _heappop_max(heap):
     """Maxheap version of a heappop."""
@@ -186,6 +192,7 @@ def _heappop_max(heap):
         return returnitem
     return lastelt
 
+
 def _heapreplace_max(heap, item):
     """Maxheap version of a heappop followed by a heappush."""
     returnitem = heap[0]    # raises appropriate IndexError if heap is empty
@@ -193,11 +200,13 @@ def _heapreplace_max(heap, item):
     _siftup_max(heap, 0)
     return returnitem
 
+
 def _heapify_max(x):
     """Transform list into a maxheap, in-place, in O(len(x)) time."""
     n = len(x)
-    for i in reversed(range(n//2)):
+    for i in range(n//2 + 1, -1, -1):
         _siftup_max(x, i)
+
 
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
 # is the index of a leaf with a possibly out-of-order value.  Restore the
@@ -215,6 +224,7 @@ def _siftdown(heap, startpos, pos):
             continue
         break
     heap[pos] = newitem
+
 
 # The child indices of heap index pos are already heaps, and we want to make
 # a heap at index pos too.  We do this by bubbling the smaller child of
@@ -275,6 +285,7 @@ def _siftup(heap, pos):
     heap[pos] = newitem
     _siftdown(heap, startpos, pos)
 
+
 def _siftdown_max(heap, startpos, pos):
     'Maxheap variant of _siftdown'
     newitem = heap[pos]
@@ -289,6 +300,7 @@ def _siftdown_max(heap, startpos, pos):
             continue
         break
     heap[pos] = newitem
+
 
 def _siftup_max(heap, pos):
     'Maxheap variant of _siftup'
@@ -310,6 +322,7 @@ def _siftup_max(heap, pos):
     # to its final resting place (by sifting its parents down).
     heap[pos] = newitem
     _siftdown_max(heap, startpos, pos)
+
 
 def merge(*iterables, key=None, reverse=False):
     '''Merge multiple sorted inputs into a single sorted output.
@@ -356,10 +369,10 @@ def merge(*iterables, key=None, reverse=False):
                 while True:
                     value, order, next = s = h[0]
                     yield value
-                    s[0] = next()           # raises StopIteration when exhausted
-                    _heapreplace(h, s)      # restore heap condition
+                    s[0] = next()        # raises StopIteration when exhausted
+                    _heapreplace(h, s)   # restore heap condition
             except StopIteration:
-                _heappop(h)                 # remove empty iterator
+                _heappop(h)              # remove empty iterator
         if h:
             # fast case when only a single iterator remains
             value, order, next = h[0]
@@ -478,7 +491,7 @@ def nsmallest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key)[:n]
+            return sorted(iterable, key=key)
 
     # When key is none, use simpler decoration
     if key is None:
@@ -518,6 +531,7 @@ def nsmallest(n, iterable, key=None):
     result.sort()
     return [elem for (k, order, elem) in result]
 
+
 def nlargest(n, iterable, key=None):
     """Find the n largest elements in a dataset.
 
@@ -538,7 +552,7 @@ def nlargest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key, reverse=True)[:n]
+            return sorted(iterable, key=key, reverse=True)
 
     # When key is none, use simpler decoration
     if key is None:
@@ -575,6 +589,7 @@ def nlargest(n, iterable, key=None):
             order -= 1
     result.sort(reverse=True)
     return [elem for (k, order, elem) in result]
+
 
 # If available, use C implementation
 try:
