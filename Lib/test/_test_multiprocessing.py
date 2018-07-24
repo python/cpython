@@ -4477,10 +4477,11 @@ class TestSemaphoreTracker(unittest.TestCase):
         if pid:
             os.kill(pid, signal.SIGKILL)
             time.sleep(0.5)  # give it time to die
-        old_stderr = sys.stderr
         testfn = test.support.TESTFN
         self.addCleanup(test.support.unlink, testfn)
-        sys.stderr = open(testfn, "bw")
+        tracker_stderr_r = open(testfn, "wb")
+        old_stderr = os.dup(sys.stderr.fileno())
+        os.dup2(tracker_stderr_r.fileno(), sys.stderr.fileno())
         try:
             with warnings.catch_warnings(record=True) as all_warn:
                 _semaphore_tracker.ensure_running()
@@ -4499,11 +4500,12 @@ class TestSemaphoreTracker(unittest.TestCase):
                     if not data:
                         continue
                     if b"PONG" not in data:
-                        raise ValueError("Invalid data in stderr!")
+                        raise ValueError("Invalid data in stderr: {}!".format(data))
                     break
         finally:
-            sys.stderr.close()
-            sys.stderr = old_stderr
+            tracker_stderr_r.close()
+            os.dup2(sys.stderr.fileno(), old_stderr)
+            os.close(old_stderr)
 
         os.kill(pid, signum)
         time.sleep(1.0)  # give it time to die
