@@ -738,6 +738,12 @@ class SpooledTemporaryFile:
     def readlines(self, *args):
         return self._file.readlines(*args)
 
+    def readinto(self, *args):
+        return self._file.readinto(*args)
+
+    def readinto1(self, *args):
+        return self._file.readinto1(*args)
+
     def seek(self, *args):
         self._file.seek(*args)
 
