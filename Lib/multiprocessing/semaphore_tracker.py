@@ -10,7 +10,6 @@
 # the next reboot.  Without this semaphore tracker process, "killall
 # python" would probably leave unlinked semaphores.
 #
-
 import os
 import signal
 import sys
@@ -129,7 +128,8 @@ def main(fd, fd_write):
                     elif cmd == b'UNREGISTER':
                         cache.remove(name)
                     elif cmd == b'PING':
-                        os.write(fd_write, b"PONG\n")
+                        with open(fd_write, "wb") as output:
+                            output.write(b"PONG\n")
                     else:
                         raise RuntimeError('unrecognized command %r' % cmd)
                 except Exception:
