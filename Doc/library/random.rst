@@ -141,8 +141,13 @@ Functions for sequences
 
 .. function:: choices(population, weights=None, *, cum_weights=None, k=1)
 
-   Return a *k* sized list of elements chosen from the *population* with replacement.
-   If the *population* is empty, raises :exc:`IndexError`.
+   Return a *k* sized list of elements chosen from the *population* sequence
+   with replacement.
+
+   Used for random sampling **with** replacement.
+
+   Returns a new list containing elements from the population while leaving the
+   original population unchanged.
 
    If a *weights* sequence is specified, selections are made according to the
    relative weights.  Alternatively, if a *cum_weights* sequence is given, the
@@ -161,6 +166,8 @@ Functions for sequences
    The *weights* or *cum_weights* can use any numeric type that interoperates
    with the :class:`float` values returned by :func:`random` (that includes
    integers, floats, and fractions but excludes decimals).
+
+   If the *population* is empty, raises :exc:`IndexError`.
 
    .. versionadded:: 3.6
 
@@ -182,16 +189,24 @@ Functions for sequences
    can fit within the period of the Mersenne Twister random number generator.
 
 
-.. function:: sample(population, k)
+.. function:: sample(population, k, *, weights=None)
 
-   Return a *k* length list of unique elements chosen from the population sequence
-   or set. Used for random sampling without replacement.
+   Return a *k* sized list of unique elements chosen from the *population* sequence
+   or set.
+
+   Used for random sampling **without** replacement.
 
    Returns a new list containing elements from the population while leaving the
-   original population unchanged.  The resulting list is in selection order so that
-   all sub-slices will also be valid random samples.  This allows raffle winners
-   (the sample) to be partitioned into grand prize and second place winners (the
-   subslices).
+   original population unchanged.
+
+   If a *weights* sequence is specified, selections are made according to the
+   relative weights.  It must be the same length as the *population* sequence,
+   otherwise a :exc:`ValueError` is raised.
+
+   If a *weights* sequence is not specified, the selections are made with equal
+   probability and the resulting list is in selection order so that all sub-slices
+   will also be valid random samples.  This allows raffle winners (the sample) to
+   be partitioned into grand prize and second place winners (the subslices).
 
    Members of the population need not be :term:`hashable` or unique.  If the population
    contains repeats, then each occurrence is a possible selection in the sample.
@@ -200,8 +215,13 @@ Functions for sequences
    argument.  This is especially fast and space efficient for sampling from a large
    population:  ``sample(range(10000000), k=60)``.
 
+   The *weights* can use any numeric type that interoperates with the :class:`float`
+   values returned by :func:`random` (that includes integers, floats, and fractions
+   but excludes decimals).
+
    If the sample size is larger than the population size, a :exc:`ValueError`
-   is raised.
+   is raised. The same error is raised when sample size is larger than number of
+   non-zero weights entries.
 
 Real-valued distributions
 -------------------------

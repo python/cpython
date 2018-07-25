@@ -305,14 +305,23 @@ class Random(_random.Random):
                 j = _int(random() * (i+1))
                 x[i], x[j] = x[j], x[i]
 
-    def sample(self, population, k):
-        """Chooses k unique random elements from a population sequence or set.
+    def sample(self, population, k, *, weights=None):
+        """Return a k sized list of unique elements chosen from the population sequence or set.
+
+        Used for random sampling without replacement.
 
         Returns a new list containing elements from the population while
-        leaving the original population unchanged.  The resulting list is
-        in selection order so that all sub-slices will also be valid random
-        samples.  This allows raffle winners (the sample) to be partitioned
-        into grand prize and second place winners (the subslices).
+        leaving the original population unchanged.
+
+        If a weights sequence is specified, selections are made according
+        to the relative weights.  It must be the same length as the
+        population sequence, otherwise a ValueError is raised.
+
+        If a weights sequence is not specified, the selections are made
+        with equal probability and the resulting list is in selection order
+        so that all sub-slices will also be valid random samples.  This
+        allows raffle winners (the sample) to be partitioned into grand
+        prize and second place winners (the subslices).
 
         Members of the population need not be hashable or unique.  If the
         population contains repeats, then each occurrence is a possible
@@ -321,6 +330,14 @@ class Random(_random.Random):
         To choose a sample in a range of integers, use range as an argument.
         This is especially fast and space efficient for sampling from a
         large population:   sample(range(10000000), 60)
+
+        The *weights* can use any numeric type that interoperates with the float
+        values returned by random (that includes integers, floats, and fractions
+        but excludes decimals).
+
+        If the sample size is larger than the population size, a ValueError
+        is raised. The same error is raised when sample size is larger than
+        number of non-zero weights entries.
         """
 
         # Sampling without replacement entails tracking either potential
@@ -337,38 +354,54 @@ class Random(_random.Random):
             population = tuple(population)
         if not isinstance(population, _Sequence):
             raise TypeError("Population must be a sequence or set.  For dicts, use list(d).")
-        randbelow = self._randbelow
         n = len(population)
         if not 0 <= k <= n:
             raise ValueError("Sample larger than population or is negative")
-        result = [None] * k
-        setsize = 21        # size of a small set minus size of an empty list
-        if k > 5:
-            setsize += 4 ** _ceil(_log(k * 3, 4)) # table size for big sets
-        if n <= setsize:
-            # An n-length list is smaller than a k-length set
-            pool = list(population)
-            for i in range(k):         # invariant:  non-selected at [0,n-i)
-                j = randbelow(n-i)
-                result[i] = pool[j]
-                pool[j] = pool[n-i-1]   # move non-selected item into vacancy
-        else:
-            selected = set()
-            selected_add = selected.add
-            for i in range(k):
-                j = randbelow(n)
-                while j in selected:
+        if weights is None:
+            randbelow = self._randbelow
+            result = [None] * k
+            setsize = 21        # size of a small set minus size of an empty list
+            if k > 5:
+                setsize += 4 ** _ceil(_log(k * 3, 4)) # table size for big sets
+            if n <= setsize:
+                # An n-length list is smaller than a k-length set
+                pool = list(population)
+                for i in range(k):         # invariant:  non-selected at [0,n-i)
+                    j = randbelow(n-i)
+                    result[i] = pool[j]
+                    pool[j] = pool[n-i-1]   # move non-selected item into vacancy
+            else:
+                selected = set()
+                selected_add = selected.add
+                for i in range(k):
                     j = randbelow(n)
-                selected_add(j)
-                result[i] = population[j]
+                    while j in selected:
+                        j = randbelow(n)
+                    selected_add(j)
+                    result[i] = population[j]
+        else:
+            # Pavlos S. Efraimidis and Paul G. Spirakis
+            # Weighted random sampling with a reservoir
+            # Information Processing Letters 97 (5), 181-185
+            # http://dx.doi.org/10.1016/j.ipl.2005.11.003
+            if len(weights) != n:
+                raise ValueError("The number of weights does not match the population")
+            order = sorted((i for i in range(n) if weights[i] > 0), key=lambda i: -random() ** (1.0 / weights[i]))
+            if len(order) < k:
+                raise ValueError("Fewer non-zero entries in weights than sample size")
+            result = [population[order[i]] for i in range(k)]
         return result
 
     def choices(self, population, weights=None, *, cum_weights=None, k=1):
         """Return a k sized list of population elements chosen with replacement.
 
+        Used for random sampling with replacement.
+
+        Returns a new list containing elements from the population while leaving the
+        original population unchanged.
+
         If the relative weights or cumulative weights are not specified,
         the selections are made with equal probability.
-
         """
         random = self.random
         n = len(population)
