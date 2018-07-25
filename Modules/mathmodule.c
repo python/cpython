@@ -89,6 +89,8 @@ m_hypot(PyObject *self, PyObject *args)
     double max = 0.0;
     double csum = 0.0;
     double x;
+    int found_inf = 0;
+    int found_nan = 0;
 
     n = PyTuple_GET_SIZE(args);
     for (i=0 ; i<n ; i++) {
@@ -97,10 +99,18 @@ m_hypot(PyObject *self, PyObject *args)
         if (x == -1.0 && PyErr_Occurred()) {
             return NULL;
         }
+        found_inf |= Py_IS_INFINITY(x);
+        found_nan |= Py_IS_NAN(x);
         x = fabs(x);
         if (x > max) {
             max = x;
         }
+    }
+    if (found_inf) {
+        return PyFloat_FromDouble(max);
+    }
+    if (found_nan) {
+        return PyFloat_FromDouble(Py_NAN);
     }
     if (max == 0.0) {
         return PyFloat_FromDouble(0.0);

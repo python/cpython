@@ -754,6 +754,27 @@ class MathTests(unittest.TestCase):
                 math.sqrt(sum(s**2 for s in args[:i]))
             )
 
+        # Test special values.
+        # Any infinity gives positive infinity.
+        self.assertEqual(hypot(INF), INF)
+        self.assertEqual(hypot(0, INF), INF)
+        self.assertEqual(hypot(10, INF), INF)
+        self.assertEqual(hypot(-10, INF), INF)
+        self.assertEqual(hypot(NAN, INF), INF)
+        self.assertEqual(hypot(-INF, INF), INF)
+        self.assertEqual(hypot(-INF, -INF), INF)
+        self.assertEqual(hypot(10, -INF), INF)
+        # If no infinity, any NaN gives a Nan.
+        self.assertTrue(math.isnan(hypot(NAN)))
+        self.assertTrue(math.isnan(hypot(0, NAN)))
+        self.assertTrue(math.isnan(hypot(NAN, 10)))
+        self.assertTrue(math.isnan(hypot(NAN, NAN)))
+        self.assertTrue(math.isnan(hypot(NAN)))
+
+        # Exact tests
+        #  hypot(*[value*n]) == value * math.sqrt(n)
+
+
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
         self.ftest('ldexp(0,1)', math.ldexp(0,1), 0)
