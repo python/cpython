@@ -23,9 +23,9 @@ class TestCase(unittest.TestCase):
     def setUp(self):
         # The tests assume that line wrapping occurs at 80 columns, but this
         # behaviour can be overridden by setting the COLUMNS environment
-        # variable.  To ensure that this assumption is true, unset COLUMNS.
+        # variable.  To ensure that this width is used, set COLUMNS to 80.
         env = support.EnvironmentVarGuard()
-        env.unset("COLUMNS")
+        env['COLUMNS'] = '80'
         self.addCleanup(env.__exit__)
 
 
@@ -5122,6 +5122,7 @@ class TestImportStar(TestCase):
 class TestWrappingMetavar(TestCase):
 
     def setUp(self):
+        super().setUp()
         self.parser = ErrorRaisingArgumentParser(
             'this_is_spammy_prog_with_a_long_name_sorry_about_the_name'
         )
