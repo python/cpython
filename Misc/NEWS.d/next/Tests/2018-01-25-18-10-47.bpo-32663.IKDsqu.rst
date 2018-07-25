@@ -1,0 +1,2 @@
+Making sure the `SMTPUTF8SimTests` class of tests gets run in
+test_smtplib.py.
