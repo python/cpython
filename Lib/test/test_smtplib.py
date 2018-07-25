@@ -1230,7 +1230,7 @@ class SMTPUTF8SimTests(unittest.TestCase):
             HOST, self.port, local_hostname='localhost', timeout=3)
         self.addCleanup(smtp.close)
         self.assertRaises(smtplib.SMTPNotSupportedError,
-                          lambda: smtp.send_message(msg))
+                          smtp.send_message, msg)
 
     def test_send_message_uses_8bitmime_if_cte_type_8bitmime(self):
         msg = EmailMessage()

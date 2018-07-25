@@ -923,6 +923,7 @@ class SMTP:
         # option allowing the user to enable the heuristics.  (It should be
         # possible to guess correctly almost all of the time.)
 
+        mail_options = mail_options[:]
         self.ehlo_or_helo_if_needed()
         resent = msg.get_all('Resent-Date')
         if resent is None:
@@ -945,10 +946,10 @@ class SMTP:
             to_addrs = [a[1] for a in email.utils.getaddresses(addr_fields)]
         # Make a local copy so we can delete the bcc headers.
         msg_copy = copy.copy(msg)
-        policy = msg.policy.clone()
-        mail_options = mail_options[:]
+        policy = msg.policy
         del msg_copy['Bcc']
         del msg_copy['Resent-Bcc']
+        body_is_8bit = False
         try:
             ''.join([from_addr, *to_addrs]).encode('ascii')
         except UnicodeEncodeError:
@@ -958,13 +959,15 @@ class SMTP:
                     " internationalized email support, but the server"
                     " does not advertise the required SMTPUTF8 capability")
             policy = policy.clone(utf8=True)
-            mail_options += ['SMTPUTF8', 'BODY=8BITMIME']
+            mail_options.append('SMTPUTF8')
+            body_is_8bit = True
         if policy.cte_type == '8bit':
             if self.has_extn('8bitmime'):
-                if 'BODY=8BITMIME' not in mail_options:
-                    mail_options.append('BODY=8BITMIME')
+                body_is_8bit = True
             else:
                 policy = policy.clone(cte_type='7bit')
+        if body_is_8bit:
+            mail_options.append('BODY=8BITMIME')
         with io.BytesIO() as bytesmsg:
             g = email.generator.BytesGenerator(bytesmsg, policy=policy)
             g.flatten(msg_copy, linesep='\r\n')
