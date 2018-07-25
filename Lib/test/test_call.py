@@ -164,6 +164,9 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         msg = r"get expected at least 1 argument, got 0"
         self.assertRaisesRegex(TypeError, msg, {}.get)
 
+        msg = r"expected 1 argument, got 0"
+        self.assertRaisesRegex(TypeError, msg, {}.__delattr__)
+
     def test_varargs2min(self):
         msg = r"getattr expected at least 2 arguments, got 0"
         self.assertRaisesRegex(TypeError, msg, getattr)
