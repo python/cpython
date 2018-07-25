@@ -3178,6 +3178,7 @@ expat_start_doctype_handler(XMLParserObject *self,
                 "The doctype() method of XMLParser is ignored.  "
                 "Define doctype() method on the TreeBuilder target.",
                 1);
+        Py_DECREF(res);
     }
 
     Py_DECREF(doctype_name_obj);
