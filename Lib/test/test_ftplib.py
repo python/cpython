@@ -257,6 +257,7 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
     def __init__(self, address, af=socket.AF_INET):
         threading.Thread.__init__(self)
         asyncore.dispatcher.__init__(self)
+        self.daemon = True
         self.create_socket(af, socket.SOCK_STREAM)
         self.bind(address)
         self.listen(5)
@@ -330,6 +331,9 @@ if ssl is not None:
                     return
                 elif err.args[0] == ssl.SSL_ERROR_EOF:
                     return self.handle_close()
+                # TODO: SSLError does not expose alert information
+                elif "SSLV3_ALERT_BAD_CERTIFICATE" in err.args[1]:
+                    return self.handle_close()
                 raise
             except OSError as err:
                 if err.args[0] == errno.ECONNABORTED:
@@ -400,7 +404,7 @@ if ssl is not None:
 
         def close(self):
             if (isinstance(self.socket, ssl.SSLSocket) and
-                self.socket._sslobj is not None):
+                    self.socket._sslobj is not None):
                 self._do_ssl_shutdown()
             else:
                 super(SSLConnection, self).close()
@@ -933,6 +937,7 @@ class TestTLS_FTPClass(TestCase):
         self.client.ccc()
         self.assertRaises(ValueError, self.client.sock.unwrap)
 
+    @skipUnless(False, "FIXME: bpo-32706")
     def test_check_hostname(self):
         self.client.quit()
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -972,6 +977,7 @@ class TestTimeouts(TestCase):
         self.sock.settimeout(20)
         self.port = support.bind_port(self.sock)
         self.server_thread = threading.Thread(target=self.server)
+        self.server_thread.daemon = True
         self.server_thread.start()
         # Wait for the server to be ready.
         self.evt.wait()

@@ -209,6 +209,26 @@ always available.
    yourself to control bytecode file generation.
 
 
+.. data:: pycache_prefix
+
+   If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
+   files to (and read them from) a parallel directory tree rooted at this
+   directory, rather than from ``__pycache__`` directories in the source code
+   tree. Any ``__pycache__`` directories in the source code tree will be ignored
+   and new `.pyc` files written within the pycache prefix. Thus if you use
+   :mod:`compileall` as a pre-build step, you must ensure you run it with the
+   same pycache prefix (if any) that you will use at runtime.
+
+   A relative path is interpreted relative to the current working directory.
+
+   This value is initially set based on the value of the :option:`-X`
+   ``pycache_prefix=PATH`` command-line option or the
+   :envvar:`PYTHONPYCACHEPREFIX` environment variable (command-line takes
+   precedence). If neither are set, it is ``None``.
+
+   .. versionadded:: 3.8
+
+
 .. function:: excepthook(type, value, traceback)
 
    This function prints out a given traceback and exception to ``sys.stderr``.
@@ -1089,7 +1109,8 @@ always available.
    but the return event is reported even when an exception has been set). The function is
    thread-specific, but there is no way for the profiler to know about context switches between
    threads, so it does not make sense to use this in the presence of multiple threads. Also,
-   its return value is not used, so it can simply return ``None``.
+   its return value is not used, so it can simply return ``None``.  Error in the profile
+   function will cause itself unset.
 
    Profile functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
@@ -1172,6 +1193,9 @@ always available.
    The local trace function should return a reference to itself (or to another
    function for further tracing in that scope), or ``None`` to turn off tracing
    in that scope.
+
+   If there is any error occurred in the trace function, it will be unset, just
+   like ``settrace(None)`` is called.
 
    The events have the following meaning:
 

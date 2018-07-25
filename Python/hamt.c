@@ -39,7 +39,7 @@ Now let's partition this bit representation of the hash into blocks of
     0b00_00000_10010_11101_00101_01011_10000 = 19830128
           (6)   (5)   (4)   (3)   (2)   (1)
 
-Each block of 5 bits represents a number betwen 0 and 31.  So if we have
+Each block of 5 bits represents a number between 0 and 31.  So if we have
 a tree that consists of nodes, each of which is an array of 32 pointers,
 those 5-bit blocks will encode a position on a single tree level.
 
@@ -56,7 +56,7 @@ tree structure:
                      +---+ -- +----+----+----+ -- +----+
                                       |
                      +---+ -- +----+----+----+ -- +----+
-  a 3rd level node   | 0 | .. | 04 | 05 | 06 | .. | 31 |   0b01011 = 5  (3)
+  a 3rd level node   | 0 | .. | 04 | 05 | 06 | .. | 31 |   0b00101 = 5  (3)
                      +---+ -- +----+----+----+ -- +----+
                                       |
                      +---+ -- +----+----+----+----+
@@ -449,7 +449,7 @@ hamt_bitcount(uint32_t i)
     */
     i = i - ((i >> 1) & 0x55555555);
     i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-    return ((i + (i >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
+    return (((i + (i >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
 }
 
 static inline uint32_t
@@ -620,7 +620,8 @@ hamt_node_bitmap_clone_without(PyHamtNode_Bitmap *o, uint32_t bit)
         new->b_array[i] = o->b_array[i];
     }
 
-    for (i = val_idx + 1; i < Py_SIZE(o); i++) {
+    assert(Py_SIZE(o) >= 0 && Py_SIZE(o) <= 32);
+    for (i = val_idx + 1; i < (uint32_t)Py_SIZE(o); i++) {
         Py_XINCREF(o->b_array[i]);
         new->b_array[i - 2] = o->b_array[i];
     }
@@ -728,7 +729,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
         uint32_t key_idx = 2 * idx;
         uint32_t val_idx = key_idx + 1;
 
-        assert(val_idx < Py_SIZE(self));
+        assert(val_idx < (size_t)Py_SIZE(self));
 
         PyObject *key_or_null = self->b_array[key_idx];
         PyObject *val_or_node = self->b_array[val_idx];
@@ -831,7 +832,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
                pairs.
 
                Small hamt objects (<30 keys) usually don't have any
-               Array nodes at all.  Betwen ~30 and ~400 keys hamt
+               Array nodes at all.  Between ~30 and ~400 keys hamt
                objects usually have one Array node, and usually it's
                a root node.
             */
@@ -920,7 +921,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
             uint32_t key_idx = 2 * idx;
             uint32_t val_idx = key_idx + 1;
-            Py_ssize_t i;
+            uint32_t i;
 
             *added_leaf = 1;
 
@@ -947,7 +948,8 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
             /* Copy all keys/values that will be after the new key/value
                we are adding. */
-            for (i = key_idx; i < Py_SIZE(self); i++) {
+            assert(Py_SIZE(self) >= 0 && Py_SIZE(self) <= 32);
+            for (i = key_idx; i < (uint32_t)Py_SIZE(self); i++) {
                 Py_XINCREF(self->b_array[i]);
                 new_node->b_array[i + 2] = self->b_array[i];
             }
@@ -1121,7 +1123,7 @@ hamt_node_bitmap_find(PyHamtNode_Bitmap *self,
     key_idx = idx * 2;
     val_idx = key_idx + 1;
 
-    assert(val_idx < Py_SIZE(self));
+    assert(val_idx < (size_t)Py_SIZE(self));
 
     key_or_null = self->b_array[key_idx];
     val_or_node = self->b_array[val_idx];
@@ -1474,7 +1476,7 @@ hamt_node_collision_without(PyHamtNode_Collision *self,
             if (new_count == 1) {
                 /* The node has two keys, and after deletion the
                    new Collision node would have one.  Collision nodes
-                   with one key shouldn't exist, co convert it to a
+                   with one key shouldn't exist, so convert it to a
                    Bitmap node.
                 */
                 PyHamtNode_Bitmap *node = (PyHamtNode_Bitmap *)
@@ -1508,6 +1510,9 @@ hamt_node_collision_without(PyHamtNode_Collision *self,
             PyHamtNode_Collision *new = (PyHamtNode_Collision *)
                 hamt_node_collision_new(
                     self->c_hash, Py_SIZE(self) - 2);
+            if (new == NULL) {
+                return W_ERROR;
+            }
 
             /* Copy all other keys from `self` to `new` */
             Py_ssize_t i;
@@ -1740,7 +1745,10 @@ hamt_node_array_assoc(PyHamtNode_Array *self,
            Set the key to it./ */
         child_node = hamt_node_assoc(
             node, shift + 5, hash, key, val, added_leaf);
-        if (child_node == (PyHamtNode *)self) {
+        if (child_node == NULL) {
+            return NULL;
+        }
+        else if (child_node == (PyHamtNode *)self) {
             Py_DECREF(child_node);
             return (PyHamtNode *)self;
         }
@@ -2340,7 +2348,7 @@ _PyHamt_Without(PyHamtObject *o, PyObject *key)
         return NULL;
     }
 
-    PyHamtNode *new_root;
+    PyHamtNode *new_root = NULL;
 
     hamt_without_t res = hamt_node_without(
         (PyHamtNode *)(o->h_root),
@@ -2356,6 +2364,8 @@ _PyHamt_Without(PyHamtObject *o, PyObject *key)
             Py_INCREF(o);
             return o;
         case W_NEWNODE: {
+            assert(new_root != NULL);
+
             PyHamtObject *new_o = hamt_alloc();
             if (new_o == NULL) {
                 Py_DECREF(new_root);
@@ -2466,6 +2476,8 @@ hamt_alloc(void)
     if (o == NULL) {
         return NULL;
     }
+    o->h_count = 0;
+    o->h_root = NULL;
     o->h_weakreflist = NULL;
     PyObject_GC_Track(o);
     return o;

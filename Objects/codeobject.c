@@ -103,7 +103,7 @@ PyCode_New(int argcount, int kwonlyargcount,
 {
     PyCodeObject *co;
     Py_ssize_t *cell2arg = NULL;
-    Py_ssize_t i, n_cellvars;
+    Py_ssize_t i, n_cellvars, n_varnames, total_args;
 
     /* Check argument types */
     if (argcount < 0 || kwonlyargcount < 0 || nlocals < 0 ||
@@ -138,10 +138,22 @@ PyCode_New(int argcount, int kwonlyargcount,
         flags &= ~CO_NOFREE;
     }
 
+    n_varnames = PyTuple_GET_SIZE(varnames);
+    if (argcount <= n_varnames && kwonlyargcount <= n_varnames) {
+        /* Never overflows. */
+        total_args = (Py_ssize_t)argcount + (Py_ssize_t)kwonlyargcount +
+                ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
+    }
+    else {
+        total_args = n_varnames + 1;
+    }
+    if (total_args > n_varnames) {
+        PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
+        return NULL;
+    }
+
     /* Create mapping between cells and arguments if needed. */
     if (n_cellvars) {
-        Py_ssize_t total_args = argcount + kwonlyargcount +
-            ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
         bool used_cell2arg = false;
         cell2arg = PyMem_NEW(Py_ssize_t, n_cellvars);
         if (cell2arg == NULL) {
@@ -488,14 +500,21 @@ _PyCode_ConstantKey(PyObject *op)
 {
     PyObject *key;
 
-    /* Py_None and Py_Ellipsis are singleton */
+    /* Py_None and Py_Ellipsis are singletons. */
     if (op == Py_None || op == Py_Ellipsis
        || PyLong_CheckExact(op)
-       || PyBool_Check(op)
-       || PyBytes_CheckExact(op)
        || PyUnicode_CheckExact(op)
           /* code_richcompare() uses _PyCode_ConstantKey() internally */
-       || PyCode_Check(op)) {
+       || PyCode_Check(op))
+    {
+        /* Objects of these types are always different from object of other
+         * type and from tuples. */
+        Py_INCREF(op);
+        key = op;
+    }
+    else if (PyBool_Check(op) || PyBytes_CheckExact(op)) {
+        /* Make booleans different from integers 0 and 1.
+         * Avoid BytesWarning from comparing bytes with strings. */
         key = PyTuple_Pack(2, Py_TYPE(op), op);
     }
     else if (PyFloat_CheckExact(op)) {

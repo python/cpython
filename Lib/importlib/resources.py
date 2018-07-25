@@ -2,17 +2,29 @@ import os
 import tempfile
 
 from . import abc as resources_abc
-from builtins import open as builtins_open
 from contextlib import contextmanager, suppress
 from importlib import import_module
 from importlib.abc import ResourceLoader
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from types import ModuleType
-from typing import Iterator, Optional, Set, Union   # noqa: F401
+from typing import Iterable, Iterator, Optional, Set, Union   # noqa: F401
 from typing import cast
 from typing.io import BinaryIO, TextIO
 from zipimport import ZipImportError
+
+
+__all__ = [
+    'Package',
+    'Resource',
+    'contents',
+    'is_resource',
+    'open_binary',
+    'open_text',
+    'path',
+    'read_binary',
+    'read_text',
+    ]
 
 
 Package = Union[str, ModuleType]
@@ -44,8 +56,7 @@ def _normalize_path(path) -> str:
 
     If the resulting string contains path separators, an exception is raised.
     """
-    str_path = str(path)
-    parent, file_name = os.path.split(str_path)
+    parent, file_name = os.path.split(path)
     if parent:
         raise ValueError('{!r} must be only a file name'.format(path))
     else:
@@ -66,6 +77,11 @@ def _get_resource_reader(
     return None
 
 
+def _check_location(package):
+    if package.__spec__.origin is None or not package.__spec__.has_location:
+        raise FileNotFoundError(f'Package has no location {package!r}')
+
+
 def open_binary(package: Package, resource: Resource) -> BinaryIO:
     """Return a file-like object opened for binary reading of the resource."""
     resource = _normalize_path(resource)
@@ -73,11 +89,12 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
     reader = _get_resource_reader(package)
     if reader is not None:
         return reader.open_resource(resource)
+    _check_location(package)
     absolute_package_path = os.path.abspath(package.__spec__.origin)
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
     try:
-        return builtins_open(full_path, mode='rb')
+        return open(full_path, mode='rb')
     except OSError:
         # Just assume the loader is a resource loader; all the relevant
         # importlib.machinery loaders are and an AttributeError for
@@ -106,12 +123,12 @@ def open_text(package: Package,
     reader = _get_resource_reader(package)
     if reader is not None:
         return TextIOWrapper(reader.open_resource(resource), encoding, errors)
+    _check_location(package)
     absolute_package_path = os.path.abspath(package.__spec__.origin)
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
     try:
-        return builtins_open(
-            full_path, mode='r', encoding=encoding, errors=errors)
+        return open(full_path, mode='r', encoding=encoding, errors=errors)
     except OSError:
         # Just assume the loader is a resource loader; all the relevant
         # importlib.machinery loaders are and an AttributeError for
@@ -172,6 +189,8 @@ def path(package: Package, resource: Resource) -> Iterator[Path]:
             return
         except FileNotFoundError:
             pass
+    else:
+        _check_location(package)
     # Fall-through for both the lack of resource_path() *and* if
     # resource_path() raises FileNotFoundError.
     package_directory = Path(package.__spec__.origin).parent
@@ -219,8 +238,8 @@ def is_resource(package: Package, name: str) -> bool:
     return path.is_file()
 
 
-def contents(package: Package) -> Iterator[str]:
-    """Return the list of entries in 'package'.
+def contents(package: Package) -> Iterable[str]:
+    """Return an iterable of entries in 'package'.
 
     Note that not all entries are resources.  Specifically, directories are
     not considered resources.  Use `is_resource()` on each entry returned here
@@ -229,21 +248,21 @@ def contents(package: Package) -> Iterator[str]:
     package = _get_package(package)
     reader = _get_resource_reader(package)
     if reader is not None:
-        yield from reader.contents()
-        return
+        return reader.contents()
     # Is the package a namespace package?  By definition, namespace packages
-    # cannot have resources.
-    if (package.__spec__.origin == 'namespace' and
-            not package.__spec__.has_location):
-        return []
-    package_directory = Path(package.__spec__.origin).parent
-    yield from os.listdir(str(package_directory))
+    # cannot have resources.  We could use _check_location() and catch the
+    # exception, but that's extra work, so just inline the check.
+    elif package.__spec__.origin is None or not package.__spec__.has_location:
+        return ()
+    else:
+        package_directory = Path(package.__spec__.origin).parent
+        return os.listdir(package_directory)
 
 
-# Private implementation of ResourceReader and get_resource_reader() for
-# zipimport.  Don't use these directly!  We're implementing these in Python
-# because 1) it's easier, 2) zipimport will likely get rewritten in Python
-# itself at some point, so doing this all in C would just be a waste of
+# Private implementation of ResourceReader and get_resource_reader() called
+# from zipimport.c.  Don't use these directly!  We're implementing these in
+# Python because 1) it's easier, 2) zipimport may get rewritten in Python
+# itself at some point, so doing this all in C would difficult and a waste of
 # effort.
 
 class _ZipImportResourceReader(resources_abc.ResourceReader):
@@ -258,11 +277,12 @@ class _ZipImportResourceReader(resources_abc.ResourceReader):
         self.fullname = fullname
 
     def open_resource(self, resource):
-        path = f'{self.fullname}/{resource}'
+        fullname_as_path = self.fullname.replace('.', '/')
+        path = f'{fullname_as_path}/{resource}'
         try:
             return BytesIO(self.zipimporter.get_data(path))
         except OSError:
-            raise FileNotFoundError
+            raise FileNotFoundError(path)
 
     def resource_path(self, resource):
         # All resources are in the zip file, so there is no path to the file.
@@ -273,7 +293,8 @@ class _ZipImportResourceReader(resources_abc.ResourceReader):
     def is_resource(self, name):
         # Maybe we could do better, but if we can get the data, it's a
         # resource.  Otherwise it isn't.
-        path = f'{self.fullname}/{name}'
+        fullname_as_path = self.fullname.replace('.', '/')
+        path = f'{fullname_as_path}/{name}'
         try:
             self.zipimporter.get_data(path)
         except OSError:
@@ -312,6 +333,7 @@ class _ZipImportResourceReader(resources_abc.ResourceReader):
                 yield parent_name
 
 
+# Called from zipimport.c
 def _zipimport_get_resource_reader(zipimporter, fullname):
     try:
         if not zipimporter.is_package(fullname):

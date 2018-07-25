@@ -1044,6 +1044,58 @@ class CodecCallbackTest(unittest.TestCase):
             for (encoding, data) in baddata:
                 self.assertEqual(data.decode(encoding, "test.mutating"), "\u4242")
 
+    # issue32583
+    def test_crashing_decode_handler(self):
+        # better generating one more character to fill the extra space slot
+        # so in debug build it can steadily fail
+        def forward_shorter_than_end(exc):
+            if isinstance(exc, UnicodeDecodeError):
+                # size one character, 0 < forward < exc.end
+                return ('\ufffd', exc.start+1)
+            else:
+                raise TypeError("don't know how to handle %r" % exc)
+        codecs.register_error(
+            "test.forward_shorter_than_end", forward_shorter_than_end)
+
+        self.assertEqual(
+            b'\xd8\xd8\xd8\xd8\xd8\x00\x00\x00'.decode(
+                'utf-16-le', 'test.forward_shorter_than_end'),
+            '\ufffd\ufffd\ufffd\ufffd\xd8\x00'
+        )
+        self.assertEqual(
+            b'\xd8\xd8\xd8\xd8\x00\xd8\x00\x00'.decode(
+                'utf-16-be', 'test.forward_shorter_than_end'),
+            '\ufffd\ufffd\ufffd\ufffd\xd8\x00'
+        )
+        self.assertEqual(
+            b'\x11\x11\x11\x11\x11\x00\x00\x00\x00\x00\x00'.decode(
+                'utf-32-le', 'test.forward_shorter_than_end'),
+            '\ufffd\ufffd\ufffd\u1111\x00'
+        )
+        self.assertEqual(
+            b'\x11\x11\x11\x00\x00\x11\x11\x00\x00\x00\x00'.decode(
+                'utf-32-be', 'test.forward_shorter_than_end'),
+            '\ufffd\ufffd\ufffd\u1111\x00'
+        )
+
+        def replace_with_long(exc):
+            if isinstance(exc, UnicodeDecodeError):
+                exc.object = b"\x00" * 8
+                return ('\ufffd', exc.start)
+            else:
+                raise TypeError("don't know how to handle %r" % exc)
+        codecs.register_error("test.replace_with_long", replace_with_long)
+
+        self.assertEqual(
+            b'\x00'.decode('utf-16', 'test.replace_with_long'),
+            '\ufffd\x00\x00\x00\x00'
+        )
+        self.assertEqual(
+            b'\x00'.decode('utf-32', 'test.replace_with_long'),
+            '\ufffd\x00\x00'
+        )
+
+
     def test_fake_error_class(self):
         handlers = [
             codecs.strict_errors,

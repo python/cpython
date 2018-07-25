@@ -232,7 +232,7 @@ The following classes are provided:
    containing the image.
 
    *unverifiable* should indicate whether the request is unverifiable,
-   as defined by RFC 2965.  It defaults to ``False``.  An unverifiable
+   as defined by :rfc:`2965`.  It defaults to ``False``.  An unverifiable
    request is one whose URL the user did not have the option to
    approve.  For example, if the request is for an image in an HTML
    document, and the user had no option to approve the automatic
@@ -504,7 +504,7 @@ request.
 .. attribute:: Request.unverifiable
 
    boolean, indicates whether the request is unverifiable as defined
-   by RFC 2965.
+   by :rfc:`2965`.
 
 .. attribute:: Request.method
 
@@ -1339,9 +1339,9 @@ some point in the future.
 
    The second argument, if present, specifies the file location to copy to (if
    absent, the location will be a tempfile with a generated name). The third
-   argument, if present, is a hook function that will be called once on
+   argument, if present, is a callable that will be called once on
    establishment of the network connection and once after each block read
-   thereafter.  The hook will be passed three arguments; a count of blocks
+   thereafter.  The callable will be passed three arguments; a count of blocks
    transferred so far, a block size in bytes, and the total size of the file.  The
    third argument may be ``-1`` on older FTP servers which do not return a file
    size in response to a retrieval request.

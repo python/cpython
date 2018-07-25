@@ -1,1 +1,0 @@
-Implement ``loop.sock_sendfile`` for asyncio event loop.

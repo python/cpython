@@ -44,9 +44,10 @@ _PyGen_Finalize(PyObject *self)
     PyObject *res = NULL;
     PyObject *error_type, *error_value, *error_traceback;
 
-    if (gen->gi_frame == NULL || gen->gi_frame->f_stacktop == NULL)
+    if (gen->gi_frame == NULL || gen->gi_frame->f_stacktop == NULL) {
         /* Generator isn't paused, so no need to close */
         return;
+    }
 
     if (PyAsyncGen_CheckExact(self)) {
         PyAsyncGenObject *agen = (PyAsyncGenObject*)self;
@@ -75,18 +76,18 @@ _PyGen_Finalize(PyObject *self)
        issue a RuntimeWarning. */
     if (gen->gi_code != NULL &&
         ((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE &&
-        gen->gi_frame->f_lasti == -1) {
-        if (!error_value) {
-            _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
-        }
+        gen->gi_frame->f_lasti == -1)
+    {
+        _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
     }
     else {
         res = gen_close(gen, NULL);
     }
 
     if (res == NULL) {
-        if (PyErr_Occurred())
+        if (PyErr_Occurred()) {
             PyErr_WriteUnraisable(self);
+        }
     }
     else {
         Py_DECREF(res);
@@ -248,59 +249,17 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
         Py_CLEAR(result);
     }
     else if (!result && PyErr_ExceptionMatches(PyExc_StopIteration)) {
-        /* Check for __future__ generator_stop and conditionally turn
-         * a leaking StopIteration into RuntimeError (with its cause
-         * set appropriately). */
-
-        const int check_stop_iter_error_flags = CO_FUTURE_GENERATOR_STOP |
-                                                CO_COROUTINE |
-                                                CO_ITERABLE_COROUTINE |
-                                                CO_ASYNC_GENERATOR;
-
-        if (gen->gi_code != NULL &&
-            ((PyCodeObject *)gen->gi_code)->co_flags &
-                check_stop_iter_error_flags)
-        {
-            /* `gen` is either:
-                  * a generator with CO_FUTURE_GENERATOR_STOP flag;
-                  * a coroutine;
-                  * a generator with CO_ITERABLE_COROUTINE flag
-                    (decorated with types.coroutine decorator);
-                  * an async generator.
-            */
-            const char *msg = "generator raised StopIteration";
-            if (PyCoro_CheckExact(gen)) {
-                msg = "coroutine raised StopIteration";
-            }
-            else if PyAsyncGen_CheckExact(gen) {
-                msg = "async generator raised StopIteration";
-            }
-            _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", msg);
+        const char *msg = "generator raised StopIteration";
+        if (PyCoro_CheckExact(gen)) {
+            msg = "coroutine raised StopIteration";
         }
-        else {
-            /* `gen` is an ordinary generator without
-               CO_FUTURE_GENERATOR_STOP flag.
-            */
-
-            PyObject *exc, *val, *tb;
-
-            /* Pop the exception before issuing a warning. */
-            PyErr_Fetch(&exc, &val, &tb);
-
-            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "generator '%.50S' raised StopIteration",
-                                 gen->gi_qualname)) {
-                /* Warning was converted to an error. */
-                Py_XDECREF(exc);
-                Py_XDECREF(val);
-                Py_XDECREF(tb);
-            }
-            else {
-                PyErr_Restore(exc, val, tb);
-            }
+        else if PyAsyncGen_CheckExact(gen) {
+            msg = "async generator raised StopIteration";
         }
+        _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", msg);
+
     }
-    else if (PyAsyncGen_CheckExact(gen) && !result &&
+    else if (!result && PyAsyncGen_CheckExact(gen) &&
              PyErr_ExceptionMatches(PyExc_StopAsyncIteration))
     {
         /* code in `gen` raised a StopAsyncIteration error:
@@ -352,13 +311,11 @@ gen_close_iter(PyObject *yf)
             return -1;
     }
     else {
-        PyObject *meth = _PyObject_GetAttrId(yf, &PyId_close);
-        if (meth == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-                PyErr_WriteUnraisable(yf);
-            PyErr_Clear();
+        PyObject *meth;
+        if (_PyObject_LookupAttrId(yf, &PyId_close, &meth) < 0) {
+            PyErr_WriteUnraisable(yf);
         }
-        else {
+        if (meth) {
             retval = _PyObject_CallNoArg(meth);
             Py_DECREF(meth);
             if (retval == NULL)
@@ -471,13 +428,12 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             gen->gi_running = 0;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
-            PyObject *meth = _PyObject_GetAttrId(yf, &PyId_throw);
+            PyObject *meth;
+            if (_PyObject_LookupAttrId(yf, &PyId_throw, &meth) < 0) {
+                Py_DECREF(yf);
+                return NULL;
+            }
             if (meth == NULL) {
-                if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    Py_DECREF(yf);
-                    return NULL;
-                }
-                PyErr_Clear();
                 Py_DECREF(yf);
                 goto throw_here;
             }
@@ -866,18 +822,16 @@ PyGen_New(PyFrameObject *f)
 int
 PyGen_NeedsFinalizing(PyGenObject *gen)
 {
-    int i;
     PyFrameObject *f = gen->gi_frame;
 
     if (f == NULL || f->f_stacktop == NULL)
         return 0; /* no frame or empty blockstack == no finalization */
 
-    /* Any block type besides a loop requires cleanup. */
-    for (i = 0; i < f->f_iblock; i++)
-        if (f->f_blockstack[i].b_type != SETUP_LOOP)
-            return 1;
+    /* Any (exception-handling) block type requires cleanup. */
+    if (f->f_iblock > 0)
+        return 1;
 
-    /* No blocks except loops, it's safe to skip finalization. */
+    /* No blocks, it's safe to skip finalization. */
     return 0;
 }
 
@@ -1922,20 +1876,19 @@ yield_close:
     return NULL;
 
 check_error:
-    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
+            PyErr_ExceptionMatches(PyExc_GeneratorExit))
+    {
         o->agt_state = AWAITABLE_STATE_CLOSED;
         if (o->agt_args == NULL) {
             /* when aclose() is called we don't want to propagate
-               StopAsyncIteration; just raise StopIteration, signalling
-               that 'aclose()' is done. */
+               StopAsyncIteration or GeneratorExit; just raise
+               StopIteration, signalling that this 'aclose()' await
+               is done.
+            */
             PyErr_Clear();
             PyErr_SetNone(PyExc_StopIteration);
         }
-    }
-    else if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
-        o->agt_state = AWAITABLE_STATE_CLOSED;
-        PyErr_Clear();          /* ignore these errors */
-        PyErr_SetNone(PyExc_StopIteration);
     }
     return NULL;
 }

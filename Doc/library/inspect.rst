@@ -247,9 +247,10 @@ attributes:
 
 .. function:: getmembers(object[, predicate])
 
-   Return all the members of an object in a list of (name, value) pairs sorted by
-   name.  If the optional *predicate* argument is supplied, only members for which
-   the predicate returns a true value are included.
+   Return all the members of an object in a list of ``(name, value)``
+   pairs sorted by name. If the optional *predicate* argument—which will be
+   called with the ``value`` object of each member—is supplied, only members
+   for which the predicate returns a true value are included.
 
    .. note::
 
@@ -602,7 +603,13 @@ function.
    .. attribute:: Signature.parameters
 
       An ordered mapping of parameters' names to the corresponding
-      :class:`Parameter` objects.
+      :class:`Parameter` objects.  Parameters appear in strict definition
+      order, including keyword-only parameters.
+
+      .. versionchanged:: 3.7
+         Python only explicitly guaranteed that it preserved the declaration
+         order of keyword-only parameters as of version 3.7, although in practice
+         this order had always been preserved in Python 3.
 
    .. attribute:: Signature.return_annotation
 
@@ -744,6 +751,25 @@ function.
          ...                        param.default is param.empty):
          ...         print('Parameter:', param)
          Parameter: c
+
+   .. attribute:: Parameter.kind.description
+
+      Describes a enum value of Parameter.kind.
+
+      .. versionadded:: 3.8
+
+      Example: print all descriptions of arguments::
+
+         >>> def foo(a, b, *, c, d=10):
+         ...     pass
+
+         >>> sig = signature(foo)
+         >>> for param in sig.parameters.values():
+         ...     print(param.kind.description)
+         positional or keyword
+         positional or keyword
+         keyword-only
+         keyword-only
 
    .. method:: Parameter.replace(*[, name][, kind][, default][, annotation])
 
@@ -895,7 +921,7 @@ Classes and functions
    *defaults* is an *n*-tuple of default argument values corresponding to the
    last *n* positional parameters, or ``None`` if there are no such defaults
    defined.
-   *kwonlyargs* is a list of keyword-only parameter names.
+   *kwonlyargs* is a list of keyword-only parameter names in declaration order.
    *kwonlydefaults* is a dictionary mapping parameter names from *kwonlyargs*
    to the default values used if no argument is supplied.
    *annotations* is a dictionary mapping parameter names to annotations.
@@ -920,6 +946,11 @@ Classes and functions
       in order to restore a clearly supported standard interface for
       single-source Python 2/3 code migrating away from the legacy
       :func:`getargspec` API.
+
+   .. versionchanged:: 3.7
+      Python only explicitly guaranteed that it preserved the declaration
+      order of keyword-only parameters as of version 3.7, although in practice
+      this order had always been preserved in Python 3.
 
 
 .. function:: getargvalues(frame)

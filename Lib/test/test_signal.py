@@ -43,6 +43,8 @@ class PosixTests(unittest.TestCase):
         self.assertRaises(ValueError, signal.signal, 4242,
                           self.trivial_signal_handler)
 
+        self.assertRaises(ValueError, signal.strsignal, 4242)
+
     def test_setting_signal_handler_to_none_raises_error(self):
         self.assertRaises(TypeError, signal.signal,
                           signal.SIGUSR1, None)
@@ -55,15 +57,38 @@ class PosixTests(unittest.TestCase):
         signal.signal(signal.SIGHUP, hup)
         self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
 
+    def test_strsignal(self):
+        self.assertIn("Interrupt", signal.strsignal(signal.SIGINT))
+        self.assertIn("Terminated", signal.strsignal(signal.SIGTERM))
+
     # Issue 3864, unknown if this affects earlier versions of freebsd also
     def test_interprocess_signal(self):
         dirname = os.path.dirname(__file__)
         script = os.path.join(dirname, 'signalinterproctester.py')
         assert_python_ok(script)
 
+    def test_valid_signals(self):
+        s = signal.valid_signals()
+        self.assertIsInstance(s, set)
+        self.assertIn(signal.Signals.SIGINT, s)
+        self.assertIn(signal.Signals.SIGALRM, s)
+        self.assertNotIn(0, s)
+        self.assertNotIn(signal.NSIG, s)
+        self.assertLess(len(s), signal.NSIG)
+
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
 class WindowsSignalTests(unittest.TestCase):
+
+    def test_valid_signals(self):
+        s = signal.valid_signals()
+        self.assertIsInstance(s, set)
+        self.assertGreaterEqual(len(s), 6)
+        self.assertIn(signal.Signals.SIGINT, s)
+        self.assertNotIn(0, s)
+        self.assertNotIn(signal.NSIG, s)
+        self.assertLess(len(s), signal.NSIG)
+
     def test_issue9324(self):
         # Updated for issue #10003, adding SIGBREAK
         handler = lambda x, y: None
@@ -367,7 +392,6 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.signal(signum, handler)
 
         read, write = socket.socketpair()
-        read.setblocking(False)
         write.setblocking(False)
         signal.set_wakeup_fd(write.fileno())
 
@@ -455,26 +479,51 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.signal(signum, handler)
 
         read, write = socket.socketpair()
-        read.setblocking(False)
-        write.setblocking(False)
 
-        # Fill the send buffer
+        # Fill the socketpair buffer
+        if sys.platform == 'win32':
+            # bpo-34130: On Windows, sometimes non-blocking send fails to fill
+            # the full socketpair buffer, so use a timeout of 50 ms instead.
+            write.settimeout(0.050)
+        else:
+            write.setblocking(False)
+
+        # Start with large chunk size to reduce the
+        # number of send needed to fill the buffer.
+        written = 0
+        for chunk_size in (2 ** 16, 2 ** 8, 1):
+            chunk = b"x" * chunk_size
+            try:
+                while True:
+                    write.send(chunk)
+                    written += chunk_size
+            except (BlockingIOError, socket.timeout):
+                pass
+
+        print(f"%s bytes written into the socketpair" % written, flush=True)
+
+        write.setblocking(False)
         try:
-            while True:
-                write.send(b"x")
+            write.send(b"x")
         except BlockingIOError:
+            # The socketpair buffer seems full
             pass
+        else:
+            raise AssertionError("%s bytes failed to fill the socketpair "
+                                 "buffer" % written)
 
         # By default, we get a warning when a signal arrives
+        msg = ('Exception ignored when trying to {action} '
+               'to the signal wakeup fd')
         signal.set_wakeup_fd(write.fileno())
 
         with captured_stderr() as err:
             _testcapi.raise_signal(signum)
 
         err = err.getvalue()
-        if ('Exception ignored when trying to {action} to the signal wakeup fd'
-            not in err):
-            raise AssertionError(err)
+        if msg not in err:
+            raise AssertionError("first set_wakeup_fd() test failed, "
+                                 "stderr: %r" % err)
 
         # And also if warn_on_full_buffer=True
         signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=True)
@@ -483,9 +532,9 @@ class WakeupSocketSignalTests(unittest.TestCase):
             _testcapi.raise_signal(signum)
 
         err = err.getvalue()
-        if ('Exception ignored when trying to {action} to the signal wakeup fd'
-            not in err):
-            raise AssertionError(err)
+        if msg not in err:
+            raise AssertionError("set_wakeup_fd(warn_on_full_buffer=True) "
+                                 "test failed, stderr: %r" % err)
 
         # But not if warn_on_full_buffer=False
         signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=False)
@@ -495,7 +544,8 @@ class WakeupSocketSignalTests(unittest.TestCase):
 
         err = err.getvalue()
         if err != "":
-            raise AssertionError("got unexpected output %r" % (err,))
+            raise AssertionError("set_wakeup_fd(warn_on_full_buffer=False) "
+                                 "test failed, stderr: %r" % err)
 
         # And then check the default again, to make sure warn_on_full_buffer
         # settings don't leak across calls.
@@ -505,9 +555,9 @@ class WakeupSocketSignalTests(unittest.TestCase):
             _testcapi.raise_signal(signum)
 
         err = err.getvalue()
-        if ('Exception ignored when trying to {action} to the signal wakeup fd'
-            not in err):
-            raise AssertionError(err)
+        if msg not in err:
+            raise AssertionError("second set_wakeup_fd() test failed, "
+                                 "stderr: %r" % err)
 
         """.format(action=action)
         assert_python_ok('-c', code)
@@ -916,6 +966,21 @@ class PendingSignalsTests(unittest.TestCase):
         self.assertRaises(TypeError, signal.pthread_sigmask, 1)
         self.assertRaises(TypeError, signal.pthread_sigmask, 1, 2, 3)
         self.assertRaises(OSError, signal.pthread_sigmask, 1700, [])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [signal.NSIG])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [0])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [1<<1000])
+
+    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                         'need signal.pthread_sigmask()')
+    def test_pthread_sigmask_valid_signals(self):
+        s = signal.pthread_sigmask(signal.SIG_BLOCK, signal.valid_signals())
+        self.addCleanup(signal.pthread_sigmask, signal.SIG_SETMASK, s)
+        # Get current blocked set
+        s = signal.pthread_sigmask(signal.SIG_UNBLOCK, signal.valid_signals())
+        self.assertLessEqual(s, signal.valid_signals())
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')

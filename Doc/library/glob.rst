@@ -48,7 +48,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
       Support for recursive globs using "``**``".
 
 
-.. function:: iglob(pathname, recursive=False)
+.. function:: iglob(pathname, *, recursive=False)
 
    Return an :term:`iterator` which yields the same values as :func:`glob`
    without actually storing them all simultaneously.

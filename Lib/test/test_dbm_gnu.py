@@ -2,12 +2,22 @@ from test import support
 gdbm = support.import_module("dbm.gnu") #skip if not supported
 import unittest
 import os
-from test.support import TESTFN, unlink
+from test.support import TESTFN, TESTFN_NONASCII, unlink
 
 
 filename = TESTFN
 
 class TestGdbm(unittest.TestCase):
+    @staticmethod
+    def setUpClass():
+        if support.verbose:
+            try:
+                from _gdbm import _GDBM_VERSION as version
+            except ImportError:
+                pass
+            else:
+                print(f"gdbm version: {version}")
+
     def setUp(self):
         self.g = None
 
@@ -32,9 +42,12 @@ class TestGdbm(unittest.TestCase):
             self.assertIn(key, key_set)
             key_set.remove(key)
             key = self.g.nextkey(key)
-        self.assertRaises(KeyError, lambda: self.g['xxx'])
         # get() and setdefault() work as in the dict interface
+        self.assertEqual(self.g.get(b'a'), b'b')
+        self.assertIsNone(self.g.get(b'xxx'))
         self.assertEqual(self.g.get(b'xxx', b'foo'), b'foo')
+        with self.assertRaises(KeyError):
+            self.g['xxx']
         self.assertEqual(self.g.setdefault(b'xxx', b'foo'), b'foo')
         self.assertEqual(self.g[b'xxx'], b'foo')
 
@@ -69,9 +82,13 @@ class TestGdbm(unittest.TestCase):
         self.g = gdbm.open(filename, 'c')
         size0 = os.path.getsize(filename)
 
-        self.g['x'] = 'x' * 10000
+        # bpo-33901: on macOS with gdbm 1.15, an empty database uses 16 MiB
+        # and adding an entry of 10,000 B has no effect on the file size.
+        # Add size0 bytes to make sure that the file size changes.
+        value_size = max(size0, 10000)
+        self.g['x'] = 'x' * value_size
         size1 = os.path.getsize(filename)
-        self.assertTrue(size0 < size1)
+        self.assertGreater(size1, size0)
 
         del self.g['x']
         # 'size' is supposed to be the same even after deleting an entry.
@@ -79,7 +96,8 @@ class TestGdbm(unittest.TestCase):
 
         self.g.reorganize()
         size2 = os.path.getsize(filename)
-        self.assertTrue(size1 > size2 >= size0)
+        self.assertLess(size2, size1)
+        self.assertGreaterEqual(size2, size0)
 
     def test_context_manager(self):
         with gdbm.open(filename, 'c') as db:
@@ -92,6 +110,40 @@ class TestGdbm(unittest.TestCase):
             db.keys()
         self.assertEqual(str(cm.exception),
                          "GDBM object has already been closed")
+
+    def test_bytes(self):
+        with gdbm.open(filename, 'c') as db:
+            db[b'bytes key \xbd'] = b'bytes value \xbd'
+        with gdbm.open(filename, 'r') as db:
+            self.assertEqual(list(db.keys()), [b'bytes key \xbd'])
+            self.assertTrue(b'bytes key \xbd' in db)
+            self.assertEqual(db[b'bytes key \xbd'], b'bytes value \xbd')
+
+    def test_unicode(self):
+        with gdbm.open(filename, 'c') as db:
+            db['Unicode key \U0001f40d'] = 'Unicode value \U0001f40d'
+        with gdbm.open(filename, 'r') as db:
+            self.assertEqual(list(db.keys()), ['Unicode key \U0001f40d'.encode()])
+            self.assertTrue('Unicode key \U0001f40d'.encode() in db)
+            self.assertTrue('Unicode key \U0001f40d' in db)
+            self.assertEqual(db['Unicode key \U0001f40d'.encode()],
+                             'Unicode value \U0001f40d'.encode())
+            self.assertEqual(db['Unicode key \U0001f40d'],
+                             'Unicode value \U0001f40d'.encode())
+
+    @unittest.skipUnless(TESTFN_NONASCII,
+                         'requires OS support of non-ASCII encodings')
+    def test_nonascii_filename(self):
+        filename = TESTFN_NONASCII
+        self.addCleanup(unlink, filename)
+        with gdbm.open(filename, 'c') as db:
+            db[b'key'] = b'value'
+        self.assertTrue(os.path.exists(filename))
+        with gdbm.open(filename, 'r') as db:
+            self.assertEqual(list(db.keys()), [b'key'])
+            self.assertTrue(b'key' in db)
+            self.assertEqual(db[b'key'], b'value')
+
 
 if __name__ == '__main__':
     unittest.main()

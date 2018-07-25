@@ -1,2 +1,0 @@
-Improved speed of :class:`datetime.date` and :class:`datetime.datetime`
-alternate constructors.

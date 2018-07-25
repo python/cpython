@@ -127,7 +127,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
 
    :class:`~mmap.mmap` can also be used as a context manager in a :keyword:`with`
-   statement.::
+   statement::
 
       import mmap
 

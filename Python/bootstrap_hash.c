@@ -301,10 +301,15 @@ dev_urandom(char *buffer, Py_ssize_t size, int raise)
 
     if (raise) {
         struct _Py_stat_struct st;
+        int fstat_result;
 
         if (urandom_cache.fd >= 0) {
+            Py_BEGIN_ALLOW_THREADS
+            fstat_result = _Py_fstat_noraise(urandom_cache.fd, &st);
+            Py_END_ALLOW_THREADS
+
             /* Does the fd point to the same thing as before? (issue #21207) */
-            if (_Py_fstat_noraise(urandom_cache.fd, &st)
+            if (fstat_result
                 || st.st_dev != urandom_cache.st_dev
                 || st.st_ino != urandom_cache.st_ino) {
                 /* Something changed: forget the cached fd (but don't close it,

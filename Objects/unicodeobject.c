@@ -3727,10 +3727,6 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
     }
 
     if (PyUnicode_Check(path)) {
-        if (PyUnicode_READY(path) == -1) {
-            Py_DECREF(path);
-            return 0;
-        }
         output = path;
     }
     else if (PyBytes_Check(path) || is_buffer) {
@@ -4190,7 +4186,10 @@ unicode_decode_call_errorhandler_writer(
     Py_ssize_t insize;
     Py_ssize_t newpos;
     Py_ssize_t replen;
+    Py_ssize_t remain;
     PyObject *inputobj = NULL;
+    int need_to_grow = 0;
+    const char *new_inptr;
 
     if (*errorHandler == NULL) {
         *errorHandler = PyCodec_LookupError(errors);
@@ -4221,6 +4220,7 @@ unicode_decode_call_errorhandler_writer(
     inputobj = PyUnicodeDecodeError_GetObject(*exceptionObject);
     if (!inputobj)
         goto onError;
+    remain = *inend - *input - *endinpos;
     *input = PyBytes_AS_STRING(inputobj);
     insize = PyBytes_GET_SIZE(inputobj);
     *inend = *input + insize;
@@ -4238,8 +4238,21 @@ unicode_decode_call_errorhandler_writer(
     replen = PyUnicode_GET_LENGTH(repunicode);
     if (replen > 1) {
         writer->min_length += replen - 1;
+        need_to_grow = 1;
+    }
+    new_inptr = *input + newpos;
+    if (*inend - new_inptr > remain) {
+        /* We don't know the decoding algorithm here so we make the worst
+           assumption that one byte decodes to one unicode character.
+           If unfortunately one byte could decode to more unicode characters,
+           the decoder may write out-of-bound then.  Is it possible for the
+           algorithms using this function? */
+        writer->min_length += *inend - new_inptr - remain;
+        need_to_grow = 1;
+    }
+    if (need_to_grow) {
         writer->overallocate = 1;
-        if (_PyUnicodeWriter_Prepare(writer, writer->min_length,
+        if (_PyUnicodeWriter_Prepare(writer, writer->min_length - writer->pos,
                             PyUnicode_MAX_CHAR_VALUE(repunicode)) == -1)
             goto onError;
     }
@@ -4247,7 +4260,7 @@ unicode_decode_call_errorhandler_writer(
         goto onError;
 
     *endinpos = newpos;
-    *inptr = *input + newpos;
+    *inptr = new_inptr;
 
     /* we made it! */
     Py_DECREF(restuple);
@@ -5572,7 +5585,8 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
 #endif
 
     /* Note: size will always be longer than the resulting Unicode
-       character count */
+       character count normally.  Error handler will take care of
+       resizing when needed. */
     _PyUnicodeWriter_Init(&writer);
     writer.min_length = (e - q + 1) / 2;
     if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
@@ -6067,9 +6081,7 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
                 &writer)) {
             goto onError;
         }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
-            goto onError;
-        }
+        assert(end - s <= writer.size - writer.pos);
 
 #undef WRITE_ASCII_CHAR
 #undef WRITE_CHAR
@@ -6346,9 +6358,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
                 &writer)) {
             goto onError;
         }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
-            goto onError;
-        }
+        assert(end - s <= writer.size - writer.pos);
 
 #undef WRITE_CHAR
     }
@@ -6412,7 +6422,7 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
         if (ch < 0x100) {
             *p++ = (char) ch;
         }
-        /* U+0000-U+00ff range: Map 16-bit characters to '\uHHHH' */
+        /* U+0100-U+ffff range: Map 16-bit characters to '\uHHHH' */
         else if (ch < 0x10000) {
             *p++ = '\\';
             *p++ = 'u';
@@ -9062,6 +9072,7 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
             int decimal = Py_UNICODE_TODECIMAL(ch);
             if (decimal < 0) {
                 out[i] = '?';
+                out[i+1] = '\0';
                 _PyUnicode_LENGTH(result) = i + 1;
                 break;
             }
@@ -9069,6 +9080,7 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
         }
     }
 
+    assert(_PyUnicode_CheckConsistency(result, 1));
     return result;
 }
 
@@ -11038,7 +11050,7 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
     if (PyUnicode_CHECK_INTERNED(left))
         return 0;
 
-    assert(_PyUnicode_HASH(right_uni) != 1);
+    assert(_PyUnicode_HASH(right_uni) != -1);
     hash = _PyUnicode_HASH(left);
     if (hash != -1 && hash != _PyUnicode_HASH(right_uni))
         return 0;
@@ -11577,7 +11589,7 @@ unicode_hash(PyObject *self)
 PyDoc_STRVAR(index__doc__,
              "S.index(sub[, start[, end]]) -> int\n\
 \n\
-Return the lowest index in S where substring sub is found, \n\
+Return the lowest index in S where substring sub is found,\n\
 such that sub is contained within S[start:end].  Optional\n\
 arguments start and end are interpreted as in slice notation.\n\
 \n\
@@ -11609,6 +11621,25 @@ unicode_index(PyObject *self, PyObject *args)
     }
 
     return PyLong_FromSsize_t(result);
+}
+
+/*[clinic input]
+str.isascii as unicode_isascii
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+[clinic start generated code]*/
+
+static PyObject *
+unicode_isascii_impl(PyObject *self)
+/*[clinic end generated code: output=c5910d64b5a8003f input=5a43cbc6399621d5]*/
+{
+    if (PyUnicode_READY(self) == -1) {
+        return NULL;
+    }
+    return PyBool_FromLong(PyUnicode_IS_ASCII(self));
 }
 
 /*[clinic input]
@@ -13763,7 +13794,7 @@ unicode_sizeof_impl(PyObject *self)
 }
 
 static PyObject *
-unicode_getnewargs(PyObject *v)
+unicode_getnewargs(PyObject *v, PyObject *Py_UNUSED(ignored))
 {
     PyObject *copy = _PyUnicode_Copy(v);
     if (!copy)
@@ -13801,6 +13832,7 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_UPPER_METHODDEF
     {"startswith", (PyCFunction) unicode_startswith, METH_VARARGS, startswith__doc__},
     {"endswith", (PyCFunction) unicode_endswith, METH_VARARGS, endswith__doc__},
+    UNICODE_ISASCII_METHODDEF
     UNICODE_ISLOWER_METHODDEF
     UNICODE_ISUPPER_METHODDEF
     UNICODE_ISTITLE_METHODDEF
@@ -13823,7 +13855,7 @@ static PyMethodDef unicode_methods[] = {
     {"_decimal2ascii", (PyCFunction) unicode__decimal2ascii, METH_NOARGS},
 #endif
 
-    {"__getnewargs__",  (PyCFunction)unicode_getnewargs, METH_NOARGS},
+    {"__getnewargs__",  unicode_getnewargs, METH_NOARGS},
     {NULL, NULL}
 };
 
@@ -15031,46 +15063,46 @@ static PyObject *unicode_iter(PyObject *seq);
 
 PyTypeObject PyUnicode_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "str",              /* tp_name */
-    sizeof(PyUnicodeObject),        /* tp_size */
-    0,                  /* tp_itemsize */
+    "str",                        /* tp_name */
+    sizeof(PyUnicodeObject),      /* tp_basicsize */
+    0,                            /* tp_itemsize */
     /* Slots */
-    (destructor)unicode_dealloc,    /* tp_dealloc */
-    0,                  /* tp_print */
-    0,                  /* tp_getattr */
-    0,                  /* tp_setattr */
-    0,                  /* tp_reserved */
-    unicode_repr,           /* tp_repr */
-    &unicode_as_number,         /* tp_as_number */
-    &unicode_as_sequence,       /* tp_as_sequence */
-    &unicode_as_mapping,        /* tp_as_mapping */
-    (hashfunc) unicode_hash,        /* tp_hash*/
-    0,                  /* tp_call*/
-    (reprfunc) unicode_str,     /* tp_str */
-    PyObject_GenericGetAttr,        /* tp_getattro */
-    0,                  /* tp_setattro */
-    0,                  /* tp_as_buffer */
+    (destructor)unicode_dealloc,  /* tp_dealloc */
+    0,                            /* tp_print */
+    0,                            /* tp_getattr */
+    0,                            /* tp_setattr */
+    0,                            /* tp_reserved */
+    unicode_repr,                 /* tp_repr */
+    &unicode_as_number,           /* tp_as_number */
+    &unicode_as_sequence,         /* tp_as_sequence */
+    &unicode_as_mapping,          /* tp_as_mapping */
+    (hashfunc) unicode_hash,      /* tp_hash*/
+    0,                            /* tp_call*/
+    (reprfunc) unicode_str,       /* tp_str */
+    PyObject_GenericGetAttr,      /* tp_getattro */
+    0,                            /* tp_setattro */
+    0,                            /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-    Py_TPFLAGS_UNICODE_SUBCLASS,    /* tp_flags */
-    unicode_doc,            /* tp_doc */
-    0,                  /* tp_traverse */
-    0,                  /* tp_clear */
-    PyUnicode_RichCompare,      /* tp_richcompare */
-    0,                  /* tp_weaklistoffset */
-    unicode_iter,           /* tp_iter */
-    0,                  /* tp_iternext */
-    unicode_methods,            /* tp_methods */
-    0,                  /* tp_members */
-    0,                  /* tp_getset */
-    &PyBaseObject_Type,         /* tp_base */
-    0,                  /* tp_dict */
-    0,                  /* tp_descr_get */
-    0,                  /* tp_descr_set */
-    0,                  /* tp_dictoffset */
-    0,                  /* tp_init */
-    0,                  /* tp_alloc */
-    unicode_new,            /* tp_new */
-    PyObject_Del,           /* tp_free */
+    Py_TPFLAGS_UNICODE_SUBCLASS,   /* tp_flags */
+    unicode_doc,                  /* tp_doc */
+    0,                            /* tp_traverse */
+    0,                            /* tp_clear */
+    PyUnicode_RichCompare,        /* tp_richcompare */
+    0,                            /* tp_weaklistoffset */
+    unicode_iter,                 /* tp_iter */
+    0,                            /* tp_iternext */
+    unicode_methods,              /* tp_methods */
+    0,                            /* tp_members */
+    0,                            /* tp_getset */
+    &PyBaseObject_Type,           /* tp_base */
+    0,                            /* tp_dict */
+    0,                            /* tp_descr_get */
+    0,                            /* tp_descr_set */
+    0,                            /* tp_dictoffset */
+    0,                            /* tp_init */
+    0,                            /* tp_alloc */
+    unicode_new,                  /* tp_new */
+    PyObject_Del,                 /* tp_free */
 };
 
 /* Initialize the Unicode implementation */
@@ -15304,7 +15336,7 @@ unicodeiter_next(unicodeiterobject *it)
 }
 
 static PyObject *
-unicodeiter_len(unicodeiterobject *it)
+unicodeiter_len(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = 0;
     if (it->it_seq)
@@ -15315,7 +15347,7 @@ unicodeiter_len(unicodeiterobject *it)
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-unicodeiter_reduce(unicodeiterobject *it)
+unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),

@@ -666,6 +666,12 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.6
 
+.. class:: AsyncContextManager(Generic[T_co])
+
+   A generic version of :class:`contextlib.AbstractAsyncContextManager`.
+
+   .. versionadded:: 3.6
+
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
    A generic version of :class:`dict`.
@@ -931,6 +937,18 @@ The module defines the following classes, functions and decorators:
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
 
+.. data:: NoReturn
+
+   Special type indicating that a function never returns.
+   For example::
+
+      from typing import NoReturn
+
+      def stop() -> NoReturn:
+          raise RuntimeError('no way')
+
+   .. versionadded:: 3.6.5
+
 .. data:: Union
 
    Union type; ``Union[X, Y]`` means either X or Y.
@@ -955,15 +973,14 @@ The module defines the following classes, functions and decorators:
 
        Union[int, str] == Union[str, int]
 
-   * When a class and its subclass are present, the latter is skipped, e.g.::
-
-       Union[int, object] == object
-
    * You cannot subclass or instantiate a union.
 
    * You cannot write ``Union[X][Y]``.
 
    * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
+
+   .. versionchanged:: 3.7
+      Don't remove explicit subclasses from unions at runtime.
 
 .. data:: Optional
 

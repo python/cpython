@@ -1544,8 +1544,8 @@ Multilingual Plane, tcl/tk will use other fonts that define a character. The
 expanded example give users of non-Latin characters a better idea of what
 they might see in IDLE's shell and editors.
 
-To make room for the expanded sample, frames on the Font tab are re-
-arranged.  The Font/Tabs help explains a bit about the additions.
+To make room for the expanded sample, frames on the Font tab are
+re-arranged.  The Font/Tabs help explains a bit about the additions.
 
 ..
 
