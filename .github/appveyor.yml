@@ -59,7 +59,7 @@ environment:
 image:
   - Visual Studio 2017
 platform:
-#    - Win32
+    - Win32
     - Cygwin64
 matrix:
     fast_finish: true
