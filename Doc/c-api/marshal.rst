@@ -40,12 +40,6 @@ unmarshalling.  Version 2 uses a binary format for floating point numbers.
 
 The following functions allow marshalled values to be read back in.
 
-XXX What about error detection?  It appears that reading past the end of the
-file will always result in a negative numeric value (where that's relevant),
-but it's not clear that negative values won't be handled properly when there's
-no error.  What's the right way to tell? Should only non-negative values be
-written using these routines?
-
 
 .. c:function:: long PyMarshal_ReadLongFromFile(FILE *file)
 
@@ -53,7 +47,8 @@ written using these routines?
    for reading.  Only a 32-bit value can be read in using this function,
    regardless of the native size of :c:type:`long`.
 
-   On error, raise an exception and return ``-1``.
+   On error, sets the appropriate exception (:exc:`EOFError` or
+   :exc:`ValueError`) and returns ``-1``.
 
 
 .. c:function:: int PyMarshal_ReadShortFromFile(FILE *file)
@@ -62,7 +57,8 @@ written using these routines?
    for reading.  Only a 16-bit value can be read in using this function,
    regardless of the native size of :c:type:`short`.
 
-   On error, raise an exception and return ``-1``.
+   On error, sets the appropriate exception (:exc:`EOFError` or
+   :exc:`ValueError`) and returns ``-1``.
 
 
 .. c:function:: PyObject* PyMarshal_ReadObjectFromFile(FILE *file)
