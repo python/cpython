@@ -771,9 +771,10 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(hypot(NAN, NAN)))
         self.assertTrue(math.isnan(hypot(NAN)))
 
-        # Exact tests
-        #  hypot(*[value*n]) == value * math.sqrt(n)
-
+        # Verify scaling for large values
+        halfmax = sys.float_info.max / 2.0
+        for n in range(10):
+            self.assertEqual(hypot(*([halfmax]*n)), halfmax * math.sqrt(n))
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
