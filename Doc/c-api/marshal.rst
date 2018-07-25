@@ -38,7 +38,8 @@ unmarshalling.  Version 2 uses a binary format for floating point numbers.
    *version* indicates the file format.
 
 
-The following functions allow marshalled values to be read back in.
+The following functions allow marshalled values to be read back in.  These
+functions can raise :exc:`MemoryError` if memory allocation is failed.
 
 
 .. c:function:: long PyMarshal_ReadLongFromFile(FILE *file)
@@ -47,8 +48,8 @@ The following functions allow marshalled values to be read back in.
    for reading.  Only a 32-bit value can be read in using this function,
    regardless of the native size of :c:type:`long`.
 
-   On error, sets the appropriate exception (:exc:`EOFError` or
-   :exc:`MemoryError`) and returns ``-1``.
+   On error, sets the appropriate exception (:exc:`EOFError`) and returns
+   ``-1``.
 
 
 .. c:function:: int PyMarshal_ReadShortFromFile(FILE *file)
@@ -57,8 +58,8 @@ The following functions allow marshalled values to be read back in.
    for reading.  Only a 16-bit value can be read in using this function,
    regardless of the native size of :c:type:`short`.
 
-   On error, sets the appropriate exception (:exc:`EOFError` or
-   :exc:`MemoryError`) and returns ``-1``.
+   On error, sets the appropriate exception (:exc:`EOFError`) and returns
+   ``-1``.
 
 
 .. c:function:: PyObject* PyMarshal_ReadObjectFromFile(FILE *file)
