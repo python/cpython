@@ -47,6 +47,9 @@ test_script:
 - ps: |
     if ($env:PLATFORM -eq "Win32") {
         PCbuild\rt.bat -x64 -q -uall -u-cpu -u-largefile -rwW --slowest --timeout=1200 --fail-env-changed -j0
+        if ($LastExitCode -ne 0) {
+            $host.SetShouldExit($LastExitCode)
+        }
     } elseif ($env:PLATFORM -eq "Cygwin64") {
         . .github\cygwin.ps1
         # For now, skip tests that are failing locally
