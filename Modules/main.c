@@ -442,8 +442,6 @@ typedef struct {
     wchar_t *filename;           /* Trailing arg without -c or -m */
     wchar_t *command;            /* -c argument */
     wchar_t *module;             /* -m argument */
-
-    PyObject *main_importer_path;
 } _PyMain;
 
 #define _PyMain_INIT {.err = _Py_INIT_OK()}
@@ -816,26 +814,6 @@ pymain_clear_config(_PyCoreConfig *config)
 
 
 static void
-pymain_free_python(_PyMain *pymain)
-{
-    Py_CLEAR(pymain->main_importer_path);
-
-#ifdef __INSURE__
-    /* Insure++ is a memory analysis tool that aids in discovering
-     * memory leaks and other memory problems.  On Python exit, the
-     * interned string dictionaries are flagged as being in use at exit
-     * (which it is).  Under normal circumstances, this is fine because
-     * the memory will be automatically reclaimed by the system.  Under
-     * memory debugging, it's a huge source of useless noise, so we
-     * trade off slower shutdown for less distraction in the memory
-     * reports.  -baw
-     */
-    _Py_ReleaseInternedUnicodeStrings();
-#endif /* __INSURE__ */
-}
-
-
-static void
 pymain_free_raw(_PyMain *pymain)
 {
     _PyImport_Fini2();
@@ -863,33 +841,47 @@ pymain_free_raw(_PyMain *pymain)
 static void
 pymain_free(_PyMain *pymain)
 {
-    pymain_free_python(pymain);
     pymain_free_raw(pymain);
+
+#ifdef __INSURE__
+    /* Insure++ is a memory analysis tool that aids in discovering
+     * memory leaks and other memory problems.  On Python exit, the
+     * interned string dictionaries are flagged as being in use at exit
+     * (which it is).  Under normal circumstances, this is fine because
+     * the memory will be automatically reclaimed by the system.  Under
+     * memory debugging, it's a huge source of useless noise, so we
+     * trade off slower shutdown for less distraction in the memory
+     * reports.  -baw
+     */
+    _Py_ReleaseInternedUnicodeStrings();
+#endif /* __INSURE__ */
 }
 
 
 static int
-pymain_run_main_from_importer(_PyMain *pymain)
+pymain_sys_path_add_path0(PyInterpreterState *interp, PyObject *path0)
 {
-    /* Assume sys_path0 has already been checked by pymain_get_importer(),
-     * so put it in sys.path[0] and import __main__ */
-    PyObject *sys_path = PySys_GetObject("path");
+    PyObject *sys_path;
+    PyObject *sysdict = interp->sysdict;
+    if (sysdict != NULL) {
+        sys_path = PyDict_GetItemString(sysdict, "path");
+    }
+    else {
+        sys_path = NULL;
+    }
     if (sys_path == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.path");
         goto error;
     }
 
-    if (PyList_Insert(sys_path, 0, pymain->main_importer_path)) {
+    if (PyList_Insert(sys_path, 0, path0)) {
         goto error;
     }
-
-    int sts = pymain_run_module(L"__main__", 0);
-    return (sts != 0);
+    return 0;
 
 error:
-    Py_CLEAR(pymain->main_importer_path);
     PyErr_Print();
-    return 1;
+    return -1;
 }
 
 
@@ -1495,50 +1487,6 @@ wstrlist_as_pylist(int len, wchar_t **list)
 }
 
 
-static int
-pymain_compute_path0(_PyMain *pymain, _PyCoreConfig *config, PyObject **path0)
-{
-    if (pymain->main_importer_path != NULL) {
-        /* Let pymain_run_main_from_importer() adjust sys.path[0] later */
-        *path0 = NULL;
-        return 0;
-    }
-
-    if (Py_IsolatedFlag) {
-        *path0 = NULL;
-        return 0;
-    }
-
-    *path0 = _PyPathConfig_ComputeArgv0(config->argc,
-                                        config->argv);
-    if (*path0 == NULL) {
-        pymain->err = _Py_INIT_NO_MEMORY();
-        return -1;
-    }
-    return 0;
-}
-
-
-static int
-pymain_update_sys_path(_PyMain *pymain, PyObject *path0)
-{
-    /* Prepend argv[0] to sys.path.
-       If argv[0] is a symlink, use the real path. */
-    PyObject *sys_path = PySys_GetObject("path");
-    if (sys_path == NULL) {
-        pymain->err = _Py_INIT_ERR("can't get sys.path");
-        return -1;
-    }
-
-    /* Prepend path0 to sys.path */
-    if (PyList_Insert(sys_path, 0, path0) < 0) {
-        pymain->err = _Py_INIT_ERR("sys.path.insert(0, path0) failed");
-        return -1;
-    }
-    return 0;
-}
-
-
 static void
 pymain_import_readline(_PyMain *pymain)
 {
@@ -1639,17 +1587,13 @@ pymain_run_startup(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
 
 
 static void
-pymain_run_filename(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
+pymain_run_filename(_PyMain *pymain, _PyCoreConfig *config,
+                    PyCompilerFlags *cf)
 {
     if (pymain->filename == NULL && pymain->stdin_is_interactive) {
         Py_InspectFlag = 0; /* do exit on SystemExit */
         pymain_run_startup(pymain, config, cf);
         pymain_run_interactive_hook();
-    }
-
-    if (pymain->main_importer_path != NULL) {
-        pymain->status = pymain_run_main_from_importer(pymain);
-        return;
     }
 
     FILE *fp;
@@ -2480,37 +2424,45 @@ pymain_init_python_main(_PyMain *pymain, _PyCoreConfig *config,
 
 
 static int
-pymain_init_sys_path(_PyMain *pymain, _PyCoreConfig *config)
+pymain_run_python(_PyMain *pymain, PyInterpreterState *interp)
 {
+    int res = 0;
+    _PyCoreConfig *config = &interp->core_config;
+
+    PyObject *main_importer_path = NULL;
     if (pymain->filename != NULL) {
         /* If filename is a package (ex: directory or ZIP file) which contains
            __main__.py, main_importer_path is set to filename and will be
-           prepended to sys.path by pymain_run_main_from_importer(). Otherwise,
-           main_importer_path is set to NULL. */
-        pymain->main_importer_path = pymain_get_importer(pymain->filename);
+           prepended to sys.path.
+
+           Otherwise, main_importer_path is set to NULL. */
+        main_importer_path = pymain_get_importer(pymain->filename);
     }
 
-    PyObject *path0;
-    if (pymain_compute_path0(pymain, config, &path0) < 0) {
-        return -1;
+    if (main_importer_path != NULL) {
+        if (pymain_sys_path_add_path0(interp, main_importer_path) < 0) {
+            pymain->status = 1;
+            goto done;
+        }
     }
+    else if (!config->isolated) {
+        PyObject *path0 = _PyPathConfig_ComputeArgv0(config->argc,
+                                                     config->argv);
+        if (path0 == NULL) {
+            pymain->err = _Py_INIT_NO_MEMORY();
+            res = -1;
+            goto done;
+        }
 
-    if (path0 != NULL) {
-        if (pymain_update_sys_path(pymain, path0) < 0) {
+        if (pymain_sys_path_add_path0(interp, path0) < 0) {
             Py_DECREF(path0);
-            return -1;
+            pymain->status = 1;
+            goto done;
         }
         Py_DECREF(path0);
     }
-    return 0;
-}
 
-
-static void
-pymain_run_python(_PyMain *pymain)
-{
     PyCompilerFlags cf = {.cf_flags = 0};
-    _PyCoreConfig *config = &PyThreadState_GET()->interp->core_config;
 
     pymain_header(pymain);
     pymain_import_readline(pymain);
@@ -2521,11 +2473,19 @@ pymain_run_python(_PyMain *pymain)
     else if (pymain->module) {
         pymain->status = (pymain_run_module(pymain->module, 1) != 0);
     }
+    else if (main_importer_path != NULL) {
+        int sts = pymain_run_module(L"__main__", 0);
+        pymain->status = (sts != 0);
+    }
     else {
         pymain_run_filename(pymain, config, &cf);
     }
 
     pymain_repl(pymain, config, &cf);
+
+done:
+    Py_XDECREF(main_importer_path);
+    return res;
 }
 
 
@@ -2617,7 +2577,7 @@ pymain_cmdline(_PyMain *pymain, _PyCoreConfig *config)
 
 
 static int
-pymain_init(_PyMain *pymain)
+pymain_init(_PyMain *pymain, PyInterpreterState **interp_p)
 {
     /* 754 requires that FP exceptions run in "no stop" mode by default,
      * and until C vendors implement C99's ways to control FP exceptions,
@@ -2652,15 +2612,12 @@ pymain_init(_PyMain *pymain)
     if (_Py_INIT_FAILED(pymain->err)) {
         _Py_FatalInitError(pymain->err);
     }
+    *interp_p = interp;
 
     pymain_clear_config(config);
     config = &interp->core_config;
 
     if (pymain_init_python_main(pymain, config, interp) < 0) {
-        _Py_FatalInitError(pymain->err);
-    }
-
-    if (pymain_init_sys_path(pymain, config) < 0) {
         _Py_FatalInitError(pymain->err);
     }
     return 0;
@@ -2670,9 +2627,12 @@ pymain_init(_PyMain *pymain)
 static int
 pymain_main(_PyMain *pymain)
 {
-    int res = pymain_init(pymain);
+    PyInterpreterState *interp;
+    int res = pymain_init(pymain, &interp);
     if (res != 1) {
-        pymain_run_python(pymain);
+        if (pymain_run_python(pymain, interp) < 0) {
+            _Py_FatalInitError(pymain->err);
+        }
 
         if (Py_FinalizeEx() < 0) {
             /* Value unlikely to be confused with a non-error exit status or
