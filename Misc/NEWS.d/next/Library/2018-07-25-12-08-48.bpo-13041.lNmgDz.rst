@@ -1,0 +1,3 @@
+Use :func:`shutil.get_terminal_size` to calculate the terminal width
+correctly in the ``argparse.HelpFormatter`` class.  Initial patch by Zbyszek
+Jędrzejewski-Szmek.
