@@ -423,7 +423,7 @@ class TestNtpath(unittest.TestCase):
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$\\"))
 
     def assertEqualCI(self, s1, s2):
-        """Assert that two strings are equal ignoring case differences"""
+        """Assert that two strings are equal ignoring case differences."""
         self.assertEqual(s1.lower(), s2.lower())
 
     @unittest.skipUnless(nt, "OS helpers require 'nt' module")
