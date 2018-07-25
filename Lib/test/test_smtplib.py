@@ -1075,6 +1075,19 @@ class SMTPSimTests(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, smtp.sendmail, 'Alice', 'Böb', '')
         self.assertRaises(UnicodeEncodeError, smtp.mail, 'Älice')
 
+    def test_send_message_error_on_non_ascii_addrs_if_no_smtputf8(self):
+        # This test is located here and not in the SMTPUTF8SimTests
+        # class because it needs a "regular" SMTP server to work
+        msg = EmailMessage()
+        msg['From'] = "Páolo <főo@bar.com>"
+        msg['To'] = 'Dinsdale'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost', timeout=3)
+        self.addCleanup(smtp.close)
+        with self.assertRaises(smtplib.SMTPNotSupportedError):
+            smtp.send_message(msg)
+
     def test_name_field_not_included_in_envelop_addresses(self):
         smtp = smtplib.SMTP(
             HOST, self.port, local_hostname='localhost', timeout=3
@@ -1218,19 +1231,6 @@ class SMTPUTF8SimTests(unittest.TestCase):
         self.assertIn('BODY=8BITMIME', self.serv.last_mail_options)
         self.assertIn('SMTPUTF8', self.serv.last_mail_options)
         self.assertEqual(self.serv.last_rcpt_options, [])
-
-    def test_send_message_error_on_non_ascii_addrs_if_no_smtputf8(self):
-        self.serv.enable_SMTPUTF8 = False
-        self.serv._extra_features = []
-        msg = EmailMessage()
-        msg['From'] = "Páolo <főo@bar.com>"
-        msg['To'] = 'Dinsdale'
-        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
-        smtp = smtplib.SMTP(
-            HOST, self.port, local_hostname='localhost', timeout=3)
-        self.addCleanup(smtp.close)
-        self.assertRaises(smtplib.SMTPNotSupportedError,
-                          smtp.send_message, msg)
 
     def test_send_message_uses_8bitmime_if_cte_type_8bitmime(self):
         msg = EmailMessage()
@@ -1395,18 +1395,5 @@ class SMTPAUTHInitialResponseSimTests(unittest.TestCase):
         self.assertEqual(code, 235)
 
 
-@support.reap_threads
-def test_main(verbose=None):
-    support.run_unittest(
-        BadHELOServerTests,
-        DebuggingServerTests,
-        GeneralTests,
-        NonConnectingTests,
-        SMTPAUTHInitialResponseSimTests,
-        SMTPSimTests,
-        TooLongLineTests,
-        )
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -3940,9 +3940,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     if (_Pickler_OpcodeBoundary(self) < 0)
         return -1;
 
-    if (Py_EnterRecursiveCall(" while pickling an object"))
-        return -1;
-
     /* The extra pers_save argument is necessary to avoid calling save_pers()
        on its returned object. */
     if (!pers_save && self->pers_func) {
@@ -3952,7 +3949,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
              1   if a persistent id was saved.
          */
         if ((status = save_pers(self, obj)) != 0)
-            goto done;
+            return status;
     }
 
     type = Py_TYPE(obj);
@@ -3965,40 +3962,39 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     /* Atom types; these aren't memoized, so don't check the memo. */
 
     if (obj == Py_None) {
-        status = save_none(self, obj);
-        goto done;
+        return save_none(self, obj);
     }
     else if (obj == Py_False || obj == Py_True) {
-        status = save_bool(self, obj);
-        goto done;
+        return save_bool(self, obj);
     }
     else if (type == &PyLong_Type) {
-        status = save_long(self, obj);
-        goto done;
+        return save_long(self, obj);
     }
     else if (type == &PyFloat_Type) {
-        status = save_float(self, obj);
-        goto done;
+        return save_float(self, obj);
     }
 
     /* Check the memo to see if it has the object. If so, generate
        a GET (or BINGET) opcode, instead of pickling the object
        once again. */
     if (PyMemoTable_Get(self->memo, obj)) {
-        if (memo_get(self, obj) < 0)
-            goto error;
-        goto done;
+        return memo_get(self, obj);
     }
 
     if (type == &PyBytes_Type) {
-        status = save_bytes(self, obj);
-        goto done;
+        return save_bytes(self, obj);
     }
     else if (type == &PyUnicode_Type) {
-        status = save_unicode(self, obj);
-        goto done;
+        return save_unicode(self, obj);
     }
-    else if (type == &PyDict_Type) {
+
+    /* We're only calling Py_EnterRecursiveCall here so that atomic
+       types above are pickled faster. */
+    if (Py_EnterRecursiveCall(" while pickling an object")) {
+        return -1;
+    }
+
+    if (type == &PyDict_Type) {
         status = save_dict(self, obj);
         goto done;
     }

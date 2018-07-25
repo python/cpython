@@ -28,7 +28,7 @@ typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 typedef struct {
     int install_signal_handlers;  /* Install signal handlers? -1 means unset */
 
-    int ignore_environment; /* -E, Py_IgnoreEnvironmentFlag */
+    int ignore_environment; /* -E, Py_IgnoreEnvironmentFlag, -1 means unset */
     int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
     const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
@@ -71,19 +71,186 @@ typedef struct {
     wchar_t *base_prefix;   /* sys.base_prefix */
     wchar_t *exec_prefix;   /* sys.exec_prefix */
     wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
+#ifdef MS_WINDOWS
+    wchar_t *dll_path;      /* Windows DLL path */
+#endif
 
-    /* Private fields */
-    int _disable_importlib; /* Needed by freeze_importlib */
+    /* If greater than 0, enable isolated mode: sys.path contains
+       neither the script's directory nor the user's site-packages directory.
+
+       Set to 1 by the -I command line option. If set to -1 (default), inherit
+       Py_IsolatedFlag value. */
+    int isolated;
+
+    /* If equal to zero, disable the import of the module site and the
+       site-dependent manipulations of sys.path that it entails. Also disable
+       these manipulations if site is explicitly imported later (call
+       site.main() if you want them to be triggered).
+
+       Set to 0 by the -S command line option. If set to -1 (default), it is
+       set to !Py_NoSiteFlag. */
+    int site_import;
+
+    /* Bytes warnings:
+
+       * If equal to 1, issue a warning when comparing bytes or bytearray with
+         str or bytes with int.
+       * If equal or greater to 2, issue an error.
+
+       Incremented by the -b command line option. If set to -1 (default), inherit
+       Py_BytesWarningFlag value. */
+    int bytes_warning;
+
+    /* If greater than 0, enable inspect: when a script is passed as first
+       argument or the -c option is used, enter interactive mode after
+       executing the script or the command, even when sys.stdin does not appear
+       to be a terminal.
+
+       Incremented by the -i command line option. Set to 1 if the PYTHONINSPECT
+       environment variable is non-empty. If set to -1 (default), inherit
+       Py_InspectFlag value. */
+    int inspect;
+
+    /* If greater than 0: enable the interactive mode (REPL).
+
+       Incremented by the -i command line option. If set to -1 (default),
+       inherit Py_InteractiveFlag value. */
+    int interactive;
+
+    /* Optimization level.
+
+       Incremented by the -O command line option. Set by the PYTHONOPTIMIZE
+       environment variable. If set to -1 (default), inherit Py_OptimizeFlag
+       value. */
+    int optimization_level;
+
+    /* If greater than 0, enable the debug mode: turn on parser debugging
+       output (for expert only, depending on compilation options).
+
+       Incremented by the -d command line option. Set by the PYTHONDEBUG
+       environment variable. If set to -1 (default), inherit Py_DebugFlag
+       value. */
+    int debug;
+
+    /* If equal to 0, Python won't try to write ``.pyc`` files on the
+       import of source modules.
+
+       Set to 0 by the -B command line option and the PYTHONDONTWRITEBYTECODE
+       environment variable. If set to -1 (default), it is set to
+       !Py_DontWriteBytecodeFlag. */
+    int write_bytecode;
+
+    /* If greater than 0, enable the verbose mode: print a message each time a
+       module is initialized, showing the place (filename or built-in module)
+       from which it is loaded.
+
+       If greater or equal to 2, print a message for each file that is checked
+       for when searching for a module. Also provides information on module
+       cleanup at exit.
+
+       Incremented by the -v option. Set by the PYTHONVERBOSE environment
+       variable. If set to -1 (default), inherit Py_VerboseFlag value. */
+    int verbose;
+
+    /* If greater than 0, enable the quiet mode: Don't display the copyright
+       and version messages even in interactive mode.
+
+       Incremented by the -q option. If set to -1 (default), inherit
+       Py_QuietFlag value. */
+    int quiet;
+
+   /* If greater than 0, don't add the user site-packages directory to
+      sys.path.
+
+      Set to 0 by the -s and -I command line options , and the PYTHONNOUSERSITE
+      environment variable. If set to -1 (default), it is set to
+      !Py_NoUserSiteDirectory. */
+    int user_site_directory;
+
+    /* If greater than 0, enable unbuffered mode: force the stdout and stderr
+       streams to be unbuffered.
+
+       Set to 1 by the -u option. Set by the PYTHONUNBUFFERED environment
+       variable. If set to -1 (default), inherit Py_UnbufferedStdioFlag
+       value. */
+    int unbuffered_stdio;
+
+#ifdef MS_WINDOWS
+    /* If greater than 1, use the "mbcs" encoding instead of the UTF-8
+       encoding for the filesystem encoding.
+
+       Set to 1 if the PYTHONLEGACYWINDOWSFSENCODING environment variable is
+       set to a non-empty string. If set to -1 (default), inherit
+       Py_LegacyWindowsFSEncodingFlag value.
+
+       See PEP 529 for more details. */
+    int legacy_windows_fs_encoding;
+
+    /* If greater than zero, use io.FileIO instead of WindowsConsoleIO for sys
+       standard streams.
+
+       Set to 1 if the PYTHONLEGACYWINDOWSSTDIO environment variable is set to
+       a non-empty string. If set to -1 (default), inherit
+       Py_LegacyWindowsStdioFlag value.
+
+       See PEP 528 for more details. */
+    int legacy_windows_stdio;
+#endif
+
+    /* --- Private fields -------- */
+
+    /* Install importlib? If set to 0, importlib is not initialized at all.
+       Needed by freeze_importlib. */
+    int _install_importlib;
+
+    /* Value of the --check-hash-based-pycs configure option. Valid values:
+
+       - "default" means the 'check_source' flag in hash-based pycs
+         determines invalidation
+       - "always" causes the interpreter to hash the source file for
+         invalidation regardless of value of 'check_source' bit
+       - "never" causes the interpreter to always assume hash-based pycs are
+         valid
+
+       Set by the --check-hash-based-pycs command line option.
+       If set to NULL (default), inherit _Py_CheckHashBasedPycsMode value.
+
+       See PEP 552 "Deterministic pycs" for more details. */
+    const char *_check_hash_pycs_mode;
 } _PyCoreConfig;
+
+#ifdef MS_WINDOWS
+#  define _PyCoreConfig_WINDOWS_INIT \
+        .legacy_windows_fs_encoding = -1, \
+        .legacy_windows_stdio = -1,
+#else
+#  define _PyCoreConfig_WINDOWS_INIT
+#endif
 
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
         .install_signal_handlers = -1, \
+        .ignore_environment = -1, \
         .use_hash_seed = -1, \
+        .tracemalloc = -1, \
         .coerce_c_locale = -1, \
         .utf8_mode = -1, \
         .argc = -1, \
-        .nmodule_search_path = -1}
+        .nmodule_search_path = -1, \
+        .isolated = -1, \
+        .site_import = -1, \
+        .bytes_warning = -1, \
+        .inspect = -1, \
+        .interactive = -1, \
+        .optimization_level = -1, \
+        .debug= -1, \
+        .write_bytecode = -1, \
+        .verbose = -1, \
+        .quiet = -1, \
+        .user_site_directory = -1, \
+        .unbuffered_stdio = -1, \
+        _PyCoreConfig_WINDOWS_INIT \
+        ._install_importlib = 1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API

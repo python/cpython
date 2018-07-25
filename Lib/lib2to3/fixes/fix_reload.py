@@ -1,6 +1,6 @@
 """Fixer for reload().
 
-reload(s) -> imp.reload(s)"""
+reload(s) -> importlib.reload(s)"""
 
 # Local imports
 from .. import fixer_base
@@ -32,7 +32,7 @@ class FixReload(fixer_base.BaseFix):
                 if (obj.type == self.syms.argument and
                     obj.children[0].value == '**'):
                     return  # Make no change.
-        names = ('imp', 'reload')
+        names = ('importlib', 'reload')
         new = ImportAndCall(node, results, names)
-        touch_import(None, 'imp', node)
+        touch_import(None, 'importlib', node)
         return new
