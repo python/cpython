@@ -1726,10 +1726,14 @@ pymain_init_tracemalloc(_PyCoreConfig *config)
     int nframe;
     int valid;
 
+    if (config->tracemalloc >= 0) {
+        return _Py_INIT_OK();
+    }
+
     const char *env = config_get_env_var(config, "PYTHONTRACEMALLOC");
     if (env) {
         if (!pymain_str_to_int(env, &nframe)) {
-            valid = (nframe >= 1);
+            valid = (nframe >= 0);
         }
         else {
             valid = 0;
@@ -1746,7 +1750,7 @@ pymain_init_tracemalloc(_PyCoreConfig *config)
         const wchar_t *sep = wcschr(xoption, L'=');
         if (sep) {
             if (!pymain_wstr_to_int(sep + 1, &nframe)) {
-                valid = (nframe >= 1);
+                valid = (nframe >= 0);
             }
             else {
                 valid = 0;
@@ -2249,17 +2253,22 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
 
     config_init_locale(config);
 
-    /* Signal handlers are installed by default */
-    if (config->install_signal_handlers < 0) {
-        config->install_signal_handlers = 1;
-    }
-
     if (config->_install_importlib) {
         err = _PyCoreConfig_InitPathConfig(config);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
     }
+
+    /* default values */
+    if (config->tracemalloc < 0) {
+        config->tracemalloc = 0;
+    }
+    if (config->install_signal_handlers < 0) {
+        /* Signal handlers are installed by default */
+        config->install_signal_handlers = 1;
+    }
+
     return _Py_INIT_OK();
 }
 
