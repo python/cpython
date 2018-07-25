@@ -48,7 +48,7 @@ The following functions allow marshalled values to be read back in.
    regardless of the native size of :c:type:`long`.
 
    On error, sets the appropriate exception (:exc:`EOFError` or
-   :exc:`ValueError`) and returns ``-1``.
+   :exc:`MemoryError`) and returns ``-1``.
 
 
 .. c:function:: int PyMarshal_ReadShortFromFile(FILE *file)
@@ -58,7 +58,7 @@ The following functions allow marshalled values to be read back in.
    regardless of the native size of :c:type:`short`.
 
    On error, sets the appropriate exception (:exc:`EOFError` or
-   :exc:`ValueError`) and returns ``-1``.
+   :exc:`MemoryError`) and returns ``-1``.
 
 
 .. c:function:: PyObject* PyMarshal_ReadObjectFromFile(FILE *file)
