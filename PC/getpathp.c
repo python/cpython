@@ -89,7 +89,7 @@
 #endif
 
 #include <windows.h>
-#include <Shlwapi.h>
+#include <shlwapi.h>
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
