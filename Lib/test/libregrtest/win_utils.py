@@ -1,6 +1,9 @@
 import subprocess
 import sys
 import os
+import _winapi
+import msvcrt
+import uuid
 from test import support
 
 
@@ -26,10 +29,6 @@ class WindowsLoadTracker():
         self.start()
 
     def start(self):
-        import _winapi
-        import msvcrt
-        import uuid
-
         # Create a named pipe which allows for asynchronous IO in Windows
         pipe_name =  r'\\.\pipe\typeperf_output_' + str(uuid.uuid4())
 
