@@ -181,7 +181,8 @@ PyList_New(Py_ssize_t size)
 }
 
 static inline PyObject *
-list_new_prealloc(Py_ssize_t size) {
+list_new_prealloc(Py_ssize_t size)
+{
     PyListObject *op = (PyListObject *) PyList_New(0);
     if (size == 0 || op == NULL) {
         return (PyObject *) op;
