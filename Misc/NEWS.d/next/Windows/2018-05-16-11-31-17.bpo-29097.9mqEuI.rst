@@ -1,0 +1,3 @@
+Fix bug where :meth:`datetime.fromtimestamp` erronously throws an
+:exc:`OSError` on Windows for values between 0 and 86400.
+Patch by Ammar Askar.
