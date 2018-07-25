@@ -232,6 +232,7 @@ typedef struct {
         .install_signal_handlers = -1, \
         .ignore_environment = -1, \
         .use_hash_seed = -1, \
+        .tracemalloc = -1, \
         .coerce_c_locale = -1, \
         .utf8_mode = -1, \
         .argc = -1, \
