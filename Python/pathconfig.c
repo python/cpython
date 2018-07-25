@@ -282,8 +282,8 @@ core_config_init_module_search_paths(_PyCoreConfig *config,
 }
 
 
-_PyInitError
-_PyCoreConfig_InitPathConfig(_PyCoreConfig *config)
+static _PyInitError
+_PyCoreConfig_CalculatePathConfig(_PyCoreConfig *config)
 {
     _PyPathConfig path_config = _PyPathConfig_INIT;
     _PyInitError err;
@@ -332,18 +332,6 @@ _PyCoreConfig_InitPathConfig(_PyCoreConfig *config)
     }
 #endif
 
-    if (config->base_prefix == NULL) {
-        if (copy_wstr(&config->base_prefix, config->prefix) < 0) {
-            goto no_memory;
-        }
-    }
-
-    if (config->base_exec_prefix == NULL) {
-        if (copy_wstr(&config->base_exec_prefix, config->exec_prefix) < 0) {
-            goto no_memory;
-        }
-    }
-
     if (path_config.isolated != -1) {
         config->isolated = path_config.isolated;
     }
@@ -360,6 +348,39 @@ no_memory:
 error:
     _PyPathConfig_Clear(&path_config);
     return err;
+}
+
+
+_PyInitError
+_PyCoreConfig_InitPathConfig(_PyCoreConfig *config)
+{
+    /* Do we need to calculate the path? */
+    if ((config->nmodule_search_path < 0)
+        || (config->executable == NULL)
+        || (config->prefix == NULL)
+#ifdef MS_WINDOWS
+        || (config->dll_path == NULL)
+#endif
+        || (config->exec_prefix == NULL))
+    {
+        _PyInitError err = _PyCoreConfig_CalculatePathConfig(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
+    if (config->base_prefix == NULL) {
+        if (copy_wstr(&config->base_prefix, config->prefix) < 0) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->base_exec_prefix == NULL) {
+        if (copy_wstr(&config->base_exec_prefix, config->exec_prefix) < 0) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+    return _Py_INIT_OK();
 }
 
 

@@ -200,8 +200,7 @@ typedef struct {
     /* --- Private fields -------- */
 
     /* Install importlib? If set to 0, importlib is not initialized at all.
-       Needed by freeze_importlib: see install_importlib argument of
-       _Py_InitializeEx_Private(). */
+       Needed by freeze_importlib. */
     int _install_importlib;
 
     /* Value of the --check-hash-based-pycs configure option. Valid values:

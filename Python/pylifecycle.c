@@ -567,7 +567,7 @@ _Py_SetLocaleFromEnv(int category)
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
    call this twice without an intervening Py_Finalize() call.
 
-   Every call to Py_InitializeCore, Py_Initialize or Py_InitializeEx
+   Every call to _Py_InitializeCore, Py_Initialize or Py_InitializeEx
    must have a corresponding call to Py_Finalize.
 
    Locking: you must hold the interpreter lock while calling these APIs.
@@ -575,6 +575,35 @@ _Py_SetLocaleFromEnv(int category)
    having the lock, but you cannot use multiple threads.)
 
 */
+
+static _PyInitError
+_Py_Initialize_ReconfigureCore(PyInterpreterState *interp,
+                               const _PyCoreConfig *core_config)
+{
+    if (core_config->allocator != NULL) {
+        const char *allocator = _PyMem_GetAllocatorsName();
+        if (allocator == NULL || strcmp(core_config->allocator, allocator) != 0) {
+            return _Py_INIT_USER_ERR("cannot modify memory allocator "
+                                     "after first Py_Initialize()");
+        }
+    }
+
+    _PyCoreConfig_SetGlobalConfig(core_config);
+
+    if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
+        return _Py_INIT_ERR("failed to copy core config");
+    }
+    core_config = &interp->core_config;
+
+    if (core_config->_install_importlib) {
+        _PyInitError err = _PyCoreConfig_SetPathConfig(core_config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+    return _Py_INIT_OK();
+}
+
 
 /* Begin interpreter initialization
  *
@@ -592,16 +621,41 @@ _Py_SetLocaleFromEnv(int category)
  * Any code invoked from this function should *not* assume it has access
  * to the Python C API (unless the API is explicitly listed as being
  * safe to call without calling Py_Initialize first)
+ *
+ * The caller is responsible to call _PyCoreConfig_Read().
  */
 
-_PyInitError
-_Py_InitializeCore(const _PyCoreConfig *core_config)
+static _PyInitError
+_Py_InitializeCore_impl(PyInterpreterState **interp_p,
+                        const _PyCoreConfig *core_config)
 {
-    assert(core_config != NULL);
+    PyInterpreterState *interp;
+    _PyInitError err;
+
+    /* bpo-34008: For backward compatibility reasons, calling Py_Main() after
+       Py_Initialize() ignores the new configuration. */
+    if (_PyRuntime.core_initialized) {
+        PyThreadState *tstate = PyThreadState_GET();
+        if (!tstate) {
+            return _Py_INIT_ERR("failed to read thread state");
+        }
+
+        interp = tstate->interp;
+        if (interp == NULL) {
+            return _Py_INIT_ERR("can't make main interpreter");
+        }
+        *interp_p = interp;
+
+        return _Py_Initialize_ReconfigureCore(interp, core_config);
+    }
+
+    if (_PyRuntime.initialized) {
+        return _Py_INIT_ERR("main interpreter already initialized");
+    }
 
     _PyCoreConfig_SetGlobalConfig(core_config);
 
-    _PyInitError err = _PyRuntime_Initialize();
+    err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -610,13 +664,6 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
         if (_PyMem_SetupAllocators(core_config->allocator) < 0) {
             return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
         }
-    }
-
-    if (_PyRuntime.initialized) {
-        return _Py_INIT_ERR("main interpreter already initialized");
-    }
-    if (_PyRuntime.core_initialized) {
-        return _Py_INIT_ERR("runtime core already initialized");
     }
 
     /* Py_Finalize leaves _Py_Finalizing set in order to help daemon
@@ -648,10 +695,11 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
         return err;
     }
 
-    PyInterpreterState *interp = PyInterpreterState_New();
+    interp = PyInterpreterState_New();
     if (interp == NULL) {
         return _Py_INIT_ERR("can't make main interpreter");
     }
+    *interp_p = interp;
 
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
         return _Py_INIT_ERR("failed to copy core config");
@@ -773,6 +821,43 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     return _Py_INIT_OK();
 }
 
+_PyInitError
+_Py_InitializeCore(PyInterpreterState **interp_p,
+                   const _PyCoreConfig *src_config)
+{
+    assert(src_config != NULL);
+
+
+    PyMemAllocatorEx old_alloc;
+    _PyInitError err;
+
+    /* Copy the configuration, since _PyCoreConfig_Read() modifies it
+       (and the input configuration is read only). */
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    if (_PyCoreConfig_Copy(&config, src_config) >= 0) {
+        err = _PyCoreConfig_Read(&config);
+    }
+    else {
+        err = _Py_INIT_ERR("failed to copy core config");
+    }
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = _Py_InitializeCore_impl(interp_p, &config);
+
+done:
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    _PyCoreConfig_Clear(&config);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    return err;
+}
+
 /* Py_Initialize() has already been called: update the main interpreter
    configuration. Example of bpo-34008: Py_Main() called after
    Py_Initialize(). */
@@ -801,27 +886,19 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp,
  * non-zero return code.
  */
 _PyInitError
-_Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
+_Py_InitializeMainInterpreter(PyInterpreterState *interp,
+                              const _PyMainInterpreterConfig *config)
 {
     if (!_PyRuntime.core_initialized) {
         return _Py_INIT_ERR("runtime core not initialized");
     }
 
-    /* Get current thread state and interpreter pointer */
-    PyThreadState *tstate = PyThreadState_GET();
-    if (!tstate) {
-        return _Py_INIT_ERR("failed to read thread state");
-    }
-    PyInterpreterState *interp = tstate->interp;
-    if (!interp) {
-        return _Py_INIT_ERR("failed to get interpreter");
-    }
-    _PyCoreConfig *core_config = &interp->core_config;
-
-    /* Now finish configuring the main interpreter */
+    /* Configure the main interpreter */
     if (_PyMainInterpreterConfig_Copy(&interp->config, config) < 0) {
         return _Py_INIT_ERR("failed to copy main interpreter config");
     }
+    config = &interp->config;
+    _PyCoreConfig *core_config = &interp->core_config;
 
     if (_PyRuntime.initialized) {
         return _Py_ReconfigureMainInterpreter(interp, config);
@@ -908,51 +985,44 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 #undef _INIT_DEBUG_PRINT
 
 _PyInitError
-_Py_InitializeEx_Private(int install_sigs, int install_importlib)
+_Py_InitializeFromConfig(const _PyCoreConfig *config)
 {
-    if (_PyRuntime.initialized) {
-        /* bpo-33932: Calling Py_Initialize() twice does nothing. */
-        return _Py_INIT_OK();
-    }
-
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    PyInterpreterState *interp;
     _PyInitError err;
-
-    config._install_importlib = install_importlib;
-    config.install_signal_handlers = install_sigs;
-
-    err = _PyCoreConfig_Read(&config);
+    err = _Py_InitializeCore(&interp, config);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
-
-    err = _Py_InitializeCore(&config);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
-    }
+    config = &interp->core_config;
 
     _PyMainInterpreterConfig main_config = _PyMainInterpreterConfig_INIT;
-    err = _PyMainInterpreterConfig_Read(&main_config, &config);
+    err = _PyMainInterpreterConfig_Read(&main_config, config);
     if (!_Py_INIT_FAILED(err)) {
-        err = _Py_InitializeMainInterpreter(&main_config);
+        err = _Py_InitializeMainInterpreter(interp, &main_config);
     }
     _PyMainInterpreterConfig_Clear(&main_config);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
-
-    err = _Py_INIT_OK();
-
-done:
-    _PyCoreConfig_Clear(&config);
-    return err;
+    return _Py_INIT_OK();
 }
 
 
 void
 Py_InitializeEx(int install_sigs)
 {
-    _PyInitError err = _Py_InitializeEx_Private(install_sigs, 1);
+    if (_PyRuntime.initialized) {
+        /* bpo-33932: Calling Py_Initialize() twice does nothing. */
+        return;
+    }
+
+    _PyInitError err;
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+    config.install_signal_handlers = install_sigs;
+
+    err = _Py_InitializeFromConfig(&config);
+    _PyCoreConfig_Clear(&config);
+
     if (_Py_INIT_FAILED(err)) {
         _Py_FatalInitError(err);
     }
