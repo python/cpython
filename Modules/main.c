@@ -701,6 +701,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
         config->LEN = config2->LEN; \
     } while (0)
 
+    COPY_ATTR(install_signal_handlers);
     COPY_ATTR(ignore_environment);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
@@ -714,6 +715,9 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(show_alloc_count);
     COPY_ATTR(dump_refs);
     COPY_ATTR(malloc_stats);
+
+    COPY_ATTR(coerce_c_locale);
+    COPY_ATTR(coerce_c_locale_warn);
     COPY_ATTR(utf8_mode);
 
     COPY_STR_ATTR(pycache_prefix);
@@ -1244,9 +1248,7 @@ config_init_warnoptions(_PyCoreConfig *config, _PyCmdline *cmdline)
 static _PyInitError
 cmdline_init_env_warnoptions(_PyMain *pymain, _PyCoreConfig *config, _PyCmdline *cmdline)
 {
-    if (config->ignore_environment) {
-        return _Py_INIT_OK();
-    }
+    assert(!config->ignore_environment);
 
     wchar_t *env;
     int res = config_get_env_var_dup(config, &env,
@@ -1819,37 +1821,6 @@ get_env_flag(_PyCoreConfig *config, int *flag, const char *name)
 }
 
 
-static void
-cmdline_get_env_flags(_PyMain *pymain, _PyCoreConfig *config,
-                      _PyCmdline *cmdline)
-{
-    get_env_flag(config, &config->debug, "PYTHONDEBUG");
-    get_env_flag(config, &config->verbose, "PYTHONVERBOSE");
-    get_env_flag(config, &config->optimization_level, "PYTHONOPTIMIZE");
-    get_env_flag(config, &config->inspect, "PYTHONINSPECT");
-
-    int dont_write_bytecode = 0;
-    get_env_flag(config, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
-    if (dont_write_bytecode) {
-        config->write_bytecode = 0;
-    }
-
-    int no_user_site_directory = 0;
-    get_env_flag(config, &no_user_site_directory, "PYTHONNOUSERSITE");
-    if (no_user_site_directory) {
-        config->user_site_directory = 0;
-    }
-
-    get_env_flag(config, &config->unbuffered_stdio, "PYTHONUNBUFFERED");
-#ifdef MS_WINDOWS
-    get_env_flag(config, &config->legacy_windows_fs_encoding,
-                 "PYTHONLEGACYWINDOWSFSENCODING");
-    get_env_flag(config, &config->legacy_windows_stdio,
-                 "PYTHONLEGACYWINDOWSSTDIO");
-#endif
-}
-
-
 static _PyInitError
 config_init_home(_PyCoreConfig *config)
 {
@@ -1944,7 +1915,37 @@ config_init_utf8_mode(_PyCoreConfig *config)
 static _PyInitError
 config_read_env_vars(_PyCoreConfig *config)
 {
-    config->allocator = config_get_env_var(config, "PYTHONMALLOC");
+    assert(!config->ignore_environment);
+
+    /* Get environment variables */
+    get_env_flag(config, &config->debug, "PYTHONDEBUG");
+    get_env_flag(config, &config->verbose, "PYTHONVERBOSE");
+    get_env_flag(config, &config->optimization_level, "PYTHONOPTIMIZE");
+    get_env_flag(config, &config->inspect, "PYTHONINSPECT");
+
+    int dont_write_bytecode = 0;
+    get_env_flag(config, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
+    if (dont_write_bytecode) {
+        config->write_bytecode = 0;
+    }
+
+    int no_user_site_directory = 0;
+    get_env_flag(config, &no_user_site_directory, "PYTHONNOUSERSITE");
+    if (no_user_site_directory) {
+        config->user_site_directory = 0;
+    }
+
+    get_env_flag(config, &config->unbuffered_stdio, "PYTHONUNBUFFERED");
+#ifdef MS_WINDOWS
+    get_env_flag(config, &config->legacy_windows_fs_encoding,
+                 "PYTHONLEGACYWINDOWSFSENCODING");
+    get_env_flag(config, &config->legacy_windows_stdio,
+                 "PYTHONLEGACYWINDOWSSTDIO");
+#endif
+
+    if (config->allocator == NULL) {
+        config->allocator = config_get_env_var(config, "PYTHONMALLOC");
+    }
 
     if (config_get_env_var(config, "PYTHONDUMPREFS")) {
         config->dump_refs = 1;
@@ -1998,8 +1999,6 @@ config_read_complex_options(_PyCoreConfig *config)
         config_get_env_var(config, "PYTHONDEVMODE"))
     {
         config->dev_mode = 1;
-        config->faulthandler = 1;
-        config->allocator = "debug";
     }
 
     _PyInitError err = pymain_init_tracemalloc(config);
@@ -2033,23 +2032,17 @@ pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
         return res;
     }
 
-    /* Get environment variables */
-    cmdline_get_env_flags(pymain, config, cmdline);
-
-    err = cmdline_init_env_warnoptions(pymain, config, cmdline);
-    if (_Py_INIT_FAILED(err)) {
-        pymain->err = err;
-        return -1;
-    }
-
-#ifdef MS_WINDOWS
-    if (config->legacy_windows_fs_encoding) {
-        config->utf8_mode = 0;
-    }
-#endif
-
     if (pymain_init_core_argv(pymain, config, cmdline) < 0) {
         return -1;
+    }
+
+    assert(config->ignore_environment >= 0);
+    if (!config->ignore_environment) {
+        err = cmdline_init_env_warnoptions(pymain, config, cmdline);
+        if (_Py_INIT_FAILED(err)) {
+            pymain->err = err;
+            return -1;
+        }
     }
 
     err = _PyCoreConfig_Read(config);
@@ -2186,14 +2179,6 @@ config_init_locale(_PyCoreConfig *config)
         }
         return;
     }
-
-    /* By default, C locale coercion and UTF-8 Mode are disabled */
-    if (config->coerce_c_locale < 0) {
-        config->coerce_c_locale = 0;
-    }
-    if (config->utf8_mode < 0) {
-        config->utf8_mode = 0;
-    }
 }
 
 
@@ -2216,9 +2201,12 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
 
     _PyCoreConfig_GetGlobalConfig(config);
 
-    err = config_read_env_vars(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    assert(config->ignore_environment >= 0);
+    if (!config->ignore_environment) {
+        err = config_read_env_vars(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 
     /* -X options */
@@ -2260,13 +2248,38 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
+    /* options side effects */
+    if (config->dev_mode) {
+        if (config->faulthandler < 0) {
+            config->faulthandler = 1;
+        }
+        if (config->allocator == NULL) {
+            config->allocator = "debug";
+        }
+    }
+
+#ifdef MS_WINDOWS
+    if (config->legacy_windows_fs_encoding) {
+        config->utf8_mode = 0;
+    }
+#endif
+
     /* default values */
+    if (config->use_hash_seed < 0) {
+        config->use_hash_seed = 0;
+        config->hash_seed = 0;
+    }
+    if (config->faulthandler < 0) {
+        config->faulthandler = 0;
+    }
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
     }
-    if (config->install_signal_handlers < 0) {
-        /* Signal handlers are installed by default */
-        config->install_signal_handlers = 1;
+    if (config->coerce_c_locale < 0) {
+        config->coerce_c_locale = 0;
+    }
+    if (config->utf8_mode < 0) {
+        config->utf8_mode = 0;
     }
 
     return _Py_INIT_OK();
@@ -2599,7 +2612,6 @@ pymain_init(_PyMain *pymain, PyInterpreterState **interp_p)
 
     _PyCoreConfig local_config = _PyCoreConfig_INIT;
     _PyCoreConfig *config = &local_config;
-    config->install_signal_handlers = 1;
 
     _PyCoreConfig_GetGlobalConfig(config);
 
