@@ -6,6 +6,7 @@ from dataclasses import *
 
 import pickle
 import inspect
+import builtins
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
@@ -211,15 +212,16 @@ class TestCase(unittest.TestCase):
         # since code generation is used.
         # Ensure that this is not happening.
         exclusions = {'None', 'True', 'False'}
-        builtins = sorted(
-            b for b in __builtins__.__dict__.keys()
+        builtins_names = sorted(
+            b for b in builtins.__dict__.keys()
             if not b.startswith('__') and b not in exclusions
         )
-        C = make_dataclass('C', [(name, str) for name in builtins])
+        attributes = [(name, str) for name in builtins_names]
+        C = make_dataclass('C', attributes)
 
-        c = C(*[name for name in builtins])
+        c = C(*[name for name in builtins_names])
 
-        for name in builtins:
+        for name in builtins_names:
             self.assertEqual(getattr(c, name), name)
 
     def test_field_named_like_builtin_frozen(self):
@@ -228,15 +230,16 @@ class TestCase(unittest.TestCase):
         # Ensure that this is not happening
         # for frozen data classes.
         exclusions = {'None', 'True', 'False'}
-        builtins = sorted(
-            b for b in __builtins__.__dict__.keys()
+        builtins_names = sorted(
+            b for b in builtins.__dict__.keys()
             if not b.startswith('__') and b not in exclusions
         )
-        C = make_dataclass('C', [(name, str) for name in builtins], frozen=True)
+        attributes = [(name, str) for name in builtins_names]
+        C = make_dataclass('C', attributes, frozen=True)
 
-        c = C(*[name for name in builtins])
+        c = C(*[name for name in builtins_names])
 
-        for name in builtins:
+        for name in builtins_names:
             self.assertEqual(getattr(c, name), name)
 
     def test_0_field_compare(self):
