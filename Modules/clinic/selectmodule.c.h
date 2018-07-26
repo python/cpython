@@ -83,7 +83,7 @@ select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
     if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
-        fildes_converter, &fd, ushort_converter, &eventmask)) {
+        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
         goto exit;
     }
     return_value = select_poll_register_impl(self, fd, eventmask);
@@ -122,7 +122,7 @@ select_poll_modify(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     unsigned short eventmask;
 
     if (!_PyArg_ParseStack(args, nargs, "O&O&:modify",
-        fildes_converter, &fd, ushort_converter, &eventmask)) {
+        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
         goto exit;
     }
     return_value = select_poll_modify_impl(self, fd, eventmask);
@@ -229,7 +229,7 @@ select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t n
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
     if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
-        fildes_converter, &fd, ushort_converter, &eventmask)) {
+        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
         goto exit;
     }
     return_value = select_devpoll_register_impl(self, fd, eventmask);
@@ -269,7 +269,7 @@ select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nar
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
     if (!_PyArg_ParseStack(args, nargs, "O&|O&:modify",
-        fildes_converter, &fd, ushort_converter, &eventmask)) {
+        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
         goto exit;
     }
     return_value = select_devpoll_modify_impl(self, fd, eventmask);
@@ -1047,4 +1047,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=3e425445d49c49e2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=561bec8bcb0e00c5 input=a9049054013a1b77]*/

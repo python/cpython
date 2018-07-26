@@ -560,12 +560,12 @@ class HashLibTestCase(unittest.TestCase):
 
         constructor(leaf_size=0)
         constructor(leaf_size=(1<<32)-1)
-        self.assertRaises(OverflowError, constructor, leaf_size=-1)
+        self.assertRaises(ValueError, constructor, leaf_size=-1)
         self.assertRaises(OverflowError, constructor, leaf_size=1<<32)
 
         constructor(node_offset=0)
         constructor(node_offset=max_offset)
-        self.assertRaises(OverflowError, constructor, node_offset=-1)
+        self.assertRaises(ValueError, constructor, node_offset=-1)
         self.assertRaises(OverflowError, constructor, node_offset=max_offset+1)
 
         constructor(
