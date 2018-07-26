@@ -346,7 +346,7 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
         locals = {}
     # __builtins__ may be the "builtins" module or
     # the value of its "__dict__",
-    # so make sure "__builtins" is the module.
+    # so make sure "__builtins__" is the module.
     if globals is not None and '__builtins__' not in globals:
         globals['__builtins__'] = builtins
     return_annotation = ''
