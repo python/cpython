@@ -1,4 +1,4 @@
-from test.support import (TESTFN, run_unittest, import_module, unlink,
+from test.support import (run_unittest, import_module, unlink,
                           requires, _2G, _4G, gc_collect, cpython_only)
 import unittest
 import os
@@ -6,6 +6,7 @@ import re
 import itertools
 import socket
 import sys
+import tempfile
 import weakref
 
 # Skip test if we can't import mmap.
@@ -13,23 +14,30 @@ mmap = import_module('mmap')
 
 PAGESIZE = mmap.PAGESIZE
 
-class MmapTests(unittest.TestCase):
+class MmapBaseTest(unittest.TestCase):
 
     def setUp(self):
-        if os.path.exists(TESTFN):
-            os.unlink(TESTFN)
-
+        fd, self.testfn = tempfile.mkstemp()
+        os.close(fd)
+        self.remove_testfn()
+    
     def tearDown(self):
+        self.remove_testfn()
+    
+    def remove_testfn(self):
         try:
-            os.unlink(TESTFN)
-        except OSError:
+            os.unlink(self.testfn)
+        except FileNotFoundError:
             pass
+
+
+class MmapTests(MmapBaseTest):
 
     def test_basic(self):
         # Test mmap module on Unix systems and Windows
 
         # Create a file to be mmap'ed.
-        f = open(TESTFN, 'bw+')
+        f = open(self.testfn, 'bw+')
         try:
             # Write 2 pages worth of data to the file
             f.write(b'\0'* PAGESIZE)
@@ -42,7 +50,7 @@ class MmapTests(unittest.TestCase):
 
         # Simple sanity checks
 
-        tp = str(type(m))  # SF bug 128713:  segfaulted on Linux
+        tp = str(type(m))  # SF g 128713:  segfaulted on Linux
         self.assertEqual(m.find(b'foo'), PAGESIZE)
 
         self.assertEqual(len(m), 2*PAGESIZE)
@@ -109,7 +117,7 @@ class MmapTests(unittest.TestCase):
 
             # Check that the underlying file is truncated too
             # (bug #728515)
-            f = open(TESTFN, 'rb')
+            f = open(self.testfn, 'rb')
             try:
                 f.seek(0, 2)
                 self.assertEqual(f.tell(), 512)
@@ -122,9 +130,9 @@ class MmapTests(unittest.TestCase):
     def test_access_parameter(self):
         # Test for "access" keyword parameter
         mapsize = 10
-        with open(TESTFN, "wb") as fp:
+        with open(self.testfn, "wb") as fp:
             fp.write(b"a"*mapsize)
-        with open(TESTFN, "rb") as f:
+        with open(self.testfn, "rb") as f:
             m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_READ)
             self.assertEqual(m[:], b'a'*mapsize, "Readonly memory map data incorrect.")
 
@@ -171,12 +179,12 @@ class MmapTests(unittest.TestCase):
                 pass
             else:
                 self.fail("Able to resize readonly memory map")
-            with open(TESTFN, "rb") as fp:
+            with open(self.testfn, "rb") as fp:
                 self.assertEqual(fp.read(), b'a'*mapsize,
                                  "Readonly memory map data file was modified")
 
         # Opening mmap with size too big
-        with open(TESTFN, "r+b") as f:
+        with open(self.testfn, "r+b") as f:
             try:
                 m = mmap.mmap(f.fileno(), mapsize+1)
             except ValueError:
@@ -193,11 +201,11 @@ class MmapTests(unittest.TestCase):
                 m.close()
             if sys.platform.startswith('win'):
                 # Repair damage from the resizing test.
-                with open(TESTFN, 'r+b') as f:
+                with open(self.testfn, 'r+b') as f:
                     f.truncate(mapsize)
 
         # Opening mmap with access=ACCESS_WRITE
-        with open(TESTFN, "r+b") as f:
+        with open(self.testfn, "r+b") as f:
             m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_WRITE)
             # Modifying write-through memory map
             m[:] = b'c'*mapsize
@@ -205,20 +213,20 @@ class MmapTests(unittest.TestCase):
                    "Write-through memory map memory not updated properly.")
             m.flush()
             m.close()
-        with open(TESTFN, 'rb') as f:
+        with open(self.testfn, 'rb') as f:
             stuff = f.read()
         self.assertEqual(stuff, b'c'*mapsize,
                "Write-through memory map data file not updated properly.")
 
         # Opening mmap with access=ACCESS_COPY
-        with open(TESTFN, "r+b") as f:
+        with open(self.testfn, "r+b") as f:
             m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_COPY)
             # Modifying copy-on-write memory map
             m[:] = b'd'*mapsize
             self.assertEqual(m[:], b'd' * mapsize,
                              "Copy-on-write memory map data not written correctly.")
             m.flush()
-            with open(TESTFN, "rb") as fp:
+            with open(self.testfn, "rb") as fp:
                 self.assertEqual(fp.read(), b'c'*mapsize,
                                  "Copy-on-write test data file should not be modified.")
             # Ensuring copy-on-write maps cannot be resized
@@ -226,19 +234,19 @@ class MmapTests(unittest.TestCase):
             m.close()
 
         # Ensuring invalid access parameter raises exception
-        with open(TESTFN, "r+b") as f:
+        with open(self.testfn, "r+b") as f:
             self.assertRaises(ValueError, mmap.mmap, f.fileno(), mapsize, access=4)
 
         if os.name == "posix":
             # Try incompatible flags, prot and access parameters.
-            with open(TESTFN, "r+b") as f:
+            with open(self.testfn, "r+b") as f:
                 self.assertRaises(ValueError, mmap.mmap, f.fileno(), mapsize,
                                   flags=mmap.MAP_PRIVATE,
                                   prot=mmap.PROT_READ, access=mmap.ACCESS_WRITE)
 
             # Try writing with PROT_EXEC and without PROT_WRITE
             prot = mmap.PROT_READ | getattr(mmap, 'PROT_EXEC', 0)
-            with open(TESTFN, "r+b") as f:
+            with open(self.testfn, "r+b") as f:
                 m = mmap.mmap(f.fileno(), mapsize, prot=prot)
                 self.assertRaises(TypeError, m.write, b"abcdef")
                 self.assertRaises(TypeError, m.write_byte, 0)
@@ -251,7 +259,7 @@ class MmapTests(unittest.TestCase):
     def test_tougher_find(self):
         # Do a tougher .find() test.  SF bug 515943 pointed out that, in 2.2,
         # searching for data with embedded \0 bytes didn't work.
-        with open(TESTFN, 'wb+') as f:
+        with open(self.testfn, 'wb+') as f:
 
             data = b'aabaac\x00deef\x00\x00aa\x00'
             n = len(data)
@@ -268,7 +276,7 @@ class MmapTests(unittest.TestCase):
 
     def test_find_end(self):
         # test the new 'end' parameter works as expected
-        f = open(TESTFN, 'wb+')
+        f = open(self.testfn, 'wb+')
         data = b'one two ones'
         n = len(data)
         f.write(data)
@@ -287,7 +295,7 @@ class MmapTests(unittest.TestCase):
 
     def test_rfind(self):
         # test the new 'end' parameter works as expected
-        f = open(TESTFN, 'wb+')
+        f = open(self.testfn, 'wb+')
         data = b'one two ones'
         n = len(data)
         f.write(data)
@@ -306,12 +314,12 @@ class MmapTests(unittest.TestCase):
 
     def test_double_close(self):
         # make sure a double close doesn't crash on Solaris (Bug# 665913)
-        f = open(TESTFN, 'wb+')
+        f = open(self.testfn, 'wb+')
 
         f.write(2**16 * b'a') # Arbitrary character
         f.close()
 
-        f = open(TESTFN, 'rb')
+        f = open(self.testfn, 'rb')
         mf = mmap.mmap(f.fileno(), 2**16, access=mmap.ACCESS_READ)
         mf.close()
         mf.close()
@@ -320,12 +328,12 @@ class MmapTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, "stat"), "needs os.stat()")
     def test_entire_file(self):
         # test mapping of entire file by passing 0 for map length
-        f = open(TESTFN, "wb+")
+        f = open(self.testfn, "wb+")
 
         f.write(2**16 * b'm') # Arbitrary character
         f.close()
 
-        f = open(TESTFN, "rb+")
+        f = open(self.testfn, "rb+")
         mf = mmap.mmap(f.fileno(), 0)
         self.assertEqual(len(mf), 2**16, "Map size should equal file size.")
         self.assertEqual(mf.read(2**16), 2**16 * b"m")
@@ -338,10 +346,10 @@ class MmapTests(unittest.TestCase):
         # map length with an offset doesn't cause a segfault.
         # NOTE: allocation granularity is currently 65536 under Win64,
         # and therefore the minimum offset alignment.
-        with open(TESTFN, "wb") as f:
+        with open(self.testfn, "wb") as f:
             f.write((65536 * 2) * b'm') # Arbitrary character
 
-        with open(TESTFN, "rb") as f:
+        with open(self.testfn, "rb") as f:
             with mmap.mmap(f.fileno(), 0, offset=65536, access=mmap.ACCESS_READ) as mf:
                 self.assertRaises(IndexError, mf.__getitem__, 80000)
 
@@ -349,16 +357,16 @@ class MmapTests(unittest.TestCase):
     def test_length_0_large_offset(self):
         # Issue #10959: test mapping of a file by passing 0 for
         # map length with a large offset doesn't cause a segfault.
-        with open(TESTFN, "wb") as f:
+        with open(self.testfn, "wb") as f:
             f.write(115699 * b'm') # Arbitrary character
 
-        with open(TESTFN, "w+b") as f:
+        with open(self.testfn, "w+b") as f:
             self.assertRaises(ValueError, mmap.mmap, f.fileno(), 0,
                               offset=2147418112)
 
     def test_move(self):
         # make move works everywhere (64-bit format problem earlier)
-        f = open(TESTFN, 'wb+')
+        f = open(self.testfn, 'wb+')
 
         f.write(b"ABCDEabcde") # Arbitrary character
         f.flush()
@@ -489,18 +497,18 @@ class MmapTests(unittest.TestCase):
         return mmap.mmap (f.fileno(), 0)
 
     def test_empty_file (self):
-        f = open (TESTFN, 'w+b')
+        f = open (self.testfn, 'w+b')
         f.close()
-        with open(TESTFN, "rb") as f :
+        with open(self.testfn, "rb") as f :
             self.assertRaisesRegex(ValueError,
                                    "cannot mmap an empty file",
                                    mmap.mmap, f.fileno(), 0,
                                    access=mmap.ACCESS_READ)
 
     def test_offset (self):
-        f = open (TESTFN, 'w+b')
+        f = open (self.testfn, 'w+b')
 
-        try: # unlink TESTFN no matter what
+        try: # unlink self.testfn no matter what
             halfsize = mmap.ALLOCATIONGRANULARITY
             m = self.make_mmap_file (f, halfsize)
             m.close ()
@@ -508,7 +516,7 @@ class MmapTests(unittest.TestCase):
 
             mapsize = halfsize * 2
             # Try invalid offset
-            f = open(TESTFN, "r+b")
+            f = open(self.testfn, "r+b")
             for offset in [-2, -1, None]:
                 try:
                     m = mmap.mmap(f.fileno(), mapsize, offset=offset)
@@ -520,7 +528,7 @@ class MmapTests(unittest.TestCase):
             f.close()
 
             # Try valid offset, hopefully 8192 works on all OSes
-            f = open(TESTFN, "r+b")
+            f = open(self.testfn, "r+b")
             m = mmap.mmap(f.fileno(), mapsize - halfsize, offset=halfsize)
             self.assertEqual(m[0:3], b'foo')
             f.close()
@@ -539,7 +547,7 @@ class MmapTests(unittest.TestCase):
                 self.assertEqual(m[0:3], b'foo')
 
                 # Check that the underlying file is truncated too
-                f = open(TESTFN, 'rb')
+                f = open(self.testfn, 'rb')
                 f.seek(0, 2)
                 self.assertEqual(f.tell(), halfsize + 512)
                 f.close()
@@ -550,7 +558,7 @@ class MmapTests(unittest.TestCase):
         finally:
             f.close()
             try:
-                os.unlink(TESTFN)
+                os.unlink(self.testfn)
             except OSError:
                 pass
 
@@ -563,9 +571,9 @@ class MmapTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(mmap, 'PROT_READ'), "needs mmap.PROT_READ")
     def test_prot_readonly(self):
         mapsize = 10
-        with open(TESTFN, "wb") as fp:
+        with open(self.testfn, "wb") as fp:
             fp.write(b"a"*mapsize)
-        f = open(TESTFN, "rb")
+        f = open(self.testfn, "rb")
         m = mmap.mmap(f.fileno(), mapsize, prot=mmap.PROT_READ)
         self.assertRaises(TypeError, m.write, "foo")
         f.close()
@@ -575,9 +583,9 @@ class MmapTests(unittest.TestCase):
 
     def test_io_methods(self):
         data = b"0123456789"
-        with open(TESTFN, "wb") as fp:
+        with open(self.testfn, "wb") as fp:
             fp.write(b"x"*len(data))
-        f = open(TESTFN, "r+b")
+        f = open(self.testfn, "r+b")
         m = mmap.mmap(f.fileno(), len(data))
         f.close()
         # Test write_byte()
@@ -663,9 +671,9 @@ class MmapTests(unittest.TestCase):
         m.close()
 
         # Should not crash (Issue 5385)
-        with open(TESTFN, "wb") as fp:
+        with open(self.testfn, "wb") as fp:
             fp.write(b"x"*10)
-        f = open(TESTFN, "r+b")
+        f = open(self.testfn, "r+b")
         m = mmap.mmap(f.fileno(), 0)
         f.close()
         try:
@@ -742,19 +750,13 @@ class MmapTests(unittest.TestCase):
             m * 2
 
 
-class LargeMmapTests(unittest.TestCase):
-
-    def setUp(self):
-        unlink(TESTFN)
-
-    def tearDown(self):
-        unlink(TESTFN)
+class LargeMmapTests(MmapBaseTest):
 
     def _make_test_file(self, num_zeroes, tail):
         if sys.platform[:3] == 'win' or sys.platform == 'darwin':
             requires('largefile',
                 'test requires %s bytes and a long time to run' % str(0x180000000))
-        f = open(TESTFN, 'w+b')
+        f = open(self.testfn, 'w+b')
         try:
             f.seek(num_zeroes)
             f.write(tail)
