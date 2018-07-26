@@ -1562,14 +1562,23 @@ getargs_et_hash(PyObject *self, PyObject *args)
 static PyObject *
 get_indices(PyObject *self, PyObject *args)
 {
-  PySliceObject *slice;
-  Py_ssize_t length, start, stop, step;
+    PySliceObject *slice;
+    Py_ssize_t length, start, stop, step;
 
-  if (!PyArg_ParseTuple(args, "On", &slice, &length))
-    return NULL;
+    if (!PyArg_ParseTuple(args, "On", &slice, &length))
+        return NULL;
 
-  int result = PySlice_GetIndices(slice, length, &start, &stop, &step);
-  return Py_BuildValue("i", result);
+    int result = PySlice_GetIndices(slice, length, &start, &stop, &step);
+
+    if (PyErr_Occurred()) {
+        assert(result == -1);
+        return NULL;
+    }
+
+    if (result == -1) {
+        Py_RETURN_NONE;
+    }
+    return Py_BuildValue("innn", result, start, stop, step);
 }
 
 static PyObject *
@@ -2677,7 +2686,7 @@ static PyMethodDef TestMethods[] = {
 #ifdef Py_USING_UNICODE
     {"test_empty_argparse", (PyCFunction)test_empty_argparse,METH_NOARGS},
 #endif
-    {"get_indices", get_indices, METH_VARARGS},
+    {"get_indices", (PyCFunction)get_indices, METH_VARARGS},
     {"parse_tuple_and_keywords", parse_tuple_and_keywords, METH_VARARGS},
     {"test_null_strings",       (PyCFunction)test_null_strings,  METH_NOARGS},
     {"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
