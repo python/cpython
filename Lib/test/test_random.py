@@ -150,6 +150,68 @@ class TestBasicOps:
     def test_sample_on_dicts(self):
         self.assertRaises(TypeError, self.gen.sample, dict.fromkeys('abcdef'), 2)
 
+    def test_sample_weighted(self):
+        sample = self.gen.sample
+        n = 4
+        data = ['red', 'green', 'blue', 'yellow']
+
+        # Test edge case N==k==0==len(weights)
+        self.assertEqual(sample([], 0, weights=[]), [])
+
+        # Exception raised if size of sample exceeds that of population
+        self.assertRaises(ValueError, sample, data, n + 1, weights=range(n))
+        self.assertRaises(ValueError, sample, [], -1, weights=[])
+
+        # weights is None
+        self.assertTrue(set(sample(data, n, weights=None)) == set(data))
+        self.assertTrue(set(sample(data, weights=None, k=n)) == set(data))
+
+        # len(weights) != len(population)
+        with self.assertRaises(ValueError):
+            sample(data, k=n, weights=range(n-1))
+        # non-iterable weights
+        with self.assertRaises(TypeError):
+            sample(data, k=n, weights=10)
+        # non-numeric weights
+        with self.assertRaises(TypeError):
+            sample(data, k=n, weights=[None] * n)
+
+        # Test all non zero weights
+        for weights in [
+                [15, 10, 25, 30],                                                  # integer weights
+                [15.1, 10.2, 25.2, 30.3],                                          # float weights
+                [Fraction(1, 3), Fraction(2, 6), Fraction(3, 6), Fraction(4, 6)],  # fractional weights
+                [True, True, True, True]                                           # booleans (include / exclude)
+        ]:
+            self.assertTrue(set(sample(data, k=n, weights=weights)) == set(data))
+            self.assertTrue(set(sample(data, k=n-1, weights=weights)) < set(data))
+            self.assertTrue(set(sample(data, k=n-2, weights=weights)) < set(data))
+            self.assertTrue(set(sample(data, k=n-3, weights=weights)) < set(data))
+            self.assertTrue(set(sample(data, k=n-4, weights=weights)) == set())
+
+        # Test one zero weight
+        for weights in [
+                [0, 10, 25, 30],                                                   # integer weights
+                [15.1, 0, 25.2, 30.3],                                             # float weights
+                [Fraction(1, 3), Fraction(2, 6), Fraction(), Fraction(4, 6)],      # fractional weights
+                [True, True, True, False]                                          # booleans (include / exclude)
+        ]:
+            self.assertRaises(ValueError, sample, data, k=n, weights=weights)
+            non_zero_elements_set = set(data[i] for i in range(4) if weights[i])
+            self.assertTrue(set(sample(data, k=n-1, weights=weights)) == non_zero_elements_set)
+            self.assertTrue(set(sample(data, k=n-2, weights=weights)) < non_zero_elements_set)
+            self.assertTrue(set(sample(data, k=n-3, weights=weights)) < non_zero_elements_set)
+            self.assertTrue(set(sample(data, k=n-4, weights=weights)) == set())
+
+        # Test all zero weights
+        self.assertEqual(sample(data, 0, weights=[0, 0, 0, 0]), [])
+
+        # Test weight focused on a single element of the population
+        self.assertEqual(sample('abcd', 1, weights=[1, 0, 0, 0]), ['a'])
+        self.assertEqual(sample('abcd', 1, weights=[0, 1, 0, 0]), ['b'])
+        self.assertEqual(sample('abcd', 1, weights=[0, 0, 1, 0]), ['c'])
+        self.assertEqual(sample('abcd', 1, weights=[0, 0, 0, 1]), ['d'])
+
     def test_choices(self):
         choices = self.gen.choices
         data = ['red', 'green', 'blue', 'yellow']

@@ -104,6 +104,14 @@ New Modules
 Improved Modules
 ================
 
+random
+-------
+
+The :func:`random.sample` function now accepts an optional *weights*
+keyword argument to perform weighted sampling without replacement.
+(Contributed by Piotr Jurkiewicz in :issue:`34227`.)
+
+
 Optimizations
 =============
 
