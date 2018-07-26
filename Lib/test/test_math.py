@@ -16,6 +16,7 @@ NAN = float('nan')
 INF = float('inf')
 NINF = float('-inf')
 FLOAT_MAX = sys.float_info.max
+FLOAT_MIN = sys.float_info.min
 
 # detect evidence of double-rounding: fsum is not always correctly
 # rounded on machines that suffer from double rounding.
@@ -780,14 +781,13 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(hypot(NAN)))
 
         # Verify scaling for extremely large values
-        halfmax = sys.float_info.max / 2.0
+        halfmax = FLOAT_MAX / 2.0
         for n in range(10):
             self.assertEqual(hypot(*([halfmax]*n)), halfmax * math.sqrt(n))
 
         # Verify scaling for extremely small values
-        small = sys.float_info.min
         for exp in range(32):
-            scale = small / 2 ** exp
+            scale = FLOAT_MIN / 2.0 ** exp
             self.assertEqual(math.hypot(12*scale, 5*scale), 13*scale)
 
     def testLdexp(self):
