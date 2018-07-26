@@ -196,15 +196,48 @@ class TestCase(unittest.TestCase):
         @dataclass
         class C:
             object: str
-        c=C('foo')
+        c = C('foo')
         self.assertEqual(c.object, 'foo')
 
     def test_field_named_object_frozen(self):
         @dataclass(frozen=True)
         class C:
             object: str
-        c=C('foo')
+        c = C('foo')
         self.assertEqual(c.object, 'foo')
+
+    def test_field_named_like_builtin(self):
+        # Attribute names can shadow built-in names
+        # since code generation is used.
+        # Ensure that this is not happening.
+        exclusions = {'None', 'True', 'False'}
+        builtins = sorted(
+            b for b in __builtins__.__dict__.keys()
+            if not b.startswith('__') and b not in exclusions
+        )
+        C = make_dataclass('C', [(name, str) for name in builtins])
+
+        c = C(*[name for name in builtins])
+
+        for name in builtins:
+            self.assertEqual(getattr(c, name), name)
+
+    def test_field_named_like_builtin_frozen(self):
+        # Attribute names can shadow built-in names
+        # since code generation is used.
+        # Ensure that this is not happening
+        # for frozen data classes.
+        exclusions = {'None', 'True', 'False'}
+        builtins = sorted(
+            b for b in __builtins__.__dict__.keys()
+            if not b.startswith('__') and b not in exclusions
+        )
+        C = make_dataclass('C', [(name, str) for name in builtins], frozen=True)
+
+        c = C(*[name for name in builtins])
+
+        for name in builtins:
+            self.assertEqual(getattr(c, name), name)
 
     def test_0_field_compare(self):
         # Ensure that order=False is the default.
