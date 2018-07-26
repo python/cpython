@@ -199,7 +199,8 @@ class BasicTestCase(CfgParserTestCaseClass):
             cf['No Such Foo Bar'].get('foo', fallback='baz')
         eq(cf['Foo Bar'].get('no-such-foo', 'baz'), 'baz')
         eq(cf['Foo Bar'].get('no-such-foo', fallback='baz'), 'baz')
-        eq(cf['Foo Bar'].get('no-such-foo'), None)
+        with self.assertRaises(configparser.NoOptionError):
+            cf['Foo Bar'].get('no-such-foo')
         eq(cf['Spacey Bar'].get('foo', None), 'bar2')
         eq(cf['Spacey Bar'].get('foo', fallback=None), 'bar2')
         with self.assertRaises(KeyError):
@@ -210,7 +211,8 @@ class BasicTestCase(CfgParserTestCaseClass):
         eq(cf['Types'].getint('no-such-int', fallback=18), 18)
         eq(cf['Types'].getint('no-such-int', "18"), "18") # sic!
         eq(cf['Types'].getint('no-such-int', fallback="18"), "18") # sic!
-        eq(cf['Types'].getint('no-such-int'), None)
+        with self.assertRaises(configparser.NoOptionError):
+            cf['Types'].getint('no-such-int')
         self.assertAlmostEqual(cf['Types'].getfloat('float', 0.0), 0.44)
         self.assertAlmostEqual(cf['Types'].getfloat('float',
                                                     fallback=0.0), 0.44)
@@ -219,7 +221,8 @@ class BasicTestCase(CfgParserTestCaseClass):
                                                     fallback=0.0), 0.0)
         eq(cf['Types'].getfloat('no-such-float', "0.0"), "0.0") # sic!
         eq(cf['Types'].getfloat('no-such-float', fallback="0.0"), "0.0") # sic!
-        eq(cf['Types'].getfloat('no-such-float'), None)
+        with self.assertRaises(configparser.NoOptionError):
+            cf['Types'].getfloat('no-such-float')
         eq(cf['Types'].getboolean('boolean', True), False)
         eq(cf['Types'].getboolean('boolean', fallback=True), False)
         eq(cf['Types'].getboolean('no-such-boolean', "yes"), "yes") # sic!
@@ -227,7 +230,8 @@ class BasicTestCase(CfgParserTestCaseClass):
            "yes") # sic!
         eq(cf['Types'].getboolean('no-such-boolean', True), True)
         eq(cf['Types'].getboolean('no-such-boolean', fallback=True), True)
-        eq(cf['Types'].getboolean('no-such-boolean'), None)
+        with self.assertRaises(configparser.NoOptionError):
+            cf['Types'].getboolean('no-such-boolean')
         if self.allow_no_value:
             eq(cf['NoValue'].get('option-without-value', False), None)
             eq(cf['NoValue'].get('option-without-value', fallback=False), None)
@@ -2089,7 +2093,8 @@ class BlatantOverrideConvertersTestCase(unittest.TestCase):
         self.assertEqual(cfg['two'].getlen('two'), 5)
         self.assertEqual(cfg['two'].getlen('three'), 4)
         self.assertEqual(cfg['two'].getlen('four', 0), 0)
-        self.assertEqual(cfg['two'].getlen('four'), None)
+        with self.assertRaises(configparser.NoOptionError):
+            cfg['two'].getlen('four')
 
     def test_instance_assignment(self):
         cfg = configparser.ConfigParser()

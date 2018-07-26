@@ -185,7 +185,10 @@ provide fallback values:
    >>> topsecret.get('CompressionLevel')
    '9'
    >>> topsecret.get('Cipher')
-   >>> topsecret.get('Cipher', '3des-cbc')
+   Traceback (most recent call last):
+     ...
+   configparser.NoOptionError: No option 'cipher' in section: 'topsecret.server.com'
+   >>> topsecret.get('Cipher', fallback='3des-cbc')
    '3des-cbc'
 
 Please note that default values have precedence over fallback values.

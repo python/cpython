@@ -1288,13 +1288,12 @@ class SectionProxy(MutableMapping):
         # The name of the section on a proxy is read-only.
         return self._name
 
-    def get(self, option, fallback=None, *, raw=False, vars=None,
+    def get(self, option, fallback=_UNSET, *, raw=False, vars=None,
             _impl=None, **kwargs):
         """Get an option value.
 
-        Unless `fallback` is provided, `None` will be returned if the option
-        is not found.
-
+        If the key is not found and `fallback' is provided, it is used as
+        a fallback value. `None' can be provided as a `fallback' value.
         """
         # If `_impl` is provided, it should be a getter method on the parser
         # object that provides the desired type conversion.
