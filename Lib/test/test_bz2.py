@@ -6,6 +6,7 @@ from io import BytesIO, DEFAULT_BUFFER_SIZE
 import os
 import pickle
 import glob
+import tempfile
 import pathlib
 import random
 import shutil
@@ -76,11 +77,14 @@ class BaseTest(unittest.TestCase):
     BIG_DATA = bz2.compress(BIG_TEXT, compresslevel=1)
 
     def setUp(self):
-        self.filename = support.TESTFN
+        fd, self.filename = tempfile.mkstemp()
+        os.close(fd)
 
     def tearDown(self):
-        if os.path.isfile(self.filename):
+        try:
             os.unlink(self.filename)
+        except FileNotFoundError:
+            pass
 
 
 class BZ2FileTest(BaseTest):
