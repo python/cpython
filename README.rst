@@ -64,7 +64,7 @@ On Unix, Linux, BSD, macOS, and Cygwin::
 This will install Python as python3.
 
 You can pass many options to the configure script; run ``./configure --help``
-to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
+to find out more.  On Windows and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
 
 If you are running on macOS with the latest updates installed, make sure to install
