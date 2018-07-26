@@ -1981,7 +1981,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyObject *rval, PyObject *obj, Py_ssi
             return -1;
         return _steal_list_append(rval, encoded);
     }
-    else if (PyInt_Check(obj) || PyLong_Check(obj)) {
+    else if (_PyAnyInt_Check(obj)) {
         PyObject *encoded = PyObject_Str(obj);
         if (encoded == NULL)
             return -1;
@@ -2131,7 +2131,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
             if (kstr == NULL)
                 goto bail;
         }
-        else if (PyInt_Check(key) || PyLong_Check(key)) {
+        else if (_PyAnyInt_Check(key)) {
             kstr = PyObject_Str(key);
             if (kstr == NULL)
                 goto bail;

@@ -194,7 +194,7 @@ PyCursesCheckERR(int code, char *fname)
 static int
 PyCurses_ConvertToChtype(PyObject *obj, chtype *ch)
 {
-    if (PyInt_Check(obj) || PyLong_Check(obj)) {
+    if (_PyAnyInt_Check(obj)) {
         *ch = (chtype) PyInt_AsLong(obj);
         if (*ch == (chtype) -1 && PyErr_Occurred())
             return 0;
@@ -2603,7 +2603,7 @@ PyCurses_UnCtrl(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args,"O;ch or int",&temp)) return NULL;
 
-    if (PyInt_Check(temp) || PyLong_Check(temp)) {
+    if (_PyAnyInt_Check(temp)) {
         ch = (chtype) PyInt_AsLong(temp);
         if (ch == (chtype) -1 && PyErr_Occurred())
             return NULL;
@@ -2628,7 +2628,7 @@ PyCurses_UngetCh(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args,"O;ch or int",&temp)) return NULL;
 
-    if (PyInt_Check(temp) || PyLong_Check(temp)) {
+    if (_PyAnyInt_Check(temp)) {
         ch = (int) PyInt_AsLong(temp);
         if (ch == -1 && PyErr_Occurred())
             return NULL;

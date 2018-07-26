@@ -1009,7 +1009,7 @@ instance_hash(PyInstanceObject *inst)
     Py_DECREF(func);
     if (res == NULL)
         return -1;
-    if (PyInt_Check(res) || PyLong_Check(res))
+    if (_PyAnyInt_Check(res))
         /* This already converts a -1 result to -2. */
         outcome = Py_TYPE(res)->tp_hash(res);
     else {

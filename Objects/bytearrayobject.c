@@ -35,7 +35,7 @@ _getbytevalue(PyObject* arg, int *value)
         *value = Py_CHARMASK(((PyBytesObject*)arg)->ob_sval[0]);
         return 1;
     }
-    else if (PyInt_Check(arg) || PyLong_Check(arg)) {
+    else if (_PyAnyInt_Check(arg)) {
         face_value = PyLong_AsLong(arg);
     }
     else {

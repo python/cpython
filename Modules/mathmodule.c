@@ -1188,7 +1188,7 @@ math_ldexp(PyObject *self, PyObject *args)
     if (! PyArg_ParseTuple(args, "dO:ldexp", &x, &oexp))
         return NULL;
 
-    if (PyLong_Check(oexp) || PyInt_Check(oexp)) {
+    if (_PyAnyInt_Check(oexp)) {
         /* on overflow, replace exponent with either LONG_MAX
            or LONG_MIN, depending on the sign. */
         exp = PyLong_AsLongAndOverflow(oexp, &overflow);

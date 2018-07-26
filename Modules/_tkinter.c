@@ -2107,7 +2107,7 @@ Tkapp_GetInt(PyObject *self, PyObject *args)
 
     if (PyTuple_Size(args) == 1) {
         PyObject* o = PyTuple_GetItem(args, 0);
-        if (PyInt_Check(o) || PyLong_Check(o)) {
+        if (_PyAnyInt_Check(o)) {
             Py_INCREF(o);
             return o;
         }

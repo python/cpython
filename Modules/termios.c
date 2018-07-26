@@ -185,7 +185,7 @@ termios_tcsetattr(PyObject *self, PyObject *args)
 
         if (PyString_Check(v) && PyString_Size(v) == 1)
             mode.c_cc[i] = (cc_t) * PyString_AsString(v);
-        else if (PyInt_Check(v) || PyLong_Check(v)) {
+        else if (_PyAnyInt_Check(v)) {
             mode.c_cc[i] = (cc_t) PyInt_AsLong(v);
             if (mode.c_cc[i] == (cc_t) -1 && PyErr_Occurred())
                 return NULL;
