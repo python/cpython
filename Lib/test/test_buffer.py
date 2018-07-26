@@ -765,8 +765,7 @@ class TestBufferProtocol(unittest.TestCase):
                      itemsize, fmt, readonly,
                      ndim, shape, strides,
                      lst, sliced=False, cast=False):
-        # Verify buffer contents against expected values. Default values
-        # are deliberately initialized to invalid types.
+        # Verify buffer contents against expected values.
         if shape:
             expected_len = prod(shape)*itemsize
         else:
@@ -978,7 +977,7 @@ class TestBufferProtocol(unittest.TestCase):
             lst = nd.tolist()
 
         # The consumer may have requested default values or a NULL format.
-        ro = not match(req, PyBUF_WRITABLE) and ex.readonly
+        ro = False if match(req, PyBUF_WRITABLE) else ex.readonly
         fmt = ex.format
         itemsize = ex.itemsize
         ndim = ex.ndim
