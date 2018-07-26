@@ -176,7 +176,7 @@ statement executed in the first suite skips the rest of the suite and continues
 with the next item, or with the :keyword:`else` clause if there is no next
 item.
 
-The for-loop makes assignments to the variables(s) in the target list.
+The for-loop makes assignments to the variables in the target list.
 This overwrites all previous assignments to those variables including
 those made in the suite of the for-loop::
 
