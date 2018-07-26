@@ -108,6 +108,15 @@ class Test6012(unittest.TestCase):
         self.assertEqual(_testcapi.argparsing("Hello", "World"), 1)
 
 
+class TestGetIndices(unittest.TestCase):
+
+    def test_get_indices(self):
+        self.assertEqual(_testcapi.get_indices(slice(10L, 20, 1), 100), 0)
+        self.assertEqual(_testcapi.get_indices(slice(10.1, 20, 1), 100), -1)
+        self.assertEqual(_testcapi.get_indices(slice(10, 20L, 1), 100), 0)
+        self.assertEqual(_testcapi.get_indices(slice(10, 20.1, 1), 100), -1)
+
+
 class SkipitemTest(unittest.TestCase):
 
     def test_skipitem(self):
@@ -266,7 +275,7 @@ def test_main():
                 raise support.TestFailed, sys.exc_info()[1]
 
     support.run_unittest(CAPITest, TestPendingCalls, SkipitemTest,
-                         TestThreadState)
+                         TestThreadState, TestGetIndices)
 
 if __name__ == "__main__":
     test_main()
