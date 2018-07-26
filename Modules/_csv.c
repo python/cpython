@@ -12,6 +12,7 @@ module instead.
 
 #include "Python.h"
 #include "structmember.h"
+#include <stdbool.h>
 
 
 typedef struct {
@@ -74,15 +75,15 @@ static const StyleDesc quote_styles[] = {
 typedef struct {
     PyObject_HEAD
 
-    int doublequote;            /* is " represented by ""? */
-    Py_UCS4 delimiter;       /* field separator */
-    Py_UCS4 quotechar;       /* quote character */
-    Py_UCS4 escapechar;      /* escape character */
-    int skipinitialspace;       /* ignore spaces following delimiter? */
-    PyObject *lineterminator; /* string to write between records */
+    char doublequote;           /* is " represented by ""? */
+    char skipinitialspace;      /* ignore spaces following delimiter? */
+    char strict;                /* raise exception on bad CSV */
     int quoting;                /* style of quoting to write */
+    Py_UCS4 delimiter;          /* field separator */
+    Py_UCS4 quotechar;          /* quote character */
+    Py_UCS4 escapechar;         /* escape character */
+    PyObject *lineterminator;   /* string to write between records */
 
-    int strict;                 /* raise exception on bad CSV */
 } DialectObj;
 
 static PyTypeObject Dialect_Type;
@@ -189,7 +190,7 @@ Dialect_get_quoting(DialectObj *self)
 }
 
 static int
-_set_bool(const char *name, int *target, PyObject *src, int dflt)
+_set_bool(const char *name, char *target, PyObject *src, bool dflt)
 {
     if (src == NULL)
         *target = dflt;
@@ -197,7 +198,7 @@ _set_bool(const char *name, int *target, PyObject *src, int dflt)
         int b = PyObject_IsTrue(src);
         if (b < 0)
             return -1;
-        *target = b;
+        *target = (char)b;
     }
     return 0;
 }
@@ -292,9 +293,9 @@ dialect_check_quoting(int quoting)
 #define D_OFF(x) offsetof(DialectObj, x)
 
 static struct PyMemberDef Dialect_memberlist[] = {
-    { "skipinitialspace",   T_INT, D_OFF(skipinitialspace), READONLY },
-    { "doublequote",        T_INT, D_OFF(doublequote), READONLY },
-    { "strict",             T_INT, D_OFF(strict), READONLY },
+    { "skipinitialspace",   T_BOOL, D_OFF(skipinitialspace), READONLY },
+    { "doublequote",        T_BOOL, D_OFF(doublequote), READONLY },
+    { "strict",             T_BOOL, D_OFF(strict), READONLY },
     { NULL }
 };
 
@@ -411,13 +412,13 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (meth(name, target, src, dflt)) \
         goto err
     DIASET(_set_char, "delimiter", &self->delimiter, delimiter, ',');
-    DIASET(_set_bool, "doublequote", &self->doublequote, doublequote, 1);
+    DIASET(_set_bool, "doublequote", &self->doublequote, doublequote, true);
     DIASET(_set_char, "escapechar", &self->escapechar, escapechar, 0);
     DIASET(_set_str, "lineterminator", &self->lineterminator, lineterminator, "\r\n");
     DIASET(_set_char, "quotechar", &self->quotechar, quotechar, '"');
     DIASET(_set_int, "quoting", &self->quoting, quoting, QUOTE_MINIMAL);
-    DIASET(_set_bool, "skipinitialspace", &self->skipinitialspace, skipinitialspace, 0);
-    DIASET(_set_bool, "strict", &self->strict, strict, 0);
+    DIASET(_set_bool, "skipinitialspace", &self->skipinitialspace, skipinitialspace, false);
+    DIASET(_set_bool, "strict", &self->strict, strict, false);
 
     /* validate options */
     if (dialect_check_quoting(self->quoting))
