@@ -2141,6 +2141,10 @@ with the :class:`Pool` class.
       the process pool as separate tasks.  The (approximate) size of these
       chunks can be specified by setting *chunksize* to a positive integer.
 
+      Note that it may cause high memory usage for very long iterables. Consider
+      using :meth:`imap` or :meth:`imap_unordered` with explicit *chunksize*
+      option for better efficiency.
+
    .. method:: map_async(func, iterable[, chunksize[, callback[, error_callback]]])
 
       A variant of the :meth:`.map` method which returns a result object.
@@ -2159,7 +2163,7 @@ with the :class:`Pool` class.
 
    .. method:: imap(func, iterable[, chunksize])
 
-      A lazier version of :meth:`map`.
+      A lazier version of :meth:`.map`.
 
       The *chunksize* argument is the same as the one used by the :meth:`.map`
       method.  For very long iterables using a large value for *chunksize* can
