@@ -1,0 +1,2 @@
+Fix crashes in :mod:`sqlite3` on memory allocation failure. Patch by Sergey
+Fedoseev.
