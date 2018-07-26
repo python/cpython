@@ -144,6 +144,9 @@ static const char usage_6[] =
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
 "   locale coercion and locale compatibility warnings on stderr.\n"
+"PYTHONBREAKPOINT: if this variable is set to 1, it enables the default\n"
+"   debugger. if this variable is a string to a callable, then breakpoint()\n"
+"   can enter any debugger. if this variable is set to 0, disable debugging.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n";
 
