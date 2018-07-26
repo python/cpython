@@ -781,9 +781,9 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(hypot(NAN)))
 
         # Verify scaling for extremely large values
-        halfmax = FLOAT_MAX / 4.0
+        fourthmax = FLOAT_MAX / 4.0
         for n in range(32):
-            self.assertEqual(hypot(*([halfmax]*n)), halfmax * math.sqrt(n))
+            self.assertEqual(hypot(*([fourthmax]*n)), fourthmax * math.sqrt(n))
 
         # Verify scaling for extremely small values
         for exp in range(32):
