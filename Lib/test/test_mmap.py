@@ -20,10 +20,10 @@ class MmapBaseTest(unittest.TestCase):
         fd, self.testfn = tempfile.mkstemp()
         os.close(fd)
         self.remove_testfn()
-    
+
     def tearDown(self):
         self.remove_testfn()
-    
+
     def remove_testfn(self):
         try:
             os.unlink(self.testfn)
