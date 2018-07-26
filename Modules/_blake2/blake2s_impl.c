@@ -75,8 +75,8 @@ _blake2s.blake2s.__new__ as py_blake2s_new
     person: Py_buffer = None
     fanout: int = 1
     depth: int = 1
-    leaf_size as leaf_size_obj: object = NULL
-    node_offset as node_offset_obj: object = NULL
+    leaf_size: unsigned_long = 0
+    node_offset: unsigned_long_long = 0
     node_depth: int = 0
     inner_size: int = 0
     last_node: bool = False
@@ -87,16 +87,13 @@ Return a new BLAKE2s hash object.
 static PyObject *
 py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                     Py_buffer *key, Py_buffer *salt, Py_buffer *person,
-                    int fanout, int depth, PyObject *leaf_size_obj,
-                    PyObject *node_offset_obj, int node_depth,
+                    int fanout, int depth, unsigned long leaf_size,
+                    unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node)
-/*[clinic end generated code: output=fe060b258a8cbfc6 input=458cfdcb3d0d47ff]*/
+/*[clinic end generated code: output=b95806be0514dcf7 input=f18d6efd9b9a1271]*/
 {
     BLAKE2sObject *self = NULL;
     Py_buffer buf;
-
-    unsigned long leaf_size = 0;
-    unsigned long long node_offset = 0;
 
     self = new_BLAKE2sObject(type);
     if (self == NULL) {
@@ -152,25 +149,13 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
     }
     self->param.depth = (uint8_t)depth;
 
-    if (leaf_size_obj != NULL) {
-        leaf_size = PyLong_AsUnsignedLong(leaf_size_obj);
-        if (leaf_size == (unsigned long) -1 && PyErr_Occurred()) {
-            goto error;
-        }
-        if (leaf_size > 0xFFFFFFFFU) {
-            PyErr_SetString(PyExc_OverflowError, "leaf_size is too large");
-            goto error;
-        }
+    if (leaf_size > 0xFFFFFFFFU) {
+        PyErr_SetString(PyExc_OverflowError, "leaf_size is too large");
+        goto error;
     }
     // NB: Simple assignment here would be incorrect on big endian platforms.
     store32(&(self->param.leaf_length), leaf_size);
 
-    if (node_offset_obj != NULL) {
-        node_offset = PyLong_AsUnsignedLongLong(node_offset_obj);
-        if (node_offset == (unsigned long long) -1 && PyErr_Occurred()) {
-            goto error;
-        }
-    }
 #ifdef HAVE_BLAKE2S
     if (node_offset > 0xFFFFFFFFFFFFULL) {
         /* maximum 2**48 - 1 */
