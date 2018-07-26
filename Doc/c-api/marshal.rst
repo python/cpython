@@ -80,8 +80,8 @@ The following functions allow marshalled values to be read back in.
    file.  Only use these variant if you are certain that you won't be reading
    anything else from the file.
 
-   On error, sets the appropriate exception (:exc:`EOFError` or
-   :exc:`TypeError`) and returns *NULL*.
+   On error, sets the appropriate exception (:exc:`EOFError`, :exc:`ValueError`
+   or :exc:`TypeError`) and returns *NULL*.
 
 
 .. c:function:: PyObject* PyMarshal_ReadObjectFromString(const char *data, Py_ssize_t len)
@@ -89,6 +89,6 @@ The following functions allow marshalled values to be read back in.
    Return a Python object from the data stream in a byte buffer
    containing *len* bytes pointed to by *data*.
 
-   On error, sets the appropriate exception (:exc:`EOFError` or
-   :exc:`TypeError`) and returns *NULL*.
+   On error, sets the appropriate exception (:exc:`EOFError`, :exc:`ValueError`
+   or :exc:`TypeError`) and returns *NULL*.
 
