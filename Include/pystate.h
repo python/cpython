@@ -55,7 +55,12 @@ typedef struct {
     int malloc_stats;       /* PYTHONMALLOCSTATS */
     int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
     int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
-    int utf8_mode;          /* PYTHONUTF8, -X utf8; -1 means unknown */
+
+    /* Enable UTF-8 mode?
+       Set by -X utf8 command line option and PYTHONUTF8 environment variable.
+       If set to -1 (default), inherit Py_UTF8Mode value. */
+    int utf8_mode;
+
     wchar_t *pycache_prefix; /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
 
     wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
