@@ -57,71 +57,6 @@ raised for division by zero and mod by zero.
 
 #include "clinic/mathmodule.c.h"
 
-/* Notes:
-
-    if (!Py_IS_FINITE(x)) {
-        if (Py_IS_NAN(x) || x > 0.0)
-
-    ? FPE protection
-
-    ? Don't scale if max == 0.0
-
-    ? If only one value, it is the hypot.
-
-    Any infinity gives infinity
-    If no infinity, any NaN gives a NaN
-
-    * hypot(x=1) -> TypeError  // no keyword args
-    * hypot(-10.5) -> 10.5     // flip the sign to positive
-    hypot(-Inf) -> Inf;      // flip the sign to positive
-    * hypot() -> 0.0           // degrade like sum([]) or reduce(hypot, sides, 0.0)
-    * hypot(0) -> 0.0          // don't divide by zero
-    * hypot(3, 4)              // ints converted to floats
-    * hypot(D('3.0'), D('4.0'))
-*/
-
-/* AC: cannot convert yet, waiting for *args support */
-static PyObject *
-m_hypot(PyObject *self, PyObject *args)
-{
-    Py_ssize_t i, n;
-    PyObject *item;
-    double max = 0.0;
-    double csum = 0.0;
-    double x;
-    int found_inf = 0;
-    int found_nan = 0;
-
-    n = PyTuple_GET_SIZE(args);
-    for (i=0 ; i<n ; i++) {
-        item = PyTuple_GET_ITEM(args, i);
-        x = PyFloat_AsDouble(item);
-        if (x == -1.0 && PyErr_Occurred()) {
-            return NULL;
-        }
-        found_inf |= Py_IS_INFINITY(x);
-        found_nan |= Py_IS_NAN(x);
-        x = fabs(x);
-        if (x > max) {
-            max = x;
-        }
-    }
-    if (found_inf) {
-        return PyFloat_FromDouble(max);
-    }
-    if (found_nan) {
-        return PyFloat_FromDouble(Py_NAN);
-    }
-    if (max == 0.0) {
-        return PyFloat_FromDouble(0.0);
-    }
-    for (i=0 ; i<n ; i++) {
-        item = PyTuple_GET_ITEM(args, i);
-        x = PyFloat_AsDouble(item) / max;
-        csum += x * x;
-    }
-    return PyFloat_FromDouble(max * sqrt(csum));       // XXX Handle overflow
-}
 
 /*[clinic input]
 module math
@@ -2097,47 +2032,47 @@ math_fmod_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(r);
 }
 
-
-/*[clinic input]
-math.hypot
-
-    x: double
-    y: double
-    /
-
-Return the Euclidean distance, sqrt(x*x + y*y).
-[clinic start generated code]*/
-
+/* AC: cannot convert yet, waiting for *args support */
 static PyObject *
-math_hypot_impl(PyObject *module, double x, double y)
-/*[clinic end generated code: output=b7686e5be468ef87 input=7f8eea70406474aa]*/
+math_hypot(PyObject *self, PyObject *args)
 {
-    double r;
-    /* hypot(x, +/-Inf) returns Inf, even if x is a NaN. */
-    if (Py_IS_INFINITY(x))
-        return PyFloat_FromDouble(fabs(x));
-    if (Py_IS_INFINITY(y))
-        return PyFloat_FromDouble(fabs(y));
-    errno = 0;
-    PyFPE_START_PROTECT("in math_hypot", return 0);
-    r = hypot(x, y);
-    PyFPE_END_PROTECT(r);
-    if (Py_IS_NAN(r)) {
-        if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
-            errno = EDOM;
-        else
-            errno = 0;
+    Py_ssize_t i, n;
+    PyObject *item;
+    double max = 0.0;
+    double csum = 0.0;
+    double x;
+    int found_inf = 0;
+    int found_nan = 0;
+
+    n = PyTuple_GET_SIZE(args);
+    for (i=0 ; i<n ; i++) {
+        item = PyTuple_GET_ITEM(args, i);
+        x = PyFloat_AsDouble(item);
+        if (x == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
+        found_inf |= Py_IS_INFINITY(x);
+        found_nan |= Py_IS_NAN(x);
+        x = fabs(x);
+        if (x > max) {
+            max = x;
+        }
     }
-    else if (Py_IS_INFINITY(r)) {
-        if (Py_IS_FINITE(x) && Py_IS_FINITE(y))
-            errno = ERANGE;
-        else
-            errno = 0;
+    if (found_inf) {
+        return PyFloat_FromDouble(max);
     }
-    if (errno && is_error(r))
-        return NULL;
-    else
-        return PyFloat_FromDouble(r);
+    if (found_nan) {
+        return PyFloat_FromDouble(Py_NAN);
+    }
+    if (max == 0.0) {
+        return PyFloat_FromDouble(0.0);
+    }
+    for (i=0 ; i<n ; i++) {
+        item = PyTuple_GET_ITEM(args, i);
+        x = PyFloat_AsDouble(item) / max;
+        csum += x * x;
+    }
+    return PyFloat_FromDouble(max * sqrt(csum));       // XXX Handle overflow
 }
 
 
@@ -2411,8 +2346,7 @@ static PyMethodDef math_methods[] = {
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
     MATH_GCD_METHODDEF
-    {"mh",              m_hypot, METH_VARARGS,   math_remainder_doc},
-    MATH_HYPOT_METHODDEF
+    {"hypot",           math_hypot,     METH_VARARGS,   math_remainder_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF

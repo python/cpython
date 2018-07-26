@@ -721,24 +721,13 @@ class MathTests(unittest.TestCase):
         self.assertEqual(gcd(MyIndexable(120), MyIndexable(84)), 12)
 
     def testHypot(self):
-        self.assertRaises(TypeError, math.hypot)
-        self.ftest('hypot(0,0)', math.hypot(0,0), 0)
-        self.ftest('hypot(3,4)', math.hypot(3,4), 5)
-        self.assertEqual(math.hypot(NAN, INF), INF)
-        self.assertEqual(math.hypot(INF, NAN), INF)
-        self.assertEqual(math.hypot(NAN, NINF), INF)
-        self.assertEqual(math.hypot(NINF, NAN), INF)
-        self.assertRaises(OverflowError, math.hypot, FLOAT_MAX, FLOAT_MAX)
-        self.assertTrue(math.isnan(math.hypot(1.0, NAN)))
-        self.assertTrue(math.isnan(math.hypot(NAN, -2.0)))
-
-    def test_multi_hypot(self):
         from decimal import Decimal
         from fractions import Fraction
 
-        hypot = math.mh
+        hypot = math.hypot
 
-        # Test different numbers of arguments from zero to five
+        # Test different numbers of arguments (from zero to five)
+        # against a straightforward pure python implementation
         args = math.e, math.pi, math.sqrt(2.0), math.gamma(3.5), math.sin(2.1)
         for i in range(len(args)+1):
             self.assertAlmostEqual(
@@ -769,6 +758,9 @@ class MathTests(unittest.TestCase):
         self.assertEqual(hypot(10, INF), INF)
         self.assertEqual(hypot(-10, INF), INF)
         self.assertEqual(hypot(NAN, INF), INF)
+        self.assertEqual(hypot(INF, NAN), INF)
+        self.assertEqual(hypot(NINF, NAN), INF)
+        self.assertEqual(hypot(NAN, NINF), INF)
         self.assertEqual(hypot(-INF, INF), INF)
         self.assertEqual(hypot(-INF, -INF), INF)
         self.assertEqual(hypot(10, -INF), INF)
@@ -777,6 +769,7 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(hypot(NAN)))
         self.assertTrue(math.isnan(hypot(0, NAN)))
         self.assertTrue(math.isnan(hypot(NAN, 10)))
+        self.assertTrue(math.isnan(hypot(10, NAN)))
         self.assertTrue(math.isnan(hypot(NAN, NAN)))
         self.assertTrue(math.isnan(hypot(NAN)))
 

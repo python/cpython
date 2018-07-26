@@ -269,35 +269,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(math_hypot__doc__,
-"hypot($module, x, y, /)\n"
-"--\n"
-"\n"
-"Return the Euclidean distance, sqrt(x*x + y*y).");
-
-#define MATH_HYPOT_METHODDEF    \
-    {"hypot", (PyCFunction)math_hypot, METH_FASTCALL, math_hypot__doc__},
-
-static PyObject *
-math_hypot_impl(PyObject *module, double x, double y);
-
-static PyObject *
-math_hypot(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    double x;
-    double y;
-
-    if (!_PyArg_ParseStack(args, nargs, "dd:hypot",
-        &x, &y)) {
-        goto exit;
-    }
-    return_value = math_hypot_impl(module, x, y);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(math_pow__doc__,
 "pow($module, x, y, /)\n"
 "--\n"
