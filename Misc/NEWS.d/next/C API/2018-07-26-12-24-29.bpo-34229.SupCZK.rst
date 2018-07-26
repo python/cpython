@@ -1,0 +1,2 @@
+Check start and stop of slice object to be long when they are not int in
+:c:func:`PySlice_GetIndices`.
