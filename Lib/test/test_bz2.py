@@ -79,7 +79,7 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         fd, self.filename = tempfile.mkstemp()
         os.close(fd)
-    
+
     def tearDown(self):
         try:
             os.unlink(self.filename)
