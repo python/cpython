@@ -132,6 +132,9 @@ int pysqlite_build_row_cast_map(pysqlite_Cursor* self)
     }
 
     Py_XSETREF(self->row_cast_map, PyList_New(0));
+    if (!self->row_cast_map) {
+        return -1;
+    }
 
     for (i = 0; i < sqlite3_column_count(self->statement->st); i++) {
         converter = NULL;
@@ -186,9 +189,6 @@ int pysqlite_build_row_cast_map(pysqlite_Cursor* self)
         }
 
         if (PyList_Append(self->row_cast_map, converter) != 0) {
-            if (converter != Py_None) {
-                Py_DECREF(converter);
-            }
             Py_CLEAR(self->row_cast_map);
 
             return -1;
