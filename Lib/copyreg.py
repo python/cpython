@@ -72,7 +72,7 @@ def _reduce_ex(self, proto):
         if getattr(self, "__slots__", None):
             raise TypeError(f"cannot serialize '{cls.__name__}' object: "
                             f"a class that defines __slots__ without "
-                            f"defining __getstate__ cannot be pickled"
+                            f"defining __getstate__ cannot be pickled "
                             f"with protocol {proto}") from None
         try:
             dict = self.__dict__
