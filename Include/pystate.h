@@ -29,9 +29,14 @@ typedef struct {
     /* Install signal handlers? Yes by default. */
     int install_signal_handlers;
 
-    int ignore_environment; /* -E, Py_IgnoreEnvironmentFlag, -1 means unset */
+    /* If greater than 0: use environment variables.
+       Set to 0 by -E command line option. If set to -1 (default), it is
+       set to !Py_IgnoreEnvironmentFlag. */
+    int use_environment;
+
     int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
+
     const char *allocator;  /* Memory allocator: PYTHONMALLOC */
     int dev_mode;           /* PYTHONDEVMODE, -X dev */
 
@@ -238,7 +243,7 @@ typedef struct {
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
         .install_signal_handlers = 1, \
-        .ignore_environment = -1, \
+        .use_environment = -1, \
         .use_hash_seed = -1, \
         .faulthandler = -1, \
         .tracemalloc = -1, \

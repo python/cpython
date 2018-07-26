@@ -77,7 +77,7 @@ main(int argc, char *argv[])
     _PyCoreConfig config = _PyCoreConfig_INIT;
     config.user_site_directory = 0;
     config.site_import = 0;
-    config.ignore_environment = 1;
+    config.use_environment = 0;
     config.program_name = L"./_freeze_importlib";
     /* Don't install importlib, since it could execute outdated bytecode. */
     config._install_importlib = 0;
