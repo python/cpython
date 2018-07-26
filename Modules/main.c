@@ -169,9 +169,9 @@ pymain_usage(int error, const wchar_t* program)
 static const char*
 config_get_env_var(const _PyCoreConfig *config, const char *name)
 {
-    assert(config->ignore_environment >= 0);
+    assert(config->use_environment >= 0);
 
-    if (config->ignore_environment) {
+    if (!config->use_environment) {
         return NULL;
     }
 
@@ -188,9 +188,9 @@ config_get_env_var(const _PyCoreConfig *config, const char *name)
 static int
 config_get_env_var_dup(const _PyCoreConfig *config, wchar_t **dest, wchar_t *wname, char *name)
 {
-    assert(config->ignore_environment >= 0);
+    assert(config->use_environment >= 0);
 
-    if (config->ignore_environment) {
+    if (!config->use_environment) {
         *dest = NULL;
         return 0;
     }
@@ -557,7 +557,6 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
             config->ATTR = !(VALUE); \
         }
 
-    COPY_FLAG(ignore_environment, Py_IgnoreEnvironmentFlag);
     COPY_FLAG(utf8_mode, Py_UTF8Mode);
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
@@ -573,6 +572,7 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
 
+    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
     COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
@@ -599,7 +599,6 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
             VAR = !config->ATTR; \
         }
 
-    COPY_FLAG(ignore_environment, Py_IgnoreEnvironmentFlag);
     COPY_FLAG(utf8_mode, Py_UTF8Mode);
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
@@ -615,6 +614,7 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
 
+    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
     COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
@@ -702,7 +702,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     } while (0)
 
     COPY_ATTR(install_signal_handlers);
-    COPY_ATTR(ignore_environment);
+    COPY_ATTR(use_environment);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
     COPY_ATTR(_install_importlib);
@@ -818,7 +818,7 @@ pymain_clear_config(_PyCoreConfig *config)
 
 
 static void
-pymain_free_raw(_PyMain *pymain)
+pymain_free(_PyMain *pymain)
 {
     _PyImport_Fini2();
 
@@ -839,13 +839,6 @@ pymain_free_raw(_PyMain *pymain)
     orig_argv = NULL;
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-}
-
-
-static void
-pymain_free(_PyMain *pymain)
-{
-    pymain_free_raw(pymain);
 
 #ifdef __INSURE__
     /* Insure++ is a memory analysis tool that aids in discovering
@@ -1002,9 +995,7 @@ pymain_parse_cmdline_impl(_PyMain *pymain, _PyCoreConfig *config,
             break;
 
         case 'I':
-            config->ignore_environment++;
             config->isolated++;
-            config->user_site_directory = 0;
             break;
 
         /* case 'J': reserved for Jython */
@@ -1026,7 +1017,7 @@ pymain_parse_cmdline_impl(_PyMain *pymain, _PyCoreConfig *config,
             break;
 
         case 'E':
-            config->ignore_environment++;
+            config->use_environment = 0;
             break;
 
         case 't':
@@ -1248,7 +1239,7 @@ config_init_warnoptions(_PyCoreConfig *config, _PyCmdline *cmdline)
 static _PyInitError
 cmdline_init_env_warnoptions(_PyMain *pymain, _PyCoreConfig *config, _PyCmdline *cmdline)
 {
-    assert(!config->ignore_environment);
+    assert(config->use_environment > 0);
 
     wchar_t *env;
     int res = config_get_env_var_dup(config, &env,
@@ -1728,10 +1719,6 @@ pymain_init_tracemalloc(_PyCoreConfig *config)
     int nframe;
     int valid;
 
-    if (config->tracemalloc >= 0) {
-        return _Py_INIT_OK();
-    }
-
     const char *env = config_get_env_var(config, "PYTHONTRACEMALLOC");
     if (env) {
         if (!pymain_str_to_int(env, &nframe)) {
@@ -1866,12 +1853,6 @@ config_init_hash_seed(_PyCoreConfig *config)
 static _PyInitError
 config_init_utf8_mode(_PyCoreConfig *config)
 {
-    /* The option was already set in config.Py_UTF8Mode,
-       by Py_LegacyWindowsFSEncodingFlag or PYTHONLEGACYWINDOWSFSENCODING. */
-    if (config->utf8_mode >= 0) {
-        return _Py_INIT_OK();
-    }
-
     const wchar_t *xopt = config_get_xoption(config, L"utf8");
     if (xopt) {
         wchar_t *sep = wcschr(xopt, L'=');
@@ -1915,7 +1896,7 @@ config_init_utf8_mode(_PyCoreConfig *config)
 static _PyInitError
 config_read_env_vars(_PyCoreConfig *config)
 {
-    assert(!config->ignore_environment);
+    assert(config->use_environment > 0);
 
     /* Get environment variables */
     get_env_flag(config, &config->debug, "PYTHONDEBUG");
@@ -1987,9 +1968,11 @@ static _PyInitError
 config_read_complex_options(_PyCoreConfig *config)
 {
     /* More complex options configured by env var and -X option */
-    if (config_get_env_var(config, "PYTHONFAULTHANDLER")
-       || config_get_xoption(config, L"faulthandler")) {
-        config->faulthandler = 1;
+    if (config->faulthandler < 0) {
+        if (config_get_env_var(config, "PYTHONFAULTHANDLER")
+           || config_get_xoption(config, L"faulthandler")) {
+            config->faulthandler = 1;
+        }
     }
     if (config_get_env_var(config, "PYTHONPROFILEIMPORTTIME")
        || config_get_xoption(config, L"importtime")) {
@@ -2001,16 +1984,20 @@ config_read_complex_options(_PyCoreConfig *config)
         config->dev_mode = 1;
     }
 
-    _PyInitError err = pymain_init_tracemalloc(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    _PyInitError err;
+    if (config->tracemalloc < 0) {
+        err = pymain_init_tracemalloc(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 
-    err = pymain_init_pycache_prefix(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    if (config->pycache_prefix == NULL) {
+        err = pymain_init_pycache_prefix(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
-
     return _Py_INIT_OK();
 }
 
@@ -2036,8 +2023,8 @@ pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
         return -1;
     }
 
-    assert(config->ignore_environment >= 0);
-    if (!config->ignore_environment) {
+    assert(config->use_environment >= 0);
+    if (config->use_environment) {
         err = cmdline_init_env_warnoptions(pymain, config, cmdline);
         if (_Py_INIT_FAILED(err)) {
             pymain->err = err;
@@ -2046,6 +2033,12 @@ pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
     }
 
     err = _PyCoreConfig_Read(config);
+    if (_Py_INIT_FAILED(err)) {
+        pymain->err = err;
+        return -1;
+    }
+
+    err = config_init_warnoptions(config, cmdline);
     if (_Py_INIT_FAILED(err)) {
         pymain->err = err;
         return -1;
@@ -2135,8 +2128,8 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
             break;
         }
 
-        /* Reset the configuration before reading the configuration,
-           except UTF-8 Mode. */
+        /* Reset the configuration before reading again the configuration,
+           just keep UTF-8 Mode value. */
         int new_utf8_mode = config->utf8_mode;
         if (_PyCoreConfig_Copy(config, &save_config) < 0) {
             pymain->err = _Py_INIT_NO_MEMORY();
@@ -2157,7 +2150,6 @@ done:
         setlocale(LC_ALL, oldloc);
         PyMem_RawFree(oldloc);
     }
-
     return res;
 }
 
@@ -2201,8 +2193,19 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
 
     _PyCoreConfig_GetGlobalConfig(config);
 
-    assert(config->ignore_environment >= 0);
-    if (!config->ignore_environment) {
+    if (config->isolated > 0) {
+        config->use_environment = 0;
+        config->user_site_directory = 0;
+    }
+
+#ifdef MS_WINDOWS
+    if (config->legacy_windows_fs_encoding) {
+        config->utf8_mode = 0;
+    }
+#endif
+
+    assert(config->use_environment >= 0);
+    if (config->use_environment) {
         err = config_read_env_vars(config);
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -2222,14 +2225,18 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         return err;
     }
 
-    err = config_init_utf8_mode(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    if (config->utf8_mode < 0) {
+        err = config_init_utf8_mode(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 
-    err = config_init_home(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    if (config->home == NULL) {
+        err = config_init_home(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 
     if (config->program_name == NULL) {
@@ -2248,7 +2255,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
-    /* options side effects */
+    /* default values */
     if (config->dev_mode) {
         if (config->faulthandler < 0) {
             config->faulthandler = 1;
@@ -2257,14 +2264,6 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
             config->allocator = "debug";
         }
     }
-
-#ifdef MS_WINDOWS
-    if (config->legacy_windows_fs_encoding) {
-        config->utf8_mode = 0;
-    }
-#endif
-
-    /* default values */
     if (config->use_hash_seed < 0) {
         config->use_hash_seed = 0;
         config->hash_seed = 0;
@@ -2547,12 +2546,6 @@ pymain_cmdline_impl(_PyMain *pymain, _PyCoreConfig *config,
         return -1;
     }
     orig_argc = pymain->argc;
-
-    _PyInitError err = config_init_warnoptions(config, cmdline);
-    if (_Py_INIT_FAILED(err)) {
-        pymain->err = err;
-        return -1;
-    }
     return 0;
 }
 
