@@ -127,10 +127,9 @@ PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 #ifdef Py_BUILD_CORE
 struct _PyPathConfig;
-typedef struct _PyPathConfig _PyPathConfig;
 
 PyAPI_FUNC(_PyInitError) _PyPathConfig_SetGlobal(
-    const _PyPathConfig *config);
+    const struct _PyPathConfig *config);
 PyAPI_FUNC(PyObject*) _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv);
 PyAPI_FUNC(int) _Py_FindEnvConfigValue(
     FILE *env_file,

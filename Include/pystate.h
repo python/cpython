@@ -26,15 +26,23 @@ typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
 
 typedef struct {
-    int install_signal_handlers;  /* Install signal handlers? -1 means unset */
+    /* Install signal handlers? Yes by default. */
+    int install_signal_handlers;
 
     int ignore_environment; /* -E, Py_IgnoreEnvironmentFlag, -1 means unset */
     int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
-    const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
+    const char *allocator;  /* Memory allocator: PYTHONMALLOC */
     int dev_mode;           /* PYTHONDEVMODE, -X dev */
-    int faulthandler;       /* PYTHONFAULTHANDLER, -X faulthandler */
-    int tracemalloc;        /* PYTHONTRACEMALLOC, -X tracemalloc=N */
+
+    /* Enable faulthandler?
+       Set to 1 by -X faulthandler and PYTHONFAULTHANDLER. -1 means unset. */
+    int faulthandler;
+
+    /* Enable tracemalloc?
+       Set by -X tracemalloc=N and PYTHONTRACEMALLOC. -1 means unset */
+    int tracemalloc;
+
     int import_time;        /* PYTHONPROFILEIMPORTTIME, -X importtime */
     int show_ref_count;     /* -X showrefcount */
     int show_alloc_count;   /* -X showalloccount */
@@ -229,9 +237,10 @@ typedef struct {
 
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
-        .install_signal_handlers = -1, \
+        .install_signal_handlers = 1, \
         .ignore_environment = -1, \
         .use_hash_seed = -1, \
+        .faulthandler = -1, \
         .tracemalloc = -1, \
         .coerce_c_locale = -1, \
         .utf8_mode = -1, \
