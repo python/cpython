@@ -732,29 +732,36 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.hypot(NAN, -2.0)))
 
     def test_multi_hypot(self):
-        from decimal import Decimal as D
+        from decimal import Decimal
+        from fractions import Fraction
 
         hypot = math.mh
 
-        self.assertEqual(hypot(12.0, 5.0), 13.0)   # Float inputs. Exact output.
-        self.assertEqual(hypot(12, 5), 13)         # Int inputs
-        self.assertEqual(hypot(D(12), D(5)), 13)   # Decimal inputs
-
-        self.assertEqual(hypot(0.0, 0.0), 0.0)     # Max input is zero
-        self.assertEqual(hypot(-10.5), 10.5)       # Negative input
-
-        with self.assertRaises(TypeError):
-            hypot(x=1)                             # Reject keyword args
-
-        # Test 0 to 4 dimensional inputs
-        args = math.e, math.pi, math.sqrt(2.0), math.gamma(3.5)
+        # Test different numbers of arguments from zero to five
+        args = math.e, math.pi, math.sqrt(2.0), math.gamma(3.5), math.sin(2.1)
         for i in range(len(args)+1):
             self.assertAlmostEqual(
                 hypot(*args[:i]),
                 math.sqrt(sum(s**2 for s in args[:i]))
             )
 
-        # Test special values.
+        # Test allowable types (those with __float__)
+        self.assertEqual(hypot(12.0, 5.0), 13.0)
+        self.assertEqual(hypot(12, 5), 13)
+        self.assertEqual(hypot(Decimal(12), Decimal(5)), 13)
+        self.assertEqual(hypot(Fraction(12, 32), Fraction(5, 32)), Fraction(13, 32))
+        self.assertEqual(hypot(bool(1), bool(0), bool(1), bool(1)), math.sqrt(3))
+
+        # Test corner cases
+        self.assertEqual(hypot(0.0, 0.0), 0.0)     # Max input is zero
+        self.assertEqual(hypot(-10.5), 10.5)       # Negative input
+
+        # Test handling of bad arguments
+        with self.assertRaises(TypeError):         # Reject keyword args
+            hypot(x=1)
+        with self.assertRaises(TypeError):         # Reject values without __float__
+            hypot(1.1, 'string', 2.2)
+
         # Any infinity gives positive infinity.
         self.assertEqual(hypot(INF), INF)
         self.assertEqual(hypot(0, INF), INF)
@@ -764,6 +771,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(hypot(-INF, INF), INF)
         self.assertEqual(hypot(-INF, -INF), INF)
         self.assertEqual(hypot(10, -INF), INF)
+
         # If no infinity, any NaN gives a Nan.
         self.assertTrue(math.isnan(hypot(NAN)))
         self.assertTrue(math.isnan(hypot(0, NAN)))
@@ -775,12 +783,12 @@ class MathTests(unittest.TestCase):
         halfmax = sys.float_info.max / 2.0
         for n in range(10):
             self.assertEqual(hypot(*([halfmax]*n)), halfmax * math.sqrt(n))
+
         # Verify scaling for extremely small values
         small = sys.float_info.min
-        a, b, c = 5, 12, 13
         for exp in range(32):
             scale = small / 2 ** exp
-            self.assertEqual(math.hypot(a*scale, b*scale), c*scale)
+            self.assertEqual(math.hypot(12*scale, 5*scale), 13*scale)
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
