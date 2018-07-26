@@ -1237,10 +1237,9 @@ config_init_warnoptions(_PyCoreConfig *config, _PyCmdline *cmdline)
    Return 0 on success.
    Set pymain->err and return -1 on error. */
 static _PyInitError
-cmdline_init_env_warnoptions(_PyMain *pymain, _PyCoreConfig *config, _PyCmdline *cmdline)
+cmdline_init_env_warnoptions(_PyMain *pymain, const _PyCoreConfig *config,
+                             _PyCmdline *cmdline)
 {
-    assert(config->use_environment > 0);
-
     wchar_t *env;
     int res = config_get_env_var_dup(config, &env,
                                      L"PYTHONWARNINGS", "PYTHONWARNINGS");
@@ -2023,6 +2022,12 @@ pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
         return -1;
     }
 
+    err = _PyCoreConfig_Read(config);
+    if (_Py_INIT_FAILED(err)) {
+        pymain->err = err;
+        return -1;
+    }
+
     assert(config->use_environment >= 0);
     if (config->use_environment) {
         err = cmdline_init_env_warnoptions(pymain, config, cmdline);
@@ -2030,12 +2035,6 @@ pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
             pymain->err = err;
             return -1;
         }
-    }
-
-    err = _PyCoreConfig_Read(config);
-    if (_Py_INIT_FAILED(err)) {
-        pymain->err = err;
-        return -1;
     }
 
     err = config_init_warnoptions(config, cmdline);
