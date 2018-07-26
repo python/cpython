@@ -113,14 +113,14 @@ PySlice_GetIndices(PySliceObject *r, Py_ssize_t length,
     if (r->start == Py_None) {
         *start = *step < 0 ? length-1 : 0;
     } else {
-        if (!PyInt_Check(r->start) && !PyLong_Check(r->start)) return -1;
+        if (!_PyAnyInt_Check(r->start)) return -1;
         *start = PyInt_AsSsize_t(r->start);
         if (*start < 0) *start += length;
     }
     if (r->stop == Py_None) {
         *stop = *step < 0 ? -1 : length;
     } else {
-        if (!PyInt_Check(r->stop) && !PyLong_Check(r->stop)) return -1;
+        if (!_PyAnyInt_Check(r->stop)) return -1;
         *stop = PyInt_AsSsize_t(r->stop);
         if (*stop < 0) *stop += length;
     }
