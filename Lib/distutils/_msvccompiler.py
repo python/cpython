@@ -252,11 +252,11 @@ class MSVCCompiler(CCompiler) :
 
         for dir in vc_env.get('include', '').split(os.pathsep):
             if dir:
-                self.add_include_dir(dir)
+                self.add_include_dir(dir.rstrip(os.sep))
 
         for dir in vc_env.get('lib', '').split(os.pathsep):
             if dir:
-                self.add_library_dir(dir)
+                self.add_library_dir(dir.rstrip(os.sep))
 
         self.preprocess_options = None
         # If vcruntime_redist is available, link against it dynamically. Otherwise,
