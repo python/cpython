@@ -57,7 +57,6 @@ raised for division by zero and mod by zero.
 
 #include "clinic/mathmodule.c.h"
 
-
 /*[clinic input]
 module math
 [clinic start generated code]*/
