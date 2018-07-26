@@ -2074,6 +2074,21 @@ math_hypot(PyObject *self, PyObject *args)
     return PyFloat_FromDouble(max * sqrt(csum));       // XXX Handle overflow
 }
 
+PyDoc_STRVAR(math_hypot_doc,
+             "hypot(*coordinates) -> value\n\n\
+Multidimensional Euclidean distance from the origin to a point.\n\
+\n\
+Roughly equivalent to:\n\
+    sqrt(sum(x**2 for x in coordinates))\n\
+\n\
+For a two dimensional point (x, y), gives the hypotenuse\n\
+using the Pythagorean theorem:  sqrt(x*x + y*y).\n\
+\n\
+For example, the hypotenuse of a 3/4/5 right triangle is:\n\
+\n\
+    >>> hypot(3.0, 4.0)\n\
+    5.0\n\
+");
 
 /* pow can't use math_2, but needs its own wrapper: the problem is
    that an infinite result can arise either as a result of overflow
@@ -2345,7 +2360,7 @@ static PyMethodDef math_methods[] = {
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
     MATH_GCD_METHODDEF
-    {"hypot",           math_hypot,     METH_VARARGS,   math_remainder_doc},
+    {"hypot",           math_hypot,     METH_VARARGS,   math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
