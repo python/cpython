@@ -1,0 +1,2 @@
+Compiler now merges constans in tuples and frozensets recursively. Code
+attributes like ``co_names`` are merged too.
