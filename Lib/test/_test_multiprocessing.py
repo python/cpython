@@ -4477,38 +4477,12 @@ class TestSemaphoreTracker(unittest.TestCase):
         if pid:
             os.kill(pid, signal.SIGKILL)
             time.sleep(0.5)  # give it time to die
-        testfn = test.support.TESTFN
-        self.addCleanup(test.support.unlink, testfn)
-        tracker_stderr_r = open(testfn, "wb")
-        old_stderr = os.dup(sys.stderr.fileno())
-        os.dup2(tracker_stderr_r.fileno(), sys.stderr.fileno())
-        try:
-            with warnings.catch_warnings(record=True) as all_warn:
-                _semaphore_tracker.ensure_running()
-            pid = _semaphore_tracker._pid
-            # Wait until we receive the PONG from the child, indicating that
-            # the signal handlers have been registered. See bpo-33613 for more
-            # information.
-            _semaphore_tracker._send("PING", "")
-            deadline = time.monotonic() + 5
-            with open(testfn, "rb") as tracker_stderr:
-                while True:
-                    if time.monotonic() >= deadline:
-                        raise TimeoutError("Reading data "
-                                           "from tracker stderr took too long")
-                    data = tracker_stderr.readline()
-                    if not data:
-                        continue
-                    if b"PONG" not in data:
-                        raise ValueError("Invalid data in stderr: {}!".format(data))
-                    break
-        finally:
-            tracker_stderr_r.close()
-            os.dup2(sys.stderr.fileno(), old_stderr)
-            os.close(old_stderr)
+        with warnings.catch_warnings(record=True) as all_warn:
+            _semaphore_tracker.ensure_running()
+        pid = _semaphore_tracker._pid
 
         os.kill(pid, signum)
-        time.sleep(1.0)  # give it time to die
+        time.sleep(0.5)  # give it time to die
 
         ctx = multiprocessing.get_context("spawn")
         with warnings.catch_warnings(record=True) as all_warn:
@@ -4533,6 +4507,10 @@ class TestSemaphoreTracker(unittest.TestCase):
     def test_semaphore_tracker_sigint(self):
         # Catchable signal (ignored by semaphore tracker)
         self.check_semaphore_tracker_death(signal.SIGINT, False)
+
+    def test_semaphore_tracker_sigterm(self):
+        # Catchable signal (ignored by semaphore tracker)
+        self.check_semaphore_tracker_death(signal.SIGTERM, False)
 
     def test_semaphore_tracker_sigkill(self):
         # Uncatchable signal.
