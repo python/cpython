@@ -2024,7 +2024,8 @@ For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
 values.  If they're used anyway, ``0`` is substituted for them.
 
-The full set of format codes supported varies across platforms, because Python
+For the ``strftime(format)`` method the full set of format codes
+supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform
 variations are common.  To see the full set of format codes supported on your
 platform, consult the :manpage:`strftime(3)` documentation.
