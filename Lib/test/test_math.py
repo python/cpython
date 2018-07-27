@@ -745,6 +745,7 @@ class MathTests(unittest.TestCase):
         # Test corner cases
         self.assertEqual(hypot(0.0, 0.0), 0.0)     # Max input is zero
         self.assertEqual(hypot(-10.5), 10.5)       # Negative input
+        self.assertEqual(hypot(), 0.0)             # Negative input
 
         # Test handling of bad arguments
         with self.assertRaises(TypeError):         # Reject keyword args
@@ -781,7 +782,7 @@ class MathTests(unittest.TestCase):
         # Verify scaling for extremely small values
         for exp in range(32):
             scale = FLOAT_MIN / 2.0 ** exp
-            self.assertEqual(math.hypot(12*scale, 5*scale), 13*scale)
+            self.assertEqual(math.hypot(4*scale, 3*scale), 5*scale)
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)

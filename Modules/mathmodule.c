@@ -2068,7 +2068,11 @@ math_hypot(PyObject *self, PyObject *args)
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(args, i);
-        x = PyFloat_AsDouble(item) / max;
+        x = PyFloat_AsDouble(item);
+        if (x == -1.0 && PyErr_Occurred()) {
+            return NULL;
+        }
+        x /= max;
         csum += x * x;
     }
     return PyFloat_FromDouble(max * sqrt(csum));       // XXX Handle overflow
