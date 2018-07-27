@@ -487,4 +487,4 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e554bad553045546 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1c35516a10443902 input=a9049054013a1b77]*/
