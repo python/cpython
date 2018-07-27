@@ -378,8 +378,6 @@ static int check_cursor(pysqlite_Cursor* cur)
 PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
 {
     PyObject* operation;
-    const char* operation_cstr;
-    Py_ssize_t operation_len;
     PyObject* parameters_list = NULL;
     PyObject* parameters_iter = NULL;
     PyObject* parameters = NULL;
@@ -463,10 +461,6 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         /* There is an active statement */
         pysqlite_statement_reset(self->statement);
     }
-
-    operation_cstr = PyUnicode_AsUTF8AndSize(operation, &operation_len);
-    if (operation_cstr == NULL)
-        goto error;
 
     /* reset description and rowcount */
     Py_INCREF(Py_None);
