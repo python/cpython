@@ -2037,45 +2037,51 @@ math_hypot(PyObject *self, PyObject *args)
 {
     Py_ssize_t i, n;
     PyObject *item;
+    double *coordinates;
     double max = 0.0;
     double csum = 0.0;
-    double x;
+    double x, result;
     int found_inf = 0;
     int found_nan = 0;
 
     n = PyTuple_GET_SIZE(args);
+    coordinates = (double *) PyObject_Malloc(n * sizeof(double));
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(args, i);
         x = PyFloat_AsDouble(item);
         if (x == -1.0 && PyErr_Occurred()) {
+            PyObject_Free(coordinates);
             return NULL;
         }
+        x = fabs(x);
+        coordinates[i] = x;
         found_inf |= Py_IS_INFINITY(x);
         found_nan |= Py_IS_NAN(x);
-        x = fabs(x);
         if (x > max) {
             max = x;
         }
     }
     if (found_inf) {
-        return PyFloat_FromDouble(max);
+        result = max;
+        goto done;
     }
     if (found_nan) {
-        return PyFloat_FromDouble(Py_NAN);
+        result = Py_NAN;
+        goto done;
     }
     if (max == 0.0) {
-        return PyFloat_FromDouble(0.0);
+        result = 0.0;
+        goto done;
     }
     for (i=0 ; i<n ; i++) {
-        item = PyTuple_GET_ITEM(args, i);
-        x = PyFloat_AsDouble(item);
-        if (x == -1.0 && PyErr_Occurred()) {
-            return NULL;
-        }
-        x /= max;
+        x = coordinates[i] / max;
         csum += x * x;
     }
-    return PyFloat_FromDouble(max * sqrt(csum));       // XXX Handle overflow
+    result = max * sqrt(csum);
+
+  done:
+    PyObject_Free(coordinates);
+    return PyFloat_FromDouble(result);
 }
 
 PyDoc_STRVAR(math_hypot_doc,
