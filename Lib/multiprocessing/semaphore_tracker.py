@@ -22,6 +22,8 @@ from . import spawn
 from . import util
 
 __all__ = ['ensure_running', 'register', 'unregister']
+_HAVE_SIGMASK = hasattr(signal, 'pthread_sigmask')
+_IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
 
 
 class SemaphoreTracker(object):
@@ -68,7 +70,11 @@ class SemaphoreTracker(object):
                 exe = spawn.get_executable()
                 args = [exe] + util._args_from_interpreter_flags()
                 args += ['-c', cmd % r]
+                if _HAVE_SIGMASK:
+                    signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
                 pid = util.spawnv_passfds(exe, args, fds_to_pass)
+                if _HAVE_SIGMASK:
+                    signal.pthread_sigmask(signal.SIG_UNBLOCK, _IGNORED_SIGNALS)
             except:
                 os.close(w)
                 raise
@@ -110,6 +116,8 @@ def main(fd):
     # protect the process from ^C and "killall python" etc
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    if _HAVE_SIGMASK:
+        signal.pthread_sigmask(signal.SIG_UNBLOCK, _IGNORED_SIGNALS)
 
     for f in (sys.stdin, sys.stdout):
         try:
