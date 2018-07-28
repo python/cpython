@@ -81,10 +81,7 @@ class BaseTest(unittest.TestCase):
         os.close(fd)
 
     def tearDown(self):
-        try:
-            os.unlink(self.filename)
-        except FileNotFoundError:
-            pass
+        unlink(self.filename)
 
 
 class BZ2FileTest(BaseTest):
