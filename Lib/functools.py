@@ -880,26 +880,29 @@ _NOT_FOUND = object()
 class cached_property:
     def __init__(self, func):
         self.func = func
+        self.attrname = func.__name__
         self.__doc__ = func.__doc__
         self.lock = RLock()
+
+    def __set_name__(self, owner, name):
+        self.attrname = name
 
     def __get__(self, instance, owner):
         if instance is None:
             return self
-        attrname = self.func.__name__
         try:
             cache = instance.__dict__
         except AttributeError:  # objects with __slots__ have no __dict__
             msg = (
                 f"No '__dict__' attribute on {type(instance).__name__!r} "
-                f"instance to cache {attrname!r} property."
+                f"instance to cache {self.attrname!r} property."
             )
             raise TypeError(msg) from None
-        val = cache.get(attrname, _NOT_FOUND)
+        val = cache.get(self.attrname, _NOT_FOUND)
         if val is _NOT_FOUND:
             with self.lock:
                 # check if another thread filled cache while we awaited lock
-                val = cache.get(attrname, _NOT_FOUND)
+                val = cache.get(self.attrname, _NOT_FOUND)
                 if val is _NOT_FOUND:
-                    val = cache[attrname] = self.func(instance)
+                    val = cache[self.attrname] = self.func(instance)
         return val
