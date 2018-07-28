@@ -25,10 +25,7 @@ class MmapBaseTest(unittest.TestCase):
         self.remove_testfn()
 
     def remove_testfn(self):
-        try:
-            os.unlink(self.testfn)
-        except FileNotFoundError:
-            pass
+        unlink(self.testfn)
 
 
 class MmapTests(MmapBaseTest):
@@ -557,10 +554,7 @@ class MmapTests(MmapBaseTest):
 
         finally:
             f.close()
-            try:
-                os.unlink(self.testfn)
-            except OSError:
-                pass
+            unlink(self.testfn)
 
     def test_subclass(self):
         class anon_mmap(mmap.mmap):
