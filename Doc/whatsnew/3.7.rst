@@ -2406,6 +2406,12 @@ Changes in the Python API
   dictionary are now being implicitly converted to strings.
   (Contributed by James Tocknell in :issue:`23835`.)
 
+* Several undocumented internal imports were removed.
+  One example is that ``os.errno`` is no longer available; use ``import errno``
+  directly instead.
+  Note that such undocumented internal imports may be removed any time without
+  notice, even in micro version releases.
+
 
 Changes in the C API
 --------------------
