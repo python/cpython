@@ -2031,49 +2031,74 @@ math_fmod_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(r);
 }
 
-
-/*[clinic input]
-math.hypot
-
-    x: double
-    y: double
-    /
-
-Return the Euclidean distance, sqrt(x*x + y*y).
-[clinic start generated code]*/
-
+/* AC: cannot convert yet, waiting for *args support */
 static PyObject *
-math_hypot_impl(PyObject *module, double x, double y)
-/*[clinic end generated code: output=b7686e5be468ef87 input=7f8eea70406474aa]*/
+math_hypot(PyObject *self, PyObject *args)
 {
-    double r;
-    /* hypot(x, +/-Inf) returns Inf, even if x is a NaN. */
-    if (Py_IS_INFINITY(x))
-        return PyFloat_FromDouble(fabs(x));
-    if (Py_IS_INFINITY(y))
-        return PyFloat_FromDouble(fabs(y));
-    errno = 0;
-    PyFPE_START_PROTECT("in math_hypot", return 0);
-    r = hypot(x, y);
-    PyFPE_END_PROTECT(r);
-    if (Py_IS_NAN(r)) {
-        if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
-            errno = EDOM;
-        else
-            errno = 0;
-    }
-    else if (Py_IS_INFINITY(r)) {
-        if (Py_IS_FINITE(x) && Py_IS_FINITE(y))
-            errno = ERANGE;
-        else
-            errno = 0;
-    }
-    if (errno && is_error(r))
+    Py_ssize_t i, n;
+    PyObject *item;
+    double *coordinates;
+    double max = 0.0;
+    double csum = 0.0;
+    double x, result;
+    int found_nan = 0;
+
+    n = PyTuple_GET_SIZE(args);
+    coordinates = (double *) PyObject_Malloc(n * sizeof(double));
+    if (coordinates == NULL)
         return NULL;
-    else
-        return PyFloat_FromDouble(r);
+    for (i=0 ; i<n ; i++) {
+        item = PyTuple_GET_ITEM(args, i);
+        x = PyFloat_AsDouble(item);
+        if (x == -1.0 && PyErr_Occurred()) {
+            PyObject_Free(coordinates);
+            return NULL;
+        }
+        x = fabs(x);
+        coordinates[i] = x;
+        found_nan |= Py_IS_NAN(x);
+        if (x > max) {
+            max = x;
+        }
+    }
+    if (Py_IS_INFINITY(max)) {
+        result = max;
+        goto done;
+    }
+    if (found_nan) {
+        result = Py_NAN;
+        goto done;
+    }
+    if (max == 0.0) {
+        result = 0.0;
+        goto done;
+    }
+    for (i=0 ; i<n ; i++) {
+        x = coordinates[i] / max;
+        csum += x * x;
+    }
+    result = max * sqrt(csum);
+
+  done:
+    PyObject_Free(coordinates);
+    return PyFloat_FromDouble(result);
 }
 
+PyDoc_STRVAR(math_hypot_doc,
+             "hypot(*coordinates) -> value\n\n\
+Multidimensional Euclidean distance from the origin to a point.\n\
+\n\
+Roughly equivalent to:\n\
+    sqrt(sum(x**2 for x in coordinates))\n\
+\n\
+For a two dimensional point (x, y), gives the hypotenuse\n\
+using the Pythagorean theorem:  sqrt(x*x + y*y).\n\
+\n\
+For example, the hypotenuse of a 3/4/5 right triangle is:\n\
+\n\
+    >>> hypot(3.0, 4.0)\n\
+    5.0\n\
+");
 
 /* pow can't use math_2, but needs its own wrapper: the problem is
    that an infinite result can arise either as a result of overflow
@@ -2345,7 +2370,7 @@ static PyMethodDef math_methods[] = {
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
     MATH_GCD_METHODDEF
-    MATH_HYPOT_METHODDEF
+    {"hypot",           math_hypot,     METH_VARARGS,   math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
