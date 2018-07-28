@@ -1658,18 +1658,14 @@ class PatchTest(unittest.TestCase):
             finally:
                 p.stop()
 
-    @contextlib.contextmanager
-    def patch_sys_modules(self):
-        with swap_attr(sys, 'modules', sys.modules.copy()):
-            squizz = Mock()
-            sys.modules['squizz'] = squizz
-            yield squizz
-
     def test_patch_imports_lazily(self):
         p1 = patch('squizz.squozz')
         self.assertRaises(ImportError, p1.start)
 
-        with self.patch_sys_modules() as squizz:
+        with swap_attr(sys, 'modules', sys.modules.copy()):
+            squizz = Mock()
+            sys.modules['squizz'] = squizz
+
             squizz.squozz = 6
             p1 = patch('squizz.squozz')
             squizz.squozz = 3
@@ -1698,7 +1694,10 @@ class PatchTest(unittest.TestCase):
         def test(mock):
             raise RuntimeError
 
-        with self.patch_sys_modules():
+        with swap_attr(sys, 'modules', sys.modules.copy()):
+            squizz = Mock()
+            sys.modules['squizz'] = squizz
+
             self.assertRaises(RuntimeError, test)
 
         self.assertIs(holder.exc_info[0], RuntimeError)
