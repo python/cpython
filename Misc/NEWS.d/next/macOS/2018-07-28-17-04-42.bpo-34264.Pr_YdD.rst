@@ -1,0 +1,2 @@
+Make sure that the default stack size for the main threads and threads
+created by the threading module are the same.
