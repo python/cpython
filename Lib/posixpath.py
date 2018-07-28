@@ -44,18 +44,14 @@ def _get_sep(path):
     else:
         return '/'
 
-# Normalize the case of a pathname.  Trivial in Posix, string.lower on Mac.
-# On MS-DOS this may also turn slashes into backslashes; however, other
-# normalizations (such as optimizing '../' away) are not allowed
-# (another function should be defined to do that).
 
-def normcase(s):
-    """Normalize case of pathname.  Has no effect under Posix"""
-    s = os.fspath(s)
-    if not isinstance(s, (bytes, str)):
+def normcase(path):
+    """Normalize case of pathname."""
+    path = os.fspath(path)
+    if not isinstance(path, (bytes, str)):
         raise TypeError("normcase() argument must be str or bytes, "
-                        "not '{}'".format(s.__class__.__name__))
-    return s
+                        "not '{}'".format(path.__class__.__name__))
+    return path
 
 
 # Return whether a path is absolute.

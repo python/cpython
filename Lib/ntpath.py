@@ -37,24 +37,25 @@ def _get_bothseps(path):
     else:
         return '\\/'
 
-# Normalize the case of a pathname and map slashes to backslashes.
-# Other normalizations (such as optimizing '../' away) are not done
-# (this is done by normpath).
 
-def normcase(s):
+def normcase(path):
     """Normalize case of pathname.
 
-    Makes all characters lowercase and all slashes into backslashes."""
-    s = os.fspath(s)
+    Makes all characters lowercase and all slashes into backslashes.
+
+    Other normalizations (such as optimizing '../' away) are not done here,
+    but by normpath.
+    """
+    path = os.fspath(path)
     try:
-        if isinstance(s, bytes):
-            return s.replace(b'/', b'\\').lower()
+        if isinstance(path, bytes):
+            return path.replace(b'/', b'\\').lower()
         else:
-            return s.replace('/', '\\').lower()
+            return path.replace('/', '\\').lower()
     except (TypeError, AttributeError):
-        if not isinstance(s, (bytes, str)):
+        if not isinstance(path, (bytes, str)):
             raise TypeError("normcase() argument must be str or bytes, "
-                            "not %r" % s.__class__.__name__) from None
+                            "not %r" % path.__class__.__name__) from None
         raise
 
 
