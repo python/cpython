@@ -38,7 +38,7 @@ The different font weights and slants are:
        | *family* - font family i.e. Courier, Times
        | *size* - font size (pt)
        | *weight* - font emphasis {NORMAL, BOLD}
-       | *slant* - {ROMAN - oblique text, ITALIC}
+       | *slant* - {ROMAN, ITALIC}
        | *underline* - font underlining (0 - none, 1 - underline)
        | *overstrike* - font strikeout (0 - none, 1 - strikeout)
 

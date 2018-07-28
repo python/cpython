@@ -16,7 +16,7 @@ is the base class for dialogs defined in other supporting modules.
 
    .. method:: show(color=None, **options)
 
-      The *show* method renders the Dialog window.
+      Render the Dialog window.
 
 
 .. seealso::

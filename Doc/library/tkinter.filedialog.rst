@@ -49,7 +49,7 @@ caller.
 
 .. function:: asksaveasfile(mode="w", **options)
 
-   Creates a :class:`SaveAs` dialog and returns a file object opened in write-
+   Create a :class:`SaveAs` dialog and return a file object opened in write-
    only mode.
 
 .. function:: askopenfilename(**options)
@@ -60,7 +60,7 @@ caller.
 
 .. function:: asksaveasfilename(**options)
 
-   Creates a :class:`SaveAs` dialog and returns the selected filename.
+   Create a :class:`SaveAs` dialog and return the selected filename.
 
 .. function:: askdirectory (**options)
 
@@ -81,18 +81,18 @@ These do not emulate the native look-and-feel of the platform.
 
 .. class:: Directory(master=None, **options)
 
-   Creates a dialog prompting user to select a directory.
+   Create a dialog prompting user to select a directory.
 
 .. note::  The *FileDialog* class should be subclassed for custom event
    handling and behaviour.
 
 .. class:: FileDialog(master, title=None)
 
-   Creates a basic file selection dialog.
+   Create a basic file selection dialog.
 
    .. method:: cancel_command(event=None)
 
-      Triggers the termination of the dialog window.
+      Trigger the termination of the dialog window.
 
    .. method:: dirs_double_event(event)
 
@@ -112,7 +112,7 @@ These do not emulate the native look-and-feel of the platform.
 
    .. method:: filter_command(event=None)
 
-      Filters the files by directory.
+      Filter the files by directory.
 
    .. method:: get_filter()
 
@@ -124,7 +124,7 @@ These do not emulate the native look-and-feel of the platform.
 
    .. method:: go(dir_or_file=os.curdir, pattern="*", default="", key=None)
 
-      Displays dialog and starts event loop.
+      Render dialog and start event loop.
 
    .. method:: ok_event(event)
 
@@ -140,7 +140,7 @@ These do not emulate the native look-and-feel of the platform.
 
    .. method:: set_selection(file)
 
-      Updates the current file selection to *file*.
+      Update the current file selection to *file*.
 
 
 .. class:: LoadFileDialog
@@ -150,7 +150,7 @@ These do not emulate the native look-and-feel of the platform.
 
    .. method:: ok_command()
 
-      Tests that a file is provided and that the selection indicates an
+      Test that a file is provided and that the selection indicates an
       already existing file.
 
 .. class:: SaveFileDialog
@@ -160,7 +160,7 @@ These do not emulate the native look-and-feel of the platform.
 
     .. method:: ok_command()
 
-      Tests whether or not the selection points to a valid file that is not a
+      Test whether or not the selection points to a valid file that is not a
       directory. Confirmation is required if an already existing file is
       selected.
 

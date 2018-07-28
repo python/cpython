@@ -22,7 +22,7 @@ is the event that invoked the call (the argument to your callback function).
 
 Selection of a target object occurs as follows:
 
-#. Bottom-up search of area under mouse for target widget
+#. Top-down search of area under mouse for target widget
 
  * Target widget should have a callable *dnd_accept* attribute
  * If *dnd_accept* not present or returns None, search moves to parent widget
@@ -41,21 +41,21 @@ Selection of a target object occurs as follows:
 
    .. method:: cancel(event=None)
 
-      Cancels the drag-and-drop process
+      Cancel the drag-and-drop process
 
    .. method:: finish(event, commit=0)
 
-      Executes end of drag-and-drop functions
+      Execute end of drag-and-drop functions
 
    .. method:: on_motion(event)
 
-      Inspects area below mouse for target objects while drag is performed
+      Inspect area below mouse for target objects while drag is performed
 
    .. method:: on_release(event)
 
-      Called when the release pattern is triggered and signals end of drag
+      Signal end of drag when the release pattern is triggered
 
-.. function:: dnd_start(event)
+.. function:: dnd_start(source, event)
 
    Factory function for drag-and-drop process
 
