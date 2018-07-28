@@ -7,12 +7,16 @@ import os
 import re
 import subprocess
 import sys
+import sysconfig
 
 
 class EmbeddingTestsMixin:
     def setUp(self):
-        here = os.path.abspath(__file__)
-        basepath = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+        if not sysconfig.is_python_build():
+            self.skipTest('testing installed tree')
+
+        basepath = sysconfig._PROJECT_BASE
+
         exename = "_testembed"
         if sys.platform.startswith("win"):
             ext = ("_d" if "_d" in sys.executable else "") + ".exe"

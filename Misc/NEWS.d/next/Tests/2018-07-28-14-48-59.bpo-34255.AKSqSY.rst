@@ -1,0 +1,1 @@
+Ensure that test.test_embed works when building outside of the source tree
