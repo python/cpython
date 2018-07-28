@@ -702,12 +702,11 @@ module_repr(PyModuleObject *m)
 int
 _PyModule_IsInitializing(PyObject *m)
 {
+    _Py_IDENTIFIER(__spec__);
+    _Py_IDENTIFIER(_initializing);
+    PyObject *spec;
+    PyObject *value = NULL;
     if (PyModule_Check(m) && ((PyModuleObject *)m)->md_dict) {
-        _Py_IDENTIFIER(__spec__);
-        _Py_IDENTIFIER(_initializing);
-        PyObject *value = NULL;
-        PyObject *spec;
-        int initializing = 0;
         spec = _PyDict_GetItemId(((PyModuleObject *)m)->md_dict, &PyId___spec__);
         if (spec != NULL && spec != Py_None) {
             value = _PyObject_GetAttrId(spec, &PyId__initializing);
@@ -716,10 +715,11 @@ _PyModule_IsInitializing(PyObject *m)
             PyErr_Clear();
         }
         else {
-            initializing = PyObject_IsTrue(value);
+            int initializing = PyObject_IsTrue(value);
             Py_DECREF(value);
-            if (initializing < 0)
+            if (initializing < 0) {
                 PyErr_Clear();
+            }
             return initializing > 0;
         }
     }
