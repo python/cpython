@@ -1070,7 +1070,7 @@ class Path(PurePath):
 
     def glob(self, pattern):
         """Iterate over this subtree and yield all existing files (of any
-        kind, including directories) matching the given pattern.
+        kind, including directories) matching the given relative pattern.
         """
         if not pattern:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
@@ -1084,7 +1084,8 @@ class Path(PurePath):
 
     def rglob(self, pattern):
         """Recursively yield all existing files (of any kind, including
-        directories) matching the given pattern, anywhere in this subtree.
+        directories) matching the given relative pattern, anywhere in
+        this subtree.
         """
         pattern = self._flavour.casefold(pattern)
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
