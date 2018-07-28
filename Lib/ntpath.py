@@ -496,22 +496,23 @@ def normpath(path):
         comps.append(curdir)
     return prefix + sep.join(comps)
 
+def _abspath_fallback(path):
+	"""Return the absolute version of a path."""
+	path = os.fspath(path)
+	if not isabs(path):
+		if isinstance(path, bytes):
+			cwd = os.getcwdb()
+		else:
+			cwd = os.getcwd()
+		path = join(cwd, path)
+	return normpath(path)
 
 # Return an absolute path.
 try:
     from nt import _getfullpathname
 
 except ImportError: # not running on Windows - mock up something sensible
-    def abspath(path):
-        """Return the absolute version of a path."""
-        path = os.fspath(path)
-        if not isabs(path):
-            if isinstance(path, bytes):
-                cwd = os.getcwdb()
-            else:
-                cwd = os.getcwd()
-            path = join(cwd, path)
-        return normpath(path)
+    abspath = _abspath_fallback
 
 else:  # use native Windows method on Windows
     def abspath(path):
@@ -522,7 +523,7 @@ else:  # use native Windows method on Windows
             try:
                 path = _getfullpathname(path)
             except OSError:
-                pass # Bad path - return unchanged.
+                path = _abspath_fallback(path)
         elif isinstance(path, bytes):
             path = os.getcwdb()
         else:
