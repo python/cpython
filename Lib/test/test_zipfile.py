@@ -1442,16 +1442,6 @@ class OtherTests(unittest.TestCase):
 
                 self.assertEqual(f.read(), b"O, for a Muse of Fire!")
 
-    def test_seek_before_current_position(self):
-        """Check that calling seek() at a position before the current one
-        on a ZipExtFile object resets its state and still works."""
-        with zipfile.ZipFile(TESTFN, mode="w") as zipf:
-            zipf.writestr("foo.txt", "O, for a Muse of Fire!")
-            with zipf.open("foo.txt") as f:
-                f.read()
-                f.seek(0)
-                self.assertEqual(f.read(), b"O, for a Muse of Fire!")
-
     def test_open_non_existent_item(self):
         """Check that attempting to call open() for an item that doesn't
         exist in the archive raises a RuntimeError."""
@@ -1656,6 +1646,8 @@ class OtherTests(unittest.TestCase):
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
+                fp.seek(0, os.SEEK_SET)
+                self.assertEqual(fp.tell(), 0)
         # Check seek on memory file
         data = io.BytesIO()
         with zipfile.ZipFile(data, mode="w") as zipf:
@@ -1671,6 +1663,8 @@ class OtherTests(unittest.TestCase):
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
+                fp.seek(0, os.SEEK_SET)
+                self.assertEqual(fp.tell(), 0)
 
     def tearDown(self):
         unlink(TESTFN)
