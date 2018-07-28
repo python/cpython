@@ -17,12 +17,17 @@
 
 The :mod:`venv` module provides support for creating lightweight "virtual
 environments" with their own site directories, optionally isolated from system
-site directories.  Each virtual environment has its own Python binary (allowing
-creation of environments with various Python versions) and can have its own
-independent set of installed Python packages in its site directories.
+site directories.  Each virtual environment has its own Python binary (which
+matches the version of the binary that was used to create this environment) and
+can have its own independent set of installed Python packages in its site
+directories.
 
 See :pep:`405` for more information about Python virtual environments.
 
+.. seealso::
+
+   `Python Packaging User Guide: Creating and using virtual environments
+   <https://packaging.python.org/installing/#creating-virtual-environments>`__
 
 
 Creating virtual environments
