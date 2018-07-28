@@ -297,6 +297,11 @@ functions:
 
       Profile ``func(*args, **kwargs)``
 
+Note that profiling will only work if the called command/function actually
+returns.  If the interpreter is terminated (e.g. via a :func:`sys.exit` call
+during the called command/function execution) no profiling results will be
+printed.
+
 .. _profile-stats:
 
 The :class:`Stats` Class
