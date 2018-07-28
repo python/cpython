@@ -219,6 +219,47 @@ class EmbeddingTests(unittest.TestCase):
         self.assertIn(expected_output, out)
         self.assertEqual(err, '')
 
+    def test_initialize_sys_flags_from_environment(self):
+        """
+        Validate that settings from environment variables affect
+        interpreter settings
+        """
+        env = { k: os.environ[k] for k in os.environ
+                if not k.startswith('PYTHON') }
+
+        out, err = self.run_embedded_interpreter(
+                "initialize_sys_flags", env=env)
+
+        expected_output = (
+            "dont_write_bytecode=0\n"
+            "hash_randomization=1\n"
+            "inspect=0\n"
+            "no_user_site=0\n"
+            "optimize=0\n"
+        )
+        self.assertIn(expected_output, out)
+        self.assertEqual(err, '')
+
+        env['PYTHONDONTWRITEBYTECODE'] = '1'
+        env['PYTHONHASHSEED'] = '0'
+        env['PYTHONINSPECT'] = '3'
+        env['PYTHONNOUSERSITE'] = '4'
+        env['PYTHONOPTIMIZE'] = '2'
+
+        out, err = self.run_embedded_interpreter(
+                "initialize_sys_flags", env=env)
+
+        expected_output = (
+            "dont_write_bytecode=1\n"
+            "hash_randomization=0\n"
+            "inspect=3\n"
+            "no_user_site=4\n"
+            "optimize=2\n"
+        )
+        self.assertEqual(expected_output, out)
+        self.assertEqual(err, '')
+
+
     def test_bpo20891(self):
         """
         bpo-20891: Calling PyGILState_Ensure in a non-Python thread before

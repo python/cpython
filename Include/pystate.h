@@ -72,6 +72,12 @@ typedef struct {
     wchar_t *exec_prefix;   /* sys.exec_prefix */
     wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
 
+    int optimization_level;      /* Py_OptimizeFlag, -O, PYTHONOPTIMIZE */
+    int inspect;                 /* Py_InspectFlag, -i, PYTHONINSPECT */
+    int no_user_site_directory;  /* Py_NoUserSiteDirectory, -I, -s, PYTHONNOUSERSITE */
+    int dont_write_bytecode;     /* Py_DontWriteBytecodeFlag, -B, PYTHONDONTWRITEBYTECODE */
+    int use_unbuffered_io;       /* Py_UnbufferedStdioFlag, -u, PYTHONUNBUFFERED */
+
     /* Private fields */
     int _disable_importlib; /* Needed by freeze_importlib */
 } _PyCoreConfig;

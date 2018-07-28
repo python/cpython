@@ -440,14 +440,9 @@ typedef struct {
     int print_version;           /* -V option */
     int bytes_warning;           /* Py_BytesWarningFlag, -b */
     int debug;                   /* Py_DebugFlag, -b, PYTHONDEBUG */
-    int inspect;                 /* Py_InspectFlag, -i, PYTHONINSPECT */
     int interactive;             /* Py_InteractiveFlag, -i */
     int isolated;                /* Py_IsolatedFlag, -I */
-    int optimization_level;      /* Py_OptimizeFlag, -O, PYTHONOPTIMIZE */
-    int dont_write_bytecode;     /* Py_DontWriteBytecodeFlag, -B, PYTHONDONTWRITEBYTECODE */
-    int no_user_site_directory;  /* Py_NoUserSiteDirectory, -I, -s, PYTHONNOUSERSITE */
     int no_site_import;          /* Py_NoSiteFlag, -S */
-    int use_unbuffered_io;       /* Py_UnbufferedStdioFlag, -u, PYTHONUNBUFFERED */
     int verbosity;               /* Py_VerboseFlag, -v, PYTHONVERBOSE */
     int quiet_flag;              /* Py_QuietFlag, -q */
     const char *check_hash_pycs_mode; /* --check-hash-based-pycs */
@@ -805,28 +800,28 @@ pymain_parse_cmdline_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
             break;
 
         case 'i':
-            cmdline->inspect++;
+            config->inspect++;
             cmdline->interactive++;
             break;
 
         case 'I':
             config->ignore_environment++;
             cmdline->isolated++;
-            cmdline->no_user_site_directory++;
+            config->no_user_site_directory++;
             break;
 
         /* case 'J': reserved for Jython */
 
         case 'O':
-            cmdline->optimization_level++;
+            config->optimization_level++;
             break;
 
         case 'B':
-            cmdline->dont_write_bytecode++;
+            config->dont_write_bytecode++;
             break;
 
         case 's':
-            cmdline->no_user_site_directory++;
+            config->no_user_site_directory++;
             break;
 
         case 'S':
@@ -842,7 +837,7 @@ pymain_parse_cmdline_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
             break;
 
         case 'u':
-            cmdline->use_unbuffered_io = 1;
+            config->use_unbuffered_io = 1;
             break;
 
         case 'v':
@@ -1368,14 +1363,14 @@ pymain_get_global_config(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
 {
     cmdline->bytes_warning = Py_BytesWarningFlag;
     cmdline->debug = Py_DebugFlag;
-    cmdline->inspect = Py_InspectFlag;
+    pymain->config.inspect = Py_InspectFlag;
     cmdline->interactive = Py_InteractiveFlag;
     cmdline->isolated = Py_IsolatedFlag;
-    cmdline->optimization_level = Py_OptimizeFlag;
-    cmdline->dont_write_bytecode = Py_DontWriteBytecodeFlag;
-    cmdline->no_user_site_directory = Py_NoUserSiteDirectory;
+    pymain->config.optimization_level = Py_OptimizeFlag;
+    pymain->config.dont_write_bytecode = Py_DontWriteBytecodeFlag;
+    pymain->config.no_user_site_directory = Py_NoUserSiteDirectory;
     cmdline->no_site_import = Py_NoSiteFlag;
-    cmdline->use_unbuffered_io = Py_UnbufferedStdioFlag;
+    pymain->config.use_unbuffered_io = Py_UnbufferedStdioFlag;
     cmdline->verbosity = Py_VerboseFlag;
     cmdline->quiet_flag = Py_QuietFlag;
 #ifdef MS_WINDOWS
@@ -1395,14 +1390,9 @@ pymain_set_global_config(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
 {
     Py_BytesWarningFlag = cmdline->bytes_warning;
     Py_DebugFlag = cmdline->debug;
-    Py_InspectFlag = cmdline->inspect;
     Py_InteractiveFlag = cmdline->interactive;
     Py_IsolatedFlag = cmdline->isolated;
-    Py_OptimizeFlag = cmdline->optimization_level;
-    Py_DontWriteBytecodeFlag = cmdline->dont_write_bytecode;
-    Py_NoUserSiteDirectory = cmdline->no_user_site_directory;
     Py_NoSiteFlag = cmdline->no_site_import;
-    Py_UnbufferedStdioFlag = cmdline->use_unbuffered_io;
     Py_VerboseFlag = cmdline->verbosity;
     Py_QuietFlag = cmdline->quiet_flag;
     _Py_CheckHashBasedPycsMode = cmdline->check_hash_pycs_mode;
@@ -1411,13 +1401,9 @@ pymain_set_global_config(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
     Py_LegacyWindowsStdioFlag = cmdline->legacy_windows_stdio;
 #endif
 
-    Py_IgnoreEnvironmentFlag = pymain->config.ignore_environment;
-    Py_UTF8Mode = pymain->config.utf8_mode;
-
-    /* Random or non-zero hash seed */
-    Py_HashRandomizationFlag = (pymain->config.use_hash_seed == 0 ||
-                                pymain->config.hash_seed != 0);
+    _PyCoreConfig_UpdateGlobals(&(pymain->config));
 }
+
 
 
 static void
@@ -1694,15 +1680,15 @@ get_env_flag(int *flag, const char *name)
 
 
 static void
-cmdline_get_env_flags(_Py_CommandLineDetails *cmdline)
+cmdline_get_env_flags(_PyCoreConfig* config, _Py_CommandLineDetails *cmdline)
 {
     get_env_flag(&cmdline->debug, "PYTHONDEBUG");
     get_env_flag(&cmdline->verbosity, "PYTHONVERBOSE");
-    get_env_flag(&cmdline->optimization_level, "PYTHONOPTIMIZE");
-    get_env_flag(&cmdline->inspect, "PYTHONINSPECT");
-    get_env_flag(&cmdline->dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
-    get_env_flag(&cmdline->no_user_site_directory, "PYTHONNOUSERSITE");
-    get_env_flag(&cmdline->use_unbuffered_io, "PYTHONUNBUFFERED");
+    get_env_flag(&config->optimization_level, "PYTHONOPTIMIZE");
+    get_env_flag(&config->inspect, "PYTHONINSPECT");
+    get_env_flag(&config->dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
+    get_env_flag(&config->no_user_site_directory, "PYTHONNOUSERSITE");
+    get_env_flag(&config->use_unbuffered_io, "PYTHONUNBUFFERED");
 #ifdef MS_WINDOWS
     get_env_flag(&cmdline->legacy_windows_fs_encoding,
                  "PYTHONLEGACYWINDOWSFSENCODING");
@@ -1804,8 +1790,15 @@ config_init_utf8_mode(_PyCoreConfig *config)
 
 
 static _PyInitError
-config_read_env_vars(_PyCoreConfig *config)
+config_read_env_vars(_PyCoreConfig *config, int ignore_cmdline)
 {
+    if (!ignore_cmdline) {
+        get_env_flag(&config->optimization_level, "PYTHONOPTIMIZE");
+        get_env_flag(&config->inspect, "PYTHONINSPECT");
+        get_env_flag(&config->no_user_site_directory, "PYTHONNOUSERSITE");
+        get_env_flag(&config->dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
+    }
+
     config->allocator = config_get_env_var("PYTHONMALLOC");
 
     if (config_get_env_var("PYTHONDUMPREFS")) {
@@ -1893,7 +1886,7 @@ pymain_read_conf_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
     Py_IgnoreEnvironmentFlag = config->ignore_environment;
 
     /* Get environment variables */
-    cmdline_get_env_flags(cmdline);
+    cmdline_get_env_flags(config, cmdline);
 
     err = cmdline_init_env_warnoptions(cmdline);
     if (_Py_INIT_FAILED(err)) {
@@ -1918,7 +1911,7 @@ pymain_read_conf_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
     Py_IsolatedFlag = cmdline->isolated;
     Py_NoSiteFlag = cmdline->no_site_import;
 
-    err = _PyCoreConfig_Read(config);
+    err = _PyCoreConfig_Read(config, 1);
 
     cmdline->isolated = Py_IsolatedFlag;
     cmdline->no_site_import = Py_NoSiteFlag;
@@ -2168,12 +2161,28 @@ config_init_path_config(_PyCoreConfig *config)
  * this function multiple times with various preconfigured settings.
  */
 
+void
+_PyCoreConfig_UpdateGlobals(_PyCoreConfig* config)
+{
+    Py_InspectFlag = config->inspect;
+    Py_OptimizeFlag = config->optimization_level;
+    Py_DontWriteBytecodeFlag = config->dont_write_bytecode;
+    Py_NoUserSiteDirectory = config->no_user_site_directory;
+    Py_UnbufferedStdioFlag = config->use_unbuffered_io;
+
+    Py_IgnoreEnvironmentFlag = config->ignore_environment;
+    Py_UTF8Mode = config->utf8_mode;
+
+    Py_HashRandomizationFlag = (config->use_hash_seed == 0 ||
+                                config->hash_seed != 0);
+}
+
 _PyInitError
-_PyCoreConfig_Read(_PyCoreConfig *config)
+_PyCoreConfig_Read(_PyCoreConfig *config, int ignore_cmdline)
 {
     _PyInitError err;
 
-    err = config_read_env_vars(config);
+    err = config_read_env_vars(config, ignore_cmdline);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
