@@ -1448,7 +1448,7 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, mode="w") as zipf:
             zipf.writestr("foo.txt", "O, for a Muse of Fire!")
             with zipf.open("foo.txt") as f:
-                f.seek(f._orig_file_size)
+                f.read()
                 f.seek(0)
                 self.assertEqual(f.read(), b"O, for a Muse of Fire!")
 
