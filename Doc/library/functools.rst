@@ -35,11 +35,11 @@ The :mod:`functools` module defines the following functions:
 
            @cached_property
            def stdev(self):
-               return statistics.stdev(self.data)
+               return statistics.stdev(self._data)
 
            @cached_property
            def variance(self):
-               return statistics.variance(self.data)
+               return statistics.variance(self._data)
 
    .. versionadded:: 3.8
 
