@@ -2041,11 +2041,12 @@ math_hypot(PyObject *self, PyObject *args)
     double max = 0.0;
     double csum = 0.0;
     double x, result;
-    int found_inf = 0;
     int found_nan = 0;
 
     n = PyTuple_GET_SIZE(args);
     coordinates = (double *) PyObject_Malloc(n * sizeof(double));
+    if (coordinates == NULL)
+        return NULL;
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(args, i);
         x = PyFloat_AsDouble(item);
@@ -2055,13 +2056,12 @@ math_hypot(PyObject *self, PyObject *args)
         }
         x = fabs(x);
         coordinates[i] = x;
-        found_inf |= Py_IS_INFINITY(x);
         found_nan |= Py_IS_NAN(x);
         if (x > max) {
             max = x;
         }
     }
-    if (found_inf) {
+    if (Py_IS_INFINITY(max)) {
         result = max;
         goto done;
     }
