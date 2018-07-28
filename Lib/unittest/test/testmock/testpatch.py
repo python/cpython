@@ -4,7 +4,10 @@
 
 import os
 import sys
+
 import unittest
+from unittest.test.testmock import support
+from unittest.test.testmock.support import SomeClass, is_instance
 
 from test.support import swap_attr
 from unittest.mock import (
@@ -12,8 +15,7 @@ from unittest.mock import (
     MagicMock, Mock, NonCallableMagicMock, patch, _patch,
     DEFAULT, call, _get_target
 )
-from unittest.test.testmock import support
-from unittest.test.testmock.support import SomeClass, is_instance
+
 
 builtin_string = 'builtins'
 
@@ -1656,6 +1658,7 @@ class PatchTest(unittest.TestCase):
                 self.assertEqual(result.method_calls, [call.wibble()])
             finally:
                 p.stop()
+
 
     def test_patch_imports_lazily(self):
         p1 = patch('squizz.squozz')
