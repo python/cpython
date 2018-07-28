@@ -2,7 +2,6 @@
 # E-mail: fuzzyman AT voidspace DOT org DOT uk
 # http://www.voidspace.org.uk/python/mock/
 
-import contextlib
 import os
 import sys
 import unittest
