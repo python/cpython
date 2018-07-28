@@ -549,11 +549,11 @@ def create_modules(modules):
 def break_in_func(funcname, fname=__file__, temporary=False, cond=None):
     return 'break', (fname, None, temporary, cond, funcname)
 
-TEST_MODULE = 'test_module'
+TEST_MODULE = 'test_module_for_bdb'
 TEST_MODULE_FNAME = TEST_MODULE + '.py'
 def tfunc_import():
-    import test_module
-    test_module.main()
+    import test_module_for_bdb
+    test_module_for_bdb.main()
 
 def tfunc_main():
     lno = 2
@@ -971,9 +971,9 @@ class RunTestCase(BaseTestCase):
                 ('return', 3, 'main'),     ('step', ),
                 ('return', 1, '<module>'), ('quit', ),
             ]
-            import test_module
+            import test_module_for_bdb
             with TracerRun(self) as tracer:
-                tracer.runeval('test_module.main()', globals(), locals())
+                tracer.runeval('test_module_for_bdb.main()', globals(), locals())
 
 class IssuesTestCase(BaseTestCase):
     """Test fixed bdb issues."""
@@ -983,7 +983,7 @@ class IssuesTestCase(BaseTestCase):
         # Check that the tracer does step into the caller frame when the
         # trace function is not set in that frame.
         code_1 = """
-            from test_module_2 import func
+            from test_module_for_bdb_2 import func
             def main():
                 func()
                 lno = 5
@@ -994,12 +994,12 @@ class IssuesTestCase(BaseTestCase):
         """
         modules = {
             TEST_MODULE: code_1,
-            'test_module_2': code_2,
+            'test_module_for_bdb_2': code_2,
         }
         with create_modules(modules):
             self.expect_set = [
                 ('line', 2, 'tfunc_import'),
-                    break_in_func('func', 'test_module_2.py'),
+                    break_in_func('func', 'test_module_for_bdb_2.py'),
                 ('None', 2, 'tfunc_import'),      ('continue', ),
                 ('line', 3, 'func', ({1:1}, [])), ('step', ),
                 ('return', 3, 'func'),            ('step', ),
