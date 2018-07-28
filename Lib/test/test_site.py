@@ -8,6 +8,7 @@ import unittest
 import test.support
 from test.support import captured_stderr, TESTFN, EnvironmentVarGuard
 import builtins
+import io
 import os
 import sys
 import re
@@ -452,6 +453,32 @@ class ImportSideEffectTests(unittest.TestCase):
         except urllib.error.HTTPError as e:
             code = e.code
         self.assertEqual(code, 200, msg="Can't find " + url)
+
+
+class DetectPipUsageInReplTests(unittest.TestCase):
+    def setUp(self):
+        self.old_excepthook = sys.excepthook
+        site._register_detect_pip_usage_in_repl()
+        self.save_stderr = sys.stderr
+
+    def tearDown(self):
+        sys.stderr = self.save_stderr
+        sys.excepthook = self.old_excepthook
+
+    def test_detect_pip_usage_in_repl(self):
+        for pip_cmd in [
+            'pip install a', 'pip3 install b', 'python -m pip install c'
+        ]:
+            with self.subTest(pip_cmd=pip_cmd):
+                stream = io.StringIO()
+                sys.stderr = stream
+
+                try:
+                    exec(pip_cmd, {}, {})
+                except SyntaxError as exc:
+                    sys.excepthook(SyntaxError, exc, exc.__traceback__)
+
+                self.assertIn("the `pip` command", stream.getvalue())
 
 
 class StartupImportTests(unittest.TestCase):
