@@ -746,6 +746,9 @@ class MathTests(unittest.TestCase):
         self.assertEqual(hypot(0.0, 0.0), 0.0)     # Max input is zero
         self.assertEqual(hypot(-10.5), 10.5)       # Negative input
         self.assertEqual(hypot(), 0.0)             # Negative input
+        self.assertEqual(1.0,
+            math.copysign(1.0, hypot(-0.0))        # Convert negative zero to positive zero
+        )
 
         # Test handling of bad arguments
         with self.assertRaises(TypeError):         # Reject keyword args
