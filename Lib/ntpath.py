@@ -497,15 +497,19 @@ def normpath(path):
     return prefix + sep.join(comps)
 
 def _abspath_fallback(path):
-	"""Return the absolute version of a path."""
-	path = os.fspath(path)
-	if not isabs(path):
-		if isinstance(path, bytes):
-			cwd = os.getcwdb()
-		else:
-			cwd = os.getcwd()
-		path = join(cwd, path)
-	return normpath(path)
+    """Return the absolute version of a path as a fallback function in case
+    `nt._getfullpathname` is not available or raises OSError.
+
+    """
+
+    path = os.fspath(path)
+    if not isabs(path):
+        if isinstance(path, bytes):
+            cwd = os.getcwdb()
+        else:
+            cwd = os.getcwd()
+        path = join(cwd, path)
+    return normpath(path)
 
 # Return an absolute path.
 try:
@@ -517,18 +521,10 @@ except ImportError: # not running on Windows - mock up something sensible
 else:  # use native Windows method on Windows
     def abspath(path):
         """Return the absolute version of a path."""
-
-        if path: # Empty path must return current working directory.
-            path = os.fspath(path)
-            try:
-                path = _getfullpathname(path)
-            except OSError:
-                path = _abspath_fallback(path)
-        elif isinstance(path, bytes):
-            path = os.getcwdb()
-        else:
-            path = os.getcwd()
-        return normpath(path)
+        try:
+            return _getfullpathname(path)
+        except OSError:
+            return _abspath_fallback(path)
 
 # realpath is a no-op on systems without islink support
 realpath = abspath
