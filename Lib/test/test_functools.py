@@ -2328,7 +2328,6 @@ class CachedCostItem:
 
 
 class CachedCostItemWait:
-    _cost = 1
 
     def __init__(self, event):
         self._cost = 1
@@ -2379,7 +2378,6 @@ class TestCachedProperty(unittest.TestCase):
             sys.setswitchinterval(orig_si)
 
         self.assertEqual(item.cost, 2)
-
 
     def test_object_with_slots(self):
         item = CachedCostItemWithSlots()

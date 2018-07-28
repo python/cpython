@@ -31,7 +31,7 @@ The :mod:`functools` module defines the following functions:
 
        class DataSet:
            def __init__(self, sequence_of_numbers):
-               self.data = sequence_of_numbers
+               self._data = sequence_of_numbers
 
            @cached_property
            def stdev(self):
