@@ -8,6 +8,8 @@ import string
 import sys
 
 AMD64 = "AMD64" in sys.version
+# Keep msilib.Win64 around to preserve backwards compatibility.
+Win64 = AMD64
 
 # Partially taken from Wine
 datasizemask=      0x00ff
