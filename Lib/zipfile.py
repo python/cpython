@@ -701,11 +701,11 @@ class _SharedFile:
 
     def seek(self, offset, whence=0):
         with self._lock:
-            if self.writing():
+            if self._writing():
                 raise ValueError("Can't reposition in the ZIP file while "
                         "there is an open writing handle on it. "
                         "Close the writing handle before trying to read.")
-            self._file.seek(self._pos)
+            self._file.seek(offset, whence)
             self._pos = self._file.tell()
             return self._pos
 
@@ -1021,14 +1021,13 @@ class ZipExtFile(io.BufferedIOBase):
             read_offset = 0
         elif read_offset < 0:
             # Position is before the current position. Reset the ZipExtFile
-
             self._fileobj.seek(self._orig_compress_start)
             self._running_crc = self._orig_start_crc
             self._compress_left = self._orig_compress_size
             self._left = self._orig_file_size
             self._readbuffer = b''
             self._offset = 0
-            self._decompressor = zipfile._get_decompressor(self._compress_type)
+            self._decompressor = _get_decompressor(self._compress_type)
             self._eof = False
             read_offset = new_pos
 

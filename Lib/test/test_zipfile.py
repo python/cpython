@@ -1646,6 +1646,8 @@ class OtherTests(unittest.TestCase):
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
+                fp.seek(0, os.SEEK_SET)
+                self.assertEqual(fp.tell(), 0)
         # Check seek on memory file
         data = io.BytesIO()
         with zipfile.ZipFile(data, mode="w") as zipf:
@@ -1661,6 +1663,8 @@ class OtherTests(unittest.TestCase):
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
+                fp.seek(0, os.SEEK_SET)
+                self.assertEqual(fp.tell(), 0)
 
     def tearDown(self):
         unlink(TESTFN)
