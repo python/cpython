@@ -890,7 +890,7 @@ class cached_property:
         else:
             raise TypeError(
                 "Cannot assign the same cached_property to two names "
-                f"({self.attrname!r} and {name!r}) on the same object."
+                f"({self.attrname!r} and {name!r}) on the same class."
             )
 
     def __get__(self, instance, owner):

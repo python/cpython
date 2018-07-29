@@ -2418,7 +2418,7 @@ class TestCachedProperty(unittest.TestCase):
 
         self.assertEqual(
             str(ctx.exception.__context__),
-            str(TypeError("Cannot assign the same cached_property to two names ('a' and 'b') on the same object."))
+            str(TypeError("Cannot assign the same cached_property to two names ('a' and 'b') on the same class."))
         )
 
     def test_set_name_not_called(self):
