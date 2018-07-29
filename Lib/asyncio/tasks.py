@@ -1,4 +1,5 @@
 """Support for tasks, coroutines and the scheduler."""
+import itertools
 
 __all__ = (
     'Task', 'create_task',
@@ -22,6 +23,9 @@ from . import coroutines
 from . import events
 from . import futures
 from .coroutines import coroutine
+
+# Helper to generate new task names
+_counter = itertools.count(1).__next__
 
 
 def current_task(loop=None):
@@ -94,7 +98,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                       stacklevel=2)
         return _all_tasks_compat(loop)
 
-    def __init__(self, coro, *, loop=None):
+    def __init__(self, coro, *, loop=None, name=None):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -104,6 +108,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._log_destroy_pending = False
             raise TypeError(f"a coroutine was expected, got {coro!r}")
 
+        self._name = str(name) if name is not None else 'Task-%s' % _counter()
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
@@ -125,6 +130,14 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = str(value)
 
     def set_result(self, result):
         raise RuntimeError('Task does not support set_result operation')
@@ -299,7 +312,6 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self.__step()
         self = None  # Needed to break cycles when an exception occurs.
 
-
 _PyTask = Task
 
 
@@ -312,13 +324,13 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro):
+def create_task(coro, *, name=None):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
     """
     loop = events.get_running_loop()
-    return loop.create_task(coro)
+    return loop.create_task(coro, name=name)
 
 
 # wait() and as_completed() similar to those in PEP 3148.

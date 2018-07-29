@@ -387,18 +387,27 @@ with the result.
 Task
 ----
 
-.. function:: create_task(coro)
+.. function:: create_task(coro, \*, name=None)
 
    Wrap a :ref:`coroutine <coroutine>` *coro* into a task and schedule
-   its execution.  Return the task object.
+   its execution. Return the task object.
 
    The task is executed in :func:`get_running_loop` context,
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
 
+   Parameters:
+
+   * *name* is a descriptive name for the task. If no explicit name is
+     supplied, the event loop may assign the task an automatically
+     generated name.
+
    .. versionadded:: 3.7
 
-.. class:: Task(coro, \*, loop=None)
+   .. versionchanged:: 3.8
+      Added the ``name`` parameter.
+
+.. class:: Task(coro, \*, loop=None, name=None)
 
    A unit for concurrent running of :ref:`coroutines <coroutine>`,
    subclass of :class:`Future`.
@@ -437,6 +446,9 @@ Task
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
+
+   .. versionchanged:: 3.8
+      Added the ``name`` argument.
 
    .. classmethod:: all_tasks(loop=None)
 
@@ -503,6 +515,12 @@ Task
       frames retrieved by get_stack().  The limit argument is passed to
       get_stack().  The file argument is an I/O stream to which the output
       is written; by default output is written to sys.stderr.
+
+   .. attribute:: name
+
+      Descriptive name of the task.
+
+      .. versionadded:: 3.8
 
 
 Example: Parallel execution of tasks

@@ -1,0 +1,2 @@
+Asyncio tasks now have a ``name`` attribute which can also be explicitly set
+using a keyword argument to ``asyncio.create_task()``.
