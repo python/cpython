@@ -280,6 +280,10 @@ class TestNtpath(unittest.TestCase):
     @unittest.skipUnless(nt, "abspath requires 'nt' module")
     def test_abspath(self):
         tester('ntpath.abspath("C:\\")', "C:\\")
+        with support.temp_cwd(support.TESTFN) as cwd_dir: # bpo-31047
+            tester('ntpath.abspath("")', cwd_dir)
+            tester('ntpath.abspath(" ")', cwd_dir + "\\ ")
+            tester('ntpath.abspath("?")', cwd_dir + "\\?")
 
     def test_relpath(self):
         tester('ntpath.relpath("a")', 'a')
