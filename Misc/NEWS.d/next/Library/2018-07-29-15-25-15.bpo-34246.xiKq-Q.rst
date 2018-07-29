@@ -1,0 +1,2 @@
+Use an empty tuple as the default argument for mail_options and avoid it from
+being mutated.

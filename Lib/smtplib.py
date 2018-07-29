@@ -890,7 +890,7 @@ class SMTP:
         return senderrs
 
     def send_message(self, msg, from_addr=None, to_addrs=None,
-                mail_options=[], rcpt_options={}):
+                     mail_options=(), rcpt_options={}):
         """Converts message to a bytestring and passes it to sendmail.
 
         The arguments are as for sendmail, except that msg is an
@@ -958,7 +958,7 @@ class SMTP:
             if international:
                 g = email.generator.BytesGenerator(
                     bytesmsg, policy=msg.policy.clone(utf8=True))
-                mail_options += ['SMTPUTF8', 'BODY=8BITMIME']
+                mail_options = (*mail_options, 'SMTPUTF8', 'BODY=8BITMIME')
             else:
                 g = email.generator.BytesGenerator(bytesmsg)
             g.flatten(msg_copy, linesep='\r\n')
