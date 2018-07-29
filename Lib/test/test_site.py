@@ -459,10 +459,8 @@ class DetectPipUsageInReplTests(unittest.TestCase):
     def setUp(self):
         self.old_excepthook = sys.excepthook
         site._register_detect_pip_usage_in_repl()
-        self.save_stderr = sys.stderr
 
     def tearDown(self):
-        sys.stderr = self.save_stderr
         sys.excepthook = self.old_excepthook
 
     def test_detect_pip_usage_in_repl(self):
@@ -470,15 +468,13 @@ class DetectPipUsageInReplTests(unittest.TestCase):
             'pip install a', 'pip3 install b', 'python -m pip install c'
         ]:
             with self.subTest(pip_cmd=pip_cmd):
-                stream = io.StringIO()
-                sys.stderr = stream
-
                 try:
                     exec(pip_cmd, {}, {})
                 except SyntaxError as exc:
-                    sys.excepthook(SyntaxError, exc, exc.__traceback__)
+                    with captured_stderr() as err_out:
+                        sys.excepthook(SyntaxError, exc, exc.__traceback__)
 
-                self.assertIn("the `pip` command", stream.getvalue())
+                self.assertIn("the `pip` command", err_out.getvalue())
 
 
 class StartupImportTests(unittest.TestCase):
