@@ -9,7 +9,7 @@ import unittest
 from unittest.test.testmock import support
 from unittest.test.testmock.support import SomeClass, is_instance
 
-from test.support import swap_attr
+from test.test_importlib.test_namespace_pkgs import sys_modules_context
 from unittest.mock import (
     NonCallableMock, CallableMixin, sentinel,
     MagicMock, Mock, NonCallableMagicMock, patch, _patch,
@@ -1664,7 +1664,7 @@ class PatchTest(unittest.TestCase):
         p1 = patch('squizz.squozz')
         self.assertRaises(ImportError, p1.start)
 
-        with swap_attr(sys, 'modules', sys.modules.copy()):
+        with sys_modules_context():
             squizz = Mock()
             sys.modules['squizz'] = squizz
 
@@ -1696,7 +1696,7 @@ class PatchTest(unittest.TestCase):
         def test(mock):
             raise RuntimeError
 
-        with swap_attr(sys, 'modules', sys.modules.copy()):
+        with sys_modules_context():
             squizz = Mock()
             sys.modules['squizz'] = squizz
 
