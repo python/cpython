@@ -1,0 +1,1 @@
+Fix several AttributeError in zipfile seek() methods. Patch by Mickaël Schoentgen.
