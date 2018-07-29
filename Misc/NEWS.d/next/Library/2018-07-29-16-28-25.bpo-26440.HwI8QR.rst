@@ -1,0 +1,2 @@
+Fix tarfile._FileInFile.seekable in stream mode. Patch by Mickaël
+Schoentgen.

@@ -500,6 +500,15 @@ class _Stream:
         """
         return self.pos
 
+    def seekable(self):
+        """As negative seeking is forbidden, the returned value
+        is False and True depending what you have in mind.
+        Returning False would say that seeking is always forbidden
+        so we are returning True and it's up to the user to use it
+        wisely.
+        """
+        return True
+
     def seek(self, pos=0):
         """Set the stream's file pointer to pos. Negative seeking
            is forbidden.

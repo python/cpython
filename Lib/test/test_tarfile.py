@@ -672,6 +672,7 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
             if not tarinfo.isreg():
                 continue
             with self.tar.extractfile(tarinfo) as fobj:
+                self.assertTrue(fobj.seekable())
                 while True:
                     try:
                         buf = fobj.read(512)
