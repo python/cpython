@@ -576,8 +576,9 @@ def main():
     setcopyright()
     sethelper()
     # Detect REPL by prompt, -i flag or PYTHONINSPECT env var being set.
-    if getattr(sys, 'ps1',
-               sys.flags.interactive or os.environ.get('PYTHONINSPECT')):
+    if (hasattr(sys, 'ps1') or sys.flags.interactive or
+        os.environ.get('PYTHONINSPECT')
+    ):
         _register_detect_pip_usage_in_repl()
     if not sys.flags.isolated:
         enablerlcompleter()
