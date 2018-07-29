@@ -303,6 +303,10 @@ class TestNtpath(unittest.TestCase):
         try:
             import nt
             tester('ntpath.abspath("C:\\")', "C:\\")
+            with support.temp_cwd(support.TESTFN) as cwd_dir: # bpo-31047
+                tester('ntpath.abspath("")', cwd_dir)
+                tester('ntpath.abspath(" ")', cwd_dir + "\\ ")
+                tester('ntpath.abspath("?")', cwd_dir + "\\?")
         except ImportError:
             self.skipTest('nt module not available')
 
