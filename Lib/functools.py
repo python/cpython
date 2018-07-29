@@ -13,10 +13,6 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
            'partialmethod', 'singledispatch', 'singledispatchmethod']
 
-try:
-    from _functools import reduce
-except ImportError:
-    pass
 from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
@@ -222,6 +218,45 @@ def cmp_to_key(mycmp):
 
 try:
     from _functools import cmp_to_key
+except ImportError:
+    pass
+
+
+################################################################################
+### reduce() sequence to a single item
+################################################################################
+
+_initial_missing = object()
+
+def reduce(function, sequence, initial=_initial_missing):
+    """
+    reduce(function, sequence[, initial]) -> value
+
+    Apply a function of two arguments cumulatively to the items of a sequence,
+    from left to right, so as to reduce the sequence to a single value.
+    For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
+    ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
+    of the sequence in the calculation, and serves as a default when the
+    sequence is empty.
+    """
+
+    it = iter(sequence)
+
+    if initial is _initial_missing:
+        try:
+            value = next(it)
+        except StopIteration:
+            raise TypeError("reduce() of empty sequence with no initial value")
+    else:
+        value = initial
+
+    for element in it:
+        value = function(value, element)
+
+    return value
+
+try:
+    from _functools import reduce
 except ImportError:
     pass
 
