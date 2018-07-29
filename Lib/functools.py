@@ -558,7 +558,6 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # still adjusting the links.
                     root = oldroot[NEXT]
                     oldkey = root[KEY]
-                    oldresult = root[RESULT]
                     root[KEY] = root[RESULT] = None
                     # Now update the cache dictionary.
                     del cache[oldkey]
