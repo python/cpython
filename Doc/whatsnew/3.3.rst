@@ -48,7 +48,7 @@ see the `changelog <https://docs.python.org/3.3/whatsnew/changelog.html>`_.
 
 .. seealso::
 
-    :pep:`398` - Python 3.3 Release Schedule
+    :pep:`398` -- Python 3.3 Release Schedule
 
 
 Summary -- Release highlights
@@ -115,7 +115,7 @@ tree.
 
 .. seealso::
 
-    :pep:`405` - Python Virtual Environments
+    :pep:`405` -- Python Virtual Environments
        PEP written by Carl Meyer; implementation by Carl Meyer and Vinay Sajip
 
 
@@ -129,7 +129,7 @@ various third party approaches to namespace packages, as described in
 
 .. seealso::
 
-   :pep:`420` - Implicit Namespace Packages
+   :pep:`420` -- Implicit Namespace Packages
       PEP written by Eric V. Smith; implementation by Eric V. Smith
       and Barry Warsaw
 
@@ -200,7 +200,7 @@ API changes
 
 .. seealso::
 
-   :pep:`3118` - Revising the Buffer Protocol
+   :pep:`3118` -- Revising the Buffer Protocol
 
 
 .. _pep-393:
@@ -279,7 +279,7 @@ details).
 
 .. seealso::
 
-   :pep:`393` - Flexible String Representation
+   :pep:`393` -- Flexible String Representation
       PEP written by Martin von Löwis; implementation by Torsten Becker
       and Martin von Löwis.
 
@@ -312,7 +312,7 @@ by Brian Curtin in :issue:`3561`.)
 
 .. seealso::
 
-   :pep:`397` - Python Launcher for Windows
+   :pep:`397` -- Python Launcher for Windows
       PEP written by Mark Hammond and Martin v. Löwis; implementation by
       Vinay Sajip.
 
@@ -389,7 +389,7 @@ inspection of exception attributes::
 
 .. seealso::
 
-   :pep:`3151` - Reworking the OS and IO Exception Hierarchy
+   :pep:`3151` -- Reworking the OS and IO Exception Hierarchy
       PEP written and implemented by Antoine Pitrou
 
 
@@ -459,7 +459,7 @@ multiple subfunctions.
 
 .. seealso::
 
-   :pep:`380` - Syntax for Delegating to a Subgenerator
+   :pep:`380` -- Syntax for Delegating to a Subgenerator
       PEP written by Greg Ewing; implementation by Greg Ewing, integrated into
       3.3 by Renaud Blanch, Ryan Kelly and Nick Coghlan; documentation by
       Zbigniew Jędrzejewski-Szmek and Nick Coghlan
@@ -524,7 +524,7 @@ suppressed valuable underlying details)::
 
 .. seealso::
 
-   :pep:`409` - Suppressing exception context
+   :pep:`409` -- Suppressing exception context
       PEP written by Ethan Furman; implemented by Ethan Furman and Nick
       Coghlan.
 
@@ -542,7 +542,7 @@ separation of binary and text data).
 
 .. seealso::
 
-   :pep:`414` - Explicit Unicode literals
+   :pep:`414` -- Explicit Unicode literals
       PEP written by Armin Ronacher.
 
 
@@ -603,7 +603,7 @@ new, more precise information::
 
 .. seealso::
 
-   :pep:`3155` - Qualified name for classes and functions
+   :pep:`3155` -- Qualified name for classes and functions
       PEP written and implemented by Antoine Pitrou.
 
 
@@ -619,7 +619,7 @@ consumption of programs creating many instances of non-builtin types.
 
 .. seealso::
 
-   :pep:`412` - Key-Sharing Dictionary
+   :pep:`412` -- Key-Sharing Dictionary
       PEP written and implemented by Mark Shannon.
 
 
@@ -675,7 +675,7 @@ through normal attribute access.
 
 .. seealso::
 
-   :pep:`421` - Adding sys.implementation
+   :pep:`421` -- Adding sys.implementation
       PEP written and implemented by Eric Snow.
 
 

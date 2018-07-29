@@ -75,7 +75,7 @@ Support was also added for third-party tools like `PyYAML <http://pyyaml.org/>`_
 
 .. seealso::
 
-   :pep:`372` - Ordered Dictionaries
+   :pep:`372` -- Ordered Dictionaries
       PEP written by Armin Ronacher and Raymond Hettinger.  Implementation
       written by Raymond Hettinger.
 
@@ -107,7 +107,7 @@ for thousands separators.
 
 .. seealso::
 
-   :pep:`378` - Format Specifier for Thousands Separator
+   :pep:`378` -- Format Specifier for Thousands Separator
       PEP written by Raymond Hettinger and implemented by Eric Smith and
       Mark Dickinson.
 

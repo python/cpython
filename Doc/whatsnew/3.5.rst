@@ -51,7 +51,7 @@ list of changes.
 
 .. seealso::
 
-    :pep:`478` - Python 3.5 Release Schedule
+    :pep:`478` -- Python 3.5 Release Schedule
 
 
 Summary -- Release highlights

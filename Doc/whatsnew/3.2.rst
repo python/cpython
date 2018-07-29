@@ -54,7 +54,7 @@ focuses on a few highlights and gives a few examples.  For full details, see the
 
 .. seealso::
 
-   :pep:`392` - Python 3.2 Release Schedule
+   :pep:`392` -- Python 3.2 Release Schedule
 
 
 PEP 384: Defining a Stable ABI
@@ -77,7 +77,7 @@ need to be recompiled for every feature release.
 
 .. seealso::
 
-   :pep:`384` - Defining a Stable ABI
+   :pep:`384` -- Defining a Stable ABI
       PEP written by Martin von Löwis.
 
 
@@ -169,7 +169,7 @@ each with their own argument patterns and help displays::
 
 .. seealso::
 
-   :pep:`389` - New Command Line Parsing Module
+   :pep:`389` -- New Command Line Parsing Module
       PEP written by Steven Bethard.
 
    :ref:`upgrading-optparse-code` for details on the differences from :mod:`optparse`.
@@ -224,7 +224,7 @@ loaded and called with code like this::
 
 .. seealso::
 
-   :pep:`391` - Dictionary Based Configuration for Logging
+   :pep:`391` -- Dictionary Based Configuration for Logging
       PEP written by Vinay Sajip.
 
 
@@ -275,7 +275,7 @@ launch of four parallel threads for copying files::
 
 .. seealso::
 
-   :pep:`3148` - Futures -- Execute Computations Asynchronously
+   :pep:`3148` -- Futures -- Execute Computations Asynchronously
       PEP written by Brian Quinlan.
 
    :ref:`Code for Threaded Parallel URL reads<threadpoolexecutor-example>`, an
@@ -347,7 +347,7 @@ aspects that are visible to the programmer:
 
 .. seealso::
 
-   :pep:`3147` - PYC Repository Directories
+   :pep:`3147` -- PYC Repository Directories
       PEP written by Barry Warsaw.
 
 
@@ -378,7 +378,7 @@ module::
 
 .. seealso::
 
-   :pep:`3149` - ABI Version Tagged .so Files
+   :pep:`3149` -- ABI Version Tagged .so Files
       PEP written by Barry Warsaw.
 
 
@@ -425,7 +425,7 @@ this gap, the :mod:`wsgiref` module has a new function,
 
 .. seealso::
 
-   :pep:`3333` - Python Web Server Gateway Interface v1.0.1
+   :pep:`3333` -- Python Web Server Gateway Interface v1.0.1
       PEP written by Phillip Eby.
 
 

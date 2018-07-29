@@ -113,7 +113,7 @@ whether one set is a subset or superset of another::
 
 .. seealso::
 
-   :pep:`218` - Adding a Built-In Set Object Type
+   :pep:`218` -- Adding a Built-In Set Object Type
       PEP written by Greg V. Wilson. Implemented by Greg V. Wilson, Alex Martelli, and
       GvR.
 
@@ -244,7 +244,7 @@ a data structure.
 
 .. seealso::
 
-   :pep:`255` - Simple Generators
+   :pep:`255` -- Simple Generators
       Written by Neil Schemenauer, Tim Peters, Magnus Lie Hetland.  Implemented mostly
       by Neil Schemenauer and Tim Peters, with other fixes from the Python Labs crew.
 
@@ -278,7 +278,7 @@ use characters outside of the usual alphanumerics.
 
 .. seealso::
 
-   :pep:`263` - Defining Python Source Code Encodings
+   :pep:`263` -- Defining Python Source Code Encodings
       Written by Marc-André Lemburg and Martin von Löwis; implemented by Suzuki Hisao
       and Martin von Löwis.
 
@@ -325,7 +325,7 @@ import from the :file:`lib/` subdirectory within the archive.
 
 .. seealso::
 
-   :pep:`273` - Import Modules from Zip Archives
+   :pep:`273` -- Import Modules from Zip Archives
       Written by James C. Ahlstrom,  who also provided an implementation. Python 2.3
       follows the specification in :pep:`273`,  but uses an implementation written by
       Just van Rossum  that uses the import hooks described in :pep:`302`. See section
@@ -361,7 +361,7 @@ Under MacOS, :func:`os.listdir` may now return Unicode filenames.
 
 .. seealso::
 
-   :pep:`277` - Unicode file name support for Windows NT
+   :pep:`277` -- Unicode file name support for Windows NT
       Written by Neil Hodgson; implemented by Neil Hodgson, Martin von Löwis, and Mark
       Hammond.
 
@@ -400,7 +400,7 @@ This feature can be disabled when compiling Python by specifying the
 
 .. seealso::
 
-   :pep:`278` - Universal Newline Support
+   :pep:`278` -- Universal Newline Support
       Written and implemented by Jack Jansen.
 
 .. ======================================================================
@@ -432,7 +432,7 @@ This can be rewritten using :func:`enumerate` as::
 
 .. seealso::
 
-   :pep:`279` - The enumerate() built-in function
+   :pep:`279` -- The enumerate() built-in function
       Written and implemented by Raymond D. Hettinger.
 
 .. ======================================================================
@@ -538,7 +538,7 @@ documentation for all of the details.  Reading :pep:`282` will also be helpful.
 
 .. seealso::
 
-   :pep:`282` - A Logging System
+   :pep:`282` -- A Logging System
       Written by Vinay Sajip and Trent Mick; implemented by Vinay Sajip.
 
 .. ======================================================================
@@ -610,7 +610,7 @@ instead of ``'1'`` and ``'0'``.
 
 .. seealso::
 
-   :pep:`285` - Adding a bool type
+   :pep:`285` -- Adding a bool type
       Written and implemented by GvR.
 
 .. ======================================================================
@@ -642,7 +642,7 @@ characters and "xmlcharrefreplace" emits XML character references.
 
 .. seealso::
 
-   :pep:`293` - Codec Error Handling Callbacks
+   :pep:`293` -- Codec Error Handling Callbacks
       Written and implemented by Walter Dörwald.
 
 .. ======================================================================
@@ -691,7 +691,7 @@ register --list-classifiers``.
 
 .. seealso::
 
-   :pep:`301` - Package Index and Metadata for Distutils
+   :pep:`301` -- Package Index and Metadata for Distutils
       Written and implemented by Richard Jones.
 
 .. ======================================================================
@@ -757,7 +757,7 @@ Pseudo-code for Python's new import logic, therefore, looks something like this
 
 .. seealso::
 
-   :pep:`302` - New Import Hooks
+   :pep:`302` -- New Import Hooks
       Written by Just van Rossum and Paul Moore. Implemented by Just van Rossum.
 
 .. ======================================================================
@@ -802,7 +802,7 @@ of tuples or lists, quoting strings that contain the delimiter.
 
 .. seealso::
 
-   :pep:`305` - CSV File API
+   :pep:`305` -- CSV File API
       Written and implemented  by Kevin Altis, Dave Cole, Andrew McNamara, Skip
       Montanaro, Cliff Wells.
 
@@ -846,7 +846,7 @@ codes for private use.  Currently no codes have been specified.
 
 .. seealso::
 
-   :pep:`307` - Extensions to the pickle protocol
+   :pep:`307` -- Extensions to the pickle protocol
       Written and implemented  by Guido van Rossum and Tim Peters.
 
 .. ======================================================================

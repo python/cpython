@@ -3390,7 +3390,7 @@ Notes:
 
 .. seealso::
 
-   :pep:`461` - Adding % formatting to bytes and bytearray
+   :pep:`461` -- Adding % formatting to bytes and bytearray
 
 .. versionadded:: 3.5
 

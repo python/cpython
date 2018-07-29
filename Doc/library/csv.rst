@@ -38,7 +38,7 @@ using the :class:`DictReader` and :class:`DictWriter` classes.
 
 .. seealso::
 
-   :pep:`305` - CSV File API
+   :pep:`305` -- CSV File API
       The Python Enhancement Proposal which proposed this addition to Python.
 
 

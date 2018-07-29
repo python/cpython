@@ -1012,5 +1012,5 @@ Other resources
    `A Python for Windows Tutorial <http://www.imladris.com/Scripts/PythonForWindows.html>`_
       by Amanda Birmingham, 2004
 
-   :pep:`397` - Python launcher for Windows
+   :pep:`397` -- Python launcher for Windows
       The proposal for the launcher to be included in the Python distribution.

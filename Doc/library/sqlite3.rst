@@ -110,7 +110,7 @@ This example uses the iterator form::
    https://www.w3schools.com/sql/
       Tutorial, reference and examples for learning SQL syntax.
 
-   :pep:`249` - Database API Specification 2.0
+   :pep:`249` -- Database API Specification 2.0
       PEP written by Marc-André Lemburg.
 
 

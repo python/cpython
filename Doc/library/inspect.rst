@@ -865,7 +865,7 @@ function.
 
 .. seealso::
 
-   :pep:`362` - Function Signature Object.
+   :pep:`362` -- Function Signature Object.
       The detailed specification, implementation details and examples.
 
 

@@ -79,7 +79,7 @@ currently no plans to deprecate the module.
 
 .. seealso::
 
-   :pep:`218` - Adding a Built-In Set Object Type
+   :pep:`218` -- Adding a Built-In Set Object Type
       Originally proposed by Greg Wilson and ultimately implemented by Raymond
       Hettinger.
 
@@ -104,7 +104,7 @@ the correct answer, 8589934592.
 
 .. seealso::
 
-   :pep:`237` - Unifying Long Integers and Integers
+   :pep:`237` -- Unifying Long Integers and Integers
       Original PEP written by Moshe Zadka and GvR.  The changes for 2.4 were
       implemented by  Kalle Svensson.
 
@@ -161,7 +161,7 @@ list comprehensions match generator expressions in this respect.
 
 .. seealso::
 
-   :pep:`289` - Generator Expressions
+   :pep:`289` -- Generator Expressions
       Proposed by Raymond Hettinger and implemented by Jiwon Seo with early efforts
       steered by Hye-Shik Chang.
 
@@ -208,7 +208,7 @@ ignores missing keys::
 
 .. seealso::
 
-   :pep:`292` - Simpler String Substitutions
+   :pep:`292` -- Simpler String Substitutions
       Written and implemented  by Barry Warsaw.
 
 .. ======================================================================
@@ -332,7 +332,7 @@ returned.
 
 .. seealso::
 
-   :pep:`318` - Decorators for Functions, Methods and Classes
+   :pep:`318` -- Decorators for Functions, Methods and Classes
       Written  by Kevin D. Smith, Jim Jewett, and Skip Montanaro.  Several people
       wrote patches implementing function decorators, but the one that was actually
       checked in was patch #979728, written by Mark Russell.
@@ -373,7 +373,7 @@ you want to reverse an iterator, first convert it to  a list with :func:`list`.
 
 .. seealso::
 
-   :pep:`322` - Reverse Iteration
+   :pep:`322` -- Reverse Iteration
       Written and implemented by Raymond Hettinger.
 
 .. ======================================================================
@@ -461,7 +461,7 @@ of the PEP is highly recommended.
 
 .. seealso::
 
-   :pep:`324` - subprocess - New process module
+   :pep:`324` -- subprocess - New process module
       Written and implemented by Peter Åstrand, with assistance from Fredrik Lundh and
       others.
 
@@ -679,7 +679,7 @@ includes a quick-start tutorial and a reference.
 
 .. seealso::
 
-   :pep:`327` - Decimal Data Type
+   :pep:`327` -- Decimal Data Type
       Written by Facundo Batista and implemented by Facundo Batista, Eric Price,
       Raymond Hettinger, Aahz, and Tim Peters.
 
@@ -725,7 +725,7 @@ PEP was not implemented for Python 2.4, but was completed for Python 2.5.
 
 .. seealso::
 
-   :pep:`328` - Imports: Multi-Line and Absolute/Relative
+   :pep:`328` -- Imports: Multi-Line and Absolute/Relative
       Written by Aahz.  Multi-line imports were implemented by Dima Dorfman.
 
 .. ======================================================================
@@ -764,7 +764,7 @@ letting extensions such as GTK+  produce the correct results.
 
 .. seealso::
 
-   :pep:`331` - Locale-Independent Float/String Conversions
+   :pep:`331` -- Locale-Independent Float/String Conversions
       Written by Christian R. Reis, and implemented by Gustavo Carneiro.
 
 .. ======================================================================

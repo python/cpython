@@ -485,7 +485,7 @@ of the block. ::
 
 .. seealso::
 
-   :pep:`343` - The "with" statement
+   :pep:`343` -- The "with" statement
       PEP written by Guido van Rossum and Nick Coghlan; implemented by Mike Bland,
       Guido van Rossum, and Neal Norwitz.  The PEP shows the code generated for a
       ':keyword:`with`' statement, which can be helpful in learning how the statement
@@ -549,7 +549,7 @@ environment variable.
 
 .. seealso::
 
-   :pep:`370` - Per-user ``site-packages`` Directory
+   :pep:`370` -- Per-user ``site-packages`` Directory
      PEP written and implemented by Christian Heimes.
 
 
@@ -705,7 +705,7 @@ This will produce the output::
 
    The documentation for the :mod:`multiprocessing` module.
 
-   :pep:`371` - Addition of the multiprocessing package
+   :pep:`371` -- Addition of the multiprocessing package
      PEP written by Jesse Noller and Richard Oudkerk;
      implemented by Richard Oudkerk and Jesse Noller.
 
@@ -848,7 +848,7 @@ provided specifier::
    :ref:`formatstrings`
       The reference documentation for format fields.
 
-   :pep:`3101` - Advanced String Formatting
+   :pep:`3101` -- Advanced String Formatting
       PEP written by Talin. Implemented by Eric Smith.
 
 .. ======================================================================
@@ -883,7 +883,7 @@ The parameters are:
 
 .. seealso::
 
-   :pep:`3105` - Make print a function
+   :pep:`3105` -- Make print a function
       PEP written by Georg Brandl.
 
 .. ======================================================================
@@ -934,7 +934,7 @@ that will only be executed with 2.6.
 
 .. seealso::
 
-   :pep:`3110` - Catching Exceptions in Python 3000
+   :pep:`3110` -- Catching Exceptions in Python 3000
       PEP written and implemented by Collin Winter.
 
 .. ======================================================================
@@ -1018,7 +1018,7 @@ and various other functions.
 
 .. seealso::
 
-   :pep:`3112` - Bytes literals in Python 3000
+   :pep:`3112` -- Bytes literals in Python 3000
       PEP written by Jason Orendorff; backported to 2.6 by Christian Heimes.
 
 .. ======================================================================
@@ -1098,7 +1098,7 @@ their own implementations of buffering and text I/O.
 
 .. seealso::
 
-   :pep:`3116` - New I/O
+   :pep:`3116` -- New I/O
       PEP written by Daniel Stutzbach, Mike Verdone, and Guido van Rossum.
       Code by Guido van Rossum, Georg Brandl, Walter Doerwald,
       Jeremy Hylton, Martin von Löwis, Tony Lownds, and others.
@@ -1151,7 +1151,7 @@ Two new argument codes for :c:func:`PyArg_ParseTuple`,
 
 .. seealso::
 
-   :pep:`3118` - Revising the buffer protocol
+   :pep:`3118` -- Revising the buffer protocol
       PEP written by Travis Oliphant and Carl Banks; implemented by
       Travis Oliphant.
 
@@ -1298,7 +1298,7 @@ Subclasses must then define a :meth:`readonly` property.
 
 .. seealso::
 
-   :pep:`3119` - Introducing Abstract Base Classes
+   :pep:`3119` -- Introducing Abstract Base Classes
       PEP written by Guido van Rossum and Talin.
       Implemented by Guido van Rossum.
       Backported to 2.6 by Benjamin Aranguren, with Alex Martelli.
@@ -1351,7 +1351,7 @@ determined from the string)::
 
 .. seealso::
 
-   :pep:`3127` - Integer Literal Support and Syntax
+   :pep:`3127` -- Integer Literal Support and Syntax
       PEP written by Patrick Maupin; backported to 2.6 by
       Eric Smith.
 
@@ -1379,7 +1379,7 @@ This is equivalent to::
 
 .. seealso::
 
-   :pep:`3129` - Class Decorators
+   :pep:`3129` -- Class Decorators
       PEP written by Collin Winter.
 
 .. ======================================================================
@@ -1428,7 +1428,7 @@ one, :func:`math.trunc`, that's been backported to Python 2.6.
 
 .. seealso::
 
-   :pep:`3141` - A Type Hierarchy for Numbers
+   :pep:`3141` -- A Type Hierarchy for Numbers
       PEP written by Jeffrey Yasskin.
 
    `Scheme's numerical tower <https://www.gnu.org/software/guile/manual/html_node/Numerical-Tower.html#Numerical-Tower>`__, from the Guile manual.

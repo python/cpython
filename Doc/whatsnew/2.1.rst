@@ -120,7 +120,7 @@ all of 2.1's lifetime to fix any breakage resulting from their introduction.
 
 .. seealso::
 
-   :pep:`227` - Statically Nested Scopes
+   :pep:`227` -- Statically Nested Scopes
       Written and implemented by Jeremy Hylton.
 
 .. ======================================================================
@@ -150,7 +150,7 @@ precede any statement that will result in bytecodes being produced.
 
 .. seealso::
 
-   :pep:`236` - Back to the :mod:`__future__`
+   :pep:`236` -- Back to the :mod:`__future__`
       Written by Tim Peters, and primarily implemented by Jeremy Hylton.
 
 .. ======================================================================
@@ -219,7 +219,7 @@ comparison.  I won't cover the C API here, but will refer you to PEP 207, or to
 
 .. seealso::
 
-   :pep:`207` - Rich Comparisons
+   :pep:`207` -- Rich Comparisons
       Written by Guido van Rossum, heavily based on earlier work by David Ascher, and
       implemented by Guido van Rossum.
 
@@ -286,13 +286,13 @@ Functions were also added to Python's C API for issuing warnings; refer to PEP
 
 .. seealso::
 
-   :pep:`5` - Guidelines for Language Evolution
+   :pep:`5` -- Guidelines for Language Evolution
       Written by Paul Prescod, to specify procedures to be followed when removing old
       features from Python.  The policy described in this PEP hasn't been officially
       adopted, but the eventual policy probably won't be too different from Prescod's
       proposal.
 
-   :pep:`230` - Warning Framework
+   :pep:`230` -- Warning Framework
       Written and implemented by Guido van Rossum.
 
 .. ======================================================================
@@ -332,7 +332,7 @@ simpler.
 
 .. seealso::
 
-   :pep:`229` - Using Distutils to Build Python
+   :pep:`229` -- Using Distutils to Build Python
       Written and implemented by A.M. Kuchling.
 
 .. ======================================================================
@@ -413,7 +413,7 @@ exists.  If the object is deallocated, attempting to use a proxy will cause a
 
 .. seealso::
 
-   :pep:`205` - Weak References
+   :pep:`205` -- Weak References
       Written and implemented by Fred L. Drake, Jr.
 
 .. ======================================================================
@@ -451,7 +451,7 @@ that behaves like a mapping.
 
 .. seealso::
 
-   :pep:`232` - Function Attributes
+   :pep:`232` -- Function Attributes
       Written and implemented by Barry Warsaw.
 
 .. ======================================================================
@@ -499,7 +499,7 @@ pretty-printing function::
 
 .. seealso::
 
-   :pep:`217` - Display Hook for Interactive Use
+   :pep:`217` -- Display Hook for Interactive Use
       Written and implemented by Moshe Zadka.
 
 .. ======================================================================
@@ -529,7 +529,7 @@ object's numeric methods).
 
 .. seealso::
 
-   :pep:`208` - Reworking the Coercion Model
+   :pep:`208` -- Reworking the Coercion Model
       Written and implemented by Neil Schemenauer, heavily based upon earlier work by
       Marc-André Lemburg.  Read this to understand the fine points of how numeric
       operations will now be processed at the C level.
@@ -567,10 +567,10 @@ available from the Distutils SIG at https://www.python.org/community/sigs/curren
 
 .. seealso::
 
-   :pep:`241` - Metadata for Python Software Packages
+   :pep:`241` -- Metadata for Python Software Packages
       Written and implemented by A.M. Kuchling.
 
-   :pep:`243` - Module Repository Upload Mechanism
+   :pep:`243` -- Module Repository Upload Mechanism
       Written by Sean Reifschneider, this draft PEP describes a proposed mechanism for
       uploading  Python packages to a central server.
 

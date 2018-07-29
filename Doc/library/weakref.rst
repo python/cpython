@@ -330,7 +330,7 @@ objects.
 
 .. seealso::
 
-   :pep:`205` - Weak References
+   :pep:`205` -- Weak References
       The proposal and rationale for this feature, including links to earlier
       implementations and information about similar features in other languages.
 

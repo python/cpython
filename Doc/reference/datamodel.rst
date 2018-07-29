@@ -1596,7 +1596,7 @@ a module object to a subclass of :class:`types.ModuleType`. For example::
 
 .. seealso::
 
-   :pep:`562` - Module __getattr__ and __dir__
+   :pep:`562` -- Module __getattr__ and __dir__
       Describes the ``__getattr__`` and ``__dir__`` functions on modules.
 
 
@@ -1875,7 +1875,7 @@ the original base is ignored.
 
 .. seealso::
 
-   :pep:`560` - Core support for typing module and generic types
+   :pep:`560` -- Core support for typing module and generic types
 
 
 Determining the appropriate metaclass
@@ -1916,7 +1916,7 @@ is initialised as an empty ordered mapping.
 
 .. seealso::
 
-   :pep:`3115` - Metaclasses in Python 3000
+   :pep:`3115` -- Metaclasses in Python 3000
       Introduced the ``__prepare__`` namespace hook
 
 
@@ -1991,7 +1991,7 @@ becomes the :attr:`~object.__dict__` attribute of the class object.
 
 .. seealso::
 
-   :pep:`3135` - New super
+   :pep:`3135` -- New super
       Describes the implicit ``__class__`` closure reference
 
 
@@ -2068,7 +2068,7 @@ case the instance is itself a class.
 
 .. seealso::
 
-   :pep:`3119` - Introducing Abstract Base Classes
+   :pep:`3119` -- Introducing Abstract Base Classes
       Includes the specification for customizing :func:`isinstance` and
       :func:`issubclass` behavior through :meth:`~class.__instancecheck__` and
       :meth:`~class.__subclasscheck__`, with motivation for this functionality
@@ -2094,7 +2094,7 @@ is discouraged.
 
 .. seealso::
 
-   :pep:`560` - Core support for typing module and generic types
+   :pep:`560` -- Core support for typing module and generic types
 
 
 .. _callable-types:
@@ -2488,7 +2488,7 @@ For more information on context managers, see :ref:`typecontextmanager`.
 
 .. seealso::
 
-   :pep:`343` - The "with" statement
+   :pep:`343` -- The "with" statement
       The specification, background, and examples for the Python :keyword:`with`
       statement.
 

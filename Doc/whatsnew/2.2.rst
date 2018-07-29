@@ -531,7 +531,7 @@ requires a :meth:`next` method.
 
 .. seealso::
 
-   :pep:`234` - Iterators
+   :pep:`234` -- Iterators
       Written by Ka-Ping Yee and GvR; implemented  by the Python Labs crew, mostly by
       GvR and Tim Peters.
 
@@ -658,7 +658,7 @@ a data structure.
 
 .. seealso::
 
-   :pep:`255` - Simple Generators
+   :pep:`255` -- Simple Generators
       Written by Neil Schemenauer, Tim Peters, Magnus Lie Hetland.  Implemented mostly
       by Neil Schemenauer and Tim Peters, with other fixes from the Python Labs crew.
 
@@ -698,7 +698,7 @@ rarely needed.
 
 .. seealso::
 
-   :pep:`237` - Unifying Long Integers and Integers
+   :pep:`237` -- Unifying Long Integers and Integers
       Written by Moshe Zadka and Guido van Rossum.  Implemented mostly by Guido van
       Rossum.
 
@@ -767,7 +767,7 @@ Here are the changes 2.2 introduces:
 
 .. seealso::
 
-   :pep:`238` - Changing the Division Operator
+   :pep:`238` -- Changing the Division Operator
       Written by Moshe Zadka and  Guido van Rossum.  Implemented by Guido van Rossum..
 
 .. ======================================================================
@@ -829,7 +829,7 @@ implemented by Fredrik Lundh and Martin von Löwis.
 
 .. seealso::
 
-   :pep:`261` - Support for 'wide' Unicode characters
+   :pep:`261` -- Support for 'wide' Unicode characters
       Written by Paul Prescod.
 
 .. ======================================================================
@@ -924,7 +924,7 @@ anyway).
 
 .. seealso::
 
-   :pep:`227` - Statically Nested Scopes
+   :pep:`227` -- Statically Nested Scopes
       Written and implemented by Jeremy Hylton.
 
 .. ======================================================================

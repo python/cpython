@@ -66,7 +66,7 @@ Dynamic Type Creation
    :ref:`metaclasses`
       Full details of the class creation process supported by these functions
 
-   :pep:`3115` - Metaclasses in Python 3000
+   :pep:`3115` -- Metaclasses in Python 3000
       Introduced the ``__prepare__`` namespace hook
 
 .. function:: resolve_bases(bases)
@@ -84,7 +84,7 @@ Dynamic Type Creation
 
 .. seealso::
 
-   :pep:`560` - Core support for typing module and generic types
+   :pep:`560` -- Core support for typing module and generic types
 
 
 Standard Interpreter Types

@@ -462,14 +462,14 @@ on the right hand side of an assignment statement.
 
 .. seealso::
 
-   :pep:`255` - Simple Generators
+   :pep:`255` -- Simple Generators
       The proposal for adding generators and the :keyword:`yield` statement to Python.
 
-   :pep:`342` - Coroutines via Enhanced Generators
+   :pep:`342` -- Coroutines via Enhanced Generators
       The proposal to enhance the API and syntax of generators, making them
       usable as simple coroutines.
 
-   :pep:`380` - Syntax for Delegating to a Subgenerator
+   :pep:`380` -- Syntax for Delegating to a Subgenerator
       The proposal to introduce the :token:`yield_from` syntax, making delegation
       to sub-generators easy.
 

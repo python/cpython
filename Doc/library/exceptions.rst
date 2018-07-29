@@ -662,7 +662,7 @@ depending on the system error code.
 
 .. seealso::
 
-   :pep:`3151` - Reworking the OS and IO exception hierarchy
+   :pep:`3151` -- Reworking the OS and IO exception hierarchy
 
 
 .. _warning-categories-as-exceptions:

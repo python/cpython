@@ -119,7 +119,7 @@ conditional expressions, you won't run into this case.
 
 .. seealso::
 
-   :pep:`308` - Conditional Expressions
+   :pep:`308` -- Conditional Expressions
       PEP written by Guido van Rossum and Raymond D. Hettinger; implemented by Thomas
       Wouters.
 
@@ -197,7 +197,7 @@ example would be::
 
 .. seealso::
 
-   :pep:`309` - Partial Function Application
+   :pep:`309` -- Partial Function Application
       PEP proposed and written by Peter Harris; implemented by Hye-Shik Chang and Nick
       Coghlan, with adaptations by Raymond Hettinger.
 
@@ -244,7 +244,7 @@ Package uploading was implemented by Martin von Löwis and Richard Jones.
 
 .. seealso::
 
-   :pep:`314` - Metadata for Python Software Packages v1.1
+   :pep:`314` -- Metadata for Python Software Packages v1.1
       PEP proposed and written by A.M. Kuchling, Richard Jones, and Fred Drake;
       implemented by Richard Jones and Fred Drake.
 
@@ -327,7 +327,7 @@ statement, only the ``from ... import`` form.
 
 .. seealso::
 
-   :pep:`328` - Imports: Multi-Line and Absolute/Relative
+   :pep:`328` -- Imports: Multi-Line and Absolute/Relative
       PEP written by Aahz; implemented by Thomas Wouters.
 
    https://pylib.readthedocs.io/
@@ -356,7 +356,7 @@ archive.
 
 .. seealso::
 
-   :pep:`338` - Executing modules as scripts
+   :pep:`338` -- Executing modules as scripts
       PEP written and  implemented by Nick Coghlan.
 
 .. ======================================================================
@@ -404,7 +404,7 @@ in the *final-block* is still run.
 
 .. seealso::
 
-   :pep:`341` - Unifying try-except and try-finally
+   :pep:`341` -- Unifying try-except and try-finally
       PEP written by Georg Brandl;  implementation by Thomas Lee.
 
 .. ======================================================================
@@ -540,7 +540,7 @@ exhausted.
 
 .. seealso::
 
-   :pep:`342` - Coroutines via Enhanced Generators
+   :pep:`342` -- Coroutines via Enhanced Generators
       PEP written by  Guido van Rossum and Phillip J. Eby; implemented by Phillip J.
       Eby.  Includes examples of  some fancier uses of generators as coroutines.
 
@@ -795,7 +795,7 @@ bound to a variable, and calls ``object.close`` at the end of the block. ::
 
 .. seealso::
 
-   :pep:`343` - The "with" statement
+   :pep:`343` -- The "with" statement
       PEP written by Guido van Rossum and Nick Coghlan; implemented by Mike Bland,
       Guido van Rossum, and Neal Norwitz.  The PEP shows the code generated for a
       ':keyword:`with`' statement, which can be helpful in learning how the statement
@@ -859,7 +859,7 @@ to be able to remove the string-exception feature in a few releases.
 
 .. seealso::
 
-   :pep:`352` - Required Superclass for Exceptions
+   :pep:`352` -- Required Superclass for Exceptions
       PEP written by  Brett Cannon and Guido van Rossum; implemented by Brett Cannon.
 
 .. ======================================================================
@@ -918,7 +918,7 @@ read to learn about supporting 64-bit platforms.
 
 .. seealso::
 
-   :pep:`353` - Using ssize_t as the index type
+   :pep:`353` -- Using ssize_t as the index type
       PEP written and implemented by Martin von Löwis.
 
 .. ======================================================================
@@ -961,7 +961,7 @@ A corresponding :attr:`nb_index` slot was added to the C-level
 
 .. seealso::
 
-   :pep:`357` - Allowing Any Object to be Used for Slicing
+   :pep:`357` -- Allowing Any Object to be Used for Slicing
       PEP written  and implemented by Travis Oliphant.
 
 .. ======================================================================
@@ -2027,7 +2027,7 @@ https://www.sqlite.org.
 
    The documentation  for the :mod:`sqlite3` module.
 
-   :pep:`249` - Database API Specification 2.0
+   :pep:`249` -- Database API Specification 2.0
       PEP written by Marc-André Lemburg.
 
 .. ======================================================================
@@ -2067,7 +2067,7 @@ up a server takes only a few lines of code::
    http://www.wsgi.org
       A central web site for WSGI-related resources.
 
-   :pep:`333` - Python Web Server Gateway Interface v1.0
+   :pep:`333` -- Python Web Server Gateway Interface v1.0
       PEP written by Phillip J. Eby.
 
 .. ======================================================================

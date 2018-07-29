@@ -1294,7 +1294,7 @@ with the :mod:`warnings` module.
    Module :mod:`logging.handlers`
       Useful handlers included with the logging module.
 
-   :pep:`282` - A Logging System
+   :pep:`282` -- A Logging System
       The proposal which described this feature for inclusion in the Python standard
       library.
 

@@ -51,7 +51,7 @@ list of changes.
 
 .. seealso::
 
-    :pep:`494` - Python 3.6 Release Schedule
+    :pep:`494` -- Python 3.6 Release Schedule
 
 
 Summary -- Release highlights

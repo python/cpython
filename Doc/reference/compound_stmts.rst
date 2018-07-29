@@ -440,7 +440,7 @@ is equivalent to ::
 
 .. seealso::
 
-   :pep:`343` - The "with" statement
+   :pep:`343` -- The "with" statement
       The specification, background, and examples for the Python :keyword:`with`
       statement.
 
@@ -588,17 +588,17 @@ access the local variables of the function containing the def.  See section
 
 .. seealso::
 
-   :pep:`3107` - Function Annotations
+   :pep:`3107` -- Function Annotations
       The original specification for function annotations.
 
-   :pep:`484` - Type Hints
+   :pep:`484` -- Type Hints
       Definition of a standard meaning for annotations: type hints.
 
-   :pep:`526` - Syntax for Variable Annotations
+   :pep:`526` -- Syntax for Variable Annotations
       Ability to type hint variable declarations, including class
       variables and instance variables
 
-   :pep:`563` - Postponed Evaluation of Annotations
+   :pep:`563` -- Postponed Evaluation of Annotations
       Support for forward references within annotations by preserving
       annotations in a string form at runtime instead of eager evaluation.
 
@@ -681,8 +681,8 @@ can be used to create instance variables with different implementation details.
 
 .. seealso::
 
-   :pep:`3115` - Metaclasses in Python 3
-   :pep:`3129` - Class Decorators
+   :pep:`3115` -- Metaclasses in Python 3
+   :pep:`3129` -- Class Decorators
 
 
 .. _async:
@@ -808,7 +808,7 @@ It is a :exc:`SyntaxError` to use ``async with`` statement outside of an
 
 .. seealso::
 
-   :pep:`492` - Coroutines with async and await syntax
+   :pep:`492` -- Coroutines with async and await syntax
 
 
 .. rubric:: Footnotes

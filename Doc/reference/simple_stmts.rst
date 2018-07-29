@@ -250,7 +250,7 @@ the following program prints ``[0, 2]``::
 
 .. seealso::
 
-   :pep:`3132` - Extended Iterable Unpacking
+   :pep:`3132` -- Extended Iterable Unpacking
       The specification for the ``*target`` feature.
 
 
@@ -353,8 +353,8 @@ target, then the interpreter evaluates the target except for the last
 
 .. seealso::
 
-   :pep:`526` - Variable and attribute annotation syntax
-   :pep:`484` - Type hints
+   :pep:`526` -- Variable and attribute annotation syntax
+   :pep:`484` -- Type hints
 
 
 .. _assert:
@@ -899,7 +899,7 @@ after the script is executed.
 
 .. seealso::
 
-   :pep:`236` - Back to the __future__
+   :pep:`236` -- Back to the __future__
       The original proposal for the __future__ mechanism.
 
 
@@ -983,5 +983,5 @@ pre-existing bindings in the local scope.
 
 .. seealso::
 
-   :pep:`3104` - Access to Names in Outer Scopes
+   :pep:`3104` -- Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
