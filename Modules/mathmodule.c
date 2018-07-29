@@ -2031,6 +2031,13 @@ math_fmod_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(r);
 }
 
+/* AC: XXX Todo */
+static PyObject *
+math_dist(PyObject *self, PyObject *args)
+{
+    return PyFloat_FromDouble(42.0);
+}
+
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
 math_hypot(PyObject *self, PyObject *args)
@@ -2358,6 +2365,7 @@ static PyMethodDef math_methods[] = {
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
+    {"dist",            math_dist,      METH_VARARGS,   math_remainder_doc},   // XXX fix doc, then convert to arg clinic
     {"erf",             math_erf,       METH_O,         math_erf_doc},
     {"erfc",            math_erfc,      METH_O,         math_erfc_doc},
     {"exp",             math_exp,       METH_O,         math_exp_doc},
