@@ -37,20 +37,13 @@ steps:
   clean: true
   fetchDepth: 5
 
-- task: PowerShell@1
+- powershell: |
+   git fetch -q origin $(System.PullRequest.TargetBranch)
+   if (git diff --name-only HEAD (git merge-base HEAD FETCH-HEAD) | sls '(\.rst$)|(^Doc)|(^Misc)') {
+      Write-Host 'Only docs were updated. Skipping build'
+      Write-Host '##vso[task.setvariable variable=DocOnly]true'
+   }
   displayName: Detect doc-only changes
-  inputs:
-    scriptType: inlineScript
-    arguments: '$(System.PullRequest.TargetBranch)'
-    workingFolder: '$(Build.ArtifactStagingDirectory)'
-    inlineScript: |
-     param([string]$target)
-     
-     git fetch -q origin $target
-     if (git diff --name-only HEAD (git merge-base HEAD FETCH-HEAD) | sls '(\.rst$)|(^Doc)|(^Misc)') {
-        Write-Host 'Only docs were updated. Skipping build'
-        Write-Host '##vso[task.setvariable variable=DocOnly]true'
-     }
   condition: and(succeeded(), variables['System.PullRequest.TargetBranch'])
 
 - script: PCbuild\build.bat -e $(buildOpt)
