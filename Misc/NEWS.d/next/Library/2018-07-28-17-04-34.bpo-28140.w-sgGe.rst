@@ -1,1 +1,2 @@
-Give better errors for ``pip install`` command typed into the REPL.
+Give better errors for ``pip install`` command typed into the REPL.  Patch by
+Tom Viner.
