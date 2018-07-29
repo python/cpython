@@ -359,7 +359,7 @@ def get_pydoc_link(module):
     "Returns a documentation web link of a module"
     abspath = os.path.abspath
     dirname = os.path.dirname
-    basedir = (dirname(dirname(abspath(__file__))))
+    basedir = dirname(dirname(abspath(__file__)))
     doc = pydoc.TextDoc()
     loc = doc.getdocloc(module, basedir=basedir)
     return loc
