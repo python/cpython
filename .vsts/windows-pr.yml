@@ -37,13 +37,32 @@ steps:
   clean: true
   fetchDepth: 5
 
+- task: PowerShell@1
+  displayName: Detect doc-only changes
+  inputs:
+    scriptType: inlineScript
+    arguments: '$(System.PullRequest.TargetBranch)'
+    workingFolder: '$(Build.ArtifactStagingDirectory)'
+    inlineScript: |
+     param([string]$target)
+     
+     git fetch -q origin $target
+     if (git diff --name-only HEAD (git merge-base HEAD FETCH-HEAD) | sls '(\.rst$)|(^Doc)|(^Misc)') {
+        Write-Host 'Only docs were updated. Skipping build'
+        Write-Host '##vso[task.setvariable variable=DocOnly]true'
+     }
+  condition: and(succeeded(), variables['System.PullRequest.TargetBranch'])
+
 - script: PCbuild\build.bat -e $(buildOpt)
   displayName: 'Build CPython'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 - script: python.bat -m test.pythoninfo
   displayName: 'Display build info'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 - script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
   displayName: 'Tests'
   env:
     PREFIX: $(Py_OutDir)\$(outDirSuffix)
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
