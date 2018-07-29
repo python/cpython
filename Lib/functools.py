@@ -880,16 +880,25 @@ _NOT_FOUND = object()
 class cached_property:
     def __init__(self, func):
         self.func = func
-        self.attrname = func.__name__
+        self.attrname = None
         self.__doc__ = func.__doc__
         self.lock = RLock()
 
     def __set_name__(self, owner, name):
-        self.attrname = name
+        if self.attrname is None:
+            self.attrname = name
+        else:
+            raise TypeError(
+                "Cannot assign the same cached_property to two names "
+                f"({self.attrname!r} and {name!r}) on the same object."
+            )
 
     def __get__(self, instance, owner):
         if instance is None:
             return self
+        if self.attrname is None:
+            raise TypeError(
+                "Cannot use cached_property instance without calling __set_name__ on it.")
         try:
             cache = instance.__dict__
         except AttributeError:  # objects with __slots__ have no __dict__

@@ -2406,6 +2406,34 @@ class TestCachedProperty(unittest.TestCase):
         ):
             item.cost
 
+    def test_reuse(self):
+        """Disallow this case because decorated function a would not be cached."""
+        with self.assertRaises(RuntimeError) as ctx:
+            class ReusedCachedProperty:
+                @py_functools.cached_property
+                def a(self):
+                    pass
+
+                b = a
+
+        self.assertEqual(
+            str(ctx.exception.__context__),
+            str(TypeError("Cannot assign the same cached_property to two names ('a' and 'b') on the same object."))
+        )
+
+    def test_set_name_not_called(self):
+        cp = py_functools.cached_property(lambda s: None)
+        class Foo:
+            pass
+
+        Foo.cp = cp
+
+        with self.assertRaisesRegex(
+                TypeError,
+                "Cannot use cached_property instance without calling __set_name__ on it.",
+        ):
+            Foo().cp
+
     def test_access_from_class(self):
         self.assertIsInstance(CachedCostItem.cost, py_functools.cached_property)
 
