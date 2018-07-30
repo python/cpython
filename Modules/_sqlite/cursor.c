@@ -42,7 +42,6 @@ static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject*
     Py_XSETREF(self->connection, connection);
     Py_CLEAR(self->statement);
     Py_CLEAR(self->next_row);
-
     Py_CLEAR(self->row_cast_map);
 
     Py_INCREF(Py_None);
