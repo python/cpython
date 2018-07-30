@@ -2057,8 +2057,9 @@ math_dist(PyObject *self, PyObject *args)
 
     }
     diffs = (double *) PyObject_Malloc(n * sizeof(double));
-    if (diffs == NULL)
+    if (diffs == NULL) {
         return NULL;
+    }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(p, i);
         px = PyFloat_AsDouble(item);
