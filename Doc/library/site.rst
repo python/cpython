@@ -245,7 +245,7 @@ If it is called without arguments, it will print the contents of
 If both options are given, user base and user site will be printed (always in
 this order), separated by :data:`os.pathsep`.
 
-If any option is given, the script will exit with one of these values: ``O`` if
+If any option is given, the script will exit with one of these values: ``0`` if
 the user site-packages directory is enabled, ``1`` if it was disabled by the
 user, ``2`` if it is disabled for security reasons or by an administrator, and a
 value greater than 2 if there is an error.
