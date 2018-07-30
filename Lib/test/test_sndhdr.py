@@ -33,6 +33,9 @@ class TestFormats(unittest.TestCase):
         ):
             what = sndhdr.what(filename)
             self.assertEqual(what, expected)
+            whathdr = sndhdr.whathdr(filename)
+            self.assertEqual(whathdr, expected)
+
 
         # test feeding bad binary data to sound header functions
         for filename, expected in (

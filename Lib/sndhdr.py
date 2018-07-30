@@ -52,11 +52,8 @@ SndHeaders.sampwidth.__doc__ = ("""Either the sample size in bits or
 
 def what(filename):
     """Guess the type of a sound file."""
-    try:
-        res = whathdr(filename)
-        return res
-    except (FileNotFoundError) as e:
-        return None
+    res = whathdr(filename)
+    return res
 
 
 def whathdr(filename):
@@ -70,7 +67,8 @@ def whathdr(filename):
                     return SndHeaders(*res)
         return None
 
-    except(TypeError) as e:
+    except (TypeError,
+            FileNotFoundError):
         return None
 
 
@@ -79,7 +77,6 @@ def whathdr(filename):
 #-----------------------------------#
 
 tests = []
-
 
 def test_aifc(h, f):
     import aifc
@@ -215,7 +212,7 @@ def test_sndr(h, f):
             rate = get_short_le(h[2:4])
             if 4000 <= rate <= 25000:
                 return 'sndr', rate, 1, -1, 8
-    except (IndexError) as e:
+    except IndexError:
         return None
 
 
