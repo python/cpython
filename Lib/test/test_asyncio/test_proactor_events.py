@@ -253,6 +253,19 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.assertEqual(None, tr._buffer)
         self.assertEqual(tr._conn_lost, 1)
 
+    def test_loop_writing_force_close(self):
+        exc_handler = mock.Mock()
+        self.loop.set_exception_handler(exc_handler)
+        fut = asyncio.Future(loop=self.loop)
+        fut.set_result(1)
+        self.proactor.send.return_value = fut
+
+        tr = self.socket_transport()
+        tr.write(b'data')
+        tr._force_close(None)
+        test_utils.run_briefly(self.loop)
+        exc_handler.assert_not_called()
+
     def test_force_close_idempotent(self):
         tr = self.socket_transport()
         tr._closing = True
