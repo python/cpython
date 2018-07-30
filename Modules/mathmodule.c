@@ -2035,8 +2035,13 @@ math_fmod_impl(PyObject *module, double x, double y)
 static PyObject *
 math_dist(PyObject *self, PyObject *args)
 {
-    PyObject *p, *q;
-    Py_ssize_t m, n;
+    PyObject *item, *p, *q;
+    double *diffs;
+    double max = 0.0;
+    double csum = 0.0;
+    double x, px, qx, result;
+    Py_ssize_t i, m, n;
+    int found_nan = 0;
 
     if (!PyArg_ParseTuple(args, "O!O!:dist",
                           &PyTuple_Type, &p,
@@ -2051,8 +2056,50 @@ math_dist(PyObject *self, PyObject *args)
         return NULL;
 
     }
+    diffs = (double *) PyObject_Malloc(n * sizeof(double));
+    if (diffs == NULL)
+        return NULL;
+    for (i=0 ; i<n ; i++) {
+        item = PyTuple_GET_ITEM(p, i);
+        px = PyFloat_AsDouble(item);
+        if (px == -1.0 && PyErr_Occurred()) {
+            PyObject_Free(diffs);
+            return NULL;
+        }
+        item = PyTuple_GET_ITEM(q, i);
+        qx = PyFloat_AsDouble(item);
+        if (qx == -1.0 && PyErr_Occurred()) {
+            PyObject_Free(diffs);
+            return NULL;
+        }
+        x = fabs(px - qx);
+        diffs[i] = x;
+        found_nan |= Py_IS_NAN(x);
+        if (x > max) {
+            max = x;
+        }
+    }
+    if (Py_IS_INFINITY(max)) {
+        result = max;
+        goto done;
+    }
+    if (found_nan) {
+        result = Py_NAN;
+        goto done;
+    }
+    if (max == 0.0) {
+        result = 0.0;
+        goto done;
+    }
+    for (i=0 ; i<n ; i++) {
+        x = diffs[i] / max;
+        csum += x * x;
+    }
+    result = max * sqrt(csum);
 
-    return PyFloat_FromDouble((double)n);
+  done:
+    PyObject_Free(diffs);
+    return PyFloat_FromDouble(result);
 }
 
 /* AC: cannot convert yet, waiting for *args support */
