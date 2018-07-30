@@ -185,7 +185,7 @@ effect of Pascal's ``for i := a to b do``; e.g., ``range(3)`` returns the list
       single: mutable sequence; loop over
 
    There is a subtlety when the sequence is being modified by the loop (this can
-   only occur for mutable sequences, i.e. lists). An internal counter is used to
+   only occur for mutable sequences, e.g. lists). An internal counter is used to
    keep track of which item is used next, and this is incremented on each
    iteration.  When this counter has reached the length of the sequence the loop
    terminates.  This means that if the suite deletes the current (or a previous)
