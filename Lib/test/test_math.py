@@ -787,6 +787,36 @@ class MathTests(unittest.TestCase):
             scale = FLOAT_MIN / 2.0 ** exp
             self.assertEqual(math.hypot(4*scale, 3*scale), 5*scale)
 
+    def testDist(self):
+        from decimal import Decimal
+        from fractions import Fraction
+
+        dist = math.dist
+
+        # Base case
+        self.assertEqual(dist((1, 2, 3), (4, 5, 6)), 3.0)
+
+        # Test handling of bad arguments
+        with self.assertRaises(TypeError):         # Reject keyword args
+            dist(p=(1, 2, 3), q=(4, 5, 6))
+        with self.assertRaises(TypeError):         # Too few args
+            dist((1, 2, 3))
+        with self.assertRaises(TypeError):         # Too many args
+            dist((1, 2, 3), (4, 5, 6), (7, 8, 9))
+        with self.assertRaises(TypeError):         # Scalars not allowed
+            dist(1, 2)
+        with self.assertRaises(TypeError):         # Lists not allowed
+            dist([1, 2, 3], [4, 5, 6])
+        with self.assertRaises(ValueError):        # Check dimension agree
+            dist((1, 2, 3, 4), (5, 6, 7))
+        with self.assertRaises(ValueError):        # Check dimension agree
+            dist((1, 2, 3), (4, 5, 6, 7))
+
+        # Verify tuple subclasses are allowed
+        class T(tuple):     # tuple subclas
+            pass
+        self.assertEqual(dist(T((1, 2, 3)), T((4, 5, 6))), 3.0)
+
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
         self.ftest('ldexp(0,1)', math.ldexp(0,1), 0)

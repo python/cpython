@@ -2035,7 +2035,24 @@ math_fmod_impl(PyObject *module, double x, double y)
 static PyObject *
 math_dist(PyObject *self, PyObject *args)
 {
-    return PyFloat_FromDouble(42.0);
+    PyObject *p, *q;
+    Py_ssize_t m, n;
+
+    if (!PyArg_ParseTuple(args, "O!O!:dist",
+                          &PyTuple_Type, &p,
+                          &PyTuple_Type, &q)) {
+        return NULL;
+    }
+    m = PyTuple_GET_SIZE(p);
+    n = PyTuple_GET_SIZE(q);
+    if (m != n) {
+        PyErr_SetString(PyExc_ValueError,
+                        "both points must have the same number of dimensions");
+        return NULL;
+
+    }
+
+    return PyFloat_FromDouble((double)n);
 }
 
 /* AC: cannot convert yet, waiting for *args support */
