@@ -2406,7 +2406,7 @@ class TestCachedProperty(unittest.TestCase):
         ):
             item.cost
 
-    def test_reuse(self):
+    def test_reuse_different_names(self):
         """Disallow this case because decorated function a would not be cached."""
         with self.assertRaises(RuntimeError) as ctx:
             class ReusedCachedProperty:
@@ -2418,8 +2418,31 @@ class TestCachedProperty(unittest.TestCase):
 
         self.assertEqual(
             str(ctx.exception.__context__),
-            str(TypeError("Cannot assign the same cached_property to two names ('a' and 'b') on the same class."))
+            str(TypeError("Cannot assign the same cached_property to two different names ('a' and 'b')."))
         )
+
+    def test_reuse_same_name(self):
+        """Reusing a cached_property on different classes under the same name is OK."""
+        counter = 0
+
+        @py_functools.cached_property
+        def _cp(_self):
+            nonlocal counter
+            counter += 1
+            return counter
+
+        class A:
+            cp = _cp
+
+        class B:
+            cp = _cp
+
+        a = A()
+        b = B()
+
+        self.assertEqual(a.cp, 1)
+        self.assertEqual(b.cp, 2)
+        self.assertEqual(a.cp, 1)
 
     def test_set_name_not_called(self):
         cp = py_functools.cached_property(lambda s: None)
