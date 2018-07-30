@@ -1,5 +1,6 @@
 """Tests for base_events.py"""
 
+import concurrent.futures
 import errno
 import logging
 import math
@@ -211,9 +212,20 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertFalse(self.loop._ready)
 
     def test_set_default_executor(self):
-        executor = mock.Mock()
+        class DummyExecutor(concurrent.futures.ThreadPoolExecutor):
+            def submit(self, fn, *args, **kwargs):
+                raise NotImplementedError(
+                    'cannot submit into a dummy executor')
+
+        executor = DummyExecutor()
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
+
+    def test_set_default_executor_deprecation_warnings(self):
+        executor = mock.Mock()
+
+        with self.assertWarns(DeprecationWarning):
+            self.loop.set_default_executor(executor)
 
     def test_call_soon(self):
         def cb():

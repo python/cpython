@@ -906,7 +906,14 @@ pool of processes). By default, an event loop uses a thread pool executor
 
 .. method:: AbstractEventLoop.set_default_executor(executor)
 
-   Set the default executor used by :meth:`run_in_executor`.
+   Set *executor* as the default executor used by :meth:`run_in_executor`.
+   *executor* should be an instance of
+   :class:`~concurrent.futures.ThreadPoolExecutor`.
+
+   .. deprecated:: 3.8
+      Using an executor that is not an instance of
+      :class:`~concurrent.futures.ThreadPoolExecutor` is deprecated and
+      will trigger an error in Python 3.9.
 
 
 Error Handling API
