@@ -1,0 +1,2 @@
+The second argument of a C function with signature METH_NOARGS is no longer
+guaranteed to be NULL.
