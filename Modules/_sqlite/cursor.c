@@ -42,11 +42,7 @@ static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject*
     Py_XSETREF(self->connection, connection);
     Py_CLEAR(self->statement);
     Py_CLEAR(self->next_row);
-
-    Py_XSETREF(self->row_cast_map, PyList_New(0));
-    if (!self->row_cast_map) {
-        return -1;
-    }
+    Py_CLEAR(self->row_cast_map);
 
     Py_INCREF(Py_None);
     Py_XSETREF(self->description, Py_None);
@@ -253,6 +249,7 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
 
     for (i = 0; i < numcols; i++) {
         if (self->connection->detect_types) {
+            assert(self->row_cast_map != NULL);
             converter = PyList_GetItem(self->row_cast_map, i);
             if (!converter) {
                 converter = Py_None;
