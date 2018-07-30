@@ -2939,11 +2939,12 @@ unicode_get_widechar_size(PyObject *unicode)
     Py_ssize_t res;
 
     assert(unicode != NULL);
-    assert(PyUnicode_IS_READY(unicode));
+    assert(_PyUnicode_CHECK(unicode));
 
     if (_PyUnicode_WSTR(unicode) != NULL) {
         return PyUnicode_WSTR_LENGTH(unicode);
     }
+    assert(PyUnicode_IS_READY(unicode));
 
     res = _PyUnicode_LENGTH(unicode);
 #if SIZEOF_WCHAR_T == 2
@@ -2966,14 +2967,14 @@ unicode_copy_as_widechar(PyObject *unicode, wchar_t *w, Py_ssize_t size)
     const wchar_t *wstr;
 
     assert(unicode != NULL);
-    assert(PyUnicode_IS_READY(unicode));
+    assert(_PyUnicode_CHECK(unicode));
 
     wstr = _PyUnicode_WSTR(unicode);
     if (wstr != NULL) {
         memcpy(w, wstr, size * sizeof(wchar_t));
         return;
     }
-    assert(PyUnicode_KIND(unicode) != SIZEOF_WCHAR_T);
+    assert(PyUnicode_IS_READY(unicode));
 
     if (PyUnicode_KIND(unicode) == PyUnicode_1BYTE_KIND) {
         const Py_UCS1 *s = PyUnicode_1BYTE_DATA(unicode);
@@ -3067,11 +3068,7 @@ PyUnicode_AsWideCharString(PyObject *unicode,
     }
 
     buflen = unicode_get_widechar_size(unicode);
-    if (buflen < 0) {
-        return NULL;
-    }
-
-    buffer = (wchar_t *) PyMem_MALLOC(sizeof(wchar_t) * (buflen + 1));
+    buffer = (wchar_t *) PyMem_NEW(wchar_t, (buflen + 1));
     if (buffer == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -3912,6 +3909,10 @@ PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
         assert(PyUnicode_IS_READY(unicode));
 
         Py_ssize_t wlen = unicode_get_widechar_size(unicode);
+        if ((size_t)wlen > PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) {
+            PyErr_NoMemory();
+            return NULL;
+        }
         w = (wchar_t *) PyObject_MALLOC(sizeof(wchar_t) * (wlen + 1));
         if (w == NULL) {
             PyErr_NoMemory();
