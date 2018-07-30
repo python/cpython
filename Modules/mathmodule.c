@@ -1671,16 +1671,10 @@ math_factorial(PyObject *module, PyObject *arg)
             return NULL;
         x = PyLong_AsLongAndOverflow(lx, &overflow);
         Py_DECREF(lx);
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing float instances to math.factorial will be "
-                "removed in future versions.", 1) < 0) {
-            return NULL;
-        }
-
     }
     else{
         pyint_form = PyNumber_Index(arg);
-        if( pyint_form == NULL){
+        if(pyint_form == NULL){
             return NULL;
         }
         x = PyLong_AsLongAndOverflow(pyint_form, &overflow);
