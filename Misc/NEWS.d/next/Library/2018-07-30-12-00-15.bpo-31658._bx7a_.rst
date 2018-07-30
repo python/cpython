@@ -1,0 +1,1 @@
+Make xml.sax.parse accepting Path objects. Patch by Mickaël Schoentgen.
