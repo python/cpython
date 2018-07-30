@@ -469,7 +469,7 @@ class ZipInfo (object):
             extra = extra[ln+4:]
 
     @classmethod
-    def from_file(cls, filename, arcname=None, strict_timestamps=True):
+    def from_file(cls, filename, arcname=None, *, strict_timestamps=True):
         """Construct an appropriate ZipInfo for a file on the filesystem.
 
         filename should be the path to a file or directory on the filesystem.
@@ -486,6 +486,8 @@ class ZipInfo (object):
         date_time = mtime[0:6]
         if not strict_timestamps and date_time[0] < 1980:
             date_time = (1980, 1, 1, 0, 0, 0)
+        elif not strict_timestamps and date_time[0] > 2107:
+            date_time = (2107, 12, 31, 23, 59, 59)
         # Create ZipInfo instance to store file information
         if arcname is None:
             arcname = filename
@@ -1676,7 +1678,7 @@ class ZipFile:
                                    " would require ZIP64 extensions")
 
     def write(self, filename, arcname=None,
-              compress_type=None, compresslevel=None,
+              compress_type=None, compresslevel=None, *,
               strict_timestamps=True):
         """Put the bytes from filename into the archive under the name
         arcname."""

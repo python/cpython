@@ -368,7 +368,7 @@ ZipFile Objects
 
 
 .. method:: ZipFile.write(filename, arcname=None, compress_type=None, \
-                          compresslevel=None, strict_timestamps=True)
+                          compresslevel=None, *, strict_timestamps=True)
 
    Write the file named *filename* to the archive, giving it the archive name
    *arcname* (by default, this will be the same as *filename*, but without a drive
@@ -377,8 +377,10 @@ ZipFile Objects
    the new entry. Similarly, *compresslevel* will override the constructor if
    given.
    The archive must be open with mode ``'w'``, ``'x'`` or ``'a'``.
-   The *strict_timestamps* keyword argument allows to zip files older
-   than 1980-01-01 at the cost of setting the timestamp to 1980-01-01.
+   The *strict_timestamps* keyword argument, when set to ``False``, allows to
+   zip files older than 1980-01-01 at the cost of setting the
+   timestamp to 1980-01-01.
+   Same behavior occures with files older than 2107-12-31.
 
    .. note::
 
@@ -545,7 +547,7 @@ information about a single member of the ZIP archive.
 There is one classmethod to make a :class:`ZipInfo` instance for a filesystem
 file:
 
-.. classmethod:: ZipInfo.from_file(filename, arcname=None, \
+.. classmethod:: ZipInfo.from_file(filename, arcname=None, *, \
                                    strict_timestamps=True)
 
    Construct a :class:`ZipInfo` instance for a file on the filesystem, in
@@ -557,8 +559,10 @@ file:
    If *arcname* is not specified, the name will be the same as *filename*, but
    with any drive letter and leading path separators removed.
 
-   The *strict_timestamps* keyword argument allows to zip files older
-   than 1980-01-01 at the cost of setting the timestamp to 1980-01-01.
+   The *strict_timestamps* keyword argument, when set to ``False``, allows to
+   zip files older than 1980-01-01 at the cost of setting the
+   timestamp to 1980-01-01.
+   Same behavior occures with files older than 2107-12-31.
 
    .. versionadded:: 3.6
 

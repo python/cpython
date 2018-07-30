@@ -1,2 +1,2 @@
-ZipFile can zip files older than 1980-01-01 at the cost of mangling the
-timestamp.
+ZipFile can zip files older than 1980-01-01 and newer than 2107-12-31 at the
+cost of setting the timestamp to the limit.
