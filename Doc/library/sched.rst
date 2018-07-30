@@ -51,8 +51,8 @@ Example::
    ...
    >>> print_some_times()
    930343690.257
-   From print_time 930343695.274 positional
-   From print_time 930343695.275 keyword
+   From print_time 930343695.274 keyword
+   From print_time 930343695.275 positional
    From print_time 930343700.273 default
    930343700.276
 
