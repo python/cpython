@@ -2102,6 +2102,16 @@ math_dist(PyObject *self, PyObject *args)
     return PyFloat_FromDouble(result);
 }
 
+PyDoc_STRVAR(math_dist_doc,
+             "dist(p, q) -> value\n\n\
+Return the Euclidean distance between two points p and q.\n\
+\n\
+The points should be specified as tuples of coordinates.\n\
+Both tuples must be the same size.\n\
+\n\
+Roughly equivalent to:\n\
+    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))");
+
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
 math_hypot(PyObject *self, PyObject *args)
@@ -2429,7 +2439,7 @@ static PyMethodDef math_methods[] = {
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
-    {"dist",            math_dist,      METH_VARARGS,   math_remainder_doc},   // XXX fix doc, then convert to arg clinic
+    {"dist",            math_dist,      METH_VARARGS,   math_dist_doc},
     {"erf",             math_erf,       METH_O,         math_erf_doc},
     {"erfc",            math_erfc,      METH_O,         math_erfc_doc},
     {"exp",             math_exp,       METH_O,         math_exp_doc},
