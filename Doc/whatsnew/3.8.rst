@@ -164,6 +164,12 @@ Deprecated
   They will be removed in Python 3.9.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
 
+* Passing an object that is not an instance of
+  :class:`concurrent.futures.ThreadPoolExecutor` to
+  :meth:`asyncio.AbstractEventLoop.set_default_executor()` is
+  deprecated and will be prohibited in Python 3.9.
+  (Contributed by Elvis Pranskevichus in :issue:`34075`.)
+
 
 Removed
 =======
