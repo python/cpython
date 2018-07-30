@@ -1979,7 +1979,6 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     } else {
         name = PyObject_Str(name);
     }
-
     Py_XSETREF(self->task_name, name);
     if (self->task_name == NULL) {
         return -1;
@@ -2055,29 +2054,6 @@ TaskObj_get_coro(TaskObj *task)
     }
 
     Py_RETURN_NONE;
-}
-
-static PyObject *
-TaskObj_get_name(TaskObj *task)
-{
-    if (task->task_name) {
-        Py_INCREF(task->task_name);
-        return task->task_name;
-    }
-
-    Py_RETURN_NONE;
-}
-
-static int
-TaskObj_set_name(TaskObj *task, PyObject *value)
-{
-    PyObject *name = PyObject_Str(value);
-    if (name == NULL) {
-        return -1;
-    }
-
-    Py_XSETREF(task->task_name, name);
-    return 0;
 }
 
 static PyObject *
@@ -2338,6 +2314,23 @@ _asyncio_Task_set_exception(TaskObj *self, PyObject *exception)
     return NULL;
 }
 
+/*[clinic input]
+_asyncio.Task.get_name
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task_get_name_impl(TaskObj *self)
+/*[clinic end generated code: output=0ecf1570c3b37a8f input=a4a6595d12f4f0f8]*/
+
+{
+    if (self->task_name) {
+        Py_INCREF(self->task_name);
+        return self->task_name;
+    }
+
+    Py_RETURN_NONE;
+}
+
 
 static void
 TaskObj_finalize(TaskObj *task)
@@ -2423,6 +2416,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_GET_STACK_METHODDEF
     _ASYNCIO_TASK_PRINT_STACK_METHODDEF
     _ASYNCIO_TASK__REPR_INFO_METHODDEF
+    _ASYNCIO_TASK_GET_NAME_METHODDEF
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -2432,8 +2426,6 @@ static PyGetSetDef TaskType_getsetlist[] = {
                              (setter)TaskObj_set_log_destroy_pending, NULL},
     {"_must_cancel", (getter)TaskObj_get_must_cancel, NULL, NULL},
     {"_coro", (getter)TaskObj_get_coro, NULL, NULL},
-    {"name", (getter)TaskObj_get_name,
-             (setter)TaskObj_set_name, NULL},
     {"_fut_waiter", (getter)TaskObj_get_fut_waiter, NULL, NULL},
     {NULL} /* Sentinel */
 };

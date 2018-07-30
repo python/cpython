@@ -12,7 +12,7 @@ def _task_repr_info(task):
         # replace status
         info[0] = 'cancelling'
 
-    info.insert(1, 'name=%r' % task.name)
+    info.insert(1, 'name=%r' % task.get_name())
 
     coro = coroutines._format_coroutine(task._coro)
     info.insert(2, f'coro=<{coro}>')

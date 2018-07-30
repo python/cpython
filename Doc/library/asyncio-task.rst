@@ -516,9 +516,9 @@ Task
       get_stack().  The file argument is an I/O stream to which the output
       is written; by default output is written to sys.stderr.
 
-   .. attribute:: name
+   .. method:: get_name()
 
-      Descriptive name of the task.
+      Return the name of the task.
 
       .. versionadded:: 3.8
 

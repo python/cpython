@@ -343,10 +343,7 @@ class BaseTaskTests:
             return 123
 
         t = self.new_task(self.loop, notmuch(), name={6})
-        self.assertEqual(t.name, '{6}')
-
-        t.name = None
-        self.assertEqual(t.name, 'None')
+        self.assertEqual(t.get_name(), '{6}')
         self.loop.run_until_complete(t)
 
     def test_task_repr_coro_decorator(self):

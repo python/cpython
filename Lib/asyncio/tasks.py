@@ -25,7 +25,7 @@ from . import futures
 from .coroutines import coroutine
 
 # Helper to generate new task names
-_counter = itertools.count(1).__next__
+_task_name_counter = itertools.count(1).__next__
 
 
 def current_task(loop=None):
@@ -108,7 +108,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._log_destroy_pending = False
             raise TypeError(f"a coroutine was expected, got {coro!r}")
 
-        self._name = str(name) if name is not None else 'Task-%s' % _counter()
+        if name is not None:
+            self._name = str(name)
+        else:
+            self._name = 'Task-%s' % _task_name_counter()
+
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
@@ -131,13 +135,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
 
-    @property
-    def name(self):
+    def get_name(self):
         return self._name
-
-    @name.setter
-    def name(self, value):
-        self._name = str(value)
 
     def set_result(self, result):
         raise RuntimeError('Task does not support set_result operation')
