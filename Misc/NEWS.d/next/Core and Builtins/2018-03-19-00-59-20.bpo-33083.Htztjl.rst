@@ -1,3 +1,2 @@
-math.factorial no longer accepts arguments that are not int-like. A
-DeprecationWarning is emitted if the argument is a float. Patch by Pablo
-Galindo.
+``math.factorial`` no longer accepts arguments that are not int-like.
+Patch by Pablo Galindo.
