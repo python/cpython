@@ -243,6 +243,11 @@ Changes in the Python API
 * ``PyGC_Head`` struct is changed completely.  All code touched the
   struct member should be rewritten.  (See :issue:`33597`)
 
+* An optional keyword-only argument, *name*, was added to
+  :func:`asyncio.create_task` and :meth:`asyncio.AbstractEventLoop.create_task`.
+  The API for task factories was also changed accordingly to allow this argument
+  to be passed.
+
 
 CPython bytecode changes
 ------------------------
