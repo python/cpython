@@ -1672,9 +1672,9 @@ math_factorial(PyObject *module, PyObject *arg)
         x = PyLong_AsLongAndOverflow(lx, &overflow);
         Py_DECREF(lx);
     }
-    else{
+    else {
         pyint_form = PyNumber_Index(arg);
-        if(pyint_form == NULL){
+        if (pyint_form == NULL) {
             return NULL;
         }
         x = PyLong_AsLongAndOverflow(pyint_form, &overflow);
