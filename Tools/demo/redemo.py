@@ -35,7 +35,7 @@ class ReDemo:
         self.showvar.set("first")
 
         self.showfirstradio = Radiobutton(self.showframe,
-                                         text="Highlight first match",
+                                          text="Highlight first match",
                                           variable=self.showvar,
                                           value="first",
                                           command=self.recompile)
