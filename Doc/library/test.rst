@@ -746,7 +746,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: wait_threads_exit(timeout=60.0)
 
-   Context manager to wait until all threads created in the ``with`` statment
+   Context manager to wait until all threads created in the ``with`` statement
    exit.
 
 

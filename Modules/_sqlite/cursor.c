@@ -109,7 +109,7 @@ PyObject* _pysqlite_get_converter(PyObject* key)
         return NULL;
     }
 
-    retval = PyDict_GetItem(converters, upcase_key);
+    retval = PyDict_GetItem(_pysqlite_converters, upcase_key);
     Py_DECREF(upcase_key);
 
     return retval;
@@ -378,8 +378,6 @@ static int check_cursor(pysqlite_Cursor* cur)
 PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
 {
     PyObject* operation;
-    const char* operation_cstr;
-    Py_ssize_t operation_len;
     PyObject* parameters_list = NULL;
     PyObject* parameters_iter = NULL;
     PyObject* parameters = NULL;
@@ -464,10 +462,6 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         pysqlite_statement_reset(self->statement);
     }
 
-    operation_cstr = PyUnicode_AsUTF8AndSize(operation, &operation_len);
-    if (operation_cstr == NULL)
-        goto error;
-
     /* reset description and rowcount */
     Py_INCREF(Py_None);
     Py_SETREF(self->description, Py_None);
@@ -539,7 +533,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
             if (PyErr_Occurred()) {
                 /* there was an error that occurred in a user-defined callback */
-                if (_enable_callback_tracebacks) {
+                if (_pysqlite_enable_callback_tracebacks) {
                     PyErr_Print();
                 } else {
                     PyErr_Clear();

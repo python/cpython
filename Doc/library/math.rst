@@ -330,10 +330,19 @@ Trigonometric functions
    Return the cosine of *x* radians.
 
 
-.. function:: hypot(x, y)
+.. function:: hypot(*coordinates)
 
-   Return the Euclidean norm, ``sqrt(x*x + y*y)``. This is the length of the vector
-   from the origin to point ``(x, y)``.
+   Return the Euclidean norm, ``sqrt(sum(x**2 for x in coordinates))``.
+   This is the length of the vector from the origin to the point
+   given by the coordinates.
+
+   For a two dimensional point ``(x, y)``, this is equivalent to computing
+   the hypotenuse of a right triangle using the Pythagorean theorem,
+   ``sqrt(x*x + y*y)``.
+
+   .. versionchanged:: 3.8
+      Added support for n-dimensional points. Formerly, only the two
+      dimensional case was supported.
 
 
 .. function:: sin(x)

@@ -352,8 +352,7 @@ class AbstractEventLoop:
 
         ssl_handshake_timeout is the time in seconds that an SSL server
         will wait for completion of the SSL handshake before aborting the
-        connection. Default is 10s, longer timeouts may increase vulnerability
-        to DoS attacks (see https://support.f5.com/csp/article/K13834)
+        connection. Default is 60s.
 
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,
@@ -411,7 +410,7 @@ class AbstractEventLoop:
         accepted connections.
 
         ssl_handshake_timeout is the time in seconds that an SSL server
-        will wait for the SSL handshake to complete (defaults to 10s).
+        will wait for the SSL handshake to complete (defaults to 60s).
 
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,

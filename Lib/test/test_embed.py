@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 
-class EmbeddingTests(unittest.TestCase):
+class EmbeddingTestsMixin:
     def setUp(self):
         here = os.path.abspath(__file__)
         basepath = os.path.dirname(os.path.dirname(os.path.dirname(here)))
@@ -110,6 +110,8 @@ class EmbeddingTests(unittest.TestCase):
                 yield current_run
                 current_run = []
 
+
+class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_subinterps_main(self):
         for run in self.run_repeated_init_and_subinterpreters():
             main = run[0]
@@ -208,7 +210,7 @@ class EmbeddingTests(unittest.TestCase):
         Checks that sys.warnoptions and sys._xoptions can be set before the
         runtime is initialized (otherwise they won't be effective).
         """
-        env = dict(PYTHONPATH=os.pathsep.join(sys.path))
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
         out, err = self.run_embedded_interpreter(
                         "pre_initialization_sys_options", env=env)
         expected_output = (
@@ -228,6 +230,178 @@ class EmbeddingTests(unittest.TestCase):
         out, err = self.run_embedded_interpreter("bpo20891")
         self.assertEqual(out, '')
         self.assertEqual(err, '')
+
+    def test_initialize_twice(self):
+        """
+        bpo-33932: Calling Py_Initialize() twice should do nothing (and not
+        crash!).
+        """
+        out, err = self.run_embedded_interpreter("initialize_twice")
+        self.assertEqual(out, '')
+        self.assertEqual(err, '')
+
+    def test_initialize_pymain(self):
+        """
+        bpo-34008: Calling Py_Main() after Py_Initialize() must not fail.
+        """
+        out, err = self.run_embedded_interpreter("initialize_pymain")
+        self.assertEqual(out.rstrip(), "Py_Main() after Py_Initialize: sys.argv=['-c', 'arg2']")
+        self.assertEqual(err, '')
+
+
+class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
+    maxDiff = 4096
+    DEFAULT_CONFIG = {
+        'install_signal_handlers': 1,
+        'use_environment': 1,
+        'use_hash_seed': 0,
+        'hash_seed': 0,
+        'allocator': '(null)',
+        'dev_mode': 0,
+        'faulthandler': 0,
+        'tracemalloc': 0,
+        'import_time': 0,
+        'show_ref_count': 0,
+        'show_alloc_count': 0,
+        'dump_refs': 0,
+        'malloc_stats': 0,
+        'utf8_mode': 0,
+
+        'coerce_c_locale': 0,
+        'coerce_c_locale_warn': 0,
+
+        'pycache_prefix': '(null)',
+        'program_name': './_testembed',
+        'program': '(null)',
+
+        'isolated': 0,
+        'site_import': 1,
+        'bytes_warning': 0,
+        'inspect': 0,
+        'interactive': 0,
+        'optimization_level': 0,
+        'debug': 0,
+        'write_bytecode': 1,
+        'verbose': 0,
+        'quiet': 0,
+        'user_site_directory': 1,
+        'unbuffered_stdio': 0,
+
+        '_install_importlib': 1,
+        '_check_hash_pycs_mode': 'default',
+    }
+
+    def check_config(self, testname, expected):
+        env = dict(os.environ)
+        for key in list(env):
+            if key.startswith('PYTHON'):
+                del env[key]
+        # Disable C locale coercion and UTF-8 mode to not depend
+        # on the current locale
+        env['PYTHONCOERCECLOCALE'] = '0'
+        env['PYTHONUTF8'] = '0'
+        out, err = self.run_embedded_interpreter(testname, env=env)
+        # Ignore err
+
+        expected = dict(self.DEFAULT_CONFIG, **expected)
+        for key, value in expected.items():
+            expected[key] = str(value)
+
+        config = {}
+        for line in out.splitlines():
+            key, value = line.split(' = ', 1)
+            config[key] = value
+        self.assertEqual(config, expected)
+
+    def test_init_default_config(self):
+        self.check_config("init_default_config", {})
+
+    def test_init_global_config(self):
+        config = {
+            'program_name': './globalvar',
+            'site_import': 0,
+            'bytes_warning': 1,
+            'inspect': 1,
+            'interactive': 1,
+            'optimization_level': 2,
+            'write_bytecode': 0,
+            'verbose': 1,
+            'quiet': 1,
+            'unbuffered_stdio': 1,
+            'utf8_mode': 1,
+            'user_site_directory': 0,
+        }
+        self.check_config("init_global_config", config)
+
+    def test_init_from_config(self):
+        config = {
+            'install_signal_handlers': 0,
+            'use_hash_seed': 1,
+            'hash_seed': 123,
+            'allocator': 'malloc_debug',
+            'tracemalloc': 2,
+            'import_time': 1,
+            'show_ref_count': 1,
+            'show_alloc_count': 1,
+            'malloc_stats': 1,
+
+            'utf8_mode': 1,
+
+            'pycache_prefix': 'conf_pycache_prefix',
+            'program_name': './conf_program_name',
+            'program': 'conf_program',
+
+            'site_import': 0,
+            'bytes_warning': 1,
+            'inspect': 1,
+            'interactive': 1,
+            'optimization_level': 2,
+            'write_bytecode': 0,
+            'verbose': 1,
+            'quiet': 1,
+            'unbuffered_stdio': 1,
+            'user_site_directory': 0,
+            'faulthandler': 1,
+            '_check_hash_pycs_mode': 'always',
+        }
+        self.check_config("init_from_config", config)
+
+    def test_init_env(self):
+        config = {
+            'use_hash_seed': 1,
+            'hash_seed': 42,
+            'allocator': 'malloc_debug',
+            'tracemalloc': 2,
+            'import_time': 1,
+            'malloc_stats': 1,
+            'utf8_mode': 1,
+            'inspect': 1,
+            'optimization_level': 2,
+            'pycache_prefix': 'env_pycache_prefix',
+            'write_bytecode': 0,
+            'verbose': 1,
+            'unbuffered_stdio': 1,
+            'user_site_directory': 0,
+            'faulthandler': 1,
+            'dev_mode': 1,
+        }
+        self.check_config("init_env", config)
+
+    def test_init_dev_mode(self):
+        config = {
+            'dev_mode': 1,
+            'faulthandler': 1,
+            'allocator': 'debug',
+        }
+        self.check_config("init_dev_mode", config)
+
+    def test_init_isolated(self):
+        config = {
+            'isolated': 1,
+            'use_environment': 0,
+            'user_site_directory': 0,
+        }
+        self.check_config("init_isolated", config)
 
 
 if __name__ == "__main__":

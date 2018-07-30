@@ -152,6 +152,47 @@ PyComplex_ImagAsDouble:PyObject*:op:0:
 PyComplex_RealAsDouble:double:::
 PyComplex_RealAsDouble:PyObject*:op:0:
 
+PyContext_CheckExact:int:::
+PyContext_CheckExact:PyObject*:o:0:
+
+PyContext_ClearFreeList:int:::
+
+PyContext_Copy:PyObject*::+1:
+PyContext_Copy:PyObject*:ctx:0:
+
+PyContext_CopyCurrent:PyObject*::+1:
+
+PyContext_Enter:int:::
+PyContext_Enter:PyObject*:ctx:+1:
+
+PyContext_Exit:int:::
+PyContext_Exit:PyObject*:ctx:-1:
+
+PyContext_New:PyObject*::+1:
+
+PyContextToken_CheckExact:int:::
+PyContextToken_CheckExact:PyObject*:o:0:
+
+PyContextVar_CheckExact:int:::
+PyContextVar_CheckExact:PyObject*:o:0:
+
+PyContextVar_Get:int:::
+PyContextVar_Get:PyObject*:var:0:
+PyContextVar_Get:PyObject*:default_value:0:
+PyContextVar_Get:PyObject**:value:+1:???
+
+PyContextVar_New:PyObject*::+1:
+PyContextVar_New:const char*:name::
+PyContextVar_New:PyObject*:def:+1:
+
+PyContextVar_Set:PyObject*::+1:
+PyContextVar_Set:PyObject*:var:0:
+PyContextVar_Set:PyObject*:value:+1:
+
+PyContextVar_Reset:int:::
+PyContextVar_Reset:PyObject*:var:0:
+PyContextVar_Reset:PyObject*:token:-1:
+
 PyDate_FromDate:PyObject*::+1:
 PyDate_FromDate:int:year::
 PyDate_FromDate:int:month::
@@ -541,6 +582,9 @@ PyImport_ExecCodeModuleEx:const char*:pathname::
 
 PyImport_GetMagicNumber:long:::
 
+PyImport_GetModule:PyObject*::+1:
+PyImport_GetModule:PyObject*:name:0:
+
 PyImport_GetModuleDict:PyObject*::0:
 
 PyImport_Import:PyObject*::+1:
@@ -604,6 +648,9 @@ PyInterpreterState_Clear:PyInterpreterState*:interp::
 
 PyInterpreterState_Delete:void:::
 PyInterpreterState_Delete:PyInterpreterState*:interp::
+
+PyInterpreterState_GetID:int64_t:::
+PyInterpreterState_GetID:PyInterpreterState*:interp::
 
 PyInterpreterState_New:PyInterpreterState*:::
 
@@ -933,6 +980,14 @@ PyNumber_Xor:PyObject*:o2:0:
 PyObject_AsFileDescriptor:int:::
 PyObject_AsFileDescriptor:PyObject*:o:0:
 
+PyOS_AfterFork:void:::
+
+PyOS_AfterFork_Child:void:::
+
+PyOS_AfterFork_Parent:void:::
+
+PyOS_BeforeFork:void:::
+
 PyOS_FSPath:PyObject*::+1:
 PyOS_FSPath:PyObject*:path:0:
 
@@ -1252,6 +1307,12 @@ PySet_Pop:PyObject*:set:0:
 PySet_Size:int:::
 PySet_Size:PyObject*:anyset:0:
 
+PySlice_AdjustIndices:Py_ssize_t:::
+PySlice_AdjustIndices:Py_ssize_t:length::
+PySlice_AdjustIndices:Py_ssize_t*:start::
+PySlice_AdjustIndices:Py_ssize_t*:stop::
+PySlice_AdjustIndices:Py_ssize_t*:step::
+
 PySlice_Check:int:::
 PySlice_Check:PyObject*:ob:0:
 
@@ -1259,6 +1320,12 @@ PySlice_New:PyObject*::+1:
 PySlice_New:PyObject*:start:0:
 PySlice_New:PyObject*:stop:0:
 PySlice_New:PyObject*:step:0:
+
+PySlice_Unpack:int:::
+PySlice_Unpack:PyObject*:slice:0:
+PySlice_Unpack:Py_ssize_t*:start::
+PySlice_Unpack:Py_ssize_t*:stop::
+PySlice_Unpack:Py_ssize_t*:step::
 
 PyString_AS_STRING:const char*:::
 PyString_AS_STRING:PyObject*:string:0:
@@ -1383,11 +1450,41 @@ PyThreadState_New:PyInterpreterState*:interp::
 PyThreadState_Swap:PyThreadState*:::
 PyThreadState_Swap:PyThreadState*:tstate::
 
+PyThread_tss_alloc:Py_tss_t*:::
+
+PyThread_tss_create:int:::
+PyThread_tss_create:Py_tss_t*:key::
+
+PyThread_tss_delete:void:::
+PyThread_tss_delete:Py_tss_t*:key::
+
+PyThread_tss_free:void:::
+PyThread_tss_free:Py_tss_t*:key::
+
+PyThread_tss_get:void*:::
+PyThread_tss_get:Py_tss_t*:key::
+
+PyThread_tss_is_created:int:::
+PyThread_tss_is_created:Py_tss_t*:key::
+
+PyThread_tss_set:int:::
+PyThread_tss_set:Py_tss_t*:key::
+PyThread_tss_set:void*:value::
+
 PyTime_FromTime:PyObject*::+1:
 PyTime_FromTime:int:hour::
 PyTime_FromTime:int:minute::
 PyTime_FromTime:int:second::
 PyTime_FromTime:int:usecond::
+
+PyTraceMalloc_Track:int:::
+PyTraceMalloc_Track:unsigned int:domain::
+PyTraceMalloc_Track:uintptr_t:ptr::
+PyTraceMalloc_Track:size_t:size::
+
+PyTraceMalloc_Untrack:int:::
+PyTraceMalloc_Untrack:unsigned int:domain::
+PyTraceMalloc_Untrack:uintptr_t:ptr::
 
 PyTuple_Check:int:::
 PyTuple_Check:PyObject*:p:0:

@@ -160,8 +160,8 @@ is the module's name in the Python package namespace.
       *msg* using the string formatting operator. (Note that this means that you can
       use keywords in the format string, together with a single dictionary argument.)
 
-      There are three keyword arguments in *kwargs* which are inspected:
-      *exc_info*, *stack_info*, and *extra*.
+      There are four keyword arguments in *kwargs* which are inspected:
+      *exc_info*, *stack_info*, *stacklevel* and *extra*.
 
       If *exc_info* does not evaluate as false, it causes exception information to be
       added to the logging message. If an exception tuple (in the format returned by
@@ -188,11 +188,19 @@ is the module's name in the Python package namespace.
       This mimics the ``Traceback (most recent call last):`` which is used when
       displaying exception frames.
 
-      The third keyword argument is *extra* which can be used to pass a
-      dictionary which is used to populate the __dict__ of the LogRecord created for
-      the logging event with user-defined attributes. These custom attributes can then
-      be used as you like. For example, they could be incorporated into logged
-      messages. For example::
+      The third optional keyword argument is *stacklevel*, which defaults to ``1``.
+      If greater than 1, the corresponding number of stack frames are skipped
+      when computing the line number and function name set in the :class:`LogRecord`
+      created for the logging event. This can be used in logging helpers so that
+      the function name, filename and line number recorded are not the information
+      for the helper function/method, but rather its caller. The name of this
+      parameter mirrors the equivalent one in the :mod:`warnings` module.
+
+      The fourth keyword argument is *extra* which can be used to pass a
+      dictionary which is used to populate the __dict__ of the :class:`LogRecord`
+      created for the logging event with user-defined attributes. These custom
+      attributes can then be used as you like. For example, they could be
+      incorporated into logged messages. For example::
 
          FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
          logging.basicConfig(format=FORMAT)
@@ -213,9 +221,9 @@ is the module's name in the Python package namespace.
       If you choose to use these attributes in logged messages, you need to exercise
       some care. In the above example, for instance, the :class:`Formatter` has been
       set up with a format string which expects 'clientip' and 'user' in the attribute
-      dictionary of the LogRecord. If these are missing, the message will not be
-      logged because a string formatting exception will occur. So in this case, you
-      always need to pass the *extra* dictionary with these keys.
+      dictionary of the :class:`LogRecord`. If these are missing, the message will
+      not be logged because a string formatting exception will occur. So in this case,
+      you always need to pass the *extra* dictionary with these keys.
 
       While this might be annoying, this feature is intended for use in specialized
       circumstances, such as multi-threaded servers where the same code executes in
@@ -224,11 +232,14 @@ is the module's name in the Python package namespace.
       above example). In such circumstances, it is likely that specialized
       :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
-      .. versionadded:: 3.2
+      .. versionchanged:: 3.2
          The *stack_info* parameter was added.
 
       .. versionchanged:: 3.5
          The *exc_info* parameter can now accept exception instances.
+
+      .. versionchanged:: 3.8
+         The *stacklevel* parameter was added.
 
 
    .. method:: Logger.info(msg, *args, **kwargs)
@@ -300,11 +311,18 @@ is the module's name in the Python package namespace.
       Removes the specified handler *hdlr* from this logger.
 
 
-   .. method:: Logger.findCaller(stack_info=False)
+   .. method:: Logger.findCaller(stack_info=False, stacklevel=1)
 
       Finds the caller's source filename and line number. Returns the filename, line
       number, function name and stack information as a 4-element tuple. The stack
       information is returned as ``None`` unless *stack_info* is ``True``.
+
+      The *stacklevel* parameter is passed from code calling the :meth:`debug`
+      and other APIs. If greater than 1, the excess is used to skip stack frames
+      before determining the values to be returned. This will generally be useful
+      when calling logging APIs from helper/wrapper code, so that the information
+      in the event log refers not to the helper/wrapper code, but to the code that
+      calls it.
 
 
    .. method:: Logger.handle(record)
@@ -515,8 +533,8 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
    Returns a new instance of the :class:`Formatter` class.  The instance is
    initialized with a format string for the message as a whole, as well as a
    format string for the date/time portion of a message.  If no *fmt* is
-   specified, ``'%(message)s'`` is used.  If no *datefmt* is specified, the
-   ISO8601 date format is used.
+   specified, ``'%(message)s'`` is used.  If no *datefmt* is specified, a format
+   is used which is described in the :meth:`formatTime` documentation.
 
    The *style* parameter can be one of '%', '{' or '$' and determines how
    the format string will be merged with its data: using one of %-formatting,
@@ -556,8 +574,10 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       formatters to provide for any specific requirement, but the basic behavior
       is as follows: if *datefmt* (a string) is specified, it is used with
       :func:`time.strftime` to format the creation time of the
-      record. Otherwise, the ISO8601 format is used.  The resulting string is
-      returned.
+      record. Otherwise, the format '%Y-%m-%d %H:%M:%S,uuu' is used, where the
+      uuu part is a millisecond value and the other letters are as per the
+      :func:`time.strftime` documentation.  An example time in this format is
+      ``2003-01-23 00:29:50,411``.  The resulting string is returned.
 
       This function uses a user-configurable function to convert the creation
       time to a tuple. By default, :func:`time.localtime` is used; to change
@@ -568,8 +588,8 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       attribute in the ``Formatter`` class.
 
       .. versionchanged:: 3.3
-         Previously, the default ISO 8601 format was hard-coded as in this
-         example: ``2010-09-06 22:38:15,292`` where the part before the comma is
+         Previously, the default format was hard-coded as in this example:
+         ``2010-09-06 22:38:15,292`` where the part before the comma is
          handled by a strptime format string (``'%Y-%m-%d %H:%M:%S'``), and the
          part after the comma is a millisecond value. Because strptime does not
          have a format placeholder for milliseconds, the millisecond value is
@@ -644,9 +664,9 @@ sophisticated criteria than levels, they get to see every record which is
 processed by the handler or logger they're attached to: this can be useful if
 you want to do things like counting how many records were processed by a
 particular logger or handler, or adding, changing or removing attributes in
-the LogRecord being processed. Obviously changing the LogRecord needs to be
-done with some care, but it does allow the injection of contextual information
-into logs (see :ref:`filters-contextual`).
+the :class:`LogRecord` being processed. Obviously changing the LogRecord needs
+to be done with some care, but it does allow the injection of contextual
+information into logs (see :ref:`filters-contextual`).
 
 .. _log-record:
 
@@ -700,13 +720,13 @@ wire).
       be used.
 
    .. versionchanged:: 3.2
-      The creation of a ``LogRecord`` has been made more configurable by
+      The creation of a :class:`LogRecord` has been made more configurable by
       providing a factory which is used to create the record. The factory can be
       set using :func:`getLogRecordFactory` and :func:`setLogRecordFactory`
       (see this for the factory's signature).
 
    This functionality can be used to inject your own values into a
-   LogRecord at creation time. You can use the following pattern::
+   :class:`LogRecord` at creation time. You can use the following pattern::
 
       old_factory = logging.getLogRecordFactory()
 
@@ -987,7 +1007,7 @@ functions.
    above example). In such circumstances, it is likely that specialized
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       The *stack_info* parameter was added.
 
 .. function:: info(msg, *args, **kwargs)
@@ -1111,7 +1131,7 @@ functions.
    if no handlers are defined for the root logger.
 
    This function does nothing if the root logger already has handlers
-   configured for it.
+   configured, unless the keyword argument *force* is set to ``True``.
 
    .. note:: This function should be called from the main thread
       before other threads are started. In versions of Python prior to
@@ -1127,52 +1147,63 @@ functions.
    +--------------+---------------------------------------------+
    | Format       | Description                                 |
    +==============+=============================================+
-   | ``filename`` | Specifies that a FileHandler be created,    |
+   | *filename*   | Specifies that a FileHandler be created,    |
    |              | using the specified filename, rather than a |
    |              | StreamHandler.                              |
    +--------------+---------------------------------------------+
-   | ``filemode`` | Specifies the mode to open the file, if     |
-   |              | filename is specified (if filemode is       |
-   |              | unspecified, it defaults to 'a').           |
+   | *filemode*   | If *filename* is specified, open the file   |
+   |              | in this :ref:`mode <filemodes>`. Defaults   |
+   |              | to ``'a'``.                                 |
    +--------------+---------------------------------------------+
-   | ``format``   | Use the specified format string for the     |
+   | *format*     | Use the specified format string for the     |
    |              | handler.                                    |
    +--------------+---------------------------------------------+
-   | ``datefmt``  | Use the specified date/time format.         |
+   | *datefmt*    | Use the specified date/time format, as      |
+   |              | accepted by :func:`time.strftime`.          |
    +--------------+---------------------------------------------+
-   | ``style``    | If ``format`` is specified, use this style  |
-   |              | for the format string. One of '%', '{' or   |
-   |              | '$' for %-formatting, :meth:`str.format` or |
-   |              | :class:`string.Template` respectively, and  |
-   |              | defaulting to '%' if not specified.         |
+   | *style*      | If *format* is specified, use this style    |
+   |              | for the format string. One of ``'%'``,      |
+   |              | ``'{'`` or ``'$'`` for :ref:`printf-style   |
+   |              | <old-string-formatting>`,                   |
+   |              | :meth:`str.format` or                       |
+   |              | :class:`string.Template` respectively.      |
+   |              | Defaults to ``'%'``.                        |
    +--------------+---------------------------------------------+
-   | ``level``    | Set the root logger level to the specified  |
-   |              | level.                                      |
+   | *level*      | Set the root logger level to the specified  |
+   |              | :ref:`level <levels>`.                      |
    +--------------+---------------------------------------------+
-   | ``stream``   | Use the specified stream to initialize the  |
+   | *stream*     | Use the specified stream to initialize the  |
    |              | StreamHandler. Note that this argument is   |
-   |              | incompatible with 'filename' - if both are  |
-   |              | present, a ``ValueError`` is raised.        |
+   |              | incompatible with *filename* - if both      |
+   |              | are present, a ``ValueError`` is raised.    |
    +--------------+---------------------------------------------+
-   | ``handlers`` | If specified, this should be an iterable of |
+   | *handlers*   | If specified, this should be an iterable of |
    |              | already created handlers to add to the root |
    |              | logger. Any handlers which don't already    |
    |              | have a formatter set will be assigned the   |
    |              | default formatter created in this function. |
    |              | Note that this argument is incompatible     |
-   |              | with 'filename' or 'stream' - if both are   |
-   |              | present, a ``ValueError`` is raised.        |
+   |              | with *filename* or *stream* - if both       |
+   |              | are present, a ``ValueError`` is raised.    |
+   +--------------+---------------------------------------------+
+   | *force*      | If this keyword argument is specified as    |
+   |              | true, any existing handlers attached to the |
+   |              | root logger are removed and closed, before  |
+   |              | carrying out the configuration as specified |
+   |              | by the other arguments.                     |
    +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2
-      The ``style`` argument was added.
+      The *style* argument was added.
 
    .. versionchanged:: 3.3
-      The ``handlers`` argument was added. Additional checks were added to
+      The *handlers* argument was added. Additional checks were added to
       catch situations where incompatible arguments are specified (e.g.
-      ``handlers`` together with ``stream`` or ``filename``, or ``stream``
-      together with ``filename``).
+      *handlers* together with *stream* or *filename*, or *stream*
+      together with *filename*).
 
+   .. versionchanged:: 3.8
+      The *force* argument was added.
 
 .. function:: shutdown()
 

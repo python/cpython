@@ -2,7 +2,7 @@ import sys
 import unittest
 
 from . import data01
-from . import zipdata02
+from . import zipdata01, zipdata02
 from . import util
 from importlib import resources, import_module
 
@@ -109,6 +109,10 @@ class ResourceFromZipsTest(util.ZipSetupBase, unittest.TestCase):
             set(resources.contents('ziptestdata.two')),
             {'__init__.py', 'resource2.txt'})
 
+
+class SubdirectoryResourceFromZipsTest(util.ZipSetupBase, unittest.TestCase):
+    ZIP_MODULE = zipdata01                          # type: ignore
+
     def test_is_submodule_resource(self):
         submodule = import_module('ziptestdata.subdirectory')
         self.assertTrue(
@@ -131,10 +135,9 @@ class ResourceFromZipsTest(util.ZipSetupBase, unittest.TestCase):
 
 
 class NamespaceTest(unittest.TestCase):
-    def test_namespaces_cant_have_resources(self):
-        contents = set(resources.contents(
-            'test.test_importlib.data03.namespace'))
-        self.assertEqual(len(contents), 0)
+    def test_namespaces_cannot_have_resources(self):
+        contents = resources.contents('test.test_importlib.data03.namespace')
+        self.assertFalse(list(contents))
         # Even though there is a file in the namespace directory, it is not
         # considered a resource, since namespace packages can't have them.
         self.assertFalse(resources.is_resource(

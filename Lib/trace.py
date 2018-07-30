@@ -73,9 +73,6 @@ def _unsettrace():
 
 PRAGMA_NOCOVER = "#pragma NO COVER"
 
-# Simple rx to find lines with no code.
-rx_blank = re.compile(r'^\s*(#.*)?$')
-
 class _Ignore:
     def __init__(self, modules=None, dirs=None):
         self._mods = set() if not modules else set(modules)
@@ -278,16 +275,15 @@ class CoverageResults:
                 lnotab = _find_executable_linenos(filename)
             else:
                 lnotab = {}
-            if lnotab:
-                source = linecache.getlines(filename)
-                coverpath = os.path.join(dir, modulename + ".cover")
-                with open(filename, 'rb') as fp:
-                    encoding, _ = tokenize.detect_encoding(fp.readline)
-                n_hits, n_lines = self.write_results_file(coverpath, source,
-                                                          lnotab, count, encoding)
-                if summary and n_lines:
-                    percent = int(100 * n_hits / n_lines)
-                    sums[modulename] = n_lines, percent, modulename, filename
+            source = linecache.getlines(filename)
+            coverpath = os.path.join(dir, modulename + ".cover")
+            with open(filename, 'rb') as fp:
+                encoding, _ = tokenize.detect_encoding(fp.readline)
+            n_hits, n_lines = self.write_results_file(coverpath, source,
+                                                      lnotab, count, encoding)
+            if summary and n_lines:
+                percent = int(100 * n_hits / n_lines)
+                sums[modulename] = n_lines, percent, modulename, filename
 
 
         if summary and sums:
@@ -306,6 +302,7 @@ class CoverageResults:
 
     def write_results_file(self, path, lines, lnotab, lines_hit, encoding=None):
         """Return a coverage results file in path."""
+        # ``lnotab`` is a dict of executable lines, or a line number "table"
 
         try:
             outfile = open(path, "w", encoding=encoding)
@@ -324,17 +321,13 @@ class CoverageResults:
                     outfile.write("%5d: " % lines_hit[lineno])
                     n_hits += 1
                     n_lines += 1
-                elif rx_blank.match(line):
-                    outfile.write("       ")
-                else:
-                    # lines preceded by no marks weren't hit
-                    # Highlight them if so indicated, unless the line contains
+                elif lineno in lnotab and not PRAGMA_NOCOVER in line:
+                    # Highlight never-executed lines, unless the line contains
                     # #pragma: NO COVER
-                    if lineno in lnotab and not PRAGMA_NOCOVER in line:
-                        outfile.write(">>>>>> ")
-                        n_lines += 1
-                    else:
-                        outfile.write("       ")
+                    outfile.write(">>>>>> ")
+                    n_lines += 1
+                else:
+                    outfile.write("       ")
                 outfile.write(line.expandtabs(8))
 
         return n_hits, n_lines

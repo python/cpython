@@ -67,7 +67,7 @@ Linked-List API
 As noted, the linked-list implemented here does not have all the bells and
 whistles.  However, we recognize that the implementation may need to
 change to accommodate performance improvements or extra functionality.  To
-that end, We use a simple API to interact with the linked-list.  Here's a
+that end, we use a simple API to interact with the linked-list.  Here's a
 summary of the methods/macros:
 
 Node info:
@@ -444,7 +444,7 @@ Potential Optimizations
   - Set node->key to NULL to indicate the node is not-in-use.
   - Add _odict_EXISTS()?
   - How to maintain consistency across resizes?  Existing node pointers
-    would be invalidate after a resize, which is particularly problematic
+    would be invalidated after a resize, which is particularly problematic
     for the iterators.
 * Use a more stream-lined implementation of update() and, likely indirectly,
   __init__().
@@ -884,7 +884,7 @@ OrderedDict_fromkeys_impl(PyTypeObject *type, PyObject *seq, PyObject *value)
 PyDoc_STRVAR(odict_sizeof__doc__, "");
 
 static PyObject *
-odict_sizeof(PyODictObject *od)
+odict_sizeof(PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res = _PyDict_SizeOf((PyDictObject *)od);
     res += sizeof(_ODictNode *) * _odict_FAST_SIZE(od);  /* od_fast_nodes */
@@ -899,7 +899,7 @@ odict_sizeof(PyODictObject *od)
 PyDoc_STRVAR(odict_reduce__doc__, "Return state information for pickling");
 
 static PyObject *
-odict_reduce(register PyODictObject *od)
+odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(__dict__);
     _Py_IDENTIFIER(items);
@@ -1143,21 +1143,21 @@ OrderedDict_popitem_impl(PyODictObject *self, int last)
 /* MutableMapping.keys() does not have a docstring. */
 PyDoc_STRVAR(odict_keys__doc__, "");
 
-static PyObject * odictkeys_new(PyObject *od);  /* forward */
+static PyObject * odictkeys_new(PyObject *od, PyObject *Py_UNUSED(ignored));  /* forward */
 
 /* values() */
 
 /* MutableMapping.values() does not have a docstring. */
 PyDoc_STRVAR(odict_values__doc__, "");
 
-static PyObject * odictvalues_new(PyObject *od);  /* forward */
+static PyObject * odictvalues_new(PyObject *od, PyObject *Py_UNUSED(ignored));  /* forward */
 
 /* items() */
 
 /* MutableMapping.items() does not have a docstring. */
 PyDoc_STRVAR(odict_items__doc__, "");
 
-static PyObject * odictitems_new(PyObject *od);  /* forward */
+static PyObject * odictitems_new(PyObject *od, PyObject *Py_UNUSED(ignored));  /* forward */
 
 /* update() */
 
@@ -1175,7 +1175,7 @@ PyDoc_STRVAR(odict_clear__doc__,
              "od.clear() -> None.  Remove all items from od.");
 
 static PyObject *
-odict_clear(register PyODictObject *od)
+odict_clear(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
     PyDict_Clear((PyObject *)od);
     _odict_clear_nodes(od);
@@ -1193,7 +1193,7 @@ static int _PyODict_SetItem_KnownHash(PyObject *, PyObject *, PyObject *,
 PyDoc_STRVAR(odict_copy__doc__, "od.copy() -> a shallow copy of od");
 
 static PyObject *
-odict_copy(register PyODictObject *od)
+odict_copy(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
     _ODictNode *node;
     PyObject *od_copy;
@@ -1252,7 +1252,7 @@ PyDoc_STRVAR(odict_reversed__doc__, "od.__reversed__() <==> reversed(od)");
 static PyObject * odictiter_new(PyODictObject *, int);
 
 static PyObject *
-odict_reversed(PyODictObject *od)
+odict_reversed(PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
     return odictiter_new(od, _odict_ITER_KEYS|_odict_ITER_REVERSED);
 }
@@ -1322,11 +1322,11 @@ static PyMethodDef odict_methods[] = {
     {"pop",             (PyCFunction)odict_pop,
      METH_VARARGS | METH_KEYWORDS, odict_pop__doc__},
     ORDEREDDICT_POPITEM_METHODDEF
-    {"keys",            (PyCFunction)odictkeys_new,     METH_NOARGS,
+    {"keys",            odictkeys_new,                  METH_NOARGS,
      odict_keys__doc__},
-    {"values",          (PyCFunction)odictvalues_new,   METH_NOARGS,
+    {"values",          odictvalues_new,                METH_NOARGS,
      odict_values__doc__},
-    {"items",           (PyCFunction)odictitems_new,    METH_NOARGS,
+    {"items",           odictitems_new,                 METH_NOARGS,
      odict_items__doc__},
     {"update",          (PyCFunction)odict_update, METH_VARARGS | METH_KEYWORDS,
      odict_update__doc__},
@@ -1487,7 +1487,7 @@ odict_tp_clear(PyODictObject *od)
     PyObject *res;
     Py_CLEAR(od->od_inst_dict);
     Py_CLEAR(od->od_weakreflist);
-    res = odict_clear(od);
+    res = odict_clear(od, NULL);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -1956,7 +1956,7 @@ odictkeys_iter(_PyDictViewObject *dv)
 }
 
 static PyObject *
-odictkeys_reversed(_PyDictViewObject *dv)
+odictkeys_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
 {
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
@@ -2005,7 +2005,7 @@ PyTypeObject PyODictKeys_Type = {
 };
 
 static PyObject *
-odictkeys_new(PyObject *od)
+odictkeys_new(PyObject *od, PyObject *Py_UNUSED(ignored))
 {
     return _PyDictView_New(od, &PyODictKeys_Type);
 }
@@ -2023,7 +2023,7 @@ odictitems_iter(_PyDictViewObject *dv)
 }
 
 static PyObject *
-odictitems_reversed(_PyDictViewObject *dv)
+odictitems_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
 {
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
@@ -2072,7 +2072,7 @@ PyTypeObject PyODictItems_Type = {
 };
 
 static PyObject *
-odictitems_new(PyObject *od)
+odictitems_new(PyObject *od, PyObject *Py_UNUSED(ignored))
 {
     return _PyDictView_New(od, &PyODictItems_Type);
 }
@@ -2090,7 +2090,7 @@ odictvalues_iter(_PyDictViewObject *dv)
 }
 
 static PyObject *
-odictvalues_reversed(_PyDictViewObject *dv)
+odictvalues_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
 {
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
@@ -2139,7 +2139,7 @@ PyTypeObject PyODictValues_Type = {
 };
 
 static PyObject *
-odictvalues_new(PyObject *od)
+odictvalues_new(PyObject *od, PyObject *Py_UNUSED(ignored))
 {
     return _PyDictView_New(od, &PyODictValues_Type);
 }

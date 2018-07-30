@@ -28,7 +28,6 @@ from builtins import open as _builtin_open
 from codecs import lookup, BOM_UTF8
 import collections
 from io import TextIOWrapper
-from itertools import chain
 import itertools as _itertools
 import re
 import sys
@@ -38,7 +37,7 @@ cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 import token
-__all__ = token.__all__ + ["tokenize", "detect_encoding",
+__all__ = token.__all__ + ["tokenize", "generate_tokens", "detect_encoding",
                            "untokenize", "TokenInfo"]
 del token
 
@@ -278,7 +277,7 @@ class Untokenizer:
         startline = token[0] in (NEWLINE, NL)
         prevstring = False
 
-        for tok in chain([token], iterable):
+        for tok in _itertools.chain([token], iterable):
             toknum, tokval = tok[:2]
             if toknum == ENCODING:
                 self.encoding = tokval
@@ -475,13 +474,10 @@ def tokenize(readline):
     The first token sequence will always be an ENCODING token
     which tells you which encoding was used to decode the bytes stream.
     """
-    # This import is here to avoid problems when the itertools module is not
-    # built yet and tokenize is imported.
-    from itertools import chain, repeat
     encoding, consumed = detect_encoding(readline)
-    rl_gen = iter(readline, b"")
-    empty = repeat(b"")
-    return _tokenize(chain(consumed, rl_gen, empty).__next__, encoding)
+    empty = _itertools.repeat(b"")
+    rl_gen = _itertools.chain(consumed, iter(readline, b""), empty)
+    return _tokenize(rl_gen.__next__, encoding)
 
 
 def _tokenize(readline, encoding):
@@ -496,8 +492,15 @@ def _tokenize(readline, encoding):
             # BOM will already have been stripped.
             encoding = "utf-8"
         yield TokenInfo(ENCODING, encoding, (0, 0), (0, 0), '')
-    while True:             # loop over lines in stream
+    last_line = b''
+    line = b''
+    while True:                                # loop over lines in stream
         try:
+            # We capture the value of the line variable here because
+            # readline uses the empty string '' to signal end of input,
+            # hence `line` itself will always be overwritten at the end
+            # of this loop.
+            last_line = line
             line = readline()
         except StopIteration:
             line = b''
@@ -581,7 +584,7 @@ def _tokenize(readline, encoding):
                     continue
                 token, initial = line[start:end], line[start]
 
-                if (initial in numchars or                  # ordinary number
+                if (initial in numchars or                 # ordinary number
                     (initial == '.' and token != '.' and token != '...')):
                     yield TokenInfo(NUMBER, token, spos, epos, line)
                 elif initial in '\r\n':
@@ -652,14 +655,20 @@ def _tokenize(readline, encoding):
                            (lnum, pos), (lnum, pos+1), line)
                 pos += 1
 
+    # Add an implicit NEWLINE if the input doesn't end in one
+    if last_line and last_line[-1] not in '\r\n':
+        yield TokenInfo(NEWLINE, '', (lnum - 1, len(last_line)), (lnum - 1, len(last_line) + 1), '')
     for indent in indents[1:]:                 # pop remaining indent levels
         yield TokenInfo(DEDENT, '', (lnum, 0), (lnum, 0), '')
     yield TokenInfo(ENDMARKER, '', (lnum, 0), (lnum, 0), '')
 
 
-# An undocumented, backwards compatible, API for all the places in the standard
-# library that expect to be able to use tokenize with strings
 def generate_tokens(readline):
+    """Tokenize a source reading Python code as unicode strings.
+
+    This has the same API as tokenize(), except that it expects the *readline*
+    callable to return str objects instead of bytes.
+    """
     return _tokenize(readline, None)
 
 def main():
@@ -667,7 +676,8 @@ def main():
 
     # Helper error handling routines
     def perror(message):
-        print(message, file=sys.stderr)
+        sys.stderr.write(message)
+        sys.stderr.write('\n')
 
     def error(message, filename=None, location=None):
         if location:

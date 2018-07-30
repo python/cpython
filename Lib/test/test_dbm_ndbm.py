@@ -18,7 +18,7 @@ class DbmTestCase(unittest.TestCase):
 
     def test_keys(self):
         self.d = dbm.ndbm.open(self.filename, 'c')
-        self.assertTrue(self.d.keys() == [])
+        self.assertEqual(self.d.keys(), [])
         self.d['a'] = 'b'
         self.d[b'bytes'] = b'data'
         self.d['12345678910'] = '019237410982340912840198242'
@@ -26,6 +26,28 @@ class DbmTestCase(unittest.TestCase):
         self.assertIn('a', self.d)
         self.assertIn(b'a', self.d)
         self.assertEqual(self.d[b'bytes'], b'data')
+        # get() and setdefault() work as in the dict interface
+        self.assertEqual(self.d.get(b'a'), b'b')
+        self.assertIsNone(self.d.get(b'xxx'))
+        self.assertEqual(self.d.get(b'xxx', b'foo'), b'foo')
+        with self.assertRaises(KeyError):
+            self.d['xxx']
+        self.assertEqual(self.d.setdefault(b'xxx', b'foo'), b'foo')
+        self.assertEqual(self.d[b'xxx'], b'foo')
+        self.d.close()
+
+    def test_empty_value(self):
+        if dbm.ndbm.library == 'Berkeley DB':
+            self.skipTest("Berkeley DB doesn't distinguish the empty value "
+                          "from the absent one")
+        self.d = dbm.ndbm.open(self.filename, 'c')
+        self.assertEqual(self.d.keys(), [])
+        self.d['empty'] = ''
+        self.assertEqual(self.d.keys(), [b'empty'])
+        self.assertIn(b'empty', self.d)
+        self.assertEqual(self.d[b'empty'], b'')
+        self.assertEqual(self.d.get(b'empty'), b'')
+        self.assertEqual(self.d.setdefault(b'empty'), b'')
         self.d.close()
 
     def test_modes(self):

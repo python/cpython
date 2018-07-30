@@ -61,6 +61,7 @@ debug(wchar_t * format, ...)
     if (log_fp != NULL) {
         va_start(va, format);
         vfwprintf_s(log_fp, format, va);
+        va_end(va);
     }
 }
 
@@ -83,6 +84,7 @@ error(int rc, wchar_t * format, ... )
 
     va_start(va, format);
     len = _vsnwprintf_s(message, MSGSIZE, _TRUNCATE, format, va);
+    va_end(va);
 
     if (rc == 0) {  /* a Windows error */
         winerror(GetLastError(), win_message, MSGSIZE);

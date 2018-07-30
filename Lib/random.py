@@ -38,7 +38,6 @@ General notes on the underlying Mersenne Twister core generator:
 """
 
 from warnings import warn as _warn
-from types import MethodType as _MethodType, BuiltinMethodType as _BuiltinMethodType
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from os import urandom as _urandom
@@ -93,6 +92,26 @@ class Random(_random.Random):
 
         self.seed(x)
         self.gauss_next = None
+
+    def __init_subclass__(cls, **kwargs):
+        """Control how subclasses generate random integers.
+
+        The algorithm a subclass can use depends on the random() and/or
+        getrandbits() implementation available to it and determines
+        whether it can generate random integers from arbitrarily large
+        ranges.
+        """
+
+        for c in cls.__mro__:
+            if '_randbelow' in c.__dict__:
+                # just inherit it
+                break
+            if 'getrandbits' in c.__dict__:
+                cls._randbelow = cls._randbelow_with_getrandbits
+                break
+            if 'random' in c.__dict__:
+                cls._randbelow = cls._randbelow_without_getrandbits
+                break
 
     def seed(self, a=None, version=2):
         """Initialize internal state from hashable object.
@@ -221,22 +240,23 @@ class Random(_random.Random):
 
         return self.randrange(a, b+1)
 
-    def _randbelow(self, n, int=int, maxsize=1<<BPF, type=type,
-                   Method=_MethodType, BuiltinMethod=_BuiltinMethodType):
+    def _randbelow_with_getrandbits(self, n):
         "Return a random int in the range [0,n).  Raises ValueError if n==0."
 
-        random = self.random
         getrandbits = self.getrandbits
-        # Only call self.getrandbits if the original random() builtin method
-        # has not been overridden or if a new getrandbits() was supplied.
-        if type(random) is BuiltinMethod or type(getrandbits) is Method:
-            k = n.bit_length()  # don't use (n-1) here because n can be 1
-            r = getrandbits(k)          # 0 <= r < 2**k
-            while r >= n:
-                r = getrandbits(k)
-            return r
-        # There's an overridden random() method but no new getrandbits() method,
-        # so we can only use random() from here.
+        k = n.bit_length()  # don't use (n-1) here because n can be 1
+        r = getrandbits(k)          # 0 <= r < 2**k
+        while r >= n:
+            r = getrandbits(k)
+        return r
+
+    def _randbelow_without_getrandbits(self, n, int=int, maxsize=1<<BPF):
+        """Return a random int in the range [0,n).  Raises ValueError if n==0.
+
+        The implementation does not use getrandbits, but only random.
+        """
+
+        random = self.random
         if n >= maxsize:
             _warn("Underlying random() generator does not supply \n"
                 "enough bits to choose from a population range this large.\n"
@@ -250,6 +270,8 @@ class Random(_random.Random):
         while r >= limit:
             r = random()
         return int(r*maxsize) % n
+
+    _randbelow = _randbelow_with_getrandbits
 
 ## -------------------- sequence methods  -------------------
 
@@ -349,19 +371,21 @@ class Random(_random.Random):
 
         """
         random = self.random
+        n = len(population)
         if cum_weights is None:
             if weights is None:
                 _int = int
-                total = len(population)
-                return [population[_int(random() * total)] for i in range(k)]
+                return [population[_int(random() * n)] for i in range(k)]
             cum_weights = list(_itertools.accumulate(weights))
         elif weights is not None:
             raise TypeError('Cannot specify both weights and cumulative weights')
-        if len(cum_weights) != len(population):
+        if len(cum_weights) != n:
             raise ValueError('The number of weights does not match the population')
         bisect = _bisect.bisect
         total = cum_weights[-1]
-        return [population[bisect(cum_weights, random() * total)] for i in range(k)]
+        hi = n - 1
+        return [population[bisect(cum_weights, random() * total, 0, hi)]
+                for i in range(k)]
 
 ## -------------------- real-valued distributions  -------------------
 

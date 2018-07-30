@@ -135,6 +135,19 @@ if _mswindows:
             self.hStdError = hStdError
             self.wShowWindow = wShowWindow
             self.lpAttributeList = lpAttributeList or {"handle_list": []}
+
+        def copy(self):
+            attr_list = self.lpAttributeList.copy()
+            if 'handle_list' in attr_list:
+                attr_list['handle_list'] = list(attr_list['handle_list'])
+
+            return STARTUPINFO(dwFlags=self.dwFlags,
+                               hStdInput=self.hStdInput,
+                               hStdOutput=self.hStdOutput,
+                               hStdError=self.hStdError,
+                               wShowWindow=self.wShowWindow,
+                               lpAttributeList=attr_list)
+
 else:
     import _posixsubprocess
     import select
@@ -1102,6 +1115,10 @@ class Popen(object):
             # Process startup details
             if startupinfo is None:
                 startupinfo = STARTUPINFO()
+            else:
+                # bpo-34044: Copy STARTUPINFO since it is modified above,
+                # so the caller can reuse it multiple times.
+                startupinfo = startupinfo.copy()
 
             use_std_handles = -1 not in (p2cread, c2pwrite, errwrite)
             if use_std_handles:

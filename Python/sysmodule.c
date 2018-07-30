@@ -107,7 +107,7 @@ static PyObject *
 sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
     assert(!PyErr_Occurred());
-    const char *envar = Py_GETENV("PYTHONBREAKPOINT");
+    char *envar = Py_GETENV("PYTHONBREAKPOINT");
 
     if (envar == NULL || strlen(envar) == 0) {
         envar = "pdb.set_trace";
@@ -115,6 +115,15 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     else if (!strcmp(envar, "0")) {
         /* The breakpoint is explicitly no-op'd. */
         Py_RETURN_NONE;
+    }
+    /* According to POSIX the string returned by getenv() might be invalidated
+     * or the string content might be overwritten by a subsequent call to
+     * getenv().  Since importing a module can performs the getenv() calls,
+     * we need to save a copy of envar. */
+    envar = _PyMem_RawStrdup(envar);
+    if (envar == NULL) {
+        PyErr_NoMemory();
+        return NULL;
     }
     const char *last_dot = strrchr(envar, '.');
     const char *attrname = NULL;
@@ -131,12 +140,14 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         attrname = last_dot + 1;
     }
     if (modulepath == NULL) {
+        PyMem_RawFree(envar);
         return NULL;
     }
 
     PyObject *fromlist = Py_BuildValue("(s)", attrname);
     if (fromlist == NULL) {
         Py_DECREF(modulepath);
+        PyMem_RawFree(envar);
         return NULL;
     }
     PyObject *module = PyImport_ImportModuleLevelObject(
@@ -154,6 +165,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (hook == NULL) {
         goto error;
     }
+    PyMem_RawFree(envar);
     PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
@@ -164,6 +176,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     int status = PyErr_WarnFormat(
         PyExc_RuntimeWarning, 0,
         "Ignoring unimportable $PYTHONBREAKPOINT: \"%s\"", envar);
+    PyMem_RawFree(envar);
     if (status < 0) {
         /* Printing the warning raised an exception. */
         return NULL;
@@ -357,7 +370,7 @@ exit status will be one (i.e., failure)."
 
 
 static PyObject *
-sys_getdefaultencoding(PyObject *self)
+sys_getdefaultencoding(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyUnicode_FromString(PyUnicode_GetDefaultEncoding());
 }
@@ -370,7 +383,7 @@ implementation."
 );
 
 static PyObject *
-sys_getfilesystemencoding(PyObject *self)
+sys_getfilesystemencoding(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (Py_FileSystemDefaultEncoding)
         return PyUnicode_FromString(Py_FileSystemDefaultEncoding);
@@ -387,7 +400,7 @@ operating system filenames."
 );
 
 static PyObject *
-sys_getfilesystemencodeerrors(PyObject *self)
+sys_getfilesystemencodeerrors(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (Py_FileSystemDefaultEncodeErrors)
         return PyUnicode_FromString(Py_FileSystemDefaultEncodeErrors);
@@ -988,7 +1001,7 @@ dependent."
 );
 
 static PyObject *
-sys_getrecursionlimit(PyObject *self)
+sys_getrecursionlimit(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(Py_GetRecursionLimit());
 }
@@ -1274,7 +1287,7 @@ sys_getrefcount(PyObject *self, PyObject *arg)
 
 #ifdef Py_REF_DEBUG
 static PyObject *
-sys_gettotalrefcount(PyObject *self)
+sys_gettotalrefcount(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromSsize_t(_Py_GetRefTotal());
 }
@@ -1289,7 +1302,7 @@ reference as an argument to getrefcount()."
 );
 
 static PyObject *
-sys_getallocatedblocks(PyObject *self)
+sys_getallocatedblocks(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromSsize_t(_Py_GetAllocatedBlocks());
 }
@@ -1401,7 +1414,7 @@ a 11-tuple where the entries in the tuple are counts of:\n\
 );
 
 static PyObject *
-sys_callstats(PyObject *self)
+sys_callstats(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                       "sys.callstats() has been deprecated in Python 3.7 "
@@ -1493,7 +1506,7 @@ static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     {"breakpointhook",  (PyCFunction)sys_breakpointhook,
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
-    {"callstats", (PyCFunction)sys_callstats, METH_NOARGS,
+    {"callstats", sys_callstats, METH_NOARGS,
      callstats_doc},
     {"_clear_type_cache",       sys_clear_type_cache,     METH_NOARGS,
      sys_clear_type_cache__doc__},
@@ -1503,13 +1516,13 @@ static PyMethodDef sys_methods[] = {
     {"exc_info",        sys_exc_info, METH_NOARGS, exc_info_doc},
     {"excepthook",      sys_excepthook, METH_VARARGS, excepthook_doc},
     {"exit",            sys_exit, METH_VARARGS, exit_doc},
-    {"getdefaultencoding", (PyCFunction)sys_getdefaultencoding,
+    {"getdefaultencoding", sys_getdefaultencoding,
      METH_NOARGS, getdefaultencoding_doc},
 #ifdef HAVE_DLOPEN
     {"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS,
      getdlopenflags_doc},
 #endif
-    {"getallocatedblocks", (PyCFunction)sys_getallocatedblocks, METH_NOARGS,
+    {"getallocatedblocks", sys_getallocatedblocks, METH_NOARGS,
       getallocatedblocks_doc},
 #ifdef COUNT_ALLOCS
     {"getcounts",       (PyCFunction)sys_getcounts, METH_NOARGS},
@@ -1517,18 +1530,18 @@ static PyMethodDef sys_methods[] = {
 #ifdef DYNAMIC_EXECUTION_PROFILE
     {"getdxp",          _Py_GetDXProfile, METH_VARARGS},
 #endif
-    {"getfilesystemencoding", (PyCFunction)sys_getfilesystemencoding,
+    {"getfilesystemencoding", sys_getfilesystemencoding,
      METH_NOARGS, getfilesystemencoding_doc},
-    { "getfilesystemencodeerrors", (PyCFunction)sys_getfilesystemencodeerrors,
+    { "getfilesystemencodeerrors", sys_getfilesystemencodeerrors,
      METH_NOARGS, getfilesystemencodeerrors_doc },
 #ifdef Py_TRACE_REFS
     {"getobjects",      _Py_GetObjects, METH_VARARGS},
 #endif
 #ifdef Py_REF_DEBUG
-    {"gettotalrefcount", (PyCFunction)sys_gettotalrefcount, METH_NOARGS},
+    {"gettotalrefcount", sys_gettotalrefcount, METH_NOARGS},
 #endif
     {"getrefcount",     (PyCFunction)sys_getrefcount, METH_O, getrefcount_doc},
-    {"getrecursionlimit", (PyCFunction)sys_getrecursionlimit, METH_NOARGS,
+    {"getrecursionlimit", sys_getrecursionlimit, METH_NOARGS,
      getrecursionlimit_doc},
     {"getsizeof",   (PyCFunction)sys_getsizeof,
      METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
@@ -2457,6 +2470,12 @@ _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
     SET_SYS_FROM_STRING_BORROW("base_prefix", config->base_prefix);
     SET_SYS_FROM_STRING_BORROW("exec_prefix", config->exec_prefix);
     SET_SYS_FROM_STRING_BORROW("base_exec_prefix", config->base_exec_prefix);
+
+    if (config->pycache_prefix != NULL) {
+        SET_SYS_FROM_STRING_BORROW("pycache_prefix", config->pycache_prefix);
+    } else {
+        PyDict_SetItemString(sysdict, "pycache_prefix", Py_None);
+    }
 
     if (config->argv != NULL) {
         SET_SYS_FROM_STRING_BORROW("argv", config->argv);
