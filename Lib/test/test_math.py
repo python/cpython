@@ -4,9 +4,11 @@
 from test.support import run_unittest, verbose, requires_IEEE_754
 from test import support
 import unittest
+import itertools
 import math
 import os
 import platform
+import random
 import struct
 import sys
 import sysconfig
@@ -788,10 +790,52 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.hypot(4*scale, 3*scale), 5*scale)
 
     def testDist(self):
-        dist = math.dist
+        from decimal import Decimal as D
+        from fractions import Fraction as F
 
-        # Base case
+        dist = math.dist
+        sqrt = math.sqrt
+
+        # Simple exact case
         self.assertEqual(dist((1, 2, 3), (4, 2, -1)), 5.0)
+
+        # Test different numbers of arguments (from zero to nine)
+        # against a straightforward pure python implementation
+        for i in range(9):
+            for j in range(5):
+                p = tuple(random.uniform(-5, 5) for k in range(i))
+                q = tuple(random.uniform(-5, 5) for k in range(i))
+                self.assertAlmostEqual(
+                    dist(p, q),
+                    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+                )
+
+        # Test allowable types (those with __float__)
+        self.assertEqual(dist((14.0, 1.0), (2.0, -4.0)), 13.0)
+        self.assertEqual(dist((14, 1), (2, -4)), 13)
+        self.assertEqual(dist((D(14), D(1)), (D(2), D(-4))), D(13))
+        self.assertEqual(dist((F(14, 32), F(1, 32)), (F(2, 32), F(-4, 32))),
+                         F(13, 32))
+        self.assertEqual(dist((True, True, False, True, False),
+                              (True, False, True, True, False)),
+                         sqrt(2.0))
+
+        # Test corner cases
+        self.assertEqual(dist((13.25, 12.5, -3.25),
+                              (13.25, 12.5, -3.25)),
+                         0.0)                      # Distance with self is zero
+        self.assertEqual(dist((), ()), 0.0)        # Zero-dimensional case
+        self.assertEqual(1.0,                      # Convert negative zero to positive zero
+            math.copysign(1.0, dist((-0.0,), (0.0,)))
+        )
+        self.assertEqual(1.0,                      # Convert negative zero to positive zero
+            math.copysign(1.0, dist((0.0,), (-0.0,)))
+        )
+
+        # Verify tuple subclasses are allowed
+        class T(tuple):     # tuple subclas
+            pass
+        self.assertEqual(dist(T((1, 2, 3)), ((4, 2, -1))), 5.0)
 
         # Test handling of bad arguments
         with self.assertRaises(TypeError):         # Reject keyword args
@@ -811,10 +855,23 @@ class MathTests(unittest.TestCase):
         with self.assertRaises(ValueError):        # Check dimension agree
             dist((1, 2, 3), (4, 5, 6, 7))
 
-        # Verify tuple subclasses are allowed
-        class T(tuple):     # tuple subclas
-            pass
-        self.assertEqual(dist(T((1, 2, 3)), ((4, 2, -1))), 5.0)
+
+        # Verify that the one dimensional case equivalent to abs()
+        for i in range(20):
+            p, q = random.random(), random.random()
+            self.assertEqual(dist((p,), (q,)), abs(p - q))
+
+        # Test special values
+        values = [NINF, -10.5, -0.0, 0.0, 10.5, INF, NAN]
+        for p in itertools.product(values, repeat=3):
+            for q in itertools.product(values, repeat=3):
+                diffs = [px - qx for px, qx in zip(p, q)]
+                if any(map(math.isinf, diffs)):
+                    # Any infinite difference gives positive infinity.
+                    self.assertEqual(dist(p, q), INF)
+                elif any(map(math.isnan, diffs)):
+                    # If no infinity, any NaN gives a Nan.
+                    self.assertTrue(math.isnan(dist(p, q)))
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
