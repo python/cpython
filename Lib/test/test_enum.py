@@ -2619,7 +2619,7 @@ CONVERT_TEST_NAME_F = 5
 
 class TestIntEnumConvert(unittest.TestCase):
     def test_convert_value_lookup_priority(self):
-        test_type = enum.IntEnum._convert(
+        test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
                 ('test.test_enum', '__main__')[__name__=='__main__'],
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
@@ -2629,7 +2629,7 @@ class TestIntEnumConvert(unittest.TestCase):
         self.assertEqual(test_type(5).name, 'CONVERT_TEST_NAME_A')
 
     def test_convert(self):
-        test_type = enum.IntEnum._convert(
+        test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
                 ('test.test_enum', '__main__')[__name__=='__main__'],
                 filter=lambda x: x.startswith('CONVERT_TEST_'))

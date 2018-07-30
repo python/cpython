@@ -424,7 +424,7 @@ class EnumMeta(type):
 
         return enum_class
 
-    def _convert(cls, name, module, filter, source=None):
+    def _convert_(cls, name, module, filter, source=None):
         """
         Create a new Enum subclass that replaces a collection of global constants
         """
