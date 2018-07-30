@@ -25,6 +25,8 @@ from . import futures
 from .coroutines import coroutine
 
 # Helper to generate new task names
+# This uses itertools.count() instead of a "+= 1" operation because the latter
+# is not thread safe. See bpo-11866 for a longer explanation.
 _task_name_counter = itertools.count(1).__next__
 
 
