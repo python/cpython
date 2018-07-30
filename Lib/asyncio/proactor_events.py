@@ -343,6 +343,10 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     def _loop_writing(self, f=None, data=None):
         try:
+            if f is not None and self._write_fut is None and self._closing:
+                # XXX most likely self._force_close() has been called, and
+                # it has set self._write_fut to None.
+                return
             assert f is self._write_fut
             self._write_fut = None
             self._pending_write = 0
