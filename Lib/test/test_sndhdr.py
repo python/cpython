@@ -27,28 +27,16 @@ class TestFormats(unittest.TestCase):
             self.assertEqual(what.sampwidth, expected[4])
 
     def test_badinputs(self):
-        for filename, expected in (
-                ('FAKE', None),
-                (None, None),
-        ):
-            what = sndhdr.what(filename)
-            self.assertEqual(what, expected)
-            whathdr = sndhdr.whathdr(filename)
-            self.assertEqual(whathdr, expected)
-
 
         # test feeding bad binary data to sound header functions
-        for filename, expected in (
-            ('input1.bad', None),
-            ('input2.bad', None)
-        ):
+        for filename in ['input1.bad', 'input2.bad']:
 
             filename = findfile(filename, subdir="sndhdrdata")
 
             for tf in sndhdr.tests:
                 with open(filename, 'rb') as f:
                     h = f.read(512)
-                    self.assertEqual(tf(h, f), expected)
+                    self.assertEqual(tf(h, f), None)
 
     def test_pickleable(self):
         filename = findfile('sndhdr.aifc', subdir="sndhdrdata")

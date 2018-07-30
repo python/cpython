@@ -58,18 +58,13 @@ def what(filename):
 
 def whathdr(filename):
     """Recognize sound headers."""
-    try:
-        with open(filename, 'rb') as f:
-            h = f.read(512)
-            for tf in tests:
-                res = tf(h, f)
-                if res:
-                    return SndHeaders(*res)
-        return None
-
-    except (TypeError,
-            FileNotFoundError):
-        return None
+    with open(filename, 'rb') as f:
+        h = f.read(512)
+        for tf in tests:
+            res = tf(h, f)
+            if res:
+                return SndHeaders(*res)
+    return None
 
 
 #-----------------------------------#
@@ -95,7 +90,6 @@ def test_aifc(h, f):
         return None
     return (fmt, a.getframerate(), a.getnchannels(),
             a.getnframes(), 8 * a.getsampwidth())
-
 
 tests.append(test_aifc)
 
@@ -171,10 +165,7 @@ def test_wav(h, f):
     try:
         f.seek(0)
         w = wave.open(f, 'r')
-    except (EOFError,
-            RuntimeError,
-            AttributeError,
-            wave.Error):
+    except (EOFError, RuntimeError, AttributeError, wave.Error):
         return None
     return ('wav',
             w.getframerate(),
