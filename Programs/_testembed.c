@@ -306,7 +306,7 @@ dump_config(void)
         exit(1); \
     }
 
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     _PyCoreConfig *config = &interp->core_config;
 
     printf("install_signal_handlers = %i\n", config->install_signal_handlers);

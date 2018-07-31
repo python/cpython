@@ -32,7 +32,7 @@ static int _PyCodecRegistry_Init(void); /* Forward */
 
 int PyCodec_Register(PyObject *search_function)
 {
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         goto onError;
     if (search_function == NULL) {
@@ -99,7 +99,6 @@ PyObject *normalizestring(const char *string)
 
 PyObject *_PyCodec_Lookup(const char *encoding)
 {
-    PyInterpreterState *interp;
     PyObject *result, *args = NULL, *v;
     Py_ssize_t i, len;
 
@@ -108,7 +107,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         goto onError;
     }
 
-    interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         goto onError;
 
@@ -187,11 +186,10 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 
 int _PyCodec_Forget(const char *encoding)
 {
-    PyInterpreterState *interp;
     PyObject *v;
     int result;
 
-    interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     if (interp->codec_search_path == NULL) {
         return -1;
     }
@@ -624,7 +622,7 @@ PyObject *_PyCodec_DecodeText(PyObject *object,
    Return 0 on success, -1 on error */
 int PyCodec_RegisterError(const char *name, PyObject *error)
 {
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         return -1;
     if (!PyCallable_Check(error)) {
@@ -642,7 +640,7 @@ PyObject *PyCodec_LookupError(const char *name)
 {
     PyObject *handler = NULL;
 
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         return NULL;
 
@@ -1494,7 +1492,7 @@ static int _PyCodecRegistry_Init(void)
         }
     };
 
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     PyObject *mod;
     unsigned i;
 

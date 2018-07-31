@@ -26,10 +26,9 @@ _copy_raw_string(PyObject *strobj)
 static PyInterpreterState *
 _get_current(void)
 {
-    PyThreadState *tstate = PyThreadState_Get();
-    // PyThreadState_Get() aborts if lookup fails, so we don't need
+    // _PyInterpreterState_Get() aborts if lookup fails, so don't need
     // to check the result for NULL.
-    return tstate->interp;
+    return _PyInterpreterState_Get
 }
 
 static int64_t
@@ -1941,7 +1940,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
 
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
-    if (interp != PyThreadState_Get()->interp) {
+    if (interp != _PyInterpreterState_Get()) {
         // XXX Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         // XXX Possible GILState issues?

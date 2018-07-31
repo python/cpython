@@ -492,6 +492,9 @@ typedef struct _ts {
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
+#endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 /* New in 3.7 */
 PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);

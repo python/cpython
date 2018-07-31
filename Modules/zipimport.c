@@ -1075,7 +1075,7 @@ read_directory(PyObject *archive)
         if (flags & 0x0800) {
             charset = "utf-8";
         }
-        else if (!PyThreadState_GET()->interp->codecs_initialized) {
+        else if (!_PyInterpreterState_Get()->codecs_initialized) {
             /* During bootstrap, we may need to load the encodings
                package from a ZIP file. But the cp437 encoding is implemented
                in Python in the encodings package.

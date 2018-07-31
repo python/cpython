@@ -56,8 +56,8 @@ _Py_IDENTIFIER(write);
 PyObject *
 _PySys_GetObjectId(_Py_Identifier *key)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *sd = tstate->interp->sysdict;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyObject *sd = interp->sysdict;
     if (sd == NULL)
         return NULL;
     return _PyDict_GetItemId(sd, key);
@@ -66,8 +66,8 @@ _PySys_GetObjectId(_Py_Identifier *key)
 PyObject *
 PySys_GetObject(const char *name)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *sd = tstate->interp->sysdict;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyObject *sd = interp->sysdict;
     if (sd == NULL)
         return NULL;
     return PyDict_GetItemString(sd, name);
@@ -76,8 +76,8 @@ PySys_GetObject(const char *name)
 int
 _PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *sd = tstate->interp->sysdict;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyObject *sd = interp->sysdict;
     if (v == NULL) {
         if (_PyDict_GetItemId(sd, key) == NULL)
             return 0;
@@ -91,8 +91,8 @@ _PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
 int
 PySys_SetObject(const char *name, PyObject *v)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *sd = tstate->interp->sysdict;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyObject *sd = interp->sysdict;
     if (v == NULL) {
         if (PyDict_GetItemString(sd, name) == NULL)
             return 0;
@@ -626,9 +626,13 @@ sys_setcheckinterval(PyObject *self, PyObject *args)
                      "are deprecated.  Use sys.setswitchinterval() "
                      "instead.", 1) < 0)
         return NULL;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
-    if (!PyArg_ParseTuple(args, "i:setcheckinterval", &interp->check_interval))
+
+    int check_interval;
+    if (!PyArg_ParseTuple(args, "i:setcheckinterval", &check_interval))
         return NULL;
+
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    interp->check_interval = check_interval;
     Py_RETURN_NONE;
 }
 
@@ -647,7 +651,7 @@ sys_getcheckinterval(PyObject *self, PyObject *args)
                      "are deprecated.  Use sys.getswitchinterval() "
                      "instead.", 1) < 0)
         return NULL;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     return PyLong_FromLong(interp->check_interval);
 }
 
@@ -1154,12 +1158,10 @@ static PyObject *
 sys_setdlopenflags(PyObject *self, PyObject *args)
 {
     int new_val;
-    PyThreadState *tstate = PyThreadState_GET();
     if (!PyArg_ParseTuple(args, "i:setdlopenflags", &new_val))
         return NULL;
-    if (!tstate)
-        return NULL;
-    tstate->interp->dlopenflags = new_val;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    interp->dlopenflags = new_val;
     Py_RETURN_NONE;
 }
 
@@ -1176,10 +1178,8 @@ can be found in the os module (RTLD_xxx constants, e.g. os.RTLD_LAZY).");
 static PyObject *
 sys_getdlopenflags(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    if (!tstate)
-        return NULL;
-    return PyLong_FromLong(tstate->interp->dlopenflags);
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    return PyLong_FromLong(interp->dlopenflags);
 }
 
 PyDoc_STRVAR(getdlopenflags_doc,
