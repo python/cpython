@@ -1492,14 +1492,13 @@ PyNumber_Index(PyObject *item)
     PyObject *result = NULL;
     if (item == NULL)
         return null_error();
-    if (PyInt_Check(item) || PyLong_Check(item)) {
+    if (_PyAnyInt_Check(item)) {
         Py_INCREF(item);
         return item;
     }
     if (PyIndex_Check(item)) {
         result = item->ob_type->tp_as_number->nb_index(item);
-        if (result &&
-            !PyInt_Check(result) && !PyLong_Check(result)) {
+        if (result && !_PyAnyInt_Check(result)) {
             PyErr_Format(PyExc_TypeError,
                          "__index__ returned non-(int,long) " \
                          "(type %.200s)",
@@ -1574,8 +1573,7 @@ _PyNumber_ConvertIntegralToInt(PyObject *integral, const char* error_format)
             return NULL;
     }
 
-    if (integral && (!PyInt_Check(integral) &&
-                     !PyLong_Check(integral))) {
+    if (integral && !_PyAnyInt_Check(integral)) {
         /* Don't go through tp_as_number->nb_int to avoid
            hitting the classic class fallback to __trunc__. */
         PyObject *int_func = PyObject_GetAttr(integral, int_name);
@@ -1586,8 +1584,7 @@ _PyNumber_ConvertIntegralToInt(PyObject *integral, const char* error_format)
         Py_DECREF(integral);
         integral = PyEval_CallObject(int_func, NULL);
         Py_DECREF(int_func);
-        if (integral && (!PyInt_Check(integral) &&
-                          !PyLong_Check(integral))) {
+        if (integral && !_PyAnyInt_Check(integral)) {
             goto non_integral_error;
         }
     }
@@ -1632,7 +1629,7 @@ PyNumber_Int(PyObject *o)
     if (m && m->nb_int) { /* This should include subclasses of int */
         /* Classic classes always take this branch. */
         PyObject *res = m->nb_int(o);
-        if (res && (!PyInt_Check(res) && !PyLong_Check(res))) {
+        if (res && !_PyAnyInt_Check(res)) {
             PyErr_Format(PyExc_TypeError,
                          "__int__ returned non-int (type %.200s)",
                          res->ob_type->tp_name);

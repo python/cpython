@@ -4504,7 +4504,7 @@ PyString_Format(PyObject *format, PyObject *args)
                 if (PyNumber_Check(v)) {
                     PyObject *iobj=NULL;
 
-                    if (PyInt_Check(v) || (PyLong_Check(v))) {
+                    if (_PyAnyInt_Check(v)) {
                         iobj = v;
                         Py_INCREF(iobj);
                     }

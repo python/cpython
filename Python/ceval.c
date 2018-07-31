@@ -4750,8 +4750,7 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 
 
 #undef ISINDEX
-#define ISINDEX(x) ((x) == NULL || \
-                    PyInt_Check(x) || PyLong_Check(x) || PyIndex_Check(x))
+#define ISINDEX(x) ((x) == NULL || _PyAnyInt_Check(x) || PyIndex_Check(x))
 
 static PyObject *
 apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */

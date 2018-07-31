@@ -4194,7 +4194,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
                         "getaddrinfo() argument 1 must be string or None");
         return NULL;
     }
-    if (PyInt_Check(pobj) || PyLong_Check(pobj)) {
+    if (_PyAnyInt_Check(pobj)) {
         long value = PyLong_AsLong(pobj);
         if (value == -1 && PyErr_Occurred())
             return NULL;

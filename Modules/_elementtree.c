@@ -1347,7 +1347,7 @@ element_subscr(PyObject* self_, PyObject* item)
     ElementObject* self = (ElementObject*) self_;
 
 #if (PY_VERSION_HEX < 0x02050000)
-    if (PyInt_Check(item) || PyLong_Check(item)) {
+    if (_PyAnyInt_Check(item)) {
         long i = PyInt_AsLong(item);
 #else
     if (PyIndex_Check(item)) {
@@ -1404,7 +1404,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
     ElementObject* self = (ElementObject*) self_;
 
 #if (PY_VERSION_HEX < 0x02050000)
-    if (PyInt_Check(item) || PyLong_Check(item)) {
+    if (_PyAnyInt_Check(item)) {
         long i = PyInt_AsLong(item);
 #else
     if (PyIndex_Check(item)) {

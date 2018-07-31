@@ -1780,7 +1780,7 @@ get_range_long_argument(PyObject *arg, const char *name)
 {
     PyObject *v;
     PyNumberMethods *nb;
-    if (PyInt_Check(arg) || PyLong_Check(arg)) {
+    if (_PyAnyInt_Check(arg)) {
         Py_INCREF(arg);
         return arg;
     }
@@ -1795,7 +1795,7 @@ get_range_long_argument(PyObject *arg, const char *name)
     v = nb->nb_int(arg);
     if (v == NULL)
         return NULL;
-    if (PyInt_Check(v) || PyLong_Check(v))
+    if (_PyAnyInt_Check(v))
         return v;
     Py_DECREF(v);
     PyErr_SetString(PyExc_TypeError,
