@@ -178,8 +178,8 @@ can be combined with a binding flag.
    Methods without parameters don't need to check whether arguments are given if
    they are listed with the :const:`METH_NOARGS` flag.  They need to be of type
    :c:type:`PyCFunction`.  The first parameter is typically named *self* and will
-   hold a reference to the module or object instance.  In all cases the second
-   parameter will be *NULL*.
+   hold a reference to the module or object instance.  The second parameter must
+   not be used: it is unspecified what its value is.
 
 
 .. data:: METH_O
