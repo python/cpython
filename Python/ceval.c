@@ -762,26 +762,26 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                           assert(STACK_LEVEL() <= co->co_stacksize); }
 #define POP()           ((void)(lltrace && prtrace(TOP(), "pop")), \
                          BASIC_POP())
-#define STACKADJ_GROW(n)    do { \
-                              assert(n >= 0); \
-                              (void)(BASIC_STACKADJ(n), \
-                              lltrace && prtrace(TOP(), "stackadj")); \
-                              assert(STACK_LEVEL() <= co->co_stacksize); \
-                            } while (0)
-#define STACKADJ_SHRINK(n)  do { \
-                              assert(n >= 0); \
-                              (void)(lltrace && prtrace(TOP(), "stackadj")); \
-                              (void)(BASIC_STACKADJ(-n)); \
-                              assert(STACK_LEVEL() <= co->co_stacksize); \
-                            } while (0)
+#define STACK_GROW(n)   do { \
+                          assert(n >= 0); \
+                          (void)(BASIC_STACKADJ(n), \
+                          lltrace && prtrace(TOP(), "stackadj")); \
+                          assert(STACK_LEVEL() <= co->co_stacksize); \
+                        } while (0)
+#define STACK_SHRINK(n) do { \
+                            assert(n >= 0); \
+                            (void)(lltrace && prtrace(TOP(), "stackadj")); \
+                            (void)(BASIC_STACKADJ(-n)); \
+                            assert(STACK_LEVEL() <= co->co_stacksize); \
+                        } while (0)
 #define EXT_POP(STACK_POINTER) ((void)(lltrace && \
                                 prtrace((STACK_POINTER)[-1], "ext_pop")), \
                                 *--(STACK_POINTER))
 #else
 #define PUSH(v)                BASIC_PUSH(v)
 #define POP()                  BASIC_POP()
-#define STACKADJ_GROW(n)       BASIC_STACKADJ(n)
-#define STACKADJ_SHRINK(n)     BASIC_STACKADJ(-n)
+#define STACK_GROW(n)          BASIC_STACKADJ(n)
+#define STACK_SHRINK(n)        BASIC_STACKADJ(-n)
 #define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 #endif
 
@@ -1143,7 +1143,7 @@ main_loop:
             PyObject *second = SECOND();
             Py_INCREF(top);
             Py_INCREF(second);
-            STACKADJ_GROW(2);
+            STACK_GROW(2);
             SET_TOP(top);
             SET_SECOND(second);
             FAST_DISPATCH();
@@ -1183,7 +1183,7 @@ main_loop:
                 SET_TOP(Py_False);
                 DISPATCH();
             }
-            STACKADJ_SHRINK(1);
+            STACK_SHRINK(1);
             goto error;
         }
 
@@ -1579,7 +1579,7 @@ main_loop:
             PyObject *container = SECOND();
             PyObject *v = THIRD();
             int err;
-            STACKADJ_SHRINK(3);
+            STACK_SHRINK(3);
             /* container[sub] = v */
             err = PyObject_SetItem(container, sub, v);
             Py_DECREF(v);
@@ -1594,7 +1594,7 @@ main_loop:
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             int err;
-            STACKADJ_SHRINK(2);
+            STACK_SHRINK(2);
             /* del container[sub] */
             err = PyObject_DelItem(container, sub);
             Py_DECREF(container);
@@ -2077,7 +2077,7 @@ main_loop:
                 }
             } else if (unpack_iterable(seq, oparg, -1,
                                        stack_pointer + oparg)) {
-                STACKADJ_GROW(oparg);
+                STACK_GROW(oparg);
             } else {
                 /* unpack_iterable() raised an exception */
                 Py_DECREF(seq);
@@ -2107,7 +2107,7 @@ main_loop:
             PyObject *owner = TOP();
             PyObject *v = SECOND();
             int err;
-            STACKADJ_SHRINK(2);
+            STACK_SHRINK(2);
             err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
             Py_DECREF(owner);
@@ -2430,7 +2430,7 @@ main_loop:
                     err = PySet_Add(set, item);
                 Py_DECREF(item);
             }
-            STACKADJ_SHRINK(oparg);
+            STACK_SHRINK(oparg);
             if (err != 0) {
                 Py_DECREF(set);
                 goto error;
@@ -2651,7 +2651,7 @@ main_loop:
             PyObject *value = SECOND();
             PyObject *map;
             int err;
-            STACKADJ_SHRINK(2);
+            STACK_SHRINK(2);
             map = PEEK(oparg);                      /* dict */
             assert(PyDict_CheckExact(map));
             err = PyDict_SetItem(map, key, value);  /* map[key] = value */
@@ -2794,7 +2794,7 @@ main_loop:
             PyObject *cond = TOP();
             int err;
             if (cond == Py_True) {
-                STACKADJ_SHRINK(1);
+                STACK_SHRINK(1);
                 Py_DECREF(cond);
                 FAST_DISPATCH();
             }
@@ -2804,7 +2804,7 @@ main_loop:
             }
             err = PyObject_IsTrue(cond);
             if (err > 0) {
-                STACKADJ_SHRINK(1);
+                STACK_SHRINK(1);
                 Py_DECREF(cond);
             }
             else if (err == 0)
@@ -2818,7 +2818,7 @@ main_loop:
             PyObject *cond = TOP();
             int err;
             if (cond == Py_False) {
-                STACKADJ_SHRINK(1);
+                STACK_SHRINK(1);
                 Py_DECREF(cond);
                 FAST_DISPATCH();
             }
@@ -2831,7 +2831,7 @@ main_loop:
                 JUMPTO(oparg);
             }
             else if (err == 0) {
-                STACKADJ_SHRINK(1);
+                STACK_SHRINK(1);
                 Py_DECREF(cond);
             }
             else
@@ -2917,7 +2917,7 @@ main_loop:
                 PyErr_Clear();
             }
             /* iterator ended normally */
-            STACKADJ_SHRINK(1);
+            STACK_SHRINK(1);
             Py_DECREF(iter);
             JUMPBY(oparg);
             PREDICT(POP_BLOCK);
@@ -3025,7 +3025,7 @@ main_loop:
             val = tb = Py_None;
             exc = TOP();
             if (exc == NULL) {
-                STACKADJ_SHRINK(1);
+                STACK_SHRINK(1);
                 exit_func = TOP();
                 SET_TOP(exc);
                 exc = Py_None;
