@@ -582,18 +582,12 @@ SHA3_TYPE(Keccak_512type, "_sha3.keccak_512", keccak_512__doc__, SHA3_methods);
 
 
 static PyObject *
-_SHAKE_digest(SHA3object *self, PyObject *digestlen_obj, int hex)
+_SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
 {
-    unsigned long digestlen;
     unsigned char *digest = NULL;
     SHA3_state temp;
     int res;
     PyObject *result = NULL;
-
-    digestlen = PyLong_AsUnsignedLong(digestlen_obj);
-    if (digestlen == (unsigned long) -1 && PyErr_Occurred()) {
-        return NULL;
-    }
 
     /* ExtractLane needs at least SHA3_MAX_DIGESTSIZE + SHA3_LANESIZE and
      * SHA3_LANESIZE extra space.
@@ -634,15 +628,15 @@ _SHAKE_digest(SHA3object *self, PyObject *digestlen_obj, int hex)
 /*[clinic input]
 _sha3.shake_128.digest
 
-    length: object
-    \
+    length: unsigned_long
+    /
 
 Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
-_sha3_shake_128_digest_impl(SHA3object *self, PyObject *length)
-/*[clinic end generated code: output=193e616c64d0e964 input=d3f367fc3f721d31]*/
+_sha3_shake_128_digest_impl(SHA3object *self, unsigned long length)
+/*[clinic end generated code: output=2313605e2f87bb8f input=418ef6a36d2e6082]*/
 {
     return _SHAKE_digest(self, length, 0);
 }
@@ -651,15 +645,15 @@ _sha3_shake_128_digest_impl(SHA3object *self, PyObject *length)
 /*[clinic input]
 _sha3.shake_128.hexdigest
 
-    length: object
-    \
+    length: unsigned_long
+    /
 
 Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
-_sha3_shake_128_hexdigest_impl(SHA3object *self, PyObject *length)
-/*[clinic end generated code: output=45b3915cb4e74984 input=cc6858023d496e7b]*/
+_sha3_shake_128_hexdigest_impl(SHA3object *self, unsigned long length)
+/*[clinic end generated code: output=bf8e2f1e490944a8 input=69fb29b0926ae321]*/
 {
     return _SHAKE_digest(self, length, 1);
 }

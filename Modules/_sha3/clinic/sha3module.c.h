@@ -66,27 +66,24 @@ PyDoc_STRVAR(_sha3_sha3_224_update__doc__,
     {"update", (PyCFunction)_sha3_sha3_224_update, METH_O, _sha3_sha3_224_update__doc__},
 
 PyDoc_STRVAR(_sha3_shake_128_digest__doc__,
-"digest($self, /, length)\n"
+"digest($self, length, /)\n"
 "--\n"
 "\n"
 "Return the digest value as a bytes object.");
 
 #define _SHA3_SHAKE_128_DIGEST_METHODDEF    \
-    {"digest", (PyCFunction)_sha3_shake_128_digest, METH_FASTCALL|METH_KEYWORDS, _sha3_shake_128_digest__doc__},
+    {"digest", (PyCFunction)_sha3_shake_128_digest, METH_O, _sha3_shake_128_digest__doc__},
 
 static PyObject *
-_sha3_shake_128_digest_impl(SHA3object *self, PyObject *length);
+_sha3_shake_128_digest_impl(SHA3object *self, unsigned long length);
 
 static PyObject *
-_sha3_shake_128_digest(SHA3object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sha3_shake_128_digest(SHA3object *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"length", NULL};
-    static _PyArg_Parser _parser = {"O:digest", _keywords, 0};
-    PyObject *length;
+    unsigned long length;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &length)) {
+    if (!PyArg_Parse(arg, "O&:digest", _PyLong_UnsignedLong_Converter, &length)) {
         goto exit;
     }
     return_value = _sha3_shake_128_digest_impl(self, length);
@@ -96,27 +93,24 @@ exit:
 }
 
 PyDoc_STRVAR(_sha3_shake_128_hexdigest__doc__,
-"hexdigest($self, /, length)\n"
+"hexdigest($self, length, /)\n"
 "--\n"
 "\n"
 "Return the digest value as a string of hexadecimal digits.");
 
 #define _SHA3_SHAKE_128_HEXDIGEST_METHODDEF    \
-    {"hexdigest", (PyCFunction)_sha3_shake_128_hexdigest, METH_FASTCALL|METH_KEYWORDS, _sha3_shake_128_hexdigest__doc__},
+    {"hexdigest", (PyCFunction)_sha3_shake_128_hexdigest, METH_O, _sha3_shake_128_hexdigest__doc__},
 
 static PyObject *
-_sha3_shake_128_hexdigest_impl(SHA3object *self, PyObject *length);
+_sha3_shake_128_hexdigest_impl(SHA3object *self, unsigned long length);
 
 static PyObject *
-_sha3_shake_128_hexdigest(SHA3object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sha3_shake_128_hexdigest(SHA3object *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"length", NULL};
-    static _PyArg_Parser _parser = {"O:hexdigest", _keywords, 0};
-    PyObject *length;
+    unsigned long length;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &length)) {
+    if (!PyArg_Parse(arg, "O&:hexdigest", _PyLong_UnsignedLong_Converter, &length)) {
         goto exit;
     }
     return_value = _sha3_shake_128_hexdigest_impl(self, length);
@@ -124,4 +118,4 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ca285aa51dcd6578 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf823532a7bffe68 input=a9049054013a1b77]*/
