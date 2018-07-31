@@ -569,7 +569,8 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             zipfp.write(TESTFN, strict_timestamps=False)
             zinfo = zipfp.getinfo(TESTFN)
-            self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
+            # Not all platforms can handle the time quite well near the limit.
+            self.assertEqual(zinfo.date_time[:3], (2107, 12, 31))
 
 
 @requires_zlib
