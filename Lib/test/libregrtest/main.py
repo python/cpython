@@ -14,7 +14,7 @@ from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
-    INTERRUPTED, CHILD_ERROR,
+    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
     PROGRESS_MIN_TIME, format_test_result)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
@@ -118,6 +118,8 @@ class Regrtest:
         elif ok == RESOURCE_DENIED:
             self.skipped.append(test)
             self.resource_denieds.append(test)
+        elif ok == TEST_DID_NOT_RUN:
+            pass
         elif ok != INTERRUPTED:
             raise ValueError("invalid test result: %r" % ok)
 
@@ -319,6 +321,10 @@ class Regrtest:
         if self.ns.pgo:
             return
 
+        if not any((self.good, self.bad, self.skipped, self.interrupted,
+            self.environment_changed)):
+            return
+
         print()
         print("== Tests result: %s ==" % self.get_tests_result())
 
@@ -458,6 +464,9 @@ class Regrtest:
             result.append("FAILURE")
         elif self.ns.fail_env_changed and self.environment_changed:
             result.append("ENV CHANGED")
+        elif not any((self.good, self.bad, self.skipped, self.interrupted,
+            self.environment_changed)):
+            result.append("NO TEST RUN")
 
         if self.interrupted:
             result.append("INTERRUPTED")
