@@ -2033,7 +2033,7 @@ math_fmod_impl(PyObject *module, double x, double y)
 
 /* AC: XXX Todo */
 static PyObject *
-math_dist(PyObject *self, PyObject *args)
+math_dist(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *item, *p, *q;
     double *diffs;
@@ -2043,7 +2043,7 @@ math_dist(PyObject *self, PyObject *args)
     Py_ssize_t i, m, n;
     int found_nan = 0;
 
-    if (!PyArg_ParseTuple(args, "O!O!:dist",
+    if (!_PyArg_ParseStack(args, nargs, "O!O!:dist",
                           &PyTuple_Type, &p,
                           &PyTuple_Type, &q)) {
         return NULL;
@@ -2440,7 +2440,8 @@ static PyMethodDef math_methods[] = {
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
-    {"dist",            math_dist,      METH_VARARGS,   math_dist_doc},
+    {"dist",            (PyCFunction)math_dist,
+                                        METH_FASTCALL,  math_dist_doc},
     {"erf",             math_erf,       METH_O,         math_erf_doc},
     {"erfc",            math_erfc,      METH_O,         math_erfc_doc},
     {"exp",             math_exp,       METH_O,         math_exp_doc},
