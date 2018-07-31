@@ -125,6 +125,7 @@ def test_au(h, f):
 
 tests.append(test_au)
 
+
 def test_hcom(h, f):
     if h[65:69] != b'FSSD' or h[128:132] != b'HCOM':
         return None
@@ -176,6 +177,7 @@ def test_8svx(h, f):
 
 tests.append(test_8svx)
 
+
 def test_sndt(h, f):
     if h.startswith(b'SOUND'):
         nsamples = get_long_le(h[8:12])
@@ -183,6 +185,7 @@ def test_sndt(h, f):
         return 'sndt', rate, 1, nsamples, 8
 
 tests.append(test_sndt)
+
 
 def test_sndr(h, f):
     if h.startswith(b'\0\0'):
