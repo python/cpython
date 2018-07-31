@@ -246,7 +246,7 @@ def reduce(function, sequence, initial=_initial_missing):
         try:
             value = next(it)
         except StopIteration:
-            raise TypeError("reduce() of empty sequence with no initial value")
+            raise TypeError("reduce() of empty sequence with no initial value") from None
     else:
         value = initial
 
