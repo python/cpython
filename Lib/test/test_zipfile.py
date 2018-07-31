@@ -564,7 +564,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             self.assertRaises(struct.error, zipfp.write, TESTFN)
 
     def test_add_file_after_2107_no_strict_timestamps(self):
-        # Set atime and mtime after 2108-12-30
+        # Set atime and mtime to 2108-12-30
         os.utime(TESTFN, (4386268800, 4386268800))
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             zipfp.write(TESTFN, strict_timestamps=False)
