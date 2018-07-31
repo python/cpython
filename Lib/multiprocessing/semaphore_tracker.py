@@ -45,7 +45,12 @@ class SemaphoreTracker(object):
         with self._lock:
             if self._pid is not None:
                 # semaphore tracker was launched before, is it still running?
-                pid, status = os.waitpid(self._pid, os.WNOHANG)
+                try:
+                    pid, _ = os.waitpid(self._pid, os.WNOHANG)
+                except ChildProcessError:
+                    # The process must be death (no process with pid self._pid).
+                    pid = self._pid
+
                 if not pid:
                     # => still alive
                     return

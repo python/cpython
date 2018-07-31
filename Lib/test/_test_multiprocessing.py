@@ -4476,13 +4476,13 @@ class TestSemaphoreTracker(unittest.TestCase):
         pid = _semaphore_tracker._pid
         if pid:
             os.kill(pid, signal.SIGKILL)
-            time.sleep(0.5)  # give it time to die
+            os.waitpid(pid, 0)
         with warnings.catch_warnings(record=True) as all_warn:
             _semaphore_tracker.ensure_running()
         pid = _semaphore_tracker._pid
 
         os.kill(pid, signum)
-        time.sleep(0.5)  # give it time to die
+        time.sleep(1.0)  # give it time to die
 
         ctx = multiprocessing.get_context("spawn")
         with warnings.catch_warnings(record=True) as all_warn:
