@@ -3,7 +3,6 @@ import pickle
 import unittest
 from test.support import findfile
 
-
 class TestFormats(unittest.TestCase):
     def test_data(self):
         for filename, expected in (
