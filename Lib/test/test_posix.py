@@ -19,6 +19,9 @@ import warnings
 _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
                               support.TESTFN + '-dummy-symlink')
 
+requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
+        'test is only meaningful on 32-bit builds')
+
 class PosixTester(unittest.TestCase):
 
     def setUp(self):
@@ -322,6 +325,17 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fd)
 
+    @unittest.skipUnless(hasattr(posix, 'writev'), "test needs posix.writev()")
+    @requires_32b
+    def test_writev_overflow_32bits(self):
+        fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
+        try:
+            with self.assertRaises(OSError) as cm:
+                os.writev(fd, [b"x" * 2**16] * 2**15)
+            self.assertEqual(cm.exception.errno, errno.EINVAL)
+        finally:
+            os.close(fd)
+
     @unittest.skipUnless(hasattr(posix, 'readv'), "test needs posix.readv()")
     def test_readv(self):
         fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
@@ -341,6 +355,19 @@ class PosixTester(unittest.TestCase):
                 pass
             else:
                 self.assertEqual(size, 0)
+        finally:
+            os.close(fd)
+
+    @unittest.skipUnless(hasattr(posix, 'readv'), "test needs posix.readv()")
+    @requires_32b
+    def test_readv_overflow_32bits(self):
+        fd = os.open(support.TESTFN, os.O_RDWR | os.O_CREAT)
+        try:
+            buf = [bytearray(2**16)] * 2**15
+            with self.assertRaises(OSError) as cm:
+                os.readv(fd, buf)
+            self.assertEqual(cm.exception.errno, errno.EINVAL)
+            self.assertEqual(bytes(buf[0]), b'\0'* 2**16)
         finally:
             os.close(fd)
 
