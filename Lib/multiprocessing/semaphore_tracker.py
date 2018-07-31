@@ -51,8 +51,8 @@ class SemaphoreTracker(object):
                     # The process must be death (no process with pid self._pid).
                     pass
                 else:
-                    if not pid:
-                    # => still alive
+                    if pid is not None:
+                        # => still alive
                         return
 
                 # => dead, launch it again
