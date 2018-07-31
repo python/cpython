@@ -32,6 +32,12 @@ class TestFormats(unittest.TestCase):
 
             filename = findfile(filename, subdir="sndhdrdata")
 
+            what = sndhdr.what(filename)
+            self.assertEqual(what, None)
+
+            whathdr = sndhdr.whathdr(filename)
+            self.assertEqual(whathdr, None)
+
             for tf in sndhdr.tests:
                 with open(filename, 'rb') as f:
                     h = f.read(512)
