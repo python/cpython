@@ -564,13 +564,12 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             self.assertRaises(struct.error, zipfp.write, TESTFN)
 
     def test_add_file_after_2107_no_strict_timestamps(self):
-        # Set atime and mtime to 2108-01-01
-        os.utime(TESTFN, (4354819200, 4354819200))
+        # Set atime and mtime after 2108-12-30
+        os.utime(TESTFN, (4386268800, 4386268800))
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             zipfp.write(TESTFN, strict_timestamps=False)
             zinfo = zipfp.getinfo(TESTFN)
-            # Not all platforms can handle the time quite well near the limit.
-            self.assertEqual(zinfo.date_time[:3], (2107, 12, 31))
+            self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
 
 
 @requires_zlib
