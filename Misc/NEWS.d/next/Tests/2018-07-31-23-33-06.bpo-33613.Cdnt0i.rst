@@ -1,5 +1,0 @@
-Fix a race condition in ``multiprocessing.semaphore_tracker`` when the
-tracker receives SIGINT before it can register signal handlers for ignoring
-it. Improve ``_test_multiprocessing.test_semaphore_tracker_sigint`` and
-related tests to fail when the tracker dies when delivering signals ignored
-by it.
