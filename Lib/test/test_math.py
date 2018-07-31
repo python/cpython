@@ -873,6 +873,23 @@ class MathTests(unittest.TestCase):
                     # If no infinity, any NaN gives a Nan.
                     self.assertTrue(math.isnan(dist(p, q)))
 
+        # Verify scaling for extremely large values
+        fourthmax = FLOAT_MAX / 4.0
+        for n in range(32):
+            p = (fourthmax,) * n
+            q = (0.0,) * n
+            self.assertEqual(dist(p, q), fourthmax * math.sqrt(n))
+            self.assertEqual(dist(q, p), fourthmax * math.sqrt(n))
+
+        # Verify scaling for extremely small values
+        for exp in range(32):
+            scale = FLOAT_MIN / 2.0 ** exp
+            p = (4*scale, 3*scale)
+            q = (0.0, 0.0)
+            self.assertEqual(math.dist(p, q), 5*scale)
+            self.assertEqual(math.dist(q, p), 5*scale)
+
+
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
         self.ftest('ldexp(0,1)', math.ldexp(0,1), 0)
