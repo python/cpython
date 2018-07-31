@@ -7923,9 +7923,7 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 }
 
 #if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
-                                || defined(__APPLE__))) \
-    || defined(HAVE_READV) || defined(HAVE_PREADV) || defined (HAVE_PREADV2) \
-    || defined(HAVE_WRITEV) || defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)
+    || defined(__APPLE__))) || defined(HAVE_READV) || defined(HAVE_WRITEV)
 static int
 iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, Py_ssize_t cnt, int type)
 {
