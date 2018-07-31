@@ -1,13 +1,9 @@
-
 import os
 import tempfile
 import textwrap
 import unittest
 
-from test import support
-from test.support.script_helper import (
-    assert_python_ok, assert_python_failure, interpreter_requires_environment,
-)
+from test.support.script_helper import assert_python_ok
 
 
 class TestLLTrace(unittest.TestCase):
@@ -30,14 +26,7 @@ class TestLLTrace(unittest.TestCase):
             """))
             tmp_script.flush()
 
-            status, stdout, stderr = assert_python_ok(tmp_script.name)
-            self.assertEqual(status, 0)
-
-
-def test_main():
-    support.run_unittest(
-        TestLLTrace,
-    )
+            assert_python_ok(tmp_script.name)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
