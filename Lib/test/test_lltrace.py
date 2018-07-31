@@ -1,8 +1,8 @@
 import os
-import tempfile
 import textwrap
 import unittest
 
+from test import support
 from test.support.script_helper import assert_python_ok
 
 
@@ -13,9 +13,9 @@ class TestLLTrace(unittest.TestCase):
         # bpo-34113. The crash happened at the command line console of
         # debug Python builds with __ltrace__ enabled (only possible in console),
         # when the interal Python stack was negatively adjusted
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp_script:
-            self.addCleanup(os.remove, tmp_script.name)
-            tmp_script.write(textwrap.dedent("""\
+        with open(support.TESTFN, 'w') as fd:
+            self.addCleanup(os.unlink, support.TESTFN)
+            fd.write(textwrap.dedent("""\
             import code
 
             console = code.InteractiveConsole()
@@ -24,9 +24,8 @@ class TestLLTrace(unittest.TestCase):
             console.push('a[0] = 1')
             print('unreachable if bug exists')
             """))
-            tmp_script.flush()
 
-            assert_python_ok(tmp_script.name)
+            assert_python_ok(support.TESTFN)
 
 if __name__ == "__main__":
     unittest.main()
