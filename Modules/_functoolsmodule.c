@@ -626,10 +626,11 @@ functools_reduce(PyObject *self, PyObject *args)
         if (result == NULL)
             result = op2;
         else {
-            PyTuple_SetItem(args, 0, result);
-            PyTuple_SetItem(args, 1, op2);
-            if ((result = PyEval_CallObject(func, args)) == NULL)
+            Py_XSETREF(_PyTuple_ITEMS(args)[0], result);
+            Py_XSETREF(_PyTuple_ITEMS(args)[1], op2);
+            if ((result = PyObject_Call(func, args, NULL)) == NULL) {
                 goto Fail;
+            }
         }
     }
 
