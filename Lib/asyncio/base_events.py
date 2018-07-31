@@ -1173,7 +1173,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError as err:
                         # Directory may have permissions only to create socket.
                         logger.error('Unable to check or remove stale UNIX '
-                        'socket %r: %r', local_addr, err)
+                                     'socket %r: %r',
+                                     local_addr, err)
 
                 addr_pairs_info = (((family, proto),
                                     (local_addr, remote_addr)), )
