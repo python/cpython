@@ -82,8 +82,7 @@ main(int argc, char *argv[])
     /* Don't install importlib, since it could execute outdated bytecode. */
     config._install_importlib = 0;
     config.install_signal_handlers = 1;
-
-    Py_FrozenFlag++;
+    config._frozen = 1;
 
     _PyInitError err = _Py_InitializeFromConfig(&config);
     /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
