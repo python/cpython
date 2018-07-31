@@ -269,6 +269,41 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_dist__doc__,
+"dist($module, p, q, /)\n"
+"--\n"
+"\n"
+"Return the Euclidean distance between two points p and q.\n"
+"\n"
+"The points should be specified as tuples of coordinates.\n"
+"Both tuples must be the same size.\n"
+"\n"
+"Roughly equivalent to:\n"
+"    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))");
+
+#define MATH_DIST_METHODDEF    \
+    {"dist", (PyCFunction)math_dist, METH_FASTCALL, math_dist__doc__},
+
+static PyObject *
+math_dist_impl(PyObject *module, PyObject *p, PyObject *q);
+
+static PyObject *
+math_dist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *p;
+    PyObject *q;
+
+    if (!_PyArg_ParseStack(args, nargs, "O!O!:dist",
+        &PyTuple_Type, &p, &PyTuple_Type, &q)) {
+        goto exit;
+    }
+    return_value = math_dist_impl(module, p, q);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_pow__doc__,
 "pow($module, x, y, /)\n"
 "--\n"
@@ -487,4 +522,4 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1c35516a10443902 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d936137c1189b89b input=a9049054013a1b77]*/

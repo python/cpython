@@ -2031,11 +2031,27 @@ math_fmod_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(r);
 }
 
-/* AC: XXX Todo */
+/*[clinic input]
+math.dist
+
+    p: object(subclass_of='&PyTuple_Type')
+    q: object(subclass_of='&PyTuple_Type')
+    /
+
+Return the Euclidean distance between two points p and q.
+
+The points should be specified as tuples of coordinates.
+Both tuples must be the same size.
+
+Roughly equivalent to:
+    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+[clinic start generated code]*/
+
 static PyObject *
-math_dist(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
+/*[clinic end generated code: output=56bd9538d06bbcfe input=937122eaa5f19272]*/
 {
-    PyObject *item, *p, *q;
+    PyObject *item;
     double *diffs;
     double max = 0.0;
     double csum = 0.0;
@@ -2043,11 +2059,6 @@ math_dist(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t i, m, n;
     int found_nan = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O!O!:dist",
-                          &PyTuple_Type, &p,
-                          &PyTuple_Type, &q)) {
-        return NULL;
-    }
     m = PyTuple_GET_SIZE(p);
     n = PyTuple_GET_SIZE(q);
     if (m != n) {
@@ -2102,16 +2113,6 @@ math_dist(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject_Free(diffs);
     return PyFloat_FromDouble(result);
 }
-
-PyDoc_STRVAR(math_dist_doc,
-             "dist(p, q) -> value\n\n\
-Return the Euclidean distance between two points p and q.\n\
-\n\
-The points should be specified as tuples of coordinates.\n\
-Both tuples must be the same size.\n\
-\n\
-Roughly equivalent to:\n\
-    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))");
 
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
@@ -2440,8 +2441,7 @@ static PyMethodDef math_methods[] = {
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
-    {"dist",            (PyCFunction)math_dist,
-                                        METH_FASTCALL,  math_dist_doc},
+    MATH_DIST_METHODDEF
     {"erf",             math_erf,       METH_O,         math_erf_doc},
     {"erfc",            math_erfc,      METH_O,         math_erfc_doc},
     {"exp",             math_exp,       METH_O,         math_exp_doc},
