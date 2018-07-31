@@ -330,6 +330,18 @@ Trigonometric functions
    Return the cosine of *x* radians.
 
 
+.. function:: dist(p, q)
+
+   Return the Euclidean distance between two points *p* and *q*, each
+   given as a tuple of coordinates.  The two tuples must be the same size.
+
+   Roughly equivalent to::
+
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+
+   .. versionadded:: 3.8
+
+
 .. function:: hypot(*coordinates)
 
    Return the Euclidean norm, ``sqrt(sum(x**2 for x in coordinates))``.
