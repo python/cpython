@@ -76,8 +76,8 @@ _blake2.blake2b.__new__ as py_blake2b_new
     person: Py_buffer(c_default="NULL", py_default="b''") = None
     fanout: int = 1
     depth: int = 1
-    leaf_size as leaf_size_obj: object(c_default="NULL") = 0
-    node_offset as node_offset_obj: object(c_default="NULL") = 0
+    leaf_size: unsigned_long = 0
+    node_offset: unsigned_long_long = 0
     node_depth: int = 0
     inner_size: int = 0
     last_node: bool = False
@@ -88,16 +88,13 @@ Return a new BLAKE2b hash object.
 static PyObject *
 py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                     Py_buffer *key, Py_buffer *salt, Py_buffer *person,
-                    int fanout, int depth, PyObject *leaf_size_obj,
-                    PyObject *node_offset_obj, int node_depth,
+                    int fanout, int depth, unsigned long leaf_size,
+                    unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node)
-/*[clinic end generated code: output=7506d8d890e5f13b input=aca35b33c5612b4b]*/
+/*[clinic end generated code: output=65e732c66c2297a0 input=82be35a4e6a9daa2]*/
 {
     BLAKE2bObject *self = NULL;
     Py_buffer buf;
-
-    unsigned long leaf_size = 0;
-    unsigned long long node_offset = 0;
 
     self = new_BLAKE2bObject(type);
     if (self == NULL) {
@@ -153,25 +150,13 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
     }
     self->param.depth = (uint8_t)depth;
 
-    if (leaf_size_obj != NULL) {
-        leaf_size = PyLong_AsUnsignedLong(leaf_size_obj);
-        if (leaf_size == (unsigned long) -1 && PyErr_Occurred()) {
-            goto error;
-        }
-        if (leaf_size > 0xFFFFFFFFU) {
-            PyErr_SetString(PyExc_OverflowError, "leaf_size is too large");
-            goto error;
-        }
+    if (leaf_size > 0xFFFFFFFFU) {
+        PyErr_SetString(PyExc_OverflowError, "leaf_size is too large");
+        goto error;
     }
     // NB: Simple assignment here would be incorrect on big endian platforms.
     store32(&(self->param.leaf_length), leaf_size);
 
-    if (node_offset_obj != NULL) {
-        node_offset = PyLong_AsUnsignedLongLong(node_offset_obj);
-        if (node_offset == (unsigned long long) -1 && PyErr_Occurred()) {
-            goto error;
-        }
-    }
 #ifdef HAVE_BLAKE2S
     if (node_offset > 0xFFFFFFFFFFFFULL) {
         /* maximum 2**48 - 1 */

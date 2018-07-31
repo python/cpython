@@ -37,7 +37,7 @@ struct _gilstate_runtime_state {
 #define _PyGILState_check_enabled _PyRuntime.gilstate.check_enabled
 
 
-typedef struct {
+typedef struct _PyPathConfig {
     /* Full path to the Python program */
     wchar_t *program_full_path;
     wchar_t *prefix;
@@ -52,18 +52,30 @@ typedef struct {
     wchar_t *program_name;
     /* Set by Py_SetPythonHome() or PYTHONHOME environment variable */
     wchar_t *home;
+    /* isolated and site_import are used to set Py_IsolatedFlag and
+       Py_NoSiteFlag flags on Windows in read_pth_file(). These fields
+       are ignored when their value are equal to -1 (unset). */
+    int isolated;
+    int site_import;
 } _PyPathConfig;
 
-#define _PyPathConfig_INIT {.module_search_path = NULL}
+#define _PyPathConfig_INIT \
+    {.module_search_path = NULL, \
+     .isolated = -1, \
+     .site_import = -1}
 /* Note: _PyPathConfig_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyPathConfig) _Py_path_config;
 
-PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate(
+PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate_impl(
     _PyPathConfig *config,
     const _PyCoreConfig *core_config);
-PyAPI_FUNC(void) _PyPathConfig_Clear(_PyPathConfig *config);
+PyAPI_FUNC(void) _PyPathConfig_ClearGlobal(void);
 
+PyAPI_FUNC(_PyInitError) _Py_wstrlist_append(
+    int *len,
+    wchar_t ***list,
+    const wchar_t *str);
 
 /* interpreter state */
 

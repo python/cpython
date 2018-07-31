@@ -158,6 +158,17 @@ Build and C API Changes
 Deprecated
 ==========
 
+* Deprecated methods ``getchildren()`` and ``getiterator()`` in
+  the :mod:`~xml.etree.ElementTree` module emit now a
+  :exc:`DeprecationWarning` instead of :exc:`PendingDeprecationWarning`.
+  They will be removed in Python 3.9.
+  (Contributed by Serhiy Storchaka in :issue:`29209`.)
+
+* Passing an object that is not an instance of
+  :class:`concurrent.futures.ThreadPoolExecutor` to
+  :meth:`asyncio.AbstractEventLoop.set_default_executor()` is
+  deprecated and will be prohibited in Python 3.9.
+  (Contributed by Elvis Pranskevichus in :issue:`34075`.)
 
 
 Removed
@@ -172,6 +183,14 @@ Removed
 
 * ``filemode`` function is removed from :mod:`tarfile` module.
   It is not documented and deprecated since Python 3.3.
+
+* The :class:`~xml.etree.ElementTree.XMLParser` constructor no longer accepts
+  the *html* argument.  It never had effect and was deprecated in Python 3.4.
+  All other parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+  (Contributed by Serhiy Storchaka in :issue:`29209`.)
+
+* Removed the ``doctype()`` method of :class:`~xml.etree.ElementTree.XMLParser`.
+  (Contributed by Serhiy Storchaka in :issue:`29209`.)
 
 
 Porting to Python 3.8
@@ -203,6 +222,13 @@ Changes in the Python API
   :func:`dbm.dumb.open` with flags ``'r'`` and ``'w'`` no longer creates
   a database if it does not exist.
   (Contributed by Serhiy Storchaka in :issue:`32749`.)
+
+* The ``doctype()`` method defined in a subclass of
+  :class:`~xml.etree.ElementTree.XMLParser` will no longer be called and will
+  cause emitting a :exc:`RuntimeWarning` instead of a :exc:`DeprecationWarning`.
+  Define the :meth:`doctype() <xml.etree.ElementTree.TreeBuilder.doctype>`
+  method on a target for handling an XML doctype declaration.
+  (Contributed by Serhiy Storchaka in :issue:`29209`.)
 
 * A :exc:`RuntimeError` is now raised when the custom metaclass doesn't
   provide the ``__classcell__`` entry in the namespace passed to

@@ -13,8 +13,8 @@ PyDoc_STRVAR(py_blake2b_new__doc__,
 static PyObject *
 py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                     Py_buffer *key, Py_buffer *salt, Py_buffer *person,
-                    int fanout, int depth, PyObject *leaf_size_obj,
-                    PyObject *node_offset_obj, int node_depth,
+                    int fanout, int depth, unsigned long leaf_size,
+                    unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node);
 
 static PyObject *
@@ -22,7 +22,7 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "digest_size", "key", "salt", "person", "fanout", "depth", "leaf_size", "node_offset", "node_depth", "inner_size", "last_node", NULL};
-    static _PyArg_Parser _parser = {"|O$iy*y*y*iiOOiip:blake2b", _keywords, 0};
+    static _PyArg_Parser _parser = {"|O$iy*y*y*iiO&O&iip:blake2b", _keywords, 0};
     PyObject *data = NULL;
     int digest_size = BLAKE2B_OUTBYTES;
     Py_buffer key = {NULL, NULL};
@@ -30,17 +30,17 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_buffer person = {NULL, NULL};
     int fanout = 1;
     int depth = 1;
-    PyObject *leaf_size_obj = NULL;
-    PyObject *node_offset_obj = NULL;
+    unsigned long leaf_size = 0;
+    unsigned long long node_offset = 0;
     int node_depth = 0;
     int inner_size = 0;
     int last_node = 0;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &data, &digest_size, &key, &salt, &person, &fanout, &depth, &leaf_size_obj, &node_offset_obj, &node_depth, &inner_size, &last_node)) {
+        &data, &digest_size, &key, &salt, &person, &fanout, &depth, _PyLong_UnsignedLong_Converter, &leaf_size, _PyLong_UnsignedLongLong_Converter, &node_offset, &node_depth, &inner_size, &last_node)) {
         goto exit;
     }
-    return_value = py_blake2b_new_impl(type, data, digest_size, &key, &salt, &person, fanout, depth, leaf_size_obj, node_offset_obj, node_depth, inner_size, last_node);
+    return_value = py_blake2b_new_impl(type, data, digest_size, &key, &salt, &person, fanout, depth, leaf_size, node_offset, node_depth, inner_size, last_node);
 
 exit:
     /* Cleanup for key */
@@ -121,4 +121,4 @@ _blake2_blake2b_hexdigest(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=0eb559f418fc0a21 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=39c77de2142faa12 input=a9049054013a1b77]*/

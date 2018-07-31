@@ -51,14 +51,21 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
                                              const char *errors);
 
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
-PyAPI_FUNC(_PyInitError) _Py_InitializeCore(const _PyCoreConfig *);
+PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
+    PyInterpreterState **interp,
+    const _PyCoreConfig *);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(int) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
+    const _PyCoreConfig *config);
+PyAPI_FUNC(void) _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config);
+
 
 PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(
     _PyMainInterpreterConfig *config,
@@ -68,14 +75,17 @@ PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
     _PyMainInterpreterConfig *config,
     const _PyMainInterpreterConfig *config2);
 
-PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *);
+PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
+    PyInterpreterState *interp,
+    const _PyMainInterpreterConfig *);
 #endif
 
 /* Initialization and finalization */
 PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(void) Py_InitializeEx(int);
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(_PyInitError) _Py_InitializeEx_Private(int, int);
+PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
+    const _PyCoreConfig *config);
 PyAPI_FUNC(void) _Py_FatalInitError(_PyInitError err) _Py_NO_RETURN;
 #endif
 PyAPI_FUNC(void) Py_Finalize(void);
@@ -116,7 +126,10 @@ PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 #ifdef Py_BUILD_CORE
-PyAPI_FUNC(_PyInitError) _PyPathConfig_Init(const _PyCoreConfig *core_config);
+struct _PyPathConfig;
+
+PyAPI_FUNC(_PyInitError) _PyPathConfig_SetGlobal(
+    const struct _PyPathConfig *config);
 PyAPI_FUNC(PyObject*) _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv);
 PyAPI_FUNC(int) _Py_FindEnvConfigValue(
     FILE *env_file,
