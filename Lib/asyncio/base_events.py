@@ -381,18 +381,16 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create a Future object attached to the loop."""
         return futures.Future(loop=self)
 
-    def create_task(self, coro, *, name=None):
+    def create_task(self, coro):
         """Schedule a coroutine object.
 
         Return a task object.
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self, name=name)
+            task = tasks.Task(coro, loop=self)
             if task._source_traceback:
                 del task._source_traceback[-1]
-        elif name is not None:
-            task = self._task_factory(self, coro, name=name)
         else:
             task = self._task_factory(self, coro)
         return task

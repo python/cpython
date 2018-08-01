@@ -1937,15 +1937,13 @@ _asyncio.Task.__init__
     coro: object
     *
     loop: object = None
-    name: object = None
 
 A coroutine wrapped in a Future.
 [clinic start generated code]*/
 
 static int
-_asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
-                            PyObject *name)
-/*[clinic end generated code: output=88b12b83d570df50 input=352a3137fe60091d]*/
+_asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
+/*[clinic end generated code: output=9f24774c2287fc2f input=8d132974b049593e]*/
 {
     if (future_init((FutureObj*)self, loop)) {
         return -1;
@@ -1974,15 +1972,11 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     Py_INCREF(coro);
     Py_XSETREF(self->task_coro, coro);
 
-    if (name == Py_None) {
-        name = PyUnicode_FromFormat("Task-%" PRIu64, ++task_name_counter);
-    } else {
-        name = PyObject_Str(name);
-    }
-    Py_XSETREF(self->task_name, name);
-    if (self->task_name == NULL) {
+    PyObject *name = PyUnicode_FromFormat("Task-%" PRIu64, ++task_name_counter);
+    if (name == NULL) {
         return -1;
     }
+    Py_XSETREF(self->task_name, name);
 
     if (task_call_step_soon(self, NULL)) {
         return -1;
@@ -2319,9 +2313,8 @@ _asyncio.Task.get_name
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Task_get_name_impl(TaskObj *self)
+_asyncio_Task_get_name(TaskObj *self)
 /*[clinic end generated code: output=0ecf1570c3b37a8f input=a4a6595d12f4f0f8]*/
-
 {
     if (self->task_name) {
         Py_INCREF(self->task_name);
@@ -2331,6 +2324,25 @@ _asyncio_Task_get_name_impl(TaskObj *self)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_asyncio.Task.set_name
+
+    value: object
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task_set_name(TaskObj *self, PyObject *value)
+/*[clinic end generated code: output=138a8d51e32057d6 input=a8359b6e65f8fd31]*/
+{
+    PyObject *name = PyObject_Str(value);
+    if (name == NULL) {
+        return -1;
+    }
+
+    Py_XSETREF(self->task_name, name);
+    Py_RETURN_NONE;
+}
 
 static void
 TaskObj_finalize(TaskObj *task)
@@ -2417,6 +2429,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_PRINT_STACK_METHODDEF
     _ASYNCIO_TASK__REPR_INFO_METHODDEF
     _ASYNCIO_TASK_GET_NAME_METHODDEF
+    _ASYNCIO_TASK_SET_NAME_METHODDEF
     {NULL, NULL}        /* Sentinel */
 };
 

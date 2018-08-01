@@ -250,7 +250,7 @@ Futures
 Tasks
 -----
 
-.. method:: AbstractEventLoop.create_task(coro, \*, name=None)
+.. method:: AbstractEventLoop.create_task(coro)
 
    Schedule the execution of a :ref:`coroutine object <coroutine>`: wrap it in
    a future. Return a :class:`Task` object.
@@ -259,16 +259,7 @@ Tasks
    interoperability. In this case, the result type is a subclass of
    :class:`Task`.
 
-   Parameters:
-
-   * *name* is a descriptive name for the task. If no explicit name is
-     supplied, the event loop may assign the task an automatically
-     generated name.
-
    .. versionadded:: 3.4.2
-
-   .. versionchanged:: 3.8
-      Added the ``name`` parameter.
 
 .. method:: AbstractEventLoop.set_task_factory(factory)
 
@@ -278,11 +269,9 @@ Tasks
    If *factory* is ``None`` the default task factory will be set.
 
    If *factory* is a *callable*, it should have a signature matching
-   ``(loop, coro, name=None)``, where *loop* will be a reference to the active
-   event loop, *coro* will be a coroutine object and *name* will be the
-   descriptive name of the task. If *name* is ``None``, the factory must
-   provide an automatically generated name for the task. The callable must
-   return an :class:`asyncio.Future` compatible object.
+   ``(loop, coro)``, where *loop* will be a reference to the active
+   event loop, *coro* will be a coroutine object.  The callable
+   must return an :class:`asyncio.Future` compatible object.
 
    .. versionadded:: 3.4.4
 

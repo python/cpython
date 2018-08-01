@@ -88,7 +88,11 @@ class BaseTaskTests:
     Future = None
 
     def new_task(self, loop, coro, name='TestTask'):
-        return self.__class__.Task(coro, loop=loop, name=name)
+        t = self.__class__.Task(coro, loop=loop)
+        if name is not None:
+            t.set_name(name)
+
+        return t
 
     def new_future(self, loop):
         return self.__class__.Future(loop=loop)
@@ -323,8 +327,8 @@ class BaseTaskTests:
         def notmuch():
             return 123
 
-        t1 = self.new_task(self.loop, notmuch(), name=None)
-        t2 = self.new_task(self.loop, notmuch(), name=None)
+        t1 = self.new_task(self.loop, notmuch(), None)
+        t2 = self.new_task(self.loop, notmuch(), None)
         self.assertNotEqual(repr(t1), repr(t2))
 
         match1 = re.match("^<Task pending name='Task-(\d+)'", repr(t1))
@@ -342,7 +346,8 @@ class BaseTaskTests:
         def notmuch():
             return 123
 
-        t = self.new_task(self.loop, notmuch(), name={6})
+        t = self.new_task(self.loop, notmuch())
+        t.set_name({6})
         self.assertEqual(t.get_name(), '{6}')
         self.loop.run_until_complete(t)
 

@@ -253,30 +253,28 @@ _asyncio_Future__repr_info(FutureObj *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_asyncio_Task___init____doc__,
-"Task(coro, *, loop=None, name=None)\n"
+"Task(coro, *, loop=None)\n"
 "--\n"
 "\n"
 "A coroutine wrapped in a Future.");
 
 static int
-_asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
-                            PyObject *name);
+_asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop);
 
 static int
 _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static const char * const _keywords[] = {"coro", "loop", "name", NULL};
-    static _PyArg_Parser _parser = {"O|$OO:Task", _keywords, 0};
+    static const char * const _keywords[] = {"coro", "loop", NULL};
+    static _PyArg_Parser _parser = {"O|$O:Task", _keywords, 0};
     PyObject *coro;
     PyObject *loop = Py_None;
-    PyObject *name = Py_None;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &coro, &loop, &name)) {
+        &coro, &loop)) {
         goto exit;
     }
-    return_value = _asyncio_Task___init___impl((TaskObj *)self, coro, loop, name);
+    return_value = _asyncio_Task___init___impl((TaskObj *)self, coro, loop);
 
 exit:
     return return_value;
@@ -519,6 +517,14 @@ _asyncio_Task_get_name(TaskObj *self, PyObject *Py_UNUSED(ignored))
     return _asyncio_Task_get_name_impl(self);
 }
 
+PyDoc_STRVAR(_asyncio_Task_set_name__doc__,
+"set_name($self, value, /)\n"
+"--\n"
+"\n");
+
+#define _ASYNCIO_TASK_SET_NAME_METHODDEF    \
+    {"set_name", (PyCFunction)_asyncio_Task_set_name, METH_O, _asyncio_Task_set_name__doc__},
+
 PyDoc_STRVAR(_asyncio__get_running_loop__doc__,
 "_get_running_loop($module, /)\n"
 "--\n"
@@ -730,4 +736,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=66f45b8456e9ddc2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e92096eacaa22d64 input=a9049054013a1b77]*/

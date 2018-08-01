@@ -387,7 +387,7 @@ with the result.
 Task
 ----
 
-.. function:: create_task(coro, \*, name=None)
+.. function:: create_task(coro)
 
    Wrap a :ref:`coroutine <coroutine>` *coro* into a task and schedule
    its execution. Return the task object.
@@ -396,18 +396,9 @@ Task
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
 
-   Parameters:
-
-   * *name* is a descriptive name for the task. If no explicit name is
-     supplied, the event loop may assign the task an automatically
-     generated name.
-
    .. versionadded:: 3.7
 
-   .. versionchanged:: 3.8
-      Added the ``name`` parameter.
-
-.. class:: Task(coro, \*, loop=None, name=None)
+.. class:: Task(coro, \*, loop=None)
 
    A unit for concurrent running of :ref:`coroutines <coroutine>`,
    subclass of :class:`Future`.
@@ -446,9 +437,6 @@ Task
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
-
-   .. versionchanged:: 3.8
-      Added the ``name`` argument.
 
    .. classmethod:: all_tasks(loop=None)
 
@@ -519,6 +507,21 @@ Task
    .. method:: get_name()
 
       Return the name of the task.
+
+      If no name has been explicitly assigned to the task, the default
+      ``Task`` implementation generates a default name during instantiation.
+
+      .. versionadded:: 3.8
+
+   .. method:: set_name(value)
+
+      Set the name of the task.
+
+      The *value* argument can be any object, which is then converted to a
+      string.
+
+      In the default Task implementation, the name will be visible in the
+      :func:`repr` output of a task object.
 
       .. versionadded:: 3.8
 

@@ -100,7 +100,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                       stacklevel=2)
         return _all_tasks_compat(loop)
 
-    def __init__(self, coro, *, loop=None, name=None):
+    def __init__(self, coro, *, loop=None):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -110,11 +110,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._log_destroy_pending = False
             raise TypeError(f"a coroutine was expected, got {coro!r}")
 
-        if name is not None:
-            self._name = str(name)
-        else:
-            self._name = 'Task-%s' % _task_name_counter()
-
+        self._name = 'Task-%s' % _task_name_counter()
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
@@ -139,6 +135,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     def get_name(self):
         return self._name
+
+    def set_name(self, value):
+        self._name = str(value)
 
     def set_result(self, result):
         raise RuntimeError('Task does not support set_result operation')
@@ -313,6 +312,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self.__step()
         self = None  # Needed to break cycles when an exception occurs.
 
+
 _PyTask = Task
 
 
@@ -325,13 +325,13 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro, *, name=None):
+def create_task(coro):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
     """
     loop = events.get_running_loop()
-    return loop.create_task(coro, name=name)
+    return loop.create_task(coro)
 
 
 # wait() and as_completed() similar to those in PEP 3148.
