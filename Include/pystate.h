@@ -148,7 +148,7 @@ typedef struct {
        Incremented by the -d command line option. Set by the PYTHONDEBUG
        environment variable. If set to -1 (default), inherit Py_DebugFlag
        value. */
-    int debug;
+    int parser_debug;
 
     /* If equal to 0, Python won't try to write ``.pyc`` files on the
        import of source modules.
@@ -185,13 +185,13 @@ typedef struct {
       !Py_NoUserSiteDirectory. */
     int user_site_directory;
 
-    /* If greater than 0, enable unbuffered mode: force the stdout and stderr
+    /* If equal to 0, enable unbuffered mode: force the stdout and stderr
        streams to be unbuffered.
 
-       Set to 1 by the -u option. Set by the PYTHONUNBUFFERED environment
-       variable. If set to -1 (default), inherit Py_UnbufferedStdioFlag
-       value. */
-    int unbuffered_stdio;
+       Set to 0 by the -u option. Set by the PYTHONUNBUFFERED environment
+       variable.
+       If set to -1 (default), it is set to !Py_UnbufferedStdioFlag. */
+    int buffered_stdio;
 
 #ifdef MS_WINDOWS
     /* If greater than 1, use the "mbcs" encoding instead of the UTF-8
@@ -268,12 +268,12 @@ typedef struct {
         .inspect = -1, \
         .interactive = -1, \
         .optimization_level = -1, \
-        .debug= -1, \
+        .parser_debug= -1, \
         .write_bytecode = -1, \
         .verbose = -1, \
         .quiet = -1, \
         .user_site_directory = -1, \
-        .unbuffered_stdio = -1, \
+        .buffered_stdio = -1, \
         _PyCoreConfig_WINDOWS_INIT \
         ._install_importlib = 1, \
         ._frozen = -1}

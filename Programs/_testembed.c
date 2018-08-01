@@ -356,13 +356,13 @@ dump_config(void)
     printf("inspect = %i\n", config->inspect);
     printf("interactive = %i\n", config->interactive);
     printf("optimization_level = %i\n", config->optimization_level);
-    printf("debug = %i\n", config->debug);
+    printf("parser_debug = %i\n", config->parser_debug);
     printf("write_bytecode = %i\n", config->write_bytecode);
     printf("verbose = %i\n", config->verbose);
     ASSERT_EQUAL(config->verbose, Py_VerboseFlag);
     printf("quiet = %i\n", config->quiet);
     printf("user_site_directory = %i\n", config->user_site_directory);
-    printf("unbuffered_stdio = %i\n", config->unbuffered_stdio);
+    printf("buffered_stdio = %i\n", config->buffered_stdio);
     /* FIXME: test legacy_windows_fs_encoding */
     /* FIXME: test legacy_windows_stdio */
 
@@ -509,7 +509,7 @@ static int test_init_from_config(void)
     Py_OptimizeFlag = 1;
     config.optimization_level = 2;
 
-    /* FIXME: test debug */
+    /* FIXME: test parser_debug */
 
     putenv("PYTHONDONTWRITEBYTECODE=");
     Py_DontWriteBytecodeFlag = 0;
@@ -520,7 +520,7 @@ static int test_init_from_config(void)
 
     putenv("PYTHONUNBUFFERED=");
     Py_UnbufferedStdioFlag = 0;
-    config.unbuffered_stdio = 1;
+    config.buffered_stdio = 0;
 
     putenv("PYTHONNOUSERSITE=");
     Py_NoUserSiteDirectory = 0;
