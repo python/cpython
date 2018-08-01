@@ -329,8 +329,9 @@ PYTHON_OBJS=	\
 		Python/ast_unparse.o \
 		Python/bltinmodule.o \
 		Python/ceval.o \
-		Python/compile.o \
 		Python/codecs.o \
+		Python/compile.o \
+		Python/coreconfig.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
 		Python/frozenmain.o \
@@ -944,6 +945,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
+		$(srcdir)/Include/coreconfig.h \
 		$(srcdir)/Include/descrobject.h \
 		$(srcdir)/Include/dictobject.h \
 		$(srcdir)/Include/dtoa.h \

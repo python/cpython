@@ -84,6 +84,9 @@
     <ClInclude Include="..\Include\context.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\coreconfig.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\datetime.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -855,6 +858,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\compile.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\coreconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\context.h">

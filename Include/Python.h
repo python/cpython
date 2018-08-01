@@ -111,6 +111,7 @@
 #include "codecs.h"
 #include "pyerrors.h"
 
+#include "coreconfig.h"
 #include "pystate.h"
 #include "context.h"
 
