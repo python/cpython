@@ -289,6 +289,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         '_install_importlib': 1,
         '_check_hash_pycs_mode': 'default',
+        '_frozen': 0,
     }
 
     def check_config(self, testname, expected):
@@ -330,6 +331,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'unbuffered_stdio': 1,
             'utf8_mode': 1,
             'user_site_directory': 0,
+            '_frozen': 1,
         }
         self.check_config("init_global_config", config)
 
@@ -362,7 +364,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'unbuffered_stdio': 1,
             'user_site_directory': 0,
             'faulthandler': 1,
+
             '_check_hash_pycs_mode': 'always',
+            '_frozen': 1,
         }
         self.check_config("init_from_config", config)
 
