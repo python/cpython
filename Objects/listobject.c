@@ -187,6 +187,7 @@ list_new_prealloc(Py_ssize_t size)
     if (size == 0 || op == NULL) {
         return (PyObject *) op;
     }
+    assert(op->ob_item == NULL);
     op->ob_item = PyMem_New(PyObject *, size);
     if (op->ob_item == NULL) {
         Py_DECREF(op);
