@@ -20,7 +20,6 @@ import signal
 import sys
 import threading
 import unittest
-import warnings
 
 
 class MockServer(WSGIServer):
@@ -362,9 +361,8 @@ class UtilityTests(TestCase):
         wrapper = util.FileWrapper(StringIO('foobar'), 3)
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'Use iterator protocol instead'):
-            last = wrapper[1]
-        # This should have returned 'bar'.
-        self.assertEqual(last, 'foo')
+            # This should have returned 'bar'.
+            self.assertEqual(wrapper[1], 'foo')
 
     def testSimpleShifts(self):
         self.checkShift('','/', '', '/', '')
