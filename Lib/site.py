@@ -404,6 +404,7 @@ def _register_detect_pip_usage_in_repl():
 
         old_excepthook(typ, value, traceback)
 
+    detect_pip_usage_in_repl.__wrapped__ = old_excepthook
     sys.excepthook = detect_pip_usage_in_repl
 
 
