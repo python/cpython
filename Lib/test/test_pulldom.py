@@ -164,7 +164,7 @@ class PullDOMTestCase(unittest.TestCase):
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'Use iterator protocol instead'):
             # This should have returned 'END_ELEMENT'.
-            self.assertEqual(parser[-1], pulldom.START_DOCUMENT)
+            self.assertEqual(parser[-1][0], pulldom.START_DOCUMENT)
 
 
 class ThoroughTestCase(unittest.TestCase):
