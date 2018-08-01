@@ -1,5 +1,4 @@
 """Support for tasks, coroutines and the scheduler."""
-import itertools
 
 __all__ = (
     'Task', 'create_task',
@@ -14,6 +13,7 @@ import concurrent.futures
 import contextvars
 import functools
 import inspect
+import itertools
 import types
 import warnings
 import weakref
