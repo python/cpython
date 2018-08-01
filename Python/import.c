@@ -2279,8 +2279,6 @@ static struct PyModuleDef impmodule = {
     NULL
 };
 
-const char *_Py_CheckHashBasedPycsMode = "default";
-
 PyMODINIT_FUNC
 PyInit__imp(void)
 {

@@ -7,36 +7,6 @@
 extern "C" {
 #endif
 
-#ifndef Py_LIMITED_API
-typedef struct {
-    const char *prefix;
-    const char *msg;
-    int user_err;
-} _PyInitError;
-
-/* Almost all errors causing Python initialization to fail */
-#ifdef _MSC_VER
-   /* Visual Studio 2015 doesn't implement C99 __func__ in C */
-#  define _Py_INIT_GET_FUNC() __FUNCTION__
-#else
-#  define _Py_INIT_GET_FUNC() __func__
-#endif
-
-#define _Py_INIT_OK() \
-    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0}
-#define _Py_INIT_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 0}
-/* Error that can be fixed by the user like invalid input parameter.
-   Don't abort() the process on such error. */
-#define _Py_INIT_USER_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 1}
-#define _Py_INIT_NO_MEMORY() _Py_INIT_USER_ERR("memory allocation failed")
-#define _Py_INIT_FAILED(err) \
-    (err.msg != NULL)
-
-#endif
-
-
 PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
 
@@ -55,16 +25,6 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
     PyInterpreterState **interp,
     const _PyCoreConfig *);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
-
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
-PyAPI_FUNC(int) _PyCoreConfig_Copy(
-    _PyCoreConfig *config,
-    const _PyCoreConfig *config2);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
-    const _PyCoreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config);
 
 
 PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(
@@ -164,12 +124,6 @@ PyAPI_FUNC(_PyInitError) _PyImportHooks_Init(void);
 PyAPI_FUNC(int) _PyFloat_Init(void);
 PyAPI_FUNC(int) PyByteArray_Init(void);
 PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(const _PyCoreConfig *);
-#endif
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(int) _Py_ReadHashSeed(
-    const char *seed_text,
-    int *use_hash_seed,
-    unsigned long *hash_seed);
 #endif
 
 /* Various internal finalizers */
