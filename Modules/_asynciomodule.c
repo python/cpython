@@ -2313,7 +2313,7 @@ _asyncio.Task.get_name
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Task_get_name(TaskObj *self)
+_asyncio_Task_get_name_impl(TaskObj *self)
 /*[clinic end generated code: output=0ecf1570c3b37a8f input=a4a6595d12f4f0f8]*/
 {
     if (self->task_name) {
