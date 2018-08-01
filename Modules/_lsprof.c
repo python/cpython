@@ -72,7 +72,8 @@ static _PyTime_t CallExternalTimer(ProfilerObject *pObj)
     if (pObj->externalTimerUnit > 0.0) {
         /* interpret the result as an integer that will be scaled
            in profiler_getstats() */
-        result = (_PyTime_t)PyLong_AsLongLong(o);
+        (void)_PyTime_FromNanosecondsObject(&result, o);
+        // Error is checked below.
     }
     else {
         /* interpret the result as a double measured in seconds.
