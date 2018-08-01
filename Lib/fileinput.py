@@ -262,7 +262,7 @@ class FileInput:
         import warnings
         warnings.warn(
             "FileInput's __getitem__ method is deprecated. "
-            "Use the iteration protocol instead.",
+            "Use iterator protocol instead.",
             DeprecationWarning,
             stacklevel=2
         )

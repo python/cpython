@@ -361,7 +361,7 @@ class UtilityTests(TestCase):
     def test_filewrapper_getitem_deprecation(self):
         wrapper = util.FileWrapper(StringIO('foobar'), 3)
         with self.assertWarnsRegex(DeprecationWarning,
-                                   r'Use the iteration protocol instead'):
+                                   r'Use iterator protocol instead'):
             last = wrapper[1]
         # This should have returned 'bar'.
         self.assertEqual(last, 'foo')

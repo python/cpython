@@ -101,7 +101,7 @@ DOMEventStream Objects
 .. class:: DOMEventStream(stream, parser, bufsize)
 
    .. deprecated:: 3.8
-      Support for :meth:`__getitem__` iteration style is deprecated.
+      Support for :meth:`sequence protocol <__getitem__>` is deprecated.
 
    .. method:: getEvent()
 

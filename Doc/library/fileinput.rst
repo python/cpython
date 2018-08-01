@@ -170,7 +170,7 @@ available for subclassing as well:
       The *bufsize* parameter.
 
    .. deprecated:: 3.8
-      Support for :meth:`sequence protocol <object.__getitem__>` is deprecated.
+      Support for :meth:`sequence protocol <__getitem__>` is deprecated.
 
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is

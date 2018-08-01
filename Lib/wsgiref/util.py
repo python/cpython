@@ -21,7 +21,7 @@ class FileWrapper:
         import warnings
         warnings.warn(
             "FileWrapper's __getitem__ method ignores 'key' parameter. "
-            "Use the iteration protocol instead.",
+            "Use iterator protocol instead.",
             DeprecationWarning,
             stacklevel=2
         )

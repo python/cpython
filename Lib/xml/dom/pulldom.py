@@ -220,7 +220,7 @@ class DOMEventStream:
         import warnings
         warnings.warn(
             "DOMEventStream's __getitem__ method ignores 'pos' parameter. "
-            "Use the iteration protocol instead.",
+            "Use iterator protocol instead.",
             DeprecationWarning,
             stacklevel=2
         )
