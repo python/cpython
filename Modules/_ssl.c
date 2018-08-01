@@ -2248,7 +2248,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
         goto error;
     }
     if (b->len == 0) {
-        /*Sending 0 bytes to SSL_write is undefined behaviour per OpenSSL documentation.
+        /* Sending 0 bytes to SSL_write is undefined behaviour per OpenSSL documentation.
         * SSLSocket imitates normal socket in Python.
         * We have to guard against empty input here. */
         Py_XDECREF(sock);
