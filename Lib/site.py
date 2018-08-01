@@ -394,8 +394,7 @@ def sethelper():
     builtins.help = _sitebuiltins._Helper()
 
 def _register_readline():
-    """
-    If the readline module can be imported, the hook will set the Tab key
+    """If the readline module can be imported, the hook will set the Tab key
     as completion key and register ~/.python_history as history file.
     This can be overridden in the sitecustomize or usercustomize module,
     or in a PYTHONSTARTUP file.
