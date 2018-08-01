@@ -1056,6 +1056,131 @@ error:
     return NULL;
 }
 
+/*[clinic input]
+_ssl._SSLSocket.key_update
+    updatetype: int
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_key_update_impl(PySSLSocket *self, int updatetype)
+/*[clinic end generated code: output=2eb3fb43e045bb4f input=338af2b9ff3d49eb]*/
+{
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
+    int ret;
+    _PySSLError err;
+
+    PySSL_BEGIN_ALLOW_THREADS
+    ret = SSL_key_update(self->ssl, updatetype);
+    err = _PySSL_errno(ret == 0, self->ssl, ret);
+    PySSL_END_ALLOW_THREADS
+    self->err = err;
+
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
+
+    if (ret == 0) {
+        return PySSL_SetError(self, ret, __FILE__, __LINE__);
+    }
+
+    Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Updating connection keys is not supported by your "
+                    "OpenSSL version.");
+    return NULL;
+#endif
+}
+
+/*[clinic input]
+_ssl._SSLSocket.get_key_update_type
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_get_key_update_type_impl(PySSLSocket *self)
+/*[clinic end generated code: output=7b6f5d4028511dd5 input=bebae60fb1855a42]*/
+{
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
+    return PyLong_FromLong(SSL_get_key_update_type(self->ssl));
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Updating connection keys is not supported by your "
+                    "OpenSSL version.");
+    return NULL;
+#endif
+}
+
+/*[clinic input]
+_ssl._SSLSocket.renegotiate
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_renegotiate_impl(PySSLSocket *self)
+/*[clinic end generated code: output=b050a8b8e7d2bfa0 input=54ed7fee344889c9]*/
+{
+    int ret;
+    _PySSLError err;
+
+    PySSL_BEGIN_ALLOW_THREADS
+    ret = SSL_renegotiate(self->ssl);
+    err = _PySSL_errno(ret == 0, self->ssl, ret);
+    PySSL_END_ALLOW_THREADS
+    self->err = err;
+
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
+
+    if (ret == 0) {
+        return PySSL_SetError(self, ret, __FILE__, __LINE__);
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_ssl._SSLSocket.renegotiate_abbreviated
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_renegotiate_abbreviated_impl(PySSLSocket *self)
+/*[clinic end generated code: output=418847227effa5f6 input=41a1acca9477811f]*/
+{
+    int ret;
+    _PySSLError err;
+
+    PySSL_BEGIN_ALLOW_THREADS
+    ret = SSL_renegotiate_abbreviated(self->ssl);
+    err = _PySSL_errno(ret == 0, self->ssl, ret);
+    PySSL_END_ALLOW_THREADS
+    self->err = err;
+
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
+
+    if (ret == 0) {
+        return PySSL_SetError(self, ret, __FILE__, __LINE__);
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_ssl._SSLSocket.renegotiate_pending
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_renegotiate_pending_impl(PySSLSocket *self)
+/*[clinic end generated code: output=965855af60c6f3a8 input=29e735de5dcc63f3]*/
+{
+    PyObject *v = SSL_renegotiate_pending(self->ssl) ? Py_True : Py_False;
+    Py_INCREF(v);
+    return v;
+}
+
 static PyObject *
 _asn1obj2py(const ASN1_OBJECT *name, int no_name)
 {
@@ -2834,6 +2959,11 @@ static PyGetSetDef ssl_getsetlist[] = {
 
 static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_DO_HANDSHAKE_METHODDEF
+    _SSL__SSLSOCKET_KEY_UPDATE_METHODDEF
+    _SSL__SSLSOCKET_GET_KEY_UPDATE_TYPE_METHODDEF
+    _SSL__SSLSOCKET_RENEGOTIATE_METHODDEF
+    _SSL__SSLSOCKET_RENEGOTIATE_ABBREVIATED_METHODDEF
+    _SSL__SSLSOCKET_RENEGOTIATE_PENDING_METHODDEF
     _SSL__SSLSOCKET_WRITE_METHODDEF
     _SSL__SSLSOCKET_READ_METHODDEF
     _SSL__SSLSOCKET_PENDING_METHODDEF
@@ -5970,6 +6100,14 @@ PyInit__ssl(void)
 #ifdef X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS
     PyModule_AddIntConstant(m, "HOSTFLAG_SINGLE_LABEL_SUBDOMAINS",
                             X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS);
+#endif
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
+    PyModule_AddIntConstant(m, "KEY_UPDATE_NONE",
+                            SSL_KEY_UPDATE_NONE);
+    PyModule_AddIntConstant(m, "KEY_UPDATE_NOT_REQUESTED",
+                            SSL_KEY_UPDATE_NOT_REQUESTED);
+    PyModule_AddIntConstant(m, "KEY_UPDATE_REQUESTED",
+                            SSL_KEY_UPDATE_REQUESTED);
 #endif
 
     /* protocol versions */

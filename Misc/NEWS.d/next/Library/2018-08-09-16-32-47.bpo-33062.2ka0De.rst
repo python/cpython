@@ -1,0 +1,1 @@
+Added ``renegotiate()`` and ``key_update()`` in :mod:`ssl`.

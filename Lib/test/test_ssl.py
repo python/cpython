@@ -1645,6 +1645,39 @@ class SSLErrorTests(unittest.TestCase):
             ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
                          server_hostname="example.org\x00evil.com")
 
+    @unittest.skipUnless(ssl.HAS_TLSv1_3,
+                         "test requires TLSv1.3 enabled OpenSSL")
+    def test_invalid_key_update_type_and_still_in_init(self):
+        b1 = ssl.MemoryBIO()
+        b2 = ssl.MemoryBIO()
+        ctx = ssl.SSLContext()
+        ctx.load_cert_chain(SIGNED_CERTFILE)
+        server = ctx.wrap_bio(b1, b2, server_side=True)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        ctx.options |= (
+                ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2
+        )
+        sslobj = ctx.wrap_bio(b2, b1, server_side=False)
+
+        handshaking = True
+        while handshaking:
+            try:
+                sslobj.do_handshake()
+                handshaking = False
+            except ssl.SSLWantReadError:
+                handshaking = True
+
+            try:
+                server.do_handshake()
+            except ssl.SSLWantReadError:
+                handshaking = True
+
+        with self.assertRaisesRegex(ssl.SSLError, 'invalid key update type'):
+            sslobj.key_update(ssl.KEY_UPDATE_NONE)
+        sslobj.key_update(ssl.KEY_UPDATE_REQUESTED)
+        with self.assertRaisesRegex(ssl.SSLError, 'still in init'):
+            sslobj.key_update(ssl.KEY_UPDATE_REQUESTED)
+
 
 class MemoryBIOTests(unittest.TestCase):
 
@@ -2074,6 +2107,91 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.write, req)
         buf = self.ssl_io_loop(sock, incoming, outgoing, sslobj.read, 1024)
         self.assertEqual(buf, b'foo\n')
+        self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
+
+    def test_bio_renegotiation(self):
+        sock = socket.socket(socket.AF_INET)
+        self.addCleanup(sock.close)
+        sock.connect(self.server_addr)
+        incoming = ssl.MemoryBIO()
+        outgoing = ssl.MemoryBIO()
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        ctx.verify_mode = ssl.CERT_NONE
+        ctx.options |= ssl.OP_NO_TLSv1_3
+        sslobj = ctx.wrap_bio(incoming, outgoing, False)
+        self.ssl_io_loop(sock, incoming, outgoing, sslobj.do_handshake)
+
+        self.assertEqual(outgoing.pending, 0)
+        sslobj.renegotiate()
+        self.assertEqual(outgoing.pending, 0)
+        self.assertTrue(sslobj.renegotiate_pending)
+        req = b'FOO\n'
+        self.ssl_io_loop(sock, incoming, outgoing, sslobj.write, req)
+        self.assertFalse(sslobj.renegotiate_pending)
+        buf = self.ssl_io_loop(sock, incoming, outgoing, sslobj.read, 1024)
+        self.assertEqual(buf, b'foo\n')
+
+        self.assertEqual(outgoing.pending, 0)
+        sslobj.renegotiate(abbreviated=True)
+        self.assertEqual(outgoing.pending, 0)
+        self.assertTrue(sslobj.renegotiate_pending)
+        req = b'BAR\n'
+        self.ssl_io_loop(sock, incoming, outgoing, sslobj.write, req)
+        self.assertFalse(sslobj.renegotiate_pending)
+        buf = self.ssl_io_loop(sock, incoming, outgoing, sslobj.read, 1024)
+        self.assertEqual(buf, b'bar\n')
+
+        if IS_OPENSSL_1_1_1 and ssl.HAS_TLSv1_3:
+            with self.assertRaises(ssl.SSLError,
+                                   msg='wrong ssl version'):
+                sslobj.key_update(ssl.KEY_UPDATE_NOT_REQUESTED)
+            with self.assertRaises(ssl.SSLError,
+                                   msg='wrong ssl version'):
+                sslobj.key_update(ssl.KEY_UPDATE_REQUESTED)
+
+        self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
+
+    @unittest.skipUnless(ssl.HAS_TLSv1_3,
+                         "test requires TLSv1.3 enabled OpenSSL")
+    def test_bio_key_update(self):
+        sock = socket.socket(socket.AF_INET)
+        self.addCleanup(sock.close)
+        sock.connect(self.server_addr)
+        incoming = ssl.MemoryBIO()
+        outgoing = ssl.MemoryBIO()
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        ctx.verify_mode = ssl.CERT_NONE
+        ctx.options |= (
+                ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2
+        )
+        sslobj = ctx.wrap_bio(incoming, outgoing, False)
+        self.ssl_io_loop(sock, incoming, outgoing, sslobj.do_handshake)
+
+        self.assertEqual(outgoing.pending, 0)
+        sslobj.key_update(ssl.KEY_UPDATE_REQUESTED)
+        self.assertEqual(outgoing.pending, 0)
+        self.assertEqual(sslobj.key_update_type, ssl.KEY_UPDATE_REQUESTED)
+        req = b'FOO\n'
+        self.ssl_io_loop(sock, incoming, outgoing, sslobj.write, req)
+        self.assertEqual(sslobj.key_update_type, ssl.KEY_UPDATE_NONE)
+        buf = self.ssl_io_loop(sock, incoming, outgoing, sslobj.read, 1024)
+        self.assertEqual(buf, b'foo\n')
+
+        self.assertEqual(outgoing.pending, 0)
+        sslobj.key_update(ssl.KEY_UPDATE_NOT_REQUESTED)
+        self.assertEqual(outgoing.pending, 0)
+        self.assertEqual(sslobj.key_update_type, ssl.KEY_UPDATE_NOT_REQUESTED)
+        req = b'BAR\n'
+        self.ssl_io_loop(sock, incoming, outgoing, sslobj.write, req)
+        self.assertEqual(sslobj.key_update_type, ssl.KEY_UPDATE_NONE)
+        buf = self.ssl_io_loop(sock, incoming, outgoing, sslobj.read, 1024)
+        self.assertEqual(buf, b'bar\n')
+
+        with self.assertRaises(ssl.SSLError, msg='wrong ssl version'):
+            sslobj.renegotiate()
+        with self.assertRaises(ssl.SSLError, msg='wrong ssl version'):
+            sslobj.renegotiate(abbreviated=True)
+
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
 
 
@@ -4163,6 +4281,78 @@ class ThreadedTests(unittest.TestCase):
                     s.connect((HOST, server.port))
                 self.assertEqual(str(e.exception),
                                  'Session refers to a different SSLContext.')
+
+    def test_renegotiation(self):
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.load_cert_chain(CERTFILE)
+        context.options |= ssl.OP_NO_TLSv1_3
+        with ThreadedEchoServer(context=context) as server:
+            with context.wrap_socket(socket.socket()) as s:
+                s.connect((HOST, server.port))
+                self.assertFalse(s.renegotiate_pending)
+                s.renegotiate()
+                self.assertTrue(s.renegotiate_pending)
+                s.send(b'HELLO')
+                self.assertEqual(s.recv(1024), b'hello')
+                self.assertFalse(s.renegotiate_pending)
+                s.send(b'WORLD')
+                self.assertEqual(s.recv(1024), b'world')
+
+                self.assertFalse(s.renegotiate_pending)
+                s.renegotiate(abbreviated=True)
+                self.assertTrue(s.renegotiate_pending)
+                s.send(b'HELLO')
+                self.assertEqual(s.recv(1024), b'hello')
+                self.assertFalse(s.renegotiate_pending)
+                s.send(b'WORLD')
+                self.assertEqual(s.recv(1024), b'world')
+
+                if IS_OPENSSL_1_1_1 and ssl.HAS_TLSv1_3:
+                    with self.assertRaises(ssl.SSLError,
+                                           msg='wrong ssl version'):
+                        s.key_update(ssl.KEY_UPDATE_NOT_REQUESTED)
+                    with self.assertRaises(ssl.SSLError,
+                                           msg='wrong ssl version'):
+                        s.key_update(ssl.KEY_UPDATE_REQUESTED)
+
+    @unittest.skipUnless(ssl.HAS_TLSv1_3,
+                         "test requires TLSv1.3 enabled OpenSSL")
+    def test_key_update(self):
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.load_cert_chain(CERTFILE)
+        context.options |= (
+                ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2
+        )
+        with ThreadedEchoServer(context=context) as server:
+            with context.wrap_socket(socket.socket()) as s:
+                s.connect((HOST, server.port))
+                self.assertEqual(s.version(), 'TLSv1.3')
+
+                self.assertEqual(s.key_update_type, ssl.KEY_UPDATE_NONE)
+                s.key_update(ssl.KEY_UPDATE_NOT_REQUESTED)
+                self.assertEqual(s.key_update_type,
+                                 ssl.KEY_UPDATE_NOT_REQUESTED)
+                s.send(b'HELLO')
+                self.assertEqual(s.key_update_type, ssl.KEY_UPDATE_NONE)
+                self.assertEqual(s.recv(1024), b'hello')
+                self.assertEqual(s.key_update_type, ssl.KEY_UPDATE_NONE)
+                s.send(b'WORLD')
+                self.assertEqual(s.recv(1024), b'world')
+
+                self.assertEqual(s.key_update_type, ssl.KEY_UPDATE_NONE)
+                s.key_update(ssl.KEY_UPDATE_REQUESTED)
+                self.assertEqual(s.key_update_type, ssl.KEY_UPDATE_REQUESTED)
+                s.send(b'HELLO')
+                self.assertEqual(s.key_update_type, ssl.KEY_UPDATE_NONE)
+                self.assertEqual(s.recv(1024), b'hello')
+                self.assertEqual(s.key_update_type, ssl.KEY_UPDATE_NONE)
+                s.send(b'WORLD')
+                self.assertEqual(s.recv(1024), b'world')
+
+                with self.assertRaises(ssl.SSLError, msg='wrong ssl version'):
+                    s.renegotiate()
+                with self.assertRaises(ssl.SSLError, msg='wrong ssl version'):
+                    s.renegotiate(abbreviated=True)
 
 
 @unittest.skipUnless(ssl.HAS_TLSv1_3, "Test needs TLS 1.3")

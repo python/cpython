@@ -19,6 +19,100 @@ _ssl__SSLSocket_do_handshake(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_do_handshake_impl(self);
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_key_update__doc__,
+"key_update($self, updatetype, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_KEY_UPDATE_METHODDEF    \
+    {"key_update", (PyCFunction)_ssl__SSLSocket_key_update, METH_O, _ssl__SSLSocket_key_update__doc__},
+
+static PyObject *
+_ssl__SSLSocket_key_update_impl(PySSLSocket *self, int updatetype);
+
+static PyObject *
+_ssl__SSLSocket_key_update(PySSLSocket *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int updatetype;
+
+    if (!PyArg_Parse(arg, "i:key_update", &updatetype)) {
+        goto exit;
+    }
+    return_value = _ssl__SSLSocket_key_update_impl(self, updatetype);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_get_key_update_type__doc__,
+"get_key_update_type($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_GET_KEY_UPDATE_TYPE_METHODDEF    \
+    {"get_key_update_type", (PyCFunction)_ssl__SSLSocket_get_key_update_type, METH_NOARGS, _ssl__SSLSocket_get_key_update_type__doc__},
+
+static PyObject *
+_ssl__SSLSocket_get_key_update_type_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_get_key_update_type(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl__SSLSocket_get_key_update_type_impl(self);
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_renegotiate__doc__,
+"renegotiate($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_RENEGOTIATE_METHODDEF    \
+    {"renegotiate", (PyCFunction)_ssl__SSLSocket_renegotiate, METH_NOARGS, _ssl__SSLSocket_renegotiate__doc__},
+
+static PyObject *
+_ssl__SSLSocket_renegotiate_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_renegotiate(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl__SSLSocket_renegotiate_impl(self);
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_renegotiate_abbreviated__doc__,
+"renegotiate_abbreviated($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_RENEGOTIATE_ABBREVIATED_METHODDEF    \
+    {"renegotiate_abbreviated", (PyCFunction)_ssl__SSLSocket_renegotiate_abbreviated, METH_NOARGS, _ssl__SSLSocket_renegotiate_abbreviated__doc__},
+
+static PyObject *
+_ssl__SSLSocket_renegotiate_abbreviated_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_renegotiate_abbreviated(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl__SSLSocket_renegotiate_abbreviated_impl(self);
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_renegotiate_pending__doc__,
+"renegotiate_pending($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_RENEGOTIATE_PENDING_METHODDEF    \
+    {"renegotiate_pending", (PyCFunction)_ssl__SSLSocket_renegotiate_pending, METH_NOARGS, _ssl__SSLSocket_renegotiate_pending__doc__},
+
+static PyObject *
+_ssl__SSLSocket_renegotiate_pending_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_renegotiate_pending(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl__SSLSocket_renegotiate_pending_impl(self);
+}
+
 PyDoc_STRVAR(_ssl__test_decode_cert__doc__,
 "_test_decode_cert($module, path, /)\n"
 "--\n"
@@ -1193,4 +1287,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=c4e73b70ac3618ba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2bb8c041e0c81578 input=a9049054013a1b77]*/

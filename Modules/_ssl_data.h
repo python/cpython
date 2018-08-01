@@ -294,15 +294,23 @@ static struct py_ssl_error_code error_codes[] = {
   #else
     {"BAD_RSA_ENCRYPT", ERR_LIB_SSL, 119},
   #endif
+  #ifdef SSL_R_INVALID_KEY_UPDATE_TYPE
+    {"INVALID_KEY_UPDATE_TYPE", ERR_LIB_SSL, SSL_R_INVALID_KEY_UPDATE_TYPE},
+  #else
   #ifdef SSL_R_BAD_RSA_E_LENGTH
     {"BAD_RSA_E_LENGTH", ERR_LIB_SSL, SSL_R_BAD_RSA_E_LENGTH},
   #else
     {"BAD_RSA_E_LENGTH", ERR_LIB_SSL, 120},
   #endif
+  #endif
+  #ifdef SSL_R_STILL_IN_INIT
+    {"STILL_IN_INIT", ERR_LIB_SSL, SSL_R_STILL_IN_INIT},
+  #else
   #ifdef SSL_R_BAD_RSA_MODULUS_LENGTH
     {"BAD_RSA_MODULUS_LENGTH", ERR_LIB_SSL, SSL_R_BAD_RSA_MODULUS_LENGTH},
   #else
     {"BAD_RSA_MODULUS_LENGTH", ERR_LIB_SSL, 121},
+  #endif
   #endif
   #ifdef SSL_R_BAD_RSA_SIGNATURE
     {"BAD_RSA_SIGNATURE", ERR_LIB_SSL, SSL_R_BAD_RSA_SIGNATURE},

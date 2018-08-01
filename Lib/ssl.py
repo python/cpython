@@ -149,6 +149,11 @@ _IntEnum._convert_(
     lambda name: name.startswith('CERT_'),
     source=_ssl)
 
+_IntEnum._convert_(
+    'KeyUpdateTypes', __name__,
+    lambda name: name.startswith('KEY_UPDATE_'),
+    source=_ssl)
+
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
 
@@ -780,6 +785,23 @@ class SSLObject:
     def verify_client_post_handshake(self):
         return self._sslobj.verify_client_post_handshake()
 
+    def key_update(self, updatetype):
+        self._sslobj.key_update(updatetype)
+
+    @property
+    def key_update_type(self):
+        return KeyUpdateTypes(self._sslobj.get_key_update_type())
+
+    def renegotiate(self, abbreviated=False):
+        if abbreviated:
+            self._sslobj.renegotiate_abbreviated()
+        else:
+            self._sslobj.renegotiate()
+
+    @property
+    def renegotiate_pending(self):
+        return self._sslobj.renegotiate_pending()
+
 
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
@@ -1090,18 +1112,14 @@ class SSLSocket(socket):
         super().shutdown(how)
 
     def unwrap(self):
-        if self._sslobj:
-            s = self._sslobj.shutdown()
-            self._sslobj = None
-            return s
-        else:
-            raise ValueError("No SSL wrapper around " + str(self))
+        self._ensure_wrapper()
+        s = self._sslobj.shutdown()
+        self._sslobj = None
+        return s
 
     def verify_client_post_handshake(self):
-        if self._sslobj:
-            return self._sslobj.verify_client_post_handshake()
-        else:
-            raise ValueError("No SSL wrapper around " + str(self))
+        self._ensure_wrapper()
+        return self._sslobj.verify_client_post_handshake()
 
     def _real_close(self):
         self._sslobj = None
@@ -1189,6 +1207,76 @@ class SSLSocket(socket):
             return self._sslobj.version()
         else:
             return None
+
+    def _ensure_wrapper(self):
+        if not self._sslobj:
+            raise ValueError("No SSL wrapper around " + str(self))
+
+    def key_update(self, updatetype):
+        self._ensure_wrapper()
+        self._sslobj.key_update(updatetype)
+
+    @property
+    def key_update_type(self):
+        self._ensure_wrapper()
+        return KeyUpdateTypes(self._sslobj.get_key_update_type())
+
+    def renegotiate(self, abbreviated=False):
+        self._ensure_wrapper()
+        if abbreviated:
+            self._sslobj.renegotiate_abbreviated()
+        else:
+            self._sslobj.renegotiate()
+
+    @property
+    def renegotiate_pending(self):
+        self._ensure_wrapper()
+        return self._sslobj.renegotiate_pending()
+
+
+for name, docstr in (
+        ('key_update', """\
+Schedule an update of the keys for the current TLS connection.
+
+If the updatetype parameter is set to KEY_UPDATE_NOT_REQUESTED then the
+sending keys for this connection will be updated and the peer will be
+informed of the change. If the updatetype parameter is set to
+KEY_UPDATE_REQUESTED then the sending keys for this connection will be
+updated and the peer will be informed of the change along with a
+request for the peer to additionally update its sending keys. It is an
+error if updatetype is set to KEY_UPDATE_NONE.
+
+key_update() must only be called after the initial handshake has been
+completed and TLSv1.3 has been negotiated. The key update will not take
+place until the next time an IO operation such as read() or write()
+takes place on the connection. Alternatively do_handshake()  can be
+called to force the update to take place immediately.
+
+Raises NotImplementedError if the TLS implementation doesn't support
+TLS 1.3.)
+
+:param updatetype: KeyUpdateTypes
+"""),
+        ('key_update_type', """\
+Determine whether a key update operation has been scheduled but
+not yet performed.
+
+The type of the pending key update operation will be returned if there
+is one, or KEY_UPDATE_NONE otherwise.
+
+Raises NotImplementedError if the TLS implementation doesn't support
+TLS 1.3.
+"""),
+        ('renegotiate', """\
+Start the SSL/TLS renegotiation, requires TLS <= 1.2."""),
+        ('renegotiate_pending', """\
+Return True if a renegotiation or renegotiation request has been
+scheduled but not yet acted on, or False otherwise."""),
+):
+    for cls in (SSLObject, SSLSocket):
+        getattr(cls, name).__doc__ = docstr
+
+del name, docstr, cls
 
 
 # Python does not support forward declaration of types.
