@@ -173,6 +173,8 @@ also provides these miscellaneous utilities:
       for chunk in wrapper:
           print(chunk)
 
+   .. deprecated:: 3.8
+      Support for :meth:`__getitem__` iteration style is deprecated.
 
 
 :mod:`wsgiref.headers` -- WSGI response header tools

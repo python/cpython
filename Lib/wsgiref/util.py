@@ -18,6 +18,13 @@ class FileWrapper:
             self.close = filelike.close
 
     def __getitem__(self,key):
+        import warnings
+        warnings.warn(
+            "FileWrapper's __getitem__ method ignores 'key' parameter. "
+            "Use the iteration protocol instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         data = self.filelike.read(self.blksize)
         if data:
             return data

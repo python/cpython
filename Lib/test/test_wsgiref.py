@@ -20,6 +20,7 @@ import signal
 import sys
 import threading
 import unittest
+import warnings
 
 
 class MockServer(WSGIServer):
@@ -338,6 +339,7 @@ class UtilityTests(TestCase):
         util.setup_testing_defaults(kw)
         self.assertEqual(util.request_uri(kw,query),uri)
 
+    @support.ignore_warnings(category=DeprecationWarning)
     def checkFW(self,text,size,match):
 
         def make_it(text=text,size=size):
@@ -355,6 +357,14 @@ class UtilityTests(TestCase):
 
         it.close()
         self.assertTrue(it.filelike.closed)
+
+    def test_filewrapper_getitem_deprecation(self):
+        wrapper = util.FileWrapper(StringIO('foobar'), 3)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'Use the iteration protocol instead'):
+            last = wrapper[1]
+        # This should have returned 'bar'.
+        self.assertEqual(last, 'foo')
 
     def testSimpleShifts(self):
         self.checkShift('','/', '', '/', '')
