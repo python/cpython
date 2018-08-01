@@ -335,7 +335,17 @@ dump_config(void)
     printf("pycache_prefix = %ls\n", config->pycache_prefix);
     printf("program_name = %ls\n", config->program_name);
     ASSERT_STR_EQUAL(config->program_name, Py_GetProgramName());
-    /* FIXME: test argc/argv */
+
+    printf("argc = %i\n", config->argc);
+    printf("argv = [");
+    for (int i=0; i < config->argc; i++) {
+        if (i) {
+            printf(", ");
+        }
+        printf("\"%ls\"", config->argv[i]);
+    }
+    printf("]\n");
+
     printf("program = %ls\n", config->program);
     /* FIXME: test xoptions */
     /* FIXME: test warnoptions */
