@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "internal/import.h"
 #include "internal/pystate.h"
 
 
@@ -52,7 +51,6 @@ int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
 int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
 int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
-const char *_Py_CheckHashBasedPycsMode = "default";
 
 
 void
@@ -317,10 +315,6 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
     COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
 
-    if (config->_check_hash_pycs_mode == NULL) {
-        config->_check_hash_pycs_mode = _Py_CheckHashBasedPycsMode;
-    }
-
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
 }
@@ -358,10 +352,6 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
     COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
-
-    if (config->_check_hash_pycs_mode != NULL) {
-        _Py_CheckHashBasedPycsMode = config->_check_hash_pycs_mode;
-    }
 
     /* Random or non-zero hash seed */
     Py_HashRandomizationFlag = (config->use_hash_seed == 0 ||
