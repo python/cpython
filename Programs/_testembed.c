@@ -436,8 +436,6 @@ static int test_init_global_config(void)
     /* FIXME: test Py_LegacyWindowsFSEncodingFlag */
     /* FIXME: test Py_LegacyWindowsStdioFlag */
 
-    /* _Py_CheckHashBasedPycsMode is not public, and so not tested */
-
     Py_Initialize();
     dump_config();
     Py_Finalize();

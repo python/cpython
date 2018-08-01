@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "internal/import.h"
 #include "internal/pystate.h"
 #include "structmember.h"
 #include "osdefs.h"
@@ -1352,12 +1351,13 @@ unmarshal_code(PyObject *pathname, PyObject *data, time_t mtime)
 
     uint32_t flags = get_uint32(buf + 4);
     if (flags != 0) {
+        _PyCoreConfig *config = &PyThreadState_GET()->interp->core_config;
         // Hash-based pyc. We currently refuse to handle checked hash-based
         // pycs. We could validate hash-based pycs against the source, but it
         // seems likely that most people putting hash-based pycs in a zipfile
         // will use unchecked ones.
-        if (strcmp(_Py_CheckHashBasedPycsMode, "never") &&
-            (flags != 0x1 || !strcmp(_Py_CheckHashBasedPycsMode, "always")))
+        if (strcmp(config->_check_hash_pycs_mode, "never") &&
+            (flags != 0x1 || !strcmp(config->_check_hash_pycs_mode, "always")))
             Py_RETURN_NONE;
     } else if ((mtime != 0 && !eq_mtime(get_uint32(buf + 8), mtime))) {
         if (Py_VerboseFlag) {
