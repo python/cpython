@@ -548,11 +548,6 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         os.utime(TESTFN, (0, 0))
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(ValueError, zipfp.write, TESTFN)
-
-    def test_add_file_before_1980_no_strict_timestamps(self):
-        # Set atime and mtime to 1970-01-01
-        os.utime(TESTFN, (0, 0))
-        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             zipfp.write(TESTFN, strict_timestamps=False)
             zinfo = zipfp.getinfo(TESTFN)
             self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
@@ -562,11 +557,6 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         os.utime(TESTFN, (4386268800, 4386268800))
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(struct.error, zipfp.write, TESTFN)
-
-    def test_add_file_after_2107_no_strict_timestamps(self):
-        # Set atime and mtime to 2108-12-30
-        os.utime(TESTFN, (4386268800, 4386268800))
-        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             zipfp.write(TESTFN, strict_timestamps=False)
             zinfo = zipfp.getinfo(TESTFN)
             self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))

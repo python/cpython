@@ -377,10 +377,11 @@ ZipFile Objects
    the new entry. Similarly, *compresslevel* will override the constructor if
    given.
    The archive must be open with mode ``'w'``, ``'x'`` or ``'a'``.
-   The *strict_timestamps* keyword argument, when set to ``False``, allows to
+   The *strict_timestamps* argument, when set to ``False``, allows to
    zip files older than 1980-01-01 at the cost of setting the
    timestamp to 1980-01-01.
-   Same behavior occures with files older than 2107-12-31.
+   Similar behavior occurs with files newer than 2107-12-31,
+   the timestamp is also set to the limit.
 
    .. note::
 
@@ -405,7 +406,7 @@ ZipFile Objects
       a :exc:`RuntimeError` was raised.
 
    .. versionadded:: 3.8
-      The *strict_timestamps* keyword argument
+      The *strict_timestamps* keyword-only argument
 
 
 .. method:: ZipFile.writestr(zinfo_or_arcname, data, compress_type=None, \
@@ -559,10 +560,11 @@ file:
    If *arcname* is not specified, the name will be the same as *filename*, but
    with any drive letter and leading path separators removed.
 
-   The *strict_timestamps* keyword argument, when set to ``False``, allows to
+   The *strict_timestamps* argument, when set to ``False``, allows to
    zip files older than 1980-01-01 at the cost of setting the
    timestamp to 1980-01-01.
-   Same behavior occures with files older than 2107-12-31.
+   Similar behavior occurs with files newer than 2107-12-31,
+   the timestamp is also set to the limit.
 
    .. versionadded:: 3.6
 
@@ -570,7 +572,7 @@ file:
       The *filename* parameter accepts a :term:`path-like object`.
 
    .. versionadded:: 3.8
-      The *strict_timestamps* keyword argument
+      The *strict_timestamps* keyword-only argument
 
 
 Instances have the following methods and attributes:
