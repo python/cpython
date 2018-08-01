@@ -1586,6 +1586,7 @@ pymain_run_filename(_PyMain *pymain, _PyCoreConfig *config,
 {
     if (pymain->filename == NULL && pymain->stdin_is_interactive) {
         Py_InspectFlag = 0; /* do exit on SystemExit */
+        config->inspect = 0;
         pymain_run_startup(pymain, config, cf);
         pymain_run_interactive_hook();
     }
@@ -1612,6 +1613,7 @@ pymain_repl(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
        opportunity to set it from Python. */
     if (!Py_InspectFlag && config_get_env_var(config, "PYTHONINSPECT")) {
         Py_InspectFlag = 1;
+        config->inspect = 1;
     }
 
     if (!(Py_InspectFlag && pymain->stdin_is_interactive && RUN_CODE(pymain))) {
@@ -1619,6 +1621,7 @@ pymain_repl(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
     }
 
     Py_InspectFlag = 0;
+    config->inspect = 0;
     pymain_run_interactive_hook();
 
     int res = PyRun_AnyFileFlags(stdin, "<stdin>", cf);
