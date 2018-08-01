@@ -10,8 +10,8 @@ struct _ProfilerEntry;
 /* represents a function called from another function */
 typedef struct _ProfilerSubEntry {
     rotating_node_t header;
-    long long tt;
-    long long it;
+    _PyTime_t tt;
+    _PyTime_t it;
     long callcount;
     long recursivecallcount;
     long recursionLevel;
@@ -21,8 +21,8 @@ typedef struct _ProfilerSubEntry {
 typedef struct _ProfilerEntry {
     rotating_node_t header;
     PyObject *userObj; /* PyCodeObject, or a descriptive str for builtins */
-    long long tt; /* total time in this entry */
-    long long it; /* inline time in this entry (not in subcalls) */
+    _PyTime_t tt; /* total time in this entry */
+    _PyTime_t it; /* inline time in this entry (not in subcalls) */
     long callcount; /* how many times this was called */
     long recursivecallcount; /* how many times called recursively */
     long recursionLevel;
@@ -30,8 +30,8 @@ typedef struct _ProfilerEntry {
 } ProfilerEntry;
 
 typedef struct _ProfilerContext {
-    long long t0;
-    long long subt;
+    _PyTime_t t0;
+    _PyTime_t subt;
     struct _ProfilerContext *previous;
     ProfilerEntry *ctxEntry;
 } ProfilerContext;
@@ -58,11 +58,12 @@ static PyTypeObject PyProfiler_Type;
 
 /*** External Timers ***/
 
-#define DOUBLE_TIMER_PRECISION   4294967296.0
+#define SEC_TO_NS (1e9)
+#define NS_TO_SEC (1e-9)
 
-static long long CallExternalTimer(ProfilerObject *pObj)
+static _PyTime_t CallExternalTimer(ProfilerObject *pObj)
 {
-    long long result;
+    _PyTime_t result;
     PyObject *o = _PyObject_CallNoArg(pObj->externalTimer);
     if (o == NULL) {
         PyErr_WriteUnraisable(pObj->externalTimer);
@@ -71,15 +72,15 @@ static long long CallExternalTimer(ProfilerObject *pObj)
     if (pObj->externalTimerUnit > 0.0) {
         /* interpret the result as an integer that will be scaled
            in profiler_getstats() */
-        result = PyLong_AsLongLong(o);
+        result = (_PyTime_t)PyLong_AsLongLong(o);
     }
     else {
         /* interpret the result as a double measured in seconds.
-           As the profiler works with long long internally
+           As the profiler works with _PyTime_t internally
            we convert it to a large integer */
         double val = PyFloat_AsDouble(o);
         /* error handling delayed to the code below */
-        result = (long long) (val * DOUBLE_TIMER_PRECISION);
+        result = (_PyTime_t)(val * SEC_TO_NS);
     }
     Py_DECREF(o);
     if (PyErr_Occurred()) {
@@ -89,14 +90,14 @@ static long long CallExternalTimer(ProfilerObject *pObj)
     return result;
 }
 
-static inline long long
+static inline _PyTime_t
 call_timer(ProfilerObject *pObj)
 {
     if (pObj->externalTimer != NULL) {
         return CallExternalTimer(pObj);
     }
     else {
-        return (long long)_PyTime_GetPerfCounter();
+        return _PyTime_GetPerfCounter();
     }
 }
 
@@ -289,8 +290,8 @@ initContext(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 static void
 Stop(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 {
-    long long tt = call_timer(pObj) - self->t0;
-    long long it = tt - self->subt;
+    _PyTime_t tt = call_timer(pObj) - self->t0;
+    _PyTime_t it = tt - self->subt;
     if (self->previous)
         self->previous->subt += tt;
     pObj->currentProfilerContext = self->previous;
@@ -582,12 +583,13 @@ profiler_getstats(ProfilerObject *pObj, PyObject* noarg)
     statscollector_t collect;
     if (pending_exception(pObj))
         return NULL;
-    if (!pObj->externalTimer)
-        collect.factor = 1e-9;  // _Py_time_t is nanosecond
-    else if (pObj->externalTimerUnit > 0.0)
+    if (!pObj->externalTimer || pObj->externalTimerUnit == 0.0) {
+        collect.factor = NS_TO_SEC;
+    }
+    else {
         collect.factor = pObj->externalTimerUnit;
-    else
-        collect.factor = 1.0 / DOUBLE_TIMER_PRECISION;
+    }
+
     collect.list = PyList_New(0);
     if (collect.list == NULL)
         return NULL;
