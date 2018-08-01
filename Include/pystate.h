@@ -235,6 +235,12 @@ typedef struct {
 
        See PEP 552 "Deterministic pycs" for more details. */
     const char *_check_hash_pycs_mode;
+
+    /* If greater than 0, suppress _PyPathConfig_Calculate() warnings.
+
+       If set to -1 (default), inherit Py_FrozenFlag value. */
+    int _frozen;
+
 } _PyCoreConfig;
 
 #ifdef MS_WINDOWS
@@ -269,7 +275,8 @@ typedef struct {
         .user_site_directory = -1, \
         .unbuffered_stdio = -1, \
         _PyCoreConfig_WINDOWS_INIT \
-        ._install_importlib = 1}
+        ._install_importlib = 1, \
+        ._frozen = -1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 /* Placeholders while working on the new configuration API

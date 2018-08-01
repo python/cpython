@@ -368,6 +368,7 @@ dump_config(void)
 
     printf("_install_importlib = %i\n", config->_install_importlib);
     printf("_check_hash_pycs_mode = %s\n", config->_check_hash_pycs_mode);
+    printf("_frozen = %i\n", config->_frozen);
 
 #undef ASSERT_EQUAL
 #undef ASSERT_STR_EQUAL
@@ -419,6 +420,8 @@ static int test_init_global_config(void)
 
     putenv("PYTHONUNBUFFERED=");
     Py_UnbufferedStdioFlag = 1;
+
+    Py_FrozenFlag = 1;
 
     /* FIXME: test Py_LegacyWindowsFSEncodingFlag */
     /* FIXME: test Py_LegacyWindowsStdioFlag */
@@ -524,6 +527,9 @@ static int test_init_from_config(void)
     config.user_site_directory = 0;
 
     config._check_hash_pycs_mode = "always";
+
+    Py_FrozenFlag = 0;
+    config._frozen = 1;
 
     _PyInitError err = _Py_InitializeFromConfig(&config);
     /* Don't call _PyCoreConfig_Clear() since all strings are static */

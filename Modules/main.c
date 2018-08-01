@@ -573,6 +573,7 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
+    COPY_FLAG(_frozen, Py_FrozenFlag);
 
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
@@ -759,6 +760,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(legacy_windows_stdio);
 #endif
     COPY_ATTR(_check_hash_pycs_mode);
+    COPY_ATTR(_frozen);
 
 #undef COPY_ATTR
 #undef COPY_STR_ATTR
@@ -2280,6 +2282,9 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
     if (config->utf8_mode < 0) {
         config->utf8_mode = 0;
+    }
+    if (config->_frozen < 0) {
+        config->_frozen = 0;
     }
 
     return _Py_INIT_OK();
