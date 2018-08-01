@@ -28,7 +28,7 @@ _get_current(void)
 {
     // _PyInterpreterState_Get() aborts if lookup fails, so don't need
     // to check the result for NULL.
-    return _PyInterpreterState_Get
+    return _PyInterpreterState_Get();
 }
 
 static int64_t
