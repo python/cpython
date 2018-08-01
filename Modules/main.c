@@ -565,10 +565,9 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
     COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
     COPY_FLAG(optimization_level, Py_OptimizeFlag);
-    COPY_FLAG(debug, Py_DebugFlag);
+    COPY_FLAG(parser_debug, Py_DebugFlag);
     COPY_FLAG(verbose, Py_VerboseFlag);
     COPY_FLAG(quiet, Py_QuietFlag);
-    COPY_FLAG(unbuffered_stdio, Py_UnbufferedStdioFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
@@ -576,6 +575,7 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
     COPY_FLAG(_frozen, Py_FrozenFlag);
 
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
+    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
     COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
@@ -608,16 +608,16 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
     COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
     COPY_FLAG(optimization_level, Py_OptimizeFlag);
-    COPY_FLAG(debug, Py_DebugFlag);
+    COPY_FLAG(parser_debug, Py_DebugFlag);
     COPY_FLAG(verbose, Py_VerboseFlag);
     COPY_FLAG(quiet, Py_QuietFlag);
-    COPY_FLAG(unbuffered_stdio, Py_UnbufferedStdioFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
 
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
+    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
     COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
@@ -749,12 +749,12 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(inspect);
     COPY_ATTR(interactive);
     COPY_ATTR(optimization_level);
-    COPY_ATTR(debug);
+    COPY_ATTR(parser_debug);
     COPY_ATTR(write_bytecode);
     COPY_ATTR(verbose);
     COPY_ATTR(quiet);
     COPY_ATTR(user_site_directory);
-    COPY_ATTR(unbuffered_stdio);
+    COPY_ATTR(buffered_stdio);
 #ifdef MS_WINDOWS
     COPY_ATTR(legacy_windows_fs_encoding);
     COPY_ATTR(legacy_windows_stdio);
@@ -990,7 +990,7 @@ pymain_parse_cmdline_impl(_PyMain *pymain, _PyCoreConfig *config,
             break;
 
         case 'd':
-            config->debug++;
+            config->parser_debug++;
             break;
 
         case 'i':
@@ -1029,7 +1029,7 @@ pymain_parse_cmdline_impl(_PyMain *pymain, _PyCoreConfig *config,
             break;
 
         case 'u':
-            config->unbuffered_stdio = 1;
+            config->buffered_stdio = 0;
             break;
 
         case 'v':
@@ -1287,7 +1287,7 @@ pymain_init_stdio(_PyMain *pymain, _PyCoreConfig *config)
     _setmode(fileno(stderr), O_BINARY);
 #endif
 
-    if (config->unbuffered_stdio) {
+    if (!config->buffered_stdio) {
 #ifdef HAVE_SETVBUF
         setvbuf(stdin,  (char *)NULL, _IONBF, BUFSIZ);
         setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
@@ -1902,7 +1902,7 @@ config_read_env_vars(_PyCoreConfig *config)
     assert(config->use_environment > 0);
 
     /* Get environment variables */
-    get_env_flag(config, &config->debug, "PYTHONDEBUG");
+    get_env_flag(config, &config->parser_debug, "PYTHONDEBUG");
     get_env_flag(config, &config->verbose, "PYTHONVERBOSE");
     get_env_flag(config, &config->optimization_level, "PYTHONOPTIMIZE");
     get_env_flag(config, &config->inspect, "PYTHONINSPECT");
@@ -1919,7 +1919,12 @@ config_read_env_vars(_PyCoreConfig *config)
         config->user_site_directory = 0;
     }
 
-    get_env_flag(config, &config->unbuffered_stdio, "PYTHONUNBUFFERED");
+    int unbuffered_stdio = 0;
+    get_env_flag(config, &unbuffered_stdio, "PYTHONUNBUFFERED");
+    if (unbuffered_stdio) {
+        config->buffered_stdio = 0;
+    }
+
 #ifdef MS_WINDOWS
     get_env_flag(config, &config->legacy_windows_fs_encoding,
                  "PYTHONLEGACYWINDOWSFSENCODING");
