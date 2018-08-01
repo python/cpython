@@ -44,6 +44,7 @@ class AboutDialog(Toplevel):
         self.title(title or
                    f'About IDLE {python_version()} ({build_bits()} bit)')
         self.transient(parent)
+        self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.ok)
         self.parent = parent
         self.button_ok.focus_set()
@@ -194,6 +195,7 @@ class AboutDialog(Toplevel):
 
     def ok(self, event=None):
         "Dismiss help_about dialog."
+        self.grab_release()
         self.destroy()
 
 

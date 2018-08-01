@@ -56,6 +56,7 @@ class Query(Toplevel):
         self.text0 = text0
         self.used_names = used_names
         self.transient(parent)
+        self.grab_set()
         windowingsystem = self.tk.call('tk', 'windowingsystem')
         if windowingsystem == 'aqua':
             try:
@@ -141,6 +142,10 @@ class Query(Toplevel):
         "Set dialog result to None and destroy tk widget."
         self.result = None
         self.destroy()
+
+    def destroy(self):
+        self.grab_release()
+        super().destroy()
 
 
 class SectionName(Query):

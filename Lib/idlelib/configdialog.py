@@ -84,6 +84,7 @@ class ConfigDialog(Toplevel):
         tracers.attach()
 
         if not _utest:
+            self.grab_set()
             self.wm_deiconify()
             self.wait_window()
 
@@ -190,6 +191,7 @@ class ConfigDialog(Toplevel):
     def destroy(self):
         global font_sample_text
         font_sample_text = self.fontpage.font_sample.get('1.0', 'end')
+        self.grab_release()
         super().destroy()
 
     def help(self):

@@ -29,6 +29,7 @@ class GetKeysDialog(Toplevel):
         self.resizable(height=FALSE, width=FALSE)
         self.title(title)
         self.transient(parent)
+        self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.Cancel)
         self.parent = parent
         self.action=action
@@ -234,10 +235,12 @@ class GetKeysDialog(Toplevel):
             return
         if (self.advanced or self.KeysOK(keys)) and self.bind_ok(keys):
             self.result = keys
+        self.grab_release()
         self.destroy()
 
     def Cancel(self, event=None):
         self.result=''
+        self.grab_release()
         self.destroy()
 
     def KeysOK(self, keys):

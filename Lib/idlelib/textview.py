@@ -85,11 +85,13 @@ class ViewWindow(Toplevel):
 
         if modal:
             self.transient(parent)
+            self.grab_set()
             if not _utest:
                 self.wait_window()
 
     def ok(self, event=None):
         """Dismiss text viewer dialog."""
+        self.grab_release()
         self.destroy()
 
 
