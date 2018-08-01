@@ -1,0 +1,2 @@
+shutil.copystat(): ignore EINVAL on os.setxattr() which may occur when
+copying files on NFS filesystems.  (patch by Giampaolo Rodola')
