@@ -241,7 +241,7 @@ typedef struct {
          valid
 
        Set by the --check-hash-based-pycs command line option.
-       If set to NULL (default), inherit _Py_CheckHashBasedPycsMode value.
+       The default value is "default".
 
        See PEP 552 "Deterministic pycs" for more details. */
     const char *_check_hash_pycs_mode;
@@ -286,6 +286,7 @@ typedef struct {
         .buffered_stdio = -1, \
         _PyCoreConfig_WINDOWS_INIT \
         ._install_importlib = 1, \
+        ._check_hash_pycs_mode = "default", \
         ._frozen = -1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
