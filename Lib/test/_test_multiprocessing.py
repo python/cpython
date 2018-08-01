@@ -4474,7 +4474,7 @@ class TestSemaphoreTracker(unittest.TestCase):
         # be restarted implicitly.
         from multiprocessing.semaphore_tracker import _semaphore_tracker
         pid = _semaphore_tracker._pid
-        if pid:
+        if pid is not None:
             os.kill(pid, signal.SIGKILL)
             os.waitpid(pid, 0)
         with warnings.catch_warnings(record=True) as all_warn:
