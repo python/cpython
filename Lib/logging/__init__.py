@@ -2037,6 +2037,9 @@ class NullHandler(Handler):
     a NullHandler and add it to the top-level logger of the library module or
     package.
     """
+    def __init__(self, *args, **kwargs):
+        """Stub."""
+
     def handle(self, record):
         """Stub."""
 
