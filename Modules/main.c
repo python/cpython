@@ -2286,6 +2286,9 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     if (config->_frozen < 0) {
         config->_frozen = 0;
     }
+    if (config->argc < 0) {
+        config->argc = 0;
+    }
 
     return _Py_INIT_OK();
 }
