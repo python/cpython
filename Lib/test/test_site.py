@@ -523,8 +523,8 @@ class StartupImportTests(unittest.TestCase):
     def test_startup_interactivehook_isolated_explicit(self):
         # issue28192 readline can be explicitly enabled in isolated mode
         r = subprocess.Popen([sys.executable, '-I', '-c',
-            'import site, sys; site.enablerlcompleter(); sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
-        self.assertTrue(r, "'__interactivehook__' not added by enablerlcompleter()")
+            'import site, sys; site._set_interactive_hook(); sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
+        self.assertTrue(r, "'__interactivehook__' not added by _set_interactive_hook()")
 
 
 @unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")

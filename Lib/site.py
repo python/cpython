@@ -390,6 +390,55 @@ def setcopyright():
         files, dirs)
 
 
+def sethelper():
+    builtins.help = _sitebuiltins._Helper()
+
+def _register_readline():
+    """
+    If the readline module can be imported, the hook will set the Tab key
+    as completion key and register ~/.python_history as history file.
+    This can be overridden in the sitecustomize or usercustomize module,
+    or in a PYTHONSTARTUP file.
+    """
+    import atexit
+    try:
+        import readline
+        import rlcompleter
+    except ImportError:
+        return
+
+    # Reading the initialization (config) file may not be enough to set a
+    # completion key, so we set one first and then read the file.
+    readline_doc = getattr(readline, '__doc__', '')
+    if readline_doc is not None and 'libedit' in readline_doc:
+        readline.parse_and_bind('bind ^I rl_complete')
+    else:
+        readline.parse_and_bind('tab: complete')
+
+    try:
+        readline.read_init_file()
+    except OSError:
+        # An OSError here could have many causes, but the most likely one
+        # is that there's no .inputrc file (or .editrc file in the case of
+        # Mac OS X + libedit) in the expected location.  In that case, we
+        # want to ignore the exception.
+        pass
+
+    if readline.get_current_history_length() == 0:
+        # If no history was loaded, default to .python_history.
+        # The guard is necessary to avoid doubling history size at
+        # each interpreter exit when readline was already configured
+        # through a PYTHONSTARTUP hook, see:
+        # http://bugs.python.org/issue5845#msg198636
+        history = os.path.join(os.path.expanduser('~'),
+                               '.python_history')
+        try:
+            readline.read_history_file(history)
+        except OSError:
+            pass
+        atexit.register(readline.write_history_file, history)
+
+
 def _register_detect_pip_usage_in_repl():
     old_excepthook = sys.excepthook
 
@@ -408,58 +457,17 @@ def _register_detect_pip_usage_in_repl():
     sys.excepthook = detect_pip_usage_in_repl
 
 
-def sethelper():
-    builtins.help = _sitebuiltins._Helper()
-
-def enablerlcompleter():
-    """Enable default readline configuration on interactive prompts, by
-    registering a sys.__interactivehook__.
-
-    If the readline module can be imported, the hook will set the Tab key
-    as completion key and register ~/.python_history as history file.
-    This can be overridden in the sitecustomize or usercustomize module,
-    or in a PYTHONSTARTUP file.
+def _set_interactive_hook():
+    """Register a sys.__interactivehook__ to:
+        - Enable default readline configuration on interactive prompts.
+        - Register an excepthook to detect pip usage in the REPL.
     """
-    def register_readline():
-        import atexit
-        try:
-            import readline
-            import rlcompleter
-        except ImportError:
-            return
+    def interactivehook():
+        _register_readline()
+        _register_detect_pip_usage_in_repl()
 
-        # Reading the initialization (config) file may not be enough to set a
-        # completion key, so we set one first and then read the file.
-        readline_doc = getattr(readline, '__doc__', '')
-        if readline_doc is not None and 'libedit' in readline_doc:
-            readline.parse_and_bind('bind ^I rl_complete')
-        else:
-            readline.parse_and_bind('tab: complete')
+    sys.__interactivehook__ = interactivehook
 
-        try:
-            readline.read_init_file()
-        except OSError:
-            # An OSError here could have many causes, but the most likely one
-            # is that there's no .inputrc file (or .editrc file in the case of
-            # Mac OS X + libedit) in the expected location.  In that case, we
-            # want to ignore the exception.
-            pass
-
-        if readline.get_current_history_length() == 0:
-            # If no history was loaded, default to .python_history.
-            # The guard is necessary to avoid doubling history size at
-            # each interpreter exit when readline was already configured
-            # through a PYTHONSTARTUP hook, see:
-            # http://bugs.python.org/issue5845#msg198636
-            history = os.path.join(os.path.expanduser('~'),
-                                   '.python_history')
-            try:
-                readline.read_history_file(history)
-            except OSError:
-                pass
-            atexit.register(readline.write_history_file, history)
-
-    sys.__interactivehook__ = register_readline
 
 def venv(known_paths):
     global PREFIXES, ENABLE_USER_SITE
@@ -576,12 +584,8 @@ def main():
     setquit()
     setcopyright()
     sethelper()
-    # Detect REPL by prompt, -i flag or PYTHONINSPECT env var being set.
-    if (hasattr(sys, 'ps1') or sys.flags.interactive or
-        os.environ.get('PYTHONINSPECT')):
-        _register_detect_pip_usage_in_repl()
     if not sys.flags.isolated:
-        enablerlcompleter()
+        _set_interactive_hook()
     execsitecustomize()
     if ENABLE_USER_SITE:
         execusercustomize()
