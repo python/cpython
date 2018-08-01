@@ -1106,6 +1106,29 @@ class ThreadingExceptionTests(BaseTestCase):
         # explicitly break the reference cycle to not leak a dangling thread
         thread.exc = None
 
+    def test_excepthook(self):
+        script = r"""if True:
+            import sys
+            import threading
+
+            def f():
+                raise Exception()
+
+            def hook(*args):
+                # print('thread: %r' % (threading.current_thread(),))
+                print('custom hook: %r' % (args,))
+
+            sys.excepthook = hook
+
+            threading.Thread(target=f).start()
+            """
+        rc, out, err = assert_python_ok("-c", script)
+        decoded_out = out.decode()
+        decoded_err = err.decode()
+        self.assertNotIn("Traceback", decoded_err)
+        self.assertIn("custom hook", decoded_out)
+
+
 class TimerTests(BaseTestCase):
 
     def setUp(self):

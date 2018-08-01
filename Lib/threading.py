@@ -918,19 +918,21 @@ class Thread:
             except SystemExit:
                 pass
             except:
-                # If sys.stderr is no more (most likely from interpreter
-                # shutdown) use self._stderr.  Otherwise still use sys (as in
-                # _sys) in case sys.stderr was redefined since the creation of
-                # self.
-                if _sys and _sys.stderr is not None:
-                    print("Exception in thread %s:\n%s" %
-                          (self.name, _format_exc()), file=_sys.stderr)
-                elif self._stderr is not None:
-                    # Do the best job possible w/o a huge amt. of code to
-                    # approximate a traceback (code ideas from
-                    # Lib/traceback.py)
-                    exc_type, exc_value, exc_tb = self._exc_info()
-                    try:
+                exc_type, exc_value, exc_tb = self._exc_info()
+                try:
+                    if _sys and _sys.excepthook != _sys.__excepthook__:
+                        _sys.excepthook(exc_type, exc_value, exc_tb)
+                    # If sys.stderr is no more (most likely from interpreter
+                    # shutdown) use self._stderr.  Otherwise still use sys (as in
+                    # _sys) in case sys.stderr was redefined since the creation of
+                    # self.
+                    elif _sys and _sys.stderr is not None:
+                        print("Exception in thread %s:\n%s" %
+                              (self.name, _format_exc()), file=_sys.stderr)
+                    elif self._stderr is not None:
+                        # Do the best job possible w/o a huge amt. of code to
+                        # approximate a traceback (code ideas from
+                        # Lib/traceback.py)
                         print((
                             "Exception in thread " + self.name +
                             " (most likely raised during interpreter shutdown):"), file=self._stderr)
@@ -945,10 +947,10 @@ class Thread:
                             exc_tb = exc_tb.tb_next
                         print(("%s: %s" % (exc_type, exc_value)), file=self._stderr)
                         self._stderr.flush()
-                    # Make sure that exc_tb gets deleted since it is a memory
-                    # hog; deleting everything else is just for thoroughness
-                    finally:
-                        del exc_type, exc_value, exc_tb
+                # Make sure that exc_tb gets deleted since it is a memory
+                # hog; deleting everything else is just for thoroughness
+                finally:
+                    del exc_type, exc_value, exc_tb
             finally:
                 # Prevent a race in
                 # test_threading.test_no_refcycle_through_target when
