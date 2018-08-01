@@ -345,7 +345,7 @@ Creating connections
      be a floating-point number representing the amount of time in seconds
      to wait for a connection attempt to complete, before starting the next
      attempt in parallel. This is the "Connection Attempt Delay" as defined
-     in RFC 8305. A sensible default value recommended by the RFC is 0.25
+     in :rfc:`8305`. A sensible default value recommended by the RFC is ``0.25``
      (250 milliseconds).
 
    * *interleave* controls address reordering when a host name resolves to
@@ -354,7 +354,7 @@ Creating connections
      tried in the order returned by :meth:`getaddrinfo`. If a positive integer
      is specified, the addresses are interleaved by address family, and the
      given integer is interpreted as "First Address Family Count" as defined
-     in RFC 8305. The default is ``0`` if *happy_eyeballs_delay* is not
+     in :rfc:`8305`. The default is ``0`` if *happy_eyeballs_delay* is not
      specified, and ``1`` if it is.
 
    * *sock*, if given, should be an existing, already connected
