@@ -1041,16 +1041,25 @@ deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
         start = stop;
     assert(0 <= start && start <= stop && stop <= Py_SIZE(deque));
 
-    /* XXX Replace this loop with faster code from deque_item() */
-    for (i=0 ; i<start ; i++) {
-        index++;
-        if (index == BLOCKLEN) {
-            b = b->rightlink;
-            index = 0;
+    if (start > 0) {
+        i = start + deque->leftindex;
+        n = (Py_ssize_t)((size_t) i / BLOCKLEN);
+        index = (Py_ssize_t)((size_t) i % BLOCKLEN);
+
+        if (index < (Py_SIZE(deque) >> 1)) {
+            while (--n >= 0)
+                b = b->rightlink;
+        } else {
+            n = (Py_ssize_t)(
+                    ((size_t)(deque->leftindex + Py_SIZE(deque) - 1))
+                    / BLOCKLEN - n);
+            b = deque->rightblock;
+            while (--n >= 0)
+                b = b->leftlink;
         }
     }
 
-    n = stop - i;
+    n = stop - start;
     while (--n >= 0) {
         CHECK_NOT_END(b);
         item = b->data[index];
