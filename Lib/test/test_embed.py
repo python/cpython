@@ -272,6 +272,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         'pycache_prefix': '(null)',
         'program_name': './_testembed',
+        'argc': 0,
+        'argv': '[]',
         'program': '(null)',
 
         'isolated': 0,
