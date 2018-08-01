@@ -86,7 +86,7 @@ PyAPI_FUNC(void) Py_InitializeEx(int);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
     const _PyCoreConfig *config);
-PyAPI_FUNC(void) _Py_FatalInitError(_PyInitError err) _Py_NO_RETURN;
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalInitError(_PyInitError err);
 #endif
 PyAPI_FUNC(void) Py_Finalize(void);
 PyAPI_FUNC(int) Py_FinalizeEx(void);
@@ -105,7 +105,7 @@ PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(PyObject *), PyObject *);
 #endif
 PyAPI_FUNC(int) Py_AtExit(void (*func)(void));
 
-PyAPI_FUNC(void) Py_Exit(int) _Py_NO_RETURN;
+PyAPI_FUNC(void) _Py_NO_RETURN Py_Exit(int);
 
 /* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL. */
 #ifndef Py_LIMITED_API
