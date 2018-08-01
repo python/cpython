@@ -639,6 +639,21 @@ def cleandoc(doc):
             lines.pop(0)
         return '\n'.join(lines)
 
+def _get_code_object(obj):
+    """Walk through a callable or frame to find the code object"""
+    if ismethod(obj):
+        obj = obj.__func__
+    if isfunction(obj):
+        obj = unwrap(obj)
+        obj = obj.__code__
+    if istraceback(obj):
+        obj = obj.tb_frame
+    if isframe(obj):
+        obj = obj.f_code
+    if iscode(obj):
+        return obj
+    raise TypeError
+
 def getfile(object):
     """Work out which source or compiled file an object was defined in."""
     if ismodule(object):
@@ -651,19 +666,13 @@ def getfile(object):
             if hasattr(object, '__file__'):
                 return object.__file__
         raise TypeError('{!r} is a built-in class'.format(object))
-    if ismethod(object):
-        object = object.__func__
-    if isfunction(object):
-        object = object.__code__
-    if istraceback(object):
-        object = object.tb_frame
-    if isframe(object):
-        object = object.f_code
-    if iscode(object):
-        return object.co_filename
-    raise TypeError('module, class, method, function, traceback, frame, or '
-                    'code object was expected, got {}'.format(
-                    type(object).__name__))
+
+    try:
+        return _get_code_object(object).co_filename
+    except TypeError:
+        raise TypeError('module, class, method, function, traceback, frame, or '
+                        'code object was expected, got {}'.format(
+                        type(object).__name__)) from None
 
 def getmodulename(path):
     """Return the module name for a given file, or None."""
@@ -811,24 +820,19 @@ def findsource(object):
         else:
             raise OSError('could not find class definition')
 
-    if ismethod(object):
-        object = object.__func__
-    if isfunction(object):
-        object = object.__code__
-    if istraceback(object):
-        object = object.tb_frame
-    if isframe(object):
-        object = object.f_code
-    if iscode(object):
-        if not hasattr(object, 'co_firstlineno'):
-            raise OSError('could not find function definition')
-        lnum = object.co_firstlineno - 1
-        pat = re.compile(r'^(\s*def\s)|(\s*async\s+def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
-        while lnum > 0:
-            if pat.match(lines[lnum]): break
-            lnum = lnum - 1
-        return lines, lnum
-    raise OSError('could not find code object')
+    try:
+        object = _get_code_object(object)
+    except TypeError:
+        raise OSError('could not find code object') from None
+
+    if not hasattr(object, 'co_firstlineno'):
+        raise OSError('could not find function definition')
+    lnum = object.co_firstlineno - 1
+    pat = re.compile(r'^(\s*def\s)|(\s*async\s+def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
+    while lnum > 0:
+        if pat.match(lines[lnum]): break
+        lnum = lnum - 1
+    return lines, lnum
 
 def getcomments(object):
     """Get lines of comments immediately preceding an object's source code.
@@ -951,7 +955,6 @@ def getsourcelines(object):
     corresponding to the object and the line number indicates where in the
     original source file the first line of code was found.  An OSError is
     raised if the source code cannot be retrieved."""
-    object = unwrap(object)
     lines, lnum = findsource(object)
 
     if ismodule(object):

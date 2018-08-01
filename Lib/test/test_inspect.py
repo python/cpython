@@ -539,6 +539,12 @@ class TestDecorators(GetSourceBase):
     def test_getsource_unwrap(self):
         self.assertSourceEqual(mod2.real, 130, 132)
 
+    def test_getcomments_unwrap(self):
+        self.assertEqual(inspect.getcomments(mod2.real), '#line 129\n')
+
+    def test_getsourcefile_unwrap(self):
+        self.assertEqual(inspect.getsourcefile(mod2.real), mod2.__file__)
+
     def test_decorator_with_lambda(self):
         self.assertSourceEqual(mod2.func114, 113, 115)
 

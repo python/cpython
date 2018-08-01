@@ -1,0 +1,3 @@
+Decorators are now unwrapped in `inspect.getcomments`, `inspect.getfile`,
+and `inspect.getsourcefile`, making these functions consistent with
+`inspect.getsource`.
