@@ -2212,7 +2212,7 @@ call_ll_exitfuncs(void)
     fflush(stderr);
 }
 
-void
+void _Py_NO_RETURN
 Py_Exit(int sts)
 {
     if (Py_FinalizeEx() < 0) {
