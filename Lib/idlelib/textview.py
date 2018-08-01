@@ -85,7 +85,6 @@ class ViewWindow(Toplevel):
 
         if modal:
             self.transient(parent)
-            self.grab_set()
             if not _utest:
                 self.wait_window()
 

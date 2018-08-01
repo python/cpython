@@ -59,12 +59,10 @@ class SearchDialogBase:
         self.ent.focus_set()
         self.ent.selection_range(0, "end")
         self.ent.icursor(0)
-        self.top.grab_set()
 
     def close(self, event=None):
         "Put dialog away for later use."
         if self.top:
-            self.top.grab_release()
             self.top.withdraw()
 
     def create_widgets(self):

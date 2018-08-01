@@ -84,7 +84,6 @@ class ConfigDialog(Toplevel):
         tracers.attach()
 
         if not _utest:
-            self.grab_set()
             self.wm_deiconify()
             self.wait_window()
 

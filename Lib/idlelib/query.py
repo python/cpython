@@ -56,7 +56,6 @@ class Query(Toplevel):
         self.text0 = text0
         self.used_names = used_names
         self.transient(parent)
-        self.grab_set()
         windowingsystem = self.tk.call('tk', 'windowingsystem')
         if windowingsystem == 'aqua':
             try:
