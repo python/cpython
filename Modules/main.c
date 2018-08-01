@@ -1768,16 +1768,6 @@ pymain_init_tracemalloc(_PyCoreConfig *config)
 static _PyInitError
 pymain_init_pycache_prefix(_PyCoreConfig *config)
 {
-    wchar_t *env;
-
-    int res = config_get_env_var_dup(config, &env,
-                                     L"PYTHONPYCACHEPREFIX", "PYTHONPYCACHEPREFIX");
-    if (res < 0) {
-        return DECODE_LOCALE_ERR("PYTHONPYCACHEPREFIX", res);
-    } else if (env) {
-        config->pycache_prefix = env;
-    }
-
     const wchar_t *xoption = config_get_xoption(config, L"pycache_prefix");
     if (xoption) {
         const wchar_t *sep = wcschr(xoption, L'=');
@@ -1790,6 +1780,16 @@ pymain_init_pycache_prefix(_PyCoreConfig *config)
             // -X pycache_prefix= can cancel the env var
             config->pycache_prefix = NULL;
         }
+        return _Py_INIT_OK();
+    }
+
+    wchar_t *env;
+    int res = config_get_env_var_dup(config, &env,
+                                     L"PYTHONPYCACHEPREFIX", "PYTHONPYCACHEPREFIX");
+    if (res < 0) {
+        return DECODE_LOCALE_ERR("PYTHONPYCACHEPREFIX", res);
+    } else if (env) {
+        config->pycache_prefix = env;
     }
 
     return _Py_INIT_OK();
