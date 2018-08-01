@@ -368,8 +368,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'Use iterator protocol instead'):
             with FileInput(files=[t]) as fi:
-                with self.assertRaises(RuntimeError):
-                    fi[1]
+                self.assertEqual(fi[0], "line1\n")
 
     @ignore_warnings(category=DeprecationWarning)
     def test__getitem__invalid_key(self):
