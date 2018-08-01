@@ -1,2 +1,3 @@
-Asyncio tasks now have a ``name`` attribute which can also be explicitly set
-using a keyword argument to ``asyncio.create_task()``.
+The default asyncio task class now always has a name which can be get or set using two new methods
+(``get_name()`` and ``set_name``). An initial name (like ``Task-1``) is always generated in the
+default implementation using a monotonic counter and is visible in the ``repr()`` output.
