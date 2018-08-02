@@ -4222,7 +4222,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
                         p = PyUnicode_AS_UNICODE(v) + oldpos;
                     }
                     value -= 0x10000;
-                    *p++ = 0xD800 | (value >> 10);
+                    *p++ = 0xD800 | (Py_UNICODE)(value >> 10);
                     *p++ = 0xDC00 | (value & 0x3FF);
                     extrachars -= 2;
                 }
