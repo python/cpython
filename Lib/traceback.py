@@ -25,10 +25,12 @@ def print_list(extracted_list, file=None):
         print(item, file=file, end="")
 
 def format_list(extracted_list):
-    """Format a list of traceback entry tuples for printing.
+    """Format a list of tuples or FrameSummary objects for printing.
 
-    Given a list of tuples as returned by extract_tb() or
-    extract_stack(), return a list of strings ready for printing.
+    Given a list of tuples or FrameSummary objects as returned by
+    extract_tb() or extract_stack(), return a list of strings ready
+    for printing.
+
     Each string in the resulting list corresponds to the item with the
     same index in the argument list.  Each string ends in a newline;
     the strings may contain internal newlines as well, for those items
@@ -55,15 +57,17 @@ def format_tb(tb, limit=None):
     return extract_tb(tb, limit=limit).format()
 
 def extract_tb(tb, limit=None):
-    """Return list of up to limit pre-processed entries from traceback.
+    """
+    Return a StackSummary object representing a list of
+    pre-processed entries from traceback.
 
     This is useful for alternate formatting of stack traces.  If
     'limit' is omitted or None, all entries are extracted.  A
-    pre-processed stack trace entry is a quadruple (filename, line
-    number, function name, text) representing the information that is
-    usually printed for a stack trace.  The text is a string with
-    leading and trailing whitespace stripped; if the source is not
-    available it is None.
+    pre-processed stack trace entry is a FrameSummary object
+    containing attributes filename, lineno, name, and line
+    representing the information that is usually printed for a stack
+    trace.  The line is a string with leading and trailing
+    whitespace stripped; if the source is not available it is None.
     """
     return StackSummary.extract(walk_tb(tb), limit=limit)
 
@@ -360,10 +364,9 @@ class StackSummary(list):
 
     @classmethod
     def from_list(klass, a_list):
-        """Create a StackSummary from a simple list of tuples.
-
-        This method supports the older Python API. Each tuple should be a
-        4-tuple with (filename, lineno, name, line) elements.
+        """
+        Create a StackSummary object from a supplied list of
+        FrameSummary objects or old-style list of tuples.
         """
         # While doing a fast-path check for isinstance(a_list, StackSummary) is
         # appealing, idlelib.run.cleanup_traceback and other similar code may
