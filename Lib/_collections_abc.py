@@ -39,9 +39,6 @@ bytearray_iterator = type(iter(bytearray()))
 dict_keyiterator = type(iter({}.keys()))
 dict_valueiterator = type(iter({}.values()))
 dict_itemiterator = type(iter({}.items()))
-dict_revesekeyiterator = type(reversed({}.keys()))
-dict_revesevalueiterator = type(reversed({}.values()))
-dict_reveseitemiterator = type(reversed({}.items()))
 list_iterator = type(iter([]))
 list_reverseiterator = type(iter(reversed([])))
 range_iterator = type(iter(range(0)))
@@ -283,9 +280,6 @@ Iterator.register(bytearray_iterator)
 Iterator.register(dict_keyiterator)
 Iterator.register(dict_valueiterator)
 Iterator.register(dict_itemiterator)
-Iterator.register(dict_revesekeyiterator)
-Iterator.register(dict_revesevalueiterator)
-Iterator.register(dict_reveseitemiterator)
 Iterator.register(list_iterator)
 Iterator.register(list_reverseiterator)
 Iterator.register(range_iterator)
@@ -310,10 +304,6 @@ class Reversible(Iterable):
         if cls is Reversible:
             return _check_methods(C, "__reversed__", "__iter__")
         return NotImplemented
-
-Reversible.register(dict_keys)
-Reversible.register(dict_values)
-Reversible.register(dict_items)
 
 
 class Generator(Iterator):
