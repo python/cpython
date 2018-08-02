@@ -532,7 +532,7 @@ PyEval_EvalFrame(PyFrameObject *f) {
 PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     return interp->eval_frame(f, throwflag);
 }
 
@@ -4435,7 +4435,7 @@ PyEval_GetBuiltins(void)
 {
     PyFrameObject *current_frame = PyEval_GetFrame();
     if (current_frame == NULL)
-        return _PyInterpreterState_Get()->builtins;
+        return _PyInterpreterState_GET_UNSAFE()->builtins;
     else
         return current_frame->f_builtins;
 }
@@ -4769,7 +4769,7 @@ import_name(PyFrameObject *f, PyObject *name, PyObject *fromlist, PyObject *leve
     }
 
     /* Fast path for not overloaded __import__. */
-    if (import_func == _PyInterpreterState_Get()->import_func) {
+    if (import_func == _PyInterpreterState_GET_UNSAFE()->import_func) {
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && PyErr_Occurred()) {
             return NULL;

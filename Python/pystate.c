@@ -268,12 +268,14 @@ PyInterpreterState *
 _PyInterpreterState_Get(void)
 {
     PyThreadState *tstate = GET_TSTATE();
-    if (tstate != NULL) {
-        return tstate->interp;
+    if (tstate == NULL) {
+        Py_FatalError("_PyInterpreterState_Get(): no current thread state");
     }
-    else {
+    PyInterpreterState *interp = tstate->interp;
+    if (interp == NULL) {
         Py_FatalError("_PyInterpreterState_Get(): no current interpreter");
     }
+    return interp;
 }
 
 
