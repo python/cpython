@@ -1,0 +1,4 @@
+assertRaises(), assertRaisesRegex(), assertWarns() and assertWarnsRegex() no
+longer success if the passed callable is None. They no longer ignore unknown
+keyword arguments in the context manager mode. A DeprecationWarning was
+raised in these cases since Python 3.5.
