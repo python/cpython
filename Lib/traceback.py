@@ -65,8 +65,8 @@ def extract_tb(tb, limit=None):
     'limit' is omitted or None, all entries are extracted.  A
     pre-processed stack trace entry is a FrameSummary object
     containing attributes filename, lineno, name, and line
-    representing the information that is usually printed for a
-    stack trace.  The line is a string with leading and trailing
+    representing the information that is usually printed for a stack
+    trace.  The line is a string with leading and trailing
     whitespace stripped; if the source is not available it is None.
     """
     return StackSummary.extract(walk_tb(tb), limit=limit)
