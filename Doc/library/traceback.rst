@@ -88,13 +88,15 @@ The module defines the following functions:
 
 .. function:: extract_tb(tb, limit=None)
 
-   Returns a :class:`StackSummary` object representing a list of "pre-processed"
+   Return a :class:`StackSummary` object representing a list of "pre-processed"
    stack trace entries extracted from the traceback object *tb*.  It is useful
    for alternate formatting of stack traces.  The optional *limit* argument has
    the same meaning as for :func:`print_tb`.  A "pre-processed" stack trace
-   entry is a :class:`FrameSummary` object containing attributes *filename*,
-   *lineno*, *name*, and *line* representing the information that is usually
-   printed for a stack trace.  The *line* is a string with leading and trailing
+   entry is a :class:`FrameSummary` object containing attributes
+   :attr:`~FrameSummary.filename`, :attr:`~FrameSummary.lineno`,
+   :attr:`~FrameSummary.name`, and :attr:`~FrameSummary.line` representing the
+   information that is usually printed for a stack trace.  The
+   :attr:`~FrameSummary.line` is a string with leading and trailing
    whitespace stripped; if the source is not available it is ``None``.
 
 
@@ -109,7 +111,7 @@ The module defines the following functions:
 
    Given a list of tuples or :class:`FrameSummary` objects as returned by
    :func:`extract_tb` or :func:`extract_stack`, return a list of strings ready
-   for printing. Each string in the resulting list corresponds to the item with
+   for printing.  Each string in the resulting list corresponds to the item with
    the same index in the argument list.  Each string ends in a newline; the
    strings may contain internal newlines as well, for those items whose source
    text line is not ``None``.
@@ -294,7 +296,7 @@ capture data for later printing in a lightweight fashion.
    .. classmethod:: from_list(a_list)
 
       Construct a :class:`StackSummary` object from a supplied list of
-      :class:`FrameSummary` objects or old-style list of tuples. Each tuple
+      :class:`FrameSummary` objects or old-style list of tuples.  Each tuple
       should be a 4-tuple with filename, lineno, name, line as the elements.
 
    .. method:: format()
