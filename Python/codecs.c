@@ -107,7 +107,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         goto onError;
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         goto onError;
 
@@ -640,7 +640,7 @@ PyObject *PyCodec_LookupError(const char *name)
 {
     PyObject *handler = NULL;
 
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         return NULL;
 

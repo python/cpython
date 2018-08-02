@@ -56,51 +56,55 @@ _Py_IDENTIFIER(write);
 PyObject *
 _PySys_GetObjectId(_Py_Identifier *key)
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    PyObject *sd = interp->sysdict;
-    if (sd == NULL)
+    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
+    if (sd == NULL) {
         return NULL;
+    }
     return _PyDict_GetItemId(sd, key);
 }
 
 PyObject *
 PySys_GetObject(const char *name)
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    PyObject *sd = interp->sysdict;
-    if (sd == NULL)
+    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
+    if (sd == NULL) {
         return NULL;
+    }
     return PyDict_GetItemString(sd, name);
 }
 
 int
 _PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    PyObject *sd = interp->sysdict;
+    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
     if (v == NULL) {
-        if (_PyDict_GetItemId(sd, key) == NULL)
+        if (_PyDict_GetItemId(sd, key) == NULL) {
             return 0;
-        else
+        }
+        else {
             return _PyDict_DelItemId(sd, key);
+        }
     }
-    else
+    else {
         return _PyDict_SetItemId(sd, key, v);
+    }
 }
 
 int
 PySys_SetObject(const char *name, PyObject *v)
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    PyObject *sd = interp->sysdict;
+    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
     if (v == NULL) {
-        if (PyDict_GetItemString(sd, name) == NULL)
+        if (PyDict_GetItemString(sd, name) == NULL) {
             return 0;
-        else
+        }
+        else {
             return PyDict_DelItemString(sd, name);
+        }
     }
-    else
+    else {
         return PyDict_SetItemString(sd, name, v);
+    }
 }
 
 static PyObject *

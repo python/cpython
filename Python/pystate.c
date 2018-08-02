@@ -1199,6 +1199,8 @@ _check_xidata(_PyCrossInterpreterData *data)
 int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
+    // _PyInterpreterState_Get() aborts if lookup fails, so we don't need
+    // to check the result for NULL.
     PyInterpreterState *interp = _PyInterpreterState_Get();
 
     // Reset data before re-populating.

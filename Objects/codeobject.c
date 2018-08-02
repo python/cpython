@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "code.h"
 #include "structmember.h"
+#include "internal/pystate.h"
 
 /* Holder for co_extra information */
 typedef struct {
@@ -428,7 +429,7 @@ static void
 code_dealloc(PyCodeObject *co)
 {
     if (co->co_extra != NULL) {
-        PyInterpreterState *interp = _PyInterpreterState_Get();
+        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
         _PyCodeObjectExtra *co_extra = co->co_extra;
 
         for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
@@ -871,7 +872,7 @@ _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 int
 _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
 
     if (!PyCode_Check(code) || index < 0 ||
             index >= interp->co_extra_user_count) {
