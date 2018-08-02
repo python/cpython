@@ -25,7 +25,6 @@ from fileinput import FileInput, hook_encoded
 from pathlib import Path
 
 from test.support import verbose, TESTFN, check_warnings
-from test.support import ignore_warnings
 from test.support import unlink as safe_unlink
 from test import support
 from unittest import mock
@@ -352,7 +351,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         with FileInput(files=[]) as fi:
             self.assertEqual(fi._files, ('-',))
 
-    @ignore_warnings(category=DeprecationWarning)
+    @support.ignore_warnings(category=DeprecationWarning)
     def test__getitem__(self):
         """Tests invoking FileInput.__getitem__() with the current
            line number"""
@@ -370,7 +369,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
             with FileInput(files=[t]) as fi:
                 self.assertEqual(fi[0], "line1\n")
 
-    @ignore_warnings(category=DeprecationWarning)
+    @support.ignore_warnings(category=DeprecationWarning)
     def test__getitem__invalid_key(self):
         """Tests invoking FileInput.__getitem__() with an index unequal to
            the line number"""
@@ -380,7 +379,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
                 fi[1]
         self.assertEqual(cm.exception.args, ("accessing lines out of order",))
 
-    @ignore_warnings(category=DeprecationWarning)
+    @support.ignore_warnings(category=DeprecationWarning)
     def test__getitem__eof(self):
         """Tests invoking FileInput.__getitem__() with the line number but at
            end-of-input"""
