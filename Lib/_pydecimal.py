@@ -6154,7 +6154,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
 (?P<minimumwidth>(?!0)\d+)?
 (?P<thousands_sep>,)?
 (?:\.(?P<precision>0|(?!0)\d+))?
-(?P<type>[eEfFgGn%])?
+(?P<type>[eEfFgGnLl%])?
 \Z
 """, re.VERBOSE|re.DOTALL)
 
@@ -6184,7 +6184,7 @@ def _parse_format_specifier(format_spec, _localeconv=None):
         used by localeconv
       decimal_point: string to use for decimal point
       precision: nonnegative integer giving precision, or None
-      type: one of the characters 'eEfFgG%', or None
+      type: one of the characters 'eEfFgGlL%', or None
 
     """
     m = _parse_format_specifier_regex.match(format_spec)
@@ -6229,17 +6229,23 @@ def _parse_format_specifier(format_spec, _localeconv=None):
 
     # determine thousands separator, grouping, and decimal separator, and
     # add appropriate entries to format_dict
-    if format_dict['type'] == 'n':
+    if format_dict['type'] and format_dict['type'] in 'nNlL':
         # apart from separators, 'n' behaves just like 'g'
-        format_dict['type'] = 'g'
         if _localeconv is None:
             _localeconv = _locale.localeconv()
         if format_dict['thousands_sep'] is not None:
             raise ValueError("Explicit thousands separator conflicts with "
-                             "'n' type in format specifier: " + format_spec)
-        format_dict['thousands_sep'] = _localeconv['thousands_sep']
-        format_dict['grouping'] = _localeconv['grouping']
-        format_dict['decimal_point'] = _localeconv['decimal_point']
+                             "type in format specifier: " + format_spec)
+        if format_dict['type'] == 'L':
+            format_dict['thousands_sep'] = _localeconv['mon_thousands_sep']
+            format_dict['grouping'] = _localeconv['mon_grouping']
+            format_dict['decimal_point'] = _localeconv['mon_decimal_point']
+        else:
+            format_dict['thousands_sep'] = _localeconv['thousands_sep']
+            format_dict['grouping'] = _localeconv['grouping']
+            format_dict['decimal_point'] = _localeconv['decimal_point']
+        format_dict['type'] = 'f' if format_dict['type'] in 'lL' else 'g'
+
     else:
         if format_dict['thousands_sep'] is None:
             format_dict['thousands_sep'] = ''
