@@ -143,6 +143,10 @@ class Query(Toplevel):
         self.result = None
         self.destroy()
 
+    def destroy(self):
+        self.grab_release()
+        super().destroy()
+
 
 class SectionName(Query):
     "Get a name for a config file section name."

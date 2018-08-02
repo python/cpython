@@ -191,6 +191,7 @@ class ConfigDialog(Toplevel):
     def destroy(self):
         global font_sample_text
         font_sample_text = self.fontpage.font_sample.get('1.0', 'end')
+        self.grab_release()
         super().destroy()
 
     def help(self):
