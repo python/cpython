@@ -1,6 +1,7 @@
 from test import support
 
 from contextlib import contextmanager
+import errno
 import imaplib
 import os.path
 import socketserver
@@ -70,13 +71,17 @@ class TestImaplib(unittest.TestCase):
             imaplib.Time2Internaldate(t)
 
     def test_imap4_host_default_value(self):
-        with self.assertRaises(ConnectionRefusedError):
+        expected_errnos = [
+            # This is the exception that should be raised.
+            errno.ECONNREFUSED,
+        ]
+        if hasattr(errno, 'EADDRNOTAVAIL'):
+            # socket.create_connection() fails randomly with
+            # EADDRNOTAVAIL on Travis CI.
+            expected_errnos.append(errno.EADDRNOTAVAIL)
+        with self.assertRaises(OSError) as cm:
             imaplib.IMAP4()
-
-    @unittest.skipUnless(ssl, 'SSL not available')
-    def test_imap4_ssl_host_default_value(self):
-        with self.assertRaises(ConnectionRefusedError):
-            imaplib.IMAP4_SSL()
+        self.assertIn(cm.exception.errno, expected_errnos)
 
 
 if ssl:
