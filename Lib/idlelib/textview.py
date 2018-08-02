@@ -91,6 +91,7 @@ class ViewWindow(Toplevel):
 
     def ok(self, event=None):
         """Dismiss text viewer dialog."""
+        self.grab_release()
         self.destroy()
 
 
