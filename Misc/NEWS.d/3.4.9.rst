@@ -1,0 +1,8 @@
+.. bpo: 0
+.. date: 2018-08-02
+.. no changes: True
+.. nonce: BuLhx8
+.. release date: 2018-08-02
+.. section: Library
+
+There were no changes between 3.4.9rc1 and 3.4.9 final.
