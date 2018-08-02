@@ -108,28 +108,6 @@ _Py_IsFinalizing(void)
     return _PyRuntime.finalizing != NULL;
 }
 
-/* Global configuration variable declarations are in pydebug.h */
-/* XXX (ncoghlan): move those declarations to pylifecycle.h? */
-int Py_DebugFlag = 0; /* Needed by parser.c */
-int Py_VerboseFlag = 0; /* Needed by import.c */
-int Py_QuietFlag = 0; /* Needed by sysmodule.c */
-int Py_InteractiveFlag = 0; /* Needed by Py_FdIsInteractive() below */
-int Py_InspectFlag = 0; /* Needed to determine whether to exit at SystemExit */
-int Py_OptimizeFlag = 0; /* Needed by compile.c */
-int Py_NoSiteFlag = 0; /* Suppress 'import site' */
-int Py_BytesWarningFlag = 0; /* Warn on str(bytes) and str(buffer) */
-int Py_FrozenFlag = 0; /* Needed by getpath.c */
-int Py_IgnoreEnvironmentFlag = 0; /* e.g. PYTHONPATH, PYTHONHOME */
-int Py_DontWriteBytecodeFlag = 0; /* Suppress writing bytecode files (*.pyc) */
-int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
-int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
-int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
-int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
-#ifdef MS_WINDOWS
-int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
-int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
-#endif
-
 /* Hack to force loading of object files */
 int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
     PyOS_mystrnicmp; /* Python/pystrcmp.o */
@@ -2208,7 +2186,7 @@ call_ll_exitfuncs(void)
     fflush(stderr);
 }
 
-void
+void _Py_NO_RETURN
 Py_Exit(int sts)
 {
     if (Py_FinalizeEx() < 0) {

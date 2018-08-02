@@ -5,7 +5,6 @@
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
 #include "internal/hash.h"
-#include "internal/import.h"
 #include "internal/pystate.h"
 #include "errcode.h"
 #include "marshal.h"
@@ -2279,8 +2278,6 @@ static struct PyModuleDef impmodule = {
     NULL
 };
 
-const char *_Py_CheckHashBasedPycsMode = "default";
-
 PyMODINIT_FUNC
 PyInit__imp(void)
 {
@@ -2292,7 +2289,8 @@ PyInit__imp(void)
     d = PyModule_GetDict(m);
     if (d == NULL)
         goto failure;
-    PyObject *pyc_mode = PyUnicode_FromString(_Py_CheckHashBasedPycsMode);
+    _PyCoreConfig *config = &PyThreadState_GET()->interp->core_config;
+    PyObject *pyc_mode = PyUnicode_FromString(config->_check_hash_pycs_mode);
     if (pyc_mode == NULL) {
         goto failure;
     }

@@ -272,6 +272,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         'pycache_prefix': '(null)',
         'program_name': './_testembed',
+        'argc': 0,
+        'argv': '[]',
         'program': '(null)',
 
         'isolated': 0,
@@ -280,15 +282,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'inspect': 0,
         'interactive': 0,
         'optimization_level': 0,
-        'debug': 0,
+        'parser_debug': 0,
         'write_bytecode': 1,
         'verbose': 0,
         'quiet': 0,
         'user_site_directory': 1,
-        'unbuffered_stdio': 0,
+        'buffered_stdio': 1,
 
         '_install_importlib': 1,
         '_check_hash_pycs_mode': 'default',
+        '_frozen': 0,
     }
 
     def check_config(self, testname, expected):
@@ -327,9 +330,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': 0,
             'verbose': 1,
             'quiet': 1,
-            'unbuffered_stdio': 1,
+            'buffered_stdio': 0,
             'utf8_mode': 1,
             'user_site_directory': 0,
+            '_frozen': 1,
         }
         self.check_config("init_global_config", config)
 
@@ -359,10 +363,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': 0,
             'verbose': 1,
             'quiet': 1,
-            'unbuffered_stdio': 1,
+            'buffered_stdio': 0,
             'user_site_directory': 0,
             'faulthandler': 1,
+
             '_check_hash_pycs_mode': 'always',
+            '_frozen': 1,
         }
         self.check_config("init_from_config", config)
 
@@ -380,7 +386,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'pycache_prefix': 'env_pycache_prefix',
             'write_bytecode': 0,
             'verbose': 1,
-            'unbuffered_stdio': 1,
+            'buffered_stdio': 0,
             'user_site_directory': 0,
             'faulthandler': 1,
             'dev_mode': 1,
