@@ -3,6 +3,7 @@ import unittest
 
 import gc
 import pickle
+import sys
 
 class TupleTest(seq_tests.CommonTest):
     type2test = tuple
@@ -222,6 +223,20 @@ class TupleTest(seq_tests.CommonTest):
         c = self.type2test([1, 3])
         self.assertLess(a, b)
         self.assertLess(b, c)
+
+    def test_from_iter(self):
+        # bpo-28940
+        class CustomIter:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                raise StopIteration
+            def __length_hint__(self):
+                return sys.maxsize
+
+        a = self.type2test(CustomIter())
+        self.assertEqual(a, ())
+
 
 if __name__ == "__main__":
     unittest.main()

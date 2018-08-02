@@ -886,10 +886,15 @@ list_extend(PyListObject *self, PyObject *iterable)
     else {
         mn = m + n;
         /* Make room. */
-        if (list_resize(self, mn) < 0)
-            goto error;
-        /* Make the list sane again. */
-        Py_SIZE(self) = m;
+        if (list_resize(self, mn) < 0) {
+            /* bpo-28940 - LengthHint could lie and asked for too much,
+             * try again without preallocation. */
+            PyErr_Clear();
+        }
+        else {
+            /* Make the list sane again. */
+            Py_SIZE(self) = m;
+        }
     }
 
     /* Run iterator to exhaustion. */

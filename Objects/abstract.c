@@ -1859,8 +1859,16 @@ PySequence_Tuple(PyObject *v)
     if (n == -1)
         goto Fail;
     result = PyTuple_New(n);
-    if (result == NULL)
-        goto Fail;
+    if (result == NULL) {
+        /* bpo-28940 - LengthHint could lie and asked for too much,
+         * try again without preallocation. */
+        PyErr_Clear();
+        result = PyTuple_New(0);
+        if (result == NULL) {
+            return NULL;
+        }
+        n = 0;
+    }
 
     /* Fill the tuple. */
     for (j = 0; ; ++j) {

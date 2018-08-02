@@ -2698,8 +2698,16 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
 
     _PyBytesWriter_Init(&writer);
     str = _PyBytesWriter_Alloc(&writer, size);
-    if (str == NULL)
-        return NULL;
+    if (str == NULL) {
+        /* bpo-28940 - LengthHint could lie and asked for too much,
+         * try again without preallocation. */
+        PyErr_Clear();
+        _PyBytesWriter_Init(&writer);
+        str = _PyBytesWriter_Alloc(&writer, 1);
+        if (str == NULL) {
+            return NULL;
+        }
+    }
     writer.overallocate = 1;
     size = writer.allocated;
 

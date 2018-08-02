@@ -1639,8 +1639,15 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
 
     bytearray_obj = PyByteArray_FromStringAndSize(NULL, buf_size);
     if (bytearray_obj == NULL) {
-        Py_DECREF(it);
-        return NULL;
+        /* bpo-28940 - LengthHint could lie and asked for too much,
+         * try again without preallocation. */
+        PyErr_Clear();
+        bytearray_obj = PyByteArray_FromStringAndSize(NULL, 1);
+        if (bytearray_obj == NULL) {
+            Py_DECREF(it);
+            return NULL;
+        }
+        buf_size = 1;
     }
     buf = PyByteArray_AS_STRING(bytearray_obj);
 

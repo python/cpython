@@ -281,6 +281,10 @@ class CommonTest(seq_tests.CommonTest):
         a.extend(CustomIter())
         self.assertEqual(a, [1,2,3,4])
 
+        # bpo-28940
+        a = self.type2test([])
+        a.extend(CustomIter())
+        self.assertEqual(a, [])
 
     def test_insert(self):
         a = self.type2test([0, 1, 2])

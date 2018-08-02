@@ -774,6 +774,19 @@ class BaseBytesTest:
         c = b.translate(None, delete=b'e')
         self.assertEqual(c, b'hllo')
 
+    def test_from_iter(self):
+        # bpo-28940
+        class CustomIter:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                raise StopIteration
+            def __length_hint__(self):
+                return sys.maxsize
+
+        a = self.type2test(CustomIter())
+        self.assertEqual(a, b'')
+
 
 class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
