@@ -1197,10 +1197,12 @@ class ConfigDialog(Toplevel):
             instance.reset_help_menu_entries()
 
     def Cancel(self):
+        self.grab_release()
         self.destroy()
 
     def Ok(self):
         self.Apply()
+        self.grab_release()
         self.destroy()
 
     def Apply(self):
