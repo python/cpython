@@ -52,6 +52,19 @@ _testfunc_cbk_large_struct(Test in, void (*func)(Test))
     func(in);
 }
 
+/*
+ * See issue 29565. Update a structure passed by value;
+ * the caller should not see any change.
+ */
+
+EXPORT(void)
+_testfunc_large_struct_update_value(Test in)
+{
+    in.first = 0x0badf00d;
+    in.second = 0x0badf00d;
+    in.third = 0x0badf00d;
+}
+
 EXPORT(void)testfunc_array(int values[4])
 {
     printf("testfunc_array %d %d %d %d\n",
