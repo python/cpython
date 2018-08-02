@@ -57,7 +57,8 @@ def format_tb(tb, limit=None):
     return extract_tb(tb, limit=limit).format()
 
 def extract_tb(tb, limit=None):
-    """Return a StackSummary object representing a list of
+    """
+    Return a StackSummary object representing a list of
     pre-processed entries from traceback.
 
     This is useful for alternate formatting of stack traces.  If
@@ -65,9 +66,8 @@ def extract_tb(tb, limit=None):
     pre-processed stack trace entry is a FrameSummary` object
     containing attributes filename, lineno, name, and line
     representing the information that is usually printed for a
-    stack trace.  The line is a string with leading and
-    trailing whitespace stripped; if the source is not
-    available it is None.
+    stack trace.  The line is a string with leading and trailing
+    whitespace stripped; if the source is not available it is None.
     """
     return StackSummary.extract(walk_tb(tb), limit=limit)
 
@@ -363,7 +363,8 @@ class StackSummary(list):
 
     @classmethod
     def from_list(klass, a_list):
-        """Create a StackSummary object from a supplied list of
+        """
+        Create a StackSummary object from a supplied list of
         FrameSummary objects or old-style list of tuples.
         """
         # While doing a fast-path check for isinstance(a_list, StackSummary) is
