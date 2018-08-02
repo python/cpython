@@ -63,7 +63,7 @@ def extract_tb(tb, limit=None):
 
     This is useful for alternate formatting of stack traces.  If
     'limit' is omitted or None, all entries are extracted.  A
-    pre-processed stack trace entry is a FrameSummary` object
+    pre-processed stack trace entry is a FrameSummary object
     containing attributes filename, lineno, name, and line
     representing the information that is usually printed for a
     stack trace.  The line is a string with leading and trailing
