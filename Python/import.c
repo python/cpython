@@ -2289,7 +2289,7 @@ PyInit__imp(void)
     d = PyModule_GetDict(m);
     if (d == NULL)
         goto failure;
-    _PyCoreConfig *config = &PyThreadState_GET()->interp->core_config;
+    _PyCoreConfig *config = &_PyInterpreterState_Get()->core_config;
     PyObject *pyc_mode = PyUnicode_FromString(config->_check_hash_pycs_mode);
     if (pyc_mode == NULL) {
         goto failure;
