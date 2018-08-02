@@ -220,14 +220,18 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
       break;
 #else
     case FFI_SYSV:
-      /* If a single argument takes more than 8 bytes,
-         then a copy is passed by reference. */
-      for (unsigned i = 0; i < cif->nargs; i++) {
-          size_t z = cif->arg_types[i]->size;
-          if (z > 8) {
-              void *temp = alloca(z);
-              memcpy(temp, avalue[i], z);
-              avalue[i] = temp;
+      /* use a local scope for the 'i' variable */
+      {
+          unsigned i;
+          /* If a single argument takes more than 8 bytes,
+             then a copy is passed by reference. */
+          for (i = 0; i < cif->nargs; i++) {
+              size_t z = cif->arg_types[i]->size;
+              if (z > 8) {
+                  void *temp = alloca(z);
+                  memcpy(temp, avalue[i], z);
+                  avalue[i] = temp;
+              }
           }
       }
       /*@-usedef@*/
