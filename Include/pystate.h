@@ -79,8 +79,11 @@ typedef struct {
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
         .install_signal_handlers = -1, \
+        .ignore_environment = -1, \
         .use_hash_seed = -1, \
         .coerce_c_locale = -1, \
+        .faulthandler = -1, \
+        .tracemalloc = -1, \
         .utf8_mode = -1, \
         .argc = -1, \
         .nmodule_search_path = -1}

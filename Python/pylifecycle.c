@@ -576,6 +576,27 @@ _Py_SetLocaleFromEnv(int category)
 
 */
 
+static _PyInitError
+_Py_Initialize_ReconfigureCore(PyInterpreterState *interp,
+                               const _PyCoreConfig *core_config)
+{
+    if (core_config->allocator != NULL) {
+        const char *allocator = _PyMem_GetAllocatorsName();
+        if (allocator == NULL || strcmp(core_config->allocator, allocator) != 0) {
+            return _Py_INIT_USER_ERR("cannot modify memory allocator "
+                                     "after first Py_Initialize()");
+        }
+    }
+
+    _PyCoreConfig_SetGlobalConfig(core_config);
+
+    if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
+        return _Py_INIT_ERR("failed to copy core config");
+    }
+    return _Py_INIT_OK();
+}
+
+
 /* Begin interpreter initialization
  *
  * On return, the first thread and interpreter state have been created,
@@ -595,14 +616,31 @@ _Py_SetLocaleFromEnv(int category)
  */
 
 _PyInitError
-_Py_InitializeCore(const _PyCoreConfig *core_config)
+_Py_InitializeCore_impl(PyInterpreterState **interp_p,
+                        const _PyCoreConfig *core_config)
 {
-    assert(core_config != NULL);
-
     PyInterpreterState *interp;
-    PyThreadState *tstate;
-    PyObject *bimod, *sysmod, *pstderr;
     _PyInitError err;
+
+    /* bpo-34008: For backward compatibility reasons, calling Py_Main() after
+       Py_Initialize() ignores the new configuration. */
+    if (_PyRuntime.core_initialized) {
+        PyThreadState *tstate = PyThreadState_GET();
+        if (!tstate) {
+            return _Py_INIT_ERR("failed to read thread state");
+        }
+
+        interp = tstate->interp;
+        if (interp == NULL) {
+            return _Py_INIT_ERR("can't make main interpreter");
+        }
+        *interp_p = interp;
+
+        return _Py_Initialize_ReconfigureCore(interp, core_config);
+    }
+
+
+    _PyCoreConfig_SetGlobalConfig(core_config);
 
     err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
@@ -660,12 +698,13 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     if (interp == NULL) {
         return _Py_INIT_ERR("can't make main interpreter");
     }
+    *interp_p = interp;
 
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
         return _Py_INIT_ERR("failed to copy core config");
     }
 
-    tstate = PyThreadState_New(interp);
+    PyThreadState *tstate = PyThreadState_New(interp);
     if (tstate == NULL)
         return _Py_INIT_ERR("can't make first thread");
     (void) PyThreadState_Swap(tstate);
@@ -702,6 +741,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
         return _Py_INIT_ERR("can't make modules dictionary");
     interp->modules = modules;
 
+    PyObject *sysmod;
     err = _PySys_BeginInit(&sysmod);
     if (_Py_INIT_FAILED(err)) {
         return err;
@@ -723,7 +763,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     if (_PyStructSequence_Init() < 0)
         return _Py_INIT_ERR("can't initialize structseq");
 
-    bimod = _PyBuiltin_Init();
+    PyObject *bimod = _PyBuiltin_Init();
     if (bimod == NULL)
         return _Py_INIT_ERR("can't initialize builtins modules");
     _PyImport_FixupBuiltin(bimod, "builtins", modules);
@@ -737,7 +777,7 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
 
     /* Set up a preliminary stderr printer until we have enough
        infrastructure for the io module in place. */
-    pstderr = PyFile_NewStdPrinter(fileno(stderr));
+    PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
     if (pstderr == NULL)
         return _Py_INIT_ERR("can't set preliminary stderr");
     _PySys_SetObjectId(&PyId_stderr, pstderr);
@@ -775,6 +815,43 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
     return _Py_INIT_OK();
 }
 
+
+_PyInitError
+_Py_InitializeCore(PyInterpreterState **interp_p,
+                   const _PyCoreConfig *src_config)
+{
+    assert(src_config != NULL);
+
+    PyMemAllocatorEx old_alloc;
+    _PyInitError err;
+
+    /* Copy the configuration, since _PyCoreConfig_Read() modifies it
+       (and the input configuration is read only). */
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    if (_PyCoreConfig_Copy(&config, src_config) >= 0) {
+        err = _PyCoreConfig_Read(&config);
+    }
+    else {
+        err = _Py_INIT_ERR("failed to copy core config");
+    }
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = _Py_InitializeCore_impl(interp_p, &config);
+
+done:
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    _PyCoreConfig_Clear(&config);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    return err;
+}
+
 /* Py_Initialize() has already been called: update the main interpreter
    configuration. Example of bpo-34008: Py_Main() called after
    Py_Initialize(). */
@@ -803,23 +880,14 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp,
  * non-zero return code.
  */
 _PyInitError
-_Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
+_Py_InitializeMainInterpreter(PyInterpreterState *interp,
+                              const _PyMainInterpreterConfig *config)
 {
-    PyInterpreterState *interp;
-    PyThreadState *tstate;
     _PyInitError err;
 
     if (!_PyRuntime.core_initialized) {
         return _Py_INIT_ERR("runtime core not initialized");
     }
-
-    /* Get current thread state and interpreter pointer */
-    tstate = PyThreadState_GET();
-    if (!tstate)
-        return _Py_INIT_ERR("failed to read thread state");
-    interp = tstate->interp;
-    if (!interp)
-        return _Py_INIT_ERR("failed to get interpreter");
 
     /* Now finish configuring the main interpreter */
     if (_PyMainInterpreterConfig_Copy(&interp->config, config) < 0) {
@@ -909,53 +977,49 @@ _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *config)
 
 #undef _INIT_DEBUG_PRINT
 
+
 _PyInitError
-_Py_InitializeEx_Private(int install_sigs, int install_importlib)
+_Py_InitializeFromConfig(const _PyCoreConfig *config)
 {
-    if (_PyRuntime.initialized) {
-        /* bpo-33932: Calling Py_Initialize() twice does nothing. */
-        return _Py_INIT_OK();
-    }
+    _Py_Initialize_ReadEnvVars();
 
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    PyInterpreterState *interp;
     _PyInitError err;
-
-    config.ignore_environment = Py_IgnoreEnvironmentFlag;
-    config._disable_importlib = !install_importlib;
-    config.install_signal_handlers = install_sigs;
-
-    err = _PyCoreConfig_Read(&config);
+    err = _Py_InitializeCore(&interp, config);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
-
-    err = _Py_InitializeCore(&config);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
-    }
+    config = &interp->core_config;
 
     _PyMainInterpreterConfig main_config = _PyMainInterpreterConfig_INIT;
-    err = _PyMainInterpreterConfig_Read(&main_config, &config);
+    err = _PyMainInterpreterConfig_Read(&main_config, config);
     if (!_Py_INIT_FAILED(err)) {
-        err = _Py_InitializeMainInterpreter(&main_config);
+        err = _Py_InitializeMainInterpreter(interp, &main_config);
     }
     _PyMainInterpreterConfig_Clear(&main_config);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
-    err = _Py_INIT_OK();
-
-done:
-    _PyCoreConfig_Clear(&config);
-    return err;
+    return _Py_INIT_OK();
 }
 
 
 void
 Py_InitializeEx(int install_sigs)
 {
-    _PyInitError err = _Py_InitializeEx_Private(install_sigs, 1);
+    if (_PyRuntime.initialized) {
+        /* bpo-33932: Calling Py_Initialize() twice does nothing. */
+        return;
+    }
+
+    _PyInitError err;
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+    config.install_signal_handlers = install_sigs;
+
+    err = _Py_InitializeFromConfig(&config);
+    _PyCoreConfig_Clear(&config);
+
     if (_Py_INIT_FAILED(err)) {
         _Py_FatalInitError(err);
     }

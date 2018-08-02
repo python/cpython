@@ -51,14 +51,26 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
                                              const char *errors);
 
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
-PyAPI_FUNC(_PyInitError) _Py_InitializeCore(const _PyCoreConfig *);
+PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
+    PyInterpreterState **interp_p,
+    const _PyCoreConfig *config);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
+    const _PyCoreConfig *config);
+#endif
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(void) _Py_Initialize_ReadEnvVars(void);
+#endif
 
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(int) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
+PyAPI_FUNC(void) _PyCoreConfig_SetGlobalConfig(
+    const _PyCoreConfig *config);
+
 
 PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(
     _PyMainInterpreterConfig *config,
@@ -68,7 +80,9 @@ PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
     _PyMainInterpreterConfig *config,
     const _PyMainInterpreterConfig *config2);
 
-PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *);
+PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
+        PyInterpreterState *interp,
+        const _PyMainInterpreterConfig *config);
 #endif
 
 /* Initialization and finalization */
