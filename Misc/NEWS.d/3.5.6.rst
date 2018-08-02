@@ -1,0 +1,8 @@
+.. bpo: 0
+.. date: 2018-08-02
+.. no changes: True
+.. nonce: zrt4E5
+.. release date: 2018-08-02
+.. section: Library
+
+There were no changes between 3.5.6rc1 and 3.5.6 final.
