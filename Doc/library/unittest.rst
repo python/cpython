@@ -393,7 +393,7 @@ run whether the test method succeeded or not.
 Such a working environment for the testing code is called a
 :dfn:`test fixture`.  A new TestCase instance is created as a unique
 test fixture used to execute each individual test method.  Thus
-`~TestCase.setUp`, `~TestCase.tearDown`, and `~TestCase.__init__`
+:meth:`~TestCase.setUp`, :meth:`~TestCase.tearDown`, and :meth:`~TestCase.__init__`
 will be called once per test.
 
 It is recommended that you use TestCase implementations to group tests together
