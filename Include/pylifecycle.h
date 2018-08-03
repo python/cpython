@@ -89,7 +89,6 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
 PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(void) Py_InitializeEx(int);
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(_PyInitError) _Py_InitializeEx_Private(int, int);
 PyAPI_FUNC(void) _Py_FatalInitError(_PyInitError err) _Py_NO_RETURN;
 #endif
 PyAPI_FUNC(void) Py_Finalize(void);
