@@ -911,7 +911,8 @@ call fails (for example because the path doesn't exist):
       >>> p.read_text()
       'Text file contents'
 
-   The optional parameters have the same meaning as in :func:`open`.
+   The file is opened and then closed. The optional parameters have the same
+   meaning as in :func:`open`.
 
    .. versionadded:: 3.5
 
