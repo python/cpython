@@ -1129,14 +1129,16 @@ pymain_run_file(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
                 "%ls: '%ls' is a directory, cannot continue\n",
                 config->program, filename);
         pymain->status = 1;
-        goto done;
+        fclose(fp);
+        return;
     }
 
     /* call pending calls like signal handlers (SIGINT) */
     if (Py_MakePendingCalls() == -1) {
         PyErr_Print();
         pymain->status = 1;
-        goto done;
+        fclose(fp);
+        return;
     }
 
     PyObject *unicode, *bytes = NULL;
@@ -1155,12 +1157,10 @@ pymain_run_file(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
         filename_str = "<filename encoding error>";
     }
 
-    int run = PyRun_AnyFileExFlags(fp, filename_str, 0, cf);
+    /* PyRun_AnyFileExFlags(closeit=1) calls fclose(fp) before running code */
+    int run = PyRun_AnyFileExFlags(fp, filename_str, 1, cf);
     Py_XDECREF(bytes);
     pymain->status = (run != 0);
-
-done:
-    fclose(fp);
 }
 
 
