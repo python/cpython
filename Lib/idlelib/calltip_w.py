@@ -72,6 +72,7 @@ class CalltipWindow:
                            background="#ffffe0", relief=SOLID, borderwidth=1,
                            font = self.widget['font'])
         self.label.pack()
+        tw.update_idletasks()
         tw.lift()  # work around bug in Tk 8.5.18+ (issue #24570)
 
         self.checkhideid = self.widget.bind(CHECKHIDE_VIRTUAL_EVENT_NAME,
