@@ -350,6 +350,10 @@ The :class:`Profile` class can also be used as a context manager (see
 
       Write the results of the current profile to *filename*.
 
+Note that profiling will only work if the called command/function actually
+returns.  If the interpreter is terminated (e.g. via a :func:`sys.exit` call
+during the called command/function execution) no profiling results will be
+printed.
 
 .. _profile-stats:
 

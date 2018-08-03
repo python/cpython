@@ -176,7 +176,7 @@ statement executed in the first suite skips the rest of the suite and continues
 with the next item, or with the :keyword:`else` clause if there is no next
 item.
 
-The for-loop makes assignments to the variables(s) in the target list.
+The for-loop makes assignments to the variables in the target list.
 This overwrites all previous assignments to those variables including
 those made in the suite of the for-loop::
 
@@ -203,7 +203,7 @@ returns the list ``[0, 1, 2]``.
       single: mutable sequence; loop over
 
    There is a subtlety when the sequence is being modified by the loop (this can
-   only occur for mutable sequences, i.e. lists).  An internal counter is used
+   only occur for mutable sequences, e.g. lists).  An internal counter is used
    to keep track of which item is used next, and this is incremented on each
    iteration.  When this counter has reached the length of the sequence the loop
    terminates.  This means that if the suite deletes the current (or a previous)

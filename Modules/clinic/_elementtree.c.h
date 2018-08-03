@@ -632,24 +632,23 @@ exit:
 }
 
 static int
-_elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
-                                     PyObject *target, const char *encoding);
+_elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
+                                     const char *encoding);
 
 static int
 _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static const char * const _keywords[] = {"html", "target", "encoding", NULL};
-    static _PyArg_Parser _parser = {"|OOz:XMLParser", _keywords, 0};
-    PyObject *html = NULL;
+    static const char * const _keywords[] = {"target", "encoding", NULL};
+    static _PyArg_Parser _parser = {"|$Oz:XMLParser", _keywords, 0};
     PyObject *target = NULL;
     const char *encoding = NULL;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &html, &target, &encoding)) {
+        &target, &encoding)) {
         goto exit;
     }
-    return_value = _elementtree_XMLParser___init___impl((XMLParserObject *)self, html, target, encoding);
+    return_value = _elementtree_XMLParser___init___impl((XMLParserObject *)self, target, encoding);
 
 exit:
     return return_value;
@@ -688,37 +687,6 @@ PyDoc_STRVAR(_elementtree_XMLParser__parse_whole__doc__,
 #define _ELEMENTTREE_XMLPARSER__PARSE_WHOLE_METHODDEF    \
     {"_parse_whole", (PyCFunction)_elementtree_XMLParser__parse_whole, METH_O, _elementtree_XMLParser__parse_whole__doc__},
 
-PyDoc_STRVAR(_elementtree_XMLParser_doctype__doc__,
-"doctype($self, name, pubid, system, /)\n"
-"--\n"
-"\n");
-
-#define _ELEMENTTREE_XMLPARSER_DOCTYPE_METHODDEF    \
-    {"doctype", (PyCFunction)_elementtree_XMLParser_doctype, METH_FASTCALL, _elementtree_XMLParser_doctype__doc__},
-
-static PyObject *
-_elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
-                                    PyObject *pubid, PyObject *system);
-
-static PyObject *
-_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *name;
-    PyObject *pubid;
-    PyObject *system;
-
-    if (!_PyArg_UnpackStack(args, nargs, "doctype",
-        3, 3,
-        &name, &pubid, &system)) {
-        goto exit;
-    }
-    return_value = _elementtree_XMLParser_doctype_impl(self, name, pubid, system);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_elementtree_XMLParser__setevents__doc__,
 "_setevents($self, events_queue, events_to_report=None, /)\n"
 "--\n"
@@ -749,4 +717,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c5a85a88bbb5cc06 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1bff22415aabb78b input=a9049054013a1b77]*/

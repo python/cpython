@@ -5347,7 +5347,6 @@ AC_LINK_IFELSE(
   AC_LANG_SOURCE([[
     #include <stdatomic.h>
     atomic_int value = ATOMIC_VAR_INIT(1);
-    _Atomic void *py_atomic_address = (void*) &value;
     int main() {
       int loaded_value = atomic_load(&value);
       return 0;
@@ -5359,7 +5358,7 @@ AC_MSG_RESULT($have_stdatomic_h)
 
 if test "$have_stdatomic_h" = yes; then
     AC_DEFINE(HAVE_STD_ATOMIC, 1,
-              [Has stdatomic.h, atomic_int and _Atomic void* types work])
+              [Has stdatomic.h with atomic_int])
 fi
 
 # Check for GCC >= 4.7 __atomic builtins
@@ -5548,12 +5547,6 @@ AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
-echo "creating Modules/Setup" >&AS_MESSAGE_FD
-if test ! -f Modules/Setup
-then
-	cp $srcdir/Modules/Setup.dist Modules/Setup
-fi
-
 echo "creating Modules/Setup.local" >&AS_MESSAGE_FD
 if test ! -f Modules/Setup.local
 then
@@ -5563,7 +5556,7 @@ fi
 echo "creating Makefile" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup
 mv config.c Modules
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
