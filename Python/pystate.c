@@ -264,6 +264,21 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 }
 
 
+PyInterpreterState *
+_PyInterpreterState_Get(void)
+{
+    PyThreadState *tstate = GET_TSTATE();
+    if (tstate == NULL) {
+        Py_FatalError("_PyInterpreterState_Get(): no current thread state");
+    }
+    PyInterpreterState *interp = tstate->interp;
+    if (interp == NULL) {
+        Py_FatalError("_PyInterpreterState_Get(): no current interpreter");
+    }
+    return interp;
+}
+
+
 int64_t
 PyInterpreterState_GetID(PyInterpreterState *interp)
 {
@@ -1184,10 +1199,9 @@ _check_xidata(_PyCrossInterpreterData *data)
 int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    PyThreadState *tstate = PyThreadState_Get();
-    // PyThreadState_Get() aborts if lookup fails, so we don't need
+    // _PyInterpreterState_Get() aborts if lookup fails, so we don't need
     // to check the result for NULL.
-    PyInterpreterState *interp = tstate->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
 
     // Reset data before re-populating.
     *data = (_PyCrossInterpreterData){0};
@@ -1235,7 +1249,7 @@ _call_in_interpreter(PyInterpreterState *interp,
      * naive approach.
      */
     PyThreadState *save_tstate = NULL;
-    if (interp != PyThreadState_Get()->interp) {
+    if (interp != _PyInterpreterState_Get()) {
         // XXX Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         // XXX Possible GILState issues?

@@ -437,7 +437,7 @@ run_at_forkers(PyObject *lst, int reverse)
 void
 PyOS_BeforeFork(void)
 {
-    run_at_forkers(PyThreadState_Get()->interp->before_forkers, 1);
+    run_at_forkers(_PyInterpreterState_Get()->before_forkers, 1);
 
     _PyImport_AcquireLock();
 }
@@ -448,7 +448,7 @@ PyOS_AfterFork_Parent(void)
     if (_PyImport_ReleaseLock() <= 0)
         Py_FatalError("failed releasing import lock after fork");
 
-    run_at_forkers(PyThreadState_Get()->interp->after_forkers_parent, 0);
+    run_at_forkers(_PyInterpreterState_Get()->after_forkers_parent, 0);
 }
 
 void
@@ -459,7 +459,7 @@ PyOS_AfterFork_Child(void)
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
 
-    run_at_forkers(PyThreadState_Get()->interp->after_forkers_child, 0);
+    run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
 }
 
 static int
@@ -5655,7 +5655,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
         check_null_or_callable(after_in_parent, "after_in_parent")) {
         return NULL;
     }
-    interp = PyThreadState_Get()->interp;
+    interp = _PyInterpreterState_Get();
 
     if (register_at_forker(&interp->before_forkers, before)) {
         return NULL;
