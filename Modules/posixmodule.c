@@ -437,7 +437,7 @@ run_at_forkers(PyObject *lst, int reverse)
 void
 PyOS_BeforeFork(void)
 {
-    run_at_forkers(PyThreadState_Get()->interp->before_forkers, 1);
+    run_at_forkers(_PyInterpreterState_Get()->before_forkers, 1);
 
     _PyImport_AcquireLock();
 }
@@ -448,7 +448,7 @@ PyOS_AfterFork_Parent(void)
     if (_PyImport_ReleaseLock() <= 0)
         Py_FatalError("failed releasing import lock after fork");
 
-    run_at_forkers(PyThreadState_Get()->interp->after_forkers_parent, 0);
+    run_at_forkers(_PyInterpreterState_Get()->after_forkers_parent, 0);
 }
 
 void
@@ -459,7 +459,7 @@ PyOS_AfterFork_Child(void)
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
 
-    run_at_forkers(PyThreadState_Get()->interp->after_forkers_child, 0);
+    run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
 }
 
 static int
@@ -5655,7 +5655,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
         check_null_or_callable(after_in_parent, "after_in_parent")) {
         return NULL;
     }
-    interp = PyThreadState_Get()->interp;
+    interp = _PyInterpreterState_Get();
 
     if (register_at_forker(&interp->before_forkers, before)) {
         return NULL;
@@ -8321,12 +8321,13 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 }
 
 #if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
-    || defined(__APPLE__))) || defined(HAVE_READV) || defined(HAVE_WRITEV)
-static Py_ssize_t
+                                || defined(__APPLE__))) \
+    || defined(HAVE_READV) || defined(HAVE_PREADV) || defined (HAVE_PREADV2) \
+    || defined(HAVE_WRITEV) || defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)
+static int
 iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, Py_ssize_t cnt, int type)
 {
     Py_ssize_t i, j;
-    Py_ssize_t blen, total = 0;
 
     *iov = PyMem_New(struct iovec, cnt);
     if (*iov == NULL) {
@@ -8351,11 +8352,9 @@ iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, Py_ssize_t cnt, in
         }
         Py_DECREF(item);
         (*iov)[i].iov_base = (*buf)[i].buf;
-        blen = (*buf)[i].len;
-        (*iov)[i].iov_len = blen;
-        total += blen;
+        (*iov)[i].iov_len = (*buf)[i].len;
     }
-    return total;
+    return 0;
 
 fail:
     PyMem_Del(*iov);
@@ -8652,12 +8651,20 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
             }
             if (i > 0) {
                 sf.hdr_cnt = (int)i;
-                i = iov_setup(&(sf.headers), &hbuf,
-                              headers, sf.hdr_cnt, PyBUF_SIMPLE);
-                if (i < 0)
+                if (iov_setup(&(sf.headers), &hbuf,
+                              headers, sf.hdr_cnt, PyBUF_SIMPLE) < 0)
                     return NULL;
 #ifdef __APPLE__
-                sbytes += i;
+                for (i = 0; i < sf.hdr_cnt; i++) {
+                    Py_ssize_t blen = sf.headers[i].iov_len;
+# define OFF_T_MAX 0x7fffffffffffffff
+                    if (sbytes >= OFF_T_MAX - blen) {
+                        PyErr_SetString(PyExc_OverflowError,
+                            "sendfile() header is too large");
+                        return NULL;
+                    }
+                    sbytes += blen;
+                }
 #endif
             }
         }
@@ -8678,13 +8685,9 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
             }
             if (i > 0) {
                 sf.trl_cnt = (int)i;
-                i = iov_setup(&(sf.trailers), &tbuf,
-                              trailers, sf.trl_cnt, PyBUF_SIMPLE);
-                if (i < 0)
+                if (iov_setup(&(sf.trailers), &tbuf,
+                              trailers, sf.trl_cnt, PyBUF_SIMPLE) < 0)
                     return NULL;
-#ifdef __APPLE__
-                sbytes += i;
-#endif
             }
         }
     }

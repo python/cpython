@@ -1,6 +1,6 @@
 'Provides "Strip trailing whitespace" under the "Format" menu.'
 
-class RstripExtension:
+class Rstrip:
 
     def __init__(self, editwin):
         self.editwin = editwin

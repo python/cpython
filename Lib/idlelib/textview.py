@@ -83,7 +83,8 @@ class ViewWindow(Toplevel):
                                             command=self.ok, takefocus=False)
         self.viewframe.pack(side='top', expand=True, fill='both')
 
-        if modal:
+        self.is_modal = modal
+        if self.is_modal:
             self.transient(parent)
             self.grab_set()
             if not _utest:
@@ -91,6 +92,8 @@ class ViewWindow(Toplevel):
 
     def ok(self, event=None):
         """Dismiss text viewer dialog."""
+        if self.is_modal:
+            self.grab_release()
         self.destroy()
 
 

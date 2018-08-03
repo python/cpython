@@ -9,7 +9,7 @@ class rstripTest(unittest.TestCase):
     def test_rstrip_line(self):
         editor = Editor()
         text = editor.text
-        do_rstrip = rstrip.RstripExtension(editor).do_rstrip
+        do_rstrip = rstrip.Rstrip(editor).do_rstrip
 
         do_rstrip()
         self.assertEqual(text.get('1.0', 'insert'), '')
@@ -27,7 +27,7 @@ class rstripTest(unittest.TestCase):
         #from tkinter import Tk
         #editor = Editor(root=Tk())
         text = editor.text
-        do_rstrip = rstrip.RstripExtension(editor).do_rstrip
+        do_rstrip = rstrip.Rstrip(editor).do_rstrip
 
         original = (
             "Line with an ending tab    \n"

@@ -255,9 +255,9 @@ class IdleConfTest(unittest.TestCase):
                 with self.assertRaises(FileNotFoundError):
                     conf.GetUserCfgDir()
 
-    @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for windows system')
+    @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for Windows system')
     def test_get_user_cfg_dir_windows(self):
-        "Test to get user config directory under windows"
+        "Test to get user config directory under Windows"
         conf = self.new_config(_utest=True)
 
         # Check normal way should success

@@ -3413,7 +3413,7 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
 #if defined(__APPLE__)
     return _PyUnicode_AsUTF8String(unicode, Py_FileSystemDefaultEncodeErrors);
 #else
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
        cannot use it to encode and decode filenames before it is loaded. Load
        the Python codec requires to encode at least its own filename. Use the C
@@ -3639,7 +3639,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 #if defined(__APPLE__)
     return PyUnicode_DecodeUTF8Stateful(s, size, Py_FileSystemDefaultEncodeErrors, NULL);
 #else
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
        cannot use it to encode and decode filenames before it is loaded. Load
        the Python codec requires to encode at least its own filename. Use the C
@@ -9072,6 +9072,7 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
             int decimal = Py_UNICODE_TODECIMAL(ch);
             if (decimal < 0) {
                 out[i] = '?';
+                out[i+1] = '\0';
                 _PyUnicode_LENGTH(result) = i + 1;
                 break;
             }
@@ -9079,6 +9080,7 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
         }
     }
 
+    assert(_PyUnicode_CheckConsistency(result, 1));
     return result;
 }
 

@@ -246,7 +246,7 @@ class AutoCompleteWindow:
         acw.wm_geometry("+%d+%d" % (new_x, new_y))
 
         if platform.system().startswith('Windows'):
-            # See issue 15786. When on windows platform, Tk will misbehave
+            # See issue 15786. When on Windows platform, Tk will misbehave
             # to call winconfig_event multiple times, we need to prevent this,
             # otherwise mouse button double click will not be able to used.
             acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
@@ -269,7 +269,7 @@ class AutoCompleteWindow:
         # mouse click on widget / text area.
         if self.is_active():
             if event.type == EventType.FocusOut:
-                # On windows platform, it will need to delay the check for
+                # On Windows platform, it will need to delay the check for
                 # acw.focus_get() when click on acw, otherwise it will return
                 # None and close the window
                 self.widget.after(1, self._hide_event_check)

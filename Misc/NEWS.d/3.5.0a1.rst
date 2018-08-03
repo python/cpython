@@ -1,5 +1,5 @@
 .. bpo: 23285
-.. date: 7608
+.. date: 8948
 .. nonce: bJJA8B
 .. release date: 2015-02-08
 .. section: Core and Builtins
@@ -9,7 +9,7 @@ PEP 475 - EINTR handling.
 ..
 
 .. bpo: 22735
-.. date: 7607
+.. date: 8947
 .. nonce: mFEX9n
 .. section: Core and Builtins
 
@@ -19,7 +19,7 @@ implementations.
 ..
 
 .. bpo: 22896
-.. date: 7606
+.. date: 8946
 .. nonce: xSDAHK
 .. section: Core and Builtins
 
@@ -29,7 +29,7 @@ PyObject_AsWriteBuffer().
 ..
 
 .. bpo: 21295
-.. date: 7605
+.. date: 8945
 .. nonce: LYq9nF
 .. section: Core and Builtins
 
@@ -39,7 +39,7 @@ that constituted a regression.
 ..
 
 .. bpo: 22986
-.. date: 7604
+.. date: 8944
 .. nonce: yay2Lv
 .. section: Core and Builtins
 
@@ -49,7 +49,7 @@ in some cases.
 ..
 
 .. bpo: 15859
-.. date: 7603
+.. date: 8943
 .. nonce: Fs5mE2
 .. section: Core and Builtins
 
@@ -61,7 +61,7 @@ platforms other than Windows. Patch written by Campbell Barton.
 ..
 
 .. bpo: 21408
-.. date: 7602
+.. date: 8942
 .. nonce: Lz6P3P
 .. section: Core and Builtins
 
@@ -71,7 +71,7 @@ NotImplemented.  Original patch by Martin Panter.
 ..
 
 .. bpo: 23321
-.. date: 7601
+.. date: 8941
 .. nonce: HQelge
 .. section: Core and Builtins
 
@@ -81,7 +81,7 @@ longer than mailformed input data.
 ..
 
 .. bpo: 22286
-.. date: 7600
+.. date: 8940
 .. nonce: l6Qyy1
 .. section: Core and Builtins
 
@@ -91,7 +91,7 @@ translating.
 ..
 
 .. bpo: 23253
-.. date: 7599
+.. date: 8939
 .. nonce: p4B1H-
 .. section: Core and Builtins
 
@@ -101,7 +101,7 @@ Windows.
 ..
 
 .. bpo: 22038
-.. date: 7598
+.. date: 8938
 .. nonce: BMZUHx
 .. section: Core and Builtins
 
@@ -111,7 +111,7 @@ access if available. Patch written by Vitor de Lima and Gustavo Temple.
 ..
 
 .. bpo: 20284
-.. date: 7597
+.. date: 8937
 .. nonce: CH8wpD
 .. section: Core and Builtins
 
@@ -120,7 +120,7 @@ access if available. Patch written by Vitor de Lima and Gustavo Temple.
 ..
 
 .. bpo: 23048
-.. date: 7596
+.. date: 8936
 .. nonce: X5BUd3
 .. section: Core and Builtins
 
@@ -129,7 +129,7 @@ Fix jumping out of an infinite while loop in the pdb.
 ..
 
 .. bpo: 20335
-.. date: 7595
+.. date: 8935
 .. nonce: YcAPOs
 .. section: Core and Builtins
 
@@ -139,7 +139,7 @@ with non-string argument.  Based on patch by Renaud Blanch.
 ..
 
 .. bpo: 22834
-.. date: 7594
+.. date: 8934
 .. nonce: N1kAXN
 .. section: Core and Builtins
 
@@ -149,7 +149,7 @@ directory then import will no longer raise FileNotFoundError.
 ..
 
 .. bpo: 22869
-.. date: 7593
+.. date: 8933
 .. nonce: rAWg-V
 .. section: Core and Builtins
 
@@ -159,7 +159,7 @@ pylifecycle.c module
 ..
 
 .. bpo: 22847
-.. date: 7592
+.. date: 8932
 .. nonce: 6baj9f
 .. section: Core and Builtins
 
@@ -168,7 +168,7 @@ Improve method cache efficiency.
 ..
 
 .. bpo: 22335
-.. date: 7591
+.. date: 8931
 .. nonce: DWsXiy
 .. section: Core and Builtins
 
@@ -178,7 +178,7 @@ platform.
 ..
 
 .. bpo: 22653
-.. date: 7590
+.. date: 8930
 .. nonce: pCNlpv
 .. section: Core and Builtins
 
@@ -188,7 +188,7 @@ in debug mode.
 ..
 
 .. bpo: 22643
-.. date: 7589
+.. date: 8929
 .. nonce: xv8xev
 .. section: Core and Builtins
 
@@ -198,7 +198,7 @@ swapcase, casefold).
 ..
 
 .. bpo: 17636
-.. date: 7588
+.. date: 8928
 .. nonce: wiqnhw
 .. section: Core and Builtins
 
@@ -207,7 +207,7 @@ Circular imports involving relative imports are now supported.
 ..
 
 .. bpo: 22604
-.. date: 7587
+.. date: 8927
 .. nonce: yii-It
 .. section: Core and Builtins
 
@@ -217,7 +217,7 @@ Fix assertion error in debug mode when dividing a complex number by
 ..
 
 .. bpo: 21052
-.. date: 7586
+.. date: 8926
 .. nonce: -sf3tp
 .. section: Core and Builtins
 
@@ -227,7 +227,7 @@ None.
 ..
 
 .. bpo: 16518
-.. date: 7585
+.. date: 8925
 .. nonce: UADwcN
 .. section: Core and Builtins
 
@@ -237,7 +237,7 @@ far more cryptic "'x' does not support the buffer protocol.
 ..
 
 .. bpo: 22470
-.. date: 7584
+.. date: 8924
 .. nonce: igrgN2
 .. section: Core and Builtins
 
@@ -247,7 +247,7 @@ and "surrogatepass" error handlers.
 ..
 
 .. bpo: 22540
-.. date: 7583
+.. date: 8923
 .. nonce: FM72m-
 .. section: Core and Builtins
 
@@ -257,7 +257,7 @@ that the second argument has metaclass `type`.
 ..
 
 .. bpo: 18711
-.. date: 7582
+.. date: 8922
 .. nonce: ds5wQa
 .. section: Core and Builtins
 
@@ -267,7 +267,7 @@ a `va_list` argument.
 ..
 
 .. bpo: 22520
-.. date: 7581
+.. date: 8921
 .. nonce: ZPJXSq
 .. section: Core and Builtins
 
@@ -276,7 +276,7 @@ Fix overflow checking when generating the repr of a unicode object.
 ..
 
 .. bpo: 22519
-.. date: 7580
+.. date: 8920
 .. nonce: xvJVg0
 .. section: Core and Builtins
 
@@ -285,7 +285,7 @@ Fix overflow checking in PyBytes_Repr.
 ..
 
 .. bpo: 22518
-.. date: 7579
+.. date: 8919
 .. nonce: C9T6ed
 .. section: Core and Builtins
 
@@ -294,7 +294,7 @@ Fix integer overflow issues in latin-1 encoding.
 ..
 
 .. bpo: 16324
-.. date: 7578
+.. date: 8918
 .. nonce: YfrBNz
 .. section: Core and Builtins
 
@@ -304,7 +304,7 @@ instances. Initial patch by Claude Paroz.
 ..
 
 .. bpo: 1764286
-.. date: 7577
+.. date: 8917
 .. nonce: L4seL2
 .. section: Core and Builtins
 
@@ -314,7 +314,7 @@ Popa.
 ..
 
 .. bpo: 18554
-.. date: 7576
+.. date: 8916
 .. nonce: hxnaui
 .. section: Core and Builtins
 
@@ -323,7 +323,7 @@ os.__all__ includes posix functions.
 ..
 
 .. bpo: 21391
-.. date: 7575
+.. date: 8915
 .. nonce: 3jntPd
 .. section: Core and Builtins
 
@@ -332,7 +332,7 @@ Use os.path.abspath in the shutil module.
 ..
 
 .. bpo: 11471
-.. date: 7574
+.. date: 8914
 .. nonce: Uu752F
 .. section: Core and Builtins
 
@@ -342,7 +342,7 @@ there is no else-clause.  Original patch by Eugene Toder.
 ..
 
 .. bpo: 22215
-.. date: 7573
+.. date: 8913
 .. nonce: IBFi6H
 .. section: Core and Builtins
 
@@ -352,7 +352,7 @@ contains not permitted null character or byte.
 ..
 
 .. bpo: 22258
-.. date: 7572
+.. date: 8912
 .. nonce: 4FszMt
 .. section: Core and Builtins
 
@@ -364,7 +364,7 @@ to the slower ``fcntl()`` (``F_GETFD`` and then ``F_SETFD``).
 ..
 
 .. bpo: 21389
-.. date: 7571
+.. date: 8911
 .. nonce: dnWZBn
 .. section: Core and Builtins
 
@@ -374,7 +374,7 @@ bound method.
 ..
 
 .. bpo: 22206
-.. date: 7570
+.. date: 8910
 .. nonce: 0i_ihB
 .. section: Core and Builtins
 
@@ -384,7 +384,7 @@ Using pthread, PyThread_create_key() now sets errno to ENOMEM and returns -1
 ..
 
 .. bpo: 20184
-.. date: 7569
+.. date: 8909
 .. nonce: bb3uHY
 .. section: Core and Builtins
 
@@ -394,7 +394,7 @@ functions.
 ..
 
 .. bpo: 22116
-.. date: 7568
+.. date: 8908
 .. nonce: auVmIt
 .. section: Core and Builtins
 
@@ -404,7 +404,7 @@ be weakref'ed.  Patch by Wei Wu.
 ..
 
 .. bpo: 22077
-.. date: 7567
+.. date: 8907
 .. nonce: KZUDR-
 .. section: Core and Builtins
 
@@ -415,7 +415,7 @@ by Claudiu Popa.
 ..
 
 .. bpo: 20179
-.. date: 7566
+.. date: 8906
 .. nonce: Nvhffc
 .. section: Core and Builtins
 
@@ -424,7 +424,7 @@ Apply Argument Clinic to bytes and bytearray. Patch by Tal Einat.
 ..
 
 .. bpo: 22082
-.. date: 7565
+.. date: 8905
 .. nonce: 6X8Qmg
 .. section: Core and Builtins
 
@@ -433,7 +433,7 @@ Clear interned strings in slotdefs.
 ..
 
 .. bpo: 0
-.. date: 7564
+.. date: 8904
 .. nonce: tuMnCc
 .. section: Core and Builtins
 
@@ -442,7 +442,7 @@ Upgrade Unicode database to Unicode 7.0.0.
 ..
 
 .. bpo: 21897
-.. date: 7563
+.. date: 8903
 .. nonce: kiOGHe
 .. section: Core and Builtins
 
@@ -452,7 +452,7 @@ frame.clear() has been called.
 ..
 
 .. bpo: 21205
-.. date: 7562
+.. date: 8902
 .. nonce: wZsx1K
 .. section: Core and Builtins
 
@@ -465,7 +465,7 @@ code.
 ..
 
 .. bpo: 21669
-.. date: 7561
+.. date: 8901
 .. nonce: DFDrBA
 .. section: Core and Builtins
 
@@ -476,7 +476,7 @@ messages when "exec" and "print" are used as statements.
 ..
 
 .. bpo: 21642
-.. date: 7560
+.. date: 8900
 .. nonce: -lWoKz
 .. section: Core and Builtins
 
@@ -487,7 +487,7 @@ False``) to be valid syntax.
 ..
 
 .. bpo: 21523
-.. date: 7559
+.. date: 8899
 .. nonce: f_PPYO
 .. section: Core and Builtins
 
@@ -498,7 +498,7 @@ when compiling code with a large number of "and" and "or" operators.
 ..
 
 .. bpo: 21418
-.. date: 7558
+.. date: 8898
 .. nonce: z9jp1_
 .. section: Core and Builtins
 
@@ -508,7 +508,7 @@ without current frame (ex: embedded Python).
 ..
 
 .. bpo: 21425
-.. date: 7557
+.. date: 8897
 .. nonce: i3Teb8
 .. section: Core and Builtins
 
@@ -517,7 +517,7 @@ Fix flushing of standard streams in the interactive interpreter.
 ..
 
 .. bpo: 21435
-.. date: 7556
+.. date: 8896
 .. nonce: ZojVOT
 .. section: Core and Builtins
 
@@ -528,7 +528,7 @@ logic.
 ..
 
 .. bpo: 21377
-.. date: 7555
+.. date: 8895
 .. nonce: OawYfl
 .. section: Core and Builtins
 
@@ -538,7 +538,7 @@ has a reference count of 1.  Patch by Nikolaus Rath.
 ..
 
 .. bpo: 20355
-.. date: 7554
+.. date: 8894
 .. nonce: OrCNkZ
 .. section: Core and Builtins
 
@@ -548,7 +548,7 @@ environment variable.  Patch by Arfrever.
 ..
 
 .. bpo: 21274
-.. date: 7553
+.. date: 8893
 .. nonce: fVGfwq
 .. section: Core and Builtins
 
@@ -557,7 +557,7 @@ Define PATH_MAX for GNU/Hurd in Python/pythonrun.c.
 ..
 
 .. bpo: 20904
-.. date: 7552
+.. date: 8892
 .. nonce: fAGdj2
 .. section: Core and Builtins
 
@@ -566,7 +566,7 @@ Support setting FPU precision on m68k.
 ..
 
 .. bpo: 21209
-.. date: 7551
+.. date: 8891
 .. nonce: nMljFr
 .. section: Core and Builtins
 
@@ -575,7 +575,7 @@ Fix sending tuples to custom generator objects with the yield from syntax.
 ..
 
 .. bpo: 21193
-.. date: 7550
+.. date: 8890
 .. nonce: Dg98Oo
 .. section: Core and Builtins
 
@@ -585,7 +585,7 @@ Patch by Josh Rosenberg.
 ..
 
 .. bpo: 21176
-.. date: 7549
+.. date: 8889
 .. nonce: mitDhW
 .. section: Core and Builtins
 
@@ -594,7 +594,7 @@ PEP 465: Add the '@' operator for matrix multiplication.
 ..
 
 .. bpo: 21134
-.. date: 7548
+.. date: 8888
 .. nonce: ZL4SKo
 .. section: Core and Builtins
 
@@ -604,7 +604,7 @@ UnicodeDecodeError, or UnicodeTranslateError object.
 ..
 
 .. bpo: 19537
-.. date: 7547
+.. date: 8887
 .. nonce: AkuC_J
 .. section: Core and Builtins
 
@@ -613,7 +613,7 @@ Fix PyUnicode_DATA() alignment under m68k.  Patch by Andreas Schwab.
 ..
 
 .. bpo: 20929
-.. date: 7546
+.. date: 8886
 .. nonce: 9NlUR7
 .. section: Core and Builtins
 
@@ -622,7 +622,7 @@ Add a type cast to avoid shifting a negative number.
 ..
 
 .. bpo: 20731
-.. date: 7545
+.. date: 8885
 .. nonce: _03SZg
 .. section: Core and Builtins
 
@@ -632,7 +632,7 @@ Patch by Serhiy Storchaka.
 ..
 
 .. bpo: 20637
-.. date: 7544
+.. date: 8884
 .. nonce: ppYU0o
 .. section: Core and Builtins
 
@@ -642,7 +642,7 @@ by Peter Ingebretson.
 ..
 
 .. bpo: 8297
-.. date: 7543
+.. date: 8883
 .. nonce: _XdGON
 .. section: Core and Builtins
 
@@ -652,7 +652,7 @@ text.  Original patch by ysj.ray.
 ..
 
 .. bpo: 19995
-.. date: 7542
+.. date: 8882
 .. nonce: mnHEzX
 .. section: Core and Builtins
 
@@ -661,7 +661,7 @@ text.  Original patch by ysj.ray.
 ..
 
 .. bpo: 19655
-.. date: 7541
+.. date: 8881
 .. nonce: JgVdes
 .. section: Core and Builtins
 
@@ -673,7 +673,7 @@ spark.py was removed from the source base.
 ..
 
 .. bpo: 12546
-.. date: 7540
+.. date: 8880
 .. nonce: 09naZ9
 .. section: Core and Builtins
 
@@ -683,7 +683,7 @@ and complex __format__ methods.
 ..
 
 .. bpo: 20480
-.. date: 7539
+.. date: 8879
 .. nonce: TIYPLo
 .. section: Core and Builtins
 
@@ -692,7 +692,7 @@ Add ipaddress.reverse_pointer. Patch by Leon Weber.
 ..
 
 .. bpo: 13598
-.. date: 7538
+.. date: 8878
 .. nonce: GJelrw
 .. section: Core and Builtins
 
@@ -703,7 +703,7 @@ Elson and Ramchandra Apte.
 ..
 
 .. bpo: 8931
-.. date: 7537
+.. date: 8877
 .. nonce: M05x4f
 .. section: Core and Builtins
 
@@ -714,7 +714,7 @@ Patch by Torsten Landschoff.
 ..
 
 .. bpo: 23165
-.. date: 7536
+.. date: 8876
 .. nonce: lk8uCE
 .. section: Core and Builtins
 
@@ -724,7 +724,7 @@ function.
 ..
 
 .. bpo: 23399
-.. date: 7535
+.. date: 8875
 .. nonce: hXMYgA
 .. section: Library
 
@@ -733,7 +733,7 @@ pyvenv creates relative symlinks where possible.
 ..
 
 .. bpo: 20289
-.. date: 7534
+.. date: 8874
 .. nonce: nio1N-
 .. section: Library
 
@@ -742,7 +742,7 @@ cgi.FieldStorage() now supports the context management protocol.
 ..
 
 .. bpo: 13128
-.. date: 7533
+.. date: 8873
 .. nonce: vqEcsy
 .. section: Library
 
@@ -752,7 +752,7 @@ Demian Brecht.
 ..
 
 .. bpo: 15381
-.. date: 7532
+.. date: 8872
 .. nonce: Xv-wu8
 .. section: Library
 
@@ -761,7 +761,7 @@ Optimized io.BytesIO to make less allocations and copyings.
 ..
 
 .. bpo: 22818
-.. date: 7531
+.. date: 8871
 .. nonce: NYdAc9
 .. section: Library
 
@@ -771,7 +771,7 @@ warning.  Patterns that can only match empty strings are now rejected.
 ..
 
 .. bpo: 23099
-.. date: 7530
+.. date: 8870
 .. nonce: ZASrUo
 .. section: Library
 
@@ -781,7 +781,7 @@ corrupting exported buffer.
 ..
 
 .. bpo: 23326
-.. date: 7529
+.. date: 8869
 .. nonce: 8VzlZD
 .. section: Library
 
@@ -791,7 +791,7 @@ in issue #21408 they are redundant.
 ..
 
 .. bpo: 23363
-.. date: 7528
+.. date: 8868
 .. nonce: -koaol
 .. section: Library
 
@@ -800,7 +800,7 @@ Fix possible overflow in itertools.permutations.
 ..
 
 .. bpo: 23364
-.. date: 7527
+.. date: 8867
 .. nonce: 3yBV-6
 .. section: Library
 
@@ -809,7 +809,7 @@ Fix possible overflow in itertools.product.
 ..
 
 .. bpo: 23366
-.. date: 7526
+.. date: 8866
 .. nonce: tyAfm8
 .. section: Library
 
@@ -818,7 +818,7 @@ Fixed possible integer overflow in itertools.combinations.
 ..
 
 .. bpo: 23369
-.. date: 7525
+.. date: 8865
 .. nonce: nqChyE
 .. section: Library
 
@@ -827,7 +827,7 @@ Fixed possible integer overflow in _json.encode_basestring_ascii.
 ..
 
 .. bpo: 23353
-.. date: 7524
+.. date: 8864
 .. nonce: Iytkpc
 .. section: Library
 
@@ -840,7 +840,7 @@ Pitrou.
 ..
 
 .. bpo: 14099
-.. date: 7523
+.. date: 8863
 .. nonce: t9-HVE
 .. section: Library
 
@@ -849,7 +849,7 @@ Restored support of writing ZIP files to tellable but non-seekable streams.
 ..
 
 .. bpo: 14099
-.. date: 7522
+.. date: 8862
 .. nonce: Myxxww
 .. section: Library
 
@@ -858,7 +858,7 @@ Writing to ZipFile and reading multiple ZipExtFiles is threadsafe now.
 ..
 
 .. bpo: 19361
-.. date: 7521
+.. date: 8861
 .. nonce: 2mvrV3
 .. section: Library
 
@@ -867,7 +867,7 @@ JSON decoder now raises JSONDecodeError instead of ValueError.
 ..
 
 .. bpo: 18518
-.. date: 7520
+.. date: 8860
 .. nonce: JXgicC
 .. section: Library
 
@@ -877,7 +877,7 @@ a loop (e.g. "return" or "break").
 ..
 
 .. bpo: 23094
-.. date: 7519
+.. date: 8859
 .. nonce: -8AXSi
 .. section: Library
 
@@ -886,7 +886,7 @@ Fixed readline with frames in Python implementation of pickle.
 ..
 
 .. bpo: 23268
-.. date: 7518
+.. date: 8858
 .. nonce: ATtRa5
 .. section: Library
 
@@ -895,7 +895,7 @@ Fixed bugs in the comparison of ipaddress classes.
 ..
 
 .. bpo: 21408
-.. date: 7517
+.. date: 8857
 .. nonce: 0rI6tx
 .. section: Library
 
@@ -906,7 +906,7 @@ now works correctly.
 ..
 
 .. bpo: 19996
-.. date: 7516
+.. date: 8856
 .. nonce: 2-SiMf
 .. section: Library
 
@@ -916,7 +916,7 @@ key rather than assuming the body has started.
 ..
 
 .. bpo: 20188
-.. date: 7515
+.. date: 8855
 .. nonce: xocY-2
 .. section: Library
 
@@ -925,7 +925,7 @@ Support Application-Layer Protocol Negotiation (ALPN) in the ssl module.
 ..
 
 .. bpo: 23133
-.. date: 7514
+.. date: 8854
 .. nonce: 8p2Wnl
 .. section: Library
 
@@ -935,7 +935,7 @@ representation.
 ..
 
 .. bpo: 23248
-.. date: 7513
+.. date: 8853
 .. nonce: FjcyCP
 .. section: Library
 
@@ -944,7 +944,7 @@ Update ssl error codes from latest OpenSSL git master.
 ..
 
 .. bpo: 23266
-.. date: 7512
+.. date: 8852
 .. nonce: Mo7alR
 .. section: Library
 
@@ -954,7 +954,7 @@ many non-consecutive addresses.
 ..
 
 .. bpo: 23098
-.. date: 7511
+.. date: 8851
 .. nonce: 7VwF3K
 .. section: Library
 
@@ -963,7 +963,7 @@ many non-consecutive addresses.
 ..
 
 .. bpo: 21817
-.. date: 7510
+.. date: 8850
 .. nonce: xYUW-9
 .. section: Library
 
@@ -974,7 +974,7 @@ Claudiu Popa.
 ..
 
 .. bpo: 15955
-.. date: 7509
+.. date: 8849
 .. nonce: uvpBL4
 .. section: Library
 
@@ -984,7 +984,7 @@ Nikolaus Rath and Martin Panter.
 ..
 
 .. bpo: 23250
-.. date: 7508
+.. date: 8848
 .. nonce: qNGAUf
 .. section: Library
 
@@ -994,7 +994,7 @@ written in the standard.
 ..
 
 .. bpo: 23063
-.. date: 7507
+.. date: 8847
 .. nonce: 9-UJRs
 .. section: Library
 
@@ -1004,7 +1004,7 @@ directives.
 ..
 
 .. bpo: 23209
-.. date: 7506
+.. date: 8846
 .. nonce: I0bCCH
 .. section: Library
 
@@ -1016,7 +1016,7 @@ written by Martin Richard. (See also: bpo-23225)
 ..
 
 .. bpo: 17911
-.. date: 7505
+.. date: 8845
 .. nonce: yg65Iu
 .. section: Library
 
@@ -1026,7 +1026,7 @@ loading the code.
 ..
 
 .. bpo: 17911
-.. date: 7504
+.. date: 8844
 .. nonce: qeTePa
 .. section: Library
 
@@ -1037,7 +1037,7 @@ the original objects being kept alive.
 ..
 
 .. bpo: 19777
-.. date: 7503
+.. date: 8843
 .. nonce: H_NDIA
 .. section: Library
 
@@ -1047,7 +1047,7 @@ and Mayank Tripathi.
 ..
 
 .. bpo: 23206
-.. date: 7502
+.. date: 8842
 .. nonce: xSiYwq
 .. section: Library
 
@@ -1057,7 +1057,7 @@ Make ``json.dumps(..., ensure_ascii=False)`` as fast as the default case of
 ..
 
 .. bpo: 23185
-.. date: 7501
+.. date: 8841
 .. nonce: KHyoSO
 .. section: Library
 
@@ -1066,7 +1066,7 @@ Add math.inf and math.nan constants.
 ..
 
 .. bpo: 23186
-.. date: 7500
+.. date: 8840
 .. nonce: KzWLP2
 .. section: Library
 
@@ -1076,7 +1076,7 @@ fetch the client's list ciphers sent at handshake.
 ..
 
 .. bpo: 23143
-.. date: 7499
+.. date: 8839
 .. nonce: AWxJXV
 .. section: Library
 
@@ -1085,7 +1085,7 @@ Remove compatibility with OpenSSLs older than 0.9.8.
 ..
 
 .. bpo: 23132
-.. date: 7498
+.. date: 8838
 .. nonce: pbQcut
 .. section: Library
 
@@ -1095,7 +1095,7 @@ by functool.total_ordering.
 ..
 
 .. bpo: 19776
-.. date: 7497
+.. date: 8837
 .. nonce: BxNgxd
 .. section: Library
 
@@ -1104,7 +1104,7 @@ Add an expanduser() method on Path objects.
 ..
 
 .. bpo: 23112
-.. date: 7496
+.. date: 8836
 .. nonce: dZGf82
 .. section: Library
 
@@ -1114,7 +1114,7 @@ it redirects to add a trailing slash.
 ..
 
 .. bpo: 21793
-.. date: 7495
+.. date: 8835
 .. nonce: T1kQBL
 .. section: Library
 
@@ -1124,7 +1124,7 @@ Patch by Demian Brecht.
 ..
 
 .. bpo: 23093
-.. date: 7494
+.. date: 8834
 .. nonce: cP7OqD
 .. section: Library
 
@@ -1133,7 +1133,7 @@ In the io, module allow more operations to work on detached streams.
 ..
 
 .. bpo: 23111
-.. date: 7493
+.. date: 8833
 .. nonce: A34IA4
 .. section: Library
 
@@ -1142,7 +1142,7 @@ In the ftplib, make ssl.PROTOCOL_SSLv23 the default protocol version.
 ..
 
 .. bpo: 22585
-.. date: 7492
+.. date: 8832
 .. nonce: F4BkNo
 .. section: Library
 
@@ -1152,7 +1152,7 @@ reading /dev/urandom, to get pseudo-random bytes.
 ..
 
 .. bpo: 19104
-.. date: 7491
+.. date: 8831
 .. nonce: _eIThy
 .. section: Library
 
@@ -1161,7 +1161,7 @@ pprint now produces evaluable output for wrapped strings.
 ..
 
 .. bpo: 23071
-.. date: 7490
+.. date: 8830
 .. nonce: 3BSqF7
 .. section: Library
 
@@ -1170,7 +1170,7 @@ Added missing names to codecs.__all__.  Patch by Martin Panter.
 ..
 
 .. bpo: 22783
-.. date: 7489
+.. date: 8829
 .. nonce: OfYxBd
 .. section: Library
 
@@ -1180,7 +1180,7 @@ possible.
 ..
 
 .. bpo: 15513
-.. date: 7488
+.. date: 8828
 .. nonce: 7yVnRE
 .. section: Library
 
@@ -1189,7 +1189,7 @@ Added a __sizeof__ implementation for pickle classes.
 ..
 
 .. bpo: 19858
-.. date: 7487
+.. date: 8827
 .. nonce: cqOlIt
 .. section: Library
 
@@ -1200,7 +1200,7 @@ MEMOIZE opcodes together with PUT or BINPUT opcodes.
 ..
 
 .. bpo: 22095
-.. date: 7486
+.. date: 8826
 .. nonce: iISzxM
 .. section: Library
 
@@ -1210,7 +1210,7 @@ host header was set to "None".  Patch by Demian Brecht.
 ..
 
 .. bpo: 23016
-.. date: 7485
+.. date: 8825
 .. nonce: LyrPd_
 .. section: Library
 
@@ -1220,7 +1220,7 @@ pythonw.exe.
 ..
 
 .. bpo: 21775
-.. date: 7484
+.. date: 8824
 .. nonce: ELR_Al
 .. section: Library
 
@@ -1232,7 +1232,7 @@ Linux (and, presumably, any other non-Windows OS). Patch by Greg Ward.
 ..
 
 .. bpo: 1218234
-.. date: 7483
+.. date: 8823
 .. nonce: 4GcoQK
 .. section: Library
 
@@ -1242,7 +1242,7 @@ patch by Berker Peksag.
 ..
 
 .. bpo: 21740
-.. date: 7482
+.. date: 8822
 .. nonce: TtAApO
 .. section: Library
 
@@ -1251,7 +1251,7 @@ Support wrapped callables in doctest. Patch by Claudiu Popa.
 ..
 
 .. bpo: 23009
-.. date: 7481
+.. date: 8821
 .. nonce: -sW7gk
 .. section: Library
 
@@ -1260,7 +1260,7 @@ Make sure selectors.EpollSelecrtor.select() works when no FD is registered.
 ..
 
 .. bpo: 22959
-.. date: 7480
+.. date: 8820
 .. nonce: Vxt3EP
 .. section: Library
 
@@ -1270,7 +1270,7 @@ check_hostname attribute over the *check_hostname* parameter.
 ..
 
 .. bpo: 22696
-.. date: 7479
+.. date: 8819
 .. nonce: pvdcxs
 .. section: Library
 
@@ -1279,7 +1279,7 @@ Add function :func:`sys.is_finalizing` to know about interpreter shutdown.
 ..
 
 .. bpo: 16043
-.. date: 7478
+.. date: 8818
 .. nonce: TGIC7t
 .. section: Library
 
@@ -1289,7 +1289,7 @@ return. This resolves CVE-2013-1753.
 ..
 
 .. bpo: 14099
-.. date: 7477
+.. date: 8817
 .. nonce: GJ5meQ
 .. section: Library
 
@@ -1301,7 +1301,7 @@ to the constructor.
 ..
 
 .. bpo: 22966
-.. date: 7476
+.. date: 8816
 .. nonce: zIxDrT
 .. section: Library
 
@@ -1311,7 +1311,7 @@ source file containing multiple dots in the source file name.
 ..
 
 .. bpo: 21971
-.. date: 7475
+.. date: 8815
 .. nonce: XlTc22
 .. section: Library
 
@@ -1320,7 +1320,7 @@ Update turtledemo doc and add module to the index.
 ..
 
 .. bpo: 21032
-.. date: 7474
+.. date: 8814
 .. nonce: wxT_41
 .. section: Library
 
@@ -1330,7 +1330,7 @@ Martin Panter.
 ..
 
 .. bpo: 22407
-.. date: 7473
+.. date: 8813
 .. nonce: CWi1wX
 .. section: Library
 
@@ -1340,7 +1340,7 @@ newer worked.
 ..
 
 .. bpo: 22902
-.. date: 7472
+.. date: 8812
 .. nonce: ZqXriA
 .. section: Library
 
@@ -1350,7 +1350,7 @@ uuid.getnode().  Pach by Bruno Cauet.
 ..
 
 .. bpo: 22960
-.. date: 7471
+.. date: 8811
 .. nonce: 2VDILT
 .. section: Library
 
@@ -1359,7 +1359,7 @@ Add a context argument to xmlrpclib.ServerProxy constructor.
 ..
 
 .. bpo: 22389
-.. date: 7470
+.. date: 8810
 .. nonce: 82DuwD
 .. section: Library
 
@@ -1368,7 +1368,7 @@ Add contextlib.redirect_stderr().
 ..
 
 .. bpo: 21356
-.. date: 7469
+.. date: 8809
 .. nonce: 8NY75J
 .. section: Library
 
@@ -1378,7 +1378,7 @@ function is checked during the compilation. Patch written by Bernard Spil.
 ..
 
 .. bpo: 22915
-.. date: 7468
+.. date: 8808
 .. nonce: 709UAo
 .. section: Library
 
@@ -1387,7 +1387,7 @@ SAX parser now supports files opened with file descriptor or bytes path.
 ..
 
 .. bpo: 22609
-.. date: 7467
+.. date: 8807
 .. nonce: mmLoeb
 .. section: Library
 
@@ -1397,7 +1397,7 @@ now accept the self keyword argument.
 ..
 
 .. bpo: 22940
-.. date: 7466
+.. date: 8806
 .. nonce: SP99Nf
 .. section: Library
 
@@ -1406,7 +1406,7 @@ Add readline.append_history_file.
 ..
 
 .. bpo: 19676
-.. date: 7465
+.. date: 8805
 .. nonce: Wijwr8
 .. section: Library
 
@@ -1415,7 +1415,7 @@ Added the "namereplace" error handler.
 ..
 
 .. bpo: 22788
-.. date: 7464
+.. date: 8804
 .. nonce: vofL9e
 .. section: Library
 
@@ -1424,7 +1424,7 @@ Add *context* parameter to logging.handlers.HTTPHandler.
 ..
 
 .. bpo: 22921
-.. date: 7463
+.. date: 8803
 .. nonce: a4wx1C
 .. section: Library
 
@@ -1434,7 +1434,7 @@ support SNI.
 ..
 
 .. bpo: 22894
-.. date: 7462
+.. date: 8802
 .. nonce: 4AkwPA
 .. section: Library
 
@@ -1444,7 +1444,7 @@ mode, even in the absence of failures.
 ..
 
 .. bpo: 22796
-.. date: 7461
+.. date: 8801
 .. nonce: _pFPFA
 .. section: Library
 
@@ -1454,7 +1454,7 @@ injection attacks.
 ..
 
 .. bpo: 22370
-.. date: 7460
+.. date: 8800
 .. nonce: j4y21u
 .. section: Library
 
@@ -1463,7 +1463,7 @@ Windows detection in pathlib is now more robust.
 ..
 
 .. bpo: 22841
-.. date: 7459
+.. date: 8799
 .. nonce: 8wpk7T
 .. section: Library
 
@@ -1472,7 +1472,7 @@ Reject coroutines in asyncio add_signal_handler(). Patch by Ludovic.Gasc.
 ..
 
 .. bpo: 19494
-.. date: 7458
+.. date: 8798
 .. nonce: 7O5O8k
 .. section: Library
 
@@ -1481,7 +1481,7 @@ Added urllib.request.HTTPBasicPriorAuthHandler. Patch by Matej Cepl.
 ..
 
 .. bpo: 22578
-.. date: 7457
+.. date: 8797
 .. nonce: 6XZ0Jf
 .. section: Library
 
@@ -1490,7 +1490,7 @@ Added attributes to the re.error class.
 ..
 
 .. bpo: 22849
-.. date: 7456
+.. date: 8796
 .. nonce: AqBPyj
 .. section: Library
 
@@ -1499,7 +1499,7 @@ Fix possible double free in the io.TextIOWrapper constructor.
 ..
 
 .. bpo: 12728
-.. date: 7455
+.. date: 8795
 .. nonce: rHZmXO
 .. section: Library
 
@@ -1509,7 +1509,7 @@ lowercase are now matched in case-insensitive regular expressions.
 ..
 
 .. bpo: 22821
-.. date: 7454
+.. date: 8794
 .. nonce: 30cQ-U
 .. section: Library
 
@@ -1518,7 +1518,7 @@ Fixed fcntl() with integer argument on 64-bit big-endian platforms.
 ..
 
 .. bpo: 21650
-.. date: 7453
+.. date: 8793
 .. nonce: 62MLqr
 .. section: Library
 
@@ -1527,7 +1527,7 @@ Add an `--sort-keys` option to json.tool CLI.
 ..
 
 .. bpo: 22824
-.. date: 7452
+.. date: 8792
 .. nonce: d5Txvr
 .. section: Library
 
@@ -1537,7 +1537,7 @@ contributed by Berker Peksag.
 ..
 
 .. bpo: 22824
-.. date: 7451
+.. date: 8791
 .. nonce: H_r9uH
 .. section: Library
 
@@ -1547,7 +1547,7 @@ unnecessary empty list.  Suggested by Serhiy Storchaka.
 ..
 
 .. bpo: 22406
-.. date: 7450
+.. date: 8790
 .. nonce: sPlVbI
 .. section: Library
 
@@ -1557,7 +1557,7 @@ Panter.
 ..
 
 .. bpo: 17293
-.. date: 7449
+.. date: 8789
 .. nonce: Hk06bO
 .. section: Library
 
@@ -1567,7 +1567,7 @@ patch by Aivars Kalvāns.
 ..
 
 .. bpo: 22769
-.. date: 7448
+.. date: 8788
 .. nonce: PunnvQ
 .. section: Library
 
@@ -1576,7 +1576,7 @@ Fixed ttk.Treeview.tag_has() when called without arguments.
 ..
 
 .. bpo: 22417
-.. date: 7447
+.. date: 8787
 .. nonce: To4b7U
 .. section: Library
 
@@ -1585,7 +1585,7 @@ Verify certificates by default in httplib (PEP 476).
 ..
 
 .. bpo: 22775
-.. date: 7446
+.. date: 8786
 .. nonce: V5aCUz
 .. section: Library
 
@@ -1595,7 +1595,7 @@ Patch by Tim Graham.
 ..
 
 .. bpo: 22776
-.. date: 7445
+.. date: 8785
 .. nonce: xNcRse
 .. section: Library
 
@@ -1604,7 +1604,7 @@ Brought excluded code into the scope of a try block in SysLogHandler.emit().
 ..
 
 .. bpo: 22665
-.. date: 7444
+.. date: 8784
 .. nonce: j6Jlp8
 .. section: Library
 
@@ -1613,7 +1613,7 @@ Add missing get_terminal_size and SameFileError to shutil.__all__.
 ..
 
 .. bpo: 6623
-.. date: 7443
+.. date: 8783
 .. nonce: 6LOidS
 .. section: Library
 
@@ -1622,7 +1622,7 @@ Remove deprecated Netrc class in the ftplib module. Patch by Matt Chaput.
 ..
 
 .. bpo: 17381
-.. date: 7442
+.. date: 8782
 .. nonce: 4J5yv7
 .. section: Library
 
@@ -1631,7 +1631,7 @@ Fixed handling of case-insensitive ranges in regular expressions.
 ..
 
 .. bpo: 22410
-.. date: 7441
+.. date: 8781
 .. nonce: 99YFdd
 .. section: Library
 
@@ -1641,7 +1641,7 @@ regular expressions taking into account the locale.
 ..
 
 .. bpo: 22759
-.. date: 7440
+.. date: 8780
 .. nonce: BJPdiL
 .. section: Library
 
@@ -1651,7 +1651,7 @@ when the underlying stat call raises NotADirectoryError.
 ..
 
 .. bpo: 8876
-.. date: 7439
+.. date: 8779
 .. nonce: A83Av4
 .. section: Library
 
@@ -1661,7 +1661,7 @@ This allows use with special filesystems such as VirtualBox shared folders.
 ..
 
 .. bpo: 22217
-.. date: 7438
+.. date: 8778
 .. nonce: nXzGur
 .. section: Library
 
@@ -1670,7 +1670,7 @@ Implemented reprs of classes in the zipfile module.
 ..
 
 .. bpo: 22457
-.. date: 7437
+.. date: 8777
 .. nonce: Xd2Mk-
 .. section: Library
 
@@ -1679,7 +1679,7 @@ Honour load_tests in the start_dir of discovery.
 ..
 
 .. bpo: 18216
-.. date: 7436
+.. date: 8776
 .. nonce: trTZw4
 .. section: Library
 
@@ -1689,7 +1689,7 @@ number.  Patch by Aaron Hill.
 ..
 
 .. bpo: 13918
-.. date: 7435
+.. date: 8775
 .. nonce: -OnUhD
 .. section: Library
 
@@ -1700,7 +1700,7 @@ converting it to a specific type.  Patch by Cédric Krier.
 ..
 
 .. bpo: 22676
-.. date: 7434
+.. date: 8774
 .. nonce: d2v8QM
 .. section: Library
 
@@ -1710,7 +1710,7 @@ less slow.
 ..
 
 .. bpo: 18853
-.. date: 7433
+.. date: 8773
 .. nonce: 76DrPD
 .. section: Library
 
@@ -1719,7 +1719,7 @@ Fixed ResourceWarning in shlex.__nain__.
 ..
 
 .. bpo: 9351
-.. date: 7432
+.. date: 8772
 .. nonce: u5UI-6
 .. section: Library
 
@@ -1729,7 +1729,7 @@ ignored when also set on the parent parser.
 ..
 
 .. bpo: 7559
-.. date: 7431
+.. date: 8771
 .. nonce: QG35ZP
 .. section: Library
 
@@ -1740,7 +1740,7 @@ already failed.
 ..
 
 .. bpo: 19746
-.. date: 7430
+.. date: 8770
 .. nonce: S1dg1K
 .. section: Library
 
@@ -1751,7 +1751,7 @@ these non-fatal errors encountered during discovery.
 ..
 
 .. bpo: 21991
-.. date: 7429
+.. date: 8769
 .. nonce: Mkm0IN
 .. section: Library
 
@@ -1762,7 +1762,7 @@ was created on each access of the attribute.
 ..
 
 .. bpo: 22638
-.. date: 7428
+.. date: 8768
 .. nonce: Ur73gJ
 .. section: Library
 
@@ -1772,7 +1772,7 @@ enabled by instantiating a SSLContext manually.
 ..
 
 .. bpo: 22641
-.. date: 7427
+.. date: 8767
 .. nonce: m0ldtl
 .. section: Library
 
@@ -1782,7 +1782,7 @@ using ssl.create_default_context(), for stronger security.
 ..
 
 .. bpo: 17401
-.. date: 7426
+.. date: 8766
 .. nonce: SZd19P
 .. section: Library
 
@@ -1791,7 +1791,7 @@ Include closefd in io.FileIO repr.
 ..
 
 .. bpo: 21338
-.. date: 7425
+.. date: 8765
 .. nonce: evDyHD
 .. section: Library
 
@@ -1802,7 +1802,7 @@ have a multilevel value. Patch by Thomas Kluyver.
 ..
 
 .. bpo: 20152
-.. date: 7424
+.. date: 8764
 .. nonce: 9_o92A
 .. section: Library
 
@@ -1811,7 +1811,7 @@ Convert the array and cmath modules to Argument Clinic.
 ..
 
 .. bpo: 18643
-.. date: 7423
+.. date: 8763
 .. nonce: 6Qdc0J
 .. section: Library
 
@@ -1820,7 +1820,7 @@ Add socket.socketpair() on Windows.
 ..
 
 .. bpo: 22435
-.. date: 7422
+.. date: 8762
 .. nonce: s2U7Zm
 .. section: Library
 
@@ -1829,7 +1829,7 @@ Fix a file descriptor leak when socketserver bind fails.
 ..
 
 .. bpo: 13096
-.. date: 7421
+.. date: 8761
 .. nonce: rsailB
 .. section: Library
 
@@ -1838,7 +1838,7 @@ Fixed segfault in CTypes POINTER handling of large values.
 ..
 
 .. bpo: 11694
-.. date: 7420
+.. date: 8760
 .. nonce: JuDrch
 .. section: Library
 
@@ -1848,7 +1848,7 @@ and Claudiu Popa.
 ..
 
 .. bpo: 19380
-.. date: 7419
+.. date: 8759
 .. nonce: nqgoRQ
 .. section: Library
 
@@ -1857,7 +1857,7 @@ Optimized parsing of regular expressions.
 ..
 
 .. bpo: 1519638
-.. date: 7418
+.. date: 8758
 .. nonce: 2pbuog
 .. section: Library
 
@@ -1867,7 +1867,7 @@ re.subn().
 ..
 
 .. bpo: 18615
-.. date: 7417
+.. date: 8757
 .. nonce: 65TxnY
 .. section: Library
 
@@ -1876,7 +1876,7 @@ sndhdr.what/whathdr now return a namedtuple.
 ..
 
 .. bpo: 22462
-.. date: 7416
+.. date: 8756
 .. nonce: 1h4Kpr
 .. section: Library
 
@@ -1886,7 +1886,7 @@ tracebacks.
 ..
 
 .. bpo: 21965
-.. date: 7415
+.. date: 8755
 .. nonce: n_jnXs
 .. section: Library
 
@@ -1895,7 +1895,7 @@ Add support for in-memory SSL to the ssl module.  Patch by Geert Jansen.
 ..
 
 .. bpo: 21173
-.. date: 7414
+.. date: 8754
 .. nonce: egkbEx
 .. section: Library
 
@@ -1905,7 +1905,7 @@ alive.
 ..
 
 .. bpo: 11866
-.. date: 7413
+.. date: 8753
 .. nonce: xrvbIC
 .. section: Library
 
@@ -1914,7 +1914,7 @@ Eliminated race condition in the computation of names for new threads.
 ..
 
 .. bpo: 21905
-.. date: 7412
+.. date: 8752
 .. nonce: coKyRo
 .. section: Library
 
@@ -1924,7 +1924,7 @@ iterating.  Patch by Olivier Grisel.
 ..
 
 .. bpo: 11271
-.. date: 7411
+.. date: 8751
 .. nonce: ZYiJru
 .. section: Library
 
@@ -1935,7 +1935,7 @@ ProcessPoolExecutor.  Patch by Dan O'Reilly.
 ..
 
 .. bpo: 21883
-.. date: 7410
+.. date: 8750
 .. nonce: qpuQu6
 .. section: Library
 
@@ -1945,7 +1945,7 @@ error message for unsupported or mismatched types of arguments.
 ..
 
 .. bpo: 22219
-.. date: 7409
+.. date: 8749
 .. nonce: l9Enh9
 .. section: Library
 
@@ -1955,7 +1955,7 @@ directories) in ZIP file.
 ..
 
 .. bpo: 22449
-.. date: 7408
+.. date: 8748
 .. nonce: nFW_Fl
 .. section: Library
 
@@ -1965,7 +1965,7 @@ variables SSL_CERT_DIR and SSL_CERT_FILE on Windows.
 ..
 
 .. bpo: 22508
-.. date: 7407
+.. date: 8747
 .. nonce: 2LbnGQ
 .. section: Library
 
@@ -1976,7 +1976,7 @@ several releases.
 ..
 
 .. bpo: 20076
-.. date: 7406
+.. date: 8746
 .. nonce: -7OIVB
 .. section: Library
 
@@ -1985,7 +1985,7 @@ Added non derived UTF-8 aliases to locale aliases table.
 ..
 
 .. bpo: 20079
-.. date: 7405
+.. date: 8745
 .. nonce: qM949O
 .. section: Library
 
@@ -1994,7 +1994,7 @@ Added locales supported in glibc 2.18 to locale alias table.
 ..
 
 .. bpo: 20218
-.. date: 7404
+.. date: 8744
 .. nonce: CMgOyE
 .. section: Library
 
@@ -2004,7 +2004,7 @@ to pathlib.Path objects.
 ..
 
 .. bpo: 22396
-.. date: 7403
+.. date: 8743
 .. nonce: cQSizA
 .. section: Library
 
@@ -2014,7 +2014,7 @@ os.posix_fallocate() because their prototypes in system headers are wrong.
 ..
 
 .. bpo: 22517
-.. date: 7402
+.. date: 8742
 .. nonce: qT6-aB
 .. section: Library
 
@@ -2023,7 +2023,7 @@ When an io.BufferedRWPair object is deallocated, clear its weakrefs.
 ..
 
 .. bpo: 22437
-.. date: 7401
+.. date: 8741
 .. nonce: MRVnmQ
 .. section: Library
 
@@ -2033,7 +2033,7 @@ Number of capturing groups in regular expression is no longer limited by
 ..
 
 .. bpo: 17442
-.. date: 7400
+.. date: 8740
 .. nonce: rnc87D
 .. section: Library
 
@@ -2043,7 +2043,7 @@ showtraceback method, to match the built in interactive interpreter.
 ..
 
 .. bpo: 23392
-.. date: 7399
+.. date: 8739
 .. nonce: Pe7_WK
 .. section: Library
 
@@ -2052,7 +2052,7 @@ Added tests for marshal C API that works with FILE*.
 ..
 
 .. bpo: 10510
-.. date: 7398
+.. date: 8738
 .. nonce: N-ntcD
 .. section: Library
 
@@ -2062,7 +2062,7 @@ line endings.
 ..
 
 .. bpo: 9850
-.. date: 7397
+.. date: 8737
 .. nonce: D-UnVi
 .. section: Library
 
@@ -2071,7 +2071,7 @@ Fixed macpath.join() for empty first component.  Patch by Oleg Oshmyan.
 ..
 
 .. bpo: 5309
-.. date: 7396
+.. date: 8736
 .. nonce: pVMmQ8
 .. section: Library
 
@@ -2081,7 +2081,7 @@ parallel building of extension modules.
 ..
 
 .. bpo: 22448
-.. date: 7395
+.. date: 8735
 .. nonce: fAapvE
 .. section: Library
 
@@ -2091,7 +2091,7 @@ Patch by Joshua Moore-Oliva.
 ..
 
 .. bpo: 22427
-.. date: 7394
+.. date: 8734
 .. nonce: TZ5S_u
 .. section: Library
 
@@ -2101,7 +2101,7 @@ with statement in generator.
 ..
 
 .. bpo: 22362
-.. date: 7393
+.. date: 8733
 .. nonce: xIBThN
 .. section: Library
 
@@ -2111,7 +2111,7 @@ expressions.
 ..
 
 .. bpo: 20912
-.. date: 7392
+.. date: 8732
 .. nonce: cAq3mZ
 .. section: Library
 
@@ -2121,7 +2121,7 @@ attributes.
 ..
 
 .. bpo: 21866
-.. date: 7391
+.. date: 8731
 .. nonce: hSc4wM
 .. section: Library
 
@@ -2131,7 +2131,7 @@ allowZip64 is false.
 ..
 
 .. bpo: 22278
-.. date: 7390
+.. date: 8730
 .. nonce: abqBXZ
 .. section: Library
 
@@ -2141,7 +2141,7 @@ to issue22118 were submitted.
 ..
 
 .. bpo: 22415
-.. date: 7389
+.. date: 8729
 .. nonce: xJLAvI
 .. section: Library
 
@@ -2151,7 +2151,7 @@ Removed trailing spaces in debugging output.
 ..
 
 .. bpo: 22423
-.. date: 7388
+.. date: 8728
 .. nonce: Rtb4oT
 .. section: Library
 
@@ -2161,7 +2161,7 @@ sys.stderr is None.
 ..
 
 .. bpo: 21332
-.. date: 7387
+.. date: 8727
 .. nonce: Gwxwlr
 .. section: Library
 
@@ -2171,7 +2171,7 @@ rather than block buffering.  Patch by Akira Li.
 ..
 
 .. bpo: 21091
-.. date: 7386
+.. date: 8726
 .. nonce: M5hAtT
 .. section: Library
 
@@ -2180,7 +2180,7 @@ Fix API bug: email.message.EmailMessage.is_attachment is now a method.
 ..
 
 .. bpo: 21079
-.. date: 7385
+.. date: 8725
 .. nonce: czVcL8
 .. section: Library
 
@@ -2190,7 +2190,7 @@ when the header has parameters as well as a value.
 ..
 
 .. bpo: 22247
-.. date: 7384
+.. date: 8724
 .. nonce: sGIpR3
 .. section: Library
 
@@ -2199,7 +2199,7 @@ Add NNTPError to nntplib.__all__.
 ..
 
 .. bpo: 22366
-.. date: 7383
+.. date: 8723
 .. nonce: Dd1eFj
 .. section: Library
 
@@ -2209,7 +2209,7 @@ argument which will then be used for HTTPS connection. Patch by Alex Gaynor.
 ..
 
 .. bpo: 4180
-.. date: 7382
+.. date: 8722
 .. nonce: QBx0JK
 .. section: Library
 
@@ -2218,7 +2218,7 @@ The warnings registries are now reset when the filters are modified.
 ..
 
 .. bpo: 22419
-.. date: 7381
+.. date: 8721
 .. nonce: FqH4aC
 .. section: Library
 
@@ -2229,7 +2229,7 @@ Cook.
 ..
 
 .. bpo: 0
-.. date: 7380
+.. date: 8720
 .. nonce: y7r3O2
 .. section: Library
 
@@ -2240,7 +2240,7 @@ Bobrov.
 ..
 
 .. bpo: 20537
-.. date: 7379
+.. date: 8719
 .. nonce: E0CE54
 .. section: Library
 
@@ -2250,7 +2250,7 @@ or exception tuple. Thanks to Yury Selivanov for the patch.
 ..
 
 .. bpo: 22384
-.. date: 7378
+.. date: 8718
 .. nonce: -Nl4He
 .. section: Library
 
@@ -2260,7 +2260,7 @@ run with pythonw.exe.
 ..
 
 .. bpo: 22168
-.. date: 7377
+.. date: 8717
 .. nonce: vLeKWC
 .. section: Library
 
@@ -2269,7 +2269,7 @@ Prevent turtle AttributeError with non-default Canvas on OS X.
 ..
 
 .. bpo: 21147
-.. date: 7376
+.. date: 8716
 .. nonce: w9DE17
 .. section: Library
 
@@ -2279,7 +2279,7 @@ instead of truncating it.  Based on patch by Victor Stinner.
 ..
 
 .. bpo: 13968
-.. date: 7375
+.. date: 8715
 .. nonce: 1okGqm
 .. section: Library
 
@@ -2289,7 +2289,7 @@ The glob module now supports recursive search in subdirectories using the
 ..
 
 .. bpo: 21951
-.. date: 7374
+.. date: 8714
 .. nonce: 3vS4LK
 .. section: Library
 
@@ -2299,7 +2299,7 @@ tuple argument.
 ..
 
 .. bpo: 21951
-.. date: 7373
+.. date: 8713
 .. nonce: _CCC4v
 .. section: Library
 
@@ -2309,7 +2309,7 @@ allocation fails.
 ..
 
 .. bpo: 22338
-.. date: 7372
+.. date: 8712
 .. nonce: rKlCMz
 .. section: Library
 
@@ -2318,7 +2318,7 @@ Fix a crash in the json module on memory allocation failure.
 ..
 
 .. bpo: 12410
-.. date: 7371
+.. date: 8711
 .. nonce: oFf-cB
 .. section: Library
 
@@ -2328,7 +2328,7 @@ by Tarek Ziadé.
 ..
 
 .. bpo: 21270
-.. date: 7370
+.. date: 8710
 .. nonce: qMBaY-
 .. section: Library
 
@@ -2338,7 +2338,7 @@ as normal call attributes.
 ..
 
 .. bpo: 16662
-.. date: 7369
+.. date: 8709
 .. nonce: Nghn-Y
 .. section: Library
 
@@ -2351,7 +2351,7 @@ Warsaw.
 ..
 
 .. bpo: 22226
-.. date: 7368
+.. date: 8708
 .. nonce: T1ZMPY
 .. section: Library
 
@@ -2361,7 +2361,7 @@ Treeview.heading().
 ..
 
 .. bpo: 19524
-.. date: 7367
+.. date: 8707
 .. nonce: EQJjlF
 .. section: Library
 
@@ -2371,7 +2371,7 @@ received.  Patch by Martin Panter.
 ..
 
 .. bpo: 20421
-.. date: 7366
+.. date: 8706
 .. nonce: iR0S1s
 .. section: Library
 
@@ -2381,7 +2381,7 @@ in use.
 ..
 
 .. bpo: 19546
-.. date: 7365
+.. date: 8705
 .. nonce: 8VdYBK
 .. section: Library
 
@@ -2392,7 +2392,7 @@ Popa.
 ..
 
 .. bpo: 22051
-.. date: 7364
+.. date: 8704
 .. nonce: cUjFqL
 .. section: Library
 
@@ -2403,7 +2403,7 @@ a demo is run, but not on import.
 ..
 
 .. bpo: 21933
-.. date: 7363
+.. date: 8703
 .. nonce: IhMjN1
 .. section: Library
 
@@ -2414,7 +2414,7 @@ Cho.
 ..
 
 .. bpo: 21597
-.. date: 7362
+.. date: 8702
 .. nonce: aPTCWJ
 .. section: Library
 
@@ -2426,7 +2426,7 @@ widened on small screens.  Original patches by Jan Kanis and Lita Cho.
 ..
 
 .. bpo: 18132
-.. date: 7361
+.. date: 8701
 .. nonce: 2R2nwM
 .. section: Library
 
@@ -2436,7 +2436,7 @@ patches by Jan Kanis and Lita Cho.
 ..
 
 .. bpo: 22043
-.. date: 7360
+.. date: 8700
 .. nonce: Q6RvGL
 .. section: Library
 
@@ -2447,7 +2447,7 @@ clock, instead of the system clock, when a timeout is used.
 ..
 
 .. bpo: 21527
-.. date: 7359
+.. date: 8699
 .. nonce: N5WPxr
 .. section: Library
 
@@ -2457,7 +2457,7 @@ number of CPUs.  Patch by Claudiu Popa.
 ..
 
 .. bpo: 22216
-.. date: 7358
+.. date: 8698
 .. nonce: Cmalu6
 .. section: Library
 
@@ -2468,7 +2468,7 @@ connect/starttls/quit/connect/starttls sequence.
 ..
 
 .. bpo: 22098
-.. date: 7357
+.. date: 8697
 .. nonce: 5JYiQN
 .. section: Library
 
@@ -2479,7 +2479,7 @@ Claudiu Popa.
 ..
 
 .. bpo: 22185
-.. date: 7356
+.. date: 8696
 .. nonce: 1SCCIK
 .. section: Library
 
@@ -2490,7 +2490,7 @@ Zongker.
 ..
 
 .. bpo: 22287
-.. date: 7355
+.. date: 8695
 .. nonce: awH2AI
 .. section: Library
 
@@ -2501,7 +2501,7 @@ Solaris and on Linux (only with glibc older than 2.17).
 ..
 
 .. bpo: 22182
-.. date: 7354
+.. date: 8694
 .. nonce: 5EG1Bc
 .. section: Library
 
@@ -2511,7 +2511,7 @@ Patch by Claudiu Popa.
 ..
 
 .. bpo: 0
-.. date: 7353
+.. date: 8693
 .. nonce: zBfe8J
 .. section: Library
 
@@ -2521,7 +2521,7 @@ than a potentially risky preexec_fn=os.setsid call.
 ..
 
 .. bpo: 22042
-.. date: 7352
+.. date: 8692
 .. nonce: WZvb8s
 .. section: Library
 
@@ -2531,7 +2531,7 @@ in blocking mode.
 ..
 
 .. bpo: 16808
-.. date: 7351
+.. date: 8691
 .. nonce: kPy_5U
 .. section: Library
 
@@ -2541,7 +2541,7 @@ Daniel Shahaf.
 ..
 
 .. bpo: 22236
-.. date: 7350
+.. date: 8690
 .. nonce: 1utXkg
 .. section: Library
 
@@ -2550,7 +2550,7 @@ Fixed Tkinter images copying operations in NoDefaultRoot mode.
 ..
 
 .. bpo: 2527
-.. date: 7349
+.. date: 8689
 .. nonce: fR2GS6
 .. section: Library
 
@@ -2560,7 +2560,7 @@ globals namespace in which the timed code is executed. Patch by Ben Roberts.
 ..
 
 .. bpo: 22118
-.. date: 7348
+.. date: 8688
 .. nonce: 3gdkOF
 .. section: Library
 
@@ -2570,7 +2570,7 @@ URLs, rather than RFCs 1808 and 2396. Patch by Demian Brecht.
 ..
 
 .. bpo: 21549
-.. date: 7347
+.. date: 8687
 .. nonce: i1LVvg
 .. section: Library
 
@@ -2579,7 +2579,7 @@ Added the "members" parameter to TarFile.list().
 ..
 
 .. bpo: 19628
-.. date: 7346
+.. date: 8686
 .. nonce: ssQVP8
 .. section: Library
 
@@ -2588,7 +2588,7 @@ Allow compileall recursion depth to be specified with a -r option.
 ..
 
 .. bpo: 15696
-.. date: 7345
+.. date: 8685
 .. nonce: PTwXYJ
 .. section: Library
 
@@ -2597,7 +2597,7 @@ Add a __sizeof__ implementation for mmap objects on Windows.
 ..
 
 .. bpo: 22068
-.. date: 7344
+.. date: 8684
 .. nonce: wCdaW0
 .. section: Library
 
@@ -2606,7 +2606,7 @@ Avoided reference loops with Variables and Fonts in Tkinter.
 ..
 
 .. bpo: 22165
-.. date: 7343
+.. date: 8683
 .. nonce: J1np4o
 .. section: Library
 
@@ -2615,7 +2615,7 @@ SimpleHTTPRequestHandler now supports undecodable file names.
 ..
 
 .. bpo: 15381
-.. date: 7342
+.. date: 8682
 .. nonce: Ia8pf6
 .. section: Library
 
@@ -2624,7 +2624,7 @@ Optimized line reading in io.BytesIO.
 ..
 
 .. bpo: 8797
-.. date: 7341
+.. date: 8681
 .. nonce: aJcIPu
 .. section: Library
 
@@ -2634,7 +2634,7 @@ Sam Bull.
 ..
 
 .. bpo: 20729
-.. date: 7340
+.. date: 8680
 .. nonce: I-1Lap
 .. section: Library
 
@@ -2644,7 +2644,7 @@ module.
 ..
 
 .. bpo: 21448
-.. date: 7339
+.. date: 8679
 .. nonce: THJSYB
 .. section: Library
 
@@ -2654,7 +2654,7 @@ Original patch by Raymond Hettinger.
 ..
 
 .. bpo: 22184
-.. date: 7338
+.. date: 8678
 .. nonce: UCbSOt
 .. section: Library
 
@@ -2664,7 +2664,7 @@ error message when the user forgets the required parameters.
 ..
 
 .. bpo: 17923
-.. date: 7337
+.. date: 8677
 .. nonce: YI_QjG
 .. section: Library
 
@@ -2674,7 +2674,7 @@ on patch by Delhallt.
 ..
 
 .. bpo: 21725
-.. date: 7336
+.. date: 8676
 .. nonce: eIu-2N
 .. section: Library
 
@@ -2683,7 +2683,7 @@ Added support for RFC 6531 (SMTPUTF8) in smtpd.
 ..
 
 .. bpo: 22176
-.. date: 7335
+.. date: 8675
 .. nonce: rgbRyg
 .. section: Library
 
@@ -2693,7 +2693,7 @@ the Linux AArch64 and POWERPC ELF ABIv2 little endian architectures.
 ..
 
 .. bpo: 5411
-.. date: 7334
+.. date: 8674
 .. nonce: 5Utapn
 .. section: Library
 
@@ -2702,17 +2702,17 @@ Added support for the "xztar" format in the shutil module.
 ..
 
 .. bpo: 21121
-.. date: 7333
+.. date: 8673
 .. nonce: ZLsRil
 .. section: Library
 
-Don't force 3rd party C extensions to be built with
-``-Werror=declaration-after-statement``.
+Don't force 3rd party C extensions to be built with -Werror=declaration-
+after-statement.
 
 ..
 
 .. bpo: 21975
-.. date: 7332
+.. date: 8672
 .. nonce: MI8ntO
 .. section: Library
 
@@ -2723,7 +2723,7 @@ __new__() method.
 ..
 
 .. bpo: 20170
-.. date: 7331
+.. date: 8671
 .. nonce: 8QfhN7
 .. section: Library
 
@@ -2732,7 +2732,7 @@ Convert posixmodule to use Argument Clinic.
 ..
 
 .. bpo: 21539
-.. date: 7330
+.. date: 8670
 .. nonce: YccmZF
 .. section: Library
 
@@ -2743,7 +2743,7 @@ by Berker Peksag.
 ..
 
 .. bpo: 22127
-.. date: 7329
+.. date: 8669
 .. nonce: 0l2OO5
 .. section: Library
 
@@ -2753,7 +2753,7 @@ for numeric IPs).
 ..
 
 .. bpo: 21047
-.. date: 7328
+.. date: 8668
 .. nonce: XfUQG3
 .. section: Library
 
@@ -2763,7 +2763,7 @@ True.  Patch by Berker Peksag.
 ..
 
 .. bpo: 0
-.. date: 7327
+.. date: 8667
 .. nonce: 56bAnQ
 .. section: Library
 
@@ -2772,7 +2772,7 @@ Add an __all__ to html.entities.
 ..
 
 .. bpo: 15114
-.. date: 7326
+.. date: 8666
 .. nonce: jXwseC
 .. section: Library
 
@@ -2782,7 +2782,7 @@ HTMLParserError exception have been removed.
 ..
 
 .. bpo: 22085
-.. date: 7325
+.. date: 8665
 .. nonce: 3JM_Aw
 .. section: Library
 
@@ -2791,7 +2791,7 @@ Dropped support of Tk 8.3 in Tkinter.
 ..
 
 .. bpo: 21580
-.. date: 7324
+.. date: 8664
 .. nonce: 3ssycS
 .. section: Library
 
@@ -2801,7 +2801,7 @@ this allows initializing images from binary data.
 ..
 
 .. bpo: 22003
-.. date: 7323
+.. date: 8663
 .. nonce: 4ZIDS1
 .. section: Library
 
@@ -2812,7 +2812,7 @@ Patch by David Wilson.
 ..
 
 .. bpo: 22018
-.. date: 7322
+.. date: 8662
 .. nonce: 6ApxSH
 .. section: Library
 
@@ -2822,7 +2822,7 @@ is that Python depends to the WinSock library.
 ..
 
 .. bpo: 22054
-.. date: 7321
+.. date: 8661
 .. nonce: zp6Svw
 .. section: Library
 
@@ -2833,7 +2833,7 @@ True otherwise). These functions are not available on Windows.
 ..
 
 .. bpo: 17172
-.. date: 7320
+.. date: 8660
 .. nonce: R_LI_2
 .. section: Library
 
@@ -2843,7 +2843,7 @@ Patch by Lita Cho.
 ..
 
 .. bpo: 21704
-.. date: 7319
+.. date: 8659
 .. nonce: gL3ikj
 .. section: Library
 
@@ -2853,7 +2853,7 @@ Patch by Arfrever Frehtes Taifersar Arahesis.
 ..
 
 .. bpo: 20173
-.. date: 7318
+.. date: 8658
 .. nonce: FAL-4L
 .. section: Library
 
@@ -2863,7 +2863,7 @@ Kok.
 ..
 
 .. bpo: 0
-.. date: 7317
+.. date: 8657
 .. nonce: G25tq3
 .. section: Library
 
@@ -2873,7 +2873,7 @@ closed socket. repr(socket.socket) already works fine.
 ..
 
 .. bpo: 22033
-.. date: 7316
+.. date: 8656
 .. nonce: nkBNci
 .. section: Library
 
@@ -2883,7 +2883,7 @@ instead of hardcoded one.
 ..
 
 .. bpo: 21947
-.. date: 7315
+.. date: 8655
 .. nonce: mlisu-
 .. section: Library
 
@@ -2893,7 +2893,7 @@ gi_code attribute. Patch by Clement Rouault.
 ..
 
 .. bpo: 16133
-.. date: 7314
+.. date: 8654
 .. nonce: tYuYQF
 .. section: Library
 
@@ -2903,7 +2903,7 @@ exceptions.
 ..
 
 .. bpo: 22044
-.. date: 7313
+.. date: 8653
 .. nonce: t09GRU
 .. section: Library
 
@@ -2912,7 +2912,7 @@ Fixed premature DECREF in call_tzinfo_method. Patch by Tom Flanagan.
 ..
 
 .. bpo: 19884
-.. date: 7312
+.. date: 8652
 .. nonce: v73gSn
 .. section: Library
 
@@ -2924,7 +2924,7 @@ characters.
 ..
 
 .. bpo: 4350
-.. date: 7311
+.. date: 8651
 .. nonce: nrTzJn
 .. section: Library
 
@@ -2934,7 +2934,7 @@ methods.
 ..
 
 .. bpo: 6167
-.. date: 7310
+.. date: 8650
 .. nonce: n9dV_D
 .. section: Library
 
@@ -2944,7 +2944,7 @@ is not specified.  Scrollbar.set() now always accepts only 2 arguments.
 ..
 
 .. bpo: 15275
-.. date: 7309
+.. date: 8649
 .. nonce: jk0tTI
 .. section: Library
 
@@ -2953,7 +2953,7 @@ Clean up and speed up the ntpath module.
 ..
 
 .. bpo: 21888
-.. date: 7308
+.. date: 8648
 .. nonce: danlpz
 .. section: Library
 
@@ -2962,7 +2962,7 @@ plistlib's load() and loads() now work if the fmt parameter is specified.
 ..
 
 .. bpo: 22032
-.. date: 7307
+.. date: 8647
 .. nonce: UklzQW
 .. section: Library
 
@@ -2972,7 +2972,7 @@ qualified class names of Python implemented classes.
 ..
 
 .. bpo: 22031
-.. date: 7306
+.. date: 8646
 .. nonce: 9aazp1
 .. section: Library
 
@@ -2982,7 +2982,7 @@ id in form " at 0x...".
 ..
 
 .. bpo: 22018
-.. date: 7305
+.. date: 8645
 .. nonce: b_JTHH
 .. section: Library
 
@@ -2992,7 +2992,7 @@ signal.set_wakeup_fd() now raises an OSError instead of a ValueError on
 ..
 
 .. bpo: 21044
-.. date: 7304
+.. date: 8644
 .. nonce: 16xo9u
 .. section: Library
 
@@ -3002,7 +3002,7 @@ on patch by Antoine Pietri.
 ..
 
 .. bpo: 21966
-.. date: 7303
+.. date: 8643
 .. nonce: hHD9MK
 .. section: Library
 
@@ -3011,7 +3011,7 @@ Respect -q command-line option when code module is ran.
 ..
 
 .. bpo: 19076
-.. date: 7302
+.. date: 8642
 .. nonce: xCoIai
 .. section: Library
 
@@ -3020,7 +3020,7 @@ Don't pass the redundant 'file' argument to self.error().
 ..
 
 .. bpo: 16382
-.. date: 7301
+.. date: 8641
 .. nonce: -XBK7z
 .. section: Library
 
@@ -3030,19 +3030,19 @@ by Phil Elson.
 ..
 
 .. bpo: 21932
-.. date: 7300
+.. date: 8640
 .. nonce: LK_5S1
 .. section: Library
 
 os.read() now uses a :c:func:`Py_ssize_t` type instead of :c:type:`int` for
-the size to support reading more than 2 GiB at once. On Windows, the size is
+the size to support reading more than 2 GB at once. On Windows, the size is
 truncted to INT_MAX. As any call to os.read(), the OS may read less bytes
 than the number of requested bytes.
 
 ..
 
 .. bpo: 21942
-.. date: 7299
+.. date: 8639
 .. nonce: TLOS41
 .. section: Library
 
@@ -3051,7 +3051,7 @@ Fixed source file viewing in pydoc's server mode on Windows.
 ..
 
 .. bpo: 11259
-.. date: 7298
+.. date: 8638
 .. nonce: GxfYnE
 .. section: Library
 
@@ -3061,7 +3061,7 @@ of received bytes is negative.
 ..
 
 .. bpo: 12523
-.. date: 7297
+.. date: 8637
 .. nonce: XBdAky
 .. section: Library
 
@@ -3071,7 +3071,7 @@ string
 ..
 
 .. bpo: 21707
-.. date: 7296
+.. date: 8636
 .. nonce: rrY_wd
 .. section: Library
 
@@ -3080,7 +3080,7 @@ Add missing kwonlyargcount argument to ModuleFinder.replace_paths_in_code().
 ..
 
 .. bpo: 20639
-.. date: 7295
+.. date: 8635
 .. nonce: YdvOpp
 .. section: Library
 
@@ -3090,7 +3090,7 @@ July Tikhonov.
 ..
 
 .. bpo: 21714
-.. date: 7294
+.. date: 8634
 .. nonce: HhkGXW
 .. section: Library
 
@@ -3100,7 +3100,7 @@ patch by Antony Lee.
 ..
 
 .. bpo: 15014
-.. date: 7293
+.. date: 8633
 .. nonce: dB50zb
 .. section: Library
 
@@ -3110,7 +3110,7 @@ and used it internally in the login method.
 ..
 
 .. bpo: 21151
-.. date: 7292
+.. date: 8632
 .. nonce: o7IuiD
 .. section: Library
 
@@ -3120,7 +3120,7 @@ Fixed a segfault in the winreg module when ``None`` is passed as a
 ..
 
 .. bpo: 21090
-.. date: 7291
+.. date: 8631
 .. nonce: 20Ooif
 .. section: Library
 
@@ -3130,7 +3130,7 @@ I/O errors if at least the first C call read() succeed.
 ..
 
 .. bpo: 5800
-.. date: 7290
+.. date: 8630
 .. nonce: ZJiLZP
 .. section: Library
 
@@ -3140,16 +3140,16 @@ by Pablo Torres Navarrete and SilentGhost.
 ..
 
 .. bpo: 21781
-.. date: 7289
+.. date: 8629
 .. nonce: u_oiv9
 .. section: Library
 
-ssl.RAND_add() now supports strings longer than 2 GiB.
+ssl.RAND_add() now supports strings longer than 2 GB.
 
 ..
 
 .. bpo: 21679
-.. date: 7288
+.. date: 8628
 .. nonce: CTVT9A
 .. section: Library
 
@@ -3158,7 +3158,7 @@ Prevent extraneous fstat() calls during open().  Patch by Bohuslav Kabrda.
 ..
 
 .. bpo: 21863
-.. date: 7287
+.. date: 8627
 .. nonce: BzbwSL
 .. section: Library
 
@@ -3168,7 +3168,7 @@ to their own name.
 ..
 
 .. bpo: 11453
-.. date: 7286
+.. date: 8626
 .. nonce: 53Gr_R
 .. section: Library
 
@@ -3179,7 +3179,7 @@ can now be called twice: the second call does nothing.
 ..
 
 .. bpo: 21858
-.. date: 7285
+.. date: 8625
 .. nonce: 0hbFBG
 .. section: Library
 
@@ -3188,7 +3188,7 @@ Better handling of Python exceptions in the sqlite3 module.
 ..
 
 .. bpo: 21476
-.. date: 7284
+.. date: 8624
 .. nonce: VN-5pW
 .. section: Library
 
@@ -3198,7 +3198,7 @@ parsing, so the input file isn't unexpectedly closed.
 ..
 
 .. bpo: 20295
-.. date: 7283
+.. date: 8623
 .. nonce: U1MPhw
 .. section: Library
 
@@ -3207,7 +3207,7 @@ imghdr now recognizes OpenEXR format images.
 ..
 
 .. bpo: 21729
-.. date: 7282
+.. date: 8622
 .. nonce: dk7o_U
 .. section: Library
 
@@ -3217,7 +3217,7 @@ Patch by Claudiu Popa.
 ..
 
 .. bpo: 21491
-.. date: 7281
+.. date: 8621
 .. nonce: Zxmut-
 .. section: Library
 
@@ -3226,7 +3226,7 @@ socketserver: Fix a race condition in child processes reaping.
 ..
 
 .. bpo: 21719
-.. date: 7280
+.. date: 8620
 .. nonce: DhQz3I
 .. section: Library
 
@@ -3235,7 +3235,7 @@ Added the ``st_file_attributes`` field to os.stat_result on Windows.
 ..
 
 .. bpo: 21832
-.. date: 7279
+.. date: 8619
 .. nonce: PBA0Uu
 .. section: Library
 
@@ -3244,7 +3244,7 @@ Require named tuple inputs to be exact strings.
 ..
 
 .. bpo: 21722
-.. date: 7278
+.. date: 8618
 .. nonce: WTHuRy
 .. section: Library
 
@@ -3254,7 +3254,7 @@ uploading fails.  Patch by Martin Dengler.
 ..
 
 .. bpo: 21723
-.. date: 7277
+.. date: 8617
 .. nonce: r86fwb
 .. section: Library
 
@@ -3264,7 +3264,7 @@ Patch written by Vajrasky Kok.
 ..
 
 .. bpo: 21711
-.. date: 7276
+.. date: 8616
 .. nonce: JWPFQZ
 .. section: Library
 
@@ -3274,7 +3274,7 @@ module (it was deprecated in 3.4).
 ..
 
 .. bpo: 17552
-.. date: 7275
+.. date: 8615
 .. nonce: NunErD
 .. section: Library
 
@@ -3284,7 +3284,7 @@ using high-performance os.sendfile() on UNIX. Patch by Giampaolo Rodola'.
 ..
 
 .. bpo: 18039
-.. date: 7274
+.. date: 8614
 .. nonce: vC9hNy
 .. section: Library
 
@@ -3294,7 +3294,7 @@ value 'n'.  Patch by Claudiu Popa.
 ..
 
 .. bpo: 21326
-.. date: 7273
+.. date: 8613
 .. nonce: Y6iW3s
 .. section: Library
 
@@ -3305,7 +3305,7 @@ if the event loop was closed.
 ..
 
 .. bpo: 21766
-.. date: 7272
+.. date: 8612
 .. nonce: 0xk_xC
 .. section: Library
 
@@ -3315,7 +3315,7 @@ checking for a CGI script at that path.
 ..
 
 .. bpo: 21310
-.. date: 7271
+.. date: 8611
 .. nonce: 2mjByJ
 .. section: Library
 
@@ -3324,7 +3324,7 @@ Fixed possible resource leak in failed open().
 ..
 
 .. bpo: 21256
-.. date: 7270
+.. date: 8610
 .. nonce: dGq6cw
 .. section: Library
 
@@ -3334,7 +3334,7 @@ call. This will help to write better doctests.
 ..
 
 .. bpo: 21677
-.. date: 7269
+.. date: 8609
 .. nonce: 58CDDD
 .. section: Library
 
@@ -3343,7 +3343,7 @@ Fixed chaining nonnormalized exceptions in io close() methods.
 ..
 
 .. bpo: 11709
-.. date: 7268
+.. date: 8608
 .. nonce: JdObvL
 .. section: Library
 
@@ -3352,7 +3352,7 @@ Fix the pydoc.help function to not fail when sys.stdin is not a valid file.
 ..
 
 .. bpo: 21515
-.. date: 7267
+.. date: 8607
 .. nonce: D9TLJF
 .. section: Library
 
@@ -3361,7 +3361,7 @@ tempfile.TemporaryFile now uses os.O_TMPFILE flag is available.
 ..
 
 .. bpo: 13223
-.. date: 7266
+.. date: 8606
 .. nonce: 9AzEbN
 .. section: Library
 
@@ -3371,7 +3371,7 @@ Fix pydoc.writedoc so that the HTML documentation for methods that use
 ..
 
 .. bpo: 21463
-.. date: 7265
+.. date: 8605
 .. nonce: 09PsgH
 .. section: Library
 
@@ -3380,7 +3380,7 @@ In urllib.request, fix pruning of the FTP cache.
 ..
 
 .. bpo: 21618
-.. date: 7264
+.. date: 8604
 .. nonce: 3Z7WS3
 .. section: Library
 
@@ -3392,7 +3392,7 @@ interface the max is now ignored and all fds are closed.
 ..
 
 .. bpo: 20383
-.. date: 7263
+.. date: 8603
 .. nonce: pSPFpW
 .. section: Library
 
@@ -3402,7 +3402,7 @@ new module.
 ..
 
 .. bpo: 21552
-.. date: 7262
+.. date: 8602
 .. nonce: uVy4tM
 .. section: Library
 
@@ -3412,7 +3412,7 @@ module on 64-bit platforms.
 ..
 
 .. bpo: 14315
-.. date: 7261
+.. date: 8601
 .. nonce: YzZzS8
 .. section: Library
 
@@ -3424,7 +3424,7 @@ is ignored by other zip tools.
 ..
 
 .. bpo: 13742
-.. date: 7260
+.. date: 8600
 .. nonce: QJiVSC
 .. section: Library
 
@@ -3434,7 +3434,7 @@ contributed by Simon Sapin.)
 ..
 
 .. bpo: 21402
-.. date: 7259
+.. date: 8599
 .. nonce: 51vDXt
 .. section: Library
 
@@ -3443,7 +3443,7 @@ tkinter.ttk now works when default root window is not set.
 ..
 
 .. bpo: 3015
-.. date: 7258
+.. date: 8598
 .. nonce: FE_PII
 .. section: Library
 
@@ -3452,7 +3452,7 @@ _tkinter.create() now creates tkapp object with wantobject=1 by default.
 ..
 
 .. bpo: 10203
-.. date: 7257
+.. date: 8597
 .. nonce: zgr0hh
 .. section: Library
 
@@ -3462,7 +3462,7 @@ reverse() and negative indices.  Original patch by Claudiu Popa.
 ..
 
 .. bpo: 18807
-.. date: 7256
+.. date: 8596
 .. nonce: XP7p8B
 .. section: Library
 
@@ -3472,7 +3472,7 @@ aliases (python, python3) are now created by copying rather than symlinking.
 ..
 
 .. bpo: 20197
-.. date: 7255
+.. date: 8595
 .. nonce: nYR9fq
 .. section: Library
 
@@ -3482,7 +3482,7 @@ Aneche and Claudiu Popa.
 ..
 
 .. bpo: 21513
-.. date: 7254
+.. date: 8594
 .. nonce: ro4AOe
 .. section: Library
 
@@ -3492,7 +3492,7 @@ Speedup some properties of IP addresses (IPv4Address, IPv6Address) such as
 ..
 
 .. bpo: 21137
-.. date: 7253
+.. date: 8593
 .. nonce: wgHb_F
 .. section: Library
 
@@ -3502,7 +3502,7 @@ Improve the repr for threading.Lock() and its variants by showing the
 ..
 
 .. bpo: 21538
-.. date: 7252
+.. date: 8592
 .. nonce: Q60FWA
 .. section: Library
 
@@ -3512,7 +3512,7 @@ reference or offset size is not a power of two.
 ..
 
 .. bpo: 21455
-.. date: 7251
+.. date: 8591
 .. nonce: 6-Uvv4
 .. section: Library
 
@@ -3521,7 +3521,7 @@ Add a default backlog to socket.listen().
 ..
 
 .. bpo: 21525
-.. date: 7250
+.. date: 8590
 .. nonce: hAKOve
 .. section: Library
 
@@ -3530,7 +3530,7 @@ Most Tkinter methods which accepted tuples now accept lists too.
 ..
 
 .. bpo: 22166
-.. date: 7249
+.. date: 8589
 .. nonce: sZYhmv
 .. section: Library
 
@@ -3541,7 +3541,7 @@ of a reference leak
 ..
 
 .. bpo: 22236
-.. date: 7248
+.. date: 8588
 .. nonce: ginJSI
 .. section: Library
 
@@ -3551,7 +3551,7 @@ created for every test class.
 ..
 
 .. bpo: 10744
-.. date: 7247
+.. date: 8587
 .. nonce: kfV0wm
 .. section: Library
 
@@ -3560,7 +3560,7 @@ Fix PEP 3118 format strings on ctypes objects with a nontrivial shape.
 ..
 
 .. bpo: 20826
-.. date: 7246
+.. date: 8586
 .. nonce: 3rXqMC
 .. section: Library
 
@@ -3569,7 +3569,7 @@ Optimize ipaddress.collapse_addresses().
 ..
 
 .. bpo: 21487
-.. date: 7245
+.. date: 8585
 .. nonce: sX8YmK
 .. section: Library
 
@@ -3579,7 +3579,7 @@ ipaddress.{IPv4Network,IPv6Network}.subnets().
 ..
 
 .. bpo: 21486
-.. date: 7244
+.. date: 8584
 .. nonce: CeFKRP
 .. section: Library
 
@@ -3589,7 +3589,7 @@ ipaddress.IPv6Network.
 ..
 
 .. bpo: 13916
-.. date: 7243
+.. date: 8583
 .. nonce: D77YVH
 .. section: Library
 
@@ -3598,7 +3598,7 @@ Disallowed the surrogatepass error handler for non UTF-\* encodings.
 ..
 
 .. bpo: 20998
-.. date: 7242
+.. date: 8582
 .. nonce: fkxpXI
 .. section: Library
 
@@ -3608,7 +3608,7 @@ Original patch by Matthew Barnett.
 ..
 
 .. bpo: 21075
-.. date: 7241
+.. date: 8581
 .. nonce: f_hmEh
 .. section: Library
 
@@ -3618,7 +3618,7 @@ specified.  Patch by Sam Kimbrel.
 ..
 
 .. bpo: 19775
-.. date: 7240
+.. date: 8580
 .. nonce: yxxD_R
 .. section: Library
 
@@ -3628,7 +3628,7 @@ Kok.
 ..
 
 .. bpo: 21226
-.. date: 7239
+.. date: 8579
 .. nonce: pzGmG1
 .. section: Library
 
@@ -3637,7 +3637,7 @@ Set up modules properly in PyImport_ExecCodeModuleObject (and friends).
 ..
 
 .. bpo: 21398
-.. date: 7238
+.. date: 8578
 .. nonce: guSBXt
 .. section: Library
 
@@ -3647,7 +3647,7 @@ characters not encodable to the stdout encoding.
 ..
 
 .. bpo: 16531
-.. date: 7237
+.. date: 8577
 .. nonce: AhrY_v
 .. section: Library
 
@@ -3658,7 +3658,7 @@ existing addresses.
 ..
 
 .. bpo: 21156
-.. date: 7236
+.. date: 8576
 .. nonce: 3dmBEp
 .. section: Library
 
@@ -3667,7 +3667,7 @@ importlib.abc.InspectLoader.source_to_code() is now a staticmethod.
 ..
 
 .. bpo: 21424
-.. date: 7235
+.. date: 8575
 .. nonce: 8CJBqW
 .. section: Library
 
@@ -3677,7 +3677,7 @@ tuple comparisons.
 ..
 
 .. bpo: 21396
-.. date: 7234
+.. date: 8574
 .. nonce: cqO6DN
 .. section: Library
 
@@ -3687,7 +3687,7 @@ underlying binary stream.  Patch by akira.
 ..
 
 .. bpo: 18314
-.. date: 7233
+.. date: 8573
 .. nonce: NCd_KF
 .. section: Library
 
@@ -3696,7 +3696,7 @@ Unlink now removes junctions on Windows. Patch by Kim Gräsman
 ..
 
 .. bpo: 21088
-.. date: 7232
+.. date: 8572
 .. nonce: WOg7Xy
 .. section: Library
 
@@ -3706,7 +3706,7 @@ Clinic, the first two arguments were reversed.
 ..
 
 .. bpo: 21407
-.. date: 7231
+.. date: 8571
 .. nonce: cZjFde
 .. section: Library
 
@@ -3715,7 +3715,7 @@ _decimal: The module now supports function signatures.
 ..
 
 .. bpo: 10650
-.. date: 7230
+.. date: 8570
 .. nonce: HYT4Oe
 .. section: Library
 
@@ -3725,7 +3725,7 @@ method in the Python version.  It had never been present in the C version.
 ..
 
 .. bpo: 21469
-.. date: 7229
+.. date: 8569
 .. nonce: _fFGuq
 .. section: Library
 
@@ -3736,7 +3736,7 @@ can_fetch().
 ..
 
 .. bpo: 19414
-.. date: 7228
+.. date: 8568
 .. nonce: bAAw4D
 .. section: Library
 
@@ -3746,7 +3746,7 @@ failure if the link is deleted during iteration.
 ..
 
 .. bpo: 21421
-.. date: 7227
+.. date: 8567
 .. nonce: 5AKAat
 .. section: Library
 
@@ -3755,7 +3755,7 @@ Add __slots__ to the MappingViews ABC. Patch by Josh Rosenberg.
 ..
 
 .. bpo: 21101
-.. date: 7226
+.. date: 8566
 .. nonce: Lj-_P4
 .. section: Library
 
@@ -3764,7 +3764,7 @@ Eliminate double hashing in the C speed-up code for collections.Counter().
 ..
 
 .. bpo: 21321
-.. date: 7225
+.. date: 8565
 .. nonce: wUkTON
 .. section: Library
 
@@ -3774,7 +3774,7 @@ the slice is exhausted.  Patch by Anton Afanasyev.
 ..
 
 .. bpo: 21057
-.. date: 7224
+.. date: 8564
 .. nonce: 0TC4Xl
 .. section: Library
 
@@ -3785,7 +3785,7 @@ Patch by Nikolaus Rath.
 ..
 
 .. bpo: 20951
-.. date: 7223
+.. date: 8563
 .. nonce: tF0dJi
 .. section: Library
 
@@ -3796,7 +3796,7 @@ return 0.  Patch by Nikolaus Rath.
 ..
 
 .. bpo: 13248
-.. date: 7222
+.. date: 8562
 .. nonce: 7vtGj0
 .. section: Library
 
@@ -3806,7 +3806,7 @@ inheritance hack.
 ..
 
 .. bpo: 9815
-.. date: 7221
+.. date: 8561
 .. nonce: 52FPlI
 .. section: Library
 
@@ -3816,7 +3816,7 @@ exception's traceback.
 ..
 
 .. bpo: 19940
-.. date: 7220
+.. date: 8560
 .. nonce: 2qtBQ8
 .. section: Library
 
@@ -3826,7 +3826,7 @@ timezone (as specified in RFC 5280), not the local timezone.
 ..
 
 .. bpo: 13204
-.. date: 7219
+.. date: 8559
 .. nonce: ZPKA5g
 .. section: Library
 
@@ -3836,7 +3836,7 @@ TypeError.
 ..
 
 .. bpo: 19385
-.. date: 7218
+.. date: 8558
 .. nonce: PexO_g
 .. section: Library
 
@@ -3846,7 +3846,7 @@ exception.
 ..
 
 .. bpo: 21207
-.. date: 7217
+.. date: 8557
 .. nonce: Hr72AB
 .. section: Library
 
@@ -3856,7 +3856,7 @@ it anew.
 ..
 
 .. bpo: 21291
-.. date: 7216
+.. date: 8556
 .. nonce: 5sSLWN
 .. section: Library
 
@@ -3867,7 +3867,7 @@ the Popen.returncode value.
 ..
 
 .. bpo: 21127
-.. date: 7215
+.. date: 8555
 .. nonce: A1aBjG
 .. section: Library
 
@@ -3877,7 +3877,7 @@ Path objects can now be instantiated from str subclass instances (such as
 ..
 
 .. bpo: 15002
-.. date: 7214
+.. date: 8554
 .. nonce: qorYDe
 .. section: Library
 
@@ -3888,7 +3888,7 @@ descriptor close. Patch contributed by Christian Theune.
 ..
 
 .. bpo: 12220
-.. date: 7213
+.. date: 8553
 .. nonce: U25uE9
 .. section: Library
 
@@ -3898,7 +3898,7 @@ in URIs instead of letting a 'split' ValueError bubble up.
 ..
 
 .. bpo: 21068
-.. date: 7212
+.. date: 8552
 .. nonce: 9k6N9m
 .. section: Library
 
@@ -3907,7 +3907,7 @@ The ssl.PROTOCOL* constants are now enum members.
 ..
 
 .. bpo: 21276
-.. date: 7211
+.. date: 8551
 .. nonce: JkfhvQ
 .. section: Library
 
@@ -3916,7 +3916,7 @@ posixmodule: Don't define USE_XATTRS on KFreeBSD and the Hurd.
 ..
 
 .. bpo: 21262
-.. date: 7210
+.. date: 8550
 .. nonce: 1J5ylk
 .. section: Library
 
@@ -3926,7 +3926,7 @@ has been called.
 ..
 
 .. bpo: 21238
-.. date: 7209
+.. date: 8549
 .. nonce: 5CDoox
 .. section: Library
 
@@ -3936,7 +3936,7 @@ an attribute startswith assert or assret.
 ..
 
 .. bpo: 20896
-.. date: 7208
+.. date: 8548
 .. nonce: oWwAb1
 .. section: Library
 
@@ -3946,7 +3946,7 @@ for maximum compatibility.
 ..
 
 .. bpo: 21239
-.. date: 7207
+.. date: 8547
 .. nonce: EalCNt
 .. section: Library
 
@@ -3956,7 +3956,7 @@ more than once.
 ..
 
 .. bpo: 21203
-.. date: 7206
+.. date: 8546
 .. nonce: 1IMs-Z
 .. section: Library
 
@@ -3966,7 +3966,7 @@ Koren for the patch.
 ..
 
 .. bpo: 21222
-.. date: 7205
+.. date: 8545
 .. nonce: G6MQBP
 .. section: Library
 
@@ -3975,7 +3975,7 @@ Passing name keyword argument to mock.create_autospec now works.
 ..
 
 .. bpo: 21197
-.. date: 7204
+.. date: 8544
 .. nonce: Gzfqdl
 .. section: Library
 
@@ -3984,7 +3984,7 @@ Add lib64 -> lib symlink in venvs on 64-bit non-OS X POSIX.
 ..
 
 .. bpo: 17498
-.. date: 7203
+.. date: 8543
 .. nonce: LR9xyb
 .. section: Library
 
@@ -3996,7 +3996,7 @@ SMTPServerDisconnected error until the next command is issued.
 ..
 
 .. bpo: 17826
-.. date: 7202
+.. date: 8542
 .. nonce: z0zMRV
 .. section: Library
 
@@ -4006,7 +4006,7 @@ create_autospec now works. Patch by Kushal Das.
 ..
 
 .. bpo: 7776
-.. date: 7201
+.. date: 8541
 .. nonce: K5S2Pe
 .. section: Library
 
@@ -4016,7 +4016,7 @@ http.client.HTTPConnection.set_tunnel(). Patch by Nikolaus Rath.
 ..
 
 .. bpo: 20968
-.. date: 7200
+.. date: 8540
 .. nonce: 53Aagz
 .. section: Library
 
@@ -4025,7 +4025,7 @@ unittest.mock.MagicMock now supports division. Patch by Johannes Baiter.
 ..
 
 .. bpo: 21529
-.. date: 7199
+.. date: 8539
 .. nonce: 57R_Fc
 .. section: Library
 
@@ -4035,7 +4035,7 @@ parameter. Bug reported by Guido Vranken. (See also: CVE-2014-4616)
 ..
 
 .. bpo: 21169
-.. date: 7198
+.. date: 8538
 .. nonce: KE7B0M
 .. section: Library
 
@@ -4045,7 +4045,7 @@ cannot encode by re-encoding using the replace error handler.
 ..
 
 .. bpo: 21171
-.. date: 7197
+.. date: 8537
 .. nonce: iUbV9S
 .. section: Library
 
@@ -4054,7 +4054,7 @@ Fixed undocumented filter API of the rot13 codec. Patch by Berker Peksag.
 ..
 
 .. bpo: 20539
-.. date: 7196
+.. date: 8536
 .. nonce: 62nbEb
 .. section: Library
 
@@ -4064,7 +4064,7 @@ exception type (OverflowError -> ValueError) for large negative inputs.
 ..
 
 .. bpo: 21172
-.. date: 7195
+.. date: 8535
 .. nonce: dQ7yY7
 .. section: Library
 
@@ -4073,7 +4073,7 @@ isinstance check relaxed from dict to collections.Mapping.
 ..
 
 .. bpo: 21155
-.. date: 7194
+.. date: 8534
 .. nonce: JSKEE7
 .. section: Library
 
@@ -4083,7 +4083,7 @@ sock are specified at the same time.
 ..
 
 .. bpo: 21136
-.. date: 7193
+.. date: 8533
 .. nonce: JZAKv3
 .. section: Library
 
@@ -4093,7 +4093,7 @@ operations.  Patch by Raymond Hettinger.
 ..
 
 .. bpo: 17621
-.. date: 7192
+.. date: 8532
 .. nonce: 1x0mvJ
 .. section: Library
 
@@ -4102,7 +4102,7 @@ Introduce importlib.util.LazyLoader.
 ..
 
 .. bpo: 21076
-.. date: 7191
+.. date: 8531
 .. nonce: upxQc6
 .. section: Library
 
@@ -4111,7 +4111,7 @@ signal module constants were turned into enums. Patch by Giampaolo Rodola'.
 ..
 
 .. bpo: 20636
-.. date: 7190
+.. date: 8530
 .. nonce: KGh-BD
 .. section: Library
 
@@ -4120,7 +4120,7 @@ Improved the repr of Tkinter widgets.
 ..
 
 .. bpo: 19505
-.. date: 7189
+.. date: 8529
 .. nonce: VEtIE6
 .. section: Library
 
@@ -4130,7 +4130,7 @@ iteration using reversed().
 ..
 
 .. bpo: 21149
-.. date: 7188
+.. date: 8528
 .. nonce: cnjwMR
 .. section: Library
 
@@ -4140,7 +4140,7 @@ Thanks to Devin Jeanpierre for the patch.
 ..
 
 .. bpo: 21058
-.. date: 7187
+.. date: 8527
 .. nonce: IhluPP
 .. section: Library
 
@@ -4150,7 +4150,7 @@ the file descriptor if :func:`io.open` fails
 ..
 
 .. bpo: 21200
-.. date: 7186
+.. date: 8526
 .. nonce: Kht8yD
 .. section: Library
 
@@ -4159,7 +4159,7 @@ Return None from pkgutil.get_loader() when __spec__ is missing.
 ..
 
 .. bpo: 21013
-.. date: 7185
+.. date: 8525
 .. nonce: 3s8Ic0
 .. section: Library
 
@@ -4169,7 +4169,7 @@ provide better security by default.
 ..
 
 .. bpo: 20145
-.. date: 7184
+.. date: 8524
 .. nonce: FP5FY0
 .. section: Library
 
@@ -4179,7 +4179,7 @@ second argument is not a string or compiled regex.
 ..
 
 .. bpo: 20633
-.. date: 7183
+.. date: 8523
 .. nonce: 6kaPjT
 .. section: Library
 
@@ -4188,7 +4188,7 @@ Replace relative import by absolute import.
 ..
 
 .. bpo: 20980
-.. date: 7182
+.. date: 8522
 .. nonce: cYszHY
 .. section: Library
 
@@ -4197,7 +4197,7 @@ Stop wrapping exception when using ThreadPool.
 ..
 
 .. bpo: 21082
-.. date: 7181
+.. date: 8521
 .. nonce: GLzGlV
 .. section: Library
 
@@ -4207,7 +4207,7 @@ behavior of makedirs when exist_ok=True.
 ..
 
 .. bpo: 20990
-.. date: 7180
+.. date: 8520
 .. nonce: PBfjW3
 .. section: Library
 
@@ -4216,7 +4216,7 @@ Fix issues found by pyflakes for multiprocessing.
 ..
 
 .. bpo: 21015
-.. date: 7179
+.. date: 8519
 .. nonce: xnwWAH
 .. section: Library
 
@@ -4226,7 +4226,7 @@ exchange on OpenSSL 1.0.2 and later, and otherwise default to "prime256v1".
 ..
 
 .. bpo: 21000
-.. date: 7178
+.. date: 8518
 .. nonce: JUyyVV
 .. section: Library
 
@@ -4235,7 +4235,7 @@ Improve the command-line interface of json.tool.
 ..
 
 .. bpo: 20995
-.. date: 7177
+.. date: 8517
 .. nonce: KSORJT
 .. section: Library
 
@@ -4245,7 +4245,7 @@ prioritize perfect forward secrecy.
 ..
 
 .. bpo: 20884
-.. date: 7176
+.. date: 8516
 .. nonce: qNmub_
 .. section: Library
 
@@ -4254,7 +4254,7 @@ Don't assume that __file__ is defined on importlib.__init__.
 ..
 
 .. bpo: 21499
-.. date: 7175
+.. date: 8515
 .. nonce: wU4OBi
 .. section: Library
 
@@ -4263,7 +4263,7 @@ Ignore __builtins__ in several test_importlib.test_api tests.
 ..
 
 .. bpo: 20627
-.. date: 7174
+.. date: 8514
 .. nonce: fgfQ1x
 .. section: Library
 
@@ -4272,7 +4272,7 @@ xmlrpc.client.ServerProxy is now a context manager.
 ..
 
 .. bpo: 19165
-.. date: 7173
+.. date: 8513
 .. nonce: sAkUjU
 .. section: Library
 
@@ -4282,7 +4282,7 @@ PendingDeprecationWarning.
 ..
 
 .. bpo: 13936
-.. date: 7172
+.. date: 8512
 .. nonce: _Q0Yog
 .. section: Library
 
@@ -4292,7 +4292,7 @@ boolean contexts.
 ..
 
 .. bpo: 18931
-.. date: 7171
+.. date: 8511
 .. nonce: mq4Mud
 .. section: Library
 
@@ -4302,7 +4302,7 @@ Rodola'.
 ..
 
 .. bpo: 19977
-.. date: 7170
+.. date: 8510
 .. nonce: A-sQ_V
 .. section: Library
 
@@ -4313,7 +4313,7 @@ When the ``LC_TYPE`` locale is the POSIX locale (``C`` locale),
 ..
 
 .. bpo: 20574
-.. date: 7169
+.. date: 8509
 .. nonce: KaKqSs
 .. section: Library
 
@@ -4323,7 +4323,7 @@ Microsoft UTF-8).
 ..
 
 .. bpo: 20879
-.. date: 7168
+.. date: 8508
 .. nonce: myeYdq
 .. section: Library
 
@@ -4335,7 +4335,7 @@ these modules are not used.
 ..
 
 .. bpo: 19157
-.. date: 7167
+.. date: 8507
 .. nonce: V1-XhC
 .. section: Library
 
@@ -4344,7 +4344,7 @@ Include the broadcast address in the usuable hosts for IPv6 in ipaddress.
 ..
 
 .. bpo: 11599
-.. date: 7166
+.. date: 8506
 .. nonce: 9QOXf4
 .. section: Library
 
@@ -4355,7 +4355,7 @@ variable DISTUTILS_DEBUG is set.
 ..
 
 .. bpo: 4931
-.. date: 7165
+.. date: 8505
 .. nonce: uF10hr
 .. section: Library
 
@@ -4365,7 +4365,7 @@ distutils.util.grok_environment_error is kept but doc-deprecated.
 ..
 
 .. bpo: 20875
-.. date: 7164
+.. date: 8504
 .. nonce: IjfI5V
 .. section: Library
 
@@ -4375,7 +4375,7 @@ Popa.
 ..
 
 .. bpo: 11558
-.. date: 7163
+.. date: 8503
 .. nonce: pxrsmq
 .. section: Library
 
@@ -4385,7 +4385,7 @@ Popa.
 ..
 
 .. bpo: 20283
-.. date: 7162
+.. date: 8502
 .. nonce: v0Vs9V
 .. section: Library
 
@@ -4395,7 +4395,7 @@ The pattern and source keyword parameters are left as deprecated aliases.
 ..
 
 .. bpo: 20778
-.. date: 7161
+.. date: 8501
 .. nonce: g_fAGI
 .. section: Library
 
@@ -4404,7 +4404,7 @@ Fix modulefinder to work with bytecode-only modules.
 ..
 
 .. bpo: 20791
-.. date: 7160
+.. date: 8500
 .. nonce: n_zrkc
 .. section: Library
 
@@ -4414,7 +4414,7 @@ Initial patch by Peter Otten.
 ..
 
 .. bpo: 19748
-.. date: 7159
+.. date: 8499
 .. nonce: kiA171
 .. section: Library
 
@@ -4424,7 +4424,7 @@ On AIX, time.mktime() now raises an OverflowError for year outsize range
 ..
 
 .. bpo: 19573
-.. date: 7158
+.. date: 8498
 .. nonce: QJvX_V
 .. section: Library
 
@@ -4433,7 +4433,7 @@ inspect.signature: Use enum for parameter kind constants.
 ..
 
 .. bpo: 20726
-.. date: 7157
+.. date: 8497
 .. nonce: 0yfRDI
 .. section: Library
 
@@ -4442,7 +4442,7 @@ inspect.signature: Make Signature and Parameter picklable.
 ..
 
 .. bpo: 17373
-.. date: 7156
+.. date: 8496
 .. nonce: ECwuJO
 .. section: Library
 
@@ -4451,7 +4451,7 @@ Add inspect.Signature.from_callable method.
 ..
 
 .. bpo: 20378
-.. date: 7155
+.. date: 8495
 .. nonce: l9M3H-
 .. section: Library
 
@@ -4460,17 +4460,17 @@ Improve repr of inspect.Signature and inspect.Parameter.
 ..
 
 .. bpo: 20816
-.. date: 7154
+.. date: 8494
 .. nonce: DFMEgN
 .. section: Library
 
-Fix inspect.getcallargs() to raise correct TypeError for missing
-keyword-only arguments. Patch by Jeremiah Lowin.
+Fix inspect.getcallargs() to raise correct TypeError for missing keyword-
+only arguments. Patch by Jeremiah Lowin.
 
 ..
 
 .. bpo: 20817
-.. date: 7153
+.. date: 8493
 .. nonce: O5XyZB
 .. section: Library
 
@@ -4480,7 +4480,7 @@ missing. Patch by Jeremiah Lowin.
 ..
 
 .. bpo: 6676
-.. date: 7152
+.. date: 8492
 .. nonce: CJu5On
 .. section: Library
 
@@ -4492,7 +4492,7 @@ Gutteridge)
 ..
 
 .. bpo: 21117
-.. date: 7151
+.. date: 8491
 .. nonce: hyH7EK
 .. section: Library
 
@@ -4503,7 +4503,7 @@ arguments passed as keyword arguments become keyword-only.
 ..
 
 .. bpo: 20334
-.. date: 7150
+.. date: 8490
 .. nonce: 0yFmfQ
 .. section: Library
 
@@ -4513,7 +4513,7 @@ Lee for bug reports and suggestions.
 ..
 
 .. bpo: 15916
-.. date: 7149
+.. date: 8489
 .. nonce: _vhKPn
 .. section: Library
 
@@ -4523,7 +4523,7 @@ ValueError if it finds no tests
 ..
 
 .. bpo: 21209
-.. date: 7148
+.. date: 8488
 .. nonce: wRE7Dn
 .. section: Library
 
@@ -4533,7 +4533,7 @@ implementation in CPythons prior to 3.4.1.
 ..
 
 .. bpo: 0
-.. date: 7147
+.. date: 8487
 .. nonce: Q1I78Z
 .. section: Library
 
@@ -4543,7 +4543,7 @@ issue #163).
 ..
 
 .. bpo: 21311
-.. date: 7146
+.. date: 8486
 .. nonce: JsDF8H
 .. section: Library
 
@@ -4553,7 +4553,7 @@ Patch by John Szakmeister.
 ..
 
 .. bpo: 11571
-.. date: 7145
+.. date: 8485
 .. nonce: RPeGNo
 .. section: Library
 
@@ -4563,7 +4563,7 @@ X.
 ..
 
 .. bpo: 21801
-.. date: 7144
+.. date: 8484
 .. nonce: rzfhYl
 .. section: Library
 
@@ -4572,7 +4572,7 @@ Validate that __signature__ is None or an instance of Signature.
 ..
 
 .. bpo: 21923
-.. date: 7143
+.. date: 8483
 .. nonce: hXnoZa
 .. section: Library
 
@@ -4582,7 +4582,7 @@ possible uninitialized _config_vars.
 ..
 
 .. bpo: 21323
-.. date: 7142
+.. date: 8482
 .. nonce: quiWfl
 .. section: Library
 
@@ -4592,7 +4592,7 @@ fix for security issue #19435.  Patch by Zach Byrne.
 ..
 
 .. bpo: 22733
-.. date: 7141
+.. date: 8481
 .. nonce: 21gJBp
 .. section: Library
 
@@ -4602,7 +4602,7 @@ Windows.
 ..
 
 .. bpo: 23302
-.. date: 7140
+.. date: 8480
 .. nonce: X2dabK
 .. section: Library
 
@@ -4613,7 +4613,7 @@ disabled.
 ..
 
 .. bpo: 20577
-.. date: 7139
+.. date: 8479
 .. nonce: Y71IMj
 .. section: IDLE
 
@@ -4624,7 +4624,7 @@ FormatParagraph tab of the Config Extensions dialog. Patch by Tal Einat.
 ..
 
 .. bpo: 16893
-.. date: 7138
+.. date: 8478
 .. nonce: JfHAA4
 .. section: IDLE
 
@@ -4633,7 +4633,7 @@ Update Idle doc chapter to match current Idle and add new information.
 ..
 
 .. bpo: 3068
-.. date: 7137
+.. date: 8477
 .. nonce: TYjXTA
 .. section: IDLE
 
@@ -4643,7 +4643,7 @@ to HOME/.idlerc/config-extensions.cfg. Original patch by Tal Einat.
 ..
 
 .. bpo: 16233
-.. date: 7136
+.. date: 8476
 .. nonce: sOadNo
 .. section: IDLE
 
@@ -4656,7 +4656,7 @@ module is opened, a corresponding browser is also opened.
 ..
 
 .. bpo: 4832
-.. date: 7135
+.. date: 8475
 .. nonce: GRKi9M
 .. section: IDLE
 
@@ -4667,7 +4667,7 @@ Save As to type Python files automatically adds .py to the name you enter
 ..
 
 .. bpo: 21986
-.. date: 7134
+.. date: 8474
 .. nonce: 04GUv2
 .. section: IDLE
 
@@ -4677,7 +4677,7 @@ they are no longer pickled when running under Idle.
 ..
 
 .. bpo: 17390
-.. date: 7133
+.. date: 8473
 .. nonce: I4vHFh
 .. section: IDLE
 
@@ -4686,7 +4686,7 @@ Adjust Editor window title; remove 'Python', move version to end.
 ..
 
 .. bpo: 14105
-.. date: 7132
+.. date: 8472
 .. nonce: -FZwYH
 .. section: IDLE
 
@@ -4696,7 +4696,7 @@ lines.
 ..
 
 .. bpo: 17172
-.. date: 7131
+.. date: 8471
 .. nonce: R8jkU1
 .. section: IDLE
 
@@ -4706,7 +4706,7 @@ menu, but it may move to Run. Patch by Ramchandra Apt and Lita Cho.
 ..
 
 .. bpo: 21765
-.. date: 7130
+.. date: 8470
 .. nonce: JyiDbd
 .. section: IDLE
 
@@ -4715,7 +4715,7 @@ Add support for non-ascii identifiers to HyperParser.
 ..
 
 .. bpo: 21940
-.. date: 7129
+.. date: 8469
 .. nonce: VlIRz7
 .. section: IDLE
 
@@ -4724,7 +4724,7 @@ Add unittest for WidgetRedirector. Initial patch by Saimadhav Heblikar.
 ..
 
 .. bpo: 18592
-.. date: 7128
+.. date: 8468
 .. nonce: sMG-SZ
 .. section: IDLE
 
@@ -4733,7 +4733,7 @@ Add unittest for SearchDialogBase. Patch by Phil Webster.
 ..
 
 .. bpo: 21694
-.. date: 7127
+.. date: 8467
 .. nonce: 1oLmRo
 .. section: IDLE
 
@@ -4742,7 +4742,7 @@ Add unittest for ParenMatch. Patch by Saimadhav Heblikar.
 ..
 
 .. bpo: 21686
-.. date: 7126
+.. date: 8466
 .. nonce: TAkFB0
 .. section: IDLE
 
@@ -4751,7 +4751,7 @@ add unittest for HyperParser. Original patch by Saimadhav Heblikar.
 ..
 
 .. bpo: 12387
-.. date: 7125
+.. date: 8465
 .. nonce: XO7Ozk
 .. section: IDLE
 
@@ -4761,7 +4761,7 @@ Idle so Caps Lock does not disable them. Patch by Roger Serwy.
 ..
 
 .. bpo: 21695
-.. date: 7124
+.. date: 8464
 .. nonce: g-t0Tm
 .. section: IDLE
 
@@ -4771,7 +4771,7 @@ no longer closes Idle.
 ..
 
 .. bpo: 18910
-.. date: 7123
+.. date: 8463
 .. nonce: ke8lMK
 .. section: IDLE
 
@@ -4780,7 +4780,7 @@ Add unittest for textView. Patch by Phil Webster.
 ..
 
 .. bpo: 18292
-.. date: 7122
+.. date: 8462
 .. nonce: ks_3wm
 .. section: IDLE
 
@@ -4789,7 +4789,7 @@ Add unittest for AutoExpand. Patch by Saihadhav Heblikar.
 ..
 
 .. bpo: 18409
-.. date: 7121
+.. date: 8461
 .. nonce: 7fe-aK
 .. section: IDLE
 
@@ -4798,7 +4798,7 @@ Add unittest for AutoComplete. Patch by Phil Webster.
 ..
 
 .. bpo: 21477
-.. date: 7120
+.. date: 8460
 .. nonce: 33NOe0
 .. section: IDLE
 
@@ -4808,7 +4808,7 @@ Heblikar
 ..
 
 .. bpo: 18104
-.. date: 7119
+.. date: 8459
 .. nonce: 8Fj9Pf
 .. section: IDLE
 
@@ -4820,7 +4820,7 @@ tests.
 ..
 
 .. bpo: 21139
-.. date: 7118
+.. date: 8458
 .. nonce: kqetng
 .. section: IDLE
 
@@ -4829,7 +4829,7 @@ Change default paragraph width to 72, the PEP 8 recommendation.
 ..
 
 .. bpo: 21284
-.. date: 7117
+.. date: 8457
 .. nonce: KKJfmv
 .. section: IDLE
 
@@ -4838,7 +4838,7 @@ Paragraph reformat test passes after user changes reformat width.
 ..
 
 .. bpo: 17654
-.. date: 7116
+.. date: 8456
 .. nonce: NbzhNS
 .. section: IDLE
 
@@ -4848,7 +4848,7 @@ and for all variants of Tk.
 ..
 
 .. bpo: 23180
-.. date: 7115
+.. date: 8455
 .. nonce: cE_89F
 .. section: IDLE
 
@@ -4857,7 +4857,7 @@ Rename IDLE "Windows" menu item to "Window". Patch by Al Sweigart.
 ..
 
 .. bpo: 15506
-.. date: 7114
+.. date: 8454
 .. nonce: nh8KlR
 .. section: Build
 
@@ -4866,7 +4866,7 @@ Use standard PKG_PROG_PKG_CONFIG autoconf macro in the configure script.
 ..
 
 .. bpo: 22935
-.. date: 7113
+.. date: 8453
 .. nonce: -vY3lc
 .. section: Build
 
@@ -4875,7 +4875,7 @@ Allow the ssl module to be compiled if openssl doesn't support SSL 3.
 ..
 
 .. bpo: 22592
-.. date: 7112
+.. date: 8452
 .. nonce: O_IE9W
 .. section: Build
 
@@ -4885,7 +4885,7 @@ still supports it to build extensions.
 ..
 
 .. bpo: 22591
-.. date: 7111
+.. date: 8451
 .. nonce: wwBlG8
 .. section: Build
 
@@ -4895,7 +4895,7 @@ GCC).
 ..
 
 .. bpo: 16537
-.. date: 7110
+.. date: 8450
 .. nonce: llFo71
 .. section: Build
 
@@ -4905,7 +4905,7 @@ Hosmer.
 ..
 
 .. bpo: 22359
-.. date: 7109
+.. date: 8449
 .. nonce: YYFOFG
 .. section: Build
 
@@ -4914,7 +4914,7 @@ Remove incorrect uses of recursive make.  Patch by Jonas Wagner.
 ..
 
 .. bpo: 21958
-.. date: 7108
+.. date: 8448
 .. nonce: 3rq4qR
 .. section: Build
 
@@ -4924,7 +4924,7 @@ Zachary Turner.
 ..
 
 .. bpo: 18093
-.. date: 7107
+.. date: 8447
 .. nonce: gnZieo
 .. section: Build
 
@@ -4934,7 +4934,7 @@ directory, rather than being kept in the Modules directory.
 ..
 
 .. bpo: 15759
-.. date: 7106
+.. date: 8446
 .. nonce: iGLR6O
 .. section: Build
 
@@ -4944,7 +4944,7 @@ special message when and only when there are failures.
 ..
 
 .. bpo: 21141
-.. date: 7105
+.. date: 8445
 .. nonce: 669LzK
 .. section: Build
 
@@ -4958,7 +4958,7 @@ will always be pre-configured and ready to build.
 ..
 
 .. bpo: 21037
-.. date: 7104
+.. date: 8444
 .. nonce: v1rZzo
 .. section: Build
 
@@ -4967,7 +4967,7 @@ Add a build option to enable AddressSanitizer support.
 ..
 
 .. bpo: 19962
-.. date: 7103
+.. date: 8443
 .. nonce: HDlwsE
 .. section: Build
 
@@ -4978,7 +4978,7 @@ interpreter.
 ..
 
 .. bpo: 21285
-.. date: 7102
+.. date: 8442
 .. nonce: cU9p2E
 .. section: Build
 
@@ -4988,7 +4988,7 @@ directory.
 ..
 
 .. bpo: 15234
-.. date: 7101
+.. date: 8441
 .. nonce: vlM720
 .. section: Build
 
@@ -4999,7 +4999,7 @@ library dependency.
 ..
 
 .. bpo: 17861
-.. date: 7100
+.. date: 8440
 .. nonce: jCi44U
 .. section: Build
 
@@ -5009,7 +5009,7 @@ Include/opcode.h from Lib/opcode.py if the latter gets any change.
 ..
 
 .. bpo: 20644
-.. date: 7099
+.. date: 8439
 .. nonce: aV0zq7
 .. section: Build
 
@@ -5019,7 +5019,7 @@ assume externally supplied sphinx-build is available in /usr/bin.
 ..
 
 .. bpo: 20022
-.. date: 7098
+.. date: 8438
 .. nonce: EqSCTW
 .. section: Build
 
@@ -5028,7 +5028,7 @@ Eliminate use of deprecated bundlebuilder in OS X builds.
 ..
 
 .. bpo: 15968
-.. date: 7097
+.. date: 8437
 .. nonce: vxUxHK
 .. section: Build
 
@@ -5037,7 +5037,7 @@ Incorporated Tcl, Tk, and Tix builds into the Windows build solution.
 ..
 
 .. bpo: 17095
-.. date: 7096
+.. date: 8436
 .. nonce: -XEBIU
 .. section: Build
 
@@ -5046,7 +5046,7 @@ Fix Modules/Setup *shared* support.
 ..
 
 .. bpo: 21811
-.. date: 7095
+.. date: 8435
 .. nonce: 3_Xyr-
 .. section: Build
 
@@ -5055,17 +5055,17 @@ Anticipated fixes to support OS X versions > 10.9.
 ..
 
 .. bpo: 21166
-.. date: 7094
+.. date: 8434
 .. nonce: KAl7aO
 .. section: Build
 
-Prevent possible segfaults and other random failures of python
-``--generate-posix-vars`` in pybuilddir.txt build target.
+Prevent possible segfaults and other random failures of python --generate-
+posix-vars in pybuilddir.txt build target.
 
 ..
 
 .. bpo: 18096
-.. date: 7093
+.. date: 8433
 .. nonce: ELyAUJ
 .. section: Build
 
@@ -5074,7 +5074,7 @@ Fix library order returned by python-config.
 ..
 
 .. bpo: 17219
-.. date: 7092
+.. date: 8432
 .. nonce: q8ueQ0
 .. section: Build
 
@@ -5083,7 +5083,7 @@ Add library build dir for Python extension cross-builds.
 ..
 
 .. bpo: 22919
-.. date: 7091
+.. date: 8431
 .. nonce: 1XThL9
 .. section: Build
 
@@ -5093,7 +5093,7 @@ used for the official release.
 ..
 
 .. bpo: 21236
-.. date: 7090
+.. date: 8430
 .. nonce: 84LXxj
 .. section: Build
 
@@ -5102,7 +5102,7 @@ Build _msi.pyd with cabinet.lib instead of fci.lib
 ..
 
 .. bpo: 17128
-.. date: 7089
+.. date: 8429
 .. nonce: U2biLA
 .. section: Build
 
@@ -5111,7 +5111,7 @@ Use private version of OpenSSL for OS X 10.5+ installer.
 ..
 
 .. bpo: 14203
-.. date: 7088
+.. date: 8428
 .. nonce: 3hv0TX
 .. section: C API
 
@@ -5122,7 +5122,7 @@ functions now raise BufferError in that case.
 ..
 
 .. bpo: 22445
-.. date: 7087
+.. date: 8427
 .. nonce: s0AOAS
 .. section: C API
 
@@ -5133,7 +5133,7 @@ function reported false negatives for corner cases.
 ..
 
 .. bpo: 22079
-.. date: 7086
+.. date: 8426
 .. nonce: zhs2qM
 .. section: C API
 
@@ -5143,7 +5143,7 @@ allocated bases.
 ..
 
 .. bpo: 22453
-.. date: 7085
+.. date: 8425
 .. nonce: XoO4ns
 .. section: C API
 
@@ -5152,7 +5152,7 @@ Removed non-documented macro PyObject_REPR().
 ..
 
 .. bpo: 18395
-.. date: 7084
+.. date: 8424
 .. nonce: YC9B06
 .. section: C API
 
@@ -5163,7 +5163,7 @@ functions.
 ..
 
 .. bpo: 21233
-.. date: 7083
+.. date: 8423
 .. nonce: 98hZAt
 .. section: C API
 
@@ -5174,7 +5174,7 @@ _PyObject_GC_Calloc(). bytes(int) is now using ``calloc()`` instead of
 ..
 
 .. bpo: 20942
-.. date: 7082
+.. date: 8422
 .. nonce: qHLJ5-
 .. section: C API
 
@@ -5185,7 +5185,7 @@ using imp.init_frozen().
 ..
 
 .. bpo: 19548
-.. date: 7081
+.. date: 8421
 .. nonce: yOX8sS
 .. section: Documentation
 
@@ -5196,7 +5196,7 @@ Patch by Martin Panter.
 ..
 
 .. bpo: 22394
-.. date: 7080
+.. date: 8420
 .. nonce: 6bJywY
 .. section: Documentation
 
@@ -5207,7 +5207,7 @@ PYTHON=venv/bin/python3``.
 ..
 
 .. bpo: 21514
-.. date: 7079
+.. date: 8419
 .. nonce: 1H16T6
 .. section: Documentation
 
@@ -5217,7 +5217,7 @@ of obsoleted RFC 4627.
 ..
 
 .. bpo: 21777
-.. date: 7078
+.. date: 8418
 .. nonce: dtQCWV
 .. section: Documentation
 
@@ -5228,7 +5228,7 @@ behaviour from the behaviour of the corresponding str methods.
 ..
 
 .. bpo: 6916
-.. date: 7077
+.. date: 8417
 .. nonce: 4sm3nE
 .. section: Documentation
 
@@ -5237,7 +5237,7 @@ undocument deprecated asynchat.fifo class.
 ..
 
 .. bpo: 17386
-.. date: 7076
+.. date: 8416
 .. nonce: ivaGLb
 .. section: Documentation
 
@@ -5247,7 +5247,7 @@ comparable to ``Doc/Makefile``.
 ..
 
 .. bpo: 21312
-.. date: 7075
+.. date: 8415
 .. nonce: 6IqcV4
 .. section: Documentation
 
@@ -5257,7 +5257,7 @@ Patch by Jack McCracken.
 ..
 
 .. bpo: 21043
-.. date: 7074
+.. date: 8414
 .. nonce: oEOC8O
 .. section: Documentation
 
@@ -5267,7 +5267,7 @@ ability to load the OS certificates.
 ..
 
 .. bpo: 20765
-.. date: 7073
+.. date: 8413
 .. nonce: Rv3GgV
 .. section: Documentation
 
@@ -5277,7 +5277,7 @@ PurePath.with_suffix().
 ..
 
 .. bpo: 19407
-.. date: 7072
+.. date: 8412
 .. nonce: mRyNnG
 .. section: Documentation
 
@@ -5289,7 +5289,7 @@ material for tool developers that isn't recorded anywhere else.
 ..
 
 .. bpo: 19697
-.. date: 7071
+.. date: 8411
 .. nonce: 2jMQBP
 .. section: Documentation
 
@@ -5298,7 +5298,7 @@ Document cases where __main__.__spec__ is None.
 ..
 
 .. bpo: 18982
-.. date: 7070
+.. date: 8410
 .. nonce: TynSM6
 .. section: Tests
 
@@ -5307,7 +5307,7 @@ Add tests for CLI of the calendar module.
 ..
 
 .. bpo: 19548
-.. date: 7069
+.. date: 8409
 .. nonce: 25Kxq_
 .. section: Tests
 
@@ -5317,7 +5317,7 @@ updated documentation remain accurate. Patch by Martin Panter.
 ..
 
 .. bpo: 22838
-.. date: 7068
+.. date: 8408
 .. nonce: VZBtZg
 .. section: Tests
 
@@ -5326,7 +5326,7 @@ All test_re tests now work with unittest test discovery.
 ..
 
 .. bpo: 22173
-.. date: 7067
+.. date: 8407
 .. nonce: dxIIVx
 .. section: Tests
 
@@ -5335,7 +5335,7 @@ Update lib2to3 tests to use unittest test discovery.
 ..
 
 .. bpo: 16000
-.. date: 7066
+.. date: 8406
 .. nonce: Y7O6TP
 .. section: Tests
 
@@ -5344,7 +5344,7 @@ Convert test_curses to use unittest.
 ..
 
 .. bpo: 21456
-.. date: 7065
+.. date: 8405
 .. nonce: Axsw43
 .. section: Tests
 
@@ -5354,7 +5354,7 @@ Remi Pointel.
 ..
 
 .. bpo: 20746
-.. date: 7064
+.. date: 8404
 .. nonce: N2pzAY
 .. section: Tests
 
@@ -5363,7 +5363,7 @@ Fix test_pdb to run in refleak mode (-R).  Patch by Xavier de Gaye.
 ..
 
 .. bpo: 22060
-.. date: 7063
+.. date: 8403
 .. nonce: TduJNO
 .. section: Tests
 
@@ -5373,7 +5373,7 @@ unittest test discovery to find its tests.
 ..
 
 .. bpo: 22104
-.. date: 7062
+.. date: 8402
 .. nonce: -YYDup
 .. section: Tests
 
@@ -5383,7 +5383,7 @@ test modules that don't define test_main().
 ..
 
 .. bpo: 22111
-.. date: 7061
+.. date: 8401
 .. nonce: 0XlFAU
 .. section: Tests
 
@@ -5392,7 +5392,7 @@ Assorted cleanups in test_imaplib.  Patch by Milan Oberkirch.
 ..
 
 .. bpo: 22002
-.. date: 7060
+.. date: 8400
 .. nonce: jpiaA2
 .. section: Tests
 
@@ -5403,7 +5403,7 @@ test_importlib, test_json, and test_tools.
 ..
 
 .. bpo: 21976
-.. date: 7059
+.. date: 8399
 .. nonce: Slq6se
 .. section: Tests
 
@@ -5412,7 +5412,7 @@ Fix test_ssl to accept LibreSSL version strings.  Thanks to William Orr.
 ..
 
 .. bpo: 21918
-.. date: 7058
+.. date: 8398
 .. nonce: QTFFSj
 .. section: Tests
 
@@ -5422,7 +5422,7 @@ files for each tested script.
 ..
 
 .. bpo: 9554
-.. date: 7057
+.. date: 8397
 .. nonce: VsP0Ve
 .. section: Tests
 
@@ -5432,7 +5432,7 @@ Coneybeare and Radu Voicilas.
 ..
 
 .. bpo: 20155
-.. date: 7056
+.. date: 8396
 .. nonce: nphzS3
 .. section: Tests
 
@@ -5443,7 +5443,7 @@ not interfere with the transaction semantics expected by the tests.
 ..
 
 .. bpo: 19493
-.. date: 7055
+.. date: 8395
 .. nonce: SwbzLQ
 .. section: Tests
 
@@ -5453,7 +5453,7 @@ silently.
 ..
 
 .. bpo: 18492
-.. date: 7054
+.. date: 8394
 .. nonce: ylPRU7
 .. section: Tests
 
@@ -5462,7 +5462,7 @@ All resources are now allowed when tests are not run by regrtest.py.
 ..
 
 .. bpo: 21634
-.. date: 7053
+.. date: 8393
 .. nonce: Eng06F
 .. section: Tests
 
@@ -5473,7 +5473,7 @@ benchmark integers instead of floating point numbers. Set pystone version to
 ..
 
 .. bpo: 21605
-.. date: 7052
+.. date: 8392
 .. nonce: qsLV8d
 .. section: Tests
 
@@ -5482,7 +5482,7 @@ Added tests for Tkinter images.
 ..
 
 .. bpo: 21493
-.. date: 7051
+.. date: 8391
 .. nonce: NqhRsy
 .. section: Tests
 
@@ -5491,7 +5491,7 @@ Added test for ntpath.expanduser().  Original patch by Claudiu Popa.
 ..
 
 .. bpo: 19925
-.. date: 7050
+.. date: 8390
 .. nonce: dhMx08
 .. section: Tests
 
@@ -5500,7 +5500,7 @@ Added tests for the spwd module. Original patch by Vajrasky Kok.
 ..
 
 .. bpo: 21522
-.. date: 7049
+.. date: 8389
 .. nonce: b-VwFW
 .. section: Tests
 
@@ -5510,7 +5510,7 @@ PanedWindow.paneconfigure(), and Menu.entryconfigure().
 ..
 
 .. bpo: 17756
-.. date: 7048
+.. date: 8388
 .. nonce: LLfbfU
 .. section: Tests
 
@@ -5519,7 +5519,7 @@ Fix test_code test when run from the installed location.
 ..
 
 .. bpo: 17752
-.. date: 7047
+.. date: 8387
 .. nonce: P8iG44
 .. section: Tests
 
@@ -5528,7 +5528,7 @@ Fix distutils tests when run from the installed location.
 ..
 
 .. bpo: 18604
-.. date: 7046
+.. date: 8386
 .. nonce: Q00Xrj
 .. section: Tests
 
@@ -5538,7 +5538,7 @@ whether Tk can be instantiated when the GUI resource is requested.
 ..
 
 .. bpo: 21275
-.. date: 7045
+.. date: 8385
 .. nonce: lI5FkX
 .. section: Tests
 
@@ -5547,7 +5547,7 @@ Fix a socket test on KFreeBSD.
 ..
 
 .. bpo: 21223
-.. date: 7044
+.. date: 8384
 .. nonce: lMY6ka
 .. section: Tests
 
@@ -5557,7 +5557,7 @@ builtins.
 ..
 
 .. bpo: 20635
-.. date: 7043
+.. date: 8383
 .. nonce: mzWmoS
 .. section: Tests
 
@@ -5566,7 +5566,7 @@ Added tests for Tk geometry managers.
 ..
 
 .. bpo: 0
-.. date: 7042
+.. date: 8382
 .. nonce: E5XNqr
 .. section: Tests
 
@@ -5575,7 +5575,7 @@ Add test case for freeze.
 ..
 
 .. bpo: 20743
-.. date: 7041
+.. date: 8381
 .. nonce: hxZQUf
 .. section: Tests
 
@@ -5584,7 +5584,7 @@ Fix a reference leak in test_tcl.
 ..
 
 .. bpo: 21097
-.. date: 7040
+.. date: 8380
 .. nonce: gsUesm
 .. section: Tests
 
@@ -5593,7 +5593,7 @@ Move test_namespace_pkgs into test_importlib.
 ..
 
 .. bpo: 21503
-.. date: 7039
+.. date: 8379
 .. nonce: H9TPCg
 .. section: Tests
 
@@ -5602,7 +5602,7 @@ Use test_both() consistently in test_importlib.
 ..
 
 .. bpo: 20939
-.. date: 7038
+.. date: 8378
 .. nonce: x3KQ35
 .. section: Tests
 
@@ -5613,7 +5613,7 @@ instead.
 ..
 
 .. bpo: 20668
-.. date: 7037
+.. date: 8377
 .. nonce: IWjOSC
 .. section: Tests
 
@@ -5622,7 +5622,7 @@ asyncio tests no longer rely on tests.txt file. (Patch by Vajrasky Kok)
 ..
 
 .. bpo: 21093
-.. date: 7036
+.. date: 8376
 .. nonce: CcpRim
 .. section: Tests
 
@@ -5632,7 +5632,7 @@ $HOME/lib or /usr/local/lib.
 ..
 
 .. bpo: 22770
-.. date: 7035
+.. date: 8375
 .. nonce: FxAh91
 .. section: Tests
 
@@ -5641,7 +5641,7 @@ Prevent some Tk segfaults on OS X when running gui tests.
 ..
 
 .. bpo: 23211
-.. date: 7034
+.. date: 8374
 .. nonce: Bc-QfJ
 .. section: Tests
 
@@ -5650,7 +5650,7 @@ Workaround test_logging failure on some OS X 10.6 systems.
 ..
 
 .. bpo: 23345
-.. date: 7033
+.. date: 8373
 .. nonce: HIGBKx
 .. section: Tests
 
@@ -5660,7 +5660,7 @@ Prevent test_ssl failures with large OpenSSL patch level values (like
 ..
 
 .. bpo: 22314
-.. date: 7032
+.. date: 8372
 .. nonce: ws6xsH
 .. section: Tools/Demos
 
@@ -5669,7 +5669,7 @@ pydoc now works when the LINES environment variable is set.
 ..
 
 .. bpo: 22615
-.. date: 7031
+.. date: 8371
 .. nonce: My3DWN
 .. section: Tools/Demos
 
@@ -5679,7 +5679,7 @@ This permits using the int converter with enums and typedefs.
 ..
 
 .. bpo: 20076
-.. date: 7030
+.. date: 8370
 .. nonce: ZNuBrC
 .. section: Tools/Demos
 
@@ -5688,7 +5688,7 @@ The makelocalealias.py script no longer ignores UTF-8 mapping.
 ..
 
 .. bpo: 20079
-.. date: 7029
+.. date: 8369
 .. nonce: ogPXcK
 .. section: Tools/Demos
 
@@ -5698,7 +5698,7 @@ sources and supports command line options for source paths.
 ..
 
 .. bpo: 22201
-.. date: 7028
+.. date: 8368
 .. nonce: k1Awbh
 .. section: Tools/Demos
 
@@ -5708,7 +5708,7 @@ files with directory entries.  Patch by Ryan Wilson.
 ..
 
 .. bpo: 22120
-.. date: 7027
+.. date: 8367
 .. nonce: KmBUj-
 .. section: Tools/Demos
 
@@ -5719,7 +5719,7 @@ code.  (This suppresses a compilation warning.)
 ..
 
 .. bpo: 18974
-.. date: 7026
+.. date: 8366
 .. nonce: I3DdAo
 .. section: Tools/Demos
 
@@ -5728,7 +5728,7 @@ Tools/scripts/diff.py now uses argparse instead of optparse.
 ..
 
 .. bpo: 21906
-.. date: 7025
+.. date: 8365
 .. nonce: ZsKy9v
 .. section: Tools/Demos
 
@@ -5737,7 +5737,7 @@ Make Tools/scripts/md5sum.py work in Python 3. Patch by Zachary Ware.
 ..
 
 .. bpo: 21629
-.. date: 7024
+.. date: 8364
 .. nonce: 9kZmQl
 .. section: Tools/Demos
 
@@ -5746,7 +5746,7 @@ Fix Argument Clinic's "--converters" feature.
 ..
 
 .. bpo: 0
-.. date: 7023
+.. date: 8363
 .. nonce: _-ge-g
 .. section: Tools/Demos
 
@@ -5755,7 +5755,7 @@ Add support for ``yield from`` to 2to3.
 ..
 
 .. bpo: 0
-.. date: 7022
+.. date: 8362
 .. nonce: dpFbyZ
 .. section: Tools/Demos
 
@@ -5764,7 +5764,7 @@ Add support for the PEP 465 matrix multiplication operator to 2to3.
 ..
 
 .. bpo: 16047
-.. date: 7021
+.. date: 8361
 .. nonce: IsgTzm
 .. section: Tools/Demos
 
@@ -5774,7 +5774,7 @@ Inge.
 ..
 
 .. bpo: 11824
-.. date: 7020
+.. date: 8360
 .. nonce: OBWc3T
 .. section: Tools/Demos
 
@@ -5783,7 +5783,7 @@ Consider ABI tags in freeze. Patch by Meador Inge.
 ..
 
 .. bpo: 20535
-.. date: 7019
+.. date: 8359
 .. nonce: 0qkvZZ
 .. section: Tools/Demos
 
@@ -5793,7 +5793,7 @@ Frehtes Taifersar Arahesis.
 ..
 
 .. bpo: 23260
-.. date: 7018
+.. date: 8358
 .. nonce: aZ5VLH
 .. section: Windows
 
@@ -5802,7 +5802,7 @@ Update Windows installer
 ..
 
 .. bpo: 0
-.. date: 7017
+.. date: 8357
 .. nonce: _aEUNt
 .. section: Windows
 
@@ -5814,7 +5814,7 @@ information.  Also, this version of Tcl/Tk includes support for Windows 10.
 ..
 
 .. bpo: 17896
-.. date: 7016
+.. date: 8356
 .. nonce: o79rHM
 .. section: Windows
 
@@ -5824,7 +5824,7 @@ The Windows build scripts now expect external library sources to be in
 ..
 
 .. bpo: 17717
-.. date: 7015
+.. date: 8355
 .. nonce: y1zoye
 .. section: Windows
 
@@ -5834,7 +5834,7 @@ to build OpenSSL.
 ..
 
 .. bpo: 21907
-.. date: 7014
+.. date: 8354
 .. nonce: jm1smN
 .. section: Windows
 
@@ -5843,7 +5843,7 @@ Improved the batch scripts provided for building Python.
 ..
 
 .. bpo: 22644
-.. date: 7013
+.. date: 8353
 .. nonce: gosBki
 .. section: Windows
 
@@ -5852,7 +5852,7 @@ The bundled version of OpenSSL has been updated to 1.0.1j.
 ..
 
 .. bpo: 10747
-.. date: 7012
+.. date: 8352
 .. nonce: LTWhLn
 .. section: Windows
 
@@ -5861,7 +5861,7 @@ Use versioned labels in the Windows start menu. Patch by Olive Kilburn.
 ..
 
 .. bpo: 22980
-.. date: 7011
+.. date: 8351
 .. nonce: -UypE5
 .. section: Windows
 

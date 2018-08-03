@@ -10,7 +10,7 @@ class MainMenuTest(unittest.TestCase):
     def test_menudefs(self):
         actual = [item[0] for item in mainmenu.menudefs]
         expect = ['file', 'edit', 'format', 'run', 'shell',
-                  'debug', 'options', 'windows', 'help']
+                  'debug', 'options', 'window', 'help']
         self.assertEqual(actual, expect)
 
     def test_default_keydefs(self):

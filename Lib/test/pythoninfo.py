@@ -527,11 +527,11 @@ def collect_cc(info_add):
 
 def collect_gdbm(info_add):
     try:
-        import _gdbm
+        from _gdbm import _GDBM_VERSION
     except ImportError:
         return
 
-    info_add('gdbm.GDBM_VERSION', '.'.join(map(str, _gdbm._GDBM_VERSION)))
+    info_add('gdbm.GDBM_VERSION', '.'.join(map(str, _GDBM_VERSION)))
 
 
 def collect_info(info):

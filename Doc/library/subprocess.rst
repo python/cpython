@@ -485,7 +485,7 @@ functions.
    between the parent and child.  Providing any *pass_fds* forces
    *close_fds* to be :const:`True`.  (POSIX only)
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       The *pass_fds* parameter was added.
 
    If *cwd* is not ``None``, the function changes the working directory to

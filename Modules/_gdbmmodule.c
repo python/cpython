@@ -678,6 +678,8 @@ PyInit__gdbm(void) {
         goto error;
     }
 
+#if defined(GDBM_VERSION_MAJOR) && defined(GDBM_VERSION_MINOR) && \
+    defined(GDBM_VERSION_PATCH)
     PyObject *obj = Py_BuildValue("iii", GDBM_VERSION_MAJOR,
                                   GDBM_VERSION_MINOR, GDBM_VERSION_PATCH);
     if (obj == NULL) {
@@ -687,6 +689,7 @@ PyInit__gdbm(void) {
         Py_DECREF(obj);
         goto error;
     }
+#endif
 
     return m;
 

@@ -1,6 +1,6 @@
-"Test windows, coverage 47%."
+"Test window, coverage 47%."
 
-from idlelib import windows
+from idlelib import window
 import unittest
 from test.support import requires
 from tkinter import Tk
@@ -9,7 +9,7 @@ from tkinter import Tk
 class WindowListTest(unittest.TestCase):
 
     def test_init(self):
-        wl = windows.WindowList()
+        wl = window.WindowList()
         self.assertEqual(wl.dict, {})
         self.assertEqual(wl.callbacks, [])
 
@@ -20,14 +20,14 @@ class ListedToplevelTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        windows.registry = set()
+        window.registry = set()
         requires('gui')
         cls.root = Tk()
         cls.root.withdraw()
 
     @classmethod
     def tearDownClass(cls):
-        windows.registry = windows.WindowList()
+        window.registry = window.WindowList()
         cls.root.update_idletasks()
 ##        for id in cls.root.tk.call('after', 'info'):
 ##            cls.root.after_cancel(id)  # Need for EditorWindow.
@@ -36,8 +36,8 @@ class ListedToplevelTest(unittest.TestCase):
 
     def test_init(self):
 
-        win = windows.ListedToplevel(self.root)
-        self.assertIn(win, windows.registry)
+        win = window.ListedToplevel(self.root)
+        self.assertIn(win, window.registry)
         self.assertEqual(win.focused_widget, win)
 
 

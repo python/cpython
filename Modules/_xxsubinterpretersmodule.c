@@ -26,10 +26,9 @@ _copy_raw_string(PyObject *strobj)
 static PyInterpreterState *
 _get_current(void)
 {
-    PyThreadState *tstate = PyThreadState_Get();
-    // PyThreadState_Get() aborts if lookup fails, so we don't need
+    // _PyInterpreterState_Get() aborts if lookup fails, so don't need
     // to check the result for NULL.
-    return tstate->interp;
+    return _PyInterpreterState_Get();
 }
 
 static int64_t
@@ -1201,7 +1200,7 @@ done:
     PyThread_release_lock(channels->mutex);
 }
 
-int64_t *
+static int64_t *
 _channels_list_all(_channels *channels, int64_t *count)
 {
     int64_t *cids = NULL;
@@ -1545,7 +1544,7 @@ channelid_str(PyObject *self)
     return PyUnicode_FromFormat("%" PRId64 "", cid->id);
 }
 
-PyObject *
+static PyObject *
 channelid_int(PyObject *self)
 {
     channelid *cid = (channelid *)self;
@@ -1941,7 +1940,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
 
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
-    if (interp != PyThreadState_Get()->interp) {
+    if (interp != _PyInterpreterState_Get()) {
         // XXX Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         // XXX Possible GILState issues?
