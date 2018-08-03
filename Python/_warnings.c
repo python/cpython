@@ -78,7 +78,7 @@ get_warnings_attr(_Py_Identifier *attr_id, int try_import)
            gone, then we can't even use PyImport_GetModule without triggering
            an interpreter abort.
         */
-        if (!PyThreadState_GET()->interp->modules) {
+        if (!_PyInterpreterState_GET_UNSAFE()->modules) {
             return NULL;
         }
         warnings_module = PyImport_GetModule(warnings_str);
@@ -686,7 +686,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
 
     if (f == NULL) {
-        globals = PyThreadState_Get()->interp->sysdict;
+        globals = _PyInterpreterState_GET_UNSAFE()->sysdict;
         *filename = PyUnicode_FromString("sys");
         *lineno = 1;
     }
