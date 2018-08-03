@@ -9494,6 +9494,12 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
      * for future extensions and currently must be to 0. */
     int flags = 0;
 
+
+    if (count < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative value for 'count' not allowed");
+        return NULL;
+    }
+
     if (offset_src != Py_None) {
         if (!Py_off_t_converter(offset_src, &offset_src_val)) {
             return NULL;

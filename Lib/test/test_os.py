@@ -232,7 +232,12 @@ class FileTests(unittest.TestCase):
             pass  # No OS support or unprivileged user
 
     @unittest.skipUnless(hasattr(os, 'copy_file_range'), 'test needs os.copy_file_range()')
-    def test_copy_file_range_ok(self):
+    def test_copy_file_range_invalid_values(self):
+        with self.assertRaises(ValueError):
+            os.copy_file_range(0, 1, -10)
+
+    @unittest.skipUnless(hasattr(os, 'copy_file_range'), 'test needs os.copy_file_range()')
+    def test_copy_file_range(self):
         TESTFN2 = support.TESTFN + ".3"
         data = b'0123456789'
 
@@ -266,7 +271,7 @@ class FileTests(unittest.TestCase):
                 self.assertEqual(in_file.read(), data[:i])
 
     @unittest.skipUnless(hasattr(os, 'copy_file_range'), 'test needs os.copy_file_range()')
-    def test_copy_file_range_off(self):
+    def test_copy_file_range_offset(self):
         TESTFN4 = support.TESTFN + ".4"
         data = b'0123456789'
         bytes_to_copy = 6
