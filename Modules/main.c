@@ -1945,6 +1945,12 @@ pymain_read_conf_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
         return -1;
     }
 
+#ifdef MS_WINDOWS
+    if (cmdline->legacy_windows_fs_encoding) {
+        config->utf8_mode = 0;
+    }
+#endif
+
     if (pymain_init_core_argv(pymain, cmdline) < 0) {
         return -1;
     }
@@ -2213,12 +2219,6 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     _PyInitError err;
 
     _PyCoreConfig_GetGlobalConfig(config);
-
-#ifdef MS_WINDOWS
-    if (cmdline->legacy_windows_fs_encoding) {
-        config->utf8_mode = 0;
-    }
-#endif
 
     assert(config->ignore_environment >= 0);
     if (!config->ignore_environment) {
