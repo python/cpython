@@ -788,11 +788,11 @@ static PyMethodDef profiler_methods[] = {
 };
 
 PyDoc_STRVAR(profiler_doc, "\
-Profiler(custom_timer=None, time_unit=None, subcalls=True, builtins=True)\n\
+Profiler(timer=None, timeunit=None, subcalls=True, builtins=True)\n\
 \n\
     Builds a profiler object using the specified timer function.\n\
     The default timer is a fast built-in one based on real time.\n\
-    For custom timer functions returning integers, time_unit can\n\
+    For custom timer functions returning integers, timeunit can\n\
     be a float specifying a scale (i.e. how long each integer unit\n\
     is, in seconds).\n\
 ");
