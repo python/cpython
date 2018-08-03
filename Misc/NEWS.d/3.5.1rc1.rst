@@ -1,5 +1,5 @@
 .. bpo: 25630
-.. date: 8110
+.. date: 9450
 .. nonce: ZxzcoY
 .. release date: 2015-11-22
 .. section: Core and Builtins
@@ -10,7 +10,7 @@ filesystem paths.
 ..
 
 .. bpo: 23564
-.. date: 8109
+.. date: 9449
 .. nonce: XHarGG
 .. section: Core and Builtins
 
@@ -21,7 +21,7 @@ impact as subprocess.py already avoided it.
 ..
 
 .. bpo: 25388
-.. date: 8108
+.. date: 9448
 .. nonce: zm3uuQ
 .. section: Core and Builtins
 
@@ -31,7 +31,7 @@ byte.
 ..
 
 .. bpo: 25462
-.. date: 8107
+.. date: 9447
 .. nonce: eXDzgO
 .. section: Core and Builtins
 
@@ -41,7 +41,7 @@ implementation of OrderedDict.
 ..
 
 .. bpo: 22995
-.. date: 8106
+.. date: 9446
 .. nonce: 90kpuP
 .. section: Core and Builtins
 
@@ -51,7 +51,7 @@ types with not defined __new__.
 ..
 
 .. bpo: 25555
-.. date: 8105
+.. date: 9445
 .. nonce: MUpG-j
 .. section: Core and Builtins
 
@@ -61,7 +61,7 @@ AST from Python objects.
 ..
 
 .. bpo: 24802
-.. date: 8104
+.. date: 9444
 .. nonce: Qie066
 .. section: Core and Builtins
 
@@ -72,7 +72,7 @@ a null byte, but the functions assumed they were.
 ..
 
 .. bpo: 24726
-.. date: 8103
+.. date: 9443
 .. nonce: AHk4v2
 .. section: Core and Builtins
 
@@ -82,7 +82,7 @@ direct calls of dict methods.
 ..
 
 .. bpo: 25449
-.. date: 8102
+.. date: 9442
 .. nonce: VqTOFi
 .. section: Core and Builtins
 
@@ -92,7 +92,7 @@ implementations as well as in Python implementation.
 ..
 
 .. bpo: 25395
-.. date: 8101
+.. date: 9441
 .. nonce: htkE3W
 .. section: Core and Builtins
 
@@ -102,7 +102,7 @@ collected.
 ..
 
 .. bpo: 25274
-.. date: 8100
+.. date: 9440
 .. nonce: QCGvAF
 .. section: Core and Builtins
 
@@ -114,7 +114,7 @@ when the overflowed flag of the thread state is reset.
 ..
 
 .. bpo: 24402
-.. date: 8099
+.. date: 9439
 .. nonce: MAgi3X
 .. section: Core and Builtins
 
@@ -124,7 +124,7 @@ fails.
 ..
 
 .. bpo: 24806
-.. date: 8098
+.. date: 9438
 .. nonce: Nb0znT
 .. section: Core and Builtins
 
@@ -134,7 +134,7 @@ subclassed through multiple inheritance.
 ..
 
 .. bpo: 24848
-.. date: 8097
+.. date: 9437
 .. nonce: HlUSuy
 .. section: Core and Builtins
 
@@ -143,7 +143,7 @@ Fixed a number of bugs in UTF-7 decoding of misformed data.
 ..
 
 .. bpo: 25280
-.. date: 8096
+.. date: 9436
 .. nonce: ivTMwd
 .. section: Core and Builtins
 
@@ -153,19 +153,19 @@ twice.
 ..
 
 .. bpo: 25003
-.. date: 8095
+.. date: 9435
 .. nonce: _ban92
 .. section: Core and Builtins
 
 On Solaris 11.3 or newer, os.urandom() now uses the getrandom() function
 instead of the getentropy() function. The getentropy() function is blocking
-to generate very good quality entropy, os.urandom() doesn't need such
-high-quality entropy.
+to generate very good quality entropy, os.urandom() doesn't need such high-
+quality entropy.
 
 ..
 
 .. bpo: 25182
-.. date: 8094
+.. date: 9434
 .. nonce: gBDq-T
 .. section: Core and Builtins
 
@@ -175,7 +175,7 @@ startup) now uses the backslashreplace error handler.
 ..
 
 .. bpo: 25131
-.. date: 8093
+.. date: 9433
 .. nonce: j5hH6a
 .. section: Core and Builtins
 
@@ -185,7 +185,7 @@ comprehensions correspond to the opening brace.
 ..
 
 .. bpo: 25150
-.. date: 8092
+.. date: 9432
 .. nonce: 0Gh-Ty
 .. section: Core and Builtins
 
@@ -196,7 +196,7 @@ PyThreadState_Get() to avoid ABI incompatibilies.
 ..
 
 .. bpo: 25626
-.. date: 8091
+.. date: 9431
 .. nonce: TQ3fvb
 .. section: Library
 
@@ -210,7 +210,7 @@ parameter.
 ..
 
 .. bpo: 25583
-.. date: 8090
+.. date: 9430
 .. nonce: Gk-cim
 .. section: Library
 
@@ -220,7 +220,7 @@ gives priority to errors such as EACCES over EEXIST.
 ..
 
 .. bpo: 25593
-.. date: 8089
+.. date: 9429
 .. nonce: 56uegI
 .. section: Library
 
@@ -229,7 +229,7 @@ Change semantics of EventLoop.stop() in asyncio.
 ..
 
 .. bpo: 6973
-.. date: 8088
+.. date: 9428
 .. nonce: nl5cHt
 .. section: Library
 
@@ -240,7 +240,7 @@ potentially signal a different process.
 ..
 
 .. bpo: 25590
-.. date: 8087
+.. date: 9427
 .. nonce: aCt-yW
 .. section: Library
 
@@ -249,7 +249,7 @@ In the Readline completer, only call getattr() once per attribute.
 ..
 
 .. bpo: 25498
-.. date: 8086
+.. date: 9426
 .. nonce: AvqEBl
 .. section: Library
 
@@ -260,7 +260,7 @@ Eryksun.
 ..
 
 .. bpo: 25584
-.. date: 8085
+.. date: 9425
 .. nonce: 124mYw
 .. section: Library
 
@@ -269,7 +269,7 @@ Added "escape" to the __all__ list in the glob module.
 ..
 
 .. bpo: 25584
-.. date: 8084
+.. date: 9424
 .. nonce: ZeWX0J
 .. section: Library
 
@@ -278,7 +278,7 @@ Fixed recursive glob() with patterns starting with ``**``.
 ..
 
 .. bpo: 25446
-.. date: 8083
+.. date: 9423
 .. nonce: k1DByx
 .. section: Library
 
@@ -287,7 +287,7 @@ Fix regression in smtplib's AUTH LOGIN support.
 ..
 
 .. bpo: 18010
-.. date: 8082
+.. date: 9422
 .. nonce: Azyf1C
 .. section: Library
 
@@ -297,7 +297,7 @@ importing packages.
 ..
 
 .. bpo: 25554
-.. date: 8081
+.. date: 9421
 .. nonce: UM9MlR
 .. section: Library
 
@@ -306,7 +306,7 @@ Got rid of circular references in regular expression parsing.
 ..
 
 .. bpo: 25510
-.. date: 8080
+.. date: 9420
 .. nonce: 79g7LA
 .. section: Library
 
@@ -316,7 +316,7 @@ the FileInput was opened with binary mode. Patch by Ryosuke Ito.
 ..
 
 .. bpo: 25503
-.. date: 8079
+.. date: 9419
 .. nonce: Zea0Y7
 .. section: Library
 
@@ -326,7 +326,7 @@ patch by John Mark Vandenberg.
 ..
 
 .. bpo: 25515
-.. date: 8078
+.. date: 9418
 .. nonce: fQsyYG
 .. section: Library
 
@@ -335,7 +335,7 @@ Always use os.urandom as a source of randomness in uuid.uuid4.
 ..
 
 .. bpo: 21827
-.. date: 8077
+.. date: 9417
 .. nonce: k2oreR
 .. section: Library
 
@@ -345,7 +345,7 @@ substring of smallest leading whitespace. Based on patch by Robert Li.
 ..
 
 .. bpo: 25447
-.. date: 8076
+.. date: 9416
 .. nonce: eDYc4t
 .. section: Library
 
@@ -355,7 +355,7 @@ the original object unchanged).
 ..
 
 .. bpo: 25390
-.. date: 8075
+.. date: 9415
 .. nonce: 6mSgRq
 .. section: Library
 
@@ -364,7 +364,7 @@ typing: Don't crash on Union[str, Pattern].
 ..
 
 .. bpo: 25441
-.. date: 8074
+.. date: 9414
 .. nonce: d7zph6
 .. section: Library
 
@@ -373,7 +373,7 @@ asyncio: Raise error from drain() when socket is closed.
 ..
 
 .. bpo: 25410
-.. date: 8073
+.. date: 9413
 .. nonce: QAs_3B
 .. section: Library
 
@@ -382,7 +382,7 @@ Cleaned up and fixed minor bugs in C implementation of OrderedDict.
 ..
 
 .. bpo: 25411
-.. date: 8072
+.. date: 9412
 .. nonce: qsJTCb
 .. section: Library
 
@@ -392,7 +392,7 @@ package. Thanks to user simon04 for the patch.
 ..
 
 .. bpo: 25407
-.. date: 8071
+.. date: 9411
 .. nonce: ukNt1D
 .. section: Library
 
@@ -401,7 +401,7 @@ Remove mentions of the formatter module being removed in Python 3.6.
 ..
 
 .. bpo: 25406
-.. date: 8070
+.. date: 9410
 .. nonce: 5MZKU_
 .. section: Library
 
@@ -412,7 +412,7 @@ start of ordered dict.
 ..
 
 .. bpo: 25364
-.. date: 8069
+.. date: 9409
 .. nonce: u_1Wi6
 .. section: Library
 
@@ -421,7 +421,7 @@ zipfile now works in threads disabled builds.
 ..
 
 .. bpo: 25328
-.. date: 8068
+.. date: 9408
 .. nonce: Rja1Xg
 .. section: Library
 
@@ -431,7 +431,7 @@ and enable_SMTPUTF8 are set to true.
 ..
 
 .. bpo: 25316
-.. date: 8067
+.. date: 9407
 .. nonce: dHQHWI
 .. section: Library
 
@@ -441,7 +441,7 @@ installed.
 ..
 
 .. bpo: 25380
-.. date: 8066
+.. date: 9406
 .. nonce: sKZ6-I
 .. section: Library
 
@@ -450,7 +450,7 @@ Fixed protocol for the STACK_GLOBAL opcode in pickletools.opcodes.
 ..
 
 .. bpo: 23972
-.. date: 8065
+.. date: 9405
 .. nonce: s2g30g
 .. section: Library
 
@@ -463,7 +463,7 @@ Patch by Chris Laws.
 ..
 
 .. bpo: 25304
-.. date: 8064
+.. date: 9404
 .. nonce: CsmLyI
 .. section: Library
 
@@ -474,7 +474,7 @@ Vincent Michel.
 ..
 
 .. bpo: 25232
-.. date: 8063
+.. date: 9403
 .. nonce: KhKjCE
 .. section: Library
 
@@ -484,7 +484,7 @@ mark (?) rather than the last. Patch from Xiang Zhang.
 ..
 
 .. bpo: 24657
-.. date: 8062
+.. date: 9402
 .. nonce: h2Ag7y
 .. section: Library
 
@@ -494,7 +494,7 @@ URL as if it were a path. Patch from Xiang Zhang.
 ..
 
 .. bpo: 24483
-.. date: 8061
+.. date: 9401
 .. nonce: WPLGSJ
 .. section: Library
 
@@ -504,7 +504,7 @@ once.
 ..
 
 .. bpo: 22958
-.. date: 8060
+.. date: 9400
 .. nonce: Ebu7Gl
 .. section: Library
 
@@ -514,7 +514,7 @@ self and the dict keyword arguments.
 ..
 
 .. bpo: 22609
-.. date: 8059
+.. date: 9399
 .. nonce: fV7hdV
 .. section: Library
 
@@ -523,7 +523,7 @@ Constructor of collections.UserDict now accepts the self keyword argument.
 ..
 
 .. bpo: 25111
-.. date: 8058
+.. date: 9398
 .. nonce: azL4qE
 .. section: Library
 
@@ -532,7 +532,7 @@ Fixed comparison of traceback.FrameSummary.
 ..
 
 .. bpo: 25262
-.. date: 8057
+.. date: 9397
 .. nonce: pQS5cB
 .. section: Library
 
@@ -543,7 +543,7 @@ longer silently ignored on 32-bit platforms in C implementation.
 ..
 
 .. bpo: 25034
-.. date: 8056
+.. date: 9396
 .. nonce: eGvOIb
 .. section: Library
 
@@ -553,7 +553,7 @@ Patch by Anthon van der Neut.
 ..
 
 .. bpo: 25233
-.. date: 8055
+.. date: 9395
 .. nonce: EdZV9x
 .. section: Library
 
@@ -563,7 +563,7 @@ understandable and correct.
 ..
 
 .. bpo: 25203
-.. date: 8054
+.. date: 9394
 .. nonce: IgDEbt
 .. section: Library
 
@@ -573,7 +573,7 @@ inconsistent state.
 ..
 
 .. bpo: 23600
-.. date: 8053
+.. date: 9393
 .. nonce: 7J_RD5
 .. section: Library
 
@@ -583,7 +583,7 @@ some cases.
 ..
 
 .. bpo: 23329
-.. date: 8052
+.. date: 9392
 .. nonce: yccJBE
 .. section: Library
 
@@ -592,7 +592,7 @@ Allow the ssl module to be built with older versions of LibreSSL.
 ..
 
 .. bpo: 0
-.. date: 8051
+.. date: 9391
 .. nonce: ww9QSm
 .. section: Library
 
@@ -601,7 +601,7 @@ Prevent overflow in _Unpickler_Read.
 ..
 
 .. bpo: 25047
-.. date: 8050
+.. date: 9390
 .. nonce: kc8tqx
 .. section: Library
 
@@ -612,7 +612,7 @@ uppercase like "UTF-8", which worked in Python 2.
 ..
 
 .. bpo: 25135
-.. date: 8049
+.. date: 9389
 .. nonce: gVHNy-
 .. section: Library
 
@@ -622,7 +622,7 @@ avoid possible reentrancy issues.
 ..
 
 .. bpo: 19143
-.. date: 8048
+.. date: 9388
 .. nonce: 76SBSO
 .. section: Library
 
@@ -632,7 +632,7 @@ compatibility shims.
 ..
 
 .. bpo: 25092
-.. date: 8047
+.. date: 9387
 .. nonce: fQ37Ac
 .. section: Library
 
@@ -641,7 +641,7 @@ Fix datetime.strftime() failure when errno was already set to EINVAL.
 ..
 
 .. bpo: 23517
-.. date: 8046
+.. date: 9386
 .. nonce: 3ABmf1
 .. section: Library
 
@@ -656,7 +656,7 @@ It also the rounding mode used by round(float) for example.
 ..
 
 .. bpo: 25155
-.. date: 8045
+.. date: 9385
 .. nonce: JiETzD
 .. section: Library
 
@@ -667,7 +667,7 @@ support date after year 2038. It was a regression introduced in Python
 ..
 
 .. bpo: 25108
-.. date: 8044
+.. date: 9384
 .. nonce: zGPbgA
 .. section: Library
 
@@ -677,7 +677,7 @@ format_stack(), and extract_stack() called without arguments.
 ..
 
 .. bpo: 25118
-.. date: 8043
+.. date: 9383
 .. nonce: wGm1u6
 .. section: Library
 
@@ -686,7 +686,7 @@ Fix a regression of Python 3.5.0 in os.waitpid() on Windows.
 ..
 
 .. bpo: 24684
-.. date: 8042
+.. date: 9382
 .. nonce: t4T77O
 .. section: Library
 
@@ -699,7 +699,7 @@ of the string.
 ..
 
 .. bpo: 25060
-.. date: 8041
+.. date: 9381
 .. nonce: zLdvIk
 .. section: Library
 
@@ -708,7 +708,7 @@ Correctly compute stack usage of the BUILD_MAP opcode.
 ..
 
 .. bpo: 24857
-.. date: 8040
+.. date: 9380
 .. nonce: PpJWZ9
 .. section: Library
 
@@ -718,7 +718,7 @@ result instead of raising an exception.  Patch by A Kaptur.
 ..
 
 .. bpo: 23144
-.. date: 8039
+.. date: 9379
 .. nonce: cLf67X
 .. section: Library
 
@@ -728,7 +728,7 @@ convert_charrefs is True.
 ..
 
 .. bpo: 24982
-.. date: 8038
+.. date: 9378
 .. nonce: sGMMAR
 .. section: Library
 
@@ -738,7 +738,7 @@ shutil.make_archive() with the "zip" format now adds entries for directories
 ..
 
 .. bpo: 25019
-.. date: 8037
+.. date: 9377
 .. nonce: JQJlOZ
 .. section: Library
 
@@ -748,7 +748,7 @@ patch by John Leitch.
 ..
 
 .. bpo: 16180
-.. date: 8036
+.. date: 9376
 .. nonce: 6IUcNS
 .. section: Library
 
@@ -758,7 +758,7 @@ loop.  Patch by Xavier de Gaye.
 ..
 
 .. bpo: 24891
-.. date: 8035
+.. date: 9375
 .. nonce: ddVmHS
 .. section: Library
 
@@ -771,7 +771,7 @@ Initial patch written by Marco Paolini.
 ..
 
 .. bpo: 24992
-.. date: 8034
+.. date: 9374
 .. nonce: 5sqF74
 .. section: Library
 
@@ -781,7 +781,7 @@ collections.OrderedDict constructor.
 ..
 
 .. bpo: 24881
-.. date: 8033
+.. date: 9373
 .. nonce: ZoVZXu
 .. section: Library
 
@@ -791,7 +791,7 @@ Cygwin.  Patch from Akira Li.
 ..
 
 .. bpo: 25578
-.. date: 8032
+.. date: 9372
 .. nonce: G6S-ft
 .. section: Library
 
@@ -800,7 +800,7 @@ Fix (another) memory leak in SSLSocket.getpeercer().
 ..
 
 .. bpo: 25530
-.. date: 8031
+.. date: 9371
 .. nonce: hDFkwu
 .. section: Library
 
@@ -810,7 +810,7 @@ ssl.SSLContext.
 ..
 
 .. bpo: 25569
-.. date: 8030
+.. date: 9370
 .. nonce: CfvQjK
 .. section: Library
 
@@ -819,7 +819,7 @@ Fix memory leak in SSLSocket.getpeercert().
 ..
 
 .. bpo: 25471
-.. date: 8029
+.. date: 9369
 .. nonce: T0A02M
 .. section: Library
 
@@ -828,7 +828,7 @@ Sockets returned from accept() shouldn't appear to be nonblocking.
 ..
 
 .. bpo: 25319
-.. date: 8028
+.. date: 9368
 .. nonce: iyuglv
 .. section: Library
 
@@ -838,7 +838,7 @@ regular lock rather than a recursive lock.
 ..
 
 .. bpo: 21112
-.. date: 8027
+.. date: 9367
 .. nonce: vSFU1r
 .. section: Library
 
@@ -848,7 +848,7 @@ Peksag.
 ..
 
 .. bpo: 24764
-.. date: 8026
+.. date: 9366
 .. nonce: QwFZ2S
 .. section: Library
 
@@ -858,7 +858,7 @@ headers. Patch written by Peter Landry and reviewed by Pierre Quentel.
 ..
 
 .. bpo: 24913
-.. date: 8025
+.. date: 9365
 .. nonce: p2ZAJ4
 .. section: Library
 
@@ -867,7 +867,7 @@ Fix overrun error in deque.index(). Found by John Leitch and Bryce Darling.
 ..
 
 .. bpo: 24774
-.. date: 8024
+.. date: 9364
 .. nonce: xLbskG
 .. section: Library
 
@@ -876,7 +876,7 @@ Fix docstring in http.server.test. Patch from Chiu-Hsiang Hsu.
 ..
 
 .. bpo: 21159
-.. date: 8023
+.. date: 9363
 .. nonce: ochL5W
 .. section: Library
 
@@ -886,7 +886,7 @@ Improve message in configparser.InterpolationMissingOptionError. Patch from
 ..
 
 .. bpo: 20362
-.. date: 8022
+.. date: 9362
 .. nonce: 5aP_Ri
 .. section: Library
 
@@ -896,7 +896,7 @@ Kurenkov.
 ..
 
 .. bpo: 23572
-.. date: 8021
+.. date: 9361
 .. nonce: QhQ9RD
 .. section: Library
 
@@ -906,7 +906,7 @@ Ethan Furman.
 ..
 
 .. bpo: 0
-.. date: 8020
+.. date: 9360
 .. nonce: DO1sFa
 .. section: Library
 
@@ -915,7 +915,7 @@ asyncio: ensure_future() now accepts awaitable objects.
 ..
 
 .. bpo: 15348
-.. date: 8019
+.. date: 9359
 .. nonce: d1Fg01
 .. section: IDLE
 
@@ -926,7 +926,7 @@ RuntimeErrors that were being caught and ignored.
 ..
 
 .. bpo: 24455
-.. date: 8018
+.. date: 9358
 .. nonce: x6YqtE
 .. section: IDLE
 
@@ -941,7 +941,7 @@ existing interaction to terminate first.
 ..
 
 .. bpo: 0
-.. date: 8017
+.. date: 9357
 .. nonce: Yp9LRY
 .. section: IDLE
 
@@ -952,7 +952,7 @@ program, not IDLE itself.
 ..
 
 .. bpo: 24750
-.. date: 8016
+.. date: 9356
 .. nonce: xgsi-K
 .. section: IDLE
 
@@ -962,7 +962,7 @@ Roseman.
 ..
 
 .. bpo: 25313
-.. date: 8015
+.. date: 9355
 .. nonce: xMXHpO
 .. section: IDLE
 
@@ -973,7 +973,7 @@ use the revised idleConf.CurrentTheme everywhere in idlelib.
 ..
 
 .. bpo: 24782
-.. date: 8014
+.. date: 9354
 .. nonce: RgIPYE
 .. section: IDLE
 
@@ -984,7 +984,7 @@ Mark Roseman.
 ..
 
 .. bpo: 22726
-.. date: 8013
+.. date: 9353
 .. nonce: x8T0dA
 .. section: IDLE
 
@@ -994,7 +994,7 @@ buttons and the new IDLE Dark theme.
 ..
 
 .. bpo: 24820
-.. date: 8012
+.. date: 9352
 .. nonce: TFPJhr
 .. section: IDLE
 
@@ -1008,7 +1008,7 @@ any IDLE release, and can be modified.
 ..
 
 .. bpo: 25224
-.. date: 8011
+.. date: 9351
 .. nonce: 5Llwo4
 .. section: IDLE
 
@@ -1019,7 +1019,7 @@ The previous user content is now in the IDLE doc chapter. 'IDLE' now means
 ..
 
 .. bpo: 24820
-.. date: 8010
+.. date: 9350
 .. nonce: ZUz9Fn
 .. section: IDLE
 
@@ -1029,7 +1029,7 @@ Original patch by Mark Roseman.
 ..
 
 .. bpo: 24972
-.. date: 8009
+.. date: 9349
 .. nonce: uc0uNo
 .. section: IDLE
 
@@ -1040,7 +1040,7 @@ on Windows.  Initial patch by Mark Roseman.
 ..
 
 .. bpo: 24570
-.. date: 8008
+.. date: 9348
 .. nonce: s3EkNn
 .. section: IDLE
 
@@ -1050,7 +1050,7 @@ regression.  Initial patch by Mark Roseman.
 ..
 
 .. bpo: 24988
-.. date: 8007
+.. date: 9347
 .. nonce: tXqq4T
 .. section: IDLE
 
@@ -1060,7 +1060,7 @@ Patch by Mark Roseman.
 ..
 
 .. bpo: 24801
-.. date: 8006
+.. date: 9346
 .. nonce: -bj_Ou
 .. section: IDLE
 
@@ -1069,7 +1069,7 @@ Make right-click for context menu work on Mac Aqua. Patch by Mark Roseman.
 ..
 
 .. bpo: 25173
-.. date: 8005
+.. date: 9345
 .. nonce: EZzrPg
 .. section: IDLE
 
@@ -1079,20 +1079,20 @@ them a 'sheet'.  Patch by Mark Roseman.
 ..
 
 .. bpo: 25198
-.. date: 8004
+.. date: 9344
 .. nonce: -j_BV7
 .. section: IDLE
 
-Enhance the initial html viewer now used for Idle Help. Properly indent
-fixed-pitch text (patch by Mark Roseman). Give code snippet a very
-Sphinx-like light blueish-gray background. Re-use initial width and height set by
-users for shell and editor. When the Table of Contents (TOC) menu is used,
+Enhance the initial html viewer now used for Idle Help. * Properly indent
+fixed-pitch text (patch by Mark Roseman). * Give code snippet a very Sphinx-
+like light blueish-gray background. * Re-use initial width and height set by
+users for shell and editor. * When the Table of Contents (TOC) menu is used,
 put the section header at the top of the screen.
 
 ..
 
 .. bpo: 25225
-.. date: 8003
+.. date: 9343
 .. nonce: 9pvdq6
 .. section: IDLE
 
@@ -1101,7 +1101,7 @@ Condense and rewrite Idle doc section on text colors.
 ..
 
 .. bpo: 21995
-.. date: 8002
+.. date: 9342
 .. nonce: C5Rmzx
 .. section: IDLE
 
@@ -1110,7 +1110,7 @@ Explain some differences between IDLE and console Python.
 ..
 
 .. bpo: 22820
-.. date: 8001
+.. date: 9341
 .. nonce: hix_8X
 .. section: IDLE
 
@@ -1119,7 +1119,7 @@ Explain need for *print* when running file from Idle editor.
 ..
 
 .. bpo: 25224
-.. date: 8000
+.. date: 9340
 .. nonce: UVMYQq
 .. section: IDLE
 
@@ -1128,7 +1128,7 @@ Doc: augment Idle feature list and no-subprocess section.
 ..
 
 .. bpo: 25219
-.. date: 7999
+.. date: 9339
 .. nonce: 8_9DYg
 .. section: IDLE
 
@@ -1138,7 +1138,7 @@ not correct.
 ..
 
 .. bpo: 24861
-.. date: 7998
+.. date: 9338
 .. nonce: Ecg2yT
 .. section: IDLE
 
@@ -1148,7 +1148,7 @@ Idle. See idlelib.__init__.__doc__.
 ..
 
 .. bpo: 25199
-.. date: 7997
+.. date: 9337
 .. nonce: ih7yY3
 .. section: IDLE
 
@@ -1157,7 +1157,7 @@ Idle: add synchronization comments for future maintainers.
 ..
 
 .. bpo: 16893
-.. date: 7996
+.. date: 9336
 .. nonce: bZtPgJ
 .. section: IDLE
 
@@ -1170,7 +1170,7 @@ unused EditorWindow.HelpDialog class and helt.txt file are deprecated.
 ..
 
 .. bpo: 24199
-.. date: 7995
+.. date: 9335
 .. nonce: VKnZEv
 .. section: IDLE
 
@@ -1179,7 +1179,7 @@ Deprecate unused idlelib.idlever with possible removal in 3.6.
 ..
 
 .. bpo: 24790
-.. date: 7994
+.. date: 9334
 .. nonce: hD1hlj
 .. section: IDLE
 
@@ -1188,7 +1188,7 @@ Remove extraneous code (which also create 2 & 3 conflicts).
 ..
 
 .. bpo: 22558
-.. date: 7993
+.. date: 9333
 .. nonce: Pk02YC
 .. section: Documentation
 
@@ -1198,7 +1198,7 @@ Yoni Lavi.
 ..
 
 .. bpo: 12067
-.. date: 7992
+.. date: 9332
 .. nonce: nLD2M-
 .. section: Documentation
 
@@ -1212,7 +1212,7 @@ Andy Maier.
 ..
 
 .. bpo: 24952
-.. date: 7991
+.. date: 9331
 .. nonce: RHhFPE
 .. section: Documentation
 
@@ -1222,7 +1222,7 @@ Clarify the default size argument of stack_size() in the "threading" and
 ..
 
 .. bpo: 23725
-.. date: 7990
+.. date: 9330
 .. nonce: 49TZ5f
 .. section: Documentation
 
@@ -1232,7 +1232,7 @@ Zbigniew Jędrzejewski-Szmek.
 ..
 
 .. bpo: 24808
-.. date: 7989
+.. date: 9329
 .. nonce: MGjc3F
 .. section: Documentation
 
@@ -1241,7 +1241,7 @@ Update the types of some PyTypeObject fields.  Patch by Joseph Weston.
 ..
 
 .. bpo: 22812
-.. date: 7988
+.. date: 9328
 .. nonce: kLCF0G
 .. section: Documentation
 
@@ -1250,7 +1250,7 @@ Fix unittest discovery examples. Patch from Pam McA'Nulty.
 ..
 
 .. bpo: 25449
-.. date: 7987
+.. date: 9327
 .. nonce: MP6KNs
 .. section: Tests
 
@@ -1259,7 +1259,7 @@ Added tests for OrderedDict subclasses.
 ..
 
 .. bpo: 25099
-.. date: 7986
+.. date: 9326
 .. nonce: tJQOWx
 .. section: Tests
 
@@ -1269,7 +1269,7 @@ Make test_compileall not fail when an entry on sys.path cannot be written to
 ..
 
 .. bpo: 23919
-.. date: 7985
+.. date: 9325
 .. nonce: vJnjaq
 .. section: Tests
 
@@ -1278,7 +1278,7 @@ Prevents assert dialogs appearing in the test suite.
 ..
 
 .. bpo: 0
-.. date: 7984
+.. date: 9324
 .. nonce: X-Bk5l
 .. section: Tests
 
@@ -1288,7 +1288,7 @@ along to regrtest.py.  Previously there was a limit of 9.
 ..
 
 .. bpo: 24915
-.. date: 7983
+.. date: 9323
 .. nonce: PgD3Cx
 .. section: Build
 
@@ -1298,7 +1298,7 @@ profile data. Initial patch by Alecsandru Patrascu of Intel.
 ..
 
 .. bpo: 24910
-.. date: 7982
+.. date: 9322
 .. nonce: ZZdfl0
 .. section: Build
 
@@ -1307,7 +1307,7 @@ Windows MSIs now have unique display names.
 ..
 
 .. bpo: 24986
-.. date: 7981
+.. date: 9321
 .. nonce: 1WyXeU
 .. section: Build
 
@@ -1317,7 +1317,7 @@ libraries are not available.
 ..
 
 .. bpo: 25450
-.. date: 7980
+.. date: 9320
 .. nonce: X4xlWf
 .. section: Windows
 
@@ -1326,7 +1326,7 @@ Updates shortcuts to start Python in installation directory.
 ..
 
 .. bpo: 25164
-.. date: 7979
+.. date: 9319
 .. nonce: FHVOOA
 .. section: Windows
 
@@ -1335,7 +1335,7 @@ Changes default all-users install directory to match per-user directory.
 ..
 
 .. bpo: 25143
-.. date: 7978
+.. date: 9318
 .. nonce: hmxsia
 .. section: Windows
 
@@ -1344,7 +1344,7 @@ Improves installer error messages for unsupported platforms.
 ..
 
 .. bpo: 25163
-.. date: 7977
+.. date: 9317
 .. nonce: uCRe8H
 .. section: Windows
 
@@ -1353,7 +1353,7 @@ Display correct directory in installer when using non-default settings.
 ..
 
 .. bpo: 25361
-.. date: 7976
+.. date: 9316
 .. nonce: GETaSY
 .. section: Windows
 
@@ -1362,7 +1362,7 @@ Disables use of SSE2 instructions in Windows 32-bit build
 ..
 
 .. bpo: 25089
-.. date: 7975
+.. date: 9315
 .. nonce: n_YJgw
 .. section: Windows
 
@@ -1372,7 +1372,7 @@ upgrade.
 ..
 
 .. bpo: 25165
-.. date: 7974
+.. date: 9314
 .. nonce: aUTN1e
 .. section: Windows
 
@@ -1381,7 +1381,7 @@ Windows uninstallation should not remove launcher if other versions remain
 ..
 
 .. bpo: 25112
-.. date: 7973
+.. date: 9313
 .. nonce: frdKij
 .. section: Windows
 
@@ -1390,7 +1390,7 @@ py.exe launcher is missing icons
 ..
 
 .. bpo: 25102
-.. date: 7972
+.. date: 9312
 .. nonce: 6y6Akl
 .. section: Windows
 
@@ -1399,7 +1399,7 @@ Windows installer does not precompile for -O or -OO.
 ..
 
 .. bpo: 25081
-.. date: 7971
+.. date: 9311
 .. nonce: dcRCTO
 .. section: Windows
 
@@ -1408,7 +1408,7 @@ Makes Back button in installer go back to upgrade page when upgrading.
 ..
 
 .. bpo: 25091
-.. date: 7970
+.. date: 9310
 .. nonce: 1u-VKy
 .. section: Windows
 
@@ -1417,7 +1417,7 @@ Increases font size of the installer.
 ..
 
 .. bpo: 25126
-.. date: 7969
+.. date: 9309
 .. nonce: ANx3DW
 .. section: Windows
 
@@ -1426,7 +1426,7 @@ Clarifies that the non-web installer will download some components.
 ..
 
 .. bpo: 25213
-.. date: 7968
+.. date: 9308
 .. nonce: KGmXoe
 .. section: Windows
 
@@ -1435,7 +1435,7 @@ Restores requestedExecutionLevel to manifest to disable UAC virtualization.
 ..
 
 .. bpo: 25022
-.. date: 7967
+.. date: 9307
 .. nonce: vAt_zr
 .. section: Windows
 
@@ -1444,7 +1444,7 @@ Removed very outdated PC/example_nt/ directory.
 ..
 
 .. bpo: 25440
-.. date: 7966
+.. date: 9306
 .. nonce: 5xhyGr
 .. section: Tools/Demos
 

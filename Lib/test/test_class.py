@@ -534,6 +534,16 @@ class ClassTests(unittest.TestCase):
         else:
             self.fail("attribute error for I.__init__ got masked")
 
+    def assertNotOrderable(self, a, b):
+        with self.assertRaises(TypeError):
+            a < b
+        with self.assertRaises(TypeError):
+            a > b
+        with self.assertRaises(TypeError):
+            a <= b
+        with self.assertRaises(TypeError):
+            a >= b
+
     def testHashComparisonOfMethods(self):
         # Test comparison and hash of methods
         class A:
@@ -544,24 +554,30 @@ class ClassTests(unittest.TestCase):
             def g(self):
                 pass
             def __eq__(self, other):
-                return self.x == other.x
+                return True
             def __hash__(self):
-                return self.x
+                raise TypeError
         class B(A):
             pass
 
         a1 = A(1)
-        a2 = A(2)
-        self.assertEqual(a1.f, a1.f)
-        self.assertNotEqual(a1.f, a2.f)
-        self.assertNotEqual(a1.f, a1.g)
-        self.assertEqual(a1.f, A(1).f)
+        a2 = A(1)
+        self.assertTrue(a1.f == a1.f)
+        self.assertFalse(a1.f != a1.f)
+        self.assertFalse(a1.f == a2.f)
+        self.assertTrue(a1.f != a2.f)
+        self.assertFalse(a1.f == a1.g)
+        self.assertTrue(a1.f != a1.g)
+        self.assertNotOrderable(a1.f, a1.f)
         self.assertEqual(hash(a1.f), hash(a1.f))
-        self.assertEqual(hash(a1.f), hash(A(1).f))
 
-        self.assertNotEqual(A.f, a1.f)
-        self.assertNotEqual(A.f, A.g)
-        self.assertEqual(B.f, A.f)
+        self.assertFalse(A.f == a1.f)
+        self.assertTrue(A.f != a1.f)
+        self.assertFalse(A.f == A.g)
+        self.assertTrue(A.f != A.g)
+        self.assertTrue(B.f == A.f)
+        self.assertFalse(B.f != A.f)
+        self.assertNotOrderable(A.f, A.f)
         self.assertEqual(hash(B.f), hash(A.f))
 
         # the following triggers a SystemError in 2.4

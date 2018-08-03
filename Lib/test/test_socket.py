@@ -5843,7 +5843,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                                  op=socket.ALG_OP_ENCRYPT, iv=iv)
                 enc = op.recv(msglen * multiplier)
             self.assertEqual(len(enc), msglen * multiplier)
-            self.assertTrue(enc[:msglen], ciphertext)
+            self.assertEqual(enc[:msglen], ciphertext)
 
             op, _ = algo.accept()
             with op:

@@ -192,8 +192,8 @@ class BugsTestCase(unittest.TestCase):
         marshal.dumps([128] * 1000)
 
     def test_patch_873224(self):
-        self.assertRaises(Exception, marshal.loads, '0')
-        self.assertRaises(Exception, marshal.loads, 'f')
+        self.assertRaises(Exception, marshal.loads, b'0')
+        self.assertRaises(Exception, marshal.loads, b'f')
         self.assertRaises(Exception, marshal.loads, marshal.dumps(2**65)[:-1])
 
     def test_version_argument(self):
@@ -204,19 +204,31 @@ class BugsTestCase(unittest.TestCase):
     def test_fuzz(self):
         # simple test that it's at least not *totally* trivial to
         # crash from bad marshal data
-        for c in [chr(i) for i in range(256)]:
+        for i in range(256):
+            c = bytes([i])
             try:
                 marshal.loads(c)
             except Exception:
                 pass
 
-    def test_loads_2x_code(self):
-        s = b'c' + (b'X' * 4*4) + b'{' * 2**20
-        self.assertRaises(ValueError, marshal.loads, s)
-
     def test_loads_recursion(self):
-        s = b'c' + (b'X' * 4*5) + b'{' * 2**20
-        self.assertRaises(ValueError, marshal.loads, s)
+        def run_tests(N, check):
+            # (((...None...),),)
+            check(b')\x01' * N + b'N')
+            check(b'(\x01\x00\x00\x00' * N + b'N')
+            # [[[...None...]]]
+            check(b'[\x01\x00\x00\x00' * N + b'N')
+            # {None: {None: {None: ...None...}}}
+            check(b'{N' * N + b'N' + b'0' * N)
+            # frozenset([frozenset([frozenset([...None...])])])
+            check(b'>\x01\x00\x00\x00' * N + b'N')
+        # Check that the generated marshal data is valid and marshal.loads()
+        # works for moderately deep nesting
+        run_tests(100, marshal.loads)
+        # Very deeply nested structure shouldn't blow the stack
+        def check(s):
+            self.assertRaises(ValueError, marshal.loads, s)
+        run_tests(2**20, check)
 
     def test_recursion_limit(self):
         # Create a deeply nested structure.
@@ -307,7 +319,7 @@ class BugsTestCase(unittest.TestCase):
             self.assertRaises(ValueError, marshal.load,
                               BadReader(marshal.dumps(value)))
 
-    def _test_eof(self):
+    def test_eof(self):
         data = marshal.dumps(("hello", "dolly", None))
         for i in range(len(data)):
             self.assertRaises(EOFError, marshal.loads, data[0: i])

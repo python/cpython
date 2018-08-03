@@ -1,4 +1,3 @@
-
 /* Thread and interpreter state structures and their interfaces */
 
 
@@ -9,6 +8,7 @@ extern "C" {
 #endif
 
 #include "pythread.h"
+#include "coreconfig.h"
 
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
@@ -25,67 +25,6 @@ typedef struct _is PyInterpreterState;
 #else
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
-
-typedef struct {
-    int install_signal_handlers;  /* Install signal handlers? -1 means unset */
-
-    int ignore_environment; /* -E, Py_IgnoreEnvironmentFlag */
-    int use_hash_seed;      /* PYTHONHASHSEED=x */
-    unsigned long hash_seed;
-    const char *allocator;  /* Memory allocator: _PyMem_SetupAllocators() */
-    int dev_mode;           /* PYTHONDEVMODE, -X dev */
-    int faulthandler;       /* PYTHONFAULTHANDLER, -X faulthandler */
-    int tracemalloc;        /* PYTHONTRACEMALLOC, -X tracemalloc=N */
-    int import_time;        /* PYTHONPROFILEIMPORTTIME, -X importtime */
-    int show_ref_count;     /* -X showrefcount */
-    int show_alloc_count;   /* -X showalloccount */
-    int dump_refs;          /* PYTHONDUMPREFS */
-    int malloc_stats;       /* PYTHONMALLOCSTATS */
-    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
-    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
-    int utf8_mode;          /* PYTHONUTF8, -X utf8; -1 means unknown */
-
-    wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
-    int argc;               /* Number of command line arguments,
-                               -1 means unset */
-    wchar_t **argv;         /* Command line arguments */
-    wchar_t *program;       /* argv[0] or "" */
-
-    int nxoption;           /* Number of -X options */
-    wchar_t **xoptions;     /* -X options */
-
-    int nwarnoption;        /* Number of warnings options */
-    wchar_t **warnoptions;  /* Warnings options */
-
-    /* Path configuration inputs */
-    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
-    wchar_t *home;          /* PYTHONHOME environment variable,
-                               see also Py_SetPythonHome(). */
-
-    /* Path configuration outputs */
-    int nmodule_search_path;        /* Number of sys.path paths,
-                                       -1 means unset */
-    wchar_t **module_search_paths;  /* sys.path paths */
-    wchar_t *executable;    /* sys.executable */
-    wchar_t *prefix;        /* sys.prefix */
-    wchar_t *base_prefix;   /* sys.base_prefix */
-    wchar_t *exec_prefix;   /* sys.exec_prefix */
-    wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
-
-    /* Private fields */
-    int _disable_importlib; /* Needed by freeze_importlib */
-} _PyCoreConfig;
-
-#define _PyCoreConfig_INIT \
-    (_PyCoreConfig){ \
-        .install_signal_handlers = -1, \
-        .use_hash_seed = -1, \
-        .coerce_c_locale = -1, \
-        .utf8_mode = -1, \
-        .argc = -1, \
-        .nmodule_search_path = -1}
-/* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
-
 /* Placeholders while working on the new configuration API
  *
  * See PEP 432 for final anticipated contents
@@ -101,6 +40,7 @@ typedef struct {
     PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
     PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
     PyObject *module_search_path;  /* sys.path list */
+    PyObject *pycache_prefix;      /* sys.pycache_prefix str, can be NULL */
 } _PyMainInterpreterConfig;
 
 #define _PyMainInterpreterConfig_INIT \
@@ -305,6 +245,13 @@ typedef struct _ts {
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+#if !defined(Py_LIMITED_API)
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
+#endif
+#ifdef Py_BUILD_CORE
+   /* Macro which should only be used for performance critical code */
+#  define _PyInterpreterState_GET_UNSAFE() (PyThreadState_GET()->interp)
+#endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 /* New in 3.7 */
 PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);

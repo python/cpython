@@ -193,3 +193,8 @@ class ScriptBinding:
         # XXX This should really be a function of EditorWindow...
         tkMessageBox.showerror(title, message, parent=self.editwin.text)
         self.editwin.text.focus_set()
+
+
+if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_runscript', verbosity=2,)

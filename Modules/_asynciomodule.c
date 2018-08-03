@@ -1738,7 +1738,7 @@ static PyGetSetDef TaskStepMethWrapper_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
-PyTypeObject TaskStepMethWrapper_Type = {
+static PyTypeObject TaskStepMethWrapper_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "TaskStepMethWrapper",
     .tp_basicsize = sizeof(TaskStepMethWrapper),
@@ -1813,7 +1813,7 @@ TaskWakeupMethWrapper_dealloc(TaskWakeupMethWrapper *o)
     Py_TYPE(o)->tp_free(o);
 }
 
-PyTypeObject TaskWakeupMethWrapper_Type = {
+static PyTypeObject TaskWakeupMethWrapper_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "TaskWakeupMethWrapper",
     .tp_basicsize = sizeof(TaskWakeupMethWrapper),

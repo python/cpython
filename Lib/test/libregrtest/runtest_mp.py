@@ -200,7 +200,7 @@ def run_tests_multiprocess(regrtest):
             if (ok not in (CHILD_ERROR, INTERRUPTED)
                 and test_time >= PROGRESS_MIN_TIME
                 and not regrtest.ns.pgo):
-                text += ' (%.0f sec)' % test_time
+                text += ' (%s)' % format_duration(test_time)
             elif ok == CHILD_ERROR:
                 text = '%s (%s)' % (text, test_time)
             running = get_running(workers)

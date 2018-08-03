@@ -263,6 +263,8 @@ The :mod:`functools` module defines the following functions:
               value = function(value, element)
           return value
 
+   See :func:`itertools.accumulate` for an iterator that yields all intermediate
+   values.
 
 .. decorator:: singledispatch
 
