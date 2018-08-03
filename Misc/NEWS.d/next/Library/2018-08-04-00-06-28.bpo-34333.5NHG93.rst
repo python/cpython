@@ -1,0 +1,1 @@
+Fix %-formatting in :meth:`pathlib.PurePath.with_suffix`.
