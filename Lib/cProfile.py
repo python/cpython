@@ -25,11 +25,11 @@ runctx.__doc__ = _pyprofile.runctx.__doc__
 # ____________________________________________________________
 
 class Profile(_lsprof.Profiler):
-    """Profile(custom_timer=None, time_unit=None, subcalls=True, builtins=True)
+    """Profile(timer=None, timeunit=None, subcalls=True, builtins=True)
 
     Builds a profiler object using the specified timer function.
     The default timer is a fast built-in one based on real time.
-    For custom timer functions returning integers, time_unit can
+    For custom timer functions returning integers, timeunit can
     be a float specifying a scale (i.e. how long each integer unit
     is, in seconds).
     """
