@@ -805,7 +805,6 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
 {
     assert(src_config != NULL);
 
-
     PyMemAllocatorEx old_alloc;
     _PyInitError err;
 
