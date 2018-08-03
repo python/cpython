@@ -41,6 +41,7 @@ class TooltipBase(object):
 
         self.position_window()
         self.showcontents()
+        self.tipwindow.update_idletasks()  # Needed on MacOS -- see #34275.
         self.tipwindow.lift()  # work around bug in Tk 8.5.18+ (issue #24570)
 
     def position_window(self):
@@ -140,8 +141,8 @@ class OnHoverTooltipBase(TooltipBase):
         super(OnHoverTooltipBase, self).hidetip()
 
 
-class TextTooltip(OnHoverTooltipBase):
-    """an on-hover text-only tooltip"""
+class Hovertip(OnHoverTooltipBase):
+    "A tooltip that pops up when a mouse hovers over an anchor widget."
     def __init__(self, anchor_widget, text, hover_delay=1000):
         """Create a text tooltip with a mouse hover delay.
 
