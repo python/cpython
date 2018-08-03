@@ -289,7 +289,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'Py_UnbufferedStdioFlag': 0,
 
         '_disable_importlib': 0,
-        '_Py_CheckHashBasedPycsMode': 'default',
         'Py_FrozenFlag': 0,
     }
 

@@ -374,7 +374,7 @@ dump_config(void)
     /* FIXME: test legacy_windows_stdio */
 
     printf("_disable_importlib = %i\n", config->_disable_importlib);
-    printf("_Py_CheckHashBasedPycsMode = %s\n", _Py_CheckHashBasedPycsMode);
+    /* cannot test _Py_CheckHashBasedPycsMode: the symbol is not exported */
     printf("Py_FrozenFlag = %i\n", Py_FrozenFlag);
 
 #undef ASSERT_EQUAL
