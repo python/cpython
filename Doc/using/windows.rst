@@ -381,7 +381,7 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    https://support.microsoft.com/en-us/help/100843/environment-variables-in-windows-nt
+    https://www.microsoft.com/en-us/wdsi/help/folder-variables
       Environment variables in Windows NT
 
     https://technet.microsoft.com/en-us/library/cc754250.aspx
