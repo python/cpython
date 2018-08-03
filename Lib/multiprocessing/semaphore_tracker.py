@@ -22,6 +22,7 @@ from . import spawn
 from . import util
 
 __all__ = ['ensure_running', 'register', 'unregister']
+
 _HAVE_SIGMASK = hasattr(signal, 'pthread_sigmask')
 _IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
 
@@ -84,9 +85,11 @@ class SemaphoreTracker(object):
                 # For more info, see: https://bugs.python.org/issue33613
                 if _HAVE_SIGMASK:
                     signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
-                pid = util.spawnv_passfds(exe, args, fds_to_pass)
-                if _HAVE_SIGMASK:
-                    signal.pthread_sigmask(signal.SIG_UNBLOCK, _IGNORED_SIGNALS)
+                try:
+                    pid = util.spawnv_passfds(exe, args, fds_to_pass)
+                finally:
+                    if _HAVE_SIGMASK:
+                        signal.pthread_sigmask(signal.SIG_UNBLOCK, _IGNORED_SIGNALS)
             except:
                 os.close(w)
                 raise
