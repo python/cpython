@@ -91,7 +91,7 @@ _PyImport_FindSharedFuncptr(const char *prefix,
         }
     }
 
-    dlopenflags = PyThreadState_GET()->interp->dlopenflags;
+    dlopenflags = _PyInterpreterState_Get()->dlopenflags;
 
     handle = dlopen(pathname, dlopenflags);
 
