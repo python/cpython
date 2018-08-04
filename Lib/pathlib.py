@@ -116,6 +116,8 @@ class _WindowsFlavour(_Flavour):
 
     drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     ext_namespace_prefix = '\\\\?\\'
+    # See https://bugs.python.org/issue33898
+    ext_namespace_prefix2 = '\\\\.\\'    
 
     reserved_names = (
         {'CON', 'PRN', 'AUX', 'NUL'} |
@@ -163,6 +165,19 @@ class _WindowsFlavour(_Flavour):
             drv = part[:2]
             part = part[2:]
             first = third
+        #Except for "UNC" and "Global" paths, the drive should be 
+        #the first component after the local-device prefix.     
+        # See https://bugs.python.org/issue33898            
+        elif part != sep and prefix and 'UNC' not in prefix and 'Global' not in prefix:
+            index = part.find(sep)
+            if index != -1:
+                drv = part[:index]
+                part = part[index:]
+                first = part[0:1] 
+            else:
+                drv = part
+                part = ''
+                first = ''                           
         if first == sep:
             root = first
             part = part.lstrip(sep)
@@ -198,14 +213,36 @@ class _WindowsFlavour(_Flavour):
         # Means fallback on absolute
         return None
 
-    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix):
+    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix,\
+                             ext_prefix2=ext_namespace_prefix2):
+        # See https://bugs.python.org/issue33898 
         prefix = ''
-        if s.startswith(ext_prefix):
+        if s.startswith(ext_prefix) or s.startswith(ext_prefix2):
             prefix = s[:4]
             s = s[4:]
-            if s.startswith('UNC\\'):
-                prefix += s[:3]
-                s = '\\' + s[3:]
+            index = s.find('\\')
+            if index != -1:   
+                # Do not assume case sensitivity. 
+                # See https://docs.microsoft.com/ru-ru/windows/desktop/FileIO/naming-a-file
+                s1 = s[:index].upper() 
+                print(s1, 's1')
+                if s1 == 'GLOBAL':
+                    prefix += s[:6] 
+                # For example, Path('//?/Global/Z:/').drive
+                    if s[8] == ':':
+                        prefix += s[6:7]
+                        s = s[7:]
+                # For example, r'\\?\Global\UNC\server\share'
+                    elif s[7:10] == 'UNC':
+                        prefix += s[6:10]
+                        print(prefix)
+                        s = '\\' +s[10:]
+                    else:    
+                        s = '\\' + s[6:]   
+                if s1 == 'UNC':                
+                    print('UNC')
+                    prefix += s[:3]
+                    s = '\\' + s[3:]     
         return prefix, s
 
     def _ext_to_normal(self, s):
