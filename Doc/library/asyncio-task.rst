@@ -392,15 +392,12 @@ Task
    Wrap a :ref:`coroutine <coroutine>` *coro* into a task and schedule
    its execution. Return the task object.
 
+   If *name* is not ``None``, it is set as the name of the task using
+   :meth:`Task.set_name`.
+
    The task is executed in :func:`get_running_loop` context,
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
-
-   Parameters:
-
-   * *name* is a descriptive name for the task. If no explicit name is
-     supplied, the event loop may assign the task an automatically
-     generated name.
 
    .. versionadded:: 3.7
 
@@ -532,7 +529,7 @@ Task
       The *value* argument can be any object, which is then converted to a
       string.
 
-      In the default Task implementation, the name will be visible in the
+      In the default ``Task`` implementation, the name will be visible in the
       :func:`repr` output of a task object.
 
       .. versionadded:: 3.8
