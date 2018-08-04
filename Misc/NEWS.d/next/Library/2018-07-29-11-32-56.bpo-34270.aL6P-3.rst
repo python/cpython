@@ -1,3 +1,6 @@
-The default asyncio task class now always has a name which can be get or set using two new methods
-(``get_name()`` and ``set_name``). An initial name (like ``Task-1``) is always generated in the
-default implementation using a monotonic counter and is visible in the ``repr()`` output.
+The default asyncio task class now always has a name which can be get or set
+using two new methods (``get_name()`` and ``set_name``) and is visible in the
+``repr()`` output. An initial name can also be set using the new ``name``
+keyword argument to :func:`asyncio.create_task`. If no initial name is set,
+the default Task implementation generates a name like ``Task-1`` using a
+monotonic counter.

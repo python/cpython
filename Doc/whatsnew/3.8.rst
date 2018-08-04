@@ -243,9 +243,11 @@ Changes in the Python API
 * ``PyGC_Head`` struct is changed completely.  All code touched the
   struct member should be rewritten.  (See :issue:`33597`)
 
-* The :meth:`asyncio.Task.get_name` and :meth:`asyncio.Task.set_name` methods
-  were added to the :class:`asyncio.Task` class. The name of the task was made
-  visible in the ``repr()`` output of :class:`asyncio.Task` instances.
+* Asyncio task can now be named, either by passing the ``name`` keyword
+  argument to :func:`asyncio.create_task` or by calling
+  :meth:`asyncio.Task.set_name` method on the task object. The task name
+  is visible in the ``repr()`` output of :class:`asyncio.Task` and can also be
+  retrieved using the :meth:`asyncio.Task.get_name` method.
 
 
 CPython bytecode changes
