@@ -54,6 +54,16 @@ def _all_tasks_compat(loop=None):
     return {t for t in _all_tasks if futures._get_loop(t) is loop}
 
 
+def _set_task_name(task, name):
+    if name is not None:
+        try:
+            set_name = task.set_name
+        except AttributeError:
+            pass
+        else:
+            set_name(name)
+
+
 class Task(futures._PyFuture):  # Inherit Python Task implementation
                                 # from a Python Future implementation.
 
@@ -336,14 +346,7 @@ def create_task(coro, *, name=None):
     """
     loop = events.get_running_loop()
     task = loop.create_task(coro)
-    if name is not None:
-        try:
-            set_name = task.set_name
-        except AttributeError:
-            pass
-        else:
-            set_name(name)
-
+    _set_task_name(task, name)
     return task
 
 
