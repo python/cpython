@@ -1049,7 +1049,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     boot = PyMem_NEW(struct bootstate, 1);
     if (boot == NULL)
         return PyErr_NoMemory();
-    boot->interp = PyThreadState_GET()->interp;
+    boot->interp = _PyInterpreterState_Get();
     boot->func = func;
     boot->args = args;
     boot->keyw = keyw;
@@ -1154,8 +1154,8 @@ A thread's identity may be reused for another thread after it exits.");
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyThreadState *tstate = PyThreadState_Get();
-    return PyLong_FromLong(tstate->interp->num_threads);
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    return PyLong_FromLong(interp->num_threads);
 }
 
 PyDoc_STRVAR(_count_doc,
@@ -1348,7 +1348,7 @@ PyInit__thread(void)
     PyObject *m, *d, *v;
     double time_max;
     double timeout_max;
-    PyThreadState *tstate = PyThreadState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_Get();
 
     /* Initialize types: */
     if (PyType_Ready(&localdummytype) < 0)
@@ -1395,7 +1395,7 @@ PyInit__thread(void)
     if (PyModule_AddObject(m, "_local", (PyObject *)&localtype) < 0)
         return NULL;
 
-    tstate->interp->num_threads = 0;
+    interp->num_threads = 0;
 
     str_dict = PyUnicode_InternFromString("__dict__");
     if (str_dict == NULL)
