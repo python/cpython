@@ -1,1 +1,2 @@
-Fix %-formatting in :meth:`pathlib.PurePath.with_suffix`.
+Fix %-formatting in :meth:`pathlib.PurePath.with_suffix` when formatting an
+error message.
