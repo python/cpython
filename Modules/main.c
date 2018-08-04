@@ -1733,7 +1733,7 @@ cmdline_get_env_flags(_Py_CommandLineDetails *cmdline)
 
 /* Set global variable variables from environment variables */
 void
-_Py_Initialize_ReadEnvVars(void)
+_Py_Initialize_ReadEnvVarsNoAlloc(void)
 {
     _Py_CommandLineDetails cmdline;
     memset(&cmdline, 0, sizeof(cmdline));

@@ -55,12 +55,10 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
     PyInterpreterState **interp_p,
     const _PyCoreConfig *config);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
     const _PyCoreConfig *config);
-#endif
 #ifdef Py_BUILD_CORE
-PyAPI_FUNC(void) _Py_Initialize_ReadEnvVars(void);
+PyAPI_FUNC(void) _Py_Initialize_ReadEnvVarsNoAlloc(void);
 #endif
 
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *);
@@ -83,7 +81,8 @@ PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
 PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
         PyInterpreterState *interp,
         const _PyMainInterpreterConfig *config);
-#endif
+#endif   /* !defined(Py_LIMITED_API) */
+
 
 /* Initialization and finalization */
 PyAPI_FUNC(void) Py_Initialize(void);

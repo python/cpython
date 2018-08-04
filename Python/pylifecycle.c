@@ -627,12 +627,12 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     if (_PyRuntime.core_initialized) {
         PyThreadState *tstate = PyThreadState_GET();
         if (!tstate) {
-            return _Py_INIT_ERR("failed to read thread state");
+            return _Py_INIT_ERR("no thread state found");
         }
 
         interp = tstate->interp;
         if (interp == NULL) {
-            return _Py_INIT_ERR("can't make main interpreter");
+            return _Py_INIT_ERR("no main interpreter found");
         }
         *interp_p = interp;
 
@@ -981,7 +981,7 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
 _PyInitError
 _Py_InitializeFromConfig(const _PyCoreConfig *config)
 {
-    _Py_Initialize_ReadEnvVars();
+    _Py_Initialize_ReadEnvVarsNoAlloc();
 
     PyInterpreterState *interp;
     _PyInitError err;
