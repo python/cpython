@@ -213,8 +213,7 @@ class _WindowsFlavour(_Flavour):
         # Means fallback on absolute
         return None
 
-    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix,\
-                             ext_prefix2=ext_namespace_prefix2):
+    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix, ext_prefix2=ext_namespace_prefix2):
         # See https://bugs.python.org/issue33898 
         prefix = ''
         if s.startswith(ext_prefix) or s.startswith(ext_prefix2):
@@ -227,11 +226,11 @@ class _WindowsFlavour(_Flavour):
                 s1 = s[:index].upper() 
                 if s1 == 'GLOBAL':
                     prefix += s[:6] 
-                # For example, Path('//?/Global/Z:/').drive
+                    # For example, Path('//?/Global/Z:/').drive
                     if s[8] == ':':
                         prefix += s[6:7]
                         s = s[7:]
-                # For example, r'\\?\Global\UNC\server\share'
+                    # For example, r'\\?\Global\UNC\server\share'
                     elif s[7:10] == 'UNC':
                         prefix += s[6:10]
                         s = '\\' +s[10:]
