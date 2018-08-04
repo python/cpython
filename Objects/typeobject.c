@@ -3703,9 +3703,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             goto error;
         method_count = PyObject_Length(abstract_methods);
         if (method_count == -1)
-        {
             goto error;
-        }
 
         PyErr_Format(PyExc_TypeError,
                      "Can't instantiate abstract class %s "
