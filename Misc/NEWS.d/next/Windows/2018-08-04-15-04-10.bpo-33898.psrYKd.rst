@@ -1,0 +1,2 @@
+Fix pathlib issues with parsing Windows device paths
+starting with //?/ or //./.  Patch by Albina Giliazova.
