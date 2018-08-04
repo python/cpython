@@ -1,0 +1,1 @@
+uuid: correct the field seperator (_mac_field) value of an ethernet adapter MAC address for AIX

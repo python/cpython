@@ -6,10 +6,12 @@ import io
 import os
 import shutil
 import subprocess
+import sys
+
+_notAIX = not sys.platform.startswith("aix")
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
-
 
 def importable(name):
     try:
@@ -516,10 +518,17 @@ class BaseTestInternals:
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
-        data = '''
+        if _notAIX:
+            data = '''
 fake hwaddr
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
+'''
+        else:
+            data = '''
+fake hwaddr
+cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+eth0      Link encap:Ethernet  HWaddr 12.34.56.78.90.ab
 '''
 
         popen = unittest.mock.MagicMock()
@@ -549,6 +558,10 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_ifconfig_getnode(self):
+        if _notAIX:
+            node = uuid._ifconfig_getnode()
+        else:
+            self.skipTest('because AIX "ifconfig" does not provide macaddr')
         node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig')
 
@@ -559,6 +572,10 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_arp_getnode(self):
+        if _notAIX:
+            node = uuid._ifconfig_getnode()
+        else:
+            self.skipTest('because AIX "arp" does not provide macaddr')
         node = self.uuid._arp_getnode()
         self.check_node(node, 'arp')
 

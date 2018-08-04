@@ -52,6 +52,9 @@ from enum import Enum
 
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
+_notAIX = not sys.platform.startswith("aix")
+_mac_delim =  b':' if _notAIX else b'.'
+
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
     'reserved for Microsoft compatibility', 'reserved for future definition']
@@ -373,7 +376,7 @@ def _find_mac(command, args, hw_identifiers, get_index):
                     if words[i] in hw_identifiers:
                         try:
                             word = words[get_index(i)]
-                            mac = int(word.replace(b':', b''), 16)
+                            mac = int(word.replace(_mac_delim, b''), 16)
                             if _is_universal(mac):
                                 return mac
                             first_local_mac = first_local_mac or mac
@@ -455,8 +458,8 @@ def _netstat_getnode():
                 try:
                     words = line.rstrip().split()
                     word = words[i]
-                    if len(word) == 17 and word.count(b':') == 5:
-                        mac = int(word.replace(b':', b''), 16)
+                    if len(word) <= 17 and len(word) >= 11 and word.count(_mac_delim) == 5:
+                        mac = int(word.replace(_mac_delim, b''), 16)
                         if _is_universal(mac):
                             return mac
                         first_local_mac = first_local_mac or mac
