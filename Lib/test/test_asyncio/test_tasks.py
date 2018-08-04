@@ -88,11 +88,7 @@ class BaseTaskTests:
     Future = None
 
     def new_task(self, loop, coro, name='TestTask'):
-        t = self.__class__.Task(coro, loop=loop)
-        if name is not None:
-            t.set_name(name)
-
-        return t
+        return self.__class__.Task(coro, loop=loop, name=name)
 
     def new_future(self, loop):
         return self.__class__.Future(loop=loop)

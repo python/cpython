@@ -100,7 +100,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                       stacklevel=2)
         return _all_tasks_compat(loop)
 
-    def __init__(self, coro, *, loop=None):
+    def __init__(self, coro, *, loop=None, name=None):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -110,7 +110,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._log_destroy_pending = False
             raise TypeError(f"a coroutine was expected, got {coro!r}")
 
-        self._name = 'Task-%s' % _task_name_counter()
+        if name is None:
+            self._name = 'Task-%s' % _task_name_counter()
+        else:
+            self._name = str(name)
+
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro

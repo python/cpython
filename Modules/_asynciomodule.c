@@ -1937,13 +1937,15 @@ _asyncio.Task.__init__
     coro: object
     *
     loop: object = None
+    name: object = None
 
 A coroutine wrapped in a Future.
 [clinic start generated code]*/
 
 static int
-_asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
-/*[clinic end generated code: output=9f24774c2287fc2f input=8d132974b049593e]*/
+_asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
+                            PyObject *name)
+/*[clinic end generated code: output=88b12b83d570df50 input=352a3137fe60091d]*/
 {
     if (future_init((FutureObj*)self, loop)) {
         return -1;
@@ -1972,11 +1974,15 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
     Py_INCREF(coro);
     Py_XSETREF(self->task_coro, coro);
 
-    PyObject *name = PyUnicode_FromFormat("Task-%" PRIu64, ++task_name_counter);
-    if (name == NULL) {
-        return -1;
+    if (name == Py_None) {
+        name = PyUnicode_FromFormat("Task-%" PRIu64, ++task_name_counter);
+    } else {
+        name = PyObject_Str(name);
     }
     Py_XSETREF(self->task_name, name);
+    if (self->task_name == NULL) {
+        return -1;
+    }
 
     if (task_call_step_soon(self, NULL)) {
         return -1;
