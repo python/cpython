@@ -225,7 +225,6 @@ class _WindowsFlavour(_Flavour):
                 # Do not assume case sensitivity. 
                 # See https://docs.microsoft.com/ru-ru/windows/desktop/FileIO/naming-a-file
                 s1 = s[:index].upper() 
-                print(s1, 's1')
                 if s1 == 'GLOBAL':
                     prefix += s[:6] 
                 # For example, Path('//?/Global/Z:/').drive
@@ -235,12 +234,10 @@ class _WindowsFlavour(_Flavour):
                 # For example, r'\\?\Global\UNC\server\share'
                     elif s[7:10] == 'UNC':
                         prefix += s[6:10]
-                        print(prefix)
                         s = '\\' +s[10:]
                     else:    
                         s = '\\' + s[6:]   
                 if s1 == 'UNC':                
-                    print('UNC')
                     prefix += s[:3]
                     s = '\\' + s[3:]     
         return prefix, s
