@@ -1,4 +1,4 @@
-from idlelib.tooltip import TextTooltip, TooltipBase
+from idlelib.tooltip import TooltipBase, Hovertip
 from test.support import requires
 requires('gui')
 
@@ -61,19 +61,19 @@ class ToolTipBaseTest(unittest.TestCase):
             tooltip.showtip()
 
 
-class TextToolTipTest(unittest.TestCase):
+class HovertipTest(unittest.TestCase):
     def setUp(self):
         self.top, self.button = _make_top_and_button(self)
 
     def test_showtip(self):
-        tooltip = TextTooltip(self.button, 'ToolTip text')
+        tooltip = Hovertip(self.button, 'ToolTip text')
         self.addCleanup(tooltip.hidetip)
         self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
         tooltip.showtip()
         self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
 
     def test_showtip_twice(self):
-        tooltip = TextTooltip(self.button, 'ToolTip text')
+        tooltip = Hovertip(self.button, 'ToolTip text')
         self.addCleanup(tooltip.hidetip)
         self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
         tooltip.showtip()
@@ -84,14 +84,14 @@ class TextToolTipTest(unittest.TestCase):
         self.assertIs(tooltip.tipwindow, orig_tipwindow)
 
     def test_hidetip(self):
-        tooltip = TextTooltip(self.button, 'ToolTip text')
+        tooltip = Hovertip(self.button, 'ToolTip text')
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip()
         tooltip.hidetip()
         self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
 
     def test_showtip_on_mouse_enter_no_delay(self):
-        tooltip = TextTooltip(self.button, 'ToolTip text', hover_delay=None)
+        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=None)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
         root_update()
@@ -102,7 +102,7 @@ class TextToolTipTest(unittest.TestCase):
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
     def test_showtip_on_mouse_enter_hover_delay(self):
-        tooltip = TextTooltip(self.button, 'ToolTip text', hover_delay=50)
+        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=50)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
         root_update()
@@ -116,7 +116,7 @@ class TextToolTipTest(unittest.TestCase):
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
     def test_hidetip_on_mouse_leave(self):
-        tooltip = TextTooltip(self.button, 'ToolTip text', hover_delay=None)
+        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=None)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
         root_update()
@@ -128,7 +128,7 @@ class TextToolTipTest(unittest.TestCase):
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
     def test_dont_show_on_mouse_leave_before_delay(self):
-        tooltip = TextTooltip(self.button, 'ToolTip text', hover_delay=50)
+        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=50)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
         root_update()

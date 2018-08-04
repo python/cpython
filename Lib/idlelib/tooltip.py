@@ -152,7 +152,7 @@ class Hovertip(OnHoverTooltipBase):
         e.g. after hovering over the anchor widget with the mouse for enough
         time.
         """
-        super(TextTooltip, self).__init__(anchor_widget,
+        super(Hovertip, self).__init__(anchor_widget,
                                           hover_delay=hover_delay)
         self.text = text
 
@@ -171,13 +171,16 @@ def _tooltip(parent):  # htest #
     label.pack()
     button1 = Button(top, text="Button 1 -- 1/2 second hover delay")
     button1.pack()
-    TextTooltip(button1, "This is tooltip text for button1.", hover_delay=500)
+    Hovertip(button1, "This is tooltip text for button1.", hover_delay=500)
     button2 = Button(top, text="Button 2 -- no hover delay")
     button2.pack()
-    TextTooltip(button2, "This is tooltip\ntext for button2.",
+    Hovertip(button2, "This is tooltip\ntext for button2.",
                 hover_delay=None)
 
 
 if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_tooltip', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_tooltip)
