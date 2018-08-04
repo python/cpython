@@ -2289,6 +2289,18 @@ class BaseTaskTests:
 
         self.loop.run_until_complete(coro())
 
+    def test_bare_create_named_task(self):
+
+        async def coro_noop():
+            pass
+
+        async def coro():
+            task = asyncio.create_task(coro_noop(), name='No-op')
+            self.assertEqual(task.get_name(), 'No-op')
+            await task
+
+        self.loop.run_until_complete(coro())
+
     def test_context_1(self):
         cvar = contextvars.ContextVar('cvar', default='nope')
 
