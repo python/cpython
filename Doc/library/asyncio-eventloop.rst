@@ -250,7 +250,7 @@ Futures
 Tasks
 -----
 
-.. method:: AbstractEventLoop.create_task(coro)
+.. method:: AbstractEventLoop.create_task(coro, \*, name=None)
 
    Schedule the execution of a :ref:`coroutine object <coroutine>`: wrap it in
    a future. Return a :class:`Task` object.
@@ -260,6 +260,9 @@ Tasks
    :class:`Task`.
 
    .. versionadded:: 3.4.2
+
+   .. versionchanged:: 3.8
+      Added the ``name`` parameter.
 
 .. method:: AbstractEventLoop.set_task_factory(factory)
 

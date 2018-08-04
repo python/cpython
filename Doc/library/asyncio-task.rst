@@ -387,7 +387,7 @@ with the result.
 Task
 ----
 
-.. function:: create_task(coro)
+.. function:: create_task(coro, \*, name=None)
 
    Wrap a :ref:`coroutine <coroutine>` *coro* into a task and schedule
    its execution. Return the task object.
@@ -396,9 +396,18 @@ Task
    :exc:`RuntimeError` is raised if there is no running loop in
    current thread.
 
+   Parameters:
+
+   * *name* is a descriptive name for the task. If no explicit name is
+     supplied, the event loop may assign the task an automatically
+     generated name.
+
    .. versionadded:: 3.7
 
-.. class:: Task(coro, \*, loop=None)
+   .. versionchanged:: 3.8
+      Added the ``name`` parameter.
+
+.. class:: Task(coro, \*, loop=None, name=None)
 
    A unit for concurrent running of :ref:`coroutines <coroutine>`,
    subclass of :class:`Future`.
@@ -437,6 +446,9 @@ Task
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
+
+   .. versionchanged:: 3.8
+      Added the ``name`` parameter.
 
    .. classmethod:: all_tasks(loop=None)
 
