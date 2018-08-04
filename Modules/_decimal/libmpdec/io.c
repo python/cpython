@@ -864,7 +864,7 @@ mpd_parse_fmt_str(mpd_spec_t *spec, const char *fmt, int caps)
         *cp == 'G' || *cp == 'g' || *cp == '%') {
         spec->type = *cp++;
     }
-    else if (*cp == 'N' || *cp == 'n' || *cp == 'L' || *cp == 'l') {
+    else if (*cp == 'N' || *cp == 'n') {
         /* locale specific conversion */
         struct lconv *lc;
         /* separator has already been specified */
@@ -872,32 +872,11 @@ mpd_parse_fmt_str(mpd_spec_t *spec, const char *fmt, int caps)
             return 0;
         }
         spec->type = *cp++;
-
+        spec->type = (spec->type == 'N') ? 'G' : 'g';
         lc = localeconv();
-        if(spec->type == 'L') {
-            spec->dot = lc->mon_decimal_point;
-            spec->sep = lc->mon_thousands_sep;
-            spec->grouping = lc->mon_grouping;
-        }
-        else {
-            spec->dot = lc->decimal_point;
-            spec->sep = lc->thousands_sep;
-            spec->grouping = lc->grouping;
-        }
-
-        switch(spec->type) {
-            case 'N':
-                spec->type = 'G';
-                break;
-            case 'n':
-                spec->type = 'g';
-                break;
-            case 'L':
-            case 'l':
-                spec->type = 'f';
-                break;
-        }
-
+        spec->dot = lc->decimal_point;
+        spec->sep = lc->thousands_sep;
+        spec->grouping = lc->grouping;
         if (mpd_validate_lconv(spec) < 0) {
             return 0; /* GCOV_NOT_REACHED */
         }

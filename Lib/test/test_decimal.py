@@ -1164,45 +1164,6 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(get_fmt(Decimal('-1.5'), dotsep_wide, '020n'),
                          '-0\u00b4000\u00b4000\u00b4000\u00b4001\u00bf5')
 
-    @run_with_locale('LC_ALL', 'en_US', 'fr_FR', 'ru_RU', 'pt_PT')
-    def test_l_format(self):
-        # Due to locale differences between platforms, test thet these
-        # formats are consistent with locale.format_string
-        Decimal = self.decimal.Decimal
-
-        for val in ['12.7',
-                    '123456789',
-                    '12.3456',
-                    '12345',
-                    ]:
-            val = Decimal(val)
-            # NB: The 'f' format will display 6 digits right of the decimal
-            #     place for floats but will respect the exponent of a Decimal
-            #     which is why this test must be explicit about decimal places
-            self.assertEqual(val.__format__('.0l'),
-                             locale.format_string('%.0f', val, True, False))
-            self.assertEqual(val.__format__('.0L'),
-                             locale.format_string('%.0f', val, True, True))
-
-            self.assertEqual(val.__format__('.3l'),
-                             locale.format_string('%.3f', val, True, False))
-            self.assertEqual(val.__format__('.3L'),
-                             locale.format_string('%.3f', val, True, True))
-
-            self.assertEqual(val.__format__('04.1l'),
-                             locale.format_string('%04.1f', val, True, False))
-            self.assertEqual(val.__format__('04.1L'),
-                             locale.format_string('%04.1f', val, True, True))
-
-
-    @run_with_locale('LC_ALL', 'en_US')
-    def test_l_format_us(self):
-        Decimal = self.decimal.Decimal
-        self.assertEqual(Decimal('12.7').__format__('l'), '12.7')
-        self.assertEqual(Decimal('123456789').__format__('l'), '123,456,789')
-        self.assertEqual(Decimal('123456789.00').__format__('l'),
-                         '123,456,789.00')
-
     @run_with_locale('LC_ALL', 'ps_AF')
     def test_wide_char_separator_decimal_point(self):
         # locale with wide char separator and decimal point
