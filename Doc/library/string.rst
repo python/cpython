@@ -468,7 +468,7 @@ The available presentation types for floating point and decimal values are:
    |         | fixed-point number.  The default precision is 6.         |
    +---------+----------------------------------------------------------+
    | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
-   |         | ``nan`` to  ``NAN`` and ``inf`` to``INF``.                |
+   |         | ``nan`` to  ``NAN`` and ``inf`` to``INF``.               |
    +---------+----------------------------------------------------------+
    | ``'g'`` | General format.  For a given precision ``p >= 1``,       |
    |         | this rounds the number to ``p`` significant digits and   |
