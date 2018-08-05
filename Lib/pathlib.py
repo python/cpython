@@ -224,8 +224,9 @@ class _WindowsFlavour(_Flavour):
             if index != -1:
                 # Do not assume case sensitivity.
                 # See https://docs.microsoft.com/ru-ru/windows/desktop/FileIO/naming-a-file
-                s1 = s[:index].upper()
-                if s1 == 'GLOBAL':
+                # But .lower() is not recommended. See https://bugs.python.org/issue32612
+                s1 = s[:index]
+                if s1 == 'Global' or s1 == 'GLOBAL':
                     prefix += s[:6]
                 # For example, Path('//?/Global/Z:/').drive
                     if s[8] == ':':
