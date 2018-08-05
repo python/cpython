@@ -458,7 +458,7 @@ class EditorWindow(object):
 
     def mousescroll(self, event):
         "Handle scroll wheel."
-        up = {EventType.MouseWheel: event.delta >= 0 == darwin,
+        up = {EventType.MouseWheel: (event.delta >= 0) == darwin,
               EventType.Button: event.num == 4}
         lines = 5
         if up[event.type]:
