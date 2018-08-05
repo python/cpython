@@ -1,0 +1,2 @@
+Don't ignore environment variables with command-line equivalents in
+Py_Initialize.

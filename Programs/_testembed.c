@@ -291,6 +291,24 @@ static int test_initialize_pymain(void)
     return 0;
 }
 
+static int test_initialize_sys_flags(void)
+{
+    _testembed_Py_Initialize();
+
+    PyRun_SimpleString(
+        "import sys;"
+        "print(f\"dont_write_bytecode={sys.flags.dont_write_bytecode}\");"
+        "print(f\"hash_randomization={sys.flags.hash_randomization}\");"
+        "print(f\"inspect={sys.flags.inspect}\");"
+        "print(f\"no_user_site={sys.flags.no_user_site}\");"
+        "print(f\"optimize={sys.flags.optimize}\");"
+        "sys.stdout.flush()"
+    );
+
+    Py_Finalize();
+    return 0;
+}
+
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -318,6 +336,7 @@ static struct TestCase TestCases[] = {
     { "bpo20891", test_bpo20891 },
     { "initialize_twice", test_initialize_twice },
     { "initialize_pymain", test_initialize_pymain },
+    { "initialize_sys_flags", test_initialize_sys_flags },
     { NULL, NULL }
 };
 
