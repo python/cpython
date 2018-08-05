@@ -117,7 +117,7 @@ class _WindowsFlavour(_Flavour):
     drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     ext_namespace_prefix = '\\\\?\\'
     # See https://bugs.python.org/issue33898
-    ext_namespace_prefix2 = '\\\\.\\'    
+    ext_namespace_prefix2 = '\\\\.\\'
 
     reserved_names = (
         {'CON', 'PRN', 'AUX', 'NUL'} |
@@ -165,19 +165,19 @@ class _WindowsFlavour(_Flavour):
             drv = part[:2]
             part = part[2:]
             first = third
-        #Except for "UNC" and "Global" paths, the drive should be 
-        #the first component after the local-device prefix.     
-        # See https://bugs.python.org/issue33898            
+        #Except for "UNC" and "Global" paths, the drive should be
+        #the first component after the local-device prefix.
+        # See https://bugs.python.org/issue33898
         elif part != sep and prefix and 'UNC' not in prefix and 'Global' not in prefix:
             index = part.find(sep)
             if index != -1:
                 drv = part[:index]
                 part = part[index:]
-                first = part[0:1] 
+                first = part[0:1]
             else:
                 drv = part
                 part = ''
-                first = ''                           
+                first = ''
         if first == sep:
             root = first
             part = part.lstrip(sep)
@@ -213,32 +213,33 @@ class _WindowsFlavour(_Flavour):
         # Means fallback on absolute
         return None
 
-    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix, ext_prefix2=ext_namespace_prefix2):
-        # See https://bugs.python.org/issue33898 
+    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix,\
+                             ext_prefix2=ext_namespace_prefix2):
+        # See https://bugs.python.org/issue33898
         prefix = ''
         if s.startswith(ext_prefix) or s.startswith(ext_prefix2):
             prefix = s[:4]
             s = s[4:]
             index = s.find('\\')
-            if index != -1:   
-                # Do not assume case sensitivity. 
+            if index != -1:
+                # Do not assume case sensitivity.
                 # See https://docs.microsoft.com/ru-ru/windows/desktop/FileIO/naming-a-file
-                s1 = s[:index].upper() 
+                s1 = s[:index].upper()
                 if s1 == 'GLOBAL':
-                    prefix += s[:6] 
-                    # For example, Path('//?/Global/Z:/').drive
+                    prefix += s[:6]
+                # For example, Path('//?/Global/Z:/').drive
                     if s[8] == ':':
                         prefix += s[6:7]
                         s = s[7:]
-                    # For example, r'\\?\Global\UNC\server\share'
+                # For example, r'\\?\Global\UNC\server\share'
                     elif s[7:10] == 'UNC':
                         prefix += s[6:10]
                         s = '\\' +s[10:]
-                    else:    
-                        s = '\\' + s[6:]   
-                if s1 == 'UNC':                
+                    else:
+                        s = '\\' + s[6:]
+                if s1 == 'UNC':
                     prefix += s[:3]
-                    s = '\\' + s[3:]     
+                    s = '\\' + s[3:]
         return prefix, s
 
     def _ext_to_normal(self, s):
@@ -618,7 +619,6 @@ class _PathParents(Sequence):
 
 class PurePath(object):
     """Base class for manipulating paths without I/O.
-
     PurePath represents a filesystem path and offers operations which
     don't imply any actual filesystem I/O.  Depending on your system,
     instantiating a PurePath will return either a PurePosixPath or a
@@ -977,7 +977,6 @@ os.PathLike.register(PurePath)
 
 class PurePosixPath(PurePath):
     """PurePath subclass for non-Windows systems.
-
     On a POSIX system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
@@ -987,7 +986,6 @@ class PurePosixPath(PurePath):
 
 class PureWindowsPath(PurePath):
     """PurePath subclass for Windows systems.
-
     On a Windows system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
@@ -1000,7 +998,6 @@ class PureWindowsPath(PurePath):
 
 class Path(PurePath):
     """PurePath subclass that can make system calls.
-
     Path represents a filesystem path but unlike PurePath, also offers
     methods to do system calls on path objects. Depending on your system,
     instantiating a Path will return either a PosixPath or a WindowsPath
@@ -1132,7 +1129,6 @@ class Path(PurePath):
     def absolute(self):
         """Return an absolute version of this path.  This function works
         even if the path doesn't point to anything.
-
         No normalization is done, i.e. all '.' and '..' will be kept along.
         Use resolve() to get the canonical path to a file.
         """
@@ -1483,14 +1479,12 @@ class Path(PurePath):
 
 class PosixPath(Path, PurePosixPath):
     """Path subclass for non-Windows systems.
-
     On a POSIX system, instantiating a Path should return this object.
     """
     __slots__ = ()
 
 class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
-
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
