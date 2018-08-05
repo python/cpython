@@ -458,8 +458,15 @@ def _netstat_getnode():
                 try:
                     words = line.rstrip().split()
                     word = words[i]
-                    if len(word) <= 17 and len(word) >= 11 and word.count(_mac_delim) == 5:
-                        mac = int(word.replace(_mac_delim, b''), 16)
+                    if word.count(_mac_delim) == 5:
+                        if len(word) == 17:
+                            mac = int(word.replace(_mac_delim, b''), 16)
+                        elif len(word) < 17 and len(word) >= 11:
+                            mac = 0
+                            hexs = word.split(_mac_delim)
+                            for hex in hexs:
+                                mac <<= 8
+                                mac += int(hex, 16)
                         if _is_universal(mac):
                             return mac
                         first_local_mac = first_local_mac or mac
@@ -666,6 +673,8 @@ _NODE_GETTERS_WIN32 = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
 _NODE_GETTERS_UNIX = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
                       _arp_getnode, _lanscan_getnode, _netstat_getnode]
 
+_NODE_GETTERS_AIX = [_unix_getnode, _netstat_getnode]
+
 def getnode(*, getters=None):
     """Get the hardware address as a 48-bit positive integer.
 
@@ -681,7 +690,7 @@ def getnode(*, getters=None):
     if sys.platform == 'win32':
         getters = _NODE_GETTERS_WIN32
     else:
-        getters = _NODE_GETTERS_UNIX
+        getters = _NODE_GETTERS_UNIX if _notAIX else _NODE_GETTERS_AIX
 
     for getter in getters + [_random_getnode]:
         try:
