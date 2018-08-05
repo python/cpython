@@ -1075,7 +1075,7 @@ class FormatTest(unittest.TestCase):
         # bytes format argument
         self.assertRaises(TypeError, Decimal(1).__format__, b'-020')
 
-    def test_n_format(self):
+    def test_locale_format(self):
         Decimal = self.decimal.Decimal
 
         try:
@@ -1163,6 +1163,40 @@ class FormatTest(unittest.TestCase):
         # wide char separator and decimal point
         self.assertEqual(get_fmt(Decimal('-1.5'), dotsep_wide, '020n'),
                          '-0\u00b4000\u00b4000\u00b4000\u00b4001\u00bf5')
+
+        # locale grouping modifier
+        self.assertEqual(get_fmt(123456789, en_US, "'f"), '123,456,789')
+        self.assertEqual(get_fmt(123456789, fr_FR, "'f"), '123456789')
+        self.assertEqual(get_fmt(123456789, ru_RU, "'f"), '123 456 789')
+        self.assertEqual(get_fmt(1234567890123, crazy, "'f"),
+                         '123456-78-9012-3')
+
+        self.assertEqual(get_fmt('123456789.123', en_US, "'.2f"),
+                         '123,456,789.12')
+        self.assertEqual(get_fmt('123456789.123', fr_FR, "'.2f"),
+                         '123456789,12')
+        self.assertEqual(get_fmt('123456789.123', ru_RU, "'.2f"),
+                         '123 456 789,12')
+        self.assertEqual(get_fmt('1234567890123.123', crazy, "'.2f"),
+                         '123456-78-9012-3&12')
+
+        self.assertEqual(get_fmt(123456789, en_US, "'.6e"), '1.234568e+8')
+        self.assertEqual(get_fmt(123456789, fr_FR, "'.6e"), '1,234568e+8')
+        self.assertEqual(get_fmt(123456789, ru_RU, "'.6e"), '1,234568e+8')
+        self.assertEqual(get_fmt(123456789, crazy, "'.6e"), '1&234568e+8')
+
+        self.assertEqual(get_fmt(123456789, en_US, "'.6g"), '1.23457e+8')
+        self.assertEqual(get_fmt(123456789, fr_FR, "'.6g"), '1,23457e+8')
+        self.assertEqual(get_fmt(123456789, ru_RU, "'.6g"), '1,23457e+8')
+        self.assertEqual(get_fmt(123456789, crazy, "'.6g"), '1&23457e+8')
+
+        self.assertEqual(get_fmt(12345, en_US, "05'g"), '12,345')
+        self.assertEqual(get_fmt(12345, en_US, "06'g"), '12,345')
+        self.assertEqual(get_fmt(12345, en_US, "07'g"), '012,345')
+        self.assertEqual(get_fmt(12345, en_US, "08'g"), '0,012,345')
+        self.assertEqual(get_fmt(12345, en_US, "09'g"), '0,012,345')
+        self.assertEqual(get_fmt(12345, en_US, "010'g"), '00,012,345')
+
 
     @run_with_locale('LC_ALL', 'ps_AF')
     def test_wide_char_separator_decimal_point(self):

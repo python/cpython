@@ -846,6 +846,15 @@ mpd_parse_fmt_str(mpd_spec_t *spec, const char *fmt, int caps)
         cp++;
     }
 
+    /* locale specific thousands separator */
+    if (*cp == '\'') {
+        struct lconv *lc = localeconv();
+        spec->dot = lc->decimal_point;
+        spec->sep = lc->thousands_sep;
+        spec->grouping = lc->grouping;
+        cp++;
+    }
+
     /* fraction digits or significant digits */
     if (*cp == '.') {
         cp++;

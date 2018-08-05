@@ -6152,7 +6152,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
 (?P<alt>\#)?
 (?P<zeropad>0)?
 (?P<minimumwidth>(?!0)\d+)?
-(?P<thousands_sep>,)?
+(?P<thousands_sep>[,'])?
 (?:\.(?P<precision>0|(?!0)\d+))?
 (?P<type>[eEfFgGn%])?
 \Z
@@ -6241,10 +6241,16 @@ def _parse_format_specifier(format_spec, _localeconv=None):
         format_dict['grouping'] = _localeconv['grouping']
         format_dict['decimal_point'] = _localeconv['decimal_point']
     else:
-        if format_dict['thousands_sep'] is None:
-            format_dict['thousands_sep'] = ''
         format_dict['grouping'] = [3, 0]
         format_dict['decimal_point'] = '.'
+        if format_dict['thousands_sep'] is None:
+            format_dict['thousands_sep'] = ''
+        elif format_dict['thousands_sep'] == "'":
+            if _localeconv is None:
+                _localeconv = _locale.localeconv()
+            format_dict['thousands_sep'] = _localeconv['thousands_sep']
+            format_dict['grouping'] = _localeconv['grouping']
+            format_dict['decimal_point'] = _localeconv['decimal_point']
 
     return format_dict
 
