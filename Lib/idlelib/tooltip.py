@@ -86,6 +86,7 @@ class OnHoverTooltipBase(TooltipBase):
         """Create a tooltip with a mouse hover delay.
 
         anchor_widget: the widget next to which the tooltip will be shown
+        hover_delay: time to delay before showing the tooltip, in milliseconds
 
         Note that a widget will only be shown when showtip() is called,
         e.g. after hovering over the anchor widget with the mouse for enough
@@ -147,13 +148,13 @@ class Hovertip(OnHoverTooltipBase):
         """Create a text tooltip with a mouse hover delay.
 
         anchor_widget: the widget next to which the tooltip will be shown
+        hover_delay: time to delay before showing the tooltip, in milliseconds
 
         Note that a widget will only be shown when showtip() is called,
         e.g. after hovering over the anchor widget with the mouse for enough
         time.
         """
-        super(Hovertip, self).__init__(anchor_widget,
-                                          hover_delay=hover_delay)
+        super(Hovertip, self).__init__(anchor_widget, hover_delay=hover_delay)
         self.text = text
 
     def showcontents(self):
@@ -174,8 +175,7 @@ def _tooltip(parent):  # htest #
     Hovertip(button1, "This is tooltip text for button1.", hover_delay=500)
     button2 = Button(top, text="Button 2 -- no hover delay")
     button2.pack()
-    Hovertip(button2, "This is tooltip\ntext for button2.",
-                hover_delay=None)
+    Hovertip(button2, "This is tooltip\ntext for button2.", hover_delay=None)
 
 
 if __name__ == '__main__':
