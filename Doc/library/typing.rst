@@ -992,10 +992,18 @@ The module defines the following classes, functions and decorators:
 
    Note that this is not the same concept as an optional argument,
    which is one that has a default.  An optional argument with a
-   default needn't use the ``Optional`` qualifier on its type
-   annotation (although it is inferred if the default is ``None``).
-   A mandatory argument may still have an ``Optional`` type if an
-   explicit value of ``None`` is allowed.
+   default does not require the ``Optional`` qualifier on its type
+   annotation just because it is optional. For example::
+
+      def foo(arg: int = 0) -> None:
+          ...
+
+   On the other hand, if an explicit value of ``None`` is allowed, the
+   use of ``Optional`` is appropriate, whether the argument is optional
+   or not. For example::
+
+      def foo(arg: Optional[int] = None) -> None:
+          ...
 
 .. data:: Tuple
 
