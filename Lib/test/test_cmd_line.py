@@ -523,9 +523,7 @@ class CmdLineTest(unittest.TestCase):
         env = dict(os.environ)
         env.pop('PYTHONWARNINGS', None)
         env.pop('PYTHONDEVMODE', None)
-        # Force malloc() to disable the debug hooks which are enabled
-        # by default for Python compiled in debug mode
-        env['PYTHONMALLOC'] = 'malloc'
+        env.pop('PYTHONMALLOC', None)
 
         if xdev:
             args = (sys.executable, '-X', 'dev', *args)
