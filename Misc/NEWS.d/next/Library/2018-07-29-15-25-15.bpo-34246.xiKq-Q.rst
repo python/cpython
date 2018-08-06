@@ -1,2 +1,2 @@
-Use an empty tuple as the default argument for mail_options and avoid it from
-being mutated.
+:meth:`smtplib.SMTP.send_message` no longer modifies the content of the
+*mail_options* argument. Patch by Pablo S. Blum de Aguiar.
