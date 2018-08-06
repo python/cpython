@@ -464,11 +464,11 @@ The available presentation types for floating point and decimal values are:
    | ``'E'`` | Exponent notation. Same as ``'e'`` except it uses an     |
    |         | upper case 'E' as the separator character.               |
    +---------+----------------------------------------------------------+
-   | ``'f'`` | Fixed point. Displays the number as a fixed-point        |
-   |         | number.  The default precision is ``6``.                 |
+   | ``'f'`` | Fixed-point notation. Displays the number as a           |
+   |         | fixed-point number.  The default precision is ``6``.     |
    +---------+----------------------------------------------------------+
-   | ``'F'`` | Fixed point. Same as ``'f'``, but converts ``nan`` to    |
-   |         | ``NAN`` and ``inf`` to ``INF``.                          |
+   | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
+   |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
    +---------+----------------------------------------------------------+
    | ``'g'`` | General format.  For a given precision ``p >= 1``,       |
    |         | this rounds the number to ``p`` significant digits and   |
