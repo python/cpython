@@ -1059,9 +1059,9 @@ Internal types
       trace (towards the frame where the exception occurred), or ``None`` if
       there is no next level.
 
-    .. versionchanged:: 3.7
-       Traceback objects can now be explicitly instantiated from Python code,
-       and the ``tb_next`` attribute of existing instances can be updated.
+      .. versionchanged:: 3.7
+         Traceback objects can now be explicitly instantiated from Python code,
+         and the ``tb_next`` attribute of existing instances can be updated.
 
    Slice objects
       .. index:: builtin: slice
