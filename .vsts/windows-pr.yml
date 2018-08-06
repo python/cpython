@@ -39,7 +39,7 @@ steps:
 
 - powershell: |
    git fetch -q origin $(System.PullRequest.TargetBranch)
-   if (git diff --name-only HEAD (git merge-base HEAD FETCH-HEAD) | sls '(\.rst$)|(^Doc)|(^Misc)') {
+   if (git diff --name-only HEAD (git merge-base HEAD FETCH_HEAD) | sls '(\.rst$)|(^Doc)|(^Misc)') {
       Write-Host 'Only docs were updated. Skipping build'
       Write-Host '##vso[task.setvariable variable=DocOnly]true'
    }
