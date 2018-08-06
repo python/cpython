@@ -102,12 +102,6 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_wait(l, n)
 
 
-# Bug #6012
-class Test6012(unittest.TestCase):
-    def test(self):
-        self.assertEqual(_testcapi.argparsing("Hello", "World"), 1)
-
-
 class TestGetIndices(unittest.TestCase):
 
     def test_get_indices(self):
