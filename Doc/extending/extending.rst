@@ -204,23 +204,33 @@ usually declare a static object variable at the beginning of your file::
 
    static PyObject *SpamError;
 
-and initialize it in your module's initialization function (:c:func:`PyInit_spam`)
-with an exception object (leaving out the error checking for now)::
+and initialize it in a function (:c:func:`spam_exec`) called from a module
+execution slot::
 
-   PyMODINIT_FUNC
-   PyInit_spam(void)
+   static int
+   spam_exec(PyObject *module)
    {
-       PyObject *m;
-
-       m = PyModule_Create(&spammodule);
-       if (m == NULL)
-           return NULL;
-
-       SpamError = PyErr_NewException("spam.error", NULL, NULL);
+       if (SpamError == NULL) {
+           SpamError = PyErr_NewException("spam.error", NULL, NULL);
+           if (SpamError == NULL) {
+               goto fail;
+           }
+       }
        Py_INCREF(SpamError);
-       PyModule_AddObject(m, "error", SpamError);
-       return m;
+       PyModule_AddObject(module, "error", SpamError);
+       return 0;
+   fail:
+       Py_XDECREF(module);
+       return -1;
    }
+
+then we need to specify the :c:func:`spam_exec` function for the
+c:var:`Py_mod_exec` slot::
+
+   static struct PyModuleDef_Slot spam_slots[] = {
+       {Py_mod_exec, spam_exec},
+       {0, NULL},        /* Sentinel */
+   };
 
 Note that the Python name for the exception object is :exc:`spam.error`.  The
 :c:func:`PyErr_NewException` function may create a class with the base class
@@ -234,8 +244,8 @@ needed to ensure that it will not be discarded, causing :c:data:`SpamError` to
 become a dangling pointer. Should it become a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
 
-We discuss the use of ``PyMODINIT_FUNC`` as a function return type later in this
-sample.
+We discuss the use of :c:macro:`PyMODINIT_FUNC` as a function return type later
+in this sample.
 
 The :exc:`spam.error` exception can be raised in your extension module using a
 call to :c:func:`PyErr_SetString` as shown below::
@@ -291,15 +301,9 @@ on the heap in Python!)
 
 If you have a C function that returns no useful argument (a function returning
 :c:type:`void`), the corresponding Python function must return ``None``.   You
-need this idiom to do so (which is implemented by the :c:macro:`Py_RETURN_NONE`
-macro)::
+can use the :c:macro:`Py_RETURN_NONE` macro to do so::
 
-   Py_INCREF(Py_None);
-   return Py_None;
-
-:c:data:`Py_None` is the C name for the special Python object ``None``.  It is a
-genuine Python object rather than a *NULL* pointer, which means "error" in most
-contexts, as we have seen.
+   Py_RETURN_NONE;
 
 
 .. _methodtable:
@@ -310,24 +314,21 @@ The Module's Method Table and Initialization Function
 I promised to show how :c:func:`spam_system` is called from Python programs.
 First, we need to list its name and address in a "method table"::
 
-   static PyMethodDef SpamMethods[] = {
-       ...
+   static PyMethodDef spam_methods[] = {
        {"system",  spam_system, METH_VARARGS,
-        "Execute a shell command."},
-       ...
-       {NULL, NULL, 0, NULL}        /* Sentinel */
+        PyDoc_STR("Execute a shell command.")},
+       {NULL, NULL}        /* Sentinel */
    };
 
 Note the third entry (``METH_VARARGS``).  This is a flag telling the interpreter
 the calling convention to be used for the C function.  It should normally always
-be ``METH_VARARGS`` or ``METH_VARARGS | METH_KEYWORDS``; a value of ``0`` means
-that an obsolete variant of :c:func:`PyArg_ParseTuple` is used.
+be ``METH_VARARGS`` or ``METH_VARARGS | METH_KEYWORDS``.
 
-When using only ``METH_VARARGS``, the function should expect the Python-level
+When using only :data:`METH_VARARGS`, the function should expect the Python-level
 parameters to be passed in as a tuple acceptable for parsing via
 :c:func:`PyArg_ParseTuple`; more information on this function is provided below.
 
-The :const:`METH_KEYWORDS` bit may be set in the third field if keyword
+The :data:`METH_KEYWORDS` bit may be set in the third field if keyword
 arguments should be passed to the function.  In this case, the C function should
 accept a third ``PyObject *`` parameter which will be a dictionary of keywords.
 Use :c:func:`PyArg_ParseTupleAndKeywords` to parse the arguments to such a
@@ -337,11 +338,15 @@ The method table must be referenced in the module definition structure::
 
    static struct PyModuleDef spammodule = {
        PyModuleDef_HEAD_INIT,
-       "spam",   /* name of module */
-       spam_doc, /* module documentation, may be NULL */
-       -1,       /* size of per-interpreter state of the module,
-                    or -1 if the module keeps state in global variables. */
-       SpamMethods
+       "spam",       /* m_name - name of module */
+       spam_doc,     /* m_doc - module documentation, may be NULL */
+       0,            /* m_size - non-negative m_size is required for
+                        multi-phase initialization */
+       spam_methods, /* m_methods */
+       spam_slots,   /* m_slots - required for multi-phase initialization */
+       NULL,         /* m_traverse */
+       NULL,         /* m_clear */
+       NULL          /* m_free */
    };
 
 This structure, in turn, must be passed to the interpreter in the module's
@@ -352,23 +357,16 @@ only non-\ ``static`` item defined in the module file::
    PyMODINIT_FUNC
    PyInit_spam(void)
    {
-       return PyModule_Create(&spammodule);
+       return PyModuleDef_Init(&spammodule);
    }
 
-Note that PyMODINIT_FUNC declares the function as ``PyObject *`` return type,
-declares any special linkage declarations required by the platform, and for C++
-declares the function as ``extern "C"``.
+Note that :c:macro:`PyMODINIT_FUNC` declares the function as ``PyObject *``
+return type, declares any special linkage declarations required by the platform,
+and for C++ declares the function as ``extern "C"``.
 
-When the Python program imports module :mod:`spam` for the first time,
-:c:func:`PyInit_spam` is called. (See below for comments about embedding Python.)
-It calls :c:func:`PyModule_Create`, which returns a module object, and
-inserts built-in function objects into the newly created module based upon the
-table (an array of :c:type:`PyMethodDef` structures) found in the module definition.
-:c:func:`PyModule_Create` returns a pointer to the module object
-that it creates.  It may abort with a fatal error for
-certain errors, or return *NULL* if the module could not be initialized
-satisfactorily. The init function must return the module object to its caller,
-so that it then gets inserted into ``sys.modules``.
+The initialization function :c:func:`PyInit_spam` returns a :c:type:`PyModuleDef`
+instance cast to ``PyObject*`` by calling :c:func:`PyModuleDef_Init`.  See
+:ref:`multi-phase-initialization` for more information about this process.
 
 When embedding Python, the :c:func:`PyInit_spam` function is not called
 automatically unless there's an entry in the :c:data:`PyImport_Inittab` table.
@@ -413,15 +411,8 @@ optionally followed by an import of the module::
    structures.
 
 A more substantial example module is included in the Python source distribution
-as :file:`Modules/xxmodule.c`.  This file may be used as a  template or simply
+as :source:`Modules/xxmodule.c`.  This file may be used as a template or simply
 read as an example.
-
-.. note::
-
-   Unlike our ``spam`` example, ``xxmodule`` uses *multi-phase initialization*
-   (new in Python 3.5), where a PyModuleDef structure is returned from
-   ``PyInit_spam``, and creation of the module is left to the import machinery.
-   For details on multi-phase initialization, see :PEP:`489`.
 
 
 .. _compilation:
