@@ -439,7 +439,16 @@ def enablerlcompleter():
                 readline.read_history_file(history)
             except OSError:
                 pass
-            atexit.register(readline.write_history_file, history)
+
+            def write_history():
+                try:
+                    readline.write_history_file(history)
+                except (FileNotFoundError, PermissionError):
+                    # home directory does not exist or is not writable
+                    # https://bugs.python.org/issue19891
+                    pass
+
+            atexit.register(write_history)
 
     sys.__interactivehook__ = register_readline
 
