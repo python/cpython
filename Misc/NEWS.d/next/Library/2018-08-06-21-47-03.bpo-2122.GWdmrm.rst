@@ -1,0 +1,2 @@
+:meth:`mmap.mmap.flush` now returns zero on success, raises :exc:`OSError`
+on error under Windows.

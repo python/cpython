@@ -1,4 +1,4 @@
-from test.support import (TESTFN, run_unittest, import_module, unlink,
+from test.support import (TESTFN, import_module, unlink,
                           requires, _2G, _4G, gc_collect, cpython_only)
 import unittest
 import os
@@ -741,6 +741,15 @@ class MmapTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             m * 2
 
+    def test_flush_return_value(self):
+        # mm.flush() should return zero on success, raise an
+        # exception on error under all platforms.
+        mm = mmap.mmap(-1, 16)
+        mm.write(b"python")
+        result = mm.flush()
+        self.assertEqual(result, 0)
+        mm.close()
+
 
 class LargeMmapTests(unittest.TestCase):
 
@@ -803,8 +812,5 @@ class LargeMmapTests(unittest.TestCase):
         self._test_around_boundary(_4G)
 
 
-def test_main():
-    run_unittest(MmapTests, LargeMmapTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

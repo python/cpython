@@ -572,7 +572,11 @@ mmap_flush_method(mmap_object *self, PyObject *args)
         return PyLong_FromLong(0);
 
 #ifdef MS_WINDOWS
-    return PyLong_FromLong((long) FlushViewOfFile(self->data+offset, size));
+    if (!FlushViewOfFile(self->data+offset, size)) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        return NULL;
+    }
+    return PyLong_FromLong(0);
 #elif defined(UNIX)
     /* XXX semantics of return value? */
     /* XXX flags for msync? */
