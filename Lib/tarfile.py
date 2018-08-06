@@ -2272,6 +2272,10 @@ class TarFile(object):
           (platform limitation), we try to make a copy of the referenced file
           instead of a link.
         """
+        # do not create link if target path is equal to link target
+        if getattr(tarinfo, "_link_target", None) == targetpath:
+            return
+
         if hasattr(os, "symlink") and hasattr(os, "link"):
             # For systems that support symbolic and hard links.
             if tarinfo.issym():
