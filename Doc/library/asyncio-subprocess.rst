@@ -392,8 +392,7 @@ function::
     import asyncio.subprocess
     import sys
 
-    @asyncio.coroutine
-    def get_date():
+    async def get_date():
         code = 'import datetime; print(datetime.datetime.now())'
 
         # Create the subprocess, redirect the standard output into a pipe
