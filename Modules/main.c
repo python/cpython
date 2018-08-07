@@ -185,7 +185,6 @@ pymain_run_interactive_hook(void)
 error:
     PySys_WriteStderr("Failed calling sys.__interactivehook__\n");
     PyErr_Print();
-    PyErr_Clear();
 }
 
 
@@ -267,7 +266,6 @@ error:
     Py_XDECREF(sys_path0);
     PySys_WriteStderr("Failed checking if argv[0] is an import path entry\n");
     PyErr_Print();
-    PyErr_Clear();
     return NULL;
 }
 
@@ -1081,7 +1079,6 @@ pymain_run_startup(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
         PyErr_SetFromErrnoWithFilename(PyExc_OSError,
                         startup);
         PyErr_Print();
-        PyErr_Clear();
         return;
     }
 
