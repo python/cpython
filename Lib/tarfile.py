@@ -2189,7 +2189,7 @@ class TarFile(object):
         if getattr(tarinfo, "_link_target", None) == targetpath:
             return
 
-        if hasattr(os, "symlink") and hasattr(os, "link"):
+        try:
             # For systems that support symbolic and hard links.
             if tarinfo.issym():
                 os.symlink(tarinfo.linkname, targetpath)
