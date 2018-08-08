@@ -1,0 +1,1 @@
+NullNew for old extension types instead of just null

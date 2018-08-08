@@ -499,7 +499,9 @@ PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject*);
 PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GenericAlloc(PyTypeObject *, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyType_GenericNew(PyTypeObject *,
-                                               PyObject *, PyObject *);
+                                         PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyType_NullNew(PyTypeObject *,
+                                      PyObject *, PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);

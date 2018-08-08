@@ -995,6 +995,15 @@ PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return type->tp_alloc(type, 0);
 }
 
+PyObject *
+PyType_NullNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyErr_Format(PyExc_TypeError,
+                 "cannot create '%.100s' instances",
+                 type->tp_name);
+    return NULL;
+}
+
 /* Helpers for subtyping */
 
 static int
@@ -2269,6 +2278,10 @@ valid_identifier(PyObject *s)
 /* Forward */
 static int
 object_init(PyObject *self, PyObject *args, PyObject *kwds);
+
+/* Forward */
+static int
+add_tp_new_wrapper(PyTypeObject *type);
 
 static int
 type_init(PyObject *cls, PyObject *args, PyObject *kwds)
@@ -4842,7 +4855,17 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
     return 0;
 }
 
-static void
+static int
+set_null_new(PyTypeObject *type)
+{
+    type->tp_new = PyType_NullNew;
+    if (add_tp_new_wrapper(type) < 0)
+        return -1;
+
+    return 0;
+}
+
+static int
 inherit_special(PyTypeObject *type, PyTypeObject *base)
 {
 
@@ -4867,10 +4890,15 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
            inherit tp_new; static extension types that specify some
            other built-in type as the default also
            inherit object.__new__. */
-        if (base != &PyBaseObject_Type ||
-            (type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-            if (type->tp_new == NULL)
-                type->tp_new = base->tp_new;
+        if (type->tp_new == NULL) {
+            if (base != &PyBaseObject_Type ||
+                (type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+                    type->tp_new = base->tp_new;
+            }
+            else {
+                if (set_null_new(type) < 0)
+                    return -1;
+            }
         }
     }
     if (type->tp_basicsize == 0)
@@ -4903,6 +4931,8 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
         type->tp_flags |= Py_TPFLAGS_LIST_SUBCLASS;
     else if (PyType_IsSubtype(base, &PyDict_Type))
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
+
+    return 0;
 }
 
 static int
@@ -5193,7 +5223,8 @@ PyType_Ready(PyTypeObject *type)
 
     /* Inherit special flags from dominant base */
     if (type->tp_base != NULL)
-        inherit_special(type, type->tp_base);
+        if (inherit_special(type, type->tp_base) < 0)
+            goto error;
 
     /* Initialize tp_dict properly */
     bases = type->tp_mro;
