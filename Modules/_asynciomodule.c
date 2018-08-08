@@ -2345,7 +2345,7 @@ _asyncio_Task_set_name(TaskObj *self, PyObject *value)
 {
     PyObject *name = PyObject_Str(value);
     if (name == NULL) {
-        return -1;
+        return NULL;
     }
 
     Py_XSETREF(self->task_name, name);
