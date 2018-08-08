@@ -389,6 +389,13 @@ An :class:`SMTP` instance has the following methods:
    If there has been no previous ``EHLO`` or ``HELO`` command this session,
    this method tries ESMTP ``EHLO`` first.
 
+   .. deprecated:: 3.6
+
+       *keyfile* and *certfile* are deprecated in favor of *context*.
+       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+       :func:`ssl.create_default_context` select the system's trusted CA
+       certificates for you.
+
    :exc:`SMTPHeloError`
       The server didn't reply properly to the ``HELO`` greeting.
 
