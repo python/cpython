@@ -388,7 +388,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self)
+            task = tasks.Task(coro, loop=self, name=name)
             if task._source_traceback:
                 del task._source_traceback[-1]
         else:

@@ -1976,7 +1976,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
 
     if (name == Py_None) {
         name = PyUnicode_FromFormat("Task-%" PRIu64, ++task_name_counter);
-    } else {
+    } else if (!PyUnicode_Check(name)) {
         name = PyObject_Str(name);
     }
     Py_XSETREF(self->task_name, name);

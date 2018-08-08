@@ -259,8 +259,8 @@ Tasks
    interoperability. In this case, the result type is a subclass of
    :class:`Task`.
 
-   If *name* is not ``None``, it is set as the name of the task using
-   :meth:`Task.set_name`.
+   If the *name* argument is provided and not ``None``, it is set as the name
+   of the task using :meth:`Task.set_name`.
 
    .. versionadded:: 3.4.2
 
