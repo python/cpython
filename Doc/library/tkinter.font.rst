@@ -19,7 +19,7 @@ The different font weights and slants are:
           ITALIC
           ROMAN
 
-.. class:: Font(root=None, font=None, name=None, exists=False, **options)
+.. class:: Font(root=None, font=None, name=None, exists=False, options)
 
    The :class:`Font` class represents a named font. *Font* instances are given
    unique names and can be specified by their family, size, and style
@@ -29,7 +29,7 @@ The different font weights and slants are:
 
     keyword arguments:
 
-       | *font* - font specifier tuple (family, size, \*\*options)
+       | *font* - font specifier tuple (family, size, options)
        | *name* - unique font name
        | *exists* - self points to existing named font if true
 
@@ -44,11 +44,11 @@ The different font weights and slants are:
 
    .. method:: actual(option=None, displayof=None)
 
-      Returns the attributes of the font.
+      Return the attributes of the font.
 
    .. method:: cget(option)
 
-      Retrieves an attribute of the font.
+      Retrieve an attribute of the font.
 
    .. method:: config(**options)
 
@@ -56,17 +56,17 @@ The different font weights and slants are:
 
    .. method:: copy()
 
-      Returns new instance of the current font.
+      Return new instance of the current font.
 
    .. method:: measure(text, displayof=None)
 
-      Returns amount of space the text would occupy on the specified display
+      Return amount of space the text would occupy on the specified display
       when formatted in the current font. If no display is specified then the
       main application window is assumed.
 
    .. method:: metrics(*options, **kw)
 
-      Returns font-specific data.
+      Return font-specific data.
       Options include:
 
       *ascent* - distance between baseline and highest point that a
@@ -82,12 +82,12 @@ The different font weights and slants are:
 
 .. function:: families(root=None, displayof=None)
 
-   Returns the different font families.
+   Return the different font families.
 
 .. function:: names(root=None)
 
-   Returns the names of defined fonts.
+   Return the names of defined fonts.
 
 .. function:: nametofont(name)
 
-   Returns a :class:`Font` representation of a tk named font.
+   Return a :class:`Font` representation of a tk named font.

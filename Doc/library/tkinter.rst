@@ -677,7 +677,7 @@ scrollcommand
    This is almost always the :meth:`!set` method of some scrollbar widget, but can
    be any widget method that takes a single argument.
 
-wrap:
+wrap
    Must be one of: ``"none"``, ``"char"``, or ``"word"``.
 
 .. _Bindings-and-Events:

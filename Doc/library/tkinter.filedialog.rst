@@ -42,7 +42,7 @@ wait for the user's selection, then return the selected value(s) or None to the
 caller.
 
 .. function:: askopenfile(mode="r", **options)
-              askopenfiles(mode = "r", **options)
+              askopenfiles(mode="r", **options)
 
    The above two functions create an :class:`Open` dialog and return the opened
    file object(s) in read-only mode.
@@ -143,7 +143,7 @@ These do not emulate the native look-and-feel of the platform.
       Update the current file selection to *file*.
 
 
-.. class:: LoadFileDialog
+.. class:: LoadFileDialog(master, title=None)
 
    A subclass of FileDialog that creates a dialog window for selecting an
    existing file.
@@ -153,7 +153,7 @@ These do not emulate the native look-and-feel of the platform.
       Test that a file is provided and that the selection indicates an
       already existing file.
 
-.. class:: SaveFileDialog
+.. class:: SaveFileDialog(master, title=None)
 
    A subclass of FileDialog that creates a dialog window for selecting a
    destination file.

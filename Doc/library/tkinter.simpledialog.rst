@@ -26,7 +26,7 @@ functions for creating simple modal dialogs to get a value from the user.
 
     .. method:: body(master)
 
-       Override to construct the dialog's interface and return widget that
+       Override to construct the dialog's interface and return the widget that
        should have initial focus.
 
     .. method:: buttonbox()

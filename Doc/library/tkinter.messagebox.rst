@@ -11,7 +11,7 @@
 
 The :mod:`tkinter.messagebox` module provides a template base class as well as
 a variety of convenience methods for commonly used configurations. The message
-boxes are modal and will return a subset of (True, False, OK, None) based on
+boxes are modal and will return a subset of (True, False, OK, None, Yes, No) based on
 the user's selection. Common message box styles and layouts include but are not
 limited to:
 
@@ -19,7 +19,7 @@ limited to:
 
 .. class:: Message(master=None, **options)
 
-   Displays a default message box.
+   Return a default message box.
 
 **Information message box**
 

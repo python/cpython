@@ -19,7 +19,7 @@ the :class:`~tkinter.commondialog.Dialog` class.
 .. function:: askcolor(color=None, **options)
 
    Create a color choosing dialog. A call to this method will show the window,
-   wait for the user to make a selection, and return the selected color (or 
+   wait for the user to make a selection, and return the selected color (or
    None) to the caller.
 
 
