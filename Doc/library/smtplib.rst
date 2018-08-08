@@ -379,8 +379,8 @@ An :class:`SMTP` instance has the following methods:
    commands that follow will be encrypted.  You should then call :meth:`ehlo`
    again.
 
-   If *keyfile* and *certfile* are provided, these are passed to the :mod:`socket`
-   module's :func:`ssl` function.
+   If *keyfile* and *certfile* are provided, they are used to create an
+   :class:`ssl.SSLContext`.
 
    Optional *context* parameter is a :class:`ssl.SSLContext` object; This is
    an alternative to using a keyfile and a certfile and if specified both
