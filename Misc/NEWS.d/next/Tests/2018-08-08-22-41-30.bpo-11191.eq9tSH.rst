@@ -1,0 +1,7 @@
+* skip the distutils test 'test_search_cpp' when AIX and not gcc as compiler
+  because IBM xlc et al do not support redirected stdout when using the
+  argument -E (aka cpp_preprocessing)
+* add the additional argument '-C' for AIX xlc cpp processing so comments are
+    included in the cpp output rather than replaced by a single ' ' (space) char.
+* getattr() might return nothing rather than None. test for both conditions in
+  Lib/test/support/__init__.py -> missing_compiler_executable(cmd_names=[])
