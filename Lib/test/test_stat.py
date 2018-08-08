@@ -1,5 +1,6 @@
 import unittest
 import os
+import socket
 import sys
 from test.support import TESTFN, import_fresh_module
 
@@ -190,6 +191,17 @@ class TestFilemode:
                 self.assertEqual(modestr[0], 'b')
                 self.assertS_IS("BLK", st_mode)
                 break
+
+    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'requires unix socket')
+    def test_socket(self):
+        s = socket.socket(socket.AF_UNIX)
+        s.bind(TESTFN)
+        try:
+            st_mode, modestr = self.get_mode()
+            self.assertEqual(modestr[0], 's')
+            self.assertS_IS("SOCK", st_mode)
+        finally:
+            s.close()
 
     def test_module_attributes(self):
         for key, value in self.stat_struct.items():
