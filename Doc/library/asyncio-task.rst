@@ -387,10 +387,13 @@ with the result.
 Task
 ----
 
-.. function:: create_task(coro)
+.. function:: create_task(coro, \*, name=None)
 
    Wrap a :ref:`coroutine <coroutine>` *coro* into a task and schedule
-   its execution.  Return the task object.
+   its execution. Return the task object.
+
+   If *name* is not ``None``, it is set as the name of the task using
+   :meth:`Task.set_name`.
 
    The task is executed in :func:`get_running_loop` context,
    :exc:`RuntimeError` is raised if there is no running loop in
@@ -398,7 +401,10 @@ Task
 
    .. versionadded:: 3.7
 
-.. class:: Task(coro, \*, loop=None)
+   .. versionchanged:: 3.8
+      Added the ``name`` parameter.
+
+.. class:: Task(coro, \*, loop=None, name=None)
 
    A unit for concurrent running of :ref:`coroutines <coroutine>`,
    subclass of :class:`Future`.
@@ -437,6 +443,9 @@ Task
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
+
+   .. versionchanged:: 3.8
+      Added the ``name`` parameter.
 
    .. classmethod:: all_tasks(loop=None)
 
@@ -503,6 +512,27 @@ Task
       frames retrieved by get_stack().  The limit argument is passed to
       get_stack().  The file argument is an I/O stream to which the output
       is written; by default output is written to sys.stderr.
+
+   .. method:: get_name()
+
+      Return the name of the task.
+
+      If no name has been explicitly assigned to the task, the default
+      ``Task`` implementation generates a default name during instantiation.
+
+      .. versionadded:: 3.8
+
+   .. method:: set_name(value)
+
+      Set the name of the task.
+
+      The *value* argument can be any object, which is then converted to a
+      string.
+
+      In the default ``Task`` implementation, the name will be visible in the
+      :func:`repr` output of a task object.
+
+      .. versionadded:: 3.8
 
 
 Example: Parallel execution of tasks
