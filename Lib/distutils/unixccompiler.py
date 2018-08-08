@@ -89,12 +89,11 @@ class UnixCCompiler(CCompiler):
         pp_opts = gen_preprocess_options(macros, include_dirs)
         pp_args = self.preprocessor + pp_opts
 
-        # issue11191 - xlc requires '-C' to include comments in cpp output
-        # this is only one aspect of the issue. The other issue is that
-        # IBM XLC -E output is ONLY to stdout - i.e., does not accept -o
+        # IBM compiler xlc requires '-C' to include comments in cpp output
         pp_gcc = self._is_gcc(self.preprocessor)
         if not pp_gcc and sys.platform[:3] == 'aix':
             pp_args.append('-C')
+        # IBM compiler xlc: -E output is ONLY to stdout - i.e., -o is not supported
         if output_file:
             if pp_gcc or sys.platform[:3] != 'aix':
                 pp_args.extend(['-o', output_file])

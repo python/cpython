@@ -330,12 +330,10 @@ class config(Command):
         return self.try_cpp(body="/* No body */", headers=[header],
                             include_dirs=include_dirs)
 
-    # issue 11191 - Need a way to see the compiler part of an object
     def check_compiler(self):
-        """Determine the compiler"""
+        """Determine the compiler name"""
         self._check_compiler()
         return self.compiler
-
 
 def dump_file(filename, head=None):
     """Dumps a file content into log.info.
