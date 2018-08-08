@@ -121,7 +121,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             raise TypeError(f"a coroutine was expected, got {coro!r}")
 
         if name is None:
-            self._name = 'Task-%s' % _task_name_counter()
+            self._name = f'Task-{_task_name_counter()}'
         else:
             self._name = str(name)
 

@@ -813,6 +813,18 @@ class BaseEventLoopTests(test_utils.TestCase):
         task._log_destroy_pending = False
         coro.close()
 
+    def test_create_named_task_with_default_factory(self):
+        async def test():
+            pass
+
+        loop = asyncio.new_event_loop()
+        task = loop.create_task(test(), name='test_task')
+        try:
+            self.assertEqual(task.get_name(), 'test_task')
+        finally:
+            loop.run_until_complete(task)
+            loop.close()
+
     def test_create_named_task_with_custom_factory(self):
         def task_factory(loop, coro):
             return asyncio.Task(coro, loop=loop)
