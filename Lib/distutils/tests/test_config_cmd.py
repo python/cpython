@@ -44,6 +44,13 @@ class ConfigTestCase(support.LoggingSilencer,
             self.skipTest('The %r command is not found' % cmd)
         pkg_dir, dist = self.create_dist()
         cmd = config(dist)
+        # issue 11191, XLC (cc, xlc, xlC, etc) does not accept "-o"
+        # and this test needs an output file to perform cmd.search_cpp()
+        if sys.platform[:3] == "aix":
+            cppcompiler = cmd.check_compiler()
+            cpp_cmd = cppcompiler.preprocessor[0]
+            if not cpp_cmd.startswith("g"):
+                self.skipTest('The command %s does not support "-o"' % cpp_cmd)
 
         # simple pattern searches
         match = cmd.search_cpp(pattern='xxx', body='/* xxx */')

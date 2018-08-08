@@ -1,0 +1,4 @@
+skip the distutils test 'test_search_cpp' when AIX and not gcc as compiler
+    as xlc et al do not support -o (as output). 'cpp' output is ALWAYS to stdout
+add the additional argument '-C' for AIX xlc cpp processing so comments are
+    included in the cpp output rather than replaced by a single ' ' (space) char.
