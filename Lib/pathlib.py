@@ -618,6 +618,7 @@ class _PathParents(Sequence):
 
 class PurePath(object):
     """Base class for manipulating paths without I/O.
+
     PurePath represents a filesystem path and offers operations which
     don't imply any actual filesystem I/O.  Depending on your system,
     instantiating a PurePath will return either a PurePosixPath or a
@@ -976,6 +977,7 @@ os.PathLike.register(PurePath)
 
 class PurePosixPath(PurePath):
     """PurePath subclass for non-Windows systems.
+
     On a POSIX system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
@@ -985,6 +987,7 @@ class PurePosixPath(PurePath):
 
 class PureWindowsPath(PurePath):
     """PurePath subclass for Windows systems.
+
     On a Windows system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
@@ -997,6 +1000,7 @@ class PureWindowsPath(PurePath):
 
 class Path(PurePath):
     """PurePath subclass that can make system calls.
+
     Path represents a filesystem path but unlike PurePath, also offers
     methods to do system calls on path objects. Depending on your system,
     instantiating a Path will return either a PosixPath or a WindowsPath
@@ -1128,6 +1132,7 @@ class Path(PurePath):
     def absolute(self):
         """Return an absolute version of this path.  This function works
         even if the path doesn't point to anything.
+    
         No normalization is done, i.e. all '.' and '..' will be kept along.
         Use resolve() to get the canonical path to a file.
         """
@@ -1478,12 +1483,14 @@ class Path(PurePath):
 
 class PosixPath(Path, PurePosixPath):
     """Path subclass for non-Windows systems.
+
     On a POSIX system, instantiating a Path should return this object.
     """
     __slots__ = ()
 
 class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
+
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
