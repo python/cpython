@@ -1,11 +1,12 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#ifdef HAVE_UUID_H
+#include <uuid.h>
+#else
 #ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
 #endif
-#ifdef HAVE_UUID_H
-#include <uuid.h>
 #endif
 
 
@@ -14,12 +15,7 @@ py_uuid_generate_time_safe(PyObject *Py_UNUSED(context),
                            PyObject *Py_UNUSED(ignored))
 {
     uuid_t uuid;
-#ifdef HAVE_UUID_GENERATE_TIME_SAFE
-    int res;
-
-    res = uuid_generate_time_safe(uuid);
-    return Py_BuildValue("y#i", (const char *) uuid, sizeof(uuid), res);
-#elif defined(HAVE_UUID_CREATE)
+#ifdef HAVE_UUID_CREATE /* uuid.h variant */
     uint32_t status;
     uuid_create(&uuid, &status);
 # if defined(HAVE_UUID_ENC_BE)
@@ -29,6 +25,11 @@ py_uuid_generate_time_safe(PyObject *Py_UNUSED(context),
 # else
     return Py_BuildValue("y#i", (const char *) &uuid, sizeof(uuid), (int) status);
 # endif
+#elif defined(HAVE_UUID_GENERATE_TIME_SAFE) /* uuid/uuid.h variants */
+    int res;
+
+    res = uuid_generate_time_safe(uuid);
+    return Py_BuildValue("y#i", (const char *) uuid, sizeof(uuid), res);
 #else
     uuid_generate_time(uuid);
     return Py_BuildValue("y#O", (const char *) uuid, sizeof(uuid), Py_None);
@@ -53,7 +54,9 @@ PyInit__uuid(void)
 {
     PyObject *mod;
     assert(sizeof(uuid_t) == 16);
-#ifdef HAVE_UUID_GENERATE_TIME_SAFE
+/* we prefer the system uuid.h library, so HAVE_UUID_GENERATE_TIME_SAFE
+ * does not matter when HAVE_UUID_CREATE is present */
+#if defined(HAVE_UUID_GENERATE_TIME_SAFE) && !defined(HAVE_UUID_CREATE)
     int has_uuid_generate_time_safe = 1;
 #else
     int has_uuid_generate_time_safe = 0;
