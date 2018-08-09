@@ -38,8 +38,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
-                  shell=False, cwd=None, timeout=None, check=False, \
-                  encoding=None, errors=None, text=None, env=None)
+                  capture_output=False, shell=False, cwd=None, timeout=None, \
+                  check=False, encoding=None, errors=None, text=None, env=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
