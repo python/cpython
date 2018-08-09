@@ -1132,7 +1132,7 @@ class Path(PurePath):
     def absolute(self):
         """Return an absolute version of this path.  This function works
         even if the path doesn't point to anything.
-    
+
         No normalization is done, i.e. all '.' and '..' will be kept along.
         Use resolve() to get the canonical path to a file.
         """
