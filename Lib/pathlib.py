@@ -115,9 +115,8 @@ class _WindowsFlavour(_Flavour):
     is_supported = (os.name == 'nt')
 
     drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
-    ext_namespace_prefix = '\\\\?\\'
     # See https://bugs.python.org/issue33898
-    ext_namespace_prefix2 = '\\\\.\\'
+    ext_namespace_prefix = ('\\\\?\\','\\\\.\\')
 
     reserved_names = (
         {'CON', 'PRN', 'AUX', 'NUL'} |
@@ -165,8 +164,8 @@ class _WindowsFlavour(_Flavour):
             drv = part[:2]
             part = part[2:]
             first = third
-        #Except for "UNC" and "Global" paths, the drive should be
-        #the first component after the local-device prefix.
+        # Except for "UNC" and "Global" paths, the drive should be
+        # the first component after the local-device prefix.
         # See https://bugs.python.org/issue33898
         elif part != sep and prefix and 'UNC' not in prefix and 'Global' not in prefix:
             index = part.find(sep)
@@ -213,11 +212,10 @@ class _WindowsFlavour(_Flavour):
         # Means fallback on absolute
         return None
 
-    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix,\
-                             ext_prefix2=ext_namespace_prefix2):
+    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix):
         # See https://bugs.python.org/issue33898
         prefix = ''
-        if s.startswith(ext_prefix) or s.startswith(ext_prefix2):
+        if s.startswith(ext_prefix):
             prefix = s[:4]
             s = s[4:]
             index = s.find('\\')
@@ -235,7 +233,7 @@ class _WindowsFlavour(_Flavour):
                 # For example, r'\\?\Global\UNC\server\share'
                     elif s[7:10] == 'UNC':
                         prefix += s[6:10]
-                        s = '\\' +s[10:]
+                        s = '\\' + s[10:]
                     else:
                         s = '\\' + s[6:]
                 if s1 == 'UNC':
