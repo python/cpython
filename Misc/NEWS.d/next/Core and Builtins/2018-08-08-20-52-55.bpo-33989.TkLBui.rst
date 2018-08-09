@@ -1,0 +1,2 @@
+Ensure that ``ms.key_compare`` is always initialized in :meth:`list.sort`.
+Patch by Zackery Spytz.
