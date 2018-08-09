@@ -1976,7 +1976,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
 
     if (name == Py_None) {
         name = PyUnicode_FromFormat("Task-%" PRIu64, ++task_name_counter);
-    } else if (!PyUnicode_Check(name)) {
+    } else if (!PyUnicode_CheckExact(name)) {
         name = PyObject_Str(name);
     } else {
         Py_INCREF(name);
@@ -2343,12 +2343,16 @@ static PyObject *
 _asyncio_Task_set_name(TaskObj *self, PyObject *value)
 /*[clinic end generated code: output=138a8d51e32057d6 input=a8359b6e65f8fd31]*/
 {
-    PyObject *name = PyObject_Str(value);
-    if (name == NULL) {
-        return NULL;
+    if (!PyUnicode_CheckExact(value)) {
+        value = PyObject_Str(value);
+        if (value == NULL) {
+            return NULL;
+        }
+    } else {
+        Py_INCREF(value);
     }
 
-    Py_XSETREF(self->task_name, name);
+    Py_XSETREF(self->task_name, value);
     Py_RETURN_NONE;
 }
 
