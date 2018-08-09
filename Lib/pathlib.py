@@ -227,7 +227,7 @@ class _WindowsFlavour(_Flavour):
                 if s1 == 'Global' or s1 == 'GLOBAL':
                     prefix += s[:6]
                 # For example, Path('//?/Global/Z:/').drive
-                    if s[8] == ':':
+                    if s[8:9] == ':':
                         prefix += s[6:7]
                         s = s[7:]
                 # For example, r'\\?\Global\UNC\server\share'
