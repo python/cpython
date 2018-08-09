@@ -764,7 +764,7 @@ ABC hierarchy::
 
     .. method:: get_code(fullname)
 
-       Concrete implementation of :meth:`InspectLoader.get_code`.
+        Concrete implementation of :meth:`InspectLoader.get_code`.
 
     .. method:: exec_module(module)
 
