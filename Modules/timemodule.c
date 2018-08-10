@@ -174,10 +174,15 @@ static PyObject *
 time_clock_gettime(PyObject *self, PyObject *args)
 {
     int ret;
-    int clk_id;
     struct timespec tp;
 
+#if defined(_AIX) && (SIZEOF_LONG == 8)
+    long clk_id;
+    if (!PyArg_ParseTuple(args, "l:clock_gettime", &clk_id)) {
+#else
+    int clk_id;
     if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id)) {
+#endif
         return NULL;
     }
 
@@ -947,28 +952,44 @@ time_mktime(PyObject *self, PyObject *tup)
     }
 #ifdef _AIX
     /* year < 1902 or year > 2037 */
-    if (buf.tm_year < 2 || buf.tm_year > 137) {
+    if ((buf.tm_year < 2) || (buf.tm_year > 137))  {
         /* Issue #19748: On AIX, mktime() doesn't report overflow error for
          * timestamp < -2^31 or timestamp > 2**31-1. */
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;
     }
+    {
+        time_t clk;
+        int     year = buf.tm_year;
+        int     days = 0;
+
+        /* year < 1970 */
+        if (year < 70) do
+        {
+                buf.tm_year += 4;
+                days -= (366 + (365 * 3));
+        } while (buf.tm_year < 70);
+
+        buf.tm_wday = -1;
+        clk = mktime(&buf);
+        buf.tm_year = year;
+
+        if (buf.tm_wday != -1 && days)
+                buf.tm_wday = (buf.tm_wday + days) % 7;
+
+	tt = clk + (days * (24 * 3600));
+    }
 #else
     buf.tm_wday = -1;  /* sentinel; original value ignored */
-#endif
     tt = mktime(&buf);
+#endif
     /* Return value of -1 does not necessarily mean an error, but tm_wday
      * cannot remain set to -1 if mktime succeeded. */
     if (tt == (time_t)(-1)
-#ifndef _AIX
         /* Return value of -1 does not necessarily mean an error, but
          * tm_wday cannot remain set to -1 if mktime succeeded. */
-        && buf.tm_wday == -1
-#else
-        /* on AIX, tm_wday is always sets, even on error */
-#endif
-       )
+        && buf.tm_wday == -1)
     {
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");

@@ -124,9 +124,16 @@ class TimeTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
     def test_pthread_getcpuclockid(self):
+        from ctypes import c_void_p, sizeof
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
-        self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        # when in 32-bit mode AIX only returns the predefined constant
+        if not sys.platform.startswith("aix"):
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        elif ((sizeof(c_void_p) * 8) == 64):
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        else:
+            self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
         t1 = time.clock_gettime(clk_id)
         t2 = time.clock_gettime(clk_id)
         self.assertLessEqual(t1, t2)
