@@ -1547,10 +1547,11 @@ passed into your test function matches this order.
 Where to patch
 ~~~~~~~~~~~~~~
 
-:func:`patch` works by (temporarily) changing the object that a *name* points to with
-another one. There can be many names pointing to any individual object, so
-for patching to work you must ensure that you patch the name used by the system
-under test.
+:func:`patch` works by (temporarily) changing the object that a *name*
+(specified by the ``target`` parameter) points to. There can be many names
+pointing to any individual object, and calling ``patch`` on one of the names
+does not change what the other names point to, so for patching to work you must
+ensure that you patch the name used by the system under test.
 
 The basic principle is that you patch where an object is *looked up*, which
 is not necessarily the same place as where it is defined. A couple of
@@ -1565,25 +1566,44 @@ Imagine we have a project that we want to test with the following structure::
         -> from a import SomeClass
         -> some_function instantiates SomeClass
 
-Now we want to test ``some_function`` but we want to mock out ``SomeClass`` using
-:func:`patch`. The problem is that when we import module b, which we will have to
-do then it imports ``SomeClass`` from module a. If we use :func:`patch` to mock out
-``a.SomeClass`` then it will have no effect on our test; module b already has a
-reference to the *real* ``SomeClass`` and it looks like our patching had no
-effect.
+Now we want to test ``some_function`` but we want to mock out ``SomeClass``
+using :func:`patch`. An incorrect way to write a test is as follows::
 
-The key is to patch out ``SomeClass`` where it is used (or where it is looked up).
-In this case ``some_function`` will actually look up ``SomeClass`` in module b,
-where we have imported it. The patching should look like::
-
-    @patch('b.SomeClass')
-
-However, consider the alternative scenario where instead of ``from a import
-SomeClass`` module b does ``import a`` and ``some_function`` uses ``a.SomeClass``. Both
-of these import forms are common. In this case the class we want to patch is
-being looked up in the module and so we have to patch ``a.SomeClass`` instead::
+    import b
 
     @patch('a.SomeClass')
+    def test1(MockClass):
+        -> configure the mock
+        assert b.some_function(...)
+
+The problem is that module b imports ``SomeClass`` from module a. Hence, within
+the context of the ``test`` function, the name ``a.SomeClass`` points to the
+``MockClass``, however module b already has a reference to the *real* (non-mock)
+``SomeClass``.
+
+The key is to patch out ``SomeClass`` where it is used (or where it is looked
+up). In this case, since ``some_function`` looks up ``SomeClass`` in module b
+(where we have imported it), the patching should look like::
+
+    import b
+
+    @patch('b.SomeClass')
+    def test2(MockClass):
+        -> configure the mock
+        assert b.some_function(...)
+
+However, consider this alternative scenario::
+
+    a.py
+        -> Defines SomeClass
+
+    b.py
+        -> import a
+        -> some_function instantiates a.SomeClass
+
+
+In this case the class we want to patch is being looked up in the module, so
+``test1`` is correct and ``test2`` is not.
 
 
 Patching Descriptors and Proxy Objects
