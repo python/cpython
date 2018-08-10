@@ -1309,7 +1309,7 @@ class TestCase(unittest.TestCase):
                 # Make sure we copied these objects and aren't using the
                 # originals.
                 self.assertIsNot(d['nt1'], inst1)
-                self.assertIsNot(d['nt2'], inst1)
+                self.assertIsNot(d['nt2'], inst2)
                 # Due to the way that namedtuples compare to tuples, check
                 # that dict values can be accessed by field name (that is,
                 # they're namedtuples not tuples).
@@ -1458,7 +1458,7 @@ class TestCase(unittest.TestCase):
                 # Make sure we copied these objects and aren't using the
                 # originals.
                 self.assertIsNot(t[1], inst1)
-                self.assertIsNot(t[2], inst1)
+                self.assertIsNot(t[2], inst2)
                 # Due to the way that namedtuples compare to tuples, check
                 # that dict values can be accessed by field name (that is,
                 # they're namedtuples not tuples).
