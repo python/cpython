@@ -1376,6 +1376,10 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT_QUIT(st, 0);
     }
     switch (e->kind) {
+    case NamedExpr_kind:
+        VISIT(st, expr, e->v.NamedExpr.value);
+        VISIT(st, expr, e->v.NamedExpr.target);
+        break;
     case BoolOp_kind:
         VISIT_SEQ(st, expr, e->v.BoolOp.values);
         break;
