@@ -143,7 +143,7 @@ class _WindowsFlavour(_Flavour):
             prefix = ''
         third = part[2:3]
         if (second == sep and first == sep and third != sep):
-            # is a UNC path:
+            # is a UNC and/or Global path:
             # vvvvvvvvvvvvvvvvvvvvv root
             # \\machine\mountpoint\directory\etc\...
             #            directory ^^^^^^^^^^^^^^
@@ -164,10 +164,11 @@ class _WindowsFlavour(_Flavour):
             drv = part[:2]
             part = part[2:]
             first = third
-        # Except for "UNC" and "Global" paths, the drive should be
+        # Except for UNC and Global paths, the drive should be
         # the first component after the local-device prefix.
         # See https://bugs.python.org/issue33898
-        elif part != sep and prefix and 'UNC' not in prefix and 'Global' not in prefix:
+        # All UNC and some of Global paths are parsed in if-condition above.
+        elif part != sep and prefix and 'global' not in self.casefold(prefix):
             index = part.find(sep)
             if index != -1:
                 drv = part[:index]
@@ -183,6 +184,7 @@ class _WindowsFlavour(_Flavour):
         return prefix + drv, root, part
 
     def casefold(self, s):
+        # .lower() is not recommended. See https://bugs.python.org/issue32612
         return s.lower()
 
     def casefold_parts(self, parts):
@@ -223,20 +225,20 @@ class _WindowsFlavour(_Flavour):
                 # Do not assume case sensitivity.
                 # See https://docs.microsoft.com/ru-ru/windows/desktop/FileIO/naming-a-file
                 # But .lower() is not recommended. See https://bugs.python.org/issue32612
-                s1 = s[:index]
-                if s1 == 'Global' or s1 == 'GLOBAL':
+                s1 = self.casefold(s[:index])
+                if s1 == 'global':
                     prefix += s[:6]
                 # For example, Path('//?/Global/Z:/').drive
                     if s[8:9] == ':':
                         prefix += s[6:7]
                         s = s[7:]
                 # For example, r'\\?\Global\UNC\server\share'
-                    elif s[7:10] == 'UNC':
+                    elif self.casefold(s[7:11]) == 'unc\\':
                         prefix += s[6:10]
                         s = '\\' + s[10:]
                     else:
                         s = '\\' + s[6:]
-                if s1 == 'UNC':
+                if s1 == 'unc':
                     prefix += s[:3]
                     s = '\\' + s[3:]
         return prefix, s
