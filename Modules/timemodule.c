@@ -967,8 +967,8 @@ time_mktime(PyObject *self, PyObject *tup)
         /* year < 1970 */
         if (year < 70) do
         {
-                buf.tm_year += 4;
-                days -= (366 + (365 * 3));
+            buf.tm_year += 4;
+            days -= (366 + (365 * 3));
         } while (buf.tm_year < 70);
 
         buf.tm_wday = -1;
@@ -976,9 +976,9 @@ time_mktime(PyObject *self, PyObject *tup)
         buf.tm_year = year;
 
         if (buf.tm_wday != -1 && days)
-                buf.tm_wday = (buf.tm_wday + days) % 7;
+            buf.tm_wday = (buf.tm_wday + days) % 7;
 
-	tt = clk + (days * (24 * 3600));
+        tt = clk + (days * (24 * 3600));
     }
 #else
     buf.tm_wday = -1;  /* sentinel; original value ignored */
