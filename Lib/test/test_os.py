@@ -1115,8 +1115,12 @@ class MakedirTests(unittest.TestCase):
             self.assertTrue(os.path.exists(path))
             self.assertTrue(os.path.isdir(path))
             if os.name != 'nt':
-                self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o555)
-                self.assertEqual(stat.S_IMODE(os.stat(parent).st_mode), 0o775)
+                if (stat.S_IMODE(os.stat(base).st_mode) & 0o2000):
+                    self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o2555)
+                    self.assertEqual(stat.S_IMODE(os.stat(parent).st_mode), 0o2775)
+                else:
+                    self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o555)
+                    self.assertEqual(stat.S_IMODE(os.stat(parent).st_mode), 0o775)
 
     def test_exist_ok_existing_directory(self):
         path = os.path.join(support.TESTFN, 'dir1')
