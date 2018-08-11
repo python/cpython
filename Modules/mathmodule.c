@@ -2057,7 +2057,7 @@ scaled_vector_squared(Py_ssize_t n, double *vec, double max)
         return 0.0;
     }
     assert(n > 0);
-    for (i=0 ; i<n-1 ; i++) {
+    for (i=0 ; i < n-1 ; i++) {
         x = vec[i];
         if (x == max) {
             x = vec[n-1];
@@ -2073,6 +2073,8 @@ scaled_vector_squared(Py_ssize_t n, double *vec, double max)
     csum += 1.0 - frac;
     return csum;
 }
+
+#define NUM_STACK_ELEMS 16
 
 /*[clinic input]
 math.dist
@@ -2095,11 +2097,12 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
 /*[clinic end generated code: output=56bd9538d06bbcfe input=937122eaa5f19272]*/
 {
     PyObject *item;
-    double *diffs;
     double max = 0.0;
     double x, px, qx, result;
     Py_ssize_t i, m, n;
     int found_nan = 0;
+    double diffs_on_stack[NUM_STACK_ELEMS];
+    double *diffs = diffs_on_stack;
 
     m = PyTuple_GET_SIZE(p);
     n = PyTuple_GET_SIZE(q);
@@ -2109,22 +2112,22 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
         return NULL;
 
     }
-    diffs = (double *) PyObject_Malloc(n * sizeof(double));
-    if (diffs == NULL) {
-        return NULL;
+    if (n > NUM_STACK_ELEMS) {
+        diffs = (double *) PyObject_Malloc(n * sizeof(double));
+        if (diffs == NULL) {
+            return NULL;
+        }
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(p, i);
         px = PyFloat_AsDouble(item);
         if (px == -1.0 && PyErr_Occurred()) {
-            PyObject_Free(diffs);
-            return NULL;
+            goto error_exit;
         }
         item = PyTuple_GET_ITEM(q, i);
         qx = PyFloat_AsDouble(item);
         if (qx == -1.0 && PyErr_Occurred()) {
-            PyObject_Free(diffs);
-            return NULL;
+            goto error_exit;
         }
         x = fabs(px - qx);
         diffs[i] = x;
@@ -2135,17 +2138,21 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     }
     if (Py_IS_INFINITY(max)) {
         result = max;
-        goto done;
-    }
-    if (found_nan) {
+    } else if (found_nan) {
         result = Py_NAN;
-        goto done;
+    } else {
+        result = max * sqrt(scaled_vector_squared(n, diffs, max));
     }
-    result = max * sqrt(scaled_vector_squared(n, diffs, max));
-
-  done:
-    PyObject_Free(diffs);
+    if (diffs != diffs_on_stack) {
+        PyObject_Free(diffs);
+    }
     return PyFloat_FromDouble(result);
+
+  error_exit:
+    if (diffs != diffs_on_stack) {
+        PyObject_Free(diffs);
+    }
+    return NULL;
 }
 
 /* AC: cannot convert yet, waiting for *args support */
@@ -2154,21 +2161,23 @@ math_hypot(PyObject *self, PyObject *args)
 {
     Py_ssize_t i, n;
     PyObject *item;
-    double *coordinates;
     double max = 0.0;
     double x, result;
     int found_nan = 0;
+    double coord_on_stack[NUM_STACK_ELEMS];
+    double *coordinates = coord_on_stack;
 
     n = PyTuple_GET_SIZE(args);
-    coordinates = (double *) PyObject_Malloc(n * sizeof(double));
-    if (coordinates == NULL)
-        return NULL;
+    if (n > NUM_STACK_ELEMS) {
+        coordinates = (double *) PyObject_Malloc(n * sizeof(double));
+        if (coordinates == NULL)
+            return NULL;
+    }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(args, i);
         x = PyFloat_AsDouble(item);
         if (x == -1.0 && PyErr_Occurred()) {
-            PyObject_Free(coordinates);
-            return NULL;
+            goto error_exit;
         }
         x = fabs(x);
         coordinates[i] = x;
@@ -2179,18 +2188,24 @@ math_hypot(PyObject *self, PyObject *args)
     }
     if (Py_IS_INFINITY(max)) {
         result = max;
-        goto done;
-    }
-    if (found_nan) {
+    } else if (found_nan) {
         result = Py_NAN;
-        goto done;
+    } else {
+        result = max * sqrt(scaled_vector_squared(n, coordinates, max));
     }
-    result = max * sqrt(scaled_vector_squared(n, coordinates, max));
-
-  done:
-    PyObject_Free(coordinates);
+    if (coordinates != coord_on_stack) {
+        PyObject_Free(coordinates);
+    }
     return PyFloat_FromDouble(result);
+
+  error_exit:
+    if (coordinates != coord_on_stack) {
+        PyObject_Free(coordinates);
+    }
+    return NULL;
 }
+
+#undef NUM_STACK_ELEMS
 
 PyDoc_STRVAR(math_hypot_doc,
              "hypot(*coordinates) -> value\n\n\
