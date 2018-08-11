@@ -439,8 +439,8 @@ class TestCommandLine(unittest.TestCase):
         self.assertIn(direct_stdout.strip(), trace_stdout)
 
     def test_count_and_summary(self):
-        filename = TESTFN + '.py'
-        coverfilename = TESTFN + '.cover'
+        filename = f'{TESTFN}.py'
+        coverfilename = f'{TESTFN}.cover'
         with open(filename, 'w') as fd:
             self.addCleanup(unlink, filename)
             self.addCleanup(unlink, coverfilename)
