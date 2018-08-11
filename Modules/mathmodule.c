@@ -2045,10 +2045,12 @@ Kahan summation is used to improve accuracy.  The *csum*
 variable tracks the cumulative sum and *frac* tracks
 fractional round-off error for the most recent addition.
 
-The *max* variable must be present in *vec* or equal to 0.0
-when n==0.  Likewise, *max* will be INF if an infinity is
-present in the vec.  The *found_nan* variable must be true
-if some member of the *vec* is a NaN.
+The value of the *max* variable must be present in *vec*
+or should equal to 0.0 when n==0.  Likewise, *max* will
+be INF if an infinity is present in the vec.
+
+The *found_nan* variable indicates whether some member of
+the *vec* is a NaN.
 */
 
 static inline double
@@ -2059,7 +2061,8 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 
     if (Py_IS_INFINITY(max)) {
         return max;
-    } else if (found_nan) {
+    }
+    if (found_nan) {
         return Py_NAN;
     }
     if (max == 0.0) {
