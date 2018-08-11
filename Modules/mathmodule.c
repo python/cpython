@@ -2032,7 +2032,7 @@ math_fmod_impl(PyObject *module, double x, double y)
 }
 
 /*
-Given an *n* length *vec* of non-negative, non-nan, non-inf values
+Given an *n* length *vec* of non-negative values
 where *max* is the largest value in the vector, compute:
 
     max * sqrt(sum((x / max) ** 2 for x in vec))
@@ -2045,14 +2045,23 @@ Kahan summation is used to improve accuracy.  The *csum*
 variable tracks the cumulative sum and *frac* tracks
 fractional round-off error for the most recent addition.
 
+The *max* variable must be present in *vec* or equal to 0.0
+when n==0.  Likewise, *max* will be INF if an infinity is
+present in the vec.  The *found_nan* variable must be true
+if some member of the *vec* is a NaN.
 */
 
 static inline double
-vector_norm(Py_ssize_t n, double *vec, double max)
+vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
     double x, csum = 0.0, oldcsum, frac = 0.0;
     Py_ssize_t i;
 
+    if (Py_IS_INFINITY(max)) {
+        return max;
+    } else if (found_nan) {
+        return Py_NAN;
+    }
     if (max == 0.0) {
         return 0.0;
     }
@@ -2136,13 +2145,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
             max = x;
         }
     }
-    if (Py_IS_INFINITY(max)) {
-        result = max;
-    } else if (found_nan) {
-        result = Py_NAN;
-    } else {
-        result = vector_norm(n, diffs, max);
-    }
+    result = vector_norm(n, diffs, max, found_nan);
     if (diffs != diffs_on_stack) {
         PyObject_Free(diffs);
     }
@@ -2186,13 +2189,7 @@ math_hypot(PyObject *self, PyObject *args)
             max = x;
         }
     }
-    if (Py_IS_INFINITY(max)) {
-        result = max;
-    } else if (found_nan) {
-        result = Py_NAN;
-    } else {
-        result = vector_norm(n, coordinates, max);
-    }
+    result = vector_norm(n, coordinates, max, found_nan);
     if (coordinates != coord_on_stack) {
         PyObject_Free(coordinates);
     }
