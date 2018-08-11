@@ -438,5 +438,27 @@ class TestCommandLine(unittest.TestCase):
         status, trace_stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN)
         self.assertIn(direct_stdout.strip(), trace_stdout)
 
+    def test_count_and_summary(self):
+        filename = f'{TESTFN}.py'
+        coverfilename = f'{TESTFN}.cover'
+        with open(filename, 'w') as fd:
+            self.addCleanup(unlink, filename)
+            self.addCleanup(unlink, coverfilename)
+            fd.write(textwrap.dedent("""\
+                x = 1
+                y = 2
+
+                def f():
+                    return x + y
+
+                for i in range(10):
+                    f()
+            """))
+        status, stdout, _ = assert_python_ok('-m', 'trace', '-cs', filename)
+        stdout = stdout.decode()
+        self.assertEqual(status, 0)
+        self.assertIn('lines   cov%   module   (path)', stdout)
+        self.assertIn(f'6   100%   {TESTFN}   ({filename})', stdout)
+
 if __name__ == '__main__':
     unittest.main()
