@@ -2035,7 +2035,7 @@ math_fmod_impl(PyObject *module, double x, double y)
 Given an *n* length *vec* of non-negative, non-nan, non-inf values
 where *max* is the largest value in the vector, compute:
 
-    sum((x / max) ** 2 for x in vec)
+    max * sqrt(sum((x / max) ** 2 for x in vec))
 
 When a maximum value is found, it is swapped to the end.  This
 lets us skip one loop iteration and just add 1.0 at the end.
@@ -2048,7 +2048,7 @@ fractional round-off error for the most recent addition.
 */
 
 static inline double
-scaled_vector_squared(Py_ssize_t n, double *vec, double max)
+vector_norm(Py_ssize_t n, double *vec, double max)
 {
     double x, csum = 0.0, oldcsum, frac = 0.0;
     Py_ssize_t i;
@@ -2071,7 +2071,7 @@ scaled_vector_squared(Py_ssize_t n, double *vec, double max)
     }
     assert(vec[n-1] == max);
     csum += 1.0 - frac;
-    return csum;
+    return max * sqrt(csum);
 }
 
 #define NUM_STACK_ELEMS 16
@@ -2141,7 +2141,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     } else if (found_nan) {
         result = Py_NAN;
     } else {
-        result = max * sqrt(scaled_vector_squared(n, diffs, max));
+        result = vector_norm(n, diffs, max);
     }
     if (diffs != diffs_on_stack) {
         PyObject_Free(diffs);
@@ -2191,7 +2191,7 @@ math_hypot(PyObject *self, PyObject *args)
     } else if (found_nan) {
         result = Py_NAN;
     } else {
-        result = max * sqrt(scaled_vector_squared(n, coordinates, max));
+        result = vector_norm(n, coordinates, max);
     }
     if (coordinates != coord_on_stack) {
         PyObject_Free(coordinates);
