@@ -2031,6 +2031,49 @@ math_fmod_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(r);
 }
 
+/*
+Given an *n* length *vec* of non-negative, non-nan, non-inf values
+where *max* is the largest value in the vector, compute:
+
+    sum((x / max) ** 2 for x in vec)
+
+When a maximum value is found, it is swapped to the end.  This
+lets us skip one loop iteration and just add 1.0 at the end.
+Saving the largest value for last also helps improve accuracy.
+
+Kahan summation is used to improve accuracy.  The *csum*
+variable tracks the cumulative sum and *frac* tracks
+fractional round-off error for the most recent addition.
+
+*/
+
+static inline double
+scaled_vector_squared(Py_ssize_t n, double *vec, double max)
+{
+    double x, csum = 0.0, oldcsum, frac = 0.0;
+    Py_ssize_t i;
+
+    if (max == 0.0) {
+        return 0.0;
+    }
+    assert(n > 0);
+    for (i=0 ; i<n-1 ; i++) {
+        x = vec[i];
+        if (x == max) {
+            x = vec[n-1];
+            vec[n-1] = max;
+        }
+        x /= max;
+        x = x*x - frac;
+        oldcsum = csum;
+        csum += x;
+        frac = (csum - oldcsum) - x;
+    }
+    assert(vec[n-1] == max);
+    csum += 1.0 - frac;
+    return csum;
+}
+
 /*[clinic input]
 math.dist
 
@@ -2054,7 +2097,6 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     PyObject *item;
     double *diffs;
     double max = 0.0;
-    double csum = 0.0;
     double x, px, qx, result;
     Py_ssize_t i, m, n;
     int found_nan = 0;
@@ -2099,15 +2141,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
         result = Py_NAN;
         goto done;
     }
-    if (max == 0.0) {
-        result = 0.0;
-        goto done;
-    }
-    for (i=0 ; i<n ; i++) {
-        x = diffs[i] / max;
-        csum += x * x;
-    }
-    result = max * sqrt(csum);
+    result = max * sqrt(scaled_vector_squared(n, diffs, max));
 
   done:
     PyObject_Free(diffs);
@@ -2122,7 +2156,6 @@ math_hypot(PyObject *self, PyObject *args)
     PyObject *item;
     double *coordinates;
     double max = 0.0;
-    double csum = 0.0;
     double x, result;
     int found_nan = 0;
 
@@ -2152,15 +2185,7 @@ math_hypot(PyObject *self, PyObject *args)
         result = Py_NAN;
         goto done;
     }
-    if (max == 0.0) {
-        result = 0.0;
-        goto done;
-    }
-    for (i=0 ; i<n ; i++) {
-        x = coordinates[i] / max;
-        csum += x * x;
-    }
-    result = max * sqrt(csum);
+    result = max * sqrt(scaled_vector_squared(n, coordinates, max));
 
   done:
     PyObject_Free(coordinates);
