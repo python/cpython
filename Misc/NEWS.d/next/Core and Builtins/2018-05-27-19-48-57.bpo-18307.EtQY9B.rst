@@ -1,1 +1,1 @@
-abspath 'filename' attribute of code-objects on import from zip
+Make file paths on the code objects from zip files be absolute.
