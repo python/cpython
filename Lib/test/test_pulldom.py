@@ -159,6 +159,13 @@ class PullDOMTestCase(unittest.TestCase):
             self.fail(
                 "Ran out of events, but should have received END_DOCUMENT")
 
+    def test_getitem_deprecation(self):
+        parser = pulldom.parseString(SMALL_SAMPLE)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'Use iterator protocol instead'):
+            # This should have returned 'END_ELEMENT'.
+            self.assertEqual(parser[-1][0], pulldom.START_DOCUMENT)
+
 
 class ThoroughTestCase(unittest.TestCase):
     """Test the hard-to-reach parts of pulldom."""

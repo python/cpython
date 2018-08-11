@@ -169,6 +169,9 @@ available for subclassing as well:
    .. deprecated-removed:: 3.6 3.8
       The *bufsize* parameter.
 
+   .. deprecated:: 3.8
+      Support for :meth:`__getitem__` method is deprecated.
+
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is
 passed to :func:`fileinput.input` or to the :class:`FileInput` constructor, the
