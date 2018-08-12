@@ -2082,6 +2082,12 @@ class Win32SymlinkTests(unittest.TestCase):
         import pathlib
         os.symlink(self.filelink_target, self.filelink)
         filelink = pathlib.Path(self.filelink)
+        print()
+        print('Debug prints:')
+        print('filelink:', filelink)
+        print('readlink:', os.readlink(filelink))
+        print('target:', self.filelink_target)
+        print()
         self.assertEqual(os.readlink(filelink), self.filelink_target)
 
     def _create_missing_dir_link(self):
