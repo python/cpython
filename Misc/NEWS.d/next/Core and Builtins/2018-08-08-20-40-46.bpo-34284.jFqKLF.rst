@@ -1,1 +1,4 @@
-NullNew for old extension types instead of just null
+Types that cannot be instantiated now don't have `tp_new` equal to NULL,
+but equal to a common helper function that raises TypeError instead.
+This is applied to all old types without `tp_new` and types
+in the `sys` module that are derived from `tuple`.

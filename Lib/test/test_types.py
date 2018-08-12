@@ -9,6 +9,7 @@ import sys
 import types
 import unittest.mock
 import weakref
+import re
 
 class TypesTests(unittest.TestCase):
 
@@ -1650,6 +1651,64 @@ class CoroutineTests(unittest.TestCase):
             '__await__', '__iter__', '__next__', 'cr_code', 'cr_running',
             'cr_frame', 'gi_code', 'gi_frame', 'gi_running', 'send',
             'close', 'throw'}))
+
+
+class ObjectCreationTests(unittest.TestCase):
+    def test_simple_create(self):
+        class C: pass
+        self.assertIsInstance(C(), C)
+        self.assertIsInstance(C.__new__(C), C)
+        self.assertIsInstance(object.__new__(C), C)
+
+    def test_create_static_class(self):
+        C = dict
+        self.assertIsInstance(C(), C)
+        self.assertIsInstance(C.__new__(C), C)
+
+        message = re.escape(
+            'object.__new__(dict) is not safe, '
+            'use dict.__new__()'
+        )
+        with self.assertRaisesRegex(TypeError, message):
+            object.__new__(C), C
+
+    def test_create_uncreatable(self):
+        C = types.GeneratorType
+
+        cant_create_message = re.escape("cannot create 'generator' instances")
+        not_safe_message = re.escape(
+            'object.__new__(generator) is not safe, '
+            'use generator.__new__()'
+        )
+
+        with self.assertRaisesRegex(TypeError, cant_create_message):
+            C()
+        with self.assertRaisesRegex(TypeError, cant_create_message):
+            C.__new__(C)
+        with self.assertRaisesRegex(TypeError, not_safe_message):
+            object.__new__(C)
+
+    def test_create_sys_tuples(self):
+        C = type(sys.flags)
+
+        cant_create_message = re.escape("cannot create 'sys.flags' instances")
+        object_message = re.escape(
+            'object.__new__(sys.flags) is not safe, '
+            'use sys.flags.__new__()'
+        )
+        tuple_message = re.escape(
+            'tuple.__new__(sys.flags) is not safe, '
+            'use sys.flags.__new__()'
+        )
+
+        with self.assertRaisesRegex(TypeError, cant_create_message):
+            C()
+        with self.assertRaisesRegex(TypeError, cant_create_message):
+            C.__new__(C)
+        with self.assertRaisesRegex(TypeError, object_message):
+            object.__new__(C)
+        with self.assertRaisesRegex(TypeError, tuple_message):
+            tuple.__new__(C)
 
 
 if __name__ == '__main__':

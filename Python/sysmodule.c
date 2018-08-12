@@ -2273,6 +2273,14 @@ static struct PyModuleDef sysmodule = {
     } while (0)
 
 
+static void
+prevent_user_creation(PyTypeObject *type)
+{
+    /* prevent user from creating new instances */
+    type->tp_init = NULL;
+    type->tp_new = PyType_NullNew;
+}
+
 _PyInitError
 _PySys_BeginInit(PyObject **sysmod)
 {
@@ -2370,12 +2378,7 @@ _PySys_BeginInit(PyObject **sysmod)
     }
     version_info = make_version_info();
     SET_SYS_FROM_STRING("version_info", version_info);
-    /* prevent user from creating new instances */
-    VersionInfoType.tp_init = NULL;
-    VersionInfoType.tp_new = NULL;
-    res = PyDict_DelItemString(VersionInfoType.tp_dict, "__new__");
-    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
-        PyErr_Clear();
+    prevent_user_creation(&VersionInfoType);
 
     /* implementation */
     SET_SYS_FROM_STRING("implementation", make_impl_info(version_info));
@@ -2396,14 +2399,7 @@ _PySys_BeginInit(PyObject **sysmod)
                                        &windows_version_desc) < 0) {
             goto type_init_failed;
         }
-    /* prevent user from creating new instances */
-    WindowsVersionType.tp_init = NULL;
-    WindowsVersionType.tp_new = NULL;
-    assert(!PyErr_Occurred());
-    res = PyDict_DelItemString(WindowsVersionType.tp_dict, "__new__");
-    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
-        PyErr_Clear();
-    }
+    prevent_user_creation(&WindowsVersionType);
 #endif
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
@@ -2493,16 +2489,7 @@ _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
 
     /* Set flags to their final values */
     SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags());
-    /* prevent user from creating new instances */
-    FlagsType.tp_init = NULL;
-    FlagsType.tp_new = NULL;
-    res = PyDict_DelItemString(FlagsType.tp_dict, "__new__");
-    if (res < 0) {
-        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
-            return res;
-        }
-        PyErr_Clear();
-    }
+    prevent_user_creation(&FlagsType);
 
     SET_SYS_FROM_STRING_INT_RESULT("dont_write_bytecode",
                          PyBool_FromLong(Py_DontWriteBytecodeFlag));
