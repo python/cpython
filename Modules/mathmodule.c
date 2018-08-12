@@ -2056,7 +2056,7 @@ the *vec* is a NaN.
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, csum = 0.0, oldcsum, frac = 0.0;
+    double x, csum = 0.0, oldcsum, frac = 0.0, last;
     Py_ssize_t i;
 
     if (Py_IS_INFINITY(max)) {
@@ -2069,12 +2069,13 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         return 0.0;
     }
     assert(n > 0);
+    last = vec[n-1];
     for (i=0 ; i < n-1 ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && x >= 0.0 && x <= max);
         if (x == max) {
-            x = vec[n-1];
-            vec[n-1] = max;
+            x = last;
+            last = max;
         }
         x /= max;
         x = x*x - frac;
@@ -2082,7 +2083,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         csum += x;
         frac = (csum - oldcsum) - x;
     }
-    assert(vec[n-1] == max);
+    assert(last == max);
     csum += 1.0 - frac;
     return max * sqrt(csum);
 }
