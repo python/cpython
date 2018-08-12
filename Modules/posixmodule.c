@@ -7467,10 +7467,10 @@ exit:
 static PyObject *
 win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    const wchar_t *path;
+    path_t path;
     DWORD n_bytes_returned;
     DWORD io_result;
-    PyObject *po, *result;
+    PyObject *result = NULL;
     int dir_fd;
     HANDLE reparse_point_handle;
 
@@ -7480,15 +7480,13 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 
     static char *keywords[] = {"path", "dir_fd", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "U|$O&:readlink", keywords,
-                          &po,
+    memset(&path, 0, sizeof(path));
+    path.function_name = "readlink";
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:readlink", keywords,
+                          path_converter, &path,
                           dir_fd_unavailable, &dir_fd
                           ))
-        return NULL;
-
-    path = _PyUnicode_AsUnicode(po);
-    if (path == NULL)
-        return NULL;
+        goto exit;
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -7502,8 +7500,10 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
         0);
     Py_END_ALLOW_THREADS
 
-    if (reparse_point_handle==INVALID_HANDLE_VALUE)
-        return win32_error_object("readlink", po);
+    if (reparse_point_handle == INVALID_HANDLE_VALUE) {
+        result = path_error(&path);
+        goto exit;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     /* New call DeviceIoControl to read the reparse point */
@@ -7518,20 +7518,24 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     CloseHandle(reparse_point_handle);
     Py_END_ALLOW_THREADS
 
-    if (io_result==0)
-        return win32_error_object("readlink", po);
+    if (io_result == 0) {
+        result = path_error(&path);
+        goto exit;
+    }
 
     if (rdb->ReparseTag != IO_REPARSE_TAG_SYMLINK)
     {
         PyErr_SetString(PyExc_ValueError,
                 "not a symbolic link");
-        return NULL;
+        goto exit;
     }
     print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
                  rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
 
     result = PyUnicode_FromWideChar(print_name,
                     rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
+exit:
+    path_cleanup(&path);
     return result;
 }
 

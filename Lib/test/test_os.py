@@ -2077,6 +2077,13 @@ class Win32SymlinkTests(unittest.TestCase):
         self.assertTrue(os.path.islink(self.filelink))
         self.check_stat(self.filelink, self.filelink_target)
 
+    @unittest.skipUnless(hasattr(os, 'readlink'), 'needs os.readlink()')
+    def test_readlink_pathlike(self):
+        os.symlink(self.filelink_target, self.filelink)
+        import pathlib
+        filelink = pathlib.Path(self.filelink)
+        self.assertEqual(os.readlink(filelink), self.filelink_target)
+
     def _create_missing_dir_link(self):
         'Create a "directory" link to a non-existent target'
         linkname = self.missing_link
