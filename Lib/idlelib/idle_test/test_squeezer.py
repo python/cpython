@@ -3,10 +3,11 @@ from collections import namedtuple
 from tkinter import Text
 import unittest
 from unittest.mock import Mock, NonCallableMagicMock, patch, sentinel, ANY
-from test.support import captured_stderr, requires
+from test.support import requires
 
 from idlelib.squeezer import count_lines_with_wrapping, ExpandingButton, \
     Squeezer
+from idlelib.textview import view_text
 from idlelib.pyshell import PyShell
 
 
@@ -266,22 +267,6 @@ class TestSqueezer(unittest.TestCase):
         self.assertEqual(retval, "break")
         self.assertEqual(squeezer.text.bell.call_count, 1)
 
-    def test_preview_last_squeezed_event_no_preview_command(self):
-        """test the preview_last_squeezed event"""
-        # The tested scenario: There is one squeezed text, therefore there
-        # is one ExpandingButton instance. However, no preview command has been
-        # configured. The preview_last_squeezed event is called and should fail
-        # (i.e. call squeezer.text.bell()).
-        editwin = self.make_mock_editor_window()
-        squeezer = self.make_squeezer_instance(editwin)
-        squeezer.get_preview_command = Mock(return_value='')
-        mock_expandingbutton = Mock()
-        squeezer.expandingbuttons = [mock_expandingbutton]
-
-        retval = squeezer.preview_last_squeezed_event(event=Mock())
-        self.assertEqual(retval, "break")
-        self.assertEqual(squeezer.text.bell.call_count, 1)
-
     def test_preview_last_squeezed_event(self):
         """test the preview_last_squeezed event"""
         # The tested scenario: There are two squeezed texts, therefore there
@@ -290,7 +275,6 @@ class TestSqueezer(unittest.TestCase):
         # second ExpandingButton.
         editwin = self.make_mock_editor_window()
         squeezer = self.make_squeezer_instance(editwin)
-        squeezer.get_preview_command = Mock(return_value='notepad.exe %(fn)s')
         mock_expandingbutton1 = Mock()
         mock_expandingbutton2 = Mock()
         squeezer.expandingbuttons = [mock_expandingbutton1,
@@ -441,32 +425,6 @@ class TestSqueezer(unittest.TestCase):
             self.assertEqual(sig.type, "int")
             self.assertNotEqual(sig.default, sentinel.NOT_GIVEN)
 
-    def test_get_preview_command(self):
-        """test the preview-command config getter"""
-        fake_cmd = 'FAKE_VIEWER_APP {filepath}'
-        with patch('idlelib.config.idleConf.GetOption') as MockGetOption:
-            MockGetOption.return_value = fake_cmd
-            retval = Squeezer.get_preview_command()
-
-            self.assertEqual(retval, fake_cmd)
-            self.assertEqual(MockGetOption.call_count, 1)
-            sig = self.get_GetOption_signature(MockGetOption.call_args)
-            self.assertSequenceEqual(
-                (sig.configType, sig.section, sig.option),
-                ("extensions", "Squeezer",
-                 Squeezer._PREVIEW_COMMAND_CONFIG_PARAM_NAME),
-            )
-            self.assertTrue(sig.raw)
-            self.assertNotEqual(sig.default, sentinel.NOT_GIVEN)
-
-    def test_invalid_preview_command_template(self):
-        """test the preview-command config getter"""
-        with patch('idlelib.config.idleConf.GetOption') as MockGetOption:
-            MockGetOption.return_value = 'FAKE_VIEWER_APP {filepath'
-            with captured_stderr():
-                retval = Squeezer.get_preview_command()
-            self.assertFalse(retval)
-
     def test_get_show_tooltip(self):
         """test the show-tooltip config getter"""
         with patch('idlelib.config.idleConf.GetOption') as MockGetOption:
@@ -499,44 +457,6 @@ class TestSqueezer(unittest.TestCase):
             self.assertEqual(sig.type, "int")
             self.assertNotEqual(sig.default, sentinel.NOT_GIVEN)
 
-    def test_conditional_add_preview_last_squeezed_text_to_edit_menu(self):
-        """test conditionally adding preview-last-squeezed to the edit menu"""
-        import importlib
-        import idlelib.squeezer
-
-        # cleanup -- make sure to reload idlelib.squeezer, since ths test
-        # messes around with it a bit
-        self.addCleanup(importlib.reload, idlelib.squeezer)
-
-        preview_last_squeezed_menu_item = \
-            ("Preview last squeezed text", "<<preview-last-squeezed>>")
-
-        # We can't override idlelib.squeezer.Squeezer.get_preview_command()
-        # in time, since what we want to test happens at module load time,
-        # and such a change can only be done once the module has been loaded.
-        # Instead, we'll patch idlelib.config.idleConf.GetOption which
-        # is used by get_preview_command().
-        with patch('idlelib.config.idleConf.GetOption') as MockGetOption:
-            # First, load the module with no preview command defined, and check
-            # that the preview-last-squeezed option is not added to the Edit
-            # menu.
-            MockGetOption.return_value = ''
-            importlib.reload(idlelib.squeezer)
-            edit_menu = dict(idlelib.squeezer.Squeezer.menudefs)['edit']
-            self.assertNotIn(preview_last_squeezed_menu_item, edit_menu)
-
-            # save the length of the edit menu spec, for comparison later
-            edit_menu_len_without_preview_last = len(edit_menu)
-
-            # Second, load the module with a preview command defined, and check
-            # that the preview-last-squeezed option is indeed added to the Edit
-            # menu.
-            MockGetOption.return_value = 'notepad.exe %(fn)s'
-            importlib.reload(idlelib.squeezer)
-            edit_menu = dict(idlelib.squeezer.Squeezer.menudefs)['edit']
-            self.assertEqual(edit_menu[-1], preview_last_squeezed_menu_item)
-            self.assertEqual(len(edit_menu), edit_menu_len_without_preview_last + 1)
-
 
 class TestExpandingButton(unittest.TestCase):
     """tests for the ExpandingButton class"""
@@ -550,17 +470,15 @@ class TestExpandingButton(unittest.TestCase):
 
         # Set default values for the configuration settings
         squeezer.get_max_num_of_lines = Mock(return_value=30)
-        squeezer.get_preview_command = Mock(return_value='')
         squeezer.get_show_tooltip = Mock(return_value=False)
         squeezer.get_tooltip_delay = Mock(return_value=1500)
         return squeezer
 
     @patch('idlelib.squeezer.ToolTip')
-    def test_init_no_preview_command_nor_tooltip(self, MockToolTip):
+    def test_init_no_tooltip(self, MockToolTip):
         """Test the simplest creation of an ExpandingButton"""
         squeezer = self.make_mock_squeezer()
         squeezer.get_show_tooltip.return_value = False
-        squeezer.get_preview_command.return_value = ''
         text_widget = squeezer.editwin.text
 
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
@@ -576,36 +494,17 @@ class TestExpandingButton(unittest.TestCase):
         # check that no tooltip was created
         self.assertEqual(MockToolTip.call_count, 0)
 
-    def test_bindings_with_preview_command(self):
-        """test tooltip creation with a preview command configured"""
-        squeezer = self.make_mock_squeezer()
-        squeezer.get_preview_command.return_value = 'notepad.exe %(fn)s'
-        expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
-
-        # check that when a preview command is configured, an event is bound
-        # on the button for middle-click
+        # check that the mouse events are bound
         self.assertIn('<Double-Button-1>', expandingbutton.bind())
         self.assertIn('<Button-2>', expandingbutton.bind())
         self.assertIn('<Button-3>', expandingbutton.bind())
 
-    def test_bindings_without_preview_command(self):
-        """test tooltip creation without a preview command configured"""
-        squeezer = self.make_mock_squeezer()
-        squeezer.get_preview_command.return_value = ''
-        expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
-
-        # check button's event bindings: double-click, right-click, middle-click
-        self.assertIn('<Double-Button-1>', expandingbutton.bind())
-        self.assertIn('<Button-2>', expandingbutton.bind())
-        self.assertNotIn('<Button-3>', expandingbutton.bind())
-
     @patch('idlelib.squeezer.ToolTip')
-    def test_init_tooltip_with_preview_command(self, MockToolTip):
-        """test tooltip creation with a preview command configured"""
+    def test_init_tooltip(self, MockToolTip):
+        """test tooltip creation"""
         squeezer = self.make_mock_squeezer()
         squeezer.get_show_tooltip.return_value = True
         squeezer.get_tooltip_delay.return_value = SENTINEL_VALUE
-        squeezer.get_preview_command.return_value = 'notepad.exe %(fn)s'
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
 
         # check that ToolTip was called once, with appropriate values
@@ -613,29 +512,9 @@ class TestExpandingButton(unittest.TestCase):
         MockToolTip.assert_called_with(expandingbutton, ANY,
                                        delay=SENTINEL_VALUE)
 
-        # check that 'right-click' appears in the tooltip text, since we
-        # configured a non-empty preview command
+        # check that 'right-click' appears in the tooltip text
         tooltip_text = MockToolTip.call_args[0][1]
         self.assertIn('right-click', tooltip_text.lower())
-
-    @patch('idlelib.squeezer.ToolTip')
-    def test_init_tooltip_without_preview_command(self, MockToolTip):
-        """test tooltip creation without a preview command configured"""
-        squeezer = self.make_mock_squeezer()
-        squeezer.get_show_tooltip.return_value = True
-        squeezer.get_tooltip_delay.return_value = SENTINEL_VALUE
-        squeezer.get_preview_command.return_value = ''
-        expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
-
-        # check that ToolTip was called once, with appropriate values
-        self.assertEqual(MockToolTip.call_count, 1)
-        MockToolTip.assert_called_with(expandingbutton, ANY,
-                                       delay=SENTINEL_VALUE)
-
-        # check that 'right-click' doesn't appear in the tooltip text, since
-        # we configured an empty preview command
-        tooltip_text = MockToolTip.call_args[0][1]
-        self.assertNotIn('right-click', tooltip_text.lower())
 
     def test_expand(self):
         """test the expand event"""
@@ -698,28 +577,16 @@ class TestExpandingButton(unittest.TestCase):
     def test_preview(self):
         """test the preview event"""
         squeezer = self.make_mock_squeezer()
-        squeezer.get_preview_command.return_value = 'FAKE_VIEWER_APP {filepath}'
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
         expandingbutton.selection_own = Mock()
 
-        with patch('subprocess.Popen') as mock_popen:
+        with patch('idlelib.textview.view_text', autospec=view_text)\
+                as mock_view_text:
             # trigger the preview event
             expandingbutton.preview(event=Mock())
 
-            # check that the expanding button called Popen once
-            self.assertEqual(mock_popen.call_count, 1)
+            # check that the expanding button called view_text
+            self.assertEqual(mock_view_text.call_count, 1)
 
-            command = mock_popen.call_args[0][0]
-            viewer, filename = command.split(' ', 1)
-
-            # check that the command line was created using the configured
-            # preview command, and that a temporary file was actually created
-            self.assertEqual(viewer, 'FAKE_VIEWER_APP')
-            self.assertTrue(os.path.isfile(filename))
-
-            # cleanup - remove the temporary file after this test
-            self.addCleanup(self._file_cleanup, filename)
-
-            # check that the temporary file contains the squeezed text
-            with open(filename, 'r') as f:
-                self.assertEqual(f.read(), 'TEXT')
+            # check that the proper text was passed
+            self.assertEqual(mock_view_text.call_args[0][2], 'TEXT')

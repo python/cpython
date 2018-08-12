@@ -7,26 +7,21 @@ completely unusable.
 
 This extension will automatically replace long texts with a small button.
 Double-cliking this button will remove it and insert the original text instead.
-Middle-clicking will copy the text to the clipboard. If a preview command
-is configured, right-clicking will open the text in an external viewing app
-using that command.
+Middle-clicking will copy the text to the clipboard. Right-clicking will open
+the text in a separate viewing window.
 
 Additionally, any output can be manually "squeezed" by the user. This includes
 output written to the standard error stream ("stderr"), such as exception
 messages and their tracebacks.
 """
-import os
 import re
-import subprocess
-import tempfile
-import traceback
-import sys
 
 import tkinter as tk
 from tkinter.font import Font
 
 from idlelib.pyshell import PyShell
 from idlelib.config import idleConf
+from idlelib.textview import view_text
 from idlelib.tooltip import ToolTip
 
 
@@ -103,8 +98,8 @@ class ExpandingButton(tk.Button):
 
     These buttons are displayed inside a Tk Text widget in place of text. A
     user can then use the button to replace it with the original text, copy
-    the original text to the clipboard or preview the original text in an
-    external application.
+    the original text to the clipboard or preview the original text in a
+    separate window.
 
     Each button is tied to a Squeezer instance, and it knows to update the
     Squeezer instance when it is expanded (and therefore removed).
@@ -120,25 +115,21 @@ class ExpandingButton(tk.Button):
         # before the iomark
         self.base_text = editwin.per.bottom
 
-        preview_command_defined = bool(self.squeezer.get_preview_command())
-
         button_text = "Squeezed text (%d lines)." % numoflines
         tk.Button.__init__(self, text, text=button_text,
                            background="#FFFFC0", activebackground="#FFFFE0")
 
         if self.squeezer.get_show_tooltip():
-            button_tooltip_text = "Double-click to expand, middle-click to copy"
-            if preview_command_defined:
-                button_tooltip_text += ", right-click to preview."
-            else:
-                button_tooltip_text += "."
+            button_tooltip_text = (
+                "Double-click to expand, middle-click to copy, " +
+                "right-click to preview."
+            )
             ToolTip(self, button_tooltip_text,
                     delay=self.squeezer.get_tooltip_delay())
 
         self.bind("<Double-Button-1>", self.expand)
         self.bind("<Button-2>", self.copy)
-        if preview_command_defined:
-            self.bind("<Button-3>", self.preview)
+        self.bind("<Button-3>", self.preview)
         self.selection_handle(
             lambda offset, length: s[int(offset):int(offset) + int(length)])
 
@@ -163,33 +154,9 @@ class ExpandingButton(tk.Button):
     def preview(self, event):
         """preview event handler
 
-        View the original text in an external application, as configured in
-        the Squeezer instance.
+        View the original text in a separate text viewer window.
         """
-        f = tempfile.NamedTemporaryFile(mode='w', suffix="longidletext",
-                                        delete=False)
-        filename = f.name
-        f.write(self.s)
-        f.close()
-
-        cmdline = self.squeezer.get_preview_command().format(filepath=filename)
-        try:
-            if sys.platform[:3] == 'win':
-                p = subprocess.Popen(cmdline)
-            else:
-                p = subprocess.Popen(cmdline, close_fds=True,
-                                     start_new_session=True)
-            return p.poll() is None
-        except OSError:
-            traceback.print_exc()
-
-        # Launching the preview failed, so remove the temporary file.
-        try:
-            os.remove(filename)
-        except OSError:
-            pass
-
-        return False
+        view_text(self.text, "Squeezed Output Viewer", self.s)
 
 
 class Squeezer:
@@ -200,29 +167,6 @@ class Squeezer:
             "extensions", "Squeezer", "auto-squeeze-min-lines",
             type="int", default=30,
         )
-
-    # allow configuring different external viewers for different platforms
-    _PREVIEW_COMMAND_CONFIG_PARAM_NAME = \
-        "preview-command-" + ("win" if os.name == "nt" else os.name)
-
-    @classmethod
-    def get_preview_command(cls):
-        preview_cmd = idleConf.GetOption(
-            "extensions", "Squeezer", cls._PREVIEW_COMMAND_CONFIG_PARAM_NAME,
-            default="", raw=True,
-        )
-
-        if preview_cmd:
-            # check that the configured command template is valid
-            try:
-                preview_cmd.format(filepath='TESTING')
-            except Exception:
-                print(f"Invalid preview command template: {preview_cmd}",
-                      file=sys.stderr)
-                traceback.print_exc()
-                return None
-
-        return preview_cmd
 
     @classmethod
     def get_show_tooltip(cls):
@@ -242,10 +186,7 @@ class Squeezer:
         ('edit', [
             None,   # Separator
             ("Expand last squeezed text", "<<expand-last-squeezed>>"),
-            # The following is commented out on purpose; it is conditionally
-            # added immediately after the class definition (see below) if a
-            # preview command is defined.
-            # ("Preview last squeezed text", "<<preview-last-squeezed>>")
+            ("Preview last squeezed text", "<<preview-last-squeezed>>"),
         ]),
     ]
 
@@ -351,7 +292,7 @@ class Squeezer:
         If there is no such squeezed text, give the user a small warning and
         do nothing.
         """
-        if self.get_preview_command() and len(self.expandingbuttons) > 0:
+        if len(self.expandingbuttons) > 0:
             self.expandingbuttons[-1].preview(event)
         else:
             self.text.bell()
@@ -405,9 +346,3 @@ class Squeezer:
         self.expandingbuttons.insert(i, expandingbutton)
 
         return "break"
-
-# Add a "Preview last squeezed text" option to the right-click menu, but only
-# if a preview command is configured.
-if Squeezer.get_preview_command():
-    Squeezer.menudefs[0][1].append(("Preview last squeezed text",
-                                    "<<preview-last-squeezed>>"))

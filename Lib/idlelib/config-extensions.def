@@ -54,8 +54,6 @@ enable_editor= False
 auto-squeeze-min-lines= 30
 show-tooltip= True
 tooltip-delay= 500
-preview-command-win= notepad.exe {filepath}
-preview-command-posix=
 [Squeezer_bindings]
 expand-last-squeezed=
 preview-last-squeezed=
