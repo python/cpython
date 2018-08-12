@@ -2039,6 +2039,53 @@ class Win32ListdirTests(unittest.TestCase):
                 [os.fsencode(path) for path in self.created_paths])
 
 
+@unittest.skipUnless(hasattr(os, 'readlink'), 'needs os.readlink()')
+class ReadlinkTests(unittest.TestCase):
+    filelink = 'readlinktest'
+    filelink_target = os.path.abspath(__file__)
+    filelinkb = os.fsencode(filelink)
+    filelinkb_target = os.fsencode(filelink_target)
+
+    def setUp(self):
+        self.assertTrue(os.path.exists(self.filelink_target))
+        self.assertTrue(os.path.exists(self.filelinkb_target))
+        self.assertFalse(os.path.exists(self.filelink))
+        self.assertFalse(os.path.exists(self.filelinkb))
+
+    def test_not_symlink(self):
+        filelink_target = FakePath(self.filelink_target)
+        self.assertRaises(OSError, os.readlink, self.filelink_target)
+        self.assertRaises(OSError, os.readlink, filelink_target)
+
+    def test_missing_link(self):
+        self.assertRaises(FileNotFoundError, os.readlink, 'missing-link')
+        self.assertRaises(FileNotFoundError, os.readlink,
+                          FakePath('missing-link'))
+
+    @support.skip_unless_symlink
+    def test_pathlike(self):
+        os.symlink(self.filelink_target, self.filelink)
+        self.addCleanup(support.unlink, self.filelink)
+        filelink = FakePath(self.filelink)
+        self.assertEqual(os.readlink(filelink), self.filelink_target)
+
+    @support.skip_unless_symlink
+    def test_pathlike_bytes(self):
+        os.symlink(self.filelinkb_target, self.filelinkb)
+        self.addCleanup(support.unlink, self.filelinkb)
+        path = os.readlink(FakePath(self.filelinkb))
+        self.assertEqual(path, self.filelinkb_target)
+        self.assertIsInstance(path, bytes)
+
+    @support.skip_unless_symlink
+    def test_bytes(self):
+        os.symlink(self.filelinkb_target, self.filelinkb)
+        self.addCleanup(support.unlink, self.filelinkb)
+        path = os.readlink(self.filelinkb)
+        self.assertEqual(path, self.filelinkb_target)
+        self.assertIsInstance(path, bytes)
+
+
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 @support.skip_unless_symlink
 class Win32SymlinkTests(unittest.TestCase):
@@ -2076,12 +2123,6 @@ class Win32SymlinkTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(self.filelink))
         self.assertTrue(os.path.islink(self.filelink))
         self.check_stat(self.filelink, self.filelink_target)
-
-    @unittest.skipUnless(hasattr(os, 'readlink'), 'needs os.readlink()')
-    def test_readlink_pathlike(self):
-        os.symlink(self.filelink_target, self.filelink)
-        filelink = FakePath(self.filelink)
-        self.assertEqual(os.readlink(filelink), self.filelink_target)
 
     def _create_missing_dir_link(self):
         'Create a "directory" link to a non-existent target'
