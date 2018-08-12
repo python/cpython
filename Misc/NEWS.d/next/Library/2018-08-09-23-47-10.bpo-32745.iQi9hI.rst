@@ -1,0 +1,3 @@
+Fix a regression in the handling of ctypes' :data:`ctypes.c_wchar_p` type:
+embedded null characters would cause a :exc:`ValueError` to be raised. Patch
+by Zackery Spytz.
