@@ -2079,8 +2079,8 @@ class Win32SymlinkTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'readlink'), 'needs os.readlink()')
     def test_readlink_pathlike(self):
-        os.symlink(self.filelink_target, self.filelink)
         import pathlib
+        os.symlink(self.filelink_target, self.filelink)
         filelink = pathlib.Path(self.filelink)
         self.assertEqual(os.readlink(filelink), self.filelink_target)
 
