@@ -90,7 +90,7 @@ or on combining URL components into a URL string.
    the return value.
 
    The return value is actually an instance of a subclass of :class:`tuple` (see
-   :class:`~collections.namedtuple`).
+   :class:`~collections.namedtuple` and :term:`named tuple`).
    This class has the following additional read-only convenience attributes:
 
    +------------------+-------+--------------------------+----------------------+
