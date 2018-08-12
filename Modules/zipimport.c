@@ -1503,16 +1503,16 @@ normalize_zip_path(PyObject *name)
     PyObject *sep1 = NULL, *sep2 = NULL, *nameobj = NULL;
     sep1 = PyUnicode_FromFormat("%c", (int)'/');
     if (sep1 == NULL) {
-        goto exit;
+        return NULL;
     }
     sep2 = PyUnicode_FromFormat("%c", SEP);
     if (sep2 == NULL) {
-        goto exit;
+        Py_DECREF(sep1);
+        return NULL;
     }
     nameobj = PyUnicode_Replace(name, sep1, sep2, -1);
-exit:
-    Py_XDECREF(sep1);
-    Py_XDECREF(sep2);
+    Py_DECREF(sep1);
+    Py_DECREF(sep2);
     return nameobj;
 }
 
@@ -1537,16 +1537,16 @@ select_code_origin(ZipImporter *self, PyCodeObject *code, PyObject *toc_entry)
 static void
 overwrite_code_origin(PyCodeObject *code, PyObject *code_origin)
 {
-    Py_ssize_t pos, len;
-    PyObject *item;
-
     Py_INCREF(code_origin);
     Py_DECREF(code->co_filename);
     code->co_filename = code_origin;
 
+    /* Iterate nested code objects to fix 'co_filename' as well. */
     if (PyTuple_Check(code->co_consts)) {
+        Py_ssize_t pos, len;
         len = PyTuple_Size(code->co_consts);
         for (pos = 0; pos < len; ++pos) {
+            PyObject *item;
             item = PyTuple_GET_ITEM(code->co_consts, pos);
             if (PyCode_Check(item)) {
                 overwrite_code_origin((PyCodeObject*)item, code_origin);
@@ -1561,7 +1561,7 @@ static PyObject *
 get_code_from_data(ZipImporter *self, int ispackage, int isbytecode,
                    time_t mtime, PyObject *toc_entry)
 {
-    PyObject *data, *modpath, *code,  *code_origin;
+    PyObject *data, *modpath, *code;
 
     data = get_data(self->archive, toc_entry);
     if (data == NULL)
@@ -1569,20 +1569,23 @@ get_code_from_data(ZipImporter *self, int ispackage, int isbytecode,
 
     modpath = PyTuple_GetItem(toc_entry, 0);
     if (modpath == NULL) {
+        Py_DECREF(data);
         return NULL;
     }
 
     if (isbytecode) {
         code = unmarshal_code(modpath, data, mtime);
         if (PyCode_Check(code)) {
+            PyObject *code_origin;
             code_origin = select_code_origin(self, (PyCodeObject*)code, toc_entry);
             if (code_origin != NULL) {
                 overwrite_code_origin((PyCodeObject*)code, code_origin);
             }
         }
     }
-    else
+    else {
         code = compile_source(modpath, data);
+    }
     Py_DECREF(data);
     return code;
 }
