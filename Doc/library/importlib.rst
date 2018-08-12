@@ -770,7 +770,7 @@ ABC hierarchy::
 
        Concrete implementation of :meth:`Loader.exec_module`.
 
-      .. versionadded:: 3.4
+       .. versionadded:: 3.4
 
     .. method:: load_module(fullname)
 
