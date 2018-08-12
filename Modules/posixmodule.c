@@ -7491,7 +7491,7 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
     reparse_point_handle = CreateFileW(
-        path,
+        path.wide,
         0,
         0,
         0,
