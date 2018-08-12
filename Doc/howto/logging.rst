@@ -750,9 +750,9 @@ the new dictionary-based approach:
         level: DEBUG
         handlers: [console]
         propagate: no
-    root:
-      level: DEBUG
-      handlers: [console]
+      root:
+        level: DEBUG
+        handlers: [console]
 
 For more information about logging using a dictionary, see
 :ref:`logging-config-api`.
