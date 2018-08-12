@@ -118,6 +118,38 @@ int_bit_length(PyObject *self, PyObject *Py_UNUSED(ignored))
     return int_bit_length_impl(self);
 }
 
+PyDoc_STRVAR(int_as_integer_ratio__doc__,
+"as_integer_ratio($self, /)\n"
+"--\n"
+"\n"
+"Return integer ratio.\n"
+"\n"
+"Return a pair of integers, whose ratio is exactly equal to the original int\n"
+"and with a positive denominator.\n"
+"\n"
+"Raise OverflowError on infinities and a ValueError on NaNs.\n"
+"\n"
+">>> (10).as_integer_ratio()\n"
+"(10, 1)\n"
+">>> (0).as_integer_ratio()\n"
+"(0, 1)\n"
+">>> (11).as_integer_ratio()\n"
+"(11, 1)\n"
+">>> (-10).as_integer_ratio()\n"
+"(-10, 1)");
+
+#define INT_AS_INTEGER_RATIO_METHODDEF    \
+    {"as_integer_ratio", (PyCFunction)int_as_integer_ratio, METH_NOARGS, int_as_integer_ratio__doc__},
+
+static PyObject *
+int_as_integer_ratio_impl(PyObject *self);
+
+static PyObject *
+int_as_integer_ratio(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return int_as_integer_ratio_impl(self);
+}
+
 PyDoc_STRVAR(int_to_bytes__doc__,
 "to_bytes($self, /, length, byteorder, *, signed=False)\n"
 "--\n"
@@ -211,4 +243,4 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fd64beb83bd16df3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d86862742f1a2709 input=a9049054013a1b77]*/

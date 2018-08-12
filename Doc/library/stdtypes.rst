@@ -539,6 +539,12 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.2
 
+.. method:: int.as_integer_ratio()
+
+  Return a pair of integers whose ratio is exactly equal to the original integer
+  and with a positive denominator. The integer ratio of integers (whole numbers)
+  is always the integer as the numerator and 1 as the denominator.
+
 
 Additional Methods on Float
 ---------------------------
@@ -4734,4 +4740,3 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
-

@@ -1349,6 +1349,11 @@ class LongTest(unittest.TestCase):
                 self.assertEqual(type(value << shift), int)
                 self.assertEqual(type(value >> shift), int)
 
+    def test_as_integer_ratio(self):
+        tests = [10, 0, -10, 1, 3]
+        for value in tests:
+            self.assertEqual((value).as_integer_ratio(), (value, 1))
+
 
 if __name__ == "__main__":
     unittest.main()
