@@ -1,0 +1,3 @@
+Make minor tweaks to turtledemo. The 'wikipedia' example is now 'rosette',
+decribing what it draws.  The 'penrose' print output is reduced. The'1024'
+output of 'tree' is eliminated.

@@ -496,18 +496,23 @@ class TimeTestCase(unittest.TestCase):
         # on Windows
         self.assertLess(stop - start, 0.020)
 
+        # bpo-33723: A busy loop of 100 ms should increase process_time()
+        # by at least 15 ms
+        min_time = 0.015
+        busy_time = 0.100
+
         # process_time() should include CPU time spent in any thread
         start = time.process_time()
-        busy_wait(0.100)
+        busy_wait(busy_time)
         stop = time.process_time()
-        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+        self.assertGreaterEqual(stop - start, min_time)
 
-        t = threading.Thread(target=busy_wait, args=(0.100,))
+        t = threading.Thread(target=busy_wait, args=(busy_time,))
         start = time.process_time()
         t.start()
         t.join()
         stop = time.process_time()
-        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+        self.assertGreaterEqual(stop - start, min_time)
 
         info = time.get_clock_info('process_time')
         self.assertTrue(info.monotonic)
@@ -529,19 +534,24 @@ class TimeTestCase(unittest.TestCase):
         # on Windows
         self.assertLess(stop - start, 0.020)
 
+        # bpo-33723: A busy loop of 100 ms should increase thread_time()
+        # by at least 15 ms
+        min_time = 0.015
+        busy_time = 0.100
+
         # thread_time() should include CPU time spent in current thread...
         start = time.thread_time()
-        busy_wait(0.100)
+        busy_wait(busy_time)
         stop = time.thread_time()
-        self.assertGreaterEqual(stop - start, 0.020)  # machine busy?
+        self.assertGreaterEqual(stop - start, min_time)
 
         # ...but not in other threads
-        t = threading.Thread(target=busy_wait, args=(0.100,))
+        t = threading.Thread(target=busy_wait, args=(busy_time,))
         start = time.thread_time()
         t.start()
         t.join()
         stop = time.thread_time()
-        self.assertLess(stop - start, 0.020)
+        self.assertLess(stop - start, min_time)
 
         info = time.get_clock_info('thread_time')
         self.assertTrue(info.monotonic)
@@ -862,19 +872,19 @@ class CPyTimeTestCase:
         ns_timestamps = self._rounding_values(use_float)
         valid_values = convert_values(ns_timestamps)
         for time_rnd, decimal_rnd in ROUNDING_MODES :
-            context = decimal.getcontext()
-            context.rounding = decimal_rnd
+            with decimal.localcontext() as context:
+                context.rounding = decimal_rnd
 
-            for value in valid_values:
-                debug_info = {'value': value, 'rounding': decimal_rnd}
-                try:
-                    result = pytime_converter(value, time_rnd)
-                    expected = expected_func(value)
-                except Exception as exc:
-                    self.fail("Error on timestamp conversion: %s" % debug_info)
-                self.assertEqual(result,
-                                 expected,
-                                 debug_info)
+                for value in valid_values:
+                    debug_info = {'value': value, 'rounding': decimal_rnd}
+                    try:
+                        result = pytime_converter(value, time_rnd)
+                        expected = expected_func(value)
+                    except Exception as exc:
+                        self.fail("Error on timestamp conversion: %s" % debug_info)
+                    self.assertEqual(result,
+                                     expected,
+                                     debug_info)
 
         # test overflow
         ns = self.OVERFLOW_SECONDS * SEC_TO_NS

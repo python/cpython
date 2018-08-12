@@ -4,7 +4,6 @@ import os
 import sys
 import tempfile
 import unittest
-import warnings
 from collections import namedtuple
 from io import StringIO, BytesIO
 from test import support
@@ -162,15 +161,6 @@ Content-Length: 3
         self.assertRaises(TypeError, cgi.FieldStorage, "foo", "bar")
         fs = cgi.FieldStorage(headers={'content-type':'text/plain'})
         self.assertRaises(TypeError, bool, fs)
-
-    def test_escape(self):
-        # cgi.escape() is deprecated.
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'cgi\.escape',
-                                     DeprecationWarning)
-            self.assertEqual("test &amp; string", cgi.escape("test & string"))
-            self.assertEqual("&lt;test string&gt;", cgi.escape("<test string>"))
-            self.assertEqual("&quot;test string&quot;", cgi.escape('"test string"', True))
 
     def test_strict(self):
         for orig, expect in parse_strict_test_cases:
@@ -448,20 +438,6 @@ this is the content of the fake file
         })
         v = gen_result(data, environ)
         self.assertEqual(result, v)
-
-    def test_deprecated_parse_qs(self):
-        # this func is moved to urllib.parse, this is just a sanity check
-        with check_warnings(('cgi.parse_qs is deprecated, use urllib.parse.'
-                             'parse_qs instead', DeprecationWarning)):
-            self.assertEqual({'a': ['A1'], 'B': ['B3'], 'b': ['B2']},
-                             cgi.parse_qs('a=A1&b=B2&B=B3'))
-
-    def test_deprecated_parse_qsl(self):
-        # this func is moved to urllib.parse, this is just a sanity check
-        with check_warnings(('cgi.parse_qsl is deprecated, use urllib.parse.'
-                             'parse_qsl instead', DeprecationWarning)):
-            self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
-                             cgi.parse_qsl('a=A1&b=B2&B=B3'))
 
     def test_parse_header(self):
         self.assertEqual(

@@ -38,8 +38,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
-                  shell=False, cwd=None, timeout=None, check=False, \
-                  encoding=None, errors=None, text=None, env=None)
+                  capture_output=False, shell=False, cwd=None, timeout=None, \
+                  check=False, encoding=None, errors=None, text=None, env=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -485,7 +485,7 @@ functions.
    between the parent and child.  Providing any *pass_fds* forces
    *close_fds* to be :const:`True`.  (POSIX only)
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       The *pass_fds* parameter was added.
 
    If *cwd* is not ``None``, the function changes the working directory to

@@ -8,6 +8,7 @@ from test.support import requires
 from idlelib.squeezer import count_lines_with_wrapping, ExpandingButton, \
     Squeezer
 from idlelib.textview import view_text
+from idlelib.tooltip import Hovertip
 from idlelib.pyshell import PyShell
 
 
@@ -474,8 +475,8 @@ class TestExpandingButton(unittest.TestCase):
         squeezer.get_tooltip_delay = Mock(return_value=1500)
         return squeezer
 
-    @patch('idlelib.squeezer.ToolTip')
-    def test_init_no_tooltip(self, MockToolTip):
+    @patch('idlelib.squeezer.Hovertip', autospec=Hovertip)
+    def test_init_no_tooltip(self, MockHovertip):
         """Test the simplest creation of an ExpandingButton"""
         squeezer = self.make_mock_squeezer()
         squeezer.get_show_tooltip.return_value = False
@@ -492,15 +493,15 @@ class TestExpandingButton(unittest.TestCase):
         self.assertEqual(text_widget.get('1.0', 'end'), '\n')
 
         # check that no tooltip was created
-        self.assertEqual(MockToolTip.call_count, 0)
+        self.assertEqual(MockHovertip.call_count, 0)
 
         # check that the mouse events are bound
         self.assertIn('<Double-Button-1>', expandingbutton.bind())
         self.assertIn('<Button-2>', expandingbutton.bind())
         self.assertIn('<Button-3>', expandingbutton.bind())
 
-    @patch('idlelib.squeezer.ToolTip')
-    def test_init_tooltip(self, MockToolTip):
+    @patch('idlelib.squeezer.Hovertip', autospec=Hovertip)
+    def test_init_tooltip(self, MockHovertip):
         """test tooltip creation"""
         squeezer = self.make_mock_squeezer()
         squeezer.get_show_tooltip.return_value = True
@@ -508,12 +509,12 @@ class TestExpandingButton(unittest.TestCase):
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
 
         # check that ToolTip was called once, with appropriate values
-        self.assertEqual(MockToolTip.call_count, 1)
-        MockToolTip.assert_called_with(expandingbutton, ANY,
-                                       delay=SENTINEL_VALUE)
+        self.assertEqual(MockHovertip.call_count, 1)
+        MockHovertip.assert_called_with(expandingbutton, ANY,
+                                        hover_delay=SENTINEL_VALUE)
 
         # check that 'right-click' appears in the tooltip text
-        tooltip_text = MockToolTip.call_args[0][1]
+        tooltip_text = MockHovertip.call_args[0][1]
         self.assertIn('right-click', tooltip_text.lower())
 
     def test_expand(self):

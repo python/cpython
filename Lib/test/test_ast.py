@@ -521,13 +521,44 @@ class ASTHelpers_Test(unittest.TestCase):
         )
 
     def test_get_docstring(self):
+        node = ast.parse('"""line one\n  line two"""')
+        self.assertEqual(ast.get_docstring(node),
+                         'line one\nline two')
+
+        node = ast.parse('class foo:\n  """line one\n  line two"""')
+        self.assertEqual(ast.get_docstring(node.body[0]),
+                         'line one\nline two')
+
         node = ast.parse('def foo():\n  """line one\n  line two"""')
         self.assertEqual(ast.get_docstring(node.body[0]),
                          'line one\nline two')
 
         node = ast.parse('async def foo():\n  """spam\n  ham"""')
         self.assertEqual(ast.get_docstring(node.body[0]), 'spam\nham')
+
+    def test_get_docstring_none(self):
         self.assertIsNone(ast.get_docstring(ast.parse('')))
+        node = ast.parse('x = "not docstring"')
+        self.assertIsNone(ast.get_docstring(node))
+        node = ast.parse('def foo():\n  pass')
+        self.assertIsNone(ast.get_docstring(node))
+
+        node = ast.parse('class foo:\n  pass')
+        self.assertIsNone(ast.get_docstring(node.body[0]))
+        node = ast.parse('class foo:\n  x = "not docstring"')
+        self.assertIsNone(ast.get_docstring(node.body[0]))
+        node = ast.parse('class foo:\n  def bar(self): pass')
+        self.assertIsNone(ast.get_docstring(node.body[0]))
+
+        node = ast.parse('def foo():\n  pass')
+        self.assertIsNone(ast.get_docstring(node.body[0]))
+        node = ast.parse('def foo():\n  x = "not docstring"')
+        self.assertIsNone(ast.get_docstring(node.body[0]))
+
+        node = ast.parse('async def foo():\n  pass')
+        self.assertIsNone(ast.get_docstring(node.body[0]))
+        node = ast.parse('async def foo():\n  x = "not docstring"')
+        self.assertIsNone(ast.get_docstring(node.body[0]))
 
     def test_literal_eval(self):
         self.assertEqual(ast.literal_eval('[1, 2, 3]'), [1, 2, 3])

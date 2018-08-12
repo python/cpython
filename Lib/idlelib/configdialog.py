@@ -191,6 +191,7 @@ class ConfigDialog(Toplevel):
     def destroy(self):
         global font_sample_text
         font_sample_text = self.fontpage.font_sample.get('1.0', 'end')
+        self.grab_release()
         super().destroy()
 
     def help(self):
@@ -373,11 +374,12 @@ class ConfigDialog(Toplevel):
                             ).grid(row=row, column=1, sticky=W, padx=7)
             elif opt['type'] == 'int':
                 Entry(entry_area, textvariable=var, validate='key',
-                      validatecommand=(self.is_int, '%P')
+                      validatecommand=(self.is_int, '%P'), width=10
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
 
-            else:
-                Entry(entry_area, textvariable=var
+            else:  # type == 'str'
+                # Limit size to fit non-expanding space with larger font.
+                Entry(entry_area, textvariable=var, width=15
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
         return
 
@@ -2268,8 +2270,8 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_configdialog',
-                  verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_configdialog', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(ConfigDialog)

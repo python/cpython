@@ -22,7 +22,7 @@ from tkinter.font import Font
 from idlelib.pyshell import PyShell
 from idlelib.config import idleConf
 from idlelib.textview import view_text
-from idlelib.tooltip import ToolTip
+from idlelib.tooltip import Hovertip
 
 
 def _add_to_rmenu(editwin, specs):
@@ -124,8 +124,8 @@ class ExpandingButton(tk.Button):
                 "Double-click to expand, middle-click to copy, " +
                 "right-click to preview."
             )
-            ToolTip(self, button_tooltip_text,
-                    delay=self.squeezer.get_tooltip_delay())
+            Hovertip(self, button_tooltip_text,
+                     hover_delay=self.squeezer.get_tooltip_delay())
 
         self.bind("<Double-Button-1>", self.expand)
         self.bind("<Button-2>", self.copy)
