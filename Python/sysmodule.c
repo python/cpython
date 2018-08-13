@@ -447,6 +447,23 @@ Return the string itself or the previously interned string object with the\n\
 same value.");
 
 
+/*[clinic input]
+sys.isinterned -> bool
+
+  string: unicode
+  /
+
+Return True if the given string is "interned".
+[clinic start generated code]*/
+
+static int
+sys_isinterned_impl(PyObject *module, PyObject *string)
+/*[clinic end generated code: output=0364c3f36499f868 input=2fe09bef8edf732e]*/
+{
+    return PyUnicode_CHECK_INTERNED(string);
+}
+
+
 /*
  * Cached interned string objects used for calling the profile and
  * trace functions.  Initialized by trace_init().
@@ -1557,6 +1574,7 @@ static PyMethodDef sys_methods[] = {
      METH_NOARGS, enablelegacywindowsfsencoding_doc },
 #endif /* MS_WINDOWS */
     {"intern",          sys_intern,     METH_VARARGS, intern_doc},
+    SYS_ISINTERNED_METHODDEF
     {"is_finalizing",   sys_is_finalizing, METH_NOARGS, is_finalizing_doc},
 #ifdef USE_MALLOPT
     {"mdebug",          sys_mdebug, METH_VARARGS},

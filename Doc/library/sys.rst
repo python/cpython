@@ -865,6 +865,14 @@ always available.
    value of :func:`intern` around to benefit from it.
 
 
+.. function:: isinterned(string)
+
+   Return :const:`True` if the given string is "interned", :const:`False`
+   otherwise.
+
+   .. versionadded:: 3.8
+
+
 .. function:: is_finalizing()
 
    Return :const:`True` if the Python interpreter is
