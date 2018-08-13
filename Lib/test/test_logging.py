@@ -1086,6 +1086,17 @@ class ExceptionFormatter(logging.Formatter):
         return "Got a [%s]" % ei[0].__name__
 
 
+class CustomFormatter(logging.Formatter):
+    """Another exception formatter."""
+    def __init__(fmt=None, datefmt=None, style="%", exc_fmt="%s", suffix="")
+        super(CustomFormatter, self).__init__(fmt, datefmt, style)
+        self.exc_fmt = exc_fmt
+        self.suffix = suffix
+
+    def formatException(self, ei):
+        return (self.exc_fmt % ei[0].__name__) + self.suffix
+
+
 class ConfigFileTest(BaseTest):
 
     """Reading logging config from a .ini-style config file."""
@@ -1341,6 +1352,35 @@ class ConfigFileTest(BaseTest):
     formatter=
     """
 
+    # config9 specifies a custom formatter class with both args and kwargs
+    config9 = """
+    [loggers]
+    keys=root
+
+    [handlers]
+    keys=hand1
+
+    [formatters]
+    keys=form1
+
+    [logger_root]
+    level=NOTSET
+    handlers=hand1
+
+    [handler_hand1]
+    class=StreamHandler
+    level=NOTSET
+    formatter=form1
+    args=(sys.stdout,)
+
+    [formatter_form1]
+    class=""" + __name__ + """.CustomFormatter
+    format=%(levelname)s:%(name)s:%(message)s
+    datefmt=
+    args=('It was a %s',)
+    kwargs={'suffix': '!',}
+    """
+
     def apply_config(self, conf, **kwargs):
         file = io.StringIO(textwrap.dedent(conf))
         logging.config.fileConfig(file, **kwargs)
@@ -1487,6 +1527,21 @@ class ConfigFileTest(BaseTest):
 
         handler = logging.root.handlers[0]
         self.addCleanup(cleanup, handler, fn)
+
+    def test_config9_ok(self):
+        # A config file with a custom formatter class with args and kwargs.
+        with support.captured_stdout() as output:
+            self.apply_config(self.config9)
+            logger = logging.getLogger()
+            try:
+                raise RuntimeError()
+            except RuntimeError:
+                logging.exception("just testing")
+            sys.stdout.seek(0)
+            self.assertEqual(output.getvalue(),
+                "ERROR:root:just testing\nIt was a RuntimeError!\n")
+            # Original logger output is empty
+            self.assert_log_lines([])
 
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
