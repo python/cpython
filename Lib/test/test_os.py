@@ -2070,6 +2070,8 @@ class ReadlinkTests(unittest.TestCase):
         self.assertEqual(os.readlink(filelink), self.filelink_target)
 
     @support.skip_unless_symlink
+    @unittest.skipIf(sys.platform == 'win32',
+                     'os.readlink() always returns str on Windows')
     def test_pathlike_bytes(self):
         os.symlink(self.filelinkb_target, self.filelinkb)
         self.addCleanup(support.unlink, self.filelinkb)
@@ -2078,6 +2080,8 @@ class ReadlinkTests(unittest.TestCase):
         self.assertIsInstance(path, bytes)
 
     @support.skip_unless_symlink
+    @unittest.skipIf(sys.platform == 'win32',
+                     'os.readlink() always returns str on Windows')
     def test_bytes(self):
         os.symlink(self.filelinkb_target, self.filelinkb)
         self.addCleanup(support.unlink, self.filelinkb)
