@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import Mock, NonCallableMagicMock, patch, sentinel, ANY
 from test.support import requires
 
+from idlelib.config import idleConf
 from idlelib.squeezer import count_lines_with_wrapping, ExpandingButton, \
     Squeezer
 from idlelib.textview import view_text
@@ -136,16 +137,9 @@ class TestSqueezer(unittest.TestCase):
     def test_init(self):
         """test the creation of Squeezer instances"""
         editwin = self.make_mock_editor_window()
-        editwin.rmenu_specs = []
         squeezer = self.make_squeezer_instance(editwin)
         self.assertIs(squeezer.editwin, editwin)
         self.assertEqual(squeezer.expandingbuttons, [])
-        self.assertEqual(squeezer.text.bind.call_count, 1)
-        squeezer.text.bind.assert_called_with(
-            '<<squeeze-current-text>>', squeezer.squeeze_current_text_event)
-        self.assertEqual(editwin.rmenu_specs, [
-            ("Squeeze current text", "<<squeeze-current-text>>"),
-        ])
 
     def test_write_no_tags(self):
         """test Squeezer's overriding of the EditorWindow's write() method"""
@@ -410,53 +404,12 @@ class TestSqueezer(unittest.TestCase):
         args, kwargs = mock_call_obj[-2:]
         return cls._make_sig(*args, **kwargs)
 
-    def test_get_auto_squeeze_min_lines(self):
-        """test the auto-squeeze-min-lines config getter"""
-        with patch('idlelib.config.idleConf.GetOption') as MockGetOption:
-            MockGetOption.return_value = SENTINEL_VALUE
-            retval = Squeezer.get_auto_squeeze_min_lines()
-
-            self.assertEqual(retval, SENTINEL_VALUE)
-            self.assertEqual(MockGetOption.call_count, 1)
-            sig = self.get_GetOption_signature(MockGetOption.call_args)
-            self.assertSequenceEqual(
-                (sig.configType, sig.section, sig.option),
-                ("extensions", "Squeezer", "auto-squeeze-min-lines"),
-            )
-            self.assertEqual(sig.type, "int")
-            self.assertNotEqual(sig.default, sentinel.NOT_GIVEN)
-
-    def test_get_show_tooltip(self):
-        """test the show-tooltip config getter"""
-        with patch('idlelib.config.idleConf.GetOption') as MockGetOption:
-            MockGetOption.return_value = SENTINEL_VALUE
-            retval = Squeezer.get_show_tooltip()
-
-            self.assertEqual(retval, SENTINEL_VALUE)
-            self.assertEqual(MockGetOption.call_count, 1)
-            sig = self.get_GetOption_signature(MockGetOption.call_args)
-            self.assertSequenceEqual(
-                (sig.configType, sig.section, sig.option),
-                ("extensions", "Squeezer", "show-tooltip"),
-            )
-            self.assertEqual(sig.type, "bool")
-            self.assertNotEqual(sig.default, sentinel.NOT_GIVEN)
-
-    def test_get_tooltip_delay(self):
-        """test the tooltip-delay config getter"""
-        with patch('idlelib.config.idleConf.GetOption') as MockGetOption:
-            MockGetOption.return_value = SENTINEL_VALUE
-            retval = Squeezer.get_tooltip_delay()
-
-            self.assertEqual(retval, SENTINEL_VALUE)
-            self.assertEqual(MockGetOption.call_count, 1)
-            sig = self.get_GetOption_signature(MockGetOption.call_args)
-            self.assertSequenceEqual(
-                (sig.configType, sig.section, sig.option),
-                ("extensions", "Squeezer", "tooltip-delay"),
-            )
-            self.assertEqual(sig.type, "int")
-            self.assertNotEqual(sig.default, sentinel.NOT_GIVEN)
+    def test_reload(self):
+        """test the reload() class-method"""
+        self.assertIsInstance(Squeezer.auto_squeeze_min_lines, int)
+        idleConf.SetOption('main', 'PyShell', 'auto-squeeze-min-lines', '42')
+        Squeezer.reload()
+        self.assertEqual(Squeezer.auto_squeeze_min_lines, 42)
 
 
 class TestExpandingButton(unittest.TestCase):

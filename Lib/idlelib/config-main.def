@@ -66,6 +66,11 @@ font-size= 10
 font-bold= 0
 encoding= none
 
+[PyShell]
+auto-squeeze-min-lines= 30
+show-squeezed-tooltips= 1
+squeezed-tooltips-delay= 0
+
 [Indent]
 use-spaces= 1
 num-spaces= 4

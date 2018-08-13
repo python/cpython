@@ -19,7 +19,6 @@ import re
 import tkinter as tk
 from tkinter.font import Font
 
-from idlelib.pyshell import PyShell
 from idlelib.config import idleConf
 from idlelib.textview import view_text
 from idlelib.tooltip import Hovertip
@@ -119,13 +118,13 @@ class ExpandingButton(tk.Button):
         tk.Button.__init__(self, text, text=button_text,
                            background="#FFFFC0", activebackground="#FFFFE0")
 
-        if self.squeezer.get_show_tooltip():
+        if self.squeezer.should_show_tooltip:
             button_tooltip_text = (
                 "Double-click to expand, middle-click to copy, " +
                 "right-click to preview."
             )
             Hovertip(self, button_tooltip_text,
-                     hover_delay=self.squeezer.get_tooltip_delay())
+                     hover_delay=self.squeezer.tooltip_delay)
 
         self.bind("<Double-Button-1>", self.expand)
         self.bind("<Button-2>", self.copy)
@@ -160,48 +159,48 @@ class ExpandingButton(tk.Button):
 
 
 class Squeezer:
-    """An IDLE extension for "squeezing" long texts into a simple button."""
+    """Replace long outputs in the shell with a simple button.
+
+    This avoids IDLE's shell slowing down considerably, and even becoming
+    completely unresponsive, when very long outputs are written.
+    """
     @classmethod
-    def get_auto_squeeze_min_lines(cls):
-        return idleConf.GetOption(
-            "extensions", "Squeezer", "auto-squeeze-min-lines",
+    def reload(cls):
+        """Load class variables from config."""
+        cls.auto_squeeze_min_lines = idleConf.GetOption(
+            "main", "PyShell", "auto-squeeze-min-lines",
             type="int", default=30,
         )
-
-    @classmethod
-    def get_show_tooltip(cls):
-        return idleConf.GetOption(
-            "extensions", "Squeezer", "show-tooltip",
+        cls.should_show_tooltip = idleConf.GetOption(
+            "main", "PyShell", "show-squeezed-tooltips",
             type="bool", default=True,
         )
-
-    @classmethod
-    def get_tooltip_delay(cls):
-        return idleConf.GetOption(
-            "extensions", "Squeezer", "tooltip-delay",
+        cls.tooltip_delay = idleConf.GetOption(
+            "main", "PyShell", "squeezed-tooltips-delay",
             type="int", default=0,
         )
 
-    menudefs = [
-        ('edit', [
-            None,   # Separator
-            ("Expand last squeezed text", "<<expand-last-squeezed>>"),
-            ("Preview last squeezed text", "<<preview-last-squeezed>>"),
-        ]),
-    ]
-
     def __init__(self, editwin):
+        """Initialize settings for Squeezer.
+
+        editwin is the shell's Editor window.
+        self.text is the editor window text widget.
+        self.base_test is the actual editor window Tk text widget, rather than
+            EditorWindow's wrapper.
+        self.expandingbuttons is the list of all buttons representing
+            "squeezed" output.
+        """
         self.editwin = editwin
         self.text = text = editwin.text
 
         # Get the base Text widget of the PyShell object, used to change text
         # before the iomark. PyShell deliberately disables changing text before
         # the iomark via its 'text' attribute, which is actually a wrapper for
-        # the actual Text widget. But Squeezer deliberately needs to make such
-        # changes.
+        # the actual Text widget. Squeezer, however, needs to make such changes.
         self.base_text = editwin.per.bottom
 
         self.expandingbuttons = []
+        from idlelib.pyshell import PyShell  # done here to avoid import cycle
         if isinstance(editwin, PyShell):
             # If we get a PyShell instance, replace its write method with a
             # wrapper, which inserts an ExpandingButton instead of a long text.
@@ -213,7 +212,7 @@ class Squeezer:
                 # only auto-squeeze text with at least the minimum
                 # configured number of lines
                 numoflines = self.count_lines(s)
-                if numoflines < self.get_auto_squeeze_min_lines():
+                if numoflines < self.auto_squeeze_min_lines:
                     return write(s, tags)
 
                 # create an ExpandingButton instance
@@ -232,12 +231,6 @@ class Squeezer:
                 self.expandingbuttons.append(expandingbutton)
 
             editwin.write = mywrite
-
-            # Add squeeze-current-text to the right-click menu
-            text.bind("<<squeeze-current-text>>",
-                      self.squeeze_current_text_event)
-            _add_to_rmenu(editwin, [("Squeeze current text",
-                                     "<<squeeze-current-text>>")])
 
     def count_lines(self, s):
         """Count the number of lines in a given text.
@@ -346,3 +339,13 @@ class Squeezer:
         self.expandingbuttons.insert(i, expandingbutton)
 
         return "break"
+
+
+Squeezer.reload()
+
+
+if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_squeezer', verbosity=2, exit=False)
+
+    # Add htest.

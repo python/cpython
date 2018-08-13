@@ -856,6 +856,20 @@ class PyShell(OutputWindow):
         ("help", "_Help"),
     ]
 
+    # Extend menus
+    menu_extras = [
+        ('edit', [
+            None,  # Separator
+            ("Expand last squeezed text", "<<expand-last-squeezed>>"),
+            ("Preview last squeezed text", "<<preview-last-squeezed>>"),
+        ]),
+    ]
+
+    # Extend right-click context menu
+    rmenu_specs = OutputWindow.rmenu_specs + [
+        ("Squeeze", "<<squeeze-current-text>>"),
+    ]
+
 
     # New classes
     from idlelib.history import History
@@ -873,6 +887,8 @@ class PyShell(OutputWindow):
             flist = PyShellFileList(root)
 
         OutputWindow.__init__(self, flist, None, None)
+
+        self.fill_menus(self.menu_extras)
 
         self.usetabs = True
         # indentwidth must be 8 when using tabs.  See note in EditorWindow:

@@ -356,11 +356,11 @@ class IdleConfTest(unittest.TestCase):
 
         self.assertCountEqual(
             conf.GetSectionList('default', 'main'),
-            ['General', 'EditorWindow', 'Indent', 'Theme',
+            ['General', 'EditorWindow', 'PyShell', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
         self.assertCountEqual(
             conf.GetSectionList('user', 'main'),
-            ['General', 'EditorWindow', 'Indent', 'Theme',
+            ['General', 'EditorWindow', 'PyShell', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
 
         with self.assertRaises(config.InvalidConfigSet):
@@ -431,8 +431,6 @@ class IdleConfTest(unittest.TestCase):
 
     def test_get_extensions(self):
         userextn.read_string('''
-            [Squeezer]
-            enable = True
             [ZzDummy]
             enable = True
             [DISABLE]
@@ -440,13 +438,11 @@ class IdleConfTest(unittest.TestCase):
             ''')
         eq = self.assertEqual
         iGE = idleConf.GetExtensions
-        eq(iGE(shell_only=True), ['Squeezer'])
-        eq(iGE(), ['Squeezer', 'ZzDummy'])
+        eq(iGE(shell_only=True), [])
+        eq(iGE(), ['ZzDummy'])
         eq(iGE(editor_only=True), ['ZzDummy'])
-        eq(iGE(active_only=False), ['Squeezer', 'ZzDummy', 'DISABLE'])
-        eq(iGE(active_only=False, editor_only=True),
-           ['Squeezer', 'ZzDummy', 'DISABLE'])
-        userextn.remove_section('Squeezer')
+        eq(iGE(active_only=False), ['ZzDummy', 'DISABLE'])
+        eq(iGE(active_only=False, editor_only=True), ['ZzDummy', 'DISABLE'])
         userextn.remove_section('ZzDummy')
         userextn.remove_section('DISABLE')
 
@@ -456,8 +452,7 @@ class IdleConfTest(unittest.TestCase):
 
         self.assertCountEqual(
             conf.RemoveKeyBindNames(conf.GetSectionList('default', 'extensions')),
-            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch',
-             'Squeezer', 'ZzDummy'])
+            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch', 'ZzDummy'])
 
     def test_get_extn_name_for_event(self):
         userextn.read_string('''
