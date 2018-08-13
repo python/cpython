@@ -271,7 +271,7 @@ An :class:`SMTP` instance has the following methods:
 
 .. method:: SMTP.ehlo_or_helo_if_needed()
 
-   This method call :meth:`ehlo` and or :meth:`helo` if there has been no
+   This method calls :meth:`ehlo` and/or :meth:`helo` if there has been no
    previous ``EHLO`` or ``HELO`` command this session.  It tries ESMTP ``EHLO``
    first.
 
@@ -379,15 +379,22 @@ An :class:`SMTP` instance has the following methods:
    commands that follow will be encrypted.  You should then call :meth:`ehlo`
    again.
 
-   If *keyfile* and *certfile* are provided, these are passed to the :mod:`socket`
-   module's :func:`ssl` function.
+   If *keyfile* and *certfile* are provided, they are used to create an
+   :class:`ssl.SSLContext`.
 
-   Optional *context* parameter is a :class:`ssl.SSLContext` object; This is
+   Optional *context* parameter is an :class:`ssl.SSLContext` object; This is
    an alternative to using a keyfile and a certfile and if specified both
    *keyfile* and *certfile* should be ``None``.
 
    If there has been no previous ``EHLO`` or ``HELO`` command this session,
    this method tries ESMTP ``EHLO`` first.
+
+   .. deprecated:: 3.6
+
+       *keyfile* and *certfile* are deprecated in favor of *context*.
+       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+       :func:`ssl.create_default_context` select the system's trusted CA
+       certificates for you.
 
    :exc:`SMTPHeloError`
       The server didn't reply properly to the ``HELO`` greeting.
