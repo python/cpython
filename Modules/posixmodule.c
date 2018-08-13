@@ -7534,6 +7534,12 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 
     result = PyUnicode_FromWideChar(print_name,
                     rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
+    if (path.narrow) {
+        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+        if (!result) {
+            goto exit;
+        }
+    }
 exit:
     path_cleanup(&path);
     return result;
