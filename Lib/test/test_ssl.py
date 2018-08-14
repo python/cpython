@@ -82,6 +82,7 @@ OP_NO_COMPRESSION = getattr(ssl, "OP_NO_COMPRESSION", 0)
 OP_SINGLE_DH_USE = getattr(ssl, "OP_SINGLE_DH_USE", 0)
 OP_SINGLE_ECDH_USE = getattr(ssl, "OP_SINGLE_ECDH_USE", 0)
 OP_CIPHER_SERVER_PREFERENCE = getattr(ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
+OP_ENABLE_MIDDLEBOX_COMPAT = getattr(ssl, "OP_ENABLE_MIDDLEBOX_COMPAT", 0)
 
 
 def handle_error(prefix):
@@ -806,7 +807,8 @@ class ContextTests(unittest.TestCase):
         default = (ssl.OP_ALL | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3)
         # SSLContext also enables these by default
         default |= (OP_NO_COMPRESSION | OP_CIPHER_SERVER_PREFERENCE |
-                    OP_SINGLE_DH_USE | OP_SINGLE_ECDH_USE)
+                    OP_SINGLE_DH_USE | OP_SINGLE_ECDH_USE |
+                    OP_ENABLE_MIDDLEBOX_COMPAT)
         self.assertEqual(default, ctx.options)
         ctx.options |= ssl.OP_NO_TLSv1
         self.assertEqual(default | ssl.OP_NO_TLSv1, ctx.options)
@@ -1701,6 +1703,21 @@ else:
                     # We treat ConnectionResetError as though it were an
                     # SSLError - OpenSSL on Ubuntu abruptly closes the
                     # connection when asked to use an unsupported protocol.
+                    #
+                    # BrokenPipeError is raised in TLS 1.3 mode, when OpenSSL
+                    # tries to send session tickets after handshake.
+                    # https://github.com/openssl/openssl/issues/6342
+                    self.server.conn_errors.append(str(e))
+                    if self.server.chatty:
+                        handle_error(
+                            "\n server:  bad connection attempt from " + repr(
+                                self.addr) + ":\n")
+                    self.running = False
+                    self.close()
+                    return False
+                except (ssl.SSLError, OSError) as e:
+                    # OSError may occur with wrong protocols, e.g. both
+                    # sides use PROTOCOL_TLS_SERVER.
                     #
                     # XXX Various errors can have happened here, for example
                     # a mismatching protocol version, an invalid certificate,
@@ -2769,7 +2786,7 @@ else:
                 # Block on the accept and wait on the connection to close.
                 evt.set()
                 remote[0], peer[0] = server.accept()
-                remote[0].recv(1)
+                remote[0].send(remote[0].recv(4))
 
             t = threading.Thread(target=serve)
             t.start()
@@ -2777,6 +2794,8 @@ else:
             evt.wait()
             client = context.wrap_socket(socket.socket())
             client.connect((host, port))
+            client.send(b'data')
+            client.recv()
             client_addr = client.getsockname()
             client.close()
             t.join()
