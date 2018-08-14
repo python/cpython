@@ -1383,7 +1383,7 @@ _Unpickler_ResizeMemoList(UnpicklerObject *self, Py_ssize_t new_size)
     assert(new_size > self->memo_size);
 
     PyObject **memo_new = self->memo;
-    PyMem_Resize(memo_new, PyObject *, new_size);
+    PyMem_RESIZE(memo_new, PyObject *, new_size);
     if (memo_new == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -6298,9 +6298,9 @@ load_mark(UnpicklerObject *self)
         }
 
         Py_ssize_t *marks_old = self->marks;
-        PyMem_Resize(self->marks, Py_ssize_t, alloc);
+        PyMem_RESIZE(self->marks, Py_ssize_t, alloc);
         if (self->marks == NULL) {
-            PyMem_Free(marks_old);
+            PyMem_FREE(marks_old);
             self->marks_size = 0;
             PyErr_NoMemory();
             return -1;

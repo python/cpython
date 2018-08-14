@@ -1084,7 +1084,7 @@ join_check_rec_size(WriterObj *self, Py_ssize_t rec_len)
     assert(rec_len >= 0);
 
     if (rec_len > self->rec_size) {
-        size_t rec_size_new = (size_t)rec_len + MEM_INCR;
+        size_t rec_size_new = (size_t)(rec_len / MEM_INCR + 1) * MEM_INCR;
         Py_UCS4 *rec_new = self->rec;
         PyMem_Resize(rec_new, Py_UCS4, rec_size_new);
         if (rec_new == NULL) {
