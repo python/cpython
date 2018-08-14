@@ -1187,7 +1187,11 @@ class EventLoopTestsMixin:
                     self.loop.run_until_complete(f_c)
 
         # close connection
-        proto.transport.close()
+        # transport may be None with TLS 1.3, because connection is
+        # interrupted, server is unable to send session tickets, and
+        # transport is closed.
+        if proto.transport is not None:
+            proto.transport.close()
         server.close()
 
     def test_legacy_create_server_ssl_match_failed(self):
