@@ -1608,6 +1608,9 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipUnless(
         hasattr(socket, 'if_nameindex'),
         'if_nameindex is not supported')
+    @unittest.skipUnless(
+        not sys.platform.startswith("aix"),
+        'Numeric scope id not supported by getaddrinfo')
     def test_getaddrinfo_ipv6_scopeid_symbolic(self):
         # Just pick up any network interface (Linux, Mac OS X)
         (ifindex, test_interface) = socket.if_nameindex()[0]
@@ -1641,6 +1644,9 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipUnless(
         hasattr(socket, 'if_nameindex'),
         'if_nameindex is not supported')
+    @unittest.skipUnless(
+        not sys.platform.startswith("aix"),
+        'Numeric scope id does not work or undocumented')
     def test_getnameinfo_ipv6_scopeid_symbolic(self):
         # Just pick up any network interface.
         (ifindex, test_interface) = socket.if_nameindex()[0]

@@ -1,0 +1,2 @@
+On AIX 6.1 and later IPv6 zone id support is only supported by inet_pton6_zone()
+Skip the related subtests in test_socket.py as unsupported
