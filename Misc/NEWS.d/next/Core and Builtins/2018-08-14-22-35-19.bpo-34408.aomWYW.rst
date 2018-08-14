@@ -1,0 +1,1 @@
+Prevent a null pointer derefence and resource leakage in `pystate.c`.

@@ -181,8 +181,8 @@ PyInterpreterState_New(void)
         /* overflow or Py_Initialize() not called! */
         PyErr_SetString(PyExc_RuntimeError,
                         "failed to get an interpreter ID");
-        /* XXX deallocate! */
-        interp = NULL;
+        PyMem_RawFree(interp);
+        return NULL;
     } else {
         interp->id = _PyRuntime.interpreters.next_id;
         _PyRuntime.interpreters.next_id += 1;
