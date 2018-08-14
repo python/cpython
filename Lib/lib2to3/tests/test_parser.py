@@ -612,13 +612,6 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
-class TestGeneratorExpressions(GrammarTest):
-
-    def test_trailing_comma_after_generator_expression_argument_works(self):
-        # BPO issue 27494
-        self.validate("set(x for x in [],)")
-
-
 def diff_texts(a, b, filename):
     a = a.splitlines()
     b = b.splitlines()

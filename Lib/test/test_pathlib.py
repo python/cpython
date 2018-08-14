@@ -577,6 +577,8 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('a/b').with_suffix, '.c/.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
+        self.assertRaises(ValueError, P('a/b').with_suffix,
+                          (self.flavour.sep, 'd'))
 
     def test_relative_to_common(self):
         P = self.cls
@@ -1516,7 +1518,7 @@ class _BasePathTest(object):
             # resolves to 'dirB/..' first before resolving to parent of dirB.
             self._check_resolve_relative(p, P(BASE, 'foo', 'in', 'spam'), False)
         # Now create absolute symlinks
-        d = tempfile.mkdtemp(suffix='-dirD')
+        d = support._longpath(tempfile.mkdtemp(suffix='-dirD'))
         self.addCleanup(support.rmtree, d)
         os.symlink(os.path.join(d), join('dirA', 'linkX'))
         os.symlink(join('dirB'), os.path.join(d, 'linkY'))

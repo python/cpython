@@ -1,0 +1,3 @@
+Avoid small type when running htests. Since part of the purpose of human-
+viewed tests is to determine that widgets look right, it is important that
+they look the same for testing as when running IDLE.

@@ -272,8 +272,8 @@ fnv(const void *src, Py_ssize_t len)
         x = (_PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *p++;
     x ^= (Py_uhash_t) len;
     x ^= (Py_uhash_t) _Py_HashSecret.fnv.suffix;
-    if (x == -1) {
-        x = -2;
+    if (x == (Py_uhash_t) -1) {
+        x = (Py_uhash_t) -2;
     }
     return x;
 }

@@ -6,6 +6,7 @@ time zone and DST data sources.
 
 import time as _time
 import math as _math
+import sys
 
 def _cmp(x, y):
     return 0 if x == y else 1 if x > y else -1
@@ -1572,6 +1573,14 @@ class datetime(date):
             # 23 hours at 1969-09-30 13:00:00 in Kwajalein.
             # Let's probe 24 hours in the past to detect a transition:
             max_fold_seconds = 24 * 3600
+
+            # On Windows localtime_s throws an OSError for negative values,
+            # thus we can't perform fold detection for values of time less
+            # than the max time fold. See comments in _datetimemodule's
+            # version of this method for more details.
+            if t < max_fold_seconds and sys.platform.startswith("win"):
+                return result
+
             y, m, d, hh, mm, ss = converter(t - max_fold_seconds)[:6]
             probe1 = cls(y, m, d, hh, mm, ss, us, tz)
             trans = result - probe1 - timedelta(0, max_fold_seconds)
@@ -1759,17 +1768,10 @@ class datetime(date):
             ts = (self - _EPOCH) // timedelta(seconds=1)
         localtm = _time.localtime(ts)
         local = datetime(*localtm[:6])
-        try:
-            # Extract TZ data if available
-            gmtoff = localtm.tm_gmtoff
-            zone = localtm.tm_zone
-        except AttributeError:
-            delta = local - datetime(*_time.gmtime(ts)[:6])
-            zone = _time.strftime('%Z', localtm)
-            tz = timezone(delta, zone)
-        else:
-            tz = timezone(timedelta(seconds=gmtoff), zone)
-        return tz
+        # Extract TZ data
+        gmtoff = localtm.tm_gmtoff
+        zone = localtm.tm_zone
+        return timezone(timedelta(seconds=gmtoff), zone)
 
     def astimezone(self, tz=None):
         if tz is None:
@@ -1780,14 +1782,17 @@ class datetime(date):
         mytz = self.tzinfo
         if mytz is None:
             mytz = self._local_timezone()
+            myoffset = mytz.utcoffset(self)
+        else:
+            myoffset = mytz.utcoffset(self)
+            if myoffset is None:
+                mytz = self.replace(tzinfo=None)._local_timezone()
+                myoffset = mytz.utcoffset(self)
 
         if tz is mytz:
             return self
 
         # Convert self to UTC, and attach the new time zone object.
-        myoffset = mytz.utcoffset(self)
-        if myoffset is None:
-            raise ValueError("astimezone() requires an aware datetime")
         utc = (self - myoffset).replace(tzinfo=tz)
 
         # Convert from UTC to tz's local time.

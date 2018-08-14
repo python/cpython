@@ -1,17 +1,13 @@
 __all__ = ()
 
-import concurrent.futures._base
+import concurrent.futures
 import reprlib
 
 from . import format_helpers
 
-Error = concurrent.futures._base.Error
 CancelledError = concurrent.futures.CancelledError
 TimeoutError = concurrent.futures.TimeoutError
-
-
-class InvalidStateError(Error):
-    """The operation is not allowed in this state."""
+InvalidStateError = concurrent.futures.InvalidStateError
 
 
 # States for Future.

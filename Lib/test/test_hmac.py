@@ -12,7 +12,7 @@ def ignore_warning(func):
     def wrapper(*args, **kwargs):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore",
-                                    category=PendingDeprecationWarning)
+                                    category=DeprecationWarning)
             return func(*args, **kwargs)
     return wrapper
 
@@ -303,7 +303,7 @@ class TestVectorsTestCase(unittest.TestCase):
                 self.fail('Expected warning about small block_size')
 
     def test_with_digestmod_warning(self):
-        with self.assertWarns(PendingDeprecationWarning):
+        with self.assertWarns(DeprecationWarning):
             key = b"\x0b" * 16
             data = b"Hi There"
             digest = "9294727A3638BB1C13F48EF8158BFC9D"
