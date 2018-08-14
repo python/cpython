@@ -821,6 +821,15 @@ Constants
 
    .. versionadded:: 3.3
 
+.. data:: OP_ENABLE_MIDDLEBOX_COMPAT
+
+   Send dummy Change Cipher Spec (CCS) messages in TLS 1.3 handshake to make
+   a TLS 1.3 connection look more like a TLS 1.2 connection.
+
+   This option is only available with OpenSSL 1.1.1 and later.
+
+   .. versionadded:: 3.6.7
+
 .. data:: OP_NO_COMPRESSION
 
    Disable compression on the SSL channel.  This is useful if the application
