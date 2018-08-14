@@ -4237,6 +4237,11 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
          LIFO order is now guaranteed. In prior versions, :meth:`popitem` would
          return an arbitrary key/value pair.
 
+   .. describe:: reversed(d)
+
+      Return an reversed iterator over the keys of the dictionnary. This is a
+      shortcut for``iter(d.keys())``.
+
    .. method:: setdefault(key[, default])
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
@@ -4262,16 +4267,21 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    value)`` pairs. Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.
 
-   Dictionaries preserve insertion order.  Note that updating a key does not
-   affect the order.  Keys added after deletion are inserted at the end. ::
+   Dict preserves insertion order and are reversible.  Note that updating key
+   doesn't affects the order.  On the other hand, keys added after deletion are
+   inserted to the last. ::
 
       >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
       >>> d
       {'one': 1, 'two': 2, 'three': 3, 'four': 4}
       >>> list(d)
       ['one', 'two', 'three', 'four']
+      >>> list(reversed(d))
+      ['four', 'three', 'two', 'one']
       >>> list(d.values())
       [1, 2, 3, 4]
+      >>> list(reversed(d.values()))
+      [4, 3, 2, 1]
       >>> d["one"] = 42
       >>> d
       {'one': 42, 'two': 2, 'three': 3, 'four': 4}
@@ -4279,10 +4289,17 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       >>> d["two"] = None
       >>> d
       {'one': 42, 'three': 3, 'four': 4, 'two': None}
+      >>> list(reversed(d.keys()))
+      ['two', 'four', 'three', 'one']
+      >>> list(reversed(d.items()))
+      [('two', None), ('four', 4), ('three', 3), ('one', 42)]
 
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
       implementation detail of CPython from 3.6.
+
+   .. versionchanged:: 3.8
+      Dict are now reversible.
 
 .. seealso::
    :class:`types.MappingProxyType` can be used to create a read-only view
@@ -4326,6 +4343,11 @@ support membership tests:
 
    Return ``True`` if *x* is in the underlying dictionary's keys, values or
    items (in the latter case, *x* should be a ``(key, value)`` tuple).
+
+.. describe:: reversed(dictview)
+
+   Return an iterator over the keys, values or items (represented as tuples of
+   ``(key, value)``) in the dictionnary.
 
 
 Keys views are set-like since their entries are unique and hashable.  If all
