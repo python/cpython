@@ -171,12 +171,6 @@ PyInterpreterState_New(void)
     interp->pyexitfunc = NULL;
     interp->pyexitmodule = NULL;
 
-    HEAD_LOCK();
-    interp->next = _PyRuntime.interpreters.head;
-    if (_PyRuntime.interpreters.main == NULL) {
-        _PyRuntime.interpreters.main = interp;
-    }
-    _PyRuntime.interpreters.head = interp;
     if (_PyRuntime.interpreters.next_id < 0) {
         /* overflow or Py_Initialize() not called! */
         PyErr_SetString(PyExc_RuntimeError,
@@ -187,6 +181,12 @@ PyInterpreterState_New(void)
         interp->id = _PyRuntime.interpreters.next_id;
         _PyRuntime.interpreters.next_id += 1;
     }
+    HEAD_LOCK();
+    interp->next = _PyRuntime.interpreters.head;
+    if (_PyRuntime.interpreters.main == NULL) {
+        _PyRuntime.interpreters.main = interp;
+    }
+    _PyRuntime.interpreters.head = interp;
     HEAD_UNLOCK();
 
     interp->tstate_next_unique_id = 0;
