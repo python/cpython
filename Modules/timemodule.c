@@ -945,12 +945,21 @@ time_mktime(PyObject *self, PyObject *tup)
 {
     struct tm buf;
     time_t tt;
+#ifdef _AIX
+    time_t clk;
+    int     year = buf.tm_year;
+    int     days = 0;
+#endif
+
     if (!gettmarg(tup, &buf,
                   "iiiiiiiii;mktime(): illegal time tuple argument"))
     {
         return NULL;
     }
-#ifdef _AIX
+#ifndef _AIX
+    buf.tm_wday = -1;  /* sentinel; original value ignored */
+    tt = mktime(&buf);
+#else
     /* year < 1902 or year > 2037 */
     if ((buf.tm_year < 2) || (buf.tm_year > 137))  {
         /* Issue #19748: On AIX, mktime() doesn't report overflow error for
@@ -959,30 +968,20 @@ time_mktime(PyObject *self, PyObject *tup)
                         "mktime argument out of range");
         return NULL;
     }
-    {
-        time_t clk;
-        int     year = buf.tm_year;
-        int     days = 0;
+    /* year < 1970 */
+    if (year < 70) do {
+        buf.tm_year += 4;
+        days -= (366 + (365 * 3));
+    } while (buf.tm_year < 70);
 
-        /* year < 1970 */
-        if (year < 70) do
-        {
-            buf.tm_year += 4;
-            days -= (366 + (365 * 3));
-        } while (buf.tm_year < 70);
+    buf.tm_wday = -1;
+    clk = mktime(&buf);
+    buf.tm_year = year;
 
-        buf.tm_wday = -1;
-        clk = mktime(&buf);
-        buf.tm_year = year;
+    if (buf.tm_wday != -1 && days)
+        buf.tm_wday = (buf.tm_wday + days) % 7;
 
-        if (buf.tm_wday != -1 && days)
-            buf.tm_wday = (buf.tm_wday + days) % 7;
-
-        tt = clk + (days * (24 * 3600));
-    }
-#else
-    buf.tm_wday = -1;  /* sentinel; original value ignored */
-    tt = mktime(&buf);
+    tt = clk + (days * (24 * 3600));
 #endif
     /* Return value of -1 does not necessarily mean an error, but tm_wday
      * cannot remain set to -1 if mktime succeeded. */
