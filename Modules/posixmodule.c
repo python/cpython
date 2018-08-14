@@ -7419,12 +7419,11 @@ static PyObject *
 posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     path_t path;
-#if defined(HAVE_READLINK)
     int dir_fd = DEFAULT_DIR_FD;
+#if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
     ssize_t length;
 #elif defined(MS_WINDOWS)
-    int dir_fd;
     DWORD n_bytes_returned;
     DWORD io_result;
     HANDLE reparse_point_handle;
@@ -7440,12 +7439,7 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     path.function_name = "readlink";
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:readlink", keywords,
                           path_converter, &path,
-#if defined(HAVE_READLINK)
-                          READLINKAT_DIR_FD_CONVERTER,
-#elif defined(MS_WINDOWS)
-                          dir_fd_unavailable,
-#endif
-                          &dir_fd))
+                          READLINKAT_DIR_FD_CONVERTER, &dir_fd))
         return NULL;
 
 #if defined(HAVE_READLINK)
@@ -7517,9 +7511,6 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
                           rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
     if (path.narrow) {
         Py_SETREF(return_value, PyUnicode_EncodeFSDefault(return_value));
-        if (!return_value) {
-            goto exit;
-        }
     }
 #endif
 exit:
