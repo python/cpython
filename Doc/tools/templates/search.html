@@ -1,0 +1,22 @@
+{% extends "!search.html" %}
+{% block extrahead %}
+    {{ super() }}
+    <script type="text/javascript">
+        jQuery(function() {
+            $.getJSON("_static/glossary.json", function(glossary) {
+                $("#search-results").prepend('<div style="display: none" class="admonition seealso" id="glossary-result"></div>');
+
+                var params = $.getQueryParameters();
+                if (params.q) {
+                    var glossary_item = glossary[params.q[0].toLowerCase()];
+                    if (glossary_item) {
+                        glossary_item = $(glossary_item).children();
+                        $("#glossary-result").html(glossary_item).show();
+                    } else {
+                        $("#glossary-result").hide('');
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}
