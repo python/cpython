@@ -1,0 +1,3 @@
+Add mimetype for file extension ``.mjs``. This will allow ``python -m`` to
+support applications attempting to load ECMAScript Modules with the ``.mjs``
+extension.
