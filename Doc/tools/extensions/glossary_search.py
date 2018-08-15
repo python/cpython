@@ -14,6 +14,9 @@ import json
 
 
 def process_glossary_nodes(app, doctree, fromdocname):
+    if app.builder.format != 'html':
+        return
+
     terms = {}
 
     for node in doctree.traverse(glossary):
