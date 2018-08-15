@@ -49,8 +49,8 @@
     <sqlite3Dir>$(ExternalsDir)sqlite-3.21.0.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
-    <opensslDir>$(ExternalsDir)openssl-1.1.0h\</opensslDir>
-    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.0h\$(ArchName)\</opensslOutDir>
+    <opensslDir>$(ExternalsDir)openssl-1.1.0i\</opensslDir>
+    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.0i\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir>$(ExternalsDir)\zlib-1.2.11\</zlibDir>
