@@ -2772,19 +2772,24 @@ else:
                     sock.do_handshake()
                 self.assertEqual(cm.exception.errno, errno.ENOTCONN)
 
-        def test_default_ciphers(self):
-            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            try:
-                # Force a set of weak ciphers on our client context
-                context.set_ciphers("DES")
-            except ssl.SSLError:
-                self.skipTest("no DES cipher available")
-            with ThreadedEchoServer(CERTFILE,
-                                    ssl_version=ssl.PROTOCOL_SSLv23,
-                                    chatty=False) as server:
-                with closing(context.wrap_socket(socket.socket())) as s:
-                    with self.assertRaises(ssl.SSLError):
-                        s.connect((HOST, server.port))
+        def test_no_shared_ciphers(self):
+            server_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            server_context.load_cert_chain(SIGNED_CERTFILE)
+            client_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            client_context.verify_mode = ssl.CERT_REQUIRED
+            client_context.check_hostname = True
+
+            # OpenSSL enables all TLS 1.3 ciphers, enforce TLS 1.2 for test
+            client_context.options |= ssl.OP_NO_TLSv1_3
+            # Force different suites on client and master
+            client_context.set_ciphers("AES128")
+            server_context.set_ciphers("AES256")
+            with ThreadedEchoServer(context=server_context) as server:
+                s = client_context.wrap_socket(
+                        socket.socket(),
+                        server_hostname="localhost")
+                with self.assertRaises(ssl.SSLError):
+                    s.connect((HOST, server.port))
             self.assertIn("no shared cipher", str(server.conn_errors[0]))
 
         def test_version_basic(self):
@@ -2815,9 +2820,9 @@ else:
                 with context.wrap_socket(socket.socket()) as s:
                     s.connect((HOST, server.port))
                     self.assertIn(s.cipher()[0], [
-                        'TLS13-AES-256-GCM-SHA384',
-                        'TLS13-CHACHA20-POLY1305-SHA256',
-                        'TLS13-AES-128-GCM-SHA256',
+                        'TLS_AES_256_GCM_SHA384',
+                        'TLS_CHACHA20_POLY1305_SHA256',
+                        'TLS_AES_128_GCM_SHA256',
                     ])
 
         @unittest.skipUnless(ssl.HAS_ECDH, "test requires ECDH-enabled OpenSSL")
