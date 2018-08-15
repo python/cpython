@@ -171,23 +171,27 @@ PyInterpreterState_New(void)
     interp->pyexitfunc = NULL;
     interp->pyexitmodule = NULL;
 
+    HEAD_LOCK();
     if (_PyRuntime.interpreters.next_id < 0) {
         /* overflow or Py_Initialize() not called! */
         PyErr_SetString(PyExc_RuntimeError,
                         "failed to get an interpreter ID");
         PyMem_RawFree(interp);
-        return NULL;
+        interp = NULL;
     } else {
         interp->id = _PyRuntime.interpreters.next_id;
         _PyRuntime.interpreters.next_id += 1;
+        interp->next = _PyRuntime.interpreters.head;
+        if (_PyRuntime.interpreters.main == NULL) {
+            _PyRuntime.interpreters.main = interp;
+        }
+        _PyRuntime.interpreters.head = interp;
     }
-    HEAD_LOCK();
-    interp->next = _PyRuntime.interpreters.head;
-    if (_PyRuntime.interpreters.main == NULL) {
-        _PyRuntime.interpreters.main = interp;
-    }
-    _PyRuntime.interpreters.head = interp;
     HEAD_UNLOCK();
+
+    if (!interp){
+        return NULL;
+    }
 
     interp->tstate_next_unique_id = 0;
 
