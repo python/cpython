@@ -2014,8 +2014,10 @@ features:
       The *dir_fd* argument.
 
    .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
+      Accepts a :term:`path-like object` on Unix.
 
+   .. versionchanged:: 3.8
+      Accepts a :term:`path-like object` and a bytes object on Windows.
 
 .. function:: remove(path, *, dir_fd=None)
 
