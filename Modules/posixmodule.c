@@ -12269,8 +12269,6 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
         goto error;
     if (path->narrow) {
         Py_SETREF(entry->name, PyUnicode_EncodeFSDefault(entry->name));
-        if (!entry->name)
-            goto error;
     }
 
     joined_path = join_path_filenameW(path->wide, dataW->cFileName);
@@ -12283,8 +12281,6 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
         goto error;
     if (path->narrow) {
         Py_SETREF(entry->path, PyUnicode_EncodeFSDefault(entry->path));
-        if (!entry->path)
-            goto error;
     }
 
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
