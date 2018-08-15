@@ -60,7 +60,6 @@ BYTES_CAPATH = os.fsencode(CAPATH)
 CAFILE_NEURONIO = data_file("capath", "4e1295a3.0")
 CAFILE_CACERT = data_file("capath", "5ed36f99.0")
 
-
 # empty CRL
 CRLFILE = data_file("revocation.crl")
 
@@ -81,7 +80,7 @@ BADKEY = data_file("badkey.pem")
 NOKIACERT = data_file("nokia.pem")
 NULLBYTECERT = data_file("nullbytecert.pem")
 
-DHFILE = data_file("dh1024.pem")
+DHFILE = data_file("ffdh3072.pem")
 BYTES_DHFILE = os.fsencode(DHFILE)
 
 # Not defined in all versions of OpenSSL
@@ -266,9 +265,9 @@ class BasicSocketTests(unittest.TestCase):
                           (('commonName', 'localhost'),))
                         )
         # Note the next three asserts will fail if the keys are regenerated
-        self.assertEqual(p['notAfter'], asn1time('Oct  5 23:01:56 2020 GMT'))
-        self.assertEqual(p['notBefore'], asn1time('Oct  8 23:01:56 2010 GMT'))
-        self.assertEqual(p['serialNumber'], 'D7C7381919AFC24E')
+        self.assertEqual(p['notAfter'], asn1time('Jan 17 19:09:06 2028 GMT'))
+        self.assertEqual(p['notBefore'], asn1time('Jan 19 19:09:06 2018 GMT'))
+        self.assertEqual(p['serialNumber'], 'F9BA076D5B6ABD9B')
         self.assertEqual(p['subject'],
                          ((('countryName', 'XY'),),
                           (('localityName', 'Castle Anthrax'),),
@@ -2475,10 +2474,10 @@ if _have_threads:
             connect to it with a wrong client certificate fails.
             """
             certfile = os.path.join(os.path.dirname(__file__) or os.curdir,
-                                       "wrongcert.pem")
-            server = ThreadedEchoServer(CERTFILE,
+                                       "keycert.pem")
+            server = ThreadedEchoServer(SIGNED_CERTFILE,
                                         certreqs=ssl.CERT_REQUIRED,
-                                        cacerts=CERTFILE, chatty=False,
+                                        cacerts=SIGNING_CA, chatty=False,
                                         connectionchatty=False)
             with server, \
                     socket.socket() as sock, \
