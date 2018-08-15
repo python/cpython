@@ -1256,8 +1256,8 @@ location listed above.
 
         # List the built-in subclasses, if any:
         subclasses = sorted(
-            (str(cls.__name__) for cls in object.__subclasses__() \
-            if not cls.__name__.startswith("_") and cls.__module__ == "builtins"),
+            (str(cls.__name__) for cls in object.__subclasses__()
+             if not cls.__name__.startswith("_") and cls.__module__ == "builtins"),
             key=str.lower
         )
         no_of_subclasses = len(subclasses)
@@ -1268,8 +1268,8 @@ location listed above.
                 push('    ' + subclassname)
             if no_of_subclasses > MAX_SUBCLASSES_TO_DISPLAY:
                 push('    ... and ' +
-                    str(no_of_subclasses - MAX_SUBCLASSES_TO_DISPLAY) +
-                    ' other subclasses')
+                     str(no_of_subclasses - MAX_SUBCLASSES_TO_DISPLAY) +
+                     ' other subclasses')
             push('')
 
         # Cute little class to pump out a horizontal rule between sections.
