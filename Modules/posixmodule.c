@@ -7414,18 +7414,24 @@ If dir_fd is not None, it should be a file descriptor open to a directory,\n\
   and path should be relative; path will then be relative to that directory.\n\
 dir_fd may not be implemented on your platform.\n\
   If it is unavailable, using it will raise a NotImplementedError.");
-#endif
 
-#ifdef HAVE_READLINK
-
-/* AC 3.5: merge win32 and not together */
 static PyObject *
 posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     path_t path;
     int dir_fd = DEFAULT_DIR_FD;
+#if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
     ssize_t length;
+#elif defined(MS_WINDOWS)
+    DWORD n_bytes_returned;
+    DWORD io_result;
+    HANDLE reparse_point_handle;
+
+    char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+    _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
+    const wchar_t *print_name;
+#endif
     PyObject *return_value = NULL;
     static char *keywords[] = {"path", "dir_fd", NULL};
 
@@ -7436,6 +7442,7 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
                           READLINKAT_DIR_FD_CONVERTER, &dir_fd))
         return NULL;
 
+#if defined(HAVE_READLINK)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_READLINKAT
     if (dir_fd != DEFAULT_DIR_FD)
@@ -7455,45 +7462,11 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
         return_value = PyUnicode_DecodeFSDefaultAndSize(buffer, length);
     else
         return_value = PyBytes_FromStringAndSize(buffer, length);
-exit:
-    path_cleanup(&path);
-    return return_value;
-}
-
-#endif /* HAVE_READLINK */
-
-#if !defined(HAVE_READLINK) && defined(MS_WINDOWS)
-
-static PyObject *
-win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    const wchar_t *path;
-    DWORD n_bytes_returned;
-    DWORD io_result;
-    PyObject *po, *result;
-    int dir_fd;
-    HANDLE reparse_point_handle;
-
-    char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
-    _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    const wchar_t *print_name;
-
-    static char *keywords[] = {"path", "dir_fd", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "U|$O&:readlink", keywords,
-                          &po,
-                          dir_fd_unavailable, &dir_fd
-                          ))
-        return NULL;
-
-    path = _PyUnicode_AsUnicode(po);
-    if (path == NULL)
-        return NULL;
-
+#elif defined(MS_WINDOWS)
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
     reparse_point_handle = CreateFileW(
-        path,
+        path.wide,
         0,
         0,
         0,
@@ -7502,8 +7475,10 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
         0);
     Py_END_ALLOW_THREADS
 
-    if (reparse_point_handle==INVALID_HANDLE_VALUE)
-        return win32_error_object("readlink", po);
+    if (reparse_point_handle == INVALID_HANDLE_VALUE) {
+        return_value = path_error(&path);
+        goto exit;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     /* New call DeviceIoControl to read the reparse point */
@@ -7518,26 +7493,31 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     CloseHandle(reparse_point_handle);
     Py_END_ALLOW_THREADS
 
-    if (io_result==0)
-        return win32_error_object("readlink", po);
+    if (io_result == 0) {
+        return_value = path_error(&path);
+        goto exit;
+    }
 
     if (rdb->ReparseTag != IO_REPARSE_TAG_SYMLINK)
     {
         PyErr_SetString(PyExc_ValueError,
                 "not a symbolic link");
-        return NULL;
+        goto exit;
     }
     print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
                  rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
 
-    result = PyUnicode_FromWideChar(print_name,
-                    rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
-    return result;
+    return_value = PyUnicode_FromWideChar(print_name,
+                          rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
+    if (path.narrow) {
+        Py_SETREF(return_value, PyUnicode_EncodeFSDefault(return_value));
+    }
+#endif
+exit:
+    path_cleanup(&path);
+    return return_value;
 }
-
-#endif /* !defined(HAVE_READLINK) && defined(MS_WINDOWS) */
-
-
+#endif /* defined(HAVE_READLINK) || defined(MS_WINDOWS) */
 
 #ifdef HAVE_SYMLINK
 
@@ -12950,16 +12930,11 @@ static PyMethodDef posix_methods[] = {
     OS_GETPRIORITY_METHODDEF
     OS_SETPRIORITY_METHODDEF
     OS_POSIX_SPAWN_METHODDEF
-#ifdef HAVE_READLINK
+#if defined(HAVE_READLINK) || defined(MS_WINDOWS)
     {"readlink",        (PyCFunction)posix_readlink,
                         METH_VARARGS | METH_KEYWORDS,
                         readlink__doc__},
-#endif /* HAVE_READLINK */
-#if !defined(HAVE_READLINK) && defined(MS_WINDOWS)
-    {"readlink",        (PyCFunction)win_readlink,
-                        METH_VARARGS | METH_KEYWORDS,
-                        readlink__doc__},
-#endif /* !defined(HAVE_READLINK) && defined(MS_WINDOWS) */
+#endif /* defined(HAVE_READLINK) || defined(MS_WINDOWS) */
     OS_RENAME_METHODDEF
     OS_REPLACE_METHODDEF
     OS_RMDIR_METHODDEF
