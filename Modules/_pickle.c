@@ -6297,14 +6297,13 @@ load_mark(UnpicklerObject *self)
             return -1;
         }
 
-        Py_ssize_t *marks_old = self->marks;
-        PyMem_RESIZE(self->marks, Py_ssize_t, alloc);
-        if (self->marks == NULL) {
-            PyMem_FREE(marks_old);
-            self->marks_size = 0;
+        Py_ssize_t *marks_new = self->marks;
+        PyMem_RESIZE(marks_new, Py_ssize_t, alloc);
+        if (marks_new == NULL) {
             PyErr_NoMemory();
             return -1;
         }
+        self->marks = marks_new;
         self->marks_size = (Py_ssize_t)alloc;
     }
 
