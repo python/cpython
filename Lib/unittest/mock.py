@@ -2089,14 +2089,7 @@ class AsyncMagicMixin(object):
 
 
 class CoroutineMockMixin(Base):
-    #: Property which is set when the mock is awaited. Its ``wait`` and
-    #: ``wait_next`` coroutine methods can be used to synchronize execution.
-    #:
-    #: .. versionadded:: 0.12
     awaited = _delegating_property('awaited')
-    #: Number of times the mock has been awaited.
-    #:
-    #: .. versionadded:: 0.12
     await_count = _delegating_property('await_count')
     await_args = _delegating_property('await_args')
     await_args_list = _delegating_property('await_args_list')
@@ -2148,8 +2141,6 @@ class CoroutineMockMixin(Base):
     def assert_awaited(_mock_self):
         """
         Assert that the mock was awaited at least once.
-
-        .. versionadded:: 0.12
         """
         self = _mock_self
         if self.await_count == 0:
@@ -2159,8 +2150,6 @@ class CoroutineMockMixin(Base):
     def assert_awaited_once(_mock_self, *args, **kwargs):
         """
         Assert that the mock was awaited exactly once.
-
-        .. versionadded:: 0.12
         """
         self = _mock_self
         if not self.await_count == 1:
@@ -2171,8 +2160,6 @@ class CoroutineMockMixin(Base):
     def assert_awaited_with(_mock_self, *args, **kwargs):
         """
         Assert that the last await was with the specified arguments.
-
-        .. versionadded:: 0.12
         """
         self = _mock_self
         if self.await_args is None:
@@ -2193,8 +2180,6 @@ class CoroutineMockMixin(Base):
         """
         Assert that the mock was awaited exactly once and with the specified
         arguments.
-
-        .. versionadded:: 0.12
         """
         self = _mock_self
         if not self.await_count == 1:
@@ -2206,8 +2191,6 @@ class CoroutineMockMixin(Base):
     def assert_any_await(_mock_self, *args, **kwargs):
         """
         Assert the mock has ever been awaited with the specified arguments.
-
-        .. versionadded:: 0.12
         """
         self = _mock_self
         expected = self._call_matcher((args, kwargs))
@@ -2230,8 +2213,6 @@ class CoroutineMockMixin(Base):
 
         If `any_order` is True then the awaits can be in any order, but
         they must all appear in :attr:`await_args_list`.
-
-        .. versionadded:: 0.12
         """
         self = _mock_self
         expected = [self._call_matcher(c) for c in calls]
@@ -2261,8 +2242,6 @@ class CoroutineMockMixin(Base):
     def assert_not_awaited(_mock_self):
         """
         Assert that the mock was never awaited.
-
-        .. versionadded:: 0.12
         """
         self = _mock_self
         if self.await_count != 0:
