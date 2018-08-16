@@ -864,12 +864,6 @@ the more significant byte last.
    The iterable object is ignored when computing
    the value of ``argc``.
 
-   .. versionchanged:: 3.5
-      In versions 3.0 to 3.4, the iterable object was above
-      the keyword arguments; in 3.5 the iterable object was moved
-      below the keyword arguments.
-
-
 
 .. opcode:: CALL_FUNCTION_KW (argc)
 
@@ -894,8 +888,8 @@ the more significant byte last.
    arguments, identically to :opcode:`CALL_FUNCTION`.
    The top of the stack contains a mapping object, as per
    :opcode:`CALL_FUNCTION_KW`.
-   Below that
-   is an iterable object containing additional positional arguments.
+   Below that is an iterable object, as per
+   :opcode:`CALL_FUNCTION_VAR`.
    Below that are keyword arguments (if any), positional arguments (if any)
    and a callable object, identically to :opcode:`CALL_FUNCTION`.
    Before the callable is called, the mapping object and iterable object
