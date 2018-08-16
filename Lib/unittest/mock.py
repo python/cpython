@@ -257,7 +257,7 @@ class _Sentinel(object):
 
     def __getattr__(self, name):
         if name == '__bases__':
-            # Without this help() raises an exception
+            # Without this help(unittest.mock) raises an exception
             raise AttributeError
         return self._sentinels.setdefault(name, _SentinelObject(name))
 
@@ -465,15 +465,15 @@ class NonCallableMock(Base):
                 _spec_coroutines.append(attr)
 
         if spec is not None and not _is_list(spec):
-                if isinstance(spec, type):
-                    _spec_class = spec
-                else:
-                    _spec_class = _get_class(spec)
-                res = _get_signature_object(spec,
-                                            _spec_as_instance, _eat_self)
-                _spec_signature = res and res[1]
+            if isinstance(spec, type):
+                _spec_class = spec
+            else:
+                _spec_class = _get_class(spec)
+            res = _get_signature_object(spec,
+                                        _spec_as_instance, _eat_self)
+            _spec_signature = res and res[1]
 
-                spec = dir(spec)
+            spec = dir(spec)
 
         __dict__ = self.__dict__
         __dict__['_spec_class'] = _spec_class
@@ -913,8 +913,7 @@ class NonCallableMock(Base):
         child mocks are made.
 
         For non-callable mocks the callable variant will be used (rather than
-        any custom subclass).
-        """
+        any custom subclass)."""
         _new_name = kw.get("_new_name")
         if _new_name in self.__dict__['_spec_coroutines']:
             return CoroutineMock(**kw)
@@ -1147,6 +1146,7 @@ class CallableMixin(Base):
         if ret_val is DEFAULT:
             ret_val = self.return_value
         return ret_val
+
 
 
 class Mock(CallableMixin, NonCallableMock):
@@ -2004,6 +2004,7 @@ class MagicMixin(object):
             setattr(_type, entry, MagicProxy(entry, self))
 
 
+
 class NonCallableMagicMock(MagicMixin, NonCallableMock):
     """A version of `MagicMock` that isn't callable."""
     def mock_add_spec(self, spec, spec_set=False):
@@ -2014,6 +2015,7 @@ class NonCallableMagicMock(MagicMixin, NonCallableMock):
         If `spec_set` is True then only attributes on the spec can be set."""
         self._mock_add_spec(spec, spec_set)
         self._mock_set_magics()
+
 
 
 class MagicMock(MagicMixin, Mock):
