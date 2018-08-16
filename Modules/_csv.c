@@ -565,24 +565,21 @@ parse_save_field(ReaderObj *self)
 static int
 parse_grow_buff(ReaderObj *self)
 {
-    if (self->field_size == 0) {
-        self->field_size = 4096;
-        if (self->field != NULL)
-            PyMem_Free(self->field);
-        self->field = PyMem_Malloc(self->field_size);
-    }
-    else {
-        if (self->field_size > INT_MAX / 2) {
-            PyErr_NoMemory();
-            return 0;
-        }
-        self->field_size *= 2;
-        self->field = PyMem_Realloc(self->field, self->field_size);
-    }
-    if (self->field == NULL) {
+    assert((unsigned)self->field_size <= INT_MAX);
+
+    unsigned field_size_new = self->field_size ? 2 * (unsigned)self->field_size : 4096;
+    if (field_size_new > INT_MAX) {
         PyErr_NoMemory();
         return 0;
     }
+    char *field_new = self->field;
+    PyMem_Resize(field_new, char, field_size_new);
+    if (field == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    self->field = field_new;
+    self->field_size = (int)field_size_new;
     return 1;
 }
 
@@ -1088,31 +1085,22 @@ join_append_data(WriterObj *self, char *field, int quote_empty,
 static int
 join_check_rec_size(WriterObj *self, int rec_len)
 {
-
-    if (rec_len < 0 || rec_len > INT_MAX - MEM_INCR) {
-        PyErr_NoMemory();
-        return 0;
-    }
+    assert(rec_len >= 0);
 
     if (rec_len > self->rec_size) {
-        if (self->rec_size == 0) {
-            self->rec_size = (rec_len / MEM_INCR + 1) * MEM_INCR;
-            if (self->rec != NULL)
-                PyMem_Free(self->rec);
-            self->rec = PyMem_Malloc(self->rec_size);
-        }
-        else {
-            char *old_rec = self->rec;
-
-            self->rec_size = (rec_len / MEM_INCR + 1) * MEM_INCR;
-            self->rec = PyMem_Realloc(self->rec, self->rec_size);
-            if (self->rec == NULL)
-                PyMem_Free(old_rec);
-        }
-        if (self->rec == NULL) {
+        unsigned rec_size_new = (unsigned)(rec_len / MEM_INCR + 1) * MEM_INCR;
+        if (rec_size_new > INT_MAX) {
             PyErr_NoMemory();
             return 0;
         }
+        char *rec_new = self->rec;
+        PyMem_Resize(rec_new, char, rec_size_new);
+        if (rec_new == NULL) {
+            PyErr_NoMemory();
+            return 0;
+        }
+        self->rec = rec_new;
+        self->rec_size = (int)rec_size_new;
     }
     return 1;
 }
