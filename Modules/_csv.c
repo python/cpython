@@ -554,25 +554,17 @@ parse_save_field(ReaderObj *self)
 static int
 parse_grow_buff(ReaderObj *self)
 {
-    if (self->field_size == 0) {
-        self->field_size = 4096;
-        if (self->field != NULL)
-            PyMem_Free(self->field);
-        self->field = PyMem_New(Py_UCS4, self->field_size);
-    }
-    else {
-        Py_UCS4 *field = self->field;
-        if (self->field_size > PY_SSIZE_T_MAX / 2) {
-            PyErr_NoMemory();
-            return 0;
-        }
-        self->field_size *= 2;
-        self->field = PyMem_Resize(field, Py_UCS4, self->field_size);
-    }
-    if (self->field == NULL) {
+    assert((size_t)self->field_size <= PY_SSIZE_T_MAX / sizeof(Py_UCS4));
+
+    Py_ssize_t field_size_new = self->field_size ? 2 * self->field_size : 4096;
+    Py_UCS4 *field_new = self->field;
+    PyMem_Resize(field_new, Py_UCS4, field_size_new);
+    if (field_new == NULL) {
         PyErr_NoMemory();
         return 0;
     }
+    self->field = field_new;
+    self->field_size = field_size_new;
     return 1;
 }
 
@@ -1088,31 +1080,18 @@ join_append_data(WriterObj *self, unsigned int field_kind, void *field_data,
 static int
 join_check_rec_size(WriterObj *self, Py_ssize_t rec_len)
 {
-
-    if (rec_len < 0 || rec_len > PY_SSIZE_T_MAX - MEM_INCR) {
-        PyErr_NoMemory();
-        return 0;
-    }
+    assert(rec_len >= 0);
 
     if (rec_len > self->rec_size) {
-        if (self->rec_size == 0) {
-            self->rec_size = (rec_len / MEM_INCR + 1) * MEM_INCR;
-            if (self->rec != NULL)
-                PyMem_Free(self->rec);
-            self->rec = PyMem_New(Py_UCS4, self->rec_size);
-        }
-        else {
-            Py_UCS4* old_rec = self->rec;
-
-            self->rec_size = (rec_len / MEM_INCR + 1) * MEM_INCR;
-            self->rec = PyMem_Resize(old_rec, Py_UCS4, self->rec_size);
-            if (self->rec == NULL)
-                PyMem_Free(old_rec);
-        }
-        if (self->rec == NULL) {
+        size_t rec_size_new = (size_t)(rec_len / MEM_INCR + 1) * MEM_INCR;
+        Py_UCS4 *rec_new = self->rec;
+        PyMem_Resize(rec_new, Py_UCS4, rec_size_new);
+        if (rec_new == NULL) {
             PyErr_NoMemory();
             return 0;
         }
+        self->rec = rec_new;
+        self->rec_size = (Py_ssize_t)rec_size_new;
     }
     return 1;
 }
