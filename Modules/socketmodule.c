@@ -303,7 +303,7 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 # endif
 
 /* Provides the IsWindows7SP1OrGreater() function */
-#include <VersionHelpers.h>
+#include <versionhelpers.h>
 
 /* remove some flags on older version Windows during run-time.
    https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
