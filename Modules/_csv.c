@@ -575,8 +575,7 @@ parse_grow_buff(ReaderObj *self)
         PyErr_NoMemory();
         return 0;
     }
-    field_new = self->field;
-    PyMem_Resize(field_new, char, field_size_new);
+    field_new = (char *)PyMem_Realloc(self->field, field_size_new);
     if (field_new == NULL) {
         PyErr_NoMemory();
         return 0;
@@ -1099,8 +1098,7 @@ join_check_rec_size(WriterObj *self, int rec_len)
             PyErr_NoMemory();
             return 0;
         }
-        rec_new = self->rec;
-        PyMem_Resize(rec_new, char, rec_size_new);
+        rec_new = (char *)PyMem_Realloc(self->rec, rec_size_new);
         if (rec_new == NULL) {
             PyErr_NoMemory();
             return 0;
