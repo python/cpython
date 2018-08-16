@@ -675,6 +675,7 @@ class TestTLS_FTPClass(TestCase):
         # clear text
         sock = self.client.transfercmd('list')
         self.assertNotIsInstance(sock, ssl.SSLSocket)
+        self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         sock.close()
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
@@ -682,6 +683,9 @@ class TestTLS_FTPClass(TestCase):
         self.client.prot_p()
         sock = self.client.transfercmd('list')
         self.assertIsInstance(sock, ssl.SSLSocket)
+        # consume from SSL socket to finalize handshake and avoid
+        # "SSLError [SSL] shutdown while in init"
+        self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         sock.close()
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
@@ -689,6 +693,7 @@ class TestTLS_FTPClass(TestCase):
         self.client.prot_c()
         sock = self.client.transfercmd('list')
         self.assertNotIsInstance(sock, ssl.SSLSocket)
+        self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         sock.close()
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
