@@ -574,7 +574,7 @@ parse_grow_buff(ReaderObj *self)
     }
     char *field_new = self->field;
     PyMem_Resize(field_new, char, field_size_new);
-    if (field == NULL) {
+    if (field_new == NULL) {
         PyErr_NoMemory();
         return 0;
     }
