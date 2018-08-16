@@ -5268,8 +5268,6 @@ Return integer ratio.
 Return a pair of integers, whose ratio is exactly equal to the original int
 and with a positive denominator.
 
-Raise OverflowError on infinities and a ValueError on NaNs.
-
 >>> (10).as_integer_ratio()
 (10, 1)
 >>> (0).as_integer_ratio()
@@ -5284,14 +5282,7 @@ static PyObject *
 int_as_integer_ratio_impl(PyObject *self)
 /*[clinic end generated code: output=e60803ae1cc8621a input=ce9c7768a1287fb9]*/
 {
-    PyObject *denominator = NULL;
-    PyObject *result_pair = NULL;
-
-    denominator = PyLong_FromLong(1);
-    result_pair = PyTuple_Pack(2, self, denominator);
-
-    Py_DECREF(denominator);
-    return result_pair;
+  return PyTuple_Pack(2, self, _PyLong_One)
 }
 
 /*[clinic input]
