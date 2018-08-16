@@ -566,7 +566,7 @@ static int
 parse_grow_buff(ReaderObj *self)
 {
     unsigned field_size_new;
-    char *field_new
+    char *field_new;
 
     assert((unsigned)self->field_size <= INT_MAX);
 
