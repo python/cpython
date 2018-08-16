@@ -565,14 +565,17 @@ parse_save_field(ReaderObj *self)
 static int
 parse_grow_buff(ReaderObj *self)
 {
+    unsigned field_size_new;
+    char *field_new
+
     assert((unsigned)self->field_size <= INT_MAX);
 
-    unsigned field_size_new = self->field_size ? 2 * (unsigned)self->field_size : 4096;
+    field_size_new = self->field_size ? 2 * (unsigned)self->field_size : 4096;
     if (field_size_new > INT_MAX) {
         PyErr_NoMemory();
         return 0;
     }
-    char *field_new = self->field;
+    field_new = self->field;
     PyMem_Resize(field_new, char, field_size_new);
     if (field_new == NULL) {
         PyErr_NoMemory();
@@ -1085,15 +1088,18 @@ join_append_data(WriterObj *self, char *field, int quote_empty,
 static int
 join_check_rec_size(WriterObj *self, int rec_len)
 {
+    unsigned rec_size_new;
+    char *rec_new;
+
     assert(rec_len >= 0);
 
     if (rec_len > self->rec_size) {
-        unsigned rec_size_new = (unsigned)(rec_len / MEM_INCR + 1) * MEM_INCR;
+        rec_size_new = (unsigned)(rec_len / MEM_INCR + 1) * MEM_INCR;
         if (rec_size_new > INT_MAX) {
             PyErr_NoMemory();
             return 0;
         }
-        char *rec_new = self->rec;
+        rec_new = self->rec;
         PyMem_Resize(rec_new, char, rec_size_new);
         if (rec_new == NULL) {
             PyErr_NoMemory();
