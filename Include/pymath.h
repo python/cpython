@@ -221,10 +221,14 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
 #define _Py_IntegralTypeMax(type) ((_Py_IntegralTypeSigned(type)) ? (((((type)1 << (sizeof(type)*CHAR_BIT - 2)) - 1) << 1) + 1) : ~(type)0)
 /* Return the minimum value of integral type *type*. */
 #define _Py_IntegralTypeMin(type) ((_Py_IntegralTypeSigned(type)) ? -_Py_IntegralTypeMax(type) - 1 : 0)
+
 /* Check whether *v* is in the range of integral type *type*. This is most
- * useful if *v* is floating-point, since demoting a floating-point *v* to an
- * integral type that cannot represent *v*'s integral part is undefined
- * behavior. */
-#define _Py_InIntegralTypeRange(type, v) (_Py_IntegralTypeMin(type) <= v && v <= _Py_IntegralTypeMax(type))
+ * useful if *v* is floating-point, since demoting a floating-point *v* to
+ * an integral type that cannot represent *v*'s integral part is undefined
+ * behavior. If however sizeof(*v*) == sizeof(*type*) and *v* is a
+ * floating-point, maximal value of *type* cannot be represented exactly,
+ * thus the check, to be true needs to use strict less than (<).
+ */
+#define _Py_InIntegralTypeRange(type, v) (_Py_IntegralTypeMin(type) <= v && v < _Py_IntegralTypeMax(type))
 
 #endif /* Py_PYMATH_H */
