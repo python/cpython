@@ -306,7 +306,7 @@ dump_config(void)
         exit(1); \
     }
 
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     _PyCoreConfig *config = &interp->core_config;
 
     printf("install_signal_handlers = %i\n", config->install_signal_handlers);
@@ -373,6 +373,8 @@ dump_config(void)
     printf("quiet = %i\n", config->quiet);
     printf("user_site_directory = %i\n", config->user_site_directory);
     printf("buffered_stdio = %i\n", config->buffered_stdio);
+    ASSERT_EQUAL(config->buffered_stdio, !Py_UnbufferedStdioFlag);
+
     /* FIXME: test legacy_windows_fs_encoding */
     /* FIXME: test legacy_windows_stdio */
 

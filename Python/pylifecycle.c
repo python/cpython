@@ -805,7 +805,6 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
 {
     assert(src_config != NULL);
 
-
     PyMemAllocatorEx old_alloc;
     _PyInitError err;
 
@@ -2123,11 +2122,7 @@ _Py_FatalInitError(_PyInitError err)
 /* For the atexit module. */
 void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
-    PyThreadState *ts;
-    PyInterpreterState *is;
-
-    ts = PyThreadState_GET();
-    is = ts->interp;
+    PyInterpreterState *is = _PyInterpreterState_Get();
 
     /* Guard against API misuse (see bpo-17852) */
     assert(is->pyexitfunc == NULL || is->pyexitfunc == func);

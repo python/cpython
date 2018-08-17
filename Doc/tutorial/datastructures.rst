@@ -40,8 +40,8 @@ objects:
 .. method:: list.remove(x)
    :noindex:
 
-   Remove the first item from the list whose value is equal to *x*.  It is an error if
-   there is no such item.
+   Remove the first item from the list whose value is equal to *x*.  It raises a
+   ``ValueError`` if there is no such item.
 
 
 .. method:: list.pop([i])

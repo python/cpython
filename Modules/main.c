@@ -185,7 +185,6 @@ pymain_run_interactive_hook(void)
 error:
     PySys_WriteStderr("Failed calling sys.__interactivehook__\n");
     PyErr_Print();
-    PyErr_Clear();
 }
 
 
@@ -267,7 +266,6 @@ error:
     Py_XDECREF(sys_path0);
     PySys_WriteStderr("Failed checking if argv[0] is an import path entry\n");
     PyErr_Print();
-    PyErr_Clear();
     return NULL;
 }
 
@@ -297,43 +295,6 @@ error:
     PySys_WriteStderr("Unable to decode the command from the command line:\n");
     PyErr_Print();
     return 1;
-}
-
-
-static int
-pymain_run_file(FILE *fp, const wchar_t *filename, PyCompilerFlags *p_cf)
-{
-    PyObject *unicode, *bytes = NULL;
-    const char *filename_str;
-    int run;
-
-    /* call pending calls like signal handlers (SIGINT) */
-    if (Py_MakePendingCalls() == -1) {
-        PyErr_Print();
-        return 1;
-    }
-
-    if (filename) {
-        unicode = PyUnicode_FromWideChar(filename, wcslen(filename));
-        if (unicode != NULL) {
-            bytes = PyUnicode_EncodeFSDefault(unicode);
-            Py_DECREF(unicode);
-        }
-        if (bytes != NULL) {
-            filename_str = PyBytes_AsString(bytes);
-        }
-        else {
-            PyErr_Clear();
-            filename_str = "<encoding error>";
-        }
-    }
-    else {
-        filename_str = "<stdin>";
-    }
-
-    run = PyRun_AnyFileExFlags(fp, filename_str, filename != NULL, p_cf);
-    Py_XDECREF(bytes);
-    return run != 0;
 }
 
 
@@ -1101,55 +1062,6 @@ pymain_import_readline(_PyMain *pymain)
 }
 
 
-static FILE*
-pymain_open_filename(_PyMain *pymain, _PyCoreConfig *config)
-{
-    FILE* fp;
-
-    fp = _Py_wfopen(pymain->filename, L"r");
-    if (fp == NULL) {
-        char *cfilename_buffer;
-        const char *cfilename;
-        int err = errno;
-        cfilename_buffer = _Py_EncodeLocaleRaw(pymain->filename, NULL);
-        if (cfilename_buffer != NULL)
-            cfilename = cfilename_buffer;
-        else
-            cfilename = "<unprintable file name>";
-        fprintf(stderr, "%ls: can't open file '%s': [Errno %d] %s\n",
-                config->program, cfilename, err, strerror(err));
-        PyMem_RawFree(cfilename_buffer);
-        pymain->status = 2;
-        return NULL;
-    }
-
-    if (pymain->skip_first_line) {
-        int ch;
-        /* Push back first newline so line numbers
-           remain the same */
-        while ((ch = getc(fp)) != EOF) {
-            if (ch == '\n') {
-                (void)ungetc(ch, fp);
-                break;
-            }
-        }
-    }
-
-    struct _Py_stat_struct sb;
-    if (_Py_fstat_noraise(fileno(fp), &sb) == 0 &&
-            S_ISDIR(sb.st_mode)) {
-        fprintf(stderr,
-                "%ls: '%ls' is a directory, cannot continue\n",
-                config->program, pymain->filename);
-        fclose(fp);
-        pymain->status = 1;
-        return NULL;
-    }
-
-    return fp;
-}
-
-
 static void
 pymain_run_startup(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
 {
@@ -1167,7 +1079,6 @@ pymain_run_startup(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
         PyErr_SetFromErrnoWithFilename(PyExc_OSError,
                         startup);
         PyErr_Print();
-        PyErr_Clear();
         return;
     }
 
@@ -1178,28 +1089,97 @@ pymain_run_startup(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
 
 
 static void
-pymain_run_filename(_PyMain *pymain, _PyCoreConfig *config,
-                    PyCompilerFlags *cf)
+pymain_run_file(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
 {
-    if (pymain->filename == NULL && pymain->stdin_is_interactive) {
+    const wchar_t *filename = pymain->filename;
+    FILE *fp = _Py_wfopen(filename, L"r");
+    if (fp == NULL) {
+        char *cfilename_buffer;
+        const char *cfilename;
+        int err = errno;
+        cfilename_buffer = _Py_EncodeLocaleRaw(filename, NULL);
+        if (cfilename_buffer != NULL)
+            cfilename = cfilename_buffer;
+        else
+            cfilename = "<unprintable file name>";
+        fprintf(stderr, "%ls: can't open file '%s': [Errno %d] %s\n",
+                config->program, cfilename, err, strerror(err));
+        PyMem_RawFree(cfilename_buffer);
+        pymain->status = 2;
+        return;
+    }
+
+    if (pymain->skip_first_line) {
+        int ch;
+        /* Push back first newline so line numbers remain the same */
+        while ((ch = getc(fp)) != EOF) {
+            if (ch == '\n') {
+                (void)ungetc(ch, fp);
+                break;
+            }
+        }
+    }
+
+    struct _Py_stat_struct sb;
+    if (_Py_fstat_noraise(fileno(fp), &sb) == 0 && S_ISDIR(sb.st_mode)) {
+        fprintf(stderr,
+                "%ls: '%ls' is a directory, cannot continue\n",
+                config->program, filename);
+        pymain->status = 1;
+        fclose(fp);
+        return;
+    }
+
+    /* call pending calls like signal handlers (SIGINT) */
+    if (Py_MakePendingCalls() == -1) {
+        PyErr_Print();
+        pymain->status = 1;
+        fclose(fp);
+        return;
+    }
+
+    PyObject *unicode, *bytes = NULL;
+    const char *filename_str;
+
+    unicode = PyUnicode_FromWideChar(filename, wcslen(filename));
+    if (unicode != NULL) {
+        bytes = PyUnicode_EncodeFSDefault(unicode);
+        Py_DECREF(unicode);
+    }
+    if (bytes != NULL) {
+        filename_str = PyBytes_AsString(bytes);
+    }
+    else {
+        PyErr_Clear();
+        filename_str = "<filename encoding error>";
+    }
+
+    /* PyRun_AnyFileExFlags(closeit=1) calls fclose(fp) before running code */
+    int run = PyRun_AnyFileExFlags(fp, filename_str, 1, cf);
+    Py_XDECREF(bytes);
+    pymain->status = (run != 0);
+}
+
+
+static void
+pymain_run_stdin(_PyMain *pymain, _PyCoreConfig *config, PyCompilerFlags *cf)
+{
+    if (pymain->stdin_is_interactive) {
         Py_InspectFlag = 0; /* do exit on SystemExit */
         config->inspect = 0;
         pymain_run_startup(pymain, config, cf);
         pymain_run_interactive_hook();
     }
 
-    FILE *fp;
-    if (pymain->filename != NULL) {
-        fp = pymain_open_filename(pymain, config);
-        if (fp == NULL) {
-            return;
-        }
-    }
-    else {
-        fp = stdin;
+    /* call pending calls like signal handlers (SIGINT) */
+    if (Py_MakePendingCalls() == -1) {
+        PyErr_Print();
+        pymain->status = 1;
+        return;
     }
 
-    pymain->status = pymain_run_file(fp, pymain->filename, cf);
+    int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, cf);
+    pymain->status = (run != 0);
 }
 
 
@@ -1618,8 +1598,11 @@ pymain_run_python(_PyMain *pymain, PyInterpreterState *interp)
         int sts = pymain_run_module(L"__main__", 0);
         pymain->status = (sts != 0);
     }
+    else if (pymain->filename != NULL) {
+        pymain_run_file(pymain, config, &cf);
+    }
     else {
-        pymain_run_filename(pymain, config, &cf);
+        pymain_run_stdin(pymain, config, &cf);
     }
 
     pymain_repl(pymain, config, &cf);
