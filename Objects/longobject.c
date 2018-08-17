@@ -1439,6 +1439,102 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
     return res;
 }
 
+int
+_PyLong_UnsignedShort_Converter(PyObject *obj, void *ptr)
+{
+    unsigned long uval;
+
+    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+        PyErr_SetString(PyExc_ValueError, "value must be positive");
+        return 0;
+    }
+    uval = PyLong_AsUnsignedLong(obj);
+    if (uval == (unsigned long)-1 && PyErr_Occurred())
+        return 0;
+    if (uval > USHRT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large for C unsigned short");
+        return 0;
+    }
+
+    *(unsigned short *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned short);
+    return 1;
+}
+
+int
+_PyLong_UnsignedInt_Converter(PyObject *obj, void *ptr)
+{
+    unsigned long uval;
+
+    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+        PyErr_SetString(PyExc_ValueError, "value must be positive");
+        return 0;
+    }
+    uval = PyLong_AsUnsignedLong(obj);
+    if (uval == (unsigned long)-1 && PyErr_Occurred())
+        return 0;
+    if (uval > UINT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large for C unsigned int");
+        return 0;
+    }
+
+    *(unsigned int *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned int);
+    return 1;
+}
+
+int
+_PyLong_UnsignedLong_Converter(PyObject *obj, void *ptr)
+{
+    unsigned long uval;
+
+    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+        PyErr_SetString(PyExc_ValueError, "value must be positive");
+        return 0;
+    }
+    uval = PyLong_AsUnsignedLong(obj);
+    if (uval == (unsigned long)-1 && PyErr_Occurred())
+        return 0;
+
+    *(unsigned long *)ptr = uval;
+    return 1;
+}
+
+int
+_PyLong_UnsignedLongLong_Converter(PyObject *obj, void *ptr)
+{
+    unsigned long long uval;
+
+    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+        PyErr_SetString(PyExc_ValueError, "value must be positive");
+        return 0;
+    }
+    uval = PyLong_AsUnsignedLongLong(obj);
+    if (uval == (unsigned long long)-1 && PyErr_Occurred())
+        return 0;
+
+    *(unsigned long long *)ptr = uval;
+    return 1;
+}
+
+int
+_PyLong_Size_t_Converter(PyObject *obj, void *ptr)
+{
+    size_t uval;
+
+    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+        PyErr_SetString(PyExc_ValueError, "value must be positive");
+        return 0;
+    }
+    uval = PyLong_AsSize_t(obj);
+    if (uval == (size_t)-1 && PyErr_Occurred())
+        return 0;
+
+    *(size_t *)ptr = uval;
+    return 1;
+}
+
+
 #define CHECK_BINOP(v,w)                                \
     do {                                                \
         if (!PyLong_Check(v) || !PyLong_Check(w))       \
