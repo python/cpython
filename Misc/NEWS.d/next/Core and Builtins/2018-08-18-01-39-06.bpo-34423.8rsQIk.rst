@@ -1,0 +1,2 @@
+``time.sleep(2**63 / 10**9)`` no longer eludes range checks and doesn't
+overflow.
