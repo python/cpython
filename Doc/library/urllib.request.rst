@@ -1125,7 +1125,7 @@ UnknownHandler Objects
 HTTPErrorProcessor Objects
 --------------------------
 
-.. method:: HTTPErrorProcessor.http_response()
+.. method:: HTTPErrorProcessor.http_response(request, response)
 
    Process HTTP error responses.
 
@@ -1137,7 +1137,7 @@ HTTPErrorProcessor Objects
    :exc:`~urllib.error.HTTPError` if no other handler handles the error.
 
 
-.. method:: HTTPErrorProcessor.https_response()
+.. method:: HTTPErrorProcessor.https_response(request, response)
 
    Process HTTPS error responses.
 
