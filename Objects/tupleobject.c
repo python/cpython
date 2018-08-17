@@ -44,7 +44,7 @@ static Py_ssize_t count_tracked = 0;
 static void
 show_track(void)
 {
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     if (!interp->core_config.show_alloc_count) {
         return;
     }

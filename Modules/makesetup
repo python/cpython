@@ -17,7 +17,7 @@
 # Setup files after a -n option are used for their variables, modules
 # and libraries but not for their .o files.
 #
-# See Setup.dist for a description of the format of the Setup file.
+# See Setup for a description of the format of the Setup file.
 #
 # The following edits are made:
 #

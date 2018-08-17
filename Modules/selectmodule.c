@@ -430,30 +430,12 @@ update_ufd_array(pollObject *self)
     return 1;
 }
 
-static int
-ushort_converter(PyObject *obj, void *ptr)
-{
-    unsigned long uval;
-
-    uval = PyLong_AsUnsignedLong(obj);
-    if (uval == (unsigned long)-1 && PyErr_Occurred())
-        return 0;
-    if (uval > USHRT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Python int too large for C unsigned short");
-        return 0;
-    }
-
-    *(unsigned short *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned short);
-    return 1;
-}
-
 /*[clinic input]
 select.poll.register
 
     fd: fildes
       either an integer, or an object with a fileno() method returning an int
-    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
       an optional bitmask describing the type of events to check for
     /
 
@@ -462,7 +444,7 @@ Register a file descriptor with the polling object.
 
 static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=0dc7173c800a4a65 input=499d96a2836217f5]*/
+/*[clinic end generated code: output=0dc7173c800a4a65 input=f18711d9bb021e25]*/
 {
     PyObject *key, *value;
     int err;
@@ -495,7 +477,7 @@ select.poll.modify
     fd: fildes
       either an integer, or an object with a fileno() method returning
       an int
-    eventmask: object(converter="ushort_converter", type="unsigned short")
+    eventmask: unsigned_short
       a bitmask describing the type of events to check for
     /
 
@@ -504,7 +486,7 @@ Modify an already registered file descriptor.
 
 static PyObject *
 select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=1a7b88bf079eff17 input=b8e0e04a1264b78f]*/
+/*[clinic end generated code: output=1a7b88bf079eff17 input=a8e383df075c32cf]*/
 {
     PyObject *key, *value;
     int err;
@@ -832,7 +814,7 @@ select.devpoll.register
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
         an optional bitmask describing the type of events to check for
     /
 
@@ -842,7 +824,7 @@ Register a file descriptor with the polling object.
 static PyObject *
 select_devpoll_register_impl(devpollObject *self, int fd,
                              unsigned short eventmask)
-/*[clinic end generated code: output=6e07fe8b74abba0c input=389a0785bb8feb57]*/
+/*[clinic end generated code: output=6e07fe8b74abba0c input=5bd7cacc47a8ee46]*/
 {
     return internal_devpoll_register(self, fd, eventmask, 0);
 }
@@ -853,7 +835,7 @@ select.devpoll.modify
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
         an optional bitmask describing the type of events to check for
     /
 
@@ -863,7 +845,7 @@ Modify a possible already registered file descriptor.
 static PyObject *
 select_devpoll_modify_impl(devpollObject *self, int fd,
                            unsigned short eventmask)
-/*[clinic end generated code: output=bc2e6d23aaff98b4 input=f0d7de3889cc55fb]*/
+/*[clinic end generated code: output=bc2e6d23aaff98b4 input=48a820fc5967165d]*/
 static PyObject *
 devpoll_modify(devpollObject *self, PyObject *args)
 {
