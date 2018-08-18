@@ -1606,13 +1606,14 @@ expression support in the :mod:`re` module).
    that can be specified in format strings.
 
    .. note::
-      When formatting a number (:class:`int`, :class:`float`, :class:`float`
-      and subclasses) with the ``n`` type (ex: ``'{:n}'.format(1234)``), the
-      function sets temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
-      locale to decode ``decimal_point`` and ``thousands_sep`` fields of
-      :c:func:`localeconv` if they are non-ASCII or longer than 1 byte, and the
-      ``LC_NUMERIC`` locale is different than the ``LC_CTYPE`` locale. This
-      temporary change affects other threads.
+      When formatting a number (:class:`int`, :class:`float`, :class:`complex`,
+      :class:`decimal.Decimal` and subclasses) with the ``n`` type
+      (ex: ``'{:n}'.format(1234)``), the function temporarily sets the
+      ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale to decode
+      ``decimal_point`` and ``thousands_sep`` fields of :c:func:`localeconv` if
+      they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC`` locale is
+      different than the ``LC_CTYPE`` locale.  This temporary change affects
+      other threads.
 
    .. versionchanged:: 3.6.5
       When formatting a number with the ``n`` type, the function sets
