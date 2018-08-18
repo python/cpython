@@ -375,6 +375,7 @@ def wrap_future(future, *, loop=None):
         loop = events.get_event_loop()
     new_future = loop.create_future()
     _chain_future(future, new_future)
+    _chain_future(new_future, future)
     return new_future
 
 
