@@ -2626,7 +2626,7 @@ def _refold_parse_tree(parse_tree, *, policy):
                 want_encoding = False
                 last_ew = None
                 if part.syntactic_break:
-                    encoded_part = part.fold(policy=policy)[:-1] # strip nl
+                    encoded_part = part.fold(policy=policy)[:-len(policy.linesep)] # strip linesep
                     if policy.linesep not in encoded_part:
                         # It fits on a single line
                         if len(encoded_part) > maxlen - len(lines[-1]):
