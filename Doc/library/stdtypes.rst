@@ -1608,7 +1608,7 @@ expression support in the :mod:`re` module).
    .. note::
       When formatting a number (:class:`int`, :class:`float`, :class:`complex`,
       :class:`decimal.Decimal` and subclasses) with the ``n`` type
-      (ex: ``'{:n}'.format(1234)``), the function sets temporarily the
+      (ex: ``'{:n}'.format(1234)``), the function temporarily sets the
       ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale to decode
       ``decimal_point`` and ``thousands_sep`` fields of :c:func:`localeconv` if
       they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC`` locale is
