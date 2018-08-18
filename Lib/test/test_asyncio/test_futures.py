@@ -480,6 +480,38 @@ class BaseFutureTests:
         self.assertEqual(f1.result(), 42)
         self.assertTrue(f2.cancelled())
 
+    def test_wrap_future_symmetry1(self):
+        f1 = concurrent.futures.Future()
+        f2 = asyncio.wrap_future(f1, loop=self.loop)
+        f1.set_result(42)
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(f1.result(), 42)
+        self.assertEqual(f2.result(), 42)
+
+    def test_wrap_future_symmetry2(self):
+        f1 = concurrent.futures.Future()
+        f2 = asyncio.wrap_future(f1, loop=self.loop)
+        f2.set_result(42)
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(f1.result(), 42)
+        self.assertEqual(f2.result(), 42)
+
+    def test_wrap_future_symmetry3(self):
+        f1 = concurrent.futures.Future()
+        f2 = asyncio.wrap_future(f1, loop=self.loop)
+        f2.cancel()
+        test_utils.run_briefly(self.loop)
+        self.assertTrue(f1.cancelled())
+        self.assertTrue(f2.cancelled())
+
+    def test_wrap_future_symmetry4(self):
+        f1 = concurrent.futures.Future()
+        f2 = asyncio.wrap_future(f1, loop=self.loop)
+        f1.cancel()
+        test_utils.run_briefly(self.loop)
+        self.assertTrue(f1.cancelled())
+        self.assertTrue(f2.cancelled())
+
     def test_future_source_traceback(self):
         self.loop.set_debug(True)
 
