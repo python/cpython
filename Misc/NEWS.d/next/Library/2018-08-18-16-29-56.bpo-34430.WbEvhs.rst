@@ -1,0 +1,14 @@
+The two futures chained by :func:`asyncio.future.wrap_future` are now
+symmetrical.
+
+Before, the behaviour was:
+1) When the wrapped future gets a result, the new future gets the same result,
+2) When the new future is cancelled, the wrapped future is cancelled
+
+now, these new behaviours have been implemented:
+3) When the new future gets a result, the wrapped future gets the same result,
+4) When the wrapped future is cancelled, the new future is cancelled
+
+so, the new behaviour is:
+1) When either one future is done, the other is done with the same results or exceptions,
+2) When either one future is cancelled, the other is cancelled.

@@ -288,39 +288,30 @@ def _set_result_unless_cancelled(fut, result):
     fut.set_result(result)
 
 
-def _set_concurrent_future_state(concurrent, source):
-    """Copy state from a future to a concurrent.futures.Future."""
-    assert source.done()
-    if source.cancelled():
-        concurrent.cancel()
-    if not concurrent.set_running_or_notify_cancel():
-        return
-    exception = source.exception()
-    if exception is not None:
-        concurrent.set_exception(exception)
-    else:
-        result = source.result()
-        concurrent.set_result(result)
-
-
 def _copy_future_state(source, dest):
     """Internal helper to copy state from another Future.
 
     The other Future may be a concurrent.futures.Future.
     """
     assert source.done()
-    if dest.cancelled():
-        return
-    assert not dest.done()
-    if source.cancelled():
+
+    if source.cancelled() and not dest.done():
         dest.cancel()
+
+    if isinstance(dest, concurrent.futures.Future):
+        if not dest.set_running_or_notify_cancel():
+            return
+    elif dest.done():
+        return
+
+    assert not dest.done()
+
+    exception = source.exception()
+    if exception is not None:
+        dest.set_exception(exception)
     else:
-        exception = source.exception()
-        if exception is not None:
-            dest.set_exception(exception)
-        else:
-            result = source.result()
-            dest.set_result(result)
+        result = source.result()
+        dest.set_result(result)
 
 
 def _chain_future(source, destination):
@@ -339,31 +330,26 @@ def _chain_future(source, destination):
     source_loop = _get_loop(source) if isfuture(source) else None
     dest_loop = _get_loop(destination) if isfuture(destination) else None
 
-    def _set_state(future, other):
-        if isfuture(future):
-            _copy_future_state(other, future)
+    def _call_set_state(future):
+        if future == source:
+            other = destination 
+            other_loop = dest_loop 
+            future_loop = source_loop
         else:
-            _set_concurrent_future_state(future, other)
+            other = source 
+            other_loop = source_loop 
+            future_loop = dest_loop
 
-    def _call_check_cancel(destination):
-        if destination.cancelled():
-            if source_loop is None or source_loop is dest_loop:
-                source.cancel()
-            else:
-                source_loop.call_soon_threadsafe(source.cancel)
-
-    def _call_set_state(source):
-        if (destination.cancelled() and
-                dest_loop is not None and dest_loop.is_closed()):
+        if other.done():
             return
-        if dest_loop is None or dest_loop is source_loop:
-            _set_state(destination, source)
+
+        if other_loop is None or other_loop is future_loop:
+            _copy_future_state(future, other)
         else:
-            dest_loop.call_soon_threadsafe(_set_state, destination, source)
+            other_loop.call_soon_threadsafe(_copy_future_state, future, other)
 
-    destination.add_done_callback(_call_check_cancel)
+    destination.add_done_callback(_call_set_state)
     source.add_done_callback(_call_set_state)
-
 
 def wrap_future(future, *, loop=None):
     """Wrap concurrent.futures.Future object."""
