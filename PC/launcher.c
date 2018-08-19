@@ -187,7 +187,7 @@ find_existing_python(wchar_t * path)
     INSTALLED_PYTHON * ip;
 
     for (i = 0, ip = installed_pythons; i < num_installed_pythons; i++, ip++) {
-        if (_wcsicmp(path, ip->executable) == 0) {
+        if (!_wcsicmp(path, ip->executable)) {
             result = ip;
             break;
         }
@@ -1603,8 +1603,7 @@ process(int argc, wchar_t ** argv)
         p = argv[1];
         plen = wcslen(p);
         if (argc == 2) {
-            slen = wcslen(L"-0");
-            if(!wcsncmp(p, L"-0", slen)) /* Starts with -0 */
+            if(!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"--list")) /* Starts with -0 or --list */
                 valid = show_python_list(argv); /* Check for -0 FIRST */
         }
         valid = valid && (*p == L'-') && validate_version(&p[1]);
@@ -1638,7 +1637,8 @@ installed, use -0 for available pythons", &p[1]);
     if (!valid) {
         if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help")))
             show_help_text(argv);
-        if ((argc == 2) && (!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"-0p")))
+        if ((argc == 2) && (!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"--list") ||
+                            !_wcsicmp(p, L"-0p") || !_wcsicmp(p, L"--list-paths")))
             executable = NULL; /* Info call only */
         else
         {
