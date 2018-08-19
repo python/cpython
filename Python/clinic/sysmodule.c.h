@@ -2,29 +2,29 @@
 preserve
 [clinic start generated code]*/
 
-PyDoc_STRVAR(sys_isinterned__doc__,
-"isinterned($module, string, /)\n"
+PyDoc_STRVAR(sys__is_interned__doc__,
+"_is_interned($module, string, /)\n"
 "--\n"
 "\n"
 "Return True if the given string is \"interned\".");
 
-#define SYS_ISINTERNED_METHODDEF    \
-    {"isinterned", (PyCFunction)sys_isinterned, METH_O, sys_isinterned__doc__},
+#define SYS__IS_INTERNED_METHODDEF    \
+    {"_is_interned", (PyCFunction)sys__is_interned, METH_O, sys__is_interned__doc__},
 
 static int
-sys_isinterned_impl(PyObject *module, PyObject *string);
+sys__is_interned_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-sys_isinterned(PyObject *module, PyObject *arg)
+sys__is_interned(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *string;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "U:isinterned", &string)) {
+    if (!PyArg_Parse(arg, "U:_is_interned", &string)) {
         goto exit;
     }
-    _return_value = sys_isinterned_impl(module, string);
+    _return_value = sys__is_interned_impl(module, string);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -95,4 +95,4 @@ sys_get_coroutine_origin_tracking_depth(PyObject *module, PyObject *Py_UNUSED(ig
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=68a9c05a9862af2d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=95761ded68d29915 input=a9049054013a1b77]*/

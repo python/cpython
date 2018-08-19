@@ -504,18 +504,25 @@ class SysModuleTest(unittest.TestCase):
     def test_intern(self):
         global numruns
         numruns += 1
+        has_is_interned = (test.support.check_impl_detail(cpython=True)
+                           or hasattr(sys, '_is_interned'))
         self.assertRaises(TypeError, sys.intern)
         self.assertRaises(TypeError, sys.intern, b'abc')
-        self.assertRaises(TypeError, sys.isinterned)
-        self.assertRaises(TypeError, sys.isinterned, b'abc')
+        if has_is_interned:
+            self.assertRaises(TypeError, sys._is_interned)
+            self.assertRaises(TypeError, sys._is_interned, b'abc')
         s = "never interned before" + str(numruns)
-        self.assertIs(sys.isinterned(s), False)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s), False)
         self.assertTrue(sys.intern(s) is s)
-        self.assertIs(sys.isinterned(s), True)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s), True)
         s2 = s.swapcase().swapcase()
-        self.assertIs(sys.isinterned(s2), False)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s2), False)
         self.assertTrue(sys.intern(s2) is s)
-        self.assertIs(sys.isinterned(s2), False)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s2), False)
 
         # Subclasses of string can't be interned, because they
         # provide too much opportunity for insane things to happen.
@@ -527,7 +534,8 @@ class SysModuleTest(unittest.TestCase):
                 return 123
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
-        self.assertIs(sys.isinterned(S("abc")), False)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(S("abc")), False)
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)

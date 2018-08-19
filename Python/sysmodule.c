@@ -448,7 +448,7 @@ same value.");
 
 
 /*[clinic input]
-sys.isinterned -> bool
+sys._is_interned -> bool
 
   string: unicode
   /
@@ -457,8 +457,8 @@ Return True if the given string is "interned".
 [clinic start generated code]*/
 
 static int
-sys_isinterned_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=0364c3f36499f868 input=2fe09bef8edf732e]*/
+sys__is_interned_impl(PyObject *module, PyObject *string)
+/*[clinic end generated code: output=c3678267b4e9d7ed input=039843e17883b606]*/
 {
     return PyUnicode_CHECK_INTERNED(string);
 }
@@ -1574,7 +1574,7 @@ static PyMethodDef sys_methods[] = {
      METH_NOARGS, enablelegacywindowsfsencoding_doc },
 #endif /* MS_WINDOWS */
     {"intern",          sys_intern,     METH_VARARGS, intern_doc},
-    SYS_ISINTERNED_METHODDEF
+    SYS__IS_INTERNED_METHODDEF
     {"is_finalizing",   sys_is_finalizing, METH_NOARGS, is_finalizing_doc},
 #ifdef USE_MALLOPT
     {"mdebug",          sys_mdebug, METH_VARARGS},
