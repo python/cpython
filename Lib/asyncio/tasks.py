@@ -701,12 +701,14 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                 # Check if 'fut' is cancelled first, as
                 # 'fut.exception()' will *raise* a CancelledError
                 # instead of returning it.
+                outer.cancel()
                 exc = futures.CancelledError()
                 outer.set_exception(exc)
                 return
             else:
                 exc = fut.exception()
                 if exc is not None:
+                    outer.cancel()
                     outer.set_exception(exc)
                     return
 
