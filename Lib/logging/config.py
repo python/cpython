@@ -112,11 +112,15 @@ def _create_formatters(cp):
         fs = cp.get(sectname, "format", raw=True, fallback=None)
         dfs = cp.get(sectname, "datefmt", raw=True, fallback=None)
         stl = cp.get(sectname, "style", raw=True, fallback='%')
+        args = section.get("args", '()')
+        args = eval(args, vars(logging))
+        kwargs = section.get("kwargs", '{}')
+        kwargs = eval(kwargs, vars(logging))
         c = logging.Formatter
         class_name = cp[sectname].get("class")
         if class_name:
             c = _resolve(class_name)
-        f = c(fs, dfs, stl)
+        f = c(fs, dfs, stl, *args, **kwargs)
         formatters[form] = f
     return formatters
 
