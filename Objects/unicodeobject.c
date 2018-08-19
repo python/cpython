@@ -6813,8 +6813,6 @@ unicode_encode_ucs1(PyObject *unicode,
                     str = _PyBytesWriter_WriteBytes(&writer, str,
                                                     PyBytes_AS_STRING(rep),
                                                     PyBytes_GET_SIZE(rep));
-                    if (str == NULL)
-                        goto onError;
                 }
                 else {
                     assert(PyUnicode_Check(rep));
@@ -6836,6 +6834,9 @@ unicode_encode_ucs1(PyObject *unicode,
                                                     PyUnicode_DATA(rep),
                                                     PyUnicode_GET_LENGTH(rep));
                 }
+                if (str == NULL)
+                    goto onError;
+
                 pos = newpos;
                 Py_CLEAR(rep);
             }
