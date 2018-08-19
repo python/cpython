@@ -115,6 +115,19 @@ now return ``False`` instead of raising :exc:`ValueError` or its subclasses
 characters or bytes unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+pathlib
+-------
+
+:mod:`pathlib.Path` methods that return a boolean result like
+:meth:`~pathlib.Path.exists()`, :meth:`~pathlib.Path.is_dir()`,
+:meth:`~pathlib.Path.is_file()`, :meth:`~pathlib.Path.is_mount()`,
+:meth:`~pathlib.Path.is_symlink()`, :meth:`~pathlib.Path.is_block_device()`,
+:meth:`~pathlib.Path.is_char_device()`, :meth:`~pathlib.Path.is_fifo()`,
+:meth:`~pathlib.Path.is_socket()` now return ``False`` instead of raising
+:exc:`ValueError` or its subclass :exc:`UnicodeEncodeError` for paths that
+contain characters unrepresentable at the OS level.
+(Contributed by Serhiy Storchaka in :issue:`33721`.)
+
 
 Optimizations
 =============

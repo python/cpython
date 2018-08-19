@@ -7,7 +7,7 @@ import posixpath
 import re
 import sys
 from _collections_abc import Sequence
-from errno import EINVAL, ENOENT, ENOTDIR
+from errno import EINVAL
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
@@ -1318,9 +1318,7 @@ class Path(PurePath):
         """
         try:
             self.stat()
-        except OSError as e:
-            if e.errno not in (ENOENT, ENOTDIR):
-                raise
+        except (FileNotFoundError, NotADirectoryError, ValueError):
             return False
         return True
 
@@ -1330,9 +1328,7 @@ class Path(PurePath):
         """
         try:
             return S_ISDIR(self.stat().st_mode)
-        except OSError as e:
-            if e.errno not in (ENOENT, ENOTDIR):
-                raise
+        except (FileNotFoundError, NotADirectoryError, ValueError):
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
             return False
@@ -1344,9 +1340,7 @@ class Path(PurePath):
         """
         try:
             return S_ISREG(self.stat().st_mode)
-        except OSError as e:
-            if e.errno not in (ENOENT, ENOTDIR):
-                raise
+        except (FileNotFoundError, NotADirectoryError, ValueError):
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
             return False
@@ -1378,9 +1372,7 @@ class Path(PurePath):
         """
         try:
             return S_ISLNK(self.lstat().st_mode)
-        except OSError as e:
-            if e.errno not in (ENOENT, ENOTDIR):
-                raise
+        except (FileNotFoundError, NotADirectoryError, ValueError):
             # Path doesn't exist
             return False
 
@@ -1390,9 +1382,7 @@ class Path(PurePath):
         """
         try:
             return S_ISBLK(self.stat().st_mode)
-        except OSError as e:
-            if e.errno not in (ENOENT, ENOTDIR):
-                raise
+        except (FileNotFoundError, NotADirectoryError, ValueError):
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
             return False
@@ -1403,9 +1393,7 @@ class Path(PurePath):
         """
         try:
             return S_ISCHR(self.stat().st_mode)
-        except OSError as e:
-            if e.errno not in (ENOENT, ENOTDIR):
-                raise
+        except (FileNotFoundError, NotADirectoryError, ValueError):
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
             return False
@@ -1416,9 +1404,7 @@ class Path(PurePath):
         """
         try:
             return S_ISFIFO(self.stat().st_mode)
-        except OSError as e:
-            if e.errno not in (ENOENT, ENOTDIR):
-                raise
+        except (FileNotFoundError, NotADirectoryError, ValueError):
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
             return False
@@ -1429,9 +1415,7 @@ class Path(PurePath):
         """
         try:
             return S_ISSOCK(self.stat().st_mode)
-        except OSError as e:
-            if e.errno not in (ENOENT, ENOTDIR):
-                raise
+        except (FileNotFoundError, NotADirectoryError, ValueError):
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
             return False

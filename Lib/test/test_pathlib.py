@@ -1341,6 +1341,8 @@ class _BasePathTest(object):
             self.assertIs(False, (p / 'linkA' / 'bah').exists())
         self.assertIs(False, (p / 'foo').exists())
         self.assertIs(False, P('/xyzzy').exists())
+        self.assertIs(False, P(BASE + '\udfff').exists())
+        self.assertIs(False, P(BASE + '\x00').exists())
 
     def test_open_common(self):
         p = self.cls(BASE)
@@ -1865,7 +1867,9 @@ class _BasePathTest(object):
         if support.can_symlink():
             self.assertFalse((P / 'linkA').is_dir())
             self.assertTrue((P / 'linkB').is_dir())
-            self.assertFalse((P/ 'brokenLink').is_dir())
+            self.assertFalse((P/ 'brokenLink').is_dir(), False)
+        self.assertIs((P / 'dirA\udfff').is_dir(), False)
+        self.assertIs((P / 'dirA\x00').is_dir(), False)
 
     def test_is_file(self):
         P = self.cls(BASE)
@@ -1877,6 +1881,8 @@ class _BasePathTest(object):
             self.assertTrue((P / 'linkA').is_file())
             self.assertFalse((P / 'linkB').is_file())
             self.assertFalse((P/ 'brokenLink').is_file())
+        self.assertIs((P / 'fileA\udfff').is_file(), False)
+        self.assertIs((P / 'fileA\x00').is_file(), False)
 
     @only_posix
     def test_is_mount(self):
@@ -1889,6 +1895,8 @@ class _BasePathTest(object):
         self.assertTrue(R.is_mount())
         if support.can_symlink():
             self.assertFalse((P / 'linkA').is_mount())
+        self.assertIs(self.cls('/\udfff').is_mount(), False)
+        self.assertIs(self.cls('/\x00').is_mount(), False)
 
     def test_is_symlink(self):
         P = self.cls(BASE)
@@ -1900,6 +1908,11 @@ class _BasePathTest(object):
             self.assertTrue((P / 'linkA').is_symlink())
             self.assertTrue((P / 'linkB').is_symlink())
             self.assertTrue((P/ 'brokenLink').is_symlink())
+        self.assertIs((P / 'fileA\udfff').is_file(), False)
+        self.assertIs((P / 'fileA\x00').is_file(), False)
+        if support.can_symlink():
+            self.assertIs((P / 'linkA\udfff').is_file(), False)
+            self.assertIs((P / 'linkA\x00').is_file(), False)
 
     def test_is_fifo_false(self):
         P = self.cls(BASE)
@@ -1907,6 +1920,8 @@ class _BasePathTest(object):
         self.assertFalse((P / 'dirA').is_fifo())
         self.assertFalse((P / 'non-existing').is_fifo())
         self.assertFalse((P / 'fileA' / 'bah').is_fifo())
+        self.assertIs((P / 'fileA\udfff').is_fifo(), False)
+        self.assertIs((P / 'fileA\x00').is_fifo(), False)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
     def test_is_fifo_true(self):
@@ -1918,6 +1933,8 @@ class _BasePathTest(object):
         self.assertTrue(P.is_fifo())
         self.assertFalse(P.is_socket())
         self.assertFalse(P.is_file())
+        self.assertIs(self.cls(BASE, 'myfifo\udfff').is_fifo(), False)
+        self.assertIs(self.cls(BASE, 'myfifo\x00').is_fifo(), False)
 
     def test_is_socket_false(self):
         P = self.cls(BASE)
@@ -1925,6 +1942,8 @@ class _BasePathTest(object):
         self.assertFalse((P / 'dirA').is_socket())
         self.assertFalse((P / 'non-existing').is_socket())
         self.assertFalse((P / 'fileA' / 'bah').is_socket())
+        self.assertIs((P / 'fileA\udfff').is_socket(), False)
+        self.assertIs((P / 'fileA\x00').is_socket(), False)
 
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
     def test_is_socket_true(self):
@@ -1940,6 +1959,8 @@ class _BasePathTest(object):
         self.assertTrue(P.is_socket())
         self.assertFalse(P.is_fifo())
         self.assertFalse(P.is_file())
+        self.assertIs(self.cls(BASE, 'mysock\udfff').is_socket(), False)
+        self.assertIs(self.cls(BASE, 'mysock\x00').is_socket(), False)
 
     def test_is_block_device_false(self):
         P = self.cls(BASE)
@@ -1947,6 +1968,8 @@ class _BasePathTest(object):
         self.assertFalse((P / 'dirA').is_block_device())
         self.assertFalse((P / 'non-existing').is_block_device())
         self.assertFalse((P / 'fileA' / 'bah').is_block_device())
+        self.assertIs((P / 'fileA\udfff').is_block_device(), False)
+        self.assertIs((P / 'fileA\x00').is_block_device(), False)
 
     def test_is_char_device_false(self):
         P = self.cls(BASE)
@@ -1954,6 +1977,8 @@ class _BasePathTest(object):
         self.assertFalse((P / 'dirA').is_char_device())
         self.assertFalse((P / 'non-existing').is_char_device())
         self.assertFalse((P / 'fileA' / 'bah').is_char_device())
+        self.assertIs((P / 'fileA\udfff').is_char_device(), False)
+        self.assertIs((P / 'fileA\x00').is_char_device(), False)
 
     def test_is_char_device_true(self):
         # Under Unix, /dev/null should generally be a char device
@@ -1963,6 +1988,8 @@ class _BasePathTest(object):
         self.assertTrue(P.is_char_device())
         self.assertFalse(P.is_block_device())
         self.assertFalse(P.is_file())
+        self.assertIs(self.cls('/dev/null\udfff').is_char_device(), False)
+        self.assertIs(self.cls('/dev/null\x00').is_char_device(), False)
 
     def test_pickling_common(self):
         p = self.cls(BASE, 'fileA')
