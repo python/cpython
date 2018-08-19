@@ -157,16 +157,11 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
             if not _is_subtype(self.expected, self._base_type):
                 raise TypeError('%s() arg 1 must be %s' %
                                 (name, self._base_type_str))
-            if args and args[0] is None:
-                warnings.warn("callable is None",
-                              DeprecationWarning, 3)
-                args = ()
             if not args:
                 self.msg = kwargs.pop('msg', None)
                 if kwargs:
-                    warnings.warn('%r is an invalid keyword argument for '
-                                  'this function' % next(iter(kwargs)),
-                                  DeprecationWarning, 3)
+                    raise TypeError('%r is an invalid keyword argument for '
+                                    'this function' % (next(iter(kwargs)),))
                 return self
 
             callable_obj, *args = args
