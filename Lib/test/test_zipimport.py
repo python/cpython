@@ -551,7 +551,12 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             z.writestr(name, data)
             z.close()
             zi = zipimport.zipimporter(TEMP_ZIP)
-            self.assertEqual(data, zi.get_data(FunnyStr(name)))
+            try:
+                data2 = zi.get_data(FunnyStr(name))
+            except AttributeError:
+                pass
+            else:
+                self.assertEqual(data2, data)
         finally:
             z.close()
             os.remove(TEMP_ZIP)

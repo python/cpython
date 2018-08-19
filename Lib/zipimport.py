@@ -69,8 +69,9 @@ class zipimporter:
         while True:
             try:
                 st = _bootstrap_external._path_stat(path)
-            except OSError:
-                # back up one path element
+            except (OSError, ValueError):
+                # On Windows a ValueError is raised for too long paths.
+                # Back up one path element.
                 dirname, basename = _bootstrap_external._path_split(path)
                 if dirname == path:
                     raise ZipImportError('not a Zip file', path=path)
@@ -164,10 +165,9 @@ class zipimporter:
         if alt_path_sep:
             pathname = pathname.replace(alt_path_sep, path_sep)
 
-        len1 = len(self.archive)
         key = pathname
-        if pathname.startswith(self.archive) and pathname[len1] == path_sep:
-            key = pathname[len1 + 1:]
+        if pathname.startswith(self.archive + path_sep):
+            key = pathname[len(self.archive + path_sep):]
 
         try:
             toc_entry = self._files[key]
