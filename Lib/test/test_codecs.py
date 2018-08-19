@@ -1020,6 +1020,7 @@ class UTF7Test(ReadTest, unittest.TestCase):
             (b'a+////,+IKw-b', 'a\uffff\ufffd\u20acb'),
             (b'a+IKw-b\xff', 'a\u20acb\ufffd'),
             (b'a+IKw\xffb', 'a\u20ac\ufffdb'),
+            (b'a+@b', 'a\ufffdb'),
         ]
         for raw, expected in tests:
             with self.subTest(raw=raw):
