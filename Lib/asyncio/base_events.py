@@ -63,6 +63,9 @@ _FATAL_ERROR_IGNORE = (BrokenPipeError,
 
 _HAS_IPv6 = hasattr(socket, 'AF_INET6')
 
+# Maximum timeout passed to select to avoid OS limitations
+MAXIMUM_SELECT_TIMEOUT = 24 * 3600
+
 
 def _format_handle(handle):
     cb = handle._callback
@@ -381,18 +384,20 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create a Future object attached to the loop."""
         return futures.Future(loop=self)
 
-    def create_task(self, coro):
+    def create_task(self, coro, *, name=None):
         """Schedule a coroutine object.
 
         Return a task object.
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self)
+            task = tasks.Task(coro, loop=self, name=name)
             if task._source_traceback:
                 del task._source_traceback[-1]
         else:
             task = self._task_factory(self, coro)
+            tasks._set_task_name(task, name)
+
         return task
 
     def set_task_factory(self, factory):
@@ -741,6 +746,12 @@ class BaseEventLoop(events.AbstractEventLoop):
             executor.submit(func, *args), loop=self)
 
     def set_default_executor(self, executor):
+        if not isinstance(executor, concurrent.futures.ThreadPoolExecutor):
+            warnings.warn(
+                'Using the default executor that is not an instance of '
+                'ThreadPoolExecutor is deprecated and will be prohibited '
+                'in Python 3.9',
+                DeprecationWarning, 2)
         self._default_executor = executor
 
     def _getaddrinfo_debug(self, host, port, family, type, proto, flags):
@@ -1702,7 +1713,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         elif self._scheduled:
             # Compute the desired timeout.
             when = self._scheduled[0]._when
-            timeout = max(0, when - self.time())
+            timeout = min(max(0, when - self.time()), MAXIMUM_SELECT_TIMEOUT)
 
         if self._debug and timeout != 0:
             t0 = self.time()

@@ -92,7 +92,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     PyCompilerFlags local_flags;
     int nomem_count = 0;
 #ifdef Py_REF_DEBUG
-    int show_ref_count = PyThreadState_GET()->interp->core_config.show_ref_count;
+    int show_ref_count = _PyInterpreterState_Get()->core_config.show_ref_count;
 #endif
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
@@ -336,17 +336,13 @@ maybe_pyc_file(FILE *fp, const char* filename, const char* ext, int closeit)
 static int
 set_main_loader(PyObject *d, const char *filename, const char *loader_name)
 {
-    PyInterpreterState *interp;
-    PyThreadState *tstate;
     PyObject *filename_obj, *bootstrap, *loader_type = NULL, *loader;
     int result = 0;
 
     filename_obj = PyUnicode_DecodeFSDefault(filename);
     if (filename_obj == NULL)
         return -1;
-    /* Get current thread state and interpreter pointer */
-    tstate = PyThreadState_GET();
-    interp = tstate->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     bootstrap = PyObject_GetAttrString(interp->importlib,
                                        "_bootstrap_external");
     if (bootstrap != NULL) {

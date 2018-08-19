@@ -1,5 +1,6 @@
 """Tests for base_events.py"""
 
+import concurrent.futures
 import errno
 import logging
 import math
@@ -211,9 +212,20 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertFalse(self.loop._ready)
 
     def test_set_default_executor(self):
-        executor = mock.Mock()
+        class DummyExecutor(concurrent.futures.ThreadPoolExecutor):
+            def submit(self, fn, *args, **kwargs):
+                raise NotImplementedError(
+                    'cannot submit into a dummy executor')
+
+        executor = DummyExecutor()
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
+
+    def test_set_default_executor_deprecation_warnings(self):
+        executor = mock.Mock()
+
+        with self.assertWarns(DeprecationWarning):
+            self.loop.set_default_executor(executor)
 
     def test_call_soon(self):
         def cb():
@@ -812,6 +824,34 @@ class BaseEventLoopTests(test_utils.TestCase):
         # make warnings quiet
         task._log_destroy_pending = False
         coro.close()
+
+    def test_create_named_task_with_default_factory(self):
+        async def test():
+            pass
+
+        loop = asyncio.new_event_loop()
+        task = loop.create_task(test(), name='test_task')
+        try:
+            self.assertEqual(task.get_name(), 'test_task')
+        finally:
+            loop.run_until_complete(task)
+            loop.close()
+
+    def test_create_named_task_with_custom_factory(self):
+        def task_factory(loop, coro):
+            return asyncio.Task(coro, loop=loop)
+
+        async def test():
+            pass
+
+        loop = asyncio.new_event_loop()
+        loop.set_task_factory(task_factory)
+        task = loop.create_task(test(), name='test_task')
+        try:
+            self.assertEqual(task.get_name(), 'test_task')
+        finally:
+            loop.run_until_complete(task)
+            loop.close()
 
     def test_run_forever_keyboard_interrupt(self):
         # Python issue #22601: ensure that the temporary task created by

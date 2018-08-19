@@ -13,6 +13,7 @@ import concurrent.futures
 import contextvars
 import functools
 import inspect
+import itertools
 import types
 import warnings
 import weakref
@@ -22,6 +23,11 @@ from . import coroutines
 from . import events
 from . import futures
 from .coroutines import coroutine
+
+# Helper to generate new task names
+# This uses itertools.count() instead of a "+= 1" operation because the latter
+# is not thread safe. See bpo-11866 for a longer explanation.
+_task_name_counter = itertools.count(1).__next__
 
 
 def current_task(loop=None):
@@ -46,6 +52,16 @@ def _all_tasks_compat(loop=None):
     if loop is None:
         loop = events.get_event_loop()
     return {t for t in _all_tasks if futures._get_loop(t) is loop}
+
+
+def _set_task_name(task, name):
+    if name is not None:
+        try:
+            set_name = task.set_name
+        except AttributeError:
+            pass
+        else:
+            set_name(name)
 
 
 class Task(futures._PyFuture):  # Inherit Python Task implementation
@@ -94,7 +110,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                       stacklevel=2)
         return _all_tasks_compat(loop)
 
-    def __init__(self, coro, *, loop=None):
+    def __init__(self, coro, *, loop=None, name=None):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -103,6 +119,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             # prevent logging for pending task in __del__
             self._log_destroy_pending = False
             raise TypeError(f"a coroutine was expected, got {coro!r}")
+
+        if name is None:
+            self._name = f'Task-{_task_name_counter()}'
+        else:
+            self._name = str(name)
 
         self._must_cancel = False
         self._fut_waiter = None
@@ -125,6 +146,12 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
+
+    def get_name(self):
+        return self._name
+
+    def set_name(self, value):
+        self._name = str(value)
 
     def set_result(self, result):
         raise RuntimeError('Task does not support set_result operation')
@@ -312,13 +339,15 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro):
+def create_task(coro, *, name=None):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
     """
     loop = events.get_running_loop()
-    return loop.create_task(coro)
+    task = loop.create_task(coro)
+    _set_task_name(task, name)
+    return task
 
 
 # wait() and as_completed() similar to those in PEP 3148.

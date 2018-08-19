@@ -2031,49 +2031,199 @@ math_fmod_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(r);
 }
 
+/*
+Given an *n* length *vec* of non-negative values
+where *max* is the largest value in the vector, compute:
+
+    max * sqrt(sum((x / max) ** 2 for x in vec))
+
+When a maximum value is found, it is swapped to the end.  This
+lets us skip one loop iteration and just add 1.0 at the end.
+Saving the largest value for last also helps improve accuracy.
+
+Kahan summation is used to improve accuracy.  The *csum*
+variable tracks the cumulative sum and *frac* tracks
+fractional round-off error for the most recent addition.
+
+The value of the *max* variable must be present in *vec*
+or should equal to 0.0 when n==0.  Likewise, *max* will
+be INF if an infinity is present in the vec.
+
+The *found_nan* variable indicates whether some member of
+the *vec* is a NaN.
+*/
+
+static inline double
+vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
+{
+    double x, csum = 0.0, oldcsum, frac = 0.0, last;
+    Py_ssize_t i;
+
+    if (Py_IS_INFINITY(max)) {
+        return max;
+    }
+    if (found_nan) {
+        return Py_NAN;
+    }
+    if (max == 0.0) {
+        return 0.0;
+    }
+    assert(n > 0);
+    last = vec[n-1];
+    for (i=0 ; i < n-1 ; i++) {
+        x = vec[i];
+        assert(Py_IS_FINITE(x) && x >= 0.0 && x <= max);
+        if (x == max) {
+            x = last;
+            last = max;
+        }
+        x /= max;
+        x = x*x - frac;
+        oldcsum = csum;
+        csum += x;
+        frac = (csum - oldcsum) - x;
+    }
+    assert(last == max);
+    csum += 1.0 - frac;
+    return max * sqrt(csum);
+}
+
+#define NUM_STACK_ELEMS 16
 
 /*[clinic input]
-math.hypot
+math.dist
 
-    x: double
-    y: double
+    p: object(subclass_of='&PyTuple_Type')
+    q: object(subclass_of='&PyTuple_Type')
     /
 
-Return the Euclidean distance, sqrt(x*x + y*y).
+Return the Euclidean distance between two points p and q.
+
+The points should be specified as tuples of coordinates.
+Both tuples must be the same size.
+
+Roughly equivalent to:
+    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
 [clinic start generated code]*/
 
 static PyObject *
-math_hypot_impl(PyObject *module, double x, double y)
-/*[clinic end generated code: output=b7686e5be468ef87 input=7f8eea70406474aa]*/
+math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
+/*[clinic end generated code: output=56bd9538d06bbcfe input=937122eaa5f19272]*/
 {
-    double r;
-    /* hypot(x, +/-Inf) returns Inf, even if x is a NaN. */
-    if (Py_IS_INFINITY(x))
-        return PyFloat_FromDouble(fabs(x));
-    if (Py_IS_INFINITY(y))
-        return PyFloat_FromDouble(fabs(y));
-    errno = 0;
-    PyFPE_START_PROTECT("in math_hypot", return 0);
-    r = hypot(x, y);
-    PyFPE_END_PROTECT(r);
-    if (Py_IS_NAN(r)) {
-        if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
-            errno = EDOM;
-        else
-            errno = 0;
-    }
-    else if (Py_IS_INFINITY(r)) {
-        if (Py_IS_FINITE(x) && Py_IS_FINITE(y))
-            errno = ERANGE;
-        else
-            errno = 0;
-    }
-    if (errno && is_error(r))
+    PyObject *item;
+    double max = 0.0;
+    double x, px, qx, result;
+    Py_ssize_t i, m, n;
+    int found_nan = 0;
+    double diffs_on_stack[NUM_STACK_ELEMS];
+    double *diffs = diffs_on_stack;
+
+    m = PyTuple_GET_SIZE(p);
+    n = PyTuple_GET_SIZE(q);
+    if (m != n) {
+        PyErr_SetString(PyExc_ValueError,
+                        "both points must have the same number of dimensions");
         return NULL;
-    else
-        return PyFloat_FromDouble(r);
+
+    }
+    if (n > NUM_STACK_ELEMS) {
+        diffs = (double *) PyObject_Malloc(n * sizeof(double));
+        if (diffs == NULL) {
+            return NULL;
+        }
+    }
+    for (i=0 ; i<n ; i++) {
+        item = PyTuple_GET_ITEM(p, i);
+        px = PyFloat_AsDouble(item);
+        if (px == -1.0 && PyErr_Occurred()) {
+            goto error_exit;
+        }
+        item = PyTuple_GET_ITEM(q, i);
+        qx = PyFloat_AsDouble(item);
+        if (qx == -1.0 && PyErr_Occurred()) {
+            goto error_exit;
+        }
+        x = fabs(px - qx);
+        diffs[i] = x;
+        found_nan |= Py_IS_NAN(x);
+        if (x > max) {
+            max = x;
+        }
+    }
+    result = vector_norm(n, diffs, max, found_nan);
+    if (diffs != diffs_on_stack) {
+        PyObject_Free(diffs);
+    }
+    return PyFloat_FromDouble(result);
+
+  error_exit:
+    if (diffs != diffs_on_stack) {
+        PyObject_Free(diffs);
+    }
+    return NULL;
 }
 
+/* AC: cannot convert yet, waiting for *args support */
+static PyObject *
+math_hypot(PyObject *self, PyObject *args)
+{
+    Py_ssize_t i, n;
+    PyObject *item;
+    double max = 0.0;
+    double x, result;
+    int found_nan = 0;
+    double coord_on_stack[NUM_STACK_ELEMS];
+    double *coordinates = coord_on_stack;
+
+    n = PyTuple_GET_SIZE(args);
+    if (n > NUM_STACK_ELEMS) {
+        coordinates = (double *) PyObject_Malloc(n * sizeof(double));
+        if (coordinates == NULL)
+            return NULL;
+    }
+    for (i=0 ; i<n ; i++) {
+        item = PyTuple_GET_ITEM(args, i);
+        x = PyFloat_AsDouble(item);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto error_exit;
+        }
+        x = fabs(x);
+        coordinates[i] = x;
+        found_nan |= Py_IS_NAN(x);
+        if (x > max) {
+            max = x;
+        }
+    }
+    result = vector_norm(n, coordinates, max, found_nan);
+    if (coordinates != coord_on_stack) {
+        PyObject_Free(coordinates);
+    }
+    return PyFloat_FromDouble(result);
+
+  error_exit:
+    if (coordinates != coord_on_stack) {
+        PyObject_Free(coordinates);
+    }
+    return NULL;
+}
+
+#undef NUM_STACK_ELEMS
+
+PyDoc_STRVAR(math_hypot_doc,
+             "hypot(*coordinates) -> value\n\n\
+Multidimensional Euclidean distance from the origin to a point.\n\
+\n\
+Roughly equivalent to:\n\
+    sqrt(sum(x**2 for x in coordinates))\n\
+\n\
+For a two dimensional point (x, y), gives the hypotenuse\n\
+using the Pythagorean theorem:  sqrt(x*x + y*y).\n\
+\n\
+For example, the hypotenuse of a 3/4/5 right triangle is:\n\
+\n\
+    >>> hypot(3.0, 4.0)\n\
+    5.0\n\
+");
 
 /* pow can't use math_2, but needs its own wrapper: the problem is
    that an infinite result can arise either as a result of overflow
@@ -2333,6 +2483,7 @@ static PyMethodDef math_methods[] = {
     {"cos",             math_cos,       METH_O,         math_cos_doc},
     {"cosh",            math_cosh,      METH_O,         math_cosh_doc},
     MATH_DEGREES_METHODDEF
+    MATH_DIST_METHODDEF
     {"erf",             math_erf,       METH_O,         math_erf_doc},
     {"erfc",            math_erfc,      METH_O,         math_erfc_doc},
     {"exp",             math_exp,       METH_O,         math_exp_doc},
@@ -2345,7 +2496,7 @@ static PyMethodDef math_methods[] = {
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
     MATH_GCD_METHODDEF
-    MATH_HYPOT_METHODDEF
+    {"hypot",           math_hypot,     METH_VARARGS,   math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF

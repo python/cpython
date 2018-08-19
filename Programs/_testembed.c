@@ -306,7 +306,7 @@ dump_config(void)
         exit(1); \
     }
 
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     _PyCoreConfig *config = &interp->core_config;
 
     printf("install_signal_handlers = %i\n", config->install_signal_handlers);
@@ -335,7 +335,17 @@ dump_config(void)
     printf("pycache_prefix = %ls\n", config->pycache_prefix);
     printf("program_name = %ls\n", config->program_name);
     ASSERT_STR_EQUAL(config->program_name, Py_GetProgramName());
-    /* FIXME: test argc/argv */
+
+    printf("argc = %i\n", config->argc);
+    printf("argv = [");
+    for (int i=0; i < config->argc; i++) {
+        if (i) {
+            printf(", ");
+        }
+        printf("\"%ls\"", config->argv[i]);
+    }
+    printf("]\n");
+
     printf("program = %ls\n", config->program);
     /* FIXME: test xoptions */
     /* FIXME: test warnoptions */
@@ -356,18 +366,21 @@ dump_config(void)
     printf("inspect = %i\n", config->inspect);
     printf("interactive = %i\n", config->interactive);
     printf("optimization_level = %i\n", config->optimization_level);
-    printf("debug = %i\n", config->debug);
+    printf("parser_debug = %i\n", config->parser_debug);
     printf("write_bytecode = %i\n", config->write_bytecode);
     printf("verbose = %i\n", config->verbose);
     ASSERT_EQUAL(config->verbose, Py_VerboseFlag);
     printf("quiet = %i\n", config->quiet);
     printf("user_site_directory = %i\n", config->user_site_directory);
-    printf("unbuffered_stdio = %i\n", config->unbuffered_stdio);
+    printf("buffered_stdio = %i\n", config->buffered_stdio);
+    ASSERT_EQUAL(config->buffered_stdio, !Py_UnbufferedStdioFlag);
+
     /* FIXME: test legacy_windows_fs_encoding */
     /* FIXME: test legacy_windows_stdio */
 
     printf("_install_importlib = %i\n", config->_install_importlib);
     printf("_check_hash_pycs_mode = %s\n", config->_check_hash_pycs_mode);
+    printf("_frozen = %i\n", config->_frozen);
 
 #undef ASSERT_EQUAL
 #undef ASSERT_STR_EQUAL
@@ -420,10 +433,10 @@ static int test_init_global_config(void)
     putenv("PYTHONUNBUFFERED=");
     Py_UnbufferedStdioFlag = 1;
 
+    Py_FrozenFlag = 1;
+
     /* FIXME: test Py_LegacyWindowsFSEncodingFlag */
     /* FIXME: test Py_LegacyWindowsStdioFlag */
-
-    /* _Py_CheckHashBasedPycsMode is not public, and so not tested */
 
     Py_Initialize();
     dump_config();
@@ -506,7 +519,7 @@ static int test_init_from_config(void)
     Py_OptimizeFlag = 1;
     config.optimization_level = 2;
 
-    /* FIXME: test debug */
+    /* FIXME: test parser_debug */
 
     putenv("PYTHONDONTWRITEBYTECODE=");
     Py_DontWriteBytecodeFlag = 0;
@@ -517,13 +530,16 @@ static int test_init_from_config(void)
 
     putenv("PYTHONUNBUFFERED=");
     Py_UnbufferedStdioFlag = 0;
-    config.unbuffered_stdio = 1;
+    config.buffered_stdio = 0;
 
     putenv("PYTHONNOUSERSITE=");
     Py_NoUserSiteDirectory = 0;
     config.user_site_directory = 0;
 
     config._check_hash_pycs_mode = "always";
+
+    Py_FrozenFlag = 0;
+    config._frozen = 1;
 
     _PyInitError err = _Py_InitializeFromConfig(&config);
     /* Don't call _PyCoreConfig_Clear() since all strings are static */

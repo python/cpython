@@ -372,7 +372,7 @@ calculate_prefix(const _PyCoreConfig *core_config,
 {
     calculate->prefix_found = search_for_prefix(core_config, calculate, prefix);
     if (!calculate->prefix_found) {
-        if (!Py_FrozenFlag) {
+        if (!core_config->_frozen) {
             fprintf(stderr,
                 "Could not find platform independent libraries <prefix>\n");
         }
@@ -495,7 +495,7 @@ calculate_exec_prefix(const _PyCoreConfig *core_config,
                                                           calculate,
                                                           exec_prefix);
     if (!calculate->exec_prefix_found) {
-        if (!Py_FrozenFlag) {
+        if (!core_config->_frozen) {
             fprintf(stderr,
                 "Could not find platform dependent libraries <exec_prefix>\n");
         }
@@ -915,7 +915,7 @@ calculate_path_impl(const _PyCoreConfig *core_config,
     calculate_exec_prefix(core_config, calculate, exec_prefix);
 
     if ((!calculate->prefix_found || !calculate->exec_prefix_found) &&
-        !Py_FrozenFlag)
+        !core_config->_frozen)
     {
         fprintf(stderr,
                 "Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]\n");
