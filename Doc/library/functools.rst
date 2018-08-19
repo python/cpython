@@ -45,7 +45,12 @@ The :mod:`functools` module defines the following functions:
 
    .. note::
 
-      This decorator does not support classes which define ``__slots__``.
+      This decorator requires that the ``__dict__`` attribute on each instance
+      be a mutable mapping. This means it will not work with some types, such as
+      metaclasses (since the ``__dict__`` attributes on type instances are
+      read-only proxies for the class namespace), and those that specify
+      ``__slots__`` without including ``__dict__`` as one of the defined slots
+      (as such classes don't provide a ``__dict__`` attribute at all).
 
 
 .. function:: cmp_to_key(func)

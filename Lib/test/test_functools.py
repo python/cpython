@@ -2406,6 +2406,21 @@ class TestCachedProperty(unittest.TestCase):
         ):
             item.cost
 
+    def test_immutable_dict(self):
+        class MyMeta(type):
+            @py_functools.cached_property
+            def prop(self):
+                return True
+
+        class MyClass(metaclass=MyMeta):
+            pass
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "The '__dict__' attribute on 'MyMeta' instance does not support item assignment for caching 'prop' property.",
+        ):
+            MyClass.prop
+
     def test_reuse_different_names(self):
         """Disallow this case because decorated function a would not be cached."""
         with self.assertRaises(RuntimeError) as ctx:
