@@ -7,6 +7,7 @@ Unit tests are in test_collections.
 """
 
 from abc import ABCMeta, abstractmethod
+from itertools import islice
 import sys
 
 __all__ = ["Awaitable", "Coroutine",
@@ -986,6 +987,8 @@ class MutableSequence(Sequence):
 
     def extend(self, values):
         'S.extend(iterable) -- extend sequence by appending elements from the iterable'
+        if values is self:
+            values = islice(self, len(self))
         for v in values:
             self.append(v)
 
