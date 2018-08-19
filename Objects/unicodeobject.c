@@ -4479,6 +4479,11 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
                 if (_PyUnicodeWriter_WriteCharInline(&writer, '+') < 0)
                     goto onError;
             }
+            else if (s < e && !IS_BASE64(*s)) {
+                s++;
+                errmsg = "ill-formed sequence";
+                goto utf7Error;
+            }
             else { /* begin base64-encoded section */
                 inShift = 1;
                 surrogate = 0;
