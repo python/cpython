@@ -412,7 +412,7 @@ An :class:`SMTP` instance has the following methods:
       :exc:`SMTPException`.
 
 
-.. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=[], rcpt_options=[])
+.. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=(), rcpt_options=())
 
    Send mail.  The required arguments are an :rfc:`822` from-address string, a list
    of :rfc:`822` to-address strings (a bare string will be treated as a list with 1
@@ -484,7 +484,7 @@ An :class:`SMTP` instance has the following methods:
 
 
 .. method:: SMTP.send_message(msg, from_addr=None, to_addrs=None, \
-                              mail_options=(), rcpt_options=[])
+                              mail_options=(), rcpt_options=())
 
    This is a convenience method for calling :meth:`sendmail` with the message
    represented by an :class:`email.message.Message` object.  The arguments have
