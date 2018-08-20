@@ -890,7 +890,7 @@ class SMTP:
         return senderrs
 
     def send_message(self, msg, from_addr=None, to_addrs=None,
-                     mail_options=(), rcpt_options={}):
+                     mail_options=(), rcpt_options=[]):
         """Converts message to a bytestring and passes it to sendmail.
 
         The arguments are as for sendmail, except that msg is an
