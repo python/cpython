@@ -414,7 +414,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             # classes.
             bogus_subclasses = [
                 None,
-                lambda x: None,
+                lambda x: [],
                 lambda: 42,
                 lambda: [42],
             ]
