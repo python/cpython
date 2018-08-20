@@ -419,11 +419,12 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 lambda: [42],
             ]
 
-            for bs in bogus_subclasses:
+            for i, bs in enumerate(bogus_subclasses):
                 class S(metaclass=abc_ABCMeta):
                     __subclasses__ = bs
 
-                with self.assertRaises(TypeError):
+                with self.subTest(i=i), \
+                        self.assertRaises(TypeError):
                     issubclass(int, S)
 
             # Also check that issubclass() propagates exceptions raised by
