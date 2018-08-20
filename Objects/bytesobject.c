@@ -820,7 +820,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 goto error;
 
             if (fmtcnt == 0) {
-                /* last writer: disable writer overallocation */
+                /* last write: disable writer overallocation */
                 writer.overallocate = 0;
             }
 
