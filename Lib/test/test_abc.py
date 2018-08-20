@@ -423,9 +423,9 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 class S(metaclass=abc_ABCMeta):
                     __subclasses__ = func
 
-                with self.subTest(i=i), \
-                        self.assertRaises(TypeError):
-                    issubclass(int, S)
+                with self.subTest(i=i):
+                    with self.assertRaises(TypeError):
+                        issubclass(int, S)
 
             # Also check that issubclass() propagates exceptions raised by
             # __subclasses__.
