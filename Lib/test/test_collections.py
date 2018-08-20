@@ -1724,7 +1724,8 @@ class TestCollectionABCs(ABCTestCase):
         # issue 34427
         # extending self should not cause infinite loop
         items = 'ABCD'
-        mss2 = MutableSequenceSubclass(items + items)
+        mss2 = MutableSequenceSubclass()
+        mss2.extend(items + items)
         mss.clear()
         mss.extend(items)
         mss.extend(mss)
