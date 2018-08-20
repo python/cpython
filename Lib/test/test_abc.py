@@ -410,6 +410,13 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             with self.assertRaises(TypeError):
                 issubclass(C(), A)
 
+            # bpo-34441: Check that issubclass() doesn't crash on bogus classes
+            class S(metaclass=abc_ABCMeta):
+                __subclasses__ = None
+
+            with self.assertRaises(TypeError):
+                issubclass(int, S)
+
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):
                 pass
