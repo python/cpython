@@ -1,2 +1,3 @@
-Fix crash when an ``ABC``-derived class with non-callable ``__subclasses__`` is passed as the
-second argument to ``issubclass()``.
+Fix crash when an ``ABC``-derived class with non-callable ``__subclasses__``
+is passed as the second argument to :func:`issubclass()`. Patch by Alexey
+Izbyshev.
