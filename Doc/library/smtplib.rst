@@ -484,7 +484,7 @@ An :class:`SMTP` instance has the following methods:
 
 
 .. method:: SMTP.send_message(msg, from_addr=None, to_addrs=None, \
-                              mail_options=[], rcpt_options=[])
+                              mail_options=(), rcpt_options=[])
 
    This is a convenience method for calling :meth:`sendmail` with the message
    represented by an :class:`email.message.Message` object.  The arguments have
