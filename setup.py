@@ -609,9 +609,12 @@ class PyBuildExt(build_ext):
         if host_platform in ['osf1', 'unixware7', 'openunix8']:
             lib_dirs += ['/usr/ccs/lib']
 
-        # HP-UX11iv3 keeps files in lib/hpux folders.
+        # HP-UX11iv3 keeps files in lib/hpux<bitness> directories.
         if host_platform == 'hp-ux11':
-            lib_dirs += ['/usr/lib/hpux64', '/usr/lib/hpux32']
+            lib_dirs += ['/usr/lib/hpux64', '/usr/lib/hpux32',
+                         '/usr/local/lib/hpux64', '/usr/local/lib/hpux32']
+            for lib_dir in lib_dirs:
+                add_dir_to_list(self.compiler.library_dirs, lib_dir)
 
         if host_platform == 'darwin':
             # This should work on any unixy platform ;-)

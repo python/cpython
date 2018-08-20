@@ -1,0 +1,2 @@
+Add HP-UX local libraries paths to compiler library dirs. Patch by Michael
+Osipov.
