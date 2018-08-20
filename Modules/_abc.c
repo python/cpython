@@ -665,6 +665,9 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
     /* 6. Check if it's a subclass of a subclass (recursive). */
     subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
+    if (subclasses == NULL) {
+        goto end;
+    }
     if (!PyList_Check(subclasses)) {
         PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
         goto end;
