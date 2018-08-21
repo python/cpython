@@ -302,6 +302,8 @@ class TestTimeZone(unittest.TestCase):
         self.assertEqual('UTC+09:30', timezone(9.5 * HOUR).tzname(None))
         self.assertEqual('UTC-00:01', timezone(timedelta(minutes=-1)).tzname(None))
         self.assertEqual('XYZ', timezone(-5 * HOUR, 'XYZ').tzname(None))
+        # bpo-34454: Check that surrogates don't cause a crash.
+        self.assertEqual('\ud800', timezone(ZERO, '\ud800').tzname(None))
 
         # Sub-minute offsets:
         self.assertEqual('UTC+01:06:40', timezone(timedelta(0, 4000)).tzname(None))
@@ -1301,7 +1303,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         #oh well, some systems just ignore those invalid ones.
         #at least, exercise them to make sure that no crashes
         #are generated
-        for f in ["%e", "%", "%#"]:
+        # bpo-34454: Check that surrogates don't cause a crash.
+        for f in ["%e", "%", "%#", "\ud800"]:
             try:
                 t.strftime(f)
             except ValueError:
@@ -1667,6 +1670,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
             '',                 # Empty string
+            '\ud800',           # bpo-34454: Surrogate code point
             '009-03-04',        # Not 10 characters
             '123456789',        # Not a date
             '200a-12-04',       # Invalid character in year
@@ -1744,6 +1748,9 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat('T'), "0001-02-03T04:05:01.000123")
         self.assertEqual(t.isoformat(' '), "0001-02-03 04:05:01.000123")
         self.assertEqual(t.isoformat('\x00'), "0001-02-03\x0004:05:01.000123")
+        # bpo-34454: Check that surrogates don't cause a crash.
+        self.assertEqual(t.isoformat('\ud800'),
+                         "0001-02-03\ud80004:05:01.000123")
         self.assertEqual(t.isoformat(timespec='hours'), "0001-02-03T04")
         self.assertEqual(t.isoformat(timespec='minutes'), "0001-02-03T04:05")
         self.assertEqual(t.isoformat(timespec='seconds'), "0001-02-03T04:05:01")
@@ -1752,6 +1759,8 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat(timespec='auto'), "0001-02-03T04:05:01.000123")
         self.assertEqual(t.isoformat(sep=' ', timespec='minutes'), "0001-02-03 04:05")
         self.assertRaises(ValueError, t.isoformat, timespec='foo')
+        # bpo-34454: Check that surrogates don't cause a crash.
+        self.assertRaises(ValueError, t.isoformat, timespec='\ud800')
         # str is ISO format with the separator forced to a blank.
         self.assertEqual(str(t), "0001-02-03 04:05:01.000123")
 
@@ -2275,13 +2284,19 @@ class TestDateTime(TestDate):
         self.assertLessEqual(abs(from_timestamp - from_now), tolerance)
 
     def test_strptime(self):
-        string = '2004-12-01 13:02:47.197'
-        format = '%Y-%m-%d %H:%M:%S.%f'
-        expected = _strptime._strptime_datetime(self.theclass, string, format)
-        got = self.theclass.strptime(string, format)
-        self.assertEqual(expected, got)
-        self.assertIs(type(expected), self.theclass)
-        self.assertIs(type(got), self.theclass)
+        inputs = [
+            ('2004-12-01 13:02:47.197', '%Y-%m-%d %H:%M:%S.%f'),
+            # bpo-34454: Check that surrogates don't cause a crash.
+            ('2004-12-01\ud80013:02:47.197', '%Y-%m-%d\ud800%H:%M:%S.%f'),
+        ]
+        for string, format in inputs:
+            with self.subTest(string=string, format=format):
+                expected = _strptime._strptime_datetime(self.theclass, string,
+                                                        format)
+                got = self.theclass.strptime(string, format)
+                self.assertEqual(expected, got)
+                self.assertIs(type(expected), self.theclass)
+                self.assertIs(type(got), self.theclass)
 
         strptime = self.theclass.strptime
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
@@ -2587,7 +2602,8 @@ class TestDateTime(TestDate):
             ' ', 'T', '\u007f',     # 1-bit widths
             '\u0080', 'ʁ',          # 2-bit widths
             'ᛇ', '時',               # 3-bit widths
-            '🐍'                     # 4-bit widths
+            '🐍',                    # 4-bit widths
+            '\ud800',               # bpo-34454
         ]
 
         for sep in separators:
@@ -2595,7 +2611,13 @@ class TestDateTime(TestDate):
             dtstr = dt.isoformat(sep=sep)
 
             with self.subTest(dtstr=dtstr):
-                dt_rt = self.theclass.fromisoformat(dtstr)
+                try:
+                    dt_rt = self.theclass.fromisoformat(dtstr)
+                except UnicodeEncodeError:
+                    # FIXME: The C datetime implementation raises an exception
+                    # while the pure-Python one succeeds.
+                    if sep != '\ud800':
+                        raise
                 self.assertEqual(dt, dt_rt)
 
     def test_fromisoformat_ambiguous(self):
@@ -2639,6 +2661,7 @@ class TestDateTime(TestDate):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
             '',                             # Empty string
+            '\ud800',                       # bpo-34454: Surrogate code point
             '2009.04-19T03',                # Wrong first separator
             '2009-04.19T03',                # Wrong second separator
             '2009-04-19T0a',                # Invalid hours
@@ -2863,6 +2886,8 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.isoformat(timespec='microseconds'), "12:34:56.123456")
         self.assertEqual(t.isoformat(timespec='auto'), "12:34:56.123456")
         self.assertRaises(ValueError, t.isoformat, timespec='monkey')
+        # bpo-34454: Check that surrogates don't cause a crash.
+        self.assertRaises(ValueError, t.isoformat, timespec='\ud800')
 
         t = self.theclass(hour=12, minute=34, second=56, microsecond=999500)
         self.assertEqual(t.isoformat(timespec='milliseconds'), "12:34:56.999")
@@ -2912,6 +2937,14 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('%H %M %S %f'), "01 02 03 000004")
         # A naive object replaces %z and %Z with empty strings.
         self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
+
+        # bpo-34454: Check that surrogates don't cause a crash.
+        # FIXME: The C datetime implementation raises an exception
+        # while the pure-Python one succeeds.
+        try:
+            t.strftime('\ud800')
+        except UnicodeEncodeError:
+            pass
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)
@@ -3521,6 +3554,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
     def test_fromisoformat_fails(self):
         bad_strs = [
             '',                         # Empty string
+            '\ud800',                   # bpo-34454: Surrogate code point
             '12:',                      # Ends on a separator
             '12:30:',                   # Ends on a separator
             '12:30:15.',                # Ends on a separator
