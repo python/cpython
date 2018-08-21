@@ -918,8 +918,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
     Test the C _PyTime_t API.
     """
     # _PyTime_t is a 64-bit signed integer
-    OVERFLOW_SECONDS = math.ceil((
-        + 1) / SEC_TO_NS)
+    OVERFLOW_SECONDS = math.ceil((2**63 + 1) / SEC_TO_NS)
 
     def test_FromSeconds(self):
         from _testcapi import PyTime_FromSeconds
