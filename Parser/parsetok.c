@@ -189,10 +189,12 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
 #endif
-        if (a >= tok->line_start)
+        if (a != NULL && a >= tok->line_start) {
             col_offset = a - tok->line_start;
-        else
+        }
+        else {
             col_offset = -1;
+        }
 
         if ((err_ret->error =
              PyParser_AddToken(ps, (int)type, str, tok->lineno, col_offset,
