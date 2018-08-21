@@ -154,15 +154,6 @@ Build and C API Changes
 
   (Contributed by Antoine Pitrou in :issue:`32430`.)
 
-* The :meth:`__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
-  :class:`wsgiref.util.FileWrapper` and :class:`fileinput.FileInput` have been
-  deprecated.
-
-  Implementations of these methods have been ignoring their *index* parameter,
-  and returning the next item instead.
-
-  (Contributed by Berker Peksag in :issue:`9372`.)
-
 
 Deprecated
 ==========
@@ -178,6 +169,15 @@ Deprecated
   :meth:`asyncio.AbstractEventLoop.set_default_executor()` is
   deprecated and will be prohibited in Python 3.9.
   (Contributed by Elvis Pranskevichus in :issue:`34075`.)
+
+* The :meth:`__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
+  :class:`wsgiref.util.FileWrapper` and :class:`fileinput.FileInput` have been
+  deprecated.
+
+  Implementations of these methods have been ignoring their *index* parameter,
+  and returning the next item instead.
+
+  (Contributed by Berker Peksag in :issue:`9372`.)
 
 
 Removed
