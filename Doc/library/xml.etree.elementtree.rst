@@ -638,6 +638,102 @@ Functions
    :class:`Element` instance and a dictionary.
 
 
+.. _elementtree-xinclude:
+
+XInclude support
+----------------
+
+This module provides limited support for
+`XInclude directives <https://www.w3.org/TR/xinclude/>`_ , via the **ElementInclude** helper module.  This module can be used to insert subtrees and text strings into element trees, based on information in the tree.
+
+Example
+^^^^^^^
+
+Here's an example that demonstrates use of the XInclude module. To include a XML document in the current document, use the ``{http://www.w3.org/2001/XInclude}include`` element and set the **parse** attribute to ``“xml”``, and use the **href** attribute to specify the document to include.::
+
+   <document xmlns:xi="http://www.w3.org/2001/XInclude">
+   <xi:include href="source.xml" parse="xml" />
+   </document>
+
+By default, the **href** attribute is treated as a file name. You can use custom loaders to override this behaviour. Also note that the standard helper does not support XPointer syntax.
+
+To process this file, load it as usual, and pass the root element to the **ElementTree** module: ::
+
+   from elementtree import ElementTree, ElementInclude
+
+   tree = ElementTree.parse("document.xml")
+   root = tree.getroot()
+
+   ElementInclude.include(root)
+
+The ElementInclude module replaces the ``{http://www.w3.org/2001/XInclude}include`` element with the root element from the **source.xml** document. The result might look something like this: ::
+
+   <document xmlns:xi="http://www.w3.org/2001/XInclude">
+   <para>This is a paragraph.</para>
+   </document>
+
+If the **parse** attribute is omitted, it defaults to “xml”. The href attribute is required.
+
+To include a text document, use the ``{http://www.w3.org/2001/XInclude}include`` element, and set the **parse** attribute to “text”: ::
+
+   <document xmlns:xi="http://www.w3.org/2001/XInclude">
+   Copyright (c) <xi:include href="year.txt" parse="text" />.
+   </document>
+
+The result might look something like: ::
+
+   <document xmlns:xi="http://www.w3.org/2001/XInclude">
+   Copyright (c) 2003.
+   </document>
+
+Reference
+---------
+
+.. _elementtree-functions:
+
+Functions
+^^^^^^^^^
+
+**Default loader**: This loader reads an included resource from disk.
+
+::
+   def xml.etree.ElementInclude.default_loader( href,
+                                                parse,
+                                                encoding = None 
+                                              )
+
+
+**Parameters**
+   **href**  Resource reference.
+   **parse** Parse mode. Either "xml" or "text".
+   **encoding** Optional text encoding.
+
+**Returns**
+   The expanded resource. If the parse mode is ``"xml"``, this is an **ElementTree** instance. If the parse mode is "text", this is a Unicode string. If the loader fails, it can return None or raise an **IOError** exception.
+
+**Exceptions**
+   **IOError**  If the loader fails to load the resource.
+
+
+**Include**: This expand XInclude directives.
+
+::
+   def xml.etree.ElementInclude.include( elem,
+                                         loader = None 
+                                       )
+
+
+**Parameters**
+   **elem**  Root element.
+   **loader** Optional resource loader. If omitted, it defaults to default_loader. If given, it should be a callable that implements the same interface as default_loader.
+
+**Returns**
+   The expanded resource. If the parse mode is ``"xml"``, this is an **ElementTree** instance. If the parse mode is "text", this is a Unicode string. If the loader fails, it can return None or raise an **IOError** exception.
+
+**Exceptions**
+   **IOError**  If the loader fails to load the resource.
+
+
 .. _elementtree-element-objects:
 
 Element Objects
