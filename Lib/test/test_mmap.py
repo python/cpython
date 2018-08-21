@@ -745,11 +745,12 @@ class MmapTests(unittest.TestCase):
         # mm.flush() should return None on success, raise an
         # exception on error under all platforms.
         mm = mmap.mmap(-1, 16)
+        self.addCleanup(mm.close)
         mm.write(b'python')
         result = mm.flush()
         self.assertIsNone(result)
-        self.assertRaises(OSError, mm.flush, 1, len(b'python'))
-        mm.close()
+        if os.name != 'nt':
+            self.assertRaises(OSError, mm.flush, 1, len(b'python'))
 
 
 class LargeMmapTests(unittest.TestCase):
