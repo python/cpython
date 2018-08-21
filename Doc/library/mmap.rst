@@ -191,11 +191,13 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       changes to the given range of bytes will be flushed to disk; otherwise, the
       whole extent of the mapping is flushed.
 
-      A zero value is returned to indicate success. An
-      exception is raised when the call failed.
+      ``None`` is returned to indicate success. An exception is raised when the
+      call failed.
 
       .. versionchanged:: 3.8
-         Previously, a nonzero value was returned on success under Windows.
+         Previously, a nonzero value was returned on success; zero was returned
+         on error under Windows and a zero value was returned on success; an
+         exception was raised on error under Unix.
 
 
    .. method:: move(dest, src, count)

@@ -742,12 +742,12 @@ class MmapTests(unittest.TestCase):
             m * 2
 
     def test_flush_return_value(self):
-        # mm.flush() should return zero on success, raise an
+        # mm.flush() should return None on success, raise an
         # exception on error under all platforms.
         mm = mmap.mmap(-1, 16)
-        mm.write(b"python")
+        mm.write(b'python')
         result = mm.flush()
-        self.assertEqual(result, 0)
+        self.assertIsNone(result)
         mm.close()
 
 
