@@ -160,6 +160,7 @@ class TimeTestCase(unittest.TestCase):
     def test_sleep(self):
         self.assertRaises(ValueError, time.sleep, -2)
         self.assertRaises(ValueError, time.sleep, -1)
+        self.assertRaises(OverflowError, time.sleep(2**63 / 10**9))
         time.sleep(1.2)
 
     def test_strftime(self):
