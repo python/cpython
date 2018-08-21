@@ -748,6 +748,7 @@ class MmapTests(unittest.TestCase):
         mm.write(b'python')
         result = mm.flush()
         self.assertIsNone(result)
+        self.assertRaises(OSError, mm.flush, 1, len(b'python'))
         mm.close()
 
 
