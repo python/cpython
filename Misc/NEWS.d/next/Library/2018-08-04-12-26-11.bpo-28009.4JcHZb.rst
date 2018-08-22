@@ -1,1 +1,1 @@
-uuid: correct the field seperator (_mac_field) value of an ethernet adapter MAC address for AIX
+Fix uuid.uuid1() and uuid.get_node() on AIX
