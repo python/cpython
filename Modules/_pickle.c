@@ -6288,7 +6288,7 @@ load_mark(UnpicklerObject *self)
      * mark stack.
      */
 
-    if ((self->num_marks + 1) >= self->marks_size) {
+    if (self->num_marks >= self->marks_size) {
         size_t alloc;
 
         /* Use the size_t type to check for overflow. */
