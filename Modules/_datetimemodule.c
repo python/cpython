@@ -4864,21 +4864,14 @@ _sanitize_isoformat_str(PyObject *dtstr, int *needs_decref) {
         return dtstr;
     }
 
-    PyObject *left = PyUnicode_Substring(dtstr, 0, 10);
-    if (left == NULL) {
-        return NULL;
-    }
-
-    PyObject *right = PyUnicode_Substring(dtstr, 11, len);
-    if (right == NULL) {
-        Py_DECREF(left);
-        return NULL;
-    }
-
-    PyObject *str_out = PyUnicode_FromFormat("%UT%U", left, right);
-    Py_DECREF(left);
-    Py_DECREF(right);
+    PyObject *str_out = PyUnicode_New(len, PyUnicode_MAX_CHAR_VALUE(dtstr));
     if (str_out == NULL) {
+        return NULL;
+    }
+
+    if (PyUnicode_CopyCharacters(str_out, 0, dtstr, 0, len) == -1 ||
+            PyUnicode_WriteChar(str_out, 10, (Py_UCS4)'T')) {
+        Py_DECREF(str_out);
         return NULL;
     }
 
