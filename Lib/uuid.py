@@ -52,8 +52,8 @@ from enum import Enum
 
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
-_notAIX = not sys.platform.startswith("aix")
-_MAC_DELIM =  b':' if _notAIX else b'.'
+_AIX = sys.platform.startswith("aix")
+_MAC_DELIM =  b':' if not _AIX else b'.'
 
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
@@ -693,7 +693,7 @@ def getnode(*, getters=None):
     if sys.platform == 'win32':
         getters = _NODE_GETTERS_WIN32
     else:
-        getters = _NODE_GETTERS_UNIX if _notAIX else _NODE_GETTERS_AIX
+        getters = _NODE_GETTERS_UNIX if not _AIX else _NODE_GETTERS_AIX
 
     for getter in getters + [_random_getnode]:
         try:
