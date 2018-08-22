@@ -15,7 +15,7 @@ _copy_raw_string(PyObject *strobj)
         return NULL;
     }
     char *copied = PyMem_Malloc(strlen(str)+1);
-    if (str == NULL) {
+    if (copied == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
