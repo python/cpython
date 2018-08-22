@@ -694,44 +694,25 @@ Reference
 Functions
 ^^^^^^^^^
 
-**Default loader**: This loader reads an included resource from disk.
+.. function:: xml.etree.ElementInclude.default_loader( href, parse, encoding = None)
 
-::
-   def xml.etree.ElementInclude.default_loader( href,
-                                                parse,
-                                                encoding = None 
-                                              )
-
-
-**Parameters**
-   **href**  Resource reference.
-   **parse** Parse mode. Either "xml" or "text".
-   **encoding** Optional text encoding.
-
-**Returns**
-   The expanded resource. If the parse mode is ``"xml"``, this is an **ElementTree** instance. If the parse mode is "text", this is a Unicode string. If the loader fails, it can return None or raise an **IOError** exception.
-
-**Exceptions**
-   **IOError**  If the loader fails to load the resource.
+   This loader reads an included resource from disk.  *href* is a resource
+   reference.  *parse* is for parse mode either "xml" or "text".  *encoding* 
+   is an optional text encoding.  If not given, none is used.  Returns the 
+   expanded resource.  If the parse mode is ``"xml"``, this is an ElementTree 
+   instance.  If the parse mode is "text", this is an Unicode string.  If the 
+   loader fails, it can return None or raise an **IOError** exception.
 
 
-**Include**: This expand XInclude directives.
+.. function:: xml.etree.ElementInclude.include( elem, loader = None)
 
-::
-   def xml.etree.ElementInclude.include( elem,
-                                         loader = None 
-                                       )
-
-
-**Parameters**
-   **elem**  Root element.
-   **loader** Optional resource loader. If omitted, it defaults to default_loader. If given, it should be a callable that implements the same interface as default_loader.
-
-**Returns**
-   The expanded resource. If the parse mode is ``"xml"``, this is an **ElementTree** instance. If the parse mode is "text", this is a Unicode string. If the loader fails, it can return None or raise an **IOError** exception.
-
-**Exceptions**
-   **IOError**  If the loader fails to load the resource.
+   This expand XInclude directives.  *elem* is the root element.  *loader* is 
+   an optional resource loader.  If omitted, it defaults to default_loader.  
+   If given, it should be a callable that implements the same interface as 
+   default_loader.  Returns the expanded resource.  If the parse mode is 
+   ``"xml"``, this is an ElementTree instance.  If the parse mode is "text", 
+   this is an Unicode string.  If the loader fails, it can return None or 
+   raise an **IOError** exception.
 
 
 .. _elementtree-element-objects:
