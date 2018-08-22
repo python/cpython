@@ -750,6 +750,7 @@ class MmapTests(unittest.TestCase):
         result = mm.flush()
         self.assertIsNone(result)
         if os.name != 'nt':
+            # 'offset' must be a multiple of mmap.PAGESIZE.
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))
 
 
