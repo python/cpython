@@ -2883,6 +2883,9 @@ date_fromisoformat(PyObject *cls, PyObject *dtstr) {
     Py_ssize_t len;
 
     const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
+    if (dt_ptr == NULL) {
+        goto invalid_string_error;
+    }
 
     int year = 0, month = 0, day = 0;
 
@@ -2894,12 +2897,15 @@ date_fromisoformat(PyObject *cls, PyObject *dtstr) {
     }
 
     if (rv < 0) {
-        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s",
-                     dt_ptr);
-        return NULL;
+        goto invalid_string_error;
     }
 
     return new_date_subclass_ex(year, month, day, cls);
+
+invalid_string_error:
+    PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R",
+                 dtstr);
+    return NULL;
 }
 
 
@@ -4258,6 +4264,10 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
     Py_ssize_t len;
     const char *p = PyUnicode_AsUTF8AndSize(tstr, &len);
 
+    if (p == NULL) {
+        goto invalid_string_error;
+    }
+
     int hour = 0, minute = 0, second = 0, microsecond = 0;
     int tzoffset, tzimicrosecond = 0;
     int rv = parse_isoformat_time(p, len,
@@ -4265,8 +4275,7 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
                                   &tzoffset, &tzimicrosecond);
 
     if (rv < 0) {
-        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s", p);
-        return NULL;
+        goto invalid_string_error;
     }
 
     PyObject *tzinfo = tzinfo_from_isoformat_results(rv, tzoffset,
@@ -4286,6 +4295,10 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
 
     Py_DECREF(tzinfo);
     return t;
+
+invalid_string_error:
+    PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", tstr);
+    return NULL;
 }
 
 
