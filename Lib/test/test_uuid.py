@@ -563,6 +563,7 @@ eth0      Link encap:Ethernet  HWaddr 12.34.56.78.90.ab
         self.check_node(node, 'ifconfig')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipIf(AIX, 'requires command "ip"')
     def test_ip_getnode(self):
         node = self.uuid._ip_getnode()
         self.check_node(node, 'ip')
@@ -574,6 +575,7 @@ eth0      Link encap:Ethernet  HWaddr 12.34.56.78.90.ab
         self.check_node(node, 'arp')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipIf(AIX, 'requires command "lanscan"')
     def test_lanscan_getnode(self):
         node = self.uuid._lanscan_getnode()
         self.check_node(node, 'lanscan')
