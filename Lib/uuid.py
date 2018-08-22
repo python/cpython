@@ -53,7 +53,7 @@ from enum import Enum
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
 _notAIX = not sys.platform.startswith("aix")
-_mac_delim =  b':' if _notAIX else b'.'
+_MAC_DELIM =  b':' if _notAIX else b'.'
 
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
@@ -376,7 +376,7 @@ def _find_mac(command, args, hw_identifiers, get_index):
                     if words[i] in hw_identifiers:
                         try:
                             word = words[get_index(i)]
-                            mac = int(word.replace(_mac_delim, b''), 16)
+                            mac = int(word.replace(_MAC_DELIM, b''), 16)
                             if _is_universal(mac):
                                 return mac
                             first_local_mac = first_local_mac or mac
@@ -458,12 +458,15 @@ def _netstat_getnode():
                 try:
                     words = line.rstrip().split()
                     word = words[i]
-                    if word.count(_mac_delim) == 5:
+                    if word.count(_MAC_DELIM) == 5:
                         if len(word) == 17:
-                            mac = int(word.replace(_mac_delim, b''), 16)
+                            mac = int(word.replace(_MAC_DELIM, b''), 16)
+                        # the extracted hex string will not be a 12 hex digit
+                        # string, so extract the fields and add them in
+                        # piece by piece
                         elif len(word) < 17 and len(word) >= 11:
                             mac = 0
-                            hexs = word.split(_mac_delim)
+                            hexs = word.split(_MAC_DELIM)
                             for hex in hexs:
                                 mac <<= 8
                                 mac += int(hex, 16)
