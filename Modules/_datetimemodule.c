@@ -4853,6 +4853,40 @@ datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
+_sanitize_isoformat_str(PyObject *dtstr, int *needs_decref) {
+    // `fromisoformat` allows surrogate characters in exactly one position,
+    // the separator; to allow datetime_fromisoformat to make the simplifying
+    // assumption that all valid strings can be encoded in UTF-8, this function
+    // replaces any surrogate character separators with `T`.
+    Py_ssize_t len = PyUnicode_GetLength(dtstr);
+    *needs_decref = 0;
+    if (len <= 10 || !Py_UNICODE_IS_SURROGATE(PyUnicode_READ_CHAR(dtstr, 10))) {
+        return dtstr;
+    }
+
+    PyObject *left = PyUnicode_Substring(dtstr, 0, 10);
+    if (left == NULL) {
+        return NULL;
+    }
+
+    PyObject *right = PyUnicode_Substring(dtstr, 11, len);
+    if (right == NULL) {
+        Py_DECREF(left);
+        return NULL;
+    }
+
+    PyObject *str_out = PyUnicode_FromFormat("%UT%U", left, right);
+    Py_DECREF(left);
+    Py_DECREF(right);
+    if (str_out == NULL) {
+        return NULL;
+    }
+
+    *needs_decref = 1;
+    return str_out;
+}
+
+static PyObject *
 datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
     assert(dtstr != NULL);
 
@@ -4861,34 +4895,20 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
         return NULL;
     }
 
-    const PyObject * dtstr_bytes = NULL;
-    unsigned char bytes_needs_decref = 0;
+    int needs_decref = 0;
+    dtstr = _sanitize_isoformat_str(dtstr, &needs_decref);
+    if (dtstr == NULL) {
+        goto error;
+    }
 
     Py_ssize_t len;
     const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
 
     if (dt_ptr == NULL) {
-        len = PyUnicode_GET_LENGTH(dtstr);
-        if (len == 10) {
-            goto invalid_string_error;
-        }
-        PyErr_Clear();
-
-        // If the datetime string cannot be encoded as UTF8 because the
-        // separator character is an invalid character, this could still
-        // be a valid isoformat, so we decode it and ignore.
-        dtstr_bytes = PyUnicode_AsEncodedString(dtstr, "ascii", "replace");
-        if (dtstr_bytes == NULL) {
-            goto finally;
-        }
-        bytes_needs_decref = 1;
-        dt_ptr = PyBytes_AS_STRING(dtstr_bytes);
-        if (dt_ptr == NULL) {
-            goto finally;
-        }
+        goto invalid_string_error;
     }
 
-    const char * p = dt_ptr;
+    const char *p = dt_ptr;
 
     int year = 0, month = 0, day = 0;
     int hour = 0, minute = 0, second = 0, microsecond = 0;
@@ -4926,24 +4946,24 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
 
     PyObject* tzinfo = tzinfo_from_isoformat_results(rv, tzoffset, tzusec);
     if (tzinfo == NULL) {
-        goto finally;
+        goto error;
     }
 
     PyObject *dt = new_datetime_subclass_ex(year, month, day, hour, minute,
                                             second, microsecond, tzinfo, cls);
 
     Py_DECREF(tzinfo);
-    if (bytes_needs_decref) {
-        Py_DECREF(dtstr_bytes);
+    if (needs_decref) {
+        Py_DECREF(dtstr);
     }
     return dt;
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
 
-finally:
-    if (bytes_needs_decref) {
-        Py_DECREF(dtstr_bytes);
+error:
+    if (needs_decref) {
+        Py_DECREF(dtstr);
     }
 
     return NULL;
