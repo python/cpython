@@ -265,6 +265,13 @@ Changes in the Python API
   task name is visible in the ``repr()`` output of :class:`asyncio.Task` and
   can also be retrieved using the :meth:`~asyncio.Task.get_name` method.
 
+* The :meth:`mmap.flush() <mmap.mmap.flush>` method now returns ``None`` on
+  success and raises an exception on error under all platforms.  Previously,
+  its behavior was platform-depended: a nonzero value was returned on success;
+  zero was returned on error under Windows.  A zero value was returned on
+  success; an exception was raised on error under Unix.
+  (Contributed by Berker Peksag in :issue:`2122`.)
+
 
 CPython bytecode changes
 ------------------------
