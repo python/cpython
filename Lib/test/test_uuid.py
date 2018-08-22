@@ -559,6 +559,7 @@ eth0      Link encap:Ethernet  HWaddr 12.34.56.78.90.ab
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     @unittest.skipIf(AIX, 'because AIX "ifconfig" does not provide macaddr')
     def test_ifconfig_getnode(self):
+        node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
