@@ -4848,8 +4848,33 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
         return NULL;
     }
 
+    const PyObject * dtstr_bytes = NULL;
+    unsigned char bytes_needs_decref = 0;
+
     Py_ssize_t len;
     const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
+
+    if (dt_ptr == NULL) {
+        len = PyUnicode_GET_LENGTH(dtstr);
+        if (len == 10) {
+            goto invalid_string_error;
+        }
+        PyErr_Clear();
+
+        // If the datetime string cannot be encoded as UTF8 because the
+        // separator character is an invalid character, this could still
+        // be a valid isoformat, so we decode it and ignore.
+        dtstr_bytes = PyUnicode_AsEncodedString(dtstr, "ascii", "replace");
+        if (dtstr_bytes == NULL) {
+            goto finally;
+        }
+        bytes_needs_decref = 1;
+        dt_ptr = PyBytes_AS_STRING(dtstr_bytes);
+        if (dt_ptr == NULL) {
+            goto finally;
+        }
+    }
+
     const char * p = dt_ptr;
 
     int year = 0, month = 0, day = 0;
@@ -4883,20 +4908,32 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
                                   &tzoffset, &tzusec);
     }
     if (rv < 0) {
-        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s", dt_ptr);
-        return NULL;
+        goto invalid_string_error;
     }
 
     PyObject* tzinfo = tzinfo_from_isoformat_results(rv, tzoffset, tzusec);
     if (tzinfo == NULL) {
-        return NULL;
+        goto finally;
     }
 
     PyObject *dt = new_datetime_subclass_ex(year, month, day, hour, minute,
                                             second, microsecond, tzinfo, cls);
 
     Py_DECREF(tzinfo);
+    if (bytes_needs_decref) {
+        Py_DECREF(dtstr_bytes);
+    }
     return dt;
+
+invalid_string_error:
+    PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
+
+finally:
+    if (bytes_needs_decref) {
+        Py_DECREF(dtstr_bytes);
+    }
+
+    return NULL;
 }
 
 
