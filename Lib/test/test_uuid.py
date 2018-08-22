@@ -557,11 +557,8 @@ eth0      Link encap:Ethernet  HWaddr 12.34.56.78.90.ab
                         "%s is not an RFC 4122 node ID" % hex)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipIf(AIX, 'because AIX "ifconfig" does not provide macaddr')
     def test_ifconfig_getnode(self):
-        if not AIX:
-            node = self.uuid._ifconfig_getnode()
-        else:
-            self.skipTest('because AIX "ifconfig" does not provide macaddr')
         self.check_node(node, 'ifconfig')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
