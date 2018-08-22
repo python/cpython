@@ -5282,7 +5282,7 @@ static PyObject *
 int_as_integer_ratio_impl(PyObject *self)
 /*[clinic end generated code: output=e60803ae1cc8621a input=ce9c7768a1287fb9]*/
 {
-  return PyTuple_Pack(2, self, _PyLong_One)
+    return PyTuple_Pack(2, self, _PyLong_One);
 }
 
 /*[clinic input]
