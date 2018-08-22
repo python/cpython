@@ -568,11 +568,9 @@ eth0      Link encap:Ethernet  HWaddr 12.34.56.78.90.ab
         self.check_node(node, 'ip')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipIf(AIX, 'because AIX "arp" does not provide macaddr')
     def test_arp_getnode(self):
-        if not AIX:
-            node = self.uuid._arp_getnode()
-        else:
-            self.skipTest('because AIX "arp" does not provide macaddr')
+        node = self.uuid._arp_getnode()
         self.check_node(node, 'arp')
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
