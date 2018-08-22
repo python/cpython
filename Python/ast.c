@@ -3267,6 +3267,8 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
             break;
         case STAR:
             str = PyUnicode_InternFromString("*");
+            if (!str)
+                return NULL;
             if (PyArena_AddPyObject(c->c_arena, str) < 0) {
                 Py_DECREF(str);
                 return NULL;
