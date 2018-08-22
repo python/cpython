@@ -1169,7 +1169,7 @@ class ZipFile:
         self.mode = mode
         self.pwd = None
         self._comment = b''
-        self.strict_timestamps = strict_timestamps
+        self._strict_timestamps = strict_timestamps
 
         # Check if we were passed a file-like object
         if isinstance(file, os.PathLike):
@@ -1690,7 +1690,7 @@ class ZipFile:
             )
 
         zinfo = ZipInfo.from_file(filename, arcname,
-                                  strict_timestamps=self.strict_timestamps)
+                                  strict_timestamps=self._strict_timestamps)
 
         if zinfo.is_dir():
             zinfo.compress_size = 0
