@@ -1,1 +1,1 @@
-Prevent a null pointer derefence and resource leakage in `pystate.c`.
+Prevent a null pointer derefence and resource leakage in `PyInterpreterState_New()`.
