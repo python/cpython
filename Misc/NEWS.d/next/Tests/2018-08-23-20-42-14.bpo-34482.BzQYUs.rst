@@ -1,2 +1,0 @@
-Add tests for proper handling of non-UTF-8-encodable strings in
-:mod:`datetime` classes. Patch by Alexey Izbyshev.
