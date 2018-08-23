@@ -20,6 +20,10 @@ PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
 #endif
 
 #ifdef Py_BUILD_CORE
+PyAPI_FUNC(wchar_t *) _Py_DecodeUTF8(
+    const char *arg,
+    size_t *size);
+
 PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
     const char *arg,
     Py_ssize_t arglen,

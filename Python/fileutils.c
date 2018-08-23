@@ -516,6 +516,21 @@ Py_DecodeLocale(const char* arg, size_t *wlen)
 }
 
 
+wchar_t*
+_Py_DecodeUTF8(const char* arg, size_t *wlen)
+{
+    wchar_t *wstr;
+    int res = _Py_DecodeUTF8Ex(arg, strlen(arg), &wstr, wlen, NULL, 1);
+    if (res != 0) {
+        if (wlen != NULL) {
+            *wlen = (size_t)res;
+        }
+        return NULL;
+    }
+    return wstr;
+}
+
+
 static int
 encode_current_locale(const wchar_t *text, char **str,
                       size_t *error_pos, const char **reason,
