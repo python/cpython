@@ -957,7 +957,7 @@ def getsourcelines(object):
     if istraceback(object):
         object = object.tb_frame
 
-    # for module or frame that correspond to module return all source lines
+    # for module or frame that corresponds to module, return all source lines
     if (ismodule(object) or
         (isframe(object) and object.f_code.co_name == "<module>")):
         return lines, 0
