@@ -527,6 +527,15 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
 
+class TestGettingSourceOfToplevelFrames(GetSourceBase):
+    fodderModule = mod
+
+    def test_range_toplevel_frame(self):
+        self.assertSourceEqual(mod.currentframe, 1, 82)
+
+    def test_range_traceback_toplevel_frame(self):
+        self.assertSourceEqual(mod.tb, 1, 82)
+
 class TestDecorators(GetSourceBase):
     fodderModule = mod2
 
@@ -3870,7 +3879,7 @@ def test_main():
         TestBoundArguments, TestSignaturePrivateHelpers,
         TestSignatureDefinitions, TestIsDataDescriptor,
         TestGetClosureVars, TestUnwrap, TestMain, TestReload,
-        TestGetCoroutineState
+        TestGetCoroutineState, TestGettingSourceOfToplevelFrames
     )
 
 if __name__ == "__main__":
