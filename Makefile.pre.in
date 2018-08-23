@@ -1077,6 +1077,7 @@ buildbottest:	build_all platform
 			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
 		fi
 		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+		$(TESTPYTHON) Tools/clinic/clinic_test.py
 
 pythoninfo: build_all
 		$(RUNSHARED) ./$(BUILDPYTHON) -m test.pythoninfo

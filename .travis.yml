@@ -156,8 +156,6 @@ script:
   - make smelly
   # `-r -w` implicitly provided through `make buildbottest`.
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then XVFB_RUN=xvfb-run; fi; $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu"
-  # Check that the argument clinic tests work correctly
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./python Tools/clinic/clinic_test.py; fi
 
 notifications:
   email: false
