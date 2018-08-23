@@ -730,7 +730,7 @@ Test cases
 
    .. method:: setUpClass()
 
-      A class method called before tests in an individual class run.
+      A class method called before tests in an individual class are run.
       ``setUpClass`` is called with the class as the only argument
       and must be decorated as a :func:`classmethod`::
 
