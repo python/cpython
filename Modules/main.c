@@ -371,7 +371,13 @@ pymain_init_cmdline_argv(_PyMain *pymain, _PyCoreConfig *config,
 
         for (int i = 0; i < pymain->argc; i++) {
             size_t len;
-            wchar_t *arg = Py_DecodeLocale(pymain->bytes_argv[i], &len);
+            wchar_t *arg;
+            if (config->utf8_mode > 0) {
+                arg = _Py_DecodeUTF8(pymain->bytes_argv[i], &len);
+            }
+            else {
+                arg = Py_DecodeLocale(pymain->bytes_argv[i], &len);
+            }
             if (arg == NULL) {
                 _Py_wstrlist_clear(i, argv);
                 pymain->err = DECODE_LOCALE_ERR("command line arguments",
