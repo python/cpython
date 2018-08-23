@@ -60,6 +60,7 @@ class PosixTests(unittest.TestCase):
     def test_strsignal(self):
         self.assertIn("Interrupt", signal.strsignal(signal.SIGINT))
         self.assertIn("Terminated", signal.strsignal(signal.SIGTERM))
+        self.assertIn("Hangup", signal.strsignal(signal.SIGHUP))
 
     # Issue 3864, unknown if this affects earlier versions of freebsd also
     def test_interprocess_signal(self):
