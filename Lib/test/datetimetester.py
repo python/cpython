@@ -1310,10 +1310,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 pass
 
         # bpo-34482: Check that surrogates don't cause a crash.
-        # FIXME: The C datetime implementation raises an exception
-        # while the pure-Python one succeeds.
         try:
-            t.strftime('\ud800')
+            self.assertEqual(t.strftime('%y\ud800%m'), '05\ud80003')
         except UnicodeEncodeError:
             pass
 
@@ -2945,10 +2943,8 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
 
         # bpo-34482: Check that surrogates don't cause a crash.
-        # FIXME: The C datetime implementation raises an exception
-        # while the pure-Python one succeeds.
         try:
-            t.strftime('\ud800')
+            self.assertEqual(t.strftime('%H\ud800%M'), '01\ud80002')
         except UnicodeEncodeError:
             pass
 
