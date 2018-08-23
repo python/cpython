@@ -1475,8 +1475,22 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     assert(PyUnicode_Check(format));
     /* Convert the input format to a C string and size */
     pin = PyUnicode_AsUTF8AndSize(format, &flen);
-    if (!pin)
-        return NULL;
+    PyObject* format_esc = NULL;
+    if (pin == NULL) {
+        PyErr_Clear();
+
+        format_esc = PyUnicode_AsEncodedString(format, "utf-8", "surrogatepass");
+        if (format_esc == NULL) {
+            return NULL;
+        }
+        char *pin_tmp;
+        if (PyBytes_AsStringAndSize(format_esc, &pin_tmp, &flen)) {
+            Py_DECREF(format_esc);
+            return NULL;
+        }
+
+        pin = pin_tmp;
+    }
 
     /* Scan the input format, looking for %z/%Z/%f escapes, building
      * a new format.  Since computing the replacements for those codes
@@ -1596,7 +1610,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
         if (time == NULL)
             goto Done;
-        format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
+        if (format_esc == NULL) {
+            format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
+        } else {
+            format = PyUnicode_Decode(PyBytes_AS_STRING(newfmt),
+                                      PyBytes_GET_SIZE(newfmt),
+                                      "utf-8", "surrogatepass");
+        }
         if (format != NULL) {
             result = _PyObject_CallMethodIdObjArgs(time, &PyId_strftime,
                                                    format, timetuple, NULL);
@@ -1605,6 +1625,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         Py_DECREF(time);
     }
  Done:
+
+    Py_XDECREF(format_esc);
     Py_XDECREF(freplacement);
     Py_XDECREF(zreplacement);
     Py_XDECREF(Zreplacement);
