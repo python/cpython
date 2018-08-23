@@ -1667,6 +1667,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
             '',                 # Empty string
+            '\ud800',           # bpo-34454: Surrogate code point
             '009-03-04',        # Not 10 characters
             '123456789',        # Not a date
             '200a-12-04',       # Invalid character in year
@@ -2587,7 +2588,8 @@ class TestDateTime(TestDate):
             ' ', 'T', '\u007f',     # 1-bit widths
             '\u0080', 'ʁ',          # 2-bit widths
             'ᛇ', '時',               # 3-bit widths
-            '🐍'                     # 4-bit widths
+            '🐍',                    # 4-bit widths
+            '\ud800',               # bpo-34454: Surrogate code point
         ]
 
         for sep in separators:
@@ -2639,6 +2641,7 @@ class TestDateTime(TestDate):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
             '',                             # Empty string
+            '\ud800',                       # bpo-34454: Surrogate code point
             '2009.04-19T03',                # Wrong first separator
             '2009-04.19T03',                # Wrong second separator
             '2009-04-19T0a',                # Invalid hours

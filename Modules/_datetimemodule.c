@@ -2880,26 +2880,40 @@ date_fromisoformat(PyObject *cls, PyObject *dtstr) {
         return NULL;
     }
 
-    Py_ssize_t len;
-
-    const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
-
-    int year = 0, month = 0, day = 0;
-
-    int rv;
-    if (len == 10) {
-        rv = parse_isoformat_date(dt_ptr, &year, &month, &day);
-    } else {
-        rv = -1;
-    }
-
-    if (rv < 0) {
-        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s",
-                     dt_ptr);
+    if (PyUnicode_READY(dtstr) == -1) {
         return NULL;
     }
 
+    const PyObject *bytes = NULL;
+    const char * p;
+
+    if (PyUnicode_KIND(dtstr) == PyUnicode_1BYTE_KIND) {
+        p = (const char *) PyUnicode_1BYTE_DATA(dtstr);
+    }
+    else {
+        bytes = PyUnicode_AsASCIIString(dtstr);
+        if (bytes == NULL) {
+            goto invalid_string_error;
+        }
+        p = PyBytes_AS_STRING(bytes);
+    }
+
+    int year = 0, month = 0, day = 0;
+    int rv = parse_isoformat_date(p, &year, &month, &day);
+
+    if (bytes != NULL) {
+        Py_DECREF(bytes);
+    }
+
+    if (rv < 0) {
+        goto invalid_string_error;
+    }
+
     return new_date_subclass_ex(year, month, day, cls);
+
+  invalid_string_error:
+    PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
+    return NULL;
 }
 
 
@@ -4255,8 +4269,24 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
         return NULL;
     }
 
-    Py_ssize_t len;
-    const char *p = PyUnicode_AsUTF8AndSize(tstr, &len);
+    if (PyUnicode_READY(tstr) == -1) {
+        return NULL;
+    }
+
+    Py_ssize_t len = PyUnicode_GET_LENGTH(tstr);
+    const PyObject * bytes = NULL;
+    const char *p;
+
+    if (PyUnicode_KIND(tstr) == PyUnicode_1BYTE_KIND) {
+        p = (const char *) PyUnicode_1BYTE_DATA(tstr);
+    }
+    else {
+        bytes = PyUnicode_AsASCIIString(tstr);
+        if (bytes == NULL) {
+            goto invalid_string_error;
+        }
+        p = PyBytes_AS_STRING(bytes);
+    }
 
     int hour = 0, minute = 0, second = 0, microsecond = 0;
     int tzoffset, tzimicrosecond = 0;
@@ -4264,9 +4294,12 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
                                   &hour, &minute, &second, &microsecond,
                                   &tzoffset, &tzimicrosecond);
 
+    if (bytes != NULL) {
+        Py_DECREF(bytes);
+    }
+
     if (rv < 0) {
-        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s", p);
-        return NULL;
+        goto invalid_string_error;
     }
 
     PyObject *tzinfo = tzinfo_from_isoformat_results(rv, tzoffset,
@@ -4286,6 +4319,10 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
 
     Py_DECREF(tzinfo);
     return t;
+
+  invalid_string_error:
+    PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s", p);
+    return NULL;
 }
 
 
@@ -4848,43 +4885,75 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
         return NULL;
     }
 
-    Py_ssize_t len;
-    const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
-    const char * p = dt_ptr;
+    if (PyUnicode_READY(dtstr) == -1) {
+        return NULL;
+    }
+
+    Py_ssize_t len = PyUnicode_GET_LENGTH(dtstr);
+    if (len < 10) {
+        goto invalid_string_error;
+    }
 
     int year = 0, month = 0, day = 0;
     int hour = 0, minute = 0, second = 0, microsecond = 0;
     int tzoffset = 0, tzusec = 0;
+    int rv;
+    PyObject *substr, *substr_bytes = NULL;
+    const char * p;
 
-    // date has a fixed length of 10
-    int rv = parse_isoformat_date(p, &year, &month, &day);
+    int is_1byte = (PyUnicode_KIND(dtstr) == PyUnicode_1BYTE_KIND);
 
-    if (!rv && len > 10) {
-        // In UTF-8, the length of multi-byte characters is encoded in the MSB
-        if ((p[10] & 0x80) == 0) {
+    if (is_1byte) {
+        p = (const char *) PyUnicode_1BYTE_DATA(dtstr);
+    }
+    else {
+        // date has a fixed length of 10
+        substr = PyUnicode_Substring(dtstr, 0, 10);
+        if (substr == NULL) {
+            return NULL;
+        }
+        substr_bytes = PyUnicode_AsASCIIString(substr);
+        Py_DECREF(substr);
+        if (substr_bytes == NULL) {
+            goto invalid_string_error;
+        }
+        p = PyBytes_AS_STRING(substr_bytes);
+    }
+
+    rv = parse_isoformat_date(p, &year, &month, &day);
+    if (substr_bytes != NULL) {
+        Py_DECREF(substr_bytes);
+    }
+    if (rv != 0) {
+        goto invalid_string_error;
+    }
+
+    if (len > 10) {
+        if (is_1byte) {
             p += 11;
-        } else {
-            switch(p[10] & 0xf0) {
-                case 0xe0:
-                    p += 13;
-                    break;
-                case 0xf0:
-                    p += 14;
-                    break;
-                default:
-                    p += 12;
-                    break;
+        }
+        else {
+            substr = PyUnicode_Substring(dtstr, 11, len);
+            if (substr == NULL) {
+                return NULL;
             }
+            substr_bytes = PyUnicode_AsASCIIString(substr);
+            Py_DECREF(substr);
+            if (substr_bytes == NULL) {
+                goto invalid_string_error;
+            }
+            p = PyBytes_AS_STRING(substr_bytes);
         }
 
-        len -= (p - dt_ptr);
-        rv = parse_isoformat_time(p, len,
+        rv = parse_isoformat_time(p, len - 11,
                                   &hour, &minute, &second, &microsecond,
                                   &tzoffset, &tzusec);
-    }
-    if (rv < 0) {
-        PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %s", dt_ptr);
-        return NULL;
+        if (substr_bytes != NULL) {
+            Py_DECREF(substr_bytes);
+        }
+        if (rv < 0) {
+            goto invalid_string_error;
+        }
     }
 
     PyObject* tzinfo = tzinfo_from_isoformat_results(rv, tzoffset, tzusec);
@@ -4897,6 +4966,10 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
 
     Py_DECREF(tzinfo);
     return dt;
+
+  invalid_string_error:
+    PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
+    return NULL;
 }
 
 
