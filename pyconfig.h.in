@@ -984,6 +984,9 @@
 /* Define to 1 if you have the <stropts.h> header file. */
 #undef HAVE_STROPTS_H
 
+/* Define to 1 if you have the `strsignal' function. */
+#undef HAVE_STRSIGNAL
+
 /* Define to 1 if `pw_gecos' is a member of `struct passwd'. */
 #undef HAVE_STRUCT_PASSWD_PW_GECOS
 
