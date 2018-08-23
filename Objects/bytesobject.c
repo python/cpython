@@ -819,8 +819,8 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             if (v == NULL)
                 goto error;
 
-            if (fmtcnt < 0) {
-                /* last writer: disable writer overallocation */
+            if (fmtcnt == 0) {
+                /* last write: disable writer overallocation */
                 writer.overallocate = 0;
             }
 
@@ -1048,7 +1048,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 
         /* If overallocation was disabled, ensure that it was the last
            write. Otherwise, we missed an optimization */
-        assert(writer.overallocate || fmtcnt < 0 || use_bytearray);
+        assert(writer.overallocate || fmtcnt == 0 || use_bytearray);
     } /* until end */
 
     if (argidx < arglen && !dict) {
