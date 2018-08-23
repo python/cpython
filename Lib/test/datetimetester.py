@@ -2373,6 +2373,13 @@ class TestDateTime(TestDate):
             t = t.replace(tzinfo=tz)
             self.assertEqual(t.strftime("%z"), "-0200" + z)
 
+        # bpo-34482: Check that surrogates don't cause a crash.
+        try:
+            self.assertEqual(t.strftime('%y\ud800%m %H\ud800%M'),
+                             '04\ud80012 06\ud80022')
+        except UnicodeEncodeError:
+            pass
+
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
         self.assertEqual(dt.date(), date(2002, 3, 4))
