@@ -2883,6 +2883,9 @@ date_fromisoformat(PyObject *cls, PyObject *dtstr) {
     Py_ssize_t len;
 
     const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
+    if (dt_ptr == NULL) {
+        return NULL;
+    }
 
     int year = 0, month = 0, day = 0;
 
@@ -4257,6 +4260,9 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
 
     Py_ssize_t len;
     const char *p = PyUnicode_AsUTF8AndSize(tstr, &len);
+    if (p == NULL) {
+        return NULL;
+    }
 
     int hour = 0, minute = 0, second = 0, microsecond = 0;
     int tzoffset, tzimicrosecond = 0;
@@ -4850,6 +4856,9 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
 
     Py_ssize_t len;
     const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
+    if (dt_ptr == NULL) {
+        return NULL;
+    }
     const char * p = dt_ptr;
 
     int year = 0, month = 0, day = 0;

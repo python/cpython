@@ -1,0 +1,2 @@
+Fix crash in ``fromisoformat`` method of classes from :mod:`datetime` on
+:c:func:`PyUnicode_AsUTF8AndSize()` failure. Patch by Alexey Izbyshev.
