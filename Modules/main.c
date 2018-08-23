@@ -1982,6 +1982,7 @@ pymain_read_conf_impl(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
 static int
 pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
 {
+    int init_utf8_mode = Py_UTF8Mode;
     _PyCoreConfig *config = &pymain->config;
     _PyCoreConfig save_config = _PyCoreConfig_INIT;
     int res = -1;
@@ -2015,6 +2016,10 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
                                        "reading the configuration");
             goto done;
         }
+
+        /* bpo-34207: Py_DecodeLocale(), Py_EncodeLocale() and similar
+           functions depend on Py_UTF8Mode. */
+        Py_UTF8Mode = config->utf8_mode;
 
         if (pymain_init_cmdline_argv(pymain, cmdline) < 0) {
             goto done;
@@ -2086,7 +2091,7 @@ done:
         setlocale(LC_ALL, oldloc);
         PyMem_RawFree(oldloc);
     }
-
+    Py_UTF8Mode = init_utf8_mode ;
     return res;
 }
 
