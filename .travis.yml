@@ -1,4 +1,4 @@
-language: c
+language: generic
 dist: trusty
 sudo: false
 group: beta
@@ -32,6 +32,7 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: OPTIONAL=true
+    - env: CC=gcc-8 CXX=g++-8 AR=gcc-ar-8 OPTIONAL=true
   include:
     - os: linux
       language: c
@@ -67,9 +68,8 @@ matrix:
         - HOMEBREW_NO_AUTO_UPDATE=1 brew install xz python3
         - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
     - os: linux
-      language: c
-      compiler: gcc
-      env: OPTIONAL=true
+      language: generic
+      env: CC=gcc-8 CXX=g++-8 AR=gcc-ar-8 OPTIONAL=true
       addons:
         apt:
           packages:
@@ -94,6 +94,27 @@ matrix:
 
 before_install:
   - set -e
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]
+    then
+      # https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      sudo apt-get update -qq
+      if [[ "${CC}" =~ ^gcc- ]]
+      then
+        echo "Installing ${CC}."
+        sudo apt-get install -qq "${CC}"
+        # Remove gcc to prevent it run unintentionally.
+        sudo rm -fv "$(which gcc)"
+      fi
+      if [[ "${CXX}" =~ ^g\+\+- ]]
+      then
+        echo "Installing ${CXX}."
+        sudo apt-get install -qq "${CXX}"
+        # Remove g++ to prevent it run unintentionally.
+        sudo rm -fv "$(which g++)"
+      fi
+    fi
   - |
       # Check short-circuit conditions
       if [[ "${TESTING}" != "docs" ]]
