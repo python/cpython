@@ -189,7 +189,7 @@ PyInterpreterState_New(void)
     }
     HEAD_UNLOCK();
 
-    if (!interp){
+    if (interp == NULL) {
         return NULL;
     }
 
