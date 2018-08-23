@@ -1158,7 +1158,7 @@ class Popen(object):
                 startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
                 startupinfo.wShowWindow = _winapi.SW_HIDE
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
-                args = '{} /c "{}"'.format (comspec, args)
+                args = '{} /s /c "{}"'.format (comspec, args)
 
             # Start the process
             try:

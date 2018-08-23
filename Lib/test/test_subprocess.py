@@ -2973,6 +2973,23 @@ class Win32ProcessTestCase(BaseTestCase):
             with p:
                 self.assertIn("physalis", p.stdout.read(), enc)
 
+    @unittest.skipUnless("COMSPEC" in os.environ, "Test needs COMSPEC")
+    def test_shell_strip_quotes(self):
+        # Check Popen passes the given command to the shell with /s switch
+        # ensuring the surrunding quotes of the passed command removed
+        comspec = os.environ["COMSPEC"]
+        cmd, ext = os.path.splitext(os.path.basename(comspec))
+        # Set PATH and PATHEXT not to run another executable file
+        newenv = os.environ.copy()
+        newenv["PATH"] = os.path.dirname(comspec)
+        newenv["PATHEXT"] = ext
+        command = cmd + ' /c echo physalis'
+        p = subprocess.Popen(command, shell=1,
+                             stdout=subprocess.PIPE,
+                             env=newenv)
+        with p:
+            self.assertIn(b"physalis\r\n", p.stdout.read())
+
     def test_call_string(self):
         # call() function with string argument on Windows
         rc = subprocess.call(sys.executable +
