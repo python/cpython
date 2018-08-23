@@ -1,8 +1,6 @@
-"""
-Test for Argument Clinic
-Copyright 2012-2013 by Larry Hastings.
-Licensed to the PSF under a contributor agreement.
-"""
+# Argument Clinic
+# Copyright 2012-2013 by Larry Hastings.
+# Licensed to the PSF under a contributor agreement.
 
 from test import support
 from unittest import TestCase
