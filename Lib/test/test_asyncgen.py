@@ -1,4 +1,5 @@
 import inspect
+import operator
 import types
 import unittest
 
@@ -371,6 +372,80 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop.close()
         self.loop = None
         asyncio.set_event_loop_policy(None)
+
+    def test_async_gen_operator_anext(self):
+        async def gen():
+            yield 1
+            yield 2
+        g = gen()
+        async def consume():
+            results = []
+            results.append(await operator.anext(g))
+            results.append(await operator.anext(g))
+            results.append(await operator.anext(g, 'buckle my shoe'))
+            return results
+        res = self.loop.run_until_complete(consume())
+        self.assertEqual(res, [1, 2, 'buckle my shoe'])
+        with self.assertRaises(StopAsyncIteration):
+            self.loop.run_until_complete(consume())
+
+    def test_async_gen_operator_aiter(self):
+        async def gen():
+            yield 1
+            yield 2
+        g = gen()
+        async def consume():
+            return [i async for i in operator.aiter(g)]
+        res = self.loop.run_until_complete(consume())
+        self.assertEqual(res, [1, 2])
+
+    def test_async_gen_operator_aiter_class(self):
+        loop = self.loop
+        class Gen:
+            async def __aiter__(self):
+                yield 1
+                await asyncio.sleep(0.01, loop=loop)
+                yield 2
+        g = Gen()
+        async def consume():
+            return [i async for i in operator.aiter(g)]
+        res = self.loop.run_until_complete(consume())
+        self.assertEqual(res, [1, 2])
+
+    def test_async_gen_operator_aiter_2_arg(self):
+        async def gen():
+            yield 1
+            yield 2
+            yield None
+        g = gen()
+        async def foo():
+            return await operator.anext(g)
+        async def consume():
+            return [i async for i in operator.aiter(foo, None)]
+        res = self.loop.run_until_complete(consume())
+        self.assertEqual(res, [1, 2])
+
+    def test_operator_anext_bad_args(self):
+        self._test_bad_args(operator.anext)
+
+    def test_operator_aiter_bad_args(self):
+        self._test_bad_args(operator.aiter)
+
+    def _test_bad_args(self, afn):
+        async def gen():
+            yield 1
+        async def call_with_no_args():
+            await afn()
+        async def call_with_3_args():
+            await afn(gen(), 1, 2)
+        async def call_with_bad_args():
+            await afn(1, gen())
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_no_args())
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_3_args())
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_bad_args())
 
     async def to_list(self, gen):
         res = []
