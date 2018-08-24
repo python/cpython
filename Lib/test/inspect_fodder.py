@@ -74,3 +74,9 @@ class FesteringGob(MalodorousPervert, ParrotDroppings):
 
 async def lobbest(grenade):
     pass
+
+currentframe = inspect.currentframe()
+try:
+    raise Exception()
+except:
+    tb = sys.exc_info()[2]
