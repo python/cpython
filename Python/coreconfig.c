@@ -69,10 +69,13 @@ _Py_wstrlist_copy(int len, wchar_t **list)
     assert((len > 0 && list != NULL) || len == 0);
     size_t size = len * sizeof(list[0]);
     wchar_t **list_copy = PyMem_RawMalloc(size);
+    if (list_copy == NULL) {
+        return NULL;
+    }
     for (int i=0; i < len; i++) {
         wchar_t* arg = _PyMem_RawWcsdup(list[i]);
         if (arg == NULL) {
-            _Py_wstrlist_clear(i, list);
+            _Py_wstrlist_clear(i, list_copy);
             return NULL;
         }
         list_copy[i] = arg;
