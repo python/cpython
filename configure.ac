@@ -4621,19 +4621,19 @@ then
   AC_MSG_RESULT($ac_cv_wchar_t_signed)
 fi
 
+AC_MSG_CHECKING(whether wchar_t is usable)
 # wchar_t is only usable if it maps to an unsigned type
 if test "$ac_cv_sizeof_wchar_t" -ge 2 \
           -a "$ac_cv_wchar_t_signed" = "no"
 then
-  HAVE_USABLE_WCHAR_T="yes"
   AC_DEFINE(HAVE_USABLE_WCHAR_T, 1,
   [Define if you have a useable wchar_t type defined in wchar.h; useable
    means wchar_t must be an unsigned type with at least 16 bits. (see
    Include/unicodeobject.h).])
+  AC_MSG_RESULT(yes)
 else
-  HAVE_USABLE_WCHAR_T="no usable wchar_t found"
+  AC_MSG_RESULT(no)
 fi
-AC_MSG_RESULT($HAVE_USABLE_WCHAR_T)
 
 # check for endianness
 AC_C_BIGENDIAN
