@@ -1287,11 +1287,11 @@ class IPv4Address(_BaseV4, _BaseAddress):
             return
 
         # Constructing from a packed address
-        if isinstance(address, bytes):
+        if isinstance(address, bytes) or isinstance(address, bytearray):
             self._check_packed_address(address, 4)
             self._ip = int.from_bytes(address, 'big')
             return
-
+            
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP string.
         addr_str = str(address)
