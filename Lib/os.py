@@ -525,12 +525,6 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
     __all__.append("fwalk")
 
-# Make sure os.environ exists, at least
-try:
-    environ
-except NameError:
-    environ = {}
-
 def execl(file, *args):
     """execl(file, *args)
 
@@ -891,7 +885,7 @@ If mode == P_WAIT return the process's exit code if it exits normally;
 otherwise return -SIG, where SIG is the signal that killed it. """
         return _spawnvef(mode, file, args, env, execve)
 
-    # Note: spawnvp[e] is't currently supported on Windows
+    # Note: spawnvp[e] isn't currently supported on Windows
 
     def spawnvp(mode, file, args):
         """spawnvp(mode, file, args) -> integer

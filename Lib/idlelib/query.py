@@ -143,6 +143,10 @@ class Query(Toplevel):
         self.result = None
         self.destroy()
 
+    def destroy(self):
+        self.grab_release()
+        super().destroy()
+
 
 class SectionName(Query):
     "Get a name for a config file section name."
@@ -301,8 +305,8 @@ class HelpSource(Query):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_query', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_query', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(Query, HelpSource)

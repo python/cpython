@@ -1,0 +1,2 @@
+Delete entries of ``None`` in :data:`sys.path_importer_cache` when
+:meth:`importlib.machinery.invalidate_caches` is called.

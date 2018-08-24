@@ -141,7 +141,7 @@ def setUpModule():
     except (ImportError, AttributeError):
         pass
 
-    # On Windows and Mac OSX this test comsumes large resources; It
+    # On Windows and Mac OSX this test consumes large resources; It
     # takes a long time to build the >2 GiB file and takes >2 GiB of disk
     # space therefore the resource must be enabled to run this test.
     # If not, nothing after this line stanza will be executed.

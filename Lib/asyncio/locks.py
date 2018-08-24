@@ -1,8 +1,9 @@
 """Synchronization primitives."""
 
-__all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
+__all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore')
 
 import collections
+import warnings
 
 from . import events
 from . import futures
@@ -21,6 +22,10 @@ class _ContextManager:
     while failing loudly when accidentally using:
 
         with lock:
+            <block>
+
+    Deprecated, use 'async with' statement:
+        async with lock:
             <block>
     """
 
@@ -63,6 +68,12 @@ class _ContextManagerMixin:
         #         <block>
         #     finally:
         #         lock.release()
+        # Deprecated, use 'async with' statement:
+        #     async with lock:
+        #         <block>
+        warnings.warn("'with (yield from lock)' is deprecated "
+                      "use 'async with lock' instead",
+                      DeprecationWarning, stacklevel=2)
         yield from self.acquire()
         return _ContextManager(self)
 
@@ -71,6 +82,9 @@ class _ContextManagerMixin:
         return _ContextManager(self)
 
     def __await__(self):
+        warnings.warn("'with await lock' is deprecated "
+                      "use 'async with lock' instead",
+                      DeprecationWarning, stacklevel=2)
         # To make "with await lock" work.
         return self.__acquire_ctx().__await__()
 
@@ -106,16 +120,16 @@ class Lock(_ContextManagerMixin):
     release() call resets the state to unlocked; first coroutine which
     is blocked in acquire() is being processed.
 
-    acquire() is a coroutine and should be called with 'yield from'.
+    acquire() is a coroutine and should be called with 'await'.
 
-    Locks also support the context management protocol.  '(yield from lock)'
-    should be used as the context manager expression.
+    Locks also support the asynchronous context management protocol.
+    'async with lock' statement should be used.
 
     Usage:
 
         lock = Lock()
         ...
-        yield from lock
+        await lock.acquire()
         try:
             ...
         finally:
@@ -125,13 +139,13 @@ class Lock(_ContextManagerMixin):
 
         lock = Lock()
         ...
-        with (yield from lock):
+        async with lock:
              ...
 
     Lock objects can be tested for locking state:
 
         if not lock.locked():
-           yield from lock
+           await lock.acquire()
         else:
            # lock is acquired
            ...
@@ -150,8 +164,8 @@ class Lock(_ContextManagerMixin):
         res = super().__repr__()
         extra = 'locked' if self._locked else 'unlocked'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def locked(self):
         """Return True if lock is acquired."""
@@ -169,16 +183,22 @@ class Lock(_ContextManagerMixin):
 
         fut = self._loop.create_future()
         self._waiters.append(fut)
+
+        # Finally block should be called before the CancelledError
+        # handling as we don't want CancelledError to call
+        # _wake_up_first() and attempt to wake up itself.
         try:
-            await fut
-            self._locked = True
-            return True
+            try:
+                await fut
+            finally:
+                self._waiters.remove(fut)
         except futures.CancelledError:
             if not self._locked:
                 self._wake_up_first()
             raise
-        finally:
-            self._waiters.remove(fut)
+
+        self._locked = True
+        return True
 
     def release(self):
         """Release a lock.
@@ -198,11 +218,17 @@ class Lock(_ContextManagerMixin):
             raise RuntimeError('Lock is not acquired.')
 
     def _wake_up_first(self):
-        """Wake up the first waiter who isn't cancelled."""
-        for fut in self._waiters:
-            if not fut.done():
-                fut.set_result(True)
-                break
+        """Wake up the first waiter if it isn't done."""
+        try:
+            fut = next(iter(self._waiters))
+        except StopIteration:
+            return
+
+        # .done() necessarily means that a waiter will wake up later on and
+        # either take the lock, or, if it was cancelled and lock wasn't
+        # taken already, will hit this again and wake up a new waiter.
+        if not fut.done():
+            fut.set_result(True)
 
 
 class Event:
@@ -226,8 +252,8 @@ class Event:
         res = super().__repr__()
         extra = 'set' if self._value else 'unset'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def is_set(self):
         """Return True if and only if the internal flag is true."""
@@ -303,8 +329,8 @@ class Condition(_ContextManagerMixin):
         res = super().__repr__()
         extra = 'locked' if self.locked() else 'unlocked'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     async def wait(self):
         """Wait until notified.
@@ -332,12 +358,16 @@ class Condition(_ContextManagerMixin):
 
         finally:
             # Must reacquire lock even if wait is cancelled
+            cancelled = False
             while True:
                 try:
                     await self.acquire()
                     break
                 except futures.CancelledError:
-                    pass
+                    cancelled = True
+
+            if cancelled:
+                raise futures.CancelledError
 
     async def wait_for(self, predicate):
         """Wait until a predicate becomes true.
@@ -412,11 +442,10 @@ class Semaphore(_ContextManagerMixin):
 
     def __repr__(self):
         res = super().__repr__()
-        extra = 'locked' if self.locked() else 'unlocked,value:{}'.format(
-            self._value)
+        extra = 'locked' if self.locked() else f'unlocked, value:{self._value}'
         if self._waiters:
-            extra = '{},waiters:{}'.format(extra, len(self._waiters))
-        return '<{} [{}]>'.format(res[1:-1], extra)
+            extra = f'{extra}, waiters:{len(self._waiters)}'
+        return f'<{res[1:-1]} [{extra}]>'
 
     def _wake_up_next(self):
         while self._waiters:

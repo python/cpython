@@ -1,0 +1,3 @@
+Revert line length limit for Windows help docs. The line-length limit is not
+needed because the pages appear in a separate app rather than on a browser
+tab.  It can also interact badly with the DPI setting.

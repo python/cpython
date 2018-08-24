@@ -1,6 +1,4 @@
-"""Queues"""
-
-__all__ = ['Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty']
+__all__ = ('Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty')
 
 import collections
 import heapq
@@ -10,16 +8,12 @@ from . import locks
 
 
 class QueueEmpty(Exception):
-    """Exception raised when Queue.get_nowait() is called on a Queue object
-    which is empty.
-    """
+    """Raised when Queue.get_nowait() is called on an empty Queue."""
     pass
 
 
 class QueueFull(Exception):
-    """Exception raised when the Queue.put_nowait() method is called on a Queue
-    object which is full.
-    """
+    """Raised when the Queue.put_nowait() method is called on a full Queue."""
     pass
 
 
@@ -73,22 +67,21 @@ class Queue:
                 break
 
     def __repr__(self):
-        return '<{} at {:#x} {}>'.format(
-            type(self).__name__, id(self), self._format())
+        return f'<{type(self).__name__} at {id(self):#x} {self._format()}>'
 
     def __str__(self):
-        return '<{} {}>'.format(type(self).__name__, self._format())
+        return f'<{type(self).__name__} {self._format()}>'
 
     def _format(self):
-        result = 'maxsize={!r}'.format(self._maxsize)
+        result = f'maxsize={self._maxsize!r}'
         if getattr(self, '_queue', None):
-            result += ' _queue={!r}'.format(list(self._queue))
+            result += f' _queue={list(self._queue)!r}'
         if self._getters:
-            result += ' _getters[{}]'.format(len(self._getters))
+            result += f' _getters[{len(self._getters)}]'
         if self._putters:
-            result += ' _putters[{}]'.format(len(self._putters))
+            result += f' _putters[{len(self._putters)}]'
         if self._unfinished_tasks:
-            result += ' tasks={}'.format(self._unfinished_tasks)
+            result += f' tasks={self._unfinished_tasks}'
         return result
 
     def qsize(self):
@@ -128,6 +121,13 @@ class Queue:
                 await putter
             except:
                 putter.cancel()  # Just in case putter is not done yet.
+                try:
+                    # Clean self._putters from canceled putters.
+                    self._putters.remove(putter)
+                except ValueError:
+                    # The putter could be removed from self._putters by a
+                    # previous get_nowait call.
+                    pass
                 if not self.full() and not putter.cancelled():
                     # We were woken up by get_nowait(), but can't take
                     # the call.  Wake up the next in line.
@@ -159,12 +159,13 @@ class Queue:
                 await getter
             except:
                 getter.cancel()  # Just in case getter is not done yet.
-
                 try:
+                    # Clean self._getters from canceled getters.
                     self._getters.remove(getter)
                 except ValueError:
+                    # The getter could be removed from self._getters by a
+                    # previous put_nowait call.
                     pass
-
                 if not self.empty() and not getter.cancelled():
                     # We were woken up by put_nowait(), but can't take
                     # the call.  Wake up the next in line.

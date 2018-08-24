@@ -83,7 +83,8 @@ class ViewWindow(Toplevel):
                                             command=self.ok, takefocus=False)
         self.viewframe.pack(side='top', expand=True, fill='both')
 
-        if modal:
+        self.is_modal = modal
+        if self.is_modal:
             self.transient(parent)
             self.grab_set()
             if not _utest:
@@ -91,6 +92,8 @@ class ViewWindow(Toplevel):
 
     def ok(self, event=None):
         """Dismiss text viewer dialog."""
+        if self.is_modal:
+            self.grab_release()
         self.destroy()
 
 
@@ -107,7 +110,7 @@ def view_text(parent, title, text, modal=True, _utest=False):
     return ViewWindow(parent, title, text, modal, _utest=_utest)
 
 
-def view_file(parent, title, filename, encoding=None, modal=True, _utest=False):
+def view_file(parent, title, filename, encoding, modal=True, _utest=False):
     """Create text viewer for text in filename.
 
     Return error message if file cannot be read.  Otherwise calls view_text
@@ -130,7 +133,8 @@ def view_file(parent, title, filename, encoding=None, modal=True, _utest=False):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_textview', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_textview', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(ViewWindow)

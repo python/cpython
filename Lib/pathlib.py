@@ -584,7 +584,9 @@ class _PathParents(Sequence):
 
 
 class PurePath(object):
-    """PurePath represents a filesystem path and offers operations which
+    """Base class for manipulating paths without I/O.
+
+    PurePath represents a filesystem path and offers operations which
     don't imply any actual filesystem I/O.  Depending on your system,
     instantiating a PurePath will return either a PurePosixPath or a
     PureWindowsPath object.  You can also instantiate either of these classes
@@ -805,11 +807,13 @@ class PurePath(object):
                                        self._parts[:-1] + [name])
 
     def with_suffix(self, suffix):
-        """Return a new path with the file suffix changed (or added, if none)."""
-        # XXX if suffix is None, should the current suffix be removed?
+        """Return a new path with the file suffix changed.  If the path
+        has no suffix, add given suffix.  If the given suffix is an empty
+        string, remove the suffix from the path.
+        """
         f = self._flavour
         if f.sep in suffix or f.altsep and f.altsep in suffix:
-            raise ValueError("Invalid suffix %r" % (suffix))
+            raise ValueError("Invalid suffix %r" % (suffix,))
         if suffix and not suffix.startswith('.') or suffix == '.':
             raise ValueError("Invalid suffix %r" % (suffix))
         name = self.name
@@ -939,11 +943,21 @@ os.PathLike.register(PurePath)
 
 
 class PurePosixPath(PurePath):
+    """PurePath subclass for non-Windows systems.
+
+    On a POSIX system, instantiating a PurePath should return this object.
+    However, you can also instantiate it directly on any system.
+    """
     _flavour = _posix_flavour
     __slots__ = ()
 
 
 class PureWindowsPath(PurePath):
+    """PurePath subclass for Windows systems.
+
+    On a Windows system, instantiating a PurePath should return this object.
+    However, you can also instantiate it directly on any system.
+    """
     _flavour = _windows_flavour
     __slots__ = ()
 
@@ -952,6 +966,14 @@ class PureWindowsPath(PurePath):
 
 
 class Path(PurePath):
+    """PurePath subclass that can make system calls.
+
+    Path represents a filesystem path but unlike PurePath, also offers
+    methods to do system calls on path objects. Depending on your system,
+    instantiating a Path will return either a PosixPath or a WindowsPath
+    object. You can also instantiate a PosixPath or WindowsPath directly,
+    but cannot instantiate a WindowsPath on a POSIX system or vice versa.
+    """
     __slots__ = (
         '_accessor',
         '_closed',
@@ -1427,9 +1449,17 @@ class Path(PurePath):
 
 
 class PosixPath(Path, PurePosixPath):
+    """Path subclass for non-Windows systems.
+
+    On a POSIX system, instantiating a Path should return this object.
+    """
     __slots__ = ()
 
 class WindowsPath(Path, PureWindowsPath):
+    """Path subclass for Windows systems.
+
+    On a Windows system, instantiating a Path should return this object.
+    """
     __slots__ = ()
 
     def owner(self):

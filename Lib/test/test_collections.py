@@ -141,6 +141,23 @@ class TestChainMap(unittest.TestCase):
         with self.assertRaises(KeyError):
             d.popitem()
 
+    def test_order_preservation(self):
+        d = ChainMap(
+                OrderedDict(j=0, h=88888),
+                OrderedDict(),
+                OrderedDict(i=9999, d=4444, c=3333),
+                OrderedDict(f=666, b=222, g=777, c=333, h=888),
+                OrderedDict(),
+                OrderedDict(e=55, b=22),
+                OrderedDict(a=1, b=2, c=3, d=4, e=5),
+                OrderedDict(),
+            )
+        self.assertEqual(''.join(d), 'abcdefghij')
+        self.assertEqual(list(d.items()),
+            [('a', 1), ('b', 222), ('c', 3333), ('d', 4444),
+             ('e', 55), ('f', 666), ('g', 777), ('h', 88888),
+             ('i', 9999), ('j', 0)])
+
     def test_dict_coercion(self):
         d = ChainMap(dict(a=1, b=2), dict(b=20, c=30))
         self.assertEqual(dict(d), dict(a=1, b=2, c=30))
@@ -215,6 +232,57 @@ class TestNamedTuple(unittest.TestCase):
 
         self.assertRaises(TypeError, Point._make, [11])                     # catch too few args
         self.assertRaises(TypeError, Point._make, [11, 22, 33])             # catch too many args
+
+    def test_defaults(self):
+        Point = namedtuple('Point', 'x y', defaults=(10, 20))              # 2 defaults
+        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point(1, 2), (1, 2))
+        self.assertEqual(Point(1), (1, 20))
+        self.assertEqual(Point(), (10, 20))
+
+        Point = namedtuple('Point', 'x y', defaults=(20,))                 # 1 default
+        self.assertEqual(Point._fields_defaults, {'y': 20})
+        self.assertEqual(Point(1, 2), (1, 2))
+        self.assertEqual(Point(1), (1, 20))
+
+        Point = namedtuple('Point', 'x y', defaults=())                     # 0 defaults
+        self.assertEqual(Point._fields_defaults, {})
+        self.assertEqual(Point(1, 2), (1, 2))
+        with self.assertRaises(TypeError):
+            Point(1)
+
+        with self.assertRaises(TypeError):                                  # catch too few args
+            Point()
+        with self.assertRaises(TypeError):                                  # catch too many args
+            Point(1, 2, 3)
+        with self.assertRaises(TypeError):                                  # too many defaults
+            Point = namedtuple('Point', 'x y', defaults=(10, 20, 30))
+        with self.assertRaises(TypeError):                                  # non-iterable defaults
+            Point = namedtuple('Point', 'x y', defaults=10)
+        with self.assertRaises(TypeError):                                  # another non-iterable default
+            Point = namedtuple('Point', 'x y', defaults=False)
+
+        Point = namedtuple('Point', 'x y', defaults=None)                   # default is None
+        self.assertEqual(Point._fields_defaults, {})
+        self.assertIsNone(Point.__new__.__defaults__, None)
+        self.assertEqual(Point(10, 20), (10, 20))
+        with self.assertRaises(TypeError):                                  # catch too few args
+            Point(10)
+
+        Point = namedtuple('Point', 'x y', defaults=[10, 20])               # allow non-tuple iterable
+        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point.__new__.__defaults__, (10, 20))
+        self.assertEqual(Point(1, 2), (1, 2))
+        self.assertEqual(Point(1), (1, 20))
+        self.assertEqual(Point(), (10, 20))
+
+        Point = namedtuple('Point', 'x y', defaults=iter([10, 20]))         # allow plain iterator
+        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point.__new__.__defaults__, (10, 20))
+        self.assertEqual(Point(1, 2), (1, 2))
+        self.assertEqual(Point(1), (1, 20))
+        self.assertEqual(Point(), (10, 20))
+
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -558,7 +626,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
         c = new_coro()
         self.assertIsInstance(c, Awaitable)
-        c.close() # awoid RuntimeWarning that coro() was not awaited
+        c.close() # avoid RuntimeWarning that coro() was not awaited
 
         class CoroLike: pass
         Coroutine.register(CoroLike)
@@ -608,7 +676,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
         c = new_coro()
         self.assertIsInstance(c, Coroutine)
-        c.close() # awoid RuntimeWarning that coro() was not awaited
+        c.close() # avoid RuntimeWarning that coro() was not awaited
 
         class CoroLike:
             def send(self, value):
@@ -792,13 +860,13 @@ class TestOneTrickPonyABCs(ABCTestCase):
             self.assertFalse(issubclass(type(x), Collection), repr(type(x)))
         # Check some non-collection iterables
         non_col_iterables = [_test_gen(), iter(b''), iter(bytearray()),
-                             (x for x in []), dict().values()]
+                             (x for x in [])]
         for x in non_col_iterables:
             self.assertNotIsInstance(x, Collection)
             self.assertFalse(issubclass(type(x), Collection), repr(type(x)))
         # Check some collections
         samples = [set(), frozenset(), dict(), bytes(), str(), tuple(),
-                   list(), dict().keys(), dict().items()]
+                   list(), dict().keys(), dict().items(), dict().values()]
         for x in samples:
             self.assertIsInstance(x, Collection)
             self.assertTrue(issubclass(type(x), Collection), repr(type(x)))
@@ -1615,7 +1683,7 @@ class TestCollectionABCs(ABCTestCase):
             '__len__', '__getitem__', '__setitem__', '__delitem__', 'insert')
 
     def test_MutableSequence_mixins(self):
-        # Test the mixins of MutableSequence by creating a miminal concrete
+        # Test the mixins of MutableSequence by creating a minimal concrete
         # class inherited from it.
         class MutableSequenceSubclass(MutableSequence):
             def __init__(self):

@@ -1,12 +1,6 @@
 import sys
 from types import MappingProxyType, DynamicClassAttribute
 
-# try _collections first to reduce startup cost
-try:
-    from _collections import OrderedDict
-except ImportError:
-    from collections import OrderedDict
-
 
 __all__ = [
         'EnumMeta',
@@ -64,6 +58,7 @@ class _EnumDict(dict):
         super().__init__()
         self._member_names = []
         self._last_values = []
+        self._ignore = []
 
     def __setitem__(self, key, value):
         """Changes anything not dundered or not a descriptor.
@@ -77,17 +72,28 @@ class _EnumDict(dict):
         if _is_sunder(key):
             if key not in (
                     '_order_', '_create_pseudo_member_',
-                    '_generate_next_value_', '_missing_',
+                    '_generate_next_value_', '_missing_', '_ignore_',
                     ):
                 raise ValueError('_names_ are reserved for future Enum use')
             if key == '_generate_next_value_':
                 setattr(self, '_generate_next_value', value)
+            elif key == '_ignore_':
+                if isinstance(value, str):
+                    value = value.replace(',',' ').split()
+                else:
+                    value = list(value)
+                self._ignore = value
+                already = set(value) & set(self._member_names)
+                if already:
+                    raise ValueError('_ignore_ cannot specify already set names: %r' % (already, ))
         elif _is_dunder(key):
             if key == '__order__':
                 key = '_order_'
         elif key in self._member_names:
             # descriptor overwriting an enum?
             raise TypeError('Attempted to reuse key: %r' % key)
+        elif key in self._ignore:
+            pass
         elif not _is_descriptor(value):
             if key in self:
                 # enum overwriting a descriptor?
@@ -124,6 +130,12 @@ class EnumMeta(type):
         # cannot be mixed with other types (int, float, etc.) if it has an
         # inherited __new__ unless a new __new__ is defined (or the resulting
         # class will fail).
+        #
+        # remove any keys listed in _ignore_
+        classdict.setdefault('_ignore_', []).append('_ignore_')
+        ignore = classdict['_ignore_']
+        for key in ignore:
+            classdict.pop(key, None)
         member_type, first_enum = metacls._get_mixins_(bases)
         __new__, save_new, use_args = metacls._find_new_(classdict, member_type,
                                                         first_enum)
@@ -150,7 +162,7 @@ class EnumMeta(type):
         # create our new Enum type
         enum_class = super().__new__(metacls, cls, bases, classdict)
         enum_class._member_names_ = []               # names in definition order
-        enum_class._member_map_ = OrderedDict()      # name->value map
+        enum_class._member_map_ = {}                 # name->value map
         enum_class._member_type_ = member_type
 
         # save attributes from super classes so we know if we can take
@@ -359,7 +371,7 @@ class EnumMeta(type):
             raise AttributeError('Cannot reassign members.')
         super().__setattr__(name, value)
 
-    def _create_(cls, class_name, names=None, *, module=None, qualname=None, type=None, start=1):
+    def _create_(cls, class_name, names, *, module=None, qualname=None, type=None, start=1):
         """Convenience method to create a new Enum class.
 
         `names` can be:
@@ -612,14 +624,12 @@ class Enum(metaclass=EnumMeta):
             source = vars(source)
         else:
             source = module_globals
-        # We use an OrderedDict of sorted source keys so that the
-        # _value2member_map is populated in the same order every time
+        # _value2member_map_ is populated in the same order every time
         # for a consistent reverse mapping of number to name when there
-        # are multiple names for the same number rather than varying
-        # between runs due to hash randomization of the module dictionary.
+        # are multiple names for the same number.
         members = [
-                (name, source[name])
-                for name in source.keys()
+                (name, value)
+                for name, value in source.items()
                 if filter(name)]
         try:
             # sort by value

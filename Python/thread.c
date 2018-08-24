@@ -61,7 +61,7 @@ void
 PyThread_init_thread(void)
 {
 #ifdef Py_DEBUG
-    char *p = Py_GETENV("PYTHONTHREADDEBUG");
+    const char *p = Py_GETENV("PYTHONTHREADDEBUG");
 
     if (p) {
         if (*p)
@@ -92,7 +92,7 @@ PyThread_init_thread(void)
 size_t
 PyThread_get_stacksize(void)
 {
-    return PyThreadState_GET()->interp->pythread_stacksize;
+    return _PyInterpreterState_Get()->pythread_stacksize;
 }
 
 /* Only platforms defining a THREAD_SET_STACKSIZE() macro

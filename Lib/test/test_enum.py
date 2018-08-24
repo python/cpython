@@ -8,7 +8,12 @@ from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
+from datetime import timedelta
 
+try:
+    import threading
+except ImportError:
+    threading = None
 
 # for pickle tests
 try:
@@ -1546,6 +1551,34 @@ class TestEnum(unittest.TestCase):
                 return G * self.mass / (self.radius * self.radius)
         self.assertEqual(round(Planet.EARTH.surface_gravity, 2), 9.80)
         self.assertEqual(Planet.EARTH.value, (5.976e+24, 6.37814e6))
+
+    def test_ignore(self):
+        class Period(timedelta, Enum):
+            '''
+            different lengths of time
+            '''
+            def __new__(cls, value, period):
+                obj = timedelta.__new__(cls, value)
+                obj._value_ = value
+                obj.period = period
+                return obj
+            _ignore_ = 'Period i'
+            Period = vars()
+            for i in range(13):
+                Period['month_%d' % i] = i*30, 'month'
+            for i in range(53):
+                Period['week_%d' % i] = i*7, 'week'
+            for i in range(32):
+                Period['day_%d' % i] = i, 'day'
+            OneDay = day_1
+            OneWeek = week_1
+            OneMonth = month_1
+        self.assertFalse(hasattr(Period, '_ignore_'))
+        self.assertFalse(hasattr(Period, 'Period'))
+        self.assertFalse(hasattr(Period, 'i'))
+        self.assertTrue(isinstance(Period.day_1, timedelta))
+        self.assertTrue(Period.month_1 is Period.day_30)
+        self.assertTrue(Period.week_4 is Period.day_28)
 
     def test_nonhash_value(self):
         class AutoNumberInAList(Enum):

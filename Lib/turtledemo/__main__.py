@@ -259,7 +259,7 @@ class DemoWindow(object):
         return 'break'
 
     def update_mousewheel(self, event):
-        # For wheel up, event.delte = 120 on Windows, -1 on darwin.
+        # For wheel up, event.delta = 120 on Windows, -1 on darwin.
         # X-11 sends Control-Button-4 event instead.
         if (event.delta < 0) == (not darwin):
             return self.decrease_size()

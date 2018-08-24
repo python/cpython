@@ -710,12 +710,12 @@ class CLanguage(Language):
 
         parser_prototype_fastcall = normalize_snippet("""
             static PyObject *
-            {c_basename}({self_type}{self_name}, PyObject **args, Py_ssize_t nargs)
+            {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs)
             """)
 
         parser_prototype_fastcall_keywords = normalize_snippet("""
             static PyObject *
-            {c_basename}({self_type}{self_name}, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+            {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
             """)
 
         # parser_body_fields remembers the fields passed in to the
@@ -2556,9 +2556,29 @@ class char_converter(CConverter):
     format_unit = 'c'
     c_ignored_default = "'\0'"
 
+    # characters which need to be escaped in C code
+    _escapes = {x: r'\%d' % x for x in range(7)}
+    _escapes.update({
+        0x07: r'\a',
+        0x08: r'\b',
+        0x09: r'\t',
+        0x0A: r'\n',
+        0x0B: r'\v',
+        0x0C: r'\f',
+        0x0D: r'\r',
+        0x22: r'\"',
+        0x27: r'\'',
+        0x3F: r'\?',
+        0x5C: r'\\',
+    })
+
     def converter_init(self):
-        if isinstance(self.default, self.default_type) and (len(self.default) != 1):
-            fail("char_converter: illegal default value " + repr(self.default))
+        if isinstance(self.default, self.default_type):
+            if len(self.default) != 1:
+                fail("char_converter: illegal default value " + repr(self.default))
+
+            c_ord = self.default[0]
+            self.c_default = "'%s'" % self._escapes.get(c_ord, chr(c_ord))
 
 
 @add_legacy_c_converter('B', bitwise=True)
@@ -2583,12 +2603,13 @@ class short_converter(CConverter):
 class unsigned_short_converter(CConverter):
     type = 'unsigned short'
     default_type = int
-    format_unit = 'H'
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
-        if not bitwise:
-            fail("Unsigned shorts must be bitwise (for now).")
+        if bitwise:
+            self.format_unit = 'H'
+        else:
+            self.converter = '_PyLong_UnsignedShort_Converter'
 
 @add_legacy_c_converter('C', accept={str})
 class int_converter(CConverter):
@@ -2608,12 +2629,13 @@ class int_converter(CConverter):
 class unsigned_int_converter(CConverter):
     type = 'unsigned int'
     default_type = int
-    format_unit = 'I'
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
-        if not bitwise:
-            fail("Unsigned ints must be bitwise (for now).")
+        if bitwise:
+            self.format_unit = 'I'
+        else:
+            self.converter = '_PyLong_UnsignedInt_Converter'
 
 class long_converter(CConverter):
     type = 'long'
@@ -2624,12 +2646,13 @@ class long_converter(CConverter):
 class unsigned_long_converter(CConverter):
     type = 'unsigned long'
     default_type = int
-    format_unit = 'k'
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
-        if not bitwise:
-            fail("Unsigned longs must be bitwise (for now).")
+        if bitwise:
+            self.format_unit = 'k'
+        else:
+            self.converter = '_PyLong_UnsignedLong_Converter'
 
 class long_long_converter(CConverter):
     type = 'long long'
@@ -2640,13 +2663,13 @@ class long_long_converter(CConverter):
 class unsigned_long_long_converter(CConverter):
     type = 'unsigned long long'
     default_type = int
-    format_unit = 'K'
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
-        if not bitwise:
-            fail("Unsigned long long must be bitwise (for now).")
-
+        if bitwise:
+            self.format_unit = 'K'
+        else:
+            self.converter = '_PyLong_UnsignedLongLong_Converter'
 
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
@@ -2672,6 +2695,11 @@ class slice_index_converter(CConverter):
             self.converter = '_PyEval_SliceIndex'
         else:
             fail("slice_index_converter: illegal 'accept' argument " + repr(accept))
+
+class size_t_converter(CConverter):
+    type = 'size_t'
+    converter = '_PyLong_Size_t_Converter'
+    c_ignored_default = "0"
 
 
 class float_converter(CConverter):

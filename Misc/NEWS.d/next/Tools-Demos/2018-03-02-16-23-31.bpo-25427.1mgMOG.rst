@@ -1,0 +1,3 @@
+Remove the pyvenv script in favor of ``python3 -m venv`` in order to lower
+confusion as to what Python interpreter a virtual environment will be
+created for.

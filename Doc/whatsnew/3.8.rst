@@ -1,0 +1,295 @@
+****************************
+  What's New In Python 3.8
+****************************
+
+.. Rules for maintenance:
+
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+
+   * It's helpful to add the bug/patch number as a comment:
+
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer in :issue:`12345`.)
+
+   This saves the maintainer the effort of going through the Mercurial log
+   when researching a change.
+
+This article explains the new features in Python 3.8, compared to 3.7.
+
+For full details, see the :ref:`changelog <changelog>`.
+
+.. note::
+
+   Prerelease users should be aware that this document is currently in draft
+   form. It will be updated substantially as Python 3.8 moves towards release,
+   so it's worth checking back even after reading earlier versions.
+
+
+Summary -- Release highlights
+=============================
+
+.. This section singles out the most important changes in Python 3.8.
+   Brevity is key.
+
+
+.. PEP-sized items next.
+
+
+
+New Features
+============
+
+Parallel filesystem cache for compiled bytecode files
+-----------------------------------------------------
+
+The new :envvar:`PYTHONPYCACHEPREFIX` setting (also available as
+:option:`-X` ``pycache_prefix``) configures the implicit bytecode
+cache to use a separate parallel filesystem tree, rather than
+the default ``__pycache__`` subdirectories within each source
+directory.
+
+The location of the cache is reported in :data:`sys.pycache_prefix`
+(:const:`None` indicates the default location in ``__pycache__``
+subdirectories).
+
+(Contributed by Carl Meyer in :issue:`33499`.)
+
+
+Other Language Changes
+======================
+
+* A :keyword:`continue` statement was illegal in the :keyword:`finally` clause
+  due to a problem with the implementation.  In Python 3.8 this restriction
+  was lifted.
+  (Contributed by Serhiy Storchaka in :issue:`32489`.)
+
+* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
+  (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
+
+
+New Modules
+===========
+
+* None yet.
+
+
+Improved Modules
+================
+
+Optimizations
+=============
+
+* :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
+  :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
+  "fast-copy" syscalls on Linux, macOS and Solaris in order to copy the file
+  more efficiently.
+  "fast-copy" means that the copying operation occurs within the kernel,
+  avoiding the use of userspace buffers in Python as in
+  "``outfd.write(infd.read())``".
+  On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
+  instead of 16 KiB) and a :func:`memoryview`-based variant of
+  :func:`shutil.copyfileobj` is used.
+  The speedup for copying a 512 MiB file within the same partition is about
+  +26% on Linux, +50% on macOS and +40% on Windows. Also, much less CPU cycles
+  are consumed.
+  See :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+  (Contributed by Giampaolo Rodola' in :issue:`25427`.)
+
+* The default protocol in the :mod:`pickle` module is now Protocol 4,
+  first introduced in Python 3.4.  It offers better performance and smaller
+  size compared to Protocol 3 available since Python 3.0.
+
+* Removed one ``Py_ssize_t`` member from ``PyGC_Head``.  All GC tracked
+  objects (e.g. tuple, list, dict) size is reduced 4 or 8 bytes.
+  (Contributed by Inada Naoki in :issue:`33597`)
+
+
+Build and C API Changes
+=======================
+
+* The result of :c:func:`PyExceptionClass_Name` is now of type
+  ``const char *`` rather of ``char *``.
+  (Contributed by Serhiy Storchaka in :issue:`33818`.)
+
+* The duality of ``Modules/Setup.dist`` and ``Modules/Setup`` has been
+  removed.  Previously, when updating the CPython source tree, one had
+  to manually copy ``Modules/Setup.dist`` (inside the source tree) to
+  ``Modules/Setup`` (inside the build tree) in order to reflect any changes
+  upstream.  This was of a small benefit to packagers at the expense of
+  a frequent annoyance to developers following CPython development, as
+  forgetting to copy the file could produce build failures.
+
+  Now the build system always reads from ``Modules/Setup`` inside the source
+  tree.  People who want to customize that file are encouraged to maintain
+  their changes in a git fork of CPython or as patch files, as they would do
+  for any other change to the source tree.
+
+  (Contributed by Antoine Pitrou in :issue:`32430`.)
+
+
+Deprecated
+==========
+
+* Deprecated methods ``getchildren()`` and ``getiterator()`` in
+  the :mod:`~xml.etree.ElementTree` module emit now a
+  :exc:`DeprecationWarning` instead of :exc:`PendingDeprecationWarning`.
+  They will be removed in Python 3.9.
+  (Contributed by Serhiy Storchaka in :issue:`29209`.)
+
+* Passing an object that is not an instance of
+  :class:`concurrent.futures.ThreadPoolExecutor` to
+  :meth:`asyncio.AbstractEventLoop.set_default_executor()` is
+  deprecated and will be prohibited in Python 3.9.
+  (Contributed by Elvis Pranskevichus in :issue:`34075`.)
+
+* The :meth:`__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
+  :class:`wsgiref.util.FileWrapper` and :class:`fileinput.FileInput` have been
+  deprecated.
+
+  Implementations of these methods have been ignoring their *index* parameter,
+  and returning the next item instead.
+
+  (Contributed by Berker Peksag in :issue:`9372`.)
+
+
+Removed
+=======
+
+* The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
+  to help eliminate confusion as to what Python interpreter the ``pyvenv``
+  script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
+
+* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from :mod:`cgi`
+  module.  They are deprecated from Python 3.2 or older.
+
+* ``filemode`` function is removed from :mod:`tarfile` module.
+  It is not documented and deprecated since Python 3.3.
+
+* The :class:`~xml.etree.ElementTree.XMLParser` constructor no longer accepts
+  the *html* argument.  It never had effect and was deprecated in Python 3.4.
+  All other parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+  (Contributed by Serhiy Storchaka in :issue:`29209`.)
+
+* Removed the ``doctype()`` method of :class:`~xml.etree.ElementTree.XMLParser`.
+  (Contributed by Serhiy Storchaka in :issue:`29209`.)
+
+
+Porting to Python 3.8
+=====================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+
+Changes in Python behavior
+--------------------------
+
+* Yield expressions (both ``yield`` and ``yield from`` clauses) are now disallowed
+  in comprehensions and generator expressions (aside from the iterable expression
+  in the leftmost :keyword:`for` clause).
+  (Contributed by Serhiy Storchaka in :issue:`10544`.)
+
+
+Changes in the Python API
+-------------------------
+
+* The :meth:`~tkinter.ttk.Treeview.selection` method of the
+  :class:`tkinter.ttk.Treeview` class no longer takes arguments.  Using it with
+  arguments for changing the selection was deprecated in Python 3.6.  Use
+  specialized methods like :meth:`~tkinter.ttk.Treeview.selection_set` for
+  changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
+
+* A :mod:`dbm.dumb` database opened with flags ``'r'`` is now read-only.
+  :func:`dbm.dumb.open` with flags ``'r'`` and ``'w'`` no longer creates
+  a database if it does not exist.
+  (Contributed by Serhiy Storchaka in :issue:`32749`.)
+
+* The ``doctype()`` method defined in a subclass of
+  :class:`~xml.etree.ElementTree.XMLParser` will no longer be called and will
+  cause emitting a :exc:`RuntimeWarning` instead of a :exc:`DeprecationWarning`.
+  Define the :meth:`doctype() <xml.etree.ElementTree.TreeBuilder.doctype>`
+  method on a target for handling an XML doctype declaration.
+  (Contributed by Serhiy Storchaka in :issue:`29209`.)
+
+* A :exc:`RuntimeError` is now raised when the custom metaclass doesn't
+  provide the ``__classcell__`` entry in the namespace passed to
+  ``type.__new__``.  A :exc:`DeprecationWarning` was emitted in Python
+  3.6--3.7.  (Contributed by Serhiy Storchaka in :issue:`23722`.)
+
+* The :class:`cProfile.Profile` class can now be used as a context
+  manager. (Contributed by Scott Sanderson in :issue:`29235`.)
+
+* :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
+  :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
+  "fast-copy" syscalls (see
+  :ref:`shutil-platform-dependent-efficient-copy-operations` section).
+
+* :func:`shutil.copyfile` default buffer size on Windows was changed from
+  16 KiB to 1 MiB.
+
+* ``PyGC_Head`` struct is changed completely.  All code touched the
+  struct member should be rewritten.  (See :issue:`33597`)
+
+* Asyncio tasks can now be named, either by passing the ``name`` keyword
+  argument to :func:`asyncio.create_task` or
+  the :meth:`~asyncio.AbstractEventLoop.create_task` event loop method, or by
+  calling the :meth:`~asyncio.Task.set_name` method on the task object. The
+  task name is visible in the ``repr()`` output of :class:`asyncio.Task` and
+  can also be retrieved using the :meth:`~asyncio.Task.get_name` method.
+
+* The :meth:`mmap.flush() <mmap.mmap.flush>` method now returns ``None`` on
+  success and raises an exception on error under all platforms.  Previously,
+  its behavior was platform-depended: a nonzero value was returned on success;
+  zero was returned on error under Windows.  A zero value was returned on
+  success; an exception was raised on error under Unix.
+  (Contributed by Berker Peksag in :issue:`2122`.)
+
+
+CPython bytecode changes
+------------------------
+
+* The interpreter loop  has been simplified by moving the logic of unrolling
+  the stack of blocks into the compiler.  The compiler emits now explicit
+  instructions for adjusting the stack of values and calling the cleaning
+  up code for :keyword:`break`, :keyword:`continue` and :keyword:`return`.
+
+  Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,
+  :opcode:`SETUP_LOOP` and :opcode:`SETUP_EXCEPT`.  Added new opcodes
+  :opcode:`ROT_FOUR`, :opcode:`BEGIN_FINALLY`, :opcode:`CALL_FINALLY` and
+  :opcode:`POP_FINALLY`.  Changed the behavior of :opcode:`END_FINALLY`
+  and :opcode:`WITH_CLEANUP_START`.
+
+  (Contributed by Mark Shannon, Antoine Pitrou and Serhiy Storchaka in
+  :issue:`17611`.)
+
+* Added new opcode :opcode:`END_ASYNC_FOR` for handling exceptions raised
+  when awaiting a next item in an :keyword:`async for` loop.
+  (Contributed by Serhiy Storchaka in :issue:`33041`.)

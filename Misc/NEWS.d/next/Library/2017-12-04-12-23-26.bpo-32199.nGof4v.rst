@@ -1,1 +1,0 @@
-The getnode() ip getter now uses 'ip link' instead of 'ip link list'.

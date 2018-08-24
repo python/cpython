@@ -1,15 +1,13 @@
-"""Stream-related things."""
-
-__all__ = ['StreamReader', 'StreamWriter', 'StreamReaderProtocol',
-           'open_connection', 'start_server',
-           'IncompleteReadError',
-           'LimitOverrunError',
-           ]
+__all__ = (
+    'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
+    'open_connection', 'start_server',
+    'IncompleteReadError', 'LimitOverrunError',
+)
 
 import socket
 
 if hasattr(socket, 'AF_UNIX'):
-    __all__.extend(['open_unix_connection', 'start_unix_server'])
+    __all__ += ('open_unix_connection', 'start_unix_server')
 
 from . import coroutines
 from . import events
@@ -18,7 +16,7 @@ from .log import logger
 from .tasks import sleep
 
 
-_DEFAULT_LIMIT = 2 ** 16
+_DEFAULT_LIMIT = 2 ** 16  # 64 KiB
 
 
 class IncompleteReadError(EOFError):
@@ -29,8 +27,8 @@ class IncompleteReadError(EOFError):
     - expected: total number of expected bytes (or None if unknown)
     """
     def __init__(self, partial, expected):
-        super().__init__("%d bytes read on a total of %r expected bytes"
-                         % (len(partial), expected))
+        super().__init__(f'{len(partial)} bytes read on a total of '
+                         f'{expected!r} expected bytes')
         self.partial = partial
         self.expected = expected
 
@@ -226,6 +224,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._stream_writer = None
         self._client_connected_cb = client_connected_cb
         self._over_ssl = False
+        self._closed = self._loop.create_future()
 
     def connection_made(self, transport):
         self._stream_reader.set_transport(transport)
@@ -245,6 +244,11 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
                 self._stream_reader.feed_eof()
             else:
                 self._stream_reader.set_exception(exc)
+        if not self._closed.done():
+            if exc is None:
+                self._closed.set_result(None)
+            else:
+                self._closed.set_exception(exc)
         super().connection_lost(exc)
         self._stream_reader = None
         self._stream_writer = None
@@ -260,6 +264,13 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             # has no effect when using ssl"
             return False
         return True
+
+    def __del__(self):
+        # Prevent reports about unhandled exceptions.
+        # Better than self._closed._log_traceback = False hack
+        closed = self._closed
+        if closed.done() and not closed.cancelled():
+            closed.exception()
 
 
 class StreamWriter:
@@ -281,10 +292,10 @@ class StreamWriter:
         self._loop = loop
 
     def __repr__(self):
-        info = [self.__class__.__name__, 'transport=%r' % self._transport]
+        info = [self.__class__.__name__, f'transport={self._transport!r}']
         if self._reader is not None:
-            info.append('reader=%r' % self._reader)
-        return '<%s>' % ' '.join(info)
+            info.append(f'reader={self._reader!r}')
+        return '<{}>'.format(' '.join(info))
 
     @property
     def transport(self):
@@ -305,6 +316,12 @@ class StreamWriter:
     def close(self):
         return self._transport.close()
 
+    def is_closing(self):
+        return self._transport.is_closing()
+
+    async def wait_closed(self):
+        await self._protocol._closed
+
     def get_extra_info(self, name, default=None):
         return self._transport.get_extra_info(name, default)
 
@@ -320,15 +337,14 @@ class StreamWriter:
             exc = self._reader.exception()
             if exc is not None:
                 raise exc
-        if self._transport is not None:
-            if self._transport.is_closing():
-                # Yield to the event loop so connection_lost() may be
-                # called.  Without this, _drain_helper() would return
-                # immediately, and code that calls
-                #     write(...); await drain()
-                # in a loop would never call connection_lost(), so it
-                # would not see an error when the socket is closed.
-                await sleep(0, loop=self._loop)
+        if self._transport.is_closing():
+            # Yield to the event loop so connection_lost() may be
+            # called.  Without this, _drain_helper() would return
+            # immediately, and code that calls
+            #     write(...); await drain()
+            # in a loop would never call connection_lost(), so it
+            # would not see an error when the socket is closed.
+            await sleep(0, loop=self._loop)
         await self._protocol._drain_helper()
 
 
@@ -356,20 +372,20 @@ class StreamReader:
     def __repr__(self):
         info = ['StreamReader']
         if self._buffer:
-            info.append('%d bytes' % len(self._buffer))
+            info.append(f'{len(self._buffer)} bytes')
         if self._eof:
             info.append('eof')
         if self._limit != _DEFAULT_LIMIT:
-            info.append('l=%d' % self._limit)
+            info.append(f'limit={self._limit}')
         if self._waiter:
-            info.append('w=%r' % self._waiter)
+            info.append(f'waiter={self._waiter!r}')
         if self._exception:
-            info.append('e=%r' % self._exception)
+            info.append(f'exception={self._exception!r}')
         if self._transport:
-            info.append('t=%r' % self._transport)
+            info.append(f'transport={self._transport!r}')
         if self._paused:
             info.append('paused')
-        return '<%s>' % ' '.join(info)
+        return '<{}>'.format(' '.join(info))
 
     def exception(self):
         return self._exception
@@ -440,8 +456,9 @@ class StreamReader:
         # would have an unexpected behaviour. It would not possible to know
         # which coroutine would get the next data.
         if self._waiter is not None:
-            raise RuntimeError('%s() called while another coroutine is '
-                               'already waiting for incoming data' % func_name)
+            raise RuntimeError(
+                f'{func_name}() called while another coroutine is '
+                f'already waiting for incoming data')
 
         assert not self._eof, '_wait_for_data after EOF'
 

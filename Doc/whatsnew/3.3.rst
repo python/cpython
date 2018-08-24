@@ -1414,7 +1414,7 @@ http
 :class:`http.server.BaseHTTPRequestHandler` now buffers the headers and writes
 them all at once when :meth:`~http.server.BaseHTTPRequestHandler.end_headers` is
 called.  A new method :meth:`~http.server.BaseHTTPRequestHandler.flush_headers`
-can be used to directly manage when the accumlated headers are sent.
+can be used to directly manage when the accumulated headers are sent.
 (Contributed by Andrew Schaaf in :issue:`3709`.)
 
 :class:`http.server` now produces valid ``HTML 4.01 strict`` output.
@@ -2480,12 +2480,12 @@ Porting C code
   :c:func:`PyUnicode_FromFormat()`, your code will automatically take
   advantage of the new unicode representations.
 
-* :c:func:`PyImport_GetMagicNumber` now returns -1 upon failure.
+* :c:func:`PyImport_GetMagicNumber` now returns ``-1`` upon failure.
 
 * As a negative value for the *level* argument to :func:`__import__` is no
   longer valid, the same now holds for :c:func:`PyImport_ImportModuleLevel`.
   This also means that the value of *level* used by
-  :c:func:`PyImport_ImportModuleEx` is now 0 instead of -1.
+  :c:func:`PyImport_ImportModuleEx` is now ``0`` instead of ``-1``.
 
 
 Building C extensions

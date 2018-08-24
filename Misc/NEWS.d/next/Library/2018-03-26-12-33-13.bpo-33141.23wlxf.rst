@@ -1,0 +1,2 @@
+Have Field objects pass through __set_name__ to their default values, if
+they have their own __set_name__.

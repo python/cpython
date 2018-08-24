@@ -168,6 +168,19 @@ PyObject_GetItem(PyObject *o, PyObject *key)
                               "be integer, not '%.200s'", key);
     }
 
+    if (PyType_Check(o)) {
+        PyObject *meth, *result, *stack[1] = {key};
+        _Py_IDENTIFIER(__class_getitem__);
+        if (_PyObject_LookupAttrId(o, &PyId___class_getitem__, &meth) < 0) {
+            return NULL;
+        }
+        if (meth) {
+            result = _PyObject_FastCall(meth, stack, 1);
+            Py_DECREF(meth);
+            return result;
+        }
+    }
+
     return type_error("'%.200s' object is not subscriptable", o);
 }
 
@@ -1231,6 +1244,15 @@ PyNumber_Absolute(PyObject *o)
     return type_error("bad operand type for abs(): '%.200s'", o);
 }
 
+#undef PyIndex_Check
+
+int
+PyIndex_Check(PyObject *obj)
+{
+    return obj->ob_type->tp_as_number != NULL &&
+           obj->ob_type->tp_as_number->nb_index != NULL;
+}
+
 /* Return a Python int from the object item.
    Raise TypeError if the result is not an int
    or if the object cannot be interpreted as an index.
@@ -1509,6 +1531,10 @@ PySequence_Size(PyObject *s)
         return len;
     }
 
+    if (s->ob_type->tp_as_mapping && s->ob_type->tp_as_mapping->mp_length) {
+        type_error("%.200s is not a sequence", s);
+        return -1;
+    }
     type_error("object of type '%.200s' has no len()", s);
     return -1;
 }
@@ -1655,6 +1681,9 @@ PySequence_GetItem(PyObject *s, Py_ssize_t i)
         return m->sq_item(s, i);
     }
 
+    if (s->ob_type->tp_as_mapping && s->ob_type->tp_as_mapping->mp_subscript) {
+        return type_error("%.200s is not a sequence", s);
+    }
     return type_error("'%.200s' object does not support indexing", s);
 }
 
@@ -1706,6 +1735,10 @@ PySequence_SetItem(PyObject *s, Py_ssize_t i, PyObject *o)
         return m->sq_ass_item(s, i, o);
     }
 
+    if (s->ob_type->tp_as_mapping && s->ob_type->tp_as_mapping->mp_ass_subscript) {
+        type_error("%.200s is not a sequence", s);
+        return -1;
+    }
     type_error("'%.200s' object does not support item assignment", s);
     return -1;
 }
@@ -1735,6 +1768,10 @@ PySequence_DelItem(PyObject *s, Py_ssize_t i)
         return m->sq_ass_item(s, i, (PyObject *)NULL);
     }
 
+    if (s->ob_type->tp_as_mapping && s->ob_type->tp_as_mapping->mp_ass_subscript) {
+        type_error("%.200s is not a sequence", s);
+        return -1;
+    }
     type_error("'%.200s' object doesn't support item deletion", s);
     return -1;
 }
@@ -2071,6 +2108,11 @@ PyMapping_Size(PyObject *o)
         return len;
     }
 
+    if (o->ob_type->tp_as_sequence && o->ob_type->tp_as_sequence->sq_length) {
+        type_error("%.200s is not a mapping", o);
+        return -1;
+    }
+    /* PyMapping_Size() can be called from PyObject_Size(). */
     type_error("object of type '%.200s' has no len()", o);
     return -1;
 }
@@ -2253,14 +2295,9 @@ abstract_get_bases(PyObject *cls)
     PyObject *bases;
 
     Py_ALLOW_RECURSION
-    bases = _PyObject_GetAttrId(cls, &PyId___bases__);
+    (void)_PyObject_LookupAttrId(cls, &PyId___bases__, &bases);
     Py_END_ALLOW_RECURSION
-    if (bases == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
-            PyErr_Clear();
-        return NULL;
-    }
-    if (!PyTuple_Check(bases)) {
+    if (bases != NULL && !PyTuple_Check(bases)) {
         Py_DECREF(bases);
         return NULL;
     }
@@ -2323,26 +2360,23 @@ static int
 recursive_isinstance(PyObject *inst, PyObject *cls)
 {
     PyObject *icls;
-    int retval = 0;
+    int retval;
     _Py_IDENTIFIER(__class__);
 
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
-            PyObject *c = _PyObject_GetAttrId(inst, &PyId___class__);
-            if (c == NULL) {
-                if (PyErr_ExceptionMatches(PyExc_AttributeError))
-                    PyErr_Clear();
-                else
-                    retval = -1;
-            }
-            else {
-                if (c != (PyObject *)(inst->ob_type) &&
-                    PyType_Check(c))
+            retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
+            if (icls != NULL) {
+                if (icls != (PyObject *)(inst->ob_type) && PyType_Check(icls)) {
                     retval = PyType_IsSubtype(
-                        (PyTypeObject *)c,
+                        (PyTypeObject *)icls,
                         (PyTypeObject *)cls);
-                Py_DECREF(c);
+                }
+                else {
+                    retval = 0;
+                }
+                Py_DECREF(icls);
             }
         }
     }
@@ -2350,14 +2384,8 @@ recursive_isinstance(PyObject *inst, PyObject *cls)
         if (!check_class(cls,
             "isinstance() arg 2 must be a type or tuple of types"))
             return -1;
-        icls = _PyObject_GetAttrId(inst, &PyId___class__);
-        if (icls == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError))
-                PyErr_Clear();
-            else
-                retval = -1;
-        }
-        else {
+        retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
+        if (icls != NULL) {
             retval = abstract_issubclass(icls, cls);
             Py_DECREF(icls);
         }
@@ -2534,6 +2562,14 @@ PyObject_GetIter(PyObject *o)
         }
         return res;
     }
+}
+
+#undef PyIter_Check
+
+int PyIter_Check(PyObject *obj)
+{
+    return obj->ob_type->tp_iternext != NULL &&
+           obj->ob_type->tp_iternext != &_PyObject_NextNotImplemented;
 }
 
 /* Return next item.

@@ -61,6 +61,7 @@ debug(wchar_t * format, ...)
     if (log_fp != NULL) {
         va_start(va, format);
         vfwprintf_s(log_fp, format, va);
+        va_end(va);
     }
 }
 
@@ -83,6 +84,7 @@ error(int rc, wchar_t * format, ... )
 
     va_start(va, format);
     len = _vsnwprintf_s(message, MSGSIZE, _TRUNCATE, format, va);
+    va_end(va);
 
     if (rc == 0) {  /* a Windows error */
         winerror(GetLastError(), win_message, MSGSIZE);
@@ -1116,6 +1118,7 @@ static PYC_MAGIC magic_values[] = {
     { 3320, 3351, L"3.5" },
     { 3360, 3379, L"3.6" },
     { 3390, 3399, L"3.7" },
+    { 3400, 3409, L"3.8" },
     { 0 }
 };
 

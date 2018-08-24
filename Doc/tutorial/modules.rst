@@ -112,6 +112,25 @@ Note that in general the practice of importing ``*`` from a module or package is
 frowned upon, since it often causes poorly readable code. However, it is okay to
 use it to save typing in interactive sessions.
 
+If the module name is followed by :keyword:`as`, then the name
+following :keyword:`as` is bound directly to the imported module.
+
+::
+
+   >>> import fibo as fib
+   >>> fib.fib(500)
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
+This is effectively importing the module in the same way that ``import fibo``
+will do, with the only difference of it being available as ``fib``.
+
+It can also be used when utilising :keyword:`from` with similar effects::
+
+   >>> from fibo import fib as fibonacci
+   >>> fibonacci(500)
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
+
 .. note::
 
    For efficiency reasons, each module is only imported once per interpreter
@@ -230,7 +249,7 @@ Some tips for experts:
   directory.
 
 * There is more detail on this process, including a flow chart of the
-  decisions, in PEP 3147.
+  decisions, in :pep:`3147`.
 
 
 .. _tut-standardmodules:
@@ -363,7 +382,7 @@ module names".  For example, the module name :mod:`A.B` designates a submodule
 named ``B`` in a package named ``A``.  Just like the use of modules saves the
 authors of different modules from having to worry about each other's global
 variable names, the use of dotted module names saves the authors of multi-module
-packages like NumPy or the Python Imaging Library from having to worry about
+packages like NumPy or Pillow from having to worry about
 each other's module names.
 
 Suppose you want to design a collection of modules (a "package") for the uniform

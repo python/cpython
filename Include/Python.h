@@ -35,6 +35,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_CRYPT_H
+#include <crypt.h>
+#endif
 
 /* For size_t? */
 #ifdef HAVE_STDDEF_H
@@ -108,7 +111,9 @@
 #include "codecs.h"
 #include "pyerrors.h"
 
+#include "coreconfig.h"
 #include "pystate.h"
+#include "context.h"
 
 #include "pyarena.h"
 #include "modsupport.h"

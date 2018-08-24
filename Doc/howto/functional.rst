@@ -198,7 +198,7 @@ for it.
 
 You can experiment with the iteration interface manually:
 
-    >>> L = [1,2,3]
+    >>> L = [1, 2, 3]
     >>> it = iter(L)
     >>> it  #doctest: +ELLIPSIS
     <...iterator object at ...>
@@ -229,7 +229,7 @@ iterator.  These two statements are equivalent::
 Iterators can be materialized as lists or tuples by using the :func:`list` or
 :func:`tuple` constructor functions:
 
-    >>> L = [1,2,3]
+    >>> L = [1, 2, 3]
     >>> iterator = iter(L)
     >>> t = tuple(iterator)
     >>> t
@@ -238,10 +238,10 @@ Iterators can be materialized as lists or tuples by using the :func:`list` or
 Sequence unpacking also supports iterators: if you know an iterator will return
 N elements, you can unpack them into an N-tuple:
 
-    >>> L = [1,2,3]
+    >>> L = [1, 2, 3]
     >>> iterator = iter(L)
-    >>> a,b,c = iterator
-    >>> a,b,c
+    >>> a, b, c = iterator
+    >>> a, b, c
     (1, 2, 3)
 
 Built-in functions such as :func:`max` and :func:`min` can take a single
@@ -273,23 +273,24 @@ dictionary's keys::
 
     >>> m = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
     ...      'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
-    >>> for key in m:  #doctest: +SKIP
+    >>> for key in m:
     ...     print(key, m[key])
-    Mar 3
+    Jan 1
     Feb 2
-    Aug 8
-    Sep 9
+    Mar 3
     Apr 4
+    May 5
     Jun 6
     Jul 7
-    Jan 1
-    May 5
+    Aug 8
+    Sep 9
+    Oct 10
     Nov 11
     Dec 12
-    Oct 10
 
-Note that the order is essentially random, because it's based on the hash
-ordering of the objects in the dictionary.
+Note that starting with Python 3.7, dictionary iteration order is guaranteed
+to be the same as the insertion order. In earlier versions, the behaviour was
+unspecified and could vary between implementations.
 
 Applying :func:`iter` to a dictionary always loops over the keys, but
 dictionaries have methods that return other iterators.  If you want to iterate
@@ -301,8 +302,8 @@ The :func:`dict` constructor can accept an iterator that returns a finite stream
 of ``(key, value)`` tuples:
 
     >>> L = [('Italy', 'Rome'), ('France', 'Paris'), ('US', 'Washington DC')]
-    >>> dict(iter(L))  #doctest: +SKIP
-    {'Italy': 'Rome', 'US': 'Washington DC', 'France': 'Paris'}
+    >>> dict(iter(L))
+    {'Italy': 'Rome', 'France': 'Paris', 'US': 'Washington DC'}
 
 Files also support iteration by calling the :meth:`~io.TextIOBase.readline`
 method until there are no more lines in the file.  This means you can read each
@@ -410,7 +411,7 @@ lengths of all the sequences.  If you have two lists of length 3, the output
 list is 9 elements long:
 
     >>> seq1 = 'abc'
-    >>> seq2 = (1,2,3)
+    >>> seq2 = (1, 2, 3)
     >>> [(x, y) for x in seq1 for y in seq2]  #doctest: +NORMALIZE_WHITESPACE
     [('a', 1), ('a', 2), ('a', 3),
      ('b', 1), ('b', 2), ('b', 3),
@@ -478,7 +479,7 @@ Here's a sample usage of the ``generate_ints()`` generator:
       File "stdin", line 2, in generate_ints
     StopIteration
 
-You could equally write ``for i in generate_ints(5)``, or ``a,b,c =
+You could equally write ``for i in generate_ints(5)``, or ``a, b, c =
 generate_ints(3)``.
 
 Inside a generator function, ``return value`` causes ``StopIteration(value)``
@@ -694,17 +695,17 @@ truth values of an iterable's contents.  :func:`any` returns ``True`` if any ele
 in the iterable is a true value, and :func:`all` returns ``True`` if all of the
 elements are true values:
 
-    >>> any([0,1,0])
+    >>> any([0, 1, 0])
     True
-    >>> any([0,0,0])
+    >>> any([0, 0, 0])
     False
-    >>> any([1,1,1])
+    >>> any([1, 1, 1])
     True
-    >>> all([0,1,0])
+    >>> all([0, 1, 0])
     False
-    >>> all([0,0,0])
+    >>> all([0, 0, 0])
     False
-    >>> all([1,1,1])
+    >>> all([1, 1, 1])
     True
 
 
@@ -763,7 +764,7 @@ which defaults to 0, and the interval between numbers, which defaults to 1::
 a provided iterable and returns a new iterator that returns its elements from
 first to last.  The new iterator will repeat these elements infinitely. ::
 
-    itertools.cycle([1,2,3,4,5]) =>
+    itertools.cycle([1, 2, 3, 4, 5]) =>
       1, 2, 3, 4, 5, 1, 2, 3, 4, 5, ...
 
 :func:`itertools.repeat(elem, [n]) <itertools.repeat>` returns the provided
@@ -874,7 +875,7 @@ iterable's results. ::
 iterators and returns only those elements of *data* for which the corresponding
 element of *selectors* is true, stopping whenever either one is exhausted::
 
-    itertools.compress([1,2,3,4,5], [True, True, False, False, True]) =>
+    itertools.compress([1, 2, 3, 4, 5], [True, True, False, False, True]) =>
        1, 2, 5
 
 
@@ -1034,7 +1035,7 @@ first calculation. ::
     Traceback (most recent call last):
       ...
     TypeError: reduce() of empty sequence with no initial value
-    >>> functools.reduce(operator.mul, [1,2,3], 1)
+    >>> functools.reduce(operator.mul, [1, 2, 3], 1)
     6
     >>> functools.reduce(operator.mul, [], 1)
     1
@@ -1044,9 +1045,9 @@ elements of the iterable.  This case is so common that there's a special
 built-in called :func:`sum` to compute it:
 
     >>> import functools, operator
-    >>> functools.reduce(operator.add, [1,2,3,4], 0)
+    >>> functools.reduce(operator.add, [1, 2, 3, 4], 0)
     10
-    >>> sum([1,2,3,4])
+    >>> sum([1, 2, 3, 4])
     10
     >>> sum([])
     0
@@ -1056,11 +1057,11 @@ write the obvious :keyword:`for` loop::
 
    import functools
    # Instead of:
-   product = functools.reduce(operator.mul, [1,2,3], 1)
+   product = functools.reduce(operator.mul, [1, 2, 3], 1)
 
    # You can write:
    product = 1
-   for i in [1,2,3]:
+   for i in [1, 2, 3]:
        product *= i
 
 A related function is :func:`itertools.accumulate(iterable, func=operator.add)
@@ -1068,10 +1069,10 @@ A related function is :func:`itertools.accumulate(iterable, func=operator.add)
 returning only the final result, :func:`accumulate` returns an iterator that
 also yields each partial result::
 
-    itertools.accumulate([1,2,3,4,5]) =>
+    itertools.accumulate([1, 2, 3, 4, 5]) =>
       1, 3, 6, 10, 15
 
-    itertools.accumulate([1,2,3,4,5], operator.mul) =>
+    itertools.accumulate([1, 2, 3, 4, 5], operator.mul) =>
       1, 2, 6, 24, 120
 
 
@@ -1155,7 +1156,7 @@ But it would be best of all if I had simply used a ``for`` loop::
 
 Or the :func:`sum` built-in and a generator expression::
 
-     total = sum(b for a,b in items)
+     total = sum(b for a, b in items)
 
 Many uses of :func:`functools.reduce` are clearer when written as ``for`` loops.
 

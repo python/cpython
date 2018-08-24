@@ -45,7 +45,7 @@ fine-tuning parameters.
 
 .. seealso::
 
-   The third-party `regex <https://pypi.python.org/pypi/regex/>`_ module,
+   The third-party `regex <https://pypi.org/project/regex/>`_ module,
    which has an API compatible with the standard library :mod:`re` module,
    but offers additional functionality and a more thorough Unicode support.
 
@@ -67,8 +67,8 @@ string *pq* will match AB.  This holds unless *A* or *B* contain low precedence
 operations; boundary conditions between *A* and *B*; or have numbered group
 references.  Thus, complex expressions can easily be constructed from simpler
 primitive expressions like the ones described here.  For details of the theory
-and implementation of regular expressions, consult the Friedl book referenced
-above, or almost any textbook about compiler construction.
+and implementation of regular expressions, consult the Friedl book [Frie09]_,
+or almost any textbook about compiler construction.
 
 A brief explanation of the format of regular expressions follows.  For further
 information and a gentler presentation, consult the :ref:`regex-howto`.
@@ -345,7 +345,7 @@ The special characters are:
 
    This example looks for a word following a hyphen:
 
-      >>> m = re.search('(?<=-)\w+', 'spam-egg')
+      >>> m = re.search(r'(?<=-)\w+', 'spam-egg')
       >>> m.group(0)
       'egg'
 
@@ -468,13 +468,13 @@ Most of the standard escapes supported by Python string literals are also
 accepted by the regular expression parser::
 
    \a      \b      \f      \n
-   \r      \t      \u      \U
-   \v      \x      \\
+   \N      \r      \t      \u
+   \U      \v      \x      \\
 
 (Note that ``\b`` is used to represent word boundaries, and means "backspace"
 only inside character classes.)
 
-``'\u'`` and ``'\U'`` escape sequences are only recognized in Unicode
+``'\u'``, ``'\U'``, and ``'\N'`` escape sequences are only recognized in Unicode
 patterns.  In bytes patterns they are errors.
 
 Octal escapes are included in a limited form.  If the first digit is a 0, or if
@@ -488,14 +488,9 @@ three digits in length.
 .. versionchanged:: 3.6
    Unknown escapes consisting of ``'\'`` and an ASCII letter now are errors.
 
-
-.. seealso::
-
-   Mastering Regular Expressions
-      Book on regular expressions by Jeffrey Friedl, published by O'Reilly.  The
-      second edition of the book no longer covers Python at all, but the first
-      edition covered writing good regular expression patterns in great detail.
-
+.. versionchanged:: 3.8
+   The ``'\N{name}'`` escape sequence has been added. As in string literals,
+   it expands to the named Unicode character (e.g. ``'\N{EM DASH}'``).
 
 
 .. _contents-of-module-re:
@@ -708,12 +703,15 @@ form.
    That way, separator components are always found at the same relative
    indices within the result list.
 
-   The pattern can match empty strings. ::
+   Empty matches for the pattern split the string only when not adjacent
+   to a previous empty match.
 
       >>> re.split(r'\b', 'Words, words, words.')
       ['', 'Words', ', ', 'words', ', ', 'words', '.']
+      >>> re.split(r'\W*', '...words...')
+      ['', '', 'w', 'o', 'r', 'd', 's', '', '']
       >>> re.split(r'(\W*)', '...words...')
-      ['', '...', 'w', '', 'o', '', 'r', '', 'd', '', 's', '...', '']
+      ['', '...', '', '', 'w', '', 'o', '', 'r', '', 'd', '', 's', '...', '', '', '']
 
    .. versionchanged:: 3.1
       Added the optional flags argument.
@@ -778,8 +776,8 @@ form.
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
    occurrences will be replaced. Empty matches for the pattern are replaced only
-   when not adjacent to a previous match, so ``sub('x*', '-', 'abc')`` returns
-   ``'-a-b-c-'``.
+   when not adjacent to a previous empty match, so ``sub('x*', '-', 'abxd')`` returns
+   ``'-a-b--d-'``.
 
    In string-type *repl* arguments, in addition to the character escapes and
    backreferences described above,
@@ -804,6 +802,9 @@ form.
    .. versionchanged:: 3.7
       Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
       now are errors.
+
+      Empty matches for the pattern are replaced when adjacent to a previous
+      non-empty match.
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
@@ -1449,8 +1450,8 @@ Finding all Adverbs
 ^^^^^^^^^^^^^^^^^^^
 
 :func:`findall` matches *all* occurrences of a pattern, not just the first
-one as :func:`search` does.  For example, if one was a writer and wanted to
-find all of the adverbs in some text, he or she might use :func:`findall` in
+one as :func:`search` does.  For example, if a writer wanted to
+find all of the adverbs in some text, they might use :func:`findall` in
 the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
@@ -1464,8 +1465,8 @@ Finding all Adverbs and their Positions
 If one wants more information about all matches of a pattern than the matched
 text, :func:`finditer` is useful as it provides :ref:`match objects
 <match-objects>` instead of strings.  Continuing with the previous example, if
-one was a writer who wanted to find all of the adverbs *and their positions* in
-some text, he or she would use :func:`finditer` in the following manner::
+a writer wanted to find all of the adverbs *and their positions* in
+some text, they would use :func:`finditer` in the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
    >>> for m in re.finditer(r"\w+ly", text):
@@ -1576,3 +1577,9 @@ The tokenizer produces the following output::
     Token(typ='END', value=';', line=4, column=27)
     Token(typ='ENDIF', value='ENDIF', line=5, column=4)
     Token(typ='END', value=';', line=5, column=9)
+
+
+.. [Frie09] Friedl, Jeffrey. Mastering Regular Expressions. 3rd ed., O'Reilly
+   Media, 2009. The third edition of the book no longer covers Python at all,
+   but the first edition covered writing good regular expression patterns in
+   great detail.

@@ -1,0 +1,2 @@
+Performance of list concatenation, repetition and slicing operations is
+slightly improved. Patch by Sergey Fedoseev.
