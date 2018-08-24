@@ -248,47 +248,117 @@ def list2cmdline(seq):
        backslash.  If the number of backslashes is odd, the last
        backslash escapes the next double quotation mark as
        described in rule 3.
+
+    6) Note that some special meta-chars `&|^<>!()%` should be escaped,
+       additionally if arguments contain unpaired (also escaped) quotes
+       before (and another like a percent char `%` - always (regardless
+       paired/unpaired quotes).
+       This chars can be escaped using switching quotation process (so
+       quasy enclosed in aditional quotes, like '1&&2' -> '1"&&"2', thereby 
+       backslashes can be joined with this chars but it's important to 
+       consider the backslash before new closing quote, so both of
+       '1\\&&\\2' -> '1"\\&&"\\2' as well as a bit longer variant
+       '1\\&&\\2' -> '1"\\&&\\\\"2' (with double escaped backslash) are correct.
+       See under [SB-0D-001-win-exec] for more info.
     """
 
-    # See
+    # See 
+    # https://github.com/sebres/PoC/blob/master/SB-0D-001-win-exec/SOLUTION.md
     # http://msdn.microsoft.com/en-us/library/17w5ykft.aspx
     # or search http://msdn.microsoft.com for
     # "Parsing C++ Command-Line Arguments"
-    result = []
-    needquote = False
-    for arg in seq:
-        bs_buf = []
+    specMetaChars = '&|^<>!()%'
+    specMetaChars2 = '%'
 
+    result = []
+    unpaired = False
+    for arg in seq:
         # Add a space to separate this argument from the others
         if result:
             result.append(' ')
 
-        needquote = (" " in arg) or ("\t" in arg) or not arg
+        # Analyze arguments (retrieve the flags for quoting process):
+        needquote = (arg == "") # indicates the arg is to enclose in quotes
+        needescape = False      # indicates the arg is to escape (meta-chars)
+        bscnt = 0               # count of backslashes before current position
+        specChars = None        # within special escape, using unpaired quotes
+
+        for c in arg:
+            if c in ' \t':
+                needquote = True
+                if bscnt: needescape = True
+            elif c in specMetaChars:
+                needquote = needescape = True
+            elif c == '"':
+                needescape = True
+            elif c == '\\':
+                bscnt = 1
+                if needquote: needescape = True
+            if needquote and needescape: break
+
+        bscnt = 0
+        # Add main opening quote, if needed.
         if needquote:
             result.append('"')
 
-        for c in arg:
-            if c == '\\':
-                # Don't know if we need to double yet.
-                bs_buf.append(c)
-            elif c == '"':
-                # Double backslashes.
-                result.append('\\' * len(bs_buf)*2)
-                bs_buf = []
-                result.append('\\"')
-            else:
-                # Normal char
-                if bs_buf:
-                    result.extend(bs_buf)
-                    bs_buf = []
-                result.append(c)
+        if not needescape:
+            # Don't need to escape
+            result.append(arg)
+        else:
+            # Escape process:
+            for c in arg:
+                if c == '\\':
+                    # Don't know if we need to double yet.
+                    bscnt += 1
+                    continue
+                if specChars:
+                    # Special escape in progress:
+                    if c in specChars:
+                        # Char in special table (don't need to escape backslash)
+                        if bscnt:
+                            result.append('\\'*bscnt); bscnt = 0
+                        result.append(c)
+                        continue
+                    # End of special escape process
+                    specChars = None
+                    # Unescaped closing (unescaped) quote:
+                    result.append('"')
+                if c == '"':
+                    # Invert unpaired flag
+                    unpaired = not unpaired
+                    # Double backslashes and escaped quote:
+                    if bscnt:
+                        result.append('\\\\'*bscnt); bscnt = 0
+                    result.append('\\"')
+                elif unpaired and c in specMetaChars:
+                    # Double backslashes and opening (unescaped) quote:
+                    if bscnt:
+                        result.append('\\\\'*bscnt); bscnt = 0
+                    result.append('"' + c)
+                    specChars = specMetaChars
+                elif c in specMetaChars2:
+                    # Double backslashes and opening (unescaped) quote:
+                    if bscnt:
+                        result.append('\\\\'*bscnt); bscnt = 0
+                    result.append('"' + c)
+                    specChars = specMetaChars2
+                else:
+                    # Normal char (don't need to escape backslash)
+                    if bscnt:
+                        result.append('\\'*bscnt); bscnt = 0
+                    result.append(c)
 
-        # Add remaining backslashes, if any.
-        if bs_buf:
-            result.extend(bs_buf)
+        # If special escape still in progress:
+        if specChars:
+            # Unescaped closing (unescaped) quote:
+            result.append('"')
 
+        if bscnt:
+            # Add remaining backslashes (corresponding quoting flag)
+            result.append(('\\\\' if needquote else '\\')*bscnt); bscnt = 0
+
+        # Add main closing quote, if needed.
         if needquote:
-            result.extend(bs_buf)
             result.append('"')
 
     return ''.join(result)
