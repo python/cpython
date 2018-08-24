@@ -268,7 +268,7 @@ BoundedSemaphore
    This raises :exc:`ValueError` in :meth:`~Semaphore.release` if it would
    increase the value above the initial value.
 
-   Bounded semapthores support the :ref:`context management
+   Bounded semaphores support the :ref:`context management
    protocol <async-with-locks>`.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
