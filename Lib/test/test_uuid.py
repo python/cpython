@@ -325,8 +325,7 @@ class BaseTestUUID:
         with unittest.mock.patch.multiple(
             self.uuid,
             _node=None,  # Ignore any cached node value.
-            _NODE_GETTERS_WIN32=[too_large_getter],
-            _NODE_GETTERS_UNIX=[too_large_getter],
+            _NODE_GETTERS=[too_large_getter],
         ):
             node = self.uuid.getnode()
         self.assertTrue(0 < node < (1 << 48), '%012x' % node)
@@ -516,21 +515,39 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 class BaseTestInternals:
     uuid = None
 
+    @unittest.skipUnless(AIX, 'requires AIX')
+    def test_find_mac_netstat(self):
+        data = '''Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
+en0   1500  link#2      fe.ad.c.1.23.4   1714807956     0 711348489     0     0
+                        01:00:5e:00:00:01
+en0   1500  192.168.129 x071             1714807956     0 711348489     0     0
+                        224.0.0.1
+en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
+                        224.0.0.1
+'''
+        popen = unittest.mock.MagicMock()
+        popen.stdout = io.BytesIO(data.encode())
+
+        with unittest.mock.patch.object(shutil, 'which',
+                                        return_value='/usr/bin/netstat'):
+            with unittest.mock.patch.object(subprocess, 'Popen',
+                                            return_value=popen):
+                mac = self.uuid._find_mac_netstat(
+                    command='netstat',
+                    args='-ia',
+                    hw_identifiers=b'Address',
+                    get_index=lambda x: x * 1,
+                )
+
+        self.assertEqual(mac, 0xfead0c012304)
+
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipIf(AIX, 'because AIX "ifconfig" does not provide macaddr')
     def test_find_mac(self):
-        if not AIX:
-            data = '''
-fake hwaddr
+        data = '''fake      Link encap:UNSPEC  hwaddr 00-00
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
-        else:
-            data = '''
-fake hwaddr
-cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
-eth0      Link encap:Ethernet  HWaddr 12.34.56.78.90.ab
-'''
-
         popen = unittest.mock.MagicMock()
         popen.stdout = io.BytesIO(data.encode())
 
