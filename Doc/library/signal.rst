@@ -67,7 +67,7 @@ Module contents
    signal (SIG*), handler (:const:`SIG_DFL`, :const:`SIG_IGN`) and sigmask
    (:const:`SIG_BLOCK`, :const:`SIG_UNBLOCK`, :const:`SIG_SETMASK`)
    related constants listed below were turned into
-   :class:`enums <enum.IntEnum>` (respectively :class:`Handlers` and :class:`Sigmasks`).
+   :class:`enums <enum.IntEnum>` (:class:`Handlers` and :class:`Sigmasks` respectively).
    :func:`getsignal`, :func:`pthread_sigmask`, :func:`sigpending` and
    :func:`sigwait` functions return human-readable
    :class:`enums <enum.IntEnum>` as :class:`Signals` objects.
