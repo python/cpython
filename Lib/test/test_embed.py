@@ -251,6 +251,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
+    UTF8_MODE_ERRORS = ('surrogatepass' if sys.platform == 'win32'
+                        else 'surrogateescape')
     DEFAULT_CONFIG = {
         'install_signal_handlers': 1,
         'use_environment': 1,
@@ -265,8 +267,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'show_alloc_count': 0,
         'dump_refs': 0,
         'malloc_stats': 0,
-        'utf8_mode': 0,
 
+        # None means that the default encoding is read at runtime:
+        # see get_locale_encoding().
+        'filesystem_encoding': None,
+        'filesystem_errors': sys.getfilesystemencodeerrors(),
+        'utf8_mode': 0,
         'coerce_c_locale': 0,
         'coerce_c_locale_warn': 0,
 
@@ -297,6 +303,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_frozen': 0,
     }
 
+
     def get_stdio_encoding(self, env):
         code = 'import sys; print(sys.stdout.encoding, sys.stdout.errors)'
         args = (sys.executable, '-c', code)
@@ -307,6 +314,29 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             raise Exception(f"failed to get the stdio encoding: stdout={proc.stdout!r}")
         out = proc.stdout.rstrip()
         return out.split()
+
+    def get_locale_encoding(self, isolated):
+        if sys.platform in ('win32', 'darwin') or support.is_android:
+            # Windows, macOS and Android use UTF-8
+            return "UTF-8"
+
+        code = ('import codecs, locale, sys',
+                'locale.setlocale(locale.LC_CTYPE, "")',
+                'enc = locale.nl_langinfo(locale.CODESET)',
+                'enc = codecs.lookup(enc).name',
+                'print(enc)')
+        args = (sys.executable, '-c', '; '.join(code))
+        env = dict(os.environ)
+        if not isolated:
+            env['PYTHONCOERCECLOCALE'] = '0'
+            env['PYTHONUTF8'] = '0'
+        proc = subprocess.run(args, text=True, env=env,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        if proc.returncode:
+            raise Exception(f"failed to get the locale encoding: "
+                            f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
+        return proc.stdout.rstrip()
 
     def check_config(self, testname, expected):
         expected = dict(self.DEFAULT_CONFIG, **expected)
@@ -326,6 +356,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 expected['stdio_encoding'] = res[0]
             if expected['stdio_errors'] is None:
                 expected['stdio_errors'] = res[1]
+        if expected['filesystem_encoding'] is None:
+            expected['filesystem_encoding'] = self.get_locale_encoding(expected['isolated'])
         for key, value in expected.items():
             expected[key] = str(value)
 
@@ -357,7 +389,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'utf8_mode': 1,
             'stdio_encoding': 'utf-8',
             'stdio_errors': 'surrogateescape',
-
+            'filesystem_encoding': 'utf-8',
+            'filesystem_errors': self.UTF8_MODE_ERRORS,
             'user_site_directory': 0,
             '_frozen': 1,
         }
@@ -378,6 +411,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'utf8_mode': 1,
             'stdio_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
+            'filesystem_encoding': 'utf-8',
+            'filesystem_errors': self.UTF8_MODE_ERRORS,
 
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
@@ -409,6 +444,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'import_time': 1,
             'malloc_stats': 1,
             'utf8_mode': 1,
+            'filesystem_encoding': 'utf-8',
+            'filesystem_errors': self.UTF8_MODE_ERRORS,
             'inspect': 1,
             'optimization_level': 2,
             'pycache_prefix': 'env_pycache_prefix',
