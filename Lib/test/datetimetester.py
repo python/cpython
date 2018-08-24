@@ -1311,7 +1311,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
         # bpo-34482: Check that surrogates don't cause a crash.
         try:
-            self.assertEqual(t.strftime('%y\ud800%m'), '05\ud80003')
+            t.strftime('%y\ud800%m')
         except UnicodeEncodeError:
             pass
 
@@ -2375,8 +2375,7 @@ class TestDateTime(TestDate):
 
         # bpo-34482: Check that surrogates don't cause a crash.
         try:
-            self.assertEqual(t.strftime('%y\ud800%m %H\ud800%M'),
-                             '04\ud80012 06\ud80022')
+            t.strftime('%y\ud800%m %H\ud800%M')
         except UnicodeEncodeError:
             pass
 
@@ -2951,7 +2950,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
         # bpo-34482: Check that surrogates don't cause a crash.
         try:
-            self.assertEqual(t.strftime('%H\ud800%M'), '01\ud80002')
+            t.strftime('%H\ud800%M')
         except UnicodeEncodeError:
             pass
 
