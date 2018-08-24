@@ -65,7 +65,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*
-   defaults to 0.  *offset* must be a multiple of the ALLOCATIONGRANULARITY.
+   defaults to 0.  *offset* must be a multiple of the :const:`ALLOCATIONGRANULARITY`.
 
 
 .. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, access=ACCESS_DEFAULT[, offset])
