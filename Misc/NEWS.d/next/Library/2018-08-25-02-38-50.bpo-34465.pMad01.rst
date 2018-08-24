@@ -1,0 +1,2 @@
+Addeded one more constructor that takes  bytearray  for  creating  a  new  IPv4
+address.
