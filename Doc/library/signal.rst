@@ -478,8 +478,8 @@ The :mod:`signal` module defines the following functions:
 
 .. _signal-example:
 
-Example
--------
+Examples
+--------
 
 Here is a minimal example program. It uses the :func:`alarm` function to limit
 the time spent waiting to open a file; this is useful if the file is for a
@@ -502,6 +502,21 @@ be sent, and the handler raises an exception. ::
    fd = os.open('/dev/ttyS0', os.O_RDWR)
 
    signal.alarm(0)          # Disable the alarm
+
+:class:`enums <enum.IntEnum>` types can be used to convert from signal code to string, or the reverse::
+
+   import signal, os
+
+   def handler(signum, frame):
+       # signum is an integer code, get the signal name using the signal.Signal enum
+       signame = signal.Signals(signum).name
+       print(f'Signal handler called with signal {signame} of code {signum}')
+
+   # attach a handler for signal.SIGINT
+   signame = 'SIGINT'
+   signal.signal(signal.Signals[signame], handler)
+
+
 
 Note on SIGPIPE
 ---------------
