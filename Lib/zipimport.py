@@ -15,6 +15,7 @@ to Zip archives.
 #from importlib import _bootstrap_external
 #from importlib import _bootstrap  # for _verbose_message
 import _frozen_importlib_external as _bootstrap_external
+from _frozen_importlib_external import _unpack_uint16, _unpack_uint32
 import _frozen_importlib as _bootstrap  # for _verbose_message
 import _imp  # for check_hash_based_pycs
 import _io  # for open
@@ -201,9 +202,9 @@ class zipimporter:
 
         path = _get_module_path(self, fullname)
         if mi:
-            fullpath = path + path_sep + '__init__.py'
+            fullpath = _bootstrap_external._path_join(path, '__init__.py')
         else:
-            fullpath = path + '.py'
+            fullpath = f'{path}.py'
 
         try:
             toc_entry = self._files[fullpath]
@@ -246,7 +247,7 @@ class zipimporter:
                 # add __path__ to the module *before* the code gets
                 # executed
                 path = _get_module_path(self, fullname)
-                fullpath = f'{self.archive}{path_sep}{path}'
+                fullpath = _bootstrap_external._path_join(self.archive, path)
                 mod.__path__ = [fullpath]
 
             if not hasattr(mod, '__builtins__'):
@@ -316,16 +317,6 @@ def _get_module_info(self, fullname):
 
 
 # implementation
-
-def _unpack_uint32(data):
-    """Convert 4 bytes in little-endian to an integer."""
-    assert len(data) == 4
-    return int.from_bytes(data, 'little')
-
-def _unpack_uint16(data):
-    """Convert 2 bytes in little-endian to an integer."""
-    assert len(data) == 2
-    return int.from_bytes(data, 'little')
 
 # _read_directory(archive) -> files dict (new reference)
 #
@@ -433,7 +424,7 @@ def _read_directory(archive):
                     name = name.decode('latin1').translate(cp437_table)
 
             name = name.replace('/', path_sep)
-            path = f'{archive}{path_sep}{name}'
+            path = _bootstrap_external._path_join(archive, name)
             t = (path, compress, data_size, file_size, file_offset, time, date, crc)
             files[name] = t
             count += 1
