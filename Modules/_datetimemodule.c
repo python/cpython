@@ -1294,7 +1294,7 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds) {
             return NULL;
         }
         tzinfo = new_timezone(delta, NULL);
-        Py_XDECREF(delta);
+        Py_DECREF(delta);
     } else {
         tzinfo = Py_None;
         Py_INCREF(Py_None);
