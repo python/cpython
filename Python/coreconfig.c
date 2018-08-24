@@ -75,7 +75,7 @@ _Py_wstrlist_copy(int len, wchar_t **list)
     for (int i=0; i < len; i++) {
         wchar_t* arg = _PyMem_RawWcsdup(list[i]);
         if (arg == NULL) {
-            _Py_wstrlist_clear(i, list);
+            _Py_wstrlist_clear(i, list_copy);
             return NULL;
         }
         list_copy[i] = arg;
