@@ -954,7 +954,12 @@ def getsourcelines(object):
     object = unwrap(object)
     lines, lnum = findsource(object)
 
-    if ismodule(object):
+    if istraceback(object):
+        object = object.tb_frame
+
+    # for module or frame that corresponds to module, return all source lines
+    if (ismodule(object) or
+        (isframe(object) and object.f_code.co_name == "<module>")):
         return lines, 0
     else:
         return getblock(lines[lnum:]), lnum + 1
