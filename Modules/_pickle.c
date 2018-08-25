@@ -6287,16 +6287,7 @@ load_mark(UnpicklerObject *self)
      */
 
     if ((self->num_marks + 1) >= self->marks_size) {
-        size_t alloc;
-
-        /* Use the size_t type to check for overflow. */
-        alloc = ((size_t)self->num_marks << 1) + 20;
-        if (alloc > (PY_SSIZE_T_MAX / sizeof(Py_ssize_t)) ||
-            alloc <= ((size_t)self->num_marks + 1)) {
-            PyErr_NoMemory();
-            return -1;
-        }
-
+        size_t alloc = ((size_t)self->num_marks << 1) + 20;
         Py_ssize_t *marks_new = self->marks;
         PyMem_RESIZE(marks_new, Py_ssize_t, alloc);
         if (marks_new == NULL) {
