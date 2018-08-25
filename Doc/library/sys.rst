@@ -313,9 +313,6 @@ always available.
       has caught :exc:`SystemExit` (such as an error flushing buffered data
       in the standard streams), the exit status is changed to 120.
 
-   .. versionchanged:: 3.7
-      Added ``utf8_mode`` attribute for the new :option:`-X` ``utf8`` flag.
-
 
 .. data:: flags
 
