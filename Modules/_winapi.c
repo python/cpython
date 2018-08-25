@@ -1432,8 +1432,6 @@ _winapi_SetNamedPipeHandleState_impl(PyObject *module, HANDLE named_pipe,
     DWORD dwArgs[3], *pArgs[3] = {NULL, NULL, NULL};
     int i;
 
-    PyErr_Clear();
-
     for (i = 0 ; i < 3 ; i++) {
         if (oArgs[i] != Py_None) {
             dwArgs[i] = PyLong_AsUnsignedLongMask(oArgs[i]);
