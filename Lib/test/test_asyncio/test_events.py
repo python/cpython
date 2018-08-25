@@ -41,11 +41,9 @@ def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
 
-def broken_unix_getsockname():
+def osx_tiger():
     """Return True if the platform is Mac OS 10.4 or older."""
-    if sys.platform.startswith("aix"):
-        return True
-    elif sys.platform != 'darwin':
+    if sys.platform != 'darwin':
         return False
     version = platform.mac_ver()[0]
     version = tuple(map(int, version.split('.')))
@@ -619,7 +617,7 @@ class EventLoopTestsMixin:
     def test_create_unix_connection(self):
         # Issue #20682: On Mac OS X Tiger, getsockname() returns a
         # zero-length address for UNIX socket.
-        check_sockname = not broken_unix_getsockname()
+        check_sockname = not osx_tiger()
 
         with test_utils.run_test_unix_server() as httpd:
             conn_fut = self.loop.create_unix_connection(
@@ -750,7 +748,7 @@ class EventLoopTestsMixin:
     def test_create_ssl_unix_connection(self):
         # Issue #20682: On Mac OS X Tiger, getsockname() returns a
         # zero-length address for UNIX socket.
-        check_sockname = not broken_unix_getsockname()
+        check_sockname = not osx_tiger()
 
         with test_utils.run_test_unix_server(use_ssl=True) as httpd:
             create_connection = functools.partial(
