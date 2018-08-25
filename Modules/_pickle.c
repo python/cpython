@@ -3454,6 +3454,8 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
             PickleState *st = _Pickle_GetGlobalState();
             PyObject *reduce_value = Py_BuildValue("(O(OO))",
                                         st->getattr, parent, lastname);
+            if (reduce_value == NULL)
+                goto error;
             status = save_reduce(self, reduce_value, NULL);
             Py_DECREF(reduce_value);
             if (status < 0)
@@ -6286,7 +6288,7 @@ load_mark(UnpicklerObject *self)
      * mark stack.
      */
 
-    if ((self->num_marks + 1) >= self->marks_size) {
+    if (self->num_marks >= self->marks_size) {
         size_t alloc = ((size_t)self->num_marks << 1) + 20;
         Py_ssize_t *marks_new = self->marks;
         PyMem_RESIZE(marks_new, Py_ssize_t, alloc);
