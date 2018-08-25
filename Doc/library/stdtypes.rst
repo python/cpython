@@ -409,13 +409,13 @@ This table lists the bitwise operations sorted in ascending priority:
 +------------+--------------------------------+----------+
 | Operation  | Result                         | Notes    |
 +============+================================+==========+
-| ``x | y``  | bitwise :dfn:`or` of *x* and   |   (4)    |
+| ``x | y``  | bitwise :dfn:`or` of *x* and   | \(4)     |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
-| ``x ^ y``  | bitwise :dfn:`exclusive or` of |   (4)    |
+| ``x ^ y``  | bitwise :dfn:`exclusive or` of | \(4)     |
 |            | *x* and *y*                    |          |
 +------------+--------------------------------+----------+
-| ``x & y``  | bitwise :dfn:`and` of *x* and  |   (4)    |
+| ``x & y``  | bitwise :dfn:`and` of *x* and  | \(4)     |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
 | ``x << n`` | *x* shifted left by *n* bits   | (1)(2)   |
@@ -1065,10 +1065,10 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | sequence (same as              |                     |
 |                              | ``s[len(s):len(s)] = [x]``)    |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.clear()``                | removes all items from ``s``   | \(5)                |
+| ``s.clear()``                | removes all items from *s*     | \(5)                |
 |                              | (same as ``del s[:]``)         |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.copy()``                 | creates a shallow copy of ``s``| \(5)                |
+| ``s.copy()``                 | creates a shallow copy of *s*  | \(5)                |
 |                              | (same as ``s[:]``)             |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.extend(t)`` or           | extends *s* with the           |                     |
