@@ -718,7 +718,7 @@ class _Test4dYear:
         # Modules/timemodule.c checks for underflow
         self.assertRaises(OverflowError, self.yearstr, TIME_MINYEAR - 1)
         with self.assertRaises(OverflowError):
-          self.yearstr(-TIME_MAXYEAR - 1)
+            self.yearstr(-TIME_MAXYEAR - 1)
 
 
 class TestAsctime4dyear(_TestAsctimeYear, _Test4dYear, unittest.TestCase):
