@@ -309,9 +309,9 @@ if has_c_implementation:
                 return data
             check_unpickler(recurse(0), 32, 0)
             check_unpickler(recurse(1), 32, 20)
-            check_unpickler(recurse(20), 32, 58)
-            check_unpickler(recurse(50), 64, 58)
-            check_unpickler(recurse(100), 128, 134)
+            check_unpickler(recurse(20), 32, 20)
+            check_unpickler(recurse(50), 64, 60)
+            check_unpickler(recurse(100), 128, 140)
 
             u = unpickler(io.BytesIO(pickle.dumps('a', 0)),
                           encoding='ASCII', errors='strict')
