@@ -132,18 +132,18 @@ except AttributeError:
         # Standard Unix uses /dev/null
         DEV_NULL = '/dev/null'
 
-# Helper for comparing two version number strings
+# Helper for comparing two version number strings.
 # Based on the description of the PHP's version_compare():
 # http://php.net/manual/en/function.version-compare.php
 
 _ver_stages = {
-    # any string not found in this dict
+    # any string not found in this dict, will get 0 assigned
     'dev': 10,
     'alpha': 20, 'a': 20,
     'beta': 30, 'b': 30,
     'c': 40,
     'RC': 50, 'rc': 50,
-    # number
+    # number, will get 100 assigned
     'pl': 200, 'p': 200,
 }
 
@@ -158,7 +158,7 @@ def _comparable_version(version):
                 t = 100
             except ValueError:
                 t = _ver_stages.get(v, 0)
-            result.append((t, v))
+            result.extend((t, v))
     return result
 
 ### Platform specific APIs
