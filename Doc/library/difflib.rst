@@ -757,8 +757,10 @@ It is also contained in the Python source distribution, as
        # we're passing these as arguments to the diff function
        fromdate = time.ctime(os.stat(fromfile).st_mtime)
        todate = time.ctime(os.stat(tofile).st_mtime)
-       fromlines = open(fromfile, 'U').readlines()
-       tolines = open(tofile, 'U').readlines()
+       with open(fromfile, 'U') as f:
+           fromlines = f.readlines()
+       with open(tofile, 'U') as f:
+           tolines = f.readlines()
 
        if options.u:
            diff = difflib.unified_diff(fromlines, tolines, fromfile, tofile,

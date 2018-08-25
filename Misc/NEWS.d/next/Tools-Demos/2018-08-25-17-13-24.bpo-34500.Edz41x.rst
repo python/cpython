@@ -1,0 +1,1 @@
+Fix 2 ResourceWarning in difflib.py. Patch by Mickaël Schoentgen.
