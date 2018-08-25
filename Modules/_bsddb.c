@@ -2297,6 +2297,7 @@ DB_join(DBObject* self, PyObject* args)
             PyErr_SetString(PyExc_TypeError,
                             "Sequence of DBCursor objects expected");
             free(cursors);
+            Py_DECREF(item);
             return NULL;
         }
         cursors[x] = ((DBCursorObject*)item)->dbc;
