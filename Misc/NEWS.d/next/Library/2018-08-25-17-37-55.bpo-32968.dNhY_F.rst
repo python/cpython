@@ -1,4 +1,0 @@
-Make mixed-type ``%`` and ``//`` operations on ``Fraction`` and ``float``
-instances consistent with other mixed-type arithmetic operations, in which
-the ``Fraction`` instance is first converted to a ``float``. Patch by Elias
-Zamaria.
