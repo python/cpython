@@ -127,8 +127,6 @@ PyDoc_STRVAR(int_as_integer_ratio__doc__,
 "Return a pair of integers, whose ratio is exactly equal to the original int\n"
 "and with a positive denominator.\n"
 "\n"
-"Raise OverflowError on infinities and a ValueError on NaNs.\n"
-"\n"
 ">>> (10).as_integer_ratio()\n"
 "(10, 1)\n"
 ">>> (0).as_integer_ratio()\n"
@@ -243,4 +241,4 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d86862742f1a2709 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acfef50c38f681a0 input=a9049054013a1b77]*/
