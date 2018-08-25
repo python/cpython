@@ -3454,6 +3454,8 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
             PickleState *st = _Pickle_GetGlobalState();
             PyObject *reduce_value = Py_BuildValue("(O(OO))",
                                         st->getattr, parent, lastname);
+            if (reduce_value == NULL)
+                goto error;
             status = save_reduce(self, reduce_value, NULL);
             Py_DECREF(reduce_value);
             if (status < 0)

@@ -193,6 +193,8 @@ If the failure persists and appears to be a problem with Python rather than
 your environment, you can `file a bug report <https://bugs.python.org>`_ and
 include relevant output from that command to show the issue.
 
+See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
+for more on running tests.
 
 Installing multiple versions
 ----------------------------
