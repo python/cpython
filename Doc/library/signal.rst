@@ -485,3 +485,37 @@ be sent, and the handler raises an exception. ::
 
    signal.alarm(0)          # Disable the alarm
 
+Note on SIGPIPE
+---------------
+
+Piping output of your program to tools like :manpage:`head(1)` will
+cause a :const:`SIGPIPE` signal to be sent to your process when the receiver
+of its standard output closes early.  This results in an exception
+like :code:`BrokenPipeError: [Errno 32] Broken pipe`.  To handle this
+case, wrap your entry point to catch this exception as follows::
+
+    import os
+    import sys
+
+    def main():
+        try:
+            # simulate large output (your code replaces this loop)
+            for x in range(10000):
+                print("y")
+            # flush output here to force SIGPIPE to be triggered
+            # while inside this try block.
+            sys.stdout.flush()
+        except BrokenPipeError:
+            # Python flushes standard streams on exit; redirect remaining output
+            # to devnull to avoid another BrokenPipeError at shutdown
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+            sys.exit(1)  # Python exits with error code 1 on EPIPE
+
+    if __name__ == '__main__':
+        main()
+
+Do not set :const:`SIGPIPE`'s disposition to :const:`SIG_DFL`
+in order to avoid :exc:`BrokenPipeError`.  Doing that would cause
+your program to exit unexpectedly also whenever any socket connection
+is interrupted while your program is still writing to it.
