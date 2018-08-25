@@ -11,29 +11,6 @@
 
 #include <ctype.h>
 
-/* The default encoding used by the platform file system APIs
-   Can remain NULL for all platforms that don't have such a concept
-
-   Don't forget to modify PyUnicode_DecodeFSDefault() if you touch any of the
-   values for Py_FileSystemDefaultEncoding!
-*/
-#if defined(__APPLE__)
-const char *Py_FileSystemDefaultEncoding = "utf-8";
-int Py_HasFileSystemDefaultEncoding = 1;
-#elif defined(MS_WINDOWS)
-/* may be changed by initfsencoding(), but should never be free()d */
-const char *Py_FileSystemDefaultEncoding = "utf-8";
-int Py_HasFileSystemDefaultEncoding = 1;
-#else
-const char *Py_FileSystemDefaultEncoding = NULL; /* set by initfsencoding() */
-int Py_HasFileSystemDefaultEncoding = 0;
-#endif
-const char *Py_FileSystemDefaultEncodeErrors = "surrogateescape";
-/* UTF-8 mode (PEP 540): if equals to 1, use the UTF-8 encoding, and change
-   stdin and stdout error handler to "surrogateescape". It is equal to
-   -1 by default: unknown, will be set by Py_Main() */
-int Py_UTF8Mode = -1;
-
 _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__prepare__);
@@ -1639,6 +1616,10 @@ min_max(PyObject *args, PyObject *kwds, int op)
         return NULL;
     }
 
+    if (keyfunc == Py_None) {
+        keyfunc = NULL;
+    }
+
     maxitem = NULL; /* the result */
     maxval = NULL;  /* the value associated with the result */
     while (( item = PyIter_Next(it) )) {
@@ -2420,6 +2401,11 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 }
             }
             result = PyFloat_FromDouble(f_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
             temp = PyNumber_Add(result, item);
             Py_DECREF(result);
             Py_DECREF(item);

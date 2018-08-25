@@ -6,6 +6,7 @@ time zone and DST data sources.
 
 import time as _time
 import math as _math
+import sys
 
 def _cmp(x, y):
     return 0 if x == y else 1 if x > y else -1
@@ -1572,6 +1573,14 @@ class datetime(date):
             # 23 hours at 1969-09-30 13:00:00 in Kwajalein.
             # Let's probe 24 hours in the past to detect a transition:
             max_fold_seconds = 24 * 3600
+
+            # On Windows localtime_s throws an OSError for negative values,
+            # thus we can't perform fold detection for values of time less
+            # than the max time fold. See comments in _datetimemodule's
+            # version of this method for more details.
+            if t < max_fold_seconds and sys.platform.startswith("win"):
+                return result
+
             y, m, d, hh, mm, ss = converter(t - max_fold_seconds)[:6]
             probe1 = cls(y, m, d, hh, mm, ss, us, tz)
             trans = result - probe1 - timedelta(0, max_fold_seconds)

@@ -89,7 +89,7 @@
 #endif
 
 #include <windows.h>
-#include <Shlwapi.h>
+#include <shlwapi.h>
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -553,8 +553,7 @@ get_program_full_path(const _PyCoreConfig *core_config,
 
 
 static int
-read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
-              int *isolated, int *nosite)
+read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path)
 {
     FILE *sp_file = _Py_wfopen(path, L"r");
     if (sp_file == NULL) {
@@ -563,8 +562,8 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
 
     wcscpy_s(prefix, MAXPATHLEN+1, path);
     reduce(prefix);
-    *isolated = 1;
-    *nosite = 1;
+    config->isolated = 1;
+    config->site_import = 0;
 
     size_t bufsiz = MAXPATHLEN;
     size_t prefixlen = wcslen(prefix);
@@ -589,9 +588,10 @@ read_pth_file(_PyPathConfig *config, wchar_t *prefix, const wchar_t *path,
         }
 
         if (strcmp(line, "import site") == 0) {
-            *nosite = 0;
+            config->site_import = 1;
             continue;
-        } else if (strncmp(line, "import ", 7) == 0) {
+        }
+        else if (strncmp(line, "import ", 7) == 0) {
             Py_FatalError("only 'import site' is supported in ._pth file");
         }
 
@@ -680,11 +680,7 @@ calculate_pth_file(_PyPathConfig *config, wchar_t *prefix)
         return 0;
     }
 
-    /* FIXME, bpo-32030: Global configuration variables should not be modified
-       here, _PyPathConfig_Init() is called early in Python initialization:
-       see pymain_cmdline(). */
-    return read_pth_file(config, prefix, spbuffer,
-                         &Py_IsolatedFlag, &Py_NoSiteFlag);
+    return read_pth_file(config, prefix, spbuffer);
 }
 
 
@@ -1000,7 +996,7 @@ calculate_free(PyCalculatePath *calculate)
 
 
 _PyInitError
-_PyPathConfig_Calculate(_PyPathConfig *config, const _PyCoreConfig *core_config)
+_PyPathConfig_Calculate_impl(_PyPathConfig *config, const _PyCoreConfig *core_config)
 {
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));

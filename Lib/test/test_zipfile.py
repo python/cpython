@@ -549,6 +549,26 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(ValueError, zipfp.write, TESTFN)
 
+        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+            zipfp.write(TESTFN, strict_timestamps=False)
+            zinfo = zipfp.getinfo(TESTFN)
+            self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
+
+    def test_add_file_after_2107(self):
+        # Set atime and mtime to 2108-12-30
+        try:
+            os.utime(TESTFN, (4386268800, 4386268800))
+        except OverflowError:
+            self.skipTest('Host fs cannot set timestamp to required value.')
+
+        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+            self.assertRaises(struct.error, zipfp.write, TESTFN)
+
+        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+            zipfp.write(TESTFN, strict_timestamps=False)
+            zinfo = zipfp.getinfo(TESTFN)
+            self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
+
 
 @requires_zlib
 class DeflateTestsWithSourceFile(AbstractTestsWithSourceFile,
@@ -1646,6 +1666,8 @@ class OtherTests(unittest.TestCase):
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
+                fp.seek(0, os.SEEK_SET)
+                self.assertEqual(fp.tell(), 0)
         # Check seek on memory file
         data = io.BytesIO()
         with zipfile.ZipFile(data, mode="w") as zipf:
@@ -1661,6 +1683,8 @@ class OtherTests(unittest.TestCase):
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
+                fp.seek(0, os.SEEK_SET)
+                self.assertEqual(fp.tell(), 0)
 
     def tearDown(self):
         unlink(TESTFN)

@@ -3413,7 +3413,7 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
 #if defined(__APPLE__)
     return _PyUnicode_AsUTF8String(unicode, Py_FileSystemDefaultEncodeErrors);
 #else
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
        cannot use it to encode and decode filenames before it is loaded. Load
        the Python codec requires to encode at least its own filename. Use the C
@@ -3639,7 +3639,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 #if defined(__APPLE__)
     return PyUnicode_DecodeUTF8Stateful(s, size, Py_FileSystemDefaultEncodeErrors, NULL);
 #else
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
        cannot use it to encode and decode filenames before it is loaded. Load
        the Python codec requires to encode at least its own filename. Use the C
@@ -4478,6 +4478,11 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
                 s++;
                 if (_PyUnicodeWriter_WriteCharInline(&writer, '+') < 0)
                     goto onError;
+            }
+            else if (s < e && !IS_BASE64(*s)) {
+                s++;
+                errmsg = "ill-formed sequence";
+                goto utf7Error;
             }
             else { /* begin base64-encoded section */
                 inShift = 1;
@@ -6808,8 +6813,6 @@ unicode_encode_ucs1(PyObject *unicode,
                     str = _PyBytesWriter_WriteBytes(&writer, str,
                                                     PyBytes_AS_STRING(rep),
                                                     PyBytes_GET_SIZE(rep));
-                    if (str == NULL)
-                        goto onError;
                 }
                 else {
                     assert(PyUnicode_Check(rep));
@@ -6831,6 +6834,9 @@ unicode_encode_ucs1(PyObject *unicode,
                                                     PyUnicode_DATA(rep),
                                                     PyUnicode_GET_LENGTH(rep));
                 }
+                if (str == NULL)
+                    goto onError;
+
                 pos = newpos;
                 Py_CLEAR(rep);
             }

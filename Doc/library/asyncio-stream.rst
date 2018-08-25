@@ -431,8 +431,7 @@ Simple example querying HTTP headers of the URL passed on the command line::
     import urllib.parse
     import sys
 
-    @asyncio.coroutine
-    def print_http_headers(url):
+    async def print_http_headers(url):
         url = urllib.parse.urlsplit(url)
         if url.scheme == 'https':
             connect = asyncio.open_connection(url.hostname, 443, ssl=True)

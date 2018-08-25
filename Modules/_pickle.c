@@ -1382,11 +1382,13 @@ _Unpickler_ResizeMemoList(UnpicklerObject *self, Py_ssize_t new_size)
 
     assert(new_size > self->memo_size);
 
-    PyMem_RESIZE(self->memo, PyObject *, new_size);
-    if (self->memo == NULL) {
+    PyObject **memo_new = self->memo;
+    PyMem_RESIZE(memo_new, PyObject *, new_size);
+    if (memo_new == NULL) {
         PyErr_NoMemory();
         return -1;
     }
+    self->memo = memo_new;
     for (i = self->memo_size; i < new_size; i++)
         self->memo[i] = NULL;
     self->memo_size = new_size;
@@ -3452,6 +3454,8 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
             PickleState *st = _Pickle_GetGlobalState();
             PyObject *reduce_value = Py_BuildValue("(O(OO))",
                                         st->getattr, parent, lastname);
+            if (reduce_value == NULL)
+                goto error;
             status = save_reduce(self, reduce_value, NULL);
             Py_DECREF(reduce_value);
             if (status < 0)
@@ -6295,11 +6299,10 @@ load_mark(UnpicklerObject *self)
             return -1;
         }
 
-        if (self->marks == NULL)
-            self->marks = PyMem_NEW(Py_ssize_t, alloc);
-        else
-            PyMem_RESIZE(self->marks, Py_ssize_t, alloc);
+        Py_ssize_t *marks_old = self->marks;
+        PyMem_RESIZE(self->marks, Py_ssize_t, alloc);
         if (self->marks == NULL) {
+            PyMem_FREE(marks_old);
             self->marks_size = 0;
             PyErr_NoMemory();
             return -1;
