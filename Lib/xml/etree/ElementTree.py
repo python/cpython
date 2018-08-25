@@ -570,6 +570,21 @@ class ElementTree:
         # assert iselement(element)
         self._root = element
 
+    def _indent(self, elem, level=0):
+        ind_text = "\n" + level * "  "
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = ind_text + "  "
+            for e in elem:
+                self._indent(e, level+1)
+                if not e.tail or not e.tail.strip():
+                    e.tail = ind_text + "  "
+            if not e.tail or not e.tail.strip():
+                e.tail = ind_text
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = ind_text
+
     def parse(self, source, parser=None):
         """Load external XML document into element tree.
 
@@ -721,6 +736,7 @@ class ElementTree:
               xml_declaration=None,
               default_namespace=None,
               method=None, *,
+              pretty_print=False,
               short_empty_elements=True):
         """Write element tree to a file as XML.
 
@@ -737,6 +753,9 @@ class ElementTree:
           *default_namespace* -- sets the default XML namespace (for "xmlns")
 
           *method* -- either "xml" (default), "html, "text", or "c14n"
+
+          *pretty_print* -- bool indicating whether the output should be
+                            pretty printed
 
           *short_empty_elements* -- controls the formatting of elements
                                     that contain no content. If True (default)
@@ -755,6 +774,10 @@ class ElementTree:
             else:
                 encoding = "us-ascii"
         enc_lower = encoding.lower()
+
+        if pretty_print:
+            self._indent(self._root)
+
         with _get_writer(file_or_filename, enc_lower) as write:
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
@@ -1116,7 +1139,7 @@ def _escape_attrib_html(text):
 # --------------------------------------------------------------------
 
 def tostring(element, encoding=None, method=None, *,
-             short_empty_elements=True):
+             pretty_print=False, short_empty_elements=True):
     """Generate string representation of XML element.
 
     All subelements are included.  If encoding is "unicode", a string
@@ -1126,11 +1149,15 @@ def tostring(element, encoding=None, method=None, *,
     encoding defaulting to US-ASCII, *method* is an optional output which can
     be one of "xml" (default), "html", "text" or "c14n".
 
+    *pretty_print* is a bool indicating whether the output should be
+    pretty printed for human reading.
+
     Returns an (optionally) encoded string containing the XML data.
 
     """
     stream = io.StringIO() if encoding == 'unicode' else io.BytesIO()
     ElementTree(element).write(stream, encoding, method=method,
+                               pretty_print=pretty_print,
                                short_empty_elements=short_empty_elements)
     return stream.getvalue()
 
@@ -1152,10 +1179,11 @@ class _ListDataStream(io.BufferedIOBase):
         return len(self.lst)
 
 def tostringlist(element, encoding=None, method=None, *,
-                 short_empty_elements=True):
+                 pretty_print=False, short_empty_elements=True):
     lst = []
     stream = _ListDataStream(lst)
     ElementTree(element).write(stream, encoding, method=method,
+                               pretty_print=pretty_print,
                                short_empty_elements=short_empty_elements)
     return lst
 

@@ -1,0 +1,3 @@
+``ElementTree`` output methods now have ``pretty_print`` (defaulting to
+``False``) parameter which leads to output being indented for the human
+consumption.

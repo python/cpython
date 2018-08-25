@@ -588,6 +588,7 @@ Functions
 
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
+                       pretty_print=False, \
                        short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -596,13 +597,18 @@ Functions
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
    *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
+   *pretty_print* enables pretty printing with default indent.
    Returns an (optionally) encoded string containing the XML data.
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
 
+   .. versionadded:: 3.7
+      The *pretty_print* parameter.
+
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
+                           pretty_print=False, \
                            short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -611,6 +617,7 @@ Functions
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
    *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
+   *pretty_print* enables pretty printing with default indent.
    Returns a list of (optionally) encoded strings containing the XML data.
    It does not guarantee any specific sequence, except that
    ``b"".join(tostringlist(element)) == tostring(element)``.
@@ -619,6 +626,9 @@ Functions
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
+
+   .. versionadded:: 3.7
+      The *pretty_print* parameter.
 
 
 .. function:: XML(text, parser=None)
@@ -921,6 +931,7 @@ ElementTree Objects
 
    .. method:: write(file, encoding="us-ascii", xml_declaration=None, \
                      default_namespace=None, method="xml", *, \
+                     pretty_print=False, \
                      short_empty_elements=True)
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
@@ -935,7 +946,8 @@ ElementTree Objects
       The keyword-only *short_empty_elements* parameter controls the formatting
       of elements that contain no content.  If ``True`` (the default), they are
       emitted as a single self-closed tag, otherwise they are emitted as a pair
-      of start/end tags.
+      of start/end tags. *pretty_print* enables pretty printing
+      with default indent.
 
       The output is either a string (:class:`str`) or binary (:class:`bytes`).
       This is controlled by the *encoding* argument.  If *encoding* is
@@ -946,6 +958,10 @@ ElementTree Objects
 
       .. versionadded:: 3.4
          The *short_empty_elements* parameter.
+
+      .. versionadded:: 3.7
+         The *pretty_print* parameter.
+
 
 
 This is the XML file that is going to be manipulated::

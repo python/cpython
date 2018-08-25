@@ -1031,6 +1031,80 @@ class ElementTreeTest(unittest.TestCase):
                                        method='html')
                 self.assertEqual(serialized, expected)
 
+    def test_pretty_print_xml(self):
+        comment = ET.Comment('comment')
+
+        root = ET.Element(None)
+
+        child1 = ET.SubElement(root, 'child1')
+        child1.append(comment)
+        elem = ET.SubElement(child1, 'elem')
+        elem.set('a', '1')
+        elem.set('b', 'txt')
+        elem.text = 'Oh, wow, some text!'
+
+        child2 = ET.SubElement(root, 'child2')
+        elem1 = ET.SubElement(child2, 'elem1')
+        elem21 = ET.SubElement(elem1, 'elem21')
+        elem22 = ET.SubElement(elem1, 'elem22')
+        elem3 = ET.SubElement(elem21, 'elem3')
+
+        elem22.append(comment)
+
+        observed = serialize(root, method='xml', pretty_print=True)
+        expected = '\n  <child1>\n' + \
+            '    <!--comment-->\n' + \
+            '      <elem a="1" b="txt">Oh, wow, some text!</elem>\n' + \
+            '  </child1>\n' + \
+            '  <child2>\n' + \
+            '    <elem1>\n' + \
+            '      <elem21>\n' + \
+            '        <elem3 />\n' + \
+            '      </elem21>\n' + \
+            '      <elem22>\n' + \
+            '        <!--comment-->\n' + \
+            '      </elem22>\n' + \
+            '    </elem1>\n' + \
+            '  </child2>\n'
+        self.assertEqual(observed, expected)
+
+    def test_pretty_print_html(self):
+        html = ET.Element('html')
+
+        head = ET.SubElement(html, 'head')
+        body = ET.SubElement(html, 'body')
+
+        style = ET.SubElement(head, 'style')
+        style.text = '''
+        body {background-color: white;}
+        h1   {color: blue;}
+        p    {color: red;}
+        '''
+
+        p = ET.SubElement(body, 'p')
+        p.text = 'etree is awesome'
+
+        ET.SubElement(body, 'br')
+
+        script = ET.SubElement(body, 'script')
+        script.text = '   document.getElementById("some").innerHTML = "Hello JavaScript!";'
+
+        observed = serialize(html, method='html', pretty_print=True)
+        expected = '<html>\n' + \
+            '  <head>\n' + \
+            '    <style>\n' + \
+            '        body {background-color: white;}\n' + \
+            '        h1   {color: blue;}\n' + \
+            '        p    {color: red;}\n' + \
+            '        </style>\n' + \
+            '  </head>\n' + \
+            '  <body>\n' + \
+            '    <p>etree is awesome</p>\n' + \
+            '    <br>\n' + \
+            '    <script>   document.getElementById("some").innerHTML = "Hello JavaScript!";</script>\n' + \
+            '  </body>\n' + \
+            '</html>'
+        self.assertEqual(observed, expected)
 
 class XMLPullParserTest(unittest.TestCase):
 
