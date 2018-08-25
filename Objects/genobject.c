@@ -1130,6 +1130,9 @@ compute_cr_origin(int origin_depth)
 
     /* Now collect them */
     PyObject *cr_origin = PyTuple_New(frame_count);
+    if (cr_origin == NULL) {
+        return NULL;
+    }
     frame = PyEval_GetFrame();
     for (int i = 0; i < frame_count; ++i) {
         PyObject *frameinfo = Py_BuildValue(
