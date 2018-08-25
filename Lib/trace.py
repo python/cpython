@@ -63,14 +63,6 @@ from time import monotonic as _time
 
 import threading
 
-def _settrace(func):
-    threading.settrace(func)
-    sys.settrace(func)
-
-def _unsettrace():
-    sys.settrace(None)
-    threading.settrace(None)
-
 PRAGMA_NOCOVER = "#pragma NO COVER"
 
 class _Ignore:
@@ -451,12 +443,14 @@ class Trace:
         if globals is None: globals = {}
         if locals is None: locals = {}
         if not self.donothing:
-            _settrace(self.globaltrace)
+            threading.settrace(self.globaltrace)
+            sys.settrace(self.globaltrace)
         try:
             exec(cmd, globals, locals)
         finally:
             if not self.donothing:
-                _unsettrace()
+                sys.settrace(None)
+                threading.settrace(None)
 
     def runfunc(self, func, *args, **kw):
         result = None
