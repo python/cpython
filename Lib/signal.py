@@ -12,10 +12,6 @@ _IntEnum._convert(
             and (name.startswith('SIG') and not name.startswith('SIG_'))
             or name.startswith('CTRL_'))
 
-_IntEnum._convert(
-        'Handlers', __name__,
-        lambda name: name in ('SIG_DFL', 'SIG_IGN'))
-
 if 'pthread_sigmask' in _globals:
     _IntEnum._convert(
             'Sigmasks', __name__,
@@ -30,28 +26,6 @@ def _int_to_enum(value, enum_klass):
         return enum_klass(value)
     except ValueError:
         return value
-
-
-def _enum_to_int(value):
-    """Convert an IntEnum member to a numeric value.
-    If it's not an IntEnum member return the value itself.
-    """
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return value
-
-
-@_wraps(_signal.signal)
-def signal(signalnum, handler):
-    handler = _signal.signal(_enum_to_int(signalnum), _enum_to_int(handler))
-    return _int_to_enum(handler, Handlers)
-
-
-@_wraps(_signal.getsignal)
-def getsignal(signalnum):
-    handler = _signal.getsignal(signalnum)
-    return _int_to_enum(handler, Handlers)
 
 
 if 'pthread_sigmask' in _globals:

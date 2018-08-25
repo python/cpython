@@ -1197,6 +1197,19 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
 #endif   /* #if defined(HAVE_PTHREAD_KILL) */
 
 
+static PyObject *
+signal_sig_const(PyObject *self, PyObject *args)
+{
+    PyErr_SetString(PyExc_TypeError,
+                    "standard handler can't be called directly");
+    return NULL;
+}
+
+PyDoc_STRVAR(signal_SIG_DFL_doc,
+"Standard signal handler used to refer to the system default handler.");
+
+PyDoc_STRVAR(signal_SIG_IGN_doc,
+"Standard signal handler used to ignore the given signal.");
 
 /* List of functions defined in the module -- some of the methoddefs are
    defined to nothing if the corresponding C function is not available. */
@@ -1220,6 +1233,8 @@ static PyMethodDef signal_methods[] = {
 #if defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS)
     SIGNAL_VALID_SIGNALS_METHODDEF
 #endif
+    {"SIG_DFL", signal_sig_const, METH_VARARGS, signal_SIG_DFL_doc},
+    {"SIG_IGN", signal_sig_const, METH_VARARGS, signal_SIG_IGN_doc},
     {NULL, NULL}           /* sentinel */
 };
 
@@ -1239,8 +1254,6 @@ pause() -- wait until a signal arrives [Unix only]\n\
 default_int_handler() -- default SIGINT handler\n\
 \n\
 signal constants:\n\
-SIG_DFL -- used to refer to the system default handler\n\
-SIG_IGN -- used to ignore the signal\n\
 NSIG -- number of defined signals\n\
 SIGINT, SIGTERM, etc. -- signal numbers\n\
 \n\
@@ -1299,13 +1312,15 @@ PyInit__signal(void)
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
 
-    x = DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
-    if (!x || PyDict_SetItemString(d, "SIG_DFL", x) < 0)
+    x = DefaultHandler = PyDict_GetItemString(d, "SIG_DFL");
+    if (!x)
         goto finally;
+    Py_INCREF(DefaultHandler);
 
-    x = IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
-    if (!x || PyDict_SetItemString(d, "SIG_IGN", x) < 0)
+    x = IgnoreHandler = PyDict_GetItemString(d, "SIG_IGN");
+    if (!x)
         goto finally;
+    Py_INCREF(IgnoreHandler);
 
     x = PyLong_FromLong((long)NSIG);
     if (!x || PyDict_SetItemString(d, "NSIG", x) < 0)

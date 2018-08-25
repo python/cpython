@@ -1,0 +1,2 @@
+Singletons :data:`~signal.SIG_DFL` and :data:`~signal.SIG_IGN` are no longer
+integers. They are now copyable and pickleable and have docstrings.

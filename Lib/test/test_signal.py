@@ -1,4 +1,6 @@
+import copy
 import os
+import pickle
 import random
 import signal
 import socket
@@ -21,15 +23,32 @@ class GenericTests(unittest.TestCase):
     def test_enums(self):
         for name in dir(signal):
             sig = getattr(signal, name)
-            if name in {'SIG_DFL', 'SIG_IGN'}:
-                self.assertIsInstance(sig, signal.Handlers)
-            elif name in {'SIG_BLOCK', 'SIG_UNBLOCK', 'SIG_SETMASK'}:
+            if name in {'SIG_BLOCK', 'SIG_UNBLOCK', 'SIG_SETMASK'}:
                 self.assertIsInstance(sig, signal.Sigmasks)
             elif name.startswith('SIG') and not name.startswith('SIG_'):
                 self.assertIsInstance(sig, signal.Signals)
             elif name.startswith('CTRL_'):
                 self.assertIsInstance(sig, signal.Signals)
                 self.assertEqual(sys.platform, "win32")
+
+    def test_standard_handlers(self):
+        for name in 'SIG_DFL', 'SIG_IGN':
+            with self.subTest(name):
+                handler = getattr(signal, name)
+                self.assertIn(name, repr(handler))
+                self.assertNotEqual(handler.__doc__, type(handler).__doc__)
+
+                self.assertIs(copy.copy(handler), handler)
+                self.assertIs(copy.deepcopy(handler), handler)
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    p = pickle.dumps(handler, proto)
+                    self.assertIs(pickle.loads(p), handler)
+
+                old_handler = signal.signal(signal.SIGINT, handler)
+                try:
+                    self.assertIs(signal.getsignal(signal.SIGINT), handler)
+                finally:
+                    signal.signal(signal.SIGINT, old_handler)
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
@@ -51,7 +70,6 @@ class PosixTests(unittest.TestCase):
 
     def test_getsignal(self):
         hup = signal.signal(signal.SIGHUP, self.trivial_signal_handler)
-        self.assertIsInstance(hup, signal.Handlers)
         self.assertEqual(signal.getsignal(signal.SIGHUP),
                          self.trivial_signal_handler)
         signal.signal(signal.SIGHUP, hup)
