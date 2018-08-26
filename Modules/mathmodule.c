@@ -2183,9 +2183,13 @@ math_hypot(PyObject *self, PyObject *args)
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(args, i);
-        x = PyFloat_AsDouble(item);
-        if (x == -1.0 && PyErr_Occurred()) {
-            goto error_exit;
+        if (PyFloat_CheckExact(item)) {
+            x = PyFloat_AS_DOUBLE(item);
+        } else {
+            x = PyFloat_AsDouble(item);
+            if (x == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
         }
         x = fabs(x);
         coordinates[i] = x;
