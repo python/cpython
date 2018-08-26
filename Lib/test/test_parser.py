@@ -41,6 +41,9 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
     def check_suite(self, s):
         self.roundtrip(parser.suite, s)
 
+    def test_return_statement(self):
+        self.check_suite("def f(): return *(1, 2), 3")
+
     def test_yield_statement(self):
         self.check_suite("def f(): yield 1")
         self.check_suite("def f(): yield")

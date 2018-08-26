@@ -471,12 +471,12 @@ The :keyword:`return` statement
    pair: class; definition
 
 .. productionlist::
-   return_stmt: "return" [`expression_list`]
+   return_stmt: "return" [`starred_expression`]
 
 :keyword:`return` may only occur syntactically nested in a function definition,
 not within a nested class definition.
 
-If an expression list is present, it is evaluated, else ``None`` is substituted.
+If an expression is present, it is evaluated, else ``None`` is substituted.
 
 :keyword:`return` leaves the current function call with the expression list (or
 ``None``) as return value.

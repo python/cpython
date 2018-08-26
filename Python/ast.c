@@ -3096,7 +3096,7 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
                  | yield_stmt
       break_stmt: 'break'
       continue_stmt: 'continue'
-      return_stmt: 'return' [testlist]
+      return_stmt: 'return' [testlist_star_expr]
       yield_stmt: yield_expr
       yield_expr: 'yield' testlist | 'yield' 'from' test
       raise_stmt: 'raise' [test [',' test [',' test]]]

@@ -613,7 +613,7 @@ static arc arcs_25_0[1] = {
     {75, 1},
 };
 static arc arcs_25_1[2] = {
-    {9, 2},
+    {47, 2},
     {0, 1},
 };
 static arc arcs_25_2[1] = {
