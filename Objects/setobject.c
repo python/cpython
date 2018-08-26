@@ -1234,7 +1234,7 @@ set_or(PySetObject *so, PyObject *other)
 {
     PySetObject *result;
 
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+    if (!PyAnySet_Check(so))
         Py_RETURN_NOTIMPLEMENTED;
 
     result = (PySetObject *)set_copy(so, NULL);
@@ -1396,7 +1396,7 @@ PyDoc_STRVAR(intersection_update_doc,
 static PyObject *
 set_and(PySetObject *so, PyObject *other)
 {
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+    if (!PyAnySet_Check(so))
         Py_RETURN_NOTIMPLEMENTED;
     return set_intersection(so, other);
 }
@@ -1654,7 +1654,7 @@ PyDoc_STRVAR(difference_doc,
 static PyObject *
 set_sub(PySetObject *so, PyObject *other)
 {
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+    if (!PyAnySet_Check(so))
         Py_RETURN_NOTIMPLEMENTED;
     return set_difference(so, other);
 }
@@ -1760,7 +1760,7 @@ PyDoc_STRVAR(symmetric_difference_doc,
 static PyObject *
 set_xor(PySetObject *so, PyObject *other)
 {
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+    if (!PyAnySet_Check(so))
         Py_RETURN_NOTIMPLEMENTED;
     return set_symmetric_difference(so, other);
 }
