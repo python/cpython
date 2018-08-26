@@ -332,7 +332,7 @@ class TestRetrievingSourceCode(GetSourceBase):
             linecache.getlines = getlines
 
 class TestGettingSourceOfToplevelFrames(GetSourceBase):
-    fodderModule = mod
+    fodderFile = mod
 
     def test_range_toplevel_frame(self):
         self.maxDiff = None
