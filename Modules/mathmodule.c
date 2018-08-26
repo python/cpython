@@ -2134,14 +2134,22 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(p, i);
-        px = PyFloat_AsDouble(item);
-        if (px == -1.0 && PyErr_Occurred()) {
-            goto error_exit;
+        if (PyFloat_CheckExact(item)) {
+            px = PyFloat_AS_DOUBLE(item);
+        } else {
+            px = PyFloat_AsDouble(item);
+            if (px == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
         }
         item = PyTuple_GET_ITEM(q, i);
-        qx = PyFloat_AsDouble(item);
-        if (qx == -1.0 && PyErr_Occurred()) {
-            goto error_exit;
+        if (PyFloat_CheckExact(item)) {
+            qx = PyFloat_AS_DOUBLE(item);
+        } else {
+            qx = PyFloat_AsDouble(item);
+            if (qx == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
         }
         x = fabs(px - qx);
         diffs[i] = x;
