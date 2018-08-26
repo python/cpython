@@ -97,6 +97,7 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
             fixed_value = _PyErr_CreateException(exception, value);
             Py_XDECREF(value);
             if (fixed_value == NULL) {
+                Py_DECREF(exc_value);
                 return;
             }
 
