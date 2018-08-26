@@ -891,6 +891,11 @@ class HTTPConnection:
     def set_debuglevel(self, level):
         self.debuglevel = level
 
+    def settimeout(self, timeout):
+        self.timeout = timeout
+        if self.sock:
+            self.sock.settimeout(timeout)
+
     def _tunnel(self):
         connect_str = "CONNECT %s:%d HTTP/1.0\r\n" % (self._tunnel_host,
             self._tunnel_port)
