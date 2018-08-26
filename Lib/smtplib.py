@@ -417,6 +417,7 @@ class SMTP:
 
     def docmd(self, cmd, args=""):
         """Send a command, and return its response code."""
+
         self.putcmd(cmd, args)
         return self.getreply()
 
@@ -627,7 +628,7 @@ class SMTP:
         mechanism = mechanism.upper()
         initial_response = (authobject() if initial_response_ok else None)
         if initial_response is not None:
-            response = encode_base64(initial_response.encode('ascii'), eol='')
+            response = encode_base64(initial_response.encode('utf-8'), eol='')
             (code, resp) = self.docmd("AUTH", mechanism + " " + response)
         else:
             (code, resp) = self.docmd("AUTH", mechanism)
@@ -635,7 +636,7 @@ class SMTP:
         if code == 334:
             challenge = base64.decodebytes(resp)
             response = encode_base64(
-                authobject(challenge).encode('ascii'), eol='')
+                authobject(challenge).encode('utf-8'), eol='')
             (code, resp) = self.docmd(response)
         if code in (235, 503):
             return (code, resp)
@@ -648,7 +649,7 @@ class SMTP:
         if challenge is None:
             return None
         return self.user + " " + hmac.HMAC(
-            self.password.encode('ascii'), challenge, 'md5').hexdigest()
+            self.password.encode('utf-8'), challenge, 'md5').hexdigest()
 
     def auth_plain(self, challenge=None):
         """ Authobject to use with PLAIN authentication. Requires self.user and
