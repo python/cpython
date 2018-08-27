@@ -176,10 +176,10 @@ class TestSqueezer(unittest.TestCase):
         for text in ['', 'TEXT']:
             editwin.write = orig_write = Mock(return_value=SENTINEL_VALUE)
             squeezer = self.make_squeezer_instance(editwin)
-            squeezer.get_auto_squeeze_min_lines = Mock(return_value=30)
+            squeezer.auto_squeeze_min_lines = 30
 
             self.assertEqual(squeezer.editwin.write(text, "stdout"),
-                              SENTINEL_VALUE)
+                             SENTINEL_VALUE)
             self.assertEqual(orig_write.call_count, 1)
             orig_write.assert_called_with(text, "stdout")
             self.assertEqual(len(squeezer.expandingbuttons), 0)
@@ -187,7 +187,7 @@ class TestSqueezer(unittest.TestCase):
         for text in ['LONG TEXT' * 1000, 'MANY_LINES\n' * 100]:
             editwin.write = orig_write = Mock(return_value=SENTINEL_VALUE)
             squeezer = self.make_squeezer_instance(editwin)
-            squeezer.get_auto_squeeze_min_lines = Mock(return_value=30)
+            squeezer.auto_squeeze_min_lines = 30
 
             self.assertEqual(squeezer.editwin.write(text, "stdout"), None)
             self.assertEqual(orig_write.call_count, 0)
@@ -256,11 +256,9 @@ class TestSqueezer(unittest.TestCase):
         # is called and should fail (i.e. call squeezer.text.bell()).
         editwin = self.make_mock_editor_window()
         squeezer = self.make_squeezer_instance(editwin)
-        squeezer.get_preview_command = Mock(return_value='notepad.exe %(fn)s')
 
         retval = squeezer.preview_last_squeezed_event(event=Mock())
         self.assertEqual(retval, "break")
-        self.assertEqual(squeezer.text.bell.call_count, 1)
 
     def test_preview_last_squeezed_event(self):
         """test the preview_last_squeezed event"""
@@ -283,6 +281,10 @@ class TestSqueezer(unittest.TestCase):
         self.assertEqual(mock_expandingbutton2.preview.call_count, 1)
         mock_expandingbutton2.preview.assert_called_with(SENTINEL_VALUE)
 
+        squeezer.preview_last_squeezed_event(event=SENTINEL_VALUE)
+        self.assertEqual(mock_expandingbutton1.preview.call_count, 0)
+        self.assertEqual(mock_expandingbutton2.preview.call_count, 2)
+
     def test_auto_squeeze(self):
         """test that the auto-squeezing creates an ExpandingButton properly"""
         requires('gui')
@@ -292,7 +294,7 @@ class TestSqueezer(unittest.TestCase):
         editwin = self.make_mock_editor_window()
         editwin.text = text_widget
         squeezer = self.make_squeezer_instance(editwin)
-        squeezer.get_auto_squeeze_min_lines = Mock(return_value=5)
+        squeezer.auto_squeeze_min_lines = 5
         squeezer.count_lines = Mock(return_value=6)
 
         editwin.write('TEXT\n'*6, "stdout")
@@ -423,16 +425,16 @@ class TestExpandingButton(unittest.TestCase):
         squeezer.editwin.text = Text()
 
         # Set default values for the configuration settings
-        squeezer.get_max_num_of_lines = Mock(return_value=30)
-        squeezer.get_show_tooltip = Mock(return_value=False)
-        squeezer.get_tooltip_delay = Mock(return_value=1500)
+        squeezer.auto_squeeze_min_lines = 30
+        squeezer.should_show_tooltip = False
+        squeezer.tooltip_delay = 1500
         return squeezer
 
     @patch('idlelib.squeezer.Hovertip', autospec=Hovertip)
     def test_init_no_tooltip(self, MockHovertip):
         """Test the simplest creation of an ExpandingButton"""
         squeezer = self.make_mock_squeezer()
-        squeezer.get_show_tooltip.return_value = False
+        squeezer.should_show_tooltip = False
         text_widget = squeezer.editwin.text
 
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
@@ -457,8 +459,8 @@ class TestExpandingButton(unittest.TestCase):
     def test_init_tooltip(self, MockHovertip):
         """test tooltip creation"""
         squeezer = self.make_mock_squeezer()
-        squeezer.get_show_tooltip.return_value = True
-        squeezer.get_tooltip_delay.return_value = SENTINEL_VALUE
+        squeezer.should_show_tooltip = True
+        squeezer.tooltip_delay = SENTINEL_VALUE
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
 
         # check that ToolTip was called once, with appropriate values
@@ -534,7 +536,7 @@ class TestExpandingButton(unittest.TestCase):
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
         expandingbutton.selection_own = Mock()
 
-        with patch('idlelib.textview.view_text', autospec=view_text)\
+        with patch('idlelib.squeezer.view_text', autospec=view_text)\
                 as mock_view_text:
             # trigger the preview event
             expandingbutton.preview(event=Mock())
