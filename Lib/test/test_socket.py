@@ -12,6 +12,7 @@ import traceback
 import queue
 import sys
 import os
+import platform
 import array
 import contextlib
 from weakref import proxy
@@ -37,8 +38,7 @@ HOST = support.HOST
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8') ## test unicode string and carriage return
 
 VSOCKPORT = 1234
-
-AIX = sys.platform.startswith('aix')
+AIX = platform.system() == "AIX"
 
 try:
     import _socket
