@@ -427,23 +427,18 @@ class Fraction(numbers.Rational):
 
     __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv)
 
-    def __floordiv__(a, b):
+    def _floordiv(a, b):
         """a // b"""
         return math.floor(a / b)
 
-    def __rfloordiv__(b, a):
-        """a // b"""
-        return math.floor(a / b)
+    __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv)
 
-    def __mod__(a, b):
+    def _mod(a, b):
         """a % b"""
         div = a // b
         return a - b * div
 
-    def __rmod__(b, a):
-        """a % b"""
-        div = a // b
-        return a - b * div
+    __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod)
 
     def __pow__(a, b):
         """a ** b
