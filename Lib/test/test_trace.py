@@ -385,13 +385,16 @@ class TestCoverageCommandLineOutput(unittest.TestCase):
         unlink(self.coverfile)
 
     def test_cover_files_written_no_highlight(self):
+        # Test also that the cover file for the trace module is not created
+        # (issue #34171).
+        tracedir = os.path.dirname(os.path.abspath(trace.__file__))
+        tracecoverpath = os.path.join(tracedir, 'trace.cover')
+        unlink(tracecoverpath)
+
         argv = '-m trace --count'.split() + [self.codefile]
         status, stdout, stderr = assert_python_ok(*argv)
         self.assertEqual(stderr, b'')
-        tracedir = os.path.dirname(os.path.abspath(trace.__file__))
-        tracecoverpath = os.path.join(tracedir, "trace.cover")
         self.assertFalse(os.path.exists(tracecoverpath))
-
         self.assertTrue(os.path.exists(self.coverfile))
         with open(self.coverfile) as f:
             self.assertEqual(f.read(),
