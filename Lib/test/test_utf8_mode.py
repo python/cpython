@@ -219,6 +219,8 @@ class UTF8ModeTests(unittest.TestCase):
         check('utf8', [arg_utf8])
         if sys.platform == 'darwin' or support.is_android:
             c_arg = arg_utf8
+        elif sys.platform.startswith("aix"):
+            c_arg = arg.decode('iso-8859-1')
         else:
             c_arg = arg_ascii
         check('utf8=0', [c_arg], LC_ALL='C')
