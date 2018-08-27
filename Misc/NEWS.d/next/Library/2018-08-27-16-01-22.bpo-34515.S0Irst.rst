@@ -1,1 +1,1 @@
-Add non-ASCII identifiers support in :mod:`lib2to3.pgen2.tokenize`.
+Fix parsing non-ASCII identifiers in :mod:`lib2to3.pgen2.tokenize` (PEP 3131).

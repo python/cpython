@@ -529,10 +529,14 @@ class TestSetLiteral(GrammarTest):
         self.validate("""x = {2, 3, 4,}""")
 
 
-# Adapted from Python 3's Lib/test/test_tokenize.py:TokenizeTest.test_non_ascii_identifiers
+# Adapted from Python 3's Lib/test/test_unicode_identifiers.py and
+# Lib/test/test_tokenize.py:TokenizeTest.test_non_ascii_identifiers
 class TestIdentfier(GrammarTest):
     def test_non_ascii_identifiers(self):
         self.validate("Örter = 'places'\ngrün = 'green'")
+        self.validate("蟒 = a蟒 = 锦蛇 = 1")
+        self.validate("µ = aµ = µµ = 1")
+        self.validate("𝔘𝔫𝔦𝔠𝔬𝔡𝔢 = a_𝔘𝔫𝔦𝔠𝔬𝔡𝔢 = 1")
 
 
 class TestNumericLiterals(GrammarTest):
