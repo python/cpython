@@ -2077,13 +2077,13 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             last = max;
         }
         x /= max;
-        x = x*x - frac;
+        x = x*x;
         oldcsum = csum;
         csum += x;
-        frac = (csum - oldcsum) - x;
+        frac += (oldcsum - csum) + x;
     }
     assert(last == max);
-    return max * sqrt(csum);
+    return max * sqrt(csum + frac);
 }
 
 #define NUM_STACK_ELEMS 16
