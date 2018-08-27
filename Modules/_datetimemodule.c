@@ -4869,18 +4869,21 @@ _sanitize_isoformat_str(PyObject *dtstr, int *needs_decref) {
     // assumption that all valid strings can be encoded in UTF-8, this function
     // replaces any surrogate character separators with `T`.
     Py_ssize_t len = PyUnicode_GetLength(dtstr);
+    if (len < 0) {
+        return NULL;
+    }
+
     *needs_decref = 0;
     if (len <= 10 || !Py_UNICODE_IS_SURROGATE(PyUnicode_READ_CHAR(dtstr, 10))) {
         return dtstr;
     }
 
-    PyObject *str_out = PyUnicode_New(len, PyUnicode_MAX_CHAR_VALUE(dtstr));
+    PyObject *str_out = _PyUnicode_Copy(dtstr);
     if (str_out == NULL) {
         return NULL;
     }
 
-    if (PyUnicode_CopyCharacters(str_out, 0, dtstr, 0, len) == -1 ||
-            PyUnicode_WriteChar(str_out, 10, (Py_UCS4)'T')) {
+    if (PyUnicode_WriteChar(str_out, 10, (Py_UCS4)'T')) {
         Py_DECREF(str_out);
         return NULL;
     }
