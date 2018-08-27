@@ -1,0 +1,1 @@
+Skip test_utf8_mode.test_cmd_line() on HP-UX. Patch by Michael Osipov.
