@@ -529,6 +529,12 @@ class TestSetLiteral(GrammarTest):
         self.validate("""x = {2, 3, 4,}""")
 
 
+# Adapted from Python 3's Lib/test/test_tokenize.py:TokenizeTest.test_non_ascii_identifiers
+class TestIdentfier(GrammarTest):
+    def test_non_ascii_identifiers(self):
+        self.validate("Örter = 'places'\ngrün = 'green'")
+
+
 class TestNumericLiterals(GrammarTest):
     def test_new_octal_notation(self):
         self.validate("""0o7777777777777""")
