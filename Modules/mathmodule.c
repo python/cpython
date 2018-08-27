@@ -2037,9 +2037,8 @@ where *max* is the largest value in the vector, compute:
 
     max * sqrt(sum((x / max) ** 2 for x in vec))
 
-When a maximum value is found, it is swapped to the end.  This
-lets us skip one loop iteration and just add 1.0 at the end.
-Saving the largest value for last also helps improve accuracy.
+When a maximum value is found, it is swapped to the end value. This
+lets us skip one loop iteration and start the accumulation from 1.0.
 
 Kahan summation is used to improve accuracy.  The *csum*
 variable tracks the cumulative sum and *frac* tracks
@@ -2056,7 +2055,7 @@ the *vec* is a NaN.
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, csum = 0.0, oldcsum, frac = 0.0, last;
+    double x, csum = 1.0, oldcsum, frac = 0.0, last;
     Py_ssize_t i;
 
     if (Py_IS_INFINITY(max)) {
@@ -2084,7 +2083,6 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         frac = (csum - oldcsum) - x;
     }
     assert(last == max);
-    csum += 1.0 - frac;
     return max * sqrt(csum);
 }
 
