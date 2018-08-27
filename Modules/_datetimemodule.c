@@ -4902,13 +4902,13 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
     }
 
     int needs_decref = 0;
-    dtstr = _sanitize_isoformat_str(dtstr, &needs_decref);
-    if (dtstr == NULL) {
+    PyObject *dtstr_clean = _sanitize_isoformat_str(dtstr, &needs_decref);
+    if (dtstr_clean == NULL) {
         goto error;
     }
 
     Py_ssize_t len;
-    const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
+    const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr_clean, &len);
 
     if (dt_ptr == NULL) {
         goto invalid_string_error;
@@ -4960,7 +4960,7 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
 
     Py_DECREF(tzinfo);
     if (needs_decref) {
-        Py_DECREF(dtstr);
+        Py_DECREF(dtstr_clean);
     }
     return dt;
 
@@ -4969,7 +4969,7 @@ invalid_string_error:
 
 error:
     if (needs_decref) {
-        Py_DECREF(dtstr);
+        Py_DECREF(dtstr_clean);
     }
 
     return NULL;
