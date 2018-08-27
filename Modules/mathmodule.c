@@ -2056,7 +2056,7 @@ the *vec* is a NaN.
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, csum = 0.0, oldcsum, frac = 0.0;
+    double x, csum = 0.0, oldcsum, frac = 0.0, last;
     Py_ssize_t i;
 
     if (Py_IS_INFINITY(max)) {
@@ -2069,11 +2069,13 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         return 0.0;
     }
     assert(n > 0);
+    last = vec[n-1];
     for (i=0 ; i < n-1 ; i++) {
         x = vec[i];
+        assert(Py_IS_FINITE(x) && x >= 0.0 && x <= max);
         if (x == max) {
-            x = vec[n-1];
-            vec[n-1] = max;
+            x = last;
+            last = max;
         }
         x /= max;
         x = x*x - frac;
@@ -2081,7 +2083,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         csum += x;
         frac = (csum - oldcsum) - x;
     }
-    assert(vec[n-1] == max);
+    assert(last == max);
     csum += 1.0 - frac;
     return max * sqrt(csum);
 }
@@ -2132,14 +2134,22 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(p, i);
-        px = PyFloat_AsDouble(item);
-        if (px == -1.0 && PyErr_Occurred()) {
-            goto error_exit;
+        if (PyFloat_CheckExact(item)) {
+            px = PyFloat_AS_DOUBLE(item);
+        } else {
+            px = PyFloat_AsDouble(item);
+            if (px == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
         }
         item = PyTuple_GET_ITEM(q, i);
-        qx = PyFloat_AsDouble(item);
-        if (qx == -1.0 && PyErr_Occurred()) {
-            goto error_exit;
+        if (PyFloat_CheckExact(item)) {
+            qx = PyFloat_AS_DOUBLE(item);
+        } else {
+            qx = PyFloat_AsDouble(item);
+            if (qx == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
         }
         x = fabs(px - qx);
         diffs[i] = x;
@@ -2181,9 +2191,13 @@ math_hypot(PyObject *self, PyObject *args)
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(args, i);
-        x = PyFloat_AsDouble(item);
-        if (x == -1.0 && PyErr_Occurred()) {
-            goto error_exit;
+        if (PyFloat_CheckExact(item)) {
+            x = PyFloat_AS_DOUBLE(item);
+        } else {
+            x = PyFloat_AsDouble(item);
+            if (x == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
         }
         x = fabs(x);
         coordinates[i] = x;

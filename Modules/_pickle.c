@@ -1382,11 +1382,13 @@ _Unpickler_ResizeMemoList(UnpicklerObject *self, Py_ssize_t new_size)
 
     assert(new_size > self->memo_size);
 
-    PyMem_RESIZE(self->memo, PyObject *, new_size);
-    if (self->memo == NULL) {
+    PyObject **memo_new = self->memo;
+    PyMem_RESIZE(memo_new, PyObject *, new_size);
+    if (memo_new == NULL) {
         PyErr_NoMemory();
         return -1;
     }
+    self->memo = memo_new;
     for (i = self->memo_size; i < new_size; i++)
         self->memo[i] = NULL;
     self->memo_size = new_size;
@@ -3452,6 +3454,8 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
             PickleState *st = _Pickle_GetGlobalState();
             PyObject *reduce_value = Py_BuildValue("(O(OO))",
                                         st->getattr, parent, lastname);
+            if (reduce_value == NULL)
+                goto error;
             status = save_reduce(self, reduce_value, NULL);
             Py_DECREF(reduce_value);
             if (status < 0)
@@ -6284,26 +6288,15 @@ load_mark(UnpicklerObject *self)
      * mark stack.
      */
 
-    if ((self->num_marks + 1) >= self->marks_size) {
-        size_t alloc;
-
-        /* Use the size_t type to check for overflow. */
-        alloc = ((size_t)self->num_marks << 1) + 20;
-        if (alloc > (PY_SSIZE_T_MAX / sizeof(Py_ssize_t)) ||
-            alloc <= ((size_t)self->num_marks + 1)) {
+    if (self->num_marks >= self->marks_size) {
+        size_t alloc = ((size_t)self->num_marks << 1) + 20;
+        Py_ssize_t *marks_new = self->marks;
+        PyMem_RESIZE(marks_new, Py_ssize_t, alloc);
+        if (marks_new == NULL) {
             PyErr_NoMemory();
             return -1;
         }
-
-        if (self->marks == NULL)
-            self->marks = PyMem_NEW(Py_ssize_t, alloc);
-        else
-            PyMem_RESIZE(self->marks, Py_ssize_t, alloc);
-        if (self->marks == NULL) {
-            self->marks_size = 0;
-            PyErr_NoMemory();
-            return -1;
-        }
+        self->marks = marks_new;
         self->marks_size = (Py_ssize_t)alloc;
     }
 
