@@ -1271,6 +1271,9 @@ PyInit__functools(void)
         NULL
     };
 
+    if (PyType_Ready(&keyobject_type) < 0)
+        return NULL;
+
     m = PyModule_Create(&_functoolsmodule);
     if (m == NULL)
         return NULL;

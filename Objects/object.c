@@ -1900,6 +1900,12 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PyAsyncGen_Type) < 0)
        Py_FatalError("Can't initialize async gen type");
 
+    if (PyType_Ready(&_PyAsyncGenASend_Type) < 0)
+       Py_FatalError("Can't initialize async gen a send type");
+
+    if (PyType_Ready(&_PyAsyncGenAThrow_Type) < 0)
+       Py_FatalError("Can't initialize async gen a send type");
+
     if (PyType_Ready(&PyListIter_Type) < 0)
        Py_FatalError("Can't initialize list iter type");
 
