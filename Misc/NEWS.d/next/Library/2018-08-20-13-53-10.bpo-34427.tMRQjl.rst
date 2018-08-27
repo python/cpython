@@ -1,1 +1,1 @@
-Fix ``a.extend(a)`` for ``MutableSequence`` subclasses
+Fix infinite loop in ``a.extend(a)`` for ``MutableSequence`` subclasses.
