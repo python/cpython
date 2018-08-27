@@ -1,0 +1,2 @@
+This modifies PyVarObject_HEAD_INIT to default the type to NULL so that all
+type objects have to be fully initialized through PyType_Ready.
