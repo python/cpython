@@ -1,2 +1,3 @@
-Fix crashes in :class:`io.BufferedReader` and :class:`io.BufferedWriter`.
+Fix crashes in :class:`io.BufferedReader` and :class:`io.BufferedWriter`
+(internal :term:`bytes-like object`s were not being properly initialized).
 Patch by Zackery Spytz.
