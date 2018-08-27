@@ -2942,6 +2942,10 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         # bpo-34482: Check that surrogates don't cause a crash.
         self.assertEqual(t.strftime('\ud800'), '\ud800')
 
+        # bpo-34482: Check that surrogates in tzinfo don't crash
+        tzinfo = timezone(timedelta(hours=1), '\ud800')
+        t.replace(tzinfo=tzinfo).strftime("%Z")
+
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)
         self.assertEqual(t.__format__(''), str(t))
@@ -3346,11 +3350,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         t = time(2, 3, 4, tzinfo=Badtzname())
         self.assertEqual(t.strftime("%H:%M:%S"), "02:03:04")
         self.assertRaises(TypeError, t.strftime, "%Z")
-
-        # Issue #6697:
-        if '_Fast' in self.__class__.__name__:
-            Badtzname.tz = '\ud800'
-            self.assertRaises(ValueError, t.strftime, "%Z")
 
     def test_hash_edge_cases(self):
         # Offsets that overflow a basic time.

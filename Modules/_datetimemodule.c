@@ -1491,6 +1491,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
         pin = pin_tmp;
     }
+    int contains_surrogates = (format_esc != NULL);
 
     /* Scan the input format, looking for %z/%Z/%f escapes, building
      * a new format.  Since computing the replacements for those codes
@@ -1551,15 +1552,33 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             if (Zreplacement == NULL) {
                 Zreplacement = make_Zreplacement(object,
                                                  tzinfoarg);
-                if (Zreplacement == NULL)
+                if (Zreplacement == NULL) {
                     goto Done;
+                }
             }
             assert(Zreplacement != NULL);
             assert(PyUnicode_Check(Zreplacement));
             ptoappend = PyUnicode_AsUTF8AndSize(Zreplacement,
                                                   &ntoappend);
-            if (ptoappend == NULL)
-                goto Done;
+            if (ptoappend == NULL) {
+                PyErr_Clear();
+
+                PyObject *Zreplacement_old = Zreplacement;
+                Zreplacement = PyUnicode_AsEncodedString(
+                        Zreplacement, "utf-8", "surrogatepass"
+                );
+                Py_DECREF(Zreplacement_old);
+                if (Zreplacement == NULL) {
+                    goto Done;
+                }
+
+                char *p_tmp;
+                if (PyBytes_AsStringAndSize(Zreplacement, &p_tmp, &ntoappend)) {
+                    goto Done;
+                }
+                ptoappend = p_tmp;
+                contains_surrogates = 1;
+            }
         }
         else if (ch == 'f') {
             /* format microseconds */
@@ -1610,7 +1629,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
         if (time == NULL)
             goto Done;
-        if (format_esc == NULL) {
+        if (!contains_surrogates) {
             format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
         } else {
             format = PyUnicode_Decode(PyBytes_AS_STRING(newfmt),
