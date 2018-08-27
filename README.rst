@@ -9,6 +9,18 @@ This is Python version 3.8.0 alpha 0
    :alt: CPython build status on Appveyor
    :target: https://ci.appveyor.com/project/python/cpython/branch/master
 
+.. image:: https://python.visualstudio.com/cpython/_apis/build/status/Linux-Buildbot?branchName=master
+   :alt: CPython build status on VSTS (Linux)
+   :target: https://python.visualstudio.com/cpython/_build/latest?definitionId=6&branchName=master
+
+.. image:: https://python.visualstudio.com/cpython/_apis/build/status/macOS-Buildbot?branchName=master
+   :alt: CPython build status on VSTS (macOS)
+   :target: https://python.visualstudio.com/cpython/_build/latest?definitionId=5&branchName=master
+
+.. image:: https://python.visualstudio.com/cpython/_apis/build/status/Windows-Buildbot?branchName=master
+   :alt: CPython build status on VSTS (Windows)
+   :target: https://python.visualstudio.com/cpython/_build/latest?definitionId=4&branchName=master
+
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
@@ -16,7 +28,7 @@ This is Python version 3.8.0 alpha 0
 .. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
    :alt: Python Zulip chat
    :target: https://python.zulipchat.com
-  
+
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
 2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
