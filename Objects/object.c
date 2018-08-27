@@ -1878,6 +1878,45 @@ _Py_ReadyTypes(void)
 
     if (PyType_Ready(&_PyCoroWrapper_Type) < 0)
         Py_FatalError("Can't initialize coroutine wrapper type");
+
+    if (PyType_Ready(&PyByteArrayIter_Type) < 0)
+        Py_FatalError("Can't initialize bytearray iter type");
+
+    if (PyType_Ready(&PyBytesIter_Type) < 0)
+       Py_FatalError("Can't initialize bytes iter type");
+
+    if (PyType_Ready(&PyDictIterKey_Type) < 0)
+       Py_FatalError("Can't initialize dict iter key type");
+
+    if (PyType_Ready(&PyDictIterValue_Type) < 0)
+       Py_FatalError("Can't initialize dict iter value type");
+
+    if (PyType_Ready(&PyDictIterItem_Type) < 0)
+       Py_FatalError("Can't initialize dict iter item type");
+
+    if (PyType_Ready(&PyClassMethod_Type) < 0)
+       Py_FatalError("Can't initialize class method type");
+
+    if (PyType_Ready(&PyAsyncGen_Type) < 0)
+       Py_FatalError("Can't initialize async gen type");
+
+    if (PyType_Ready(&PyListIter_Type) < 0)
+       Py_FatalError("Can't initialize list iter type");
+
+    if (PyType_Ready(&PyListRevIter_Type) < 0)
+       Py_FatalError("Can't initialize rev iter type");
+
+    if (PyType_Ready(&PyODictIter_Type) < 0)
+       Py_FatalError("Can't initialize odict iter type");
+
+    if (PyType_Ready(&PyRangeIter_Type) < 0)
+       Py_FatalError("Can't initialize range iter type");
+
+    if (PyType_Ready(&PySetIter_Type) < 0)
+       Py_FatalError("Can't initialize set iter type");
+
+    if (PyType_Ready(&PyTupleIter_Type) < 0)
+       Py_FatalError("Can't initialize tuple iter type");
 }
 
 

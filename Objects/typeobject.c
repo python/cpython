@@ -5141,6 +5141,10 @@ PyType_Ready(PyTypeObject *type)
     /* Now the only way base can still be NULL is if type is
      * &PyBaseObject_Type.
      */
+    if (base == NULL) {
+        Py_TYPE(&PyType_Type) = &PyType_Type;
+        Py_TYPE(type) = &PyType_Type;
+    }
 
     /* Initialize the base class */
     if (base != NULL && base->tp_dict == NULL) {

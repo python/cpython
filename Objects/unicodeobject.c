@@ -15141,6 +15141,9 @@ int _PyUnicode_Init(void)
         PyUnicode_2BYTE_KIND, linebreak,
         Py_ARRAY_LENGTH(linebreak));
 
+    if (PyType_Ready(&PyUnicodeIter_Type) < 0)
+        Py_FatalError("Can't initialize unicode iterator type");
+
     if (PyType_Ready(&EncodingMapType) < 0)
          Py_FatalError("Can't initialize encoding map type");
 
