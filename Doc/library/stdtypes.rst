@@ -1195,12 +1195,14 @@ application).
       --- this is helpful for sorting in multiple passes (for example, sort by
       department, then by salary grade).
 
+      While a list is being sorted, the effect of attempting to mutate, or even
+      inspect, the list is undefined.
+
       .. impl-detail::
 
-         While a list is being sorted, the effect of attempting to mutate, or even
-         inspect, the list is undefined.  The C implementation of Python makes the
-         list appear empty for the duration, and raises :exc:`ValueError` if it can
-         detect that the list has been mutated during a sort.
+         CPython makes lists appear empty while sorting them, and raises
+         :exc:`ValueError` if it can detect that a list has been mutated
+         during a sort.
 
 
 .. _typesseq-tuple:
