@@ -490,7 +490,7 @@ class TestExpandingButton(unittest.TestCase):
         retval = expandingbutton.expand(event=Mock())
         self.assertEqual(retval, None)
 
-        # check that the text was inserting into the text widget
+        # check that the text was inserted into the text widget
         self.assertEqual(text_widget.get('1.0', 'end'), 'TEXT\n')
 
         # check that the 'TAGS' tag was set on the inserted text
@@ -502,6 +502,47 @@ class TestExpandingButton(unittest.TestCase):
         # check that the button removed itself from squeezer.expandingbuttons
         self.assertEqual(squeezer.expandingbuttons.remove.call_count, 1)
         squeezer.expandingbuttons.remove.assert_called_with(expandingbutton)
+
+    def test_expand_dangerous_oupput(self):
+        """attempting to expand very long output asks user for confirmation"""
+        squeezer = self.make_mock_squeezer()
+        text = 'a' * 10**5
+        expandingbutton = ExpandingButton(text, 'TAGS', 30, squeezer)
+        expandingbutton.set_is_dangerous()
+        self.assertTrue(expandingbutton.is_dangerous)
+
+        # insert the button into the text widget
+        # (this is normally done by the Squeezer class)
+        text_widget = expandingbutton.text
+        text_widget.window_create("1.0", window=expandingbutton)
+
+        # set base_text to the text widget, so that changes are actually made
+        # to it (by ExpandingButton) and we can inspect these changes afterwards
+        expandingbutton.base_text = expandingbutton.text
+
+        # patch the message box module to always return False
+        with patch('idlelib.squeezer.tkMessageBox') as mock_msgbox:
+            mock_msgbox.askokcancel.return_value = False
+            mock_msgbox.askyesno.return_value = False
+
+            # trigger the expand event
+            retval = expandingbutton.expand(event=Mock())
+
+        # check that the event chain was broken and no text was inserted
+        self.assertEqual(retval, 'break')
+        self.assertEqual(expandingbutton.text.get('1.0', 'end-1c'), '')
+
+        # patch the message box module to always return True
+        with patch('idlelib.squeezer.tkMessageBox') as mock_msgbox:
+            mock_msgbox.askokcancel.return_value = True
+            mock_msgbox.askyesno.return_value = True
+
+            # trigger the expand event
+            retval = expandingbutton.expand(event=Mock())
+
+        # check that the event chain wasn't broken and the text was inserted
+        self.assertEqual(retval, None)
+        self.assertEqual(expandingbutton.text.get('1.0', 'end-1c'), text)
 
     def test_copy(self):
         """test the copy event"""

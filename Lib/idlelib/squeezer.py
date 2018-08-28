@@ -18,6 +18,7 @@ import re
 
 import tkinter as tk
 from tkinter.font import Font
+import tkinter.messagebox as tkMessageBox
 
 from idlelib.config import idleConf
 from idlelib.textview import view_text
@@ -106,6 +107,7 @@ class ExpandingButton(tk.Button):
     def __init__(self, s, tags, numoflines, squeezer):
         self.s = s
         self.tags = tags
+        self.numoflines = numoflines
         self.squeezer = squeezer
         self.editwin = editwin = squeezer.editwin
         self.text = text = editwin.text
@@ -114,7 +116,7 @@ class ExpandingButton(tk.Button):
         # before the iomark
         self.base_text = editwin.per.bottom
 
-        button_text = "Squeezed text (%d lines)." % numoflines
+        button_text = "Squeezed text (%d lines)." % self.numoflines
         tk.Button.__init__(self, text, text=button_text,
                            background="#FFFFC0", activebackground="#FFFFE0")
 
@@ -132,12 +134,45 @@ class ExpandingButton(tk.Button):
         self.selection_handle(
             lambda offset, length: s[int(offset):int(offset) + int(length)])
 
+        self.is_dangerous = None
+        self.after_idle(self.set_is_dangerous)
+
+    def set_is_dangerous(self):
+        dangerous_line_len = 50 * self.text.winfo_width()
+        self.is_dangerous = (
+            self.numoflines > 1000 or
+            len(self.s) > 50000 or
+            any(
+                len(line_match.group(0)) >= dangerous_line_len
+                for line_match in re.finditer(r'[^\n]+', self.s)
+            )
+        )
+
     def expand(self, event):
         """expand event handler
 
         This inserts the original text in place of the button in the Text
         widget, removes the button and updates the Squeezer instance.
+
+        If the original text is dangerously long, i.e. expanding it could
+        cause a performance degradation, ask the user for confirmation.
         """
+        if self.is_dangerous is None:
+            self.set_is_dangerous()
+        if self.is_dangerous:
+            confirm = tkMessageBox.askokcancel(
+                title="Expand huge output?",
+                message="\n\n".join([
+                    "The squeezed output is very long: %d lines, %d chars.",
+                    "Expanding it could make IDLE slow or unresponsive.",
+                    "It is recommended to preview or copy the output instead.",
+                    "Really expand?"
+                ]) % (self.numoflines, len(self.s)),
+                default=tkMessageBox.CANCEL,
+                parent=self.text)
+            if not confirm:
+                return "break"
+
         self.base_text.insert(self.text.index(self), self.s, self.tags)
         self.base_text.delete(self)
         self.squeezer.expandingbuttons.remove(self)
