@@ -659,10 +659,6 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     _PyRuntime.finalizing = NULL;
 
 #ifndef MS_WINDOWS
-    /* Set up the LC_CTYPE locale, so we can obtain
-       the locale's charset without having to switch
-       locales. */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
     _emit_stderr_warning_for_legacy_locale(core_config);
 #endif
 
@@ -814,6 +810,12 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
     /* Copy the configuration, since _PyCoreConfig_Read() modifies it
        (and the input configuration is read only). */
     _PyCoreConfig config = _PyCoreConfig_INIT;
+
+#ifndef MS_WINDOWS
+    /* Set up the LC_CTYPE locale, so we can obtain the locale's charset
+       without having to switch locales. */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
+#endif
 
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     if (_PyCoreConfig_Copy(&config, src_config) >= 0) {
