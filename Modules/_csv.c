@@ -87,6 +87,8 @@ typedef struct {
 
 } DialectObj;
 
+static PyObject* Dialect_Type;
+
 typedef struct {
     PyObject_HEAD
 
@@ -103,6 +105,8 @@ typedef struct {
     unsigned long line_num;     /* Source-file line number */
 } ReaderObj;
 
+static PyObject* Reader_Type;
+
 typedef struct {
     PyObject_HEAD
 
@@ -115,6 +119,8 @@ typedef struct {
     Py_ssize_t rec_len;         /* length of record */
     int num_fields;             /* number of fields in record */
 } WriterObj;
+
+static PyObject* Writer_Type;
 
 /*
  * DIALECT class
@@ -358,8 +364,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         else
             Py_INCREF(dialect);
         /* Can we reuse this instance? */
-        PyObject *dialect_type = PyObject_GetAttrString(_csvmodule, "Dialect");
-        if (PyObject_TypeCheck(dialect, (PyTypeObject *)dialect_type) &&
+        if (PyObject_TypeCheck(dialect, (PyTypeObject *)Dialect_Type) &&
             delimiter == NULL &&
             doublequote == NULL &&
             escapechar == NULL &&
@@ -466,7 +471,7 @@ static PyType_Slot Dialect_Type_slots[] = {
 };
 
 static PyType_Spec Dialect_Type_spec = {
-    "_csv.Dialect",
+    "Dialect",
     sizeof(DialectObj),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -871,10 +876,11 @@ static PyType_Slot Reader_Type_slots[] = {
     {Py_tp_iternext, Reader_iternext},
     {Py_tp_methods, Reader_methods},
     {Py_tp_members, Reader_memberlist},
+    {0, 0},
 };
 
 static PyType_Spec Reader_Type_spec = {
-    "_csv.reader",
+    "reader",
     sizeof(ReaderObj),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -885,8 +891,7 @@ static PyObject *
 csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * iterator, * dialect = NULL;
-    PyObject *reader_type = PyObject_GetAttrString(_csvmodule, "Reader");
-    ReaderObj * self = PyObject_GC_New(ReaderObj, (PyTypeObject *)reader_type);
+    ReaderObj * self = PyObject_GC_New(ReaderObj, (PyTypeObject *)Reader_Type);
 
     if (!self)
         return NULL;
@@ -1285,7 +1290,7 @@ static PyType_Slot Writer_Type_slots[] = {
 };
 
 static PyType_Spec Writer_Type_spec = {
-    "_csv.writer",
+    "writer",
     sizeof(WriterObj),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -1296,8 +1301,7 @@ static PyObject *
 csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * output_file, * dialect = NULL;
-    PyObject *writer_type = PyObject_GetAttrString(_csvmodule, "Writer");
-    WriterObj * self = PyObject_GC_New(WriterObj, (PyTypeObject*)writer_type);
+    WriterObj * self = PyObject_GC_New(WriterObj, (PyTypeObject*)Writer_Type);
     _Py_IDENTIFIER(write);
 
     if (!self)
@@ -1552,16 +1556,16 @@ PyInit__csv(void)
 {
     const StyleDesc *style;
 
-    PyObject *dialect_type = PyType_FromSpec(&Dialect_Type_spec);
-    if (dialect_type == NULL)
+    Dialect_Type = PyType_FromSpec(&Dialect_Type_spec);
+    if (Dialect_Type == NULL)
         return NULL;
 
-    PyObject *reader_type = PyType_FromSpec(&Reader_Type_spec);
-    if (reader_type == NULL)
+    Reader_Type = PyType_FromSpec(&Reader_Type_spec);
+    if (Reader_Type == NULL)
         return NULL;
 
-    PyObject *writer_type = PyType_FromSpec(&Writer_Type_spec);
-    if (writer_type == NULL)
+    Writer_Type = PyType_FromSpec(&Writer_Type_spec);
+    if (Writer_Type == NULL)
         return NULL;
 
     /* Create the module and add the functions */
@@ -1594,18 +1598,8 @@ PyInit__csv(void)
     }
 
     /* Add the Dialect type */
-    Py_INCREF(dialect_type);
-    if (PyModule_AddObject(_csvmodule, "Dialect", dialect_type))
-        return NULL;
-
-    /* Add the Reader type */
-    Py_INCREF(reader_type);
-    if (PyModule_AddObject(_csvmodule, "Reader", reader_type))
-        return NULL;
-
-    /* Add the Writer type */
-    Py_INCREF(writer_type);
-    if (PyModule_AddObject(_csvmodule, "Writer", writer_type))
+    Py_INCREF(Dialect_Type);
+    if (PyModule_AddObject(_csvmodule, "Dialect", Dialect_Type))
         return NULL;
 
     /* Add the CSV exception object to the module. */
