@@ -310,8 +310,10 @@ static PyGetSetDef Dialect_getsetlist[] = {
 static void
 Dialect_dealloc(DialectObj *self)
 {
+    PyObject *tp = (PyObject *) Py_TYPE(self);
     Py_XDECREF(self->lineterminator);
     Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static char *dialect_kws[] = {
@@ -485,12 +487,11 @@ static PyType_Spec Dialect_Type_spec = {
 static PyObject *
 _call_dialect(PyObject *dialect_inst, PyObject *kwargs)
 {
-    PyObject *type = PyObject_GetAttrString(_csvmodule, "Dialect");
     if (dialect_inst) {
-        return _PyObject_FastCallDict(type, &dialect_inst, 1, kwargs);
+        return _PyObject_FastCallDict(Dialect_Type, &dialect_inst, 1, kwargs);
     }
     else {
-        return _PyObject_FastCallDict(type, NULL, 0, kwargs);
+        return _PyObject_FastCallDict(Dialect_Type, NULL, 0, kwargs);
     }
 }
 
@@ -822,12 +823,14 @@ err:
 static void
 Reader_dealloc(ReaderObj *self)
 {
+    PyObject *tp = (PyObject *) Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_XDECREF(self->dialect);
     Py_XDECREF(self->input_iter);
     Py_XDECREF(self->fields);
     if (self->field != NULL)
         PyMem_Free(self->field);
+    Py_DECREF(tp);
     PyObject_GC_Del(self);
 }
 
@@ -895,6 +898,7 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
 
     if (!self)
         return NULL;
+    Py_INCREF(Reader_Type);
 
     self->dialect = NULL;
     self->fields = NULL;
@@ -1248,11 +1252,13 @@ static struct PyMemberDef Writer_memberlist[] = {
 static void
 Writer_dealloc(WriterObj *self)
 {
+    PyObject *tp = (PyObject *) Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_XDECREF(self->dialect);
     Py_XDECREF(self->writeline);
     if (self->rec != NULL)
         PyMem_Free(self->rec);
+    Py_DECREF(tp);
     PyObject_GC_Del(self);
 }
 
@@ -1306,6 +1312,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 
     if (!self)
         return NULL;
+    Py_INCREF(Writer_Type);
 
     self->dialect = NULL;
     self->writeline = NULL;
@@ -1563,10 +1570,12 @@ PyInit__csv(void)
     Reader_Type = PyType_FromSpec(&Reader_Type_spec);
     if (Reader_Type == NULL)
         return NULL;
+    ((PyTypeObject *)Reader_Type)->tp_new = NULL;
 
     Writer_Type = PyType_FromSpec(&Writer_Type_spec);
     if (Writer_Type == NULL)
         return NULL;
+    ((PyTypeObject *)Writer_Type)->tp_new = NULL;
 
     /* Create the module and add the functions */
     _csvmodule = PyModule_Create(&_csvmodule_def);
@@ -1598,9 +1607,9 @@ PyInit__csv(void)
     }
 
     /* Add the Dialect type */
-    Py_INCREF(Dialect_Type);
     if (PyModule_AddObject(_csvmodule, "Dialect", Dialect_Type))
         return NULL;
+    Py_INCREF(Dialect_Type);
 
     /* Add the CSV exception object to the module. */
     _csvstate(_csvmodule)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
