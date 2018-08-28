@@ -9,15 +9,15 @@ This is Python version 3.6.6+
    :alt: CPython build status on Appveyor
    :target: https://ci.appveyor.com/project/python/cpython/branch/3.6
 
-.. image:: https://python.visualstudio.com/cpython/_apis/build/status/Linux-Buildbot?branchName=3.6
+.. image:: https://python.visualstudio.com/cpython/_apis/build/status/Linux-Buildbot?branchName=3.6&label=Linux
    :alt: CPython build status on VSTS (Linux)
    :target: https://python.visualstudio.com/cpython/_build/latest?definitionId=6&branchName=3.6
 
-.. image:: https://python.visualstudio.com/cpython/_apis/build/status/macOS-Buildbot?branchName=3.6
+.. image:: https://python.visualstudio.com/cpython/_apis/build/status/macOS-Buildbot?branchName=3.6&label=macOS
    :alt: CPython build status on VSTS (macOS)
    :target: https://python.visualstudio.com/cpython/_build/latest?definitionId=5&branchName=3.6
 
-.. image:: https://python.visualstudio.com/cpython/_apis/build/status/Windows-Buildbot?branchName=3.6
+.. image:: https://python.visualstudio.com/cpython/_apis/build/status/Windows-Buildbot?branchName=3.6&label=Windows
    :alt: CPython build status on VSTS (Windows)
    :target: https://python.visualstudio.com/cpython/_build/latest?definitionId=4&branchName=3.6
 
