@@ -9,7 +9,7 @@ from tkinter.messagebox import showerror
 class TextFrame(Frame):
     "Display text with scrollbar."
 
-    def __init__(self, parent, rawtext):
+    def __init__(self, parent, rawtext, wrap='word'):
         """Create a frame for Textview.
 
         parent - parent widget for this frame
@@ -22,7 +22,7 @@ class TextFrame(Frame):
         self.bg = '#ffffff'
         self.fg = '#000000'
 
-        self.text = text = Text(self, wrap='word', highlightthickness=0,
+        self.text = text = Text(self, wrap=wrap, highlightthickness=0,
                                 fg=self.fg, bg=self.bg)
         self.scroll = scroll = Scrollbar(self, orient='vertical',
                                          takefocus=False, command=text.yview)
@@ -37,12 +37,12 @@ class TextFrame(Frame):
 
 class ViewFrame(Frame):
     "Display TextFrame and Close button."
-    def __init__(self, parent, text):
+    def __init__(self, parent, text, wrap='word'):
         super().__init__(parent)
         self.parent = parent
         self.bind('<Return>', self.ok)
         self.bind('<Escape>', self.ok)
-        self.textframe = TextFrame(self, text)
+        self.textframe = TextFrame(self, text, wrap=wrap)
         self.button_ok = button_ok = Button(
                 self, text='Close', command=self.ok, takefocus=False)
         self.textframe.pack(side='top', expand=True, fill='both')
@@ -56,7 +56,7 @@ class ViewFrame(Frame):
 class ViewWindow(Toplevel):
     "A simple text viewer dialog for IDLE."
 
-    def __init__(self, parent, title, text, modal=True,
+    def __init__(self, parent, title, text, modal=True, wrap='word',
                  *, _htest=False, _utest=False):
         """Show the given text in a scrollable window with a 'close' button.
 
@@ -66,6 +66,7 @@ class ViewWindow(Toplevel):
         parent - parent of this dialog
         title - string which is title of popup dialog
         text - text to display in dialog
+        wrap - type of text wrapping to use ('word', 'char' or 'none')
         _htest - bool; change box location when running htest.
         _utest - bool; don't wait_window when running unittest.
         """
@@ -77,7 +78,7 @@ class ViewWindow(Toplevel):
         self.geometry(f'=750x500+{x}+{y}')
 
         self.title(title)
-        self.viewframe = ViewFrame(self, text)
+        self.viewframe = ViewFrame(self, text, wrap=wrap)
         self.protocol("WM_DELETE_WINDOW", self.ok)
         self.button_ok = button_ok = Button(self, text='Close',
                                             command=self.ok, takefocus=False)
@@ -97,20 +98,22 @@ class ViewWindow(Toplevel):
         self.destroy()
 
 
-def view_text(parent, title, text, modal=True, _utest=False):
+def view_text(parent, title, text, modal=True, wrap='word', _utest=False):
     """Create text viewer for given text.
 
     parent - parent of this dialog
     title - string which is the title of popup dialog
     text - text to display in this dialog
+    wrap - type of text wrapping to use ('word', 'char' or 'none')
     modal - controls if users can interact with other windows while this
             dialog is displayed
     _utest - bool; controls wait_window on unittest
     """
-    return ViewWindow(parent, title, text, modal, _utest=_utest)
+    return ViewWindow(parent, title, text, modal, wrap=wrap, _utest=_utest)
 
 
-def view_file(parent, title, filename, encoding, modal=True, _utest=False):
+def view_file(parent, title, filename, encoding, modal=True, wrap='word',
+              _utest=False):
     """Create text viewer for text in filename.
 
     Return error message if file cannot be read.  Otherwise calls view_text
@@ -128,7 +131,8 @@ def view_file(parent, title, filename, encoding, modal=True, _utest=False):
                   message=str(err),
                   parent=parent)
     else:
-        return view_text(parent, title, contents, modal, _utest=_utest)
+        return view_text(parent, title, contents, modal, wrap=wrap,
+                         _utest=_utest)
     return None
 
 

@@ -155,7 +155,7 @@ class ExpandingButton(tk.Button):
 
         View the original text in a separate text viewer window.
         """
-        view_text(self.text, "Squeezed Output Viewer", self.s)
+        view_text(self.text, "Squeezed Output Viewer", self.s, wrap='none')
 
 
 class Squeezer:
