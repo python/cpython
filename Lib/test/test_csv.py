@@ -1082,7 +1082,6 @@ class TestLeaks(unittest.TestCase):
             delta = rc-lastrc
             lastrc = rc
         # if csv.writer() leaks, last delta should be 3 or more
-        print(sys.getobjects(5))
         self.assertLess(delta, 3)
 
     def test_read(self):
