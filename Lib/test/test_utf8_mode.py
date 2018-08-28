@@ -206,9 +206,6 @@ class UTF8ModeTests(unittest.TestCase):
 
     @unittest.skipIf(MS_WINDOWS, 'test specific to Unix')
     def test_cmd_line(self):
-        arg = 'h\xe9\u20ac'.encode('utf-8')
-        arg_utf8 = arg.decode('utf-8')
-        arg_ascii = arg.decode('ascii', 'surrogateescape')
         code = 'import locale, sys; print("%s:%s" % (locale.getpreferredencoding(), ascii(sys.argv[1:])))'
 
         def check(utf8_opt, expected, **kw):
@@ -216,14 +213,26 @@ class UTF8ModeTests(unittest.TestCase):
             args = out.partition(':')[2].rstrip()
             self.assertEqual(args, ascii(expected), out)
 
-        check('utf8', [arg_utf8])
-        if sys.platform == 'darwin' or support.is_android:
-            c_arg = arg_utf8
-        elif sys.platform.startswith("aix"):
-            c_arg = arg.decode('iso-8859-1')
-        else:
-            c_arg = arg_ascii
-        check('utf8=0', [c_arg], LC_ALL='C')
+        # UTF-8 Mode must use the UTF-8 encoding for any locale
+        arg = 'h\xe9\u20ac\U0010ffff'.encode('utf-8')
+        check('utf8', [arg.decode('utf-8')])
+        check('utf8', [arg.decode('utf-8')], LC_ALL='C')
+
+        # Non-ASCII byte string. Don't test Euro sign (U+20AC): Roman8 doesn't
+        # support it, and HP-UX uses Roman8 encoding for its C locale. The
+        # test just requires a single non-ASCII character to validate the code.
+        arg = b'h\xa7\xe9'
+
+        # Get the locale encoding when the UTF-8 mode is disabled
+        out = self.get_output('-X', 'utf8=0', '-c',
+                              'import locale; print(locale.getpreferredencoding())',
+                              LC_ALL='C')
+        encoding = out.rstrip()
+
+        # Check that the command line is decoded from the locale encoding
+        with self.subTest(encoding=encoding):
+            check('utf8=0', [arg.decode(encoding, 'surrogateescape')],
+                  LC_ALL='C')
 
     def test_optim_level(self):
         # CPython: check that Py_Main() doesn't increment Py_OptimizeFlag
