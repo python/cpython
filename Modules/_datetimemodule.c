@@ -4939,7 +4939,12 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
     const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
 
     if (dt_ptr == NULL) {
-        goto invalid_string_error;
+        if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+            // Encoding errors are invalid string errors at this point
+            goto invalid_string_error;
+        } else {
+            goto error;
+        }
     }
 
     const char *p = dt_ptr;
