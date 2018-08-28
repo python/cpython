@@ -67,7 +67,7 @@ font-bold= 0
 encoding= none
 
 [PyShell]
-auto-squeeze-min-lines= 30
+auto-squeeze-min-lines= 50
 show-squeezed-tooltips= 1
 squeezed-tooltips-delay= 0
 

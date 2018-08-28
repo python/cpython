@@ -176,7 +176,7 @@ class TestSqueezer(unittest.TestCase):
         for text in ['', 'TEXT']:
             editwin.write = orig_write = Mock(return_value=SENTINEL_VALUE)
             squeezer = self.make_squeezer_instance(editwin)
-            squeezer.auto_squeeze_min_lines = 30
+            squeezer.auto_squeeze_min_lines = 50
 
             self.assertEqual(squeezer.editwin.write(text, "stdout"),
                              SENTINEL_VALUE)
@@ -187,7 +187,7 @@ class TestSqueezer(unittest.TestCase):
         for text in ['LONG TEXT' * 1000, 'MANY_LINES\n' * 100]:
             editwin.write = orig_write = Mock(return_value=SENTINEL_VALUE)
             squeezer = self.make_squeezer_instance(editwin)
-            squeezer.auto_squeeze_min_lines = 30
+            squeezer.auto_squeeze_min_lines = 50
 
             self.assertEqual(squeezer.editwin.write(text, "stdout"), None)
             self.assertEqual(orig_write.call_count, 0)
@@ -425,7 +425,7 @@ class TestExpandingButton(unittest.TestCase):
         squeezer.editwin.text = Text()
 
         # Set default values for the configuration settings
-        squeezer.auto_squeeze_min_lines = 30
+        squeezer.auto_squeeze_min_lines = 50
         squeezer.should_show_tooltip = False
         squeezer.tooltip_delay = 1500
         return squeezer
@@ -437,12 +437,12 @@ class TestExpandingButton(unittest.TestCase):
         squeezer.should_show_tooltip = False
         text_widget = squeezer.editwin.text
 
-        expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
+        expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
         self.assertEqual(expandingbutton.s, 'TEXT')
 
         # check that the underlying tkinter.Button is properly configured
         self.assertEqual(expandingbutton.master, text_widget)
-        self.assertTrue('30 lines' in expandingbutton.cget('text'))
+        self.assertTrue('50 lines' in expandingbutton.cget('text'))
 
         # check that the text widget still contains no text
         self.assertEqual(text_widget.get('1.0', 'end'), '\n')
@@ -461,7 +461,7 @@ class TestExpandingButton(unittest.TestCase):
         squeezer = self.make_mock_squeezer()
         squeezer.should_show_tooltip = True
         squeezer.tooltip_delay = SENTINEL_VALUE
-        expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
+        expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
 
         # check that ToolTip was called once, with appropriate values
         self.assertEqual(MockHovertip.call_count, 1)
@@ -475,7 +475,7 @@ class TestExpandingButton(unittest.TestCase):
     def test_expand(self):
         """test the expand event"""
         squeezer = self.make_mock_squeezer()
-        expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
+        expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
 
         # insert the button into the text widget
         # (this is normally done by the Squeezer class)
@@ -507,7 +507,7 @@ class TestExpandingButton(unittest.TestCase):
         """attempting to expand very long output asks user for confirmation"""
         squeezer = self.make_mock_squeezer()
         text = 'a' * 10**5
-        expandingbutton = ExpandingButton(text, 'TAGS', 30, squeezer)
+        expandingbutton = ExpandingButton(text, 'TAGS', 50, squeezer)
         expandingbutton.set_is_dangerous()
         self.assertTrue(expandingbutton.is_dangerous)
 
@@ -550,7 +550,7 @@ class TestExpandingButton(unittest.TestCase):
         # replaces the clipboard manipulation functions with mocks and checks
         # that they are called appropriately
         squeezer = self.make_mock_squeezer()
-        expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
+        expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
         expandingbutton.clipboard_clear = Mock()
         expandingbutton.clipboard_append = Mock()
 
@@ -574,7 +574,7 @@ class TestExpandingButton(unittest.TestCase):
     def test_preview(self):
         """test the preview event"""
         squeezer = self.make_mock_squeezer()
-        expandingbutton = ExpandingButton('TEXT', 'TAGS', 30, squeezer)
+        expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
         expandingbutton.selection_own = Mock()
 
         with patch('idlelib.squeezer.view_text', autospec=view_text)\

@@ -204,7 +204,7 @@ class Squeezer:
         """Load class variables from config."""
         cls.auto_squeeze_min_lines = idleConf.GetOption(
             "main", "PyShell", "auto-squeeze-min-lines",
-            type="int", default=30,
+            type="int", default=50,
         )
         cls.should_show_tooltip = idleConf.GetOption(
             "main", "PyShell", "show-squeezed-tooltips",
