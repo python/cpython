@@ -244,22 +244,26 @@ error:
     return NULL;
 }
 
-static char*
-get_locale_encoding(void)
+static _PyInitError
+get_locale_encoding(char **locale_encoding)
 {
-#if defined(HAVE_LANGINFO_H) && defined(CODESET)
-    char* codeset = nl_langinfo(CODESET);
-    if (!codeset || codeset[0] == '\0') {
-        PyErr_SetString(PyExc_ValueError, "CODESET is not set or empty");
-        return NULL;
-    }
-    return get_codec_name(codeset);
+#ifdef MS_WINDOWS
+    char encoding[20];
+    PyOS_snprintf(encoding, sizeof(encoding), "cp%d", GetACP());
 #elif defined(__ANDROID__)
-    return get_codec_name("UTF-8");
+    const char *encoding = "UTF-8";
 #else
-    PyErr_SetNone(PyExc_NotImplementedError);
-    return NULL;
+    const char *encoding = nl_langinfo(CODESET);
+    if (!encoding || encoding[0] == '\0') {
+        return _Py_INIT_USER_ERR("failed to get the locale encoding: "
+                                 "nl_langinfo(CODESET) failed");
+    }
 #endif
+    *locale_encoding = _PyMem_RawStrdup(encoding);
+    if (*locale_encoding == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+    return _Py_INIT_OK();
 }
 
 static _PyInitError
@@ -1586,9 +1590,17 @@ initfsencoding(PyInterpreterState *interp)
             Py_HasFileSystemDefaultEncoding = 1;
         }
         else {
-            Py_FileSystemDefaultEncoding = get_locale_encoding();
+            char *locale_encoding;
+            _PyInitError err = get_locale_encoding(&locale_encoding);
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
+
+            Py_FileSystemDefaultEncoding = get_codec_name(locale_encoding);
+            PyMem_RawFree(locale_encoding);
             if (Py_FileSystemDefaultEncoding == NULL) {
-                return _Py_INIT_ERR("Unable to get the locale encoding");
+                return _Py_INIT_ERR("failed to get the Python codec "
+                                    "of the locale encoding");
             }
 
             Py_HasFileSystemDefaultEncoding = 0;
@@ -1787,6 +1799,8 @@ init_sys_streams(PyInterpreterState *interp)
     PyObject * encoding_attr;
     char *pythonioencoding = NULL;
     const char *encoding, *errors;
+    char *locale_encoding = NULL;
+    char *codec_name = NULL;
     _PyInitError res = _Py_INIT_OK();
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
@@ -1838,13 +1852,21 @@ init_sys_streams(PyInterpreterState *interp)
                     errors = err;
                 }
             }
-            if (*pythonioencoding && !encoding) {
+            if (!encoding && *pythonioencoding) {
                 encoding = pythonioencoding;
+                if (!errors) {
+                    errors = "strict";
+                }
             }
         }
-        else if (interp->core_config.utf8_mode) {
-            encoding = "utf-8";
-            errors = "surrogateescape";
+
+        if (interp->core_config.utf8_mode) {
+            if (!encoding) {
+                encoding = "utf-8";
+            }
+            if (!errors) {
+                errors = "surrogateescape";
+            }
         }
 
         if (!errors && !pythonioencoding) {
@@ -1852,6 +1874,23 @@ init_sys_streams(PyInterpreterState *interp)
             errors = get_default_standard_stream_error_handler();
         }
     }
+
+    if (encoding == NULL) {
+        _PyInitError err = get_locale_encoding(&locale_encoding);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+        encoding = locale_encoding;
+    }
+
+    codec_name = get_codec_name(encoding);
+    if (codec_name == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to get the Python codec name "
+                        "of stdio encoding");
+        goto error;
+    }
+    encoding = codec_name;
 
     /* Set sys.stdin */
     fd = fileno(stdin);
@@ -1928,6 +1967,8 @@ done:
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
+    PyMem_RawFree(locale_encoding);
+    PyMem_RawFree(codec_name);
     PyMem_Free(pythonioencoding);
     Py_XDECREF(bimod);
     Py_XDECREF(iomod);
