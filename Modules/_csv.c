@@ -471,7 +471,7 @@ static PyType_Slot Dialect_Type_slots[] = {
 };
 
 static PyType_Spec Dialect_Type_spec = {
-    "Dialect",
+    "_csv.Dialect",
     sizeof(DialectObj),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -880,7 +880,7 @@ static PyType_Slot Reader_Type_slots[] = {
 };
 
 static PyType_Spec Reader_Type_spec = {
-    "reader",
+    "_csv.reader",
     sizeof(ReaderObj),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -1290,7 +1290,7 @@ static PyType_Slot Writer_Type_slots[] = {
 };
 
 static PyType_Spec Writer_Type_spec = {
-    "writer",
+    "_csv.writer",
     sizeof(WriterObj),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
