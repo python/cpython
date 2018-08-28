@@ -266,6 +266,12 @@ encode_ascii(const wchar_t *text, char **str,
     *str = result;
     return 0;
 }
+#else
+int
+_Py_GetForceASCII(void)
+{
+    return 0;
+}
 #endif   /* !defined(__APPLE__) && !defined(__ANDROID__) && !defined(MS_WINDOWS) */
 
 
