@@ -1869,7 +1869,7 @@ init_sys_streams(PyInterpreterState *interp)
             }
         }
 
-        if (!errors && !pythonioencoding) {
+        if (!errors) {
             /* Choose the default error handler based on the current locale */
             errors = get_default_standard_stream_error_handler();
         }
