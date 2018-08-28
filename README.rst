@@ -9,15 +9,15 @@ This is Python version 3.8.0 alpha 0
    :alt: CPython build status on Appveyor
    :target: https://ci.appveyor.com/project/python/cpython/branch/master
 
-.. image:: https://python.visualstudio.com/cpython/_apis/build/status/Linux-Buildbot?branchName=master
+.. image:: https://python.visualstudio.com/cpython/_apis/build/status/Linux-Buildbot?branchName=master&label=Linux
    :alt: CPython build status on VSTS (Linux)
    :target: https://python.visualstudio.com/cpython/_build/latest?definitionId=6&branchName=master
 
-.. image:: https://python.visualstudio.com/cpython/_apis/build/status/macOS-Buildbot?branchName=master
+.. image:: https://python.visualstudio.com/cpython/_apis/build/status/macOS-Buildbot?branchName=master&label=macOS
    :alt: CPython build status on VSTS (macOS)
    :target: https://python.visualstudio.com/cpython/_build/latest?definitionId=5&branchName=master
 
-.. image:: https://python.visualstudio.com/cpython/_apis/build/status/Windows-Buildbot?branchName=master
+.. image:: https://python.visualstudio.com/cpython/_apis/build/status/Windows-Buildbot?branchName=master&label=Windows
    :alt: CPython build status on VSTS (Windows)
    :target: https://python.visualstudio.com/cpython/_build/latest?definitionId=4&branchName=master
 
