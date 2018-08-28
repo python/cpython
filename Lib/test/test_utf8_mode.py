@@ -24,7 +24,7 @@ class UTF8ModeTests(unittest.TestCase):
 
     def posix_locale(self):
         loc = locale.setlocale(locale.LC_CTYPE, None)
-        return (loc == 'C')
+        return (loc in POSIX_LOCALES)
 
     def get_output(self, *args, failure=False, **kw):
         kw = dict(self.DEFAULT_ENV, **kw)
