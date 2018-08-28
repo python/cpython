@@ -1854,16 +1854,18 @@ config_read_env_vars(_PyCoreConfig *config)
         config->malloc_stats = 1;
     }
 
-    if (config->coerce_c_locale < 0) {
-        const char *env = config_get_env_var("PYTHONCOERCECLOCALE");
-        if (env) {
-            if (strcmp(env, "0") == 0) {
+    const char *env = config_get_env_var("PYTHONCOERCECLOCALE");
+    if (env) {
+        if (strcmp(env, "0") == 0) {
+            if (config->coerce_c_locale < 0) {
                 config->coerce_c_locale = 0;
             }
-            else if (strcmp(env, "warn") == 0) {
-                config->coerce_c_locale_warn = 1;
-            }
-            else {
+        }
+        else if (strcmp(env, "warn") == 0) {
+            config->coerce_c_locale_warn = 1;
+        }
+        else {
+            if (config->coerce_c_locale < 0) {
                 config->coerce_c_locale = 1;
             }
         }
@@ -2044,7 +2046,7 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
          * See the documentation of the PYTHONCOERCECLOCALE setting for more
          * details.
          */
-        if (config->coerce_c_locale == 1 && !locale_coerced) {
+        if (config->coerce_c_locale && !locale_coerced) {
             locale_coerced = 1;
             _Py_CoerceLegacyLocale(config);
             encoding_changed = 1;
@@ -2071,6 +2073,7 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
            pymain_read_conf_impl(). Reset Py_IsolatedFlag and Py_NoSiteFlag
            modified by _PyCoreConfig_Read(). */
         int new_utf8_mode = config->utf8_mode;
+        int new_coerce_c_locale = config->coerce_c_locale;
         Py_IgnoreEnvironmentFlag = init_ignore_env;
         if (_PyCoreConfig_Copy(config, &save_config) < 0) {
             pymain->err = _Py_INIT_NO_MEMORY();
@@ -2082,6 +2085,7 @@ pymain_read_conf(_PyMain *pymain, _Py_CommandLineDetails *cmdline)
         cmdline_get_global_config(cmdline);
         _PyCoreConfig_GetGlobalConfig(config);
         config->utf8_mode = new_utf8_mode;
+        config->coerce_c_locale = new_coerce_c_locale;
 
         /* The encoding changed: read again the configuration
            with the new encoding */
