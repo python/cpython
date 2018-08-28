@@ -23,6 +23,7 @@ import tkinter.messagebox as tkMessageBox
 from idlelib.config import idleConf
 from idlelib.textview import view_text
 from idlelib.tooltip import Hovertip
+from idlelib import macosx
 
 
 def _add_to_rmenu(editwin, specs):
@@ -122,15 +123,17 @@ class ExpandingButton(tk.Button):
 
         if self.squeezer.should_show_tooltip:
             button_tooltip_text = (
-                "Double-click to expand, middle-click to copy, " +
-                "right-click to preview."
+                "Double-click to expand, right-click for more options."
             )
             Hovertip(self, button_tooltip_text,
                      hover_delay=self.squeezer.tooltip_delay)
 
         self.bind("<Double-Button-1>", self.expand)
-        self.bind("<Button-2>", self.copy)
-        self.bind("<Button-3>", self.preview)
+        if macosx.isAquaTk():
+            # AquaTk defines <2> as the right button, not <3>.
+            self.bind("<Button-2>", self.context_menu_event)
+        else:
+            self.bind("<Button-3>", self.context_menu_event)
         self.selection_handle(
             lambda offset, length: s[int(offset):int(offset) + int(length)])
 
@@ -148,7 +151,7 @@ class ExpandingButton(tk.Button):
             )
         )
 
-    def expand(self, event):
+    def expand(self, event=None):
         """expand event handler
 
         This inserts the original text in place of the button in the Text
@@ -177,7 +180,7 @@ class ExpandingButton(tk.Button):
         self.base_text.delete(self)
         self.squeezer.expandingbuttons.remove(self)
 
-    def copy(self, event):
+    def copy(self, event=None):
         """copy event handler
 
         Copy the original text to the clipboard.
@@ -185,12 +188,26 @@ class ExpandingButton(tk.Button):
         self.clipboard_clear()
         self.clipboard_append(self.s)
 
-    def preview(self, event):
+    def preview(self, event=None):
         """preview event handler
 
         View the original text in a separate text viewer window.
         """
         view_text(self.text, "Squeezed Output Viewer", self.s, wrap='none')
+
+    rmenu_specs = (
+        # item structure: (label, method_name)
+        ('copy', 'copy'),
+        ('preview', 'preview'),
+    )
+
+    def context_menu_event(self, event):
+        self.text.mark_set("insert", "@%d,%d" % (event.x, event.y))
+        rmenu = tk.Menu(self.text, tearoff=0)
+        for label, method_name in self.rmenu_specs:
+            rmenu.add_command(label=label, command=getattr(self, method_name))
+        rmenu.tk_popup(event.x_root, event.y_root)
+        return "break"
 
 
 class Squeezer:

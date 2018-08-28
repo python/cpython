@@ -8,6 +8,7 @@ from test.support import requires
 from idlelib.config import idleConf
 from idlelib.squeezer import count_lines_with_wrapping, ExpandingButton, \
     Squeezer
+from idlelib import macosx
 from idlelib.textview import view_text
 from idlelib.tooltip import Hovertip
 from idlelib.pyshell import PyShell
@@ -452,8 +453,8 @@ class TestExpandingButton(unittest.TestCase):
 
         # check that the mouse events are bound
         self.assertIn('<Double-Button-1>', expandingbutton.bind())
-        self.assertIn('<Button-2>', expandingbutton.bind())
-        self.assertIn('<Button-3>', expandingbutton.bind())
+        right_button_code = '<Button-%s>' % ('2' if macosx.isAquaTk() else '3')
+        self.assertIn(right_button_code, expandingbutton.bind())
 
     @patch('idlelib.squeezer.Hovertip', autospec=Hovertip)
     def test_init_tooltip(self, MockHovertip):
@@ -564,13 +565,6 @@ class TestExpandingButton(unittest.TestCase):
         self.assertEqual(expandingbutton.clipboard_append.call_count, 1)
         expandingbutton.clipboard_append.assert_called_with('TEXT')
 
-    def _file_cleanup(self, filename):
-        if os.path.exists(filename):
-            try:
-                os.remove(filename)
-            except OSError:
-                pass
-
     def test_preview(self):
         """test the preview event"""
         squeezer = self.make_mock_squeezer()
@@ -587,3 +581,19 @@ class TestExpandingButton(unittest.TestCase):
 
             # check that the proper text was passed
             self.assertEqual(mock_view_text.call_args[0][2], 'TEXT')
+
+    def test_rmenu(self):
+        """test the context menu"""
+        squeezer = self.make_mock_squeezer()
+        expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
+        with patch('tkinter.Menu') as mock_Menu:
+            mock_menu = Mock()
+            mock_Menu.return_value = mock_menu
+            mock_event = Mock()
+            mock_event.x = 10
+            mock_event.y = 10
+            expandingbutton.context_menu_event(event=mock_event)
+            self.assertEqual(mock_menu.add_command.call_count,
+                             len(expandingbutton.rmenu_specs))
+            for label, *data in expandingbutton.rmenu_specs:
+                mock_menu.add_command.assert_any_call(label=label, command=ANY)
