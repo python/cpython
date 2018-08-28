@@ -128,7 +128,7 @@ check_force_ascii(void)
     loc = setlocale(LC_CTYPE, NULL);
     if (loc == NULL)
         goto error;
-    if (strcmp(loc, "C") != 0) {
+    if (strcmp(loc, "C") != 0 && strcmp(loc, "POSIX") != 0) {
         /* the LC_CTYPE locale is different than C */
         return 0;
     }
