@@ -72,8 +72,8 @@ _Py_device_encoding(int fd)
 
 extern int _Py_normalize_encoding(const char *, char *, size_t);
 
-/* Workaround FreeBSD and OpenIndiana locale encoding issue with the C locale.
-   On these operating systems, nl_langinfo(CODESET) announces an alias of the
+/* Workaround FreeBSD and OpenIndiana locale encoding issue with the C locale
+   and POSIX locale. nl_langinfo(CODESET) announces an alias of the
    ASCII encoding, whereas mbstowcs() and wcstombs() functions use the
    ISO-8859-1 encoding. The problem is that os.fsencode() and os.fsdecode() use
    locale.getpreferredencoding() codec. For example, if command line arguments
@@ -85,6 +85,10 @@ extern int _Py_normalize_encoding(const char *, char *, size_t);
    one byte in range 0x80-0xff can be decoded from the locale encoding. The
    workaround is also enabled on error, for example if getting the locale
    failed.
+
+   On HP-UX with the C locale or the POSIX locale, nl_langinfo(CODESET)
+   announces "roman8" but mbstowcs() uses Latin1 in practice. Force also the
+   ASCII encoding in this case.
 
    Values of force_ascii:
 
@@ -100,13 +104,46 @@ static int force_ascii = -1;
 static int
 check_force_ascii(void)
 {
-    char *loc;
+    char *loc = setlocale(LC_CTYPE, NULL);
+    if (loc == NULL) {
+        goto error;
+    }
+    if (strcmp(loc, "C") != 0 && strcmp(loc, "POSIX") != 0) {
+        /* the LC_CTYPE locale is different than C and POSIX */
+        return 0;
+    }
+
 #if defined(HAVE_LANGINFO_H) && defined(CODESET)
-    char *codeset, **alias;
+    const char *codeset = nl_langinfo(CODESET);
+    if (!codeset || codeset[0] == '\0') {
+        /* CODESET is not set or empty */
+        goto error;
+    }
+
     char encoding[20];   /* longest name: "iso_646.irv_1991\0" */
-    int is_ascii;
-    unsigned int i;
-    char* ascii_aliases[] = {
+    if (!_Py_normalize_encoding(codeset, encoding, sizeof(encoding))) {
+        goto error;
+    }
+
+#ifdef __hpux
+    if (strcmp(encoding, "roman8") == 0) {
+        unsigned char ch;
+        wchar_t wch;
+        size_t res;
+
+        ch = (unsigned char)0xA7;
+        res = mbstowcs(&wch, (char*)&ch, 1);
+        if (res != (size_t)-1 && wch == L'\xA7') {
+            /* On HP-UX withe C locale or the POSIX locale,
+               nl_langinfo(CODESET) announces "roman8", whereas mbstowcs() uses
+               Latin1 encoding in practice. Force ASCII in this case.
+
+               Roman8 decodes 0xA7 to U+00CF. Latin1 decodes 0xA7 to U+00A7. */
+            return 1;
+        }
+    }
+#else
+    const char* ascii_aliases[] = {
         "ascii",
         /* Aliases from Lib/encodings/aliases.py */
         "646",
@@ -123,27 +160,9 @@ check_force_ascii(void)
         "us_ascii",
         NULL
     };
-#endif
 
-    loc = setlocale(LC_CTYPE, NULL);
-    if (loc == NULL)
-        goto error;
-    if (strcmp(loc, "C") != 0 && strcmp(loc, "POSIX") != 0) {
-        /* the LC_CTYPE locale is different than C */
-        return 0;
-    }
-
-#if defined(HAVE_LANGINFO_H) && defined(CODESET)
-    codeset = nl_langinfo(CODESET);
-    if (!codeset || codeset[0] == '\0') {
-        /* CODESET is not set or empty */
-        goto error;
-    }
-    if (!_Py_normalize_encoding(codeset, encoding, sizeof(encoding)))
-        goto error;
-
-    is_ascii = 0;
-    for (alias=ascii_aliases; *alias != NULL; alias++) {
+    int is_ascii = 0;
+    for (const char **alias=ascii_aliases; *alias != NULL; alias++) {
         if (strcmp(encoding, *alias) == 0) {
             is_ascii = 1;
             break;
@@ -154,13 +173,14 @@ check_force_ascii(void)
         return 0;
     }
 
-    for (i=0x80; i<0xff; i++) {
-        unsigned char ch;
-        wchar_t wch;
+    for (unsigned int i=0x80; i<=0xff; i++) {
+        char ch[1];
+        wchar_t wch[1];
         size_t res;
 
-        ch = (unsigned char)i;
-        res = mbstowcs(&wch, (char*)&ch, 1);
+        unsigned uch = (unsigned char)i;
+        ch[0] = (char)uch;
+        res = mbstowcs(wch, ch, 1);
         if (res != (size_t)-1) {
             /* decoding a non-ASCII character from the locale encoding succeed:
                the locale encoding is not ASCII, force ASCII */
@@ -169,16 +189,28 @@ check_force_ascii(void)
     }
     /* None of the bytes in the range 0x80-0xff can be decoded from the locale
        encoding: the locale encoding is really ASCII */
+#endif   /* !defined(__hpux) */
     return 0;
 #else
     /* nl_langinfo(CODESET) is not available: always force ASCII */
     return 1;
-#endif
+#endif   /* defined(HAVE_LANGINFO_H) && defined(CODESET) */
 
 error:
     /* if an error occurred, force the ASCII encoding */
     return 1;
 }
+
+
+int
+_Py_GetForceASCII(void)
+{
+    if (force_ascii == -1) {
+        force_ascii = check_force_ascii();
+    }
+    return force_ascii;
+}
+
 
 static int
 encode_ascii(const wchar_t *text, char **str,
@@ -232,6 +264,12 @@ encode_ascii(const wchar_t *text, char **str,
     }
     *out = '\0';
     *str = result;
+    return 0;
+}
+#else
+int
+_Py_GetForceASCII(void)
+{
     return 0;
 }
 #endif   /* !defined(__APPLE__) && !defined(__ANDROID__) && !defined(MS_WINDOWS) */

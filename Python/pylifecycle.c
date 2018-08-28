@@ -1576,21 +1576,25 @@ initfsencoding(PyInterpreterState *interp)
         Py_FileSystemDefaultEncodeErrors = "surrogatepass";
     }
 #else
-    if (Py_FileSystemDefaultEncoding == NULL &&
-        interp->core_config.utf8_mode)
-    {
-        Py_FileSystemDefaultEncoding = "utf-8";
-        Py_HasFileSystemDefaultEncoding = 1;
-    }
-    else if (Py_FileSystemDefaultEncoding == NULL) {
-        Py_FileSystemDefaultEncoding = get_locale_encoding();
-        if (Py_FileSystemDefaultEncoding == NULL) {
-            return _Py_INIT_ERR("Unable to get the locale encoding");
+    if (Py_FileSystemDefaultEncoding == NULL) {
+        if (interp->core_config.utf8_mode) {
+            Py_FileSystemDefaultEncoding = "utf-8";
+            Py_HasFileSystemDefaultEncoding = 1;
         }
+        else if (_Py_GetForceASCII()) {
+            Py_FileSystemDefaultEncoding = "ascii";
+            Py_HasFileSystemDefaultEncoding = 1;
+        }
+        else {
+            Py_FileSystemDefaultEncoding = get_locale_encoding();
+            if (Py_FileSystemDefaultEncoding == NULL) {
+                return _Py_INIT_ERR("Unable to get the locale encoding");
+            }
 
-        Py_HasFileSystemDefaultEncoding = 0;
-        interp->fscodec_initialized = 1;
-        return _Py_INIT_OK();
+            Py_HasFileSystemDefaultEncoding = 0;
+            interp->fscodec_initialized = 1;
+            return _Py_INIT_OK();
+        }
     }
 #endif
 
