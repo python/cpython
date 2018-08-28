@@ -4876,20 +4876,22 @@ datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-_sanitize_isoformat_str(PyObject *dtstr, int *needs_decref)
+_sanitize_isoformat_str(PyObject *dtstr)
 {
     // `fromisoformat` allows surrogate characters in exactly one position,
     // the separator; to allow datetime_fromisoformat to make the simplifying
     // assumption that all valid strings can be encoded in UTF-8, this function
     // replaces any surrogate character separators with `T`.
+    //
+    // The result of this, if not NULL, returns a new reference
     Py_ssize_t len = PyUnicode_GetLength(dtstr);
     if (len < 0) {
         return NULL;
     }
 
-    *needs_decref = 0;
     if (len <= 10 ||
         !Py_UNICODE_IS_SURROGATE(PyUnicode_READ_CHAR(dtstr, 10))) {
+        Py_INCREF(dtstr);
         return dtstr;
     }
 
@@ -4903,7 +4905,6 @@ _sanitize_isoformat_str(PyObject *dtstr, int *needs_decref)
         return NULL;
     }
 
-    *needs_decref = 1;
     return str_out;
 }
 
@@ -4918,8 +4919,7 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         return NULL;
     }
 
-    int needs_decref = 0;
-    PyObject *dtstr_clean = _sanitize_isoformat_str(dtstr, &needs_decref);
+    PyObject *dtstr_clean = _sanitize_isoformat_str(dtstr);
     if (dtstr_clean == NULL) {
         goto error;
     }
@@ -4982,18 +4982,14 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
                                             second, microsecond, tzinfo, cls);
 
     Py_DECREF(tzinfo);
-    if (needs_decref) {
-        Py_DECREF(dtstr_clean);
-    }
+    Py_DECREF(dtstr_clean);
     return dt;
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
 
 error:
-    if (needs_decref) {
-        Py_DECREF(dtstr_clean);
-    }
+    Py_XDECREF(dtstr_clean);
 
     return NULL;
 }
