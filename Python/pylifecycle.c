@@ -401,7 +401,7 @@ static _LocaleCoercionTarget _TARGET_LOCALES[] = {
 };
 
 static const char *
-get_default_standard_stream_error_handler(void)
+get_stdio_errors(void)
 {
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     if (ctype_loc != NULL) {
@@ -421,8 +421,7 @@ get_default_standard_stream_error_handler(void)
 #endif
    }
 
-   /* Otherwise return NULL to request the typical default error handler */
-   return NULL;
+   return "strict";
 }
 
 #ifdef PY_COERCE_C_LOCALE
@@ -1871,7 +1870,7 @@ init_sys_streams(PyInterpreterState *interp)
 
         if (!errors) {
             /* Choose the default error handler based on the current locale */
-            errors = get_default_standard_stream_error_handler();
+            errors = get_stdio_errors();
         }
     }
 
