@@ -259,9 +259,9 @@ on the value, ``'!r'`` which calls :func:`repr` and ``'!a'`` which calls
 
 Some examples::
 
-   "Harold's a clever {0!s}"        # Calls str() on the argument first
-   "Bring out the holy {name!r}"    # Calls repr() on the argument first
-   "More {!a}"                      # Calls ascii() on the argument first
+   "Harold's a clever {0!s}"        # Calls str() on the first argument
+   "Bring out the holy {name!r}"    # Calls repr() on a named argument 
+   "More {!a}"                      # Calls ascii() on an implicit argument 
 
 The *format_spec* field contains a specification of how the value should be
 presented, including such details as field width, alignment, padding, decimal
