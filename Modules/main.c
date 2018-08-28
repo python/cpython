@@ -2102,15 +2102,25 @@ done:
 static void
 config_init_locale(_PyCoreConfig *config)
 {
-    if (_Py_LegacyLocaleDetected()) {
-        /* POSIX locale: enable C locale coercion and UTF-8 Mode */
-        if (config->utf8_mode < 0) {
-            config->utf8_mode = 1;
-        }
-        if (config->coerce_c_locale < 0) {
+    if (config->coerce_c_locale < 0) {
+        /* The C locale enables the C locale coercion (PEP 538) */
+        if (_Py_LegacyLocaleDetected()) {
             config->coerce_c_locale = 1;
         }
     }
+
+#ifndef MS_WINDOWS
+    if (config->utf8_mode < 0) {
+        /* The C locale and the POSIX locale enable the UTF-8 Mode (PEP 540) */
+        const char *ctype_loc = setlocale(LC_CTYPE, NULL);
+        if (ctype_loc != NULL
+           && (strcmp(ctype_loc, "C") == 0
+               || strcmp(ctype_loc, "POSIX") == 0))
+        {
+            config->utf8_mode = 1;
+        }
+    }
+#endif
 }
 
 
