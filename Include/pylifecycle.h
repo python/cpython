@@ -19,7 +19,13 @@ PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
  */
 PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
                                              const char *errors);
+#endif
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(void) _Py_ClearStandardStreamEncoding(void);
+#endif
 
+
+#ifndef Py_LIMITED_API
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
     PyInterpreterState **interp,
