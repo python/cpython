@@ -12,7 +12,7 @@ from test.support.script_helper import assert_python_ok, assert_python_failure
 
 
 MS_WINDOWS = (sys.platform == 'win32')
-
+HPUX = (sys.platform.startswith('hp-ux'))
 
 class UTF8ModeTests(unittest.TestCase):
     DEFAULT_ENV = {
@@ -205,6 +205,7 @@ class UTF8ModeTests(unittest.TestCase):
         self.assertEqual(out, 'UTF-8 UTF-8')
 
     @unittest.skipIf(MS_WINDOWS, 'test specific to Unix')
+    @unittest.skipIf(HPUX, 'test specific to Unix with single-byte default locale')
     def test_cmd_line(self):
         arg = 'h\xe9\u20ac'.encode('utf-8')
         arg_utf8 = arg.decode('utf-8')
