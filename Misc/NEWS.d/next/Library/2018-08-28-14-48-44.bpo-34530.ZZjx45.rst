@@ -1,0 +1,4 @@
+distutils.spawn.find_executable() has been reimplemented using
+shutil.which() to fix two issues: fallback on os.defpath if the PATH
+environment variable is not set, and respect the PATHEXT environment
+variable on Windows.
