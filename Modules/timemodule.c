@@ -735,7 +735,7 @@ time_strftime(PyObject *self, PyObject *args)
     fmt = format;
 #else
     /* Convert the unicode string to an ascii one */
-    format = PyUnicode_EncodeLocale(format_arg, "surrogateescape");
+    format = PyUnicode_AsEncodedString(format_arg, "utf-8", "surrogateescape");
     if (format == NULL)
         return NULL;
     fmt = PyBytes_AS_STRING(format);
@@ -809,7 +809,7 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, "surrogateescape");
+            ret = PyUnicode_Decode(outbuf, buflen, "utf-8", "surrogateescape");
 #endif
             PyMem_Free(outbuf);
             break;
