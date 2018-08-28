@@ -1,0 +1,1 @@
+Implement ``Py_DEPRECATED()`` on Windows.
