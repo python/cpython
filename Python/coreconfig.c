@@ -85,6 +85,88 @@ _Py_wstrlist_copy(int len, wchar_t **list)
 }
 
 
+/* Helper to allow an embedding application to override the normal
+ * mechanism that attempts to figure out an appropriate IO encoding
+ */
+
+char *_Py_StandardStreamEncoding = NULL;
+char *_Py_StandardStreamErrors = NULL;
+
+int
+Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
+{
+    if (Py_IsInitialized()) {
+        /* This is too late to have any effect */
+        return -1;
+    }
+
+    int res = 0;
+
+    /* Py_SetStandardStreamEncoding() can be called before Py_Initialize(),
+       but Py_Initialize() can change the allocator. Use a known allocator
+       to be able to release the memory later. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* Can't call PyErr_NoMemory() on errors, as Python hasn't been
+     * initialised yet.
+     *
+     * However, the raw memory allocators are initialised appropriately
+     * as C static variables, so _PyMem_RawStrdup is OK even though
+     * Py_Initialize hasn't been called yet.
+     */
+    if (encoding) {
+        _Py_StandardStreamEncoding = _PyMem_RawStrdup(encoding);
+        if (!_Py_StandardStreamEncoding) {
+            res = -2;
+            goto done;
+        }
+    }
+    if (errors) {
+        _Py_StandardStreamErrors = _PyMem_RawStrdup(errors);
+        if (!_Py_StandardStreamErrors) {
+            if (_Py_StandardStreamEncoding) {
+                PyMem_RawFree(_Py_StandardStreamEncoding);
+            }
+            res = -3;
+            goto done;
+        }
+    }
+#ifdef MS_WINDOWS
+    if (_Py_StandardStreamEncoding) {
+        /* Overriding the stream encoding implies legacy streams */
+        Py_LegacyWindowsStdioFlag = 1;
+    }
+#endif
+
+done:
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    return res;
+}
+
+
+void
+_Py_ClearStandardStreamEncoding(void)
+{
+    /* Use the same allocator than Py_SetStandardStreamEncoding() */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* We won't need them anymore. */
+    if (_Py_StandardStreamEncoding) {
+        PyMem_RawFree(_Py_StandardStreamEncoding);
+        _Py_StandardStreamEncoding = NULL;
+    }
+    if (_Py_StandardStreamErrors) {
+        PyMem_RawFree(_Py_StandardStreamErrors);
+        _Py_StandardStreamErrors = NULL;
+    }
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+}
+
+
 /* Free memory allocated in config, but don't clear all attributes */
 void
 _PyCoreConfig_Clear(_PyCoreConfig *config)
@@ -134,7 +216,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     _PyCoreConfig_Clear(config);
 
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
-#define COPY_STR_ATTR(ATTR) \
+#define COPY_WSTR_ATTR(ATTR) \
     do { \
         if (config2->ATTR != NULL) { \
             config->ATTR = _PyMem_RawWcsdup(config2->ATTR); \
@@ -173,25 +255,25 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(coerce_c_locale_warn);
     COPY_ATTR(utf8_mode);
 
-    COPY_STR_ATTR(pycache_prefix);
-    COPY_STR_ATTR(module_search_path_env);
-    COPY_STR_ATTR(home);
-    COPY_STR_ATTR(program_name);
-    COPY_STR_ATTR(program);
+    COPY_WSTR_ATTR(pycache_prefix);
+    COPY_WSTR_ATTR(module_search_path_env);
+    COPY_WSTR_ATTR(home);
+    COPY_WSTR_ATTR(program_name);
+    COPY_WSTR_ATTR(program);
 
     COPY_WSTRLIST(argc, argv);
     COPY_WSTRLIST(nwarnoption, warnoptions);
     COPY_WSTRLIST(nxoption, xoptions);
     COPY_WSTRLIST(nmodule_search_path, module_search_paths);
 
-    COPY_STR_ATTR(executable);
-    COPY_STR_ATTR(prefix);
-    COPY_STR_ATTR(base_prefix);
-    COPY_STR_ATTR(exec_prefix);
+    COPY_WSTR_ATTR(executable);
+    COPY_WSTR_ATTR(prefix);
+    COPY_WSTR_ATTR(base_prefix);
+    COPY_WSTR_ATTR(exec_prefix);
 #ifdef MS_WINDOWS
-    COPY_STR_ATTR(dll_path);
+    COPY_WSTR_ATTR(dll_path);
 #endif
-    COPY_STR_ATTR(base_exec_prefix);
+    COPY_WSTR_ATTR(base_exec_prefix);
 
     COPY_ATTR(isolated);
     COPY_ATTR(site_import);
@@ -213,7 +295,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(_frozen);
 
 #undef COPY_ATTR
-#undef COPY_STR_ATTR
+#undef COPY_WSTR_ATTR
 #undef COPY_WSTRLIST
     return 0;
 }
@@ -627,8 +709,6 @@ get_env_flag(_PyCoreConfig *config, int *flag, const char *name)
 static _PyInitError
 config_read_env_vars(_PyCoreConfig *config)
 {
-    assert(config->use_environment > 0);
-
     /* Get environment variables */
     get_env_flag(config, &config->parser_debug, "PYTHONDEBUG");
     get_env_flag(config, &config->verbose, "PYTHONVERBOSE");
@@ -870,6 +950,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     _PyInitError err;
 
     _PyCoreConfig_GetGlobalConfig(config);
+    assert(config->use_environment >= 0);
 
     if (config->isolated > 0) {
         config->use_environment = 0;
@@ -882,7 +963,6 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
 #endif
 
-    assert(config->use_environment >= 0);
     if (config->use_environment) {
         err = config_read_env_vars(config);
         if (_Py_INIT_FAILED(err)) {
@@ -960,12 +1040,12 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     if (config->utf8_mode < 0) {
         config->utf8_mode = 0;
     }
-    if (config->_frozen < 0) {
-        config->_frozen = 0;
-    }
     if (config->argc < 0) {
         config->argc = 0;
     }
+
+    assert(config->coerce_c_locale >= 0);
+    assert(config->use_environment >= 0);
 
     return _Py_INIT_OK();
 }

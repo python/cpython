@@ -138,66 +138,6 @@ Py_IsInitialized(void)
     return _PyRuntime.initialized;
 }
 
-/* Helper to allow an embedding application to override the normal
- * mechanism that attempts to figure out an appropriate IO encoding
- */
-
-static char *_Py_StandardStreamEncoding = NULL;
-static char *_Py_StandardStreamErrors = NULL;
-
-int
-Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
-{
-    if (Py_IsInitialized()) {
-        /* This is too late to have any effect */
-        return -1;
-    }
-
-    int res = 0;
-
-    /* Py_SetStandardStreamEncoding() can be called before Py_Initialize(),
-       but Py_Initialize() can change the allocator. Use a known allocator
-       to be able to release the memory later. */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* Can't call PyErr_NoMemory() on errors, as Python hasn't been
-     * initialised yet.
-     *
-     * However, the raw memory allocators are initialised appropriately
-     * as C static variables, so _PyMem_RawStrdup is OK even though
-     * Py_Initialize hasn't been called yet.
-     */
-    if (encoding) {
-        _Py_StandardStreamEncoding = _PyMem_RawStrdup(encoding);
-        if (!_Py_StandardStreamEncoding) {
-            res = -2;
-            goto done;
-        }
-    }
-    if (errors) {
-        _Py_StandardStreamErrors = _PyMem_RawStrdup(errors);
-        if (!_Py_StandardStreamErrors) {
-            if (_Py_StandardStreamEncoding) {
-                PyMem_RawFree(_Py_StandardStreamEncoding);
-            }
-            res = -3;
-            goto done;
-        }
-    }
-#ifdef MS_WINDOWS
-    if (_Py_StandardStreamEncoding) {
-        /* Overriding the stream encoding implies legacy streams */
-        Py_LegacyWindowsStdioFlag = 1;
-    }
-#endif
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    return res;
-}
-
 
 /* Global initializations.  Can be undone by Py_FinalizeEx().  Don't
    call this twice without an intervening Py_FinalizeEx() call.  When
@@ -419,9 +359,9 @@ get_stdio_errors(void)
             }
         }
 #endif
-   }
+    }
 
-   return "strict";
+    return "strict";
 }
 
 #ifdef PY_COERCE_C_LOCALE
@@ -1803,6 +1743,8 @@ init_sys_streams(PyInterpreterState *interp)
     char *locale_encoding = NULL;
     char *codec_name = NULL;
     _PyInitError res = _Py_INIT_OK();
+    extern char *_Py_StandardStreamEncoding;
+    extern char *_Py_StandardStreamErrors;
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
        in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
@@ -1951,22 +1893,8 @@ init_sys_streams(PyInterpreterState *interp)
 error:
     res = _Py_INIT_ERR("can't initialize sys standard streams");
 
-    /* Use the same allocator than Py_SetStandardStreamEncoding() */
-    PyMemAllocatorEx old_alloc;
 done:
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* We won't need them anymore. */
-    if (_Py_StandardStreamEncoding) {
-        PyMem_RawFree(_Py_StandardStreamEncoding);
-        _Py_StandardStreamEncoding = NULL;
-    }
-    if (_Py_StandardStreamErrors) {
-        PyMem_RawFree(_Py_StandardStreamErrors);
-        _Py_StandardStreamErrors = NULL;
-    }
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    _Py_ClearStandardStreamEncoding();
 
     PyMem_RawFree(locale_encoding);
     PyMem_RawFree(codec_name);
