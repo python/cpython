@@ -204,7 +204,7 @@ class InitVar(metaclass=_InitVarMeta):
     __slots__ = ('type', )
 
     def __init__(self, type):
-         self.type = type
+        self.type = type
 
 
 # Instances of Field are only ever created from within this module,
@@ -564,7 +564,8 @@ def _is_classvar(a_type, typing):
 def _is_initvar(a_type, dataclasses):
     # The module we're checking against is the module we're
     # currently in (dataclasses.py).
-    return type(a_type) is dataclasses.InitVar
+    return (a_type is dataclasses.InitVar
+            or type(a_type) is dataclasses.InitVar)
 
 
 def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
