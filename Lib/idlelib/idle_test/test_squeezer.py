@@ -1,4 +1,3 @@
-import os
 from collections import namedtuple
 from tkinter import Text
 import unittest
@@ -250,22 +249,22 @@ class TestSqueezer(unittest.TestCase):
         self.assertEqual(retval, "break")
         self.assertEqual(squeezer.text.bell.call_count, 1)
 
-    def test_preview_last_squeezed_event_no_squeezed(self):
-        """test the preview_last_squeezed event"""
+    def test_view_last_squeezed_event_no_squeezed(self):
+        """test the view_last_squeezed event"""
         # The tested scenario: There are no squeezed texts, therefore there
-        # are no ExpandingButton instances. The preview_last_squeezed event
+        # are no ExpandingButton instances. The view_last_squeezed event
         # is called and should fail (i.e. call squeezer.text.bell()).
         editwin = self.make_mock_editor_window()
         squeezer = self.make_squeezer_instance(editwin)
 
-        retval = squeezer.preview_last_squeezed_event(event=Mock())
+        retval = squeezer.view_last_squeezed_event(event=Mock())
         self.assertEqual(retval, "break")
 
-    def test_preview_last_squeezed_event(self):
-        """test the preview_last_squeezed event"""
+    def test_view_last_squeezed_event(self):
+        """test the view_last_squeezed event"""
         # The tested scenario: There are two squeezed texts, therefore there
-        # are two ExpandingButton instances. The preview_last_squeezed event
-        # is called twice. Both times should call the preview() method of the
+        # are two ExpandingButton instances. The view_last_squeezed event
+        # is called twice. Both times should call the view() method of the
         # second ExpandingButton.
         editwin = self.make_mock_editor_window()
         squeezer = self.make_squeezer_instance(editwin)
@@ -274,17 +273,17 @@ class TestSqueezer(unittest.TestCase):
         squeezer.expandingbuttons = [mock_expandingbutton1,
                                      mock_expandingbutton2]
 
-        # check that the second expanding button is previewed
-        retval = squeezer.preview_last_squeezed_event(event=SENTINEL_VALUE)
+        # check that the second expanding button is viewed
+        retval = squeezer.view_last_squeezed_event(event=SENTINEL_VALUE)
         self.assertEqual(retval, "break")
         self.assertEqual(squeezer.text.bell.call_count, 0)
-        self.assertEqual(mock_expandingbutton1.preview.call_count, 0)
-        self.assertEqual(mock_expandingbutton2.preview.call_count, 1)
-        mock_expandingbutton2.preview.assert_called_with(SENTINEL_VALUE)
+        self.assertEqual(mock_expandingbutton1.view.call_count, 0)
+        self.assertEqual(mock_expandingbutton2.view.call_count, 1)
+        mock_expandingbutton2.view.assert_called_with(SENTINEL_VALUE)
 
-        squeezer.preview_last_squeezed_event(event=SENTINEL_VALUE)
-        self.assertEqual(mock_expandingbutton1.preview.call_count, 0)
-        self.assertEqual(mock_expandingbutton2.preview.call_count, 2)
+        squeezer.view_last_squeezed_event(event=SENTINEL_VALUE)
+        self.assertEqual(mock_expandingbutton1.view.call_count, 0)
+        self.assertEqual(mock_expandingbutton2.view.call_count, 2)
 
     def test_auto_squeeze(self):
         """test that the auto-squeezing creates an ExpandingButton properly"""
@@ -565,16 +564,16 @@ class TestExpandingButton(unittest.TestCase):
         self.assertEqual(expandingbutton.clipboard_append.call_count, 1)
         expandingbutton.clipboard_append.assert_called_with('TEXT')
 
-    def test_preview(self):
-        """test the preview event"""
+    def test_view(self):
+        """test the view event"""
         squeezer = self.make_mock_squeezer()
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
         expandingbutton.selection_own = Mock()
 
         with patch('idlelib.squeezer.view_text', autospec=view_text)\
                 as mock_view_text:
-            # trigger the preview event
-            expandingbutton.preview(event=Mock())
+            # trigger the view event
+            expandingbutton.view(event=Mock())
 
             # check that the expanding button called view_text
             self.assertEqual(mock_view_text.call_count, 1)

@@ -99,8 +99,8 @@ class ExpandingButton(tk.Button):
 
     These buttons are displayed inside a Tk Text widget in place of text. A
     user can then use the button to replace it with the original text, copy
-    the original text to the clipboard or preview the original text in a
-    separate window.
+    the original text to the clipboard or view the original text in a separate
+    window.
 
     Each button is tied to a Squeezer instance, and it knows to update the
     Squeezer instance when it is expanded (and therefore removed).
@@ -168,7 +168,7 @@ class ExpandingButton(tk.Button):
                 message="\n\n".join([
                     "The squeezed output is very long: %d lines, %d chars.",
                     "Expanding it could make IDLE slow or unresponsive.",
-                    "It is recommended to preview or copy the output instead.",
+                    "It is recommended to view or copy the output instead.",
                     "Really expand?"
                 ]) % (self.numoflines, len(self.s)),
                 default=tkMessageBox.CANCEL,
@@ -188,8 +188,8 @@ class ExpandingButton(tk.Button):
         self.clipboard_clear()
         self.clipboard_append(self.s)
 
-    def preview(self, event=None):
-        """preview event handler
+    def view(self, event=None):
+        """view event handler
 
         View the original text in a separate text viewer window.
         """
@@ -198,7 +198,7 @@ class ExpandingButton(tk.Button):
     rmenu_specs = (
         # item structure: (label, method_name)
         ('copy', 'copy'),
-        ('preview', 'preview'),
+        ('view', 'view'),
     )
 
     def context_menu_event(self, event):
@@ -329,8 +329,8 @@ class Squeezer:
             self.text.bell()
         return "break"
 
-    def preview_last_squeezed_event(self, event):
-        """preview-last-squeezed event handler
+    def view_last_squeezed_event(self, event):
+        """view-last-squeezed event handler
 
         Preview the last squeezed text in the Text widget.
 
@@ -338,7 +338,7 @@ class Squeezer:
         do nothing.
         """
         if len(self.expandingbuttons) > 0:
-            self.expandingbuttons[-1].preview(event)
+            self.expandingbuttons[-1].view(event)
         else:
             self.text.bell()
         return "break"
