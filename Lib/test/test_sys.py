@@ -668,7 +668,7 @@ class SysModuleTest(unittest.TestCase):
             'dump("stdout")',
             'dump("stderr")',
         ))
-        args = [sys.executable, "-c", code]
+        args = [sys.executable, "-X", "utf8=0", "-c", code]
         if isolated:
             args.append("-I")
         if encoding is not None:
@@ -712,8 +712,8 @@ class SysModuleTest(unittest.TestCase):
         # have no any effect
         out = self.c_locale_get_error_handler(encoding=':')
         self.assertEqual(out,
-                         'stdin: strict\n'
-                         'stdout: strict\n'
+                         'stdin: surrogateescape\n'
+                         'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
         out = self.c_locale_get_error_handler(encoding='')
         self.assertEqual(out,

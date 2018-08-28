@@ -113,9 +113,9 @@ static int test_forced_io_encoding(void)
     printf("--- Set errors only ---\n");
     check_stdio_details(NULL, "ignore");
     printf("--- Set encoding only ---\n");
-    check_stdio_details("latin-1", NULL);
+    check_stdio_details("iso8859-1", NULL);
     printf("--- Set encoding and errors ---\n");
-    check_stdio_details("latin-1", "replace");
+    check_stdio_details("iso8859-1", "replace");
 
     /* Check calling after initialization fails */
     Py_Initialize();
