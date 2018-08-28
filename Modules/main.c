@@ -466,6 +466,7 @@ pymain_free(_PyMain *pymain)
        remain valid after Py_Finalize(), since
        Py_Initialize()-Py_Finalize() can be called multiple times. */
     _PyPathConfig_ClearGlobal();
+    _Py_ClearStandardStreamEncoding();
 
     /* Force the allocator used by pymain_read_conf() */
     PyMemAllocatorEx old_alloc;
@@ -1262,7 +1263,6 @@ pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
         return -1;
     }
 
-    assert(config->use_environment >= 0);
     if (config->use_environment) {
         err = cmdline_init_env_warnoptions(pymain, config, cmdline);
         if (_Py_INIT_FAILED(err)) {
