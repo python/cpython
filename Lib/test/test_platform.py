@@ -275,6 +275,26 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(platform.libc_ver(support.TESTFN),
                          ('glibc', '1.23.4'))
 
+    @support.cpython_only
+    def test__comparable_version(self):
+        from platform import _comparable_version as V
+        self.assertEqual(V('1.2.3'), V('1.2.3'))
+        self.assertLess(V('1.2.3'), V('1.2.10'))
+        self.assertEqual(V('1.2.3.4'), V('1_2-3+4'))
+        self.assertLess(V('1.2spam'), V('1.2dev'))
+        self.assertLess(V('1.2dev'), V('1.2alpha'))
+        self.assertLess(V('1.2dev'), V('1.2a'))
+        self.assertLess(V('1.2alpha'), V('1.2beta'))
+        self.assertLess(V('1.2a'), V('1.2b'))
+        self.assertLess(V('1.2beta'), V('1.2c'))
+        self.assertLess(V('1.2b'), V('1.2c'))
+        self.assertLess(V('1.2c'), V('1.2RC'))
+        self.assertLess(V('1.2c'), V('1.2rc'))
+        self.assertLess(V('1.2RC'), V('1.2.0'))
+        self.assertLess(V('1.2rc'), V('1.2.0'))
+        self.assertLess(V('1.2.0'), V('1.2pl'))
+        self.assertLess(V('1.2.0'), V('1.2p'))
+
     def test_popen(self):
         mswindows = (sys.platform == "win32")
 
