@@ -671,16 +671,18 @@ config_read_env_vars(_PyCoreConfig *config)
         config->malloc_stats = 1;
     }
 
-    if (config->coerce_c_locale < 0) {
-        const char *env = _PyCoreConfig_GetEnv(config, "PYTHONCOERCECLOCALE");
-        if (env) {
-            if (strcmp(env, "0") == 0) {
+    const char *env = _PyCoreConfig_GetEnv(config, "PYTHONCOERCECLOCALE");
+    if (env) {
+        if (strcmp(env, "0") == 0) {
+            if (config->coerce_c_locale < 0) {
                 config->coerce_c_locale = 0;
             }
-            else if (strcmp(env, "warn") == 0) {
-                config->coerce_c_locale_warn = 1;
-            }
-            else {
+        }
+        else if (strcmp(env, "warn") == 0) {
+            config->coerce_c_locale_warn = 1;
+        }
+        else {
+            if (config->coerce_c_locale < 0) {
                 config->coerce_c_locale = 1;
             }
         }
