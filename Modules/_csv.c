@@ -45,9 +45,10 @@ _csv_free(void *m)
    _csv_clear((PyObject *)m);
 }
 
-static struct PyModuleDef _csvmodule;
+static struct PyModuleDef _csvmodule_def;
+static PyObject *_csvmodule;
 
-#define _csvstate_global ((_csvstate *)PyModule_GetState(PyState_FindModule(&_csvmodule)))
+#define _csvstate_global ((_csvstate *)PyModule_GetState(PyState_FindModule(&_csvmodule_def)))
 
 typedef enum {
     START_RECORD, START_FIELD, ESCAPED_CHAR, IN_FIELD,
@@ -86,8 +87,6 @@ typedef struct {
 
 } DialectObj;
 
-static PyTypeObject Dialect_Type;
-
 typedef struct {
     PyObject_HEAD
 
@@ -104,10 +103,6 @@ typedef struct {
     unsigned long line_num;     /* Source-file line number */
 } ReaderObj;
 
-static PyTypeObject Reader_Type;
-
-#define ReaderObject_Check(v)   (Py_TYPE(v) == &Reader_Type)
-
 typedef struct {
     PyObject_HEAD
 
@@ -120,8 +115,6 @@ typedef struct {
     Py_ssize_t rec_len;         /* length of record */
     int num_fields;             /* number of fields in record */
 } WriterObj;
-
-static PyTypeObject Writer_Type;
 
 /*
  * DIALECT class
@@ -365,7 +358,8 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         else
             Py_INCREF(dialect);
         /* Can we reuse this instance? */
-        if (PyObject_TypeCheck(dialect, &Dialect_Type) &&
+        PyObject *dialect_type = PyObject_GetAttrString(_csvmodule, "Dialect");
+        if (PyObject_TypeCheck(dialect, (PyTypeObject *)dialect_type) &&
             delimiter == NULL &&
             doublequote == NULL &&
             escapechar == NULL &&
@@ -462,47 +456,21 @@ PyDoc_STRVAR(Dialect_Type_doc,
 "\n"
 "The Dialect type records CSV parsing and generation options.\n");
 
-static PyTypeObject Dialect_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_csv.Dialect",                         /* tp_name */
-    sizeof(DialectObj),                     /* tp_basicsize */
-    0,                                      /* tp_itemsize */
-    /*  methods  */
-    (destructor)Dialect_dealloc,            /* tp_dealloc */
-    (printfunc)0,                           /* tp_print */
-    (getattrfunc)0,                         /* tp_getattr */
-    (setattrfunc)0,                         /* tp_setattr */
-    0,                                      /* tp_reserved */
-    (reprfunc)0,                            /* tp_repr */
-    0,                                      /* tp_as_number */
-    0,                                      /* tp_as_sequence */
-    0,                                      /* tp_as_mapping */
-    (hashfunc)0,                            /* tp_hash */
-    (ternaryfunc)0,                         /* tp_call */
-    (reprfunc)0,                                /* tp_str */
-    0,                                      /* tp_getattro */
-    0,                                      /* tp_setattro */
-    0,                                      /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    Dialect_Type_doc,                       /* tp_doc */
-    0,                                      /* tp_traverse */
-    0,                                      /* tp_clear */
-    0,                                      /* tp_richcompare */
-    0,                                      /* tp_weaklistoffset */
-    0,                                      /* tp_iter */
-    0,                                      /* tp_iternext */
-    0,                                          /* tp_methods */
-    Dialect_memberlist,                     /* tp_members */
-    Dialect_getsetlist,                     /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    dialect_new,                                /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot Dialect_Type_slots[] = {
+    {Py_tp_dealloc, Dialect_dealloc},
+    {Py_tp_doc, Dialect_Type_doc},
+    {Py_tp_members, Dialect_memberlist},
+    {Py_tp_getset, Dialect_getsetlist},
+    {Py_tp_new, dialect_new},
+    {0, 0},
+};
+
+static PyType_Spec Dialect_Type_spec = {
+    "_csv.Dialect",
+    sizeof(DialectObj),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    Dialect_Type_slots
 };
 
 /*
@@ -512,7 +480,7 @@ static PyTypeObject Dialect_Type = {
 static PyObject *
 _call_dialect(PyObject *dialect_inst, PyObject *kwargs)
 {
-    PyObject *type = (PyObject *)&Dialect_Type;
+    PyObject *type = PyObject_GetAttrString(_csvmodule, "Dialect");
     if (dialect_inst) {
         return _PyObject_FastCallDict(type, &dialect_inst, 1, kwargs);
     }
@@ -894,48 +862,31 @@ static struct PyMemberDef Reader_memberlist[] = {
     { NULL }
 };
 
+static PyType_Slot Reader_Type_slots[] = {
+    {Py_tp_dealloc, Reader_dealloc},
+    {Py_tp_doc, Reader_Type_doc},
+    {Py_tp_traverse, Reader_traverse},
+    {Py_tp_clear, Reader_clear},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, Reader_iternext},
+    {Py_tp_methods, Reader_methods},
+    {Py_tp_members, Reader_memberlist},
+};
 
-static PyTypeObject Reader_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_csv.reader",                          /*tp_name*/
-    sizeof(ReaderObj),                      /*tp_basicsize*/
-    0,                                      /*tp_itemsize*/
-    /* methods */
-    (destructor)Reader_dealloc,             /*tp_dealloc*/
-    (printfunc)0,                           /*tp_print*/
-    (getattrfunc)0,                         /*tp_getattr*/
-    (setattrfunc)0,                         /*tp_setattr*/
-    0,                                     /*tp_reserved*/
-    (reprfunc)0,                            /*tp_repr*/
-    0,                                      /*tp_as_number*/
-    0,                                      /*tp_as_sequence*/
-    0,                                      /*tp_as_mapping*/
-    (hashfunc)0,                            /*tp_hash*/
-    (ternaryfunc)0,                         /*tp_call*/
-    (reprfunc)0,                                /*tp_str*/
-    0,                                      /*tp_getattro*/
-    0,                                      /*tp_setattro*/
-    0,                                      /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_HAVE_GC,                     /*tp_flags*/
-    Reader_Type_doc,                        /*tp_doc*/
-    (traverseproc)Reader_traverse,          /*tp_traverse*/
-    (inquiry)Reader_clear,                  /*tp_clear*/
-    0,                                      /*tp_richcompare*/
-    0,                                      /*tp_weaklistoffset*/
-    PyObject_SelfIter,                          /*tp_iter*/
-    (getiterfunc)Reader_iternext,           /*tp_iternext*/
-    Reader_methods,                         /*tp_methods*/
-    Reader_memberlist,                      /*tp_members*/
-    0,                                      /*tp_getset*/
-
+static PyType_Spec Reader_Type_spec = {
+    "_csv.reader",
+    sizeof(ReaderObj),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    Reader_Type_slots
 };
 
 static PyObject *
 csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * iterator, * dialect = NULL;
-    ReaderObj * self = PyObject_GC_New(ReaderObj, &Reader_Type);
+    PyObject *reader_type = PyObject_GetAttrString(_csvmodule, "Reader");
+    ReaderObj * self = PyObject_GC_New(ReaderObj, (PyTypeObject *)reader_type);
 
     if (!self)
         return NULL;
@@ -1323,46 +1274,30 @@ PyDoc_STRVAR(Writer_Type_doc,
 "in CSV format from sequence input.\n"
 );
 
-static PyTypeObject Writer_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_csv.writer",                          /*tp_name*/
-    sizeof(WriterObj),                      /*tp_basicsize*/
-    0,                                      /*tp_itemsize*/
-    /* methods */
-    (destructor)Writer_dealloc,             /*tp_dealloc*/
-    (printfunc)0,                           /*tp_print*/
-    (getattrfunc)0,                         /*tp_getattr*/
-    (setattrfunc)0,                         /*tp_setattr*/
-    0,                                      /*tp_reserved*/
-    (reprfunc)0,                            /*tp_repr*/
-    0,                                      /*tp_as_number*/
-    0,                                      /*tp_as_sequence*/
-    0,                                      /*tp_as_mapping*/
-    (hashfunc)0,                            /*tp_hash*/
-    (ternaryfunc)0,                         /*tp_call*/
-    (reprfunc)0,                            /*tp_str*/
-    0,                                      /*tp_getattro*/
-    0,                                      /*tp_setattro*/
-    0,                                      /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_HAVE_GC,                     /*tp_flags*/
-    Writer_Type_doc,
-    (traverseproc)Writer_traverse,          /*tp_traverse*/
-    (inquiry)Writer_clear,                  /*tp_clear*/
-    0,                                      /*tp_richcompare*/
-    0,                                      /*tp_weaklistoffset*/
-    (getiterfunc)0,                         /*tp_iter*/
-    (getiterfunc)0,                         /*tp_iternext*/
-    Writer_methods,                         /*tp_methods*/
-    Writer_memberlist,                      /*tp_members*/
-    0,                                      /*tp_getset*/
+static PyType_Slot Writer_Type_slots[] = {
+    {Py_tp_dealloc, Writer_dealloc},
+    {Py_tp_doc, Writer_Type_doc},
+    {Py_tp_traverse, Writer_traverse},
+    {Py_tp_clear, Writer_clear},
+    {Py_tp_methods, Writer_methods},
+    {Py_tp_members, Writer_memberlist},
+    {0, 0},
+};
+
+static PyType_Spec Writer_Type_spec = {
+    "_csv.writer",
+    sizeof(WriterObj),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    Writer_Type_slots
 };
 
 static PyObject *
 csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * output_file, * dialect = NULL;
-    WriterObj * self = PyObject_GC_New(WriterObj, &Writer_Type);
+    PyObject *writer_type = PyObject_GetAttrString(_csvmodule, "Writer");
+    WriterObj * self = PyObject_GC_New(WriterObj, (PyTypeObject*)writer_type);
     _Py_IDENTIFIER(write);
 
     if (!self)
@@ -1600,7 +1535,7 @@ static struct PyMethodDef csv_methods[] = {
     { NULL, NULL }
 };
 
-static struct PyModuleDef _csvmodule = {
+static struct PyModuleDef _csvmodule_def = {
     PyModuleDef_HEAD_INIT,
     "_csv",
     csv_module_doc,
@@ -1615,57 +1550,69 @@ static struct PyModuleDef _csvmodule = {
 PyMODINIT_FUNC
 PyInit__csv(void)
 {
-    PyObject *module;
     const StyleDesc *style;
 
-    if (PyType_Ready(&Dialect_Type) < 0)
+    PyObject *dialect_type = PyType_FromSpec(&Dialect_Type_spec);
+    if (dialect_type == NULL)
         return NULL;
 
-    if (PyType_Ready(&Reader_Type) < 0)
+    PyObject *reader_type = PyType_FromSpec(&Reader_Type_spec);
+    if (reader_type == NULL)
         return NULL;
 
-    if (PyType_Ready(&Writer_Type) < 0)
+    PyObject *writer_type = PyType_FromSpec(&Writer_Type_spec);
+    if (writer_type == NULL)
         return NULL;
 
     /* Create the module and add the functions */
-    module = PyModule_Create(&_csvmodule);
-    if (module == NULL)
+    _csvmodule = PyModule_Create(&_csvmodule_def);
+    if (_csvmodule == NULL)
         return NULL;
 
     /* Add version to the module. */
-    if (PyModule_AddStringConstant(module, "__version__",
+    if (PyModule_AddStringConstant(_csvmodule, "__version__",
                                    MODULE_VERSION) == -1)
         return NULL;
 
     /* Set the field limit */
-    _csvstate(module)->field_limit = 128 * 1024;
+    _csvstate(_csvmodule)->field_limit = 128 * 1024;
     /* Do I still need to add this var to the Module Dict? */
 
     /* Add _dialects dictionary */
-    _csvstate(module)->dialects = PyDict_New();
-    if (_csvstate(module)->dialects == NULL)
+    _csvstate(_csvmodule)->dialects = PyDict_New();
+    if (_csvstate(_csvmodule)->dialects == NULL)
         return NULL;
-    Py_INCREF(_csvstate(module)->dialects);
-    if (PyModule_AddObject(module, "_dialects", _csvstate(module)->dialects))
+    Py_INCREF(_csvstate(_csvmodule)->dialects);
+    if (PyModule_AddObject(_csvmodule, "_dialects", _csvstate(_csvmodule)->dialects))
         return NULL;
 
     /* Add quote styles into dictionary */
     for (style = quote_styles; style->name; style++) {
-        if (PyModule_AddIntConstant(module, style->name,
+        if (PyModule_AddIntConstant(_csvmodule, style->name,
                                     style->style) == -1)
             return NULL;
     }
 
     /* Add the Dialect type */
-    Py_INCREF(&Dialect_Type);
-    if (PyModule_AddObject(module, "Dialect", (PyObject *)&Dialect_Type))
+    Py_INCREF(dialect_type);
+    if (PyModule_AddObject(_csvmodule, "Dialect", dialect_type))
+        return NULL;
+
+    /* Add the Reader type */
+    Py_INCREF(reader_type);
+    if (PyModule_AddObject(_csvmodule, "Reader", reader_type))
+        return NULL;
+
+    /* Add the Writer type */
+    Py_INCREF(writer_type);
+    if (PyModule_AddObject(_csvmodule, "Writer", writer_type))
         return NULL;
 
     /* Add the CSV exception object to the module. */
-    _csvstate(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
-    if (_csvstate(module)->error_obj == NULL)
+    _csvstate(_csvmodule)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
+    if (_csvstate(_csvmodule)->error_obj == NULL)
         return NULL;
-    Py_INCREF(_csvstate(module)->error_obj);
-    PyModule_AddObject(module, "Error", _csvstate(module)->error_obj);
-    return module;
+    Py_INCREF(_csvstate(_csvmodule)->error_obj);
+    PyModule_AddObject(_csvmodule, "Error", _csvstate(_csvmodule)->error_obj);
+    return _csvmodule;
 }
