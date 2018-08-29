@@ -179,6 +179,9 @@ PyAPI_FUNC(void) _Py_CoerceLegacyLocale(const _PyCoreConfig *config);
 PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
 #endif
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
+#endif
 
 #ifdef __cplusplus
 }
