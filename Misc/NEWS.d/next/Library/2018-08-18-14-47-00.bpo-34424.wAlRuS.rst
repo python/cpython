@@ -1,0 +1,3 @@
+Fix bug that mishandled email header line-separators, thus breaking email
+headers under certain conditions. Also added relevant test case. Patch by
+Jens Troeger.
