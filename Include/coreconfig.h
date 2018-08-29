@@ -203,6 +203,18 @@ typedef struct {
        If set to -1 (default), it is set to !Py_UnbufferedStdioFlag. */
     int buffered_stdio;
 
+    /* Encoding of sys.stdin, sys.stdout and sys.stderr.
+       Value set from PYTHONIOENCODING environment variable and
+       Py_SetStandardStreamEncoding() function.
+       See also 'stdio_errors' attribute. */
+    char *stdio_encoding;
+
+    /* Error handler of sys.stdin and sys.stdout.
+       Value set from PYTHONIOENCODING environment variable and
+       Py_SetStandardStreamEncoding() function.
+       See also 'stdio_encoding' attribute. */
+    char *stdio_errors;
+
 #ifdef MS_WINDOWS
     /* If greater than 1, use the "mbcs" encoding instead of the UTF-8
        encoding for the filesystem encoding.

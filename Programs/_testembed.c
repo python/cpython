@@ -374,6 +374,8 @@ dump_config(void)
     printf("user_site_directory = %i\n", config->user_site_directory);
     printf("buffered_stdio = %i\n", config->buffered_stdio);
     ASSERT_EQUAL(config->buffered_stdio, !Py_UnbufferedStdioFlag);
+    printf("stdio_encoding = %s\n", config->stdio_encoding);
+    printf("stdio_errors = %s\n", config->stdio_errors);
 
     /* FIXME: test legacy_windows_fs_encoding */
     /* FIXME: test legacy_windows_stdio */
@@ -532,6 +534,11 @@ static int test_init_from_config(void)
     Py_UnbufferedStdioFlag = 0;
     config.buffered_stdio = 0;
 
+    putenv("PYTHONIOENCODING=cp424");
+    Py_SetStandardStreamEncoding("ascii", "ignore");
+    config.stdio_encoding = "iso8859-1";
+    config.stdio_errors = "replace";
+
     putenv("PYTHONNOUSERSITE=");
     Py_NoUserSiteDirectory = 0;
     config.user_site_directory = 0;
@@ -569,6 +576,7 @@ static void test_init_env_putenvs(void)
     putenv("PYTHONNOUSERSITE=1");
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONDEVMODE=1");
+    putenv("PYTHONIOENCODING=iso8859-1:replace");
     /* FIXME: test PYTHONWARNINGS */
     /* FIXME: test PYTHONEXECUTABLE */
     /* FIXME: test PYTHONHOME */
