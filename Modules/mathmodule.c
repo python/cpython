@@ -2053,11 +2053,12 @@ The *csum* variable tracks the cumulative sum and *frac* tracks
 the cumulative fractional errors at each step.  Since this
 variant assumes that |csum| >= |x| at each step, we establish
 the precondition by starting the accumulation from 1.0 which
-represents the largest possible scaled value of (x/max)**2.
+represents the largest possible value of (x/max)**2.
+
 After the loop is finished, the initial 1.0 is subtracted out
 for a net zero effect on the final sum.  Since *csum* will be
-greater than 1.0, the subtraction of 1.0 will cause additional
-loss fractional digits from *csum*.
+greater than 1.0, the subtraction of 1.0 will not cause
+fractional digits to be dropped from *csum*.
 
 */
 
