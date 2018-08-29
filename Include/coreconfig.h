@@ -66,11 +66,34 @@ typedef struct {
     int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
     int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
 
-    /* Python filesystem encoding and error handler: see
+    /* Python filesystem encoding and error handler:
        sys.getfilesystemencoding() and sys.getfilesystemencodeerrors().
 
-       Updated later by initfsencoding(). On Windows, can be updated by
-       sys._enablelegacywindowsfsencoding() at runtime.
+       Default encoding and error handler:
+
+       * if Py_SetStandardStreamEncoding() has been called: they have the
+         highest priority;
+       * PYTHONIOENCODING environment variable;
+       * The UTF-8 Mode uses UTF-8/surrogateescape;
+       * locale encoding: ANSI code page on Windows, UTF-8 on Android,
+         LC_CTYPE locale encoding on other platforms;
+       * On Windows, "surrogateescape" error handler;
+       * "surrogateescape" error handler if the LC_CTYPE locale is "C" or "POSIX";
+       * "surrogateescape" error handler if the LC_CTYPE locale has been coerced
+         (PEP 538);
+       * "strict" error handler.
+
+       Supported error handlers: "strict", "surrogateescape" and
+       "surrogatepass". The surrogatepass error handler is only supported
+       if Py_DecodeLocale() and Py_EncodeLocale() use directly the UTF-8 codec;
+       it's only used on Windows.
+
+       initfsencoding() updates the encoding to the Python codec name.
+       For example, "ANSI_X3.4-1968" is replaced with "ascii".
+
+       On Windows, sys._enablelegacywindowsfsencoding() sets the
+       encoding/errors to mbcs/replace at runtime.
+
 
        See Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors.
        */
