@@ -1477,6 +1477,17 @@ class PosixGroupsTester(unittest.TestCase):
 
 @unittest.skipUnless(hasattr(os, 'posix_spawn'), "test needs os.posix_spawn")
 class TestPosixSpawn(unittest.TestCase):
+    # Program which does nothing and exit with status 0 (success)
+    NOOP_PROGRAM = (sys.executable, '-I', '-S', '-c', 'pass')
+
+    def python_args(self, *args):
+        # Disable site module to avoid side effects. For example,
+        # on Fedora 28, if the HOME environment variable is not set,
+        # site._getuserbase() calls pwd.getpwuid() which opens
+        # /var/lib/sss/mc/passwd but then leaves the file open which makes
+        # test_close_file() to fail.
+        return (sys.executable, '-I', '-S', *args)
+
     def test_returns_pid(self):
         pidfile = support.TESTFN
         self.addCleanup(support.unlink, pidfile)
@@ -1485,8 +1496,8 @@ class TestPosixSpawn(unittest.TestCase):
             with open({pidfile!r}, "w") as pidfile:
                 pidfile.write(str(os.getpid()))
             """
-        pid = posix.posix_spawn(sys.executable,
-                                [sys.executable, '-c', script],
+        args = self.python_args('-c', script)
+        pid = posix.posix_spawn(args[0], args,
                                 os.environ)
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
         with open(pidfile) as f:
@@ -1513,8 +1524,8 @@ class TestPosixSpawn(unittest.TestCase):
             with open({envfile!r}, "w") as envfile:
                 envfile.write(os.environ['foo'])
         """
-        pid = posix.posix_spawn(sys.executable,
-                                [sys.executable, '-c', script],
+        args = self.python_args('-c', script)
+        pid = posix.posix_spawn(args[0], args,
                                 {**os.environ, 'foo': 'bar'})
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
         with open(envfile) as f:
@@ -1522,8 +1533,8 @@ class TestPosixSpawn(unittest.TestCase):
 
     def test_empty_file_actions(self):
         pid = posix.posix_spawn(
-            sys.executable,
-            [sys.executable, '-c', 'pass'],
+            self.NOOP_PROGRAM[0],
+            self.NOOP_PROGRAM,
             os.environ,
             []
         )
@@ -1535,43 +1546,36 @@ class TestPosixSpawn(unittest.TestCase):
             (os.POSIX_SPAWN_CLOSE, 0),
             (os.POSIX_SPAWN_DUP2, 1, 4),
         ]
-        pid = posix.posix_spawn(sys.executable,
-                                [sys.executable, "-c", "pass"],
+        pid = posix.posix_spawn(self.NOOP_PROGRAM[0],
+                                self.NOOP_PROGRAM,
                                 os.environ, file_actions)
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
     def test_bad_file_actions(self):
+        args = self.NOOP_PROGRAM
         with self.assertRaises(TypeError):
-            posix.posix_spawn(sys.executable,
-                              [sys.executable, "-c", "pass"],
+            posix.posix_spawn(args[0], args,
                               os.environ, [None])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(sys.executable,
-                              [sys.executable, "-c", "pass"],
+            posix.posix_spawn(args[0], args,
                               os.environ, [()])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(sys.executable,
-                              [sys.executable, "-c", "pass"],
+            posix.posix_spawn(args[0], args,
                               os.environ, [(None,)])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(sys.executable,
-                              [sys.executable, "-c", "pass"],
+            posix.posix_spawn(args[0], args,
                               os.environ, [(12345,)])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(sys.executable,
-                              [sys.executable, "-c", "pass"],
+            posix.posix_spawn(args[0], args,
                               os.environ, [(os.POSIX_SPAWN_CLOSE,)])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(sys.executable,
-                              [sys.executable, "-c", "pass"],
+            posix.posix_spawn(args[0], args,
                               os.environ, [(os.POSIX_SPAWN_CLOSE, 1, 2)])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(sys.executable,
-                              [sys.executable, "-c", "pass"],
+            posix.posix_spawn(args[0], args,
                               os.environ, [(os.POSIX_SPAWN_CLOSE, None)])
         with self.assertRaises(ValueError):
-            posix.posix_spawn(sys.executable,
-                              [sys.executable, "-c", "pass"],
+            posix.posix_spawn(args[0], args,
                               os.environ,
                               [(os.POSIX_SPAWN_OPEN, 3, __file__ + '\0',
                                 os.O_RDONLY, 0)])
@@ -1588,8 +1592,8 @@ class TestPosixSpawn(unittest.TestCase):
                 os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
                 stat.S_IRUSR | stat.S_IWUSR),
         ]
-        pid = posix.posix_spawn(sys.executable,
-                                [sys.executable, '-c', script],
+        args = self.python_args('-c', script)
+        pid = posix.posix_spawn(args[0], args,
                                 os.environ, file_actions)
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
         with open(outfile) as f:
@@ -1606,8 +1610,8 @@ class TestPosixSpawn(unittest.TestCase):
                 with open({closefile!r}, 'w') as closefile:
                     closefile.write('is closed %d' % e.errno)
             """
-        pid = posix.posix_spawn(sys.executable,
-                                [sys.executable, '-c', script],
+        args = self.python_args('-c', script)
+        pid = posix.posix_spawn(args[0], args,
                                 os.environ,
                                 [(os.POSIX_SPAWN_CLOSE, 0),])
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
@@ -1625,8 +1629,8 @@ class TestPosixSpawn(unittest.TestCase):
             file_actions = [
                 (os.POSIX_SPAWN_DUP2, childfile.fileno(), 1),
             ]
-            pid = posix.posix_spawn(sys.executable,
-                                    [sys.executable, '-c', script],
+            args = self.python_args('-c', script)
+            pid = posix.posix_spawn(args[0], args,
                                     os.environ, file_actions)
             self.assertEqual(os.waitpid(pid, 0), (pid, 0))
         with open(dupfile) as f:
