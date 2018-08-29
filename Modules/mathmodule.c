@@ -2032,8 +2032,8 @@ math_fmod_impl(PyObject *module, double x, double y)
 }
 
 /*
-Given an *n* length *vec* of non-negative values
-where *max* is the largest value in the vector, compute:
+Given an *n* length *vec* of values where *max* is the absolute
+value of the largest magnitude entry in the vector, compute:
 
     max * sqrt(sum((x / max) ** 2 for x in vec))
 
@@ -2053,9 +2053,7 @@ The *csum* variable tracks the cumulative sum and *frac* tracks
 the cumulative fractional errors at each step.  Since this
 variant assumes that |csum| >= |x| at each step, we establish
 the precondition by starting the accumulation from 1.0 which
-represents an entry equal to *max*.  This also provides a nice
-side benefit in that it lets us skip over a *max* entry (which
-is swapped into *last*) saving us one iteration through the loop.
+represents the largest possible scaled value of (x/max)**2.
 
 */
 
@@ -2076,7 +2074,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     }
     for (i=0 ; i < n ; i++) {
         x = vec[i];
-        assert(Py_IS_FINITE(x) && x >= 0.0 && x <= max);
+        assert(Py_IS_FINITE(x) && fabs(x) <= max);
         x /= max;
         x = x*x;
         assert(csum >= x);
