@@ -673,6 +673,81 @@ the C library strftime function.\n"
 #endif
 
 static PyObject *
+_escape_strftime_chars(PyObject* format_arg)
+{
+    // This (and the subsequent _from_escaped_strftime_chars is a special
+    // case for handling surrogate characters that are failed by
+    // surrogateescape. It is unlikely that this will be important in any
+    // real, non-adversarial situation, but there's something to be said for
+    // correctness on this point.
+    //
+    // Specifically, this will allow "pass through" printing for characters
+    // like \ud800, which would have to be encoded with a non-terminating
+    // null byte
+    PyObject * substr = NULL;
+    PyObject * replstr = NULL;
+    PyObject * escaped_unicode = NULL;
+    PyObject * rv = NULL;
+
+    substr = PyUnicode_FromString("\\");
+    if (substr == NULL) {
+        goto error;
+    }
+
+    replstr = PyUnicode_FromString("\\\\");
+    if (replstr == NULL) {
+        goto error;
+    }
+
+    escaped_unicode = PyUnicode_Replace(format_arg, substr, replstr, -1);
+    if (escaped_unicode == NULL) {
+        goto error;
+    }
+
+    rv = PyUnicode_AsUnicodeEscapeString(escaped_unicode);
+
+error:
+    Py_XDECREF(substr);
+    Py_XDECREF(replstr);
+    Py_XDECREF(escaped_unicode);
+
+    return rv;
+}
+
+static PyObject *
+_from_escaped_strftime_chars(const char* buf, Py_ssize_t buflen)
+{
+    PyObject * tmp = NULL;
+    PyObject * substr = NULL;
+    PyObject * replstr = NULL;
+    PyObject * rv = NULL;
+
+    tmp = PyUnicode_DecodeUnicodeEscape(buf, buflen, "strict");
+    if (tmp == NULL) {
+        goto error;
+    }
+
+    substr = PyUnicode_FromString("\\\\");
+    if (substr == NULL) {
+        goto error;
+    }
+
+    replstr = PyUnicode_FromString("\\");
+    if (replstr == NULL) {
+        goto error;
+    }
+
+    rv = PyUnicode_Replace(tmp, substr, replstr, -1);
+
+error:
+    Py_XDECREF(tmp);
+    Py_XDECREF(replstr);
+    Py_XDECREF(substr);
+    return rv;
+
+}
+
+static PyObject *
 time_strftime(PyObject *self, PyObject *args)
 {
     PyObject *tup = NULL;
@@ -733,8 +808,21 @@ time_strftime(PyObject *self, PyObject *args)
 #else
     /* Convert the unicode string to an ascii one */
     format = PyUnicode_EncodeLocale(format_arg, "surrogateescape");
-    if (format == NULL)
-        return NULL;
+    int decode_escaped = 0;
+    if (format == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+            return NULL;
+        }
+        PyErr_Clear();
+
+        // Surrogate characters with 0x00 bytes - needs backslashreplace
+        decode_escaped = 1;
+        format = _escape_strftime_chars(format_arg);
+        if (format == NULL) {
+            return NULL;
+        }
+    }
+
     fmt = PyBytes_AS_STRING(format);
 #endif
 
@@ -806,7 +894,12 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, "surrogateescape");
+            if (decode_escaped) {
+                ret = _from_escaped_strftime_chars(outbuf, buflen);
+            }
+            else {
+                ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, "surrogateescape");
+            }
 #endif
             PyMem_Free(outbuf);
             break;

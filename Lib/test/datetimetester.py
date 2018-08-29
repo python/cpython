@@ -1310,7 +1310,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 pass
 
         # bpo-34482: Check that surrogates don't cause a crash.
-        self.assertEqual(t.strftime('\ud800'), '\ud800')
+        no_op_strs = ['\ud8888', '\ud800', '\\ud800\ud800']
+        for tstr in no_op_strs:
+            with self.subTest(f'strftime: {tstr!r}'):
+                self.assertEqual(t.strftime(tstr), tstr)
 
         #check that this standard extension works
         t.strftime("%f")
