@@ -2037,19 +2037,20 @@ where *max* is the largest value in the vector, compute:
 
     max * sqrt(sum((x / max) ** 2 for x in vec))
 
-When a maximum value is found, it is swapped to the end value. This
-lets us skip one loop iteration and start the accumulation from 1.0.
-
-Kahan summation is used to improve accuracy.  The *csum*
-variable tracks the cumulative sum and *frac* tracks
-fractional round-off error for the most recent addition.
-
 The value of the *max* variable must be present in *vec*
 or should equal to 0.0 when n==0.  Likewise, *max* will
 be INF if an infinity is present in the vec.
 
 The *found_nan* variable indicates whether some member of
 the *vec* is a NaN.
+
+A variant of Kahan summation is used to improve accuracy. The *csum*
+variable tracks the cumulative sum and *frac* tracks the cumulative
+fractional round-off errors at each step.  The variant assumes that
+|csum| >= |x| at each step.  We establish this precondition by
+starting the accumulation from 1.0 and skipping over one *max* entry.
+This also saves us one loop iteration.
+
 */
 
 static inline double
