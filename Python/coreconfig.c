@@ -1,6 +1,9 @@
 #include "Python.h"
 #include "internal/pystate.h"
 #include <locale.h>
+#ifdef HAVE_LANGINFO_H
+#  include <langinfo.h>
+#endif
 
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
@@ -89,8 +92,8 @@ _Py_wstrlist_copy(int len, wchar_t **list)
  * mechanism that attempts to figure out an appropriate IO encoding
  */
 
-char *_Py_StandardStreamEncoding = NULL;
-char *_Py_StandardStreamErrors = NULL;
+static char *_Py_StandardStreamEncoding = NULL;
+static char *_Py_StandardStreamErrors = NULL;
 
 int
 Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
@@ -205,6 +208,9 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
     CLEAR(config->dll_path);
 #endif
     CLEAR(config->base_exec_prefix);
+
+    CLEAR(config->stdio_encoding);
+    CLEAR(config->stdio_errors);
 #undef CLEAR
 #undef CLEAR_WSTRLIST
 }
@@ -216,6 +222,15 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     _PyCoreConfig_Clear(config);
 
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
+#define COPY_STR_ATTR(ATTR) \
+    do { \
+        if (config2->ATTR != NULL) { \
+            config->ATTR = _PyMem_RawStrdup(config2->ATTR); \
+            if (config->ATTR == NULL) { \
+                return -1; \
+            } \
+        } \
+    } while (0)
 #define COPY_WSTR_ATTR(ATTR) \
     do { \
         if (config2->ATTR != NULL) { \
@@ -287,6 +302,8 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(quiet);
     COPY_ATTR(user_site_directory);
     COPY_ATTR(buffered_stdio);
+    COPY_STR_ATTR(stdio_encoding);
+    COPY_STR_ATTR(stdio_errors);
 #ifdef MS_WINDOWS
     COPY_ATTR(legacy_windows_fs_encoding);
     COPY_ATTR(legacy_windows_stdio);
@@ -932,6 +949,161 @@ config_init_locale(_PyCoreConfig *config)
 }
 
 
+static const char *
+get_stdio_errors(const _PyCoreConfig *config)
+{
+#ifndef MS_WINDOWS
+    const char *loc = setlocale(LC_CTYPE, NULL);
+    if (loc != NULL) {
+        /* surrogateescape is the default in the legacy C and POSIX locales */
+        if (strcmp(loc, "C") == 0 || strcmp(loc, "POSIX") == 0) {
+            return "surrogateescape";
+        }
+
+#ifdef PY_COERCE_C_LOCALE
+        /* surrogateescape is the default in locale coercion target locales */
+        if (_Py_IsLocaleCoercionTarget(loc)) {
+            return "surrogateescape";
+        }
+#endif
+    }
+
+    return "strict";
+#else
+    /* On Windows, always use surrogateescape by default */
+    return "surrogateescape";
+#endif
+}
+
+
+_PyInitError
+_Py_get_locale_encoding(char **locale_encoding)
+{
+#ifdef MS_WINDOWS
+    char encoding[20];
+    PyOS_snprintf(encoding, sizeof(encoding), "cp%d", GetACP());
+#elif defined(__ANDROID__)
+    const char *encoding = "UTF-8";
+#else
+    const char *encoding = nl_langinfo(CODESET);
+    if (!encoding || encoding[0] == '\0') {
+        return _Py_INIT_USER_ERR("failed to get the locale encoding: "
+                                 "nl_langinfo(CODESET) failed");
+    }
+#endif
+    *locale_encoding = _PyMem_RawStrdup(encoding);
+    if (*locale_encoding == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+config_init_stdio_encoding(_PyCoreConfig *config)
+{
+    /* If Py_SetStandardStreamEncoding() have been called, use these
+        parameters. */
+    if (config->stdio_encoding == NULL && _Py_StandardStreamEncoding != NULL) {
+        config->stdio_encoding = _PyMem_RawStrdup(_Py_StandardStreamEncoding);
+        if (config->stdio_encoding == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->stdio_errors == NULL && _Py_StandardStreamErrors != NULL) {
+        config->stdio_errors = _PyMem_RawStrdup(_Py_StandardStreamErrors);
+        if (config->stdio_errors == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->stdio_encoding != NULL && config->stdio_errors != NULL) {
+        return _Py_INIT_OK();
+    }
+
+    /* PYTHONIOENCODING environment variable */
+    const char *opt = _PyCoreConfig_GetEnv(config, "PYTHONIOENCODING");
+    if (opt) {
+        char *pythonioencoding = _PyMem_RawStrdup(opt);
+        if (pythonioencoding == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+
+        char *err = strchr(pythonioencoding, ':');
+        if (err) {
+            *err = '\0';
+            err++;
+            if (!err[0]) {
+                err = NULL;
+            }
+        }
+
+        /* Does PYTHONIOENCODING contain an encoding? */
+        if (pythonioencoding[0]) {
+            if (config->stdio_encoding == NULL) {
+                config->stdio_encoding = _PyMem_RawStrdup(pythonioencoding);
+                if (config->stdio_encoding == NULL) {
+                    PyMem_RawFree(pythonioencoding);
+                    return _Py_INIT_NO_MEMORY();
+                }
+            }
+
+            /* If the encoding is set but not the error handler,
+               use "strict" error handler by default.
+               PYTHONIOENCODING=latin1 behaves as
+               PYTHONIOENCODING=latin1:strict. */
+            if (!err) {
+                err = "strict";
+            }
+        }
+
+        if (config->stdio_errors == NULL && err != NULL) {
+            config->stdio_errors = _PyMem_RawStrdup(err);
+            if (config->stdio_errors == NULL) {
+                PyMem_RawFree(pythonioencoding);
+                return _Py_INIT_NO_MEMORY();
+            }
+        }
+
+        PyMem_RawFree(pythonioencoding);
+    }
+
+    /* UTF-8 Mode uses UTF-8/surrogateescape */
+    if (config->utf8_mode) {
+        if (config->stdio_encoding == NULL) {
+            config->stdio_encoding = _PyMem_RawStrdup("utf-8");
+            if (config->stdio_encoding == NULL) {
+                return _Py_INIT_NO_MEMORY();
+            }
+        }
+        if (config->stdio_errors == NULL) {
+            config->stdio_errors = _PyMem_RawStrdup("surrogateescape");
+            if (config->stdio_errors == NULL) {
+                return _Py_INIT_NO_MEMORY();
+            }
+        }
+    }
+
+    /* Choose the default error handler based on the current locale. */
+    if (config->stdio_encoding == NULL) {
+        _PyInitError err = _Py_get_locale_encoding(&config->stdio_encoding);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+    if (config->stdio_errors == NULL) {
+        const char *errors = get_stdio_errors(config);
+        config->stdio_errors = _PyMem_RawStrdup(errors);
+        if (config->stdio_errors == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    return _Py_INIT_OK();
+}
+
+
 /* Read configuration settings from standard locations
  *
  * This function doesn't make any changes to the interpreter state - it
@@ -1042,6 +1214,11 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
     if (config->argc < 0) {
         config->argc = 0;
+    }
+
+    err = config_init_stdio_encoding(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
     }
 
     assert(config->coerce_c_locale >= 0);

@@ -184,27 +184,6 @@ error:
     return NULL;
 }
 
-static _PyInitError
-get_locale_encoding(char **locale_encoding)
-{
-#ifdef MS_WINDOWS
-    char encoding[20];
-    PyOS_snprintf(encoding, sizeof(encoding), "cp%d", GetACP());
-#elif defined(__ANDROID__)
-    const char *encoding = "UTF-8";
-#else
-    const char *encoding = nl_langinfo(CODESET);
-    if (!encoding || encoding[0] == '\0') {
-        return _Py_INIT_USER_ERR("failed to get the locale encoding: "
-                                 "nl_langinfo(CODESET) failed");
-    }
-#endif
-    *locale_encoding = _PyMem_RawStrdup(encoding);
-    if (*locale_encoding == NULL) {
-        return _Py_INIT_NO_MEMORY();
-    }
-    return _Py_INIT_OK();
-}
 
 static _PyInitError
 initimport(PyInterpreterState *interp, PyObject *sysmod)
@@ -340,34 +319,19 @@ static _LocaleCoercionTarget _TARGET_LOCALES[] = {
     {NULL}
 };
 
-static const char *
-get_stdio_errors(void)
+
+int
+_Py_IsLocaleCoercionTarget(const char *ctype_loc)
 {
-#ifndef MS_WINDOWS
-    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-    if (ctype_loc != NULL) {
-        /* surrogateescape is the default in the legacy C and POSIX locales */
-        if (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0) {
-            return "surrogateescape";
+    const _LocaleCoercionTarget *target = NULL;
+    for (target = _TARGET_LOCALES; target->locale_name; target++) {
+        if (strcmp(ctype_loc, target->locale_name) == 0) {
+            return 1;
         }
-
-#ifdef PY_COERCE_C_LOCALE
-        /* surrogateescape is the default in locale coercion target locales */
-        const _LocaleCoercionTarget *target = NULL;
-        for (target = _TARGET_LOCALES; target->locale_name; target++) {
-            if (strcmp(ctype_loc, target->locale_name) == 0) {
-                return "surrogateescape";
-            }
-        }
-#endif
     }
-
-    return "strict";
-#else
-    /* On Windows, always use surrogateescape by default */
-    return "surrogateescape";
-#endif
+    return 0;
 }
+
 
 #ifdef PY_COERCE_C_LOCALE
 static const char C_LOCALE_COERCION_WARNING[] =
@@ -1533,8 +1497,10 @@ initfsencoding(PyInterpreterState *interp)
             Py_HasFileSystemDefaultEncoding = 1;
         }
         else {
+            extern _PyInitError _Py_get_locale_encoding(char **locale_encoding);
+
             char *locale_encoding;
-            _PyInitError err = get_locale_encoding(&locale_encoding);
+            _PyInitError err = _Py_get_locale_encoding(&locale_encoding);
             if (_Py_INIT_FAILED(err)) {
                 return err;
             }
@@ -1740,13 +1706,16 @@ init_sys_streams(PyInterpreterState *interp)
     PyObject *std = NULL;
     int fd;
     PyObject * encoding_attr;
-    char *pythonioencoding = NULL;
-    const char *encoding, *errors;
-    char *locale_encoding = NULL;
-    char *codec_name = NULL;
     _PyInitError res = _Py_INIT_OK();
-    extern char *_Py_StandardStreamEncoding;
-    extern char *_Py_StandardStreamErrors;
+    _PyCoreConfig *config = &interp->core_config;
+
+    char *codec_name = get_codec_name(config->stdio_encoding);
+    if (codec_name == NULL) {
+        return _Py_INIT_ERR("failed to get the Python codec name "
+                            "of the stdio encoding");
+    }
+    PyMem_RawFree(config->stdio_encoding);
+    config->stdio_encoding = codec_name;
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
        in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
@@ -1778,85 +1747,15 @@ init_sys_streams(PyInterpreterState *interp)
     }
     Py_DECREF(wrapper);
 
-    encoding = _Py_StandardStreamEncoding;
-    errors = _Py_StandardStreamErrors;
-    if (!encoding || !errors) {
-        char *opt = Py_GETENV("PYTHONIOENCODING");
-        if (opt && opt[0] != '\0') {
-            char *err;
-            pythonioencoding = _PyMem_Strdup(opt);
-            if (pythonioencoding == NULL) {
-                PyErr_NoMemory();
-                goto error;
-            }
-            err = strchr(pythonioencoding, ':');
-            if (err) {
-                *err = '\0';
-                err++;
-                if (!err[0]) {
-                    err = NULL;
-                }
-            }
-
-            /* Does PYTHONIOENCODING contain an encoding? */
-            if (pythonioencoding[0]) {
-                if (!encoding) {
-                    encoding = pythonioencoding;
-                }
-
-                /* If the encoding is set but not the error handler,
-                   use "strict" error handler by default.
-                   PYTHONIOENCODING=latin1 behaves as
-                   PYTHONIOENCODING=latin1:strict. */
-                if (!err) {
-                    err = "strict";
-                }
-            }
-
-            if (!errors && err != NULL) {
-                errors = err;
-            }
-        }
-
-        if (interp->core_config.utf8_mode) {
-            if (!encoding) {
-                encoding = "utf-8";
-            }
-            if (!errors) {
-                errors = "surrogateescape";
-            }
-        }
-
-        if (!errors) {
-            /* Choose the default error handler based on the current locale */
-            errors = get_stdio_errors();
-        }
-    }
-
-    if (encoding == NULL) {
-        _PyInitError err = get_locale_encoding(&locale_encoding);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
-        encoding = locale_encoding;
-    }
-
-    codec_name = get_codec_name(encoding);
-    if (codec_name == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "failed to get the Python codec name "
-                        "of stdio encoding");
-        goto error;
-    }
-    encoding = codec_name;
-
     /* Set sys.stdin */
     fd = fileno(stdin);
     /* Under some conditions stdin, stdout and stderr may not be connected
      * and fileno() may point to an invalid file descriptor. For example
      * GUI apps don't have valid standard streams by default.
      */
-    std = create_stdio(iomod, fd, 0, "<stdin>", encoding, errors);
+    std = create_stdio(iomod, fd, 0, "<stdin>",
+                       config->stdio_encoding,
+                       config->stdio_errors);
     if (std == NULL)
         goto error;
     PySys_SetObject("__stdin__", std);
@@ -1865,7 +1764,9 @@ init_sys_streams(PyInterpreterState *interp)
 
     /* Set sys.stdout */
     fd = fileno(stdout);
-    std = create_stdio(iomod, fd, 1, "<stdout>", encoding, errors);
+    std = create_stdio(iomod, fd, 1, "<stdout>",
+                       config->stdio_encoding,
+                       config->stdio_errors);
     if (std == NULL)
         goto error;
     PySys_SetObject("__stdout__", std);
@@ -1875,7 +1776,9 @@ init_sys_streams(PyInterpreterState *interp)
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
     /* Set sys.stderr, replaces the preliminary stderr */
     fd = fileno(stderr);
-    std = create_stdio(iomod, fd, 1, "<stderr>", encoding, "backslashreplace");
+    std = create_stdio(iomod, fd, 1, "<stderr>",
+                       config->stdio_encoding,
+                       "backslashreplace");
     if (std == NULL)
         goto error;
 
@@ -1911,9 +1814,6 @@ error:
 done:
     _Py_ClearStandardStreamEncoding();
 
-    PyMem_RawFree(locale_encoding);
-    PyMem_RawFree(codec_name);
-    PyMem_Free(pythonioencoding);
     Py_XDECREF(bimod);
     Py_XDECREF(iomod);
     return res;
