@@ -66,6 +66,17 @@ typedef struct {
     int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
     int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
 
+    /* Python filesystem encoding and error handler: see
+       sys.getfilesystemencoding() and sys.getfilesystemencodeerrors().
+
+       Updated later by initfsencoding(). On Windows, can be updated by
+       sys._enablelegacywindowsfsencoding() at runtime.
+
+       See Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors.
+       */
+    char *filesystem_encoding;
+    char *filesystem_errors;
+
     /* Enable UTF-8 mode?
        Set by -X utf8 command line option and PYTHONUTF8 environment variable.
        If set to -1 (default), inherit Py_UTF8Mode value. */
@@ -322,6 +333,14 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
     wchar_t **dest,
     wchar_t *wname,
     char *name);
+#endif
+
+
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_SetFileSystemEncoding(
+    const char *encoding,
+    const char *errors);
+PyAPI_FUNC(void) _Py_ClearFileSystemEncoding(void);
 #endif
 
 

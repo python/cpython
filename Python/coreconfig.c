@@ -5,6 +5,11 @@
 #  include <langinfo.h>
 #endif
 
+#include <locale.h>     /* setlocale() */
+#ifdef HAVE_LANGINFO_H
+#include <langinfo.h>   /* nl_langinfo(CODESET) */
+#endif
+
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
     (((LEN) == -2) \
@@ -32,6 +37,8 @@ const char *Py_FileSystemDefaultEncoding = NULL; /* set by initfsencoding() */
 int Py_HasFileSystemDefaultEncoding = 0;
 #endif
 const char *Py_FileSystemDefaultEncodeErrors = "surrogateescape";
+static int _Py_HasFileSystemDefaultEncodeErrors = 1;
+
 /* UTF-8 mode (PEP 540): if equals to 1, use the UTF-8 encoding, and change
    stdin and stdout error handler to "surrogateescape". It is equal to
    -1 by default: unknown, will be set by Py_Main() */
@@ -85,6 +92,47 @@ _Py_wstrlist_copy(int len, wchar_t **list)
         list_copy[i] = arg;
     }
     return list_copy;
+}
+
+
+void
+_Py_ClearFileSystemEncoding(void)
+{
+    if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
+        PyMem_RawFree((char*)Py_FileSystemDefaultEncoding);
+        Py_FileSystemDefaultEncoding = NULL;
+    }
+    if (!_Py_HasFileSystemDefaultEncodeErrors && Py_FileSystemDefaultEncodeErrors) {
+        PyMem_RawFree((char*)Py_FileSystemDefaultEncodeErrors);
+        Py_FileSystemDefaultEncodeErrors = NULL;
+    }
+}
+
+
+/* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
+   global configuration variables. */
+int
+_Py_SetFileSystemEncoding(const char *encoding, const char *errors)
+{
+    char *encoding2 = _PyMem_RawStrdup(encoding);
+    if (encoding2 == NULL) {
+        return -1;
+    }
+
+    char *errors2 = _PyMem_RawStrdup(errors);
+    if (errors2 == NULL) {
+        PyMem_RawFree(encoding2);
+        return -1;
+    }
+
+    _Py_ClearFileSystemEncoding();
+
+    Py_FileSystemDefaultEncoding = encoding2;
+    Py_HasFileSystemDefaultEncoding = 0;
+
+    Py_FileSystemDefaultEncodeErrors = errors2;
+    _Py_HasFileSystemDefaultEncodeErrors = 0;
+    return 0;
 }
 
 
@@ -209,6 +257,8 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
 #endif
     CLEAR(config->base_exec_prefix);
 
+    CLEAR(config->filesystem_encoding);
+    CLEAR(config->filesystem_errors);
     CLEAR(config->stdio_encoding);
     CLEAR(config->stdio_errors);
 #undef CLEAR
@@ -302,6 +352,8 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(quiet);
     COPY_ATTR(user_site_directory);
     COPY_ATTR(buffered_stdio);
+    COPY_STR_ATTR(filesystem_encoding);
+    COPY_STR_ATTR(filesystem_errors);
     COPY_STR_ATTR(stdio_encoding);
     COPY_STR_ATTR(stdio_errors);
 #ifdef MS_WINDOWS
@@ -312,6 +364,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(_frozen);
 
 #undef COPY_ATTR
+#undef COPY_STR_ATTR
 #undef COPY_WSTR_ATTR
 #undef COPY_WSTRLIST
     return 0;
@@ -976,8 +1029,8 @@ get_stdio_errors(const _PyCoreConfig *config)
 }
 
 
-_PyInitError
-_Py_get_locale_encoding(char **locale_encoding)
+static _PyInitError
+get_locale_encoding(char **locale_encoding)
 {
 #ifdef MS_WINDOWS
     char encoding[20];
@@ -1087,7 +1140,7 @@ config_init_stdio_encoding(_PyCoreConfig *config)
 
     /* Choose the default error handler based on the current locale. */
     if (config->stdio_encoding == NULL) {
-        _PyInitError err = _Py_get_locale_encoding(&config->stdio_encoding);
+        _PyInitError err = get_locale_encoding(&config->stdio_encoding);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1100,6 +1153,81 @@ config_init_stdio_encoding(_PyCoreConfig *config)
         }
     }
 
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+config_init_fs_encoding(_PyCoreConfig *config)
+{
+#ifdef MS_WINDOWS
+    if (config->legacy_windows_fs_encoding) {
+        /* Legacy Windows filesystem encoding: mbcs/replace */
+        if (config->filesystem_encoding == NULL) {
+            config->filesystem_encoding = _PyMem_RawStrdup("mbcs");
+            if (config->filesystem_encoding == NULL) {
+                return _Py_INIT_NO_MEMORY();
+            }
+        }
+        if (config->filesystem_errors == NULL) {
+            config->filesystem_errors = _PyMem_RawStrdup("replace");
+            if (config->filesystem_errors == NULL) {
+                return _Py_INIT_NO_MEMORY();
+            }
+        }
+    }
+
+    /* Windows defaults to utf-8/surrogatepass (PEP 529) */
+    if (config->filesystem_encoding == NULL) {
+        config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
+        if (config->filesystem_encoding == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+    if (config->filesystem_errors == NULL) {
+        config->filesystem_errors = _PyMem_RawStrdup("surrogatepass");
+        if (config->filesystem_errors == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+#else
+    if (config->utf8_mode) {
+        /* UTF-8 Mode use: utf-8/surrogateescape */
+        if (config->filesystem_encoding == NULL) {
+            config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
+            if (config->filesystem_encoding == NULL) {
+                return _Py_INIT_NO_MEMORY();
+            }
+        }
+        /* errors defaults to surrogateescape above */
+    }
+
+    if (config->filesystem_encoding == NULL) {
+        /* macOS and Android use UTF-8, other platforms use
+           the locale encoding. */
+        char *locale_encoding;
+#if defined(__APPLE__) || defined(__ANDROID__)
+        locale_encoding = "UTF-8";
+#else
+        _PyInitError err = get_locale_encoding(&locale_encoding);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+#endif
+        config->filesystem_encoding = _PyMem_RawStrdup(locale_encoding);
+        if (config->filesystem_encoding == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->filesystem_errors == NULL) {
+        /* by default, use the "surrogateescape" error handler */
+        config->filesystem_errors = _PyMem_RawStrdup("surrogateescape");
+        if (config->filesystem_errors == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+#endif
     return _Py_INIT_OK();
 }
 
@@ -1216,6 +1344,13 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         config->argc = 0;
     }
 
+    if (config->filesystem_encoding == NULL && config->filesystem_errors == NULL) {
+        err = config_init_fs_encoding(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
     err = config_init_stdio_encoding(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
@@ -1223,6 +1358,10 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
 
     assert(config->coerce_c_locale >= 0);
     assert(config->use_environment >= 0);
+    assert(config->filesystem_encoding != NULL);
+    assert(config->filesystem_errors != NULL);
+    assert(config->stdio_encoding != NULL);
+    assert(config->stdio_errors != NULL);
 
     return _Py_INIT_OK();
 }

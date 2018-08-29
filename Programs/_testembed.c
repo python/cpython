@@ -328,6 +328,8 @@ dump_config(void)
     printf("dump_refs = %i\n", config->dump_refs);
     printf("malloc_stats = %i\n", config->malloc_stats);
 
+    printf("filesystem_encoding = %s\n", config->filesystem_encoding);
+    printf("filesystem_errors = %s\n", config->filesystem_errors);
     printf("coerce_c_locale = %i\n", config->coerce_c_locale);
     printf("coerce_c_locale_warn = %i\n", config->coerce_c_locale_warn);
     printf("utf8_mode = %i\n", config->utf8_mode);

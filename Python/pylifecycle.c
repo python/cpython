@@ -339,7 +339,7 @@ static const char C_LOCALE_COERCION_WARNING[] =
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior).\n";
 
 static void
-_coerce_default_locale_settings(const _PyCoreConfig *config, const _LocaleCoercionTarget *target)
+_coerce_default_locale_settings(int warn, const _LocaleCoercionTarget *target)
 {
     const char *newloc = target->locale_name;
 
@@ -352,7 +352,7 @@ _coerce_default_locale_settings(const _PyCoreConfig *config, const _LocaleCoerci
                 "Error setting LC_CTYPE, skipping C locale coercion\n");
         return;
     }
-    if (config->coerce_c_locale_warn) {
+    if (warn) {
         fprintf(stderr, C_LOCALE_COERCION_WARNING, newloc);
     }
 
@@ -362,7 +362,7 @@ _coerce_default_locale_settings(const _PyCoreConfig *config, const _LocaleCoerci
 #endif
 
 void
-_Py_CoerceLegacyLocale(const _PyCoreConfig *config)
+_Py_CoerceLegacyLocale(int warn)
 {
 #ifdef PY_COERCE_C_LOCALE
     const char *locale_override = getenv("LC_ALL");
@@ -385,7 +385,7 @@ defined(HAVE_LANGINFO_H) && defined(CODESET)
                 }
 #endif
                 /* Successfully configured locale, so make it the default */
-                _coerce_default_locale_settings(config, target);
+                _coerce_default_locale_settings(warn, target);
                 return;
             }
         }
@@ -1162,11 +1162,7 @@ Py_FinalizeEx(void)
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini();
 
-    /* reset file system default encoding */
-    if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
-        PyMem_RawFree((char*)Py_FileSystemDefaultEncoding);
-        Py_FileSystemDefaultEncoding = NULL;
-    }
+    _Py_ClearFileSystemEncoding();
 
     /* XXX Still allocated:
        - various static ad-hoc pointers to interned strings
@@ -1475,59 +1471,31 @@ add_main_module(PyInterpreterState *interp)
 static _PyInitError
 initfsencoding(PyInterpreterState *interp)
 {
-    PyObject *codec;
+    _PyCoreConfig *config = &interp->core_config;
 
-#ifdef MS_WINDOWS
-    if (Py_LegacyWindowsFSEncodingFlag) {
-        Py_FileSystemDefaultEncoding = "mbcs";
-        Py_FileSystemDefaultEncodeErrors = "replace";
-    }
-    else {
-        Py_FileSystemDefaultEncoding = "utf-8";
-        Py_FileSystemDefaultEncodeErrors = "surrogatepass";
-    }
-#else
-    if (Py_FileSystemDefaultEncoding == NULL) {
-        if (interp->core_config.utf8_mode) {
-            Py_FileSystemDefaultEncoding = "utf-8";
-            Py_HasFileSystemDefaultEncoding = 1;
-        }
-        else if (_Py_GetForceASCII()) {
-            Py_FileSystemDefaultEncoding = "ascii";
-            Py_HasFileSystemDefaultEncoding = 1;
-        }
-        else {
-            extern _PyInitError _Py_get_locale_encoding(char **locale_encoding);
-
-            char *locale_encoding;
-            _PyInitError err = _Py_get_locale_encoding(&locale_encoding);
-            if (_Py_INIT_FAILED(err)) {
-                return err;
-            }
-
-            Py_FileSystemDefaultEncoding = get_codec_name(locale_encoding);
-            PyMem_RawFree(locale_encoding);
-            if (Py_FileSystemDefaultEncoding == NULL) {
-                return _Py_INIT_ERR("failed to get the Python codec "
-                                    "of the locale encoding");
-            }
-
-            Py_HasFileSystemDefaultEncoding = 0;
-            interp->fscodec_initialized = 1;
-            return _Py_INIT_OK();
-        }
-    }
-#endif
-
-    /* the encoding is mbcs, utf-8 or ascii */
-    codec = _PyCodec_Lookup(Py_FileSystemDefaultEncoding);
-    if (!codec) {
+    char *encoding = get_codec_name(config->filesystem_encoding);
+    if (encoding == NULL) {
         /* Such error can only occurs in critical situations: no more
-         * memory, import a module of the standard library failed,
-         * etc. */
-        return _Py_INIT_ERR("unable to load the file system codec");
+           memory, import a module of the standard library failed, etc. */
+        return _Py_INIT_ERR("failed to get the Python codec "
+                            "of the filesystem encoding");
     }
-    Py_DECREF(codec);
+
+    /* Update the filesystem encoding to the normalized Python codec name.
+       For example, replace "ANSI_X3.4-1968" (locale encoding) with "ascii"
+       (Python codec name). */
+    PyMem_RawFree(config->filesystem_encoding);
+    config->filesystem_encoding = encoding;
+
+    /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
+       global configuration variables. */
+    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
+                                  config->filesystem_errors) < 0) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    /* PyUnicode can now use the Python codec rather than C implementation
+       for the filesystem encoding */
     interp->fscodec_initialized = 1;
     return _Py_INIT_OK();
 }
