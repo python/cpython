@@ -1,0 +1,2 @@
+Add the macros ``Py_COMP_DIAG_PUSH``, ``Py_COMP_DIAG_IGNORE_DEPR_DECLS``,
+and ``Py_COMP_DIAG_POP``.

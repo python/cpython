@@ -495,6 +495,26 @@ extern "C" {
 #define Py_DEPRECATED(VERSION_UNUSED)
 #endif
 
+#if defined(__clang__)
+#define Py_COMP_DIAG_PUSH _Pragma("clang diagnostic push")
+#define Py_COMP_DIAG_IGNORE_DEPR_DECLS \
+    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define Py_COMP_DIAG_POP _Pragma("clang diagnostic pop")
+#elif defined(__GNUC__) \
+    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 6))
+#define Py_COMP_DIAG_PUSH _Pragma("GCC diagnostic push")
+#define Py_COMP_DIAG_IGNORE_DEPR_DECLS \
+    _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define Py_COMP_DIAG_POP _Pragma("GCC diagnostic pop")
+#elif defined(_MSC_VER)
+#define Py_COMP_DIAG_PUSH __pragma(warning(push))
+#define Py_COMP_DIAG_IGNORE_DEPR_DECLS __pragma(warning(disable: 4996))
+#define Py_COMP_DIAG_POP __pragma(warning(pop))
+#else
+#define Py_COMP_DIAG_PUSH
+#define Py_COMP_DIAG_IGNORE_DEPR_DECLS
+#define Py_COMP_DIAG_POP
+#endif
 
 /* _Py_HOT_FUNCTION
  * The hot attribute on a function is used to inform the compiler that the
