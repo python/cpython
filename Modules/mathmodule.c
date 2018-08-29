@@ -2079,6 +2079,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         }
         x /= max;
         x = x*x;
+        assert(csum >= x);
         oldcsum = csum;
         csum += x;
         frac += (oldcsum - csum) + x;
