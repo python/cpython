@@ -2071,10 +2071,9 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     if (found_nan) {
         return Py_NAN;
     }
-    if (max == 0.0) {
-        return 0.0;
+    if (max == 0.0 || n == 1) {
+        return max;
     }
-    assert(n > 0);
     for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && x >= 0.0 && x <= max);
