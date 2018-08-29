@@ -2062,7 +2062,7 @@ is swapped into *last*) saving us one iteration through the loop.
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, csum = 1.0, oldcsum, frac = 0.0, last;
+    double x, csum = 1.0, oldcsum, frac = 0.0;
     Py_ssize_t i;
 
     if (Py_IS_INFINITY(max)) {
@@ -2075,14 +2075,9 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         return 0.0;
     }
     assert(n > 0);
-    last = vec[n-1];
-    for (i=0 ; i < n-1 ; i++) {
+    for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && x >= 0.0 && x <= max);
-        if (x == max) {
-            x = last;
-            last = max;
-        }
         x /= max;
         x = x*x;
         assert(csum >= x);
@@ -2090,8 +2085,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         csum += x;
         frac += (oldcsum - csum) + x;
     }
-    assert(last == max);
-    return max * sqrt(csum + frac);
+    return max * sqrt(csum - 1.0 + frac);
 }
 
 #define NUM_STACK_ELEMS 16
