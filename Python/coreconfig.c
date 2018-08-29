@@ -19,25 +19,12 @@
 
 /* Global configuration variables */
 
-/* The default encoding used by the platform file system APIs
-   Can remain NULL for all platforms that don't have such a concept
-
-   Don't forget to modify PyUnicode_DecodeFSDefault() if you touch any of the
-   values for Py_FileSystemDefaultEncoding!
-*/
-#if defined(__APPLE__)
-const char *Py_FileSystemDefaultEncoding = "utf-8";
-int Py_HasFileSystemDefaultEncoding = 1;
-#elif defined(MS_WINDOWS)
-/* may be changed by initfsencoding(), but should never be free()d */
-const char *Py_FileSystemDefaultEncoding = "utf-8";
-int Py_HasFileSystemDefaultEncoding = 1;
-#else
-const char *Py_FileSystemDefaultEncoding = NULL; /* set by initfsencoding() */
+/* The filesystem encoding is chosen by config_init_fs_encoding(),
+   see also initfsencoding(). */
+const char *Py_FileSystemDefaultEncoding = NULL;
 int Py_HasFileSystemDefaultEncoding = 0;
-#endif
-const char *Py_FileSystemDefaultEncodeErrors = "surrogateescape";
-static int _Py_HasFileSystemDefaultEncodeErrors = 1;
+const char *Py_FileSystemDefaultEncodeErrors = NULL;
+static int _Py_HasFileSystemDefaultEncodeErrors = 0;
 
 /* UTF-8 mode (PEP 540): if equals to 1, use the UTF-8 encoding, and change
    stdin and stdout error handler to "surrogateescape". It is equal to
@@ -1362,6 +1349,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     assert(config->filesystem_errors != NULL);
     assert(config->stdio_encoding != NULL);
     assert(config->stdio_errors != NULL);
+    assert(config->_check_hash_pycs_mode != NULL);
 
     return _Py_INIT_OK();
 }
