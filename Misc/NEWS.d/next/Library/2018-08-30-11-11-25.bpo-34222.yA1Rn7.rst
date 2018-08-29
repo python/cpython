@@ -1,0 +1,1 @@
+Fix infinite loop when folding non-ASCII email headers

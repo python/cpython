@@ -2726,12 +2726,23 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
             continue
         first_part = to_encode[:text_space]
         ew = _ew.encode(first_part, charset=encode_as)
-        excess = len(ew) - remaining_space
-        if excess > 0:
-            # encode always chooses the shortest encoding, so this
-            # is guaranteed to fit at this point.
-            first_part = first_part[:-excess]
-            ew = _ew.encode(first_part)
+        if len(ew) > remaining_space:
+            # Find the longest first_part
+            # since len(_ew.encode(to_encode[:x])) is a non-linear
+            # monotonically increasing function, and calculating the
+            # exactly length requires knowing the internal of _ew.encode
+            # which seems dirty, use binary search here.
+            part_len_l = 0
+            part_len_r = text_space
+            while part_len_l + 1 < part_len_r:
+                part_len_m = (part_len_l + part_len_r) // 2
+                ew = _ew.encode(first_part[:part_len_m], charset=encode_as)
+                if len(ew) <= remaining_space:
+                    part_len_l = part_len_m
+                else:
+                    part_len_r = part_len_m
+            first_part = to_encode[:part_len_l]
+            ew = _ew.encode(first_part, charset=encode_as)
         lines[-1] += ew
         to_encode = to_encode[len(first_part):]
         if to_encode:

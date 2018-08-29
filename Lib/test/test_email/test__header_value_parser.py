@@ -2687,6 +2687,12 @@ class TestFolding(TestEmailBase):
         self._test(parser.get_unstructured("hübsch kleiner beißt"),
                    "=?utf-8?q?h=C3=BCbsch_kleiner_bei=C3=9Ft?=\n")
 
+    def test_unstructured_with_long_unicode_folded(self):
+        self._test(parser.get_unstructured("虾" * 40),
+                   "=?utf-8?b?" + "6Jm+" * 16 + "?=\n"
+                   " =?utf-8?b?" + "6Jm+" * 16 + "?=\n"
+                   " =?utf-8?b?" + "6Jm+" * 8 + "?=\n")
+
     def test_one_ew_on_each_of_two_wrapped_lines(self):
         self._test(parser.get_unstructured("Mein kleiner Kaktus ist sehr "
                                            "hübsch.  Es hat viele Stacheln "
