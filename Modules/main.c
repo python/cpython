@@ -1339,7 +1339,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
          */
         if (config->coerce_c_locale && !locale_coerced) {
             locale_coerced = 1;
-            _Py_CoerceLegacyLocale(config);
+            _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
             encoding_changed = 1;
         }
 

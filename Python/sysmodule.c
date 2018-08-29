@@ -389,11 +389,9 @@ implementation."
 static PyObject *
 sys_getfilesystemencoding(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (Py_FileSystemDefaultEncoding)
-        return PyUnicode_FromString(Py_FileSystemDefaultEncoding);
-    PyErr_SetString(PyExc_RuntimeError,
-                    "filesystem encoding is not initialized");
-    return NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const _PyCoreConfig *config = &interp->core_config;
+    return PyUnicode_FromString(config->filesystem_encoding);
 }
 
 PyDoc_STRVAR(getfilesystemencoding_doc,
@@ -406,11 +404,9 @@ operating system filenames."
 static PyObject *
 sys_getfilesystemencodeerrors(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (Py_FileSystemDefaultEncodeErrors)
-        return PyUnicode_FromString(Py_FileSystemDefaultEncodeErrors);
-    PyErr_SetString(PyExc_RuntimeError,
-        "filesystem encoding is not initialized");
-    return NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const _PyCoreConfig *config = &interp->core_config;
+    return PyUnicode_FromString(config->filesystem_errors);
 }
 
 PyDoc_STRVAR(getfilesystemencodeerrors_doc,
@@ -1150,8 +1146,30 @@ environment variable before launching Python."
 static PyObject *
 sys_enablelegacywindowsfsencoding(PyObject *self)
 {
-    Py_FileSystemDefaultEncoding = "mbcs";
-    Py_FileSystemDefaultEncodeErrors = "replace";
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    _PyCoreConfig *config = &interp->core_config;
+
+    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
+    char *encoding = _PyMem_RawStrdup("mbcs");
+    char *errors = _PyMem_RawStrdup("replace");
+    if (encoding == NULL || errors == NULL) {
+        PyMem_Free(encoding);
+        PyMem_Free(errors);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    PyMem_RawFree(config->filesystem_encoding);
+    config->filesystem_encoding = encoding;
+    PyMem_RawFree(config->filesystem_errors);
+    config->filesystem_errors = errors;
+
+    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
+                                  config->filesystem_errors) < 0) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
