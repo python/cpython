@@ -1,0 +1,3 @@
+Standard streams like sys.stdout now use the "surrogateescape" error
+handler, instead of "strict", on the POSIX locale (when the C locale is not
+coerced and the UTF-8 Mode is disabled).
