@@ -1280,25 +1280,18 @@ pymain_read_conf_impl(_PyMain *pymain, _PyCoreConfig *config,
 }
 
 
-/* Read the configuration, but initialize also the LC_CTYPE locale:
-   enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538) */
+/* Read the configuration and initialize the LC_CTYPE locale:
+   enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538). */
 static int
 pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
                  _PyCmdline *cmdline)
 {
     int init_utf8_mode = Py_UTF8Mode;
     _PyCoreConfig save_config = _PyCoreConfig_INIT;
-    char *oldloc = NULL;
     int res = -1;
 
-    oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
-    if (oldloc == NULL) {
-        pymain->err = _Py_INIT_NO_MEMORY();
-        goto done;
-    }
-
-    /* Reconfigure the locale to the default for this process */
-    _Py_SetLocaleFromEnv(LC_ALL);
+    /* Set LC_CTYPE to the user preferred locale */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
 
     int locale_coerced = 0;
     int loops = 0;
@@ -1386,10 +1379,6 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
 
 done:
     _PyCoreConfig_Clear(&save_config);
-    if (oldloc != NULL) {
-        setlocale(LC_ALL, oldloc);
-        PyMem_RawFree(oldloc);
-    }
     Py_UTF8Mode = init_utf8_mode ;
     return res;
 }
