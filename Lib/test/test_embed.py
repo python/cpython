@@ -318,7 +318,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def get_locale_encoding(self, isolated):
         if sys.platform in ('win32', 'darwin') or support.is_android:
             # Windows, macOS and Android use UTF-8
-            return "UTF-8"
+            return "utf-8"
 
         code = ('import codecs, locale, sys',
                 'locale.setlocale(locale.LC_CTYPE, "")',
