@@ -2032,14 +2032,14 @@ math_fmod_impl(PyObject *module, double x, double y)
 }
 
 /*
-Given an *n* length *vec* of values where *max* is the absolute
-value of the largest magnitude entry in the vector, compute:
+Given an *n* length *vec* of values and a value *max*, compute:
 
     max * sqrt(sum((x / max) ** 2 for x in vec))
 
-The value of the *max* variable must be present in *vec*
-or should equal to 0.0 when n==0.  Likewise, *max* will
-be INF if an infinity is present in the vec.
+The value of the *max* variable must be non-negative and
+at least equal to the absolute value of the largest magnitude
+entry in the vector.  If n==0, then *max* should be 0.0.
+If an infinity is present in the vec, *max* should be INF.
 
 The *found_nan* variable indicates whether some member of
 the *vec* is a NaN.
@@ -2082,9 +2082,9 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
         x /= max;
         x = x*x;
-        assert(csum >= x);
         oldcsum = csum;
         csum += x;
+        assert(csum >= x);
         frac += (oldcsum - csum) + x;
     }
     return max * sqrt(csum - 1.0 + frac);
