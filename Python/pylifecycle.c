@@ -343,6 +343,7 @@ static _LocaleCoercionTarget _TARGET_LOCALES[] = {
 static const char *
 get_stdio_errors(void)
 {
+#ifndef MS_WINDOWS
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     if (ctype_loc != NULL) {
         /* surrogateescape is the default in the legacy C and POSIX locales */
@@ -362,6 +363,10 @@ get_stdio_errors(void)
     }
 
     return "strict";
+#else
+    /* On Windows, always use surrogateescape by default */
+    return "surrogateescape";
+#endif
 }
 
 #ifdef PY_COERCE_C_LOCALE
@@ -751,11 +756,8 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
        (and the input configuration is read only). */
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
-#ifndef MS_WINDOWS
-    /* Set up the LC_CTYPE locale, so we can obtain the locale's charset
-       without having to switch locales. */
+    /* Set LC_CTYPE to the user preferred locale */
     _Py_SetLocaleFromEnv(LC_CTYPE);
-#endif
 
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     if (_PyCoreConfig_Copy(&config, src_config) >= 0) {
