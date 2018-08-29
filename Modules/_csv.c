@@ -45,10 +45,9 @@ _csv_free(void *m)
    _csv_clear((PyObject *)m);
 }
 
-static struct PyModuleDef _csvmodule_def;
-static PyObject *_csvmodule;
+static struct PyModuleDef module_def;
 
-#define _csvstate_global ((_csvstate *)PyModule_GetState(PyState_FindModule(&_csvmodule_def)))
+#define _csvstate_global ((_csvstate *)PyModule_GetState(PyState_FindModule(&module_def)))
 
 typedef enum {
     START_RECORD, START_FIELD, ESCAPED_CHAR, IN_FIELD,
@@ -1546,7 +1545,7 @@ static struct PyMethodDef csv_methods[] = {
     { NULL, NULL }
 };
 
-static struct PyModuleDef _csvmodule_def = {
+static struct PyModuleDef module_def = {
     PyModuleDef_HEAD_INIT,
     "_csv",
     csv_module_doc,
@@ -1561,6 +1560,7 @@ static struct PyModuleDef _csvmodule_def = {
 PyMODINIT_FUNC
 PyInit__csv(void)
 {
+    PyObject *module;
     const StyleDesc *style;
 
     Dialect_Type = PyType_FromSpec(&Dialect_Type_spec);
@@ -1578,44 +1578,44 @@ PyInit__csv(void)
     ((PyTypeObject *)Writer_Type)->tp_new = NULL;
 
     /* Create the module and add the functions */
-    _csvmodule = PyModule_Create(&_csvmodule_def);
-    if (_csvmodule == NULL)
+    module = PyModule_Create(&module_def);
+    if (module == NULL)
         return NULL;
 
     /* Add version to the module. */
-    if (PyModule_AddStringConstant(_csvmodule, "__version__",
+    if (PyModule_AddStringConstant(module, "__version__",
                                    MODULE_VERSION) == -1)
         return NULL;
 
     /* Set the field limit */
-    _csvstate(_csvmodule)->field_limit = 128 * 1024;
+    _csvstate(module)->field_limit = 128 * 1024;
     /* Do I still need to add this var to the Module Dict? */
 
     /* Add _dialects dictionary */
-    _csvstate(_csvmodule)->dialects = PyDict_New();
-    if (_csvstate(_csvmodule)->dialects == NULL)
+    _csvstate(module)->dialects = PyDict_New();
+    if (_csvstate(module)->dialects == NULL)
         return NULL;
-    Py_INCREF(_csvstate(_csvmodule)->dialects);
-    if (PyModule_AddObject(_csvmodule, "_dialects", _csvstate(_csvmodule)->dialects))
+    Py_INCREF(_csvstate(module)->dialects);
+    if (PyModule_AddObject(module, "_dialects", _csvstate(module)->dialects))
         return NULL;
 
     /* Add quote styles into dictionary */
     for (style = quote_styles; style->name; style++) {
-        if (PyModule_AddIntConstant(_csvmodule, style->name,
+        if (PyModule_AddIntConstant(module, style->name,
                                     style->style) == -1)
             return NULL;
     }
 
     /* Add the Dialect type */
-    if (PyModule_AddObject(_csvmodule, "Dialect", Dialect_Type))
+    if (PyModule_AddObject(module, "Dialect", Dialect_Type))
         return NULL;
     Py_INCREF(Dialect_Type);
 
     /* Add the CSV exception object to the module. */
-    _csvstate(_csvmodule)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
-    if (_csvstate(_csvmodule)->error_obj == NULL)
+    _csvstate(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
+    if (_csvstate(module)->error_obj == NULL)
         return NULL;
-    Py_INCREF(_csvstate(_csvmodule)->error_obj);
-    PyModule_AddObject(_csvmodule, "Error", _csvstate(_csvmodule)->error_obj);
-    return _csvmodule;
+    Py_INCREF(_csvstate(module)->error_obj);
+    PyModule_AddObject(module, "Error", _csvstate(module)->error_obj);
+    return module;
 }
