@@ -1059,10 +1059,15 @@ class Path(PurePath):
     def iterdir(self):
         """Iterate over the files in this directory.  Does not yield any
         result for the special paths '.' and '..'.
-        """
+        """        
+        #Below line throws FileNotFoundError if path is invalid
+        dirs = self._accessor.listdir(self)
+        return self._iterdirgen(dirs)
+                
+    def _iterdirgen(self,dirs):
         if self._closed:
             self._raise_closed()
-        for name in self._accessor.listdir(self):
+        for name in dirs:
             if name in {'.', '..'}:
                 # Yielding a path object for these makes little sense
                 continue

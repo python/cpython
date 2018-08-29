@@ -1,0 +1,2 @@
+Added code to make pathlib.Path.iterdir  throw  FileNotFoundError when path  is
+ not valid
