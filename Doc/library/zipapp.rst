@@ -1,8 +1,8 @@
-:mod:`zipapp` --- Manage executable python zip archives
+:mod:`zipapp` --- Manage executable Python zip archives
 =======================================================
 
 .. module:: zipapp
-   :synopsis: Manage executable python zip archives
+   :synopsis: Manage executable Python zip archives
 
 .. versionadded:: 3.5
 
@@ -247,7 +247,7 @@ are other issues to consider:
 * If you use an explicit version, for example "/usr/bin/env python3" your
   application will not work for users who do not have that version.  (This
   may be what you want if you have not made your code Python 2 compatible).
-* There is no way to say "python X.Y or later", so be careful of using an
+* There is no way to say "Python X.Y or later", so be careful of using an
   exact version like "/usr/bin/env python3.4" as you will need to change your
   shebang line for users of Python 3.5, for example.
 
