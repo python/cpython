@@ -123,7 +123,7 @@ PyAPI_FUNC(const char *) _Py_gitversion(void);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyBuiltin_Init(void);
 PyAPI_FUNC(_PyInitError) _PySys_BeginInit(PyObject **sysmod);
-PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config);
+PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp);
 PyAPI_FUNC(_PyInitError) _PyImport_Init(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyExc_Init(PyObject * bltinmod);
 PyAPI_FUNC(_PyInitError) _PyImportHooks_Init(void);

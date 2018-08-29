@@ -800,7 +800,7 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
         return _Py_INIT_ERR("can't initialize time");
     }
 
-    if (_PySys_EndInit(interp->sysdict, &interp->config) < 0) {
+    if (_PySys_EndInit(interp->sysdict, interp) < 0) {
         return _Py_INIT_ERR("can't finish initializing sys");
     }
 
@@ -1285,7 +1285,7 @@ new_interpreter(PyThreadState **tstate_p)
             goto handle_error;
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        _PySys_EndInit(interp->sysdict, &interp->config);
+        _PySys_EndInit(interp->sysdict, interp);
     }
 
     bimod = _PyImport_FindBuiltin("builtins", modules);
@@ -1543,7 +1543,7 @@ is_valid_fd(int fd)
 
 /* returns Py_None if the fd is not valid */
 static PyObject*
-create_stdio(PyObject* io,
+create_stdio(const _PyCoreConfig *config, PyObject* io,
     int fd, int write_mode, const char* name,
     const char* encoding, const char* errors)
 {
@@ -1556,6 +1556,7 @@ create_stdio(PyObject* io,
     _Py_IDENTIFIER(isatty);
     _Py_IDENTIFIER(TextIOWrapper);
     _Py_IDENTIFIER(mode);
+    const int buffered_stdio = config->buffered_stdio;
 
     if (!is_valid_fd(fd))
         Py_RETURN_NONE;
@@ -1565,7 +1566,7 @@ create_stdio(PyObject* io,
        depends on the presence of a read1() method which only exists on
        buffered streams.
     */
-    if (Py_UnbufferedStdioFlag && write_mode)
+    if (!buffered_stdio && write_mode)
         buffering = 0;
     else
         buffering = -1;
@@ -1607,11 +1608,11 @@ create_stdio(PyObject* io,
     Py_DECREF(res);
     if (isatty == -1)
         goto error;
-    if (Py_UnbufferedStdioFlag)
+    if (!buffered_stdio)
         write_through = Py_True;
     else
         write_through = Py_False;
-    if (isatty && !Py_UnbufferedStdioFlag)
+    if (isatty && buffered_stdio)
         line_buffering = Py_True;
     else
         line_buffering = Py_False;
@@ -1720,7 +1721,7 @@ init_sys_streams(PyInterpreterState *interp)
      * and fileno() may point to an invalid file descriptor. For example
      * GUI apps don't have valid standard streams by default.
      */
-    std = create_stdio(iomod, fd, 0, "<stdin>",
+    std = create_stdio(config, iomod, fd, 0, "<stdin>",
                        config->stdio_encoding,
                        config->stdio_errors);
     if (std == NULL)
@@ -1731,7 +1732,7 @@ init_sys_streams(PyInterpreterState *interp)
 
     /* Set sys.stdout */
     fd = fileno(stdout);
-    std = create_stdio(iomod, fd, 1, "<stdout>",
+    std = create_stdio(config, iomod, fd, 1, "<stdout>",
                        config->stdio_encoding,
                        config->stdio_errors);
     if (std == NULL)
@@ -1743,7 +1744,7 @@ init_sys_streams(PyInterpreterState *interp)
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
     /* Set sys.stderr, replaces the preliminary stderr */
     fd = fileno(stderr);
-    std = create_stdio(iomod, fd, 1, "<stderr>",
+    std = create_stdio(config, iomod, fd, 1, "<stderr>",
                        config->stdio_encoding,
                        "backslashreplace");
     if (std == NULL)

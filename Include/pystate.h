@@ -249,7 +249,9 @@ PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
 #endif
 #ifdef Py_BUILD_CORE
-   /* Macro which should only be used for performance critical code */
+   /* Macro which should only be used for performance critical code.
+      Need "#include "internal/pystate.h". See also _PyInterpreterState_Get()
+      and _PyGILState_GetInterpreterStateUnsafe(). */
 #  define _PyInterpreterState_GET_UNSAFE() (PyThreadState_GET()->interp)
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
@@ -369,7 +371,9 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    GILState implementation.
 
    Return NULL before _PyGILState_Init() is called and after _PyGILState_Fini()
-   is called. */
+   is called.
+
+   See also _PyInterpreterState_Get() and _PyInterpreterState_GET_UNSAFE(). */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 #endif   /* !Py_LIMITED_API */
 
