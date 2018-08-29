@@ -2044,12 +2044,14 @@ be INF if an infinity is present in the vec.
 The *found_nan* variable indicates whether some member of
 the *vec* is a NaN.
 
-A variant of Kahan summation is used to improve accuracy. The *csum*
-variable tracks the cumulative sum and *frac* tracks the cumulative
-fractional round-off errors at each step.  The variant assumes that
-|csum| >= |x| at each step.  We establish this precondition by
-starting the accumulation from 1.0 and skipping over one *max* entry.
-This also saves us one loop iteration.
+A variant of Kahan summation is used to improve accuracy and to
+increase the number of cases where vector_norm() is commutative.
+The *csum* variable tracks the cumulative sum and *frac* tracks
+the cumulative fractional errors at each step.  This variant
+assumes that |csum| >= |x| at each step.  We establish the
+precondition by starting the accumulation from 1.0 which
+represents an entry equal to *max*.  This also saves us one loop
+iteration because the *max* entry is swapped with the last entry.
 
 */
 
