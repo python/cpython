@@ -645,7 +645,7 @@ run_child(wchar_t * cmdline)
     if (!ok)
         error(RC_CREATE_PROCESS, L"Job information setting failed");
     memset(&si, 0, sizeof(si));
-    si.cb = sizeof(si);
+    GetStartupInfoW(&si);
     ok = safe_duplicate_handle(GetStdHandle(STD_INPUT_HANDLE), &si.hStdInput);
     if (!ok)
         error(RC_NO_STD_HANDLES, L"stdin duplication failed");
