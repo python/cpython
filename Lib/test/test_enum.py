@@ -2584,9 +2584,9 @@ class TestStdLib(unittest.TestCase):
     def test_pydoc(self):
         # indirectly test __objclass__
         if StrEnum.__doc__ is None:
-            expected_text = expected_help_output_without_docs % __name__
+            expected_text = expected_help_output_without_docs % self.__class__.__qualname__
         else:
-            expected_text = expected_help_output_with_docs % __name__
+            expected_text = expected_help_output_with_docs % self.__class__.__qualname__
         output = StringIO()
         helper = pydoc.Helper(output=output)
         helper(self.Color)

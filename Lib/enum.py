@@ -561,7 +561,7 @@ class Enum(metaclass=EnumMeta):
 
     def __repr__(self):
         return "<%s.%s: %r>" % (
-                self.__class__.__name__, self._name_, self._value_)
+                self.__class__.__qualname__, self._name_, self._value_)
 
     def __str__(self):
         return "%s.%s" % (self.__class__.__name__, self._name_)
