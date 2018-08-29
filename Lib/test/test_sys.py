@@ -654,10 +654,10 @@ class SysModuleTest(unittest.TestCase):
             expected = None
         self.check_fsencoding(fs_encoding, expected)
 
-    def c_locale_get_error_handler(self, isolated=False, encoding=None):
+    def c_locale_get_error_handler(self, locale, isolated=False, encoding=None):
         # Force the POSIX locale
         env = os.environ.copy()
-        env["LC_ALL"] = "C"
+        env["LC_ALL"] = locale
         env["PYTHONCOERCECLOCALE"] = "0"
         code = '\n'.join((
             'import sys',
@@ -683,43 +683,49 @@ class SysModuleTest(unittest.TestCase):
         stdout, stderr = p.communicate()
         return stdout
 
-    def test_c_locale_surrogateescape(self):
-        out = self.c_locale_get_error_handler(isolated=True)
+    def check_locale_surrogateescape(self, locale):
+        out = self.c_locale_get_error_handler(locale, isolated=True)
         self.assertEqual(out,
                          'stdin: surrogateescape\n'
                          'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
 
         # replace the default error handler
-        out = self.c_locale_get_error_handler(encoding=':ignore')
+        out = self.c_locale_get_error_handler(locale, encoding=':ignore')
         self.assertEqual(out,
                          'stdin: ignore\n'
                          'stdout: ignore\n'
                          'stderr: backslashreplace\n')
 
         # force the encoding
-        out = self.c_locale_get_error_handler(encoding='iso8859-1')
+        out = self.c_locale_get_error_handler(locale, encoding='iso8859-1')
         self.assertEqual(out,
                          'stdin: strict\n'
                          'stdout: strict\n'
                          'stderr: backslashreplace\n')
-        out = self.c_locale_get_error_handler(encoding='iso8859-1:')
+        out = self.c_locale_get_error_handler(locale, encoding='iso8859-1:')
         self.assertEqual(out,
                          'stdin: strict\n'
                          'stdout: strict\n'
                          'stderr: backslashreplace\n')
 
         # have no any effect
-        out = self.c_locale_get_error_handler(encoding=':')
-        self.assertEqual(out,
-                         'stdin: strict\n'
-                         'stdout: strict\n'
-                         'stderr: backslashreplace\n')
-        out = self.c_locale_get_error_handler(encoding='')
+        out = self.c_locale_get_error_handler(locale, encoding=':')
         self.assertEqual(out,
                          'stdin: surrogateescape\n'
                          'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
+        out = self.c_locale_get_error_handler(locale, encoding='')
+        self.assertEqual(out,
+                         'stdin: surrogateescape\n'
+                         'stdout: surrogateescape\n'
+                         'stderr: backslashreplace\n')
+
+    def test_c_locale_surrogateescape(self):
+        self.check_locale_surrogateescape('C')
+
+    def test_posix_locale_surrogateescape(self):
+        self.check_locale_surrogateescape('POSIX')
 
     def test_implementation(self):
         # This test applies to all implementations equally.
