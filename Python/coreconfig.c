@@ -1344,7 +1344,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         config->argc = 0;
     }
 
-    if (config->filesystem_encoding == NULL && config->filesystem_errors == NULL) {
+    if (config->filesystem_encoding == NULL || config->filesystem_errors == NULL) {
         err = config_init_fs_encoding(config);
         if (_Py_INIT_FAILED(err)) {
             return err;
