@@ -1287,6 +1287,9 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
                  _PyCmdline *cmdline)
 {
     int init_utf8_mode = Py_UTF8Mode;
+#ifdef MS_WINDOWS
+    int init_legacy_encoding = Py_LegacyWindowsFSEncodingFlag;
+#endif
     _PyCoreConfig save_config = _PyCoreConfig_INIT;
     int res = -1;
 
@@ -1313,9 +1316,12 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
             goto done;
         }
 
-        /* bpo-34207: Py_DecodeLocale(), Py_EncodeLocale() and similar
-           functions depend on Py_UTF8Mode. */
+        /* bpo-34207: Py_DecodeLocale() and Py_EncodeLocale() depend
+           on Py_UTF8Mode and Py_LegacyWindowsFSEncodingFlag. */
         Py_UTF8Mode = config->utf8_mode;
+#ifdef MS_WINDOWS
+        Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
+#endif
 
         if (pymain_init_cmdline_argv(pymain, config, cmdline) < 0) {
             goto done;
@@ -1380,6 +1386,9 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
 done:
     _PyCoreConfig_Clear(&save_config);
     Py_UTF8Mode = init_utf8_mode ;
+#ifdef MS_WINDOWS
+    Py_LegacyWindowsFSEncodingFlag = init_legacy_encoding;
+#endif
     return res;
 }
 
