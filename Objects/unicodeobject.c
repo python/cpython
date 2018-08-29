@@ -3410,27 +3410,24 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 PyObject *
 PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
-#if defined(__APPLE__)
-    return _PyUnicode_AsUTF8String(unicode, Py_FileSystemDefaultEncodeErrors);
-#else
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const _PyCoreConfig *config = &interp->core_config;
+#if defined(__APPLE__)
+    return _PyUnicode_AsUTF8String(unicode, config->filesystem_errors);
+#else
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
        cannot use it to encode and decode filenames before it is loaded. Load
        the Python codec requires to encode at least its own filename. Use the C
-       version of the locale codec until the codec registry is initialized and
-       the Python codec is loaded.
-
-       Py_FileSystemDefaultEncoding is shared between all interpreters, we
-       cannot only rely on it: check also interp->fscodec_initialized for
-       subinterpreters. */
-    if (Py_FileSystemDefaultEncoding && interp->fscodec_initialized) {
+       implementation of the locale codec until the codec registry is
+       initialized and the Python codec is loaded. See initfsencoding(). */
+    if (interp->fscodec_initialized) {
         return PyUnicode_AsEncodedString(unicode,
-                                         Py_FileSystemDefaultEncoding,
-                                         Py_FileSystemDefaultEncodeErrors);
+                                         config->filesystem_encoding,
+                                         config->filesystem_errors);
     }
     else {
         return unicode_encode_locale(unicode,
-                                     Py_FileSystemDefaultEncodeErrors, 0);
+                                     config->filesystem_errors, 0);
     }
 #endif
 }
@@ -3636,27 +3633,24 @@ PyUnicode_DecodeFSDefault(const char *s) {
 PyObject*
 PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 {
-#if defined(__APPLE__)
-    return PyUnicode_DecodeUTF8Stateful(s, size, Py_FileSystemDefaultEncodeErrors, NULL);
-#else
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const _PyCoreConfig *config = &interp->core_config;
+#if defined(__APPLE__)
+    return PyUnicode_DecodeUTF8Stateful(s, size, config->filesystem_errors, NULL);
+#else
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
        cannot use it to encode and decode filenames before it is loaded. Load
        the Python codec requires to encode at least its own filename. Use the C
-       version of the locale codec until the codec registry is initialized and
-       the Python codec is loaded.
-
-       Py_FileSystemDefaultEncoding is shared between all interpreters, we
-       cannot only rely on it: check also interp->fscodec_initialized for
-       subinterpreters. */
-    if (Py_FileSystemDefaultEncoding && interp->fscodec_initialized) {
+       implementation of the locale codec until the codec registry is
+       initialized and the Python codec is loaded. See initfsencoding(). */
+    if (interp->fscodec_initialized) {
         return PyUnicode_Decode(s, size,
-                                Py_FileSystemDefaultEncoding,
-                                Py_FileSystemDefaultEncodeErrors);
+                                config->filesystem_encoding,
+                                config->filesystem_errors);
     }
     else {
         return unicode_decode_locale(s, size,
-                                     Py_FileSystemDefaultEncodeErrors, 0);
+                                     config->filesystem_errors, 0);
     }
 #endif
 }
