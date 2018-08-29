@@ -5,6 +5,24 @@
 extern "C" {
 #endif
 
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
+typedef enum {
+    _Py_ERROR_UNKNOWN=0,
+    _Py_ERROR_STRICT,
+    _Py_ERROR_SURROGATEESCAPE,
+    _Py_ERROR_REPLACE,
+    _Py_ERROR_IGNORE,
+    _Py_ERROR_BACKSLASHREPLACE,
+    _Py_ERROR_SURROGATEPASS,
+    _Py_ERROR_XMLCHARREFREPLACE,
+    _Py_ERROR_OTHER
+} _Py_error_handler;
+
+PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
+#endif
+
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
     const char *arg,
@@ -26,7 +44,7 @@ PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
     wchar_t **wstr,
     size_t *wlen,
     const char **reason,
-    int surrogateescape);
+    _Py_error_handler errors);
 
 PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
     const wchar_t *text,
@@ -34,19 +52,22 @@ PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
     size_t *error_pos,
     const char **reason,
     int raw_malloc,
-    int surrogateescape);
+    _Py_error_handler errors);
 
 PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
     const char *arg,
     Py_ssize_t arglen);
+#endif
 
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
 PyAPI_FUNC(int) _Py_DecodeLocaleEx(
     const char *arg,
     wchar_t **wstr,
     size_t *wlen,
     const char **reason,
     int current_locale,
-    int surrogateescape);
+    _Py_error_handler errors);
 
 PyAPI_FUNC(int) _Py_EncodeLocaleEx(
     const wchar_t *text,
@@ -54,7 +75,7 @@ PyAPI_FUNC(int) _Py_EncodeLocaleEx(
     size_t *error_pos,
     const char **reason,
     int current_locale,
-    int surrogateescape);
+    _Py_error_handler errors);
 #endif
 
 #ifndef Py_LIMITED_API

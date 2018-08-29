@@ -32,6 +32,24 @@ extern int winerror_to_errno(int);
 int _Py_open_cloexec_works = -1;
 #endif
 
+
+static int
+get_surrogateescape(_Py_error_handler errors, int *surrogateescape)
+{
+    switch (errors)
+    {
+    case _Py_ERROR_STRICT:
+        *surrogateescape = 0;
+        return 0;
+    case _Py_ERROR_SURROGATEESCAPE:
+        *surrogateescape = 1;
+        return 0;
+    default:
+        return -1;
+    }
+}
+
+
 PyObject *
 _Py_device_encoding(int fd)
 {
@@ -215,11 +233,16 @@ _Py_GetForceASCII(void)
 static int
 encode_ascii(const wchar_t *text, char **str,
              size_t *error_pos, const char **reason,
-             int raw_malloc, int surrogateescape)
+             int raw_malloc, _Py_error_handler errors)
 {
     char *result = NULL, *out;
     size_t len, i;
     wchar_t ch;
+
+    int surrogateescape;
+    if (get_surrogateescape(errors, &surrogateescape) < 0) {
+        return -3;
+    }
 
     len = wcslen(text);
 
@@ -278,12 +301,17 @@ _Py_GetForceASCII(void)
 #if !defined(HAVE_MBRTOWC) || defined(USE_FORCE_ASCII)
 static int
 decode_ascii(const char *arg, wchar_t **wstr, size_t *wlen,
-             const char **reason, int surrogateescape)
+             const char **reason, _Py_error_handler errors)
 {
     wchar_t *res;
     unsigned char *in;
     wchar_t *out;
     size_t argsize = strlen(arg) + 1;
+
+    int surrogateescape;
+    if (get_surrogateescape(errors, &surrogateescape) < 0) {
+        return -3;
+    }
 
     if (argsize > PY_SSIZE_T_MAX / sizeof(wchar_t)) {
         return -1;
@@ -325,7 +353,7 @@ decode_ascii(const char *arg, wchar_t **wstr, size_t *wlen,
 
 static int
 decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
-                      const char **reason, int surrogateescape)
+                      const char **reason, _Py_error_handler errors)
 {
     wchar_t *res;
     size_t argsize;
@@ -335,6 +363,11 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
     wchar_t *out;
     mbstate_t mbs;
 #endif
+
+    int surrogateescape;
+    if (get_surrogateescape(errors, &surrogateescape) < 0) {
+        return -3;
+    }
 
 #ifdef HAVE_BROKEN_MBSTOWCS
     /* Some platforms have a broken implementation of
@@ -456,7 +489,7 @@ decode_error:
     /* Cannot use C locale for escaping; manually escape as if charset
        is ASCII (i.e. escape all bytes > 128. This will still roundtrip
        correctly in the locale's charset, which must be an ASCII superset. */
-    return decode_ascii(arg, wstr, wlen, reason, surrogateescape);
+    return decode_ascii(arg, wstr, wlen, reason, errors);
 #endif   /* HAVE_MBRTOWC */
 }
 
@@ -479,33 +512,35 @@ decode_error:
    invalid byte sequence in the input string into *wlen. If reason is not NULL,
    write the decoding error message into *reason.
 
+   Return -3 if the error handler 'errors' is not supported.
+
    Use the Py_EncodeLocaleEx() function to encode the character string back to
    a byte string. */
 int
 _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
                    const char **reason,
-                   int current_locale, int surrogateescape)
+                   int current_locale, _Py_error_handler errors)
 {
     if (current_locale) {
 #ifdef __ANDROID__
         return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
-                                surrogateescape);
+                                errors);
 #else
-        return decode_current_locale(arg, wstr, wlen, reason, surrogateescape);
+        return decode_current_locale(arg, wstr, wlen, reason, errors);
 #endif
     }
 
 #if defined(__APPLE__) || defined(__ANDROID__)
     return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
-                            surrogateescape);
+                            errors);
 #else
     int use_utf8 = (Py_UTF8Mode == 1);
 #ifdef MS_WINDOWS
     use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
 #endif
     if (use_utf8) {
-        return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen,
-                                reason, surrogateescape);
+        return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
+                                errors);
     }
 
 #ifdef USE_FORCE_ASCII
@@ -515,11 +550,11 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
 
     if (force_ascii) {
         /* force ASCII encoding to workaround mbstowcs() issue */
-        return decode_ascii(arg, wstr, wlen, reason, surrogateescape);
+        return decode_ascii(arg, wstr, wlen, reason, errors);
     }
 #endif
 
-    return decode_current_locale(arg, wstr, wlen, reason, surrogateescape);
+    return decode_current_locale(arg, wstr, wlen, reason, errors);
 #endif   /* __APPLE__ or __ANDROID__ */
 }
 
@@ -547,8 +582,11 @@ wchar_t*
 Py_DecodeLocale(const char* arg, size_t *wlen)
 {
     wchar_t *wstr;
-    int res = _Py_DecodeLocaleEx(arg, &wstr, wlen, NULL, 0, 1);
+    int res = _Py_DecodeLocaleEx(arg, &wstr, wlen,
+                                 NULL, 0,
+                                 _Py_ERROR_SURROGATEESCAPE);
     if (res != 0) {
+        assert(res != -3);
         if (wlen != NULL) {
             *wlen = (size_t)res;
         }
@@ -561,12 +599,17 @@ Py_DecodeLocale(const char* arg, size_t *wlen)
 static int
 encode_current_locale(const wchar_t *text, char **str,
                       size_t *error_pos, const char **reason,
-                      int raw_malloc, int surrogateescape)
+                      int raw_malloc, _Py_error_handler errors)
 {
     const size_t len = wcslen(text);
     char *result = NULL, *bytes = NULL;
     size_t i, size, converted;
     wchar_t c, buf[2];
+
+    int surrogateescape;
+    if (get_surrogateescape(errors, &surrogateescape) < 0) {
+        return -3;
+    }
 
     /* The function works in two steps:
        1. compute the length of the output buffer in bytes (size)
@@ -646,32 +689,50 @@ encode_error:
     return -2;
 }
 
+
+/* Encode a string to the locale encoding.
+
+   Parameters:
+
+   * raw_malloc: if non-zero, allocate memory using PyMem_RawMalloc() instead
+     of PyMem_Malloc().
+   * current_locale: if non-zero, use the current LC_CTYPE, otherwise use
+     Python filesystem encoding.
+   * errors: error handler like "strict" or "surrogateescape".
+
+   Return value:
+
+    0: success, *str is set to a newly allocated decoded string.
+   -1: memory allocation failure
+   -2: encoding error, set *error_pos and *reason (if set).
+   -3: the error handler 'errors' is not supported.
+ */
 static int
 encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
                  const char **reason,
-                 int raw_malloc, int current_locale, int surrogateescape)
+                 int raw_malloc, int current_locale, _Py_error_handler errors)
 {
     if (current_locale) {
 #ifdef __ANDROID__
         return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
-                                raw_malloc, surrogateescape);
+                                raw_malloc, errors);
 #else
         return encode_current_locale(text, str, error_pos, reason,
-                                     raw_malloc, surrogateescape);
+                                     raw_malloc, errors);
 #endif
     }
 
 #if defined(__APPLE__) || defined(__ANDROID__)
     return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
-                            raw_malloc, surrogateescape);
-#else   /* __APPLE__ */
+                            raw_malloc, errors);
+#else
     int use_utf8 = (Py_UTF8Mode == 1);
 #ifdef MS_WINDOWS
     use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
 #endif
     if (use_utf8) {
         return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
-                                raw_malloc, surrogateescape);
+                                raw_malloc, errors);
     }
 
 #ifdef USE_FORCE_ASCII
@@ -681,12 +742,12 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
 
     if (force_ascii) {
         return encode_ascii(text, str, error_pos, reason,
-                            raw_malloc, surrogateescape);
+                            raw_malloc, errors);
     }
 #endif
 
     return encode_current_locale(text, str, error_pos, reason,
-                                 raw_malloc, surrogateescape);
+                                 raw_malloc, errors);
 #endif   /* __APPLE__ or __ANDROID__ */
 }
 
@@ -696,7 +757,8 @@ encode_locale(const wchar_t *text, size_t *error_pos,
 {
     char *str;
     int res = encode_locale_ex(text, &str, error_pos, NULL,
-                               raw_malloc, current_locale, 1);
+                               raw_malloc, current_locale,
+                               _Py_ERROR_SURROGATEESCAPE);
     if (res != -2 && error_pos) {
         *error_pos = (size_t)-1;
     }
@@ -737,10 +799,10 @@ _Py_EncodeLocaleRaw(const wchar_t *text, size_t *error_pos)
 int
 _Py_EncodeLocaleEx(const wchar_t *text, char **str,
                    size_t *error_pos, const char **reason,
-                   int current_locale, int surrogateescape)
+                   int current_locale, _Py_error_handler errors)
 {
     return encode_locale_ex(text, str, error_pos, reason, 1,
-                            current_locale, surrogateescape);
+                            current_locale, errors);
 }
 
 

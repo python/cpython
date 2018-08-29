@@ -82,14 +82,6 @@ main(int argc, char *argv[])
     /* Don't install importlib, since it could execute outdated bytecode. */
     config._install_importlib = 0;
     config._frozen = 1;
-#ifdef MS_WINDOWS
-    /* bpo-34523: initfsencoding() is not called if _install_importlib=0,
-       so interp->fscodec_initialized value remains 0.
-       PyUnicode_EncodeFSDefault() doesn't support the "surrogatepass" error
-       handler in such case, whereas it's the default error handler on Windows.
-       Force the "strict" error handler to work around this bootstrap issue. */
-    config.filesystem_errors = "strict";
-#endif
 
     _PyInitError err = _Py_InitializeFromConfig(&config);
     /* No need to call _PyCoreConfig_Clear() since we didn't allocate any

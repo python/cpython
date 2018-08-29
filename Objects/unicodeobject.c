@@ -318,20 +318,8 @@ static int convert_uc(PyObject *obj, void *addr);
 
 #include "clinic/unicodeobject.c.h"
 
-typedef enum {
-    _Py_ERROR_UNKNOWN=0,
-    _Py_ERROR_STRICT,
-    _Py_ERROR_SURROGATEESCAPE,
-    _Py_ERROR_REPLACE,
-    _Py_ERROR_IGNORE,
-    _Py_ERROR_BACKSLASHREPLACE,
-    _Py_ERROR_SURROGATEPASS,
-    _Py_ERROR_XMLCHARREFREPLACE,
-    _Py_ERROR_OTHER
-} _Py_error_handler;
-
-static _Py_error_handler
-get_error_handler(const char *errors)
+_Py_error_handler
+_Py_GetErrorHandler(const char *errors)
 {
     if (errors == NULL || strcmp(errors, "strict") == 0) {
         return _Py_ERROR_STRICT;
@@ -3327,34 +3315,12 @@ PyUnicode_AsEncodedObject(PyObject *unicode,
     return NULL;
 }
 
-static int
-locale_error_handler(const char *errors, int *surrogateescape)
-{
-    _Py_error_handler error_handler = get_error_handler(errors);
-    switch (error_handler)
-    {
-    case _Py_ERROR_STRICT:
-        *surrogateescape = 0;
-        return 0;
-    case _Py_ERROR_SURROGATEESCAPE:
-        *surrogateescape = 1;
-        return 0;
-    default:
-        PyErr_Format(PyExc_ValueError,
-                     "only 'strict' and 'surrogateescape' error handlers "
-                     "are supported, not '%s'",
-                     errors);
-        return -1;
-    }
-}
 
 static PyObject *
 unicode_encode_locale(PyObject *unicode, const char *errors,
                       int current_locale)
 {
-    int surrogateescape;
-    if (locale_error_handler(errors, &surrogateescape) < 0)
-        return NULL;
+    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
 
     Py_ssize_t wlen;
     wchar_t *wstr = PyUnicode_AsWideCharString(unicode, &wlen);
@@ -3373,7 +3339,7 @@ unicode_encode_locale(PyObject *unicode, const char *errors,
     size_t error_pos;
     const char *reason;
     int res = _Py_EncodeLocaleEx(wstr, &str, &error_pos, &reason,
-                                 current_locale, surrogateescape);
+                                 current_locale, error_handler);
     if (res != 0) {
         if (res == -2) {
             PyObject *exc;
@@ -3387,6 +3353,9 @@ unicode_encode_locale(PyObject *unicode, const char *errors,
                 Py_DECREF(exc);
             }
             return NULL;
+        }
+        else if (res == -3) {
+            PyErr_SetString(PyExc_ValueError, "unsupported error handler");
         }
         else {
             PyErr_NoMemory();
@@ -3571,9 +3540,7 @@ static PyObject*
 unicode_decode_locale(const char *str, Py_ssize_t len, const char *errors,
                       int current_locale)
 {
-    int surrogateescape;
-    if (locale_error_handler(errors, &surrogateescape) < 0)
-        return NULL;
+    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
 
     if (str[len] != '\0' || (size_t)len != strlen(str))  {
         PyErr_SetString(PyExc_ValueError, "embedded null byte");
@@ -3584,7 +3551,7 @@ unicode_decode_locale(const char *str, Py_ssize_t len, const char *errors,
     size_t wlen;
     const char *reason;
     int res = _Py_DecodeLocaleEx(str, &wstr, &wlen, &reason,
-                                 current_locale, surrogateescape);
+                                 current_locale, error_handler);
     if (res != 0) {
         if (res == -2) {
             PyObject *exc;
@@ -3597,6 +3564,9 @@ unicode_decode_locale(const char *str, Py_ssize_t len, const char *errors,
                 PyCodec_StrictErrors(exc);
                 Py_DECREF(exc);
             }
+        }
+        else if (res == -3) {
+            PyErr_SetString(PyExc_ValueError, "unsupported error handler");
         }
         else {
             PyErr_NoMemory();
@@ -4863,7 +4833,7 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
         }
 
         if (error_handler == _Py_ERROR_UNKNOWN)
-            error_handler = get_error_handler(errors);
+            error_handler = _Py_GetErrorHandler(errors);
 
         switch (error_handler) {
         case _Py_ERROR_IGNORE:
@@ -4932,12 +4902,28 @@ onError:
    is not NULL, write the decoding error message into *reason. */
 int
 _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
-                 const char **reason, int surrogateescape)
+                 const char **reason, _Py_error_handler errors)
 {
     const char *orig_s = s;
     const char *e;
     wchar_t *unicode;
     Py_ssize_t outpos;
+
+    int surrogateescape = 0;
+    int surrogatepass = 0;
+    switch (errors)
+    {
+    case _Py_ERROR_STRICT:
+        break;
+    case _Py_ERROR_SURROGATEESCAPE:
+        surrogateescape = 1;
+        break;
+    case _Py_ERROR_SURROGATEPASS:
+        surrogatepass = 1;
+        break;
+    default:
+        return -3;
+    }
 
     /* Note: size will always be longer than the resulting Unicode
        character count */
@@ -4971,31 +4957,47 @@ _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
 #endif
         }
         else {
-            if (!ch && s == e)
+            if (!ch && s == e) {
                 break;
-            if (!surrogateescape) {
-                PyMem_RawFree(unicode );
-                if (reason != NULL) {
-                    switch (ch) {
-                    case 0:
-                        *reason = "unexpected end of data";
-                        break;
-                    case 1:
-                        *reason = "invalid start byte";
-                        break;
-                    /* 2, 3, 4 */
-                    default:
-                        *reason = "invalid continuation byte";
-                        break;
-                    }
-                }
-                if (wlen != NULL) {
-                    *wlen = s - orig_s;
-                }
-                return -2;
             }
-            /* surrogateescape */
-            unicode[outpos++] = 0xDC00 + (unsigned char)*s++;
+
+            if (surrogateescape) {
+                unicode[outpos++] = 0xDC00 + (unsigned char)*s++;
+            }
+            else {
+                /* Is it a valid three-byte code? */
+                if (surrogatepass
+                    && (e - s) >= 3
+                    && (s[0] & 0xf0) == 0xe0
+                    && (s[1] & 0xc0) == 0x80
+                    && (s[2] & 0xc0) == 0x80)
+                {
+                    ch = ((s[0] & 0x0f) << 12) + ((s[1] & 0x3f) << 6) + (s[2] & 0x3f);
+                    s += 3;
+                    unicode[outpos++] = ch;
+                }
+                else {
+                    PyMem_RawFree(unicode );
+                    if (reason != NULL) {
+                        switch (ch) {
+                        case 0:
+                            *reason = "unexpected end of data";
+                            break;
+                        case 1:
+                            *reason = "invalid start byte";
+                            break;
+                        /* 2, 3, 4 */
+                        default:
+                            *reason = "invalid continuation byte";
+                            break;
+                        }
+                    }
+                    if (wlen != NULL) {
+                        *wlen = s - orig_s;
+                    }
+                    return -2;
+                }
+            }
         }
     }
     unicode[outpos] = L'\0';
@@ -5030,12 +5032,28 @@ _Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen)
    On memory allocation failure, return -1. */
 int
 _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *error_pos,
-                 const char **reason, int raw_malloc, int surrogateescape)
+                 const char **reason, int raw_malloc, _Py_error_handler errors)
 {
     const Py_ssize_t max_char_size = 4;
     Py_ssize_t len = wcslen(text);
 
     assert(len >= 0);
+
+    int surrogateescape = 0;
+    int surrogatepass = 0;
+    switch (errors)
+    {
+    case _Py_ERROR_STRICT:
+        break;
+    case _Py_ERROR_SURROGATEESCAPE:
+        surrogateescape = 1;
+        break;
+    case _Py_ERROR_SURROGATEPASS:
+        surrogatepass = 1;
+        break;
+    default:
+        return -3;
+    }
 
     if (len > PY_SSIZE_T_MAX / max_char_size - 1) {
         return -1;
@@ -5053,8 +5071,19 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *error_pos,
 
     char *p = bytes;
     Py_ssize_t i;
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < len; ) {
+        Py_ssize_t ch_pos = i;
         Py_UCS4 ch = text[i];
+        i++;
+#if Py_UNICODE_SIZE == 2
+        if (Py_UNICODE_IS_HIGH_SURROGATE(ch)
+            && i < len
+            && Py_UNICODE_IS_LOW_SURROGATE(text[i]))
+        {
+            ch = Py_UNICODE_JOIN_SURROGATES(ch, text[i]);
+            i++;
+        }
+#endif
 
         if (ch < 0x80) {
             /* Encode ASCII */
@@ -5066,11 +5095,11 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *error_pos,
             *p++ = (char)(0xc0 | (ch >> 6));
             *p++ = (char)(0x80 | (ch & 0x3f));
         }
-        else if (Py_UNICODE_IS_SURROGATE(ch)) {
+        else if (Py_UNICODE_IS_SURROGATE(ch) && !surrogatepass) {
             /* surrogateescape error handler */
             if (!surrogateescape || !(0xDC80 <= ch && ch <= 0xDCFF)) {
                 if (error_pos != NULL) {
-                    *error_pos = (size_t)i;
+                    *error_pos = (size_t)ch_pos;
                 }
                 if (reason != NULL) {
                     *reason = "encoding error";
@@ -6741,7 +6770,7 @@ unicode_encode_ucs1(PyObject *unicode,
 
             /* cache callback name lookup (if not done yet, i.e. it's the first error) */
             if (error_handler == _Py_ERROR_UNKNOWN)
-                error_handler = get_error_handler(errors);
+                error_handler = _Py_GetErrorHandler(errors);
 
             switch (error_handler) {
             case _Py_ERROR_STRICT:
@@ -6945,7 +6974,7 @@ PyUnicode_DecodeASCII(const char *s,
         /* byte outsize range 0x00..0x7f: call the error handler */
 
         if (error_handler == _Py_ERROR_UNKNOWN)
-            error_handler = get_error_handler(errors);
+            error_handler = _Py_GetErrorHandler(errors);
 
         switch (error_handler)
         {
@@ -8404,7 +8433,7 @@ charmap_encoding_error(
     /* cache callback name lookup
      * (if not done yet, i.e. it's the first error) */
     if (*error_handler == _Py_ERROR_UNKNOWN)
-        *error_handler = get_error_handler(errors);
+        *error_handler = _Py_GetErrorHandler(errors);
 
     switch (*error_handler) {
     case _Py_ERROR_STRICT:

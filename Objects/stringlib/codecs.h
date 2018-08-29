@@ -313,7 +313,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
             Py_ssize_t startpos, endpos, newpos;
             Py_ssize_t k;
             if (error_handler == _Py_ERROR_UNKNOWN) {
-                error_handler = get_error_handler(errors);
+                error_handler = _Py_GetErrorHandler(errors);
             }
 
             startpos = i-1;
