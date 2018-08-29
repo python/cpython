@@ -301,10 +301,8 @@ static const char *_C_LOCALE_WARNING =
 static void
 _emit_stderr_warning_for_legacy_locale(const _PyCoreConfig *core_config)
 {
-    if (core_config->coerce_c_locale_warn) {
-        if (_Py_LegacyLocaleDetected()) {
-            fprintf(stderr, "%s", _C_LOCALE_WARNING);
-        }
+    if (core_config->coerce_c_locale_warn && _Py_LegacyLocaleDetected()) {
+        PySys_FormatStderr("%s", _C_LOCALE_WARNING);
     }
 }
 
@@ -566,10 +564,6 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
      * pair :(
      */
     _PyRuntime.finalizing = NULL;
-
-#ifndef MS_WINDOWS
-    _emit_stderr_warning_for_legacy_locale(core_config);
-#endif
 
     err = _Py_HashRandomization_Init(core_config);
     if (_Py_INIT_FAILED(err)) {
@@ -867,6 +861,11 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
             return err;
         }
     }
+
+#ifndef MS_WINDOWS
+    _emit_stderr_warning_for_legacy_locale(core_config);
+#endif
+
     return _Py_INIT_OK();
 }
 
