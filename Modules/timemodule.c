@@ -639,7 +639,10 @@ checktm(struct tm* buf)
     return 1;
 }
 
-#undef HAVE_WCSFTIME
+#ifdef MS_WINDOWS
+   /* wcsftime() doesn't format correctly time zones, see issue #10653 */
+#  undef HAVE_WCSFTIME
+#endif
 #define STRFTIME_FORMAT_CODES \
 "Commonly used format codes:\n\
 \n\
