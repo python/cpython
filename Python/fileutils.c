@@ -499,9 +499,13 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
     return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                             surrogateescape);
 #else
-    if (Py_UTF8Mode == 1) {
-        return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
-                                surrogateescape);
+    int use_utf8 = (Py_UTF8Mode == 1);
+#ifdef MS_WINDOWS
+    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+#endif
+    if (use_utf8) {
+        return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen,
+                                reason, surrogateescape);
     }
 
 #ifdef USE_FORCE_ASCII
@@ -661,7 +665,11 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
     return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
                             raw_malloc, surrogateescape);
 #else   /* __APPLE__ */
-    if (Py_UTF8Mode == 1) {
+    int use_utf8 = (Py_UTF8Mode == 1);
+#ifdef MS_WINDOWS
+    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+#endif
+    if (use_utf8) {
         return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
                                 raw_malloc, surrogateescape);
     }
