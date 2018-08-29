@@ -35,6 +35,8 @@ except ImportError:
 
 mswindows = (sys.platform == "win32")
 
+DEBUG = False
+
 #
 # Depends on the following external programs: Python
 #
@@ -1467,6 +1469,7 @@ class HelperFunctionTests(unittest.TestCase):
                          subprocess._eintr_retry_call(fake_os_func, 666))
         self.assertEqual([(256, 999), (666,), (666,)], record_calls)
 
+
 @unittest.skipUnless(mswindows, "mswindows only")
 class CommandsWithSpaces (BaseTestCase):
 
@@ -1510,16 +1513,155 @@ class CommandsWithSpaces (BaseTestCase):
         # call() function with sequence argument with spaces on Windows
         self.with_spaces([sys.executable, self.fname, "ab cd"])
 
+
+@unittest.skipUnless(mswindows, "mswindows only")
+class CommandTryInject (BaseTestCase):
+
+    def setUp(self):
+        super(CommandTryInject, self).setUp()
+        # bat-file to dump args:
+        f, self.batname = tempfile.mkstemp(".bat", "test-dump")
+        os.write(f, '@\"' + sys.executable + '\"'
+            ' -c \"import sys;print(sys.argv[1:])\" %*')
+        os.close(f)
+
+    def tearDown(self):
+        os.remove(self.batname)
+        super(CommandTryInject, self).tearDown()
+
+    def _do_execwithargs(self, *args):
+        for cmd in (
+            (sys.executable, '-c', 'import sys;print(sys.argv[1:])') + args,
+            (self.batname,) + args,
+        ):
+            if DEBUG and test_support.verbose:
+                print("  exec", cmd)
+            p = subprocess.Popen(cmd, shell=False, 
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = p.communicate()
+            if stderr:
+              stdout += " ERROR: " + stderr
+            elif p.returncode != 0:
+              stdout += " ERROR: (" + p.returncode +")"
+            self.assertEqual(stdout.rstrip(), '%r' % (list(args),))
+
+    INJECT_ARGS = (
+        r'test"whoami',     r'test""whoami',
+        r'test"""whoami',   r'test""""whoami',
+
+        'test"whoami\\',     'test""whoami\\',
+        'test"""whoami\\',   'test""""whoami\\',
+        'test"whoami\\\\',   'test""whoami\\\\',
+        'test"""whoami\\\\', 'test""""whoami\\\\',
+
+        r'test\\&\\test',    r'test"\\&\\test',
+        r'"test\\&\\test',   r'"test"\\&\\"test"',
+        r'test\\"&"\\test',  r'test"\\"&"\\test',
+        r'"test\\"&"\\test', r'"test"\\"&"\\"test"',
+
+        r'test\"&whoami',    r'test"\"&whoami',
+        r'test""\"&whoami',  r'test"""\"&whoami',
+        r'test\"\&whoami',   r'test"\"\&whoami',
+        r'test""\"\&whoami', r'test"""\"\&whoami',
+
+        r'test&whoami',     r'test|whoami',
+        r'"test&whoami',    r'"test|whoami',
+        r'test"&whoami',    r'test"|whoami',
+        r'"test"&whoami',   r'"test"|whoami',
+        r'""test"&whoami',  r'""test"|whoami',
+
+        r'test&echo "',     r'test|echo "',
+        r'"test&echo "',    r'"test|echo "',
+        r'test"&echo "',    r'test"|echo "',
+        r'"test"&echo "',   r'"test"|echo "',
+        r'""test"&echo "',  r'""test"|echo "',
+
+        r'test&echo ""',    r'test|echo ""',
+        r'"test&echo ""',   r'"test|echo ""',
+        r'test"&echo ""',   r'test"|echo ""',
+        r'"test"&echo ""',  r'"test"|echo ""',
+        r'""test"&echo ""', r'""test"|echo ""',
+
+        r'test>whoami',     r'test<whoami',
+        r'"test>whoami',    r'"test<whoami',
+        r'test">whoami',    r'test"<whoami',
+        r'"test">whoami',   r'"test"<whoami',
+        r'""test">whoami',  r'""test"<whoami',
+        r'test(whoami)',    r'test(whoami)',
+        r'test"(whoami)',   r'test"(whoami)',
+        r'test^whoami',     r'test^^echo ^^^',
+        r'test"^whoami',    r'test"^^echo ^^^',
+        r'test"^echo ^^^"', r'test""^echo" ^^^"',
+
+        r'test%USERDOMAIN%\%USERNAME%',
+        r'test" %USERDOMAIN%\%USERNAME%',
+        r'test%USERDOMAIN%\\%USERNAME%',
+        r'test" %USERDOMAIN%\\%USERNAME%',
+        r'test%USERDOMAIN%&%USERNAME%',
+        r'test" %USERDOMAIN%&%USERNAME%',
+        r'test%USERDOMAIN%\&\%USERNAME%',
+        r'test" %USERDOMAIN%\&\%USERNAME%',
+
+        r'test%USERDOMAIN%\&\test',
+        r'test" %USERDOMAIN%\&\test',
+        r'test%USERDOMAIN%\\&\\test',
+        r'test" %USERDOMAIN%\\&\\test',
+
+        r'test%USERDOMAIN%\&\"test',
+        r'test" %USERDOMAIN%\&\"test',
+        r'test%USERDOMAIN%\\&\\"test',
+        r'test" %USERDOMAIN%\\&\\"test',
+    )
+    def test_inject_all(self):
+        args = self.INJECT_ARGS
+        for args in (
+            ('START',) + args + ('END',),
+            ('START"',) + args + ('END',),
+            ('START',) + args + ('"END',),
+            ('START"',) + args + ('"END',),
+        ):
+            self._do_execwithargs(*args)
+
+    def test_inject_particular(self):
+        if not DEBUG:
+            test_support.requires('slow-tests')
+        for a in self.INJECT_ARGS:
+            self._do_execwithargs('1st', a, '3rd')
+
+    def test_inject_random(self):
+        import random
+        maps = (
+            '\&|^<>!()%',
+            '\&|^<>!()% ',
+            '"\&|^<>!()%',
+            '"\&|^<>!()% ',
+            '"""""\\\\\\\\\\&|^<>!()%',
+            '"""""\\\\\\\\\\&|^<>!()% ',
+        )
+        i = 0
+        for t in range(10): # 10 tests
+            args = ()
+            for i in range(20): # with 20 random generated args
+                map = maps[random.randint(0, len(maps)-1)]
+                a = 'x'
+                while len(a) < 50: # each 50 chars long
+                    a += map[random.randint(0, len(map)-1)]
+                args += (a,)
+            self._do_execwithargs(*args)
+        
+
 def test_main():
     unit_tests = (ProcessTestCase,
                   POSIXProcessTestCase,
                   Win32ProcessTestCase,
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests,
-                  CommandsWithSpaces)
+                  CommandsWithSpaces,
+                  CommandTryInject)
 
     test_support.run_unittest(*unit_tests)
     test_support.reap_children()
 
 if __name__ == "__main__":
+    DEBUG = ('-d' in sys.argv or '--debug' in sys.argv)
     test_main()
