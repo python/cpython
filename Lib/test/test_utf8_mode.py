@@ -146,9 +146,9 @@ class UTF8ModeTests(unittest.TestCase):
         out = self.get_output('-X', 'utf8', '-c', code,
                               PYTHONIOENCODING=":namereplace")
         self.assertEqual(out.splitlines(),
-                         ['stdin: UTF-8/namereplace',
-                          'stdout: UTF-8/namereplace',
-                          'stderr: UTF-8/backslashreplace'])
+                         ['stdin: utf-8/namereplace',
+                          'stdout: utf-8/namereplace',
+                          'stderr: utf-8/backslashreplace'])
 
     def test_io(self):
         code = textwrap.dedent('''
