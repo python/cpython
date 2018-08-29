@@ -2044,14 +2044,18 @@ be INF if an infinity is present in the vec.
 The *found_nan* variable indicates whether some member of
 the *vec* is a NaN.
 
-A variant of Kahan summation is used to improve accuracy and to
-increase the number of cases where vector_norm() is commutative.
+To improve accuracy and to increase the number of cases where
+vector_norm() is commutative, we use a variant of Neumaier
+summation specialized to exploit that we always know that
+|csum| >= |x|.
+
 The *csum* variable tracks the cumulative sum and *frac* tracks
-the cumulative fractional errors at each step.  This variant
-assumes that |csum| >= |x| at each step.  We establish the
-precondition by starting the accumulation from 1.0 which
-represents an entry equal to *max*.  This also saves us one loop
-iteration because the *max* entry is swapped with the last entry.
+the cumulative fractional errors at each step.  Since this
+variant assumes that |csum| >= |x| at each step, we establish
+the precondition by starting the accumulation from 1.0 which
+represents an entry equal to *max*.  This also provides a nice
+side benefit in that it lets us skip over a *max* entry (which
+is swapped into *last*) saving us one iteration through the loop.
 
 */
 
