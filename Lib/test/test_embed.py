@@ -288,13 +288,29 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'quiet': 0,
         'user_site_directory': 1,
         'buffered_stdio': 1,
+        # None means that check_config() gets the expected encoding at runtime
+        'stdio_encoding': None,
+        'stdio_errors': None,
 
         '_install_importlib': 1,
         '_check_hash_pycs_mode': 'default',
         '_frozen': 0,
     }
 
+    def get_stdio_encoding(self, env):
+        code = 'import sys; print(sys.stdout.encoding, sys.stdout.errors)'
+        args = (sys.executable, '-c', code)
+        proc = subprocess.run(args, env=env, text=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
+        if proc.returncode:
+            raise Exception(f"failed to get the stdio encoding: stdout={proc.stdout!r}")
+        out = proc.stdout.rstrip()
+        return out.split()
+
     def check_config(self, testname, expected):
+        expected = dict(self.DEFAULT_CONFIG, **expected)
+
         env = dict(os.environ)
         for key in list(env):
             if key.startswith('PYTHON'):
@@ -303,12 +319,18 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # on the current locale
         env['PYTHONCOERCECLOCALE'] = '0'
         env['PYTHONUTF8'] = '0'
-        out, err = self.run_embedded_interpreter(testname, env=env)
-        # Ignore err
 
-        expected = dict(self.DEFAULT_CONFIG, **expected)
+        if expected['stdio_encoding'] is None or expected['stdio_errors'] is None:
+            res = self.get_stdio_encoding(env)
+            if expected['stdio_encoding'] is None:
+                expected['stdio_encoding'] = res[0]
+            if expected['stdio_errors'] is None:
+                expected['stdio_errors'] = res[1]
         for key, value in expected.items():
             expected[key] = str(value)
+
+        out, err = self.run_embedded_interpreter(testname, env=env)
+        # Ignore err
 
         config = {}
         for line in out.splitlines():
@@ -331,7 +353,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'verbose': 1,
             'quiet': 1,
             'buffered_stdio': 0,
+
             'utf8_mode': 1,
+            'stdio_encoding': 'utf-8',
+            'stdio_errors': 'surrogateescape',
+
             'user_site_directory': 0,
             '_frozen': 1,
         }
@@ -350,6 +376,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'malloc_stats': 1,
 
             'utf8_mode': 1,
+            'stdio_encoding': 'iso8859-1',
+            'stdio_errors': 'replace',
 
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
@@ -387,6 +415,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': 0,
             'verbose': 1,
             'buffered_stdio': 0,
+            'stdio_encoding': 'iso8859-1',
+            'stdio_errors': 'replace',
             'user_site_directory': 0,
             'faulthandler': 1,
             'dev_mode': 1,
