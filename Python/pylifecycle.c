@@ -423,13 +423,13 @@ get_default_standard_stream_error_handler(void)
 {
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     if (ctype_loc != NULL) {
-        /* "surrogateescape" is the default in the legacy C locale */
-        if (strcmp(ctype_loc, "C") == 0) {
+        /* surrogateescape is the default in the legacy C and POSIX locales */
+        if (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0) {
             return "surrogateescape";
         }
 
 #ifdef PY_COERCE_C_LOCALE
-        /* "surrogateescape" is the default in locale coercion target locales */
+        /* surrogateescape is the default in locale coercion target locales */
         const _LocaleCoercionTarget *target = NULL;
         for (target = _TARGET_LOCALES; target->locale_name; target++) {
             if (strcmp(ctype_loc, target->locale_name) == 0) {
@@ -440,7 +440,7 @@ get_default_standard_stream_error_handler(void)
    }
 
    /* Otherwise return NULL to request the typical default error handler */
-   return NULL;
+   return "strict";
 }
 
 #ifdef PY_COERCE_C_LOCALE
@@ -1851,20 +1851,42 @@ init_sys_streams(PyInterpreterState *interp)
             if (err) {
                 *err = '\0';
                 err++;
-                if (*err && !errors) {
-                    errors = err;
+                if (!err[0]) {
+                    err = NULL;
                 }
             }
-            if (*pythonioencoding && !encoding) {
-                encoding = pythonioencoding;
+
+            /* Does PYTHONIOENCODING contain an encoding? */
+            if (pythonioencoding[0]) {
+                if (!encoding) {
+                    encoding = pythonioencoding;
+                }
+
+                /* If the encoding is set but not the error handler,
+                   use "strict" error handler by default.
+                   PYTHONIOENCODING=latin1 behaves as
+                   PYTHONIOENCODING=latin1:strict. */
+                if (!err) {
+                    err = "strict";
+                }
+            }
+
+            if (!errors && err != NULL) {
+                errors = err;
             }
         }
-        else if (interp->core_config.utf8_mode) {
-            encoding = "utf-8";
-            errors = "surrogateescape";
+
+        if (interp->core_config.utf8_mode) {
+            if (!encoding) {
+                encoding = "utf-8";
+            }
+            if (!errors) {
+                errors = "surrogateescape";
+            }
         }
 
-        if (!errors && !pythonioencoding) {
+
+        if (!errors) {
             /* Choose the default error handler based on the current locale */
             errors = get_default_standard_stream_error_handler();
         }
