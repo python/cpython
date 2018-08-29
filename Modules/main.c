@@ -951,18 +951,18 @@ pymain_init_stdio(_PyMain *pymain, _PyCoreConfig *config)
 
 
 static void
-pymain_header(_PyMain *pymain)
+pymain_header(_PyMain *pymain, const _PyCoreConfig *config)
 {
-    if (Py_QuietFlag) {
+    if (config->quiet) {
         return;
     }
 
-    if (!Py_VerboseFlag && (RUN_CODE(pymain) || !pymain->stdin_is_interactive)) {
+    if (!config->verbose && (RUN_CODE(pymain) || !pymain->stdin_is_interactive)) {
         return;
     }
 
     fprintf(stderr, "Python %s on %s\n", Py_GetVersion(), Py_GetPlatform());
-    if (!Py_NoSiteFlag) {
+    if (config->site_import) {
         fprintf(stderr, "%s\n", COPYRIGHT);
     }
 }
@@ -1041,12 +1041,12 @@ wstrlist_as_pylist(int len, wchar_t **list)
 
 
 static void
-pymain_import_readline(_PyMain *pymain)
+pymain_import_readline(_PyMain *pymain, const _PyCoreConfig *config)
 {
-    if (Py_IsolatedFlag) {
+    if (config->isolated) {
         return;
     }
-    if (!Py_InspectFlag && RUN_CODE(pymain)) {
+    if (!config->inspect && RUN_CODE(pymain)) {
         return;
     }
     if (!isatty(fileno(stdin))) {
@@ -1591,8 +1591,8 @@ pymain_run_python(_PyMain *pymain, PyInterpreterState *interp)
 
     PyCompilerFlags cf = {.cf_flags = 0};
 
-    pymain_header(pymain);
-    pymain_import_readline(pymain);
+    pymain_header(pymain, config);
+    pymain_import_readline(pymain, config);
 
     if (pymain->command) {
         pymain->status = pymain_run_command(pymain->command, &cf);

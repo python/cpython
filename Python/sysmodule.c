@@ -2076,7 +2076,7 @@ make_flags(void)
 {
     int pos = 0;
     PyObject *seq;
-    _PyCoreConfig *core_config = &_PyGILState_GetInterpreterStateUnsafe()->core_config;
+    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -2085,23 +2085,23 @@ make_flags(void)
 #define SetFlag(flag) \
     PyStructSequence_SET_ITEM(seq, pos++, PyLong_FromLong(flag))
 
-    SetFlag(Py_DebugFlag);
-    SetFlag(Py_InspectFlag);
-    SetFlag(Py_InteractiveFlag);
-    SetFlag(Py_OptimizeFlag);
-    SetFlag(Py_DontWriteBytecodeFlag);
-    SetFlag(Py_NoUserSiteDirectory);
-    SetFlag(Py_NoSiteFlag);
-    SetFlag(Py_IgnoreEnvironmentFlag);
-    SetFlag(Py_VerboseFlag);
+    SetFlag(config->parser_debug);
+    SetFlag(config->inspect);
+    SetFlag(config->interactive);
+    SetFlag(config->optimization_level);
+    SetFlag(!config->write_bytecode);
+    SetFlag(!config->user_site_directory);
+    SetFlag(!config->site_import);
+    SetFlag(!config->use_environment);
+    SetFlag(config->verbose);
     /* SetFlag(saw_unbuffered_flag); */
     /* SetFlag(skipfirstline); */
-    SetFlag(Py_BytesWarningFlag);
-    SetFlag(Py_QuietFlag);
-    SetFlag(Py_HashRandomizationFlag);
-    SetFlag(Py_IsolatedFlag);
-    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(core_config->dev_mode));
-    SetFlag(Py_UTF8Mode);
+    SetFlag(config->bytes_warning);
+    SetFlag(config->quiet);
+    SetFlag(config->use_hash_seed == 0 || config->hash_seed != 0);
+    SetFlag(config->isolated);
+    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->dev_mode));
+    SetFlag(config->utf8_mode);
 #undef SetFlag
 
     if (PyErr_Occurred()) {
@@ -2474,8 +2474,10 @@ err_occurred:
     } while (0)
 
 int
-_PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
+_PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
 {
+    const _PyCoreConfig *core_config = &interp->core_config;
+    const _PyMainInterpreterConfig *config = &interp->config;
     int res;
 
     /* _PyMainInterpreterConfig_Read() must set all these variables */
@@ -2523,7 +2525,7 @@ _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
     }
 
     SET_SYS_FROM_STRING_INT_RESULT("dont_write_bytecode",
-                         PyBool_FromLong(Py_DontWriteBytecodeFlag));
+                         PyBool_FromLong(!core_config->write_bytecode));
 
     if (get_warnoptions() == NULL)
         return -1;
