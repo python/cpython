@@ -268,10 +268,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'dump_refs': 0,
         'malloc_stats': 0,
 
-        # None means that the default encoding is read at runtime:
-        # see get_locale_encoding().
+        # None means that the value is get by get_locale_encoding()
         'filesystem_encoding': None,
-        'filesystem_errors': sys.getfilesystemencodeerrors(),
+        'filesystem_errors': None,
+
         'utf8_mode': 0,
         'coerce_c_locale': 0,
         'coerce_c_locale_warn': 0,
@@ -294,7 +294,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'quiet': 0,
         'user_site_directory': 1,
         'buffered_stdio': 1,
-        # None means that check_config() gets the expected encoding at runtime
+
+        # None means that the value is get by get_stdio_encoding()
         'stdio_encoding': None,
         'stdio_errors': None,
 
@@ -302,7 +303,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_check_hash_pycs_mode': 'default',
         '_frozen': 0,
     }
-
 
     def get_stdio_encoding(self, env):
         code = 'import sys; print(sys.stdout.encoding, sys.stdout.errors)'
@@ -315,18 +315,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         out = proc.stdout.rstrip()
         return out.split()
 
-    def get_locale_encoding(self, isolated):
-        if sys.platform in ('win32', 'darwin') or support.is_android:
-            # Windows, macOS and Android use UTF-8
-            return "utf-8"
-
-        code = ('import codecs, locale, sys',
-                'locale.setlocale(locale.LC_CTYPE, "")',
-                'enc = locale.nl_langinfo(locale.CODESET)',
-                'enc = codecs.lookup(enc).name',
-                'print(enc)')
-        args = (sys.executable, '-c', '; '.join(code))
-        env = dict(os.environ)
+    def get_filesystem_encoding(self, isolated, env):
+        code = ('import codecs, locale, sys; '
+                'print(sys.getfilesystemencoding(), '
+                'sys.getfilesystemencodeerrors())')
+        args = (sys.executable, '-c', code)
+        env = dict(env)
         if not isolated:
             env['PYTHONCOERCECLOCALE'] = '0'
             env['PYTHONUTF8'] = '0'
@@ -336,7 +330,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if proc.returncode:
             raise Exception(f"failed to get the locale encoding: "
                             f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
-        return proc.stdout.rstrip()
+        out = proc.stdout.rstrip()
+        return out.split()
 
     def check_config(self, testname, expected):
         expected = dict(self.DEFAULT_CONFIG, **expected)
@@ -356,8 +351,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 expected['stdio_encoding'] = res[0]
             if expected['stdio_errors'] is None:
                 expected['stdio_errors'] = res[1]
-        if expected['filesystem_encoding'] is None:
-            expected['filesystem_encoding'] = self.get_locale_encoding(expected['isolated'])
+        if expected['filesystem_encoding'] is None or expected['filesystem_errors'] is None:
+            res = self.get_filesystem_encoding(expected['isolated'], env)
+            if expected['filesystem_encoding'] is None:
+                expected['filesystem_encoding'] = res[0]
+            if expected['filesystem_errors'] is None:
+                expected['filesystem_errors'] = res[1]
         for key, value in expected.items():
             expected[key] = str(value)
 
