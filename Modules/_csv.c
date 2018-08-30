@@ -19,6 +19,9 @@ typedef struct {
     PyObject *error_obj;   /* CSV exception */
     PyObject *dialects;   /* Dialect registry */
     long field_limit;   /* max parsed field size */
+    PyObject* Dialect_Type;
+    PyObject* Reader_Type;
+    PyObject* Writer_Type;
 } _csvstate;
 
 #define _csvstate(o) ((_csvstate *)PyModule_GetState(o))
@@ -28,6 +31,9 @@ _csv_clear(PyObject *m)
 {
     Py_CLEAR(_csvstate(m)->error_obj);
     Py_CLEAR(_csvstate(m)->dialects);
+    Py_CLEAR(_csvstate(m)->Dialect_Type);
+    Py_CLEAR(_csvstate(m)->Reader_Type);
+    Py_CLEAR(_csvstate(m)->Writer_Type);
     return 0;
 }
 
@@ -36,6 +42,9 @@ _csv_traverse(PyObject *m, visitproc visit, void *arg)
 {
     Py_VISIT(_csvstate(m)->error_obj);
     Py_VISIT(_csvstate(m)->dialects);
+    Py_VISIT(_csvstate(m)->Dialect_Type);
+    Py_VISIT(_csvstate(m)->Reader_Type);
+    Py_VISIT(_csvstate(m)->Writer_Type);
     return 0;
 }
 
@@ -86,8 +95,6 @@ typedef struct {
 
 } DialectObj;
 
-static PyObject* Dialect_Type;
-
 typedef struct {
     PyObject_HEAD
 
@@ -104,8 +111,6 @@ typedef struct {
     unsigned long line_num;     /* Source-file line number */
 } ReaderObj;
 
-static PyObject* Reader_Type;
-
 typedef struct {
     PyObject_HEAD
 
@@ -118,8 +123,6 @@ typedef struct {
     Py_ssize_t rec_len;         /* length of record */
     int num_fields;             /* number of fields in record */
 } WriterObj;
-
-static PyObject* Writer_Type;
 
 /*
  * DIALECT class
@@ -365,7 +368,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         else
             Py_INCREF(dialect);
         /* Can we reuse this instance? */
-        if (PyObject_TypeCheck(dialect, (PyTypeObject *)Dialect_Type) &&
+        if (PyObject_TypeCheck(dialect, (PyTypeObject *)_csvstate_global->Dialect_Type) &&
             delimiter == NULL &&
             doublequote == NULL &&
             escapechar == NULL &&
@@ -487,10 +490,10 @@ static PyObject *
 _call_dialect(PyObject *dialect_inst, PyObject *kwargs)
 {
     if (dialect_inst) {
-        return _PyObject_FastCallDict(Dialect_Type, &dialect_inst, 1, kwargs);
+        return _PyObject_FastCallDict(_csvstate_global->Dialect_Type, &dialect_inst, 1, kwargs);
     }
     else {
-        return _PyObject_FastCallDict(Dialect_Type, NULL, 0, kwargs);
+        return _PyObject_FastCallDict(_csvstate_global->Dialect_Type, NULL, 0, kwargs);
     }
 }
 
@@ -893,11 +896,11 @@ static PyObject *
 csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * iterator, * dialect = NULL;
-    ReaderObj * self = PyObject_GC_New(ReaderObj, (PyTypeObject *)Reader_Type);
+    ReaderObj * self = PyObject_GC_New(ReaderObj, (PyTypeObject *)_csvstate_global->Reader_Type);
 
     if (!self)
         return NULL;
-    Py_INCREF(Reader_Type);
+    Py_INCREF(_csvstate_global->Reader_Type);
 
     self->dialect = NULL;
     self->fields = NULL;
@@ -1306,12 +1309,12 @@ static PyObject *
 csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * output_file, * dialect = NULL;
-    WriterObj * self = PyObject_GC_New(WriterObj, (PyTypeObject*)Writer_Type);
+    WriterObj * self = PyObject_GC_New(WriterObj, (PyTypeObject*)_csvstate_global->Writer_Type);
     _Py_IDENTIFIER(write);
 
     if (!self)
         return NULL;
-    Py_INCREF(Writer_Type);
+    Py_INCREF(_csvstate_global->Writer_Type);
 
     self->dialect = NULL;
     self->writeline = NULL;
@@ -1563,24 +1566,24 @@ PyInit__csv(void)
     PyObject *module;
     const StyleDesc *style;
 
-    Dialect_Type = PyType_FromSpec(&Dialect_Type_spec);
-    if (Dialect_Type == NULL)
-        return NULL;
-
-    Reader_Type = PyType_FromSpec(&Reader_Type_spec);
-    if (Reader_Type == NULL)
-        return NULL;
-    ((PyTypeObject *)Reader_Type)->tp_new = NULL;
-
-    Writer_Type = PyType_FromSpec(&Writer_Type_spec);
-    if (Writer_Type == NULL)
-        return NULL;
-    ((PyTypeObject *)Writer_Type)->tp_new = NULL;
-
     /* Create the module and add the functions */
     module = PyModule_Create(&module_def);
     if (module == NULL)
         return NULL;
+
+    _csvstate(module)->Dialect_Type = PyType_FromSpec(&Dialect_Type_spec);
+    if (_csvstate(module)->Dialect_Type == NULL)
+        return NULL;
+
+    _csvstate(module)->Reader_Type = PyType_FromSpec(&Reader_Type_spec);
+    if (_csvstate(module)->Reader_Type == NULL)
+        return NULL;
+    ((PyTypeObject *)_csvstate(module)->Reader_Type)->tp_new = NULL;
+
+    _csvstate(module)->Writer_Type = PyType_FromSpec(&Writer_Type_spec);
+    if (_csvstate(module)->Writer_Type == NULL)
+        return NULL;
+    ((PyTypeObject *)_csvstate(module)->Writer_Type)->tp_new = NULL;
 
     /* Add version to the module. */
     if (PyModule_AddStringConstant(module, "__version__",
@@ -1607,9 +1610,9 @@ PyInit__csv(void)
     }
 
     /* Add the Dialect type */
-    if (PyModule_AddObject(module, "Dialect", Dialect_Type))
+    if (PyModule_AddObject(module, "Dialect", _csvstate(module)->Dialect_Type))
         return NULL;
-    Py_INCREF(Dialect_Type);
+    Py_INCREF(_csvstate(module)->Dialect_Type);
 
     /* Add the CSV exception object to the module. */
     _csvstate(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
