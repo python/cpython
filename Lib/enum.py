@@ -353,7 +353,7 @@ class EnumMeta(type):
         return MappingProxyType(cls._member_map_)
 
     def __repr__(cls):
-        return "<enum %r>" % cls.__name__
+        return "<enum '%s.%s'>" % (cls.__module__, cls.__qualname__)
 
     def __reversed__(cls):
         return (cls._member_map_[name] for name in reversed(cls._member_names_))
@@ -556,8 +556,10 @@ class Enum(metaclass=EnumMeta):
         raise ValueError("%r is not a valid %s" % (value, cls.__name__))
 
     def __repr__(self):
-        return "<%s.%s: %r>" % (
-                self.__class__.__name__, self._name_, self._value_)
+        return "<%s.%s.%s: %r>" % (self.__class__.__module__,
+                                   self.__class__.__qualname__,
+                                   self._name_,
+                                   self._value_)
 
     def __str__(self):
         return "%s.%s" % (self.__class__.__name__, self._name_)
@@ -711,10 +713,12 @@ class Flag(Enum):
     def __repr__(self):
         cls = self.__class__
         if self._name_ is not None:
-            return '<%s.%s: %r>' % (cls.__name__, self._name_, self._value_)
+            return '<%s.%s.%s: %r>' % (
+                cls.__module__, cls.__qualname__, self._name_, self._value_)
         members, uncovered = _decompose(cls, self._value_)
-        return '<%s.%s: %r>' % (
-                cls.__name__,
+        return '<%s.%s.%s: %r>' % (
+                cls.__module__,
+                cls.__qualname__,
                 '|'.join([str(m._name_ or m._value_) for m in members]),
                 self._value_,
                 )
