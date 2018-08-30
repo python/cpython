@@ -933,3 +933,27 @@ runtime):
    backslash escapes the next double quotation mark as
    described in rule 3.
 
+6. Note that some special meta-chars ``&|^<>!()%`` should be escaped,
+   additionally if arguments contain unpaired (also escaped) quotes
+   before (and another like a percent char ``%`` - always (regardless
+   paired/unpaired quotes).
+   This chars can be escaped using switching quotation process (so
+   quasy enclosed in aditional quotes, like ``1&&2`` -> ``1"&&"2``, thereby 
+   backslashes can be joined with this chars but it's important to 
+   consider the backslash before new closing quote, so although both of
+   ``1\\&&\\2`` -> ``1"\\&&"\\2`` as well as a bit longer variant
+   ``1\\&&\\2`` -> ``1"\\&&\\\\"2`` (with double escaped backslash) are correct,
+   the short (first) notation is prefered.
+
+Note that the current escape resp. quoting of arguments for windows works only
+with executables using CommandLineToArgv, CRT-library or similar, as well as
+with the windows batch files (excepting the newline, see below).
+Although it is the common escape algorithm, but, in fact, the way how the
+executable parses the command-line (resp. splits it into single arguments)
+is decisive.
+
+Unfortunately, there is currently no way to supply newline character within 
+an argument to the batch files (``.cmd`` or ``.bat``) or to the command 
+processor (``cmd.exe /c``), because this causes truncation of command-line
+(also the argument chain) on the first newline character. 
+But it works properly with an executable (using CommandLineToArgv, etc).

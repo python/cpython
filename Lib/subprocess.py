@@ -254,11 +254,12 @@ def list2cmdline(seq):
        before (and another like a percent char `%` - always (regardless
        paired/unpaired quotes).
        This chars can be escaped using switching quotation process (so
-       quasy enclosed in aditional quotes, like '1&&2' -> '1"&&"2', thereby 
+       quasy enclosed in aditional quotes, like `1&&2` -> `1"&&"2`, thereby 
        backslashes can be joined with this chars but it's important to 
-       consider the backslash before new closing quote, so both of
-       '1\\&&\\2' -> '1"\\&&"\\2' as well as a bit longer variant
-       '1\\&&\\2' -> '1"\\&&\\\\"2' (with double escaped backslash) are correct.
+       consider the backslash before new closing quote, so although both of
+       `1\\&&\\2` -> `1"\\&&"\\2` as well as a bit longer variant
+       `1\\&&\\2` -> `1"\\&&\\\\"2` (with double escaped backslash) are correct,
+       the short (first) notation is prefered.
        See under [SB-0D-001-win-exec] for more info.
     """
 
