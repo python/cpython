@@ -1,0 +1,3 @@
+When the queue is closed, :exc:`ValueError` is now raised by
+:meth:`multiprocessing.Queue.put` and :meth:`multiprocessing.Queue.get`
+instead of :exc:`AssertionError` and :exc:`OSError`, respectively.

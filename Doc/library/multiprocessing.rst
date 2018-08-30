@@ -786,6 +786,10 @@ For an example of the usage of queues for interprocess communication see
       available, else raise the :exc:`queue.Full` exception (*timeout* is
       ignored in that case).
 
+      .. versionchanged:: 3.8
+         If the queue is closed, :exc:`ValueError` is raised instead of
+         :exc:`AssertionError`.
+
    .. method:: put_nowait(obj)
 
       Equivalent to ``put(obj, False)``.
@@ -799,6 +803,10 @@ For an example of the usage of queues for interprocess communication see
       exception if no item was available within that time.  Otherwise (block is
       ``False``), return an item if one is immediately available, else raise the
       :exc:`queue.Empty` exception (*timeout* is ignored in that case).
+
+      .. versionchanged:: 3.8
+         If the queue is closed, :exc:`ValueError` is raised instead of
+         :exc:`OSError`.
 
    .. method:: get_nowait()
 
