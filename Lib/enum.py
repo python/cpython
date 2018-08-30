@@ -562,7 +562,9 @@ class Enum(metaclass=EnumMeta):
                                    self._value_)
 
     def __str__(self):
-        return "%s.%s" % (self.__class__.__name__, self._name_)
+        return "%s.%s.%s" % (self.__class__.__module__,
+                             self.__class__.__qualname__,
+                             self._name_)
 
     def __dir__(self):
         added_behavior = [
@@ -726,13 +728,15 @@ class Flag(Enum):
     def __str__(self):
         cls = self.__class__
         if self._name_ is not None:
-            return '%s.%s' % (cls.__name__, self._name_)
+            return '%s.%s.%s' % (cls.__module__, cls.__qualname__, self._name_)
         members, uncovered = _decompose(cls, self._value_)
         if len(members) == 1 and members[0]._name_ is None:
-            return '%s.%r' % (cls.__name__, members[0]._value_)
+            return '%s.%s.%r' % (
+                cls.__module__, cls.__qualname__, members[0]._value_)
         else:
-            return '%s.%s' % (
-                    cls.__name__,
+            return '%s.%s.%s' % (
+                    cls.__module__,
+                    cls.__qualname__,
                     '|'.join([str(m._name_ or m._value_) for m in members]),
                     )
 
