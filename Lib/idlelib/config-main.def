@@ -68,8 +68,6 @@ encoding= none
 
 [PyShell]
 auto-squeeze-min-lines= 50
-show-squeezed-tooltips= 1
-squeezed-tooltips-delay= 0
 
 [Indent]
 use-spaces= 1

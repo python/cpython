@@ -426,15 +426,12 @@ class TestExpandingButton(unittest.TestCase):
 
         # Set default values for the configuration settings
         squeezer.auto_squeeze_min_lines = 50
-        squeezer.should_show_tooltip = False
-        squeezer.tooltip_delay = 1500
         return squeezer
 
     @patch('idlelib.squeezer.Hovertip', autospec=Hovertip)
-    def test_init_no_tooltip(self, MockHovertip):
+    def test_init(self, MockHovertip):
         """Test the simplest creation of an ExpandingButton"""
         squeezer = self.make_mock_squeezer()
-        squeezer.should_show_tooltip = False
         text_widget = squeezer.editwin.text
 
         expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
@@ -447,26 +444,14 @@ class TestExpandingButton(unittest.TestCase):
         # check that the text widget still contains no text
         self.assertEqual(text_widget.get('1.0', 'end'), '\n')
 
-        # check that no tooltip was created
-        self.assertEqual(MockHovertip.call_count, 0)
-
         # check that the mouse events are bound
         self.assertIn('<Double-Button-1>', expandingbutton.bind())
         right_button_code = '<Button-%s>' % ('2' if macosx.isAquaTk() else '3')
         self.assertIn(right_button_code, expandingbutton.bind())
 
-    @patch('idlelib.squeezer.Hovertip', autospec=Hovertip)
-    def test_init_tooltip(self, MockHovertip):
-        """test tooltip creation"""
-        squeezer = self.make_mock_squeezer()
-        squeezer.should_show_tooltip = True
-        squeezer.tooltip_delay = SENTINEL_VALUE
-        expandingbutton = ExpandingButton('TEXT', 'TAGS', 50, squeezer)
-
         # check that ToolTip was called once, with appropriate values
         self.assertEqual(MockHovertip.call_count, 1)
-        MockHovertip.assert_called_with(expandingbutton, ANY,
-                                        hover_delay=SENTINEL_VALUE)
+        MockHovertip.assert_called_with(expandingbutton, ANY, hover_delay=ANY)
 
         # check that 'right-click' appears in the tooltip text
         tooltip_text = MockHovertip.call_args[0][1]

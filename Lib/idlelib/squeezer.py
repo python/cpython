@@ -26,15 +26,6 @@ from idlelib.tooltip import Hovertip
 from idlelib import macosx
 
 
-def _add_to_rmenu(editwin, specs):
-    """Utility func: Add specs to the right-click menu of the given editwin."""
-    # Important: don't use += or .append() here!!!
-    # rmenu_specs has a default value set as a class attribute, so we must be
-    # sure to create an instance attribute here, without changing the class
-    # attribute.
-    editwin.rmenu_specs = editwin.rmenu_specs + specs
-
-
 def count_lines_with_wrapping(s, linewidth=80, tabwidth=8):
     """Count the number of lines in a given string.
 
@@ -92,8 +83,6 @@ def count_lines_with_wrapping(s, linewidth=80, tabwidth=8):
     return linecount
 
 
-# define the extension's classes
-
 class ExpandingButton(tk.Button):
     """Class for the "squeezed" text buttons used by Squeezer
 
@@ -121,12 +110,10 @@ class ExpandingButton(tk.Button):
         tk.Button.__init__(self, text, text=button_text,
                            background="#FFFFC0", activebackground="#FFFFE0")
 
-        if self.squeezer.should_show_tooltip:
-            button_tooltip_text = (
-                "Double-click to expand, right-click for more options."
-            )
-            Hovertip(self, button_tooltip_text,
-                     hover_delay=self.squeezer.tooltip_delay)
+        button_tooltip_text = (
+            "Double-click to expand, right-click for more options."
+        )
+        Hovertip(self, button_tooltip_text, hover_delay=80)
 
         self.bind("<Double-Button-1>", self.expand)
         if macosx.isAquaTk():
@@ -222,14 +209,6 @@ class Squeezer:
         cls.auto_squeeze_min_lines = idleConf.GetOption(
             "main", "PyShell", "auto-squeeze-min-lines",
             type="int", default=50,
-        )
-        cls.should_show_tooltip = idleConf.GetOption(
-            "main", "PyShell", "show-squeezed-tooltips",
-            type="bool", default=True,
-        )
-        cls.tooltip_delay = idleConf.GetOption(
-            "main", "PyShell", "squeezed-tooltips-delay",
-            type="int", default=0,
         )
 
     def __init__(self, editwin):

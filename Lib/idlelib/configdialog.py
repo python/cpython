@@ -1823,12 +1823,6 @@ class GenPage(Frame):
                 frame_auto_squeeze_min_lines: Frame
                     auto_squeeze_min_lines_title: Label
                     (*)auto_squeeze_min_lines_int: Entry - auto_squeeze_min_lines
-                frame_show_squeezed_tooltips: Frame
-                    show_squeezed_tooltips_title: Label
-                    (*)show_squeezed_tooltips_bool: Entry - show_squeezed_tooltips
-                frame_squeezed_tooltips_delay: Frame
-                    squeezed_tooltips_delay_title: Label
-                    (*)squeezed_tooltips_delay_int: Entry - squeezed_tooltips_delay
             frame_help: LabelFrame
                 frame_helplist: Frame
                     frame_helplist_buttons: Frame
@@ -1856,10 +1850,6 @@ class GenPage(Frame):
 
         self.auto_squeeze_min_lines = tracers.add(
                 StringVar(self), ('main', 'PyShell', 'auto-squeeze-min-lines'))
-        self.show_squeezed_tooltips = tracers.add(
-                StringVar(self), ('main', 'PyShell', 'show-squeezed-tooltips'))
-        self.squeezed_tooltips_delay = tracers.add(
-                StringVar(self), ('main', 'PyShell', 'squeezed-tooltips-delay'))
 
         self.autosave = tracers.add(
                 IntVar(self), ('main', 'General', 'autosave'))
@@ -1946,18 +1936,6 @@ class GenPage(Frame):
         self.auto_squeeze_min_lines_int = Entry(
             frame_auto_squeeze_min_lines, width=4,
             textvariable=self.auto_squeeze_min_lines)
-        frame_show_squeezed_tooltips = Frame(frame_shell, borderwidth=0)
-        show_squeezed_tooltips_title = Label(frame_show_squeezed_tooltips,
-                                             text='Show Squeezed Tooltips:')
-        self.show_squeezed_tooltips_on = Checkbutton(
-            frame_show_squeezed_tooltips,
-            variable=self.show_squeezed_tooltips)
-        frame_squeezed_tooltips_delay = Frame(frame_shell, borderwidth=0)
-        squeezed_tooltips_delay_title = Label(frame_squeezed_tooltips_delay,
-                                              text='Squeezed Tooltip Delay:')
-        self.squeezed_tooltips_delay_int = Entry(
-            frame_squeezed_tooltips_delay, width=4,
-            textvariable=self.squeezed_tooltips_delay)
 
         # frame_help.
         frame_helplist = Frame(frame_help)
@@ -2029,14 +2007,6 @@ class GenPage(Frame):
         auto_squeeze_min_lines_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.auto_squeeze_min_lines_int.pack(side=TOP, padx=5, pady=5)
 
-        frame_show_squeezed_tooltips.pack(side=TOP, padx=5, pady=0, fill=X)
-        show_squeezed_tooltips_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.show_squeezed_tooltips_on.pack(side=TOP, padx=5, pady=5)
-
-        frame_squeezed_tooltips_delay.pack(side=TOP, padx=5, pady=0, fill=X)
-        squeezed_tooltips_delay_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.squeezed_tooltips_delay_int.pack(side=TOP, padx=5, pady=5)
-
         # frame_help.
         frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
         frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
@@ -2075,10 +2045,6 @@ class GenPage(Frame):
         # Set variables for shell windows.
         self.auto_squeeze_min_lines.set(idleConf.GetOption(
                 'main', 'PyShell', 'auto-squeeze-min-lines', type='int'))
-        self.show_squeezed_tooltips.set(idleConf.GetOption(
-                'main', 'PyShell', 'show-squeezed-tooltips', type='bool'))
-        self.squeezed_tooltips_delay.set(idleConf.GetOption(
-                'main', 'PyShell', 'squeezed-tooltips-delay', type='int'))
 
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
@@ -2274,13 +2240,8 @@ long to highlight if cursor is not moved (0 means forever).
 CodeContext: Maxlines is the maximum number of code context lines to
 display when Code Context is turned on for an editor window.
 
-Shell Preferences:
-* Auto-Squeeze Min. Lines is the minimum number of lines of output to
-  automatically "squeeze".
-* Show Squeezed Tooltips toggles whether tooltips are shown for squeezed
-  outputs.
-* Squeezed Tooltips Delay sets the mouse hover delay over a squeezed output
-  before its tooltip is shown, in milliseconds.
+Shell Preferences: Auto-Squeeze Min. Lines is the minimum number of lines
+of output to automatically "squeeze".
 '''
 }
 
