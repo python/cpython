@@ -1,0 +1,1 @@
+Change enum ``__repr__``s and ``__str__``s to use the fully qualified name.
