@@ -180,7 +180,8 @@ class ExpandingButton(tk.Button):
 
         View the original text in a separate text viewer window.
         """
-        view_text(self.text, "Squeezed Output Viewer", self.s, wrap='none')
+        view_text(self.text, "Squeezed Output Viewer", self.s,
+                  modal=False, wrap='none')
 
     rmenu_specs = (
         # item structure: (label, method_name)

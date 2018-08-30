@@ -1,9 +1,29 @@
 """Simple text browser for IDLE
 
 """
-from tkinter import Toplevel, Text
+from tkinter import Toplevel, Text, TclError,\
+    HORIZONTAL, VERTICAL, N, S, E, W
 from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
+
+
+class AutoHiddenScrollbar(Scrollbar):
+    """A scrollbar that is automatically hidden when not needed.
+
+    Only the grid geometry manager is supported.
+    """
+    def set(self, lo, hi):
+        if float(lo) > 0.0 or float(hi) < 1.0:
+            self.grid()
+        else:
+            self.grid_remove()
+        super().set(lo, hi)
+
+    def pack(self, **kwargs):
+        raise TclError(f'{self.__class__.__name__} does not support "pack"')
+
+    def place(self, **kwargs):
+        raise TclError(f'{self.__class__.__name__} does not support "place"')
 
 
 class TextFrame(Frame):
@@ -24,15 +44,27 @@ class TextFrame(Frame):
 
         self.text = text = Text(self, wrap=wrap, highlightthickness=0,
                                 fg=self.fg, bg=self.bg)
-        self.scroll = scroll = Scrollbar(self, orient='vertical',
-                                         takefocus=False, command=text.yview)
-        text['yscrollcommand'] = scroll.set
+        text.grid(row=0, column=0, sticky=N+S+E+W)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
         text.insert(0.0, rawtext)
         text['state'] = 'disabled'
         text.focus_set()
 
-        scroll.pack(side='right', fill='y')
-        text.pack(side='left', expand=True, fill='both')
+        # vertical scrollbar
+        self.yscroll = yscroll = AutoHiddenScrollbar(self, orient=VERTICAL,
+                                                     takefocus=False,
+                                                     command=text.yview)
+        text['yscrollcommand'] = yscroll.set
+        yscroll.grid(row=0, column=1, sticky=N+S)
+
+        if wrap == 'none':
+            # horizontal scrollbar
+            self.xscroll = xscroll = AutoHiddenScrollbar(self, orient=HORIZONTAL,
+                                                         takefocus=False,
+                                                         command=text.xview)
+            text['xscrollcommand'] = xscroll.set
+            xscroll.grid(row=1, column=0, sticky=E+W)
 
 
 class ViewFrame(Frame):
