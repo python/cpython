@@ -2290,9 +2290,16 @@ class TestDateTime(TestDate):
         self.assertLessEqual(abs(from_timestamp - from_now), tolerance)
 
     def test_strptime(self):
+        string = '2004-12-01 13:02:47.197'
+        format = '%Y-%m-%d %H:%M:%S.%f'
+        expected = _strptime._strptime_datetime(self.theclass, string, format)
+        got = self.theclass.strptime(string, format)
+        self.assertEqual(expected, got)
+        self.assertIs(type(expected), self.theclass)
+        self.assertIs(type(got), self.theclass)
+
+        # bpo-34482: Check that surrogates are handled properly.
         inputs = [
-            ('2004-12-01 13:02:47.197', '%Y-%m-%d %H:%M:%S.%f'),
-            # bpo-34482: Check that surrogates are handled properly.
             ('2004-12-01\ud80013:02:47.197', '%Y-%m-%d\ud800%H:%M:%S.%f'),
             ('2004\ud80012-01 13:02:47.197', '%Y\ud800%m-%d %H:%M:%S.%f'),
             ('2004-12-01 13:02\ud80047.197', '%Y-%m-%d %H:%M\ud800%S.%f'),
@@ -2303,8 +2310,6 @@ class TestDateTime(TestDate):
                                                         format)
                 got = self.theclass.strptime(string, format)
                 self.assertEqual(expected, got)
-                self.assertIs(type(expected), self.theclass)
-                self.assertIs(type(got), self.theclass)
 
         strptime = self.theclass.strptime
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
