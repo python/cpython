@@ -1837,38 +1837,17 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 static PyObject *
 odictiter_reduce(odictiterobject *di)
 {
-    PyObject *list, *iter;
-
-    list = PyList_New(0);
-    if (!list)
-        return NULL;
+    /* copy the iterator state */
+    odictiterobject tmp = *di;
+    Py_XINCREF(tmp.di_odict);
 
     /* iterate the temporary into a list */
-    for(;;) {
-        PyObject *element = odictiter_iternext(di);
-        if (element) {
-            if (PyList_Append(list, element)) {
-                Py_DECREF(element);
-                Py_DECREF(list);
-                return NULL;
-            }
-            Py_DECREF(element);
-        }
-        else {
-            /* done iterating? */
-            break;
-        }
-    }
-    if (PyErr_Occurred()) {
-        Py_DECREF(list);
+    PyObject *list = PySequence_List((PyObject*)&tmp);
+    Py_XDECREF(tmp.di_odict);
+    if (list == NULL) {
         return NULL;
     }
-    iter = _PyObject_GetBuiltin("iter");
-    if (iter == NULL) {
-        Py_DECREF(list);
-        return NULL;
-    }
-    return Py_BuildValue("N(N)", iter, list);
+    return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
 }
 
 static PyMethodDef odictiter_methods[] = {

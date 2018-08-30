@@ -848,36 +848,14 @@ static PyObject *setiter_iternext(setiterobject *si);
 static PyObject *
 setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *list;
-    setiterobject tmp;
-
-    list = PyList_New(0);
-    if (!list)
-        return NULL;
-
     /* copy the iterator state */
-    tmp = *si;
+    setiterobject tmp = *si;
     Py_XINCREF(tmp.si_set);
 
     /* iterate the temporary into a list */
-    for(;;) {
-        PyObject *element = setiter_iternext(&tmp);
-        if (element) {
-            if (PyList_Append(list, element)) {
-                Py_DECREF(element);
-                Py_DECREF(list);
-                Py_XDECREF(tmp.si_set);
-                return NULL;
-            }
-            Py_DECREF(element);
-        } else
-            break;
-    }
+    PyObject *list = PySequence_List((PyObject*)&tmp);
     Py_XDECREF(tmp.si_set);
-    /* check for error */
-    if (tmp.si_set != NULL) {
-        /* we have an error */
-        Py_DECREF(list);
+    if (list == NULL) {
         return NULL;
     }
     return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
