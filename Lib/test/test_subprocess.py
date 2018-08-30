@@ -1529,7 +1529,7 @@ class CommandTryInject (BaseTestCase):
         os.remove(self.batname)
         super(CommandTryInject, self).tearDown()
 
-    def _do_execwithargs(self, *args):
+    def _do_execwithargs(self, *args, **kwargs):
         for cmd in (
             (sys.executable, '-c', 'import sys;print(sys.argv[1:])') + args,
             (self.batname,) + args,
@@ -1544,7 +1544,9 @@ class CommandTryInject (BaseTestCase):
             elif p.returncode != 0:
               stdout += " ERROR: (" + p.returncode +")"
             self.assertEqual(stdout.rstrip(), '%r' % (list(args),))
+            if kwargs.get('exeOnly'): break
 
+    # test several meta-chars are escaped properly
     INJECT_ARGS = (
         r'test"whoami',     r'test""whoami',
         r'test"""whoami',   r'test""""whoami',
@@ -1612,6 +1614,18 @@ class CommandTryInject (BaseTestCase):
         r'test%USERDOMAIN%\\&\\"test',
         r'test" %USERDOMAIN%\\&\\"test',
     )
+
+    # test proper escape on new-line
+    INJECT_ARGS_NL = (
+        'test\nwhoami',     'test\n&whoami',
+        'test"\nwhoami',    'test""\nwhoami',
+        'test"""\nwhoami',  'test""""\nwhoami',
+
+        'test;\n&echo "',   '"test;\n&echo "',
+        'test";\n&echo "',  '"test";\n&echo "',
+        '""test";\n&echo "',
+    )
+
     def test_inject_all(self):
         args = self.INJECT_ARGS
         for args in (
@@ -1624,7 +1638,7 @@ class CommandTryInject (BaseTestCase):
 
     def test_inject_particular(self):
         if not DEBUG:
-            test_support.requires('slow-tests')
+            test_support.requires('subprocess')
         for a in self.INJECT_ARGS:
             self._do_execwithargs('1st', a, '3rd')
 
@@ -1648,6 +1662,24 @@ class CommandTryInject (BaseTestCase):
                     a += map[random.randint(0, len(map)-1)]
                 args += (a,)
             self._do_execwithargs(*args)
+
+    def test_inject_nl_all(self):
+        # currently no way to supply newline char to batch-files, so test exe only:
+        args = self.INJECT_ARGS_NL
+        for args in (
+            ('START',) + args + ('END',),
+            ('START"',) + args + ('END',),
+            ('START',) + args + ('"END',),
+            ('START"',) + args + ('"END',),
+        ):
+            self._do_execwithargs(*args, exeOnly=True)
+
+    def test_inject_nl_particular(self):
+        if not DEBUG:
+            test_support.requires('subprocess')
+        # currently no way to supply newline char to batch-files, so test exe only:
+        for a in self.INJECT_ARGS_NL:
+            self._do_execwithargs('1st', a, '3rd', exeOnly=True)
         
 
 def test_main():

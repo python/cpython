@@ -284,7 +284,7 @@ def list2cmdline(seq):
         specChars = None        # within special escape, using unpaired quotes
 
         for c in arg:
-            if c in ' \t':
+            if c.isspace():
                 needquote = True
                 if bscnt: needescape = True
             elif c in specMetaChars:
