@@ -294,34 +294,6 @@ class Squeezer:
 
         return count_lines_with_wrapping(s, linewidth, tabwidth)
 
-    def expand_last_squeezed_event(self, event):
-        """expand-last-squeezed event handler
-
-        Expand the last squeezed text in the Text widget.
-
-        If there is no such squeezed text, give the user a small warning and
-        do nothing.
-        """
-        if len(self.expandingbuttons) > 0:
-            self.expandingbuttons[-1].expand(event)
-        else:
-            self.text.bell()
-        return "break"
-
-    def view_last_squeezed_event(self, event):
-        """view-last-squeezed event handler
-
-        Preview the last squeezed text in the Text widget.
-
-        If there is no such squeezed text, give the user a small warning and
-        do nothing.
-        """
-        if len(self.expandingbuttons) > 0:
-            self.expandingbuttons[-1].view(event)
-        else:
-            self.text.bell()
-        return "break"
-
     def squeeze_current_text_event(self, event):
         """squeeze-current-text event handler
 
