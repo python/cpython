@@ -32,10 +32,10 @@ prog = re.compile(make_pat(), re.S)
 idprog = re.compile(r"\s+(\w+)", re.S)
 
 def color_config(text):  # Called from htest, Editor, and Turtle Demo.
-    '''Set color opitons of Text widget.
+    """Set color options of Text widget.
 
     Should be called whenever ColorDelegator is called.
-    '''
+    """
     # Not automatic because ColorDelegator does not know 'text'.
     theme = idleConf.CurrentTheme()
     normal_colors = idleConf.GetHighlight(theme, 'normal')
@@ -49,6 +49,7 @@ def color_config(text):  # Called from htest, Editor, and Turtle Demo.
         selectbackground=select_colors['background'],
         inactiveselectbackground=select_colors['background'],  # new in 8.5
     )
+
 
 class ColorDelegator(Delegator):
 
@@ -284,6 +285,7 @@ def _color_delegator(parent):  # htest #
     p = Percolator(text)
     d = ColorDelegator()
     p.insertfilter(d)
+
 
 if __name__ == "__main__":
     from unittest import main
