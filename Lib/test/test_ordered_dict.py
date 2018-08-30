@@ -732,6 +732,26 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
                 del od['c']
         self.assertEqual(list(od), list('bdeaf'))
 
+    def test_iterators_pickling(self):
+        OrderedDict = self.OrderedDict
+        pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
+        od = OrderedDict(pairs)
+
+        expected = (
+            ('keys', [k for k, v in pairs[:1]]),
+            ('values', [v for k, v in pairs[:1]]),
+            ('items', pairs[:1]),
+        )
+        for method_name, items in expected:
+            meth = getattr(od, method_name)
+            with self.subTest(method_name=method_name):
+                for i in range(pickle.HIGHEST_PROTOCOL + 1):
+                    it = iter(meth())
+                    next(it)
+                    p = pickle.dumps(it, i)
+                    unpickled = pickle.loads(p)
+                    self.assertEqual(list(it), list(unpickled))
+
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):
 
