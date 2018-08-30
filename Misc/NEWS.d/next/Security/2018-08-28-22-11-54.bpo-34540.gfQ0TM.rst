@@ -1,0 +1,3 @@
+When ``shutil.make_archive`` falls back to the external ``zip`` problem, it
+uses :mod:`subprocess` to invoke it rather than :mod:`distutils.spawn`. This
+closes a possible shell injection vector.
