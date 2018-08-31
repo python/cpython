@@ -1287,7 +1287,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
             return
 
         # Constructing from a packed address
-        if isinstance(address, (bytes,bytearray)):
+        if isinstance(address, (bytes, bytearray)):
             self._check_packed_address(address, 4)
             self._ip = int.from_bytes(address, 'big')
             return

@@ -1,1 +1,1 @@
-Addeded support for bytearray in creating a new IPv4 address.
+Added support for 'bytearray' type in creating a new IPv4 address.
