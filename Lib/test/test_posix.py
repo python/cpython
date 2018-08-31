@@ -1548,7 +1548,8 @@ class TestPosixSpawn(unittest.TestCase):
         with self.assertRaises(ValueError):
             posix.posix_spawn(sys.executable,
                               [sys.executable, "-c", "pass"],
-                              os.environ, setsigmask=[9998, 9999])
+                              os.environ, setsigmask=[signal.NSIG,
+                                                      signal.NSIG+1])
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
@@ -1569,7 +1570,8 @@ class TestPosixSpawn(unittest.TestCase):
 
         pid2, status = os.waitpid(pid, 0)
         self.assertEqual(pid2, pid)
-        self.assertNotEqual(status, 0)
+        self.assertTrue(os.WIFSIGNALED(status), status)
+        self.assertEqual(os.WTERMSIG(status), signal.SIGUSR1)
 
     def test_setsigdef_wrong_type(self):
         with self.assertRaises(TypeError):
