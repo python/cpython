@@ -131,7 +131,7 @@ ZipFile Objects
 
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
-                   compresslevel=None)
+                   compresslevel=None, *, strict_timestamps=True)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
    file-like object or a :term:`path-like object`.
@@ -169,6 +169,12 @@ ZipFile Objects
    When using :const:`ZIP_BZIP2` integers ``1`` through ``9`` are accepted
    (see :class:`bz2 <bz2.BZ2File>` for more information).
 
+   The *strict_timestamps* argument, when set to ``False``, allows to
+   zip files older than 1980-01-01 at the cost of setting the
+   timestamp to 1980-01-01.
+   Similar behavior occurs with files newer than 2107-12-31,
+   the timestamp is also set to the limit.
+
    If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
    ZIP structures for an empty archive will be written to the file.
@@ -202,6 +208,9 @@ ZipFile Objects
 
    .. versionchanged:: 3.7
       Add the *compresslevel* parameter.
+
+   .. versionadded:: 3.8
+      The *strict_timestamps* keyword-only argument
 
 
 .. method:: ZipFile.close()
@@ -368,7 +377,7 @@ ZipFile Objects
 
 
 .. method:: ZipFile.write(filename, arcname=None, compress_type=None, \
-                          compresslevel=None, *, strict_timestamps=True)
+                          compresslevel=None)
 
    Write the file named *filename* to the archive, giving it the archive name
    *arcname* (by default, this will be the same as *filename*, but without a drive
@@ -377,11 +386,6 @@ ZipFile Objects
    the new entry. Similarly, *compresslevel* will override the constructor if
    given.
    The archive must be open with mode ``'w'``, ``'x'`` or ``'a'``.
-   The *strict_timestamps* argument, when set to ``False``, allows to
-   zip files older than 1980-01-01 at the cost of setting the
-   timestamp to 1980-01-01.
-   Similar behavior occurs with files newer than 2107-12-31,
-   the timestamp is also set to the limit.
 
    .. note::
 
@@ -404,9 +408,6 @@ ZipFile Objects
       Calling :meth:`write` on a ZipFile created with mode ``'r'`` or
       a closed ZipFile will raise a :exc:`ValueError`.  Previously,
       a :exc:`RuntimeError` was raised.
-
-   .. versionadded:: 3.8
-      The *strict_timestamps* keyword-only argument
 
 
 .. method:: ZipFile.writestr(zinfo_or_arcname, data, compress_type=None, \
