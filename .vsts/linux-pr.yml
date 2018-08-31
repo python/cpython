@@ -62,6 +62,7 @@ steps:
     uuid-dev
     xvfb
   displayName: 'Install dependencies'
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 
 - script: ./configure --with-pydebug
