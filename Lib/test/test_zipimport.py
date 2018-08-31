@@ -680,14 +680,12 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
     def doCodeObjectPathTest(self, keep_src, keep_code):
         make_codeobject_test_zip(TEMP_ZIP, self.compression, keep_src, keep_code)
-        try:
-            with test_util.uncache('co_path_test'):
-                with test_util.import_state(path=[TEMP_ZIP], meta_path=sys.meta_path, path_hooks=sys.path_hooks):
-                    import co_path_test
-                    co_path = co_path_test.get_co_filename()
-                    self.assertTrue(co_path.startswith(TEMP_ZIP))
-        finally:
-            support.unlink(TEMP_ZIP)
+        self.addCleanup(support.unlink, TEMP_ZIP)
+        with test_util.uncache('co_path_test'):
+            with test_util.import_state(path=[TEMP_ZIP], meta_path=sys.meta_path, path_hooks=sys.path_hooks):
+                import co_path_test
+                co_path = co_path_test.get_co_filename()
+                self.assertTrue(co_path.startswith(TEMP_ZIP))
 
     def testCodeObjectPathPy(self):
         self.doCodeObjectPathTest(keep_src=True, keep_code=False)
