@@ -101,39 +101,40 @@ typedef int socklen_t;
 #include <sys/kern_control.h>
 #endif
 
-#ifdef HAVE_SOCKADDR_ALG
-#include <linux/if_alg.h>
-#ifndef AF_ALG
-#define AF_ALG 38
-#endif
-#ifndef SOL_ALG
-#define SOL_ALG 279
-#endif
-
 #ifdef HAVE_LINUX_VM_SOCKETS_H
 # include <linux/vm_sockets.h>
 #else
 # undef AF_VSOCK
 #endif
 
-/* Linux 3.19 */
-#ifndef ALG_SET_AEAD_ASSOCLEN
-#define ALG_SET_AEAD_ASSOCLEN           4
-#endif
-#ifndef ALG_SET_AEAD_AUTHSIZE
-#define ALG_SET_AEAD_AUTHSIZE           5
-#endif
-/* Linux 4.8 */
-#ifndef ALG_SET_PUBKEY
-#define ALG_SET_PUBKEY                  6
-#endif
+#ifdef HAVE_SOCKADDR_ALG
 
-#ifndef ALG_OP_SIGN
-#define ALG_OP_SIGN                     2
-#endif
-#ifndef ALG_OP_VERIFY
-#define ALG_OP_VERIFY                   3
-#endif
+# include <linux/if_alg.h>
+# ifndef AF_ALG
+#  define AF_ALG 38
+# endif
+# ifndef SOL_ALG
+#  define SOL_ALG 279
+# endif
+
+/* Linux 3.19 */
+# ifndef ALG_SET_AEAD_ASSOCLEN
+#  define ALG_SET_AEAD_ASSOCLEN           4
+# endif
+# ifndef ALG_SET_AEAD_AUTHSIZE
+#  define ALG_SET_AEAD_AUTHSIZE           5
+# endif
+/* Linux 4.8 */
+# ifndef ALG_SET_PUBKEY
+#  define ALG_SET_PUBKEY                  6
+# endif
+
+# ifndef ALG_OP_SIGN
+#  define ALG_OP_SIGN                     2
+# endif
+# ifndef ALG_OP_VERIFY
+#  define ALG_OP_VERIFY                   3
+# endif
 
 #endif /* HAVE_SOCKADDR_ALG */
 
