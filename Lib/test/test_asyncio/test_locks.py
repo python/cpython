@@ -16,6 +16,10 @@ STR_RGX_REPR = (
 RGX_REPR = re.compile(STR_RGX_REPR)
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class LockTests(test_utils.TestCase):
 
     def setUp(self):
@@ -214,11 +218,11 @@ class LockTests(test_utils.TestCase):
             call_count += 1
             await lock.acquire()
             lock_count += 1
-  
+
         async def lockandtrigger():
             await lock.acquire()
             self.loop.call_soon(trigger)
-          
+
         def trigger():
             t1.cancel()
             lock.release()
@@ -247,8 +251,6 @@ class LockTests(test_utils.TestCase):
         t3.cancel()
         test_utils.run_briefly(self.loop)
         self.assertTrue(t3.cancelled())
-
-
 
     def test_finished_waiter_cancelled(self):
         lock = asyncio.Lock(loop=self.loop)
@@ -576,6 +578,31 @@ class ConditionTests(test_utils.TestCase):
 
         self.assertTrue(cond.locked())
 
+    def test_wait_cancel_after_notify(self):
+        # See bpo-32841
+        cond = asyncio.Condition(loop=self.loop)
+        waited = False
+
+        async def wait_on_cond():
+            nonlocal waited
+            async with cond:
+                waited = True  # Make sure this area was reached
+                await cond.wait()
+
+        waiter = asyncio.ensure_future(wait_on_cond(), loop=self.loop)
+        test_utils.run_briefly(self.loop)  # Start waiting
+
+        self.loop.run_until_complete(cond.acquire())
+        cond.notify()
+        test_utils.run_briefly(self.loop)  # Get to acquire()
+        waiter.cancel()
+        test_utils.run_briefly(self.loop)  # Activate cancellation
+        cond.release()
+        test_utils.run_briefly(self.loop)  # Cancellation should occur
+
+        self.assertTrue(waiter.cancelled())
+        self.assertTrue(waited)
+
     def test_wait_unacquired(self):
         cond = asyncio.Condition(loop=self.loop)
         self.assertRaises(
@@ -783,6 +810,19 @@ class ConditionTests(test_utils.TestCase):
         lock = asyncio.Lock(loop=self.loop)
         with self.assertRaises(ValueError):
             asyncio.Condition(lock, loop=loop)
+
+    def test_timeout_in_block(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        async def task_timeout():
+            condition = asyncio.Condition(loop=loop)
+            async with condition:
+                with self.assertRaises(asyncio.TimeoutError):
+                    await asyncio.wait_for(condition.wait(), timeout=0.5,
+                                           loop=loop)
+
+        loop.run_until_complete(task_timeout())
 
 
 class SemaphoreTests(test_utils.TestCase):

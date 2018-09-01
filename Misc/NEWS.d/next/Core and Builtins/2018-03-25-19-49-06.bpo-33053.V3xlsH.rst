@@ -1,0 +1,4 @@
+When using the -m switch, sys.path[0] is now explicitly expanded as the
+*starting* working directory, rather than being left as the empty path
+(which allows imports from the current working directory at the time of the
+import)

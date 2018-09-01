@@ -63,6 +63,8 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-vv')
         self.assertNotIn(b'stack overflow', err)
 
+    @unittest.skipIf(interpreter_requires_environment(),
+                     'Cannot run -E tests when PYTHON env vars are required.')
     def test_xoptions(self):
         def get_xoptions(*args):
             # use subprocess module directly because test.support.script_helper adds
@@ -278,11 +280,7 @@ class CmdLineTest(unittest.TestCase):
 
     def test_displayhook_unencodable(self):
         for encoding in ('ascii', 'latin-1', 'utf-8'):
-            # We are testing a PYTHON environment variable here, so we can't
-            # use -E, -I, or script_helper (which uses them).  So instead we do
-            # poor-man's isolation by deleting the PYTHON vars from env.
-            env = {key:value for (key,value) in os.environ.copy().items()
-                   if not key.startswith('PYTHON')}
+            env = os.environ.copy()
             env['PYTHONIOENCODING'] = encoding
             p = subprocess.Popen(
                 [sys.executable, '-i'],
@@ -509,25 +507,51 @@ class CmdLineTest(unittest.TestCase):
                 PYTHONDONTWRITEBYTECODE=value,
                 PYTHONVERBOSE=value,
             )
+            dont_write_bytecode = int(bool(value))
             code = (
                 "import sys; "
                 "sys.stderr.write(str(sys.flags)); "
                 f"""sys.exit(not (
                     sys.flags.debug == sys.flags.optimize ==
-                    sys.flags.dont_write_bytecode == sys.flags.verbose ==
+                    sys.flags.verbose ==
                     {expected}
+                    and sys.flags.dont_write_bytecode == {dont_write_bytecode}
                 ))"""
             )
             with self.subTest(envar_value=value):
                 assert_python_ok('-c', code, **env_vars)
 
+    def test_set_pycache_prefix(self):
+        # sys.pycache_prefix can be set from either -X pycache_prefix or
+        # PYTHONPYCACHEPREFIX env var, with the former taking precedence.
+        NO_VALUE = object()  # `-X pycache_prefix` with no `=PATH`
+        cases = [
+            # (PYTHONPYCACHEPREFIX, -X pycache_prefix, sys.pycache_prefix)
+            (None, None, None),
+            ('foo', None, 'foo'),
+            (None, 'bar', 'bar'),
+            ('foo', 'bar', 'bar'),
+            ('foo', '', None),
+            ('foo', NO_VALUE, None),
+        ]
+        for envval, opt, expected in cases:
+            exp_clause = "is None" if expected is None else f'== "{expected}"'
+            code = f"import sys; sys.exit(not sys.pycache_prefix {exp_clause})"
+            args = ['-c', code]
+            env = {} if envval is None else {'PYTHONPYCACHEPREFIX': envval}
+            if opt is NO_VALUE:
+                args[:0] = ['-X', 'pycache_prefix']
+            elif opt is not None:
+                args[:0] = ['-X', f'pycache_prefix={opt}']
+            with self.subTest(envval=envval, opt=opt):
+                with support.temp_cwd():
+                    assert_python_ok(*args, **env)
+
     def run_xdev(self, *args, check_exitcode=True, xdev=True):
         env = dict(os.environ)
         env.pop('PYTHONWARNINGS', None)
         env.pop('PYTHONDEVMODE', None)
-        # Force malloc() to disable the debug hooks which are enabled
-        # by default for Python compiled in debug mode
-        env['PYTHONMALLOC'] = 'malloc'
+        env.pop('PYTHONMALLOC', None)
 
         if xdev:
             args = (sys.executable, '-X', 'dev', *args)
@@ -703,7 +727,20 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), 'True')
         self.assertEqual(proc.returncode, 0, proc)
 
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'bpo-32457 only applies on Windows')
+    def test_argv0_normalization(self):
+        args = sys.executable, '-c', 'print(0)'
+        prefix, exe = os.path.split(sys.executable)
+        executable = prefix + '\\.\\.\\.\\' + exe
 
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              executable=executable)
+        self.assertEqual(proc.returncode, 0, proc)
+        self.assertEqual(proc.stdout.strip(), b'0')
+
+@unittest.skipIf(interpreter_requires_environment(),
+                 'Cannot run -I tests when PYTHON env vars are required.')
 class IgnoreEnvironmentTest(unittest.TestCase):
 
     def run_ignoring_vars(self, predicate, **env_vars):

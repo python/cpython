@@ -1,0 +1,2 @@
+Add the parameter *deterministic* to the
+:meth:`sqlite3.Connection.create_function` method. Patch by Sergey Fedoseev.

@@ -845,33 +845,3 @@ _Py_bytes_endswith(const char *str, Py_ssize_t len, PyObject *args)
 {
     return _Py_bytes_tailmatch(str, len, "endswith", args, +1);
 }
-
-PyDoc_STRVAR_shared(_Py_expandtabs__doc__,
-"B.expandtabs(tabsize=8) -> copy of B\n\
-\n\
-Return a copy of B where all tab characters are expanded using spaces.\n\
-If tabsize is not given, a tab size of 8 characters is assumed.");
-
-PyDoc_STRVAR_shared(_Py_ljust__doc__,
-"B.ljust(width[, fillchar]) -> copy of B\n"
-"\n"
-"Return B left justified in a string of length width. Padding is\n"
-"done using the specified fill character (default is a space).");
-
-PyDoc_STRVAR_shared(_Py_rjust__doc__,
-"B.rjust(width[, fillchar]) -> copy of B\n"
-"\n"
-"Return B right justified in a string of length width. Padding is\n"
-"done using the specified fill character (default is a space)");
-
-PyDoc_STRVAR_shared(_Py_center__doc__,
-"B.center(width[, fillchar]) -> copy of B\n"
-"\n"
-"Return B centered in a string of length width.  Padding is\n"
-"done using the specified fill character (default is a space).");
-
-PyDoc_STRVAR_shared(_Py_zfill__doc__,
-"B.zfill(width) -> copy of B\n"
-"\n"
-"Pad a numeric string B with zeros on the left, to fill a field\n"
-"of the specified width.  B is never truncated.");

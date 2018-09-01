@@ -20,10 +20,12 @@ class _pickle.UnpicklerMemoProxy "UnpicklerMemoProxyObject *" "&UnpicklerMemoPro
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4b3e113468a58e6c]*/
 
-/* Bump this when new opcodes are added to the pickle protocol. */
+/* Bump HIGHEST_PROTOCOL when new opcodes are added to the pickle protocol.
+   Bump DEFAULT_PROTOCOL only when the oldest still supported version of Python
+   already includes it. */
 enum {
     HIGHEST_PROTOCOL = 4,
-    DEFAULT_PROTOCOL = 3
+    DEFAULT_PROTOCOL = 4
 };
 
 /* Pickle opcodes. These must be kept updated with pickle.py.
@@ -1015,7 +1017,7 @@ _Pickler_OpcodeBoundary(PicklerObject *self)
         if(_Pickler_CommitFrame(self)) {
             return -1;
         }
-        /* Flush the content of the commited frame to the underlying
+        /* Flush the content of the committed frame to the underlying
          * file and reuse the pickler buffer for the next frame so as
          * to limit memory usage when dumping large complex objects to
          * a file.
@@ -1380,11 +1382,13 @@ _Unpickler_ResizeMemoList(UnpicklerObject *self, Py_ssize_t new_size)
 
     assert(new_size > self->memo_size);
 
-    PyMem_RESIZE(self->memo, PyObject *, new_size);
-    if (self->memo == NULL) {
+    PyObject **memo_new = self->memo;
+    PyMem_RESIZE(memo_new, PyObject *, new_size);
+    if (memo_new == NULL) {
         PyErr_NoMemory();
         return -1;
     }
+    self->memo = memo_new;
     for (i = self->memo_size; i < new_size; i++)
         self->memo[i] = NULL;
     self->memo_size = new_size;
@@ -3450,6 +3454,8 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
             PickleState *st = _Pickle_GetGlobalState();
             PyObject *reduce_value = Py_BuildValue("(O(OO))",
                                         st->getattr, parent, lastname);
+            if (reduce_value == NULL)
+                goto error;
             status = save_reduce(self, reduce_value, NULL);
             Py_DECREF(reduce_value);
             if (status < 0)
@@ -3938,9 +3944,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     if (_Pickler_OpcodeBoundary(self) < 0)
         return -1;
 
-    if (Py_EnterRecursiveCall(" while pickling an object"))
-        return -1;
-
     /* The extra pers_save argument is necessary to avoid calling save_pers()
        on its returned object. */
     if (!pers_save && self->pers_func) {
@@ -3950,7 +3953,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
              1   if a persistent id was saved.
          */
         if ((status = save_pers(self, obj)) != 0)
-            goto done;
+            return status;
     }
 
     type = Py_TYPE(obj);
@@ -3963,40 +3966,39 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     /* Atom types; these aren't memoized, so don't check the memo. */
 
     if (obj == Py_None) {
-        status = save_none(self, obj);
-        goto done;
+        return save_none(self, obj);
     }
     else if (obj == Py_False || obj == Py_True) {
-        status = save_bool(self, obj);
-        goto done;
+        return save_bool(self, obj);
     }
     else if (type == &PyLong_Type) {
-        status = save_long(self, obj);
-        goto done;
+        return save_long(self, obj);
     }
     else if (type == &PyFloat_Type) {
-        status = save_float(self, obj);
-        goto done;
+        return save_float(self, obj);
     }
 
     /* Check the memo to see if it has the object. If so, generate
        a GET (or BINGET) opcode, instead of pickling the object
        once again. */
     if (PyMemoTable_Get(self->memo, obj)) {
-        if (memo_get(self, obj) < 0)
-            goto error;
-        goto done;
+        return memo_get(self, obj);
     }
 
     if (type == &PyBytes_Type) {
-        status = save_bytes(self, obj);
-        goto done;
+        return save_bytes(self, obj);
     }
     else if (type == &PyUnicode_Type) {
-        status = save_unicode(self, obj);
-        goto done;
+        return save_unicode(self, obj);
     }
-    else if (type == &PyDict_Type) {
+
+    /* We're only calling Py_EnterRecursiveCall here so that atomic
+       types above are pickled faster. */
+    if (Py_EnterRecursiveCall(" while pickling an object")) {
+        return -1;
+    }
+
+    if (type == &PyDict_Type) {
         status = save_dict(self, obj);
         goto done;
     }
@@ -4152,9 +4154,10 @@ dump(PicklerObject *self, PyObject *obj)
     }
 
     if (save(self, obj, 0) < 0 ||
-        _Pickler_Write(self, &stop_op, 1) < 0)
+        _Pickler_Write(self, &stop_op, 1) < 0 ||
+        _Pickler_CommitFrame(self) < 0)
         return -1;
-
+    self->framing = 0;
     return 0;
 }
 
@@ -6285,26 +6288,15 @@ load_mark(UnpicklerObject *self)
      * mark stack.
      */
 
-    if ((self->num_marks + 1) >= self->marks_size) {
-        size_t alloc;
-
-        /* Use the size_t type to check for overflow. */
-        alloc = ((size_t)self->num_marks << 1) + 20;
-        if (alloc > (PY_SSIZE_T_MAX / sizeof(Py_ssize_t)) ||
-            alloc <= ((size_t)self->num_marks + 1)) {
+    if (self->num_marks >= self->marks_size) {
+        size_t alloc = ((size_t)self->num_marks << 1) + 20;
+        Py_ssize_t *marks_new = self->marks;
+        PyMem_RESIZE(marks_new, Py_ssize_t, alloc);
+        if (marks_new == NULL) {
             PyErr_NoMemory();
             return -1;
         }
-
-        if (self->marks == NULL)
-            self->marks = PyMem_NEW(Py_ssize_t, alloc);
-        else
-            PyMem_RESIZE(self->marks, Py_ssize_t, alloc);
-        if (self->marks == NULL) {
-            self->marks_size = 0;
-            PyErr_NoMemory();
-            return -1;
-        }
+        self->marks = marks_new;
         self->marks_size = (Py_ssize_t)alloc;
     }
 
@@ -7175,8 +7167,9 @@ This is equivalent to ``Pickler(file, protocol).dump(obj)``, but may
 be more efficient.
 
 The optional *protocol* argument tells the pickler to use the given
-protocol supported protocols are 0, 1, 2, 3 and 4.  The default
-protocol is 3; a backward-incompatible protocol designed for Python 3.
+protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
+protocol is 4. It was introduced in Python 3.4, it is incompatible
+with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
 version supported.  The higher the protocol used, the more recent the
@@ -7195,7 +7188,7 @@ to map the new Python 3 names to the old module names used in Python
 static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports)
-/*[clinic end generated code: output=a4774d5fde7d34de input=830f8a64cef6f042]*/
+/*[clinic end generated code: output=a4774d5fde7d34de input=93f1408489a87472]*/
 {
     PicklerObject *pickler = _Pickler_New();
 
@@ -7235,7 +7228,8 @@ Return the pickled representation of the object as a bytes object.
 
 The optional *protocol* argument tells the pickler to use the given
 protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
-protocol is 3; a backward-incompatible protocol designed for Python 3.
+protocol is 4. It was introduced in Python 3.4, it is incompatible
+with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
 version supported.  The higher the protocol used, the more recent the
@@ -7249,7 +7243,7 @@ Python 2, so that the pickle data stream is readable with Python 2.
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports)
-/*[clinic end generated code: output=d75d5cda456fd261 input=293dbeda181580b7]*/
+/*[clinic end generated code: output=d75d5cda456fd261 input=b6efb45a7d19b5ab]*/
 {
     PyObject *result;
     PicklerObject *pickler = _Pickler_New();

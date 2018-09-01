@@ -548,7 +548,7 @@ class _pthFileTests(unittest.TestCase):
             'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
         ], env=env, encoding='ansi')
         actual_sys_path = output.rstrip().split('\n')
-        self.assert_(actual_sys_path, "sys.flags.no_site was False")
+        self.assertTrue(actual_sys_path, "sys.flags.no_site was False")
         self.assertEqual(
             actual_sys_path,
             sys_path,

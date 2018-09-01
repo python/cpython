@@ -12,6 +12,7 @@ extern "C" {
 #define ROT_THREE                 3
 #define DUP_TOP                   4
 #define DUP_TOP_TWO               5
+#define ROT_FOUR                  6
 #define NOP                       9
 #define UNARY_POSITIVE           10
 #define UNARY_NEGATIVE           11
@@ -32,6 +33,8 @@ extern "C" {
 #define GET_AITER                50
 #define GET_ANEXT                51
 #define BEFORE_ASYNC_WITH        52
+#define BEGIN_FINALLY            53
+#define END_ASYNC_FOR            54
 #define INPLACE_ADD              55
 #define INPLACE_SUBTRACT         56
 #define INPLACE_MULTIPLY         57
@@ -55,7 +58,6 @@ extern "C" {
 #define INPLACE_AND              77
 #define INPLACE_XOR              78
 #define INPLACE_OR               79
-#define BREAK_LOOP               80
 #define WITH_CLEANUP_START       81
 #define WITH_CLEANUP_FINISH      82
 #define RETURN_VALUE             83
@@ -92,9 +94,6 @@ extern "C" {
 #define POP_JUMP_IF_FALSE       114
 #define POP_JUMP_IF_TRUE        115
 #define LOAD_GLOBAL             116
-#define CONTINUE_LOOP           119
-#define SETUP_LOOP              120
-#define SETUP_EXCEPT            121
 #define SETUP_FINALLY           122
 #define LOAD_FAST               124
 #define STORE_FAST              125
@@ -127,6 +126,8 @@ extern "C" {
 #define BUILD_TUPLE_UNPACK_WITH_CALL 158
 #define LOAD_METHOD             160
 #define CALL_METHOD             161
+#define CALL_FINALLY            162
+#define POP_FINALLY             163
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here

@@ -412,11 +412,10 @@ class Element:
 
     # compatibility
     def getiterator(self, tag=None):
-        # Change for a DeprecationWarning in 1.4
         warnings.warn(
             "This method will be removed in future versions.  "
             "Use 'elem.iter()' or 'list(elem.iter())' instead.",
-            PendingDeprecationWarning, stacklevel=2
+            DeprecationWarning, stacklevel=2
         )
         return list(self.iter(tag))
 
@@ -622,11 +621,10 @@ class ElementTree:
 
     # compatibility
     def getiterator(self, tag=None):
-        # Change for a DeprecationWarning in 1.4
         warnings.warn(
             "This method will be removed in future versions.  "
             "Use 'tree.iter()' or 'list(tree.iter())' instead.",
-            PendingDeprecationWarning, stacklevel=2
+            DeprecationWarning, stacklevel=2
         )
         return list(self.iter(tag))
 
@@ -1431,13 +1429,11 @@ class TreeBuilder:
         self._tail = 1
         return self._last
 
-_sentinel = ['sentinel']
 
 # also see ElementTree and TreeBuilder
 class XMLParser:
     """Element structure builder for XML source data based on the expat parser.
 
-    *html* are predefined HTML entities (deprecated and not supported),
     *target* is an optional target object which defaults to an instance of the
     standard TreeBuilder class, *encoding* is an optional encoding string
     which if given, overrides the encoding specified in the XML file:
@@ -1445,11 +1441,7 @@ class XMLParser:
 
     """
 
-    def __init__(self, html=_sentinel, target=None, encoding=None):
-        if html is not _sentinel:
-            warnings.warn(
-                "The html argument of XMLParser() is deprecated",
-                DeprecationWarning, stacklevel=2)
+    def __init__(self, *, target=None, encoding=None):
         try:
             from xml.parsers import expat
         except ImportError:
@@ -1602,27 +1594,13 @@ class XMLParser:
                     return
                 if hasattr(self.target, "doctype"):
                     self.target.doctype(name, pubid, system[1:-1])
-                elif self.doctype != self._XMLParser__doctype:
-                    # warn about deprecated call
-                    self._XMLParser__doctype(name, pubid, system[1:-1])
-                    self.doctype(name, pubid, system[1:-1])
+                elif hasattr(self, "doctype"):
+                    warnings.warn(
+                        "The doctype() method of XMLParser is ignored.  "
+                        "Define doctype() method on the TreeBuilder target.",
+                        RuntimeWarning)
+
                 self._doctype = None
-
-    def doctype(self, name, pubid, system):
-        """(Deprecated)  Handle doctype declaration
-
-        *name* is the Doctype name, *pubid* is the public identifier,
-        and *system* is the system identifier.
-
-        """
-        warnings.warn(
-            "This method of XMLParser is deprecated.  Define doctype() "
-            "method on the TreeBuilder target.",
-            DeprecationWarning,
-            )
-
-    # sentinel, if doctype is redefined in a subclass
-    __doctype = doctype
 
     def feed(self, data):
         """Feed encoded data to parser."""

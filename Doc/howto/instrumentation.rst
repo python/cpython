@@ -254,11 +254,15 @@ and the remainder indicates the call/return hierarchy as the script executes.
 
 For a `--enable-shared` build of CPython, the markers are contained within the
 libpython shared library, and the probe's dotted path needs to reflect this. For
-example, this line from the above example::
+example, this line from the above example:
+
+.. code-block:: none
 
    probe process("python").mark("function__entry") {
 
-should instead read::
+should instead read:
+
+.. code-block:: none
 
    probe process("python").library("libpython3.6dm.so.1.0").mark("function__entry") {
 

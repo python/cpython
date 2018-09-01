@@ -1,6 +1,7 @@
 import collections.abc
 import io
 import os
+import sys
 import errno
 import pathlib
 import pickle
@@ -11,7 +12,7 @@ import unittest
 from unittest import mock
 
 from test import support
-TESTFN = support.TESTFN
+from test.support import TESTFN, FakePath
 
 try:
     import grp, pwd
@@ -191,18 +192,15 @@ class _BasePurePathTest(object):
         P = self.cls
         p = P('a')
         self.assertIsInstance(p, P)
-        class PathLike:
-            def __fspath__(self):
-                return "a/b/c"
         P('a', 'b', 'c')
         P('/a', 'b', 'c')
         P('a/b/c')
         P('/a/b/c')
-        P(PathLike())
+        P(FakePath("a/b/c"))
         self.assertEqual(P(P('a')), P('a'))
         self.assertEqual(P(P('a'), 'b'), P('a/b'))
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
-        self.assertEqual(P(P('a'), P('b'), P('c')), P(PathLike()))
+        self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
 
     def _check_str_subclass(self, *args):
         # Issue #21127: it should be possible to construct a PurePath object
@@ -580,6 +578,8 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('a/b').with_suffix, '.c/.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
+        self.assertRaises(ValueError, P('a/b').with_suffix,
+                          (self.flavour.sep, 'd'))
 
     def test_relative_to_common(self):
         P = self.cls
@@ -1519,7 +1519,7 @@ class _BasePathTest(object):
             # resolves to 'dirB/..' first before resolving to parent of dirB.
             self._check_resolve_relative(p, P(BASE, 'foo', 'in', 'spam'), False)
         # Now create absolute symlinks
-        d = tempfile.mkdtemp(suffix='-dirD')
+        d = support._longpath(tempfile.mkdtemp(suffix='-dirD'))
         self.addCleanup(support.rmtree, d)
         os.symlink(os.path.join(d), join('dirA', 'linkX'))
         os.symlink(join('dirB'), os.path.join(d, 'linkY'))
@@ -2145,6 +2145,9 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             otherhome = pwdent.pw_dir.rstrip('/')
             if othername != username and otherhome:
                 break
+        else:
+            othername = username
+            otherhome = userhome
 
         p1 = P('~/Documents')
         p2 = P('~' + username + '/Documents')
@@ -2173,6 +2176,29 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             self.assertEqual(p5.expanduser(), p5)
             self.assertEqual(p6.expanduser(), p6)
             self.assertRaises(RuntimeError, p7.expanduser)
+
+    @unittest.skipIf(sys.platform != "darwin",
+                     "Bad file descriptor in /dev/fd affects only macOS")
+    def test_handling_bad_descriptor(self):
+        try:
+            file_descriptors = list(pathlib.Path('/dev/fd').rglob("*"))[3:]
+            if not file_descriptors:
+                self.skipTest("no file descriptors - issue was not reproduced")
+            # Checking all file descriptors because there is no guarantee
+            # which one will fail.
+            for f in file_descriptors:
+                f.exists()
+                f.is_dir()
+                f.is_file()
+                f.is_symlink()
+                f.is_block_device()
+                f.is_char_device()
+                f.is_fifo()
+                f.is_socket()
+        except OSError as e:
+            if e.errno == errno.EBADF:
+                self.fail("Bad file descriptor not handled.")
+            raise
 
 
 @only_nt

@@ -27,7 +27,7 @@ This module implements the HMAC algorithm as described by :rfc:`2104`.
       Parameter *msg* can be of any type supported by :mod:`hashlib`.
       Parameter *digestmod* can be the name of a hash algorithm.
 
-   .. deprecated:: 3.4
+   .. deprecated-removed:: 3.4 3.8
       MD5 as implicit default digest for *digestmod* is deprecated.
 
 

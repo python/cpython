@@ -344,7 +344,7 @@ by the local file.
    Specifying any command resuming execution
    (currently :pdbcmd:`continue`, :pdbcmd:`step`, :pdbcmd:`next`,
    :pdbcmd:`return`, :pdbcmd:`jump`, :pdbcmd:`quit` and their abbreviations)
-   terminates the command :pdbcmd:`list` (as if
+   terminates the command list (as if
    that command was immediately followed by end). This is because any time you
    resume execution (even with a simple next or step), you may encounter another
    breakpoint—which could have its own command list, leading to ambiguities about

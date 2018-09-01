@@ -8,7 +8,7 @@
 
 #define CONTEXT_FREELIST_MAXLEN 255
 static PyContext *ctx_freelist = NULL;
-static Py_ssize_t ctx_freelist_len = 0;
+static int ctx_freelist_len = 0;
 
 
 #include "clinic/context.c.h"
@@ -489,12 +489,17 @@ _contextvars.Context.get
     key: object
     default: object = None
     /
+
+Return the value for `key` if `key` has the value in the context object.
+
+If `key` does not exist, return `default`. If `default` is not given,
+return None.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_get_impl(PyContext *self, PyObject *key,
                               PyObject *default_value)
-/*[clinic end generated code: output=0c54aa7664268189 input=8d4c33c8ecd6d769]*/
+/*[clinic end generated code: output=0c54aa7664268189 input=c8eeb81505023995]*/
 {
     if (context_check_key_type(key)) {
         return NULL;
@@ -516,11 +521,15 @@ _contextvars_Context_get_impl(PyContext *self, PyObject *key,
 
 /*[clinic input]
 _contextvars.Context.items
+
+Return all variables and their values in the context object.
+
+The result is returned as a list of 2-tuples (variable, value).
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_items_impl(PyContext *self)
-/*[clinic end generated code: output=fa1655c8a08502af input=2d570d1455004979]*/
+/*[clinic end generated code: output=fa1655c8a08502af input=00db64ae379f9f42]*/
 {
     return _PyHamt_NewIterItems(self->ctx_vars);
 }
@@ -528,11 +537,13 @@ _contextvars_Context_items_impl(PyContext *self)
 
 /*[clinic input]
 _contextvars.Context.keys
+
+Return a list of all variables in the context object.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_keys_impl(PyContext *self)
-/*[clinic end generated code: output=177227c6b63ec0e2 input=13005e142fbbf37d]*/
+/*[clinic end generated code: output=177227c6b63ec0e2 input=114b53aebca3449c]*/
 {
     return _PyHamt_NewIterKeys(self->ctx_vars);
 }
@@ -540,11 +551,13 @@ _contextvars_Context_keys_impl(PyContext *self)
 
 /*[clinic input]
 _contextvars.Context.values
+
+Return a list of all variables’ values in the context object.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_values_impl(PyContext *self)
-/*[clinic end generated code: output=d286dabfc8db6dde input=c2cbc40a4470e905]*/
+/*[clinic end generated code: output=d286dabfc8db6dde input=6c3d08639ba3bf67]*/
 {
     return _PyHamt_NewIterValues(self->ctx_vars);
 }
@@ -552,11 +565,13 @@ _contextvars_Context_values_impl(PyContext *self)
 
 /*[clinic input]
 _contextvars.Context.copy
+
+Return a shallow copy of the context object.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_copy_impl(PyContext *self)
-/*[clinic end generated code: output=30ba8896c4707a15 input=3e3fd72d598653ab]*/
+/*[clinic end generated code: output=30ba8896c4707a15 input=ebafdbdd9c72d592]*/
 {
     return (PyObject *)context_new_from_vars(self->ctx_vars);
 }
@@ -872,11 +887,19 @@ error:
 _contextvars.ContextVar.get
     default: object = NULL
     /
+
+Return a value for the context variable for the current context.
+
+If there is no value for the variable in the current context, the method will:
+ * return the value of the default argument of the method, if provided; or
+ * return the default value for the context variable, if it was created
+   with one; or
+ * raise a LookupError.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
-/*[clinic end generated code: output=0746bd0aa2ced7bf input=8d002b02eebbb247]*/
+/*[clinic end generated code: output=0746bd0aa2ced7bf input=30aa2ab9e433e401]*/
 {
     if (!PyContextVar_CheckExact(self)) {
         PyErr_SetString(
@@ -901,11 +924,18 @@ _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
 _contextvars.ContextVar.set
     value: object
     /
+
+Call to set a new value for the context variable in the current context.
+
+The required value argument is the new value for the context variable.
+
+Returns a Token object that can be used to restore the variable to its previous
+value via the `ContextVar.reset()` method.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_set(PyContextVar *self, PyObject *value)
-/*[clinic end generated code: output=446ed5e820d6d60b input=a2d88f57c6d86f7c]*/
+/*[clinic end generated code: output=446ed5e820d6d60b input=c0a6887154227453]*/
 {
     return (PyObject *)PyContextVar_Set(self, value);
 }
@@ -914,11 +944,16 @@ _contextvars_ContextVar_set(PyContextVar *self, PyObject *value)
 _contextvars.ContextVar.reset
     token: object
     /
+
+Reset the context variable.
+
+The variable is reset to the value it had before the `ContextVar.set()` that
+created the token was used.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
-/*[clinic end generated code: output=d4ee34d0742d62ee input=4c871b6f1f31a65f]*/
+/*[clinic end generated code: output=d4ee34d0742d62ee input=ebe2881e5af4ffda]*/
 {
     if (!PyContextToken_CheckExact(token)) {
         PyErr_Format(PyExc_TypeError,
@@ -940,6 +975,10 @@ contextvar_cls_getitem(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyMemberDef PyContextVar_members[] = {
+    {"name", T_OBJECT, offsetof(PyContextVar, var_name), READONLY},
+    {NULL}
+};
 
 static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_GET_METHODDEF
@@ -955,6 +994,7 @@ PyTypeObject PyContextVar_Type = {
     "ContextVar",
     sizeof(PyContextVar),
     .tp_methods = PyContextVar_methods,
+    .tp_members = PyContextVar_members,
     .tp_dealloc = (destructor)contextvar_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
@@ -1177,7 +1217,7 @@ get_token_missing(void)
 int
 PyContext_ClearFreeList(void)
 {
-    Py_ssize_t size = ctx_freelist_len;
+    int size = ctx_freelist_len;
     while (ctx_freelist_len) {
         PyContext *ctx = ctx_freelist;
         ctx_freelist = (PyContext *)ctx->ctx_weakreflist;

@@ -551,6 +551,12 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
                           &p->tm_hour, &p->tm_min, &p->tm_sec,
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
         return 0;
+
+    if (y < INT_MIN + 1900) {
+        PyErr_SetString(PyExc_OverflowError, "year out of range");
+        return 0;
+    }
+
     p->tm_year = y - 1900;
     p->tm_mon--;
     p->tm_wday = (p->tm_wday + 1) % 7;
@@ -1192,11 +1198,13 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
             if (freq != -1) {
                 /* check that _PyTime_MulDiv(t, SEC_TO_NS, ticks_per_second)
                    cannot overflow below */
+#if LONG_MAX > _PyTime_MAX / SEC_TO_NS
                 if ((_PyTime_t)freq > _PyTime_MAX / SEC_TO_NS) {
                     PyErr_SetString(PyExc_OverflowError,
                                     "_SC_CLK_TCK is too large");
                     return -1;
                 }
+#endif
 
                 ticks_per_second = freq;
             }

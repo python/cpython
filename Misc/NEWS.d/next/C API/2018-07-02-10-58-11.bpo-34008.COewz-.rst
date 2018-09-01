@@ -1,0 +1,1 @@
+Py_Main() can again be called after Py_Initialize(), as in Python 3.6.
