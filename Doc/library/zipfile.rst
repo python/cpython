@@ -19,9 +19,12 @@ defined in `PKZIP Application Note`_.
 This module does not currently handle multi-disk ZIP files.
 It can handle ZIP files that use the ZIP64 extensions
 (that is ZIP files that are more than 4 GiB in size).  It supports
-decryption of encrypted files in ZIP archives, but it currently cannot
-create an encrypted file.  Decryption is extremely slow as it is
-implemented in native Python rather than C.
+decryption of encrypted files in ZIP archives.
+
+   .. warning::
+      Though this can create an encrypted file, the traditional PKWARE encryption is considered weak by today's standards and its use is recommended only for situations with low security needs or for compatibility with older .ZIP applications.
+
+Decryption is extremely slow as it is implemented in native Python rather than C.
 
 The module defines the following items:
 
@@ -234,7 +237,7 @@ ZipFile Objects
    Access a member of the archive as a binary file-like object.  *name*
    can be either the name of a file within the archive or a :class:`ZipInfo`
    object.  The *mode* parameter, if included, must be ``'r'`` (the default)
-   or ``'w'``.  *pwd* is the password used to decrypt encrypted ZIP files.
+   or ``'w'``.
 
    :meth:`~ZipFile.open` is also a context manager and therefore supports the
    :keyword:`with` statement::
@@ -286,7 +289,6 @@ ZipFile Objects
    must be its full name or a :class:`ZipInfo` object.  Its file information is
    extracted as accurately as possible.  *path* specifies a different directory
    to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
-   *pwd* is the password used for encrypted files.
 
    Returns the normalized path created (a directory or new file).
 
@@ -338,7 +340,7 @@ ZipFile Objects
 
 .. method:: ZipFile.setpassword(pwd)
 
-   Set *pwd* as default password to extract encrypted files.
+   Set *pwd* as default password to extract and create encrypted files.
 
 
 .. method:: ZipFile.read(name, pwd=None)

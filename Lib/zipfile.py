@@ -566,6 +566,49 @@ def _ZipDecrypter(pwd):
     return decrypter
 
 
+# Supports a password-based encryption.
+#
+# Usage:
+#     zd = _ZipEncrypter(mypwd)
+#     cypher_bytes = zd(plain_bytes)
+
+def _ZipEncrypter(pwd):
+    key0 = 305419896
+    key1 = 591751049
+    key2 = 878082192
+
+    global _crctable
+    if _crctable is None:
+        _crctable = list(map(_gen_crc, range(256)))
+    crctable = _crctable
+
+    def crc32(ch, crc):
+        """Compute the CRC32 primitive on one byte."""
+        return (crc >> 8) ^ crctable[(crc ^ ch) & 0xFF]
+
+    def update_keys(c):
+        nonlocal key0, key1, key2
+        key0 = crc32(c, key0)
+        key1 = (key1 + (key0 & 0xFF)) & 0xFFFFFFFF
+        key1 = (key1 * 134775813 + 1) & 0xFFFFFFFF
+        key2 = crc32(key1 >> 24, key2)
+
+    for p in pwd:
+        update_keys(p)
+
+    def encrypter(data):
+        """Encrypt a bytes object."""
+        result = bytearray()
+        append = result.append
+        for c in data:
+            k = key2 | 2
+            update_keys(c)
+            c ^= (((k * (k^1)) >> 8) & 0xFF)
+            append(c)
+        return bytes(result)
+
+    return encrypter
+
 class LZMACompressor:
 
     def __init__(self):
@@ -1046,12 +1089,13 @@ class ZipExtFile(io.BufferedIOBase):
 
 
 class _ZipWriteFile(io.BufferedIOBase):
-    def __init__(self, zf, zinfo, zip64):
+    def __init__(self, zf, zinfo, zip64, encrypter=None):
         self._zinfo = zinfo
         self._zip64 = zip64
         self._zipfile = zf
         self._compressor = _get_compressor(zinfo.compress_type,
                                            zinfo._compresslevel)
+        self._encrypter = encrypter
         self._file_size = 0
         self._compress_size = 0
         self._crc = 0
@@ -1072,6 +1116,14 @@ class _ZipWriteFile(io.BufferedIOBase):
         if self._compressor:
             data = self._compressor.compress(data)
             self._compress_size += len(data)
+        if self._encrypter:
+            if self._zinfo.flag_bits & 0x8:
+                # compare against the file type from extended local headers
+                check_byte = self._zinfo._raw_time & 0xffff
+            else:
+                # compare against the CRC otherwise
+                check_byte = (self._crc >> 16) & 0xffff
+            data = self._encrypter(os.urandom(10) + check_byte.to_bytes(2, "little") + data)
         self._fileobj.write(data)
         return nbytes
 
@@ -1082,11 +1134,15 @@ class _ZipWriteFile(io.BufferedIOBase):
         # Flush any data from the compressor, and update header info
         if self._compressor:
             buf = self._compressor.flush()
+            if self._encrypter:
+                buf = self._encrypter(buf)
             self._compress_size += len(buf)
             self._fileobj.write(buf)
             self._zinfo.compress_size = self._compress_size
         else:
             self._zinfo.compress_size = self._file_size
+        if self._encrypter:
+            self._zinfo.compress_size += 12
         self._zinfo.CRC = self._crc
         self._zinfo.file_size = self._file_size
 
@@ -1426,7 +1482,11 @@ class ZipFile:
         if pwd and not isinstance(pwd, bytes):
             raise TypeError("pwd: expected bytes, got %s" % type(pwd).__name__)
         if pwd and (mode == "w"):
-            raise ValueError("pwd is only supported for reading files")
+            import warnings
+            warnings.warn(
+                'Insecure encryption zip file is being made. '
+                'Traditional PKWARE encryption is considered weak.'
+                '#insecure-warnings', stacklevel=1)
         if not self.fp:
             raise ValueError(
                 "Attempt to use ZIP archive that was already closed")
@@ -1535,8 +1595,12 @@ class ZipFile:
             zinfo.file_size = 0
         zinfo.compress_size = 0
         zinfo.CRC = 0
+        ze = None
 
         zinfo.flag_bits = 0x00
+        if self.pwd:
+            zinfo.flag_bits |= 0x01
+            ze = _ZipEncrypter(self.pwd)
         if zinfo.compress_type == ZIP_LZMA:
             # Compressed data includes an end-of-stream (EOS) marker
             zinfo.flag_bits |= 0x02
@@ -1560,7 +1624,7 @@ class ZipFile:
         self.fp.write(zinfo.FileHeader(zip64))
 
         self._writing = True
-        return _ZipWriteFile(self, zinfo, zip64)
+        return _ZipWriteFile(self, zinfo, zip64, ze)
 
     def extract(self, member, path=None, pwd=None):
         """Extract a member from the archive to the current working directory,
@@ -1705,6 +1769,8 @@ class ZipFile:
                 if self._seekable:
                     self.fp.seek(self.start_dir)
                 zinfo.header_offset = self.fp.tell()  # Start of header bytes
+                if self.pwd:
+                    zinfo.flag_bits |= 0x01
                 if zinfo.compress_type == ZIP_LZMA:
                 # Compressed data includes an end-of-stream (EOS) marker
                     zinfo.flag_bits |= 0x02

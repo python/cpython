@@ -1823,6 +1823,128 @@ class DecryptionTests(unittest.TestCase):
         self.assertRaises(TypeError, self.zip.open, "test.txt", pwd="python")
         self.assertRaises(TypeError, self.zip.extract, "test.txt", pwd="python")
 
+class AbstractEncryptionTests():
+    """Check that ZIP encryption works."""
+    mypwd = b"1234"
+    plain = b'zipfile.py encryption test'
+
+    def setUp(self):
+        # Make a source file with some lines
+        with open(TESTFN, "wb") as fp:
+            fp.write(self.plain)
+
+    def tearDown(self):
+        unlink(TESTFN)
+        unlink(TESTFN2)
+
+    def make_test_archive(self, f, compression):
+        # Create the ZIP archive
+        with zipfile.ZipFile(f, "w", compression) as zipfp:
+            zipfp.setpassword(self.mypwd)
+            zipfp.write(TESTFN, "another.name")
+            with self.assertWarns(UserWarning):
+                with zipfp.open(TESTFN, "w", pwd=self.mypwd) as fp:
+                    fp.write(self.plain)
+
+    def zip_test(self, f, compression):
+        self.make_test_archive(f, compression)
+
+        # Read the ZIP archive
+        with zipfile.ZipFile(f, "r", compression) as zipfp:
+            zipfp.setpassword(self.mypwd)
+            self.assertEqual(zipfp.read("another.name"), self.plain)
+
+        with zipfile.ZipFile(f, "r", compression) as zipfp:
+            self.assertEqual(zipfp.read("another.name", self.mypwd), self.plain)
+
+        with zipfile.ZipFile(f, "r", compression) as zipfp:
+            zipfp.setpassword(b"wrong")
+            self.assertRaises(RuntimeError, zipfp.read, "another.name")
+
+        with zipfile.ZipFile(f, "r", compression) as zipfp:
+            self.assertRaises(RuntimeError, zipfp.read, "another.name", b"wrong")
+
+        with zipfile.ZipFile(f, "r", compression) as zipfp:
+            # No password
+            self.assertRaises(RuntimeError, zipfp.read, "another.name")
+
+    def test_read(self):
+        for f in get_files(self):
+            self.zip_test(f, self.compression)
+
+    def zip_open_test(self, f, compression):
+        self.make_test_archive(f, compression)
+
+        # Read the ZIP archive
+        with zipfile.ZipFile(f, "r", compression) as zipfp:
+            zipdata1 = []
+            with zipfp.open(TESTFN, pwd=self.mypwd) as zipopen1:
+                while True:
+                    read_data = zipopen1.read(256)
+                    if not read_data:
+                        break
+                    zipdata1.append(read_data)
+
+            zipdata2 = []
+            with zipfp.open("another.name", pwd=self.mypwd) as zipopen2:
+                while True:
+                    read_data = zipopen2.read(256)
+                    if not read_data:
+                        break
+                    zipdata2.append(read_data)
+
+            testdata1 = b''.join(zipdata1)
+            self.assertEqual(len(testdata1), len(self.plain))
+            self.assertEqual(testdata1, self.plain)
+
+            testdata2 = b''.join(zipdata2)
+            self.assertEqual(len(testdata2), len(self.plain))
+            self.assertEqual(testdata2, self.plain)
+
+    def test_open(self):
+        for f in get_files(self):
+            self.zip_open_test(f, self.compression)
+
+    def zip_random_open_test(self, f, compression):
+        self.make_test_archive(f, compression)
+
+        # Read the ZIP archive
+        with zipfile.ZipFile(f, "r", compression) as zipfp:
+            zipdata1 = []
+            with zipfp.open(TESTFN, pwd=self.mypwd) as zipopen1:
+                while True:
+                    read_data = zipopen1.read(randint(1, 1024))
+                    if not read_data:
+                        break
+                    zipdata1.append(read_data)
+
+            testdata = b''.join(zipdata1)
+            self.assertEqual(len(testdata), len(self.plain))
+            self.assertEqual(testdata, self.plain)
+
+    def test_random_open(self):
+        for f in get_files(self):
+            self.zip_random_open_test(f, self.compression)
+
+class StoredTestsWithEncryption(AbstractEncryptionTests,
+                                       unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+@requires_zlib
+class DeflateTestsWithEncryption(AbstractEncryptionTests,
+                                        unittest.TestCase):
+    compression = zipfile.ZIP_DEFLATED
+
+@requires_bz2
+class Bzip2TestsWithEncryption(AbstractEncryptionTests,
+                                      unittest.TestCase):
+    compression = zipfile.ZIP_BZIP2
+
+@requires_lzma
+class LzmaTestsWithEncryption(AbstractEncryptionTests,
+                                     unittest.TestCase):
+    compression = zipfile.ZIP_LZMA
+
 class AbstractTestsWithRandomBinaryFiles:
     @classmethod
     def setUpClass(cls):
