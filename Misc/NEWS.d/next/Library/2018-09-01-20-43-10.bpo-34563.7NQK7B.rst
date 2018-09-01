@@ -1,0 +1,1 @@
+Fix for invalid assert on big output of multiprocessing.Process
