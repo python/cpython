@@ -108,6 +108,7 @@ typedef int socklen_t;
 #endif
 
 #ifdef HAVE_SOCKADDR_ALG
+
 # include <linux/if_alg.h>
 # ifndef AF_ALG
 #  define AF_ALG 38
