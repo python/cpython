@@ -1074,7 +1074,7 @@ read_directory(PyObject *archive)
         if (flags & 0x0800) {
             charset = "utf-8";
         }
-        else if (!PyThreadState_GET()->interp->codecs_initialized) {
+        else if (!_PyInterpreterState_Get()->codecs_initialized) {
             /* During bootstrap, we may need to load the encodings
                package from a ZIP file. But the cp437 encoding is implemented
                in Python in the encodings package.
@@ -1351,7 +1351,7 @@ unmarshal_code(PyObject *pathname, PyObject *data, time_t mtime)
 
     uint32_t flags = get_uint32(buf + 4);
     if (flags != 0) {
-        _PyCoreConfig *config = &PyThreadState_GET()->interp->core_config;
+        _PyCoreConfig *config = &_PyInterpreterState_Get()->core_config;
         // Hash-based pyc. We currently refuse to handle checked hash-based
         // pycs. We could validate hash-based pycs against the source, but it
         // seems likely that most people putting hash-based pycs in a zipfile

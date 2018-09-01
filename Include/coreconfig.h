@@ -66,6 +66,40 @@ typedef struct {
     int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
     int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
 
+    /* Python filesystem encoding and error handler:
+       sys.getfilesystemencoding() and sys.getfilesystemencodeerrors().
+
+       Default encoding and error handler:
+
+       * if Py_SetStandardStreamEncoding() has been called: they have the
+         highest priority;
+       * PYTHONIOENCODING environment variable;
+       * The UTF-8 Mode uses UTF-8/surrogateescape;
+       * locale encoding: ANSI code page on Windows, UTF-8 on Android,
+         LC_CTYPE locale encoding on other platforms;
+       * On Windows, "surrogateescape" error handler;
+       * "surrogateescape" error handler if the LC_CTYPE locale is "C" or "POSIX";
+       * "surrogateescape" error handler if the LC_CTYPE locale has been coerced
+         (PEP 538);
+       * "strict" error handler.
+
+       Supported error handlers: "strict", "surrogateescape" and
+       "surrogatepass". The surrogatepass error handler is only supported
+       if Py_DecodeLocale() and Py_EncodeLocale() use directly the UTF-8 codec;
+       it's only used on Windows.
+
+       initfsencoding() updates the encoding to the Python codec name.
+       For example, "ANSI_X3.4-1968" is replaced with "ascii".
+
+       On Windows, sys._enablelegacywindowsfsencoding() sets the
+       encoding/errors to mbcs/replace at runtime.
+
+
+       See Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors.
+       */
+    char *filesystem_encoding;
+    char *filesystem_errors;
+
     /* Enable UTF-8 mode?
        Set by -X utf8 command line option and PYTHONUTF8 environment variable.
        If set to -1 (default), inherit Py_UTF8Mode value. */
@@ -203,6 +237,18 @@ typedef struct {
        If set to -1 (default), it is set to !Py_UnbufferedStdioFlag. */
     int buffered_stdio;
 
+    /* Encoding of sys.stdin, sys.stdout and sys.stderr.
+       Value set from PYTHONIOENCODING environment variable and
+       Py_SetStandardStreamEncoding() function.
+       See also 'stdio_errors' attribute. */
+    char *stdio_encoding;
+
+    /* Error handler of sys.stdin and sys.stdout.
+       Value set from PYTHONIOENCODING environment variable and
+       Py_SetStandardStreamEncoding() function.
+       See also 'stdio_encoding' attribute. */
+    char *stdio_errors;
+
 #ifdef MS_WINDOWS
     /* If greater than 1, use the "mbcs" encoding instead of the UTF-8
        encoding for the filesystem encoding.
@@ -310,6 +356,14 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
     wchar_t **dest,
     wchar_t *wname,
     char *name);
+#endif
+
+
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_SetFileSystemEncoding(
+    const char *encoding,
+    const char *errors);
+PyAPI_FUNC(void) _Py_ClearFileSystemEncoding(void);
 #endif
 
 

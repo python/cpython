@@ -55,16 +55,15 @@ CAPATH = data_file("capath")
 BYTES_CAPATH = os.fsencode(CAPATH)
 CAFILE_NEURONIO = data_file("capath", "4e1295a3.0")
 CAFILE_CACERT = data_file("capath", "5ed36f99.0")
-WRONG_CERT = data_file("wrongcert.pem")
 
 CERTFILE_INFO = {
     'issuer': ((('countryName', 'XY'),),
                (('localityName', 'Castle Anthrax'),),
                (('organizationName', 'Python Software Foundation'),),
                (('commonName', 'localhost'),)),
-    'notAfter': 'Jan 17 19:09:06 2028 GMT',
-    'notBefore': 'Jan 19 19:09:06 2018 GMT',
-    'serialNumber': 'F9BA076D5B6ABD9B',
+    'notAfter': 'Aug 26 14:23:15 2028 GMT',
+    'notBefore': 'Aug 29 14:23:15 2018 GMT',
+    'serialNumber': '98A7CF88C74A32ED',
     'subject': ((('countryName', 'XY'),),
              (('localityName', 'Castle Anthrax'),),
              (('organizationName', 'Python Software Foundation'),),
@@ -87,9 +86,9 @@ SIGNED_CERTFILE_INFO = {
     'issuer': ((('countryName', 'XY'),),
             (('organizationName', 'Python Software Foundation CA'),),
             (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Nov 28 19:09:06 2027 GMT',
-    'notBefore': 'Jan 19 19:09:06 2018 GMT',
-    'serialNumber': '82EDBF41C880919C',
+    'notAfter': 'Jul  7 14:23:16 2028 GMT',
+    'notBefore': 'Aug 29 14:23:16 2018 GMT',
+    'serialNumber': 'CB2D80995A69525C',
     'subject': ((('countryName', 'XY'),),
              (('localityName', 'Castle Anthrax'),),
              (('organizationName', 'Python Software Foundation'),),
@@ -118,7 +117,7 @@ BADKEY = data_file("badkey.pem")
 NOKIACERT = data_file("nokia.pem")
 NULLBYTECERT = data_file("nullbytecert.pem")
 
-DHFILE = data_file("dh1024.pem")
+DHFILE = data_file("ffdh3072.pem")
 BYTES_DHFILE = os.fsencode(DHFILE)
 
 # Not defined in all versions of OpenSSL
@@ -318,6 +317,8 @@ class BasicSocketTests(unittest.TestCase):
             self.assertEqual(len(parent_random), 16)
 
             self.assertNotEqual(child_random, parent_random)
+
+    maxDiff = None
 
     def test_parse_cert(self):
         # note that this uses an 'unofficial' function in _ssl.c,
@@ -2825,8 +2826,8 @@ class ThreadedTests(unittest.TestCase):
         connect to it with a wrong client certificate fails.
         """
         client_context, server_context, hostname = testing_context()
-        # load client cert
-        client_context.load_cert_chain(WRONG_CERT)
+        # load client cert that is not signed by trusted CA
+        client_context.load_cert_chain(CERTFILE)
         # require TLS client authentication
         server_context.verify_mode = ssl.CERT_REQUIRED
         # TLS 1.3 has different handshake
@@ -2858,7 +2859,8 @@ class ThreadedTests(unittest.TestCase):
     @unittest.skipUnless(ssl.HAS_TLSv1_3, "Test needs TLS 1.3")
     def test_wrong_cert_tls13(self):
         client_context, server_context, hostname = testing_context()
-        client_context.load_cert_chain(WRONG_CERT)
+        # load client cert that is not signed by trusted CA
+        client_context.load_cert_chain(CERTFILE)
         server_context.verify_mode = ssl.CERT_REQUIRED
         server_context.minimum_version = ssl.TLSVersion.TLSv1_3
         client_context.minimum_version = ssl.TLSVersion.TLSv1_3

@@ -225,7 +225,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         }
         else
             started = 1;
-        len = b - a; /* XXX this may compute NULL - NULL */
+        len = (a != NULL && b != NULL) ? b - a : 0;
         str = (char *) PyObject_MALLOC(len + 1);
         if (str == NULL) {
             err_ret->error = E_NOMEM;
@@ -252,11 +252,13 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             }
         }
 #endif
-        if (a >= tok->line_start)
+        if (a != NULL && a >= tok->line_start) {
             col_offset = Py_SAFE_DOWNCAST(a - tok->line_start,
                                           intptr_t, int);
-        else
+        }
+        else {
             col_offset = -1;
+        }
 
         if ((err_ret->error =
              PyParser_AddToken(ps, (int)type, str,

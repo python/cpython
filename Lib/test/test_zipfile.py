@@ -549,19 +549,23 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(ValueError, zipfp.write, TESTFN)
 
-        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
-            zipfp.write(TESTFN, strict_timestamps=False)
+        with zipfile.ZipFile(TESTFN2, "w", strict_timestamps=False) as zipfp:
+            zipfp.write(TESTFN)
             zinfo = zipfp.getinfo(TESTFN)
             self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
 
     def test_add_file_after_2107(self):
         # Set atime and mtime to 2108-12-30
-        os.utime(TESTFN, (4386268800, 4386268800))
+        try:
+            os.utime(TESTFN, (4386268800, 4386268800))
+        except OverflowError:
+            self.skipTest('Host fs cannot set timestamp to required value.')
+
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(struct.error, zipfp.write, TESTFN)
 
-        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
-            zipfp.write(TESTFN, strict_timestamps=False)
+        with zipfile.ZipFile(TESTFN2, "w", strict_timestamps=False) as zipfp:
+            zipfp.write(TESTFN)
             zinfo = zipfp.getinfo(TESTFN)
             self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
 

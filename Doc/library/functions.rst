@@ -113,6 +113,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. index:: pair: Boolean; type
 
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
 
 .. function:: breakpoint(*args, **kws)
 
@@ -435,8 +437,10 @@ are always available.  They are listed here in alphabetical order.
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    dictionaries as global and local namespace.  If the *globals* dictionary is
-   present and lacks '__builtins__', the current globals are copied into *globals*
-   before *expression* is parsed.  This means that *expression* normally has full
+   present and does not contain a value for the key ``__builtins__``, a
+   reference to the dictionary of the built-in module :mod:`builtins` is
+   inserted under that key before *expression* is parsed.
+   This means that *expression* normally has full
    access to the standard :mod:`builtins` module and restricted environments are
    propagated.  If the *locals* dictionary is omitted it defaults to the *globals*
    dictionary.  If both dictionaries are omitted, the expression is executed in the
@@ -575,6 +579,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
+
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
 
 
 .. index::
@@ -727,7 +734,7 @@ are always available.  They are listed here in alphabetical order.
    to provide elaborate line editing and history features.
 
 
-.. class:: int(x=0)
+.. class:: int([x])
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
@@ -760,6 +767,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
+
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
 
 
 .. function:: isinstance(object, classinfo)
