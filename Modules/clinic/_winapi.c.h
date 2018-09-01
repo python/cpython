@@ -673,7 +673,7 @@ PyDoc_STRVAR(_winapi_ReadFile__doc__,
     {"ReadFile", (PyCFunction)_winapi_ReadFile, METH_FASTCALL|METH_KEYWORDS, _winapi_ReadFile__doc__},
 
 static PyObject *
-_winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
+_winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
                       int use_overlapped);
 
 static PyObject *
@@ -681,7 +681,7 @@ _winapi_ReadFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "size", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "I|I:ReadFile", _keywords, 0};
+    static _PyArg_Parser _parser = {"" F_HANDLE "i|i:ReadFile", _keywords, 0};
     HANDLE handle;
     int size;
     int use_overlapped = 0;
