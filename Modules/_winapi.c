@@ -1355,12 +1355,12 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
 _winapi.ReadFile
 
     handle: HANDLE
-    size: int
+    size: DWORD
     overlapped as use_overlapped: bool(accept={int}) = False
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
+_winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
                       int use_overlapped)
 /*[clinic end generated code: output=492029ca98161d84 input=3f0fde92f74de59a]*/
 {
