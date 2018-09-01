@@ -457,11 +457,11 @@ class EnumMeta(type):
         module_globals[name] = cls
         return cls
 
-    def _convert(cls, *args):
+    def _convert(cls, *args, **kwargs):
         import warnings
         warnings.warn("_convert is deprecated and will be removed in 3.9, use "
                       "_convert_ instead.", DeprecationWarning, stacklevel=2)
-        return cls._convert_(*args)
+        return cls._convert_(*args, **kwargs)
 
     @staticmethod
     def _get_mixins_(bases):
