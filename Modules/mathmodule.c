@@ -2074,7 +2074,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     if (found_nan) {
         return Py_NAN;
     }
-    if (max == 0.0 || n == 1) {
+    if (max == 0.0 || n <= 1) {
         return max;
     }
     for (i=0 ; i < n ; i++) {
