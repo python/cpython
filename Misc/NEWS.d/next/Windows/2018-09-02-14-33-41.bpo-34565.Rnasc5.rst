@@ -1,0 +1,2 @@
+Restricts the major component of py.exe launcher version argument to 2 or 3 to
+match the the launcher help text.

@@ -1068,14 +1068,12 @@ validate_version(wchar_t * p)
     */
     BOOL result = (p != NULL); /* Default to False if null pointer. */
 
-    result = result && iswdigit(*p);  /* Result = False if fist string element is not a digit. */
-
-    while (result && iswdigit(*p))   /* Require a major version */
-        ++p;  /* Skip all leading digit(s) */
-    if (result && (*p == L'.'))     /* Allow . for major minor separator.*/
-    {
-        result = iswdigit(*++p);     /* Must be at least one digit */
-        while (result && iswdigit(*++p)) ; /* Skip any more Digits */
+    /* Require first string element to be a a major version; either 2 or 3. */
+    result = result && (*p == L'2' || *p == L'3');
+    
+    if (result && (*++p == L'.')) {  /* Advance and allow . for major minor separator; */
+        result = iswdigit(*++p);     /* must be at least one digit; */
+        while (result && iswdigit(*++p)) ; /* skip any more digits. */
     }
     if (result && (*p == L'-')) {   /* Allow - for Bits Separator */
         switch(*++p){
@@ -1092,7 +1090,6 @@ validate_version(wchar_t * p)
     }
     result = result && !*p; /* Must have reached EOS */
     return result;
-
 }
 
 typedef struct {
