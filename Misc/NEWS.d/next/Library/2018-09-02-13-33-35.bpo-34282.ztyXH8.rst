@@ -1,0 +1,1 @@
+Fix ``Enum._convert`` shadowing members named _convert.
