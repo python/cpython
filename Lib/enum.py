@@ -173,7 +173,8 @@ class EnumMeta(type):
 
         # save attributes from super classes so we know if we can take
         # the shortcut of storing members in the class dict
-        base_attributes = {a for b in enum_class.mro() for a in b.__dict__}
+        base_attributes = {k: v for c in reversed(enum_class.mro())
+                           for k, v in c.__dict__.items()}
 
         # Reverse value->name map for hashable values.
         enum_class._value2member_map_ = {}
@@ -235,6 +236,13 @@ class EnumMeta(type):
             # a DynamicClassAttribute
             if member_name not in base_attributes:
                 setattr(enum_class, member_name, enum_member)
+            # issue34282: Members named _convert should take precedence over
+            # the _convert method except if the enum also has a behavior named
+            # _convert. In which case, it falls back to the default
+            # behavior > member ordering where the behavior takes precedence.
+            elif (member_name == '_convert' and
+                    base_attributes['_convert'] is Enum.__dict__['_convert']):
+                enum_class._convert = enum_member
             # now add to _member_map_
             enum_class._member_map_[member_name] = enum_member
             try:
