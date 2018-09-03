@@ -44,6 +44,7 @@ if NOT "%1"=="" (set regrtestargs=%regrtestargs% %1) & shift & goto CheckOpts
 if not defined prefix set prefix=%pcbuild%win32
 set exe=%prefix%\python%suffix%.exe
 set cmd="%exe%" %dashO% -u -Wd -E -bb -m test %regrtestargs%
+set cmd_clinic_test="%exe%" Tools\clinic\clinic_test.py
 if defined qmode goto Qmode
 
 echo Deleting .pyc files ...
@@ -54,6 +55,7 @@ if exist %prefix%\*._pth del %prefix%\*._pth
 
 echo on
 %cmd%
+%cmd_clinic_test%
 @echo off
 
 echo About to run again without deleting .pyc first:
@@ -62,3 +64,4 @@ pause
 :Qmode
 echo on
 %cmd%
+%cmd_clinic_test%

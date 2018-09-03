@@ -35,7 +35,7 @@ class FakeConvertersDict:
         return self.used_converters.setdefault(name, FakeConverterFactory(name))
 
 clinic.Clinic.presets_text = ''
-c = clinic.Clinic(language='C')
+c = clinic.Clinic(language='C', filename = "file")
 
 class FakeClinic:
     def __init__(self):
@@ -43,6 +43,7 @@ class FakeClinic:
         self.legacy_converters = FakeConvertersDict()
         self.language = clinic.CLanguage(None)
         self.filename = None
+        self.destination_buffers = {}
         self.block_parser = clinic.BlockParser('', self.language)
         self.modules = collections.OrderedDict()
         self.classes = collections.OrderedDict()
@@ -93,7 +94,7 @@ class ClinicWholeFileTest(TestCase):
         # so it would spit out an end line for you.
         # and since you really already had one,
         # the last line of the block got corrupted.
-        c = clinic.Clinic(clinic.CLanguage(None))
+        c = clinic.Clinic(clinic.CLanguage(None), filename="file")
         raw = "/*[clinic]\nfoo\n[clinic]*/"
         cooked = c.parse(raw).splitlines()
         end_line = cooked[2].rstrip()
@@ -252,7 +253,7 @@ xyz
 
     def _test_clinic(self, input, output):
         language = clinic.CLanguage(None)
-        c = clinic.Clinic(language)
+        c = clinic.Clinic(language, filename="file")
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
         computed = c.parse(input)
