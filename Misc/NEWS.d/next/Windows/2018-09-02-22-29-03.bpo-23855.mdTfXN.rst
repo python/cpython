@@ -1,0 +1,1 @@
+Add missing ``NULL`` checks for ``malloc()`` in _msi.c.
