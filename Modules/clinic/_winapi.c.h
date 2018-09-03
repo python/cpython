@@ -673,7 +673,7 @@ PyDoc_STRVAR(_winapi_ReadFile__doc__,
     {"ReadFile", (PyCFunction)_winapi_ReadFile, METH_FASTCALL|METH_KEYWORDS, _winapi_ReadFile__doc__},
 
 static PyObject *
-_winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
+_winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
                       int use_overlapped);
 
 static PyObject *
