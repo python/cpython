@@ -11,6 +11,7 @@ import gc
 import sysconfig
 import locale
 import threading
+import re
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
@@ -541,10 +542,26 @@ class SysModuleTest(unittest.TestCase):
         # Users are intentionally prevented from creating new instances of
         # sys.flags, sys.version_info, and sys.getwindowsversion.
         attr_type = type(sys_attr)
-        with self.assertRaises(TypeError):
+        attr_type_name = f'sys.{attr_type.__name__}'
+
+        cant_create_message = re.escape(f"cannot create '{attr_type_name}' instances")
+        object_message = re.escape(
+            f'object.__new__({attr_type_name}) is not safe, '
+            f'use {attr_type_name}.__new__()'
+        )
+        tuple_message = re.escape(
+            f'tuple.__new__({attr_type_name}) is not safe, '
+            f'use {attr_type_name}.__new__()'
+        )
+
+        with self.assertRaisesRegex(TypeError, cant_create_message):
             attr_type()
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, cant_create_message):
             attr_type.__new__(attr_type)
+        with self.assertRaisesRegex(TypeError, object_message):
+            object.__new__(attr_type)
+        with self.assertRaisesRegex(TypeError, tuple_message):
+            tuple.__new__(attr_type)
 
     def test_sys_flags_no_instantiation(self):
         self.assert_raise_on_new_sys_type(sys.flags)

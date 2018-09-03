@@ -1688,28 +1688,6 @@ class ObjectCreationTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, not_safe_message):
             object.__new__(C)
 
-    def test_create_sys_tuples(self):
-        C = type(sys.flags)
-
-        cant_create_message = re.escape("cannot create 'sys.flags' instances")
-        object_message = re.escape(
-            'object.__new__(sys.flags) is not safe, '
-            'use sys.flags.__new__()'
-        )
-        tuple_message = re.escape(
-            'tuple.__new__(sys.flags) is not safe, '
-            'use sys.flags.__new__()'
-        )
-
-        with self.assertRaisesRegex(TypeError, cant_create_message):
-            C()
-        with self.assertRaisesRegex(TypeError, cant_create_message):
-            C.__new__(C)
-        with self.assertRaisesRegex(TypeError, object_message):
-            object.__new__(C)
-        with self.assertRaisesRegex(TypeError, tuple_message):
-            tuple.__new__(C)
-
 
 if __name__ == '__main__':
     unittest.main()
