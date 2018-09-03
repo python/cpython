@@ -77,12 +77,12 @@ class SemaphoreTracker(object):
                 exe = spawn.get_executable()
                 args = [exe] + util._args_from_interpreter_flags()
                 args += ['-c', cmd % r]
-                # Register a signal mask that will block the signals. This signal
-                # mask will be inherited by the child that is going to be spawned
-                # and will protect the child from a race condition that can make
-                # the child die before it registers signal handlers for SIGINT and
-                # SIGTERM. The mask is unregistered after spawning the child.
-                # For more info, see: https://bugs.python.org/issue33613
+                # bpo-33613: Register a signal mask that will block the signals.
+                # This signal mask will be inherited by the child that is going
+                # to be spawned and will protect the child from a race condition
+                # that can make the child die before it registers signal handlers
+                # for SIGINT and SIGTERM. The mask is unregistered after spawning
+                # the child.
                 try:
                     if _HAVE_SIGMASK:
                         signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
