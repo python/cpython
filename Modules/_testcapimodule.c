@@ -4645,8 +4645,6 @@ decode_locale_ex(PyObject *self, PyObject *args)
 static PyObject *
 get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    extern PyObject* _Py_wstrlist_as_pylist(int len, wchar_t **list);
-
     PyInterpreterState *interp = _PyInterpreterState_Get();
     const _PyCoreConfig *config = &interp->core_config;
     PyObject *dict, *obj;
