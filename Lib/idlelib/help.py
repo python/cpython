@@ -191,31 +191,39 @@ class FontSizer:
         shortcut = 'Command' if darwin else 'Control'
         # Zoom out works with or without shift.
         self.widget.event_add(
-                '<<zoom-text-out>>',
+                '<<zoom-text-in>>',
                 *[f'<{shortcut}-Key-equal>', f'<{shortcut}-Key-plus>'])
-        self.widget.bind('<<zoom-text-out>>', self.zoom)
+        self.widget.bind('<<zoom-text-in>>', self.zoom_in)
 
         self.widget.event_add(
-                '<<zoom-text-in>>',
+                '<<zoom-text-out>>',
                 *[f'<{shortcut}-Key-minus>', f'<{shortcut}-Key-underscore>'])
-        self.widget.bind('<<zoom-text-in>>', self.zoom)
+        self.widget.bind('<<zoom-text-out>>', self.zoom_out)
 
         # Windows and Mac use MouseWheel.
-        self.widget.bind('<Control-MouseWheel>', self.zoom)
+        self.widget.bind('<Control-MouseWheel>', self.zoom_mousewheel)
         # Linux uses Button 4 (scroll down) and Button 5 (scroll up).
-        self.widget.bind('<Control-Button-4>', self.zoom)
-        self.widget.bind('<Control-Button-5>', self.zoom)
+        self.widget.bind('<Control-Button-4>', self.zoom_mousewheel)
+        self.widget.bind('<Control-Button-5>', self.zoom_mousewheel)
 
-    def zoom(self, event):
-        "Handle zooming in/out."
-        if event.type == EventType.KeyPress:
-            increase = event.keysym in {'plus', 'equal'}
-        elif event.type == EventType.MouseWheel:
-            increase = event.delta >= 0 == darwin
-        elif event.type == EventType.Button:
-            increase = event.num == 4
+    def zoom_in(self, event):
+        "Make font size larger."
+        self.zoom(increase=True)
 
+    def zoom_out(self, event):
+        "Make font size smaller."
+        self.zoom(increase=False)
+
+    def zoom_mousewheel(self, event):
+        "Adjust font size based on mouse wheel direction."
+        wheel_up = {EventType.MouseWheel: event.delta > 0,
+                    EventType.Button: event.num == 4}
+        self.zoom(wheel_up[event.type])
+
+    def zoom(self, increase):
+        "Adjust font size."
         font = tkfont.Font(self.widget, name=self.widget['font'], exists=True)
+        # Increase or decrease font size within defined range.
         new_size = (min(font['size'] + 1, MAXIMUM_FONT_SIZE) if increase
                     else max(font['size'] - 1, MINIMUM_FONT_SIZE))
         font['size'] = new_size
@@ -255,6 +263,7 @@ class HelpText(Text):
         self.base_font = tkfont.Font(self, (normalfont, base_size))
         self['font'] = self.base_font
 
+        # Define styling for each font tag used in html.
         self.fonts = fonts = {}
         fonts['em'] = tkfont.Font(self, family=normalfont, slant='italic')
         for tag in ('h3', 'h2', 'h1'):
