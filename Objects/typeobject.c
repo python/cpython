@@ -3639,7 +3639,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int
 excess_args(PyObject *args, PyObject *kwds)
 {
-    return PyTuple_GET_SIZE(args) ||
+    return (args && PyTuple_GET_SIZE(args)) ||
         (kwds && PyDict_Check(kwds) && PyDict_GET_SIZE(kwds));
 }
 
