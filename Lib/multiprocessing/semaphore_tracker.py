@@ -49,7 +49,7 @@ class SemaphoreTracker(object):
                 try:
                     pid, _ = os.waitpid(self._pid, os.WNOHANG)
                 except ChildProcessError:
-                    # The process must be death (no process with pid self._pid).
+                    # The process terminated
                     pass
                 else:
                     if not pid:
