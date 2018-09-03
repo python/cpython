@@ -1018,8 +1018,8 @@ pymain_init_core_argv(_PyMain *pymain, _PyCoreConfig *config, _PyCmdline *cmdlin
 }
 
 
-static PyObject*
-wstrlist_as_pylist(int len, wchar_t **list)
+PyObject*
+_Py_wstrlist_as_pylist(int len, wchar_t **list)
 {
     assert(list != NULL || len < 1);
 
@@ -1502,7 +1502,7 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
 #define COPY_WSTRLIST(ATTR, LEN, LIST) \
     do { \
         if (ATTR == NULL) { \
-            ATTR = wstrlist_as_pylist(LEN, LIST); \
+            ATTR = _Py_wstrlist_as_pylist(LEN, LIST); \
             if (ATTR == NULL) { \
                 return _Py_INIT_NO_MEMORY(); \
             } \
