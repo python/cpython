@@ -477,6 +477,7 @@ static PyMethodDef PyCursesPanel_Methods[] = {
 /* -------------------------------------------------------*/
 
 static PyType_Slot PyCursesPanel_Type_slots[] = {
+    {Py_tp_new,     PyType_NullNew},
     {Py_tp_dealloc, PyCursesPanel_Dealloc},
     {Py_tp_methods, PyCursesPanel_Methods},
     {0, 0},
@@ -640,7 +641,6 @@ PyInit__curses_panel(void)
     v = PyType_FromSpec(&PyCursesPanel_Type_spec);
     if (v == NULL)
         goto fail;
-    ((PyTypeObject *)v)->tp_new = NULL;
     _curses_panelstate(m)->PyCursesPanel_Type = v;
 
     import_curses();

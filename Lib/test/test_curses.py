@@ -14,6 +14,7 @@ import string
 import sys
 import tempfile
 import unittest
+import re
 
 from test.support import requires, import_module, verbose, SaveSignals
 
@@ -305,6 +306,21 @@ class TestCurses(unittest.TestCase):
         # just verify these don't cause errors
         curses.ungetmouse(0, 0, 0, 0, curses.BUTTON1_PRESSED)
         m = curses.getmouse()
+
+    @requires_curses_func('panel')
+    def test_panel_no_instantiation(self):
+        cant_create_message = re.escape("cannot create '_curses_panel.panel' instances")
+        object_message = re.escape(
+            'object.__new__(_curses_panel.panel) is not safe, '
+            'use _curses_panel.panel.__new__()'
+        )
+
+        with self.assertRaisesRegex(TypeError, cant_create_message):
+            curses.panel.panel()
+        with self.assertRaisesRegex(TypeError, cant_create_message):
+            curses.panel.panel.__new__(curses.panel.panel)
+        with self.assertRaisesRegex(TypeError, object_message):
+            object.__new__(curses.panel.panel)
 
     @requires_curses_func('panel')
     def test_userptr_without_set(self):
