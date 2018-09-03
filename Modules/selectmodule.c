@@ -1498,17 +1498,12 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;
     struct epoll_event *evs = NULL;
-    _PyTime_t timeout, ms, deadline;
+    _PyTime_t timeout = -1, ms = -1, deadline = 0;
 
     if (self->epfd < 0)
         return pyepoll_err_closed();
 
-    if (timeout_obj == Py_None) {
-        timeout = -1;
-        ms = -1;
-        deadline = 0;   /* initialize to prevent gcc warning */
-    }
-    else {
+    if (timeout_obj != NULL && timeout_obj != Py_None) {
         /* epoll_wait() has a resolution of 1 millisecond, round towards
            infinity to wait at least timeout seconds. */
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
@@ -1526,7 +1521,19 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
             return NULL;
         }
 
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+        if (timeout >= 0) {
+            deadline = _PyTime_GetMonotonicClock() + timeout;
+        }
+    }
+
+    /* Kernel doesn't make any difference for negative values, but -1 is
+       documented as a way to block indefinitely in the epoll_wait()
+       documentation, so set ms to -1 if the value is negative.
+
+       Note that we didn't use INFTIM here since it's non-standard and
+       doesn't available under Linux. */
+    if (ms < 0) {
+        ms = -1;
     }
 
     if (maxevents == -1) {
