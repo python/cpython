@@ -1,9 +1,11 @@
 """Tests for distutils.spawn."""
-import unittest
-import sys
 import os
-from test.support import run_unittest, unix_shell
+import stat
+import sys
+import unittest
+from test.support import run_unittest, unix_shell, temp_dir
 
+from distutils.spawn import find_executable
 from distutils.spawn import _nt_quote_args
 from distutils.spawn import spawn
 from distutils.errors import DistutilsExecError
@@ -50,6 +52,21 @@ class SpawnTestCase(support.TempdirManager,
 
         os.chmod(exe, 0o777)
         spawn([exe])  # should work without any error
+
+    def test_find_executable(self):
+        with temp_dir() as tmp_dir:
+            # Give the temporary program an ".exe" suffix for all.
+            # It's needed on Windows and not harmful on other platforms.
+            program = "testprogram" + ".exe"
+
+            filename = os.path.join(tmp_dir, program)
+            with open(filename, "wb"):
+                pass
+            os.chmod(filename, stat.S_IXUSR)
+
+            rv = find_executable(program, path=tmp_dir)
+            self.assertEqual(rv, filename)
+
 
 def test_suite():
     return unittest.makeSuite(SpawnTestCase)
