@@ -1585,7 +1585,7 @@ class TestPosixSpawn(unittest.TestCase):
         with self.assertRaises(ValueError):
             posix.posix_spawn(sys.executable,
                               [sys.executable, "-c", "pass"],
-                              os.environ, setsigdef=[9998, 9999])
+                              os.environ, setsigdef=[signal.NSIG, signal.NSIG+1])
 
     @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
     def test_setscheduler_only_param(self):
