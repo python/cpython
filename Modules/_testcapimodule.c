@@ -4658,6 +4658,10 @@ get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
     ((STR != NULL) ? \
         PyUnicode_FromString(STR) \
         : (Py_INCREF(Py_None), Py_None))
+#define FROM_WSTRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromWideChar(STR, -1) \
+        : (Py_INCREF(Py_None), Py_None))
 #define SET_ITEM(KEY, EXPR) \
         do { \
             obj = (EXPR); \
@@ -4710,34 +4714,34 @@ get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
     SET_ITEM("utf8_mode",
              PyLong_FromLong(config->utf8_mode));
     SET_ITEM("pycache_prefix",
-             FROM_STRING(config->pycache_prefix));
+             FROM_WSTRING(config->pycache_prefix));
     SET_ITEM("program_name",
-             FROM_STRING(config->program_name));
+             FROM_WSTRING(config->program_name));
     SET_ITEM("argv",
              _Py_wstrlist_as_pylist(config->argc, config->argv));
     SET_ITEM("program",
-             FROM_STRING(config->program));
+             FROM_WSTRING(config->program));
     SET_ITEM("warnoptions",
              _Py_wstrlist_as_pylist(config->nwarnoption, config->warnoptions));
     SET_ITEM("module_search_path_env",
-             FROM_STRING(config->module_search_path_env));
+             FROM_WSTRING(config->module_search_path_env));
     SET_ITEM("home",
-             FROM_STRING(config->home));
+             FROM_WSTRING(config->home));
     SET_ITEM("module_search_paths",
              _Py_wstrlist_as_pylist(config->nmodule_search_path, config->module_search_paths));
     SET_ITEM("executable",
-             FROM_STRING(config->executable));
+             FROM_WSTRING(config->executable));
     SET_ITEM("prefix",
-             FROM_STRING(config->prefix));
+             FROM_WSTRING(config->prefix));
     SET_ITEM("base_prefix",
-             FROM_STRING(config->base_prefix));
+             FROM_WSTRING(config->base_prefix));
     SET_ITEM("exec_prefix",
-             FROM_STRING(config->exec_prefix));
+             FROM_WSTRING(config->exec_prefix));
     SET_ITEM("base_exec_prefix",
-             FROM_STRING(config->base_exec_prefix));
+             FROM_WSTRING(config->base_exec_prefix));
 #ifdef MS_WINDOWS
     SET_ITEM("dll_path",
-             FROM_STRING(config->dll_path));
+             FROM_WSTRING(config->dll_path));
 #endif
     SET_ITEM("isolated",
              PyLong_FromLong(config->isolated));
@@ -4787,6 +4791,7 @@ fail:
     return NULL;
 
 #undef FROM_STRING
+#undef FROM_WSTRING
 #undef SET_ITEM
 }
 
