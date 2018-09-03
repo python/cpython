@@ -1051,7 +1051,7 @@ static BOOL
 validate_version(wchar_t * p)
 {
     /*
-    Version information should start with one of 2 or 3,
+    Version information should start with the major version,
     Optionally followed by a period and a minor version,
     Optionally followed by a minus and one of 32 or 64.
     Valid examples:
@@ -1068,12 +1068,14 @@ validate_version(wchar_t * p)
     */
     BOOL result = (p != NULL); /* Default to False if null pointer. */
 
-    /* Require first string element to be a a major version; either 2 or 3. */
-    result = result && (*p == L'2' || *p == L'3');
-    
-    if (result && (*++p == L'.')) {  /* Advance and allow . for major minor separator; */
-        result = iswdigit(*++p);     /* must be at least one digit; */
-        while (result && iswdigit(*++p)) ; /* skip any more digits. */
+    result = result && iswdigit(*p);  /* Result = False if first string element is not a digit. */
+
+    while (result && iswdigit(*p))   /* Require a major version */
+        ++p;  /* Skip all leading digit(s) */
+    if (result && (*p == L'.'))     /* Allow . for major minor separator.*/
+    {
+        result = iswdigit(*++p);     /* Must be at least one digit */
+        while (result && iswdigit(*++p)) ; /* Skip any more Digits */
     }
     if (result && (*p == L'-')) {   /* Allow - for Bits Separator */
         switch(*++p){
@@ -1090,6 +1092,7 @@ validate_version(wchar_t * p)
     }
     result = result && !*p; /* Must have reached EOS */
     return result;
+
 }
 
 typedef struct {
