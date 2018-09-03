@@ -475,6 +475,13 @@ void
 _Py_CoerceLegacyLocale(const _PyCoreConfig *config)
 {
 #ifdef PY_COERCE_C_LOCALE
+    char *oldloc = NULL;
+
+    oldloc = _PyMem_RawStrdup(setlocale(LC_CTYPE, NULL));
+    if (oldloc == NULL) {
+        return;
+    }
+
     const char *locale_override = getenv("LC_ALL");
     if (locale_override == NULL || *locale_override == '\0') {
         /* LC_ALL is also not set (or is set to an empty string) */
@@ -496,11 +503,16 @@ defined(HAVE_LANGINFO_H) && defined(CODESET)
 #endif
                 /* Successfully configured locale, so make it the default */
                 _coerce_default_locale_settings(config, target);
-                return;
+                goto done;
             }
         }
     }
     /* No C locale warning here, as Py_Initialize will emit one later */
+
+    setlocale(LC_CTYPE, oldloc);
+
+done:
+    PyMem_RawFree(oldloc);
 #endif
 }
 
