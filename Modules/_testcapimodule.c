@@ -4642,6 +4642,157 @@ decode_locale_ex(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    extern PyObject* _Py_wstrlist_as_pylist(int len, wchar_t **list);
+
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    const _PyCoreConfig *config = &interp->core_config;
+    PyObject *dict, *obj;
+
+    dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+#define FROM_STRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromString(STR) \
+        : (Py_INCREF(Py_None), Py_None))
+#define SET_ITEM(KEY, EXPR) \
+        do { \
+            obj = (EXPR); \
+            if (obj == NULL) { \
+                return NULL; \
+            } \
+            int res = PyDict_SetItemString(dict, (KEY), obj); \
+            Py_DECREF(obj); \
+            if (res < 0) { \
+                goto fail; \
+            } \
+        } while (0)
+
+    SET_ITEM("install_signal_handlers",
+             PyLong_FromLong(config->install_signal_handlers));
+    SET_ITEM("use_environment",
+             PyLong_FromLong(config->use_environment));
+    SET_ITEM("use_hash_seed",
+             PyLong_FromLong(config->use_hash_seed));
+    SET_ITEM("hash_seed",
+             PyLong_FromUnsignedLong(config->hash_seed));
+    SET_ITEM("allocator",
+             FROM_STRING(config->allocator));
+    SET_ITEM("dev_mode",
+             PyLong_FromLong(config->dev_mode));
+    SET_ITEM("faulthandler",
+             PyLong_FromLong(config->faulthandler));
+    SET_ITEM("tracemalloc",
+             PyLong_FromLong(config->tracemalloc));
+    SET_ITEM("import_time",
+             PyLong_FromLong(config->import_time));
+    SET_ITEM("show_ref_count",
+             PyLong_FromLong(config->show_ref_count));
+    SET_ITEM("show_alloc_count",
+             PyLong_FromLong(config->show_alloc_count));
+    SET_ITEM("dump_refs",
+             PyLong_FromLong(config->dump_refs));
+    SET_ITEM("malloc_stats",
+             PyLong_FromLong(config->malloc_stats));
+    SET_ITEM("coerce_c_locale",
+             PyLong_FromLong(config->coerce_c_locale));
+    SET_ITEM("coerce_c_locale_warn",
+             PyLong_FromLong(config->coerce_c_locale_warn));
+    SET_ITEM("filesystem_encoding",
+             FROM_STRING(config->filesystem_encoding));
+    SET_ITEM("filesystem_errors",
+             FROM_STRING(config->filesystem_errors));
+    SET_ITEM("stdio_encoding",
+             FROM_STRING(config->stdio_encoding));
+    SET_ITEM("utf8_mode",
+             PyLong_FromLong(config->utf8_mode));
+    SET_ITEM("pycache_prefix",
+             FROM_STRING(config->pycache_prefix));
+    SET_ITEM("program_name",
+             FROM_STRING(config->program_name));
+    SET_ITEM("argv",
+             _Py_wstrlist_as_pylist(config->argc, config->argv));
+    SET_ITEM("program",
+             FROM_STRING(config->program));
+    SET_ITEM("warnoptions",
+             _Py_wstrlist_as_pylist(config->nwarnoption, config->warnoptions));
+    SET_ITEM("module_search_path_env",
+             FROM_STRING(config->module_search_path_env));
+    SET_ITEM("home",
+             FROM_STRING(config->home));
+    SET_ITEM("module_search_paths",
+             _Py_wstrlist_as_pylist(config->nmodule_search_path, config->module_search_paths));
+    SET_ITEM("executable",
+             FROM_STRING(config->executable));
+    SET_ITEM("prefix",
+             FROM_STRING(config->prefix));
+    SET_ITEM("base_prefix",
+             FROM_STRING(config->base_prefix));
+    SET_ITEM("exec_prefix",
+             FROM_STRING(config->exec_prefix));
+    SET_ITEM("base_exec_prefix",
+             FROM_STRING(config->base_exec_prefix));
+#ifdef MS_WINDOWS
+    SET_ITEM("dll_path",
+             FROM_STRING(config->dll_path));
+#endif
+    SET_ITEM("isolated",
+             PyLong_FromLong(config->isolated));
+    SET_ITEM("site_import",
+             PyLong_FromLong(config->site_import));
+    SET_ITEM("bytes_warning",
+             PyLong_FromLong(config->bytes_warning));
+    SET_ITEM("inspect",
+             PyLong_FromLong(config->inspect));
+    SET_ITEM("interactive",
+             PyLong_FromLong(config->interactive));
+    SET_ITEM("optimization_level",
+             PyLong_FromLong(config->optimization_level));
+    SET_ITEM("parser_debug",
+             PyLong_FromLong(config->parser_debug));
+    SET_ITEM("write_bytecode",
+             PyLong_FromLong(config->write_bytecode));
+    SET_ITEM("verbose",
+             PyLong_FromLong(config->verbose));
+    SET_ITEM("quiet",
+             PyLong_FromLong(config->quiet));
+    SET_ITEM("user_site_directory",
+             PyLong_FromLong(config->user_site_directory));
+    SET_ITEM("buffered_stdio",
+             PyLong_FromLong(config->buffered_stdio));
+    SET_ITEM("stdio_encoding",
+             FROM_STRING(config->stdio_encoding));
+    SET_ITEM("stdio_errors",
+             FROM_STRING(config->stdio_errors));
+#ifdef MS_WINDOWS
+    SET_ITEM("legacy_windows_fs_encoding",
+             PyLong_FromLong(config->legacy_windows_fs_encoding));
+    SET_ITEM("legacy_windows_stdio",
+             PyLong_FromLong(config->legacy_windows_stdio));
+#endif
+    SET_ITEM("_install_importlib",
+             PyLong_FromLong(config->_install_importlib));
+    SET_ITEM("_check_hash_pycs_mode",
+             FROM_STRING(config->_check_hash_pycs_mode));
+    SET_ITEM("_frozen",
+             PyLong_FromLong(config->_frozen));
+
+    return dict;
+
+fail:
+    Py_DECREF(dict);
+    return NULL;
+
+#undef FROM_STRING
+#undef SET_ITEM
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -4865,6 +5016,7 @@ static PyMethodDef TestMethods[] = {
     {"hamt", new_hamt, METH_NOARGS},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
+    {"get_coreconfig", get_coreconfig, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
