@@ -83,9 +83,9 @@ class SemaphoreTracker(object):
                 # the child die before it registers signal handlers for SIGINT and
                 # SIGTERM. The mask is unregistered after spawning the child.
                 # For more info, see: https://bugs.python.org/issue33613
-                if _HAVE_SIGMASK:
-                    signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
                 try:
+                    if _HAVE_SIGMASK:
+                        signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
                     pid = util.spawnv_passfds(exe, args, fds_to_pass)
                 finally:
                     if _HAVE_SIGMASK:
