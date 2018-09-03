@@ -1291,10 +1291,17 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
     int init_legacy_encoding = Py_LegacyWindowsFSEncodingFlag;
 #endif
     _PyCoreConfig save_config = _PyCoreConfig_INIT;
+    char *oldloc = NULL;
     int res = -1;
 
-    /* Set LC_CTYPE to the user preferred locale */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
+    oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
+    if (oldloc == NULL) {
+        pymain->err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+
+    /* Reconfigure the locale to the default for this process */
+    _Py_SetLocaleFromEnv(LC_ALL);
 
     int locale_coerced = 0;
     int loops = 0;
@@ -1385,6 +1392,10 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
 
 done:
     _PyCoreConfig_Clear(&save_config);
+    if (oldloc != NULL) {
+        setlocale(LC_ALL, oldloc);
+        PyMem_RawFree(oldloc);
+    }
     Py_UTF8Mode = init_utf8_mode ;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsFSEncodingFlag = init_legacy_encoding;
