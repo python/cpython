@@ -5181,7 +5181,7 @@ static int
 convert_sched_param(PyObject *param, struct sched_param *res);
 
 static int
-parse_posix_spawn_flags(PyObject *setpgroup, PyObject *resetids, PyObject *setsigmask,
+parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
                         PyObject *setsigdef, PyObject *scheduler,
                         posix_spawnattr_t *attrp)
 {
@@ -5206,13 +5206,8 @@ parse_posix_spawn_flags(PyObject *setpgroup, PyObject *resetids, PyObject *setsi
         all_flags |= POSIX_SPAWN_SETPGROUP;
     }
 
-    if (resetids == Py_True) {
+    if (resetids) {
         all_flags |= POSIX_SPAWN_RESETIDS;
-    }
-    else if (resetids != Py_False) {
-        PyErr_SetString(PyExc_TypeError,
-            "The resetids parameter must be either True or False.");
-        goto fail;
     }
 
    if (setsigmask) {
@@ -5416,7 +5411,7 @@ os.posix_spawn
     *
     setpgroup: object = NULL
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
-    resetids: object = False
+    resetids: bool(accept={int}) = False
         If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.
     setsigmask: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
@@ -5430,10 +5425,9 @@ Execute the program specified by path in a new process.
 static PyObject *
 os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *env, PyObject *file_actions,
-                    PyObject *setpgroup, PyObject *resetids,
-                    PyObject *setsigmask, PyObject *setsigdef,
-                    PyObject *scheduler)
-/*[clinic end generated code: output=9ed52ce93bef3143 input=29fb938a0224bcb0]*/
+                    PyObject *setpgroup, int resetids, PyObject *setsigmask,
+                    PyObject *setsigdef, PyObject *scheduler)
+/*[clinic end generated code: output=45dfa4c515d09f2c input=2d7a7578430a90f0]*/
 {
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;

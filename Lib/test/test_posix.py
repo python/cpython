@@ -1500,10 +1500,6 @@ class TestPosixSpawn(unittest.TestCase):
         with self.assertRaises(TypeError):
             posix.posix_spawn(sys.executable,
                               [sys.executable, "-c", "pass"],
-                              os.environ, resetids=0)
-        with self.assertRaises(TypeError):
-            posix.posix_spawn(sys.executable,
-                              [sys.executable, "-c", "pass"],
                               os.environ, resetids=None)
 
     def test_setpgroup(self):
