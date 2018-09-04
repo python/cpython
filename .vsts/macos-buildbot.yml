@@ -3,35 +3,38 @@
 
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
-pool:
-  vmImage: macOS 10.13
+jobs:
 
-trigger:
-  branches:
-    include:
-    - master
-    - 3.7
-    - 3.6
-  paths:
-    exclude:
-    - Doc/*
-    - Tools/*
+- job: macOSBuildBot
+  pool:
+    vmImage: 'macOS 10.13'
 
-#variables:
+  trigger:
+    branches:
+      include:
+      - master
+      - 3.7
+      - 3.6
+    paths:
+      exclude:
+      - Doc/*
+      - Tools/*
 
-steps:
-- checkout: self
-  clean: true
-  fetchDepth: 5
+  #variables:
 
-- script: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-vsts
-  displayName: 'Configure CPython (debug)'
+  steps:
+  - checkout: self
+    clean: true
+    fetchDepth: 5
 
-- script: make -s -j4
-  displayName: 'Build CPython'
+  - script: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-vsts
+    displayName: 'Configure CPython (debug)'
 
-- script: make pythoninfo
-  displayName: 'Display build info'
+  - script: make -s -j4
+    displayName: 'Build CPython'
 
-- script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
-  displayName: 'Tests'
+  - script: make pythoninfo
+    displayName: 'Display build info'
+
+  - script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+    displayName: 'Tests'

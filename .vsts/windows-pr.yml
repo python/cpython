@@ -3,60 +3,63 @@
 
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
-pool:
-  vmImage: 'VS2017-Win2016'
-strategy:
-  maxParallel: 2
-  matrix:
-    amd64:
-      buildOpt: -p x64
-      outDirSuffix: amd64
-    win32:
-      buildOpt:
-      outDirSuffix: win32
+jobs:
 
-trigger:
-  branches:
-    include:
-    - master
-    - 3.7
-    - 3.6
-  paths:
-    exclude:
-    - Doc/*
-    - Tools/*
+- job: windowsPR
+  pool:
+    vmImage: 'vs2017-win2016'
+  strategy:
+    maxParallel: 2
+    matrix:
+      amd64:
+        buildOpt: -p x64
+        outDirSuffix: amd64
+      win32:
+        buildOpt:
+        outDirSuffix: win32
 
-variables:
-  # Relocate build outputs outside of source directory to make cleaning faster
-  Py_IntDir: $(Build.BinariesDirectory)\obj
-  # UNDONE: Do not build to a different directory because of broken tests
-  Py_OutDir: $(Build.SourcesDirectory)\PCbuild
-  EXTERNAL_DIR: $(Build.BinariesDirectory)\externals
+  trigger:
+    branches:
+      include:
+      - master
+      - 3.7
+      - 3.6
+    paths:
+      exclude:
+      - Doc/*
+      - Tools/*
 
-steps:
-- checkout: self
-  clean: true
-  fetchDepth: 5
+  variables:
+    # Relocate build outputs outside of source directory to make cleaning faster
+    Py_IntDir: $(Build.BinariesDirectory)\obj
+    # UNDONE: Do not build to a different directory because of broken tests
+    Py_OutDir: $(Build.SourcesDirectory)\PCbuild
+    EXTERNAL_DIR: $(Build.BinariesDirectory)\externals
 
-- powershell: |
-   git fetch -q origin $(System.PullRequest.TargetBranch)
-   if (-not (git diff --name-only HEAD (git merge-base HEAD FETCH_HEAD) | sls -NotMatch '(\.rst$)|(^Doc)|(^Misc)')) {
-      Write-Host 'Only docs were updated. Skipping build'
-      Write-Host '##vso[task.setvariable variable=DocOnly]true'
-   }
-  displayName: Detect doc-only changes
-  condition: and(succeeded(), variables['System.PullRequest.TargetBranch'])
+  steps:
+  - checkout: self
+    clean: true
+    fetchDepth: 5
 
-- script: PCbuild\build.bat -e $(buildOpt)
-  displayName: 'Build CPython'
-  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+  - powershell: |
+      git fetch -q origin $(System.PullRequest.TargetBranch)
+      if (-not (git diff --name-only HEAD (git merge-base HEAD FETCH_HEAD) | sls -NotMatch '(\.rst$)|(^Doc)|(^Misc)')) {
+          Write-Host 'Only docs were updated. Skipping build'
+          Write-Host '##vso[task.setvariable variable=DocOnly]true'
+      }
+    displayName: Detect doc-only changes
+    condition: and(succeeded(), variables['System.PullRequest.TargetBranch'])
 
-- script: python.bat -m test.pythoninfo
-  displayName: 'Display build info'
-  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+  - script: PCbuild\build.bat -e $(buildOpt)
+    displayName: 'Build CPython'
+    condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
-- script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
-  displayName: 'Tests'
-  env:
-    PREFIX: $(Py_OutDir)\$(outDirSuffix)
-  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+  - script: python.bat -m test.pythoninfo
+    displayName: 'Display build info'
+    condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
+  - script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+    displayName: 'Tests'
+    env:
+      PREFIX: $(Py_OutDir)\$(outDirSuffix)
+    condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
