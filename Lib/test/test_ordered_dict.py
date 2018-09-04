@@ -737,15 +737,10 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         od = OrderedDict(pairs)
 
-        expected = (
-            ('keys', [k for k, v in pairs[:1]]),
-            ('values', [v for k, v in pairs[:1]]),
-            ('items', pairs[:1]),
-        )
-        for method_name, items in expected:
+        for method_name in ('keys', 'values', 'items'):
             meth = getattr(od, method_name)
-            with self.subTest(method_name=method_name):
-                for i in range(pickle.HIGHEST_PROTOCOL + 1):
+            for i in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(method_name=method_name, protocol=i):
                     it = iter(meth())
                     next(it)
                     p = pickle.dumps(it, i)
