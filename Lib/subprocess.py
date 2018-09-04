@@ -41,17 +41,55 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
     then returns a (exitcode, output) tuple
 """
 
-import sys
-_mswindows = (sys.platform == "win32")
-
+import builtins
+import errno
 import io
 import os
 import time
 import signal
-import builtins
+import sys
+import threading
 import warnings
-import errno
 from time import monotonic as _time
+
+
+__all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
+           "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
+           "SubprocessError", "TimeoutExpired", "CompletedProcess"]
+           # NOTE: We intentionally exclude list2cmdline as it is
+           # considered an internal implementation detail.  issue10838.
+
+try:
+    import msvcrt
+    import _winapi
+    _mswindows = True
+except ModuleNotFoundError:
+    _mswindows = False
+    import _posixsubprocess
+    import select
+    import selectors
+else:
+    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
+                         STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
+                         STD_ERROR_HANDLE, SW_HIDE,
+                         STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW,
+                         ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS,
+                         HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
+                         NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
+                         CREATE_NO_WINDOW, DETACHED_PROCESS,
+                         CREATE_DEFAULT_ERROR_MODE, CREATE_BREAKAWAY_FROM_JOB)
+
+    __all__.extend(["CREATE_NEW_CONSOLE", "CREATE_NEW_PROCESS_GROUP",
+                    "STD_INPUT_HANDLE", "STD_OUTPUT_HANDLE",
+                    "STD_ERROR_HANDLE", "SW_HIDE",
+                    "STARTF_USESTDHANDLES", "STARTF_USESHOWWINDOW",
+                    "STARTUPINFO",
+                    "ABOVE_NORMAL_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS",
+                    "HIGH_PRIORITY_CLASS", "IDLE_PRIORITY_CLASS",
+                    "NORMAL_PRIORITY_CLASS", "REALTIME_PRIORITY_CLASS",
+                    "CREATE_NO_WINDOW", "DETACHED_PROCESS",
+                    "CREATE_DEFAULT_ERROR_MODE", "CREATE_BREAKAWAY_FROM_JOB"])
+
 
 # Exception classes used by this module.
 class SubprocessError(Exception): pass
@@ -123,9 +161,6 @@ class TimeoutExpired(SubprocessError):
 
 
 if _mswindows:
-    import threading
-    import msvcrt
-    import _winapi
     class STARTUPINFO:
         def __init__(self, *, dwFlags=0, hStdInput=None, hStdOutput=None,
                      hStdError=None, wShowWindow=0, lpAttributeList=None):
@@ -148,53 +183,6 @@ if _mswindows:
                                wShowWindow=self.wShowWindow,
                                lpAttributeList=attr_list)
 
-else:
-    import _posixsubprocess
-    import select
-    import selectors
-    import threading
-
-    # When select or poll has indicated that the file is writable,
-    # we can write up to _PIPE_BUF bytes without risk of blocking.
-    # POSIX defines PIPE_BUF as >= 512.
-    _PIPE_BUF = getattr(select, 'PIPE_BUF', 512)
-
-    # poll/select have the advantage of not requiring any extra file
-    # descriptor, contrarily to epoll/kqueue (also, they require a single
-    # syscall).
-    if hasattr(selectors, 'PollSelector'):
-        _PopenSelector = selectors.PollSelector
-    else:
-        _PopenSelector = selectors.SelectSelector
-
-
-__all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
-           "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
-           "SubprocessError", "TimeoutExpired", "CompletedProcess"]
-           # NOTE: We intentionally exclude list2cmdline as it is
-           # considered an internal implementation detail.  issue10838.
-
-if _mswindows:
-    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
-                         STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
-                         STD_ERROR_HANDLE, SW_HIDE,
-                         STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW,
-                         ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS,
-                         HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
-                         NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
-                         CREATE_NO_WINDOW, DETACHED_PROCESS,
-                         CREATE_DEFAULT_ERROR_MODE, CREATE_BREAKAWAY_FROM_JOB)
-
-    __all__.extend(["CREATE_NEW_CONSOLE", "CREATE_NEW_PROCESS_GROUP",
-                    "STD_INPUT_HANDLE", "STD_OUTPUT_HANDLE",
-                    "STD_ERROR_HANDLE", "SW_HIDE",
-                    "STARTF_USESTDHANDLES", "STARTF_USESHOWWINDOW",
-                    "STARTUPINFO",
-                    "ABOVE_NORMAL_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS",
-                    "HIGH_PRIORITY_CLASS", "IDLE_PRIORITY_CLASS",
-                    "NORMAL_PRIORITY_CLASS", "REALTIME_PRIORITY_CLASS",
-                    "CREATE_NO_WINDOW", "DETACHED_PROCESS",
-                    "CREATE_DEFAULT_ERROR_MODE", "CREATE_BREAKAWAY_FROM_JOB"])
 
     class Handle(int):
         closed = False
@@ -215,6 +203,19 @@ if _mswindows:
 
         __del__ = Close
         __str__ = __repr__
+else:
+    # When select or poll has indicated that the file is writable,
+    # we can write up to _PIPE_BUF bytes without risk of blocking.
+    # POSIX defines PIPE_BUF as >= 512.
+    _PIPE_BUF = getattr(select, 'PIPE_BUF', 512)
+
+    # poll/select have the advantage of not requiring any extra file
+    # descriptor, contrarily to epoll/kqueue (also, they require a single
+    # syscall).
+    if hasattr(selectors, 'PollSelector'):
+        _PopenSelector = selectors.PollSelector
+    else:
+        _PopenSelector = selectors.SelectSelector
 
 
 # This lists holds Popen instances for which the underlying process had not
