@@ -3,9 +3,10 @@
 
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
-queue:
-  name: Hosted VS2017
-  parallel: 2
+pool:
+  vmImage: 'VS2017-Win2016'
+strategy:
+  maxParallel: 2
   matrix:
     amd64:
       buildOpt: -p x64

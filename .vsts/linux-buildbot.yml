@@ -3,8 +3,8 @@
 
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
-queue:
-  name: Hosted Linux Preview
+pool:
+  vmImage: Ubuntu 16.04
 
 trigger:
   branches:
@@ -21,7 +21,6 @@ variables:
   # Copy-pasted from linux-deps.yml until template support arrives
   OPENSSL: 1.1.0g
   OPENSSL_DIR: "$(build.sourcesDirectory)/multissl/openssl/$(OPENSSL)"
-
 
 steps:
 - checkout: self

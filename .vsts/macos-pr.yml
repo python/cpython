@@ -3,8 +3,8 @@
 
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
-queue:
-  name: Hosted macOS Preview
+pool:
+  vmImage: macOS 10.13
 
 trigger:
   branches:
