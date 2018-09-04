@@ -1840,10 +1840,12 @@ odictiter_reduce(odictiterobject *di)
     /* copy the iterator state */
     odictiterobject tmp = *di;
     Py_XINCREF(tmp.di_odict);
+    Py_XINCREF(tmp.di_current);
 
     /* iterate the temporary into a list */
     PyObject *list = PySequence_List((PyObject*)&tmp);
     Py_XDECREF(tmp.di_odict);
+    Py_XDECREF(tmp.di_current);
     if (list == NULL) {
         return NULL;
     }
