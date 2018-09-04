@@ -35,6 +35,6 @@ test_script:
 environment:
   HOST_PYTHON: C:\Python36\python.exe
 image:
-# XXX: Testing whether a VS2017 build on its own can survive
-#  - Visual Studio 2015
+# XXX: Testing whether order matters
   - Visual Studio 2017
+  - Visual Studio 2015
