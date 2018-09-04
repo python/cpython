@@ -7,6 +7,8 @@ import os
 import re
 import subprocess
 import sys
+import platform
+AIX = platform.system() == 'AIX'
 
 
 class EmbeddingTestsMixin:
@@ -293,6 +295,49 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_check_hash_pycs_mode': 'default',
         '_frozen': 0,
     }
+    if AIX:
+        DEFAULT_CONFIG = {
+            'install_signal_handlers': 1,
+            'use_environment': 1,
+            'use_hash_seed': 0,
+            'hash_seed': 0,
+            'allocator': '',
+            'dev_mode': 0,
+            'faulthandler': 0,
+            'tracemalloc': 0,
+            'import_time': 0,
+            'show_ref_count': 0,
+            'show_alloc_count': 0,
+            'dump_refs': 0,
+            'malloc_stats': 0,
+            'utf8_mode': 0,
+
+            'coerce_c_locale': 0,
+            'coerce_c_locale_warn': 0,
+
+            'pycache_prefix': '',
+            'program_name': './_testembed',
+            'argc': 0,
+            'argv': '[]',
+            'program': '',
+
+            'isolated': 0,
+            'site_import': 1,
+            'bytes_warning': 0,
+            'inspect': 0,
+            'interactive': 0,
+            'optimization_level': 0,
+            'parser_debug': 0,
+            'write_bytecode': 1,
+            'verbose': 0,
+            'quiet': 0,
+            'user_site_directory': 1,
+            'buffered_stdio': 1,
+
+            '_install_importlib': 1,
+            '_check_hash_pycs_mode': 'default',
+            '_frozen': 0,
+        }
 
     def check_config(self, testname, expected):
         env = dict(os.environ)

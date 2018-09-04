@@ -1,0 +1,1 @@
+Modify DEFAULT_CONFIG for AIX
