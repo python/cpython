@@ -423,13 +423,13 @@ get_default_standard_stream_error_handler(void)
 {
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     if (ctype_loc != NULL) {
-        /* "surrogateescape" is the default in the legacy C locale */
-        if (strcmp(ctype_loc, "C") == 0) {
+        /* surrogateescape is the default in the legacy C and POSIX locales */
+        if (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0) {
             return "surrogateescape";
         }
 
 #ifdef PY_COERCE_C_LOCALE
-        /* "surrogateescape" is the default in locale coercion target locales */
+        /* surrogateescape is the default in locale coercion target locales */
         const _LocaleCoercionTarget *target = NULL;
         for (target = _TARGET_LOCALES; target->locale_name; target++) {
             if (strcmp(ctype_loc, target->locale_name) == 0) {
@@ -440,7 +440,7 @@ get_default_standard_stream_error_handler(void)
    }
 
    /* Otherwise return NULL to request the typical default error handler */
-   return NULL;
+   return "strict";
 }
 
 #ifdef PY_COERCE_C_LOCALE
@@ -475,6 +475,13 @@ void
 _Py_CoerceLegacyLocale(const _PyCoreConfig *config)
 {
 #ifdef PY_COERCE_C_LOCALE
+    char *oldloc = NULL;
+
+    oldloc = _PyMem_RawStrdup(setlocale(LC_CTYPE, NULL));
+    if (oldloc == NULL) {
+        return;
+    }
+
     const char *locale_override = getenv("LC_ALL");
     if (locale_override == NULL || *locale_override == '\0') {
         /* LC_ALL is also not set (or is set to an empty string) */
@@ -496,11 +503,16 @@ defined(HAVE_LANGINFO_H) && defined(CODESET)
 #endif
                 /* Successfully configured locale, so make it the default */
                 _coerce_default_locale_settings(config, target);
-                return;
+                goto done;
             }
         }
     }
     /* No C locale warning here, as Py_Initialize will emit one later */
+
+    setlocale(LC_CTYPE, oldloc);
+
+done:
+    PyMem_RawFree(oldloc);
 #endif
 }
 
@@ -672,10 +684,6 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     _PyRuntime.finalizing = NULL;
 
 #ifndef MS_WINDOWS
-    /* Set up the LC_CTYPE locale, so we can obtain
-       the locale's charset without having to switch
-       locales. */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
     _emit_stderr_warning_for_legacy_locale(core_config);
 #endif
 
@@ -828,6 +836,12 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
     /* Copy the configuration, since _PyCoreConfig_Read() modifies it
        (and the input configuration is read only). */
     _PyCoreConfig config = _PyCoreConfig_INIT;
+
+#ifndef MS_WINDOWS
+    /* Set up the LC_CTYPE locale, so we can obtain the locale's charset
+       without having to switch locales. */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
+#endif
 
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     if (_PyCoreConfig_Copy(&config, src_config) >= 0) {
@@ -1849,20 +1863,42 @@ init_sys_streams(PyInterpreterState *interp)
             if (err) {
                 *err = '\0';
                 err++;
-                if (*err && !errors) {
-                    errors = err;
+                if (!err[0]) {
+                    err = NULL;
                 }
             }
-            if (*pythonioencoding && !encoding) {
-                encoding = pythonioencoding;
+
+            /* Does PYTHONIOENCODING contain an encoding? */
+            if (pythonioencoding[0]) {
+                if (!encoding) {
+                    encoding = pythonioencoding;
+                }
+
+                /* If the encoding is set but not the error handler,
+                   use "strict" error handler by default.
+                   PYTHONIOENCODING=latin1 behaves as
+                   PYTHONIOENCODING=latin1:strict. */
+                if (!err) {
+                    err = "strict";
+                }
+            }
+
+            if (!errors && err != NULL) {
+                errors = err;
             }
         }
-        else if (interp->core_config.utf8_mode) {
-            encoding = "utf-8";
-            errors = "surrogateescape";
+
+        if (interp->core_config.utf8_mode) {
+            if (!encoding) {
+                encoding = "utf-8";
+            }
+            if (!errors) {
+                errors = "surrogateescape";
+            }
         }
 
-        if (!errors && !pythonioencoding) {
+
+        if (!errors) {
             /* Choose the default error handler based on the current locale */
             errors = get_default_standard_stream_error_handler();
         }

@@ -1465,7 +1465,6 @@ process(int argc, wchar_t ** argv)
     wchar_t * p;
     int rc = 0;
     size_t plen;
-    size_t slen;
     INSTALLED_PYTHON * ip;
     BOOL valid;
     DWORD size, attrs;
@@ -1601,10 +1600,11 @@ process(int argc, wchar_t ** argv)
     else {
         p = argv[1];
         plen = wcslen(p);
-        if (argc == 2) {
-            slen = wcslen(L"-0");
-            if(!wcsncmp(p, L"-0", slen)) /* Starts with -0 */
-                valid = show_python_list(argv); /* Check for -0 FIRST */
+        if ((argc == 2) && 
+            (!wcsncmp(p, L"-0", wcslen(L"-0")) || /* Starts with -0 or --list */
+            !wcsncmp(p, L"--list", wcslen(L"--list"))))
+        {
+            valid = show_python_list(argv); /* Check for -0 or --list FIRST */
         }
         valid = valid && (*p == L'-') && validate_version(&p[1]);
         if (valid) {
@@ -1637,10 +1637,13 @@ installed, use -0 for available pythons", &p[1]);
     if (!valid) {
         if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help")))
             show_help_text(argv);
-        if ((argc == 2) && (!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"-0p")))
-            executable = NULL; /* Info call only */
-        else
+        if ((argc == 2) &&
+            (!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"--list") ||
+            !_wcsicmp(p, L"-0p") || !_wcsicmp(p, L"--list-paths")))
         {
+            executable = NULL; /* Info call only */
+        }
+        else {
             /* Look for an active virtualenv */
             executable = find_python_by_venv();
 
