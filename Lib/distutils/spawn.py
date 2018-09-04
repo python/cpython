@@ -173,7 +173,7 @@ def find_executable(executable, path=None):
     os.environ['PATH'].  Returns the complete filename or None if not found.
     """
     if path is None:
-        path = os.environ['PATH']
+        path = os.environ.get('PATH', os.defpath)
 
     paths = path.split(os.pathsep)
     base, ext = os.path.splitext(executable)
