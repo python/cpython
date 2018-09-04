@@ -1,0 +1,1 @@
+Add encryption support to zipfile module.
