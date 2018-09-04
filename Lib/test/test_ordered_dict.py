@@ -739,13 +739,15 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
         for method_name in ('keys', 'values', 'items'):
             meth = getattr(od, method_name)
+            expected = list(meth())[1:]
             for i in range(pickle.HIGHEST_PROTOCOL + 1):
                 with self.subTest(method_name=method_name, protocol=i):
                     it = iter(meth())
                     next(it)
                     p = pickle.dumps(it, i)
                     unpickled = pickle.loads(p)
-                    self.assertEqual(list(it), list(unpickled))
+                    self.assertEqual(list(unpickled), expected)
+                    self.assertEqual(list(it), expected)
 
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):
