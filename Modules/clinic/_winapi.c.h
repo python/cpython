@@ -530,6 +530,38 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_GetProcessHandleCount__doc__,
+"GetProcessHandleCount($module, ProcessHandle=None, /)\n"
+"--\n"
+"\n"
+"Return the number of open handles for the specified process.\n"
+"\n"
+"Return the number of open handles for the process specified\n"
+"by ProcessHandle.  If ProcessHandle is not given then the\n"
+"handle count for the current process is given.");
+
+#define _WINAPI_GETPROCESSHANDLECOUNT_METHODDEF    \
+    {"GetProcessHandleCount", (PyCFunction)_winapi_GetProcessHandleCount, METH_FASTCALL, _winapi_GetProcessHandleCount__doc__},
+
+static PyObject *
+_winapi_GetProcessHandleCount_impl(PyObject *module, HANDLE ProcessHandle);
+
+static PyObject *
+_winapi_GetProcessHandleCount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    HANDLE ProcessHandle = GetCurrentProcess();
+
+    if (!_PyArg_ParseStack(args, nargs, "|" F_HANDLE ":GetProcessHandleCount",
+        &ProcessHandle)) {
+        goto exit;
+    }
+    return_value = _winapi_GetProcessHandleCount_impl(module, ProcessHandle);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi_GetStdHandle__doc__,
 "GetStdHandle($module, std_handle, /)\n"
 "--\n"
@@ -941,4 +973,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ec7f36eb7efc9d00 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5f1f0b2da6249e90 input=a9049054013a1b77]*/
