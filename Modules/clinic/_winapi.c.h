@@ -673,7 +673,7 @@ PyDoc_STRVAR(_winapi_ReadFile__doc__,
     {"ReadFile", (PyCFunction)_winapi_ReadFile, METH_FASTCALL, _winapi_ReadFile__doc__},
 
 static PyObject *
-_winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
+_winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
                       int use_overlapped);
 
 static PyObject *
@@ -681,9 +681,9 @@ _winapi_ReadFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "size", "overlapped", NULL};
-    static _PyArg_Parser _parser = {"" F_HANDLE "i|i:ReadFile", _keywords, 0};
+    static _PyArg_Parser _parser = {"" F_HANDLE "k|i:ReadFile", _keywords, 0};
     HANDLE handle;
-    int size;
+    DWORD size;
     int use_overlapped = 0;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
@@ -889,4 +889,56 @@ _winapi_WriteFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=46d6382a6662c4a9 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_GetACP__doc__,
+"GetACP($module, /)\n"
+"--\n"
+"\n"
+"Get the current Windows ANSI code page identifier.");
+
+#define _WINAPI_GETACP_METHODDEF    \
+    {"GetACP", (PyCFunction)_winapi_GetACP, METH_NOARGS, _winapi_GetACP__doc__},
+
+static PyObject *
+_winapi_GetACP_impl(PyObject *module);
+
+static PyObject *
+_winapi_GetACP(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _winapi_GetACP_impl(module);
+}
+
+PyDoc_STRVAR(_winapi_GetFileType__doc__,
+"GetFileType($module, /, handle)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_GETFILETYPE_METHODDEF    \
+    {"GetFileType", (PyCFunction)_winapi_GetFileType, METH_FASTCALL|METH_KEYWORDS, _winapi_GetFileType__doc__},
+
+static DWORD
+_winapi_GetFileType_impl(PyObject *module, HANDLE handle);
+
+static PyObject *
+_winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"handle", NULL};
+    static _PyArg_Parser _parser = {"" F_HANDLE ":GetFileType", _keywords, 0};
+    HANDLE handle;
+    DWORD _return_value;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &handle)) {
+        goto exit;
+    }
+    _return_value = _winapi_GetFileType_impl(module, handle);
+    if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = Py_BuildValue("k", _return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=baaf3d379b91be0a input=a9049054013a1b77]*/
