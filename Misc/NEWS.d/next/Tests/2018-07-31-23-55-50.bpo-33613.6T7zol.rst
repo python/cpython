@@ -1,3 +1,0 @@
-Improve ``test_semaphore_tracker_sigint`` of multiprocessing tests to fail
-when the semaphore tracker dies when delivering signals ignored by it.
-Related test cases in multiprocessing tests were improved as well.
