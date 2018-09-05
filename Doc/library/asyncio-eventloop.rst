@@ -124,7 +124,7 @@ keywords to your callback, use :func:`functools.partial`. For example,
    parameters in debug mode, whereas ``lambda`` functions have a poor
    representation.
 
-.. method:: AbstractEventLoop.call_soon(callback, \*args)
+.. method:: AbstractEventLoop.call_soon(callback, *args, context=None)
 
    Arrange for a callback to be called as soon as possible.  The callback is
    called after :meth:`call_soon` returns, when control returns to the event
@@ -137,18 +137,30 @@ keywords to your callback, use :func:`functools.partial`. For example,
    Any positional arguments after the callback will be passed to the
    callback when it is called.
 
+   An optional keyword-only *context* argument allows specifying a custom
+   :class:`contextvars.Context` for the *callback* to run in.  The current
+   context is used when no *context* is provided.
+
    An instance of :class:`asyncio.Handle` is returned, which can be
    used to cancel the callback.
 
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
 
-.. method:: AbstractEventLoop.call_soon_threadsafe(callback, \*args)
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
+
+.. method:: AbstractEventLoop.call_soon_threadsafe(callback, *args, context=None)
 
    Like :meth:`call_soon`, but thread safe.
 
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
+
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
 
 
 .. _asyncio-delayed-calls:
@@ -161,12 +173,8 @@ Which clock is used depends on the (platform-specific) event loop
 implementation; ideally it is a monotonic clock.  This will generally be
 a different clock than :func:`time.time`.
 
-.. note::
 
-   Timeouts (relative *delay* or absolute *when*) should not exceed one day.
-
-
-.. method:: AbstractEventLoop.call_later(delay, callback, *args)
+.. method:: AbstractEventLoop.call_later(delay, callback, *args, context=None)
 
    Arrange for the *callback* to be called after the given *delay*
    seconds (either an int or float).
@@ -182,10 +190,18 @@ a different clock than :func:`time.time`.
    is called. If you want the callback to be called with some named
    arguments, use a closure or :func:`functools.partial`.
 
+   An optional keyword-only *context* argument allows specifying a custom
+   :class:`contextvars.Context` for the *callback* to run in.  The current
+   context is used when no *context* is provided.
+
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
 
-.. method:: AbstractEventLoop.call_at(when, callback, *args)
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
+
+.. method:: AbstractEventLoop.call_at(when, callback, *args, context=None)
 
    Arrange for the *callback* to be called at the given absolute timestamp
    *when* (an int or float), using the same time reference as
@@ -198,6 +214,10 @@ a different clock than :func:`time.time`.
 
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
+
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
 
 .. method:: AbstractEventLoop.time()
 
@@ -226,7 +246,7 @@ Futures
 Tasks
 -----
 
-.. method:: AbstractEventLoop.create_task(coro)
+.. method:: AbstractEventLoop.create_task(coro, \*, name=None)
 
    Schedule the execution of a :ref:`coroutine object <coroutine>`: wrap it in
    a future. Return a :class:`Task` object.
@@ -235,7 +255,13 @@ Tasks
    interoperability. In this case, the result type is a subclass of
    :class:`Task`.
 
+   If the *name* argument is provided and not ``None``, it is set as the name
+   of the task using :meth:`Task.set_name`.
+
    .. versionadded:: 3.4.2
+
+   .. versionchanged:: 3.8
+      Added the ``name`` parameter.
 
 .. method:: AbstractEventLoop.set_task_factory(factory)
 
@@ -327,7 +353,7 @@ Creating connections
 
    * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds
      to wait for the SSL handshake to complete before aborting the connection.
-     ``10.0`` seconds if ``None`` (default).
+     ``60.0`` seconds if ``None`` (default).
 
    .. versionadded:: 3.7
 
@@ -352,7 +378,7 @@ Creating connections
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
    This method will try to establish the connection in the background.
-   When successful, the it returns a ``(transport, protocol)`` pair.
+   When successful, it returns a ``(transport, protocol)`` pair.
 
    Options changing how the connection is created:
 
@@ -393,6 +419,9 @@ Creating connections
    See :ref:`UDP echo client protocol <asyncio-udp-echo-client-protocol>` and
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
+   .. versionchanged:: 3.4.4
+      The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
+      *allow_broadcast*, and *sock* parameters were added.
 
 .. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path=None, \*, ssl=None, sock=None, server_hostname=None, ssl_handshake_timeout=None)
 
@@ -402,7 +431,7 @@ Creating connections
    efficiently.
 
    This method will try to establish the connection in the background.
-   When successful, the it returns a ``(transport, protocol)`` pair.
+   When successful, it returns a ``(transport, protocol)`` pair.
 
    *path* is the name of a UNIX domain socket, and is required unless a *sock*
    parameter is specified.  Abstract UNIX sockets, :class:`str`,
@@ -418,7 +447,7 @@ Creating connections
 
    .. versionchanged:: 3.7
 
-      The *path* parameter can now be a :class:`~pathlib.Path` object.
+      The *path* parameter can now be a :term:`path-like object`.
 
 
 Creating listening connections
@@ -470,7 +499,7 @@ Creating listening connections
 
    * *ssl_handshake_timeout* is (for an SSL server) the time in seconds to wait
      for the SSL handshake to complete before aborting the connection.
-     ``10.0`` seconds if ``None`` (default).
+     ``60.0`` seconds if ``None`` (default).
 
    * *start_serving* set to ``True`` (the default) causes the created server
      to start accepting connections immediately.  When set to ``False``,
@@ -509,7 +538,7 @@ Creating listening connections
 
    .. versionadded:: 3.7
 
-      The *ssl_handshake_timeout* parameter.
+      The *ssl_handshake_timeout* and *start_serving* parameters.
 
    .. versionchanged:: 3.7
 
@@ -532,7 +561,7 @@ Creating listening connections
 
    * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds to
      wait for the SSL handshake to complete before aborting the connection.
-     ``10.0`` seconds if ``None`` (default).
+     ``60.0`` seconds if ``None`` (default).
 
    When completed it returns a ``(transport, protocol)`` pair.
 
@@ -601,7 +630,7 @@ TLS Upgrade
 
    * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds to
      wait for the SSL handshake to complete before aborting the connection.
-     ``10.0`` seconds if ``None`` (default).
+     ``60.0`` seconds if ``None`` (default).
 
    .. versionadded:: 3.7
 
@@ -879,7 +908,14 @@ pool of processes). By default, an event loop uses a thread pool executor
 
 .. method:: AbstractEventLoop.set_default_executor(executor)
 
-   Set the default executor used by :meth:`run_in_executor`.
+   Set *executor* as the default executor used by :meth:`run_in_executor`.
+   *executor* should be an instance of
+   :class:`~concurrent.futures.ThreadPoolExecutor`.
+
+   .. deprecated:: 3.8
+      Using an executor that is not an instance of
+      :class:`~concurrent.futures.ThreadPoolExecutor` is deprecated and
+      will trigger an error in Python 3.9.
 
 
 Error Handling API
@@ -1114,7 +1150,7 @@ SendfileNotAvailableError
 
    Sendfile syscall is not available, subclass of :exc:`RuntimeError`.
 
-   Raised if the OS does not support senfile syscall for
+   Raised if the OS does not support sendfile syscall for
    given socket or file type.
 
 

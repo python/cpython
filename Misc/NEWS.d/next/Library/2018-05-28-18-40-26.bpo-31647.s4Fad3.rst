@@ -1,0 +1,2 @@
+Fixed bug where calling write_eof() on a _SelectorSocketTransport after it's
+already closed raises AttributeError.

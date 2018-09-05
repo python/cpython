@@ -18,8 +18,8 @@ import sys
 import threading
 import array
 import queue
+import time
 
-from time import time as _time
 from traceback import format_exc
 
 from . import connection
@@ -1045,13 +1045,13 @@ class ConditionProxy(AcquirerProxy):
         if result:
             return result
         if timeout is not None:
-            endtime = _time() + timeout
+            endtime = time.monotonic() + timeout
         else:
             endtime = None
             waittime = None
         while not result:
             if endtime is not None:
-                waittime = endtime - _time()
+                waittime = endtime - time.monotonic()
                 if waittime <= 0:
                     break
             self.wait(waittime)

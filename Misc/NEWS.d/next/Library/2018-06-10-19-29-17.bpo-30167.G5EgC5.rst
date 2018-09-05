@@ -1,0 +1,1 @@
+Prevent site.main() exception if PYTHONSTARTUP is set. Patch by Steve Weber.

@@ -525,12 +525,6 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
     __all__.append("fwalk")
 
-# Make sure os.environ exists, at least
-try:
-    environ
-except NameError:
-    environ = {}
-
 def execl(file, *args):
     """execl(file, *args)
 

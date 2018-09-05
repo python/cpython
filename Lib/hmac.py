@@ -39,8 +39,8 @@ class HMAC:
                    A hashlib constructor returning a new hash object. *OR*
                    A hash name suitable for hashlib.new().
                    Defaults to hashlib.md5.
-                   Implicit default to hashlib.md5 is deprecated and will be
-                   removed in Python 3.6.
+                   Implicit default to hashlib.md5 is deprecated since Python
+                   3.4 and will be removed in Python 3.8.
 
         Note: key and msg must be a bytes or bytearray objects.
         """
@@ -50,7 +50,9 @@ class HMAC:
 
         if digestmod is None:
             _warnings.warn("HMAC() without an explicit digestmod argument "
-                           "is deprecated.", PendingDeprecationWarning, 2)
+                           "is deprecated since Python 3.4, and will be removed "
+                           "in 3.8",
+                           DeprecationWarning, 2)
             digestmod = _hashlib.md5
 
         if callable(digestmod):

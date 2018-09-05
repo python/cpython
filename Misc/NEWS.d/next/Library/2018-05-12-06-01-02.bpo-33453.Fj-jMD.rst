@@ -1,0 +1,4 @@
+Fix dataclasses to work if using literal string type annotations or if using
+PEP 563 "Postponed Evaluation of Annotations".  Only specific string
+prefixes are detected for both ClassVar ("ClassVar" and "typing.ClassVar")
+and InitVar ("InitVar" and "dataclasses.InitVar").

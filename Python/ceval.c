@@ -69,6 +69,7 @@ static PyObject * unicode_concatenate(PyObject *, PyObject *,
 static PyObject * special_lookup(PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyObject *func, PyObject *vararg);
 static void format_kwargs_mapping_error(PyObject *func, PyObject *kwargs);
+static void format_awaitable_error(PyTypeObject *, int);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -531,8 +532,8 @@ PyEval_EvalFrame(PyFrameObject *f) {
 PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    return tstate->interp->eval_frame(f, throwflag);
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    return interp->eval_frame(f, throwflag);
 }
 
 PyObject* _Py_HOT_FUNCTION
@@ -761,16 +762,26 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                           assert(STACK_LEVEL() <= co->co_stacksize); }
 #define POP()           ((void)(lltrace && prtrace(TOP(), "pop")), \
                          BASIC_POP())
-#define STACKADJ(n)     { (void)(BASIC_STACKADJ(n), \
+#define STACK_GROW(n)   do { \
+                          assert(n >= 0); \
+                          (void)(BASIC_STACKADJ(n), \
                           lltrace && prtrace(TOP(), "stackadj")); \
-                          assert(STACK_LEVEL() <= co->co_stacksize); }
+                          assert(STACK_LEVEL() <= co->co_stacksize); \
+                        } while (0)
+#define STACK_SHRINK(n) do { \
+                            assert(n >= 0); \
+                            (void)(lltrace && prtrace(TOP(), "stackadj")); \
+                            (void)(BASIC_STACKADJ(-n)); \
+                            assert(STACK_LEVEL() <= co->co_stacksize); \
+                        } while (0)
 #define EXT_POP(STACK_POINTER) ((void)(lltrace && \
                                 prtrace((STACK_POINTER)[-1], "ext_pop")), \
                                 *--(STACK_POINTER))
 #else
 #define PUSH(v)                BASIC_PUSH(v)
 #define POP()                  BASIC_POP()
-#define STACKADJ(n)            BASIC_STACKADJ(n)
+#define STACK_GROW(n)          BASIC_STACKADJ(n)
+#define STACK_SHRINK(n)        BASIC_STACKADJ(-n)
 #define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 #endif
 
@@ -927,11 +938,18 @@ main_loop:
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) {
-            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY ||
-                _Py_OPCODE(*next_instr) == YIELD_FROM) {
-                /* Two cases where we skip running signal handlers and other
+            opcode = _Py_OPCODE(*next_instr);
+            if (opcode == SETUP_FINALLY ||
+                opcode == SETUP_WITH ||
+                opcode == BEFORE_ASYNC_WITH ||
+                opcode == YIELD_FROM) {
+                /* Few cases where we skip running signal handlers and other
                    pending calls:
-                   - If we're about to enter the try: of a try/finally (not
+                   - If we're about to enter the 'with:'. It will prevent
+                     emitting a resource warning in the common idiom
+                     'with open(path) as file:'.
+                   - If we're about to enter the 'async with:'.
+                   - If we're about to enter the 'try:' of a try/finally (not
                      *very* useful, but might help in some cases and it's
                      traditional)
                    - If we're resuming a chain of nested 'yield from' or
@@ -1125,7 +1143,7 @@ main_loop:
             PyObject *second = SECOND();
             Py_INCREF(top);
             Py_INCREF(second);
-            STACKADJ(2);
+            STACK_GROW(2);
             SET_TOP(top);
             SET_SECOND(second);
             FAST_DISPATCH();
@@ -1165,7 +1183,7 @@ main_loop:
                 SET_TOP(Py_False);
                 DISPATCH();
             }
-            STACKADJ(-1);
+            STACK_SHRINK(1);
             goto error;
         }
 
@@ -1561,7 +1579,7 @@ main_loop:
             PyObject *container = SECOND();
             PyObject *v = THIRD();
             int err;
-            STACKADJ(-3);
+            STACK_SHRINK(3);
             /* container[sub] = v */
             err = PyObject_SetItem(container, sub, v);
             Py_DECREF(v);
@@ -1576,7 +1594,7 @@ main_loop:
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             int err;
-            STACKADJ(-2);
+            STACK_SHRINK(2);
             /* del container[sub] */
             err = PyObject_DelItem(container, sub);
             Py_DECREF(container);
@@ -1735,6 +1753,11 @@ main_loop:
         TARGET(GET_AWAITABLE) {
             PyObject *iterable = TOP();
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
+
+            if (iter == NULL) {
+                format_awaitable_error(Py_TYPE(iterable),
+                                       _Py_OPCODE(next_instr[-2]));
+            }
 
             Py_DECREF(iterable);
 
@@ -1944,6 +1967,26 @@ main_loop:
             }
         }
 
+        TARGET(END_ASYNC_FOR) {
+            PyObject *exc = POP();
+            assert(PyExceptionClass_Check(exc));
+            if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
+                PyTryBlock *b = PyFrame_BlockPop(f);
+                assert(b->b_type == EXCEPT_HANDLER);
+                Py_DECREF(exc);
+                UNWIND_EXCEPT_HANDLER(b);
+                Py_DECREF(POP());
+                JUMPBY(oparg);
+                FAST_DISPATCH();
+            }
+            else {
+                PyObject *val = POP();
+                PyObject *tb = POP();
+                PyErr_Restore(exc, val, tb);
+                goto exception_unwind;
+            }
+        }
+
         TARGET(LOAD_BUILD_CLASS) {
             _Py_IDENTIFIER(__build_class__);
 
@@ -2034,7 +2077,7 @@ main_loop:
                 }
             } else if (unpack_iterable(seq, oparg, -1,
                                        stack_pointer + oparg)) {
-                STACKADJ(oparg);
+                STACK_GROW(oparg);
             } else {
                 /* unpack_iterable() raised an exception */
                 Py_DECREF(seq);
@@ -2064,7 +2107,7 @@ main_loop:
             PyObject *owner = TOP();
             PyObject *v = SECOND();
             int err;
-            STACKADJ(-2);
+            STACK_SHRINK(2);
             err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
             Py_DECREF(owner);
@@ -2387,7 +2430,7 @@ main_loop:
                     err = PySet_Add(set, item);
                 Py_DECREF(item);
             }
-            STACKADJ(-oparg);
+            STACK_SHRINK(oparg);
             if (err != 0) {
                 Py_DECREF(set);
                 goto error;
@@ -2608,7 +2651,7 @@ main_loop:
             PyObject *value = SECOND();
             PyObject *map;
             int err;
-            STACKADJ(-2);
+            STACK_SHRINK(2);
             map = PEEK(oparg);                      /* dict */
             assert(PyDict_CheckExact(map));
             err = PyDict_SetItem(map, key, value);  /* map[key] = value */
@@ -2751,7 +2794,7 @@ main_loop:
             PyObject *cond = TOP();
             int err;
             if (cond == Py_True) {
-                STACKADJ(-1);
+                STACK_SHRINK(1);
                 Py_DECREF(cond);
                 FAST_DISPATCH();
             }
@@ -2761,7 +2804,7 @@ main_loop:
             }
             err = PyObject_IsTrue(cond);
             if (err > 0) {
-                STACKADJ(-1);
+                STACK_SHRINK(1);
                 Py_DECREF(cond);
             }
             else if (err == 0)
@@ -2775,7 +2818,7 @@ main_loop:
             PyObject *cond = TOP();
             int err;
             if (cond == Py_False) {
-                STACKADJ(-1);
+                STACK_SHRINK(1);
                 Py_DECREF(cond);
                 FAST_DISPATCH();
             }
@@ -2788,7 +2831,7 @@ main_loop:
                 JUMPTO(oparg);
             }
             else if (err == 0) {
-                STACKADJ(-1);
+                STACK_SHRINK(1);
                 Py_DECREF(cond);
             }
             else
@@ -2874,7 +2917,7 @@ main_loop:
                 PyErr_Clear();
             }
             /* iterator ended normally */
-            STACKADJ(-1);
+            STACK_SHRINK(1);
             Py_DECREF(iter);
             JUMPBY(oparg);
             PREDICT(POP_BLOCK);
@@ -2982,7 +3025,7 @@ main_loop:
             val = tb = Py_None;
             exc = TOP();
             if (exc == NULL) {
-                STACKADJ(-1);
+                STACK_SHRINK(1);
                 exit_func = TOP();
                 SET_TOP(exc);
                 exc = Py_None;
@@ -3635,7 +3678,7 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
 }
 
 /* This is gonna seem *real weird*, but if you put some other code between
-   PyEval_EvalFrame() and PyEval_EvalCodeEx() you will need to adjust
+   PyEval_EvalFrame() and _PyEval_EvalFrameDefault() you will need to adjust
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
 
 PyObject *
@@ -4392,7 +4435,7 @@ PyEval_GetBuiltins(void)
 {
     PyFrameObject *current_frame = PyEval_GetFrame();
     if (current_frame == NULL)
-        return PyThreadState_GET()->interp->builtins;
+        return _PyInterpreterState_GET_UNSAFE()->builtins;
     else
         return current_frame->f_builtins;
 }
@@ -4533,16 +4576,25 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type) {
         PyThreadState *tstate = PyThreadState_GET();
-        if (tstate->use_tracing && tstate->c_profilefunc) {
-            // We need to create PyCFunctionObject for tracing.
-            PyMethodDescrObject *descr = (PyMethodDescrObject*)func;
-            func = PyCFunction_NewEx(descr->d_method, stack[0], NULL);
-            if (func == NULL) {
-                return NULL;
+        if (nargs > 0 && tstate->use_tracing) {
+            /* We need to create a temporary bound method as argument
+               for profiling.
+
+               If nargs == 0, then this cannot work because we have no
+               "self". In any case, the call itself would raise
+               TypeError (foo needs an argument), so we just skip
+               profiling. */
+            PyObject *self = stack[0];
+            func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
+            if (func != NULL) {
+                C_TRACE(x, _PyCFunction_FastCallKeywords(func,
+                                                         stack+1, nargs-1,
+                                                         kwnames));
+                Py_DECREF(func);
             }
-            C_TRACE(x, _PyCFunction_FastCallKeywords(func, stack+1, nargs-1,
-                                                     kwnames));
-            Py_DECREF(func);
+            else {
+                x = NULL;
+            }
         }
         else {
             x = _PyMethodDescr_FastCallKeywords(func, stack, nargs, kwnames);
@@ -4717,7 +4769,7 @@ import_name(PyFrameObject *f, PyObject *name, PyObject *fromlist, PyObject *leve
     }
 
     /* Fast path for not overloaded __import__. */
-    if (import_func == PyThreadState_GET()->interp->import_func) {
+    if (import_func == _PyInterpreterState_GET_UNSAFE()->import_func) {
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && PyErr_Occurred()) {
             return NULL;
@@ -4817,6 +4869,7 @@ import_all_from(PyObject *locals, PyObject *v)
 {
     _Py_IDENTIFIER(__all__);
     _Py_IDENTIFIER(__dict__);
+    _Py_IDENTIFIER(__name__);
     PyObject *all, *dict, *name, *value;
     int skip_leading_underscores = 0;
     int pos, err;
@@ -4849,7 +4902,32 @@ import_all_from(PyObject *locals, PyObject *v)
                 PyErr_Clear();
             break;
         }
-        if (skip_leading_underscores && PyUnicode_Check(name)) {
+        if (!PyUnicode_Check(name)) {
+            PyObject *modname = _PyObject_GetAttrId(v, &PyId___name__);
+            if (modname == NULL) {
+                Py_DECREF(name);
+                err = -1;
+                break;
+            }
+            if (!PyUnicode_Check(modname)) {
+                PyErr_Format(PyExc_TypeError,
+                             "module __name__ must be a string, not %.100s",
+                             Py_TYPE(modname)->tp_name);
+            }
+            else {
+                PyErr_Format(PyExc_TypeError,
+                             "%s in %U.%s must be str, not %.100s",
+                             skip_leading_underscores ? "Key" : "Item",
+                             modname,
+                             skip_leading_underscores ? "__dict__" : "__all__",
+                             Py_TYPE(name)->tp_name);
+            }
+            Py_DECREF(modname);
+            Py_DECREF(name);
+            err = -1;
+            break;
+        }
+        if (skip_leading_underscores) {
             if (PyUnicode_READY(name) == -1) {
                 Py_DECREF(name);
                 err = -1;
@@ -4936,6 +5014,25 @@ format_exc_unbound(PyCodeObject *co, int oparg)
                                 PyTuple_GET_SIZE(co->co_cellvars));
         format_exc_check_arg(PyExc_NameError,
                              UNBOUNDFREE_ERROR_MSG, name);
+    }
+}
+
+static void
+format_awaitable_error(PyTypeObject *type, int prevopcode)
+{
+    if (type->tp_as_async == NULL || type->tp_as_async->am_await == NULL) {
+        if (prevopcode == BEFORE_ASYNC_WITH) {
+            PyErr_Format(PyExc_TypeError,
+                         "'async with' received an object from __aenter__ "
+                         "that does not implement __await__: %.100s",
+                         type->tp_name);
+        }
+        else if (prevopcode == WITH_CLEANUP_START) {
+            PyErr_Format(PyExc_TypeError,
+                         "'async with' received an object from __aexit__ "
+                         "that does not implement __await__: %.100s",
+                         type->tp_name);
+        }
     }
 }
 
@@ -5039,7 +5136,7 @@ _Py_GetDXProfile(PyObject *self, PyObject *args)
 Py_ssize_t
 _PyEval_RequestCodeExtraIndex(freefunc free)
 {
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     Py_ssize_t new_index;
 
     if (interp->co_extra_user_count == MAX_CO_EXTRA_USERS - 1) {

@@ -97,6 +97,10 @@ corresponding Unix manual entries for more information on calls.");
 #include <sys/sendfile.h>
 #endif
 
+#if defined(__APPLE__)
+#include <copyfile.h>
+#endif
+
 #ifdef HAVE_SCHED_H
 #include <sched.h>
 #endif
@@ -303,12 +307,6 @@ extern int lstat(const char *, struct stat *);
 #ifdef HAVE_PROCESS_H
 #include <process.h>
 #endif
-#ifndef VOLUME_NAME_DOS
-#define VOLUME_NAME_DOS 0x0
-#endif
-#ifndef VOLUME_NAME_NT
-#define VOLUME_NAME_NT  0x2
-#endif
 #ifndef IO_REPARSE_TAG_SYMLINK
 #define IO_REPARSE_TAG_SYMLINK (0xA000000CL)
 #endif
@@ -439,7 +437,7 @@ run_at_forkers(PyObject *lst, int reverse)
 void
 PyOS_BeforeFork(void)
 {
-    run_at_forkers(PyThreadState_Get()->interp->before_forkers, 1);
+    run_at_forkers(_PyInterpreterState_Get()->before_forkers, 1);
 
     _PyImport_AcquireLock();
 }
@@ -450,7 +448,7 @@ PyOS_AfterFork_Parent(void)
     if (_PyImport_ReleaseLock() <= 0)
         Py_FatalError("failed releasing import lock after fork");
 
-    run_at_forkers(PyThreadState_Get()->interp->after_forkers_parent, 0);
+    run_at_forkers(_PyInterpreterState_Get()->after_forkers_parent, 0);
 }
 
 void
@@ -461,7 +459,7 @@ PyOS_AfterFork_Child(void)
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
 
-    run_at_forkers(PyThreadState_Get()->interp->after_forkers_child, 0);
+    run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
 }
 
 static int
@@ -1273,6 +1271,65 @@ PyLong_FromPy_off_t(Py_off_t offset)
     return PyLong_FromLong(offset);
 #endif
 }
+
+#ifdef HAVE_SIGSET_T
+/* Convert an iterable of integers to a sigset.
+   Return 1 on success, return 0 and raise an exception on error. */
+int
+_Py_Sigset_Converter(PyObject *obj, void *addr)
+{
+    sigset_t *mask = (sigset_t *)addr;
+    PyObject *iterator, *item;
+    long signum;
+    int overflow;
+
+    if (sigemptyset(mask)) {
+        /* Probably only if mask == NULL. */
+        PyErr_SetFromErrno(PyExc_OSError);
+        return 0;
+    }
+
+    iterator = PyObject_GetIter(obj);
+    if (iterator == NULL) {
+        return 0;
+    }
+
+    while ((item = PyIter_Next(iterator)) != NULL) {
+        signum = PyLong_AsLongAndOverflow(item, &overflow);
+        Py_DECREF(item);
+        if (signum <= 0 || signum >= NSIG) {
+            if (overflow || signum != -1 || !PyErr_Occurred()) {
+                PyErr_Format(PyExc_ValueError,
+                             "signal number %ld out of range", signum);
+            }
+            goto error;
+        }
+        if (sigaddset(mask, (int)signum)) {
+            if (errno != EINVAL) {
+                /* Probably impossible */
+                PyErr_SetFromErrno(PyExc_OSError);
+                goto error;
+            }
+            /* For backwards compatibility, allow idioms such as
+             * `range(1, NSIG)` but warn about invalid signal numbers
+             */
+            const char msg[] =
+                "invalid signal number %ld, please use valid_signals()";
+            if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1, msg, signum)) {
+                goto error;
+            }
+        }
+    }
+    if (!PyErr_Occurred()) {
+        Py_DECREF(iterator);
+        return 1;
+    }
+
+error:
+    Py_DECREF(iterator);
+    return 0;
+}
+#endif /* HAVE_SIGSET_T */
 
 /* Return a dictionary corresponding to the POSIX environment table */
 #if defined(WITH_NEXT_FRAMEWORK) || (defined(__APPLE__) && defined(Py_ENABLE_SHARED))
@@ -3679,11 +3736,10 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=621a3c79bc29ebfa input=2b6b6c7cbad5fb84]*/
 {
     HANDLE hFile;
-    int buf_size;
-    wchar_t *target_path;
+    wchar_t buf[MAXPATHLEN], *target_path = buf;
+    int buf_size = Py_ARRAY_LENGTH(buf);
     int result_length;
     PyObject *result;
-    const char *err = NULL;
 
     Py_BEGIN_ALLOW_THREADS
     hFile = CreateFileW(
@@ -3695,55 +3751,52 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
         /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
         FILE_FLAG_BACKUP_SEMANTICS,
         NULL);
+    Py_END_ALLOW_THREADS
 
     if (hFile == INVALID_HANDLE_VALUE) {
-        err = "CreateFileW";
-        goto done1;
+        return win32_error_object("CreateFileW", path->object);
     }
 
     /* We have a good handle to the target, use it to determine the
        target path name. */
-    buf_size = GetFinalPathNameByHandleW(hFile, 0, 0, VOLUME_NAME_NT);
+    while (1) {
+        Py_BEGIN_ALLOW_THREADS
+        result_length = GetFinalPathNameByHandleW(hFile, target_path,
+                                                  buf_size, VOLUME_NAME_DOS);
+        Py_END_ALLOW_THREADS
 
-    if (!buf_size) {
-        err = "GetFinalPathNameByHandle";
-        goto done1;
-    }
-done1:
-    Py_END_ALLOW_THREADS
-    if (err)
-        return win32_error_object(err, path->object);
+        if (!result_length) {
+            result = win32_error_object("GetFinalPathNameByHandleW",
+                                         path->object);
+            goto cleanup;
+        }
 
-    target_path = PyMem_New(wchar_t, buf_size+1);
-    if(!target_path)
-        return PyErr_NoMemory();
+        if (result_length < buf_size) {
+            break;
+        }
 
-    Py_BEGIN_ALLOW_THREADS
-    result_length = GetFinalPathNameByHandleW(hFile, target_path,
-                                              buf_size, VOLUME_NAME_DOS);
-    if (!result_length) {
-        err = "GetFinalPathNameByHandle";
-        goto done2;
-    }
+        wchar_t *tmp;
+        tmp = PyMem_Realloc(target_path != buf ? target_path : NULL,
+                            result_length * sizeof(*tmp));
+        if (!tmp) {
+            result = PyErr_NoMemory();
+            goto cleanup;
+        }
 
-    if (!CloseHandle(hFile)) {
-        err = "CloseHandle";
-        goto done2;
-    }
-done2:
-    Py_END_ALLOW_THREADS
-    if (err) {
-        PyMem_Free(target_path);
-        return win32_error_object(err, path->object);
+        buf_size = result_length;
+        target_path = tmp;
     }
 
-    target_path[result_length] = 0;
     result = PyUnicode_FromWideChar(target_path, result_length);
-    PyMem_Free(target_path);
     if (path->narrow)
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
-    return result;
 
+cleanup:
+    if (target_path != buf) {
+        PyMem_Free(target_path);
+    }
+    CloseHandle(hFile);
+    return result;
 }
 
 /*[clinic input]
@@ -5072,6 +5125,116 @@ enum posix_spawn_file_actions_identifier {
     POSIX_SPAWN_DUP2
 };
 
+static int
+parse_file_actions(PyObject *file_actions,
+                   posix_spawn_file_actions_t *file_actionsp,
+                   PyObject *temp_buffer)
+{
+    PyObject *seq;
+    PyObject *file_action = NULL;
+    PyObject *tag_obj;
+
+    seq = PySequence_Fast(file_actions,
+                          "file_actions must be a sequence or None");
+    if (seq == NULL) {
+        return -1;
+    }
+
+    errno = posix_spawn_file_actions_init(file_actionsp);
+    if (errno) {
+        posix_error();
+        Py_DECREF(seq);
+        return -1;
+    }
+
+    for (int i = 0; i < PySequence_Fast_GET_SIZE(seq); ++i) {
+        file_action = PySequence_Fast_GET_ITEM(seq, i);
+        Py_INCREF(file_action);
+        if (!PyTuple_Check(file_action) || !PyTuple_GET_SIZE(file_action)) {
+            PyErr_SetString(PyExc_TypeError,
+                "Each file_actions element must be a non-empty tuple");
+            goto fail;
+        }
+        long tag = PyLong_AsLong(PyTuple_GET_ITEM(file_action, 0));
+        if (tag == -1 && PyErr_Occurred()) {
+            goto fail;
+        }
+
+        /* Populate the file_actions object */
+        switch (tag) {
+            case POSIX_SPAWN_OPEN: {
+                int fd, oflag;
+                PyObject *path;
+                unsigned long mode;
+                if (!PyArg_ParseTuple(file_action, "OiO&ik"
+                        ";A open file_action tuple must have 5 elements",
+                        &tag_obj, &fd, PyUnicode_FSConverter, &path,
+                        &oflag, &mode))
+                {
+                    goto fail;
+                }
+                if (PyList_Append(temp_buffer, path)) {
+                    Py_DECREF(path);
+                    goto fail;
+                }
+                errno = posix_spawn_file_actions_addopen(file_actionsp,
+                        fd, PyBytes_AS_STRING(path), oflag, (mode_t)mode);
+                Py_DECREF(path);
+                if (errno) {
+                    posix_error();
+                    goto fail;
+                }
+                break;
+            }
+            case POSIX_SPAWN_CLOSE: {
+                int fd;
+                if (!PyArg_ParseTuple(file_action, "Oi"
+                        ";A close file_action tuple must have 2 elements",
+                        &tag_obj, &fd))
+                {
+                    goto fail;
+                }
+                errno = posix_spawn_file_actions_addclose(file_actionsp, fd);
+                if (errno) {
+                    posix_error();
+                    goto fail;
+                }
+                break;
+            }
+            case POSIX_SPAWN_DUP2: {
+                int fd1, fd2;
+                if (!PyArg_ParseTuple(file_action, "Oii"
+                        ";A dup2 file_action tuple must have 3 elements",
+                        &tag_obj, &fd1, &fd2))
+                {
+                    goto fail;
+                }
+                errno = posix_spawn_file_actions_adddup2(file_actionsp,
+                                                         fd1, fd2);
+                if (errno) {
+                    posix_error();
+                    goto fail;
+                }
+                break;
+            }
+            default: {
+                PyErr_SetString(PyExc_TypeError,
+                                "Unknown file_actions identifier");
+                goto fail;
+            }
+        }
+        Py_DECREF(file_action);
+    }
+    Py_DECREF(seq);
+    return 0;
+
+fail:
+    Py_DECREF(seq);
+    Py_DECREF(file_action);
+    (void)posix_spawn_file_actions_destroy(file_actionsp);
+    return -1;
+}
+
 /*[clinic input]
 
 os.posix_spawn
@@ -5082,7 +5245,7 @@ os.posix_spawn
     env: object
         Dictionary of strings mapping to strings.
     file_actions: object = None
-        FileActions object.
+        A sequence of file action tuples.
     /
 
 Execute the program specified by path in a new process.
@@ -5091,22 +5254,23 @@ Execute the program specified by path in a new process.
 static PyObject *
 os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *env, PyObject *file_actions)
-/*[clinic end generated code: output=d023521f541c709c input=0ec9f1cfdc890be5]*/
+/*[clinic end generated code: output=d023521f541c709c input=a3db1021d33230dc]*/
 {
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
-    posix_spawn_file_actions_t _file_actions;
+    posix_spawn_file_actions_t file_actions_buf;
     posix_spawn_file_actions_t *file_actionsp = NULL;
     Py_ssize_t argc, envc;
-    PyObject* result = NULL;
-    PyObject* seq = NULL;
- 
+    PyObject *result = NULL;
+    PyObject *temp_buffer = NULL;
+    pid_t pid;
+    int err_code;
 
     /* posix_spawn has three arguments: (path, argv, env), where
-   argv is a list or tuple of strings and env is a dictionary
+       argv is a list or tuple of strings and env is a dictionary
        like posix.environ. */
 
-    if (!PySequence_Check(argv)) {
+    if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
         PyErr_SetString(PyExc_TypeError,
                         "posix_spawn: argv must be a tuple or list");
         goto exit;
@@ -5138,139 +5302,48 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         goto exit;
     }
 
-    pid_t pid;
-    if (file_actions != NULL && file_actions != Py_None) {
-        if(posix_spawn_file_actions_init(&_file_actions) != 0){
-            PyErr_SetString(PyExc_OSError,
-                            "Error initializing file actions");
+    if (file_actions != Py_None) {
+        /* There is a bug in old versions of glibc that makes some of the
+         * helper functions for manipulating file actions not copy the provided
+         * buffers. The problem is that posix_spawn_file_actions_addopen does not
+         * copy the value of path for some old versions of glibc (<2.20).
+         * The use of temp_buffer here is a workaround that keeps the
+         * python objects that own the buffers alive until posix_spawn gets called.
+         * Check https://bugs.python.org/issue33630 and
+         * https://sourceware.org/bugzilla/show_bug.cgi?id=17048 for more info.*/
+        temp_buffer = PyList_New(0);
+        if (!temp_buffer) {
             goto exit;
         }
-
-        file_actionsp = &_file_actions;
-
-        seq = PySequence_Fast(file_actions, "file_actions must be a sequence");
-        if(seq == NULL) {
+        if (parse_file_actions(file_actions, &file_actions_buf, temp_buffer)) {
             goto exit;
         }
-        PyObject* file_actions_obj;
-        PyObject* mode_obj;
-
-        for (int i = 0; i < PySequence_Fast_GET_SIZE(seq); ++i) {
-            file_actions_obj = PySequence_Fast_GET_ITEM(seq, i);
-
-            if(!PySequence_Check(file_actions_obj) | !PySequence_Size(file_actions_obj)) {
-                PyErr_SetString(PyExc_TypeError,"Each file_action element must be a non empty sequence");
-                goto exit;
-            }
-
-
-            mode_obj = PySequence_Fast_GET_ITEM(file_actions_obj, 0);
-            int mode = PyLong_AsLong(mode_obj);
-
-            /* Populate the file_actions object */
-
-            switch(mode) {
-
-                case POSIX_SPAWN_OPEN:
-                    if(PySequence_Size(file_actions_obj) != 5) {
-                        PyErr_SetString(PyExc_TypeError,"A open file_action object must have 5 elements");
-                        goto exit;
-                    }
-
-                    long open_fd = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
-                    if(PyErr_Occurred()) {
-                        goto exit;
-                    }
-                    const char* open_path = PyUnicode_AsUTF8(PySequence_GetItem(file_actions_obj, 2));
-                    if(open_path == NULL) {
-                        goto exit;
-                    }
-                    long open_oflag = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 3));
-                    if(PyErr_Occurred()) {
-                        goto exit;
-                    }
-                    long open_mode = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 4));
-                    if(PyErr_Occurred()) {
-                        goto exit;
-                    }
-                    if(posix_spawn_file_actions_addopen(file_actionsp, open_fd, open_path, open_oflag, open_mode)) {
-                        PyErr_SetString(PyExc_OSError,"Failed to add open file action");
-                        goto exit;
-                    }
-   
-                    break;
-
-                case POSIX_SPAWN_CLOSE:
-                    if(PySequence_Size(file_actions_obj) != 2){
-                        PyErr_SetString(PyExc_TypeError,"A close file_action object must have 2 elements");
-                        goto exit;
-                    }
-
-                    long close_fd = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
-                    if(PyErr_Occurred()) {
-                        goto exit;
-                    }
-                    if(posix_spawn_file_actions_addclose(file_actionsp, close_fd)) {
-                        PyErr_SetString(PyExc_OSError,"Failed to add close file action");
-                        goto exit;
-                    }
-                    break;
-
-                case POSIX_SPAWN_DUP2:
-                    if(PySequence_Size(file_actions_obj) != 3){
-                        PyErr_SetString(PyExc_TypeError,"A dup2 file_action object must have 3 elements");
-                        goto exit;
-                    }
-
-                    long fd1 = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 1));
-                    if(PyErr_Occurred()) {
-                        goto exit;
-                    }
-                    long fd2 = PyLong_AsLong(PySequence_GetItem(file_actions_obj, 2));
-                    if(PyErr_Occurred()) {
-                        goto exit;
-                    }
-                    if(posix_spawn_file_actions_adddup2(file_actionsp, fd1, fd2)) {
-                        PyErr_SetString(PyExc_OSError,"Failed to add dup2 file action");
-                        goto exit;
-                    }
-                    break;
-
-                default:
-                    PyErr_SetString(PyExc_TypeError,"Unknown file_actions identifier");
-                    goto exit;
-            }
-        }
+        file_actionsp = &file_actions_buf;
     }
 
     _Py_BEGIN_SUPPRESS_IPH
-    int err_code = posix_spawn(&pid, path->narrow, file_actionsp, NULL, argvlist, envlist);
+    err_code = posix_spawn(&pid, path->narrow,
+                           file_actionsp, NULL, argvlist, envlist);
     _Py_END_SUPPRESS_IPH
-    if(err_code) {
-        PyErr_SetString(PyExc_OSError,"posix_spawn call failed");
+    if (err_code) {
+        errno = err_code;
+        PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
         goto exit;
     }
     result = PyLong_FromPid(pid);
 
 exit:
-
-    Py_XDECREF(seq);
-
-    if(file_actionsp) {
-        posix_spawn_file_actions_destroy(file_actionsp);
+    if (file_actionsp) {
+        (void)posix_spawn_file_actions_destroy(file_actionsp);
     }
-    
     if (envlist) {
         free_string_array(envlist, envc);
     }
-
     if (argvlist) {
         free_string_array(argvlist, argc);
     }
-
+    Py_XDECREF(temp_buffer);
     return result;
-
-
 }
 #endif /* HAVE_POSIX_SPAWN */
 
@@ -5530,7 +5603,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
         check_null_or_callable(after_in_parent, "after_in_parent")) {
         return NULL;
     }
-    interp = PyThreadState_Get()->interp;
+    interp = _PyInterpreterState_Get();
 
     if (register_at_forker(&interp->before_forkers, before)) {
         return NULL;
@@ -7289,18 +7362,26 @@ If dir_fd is not None, it should be a file descriptor open to a directory,\n\
   and path should be relative; path will then be relative to that directory.\n\
 dir_fd may not be implemented on your platform.\n\
   If it is unavailable, using it will raise a NotImplementedError.");
-#endif
 
-#ifdef HAVE_READLINK
-
-/* AC 3.5: merge win32 and not together */
 static PyObject *
 posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     path_t path;
     int dir_fd = DEFAULT_DIR_FD;
+#if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
     ssize_t length;
+#elif defined(MS_WINDOWS)
+    DWORD n_bytes_returned;
+    DWORD io_result;
+    HANDLE reparse_point_handle;
+    BOOL is_link;
+    USHORT pname_len;
+
+    char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+    _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
+    const wchar_t *print_name;
+#endif
     PyObject *return_value = NULL;
     static char *keywords[] = {"path", "dir_fd", NULL};
 
@@ -7311,6 +7392,7 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
                           READLINKAT_DIR_FD_CONVERTER, &dir_fd))
         return NULL;
 
+#if defined(HAVE_READLINK)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_READLINKAT
     if (dir_fd != DEFAULT_DIR_FD)
@@ -7330,47 +7412,11 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
         return_value = PyUnicode_DecodeFSDefaultAndSize(buffer, length);
     else
         return_value = PyBytes_FromStringAndSize(buffer, length);
-exit:
-    path_cleanup(&path);
-    return return_value;
-}
-
-#endif /* HAVE_READLINK */
-
-#if !defined(HAVE_READLINK) && defined(MS_WINDOWS)
-
-static PyObject *
-win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    const wchar_t *path;
-    DWORD n_bytes_returned;
-    DWORD io_result;
-    BOOL is_link;
-    PyObject *po, *result;
-    int dir_fd;
-    HANDLE reparse_point_handle;
-    USHORT pname_len;
-
-    char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
-    _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    const wchar_t *print_name;
-
-    static char *keywords[] = {"path", "dir_fd", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "U|$O&:readlink", keywords,
-                          &po,
-                          dir_fd_unavailable, &dir_fd
-                          ))
-        return NULL;
-
-    path = _PyUnicode_AsUnicode(po);
-    if (path == NULL)
-        return NULL;
-
+#elif defined(MS_WINDOWS)
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
     reparse_point_handle = CreateFileW(
-        path,
+        path.wide,
         0,
         0,
         0,
@@ -7379,8 +7425,10 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
         0);
     Py_END_ALLOW_THREADS
 
-    if (reparse_point_handle==INVALID_HANDLE_VALUE)
-        return win32_error_object("readlink", po);
+    if (reparse_point_handle == INVALID_HANDLE_VALUE) {
+        return_value = path_error(&path);
+        goto exit;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     /* New call DeviceIoControl to read the reparse point */
@@ -7395,16 +7443,19 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     CloseHandle(reparse_point_handle);
     Py_END_ALLOW_THREADS
 
-    if (io_result==0)
-        return win32_error_object("readlink", po);
+    if (io_result == 0) {
+        return_value = path_error(&path);
+        goto exit;
+    }
 
     if (!_Py_is_reparse_link(path, rdb->ReparseTag, &is_link, TRUE)) {
-        return PyErr_SetFromWindowsErr(GetLastError());
+        PyErr_SetFromWindowsErr(GetLastError());
+		goto exit;
     }
     if (!is_link) {
         PyErr_SetString(PyExc_ValueError,
                 "not a symbolic link");
-        return NULL;
+        goto exit;
     }
     if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK) {
         print_name = (wchar_t *)(
@@ -7418,13 +7469,16 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
         pname_len = rdb->MountPointReparseBuffer.PrintNameLength;
     }
 
-    result = PyUnicode_FromWideChar(print_name, pname_len / sizeof(wchar_t));
-    return result;
+    return_value = PyUnicode_FromWideChar(print_name, pname_len / sizeof(wchar_t));
+    if (path.narrow) {
+        Py_SETREF(return_value, PyUnicode_EncodeFSDefault(return_value));
+    }
+#endif
+exit:
+    path_cleanup(&path);
+    return return_value;
 }
-
-#endif /* !defined(HAVE_READLINK) && defined(MS_WINDOWS) */
-
-
+#endif /* defined(HAVE_READLINK) || defined(MS_WINDOWS) */
 
 #ifdef HAVE_SYMLINK
 
@@ -8148,9 +8202,6 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     }
 #endif /* SEEK_END */
 
-    if (PyErr_Occurred())
-        return -1;
-
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
@@ -8211,12 +8262,13 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 }
 
 #if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
-    || defined(__APPLE__))) || defined(HAVE_READV) || defined(HAVE_WRITEV)
-static Py_ssize_t
+                                || defined(__APPLE__))) \
+    || defined(HAVE_READV) || defined(HAVE_PREADV) || defined (HAVE_PREADV2) \
+    || defined(HAVE_WRITEV) || defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)
+static int
 iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, Py_ssize_t cnt, int type)
 {
     Py_ssize_t i, j;
-    Py_ssize_t blen, total = 0;
 
     *iov = PyMem_New(struct iovec, cnt);
     if (*iov == NULL) {
@@ -8241,11 +8293,9 @@ iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, Py_ssize_t cnt, in
         }
         Py_DECREF(item);
         (*iov)[i].iov_base = (*buf)[i].buf;
-        blen = (*buf)[i].len;
-        (*iov)[i].iov_len = blen;
-        total += blen;
+        (*iov)[i].iov_len = (*buf)[i].len;
     }
-    return total;
+    return 0;
 
 fail:
     PyMem_Del(*iov);
@@ -8542,12 +8592,20 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
             }
             if (i > 0) {
                 sf.hdr_cnt = (int)i;
-                i = iov_setup(&(sf.headers), &hbuf,
-                              headers, sf.hdr_cnt, PyBUF_SIMPLE);
-                if (i < 0)
+                if (iov_setup(&(sf.headers), &hbuf,
+                              headers, sf.hdr_cnt, PyBUF_SIMPLE) < 0)
                     return NULL;
 #ifdef __APPLE__
-                sbytes += i;
+                for (i = 0; i < sf.hdr_cnt; i++) {
+                    Py_ssize_t blen = sf.headers[i].iov_len;
+# define OFF_T_MAX 0x7fffffffffffffff
+                    if (sbytes >= OFF_T_MAX - blen) {
+                        PyErr_SetString(PyExc_OverflowError,
+                            "sendfile() header is too large");
+                        return NULL;
+                    }
+                    sbytes += blen;
+                }
 #endif
             }
         }
@@ -8568,13 +8626,9 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
             }
             if (i > 0) {
                 sf.trl_cnt = (int)i;
-                i = iov_setup(&(sf.trailers), &tbuf,
-                              trailers, sf.trl_cnt, PyBUF_SIMPLE);
-                if (i < 0)
+                if (iov_setup(&(sf.trailers), &tbuf,
+                              trailers, sf.trl_cnt, PyBUF_SIMPLE) < 0)
                     return NULL;
-#ifdef __APPLE__
-                sbytes += i;
-#endif
             }
         }
     }
@@ -8653,6 +8707,34 @@ done:
 #endif
 }
 #endif /* HAVE_SENDFILE */
+
+
+#if defined(__APPLE__)
+/*[clinic input]
+os._fcopyfile
+
+    infd: int
+    outfd: int
+    flags: int
+    /
+
+Efficiently copy content or metadata of 2 regular file descriptors (macOS).
+[clinic start generated code]*/
+
+static PyObject *
+os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags)
+/*[clinic end generated code: output=8e8885c721ec38e3 input=69e0770e600cb44f]*/
+{
+    int ret;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = fcopyfile(infd, outfd, NULL, flags);
+    Py_END_ALLOW_THREADS
+    if (ret < 0)
+        return posix_error();
+    Py_RETURN_NONE;
+}
+#endif
 
 
 /*[clinic input]
@@ -12815,16 +12897,11 @@ static PyMethodDef posix_methods[] = {
     OS_GETPRIORITY_METHODDEF
     OS_SETPRIORITY_METHODDEF
     OS_POSIX_SPAWN_METHODDEF
-#ifdef HAVE_READLINK
+#if defined(HAVE_READLINK) || defined(MS_WINDOWS)
     {"readlink",        (PyCFunction)posix_readlink,
                         METH_VARARGS | METH_KEYWORDS,
                         readlink__doc__},
-#endif /* HAVE_READLINK */
-#if !defined(HAVE_READLINK) && defined(MS_WINDOWS)
-    {"readlink",        (PyCFunction)win_readlink,
-                        METH_VARARGS | METH_KEYWORDS,
-                        readlink__doc__},
-#endif /* !defined(HAVE_READLINK) && defined(MS_WINDOWS) */
+#endif /* defined(HAVE_READLINK) || defined(MS_WINDOWS) */
     OS_RENAME_METHODDEF
     OS_REPLACE_METHODDEF
     OS_RMDIR_METHODDEF
@@ -12837,6 +12914,7 @@ static PyMethodDef posix_methods[] = {
     OS_UTIME_METHODDEF
     OS_TIMES_METHODDEF
     OS__EXIT_METHODDEF
+    OS__FCOPYFILE_METHODDEF
     OS_EXECV_METHODDEF
     OS_EXECVE_METHODDEF
     OS_SPAWNV_METHODDEF
@@ -13454,6 +13532,10 @@ all_ins(PyObject *m)
 #ifdef HAVE_GETRANDOM_SYSCALL
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
+#endif
+
+#if defined(__APPLE__)
+    if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
 #endif
 
     return 0;

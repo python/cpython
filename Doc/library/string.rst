@@ -231,8 +231,11 @@ attribute using :func:`getattr`, while an expression of the form ``'[index]'``
 does an index lookup using :func:`__getitem__`.
 
 .. versionchanged:: 3.1
-   The positional argument specifiers can be omitted, so ``'{} {}'`` is
-   equivalent to ``'{0} {1}'``.
+   The positional argument specifiers can be omitted for :meth:`str.format`,
+   so ``'{} {}'.format(a, b)`` is equivalent to ``'{0} {1}'.format(a, b)``.
+
+.. versionchanged:: 3.4
+   The positional argument specifiers can be omitted for :class:`Formatter`.
 
 Some simple format string examples::
 
@@ -461,11 +464,11 @@ The available presentation types for floating point and decimal values are:
    | ``'E'`` | Exponent notation. Same as ``'e'`` except it uses an     |
    |         | upper case 'E' as the separator character.               |
    +---------+----------------------------------------------------------+
-   | ``'f'`` | Fixed point. Displays the number as a fixed-point        |
-   |         | number.  The default precision is ``6``.                 |
+   | ``'f'`` | Fixed-point notation. Displays the number as a           |
+   |         | fixed-point number.  The default precision is ``6``.     |
    +---------+----------------------------------------------------------+
-   | ``'F'`` | Fixed point. Same as ``'f'``, but converts ``nan`` to    |
-   |         | ``NAN`` and ``inf`` to ``INF``.                          |
+   | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
+   |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
    +---------+----------------------------------------------------------+
    | ``'g'`` | General format.  For a given precision ``p >= 1``,       |
    |         | this rounds the number to ``p`` significant digits and   |

@@ -1,0 +1,4 @@
+Fix a race condition in SSLProtocol.connection_made() of asyncio.sslproto:
+start immediately the handshake instead of using call_soon(). Previously,
+data_received() could be called before the handshake started, causing the
+handshake to hang or fail.
