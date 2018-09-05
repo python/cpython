@@ -1,1 +1,1 @@
-Fix ``Enum._convert`` shadowing members named _convert.
+Fix enum members getting shadowed by parent attributes.
