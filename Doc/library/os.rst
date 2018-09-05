@@ -2691,7 +2691,7 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       Added support for unelevated symlinks on Windows with Developer Mode.
 
 
