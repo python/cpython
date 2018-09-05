@@ -7448,9 +7448,9 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 
-    if (!_Py_is_reparse_link(path, rdb->ReparseTag, &is_link, TRUE)) {
+    if (!_Py_is_reparse_link(path.wide, rdb->ReparseTag, &is_link, TRUE)) {
         PyErr_SetFromWindowsErr(GetLastError());
-		goto exit;
+        goto exit;
     }
     if (!is_link) {
         PyErr_SetString(PyExc_ValueError,
