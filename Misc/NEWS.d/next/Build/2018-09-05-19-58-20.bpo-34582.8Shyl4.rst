@@ -1,0 +1,2 @@
+The latest YAML syntax is adopted for VSTS build pipelines. Also, new hosted
+agent pools are used for better performance.
