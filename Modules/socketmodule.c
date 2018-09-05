@@ -559,15 +559,18 @@ select_error(void)
 #  define SET_SOCK_ERROR(err) WSASetLastError(err)
 #  define SOCK_TIMEOUT_ERR WSAEWOULDBLOCK
 #  define SOCK_INPROGRESS_ERR WSAEWOULDBLOCK
-#  define SUPPRESS_DEPRECATED_CALL __pragma(warning(suppress: 4996))
 #else
 #  define GET_SOCK_ERROR errno
 #  define SET_SOCK_ERROR(err) do { errno = err; } while (0)
 #  define SOCK_TIMEOUT_ERR EWOULDBLOCK
 #  define SOCK_INPROGRESS_ERR EINPROGRESS
-#  define SUPPRESS_DEPRECATED_CALL
 #endif
 
+#ifdef _MSC_VER
+#  define SUPPRESS_DEPRECATED_CALL __pragma(warning(suppress: 4996))
+#else
+#  define SUPPRESS_DEPRECATED_CALL
+#endif
 
 #ifdef MS_WINDOWS
 /* Does WSASocket() support the WSA_FLAG_NO_HANDLE_INHERIT flag? */
