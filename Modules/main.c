@@ -1018,8 +1018,8 @@ pymain_init_core_argv(_PyMain *pymain, _PyCoreConfig *config, _PyCmdline *cmdlin
 }
 
 
-static PyObject*
-wstrlist_as_pylist(int len, wchar_t **list)
+PyObject*
+_Py_wstrlist_as_pylist(int len, wchar_t **list)
 {
     assert(list != NULL || len < 1);
 
@@ -1292,10 +1292,6 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
 #endif
     _PyCoreConfig save_config = _PyCoreConfig_INIT;
     int res = -1;
-
-    /* Set LC_CTYPE to the user preferred locale */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
-
     int locale_coerced = 0;
     int loops = 0;
 
@@ -1303,6 +1299,9 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
         pymain->err = _Py_INIT_NO_MEMORY();
         goto done;
     }
+
+    /* Set LC_CTYPE to the user preferred locale */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
 
     while (1) {
         int utf8_mode = config->utf8_mode;
@@ -1491,7 +1490,7 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
 #define COPY_WSTRLIST(ATTR, LEN, LIST) \
     do { \
         if (ATTR == NULL) { \
-            ATTR = wstrlist_as_pylist(LEN, LIST); \
+            ATTR = _Py_wstrlist_as_pylist(LEN, LIST); \
             if (ATTR == NULL) { \
                 return _Py_INIT_NO_MEMORY(); \
             } \

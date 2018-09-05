@@ -1656,7 +1656,7 @@ math_factorial(PyObject *module, PyObject *arg)
 {
     long x;
     int overflow;
-    PyObject *result, *odd_part, *two_valuation;
+    PyObject *result, *odd_part, *two_valuation, *pyint_form;
 
     if (PyFloat_Check(arg)) {
         PyObject *lx;
@@ -1672,8 +1672,14 @@ math_factorial(PyObject *module, PyObject *arg)
         x = PyLong_AsLongAndOverflow(lx, &overflow);
         Py_DECREF(lx);
     }
-    else
-        x = PyLong_AsLongAndOverflow(arg, &overflow);
+    else {
+        pyint_form = PyNumber_Index(arg);
+        if (pyint_form == NULL) {
+            return NULL;
+        }
+        x = PyLong_AsLongAndOverflow(pyint_form, &overflow);
+        Py_DECREF(pyint_form);
+    }
 
     if (x == -1 && PyErr_Occurred()) {
         return NULL;
@@ -2074,7 +2080,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     if (found_nan) {
         return Py_NAN;
     }
-    if (max == 0.0 || n == 1) {
+    if (max == 0.0 || n <= 1) {
         return max;
     }
     for (i=0 ; i < n ; i++) {
