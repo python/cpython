@@ -307,6 +307,14 @@ class DispatcherTests(unittest.TestCase):
         err = asyncore._strerror(-1)
         self.assertTrue(err != "")
 
+    def test_close(self):
+        d = asyncore.dispatcher()
+        d.close()
+        self.assertTrue(d.closing)
+
+        # calling close twice should not fail
+        d.close()
+
 
 class dispatcherwithsend_noread(asyncore.dispatcher_with_send):
     def readable(self):

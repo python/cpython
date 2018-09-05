@@ -387,6 +387,10 @@ class dispatcher:
                 raise
 
     def close(self):
+        if self.closing:
+            return
+        self.closing = True
+
         self.connected = False
         self.accepting = False
         self.connecting = False
