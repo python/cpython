@@ -35,6 +35,4 @@ test_script:
 environment:
   HOST_PYTHON: C:\Python36\python.exe
 image:
-# XXX: Testing whether order matters
-  - Visual Studio 2017
   - Visual Studio 2015
