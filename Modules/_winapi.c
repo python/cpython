@@ -1185,7 +1185,7 @@ _winapi.ReadFile
 
     handle: HANDLE
     size: DWORD
-    overlapped as use_overlapped: bool(accept={int}) = False
+    overlapped as use_overlapped: int(c_default='0') = False
 [clinic start generated code]*/
 
 static PyObject *
