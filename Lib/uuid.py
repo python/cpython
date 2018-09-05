@@ -118,6 +118,8 @@ class UUID:
                     uuid_generate_time_safe(3).
     """
 
+    __slots__ = ('int', 'is_safe')
+
     def __init__(self, hex=None, bytes=None, bytes_le=None, fields=None,
                        int=None, version=None,
                        *, is_safe=SafeUUID.unknown):
@@ -201,8 +203,8 @@ class UUID:
             # Set the version number.
             int &= ~(0xf000 << 64)
             int |= version << 76
-        self.__dict__['int'] = int
-        self.__dict__['is_safe'] = is_safe
+        super().__setattr__('int', int)
+        super().__setattr__('is_safe', is_safe)
 
     def __eq__(self, other):
         if isinstance(other, UUID):
