@@ -302,6 +302,8 @@ class TestTimeZone(unittest.TestCase):
         self.assertEqual('UTC+09:30', timezone(9.5 * HOUR).tzname(None))
         self.assertEqual('UTC-00:01', timezone(timedelta(minutes=-1)).tzname(None))
         self.assertEqual('XYZ', timezone(-5 * HOUR, 'XYZ').tzname(None))
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertEqual('\ud800', timezone(ZERO, '\ud800').tzname(None))
 
         # Sub-minute offsets:
         self.assertEqual('UTC+01:06:40', timezone(timedelta(0, 4000)).tzname(None))
@@ -1307,6 +1309,12 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             except ValueError:
                 pass
 
+        # bpo-34482: Check that surrogates don't cause a crash.
+        no_op_strs = ['\ud8888', '\ud800', '\\ud800\ud800']
+        for tstr in no_op_strs:
+            with self.subTest(f'strftime: {tstr!r}'):
+                self.assertEqual(t.strftime(tstr), tstr)
+
         #check that this standard extension works
         t.strftime("%f")
 
@@ -1746,6 +1754,9 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat('T'), "0001-02-03T04:05:01.000123")
         self.assertEqual(t.isoformat(' '), "0001-02-03 04:05:01.000123")
         self.assertEqual(t.isoformat('\x00'), "0001-02-03\x0004:05:01.000123")
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertEqual(t.isoformat('\ud800'),
+                         "0001-02-03\ud80004:05:01.000123")
         self.assertEqual(t.isoformat(timespec='hours'), "0001-02-03T04")
         self.assertEqual(t.isoformat(timespec='minutes'), "0001-02-03T04:05")
         self.assertEqual(t.isoformat(timespec='seconds'), "0001-02-03T04:05:01")
@@ -1754,6 +1765,8 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat(timespec='auto'), "0001-02-03T04:05:01.000123")
         self.assertEqual(t.isoformat(sep=' ', timespec='minutes'), "0001-02-03 04:05")
         self.assertRaises(ValueError, t.isoformat, timespec='foo')
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertRaises(ValueError, t.isoformat, timespec='\ud800')
         # str is ISO format with the separator forced to a blank.
         self.assertEqual(str(t), "0001-02-03 04:05:01.000123")
 
@@ -2277,13 +2290,21 @@ class TestDateTime(TestDate):
         self.assertLessEqual(abs(from_timestamp - from_now), tolerance)
 
     def test_strptime(self):
-        string = '2004-12-01 13:02:47.197'
-        format = '%Y-%m-%d %H:%M:%S.%f'
-        expected = _strptime._strptime_datetime(self.theclass, string, format)
-        got = self.theclass.strptime(string, format)
-        self.assertEqual(expected, got)
-        self.assertIs(type(expected), self.theclass)
-        self.assertIs(type(got), self.theclass)
+        inputs = [
+            ('2004-12-01 13:02:47.197', '%Y-%m-%d %H:%M:%S.%f'),
+            # bpo-34482: Check that surrogates are handled properly.
+            ('2004-12-01\ud80013:02:47.197', '%Y-%m-%d\ud800%H:%M:%S.%f'),
+            ('2004\ud80012-01 13:02:47.197', '%Y\ud800%m-%d %H:%M:%S.%f'),
+            ('2004-12-01 13:02\ud80047.197', '%Y-%m-%d %H:%M\ud800%S.%f'),
+        ]
+        for string, format in inputs:
+            with self.subTest(string=string, format=format):
+                expected = _strptime._strptime_datetime(self.theclass, string,
+                                                        format)
+                got = self.theclass.strptime(string, format)
+                self.assertEqual(expected, got)
+                self.assertIs(type(expected), self.theclass)
+                self.assertIs(type(got), self.theclass)
 
         strptime = self.theclass.strptime
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
@@ -2869,6 +2890,8 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.isoformat(timespec='microseconds'), "12:34:56.123456")
         self.assertEqual(t.isoformat(timespec='auto'), "12:34:56.123456")
         self.assertRaises(ValueError, t.isoformat, timespec='monkey')
+        # bpo-34482: Check that surrogates are handled properly.
+        self.assertRaises(ValueError, t.isoformat, timespec='\ud800')
 
         t = self.theclass(hour=12, minute=34, second=56, microsecond=999500)
         self.assertEqual(t.isoformat(timespec='milliseconds'), "12:34:56.999")
@@ -2918,6 +2941,13 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('%H %M %S %f'), "01 02 03 000004")
         # A naive object replaces %z and %Z with empty strings.
         self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
+
+        # bpo-34482: Check that surrogates don't cause a crash.
+        self.assertEqual(t.strftime('\ud800'), '\ud800')
+
+        # bpo-34482: Check that surrogates in tzinfo don't crash
+        tzinfo = timezone(timedelta(hours=1), '\ud800')
+        t.replace(tzinfo=tzinfo).strftime("%Z")
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)
@@ -3323,11 +3353,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         t = time(2, 3, 4, tzinfo=Badtzname())
         self.assertEqual(t.strftime("%H:%M:%S"), "02:03:04")
         self.assertRaises(TypeError, t.strftime, "%Z")
-
-        # Issue #6697:
-        if '_Fast' in self.__class__.__name__:
-            Badtzname.tz = '\ud800'
-            self.assertRaises(ValueError, t.strftime, "%Z")
 
     def test_hash_edge_cases(self):
         # Offsets that overflow a basic time.

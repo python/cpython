@@ -1478,8 +1478,23 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     assert(PyUnicode_Check(format));
     /* Convert the input format to a C string and size */
     pin = PyUnicode_AsUTF8AndSize(format, &flen);
-    if (!pin)
-        return NULL;
+    PyObject* format_esc = NULL;
+    if (pin == NULL) {
+        PyErr_Clear();
+
+        format_esc = PyUnicode_AsEncodedString(format, "utf-8", "surrogatepass");
+        if (format_esc == NULL) {
+            return NULL;
+        }
+        char *pin_tmp;
+        if (PyBytes_AsStringAndSize(format_esc, &pin_tmp, &flen)) {
+            Py_DECREF(format_esc);
+            return NULL;
+        }
+
+        pin = pin_tmp;
+    }
+    int contains_surrogates = (format_esc != NULL);
 
     /* Scan the input format, looking for %z/%Z/%f escapes, building
      * a new format.  Since computing the replacements for those codes
@@ -1540,15 +1555,33 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             if (Zreplacement == NULL) {
                 Zreplacement = make_Zreplacement(object,
                                                  tzinfoarg);
-                if (Zreplacement == NULL)
+                if (Zreplacement == NULL) {
                     goto Done;
+                }
             }
             assert(Zreplacement != NULL);
             assert(PyUnicode_Check(Zreplacement));
             ptoappend = PyUnicode_AsUTF8AndSize(Zreplacement,
                                                   &ntoappend);
-            if (ptoappend == NULL)
-                goto Done;
+            if (ptoappend == NULL) {
+                PyErr_Clear();
+
+                PyObject *Zreplacement_old = Zreplacement;
+                Zreplacement = PyUnicode_AsEncodedString(
+                        Zreplacement, "utf-8", "surrogatepass"
+                );
+                Py_DECREF(Zreplacement_old);
+                if (Zreplacement == NULL) {
+                    goto Done;
+                }
+
+                char *p_tmp;
+                if (PyBytes_AsStringAndSize(Zreplacement, &p_tmp, &ntoappend)) {
+                    goto Done;
+                }
+                ptoappend = p_tmp;
+                contains_surrogates = 1;
+            }
         }
         else if (ch == 'f') {
             /* format microseconds */
@@ -1599,7 +1632,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
         if (time == NULL)
             goto Done;
-        format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
+        if (!contains_surrogates) {
+            format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
+        } else {
+            format = PyUnicode_Decode(PyBytes_AS_STRING(newfmt),
+                                      PyBytes_GET_SIZE(newfmt),
+                                      "utf-8", "surrogatepass");
+        }
         if (format != NULL) {
             result = _PyObject_CallMethodIdObjArgs(time, &PyId_strftime,
                                                    format, timetuple, NULL);
@@ -1608,6 +1647,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         Py_DECREF(time);
     }
  Done:
+
+    Py_XDECREF(format_esc);
     Py_XDECREF(freplacement);
     Py_XDECREF(zreplacement);
     Py_XDECREF(Zreplacement);
@@ -4901,7 +4942,12 @@ datetime_fromisoformat(PyObject* cls, PyObject *dtstr) {
     const char * dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
 
     if (dt_ptr == NULL) {
-        goto invalid_string_error;
+        if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+            // Encoding errors are invalid string errors at this point
+            goto invalid_string_error;
+        } else {
+            goto error;
+        }
     }
 
     const char *p = dt_ptr;
