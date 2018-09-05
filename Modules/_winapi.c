@@ -1191,7 +1191,7 @@ _winapi.ReadFile
 static PyObject *
 _winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
                       int use_overlapped)
-/*[clinic end generated code: output=d3d5b44a8201b944 input=08c439d03a11aac5]*/
+/*[clinic end generated code: output=d3d5b44a8201b944 input=1b7d0ed0de1e50bc]*/
 {
     DWORD nread;
     PyObject *buf;
