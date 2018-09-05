@@ -889,4 +889,4 @@ _winapi_WriteFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=baaf3d379b91be0a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6c5cf8865d381c70 input=a9049054013a1b77]*/
