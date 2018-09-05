@@ -906,6 +906,7 @@ static PyGetSetDef PyTclObject_getsetlist[] = {
 };
 
 static PyType_Slot PyTclObject_Type_slots[] = {
+    {Py_tp_new, PyType_NullNew},
     {Py_tp_dealloc, (destructor)PyTclObject_dealloc},
     {Py_tp_repr, (reprfunc)PyTclObject_repr},
     {Py_tp_str, (reprfunc)PyTclObject_str},
@@ -3206,6 +3207,7 @@ static PyMethodDef Tktt_methods[] =
 };
 
 static PyType_Slot Tktt_Type_slots[] = {
+    {Py_tp_new, PyType_NullNew},
     {Py_tp_dealloc, Tktt_Dealloc},
     {Py_tp_repr, Tktt_Repr},
     {Py_tp_methods, Tktt_methods},
@@ -3261,6 +3263,7 @@ static PyMethodDef Tkapp_methods[] =
 };
 
 static PyType_Slot Tkapp_Type_slots[] = {
+    {Py_tp_new, PyType_NullNew},
     {Py_tp_dealloc, Tkapp_Dealloc},
     {Py_tp_methods, Tkapp_methods},
     {0, 0}
@@ -3459,7 +3462,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "TkappType", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
@@ -3472,7 +3474,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "TkttType", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
@@ -3485,7 +3486,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "Tcl_Obj", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
