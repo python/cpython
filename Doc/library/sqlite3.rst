@@ -1074,7 +1074,8 @@ Using the connection as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Connection objects can be used as context managers
-that automatically commit or rollback transactions.  In the event of an
+that automatically commit or rollback transactions. Note that this does not
+automatically call :meth:`close` on the connection object. In the event of an
 exception, the transaction is rolled back; otherwise, the transaction is
 committed:
 
