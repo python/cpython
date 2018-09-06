@@ -363,21 +363,9 @@ _Py_bytes_capitalize(char *result, const char *s, Py_ssize_t len)
 {
     Py_ssize_t i;
 
-    if (0 < len) {
-        int c = Py_CHARMASK(*s++);
-        if (Py_ISLOWER(c))
-            *result = Py_TOUPPER(c);
-        else
-            *result = c;
-        result++;
-    }
-    for (i = 1; i < len; i++) {
-        int c = Py_CHARMASK(*s++);
-        if (Py_ISUPPER(c))
-            *result = Py_TOLOWER(c);
-        else
-            *result = c;
-        result++;
+    if (len > 0) {
+        *result = Py_TOUPPER(*s);
+        _Py_bytes_lower(result + 1, s + 1, len - 1);
     }
 }
 
