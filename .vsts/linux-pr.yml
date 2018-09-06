@@ -44,7 +44,9 @@ jobs:
 
   # See https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted-templates.md
   # For now, we copy/paste the steps
-  - script: echo "sudo deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
+  - script: |
+      sudo lsattr /etc/apt/sources.list.d/python.list
+      echo "sudo deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
     displayName: 'Update apt-get lists'
     condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
