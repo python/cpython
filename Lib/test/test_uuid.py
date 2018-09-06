@@ -320,17 +320,30 @@ class BaseTestUUID:
 
         # Python 2.7 protocol 0-2 pickles of u
         py27_pickles = [
-            b'ccopy_reg\n_reconstructor\np0\n(cuuid\nUUID\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS\'int\'\np6\nL24197857161011715162171839636988778104L\nsb.',
-            b'ccopy_reg\n_reconstructor\nq\x00(cuuid\nUUID\nq\x01c__builtin__\nobject\nq\x02Ntq\x03Rq\x04}q\x05U\x03intq\x06L24197857161011715162171839636988778104L\nsb.',
-            b'\x80\x02cuuid\nUUID\nq\x00)\x81q\x01}q\x02U\x03intq\x03\x8a\x10xV4\x12xV4\x12xV4\x12xV4\x12sb.',
+            b'ccopy_reg\n_reconstructor\np0\n(cuuid\nUUID\np1\nc__builtin__\nob'
+            b'ject\np2\nNtp3\nRp4\n(dp5\nS\'int\'\np6\nL24197857161011715162171'
+            b'839636988778104L\nsb.',
+            b'ccopy_reg\n_reconstructor\nq\x00(cuuid\nUUID\nq\x01c__builtin__\n'
+            b'object\nq\x02Ntq\x03Rq\x04}q\x05U\x03intq\x06L2419785716101171516'
+            b'2171839636988778104L\nsb.',
+            b'\x80\x02cuuid\nUUID\nq\x00)\x81q\x01}q\x02U\x03intq\x03\x8a\x10xV'
+            b'4\x12xV4\x12xV4\x12xV4\x12sb.',
         ]
         # Python 3.6 protocol 0-4 pickles of u
         py36_pickles = [
-            b'ccopy_reg\n_reconstructor\np0\n(cuuid\nUUID\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nVint\np6\nL24197857161011715162171839636988778104L\nsb.',
-            b'ccopy_reg\n_reconstructor\nq\x00(cuuid\nUUID\nq\x01c__builtin__\nobject\nq\x02Ntq\x03Rq\x04}q\x05X\x03\x00\x00\x00intq\x06L24197857161011715162171839636988778104L\nsb.',
-            b'\x80\x02cuuid\nUUID\nq\x00)\x81q\x01}q\x02X\x03\x00\x00\x00intq\x03\x8a\x10xV4\x12xV4\x12xV4\x12xV4\x12sb.',
-            b'\x80\x03cuuid\nUUID\nq\x00)\x81q\x01}q\x02X\x03\x00\x00\x00intq\x03\x8a\x10xV4\x12xV4\x12xV4\x12xV4\x12sb.',
-            b'\x80\x04\x950\x00\x00\x00\x00\x00\x00\x00\x8c\x04uuid\x94\x8c\x04UUID\x94\x93\x94)\x81\x94}\x94\x8c\x03int\x94\x8a\x10xV4\x12xV4\x12xV4\x12xV4\x12sb.',
+            b'ccopy_reg\n_reconstructor\np0\n(cuuid\nUUID\np1\nc__builtin__\nob'
+            b'ject\np2\nNtp3\nRp4\n(dp5\nVint\np6\nL241978571610117151621718396'
+            b'36988778104L\nsb.',
+            b'ccopy_reg\n_reconstructor\nq\x00(cuuid\nUUID\nq\x01c__builtin__\n'
+            b'object\nq\x02Ntq\x03Rq\x04}q\x05X\x03\x00\x00\x00intq\x06L2419785'
+            b'7161011715162171839636988778104L\nsb.',
+            b'\x80\x02cuuid\nUUID\nq\x00)\x81q\x01}q\x02X\x03\x00\x00\x00intq'
+            b'\x03\x8a\x10xV4\x12xV4\x12xV4\x12xV4\x12sb.',
+            b'\x80\x03cuuid\nUUID\nq\x00)\x81q\x01}q\x02X\x03\x00\x00\x00intq'
+            b'\x03\x8a\x10xV4\x12xV4\x12xV4\x12xV4\x12sb.',
+            b'\x80\x04\x950\x00\x00\x00\x00\x00\x00\x00\x8c\x04uuid\x94\x8c\x04'
+            b'UUID\x94\x93\x94)\x81\x94}\x94\x8c\x03int\x94\x8a\x10xV4\x12xV4'
+            b'\x12xV4\x12xV4\x12sb.',
         ]
 
         for pickled in py27_pickles + py36_pickles:
