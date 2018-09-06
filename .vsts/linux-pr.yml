@@ -44,9 +44,9 @@ jobs:
 
   # See https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted-templates.md
   # For now, we copy/paste the steps
-#  - script: sudo echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
-#    displayName: 'Update apt-get lists'
-#    condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+  - script: sudo apt-get update
+    displayName: 'Update apt-get lists'
+    condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
   - script: echo ##vso[task.prependpath]$(OPENSSL_DIR)
     displayName: 'Add $(OPENSSL_DIR) to PATH'
