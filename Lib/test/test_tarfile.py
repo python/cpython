@@ -530,7 +530,7 @@ class MiscReadTestBase(CommonReadTest):
                     "wrong uname for %s" % tarinfo.name)
 
     def test_find_members(self):
-        self.assertEqual(self.tar.getmembers()[-1].name, "misc/eof",
+        self.assertEqual(self.tar.getmembers()[-1].name, "misc/hard-link",
                 "could not find all members")
 
     @unittest.skipUnless(hasattr(os, "link"),
@@ -561,7 +561,7 @@ class MiscReadTestBase(CommonReadTest):
         # Test skipping hard link if file points to itself (e.g. bug #29612)
         with tarfile.open(tarname, errorlevel=1, encoding="iso8859-1") as tar:
             tar.extract("misc/hard-link", TEMPDIR)
-            self.assertFalse(os.islink(os.path.join(TEMPDIR, "misc/hard-link")))
+            self.assertFalse(os.path.islink(os.path.join(TEMPDIR, "misc/hard-link")))
 
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions
