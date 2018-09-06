@@ -397,6 +397,7 @@ typedef struct {
     int numread;                /* 0 <= numread <= LINKCELLS */
     PyObject *nextlink;
     PyObject *(values[LINKCELLS]);
+    PyThread_type_lock lead_lock; /* lead iterator lock */
 } teedataobject;
 
 typedef struct {
@@ -421,6 +422,7 @@ teedataobject_newinternal(PyObject *it)
     tdo->nextlink = NULL;
     Py_INCREF(it);
     tdo->it = it;
+    tdo->lead_lock = PyThread_allocate_lock();
     PyObject_GC_Track(tdo);
     return (PyObject *)tdo;
 }
@@ -445,7 +447,14 @@ teedataobject_getitem(teedataobject *tdo, int i)
     else {
         /* this is the lead iterator, so fetch more data */
         assert(i == tdo->numread);
+        if (!PyThread_acquire_lock(tdo->lead_lock, 0)) {
+            Py_BEGIN_ALLOW_THREADS
+            PyThread_acquire_lock(tdo->lead_lock, 1);
+            Py_END_ALLOW_THREADS
+        }
+
         value = PyIter_Next(tdo->it);
+        PyThread_release_lock(tdo->lead_lock);
         if (value == NULL)
             return NULL;
         tdo->numread++;
@@ -498,6 +507,7 @@ teedataobject_clear(teedataobject *tdo)
 static void
 teedataobject_dealloc(teedataobject *tdo)
 {
+    PyThread_free_lock(tdo->lead_lock);
     PyObject_GC_UnTrack(tdo);
     teedataobject_clear(tdo);
     PyObject_GC_Del(tdo);
