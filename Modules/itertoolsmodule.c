@@ -447,14 +447,7 @@ teedataobject_getitem(teedataobject *tdo, int i)
     else {
         /* this is the lead iterator, so fetch more data */
         assert(i == tdo->numread);
-        if (!PyThread_acquire_lock(tdo->lead_lock, 0)) {
-            Py_BEGIN_ALLOW_THREADS
-            PyThread_acquire_lock(tdo->lead_lock, 1);
-            Py_END_ALLOW_THREADS
-        }
-
         value = PyIter_Next(tdo->it);
-        PyThread_release_lock(tdo->lead_lock);
         if (value == NULL)
             return NULL;
         tdo->numread++;
@@ -644,7 +637,13 @@ tee_next(teeobject *to)
         Py_SETREF(to->dataobj, (teedataobject *)link);
         to->index = 0;
     }
+    if (!PyThread_acquire_lock(to->dataobj->lead_lock, NOWAIT_LOCK)) {
+        Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(to->dataobj->lead_lock, WAIT_LOCK);
+        Py_END_ALLOW_THREADS
+    }
     value = teedataobject_getitem(to->dataobj, to->index);
+    PyThread_release_lock(to->dataobj->lead_lock);
     if (value == NULL)
         return NULL;
     to->index++;
