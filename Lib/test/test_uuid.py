@@ -315,6 +315,8 @@ class BaseTestUUID:
 
     def _setup_for_pickle(self):
         orig_uuid = sys.modules.get('uuid')
+        sys.modules['uuid'] = self.uuid
+
         def restore_uuid_module():
             if orig_uuid is not None:
                 sys.modules['uuid'] = orig_uuid
