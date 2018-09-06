@@ -1,0 +1,1 @@
+itertools.tee thread-safe
