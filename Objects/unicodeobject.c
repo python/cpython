@@ -768,8 +768,7 @@ ensure_unicode(PyObject *obj)
 {
     if (!PyUnicode_Check(obj)) {
         PyErr_Format(PyExc_TypeError,
-                     "must be str, not %.100s",
-                     Py_TYPE(obj)->tp_name);
+                     "must be str, not %T", obj);
         return -1;
     }
     return PyUnicode_READY(obj);
@@ -2530,7 +2529,7 @@ unicode_fromformat_write_str(_PyUnicodeWriter *writer, PyObject *str,
 }
 
 static int
-unicode_fromformat_write_cstr(_PyUnicodeWriter *writer, const char *str,
+unicode_fromformat_write_utf8(_PyUnicodeWriter *writer, const char *str,
                               Py_ssize_t width, Py_ssize_t precision)
 {
     /* UTF-8 */
@@ -2747,7 +2746,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     {
         /* UTF-8 */
         const char *s = va_arg(*vargs, const char*);
-        if (unicode_fromformat_write_cstr(writer, s, width, precision) < 0)
+        if (unicode_fromformat_write_utf8(writer, s, width, precision) < 0)
             return NULL;
         break;
     }
@@ -2773,7 +2772,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         }
         else {
             assert(str != NULL);
-            if (unicode_fromformat_write_cstr(writer, str, width, precision) < 0)
+            if (unicode_fromformat_write_utf8(writer, str, width, precision) < 0)
                 return NULL;
         }
         break;
@@ -2827,6 +2826,17 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         break;
     }
 
+    case 'T':
+    {
+        /* Object type name (tp_name) */
+        PyObject *obj = va_arg(*vargs, PyObject *);
+        PyTypeObject *type = Py_TYPE(obj);
+        const char *type_name = type->tp_name;
+        if (unicode_fromformat_write_utf8(writer, type_name, -1, -1) < 0) {
+            return NULL;
+        }
+        break;
+    }
     case '%':
         if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
             return NULL;
@@ -3024,8 +3034,7 @@ PyUnicode_FromObject(PyObject *obj)
         return _PyUnicode_Copy(obj);
     }
     PyErr_Format(PyExc_TypeError,
-                 "Can't convert '%.100s' object to str implicitly",
-                 Py_TYPE(obj)->tp_name);
+                 "Can't convert '%T' object to str implicitly", obj);
     return NULL;
 }
 
@@ -3061,8 +3070,8 @@ PyUnicode_FromEncodedObject(PyObject *obj,
     /* Retrieve a bytes buffer view through the PEP 3118 buffer interface */
     if (PyObject_GetBuffer(obj, &buffer, PyBUF_SIMPLE) < 0) {
         PyErr_Format(PyExc_TypeError,
-                     "decoding to str: need a bytes-like object, %.80s found",
-                     Py_TYPE(obj)->tp_name);
+                     "decoding to str: need a bytes-like object, %T found",
+                     obj);
         return NULL;
     }
 
@@ -3192,10 +3201,9 @@ PyUnicode_Decode(const char *s,
         goto onError;
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError,
-                     "'%.400s' decoder returned '%.400s' instead of 'str'; "
+                     "'%.400s' decoder returned '%T' instead of 'str'; "
                      "use codecs.decode() to decode to arbitrary types",
-                     encoding,
-                     Py_TYPE(unicode)->tp_name);
+                     encoding, unicode);
         Py_DECREF(unicode);
         goto onError;
     }
@@ -3255,10 +3263,9 @@ PyUnicode_AsDecodedUnicode(PyObject *unicode,
         goto onError;
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "'%.400s' decoder returned '%.400s' instead of 'str'; "
+                     "'%.400s' decoder returned '%T' instead of 'str'; "
                      "use codecs.decode() to decode to arbitrary types",
-                     encoding,
-                     Py_TYPE(unicode)->tp_name);
+                     encoding, unicode);
         Py_DECREF(v);
         goto onError;
     }
@@ -3489,10 +3496,9 @@ PyUnicode_AsEncodedString(PyObject *unicode,
     }
 
     PyErr_Format(PyExc_TypeError,
-                 "'%.400s' encoder returned '%.400s' instead of 'bytes'; "
+                 "'%.400s' encoder returned '%T' instead of 'bytes'; "
                  "use codecs.encode() to encode to arbitrary types",
-                 encoding,
-                 Py_TYPE(v)->tp_name);
+                 encoding, v);
     Py_DECREF(v);
     return NULL;
 }
@@ -3523,10 +3529,9 @@ PyUnicode_AsEncodedUnicode(PyObject *unicode,
         goto onError;
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "'%.400s' encoder returned '%.400s' instead of 'str'; "
+                     "'%.400s' encoder returned '%T' instead of 'str'; "
                      "use codecs.encode() to encode to arbitrary types",
-                     encoding,
-                     Py_TYPE(v)->tp_name);
+                     encoding, v);
         Py_DECREF(v);
         goto onError;
     }
@@ -3698,9 +3703,11 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
 
         if (!PyBytes_Check(path) &&
             PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-            "path should be string, bytes, or os.PathLike, not %.200s",
-            Py_TYPE(arg)->tp_name)) {
-                Py_DECREF(path);
+                             "path should be string, bytes, "
+                             "or os.PathLike, not %T",
+                             arg))
+        {
+            Py_DECREF(path);
             return 0;
         }
         path_bytes = PyBytes_FromObject(path);
@@ -3717,8 +3724,8 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "path should be string, bytes, or os.PathLike, not %.200s",
-                     Py_TYPE(arg)->tp_name);
+                     "path should be string, bytes, or os.PathLike, not %T",
+                     arg);
         Py_DECREF(path);
         return 0;
     }
@@ -9886,9 +9893,8 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
         else {
             if (!PyUnicode_Check(separator)) {
                 PyErr_Format(PyExc_TypeError,
-                             "separator: expected str instance,"
-                             " %.80s found",
-                             Py_TYPE(separator)->tp_name);
+                             "separator: expected str instance, %T found",
+                             separator);
                 goto onError;
             }
             if (PyUnicode_READY(separator))
@@ -9919,9 +9925,8 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
         item = items[i];
         if (!PyUnicode_Check(item)) {
             PyErr_Format(PyExc_TypeError,
-                         "sequence item %zd: expected str instance,"
-                         " %.80s found",
-                         i, Py_TYPE(item)->tp_name);
+                         "sequence item %zd: expected str instance, %T found",
+                         i, item);
             goto onError;
         }
         if (PyUnicode_READY(item) == -1)
@@ -10736,7 +10741,7 @@ convert_uc(PyObject *obj, void *addr)
     if (!PyUnicode_Check(obj)) {
         PyErr_Format(PyExc_TypeError,
                      "The fill character must be a unicode character, "
-                     "not %.100s", Py_TYPE(obj)->tp_name);
+                     "not %T", obj);
         return 0;
     }
     if (PyUnicode_READY(obj) < 0)
@@ -11142,8 +11147,8 @@ PyUnicode_Contains(PyObject *str, PyObject *substr)
 
     if (!PyUnicode_Check(substr)) {
         PyErr_Format(PyExc_TypeError,
-                     "'in <string>' requires string as left operand, not %.100s",
-                     Py_TYPE(substr)->tp_name);
+                     "'in <string>' requires string as left operand, not %T",
+                     substr);
         return -1;
     }
     if (PyUnicode_READY(substr) == -1)
@@ -12848,9 +12853,7 @@ unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
     if (PyUnicode_Check(sep))
         return split(self, sep, maxsplit);
 
-    PyErr_Format(PyExc_TypeError,
-                 "must be str or None, not %.100s",
-                 Py_TYPE(sep)->tp_name);
+    PyErr_Format(PyExc_TypeError, "must be str or None, not %T", sep);
     return NULL;
 }
 
@@ -13036,9 +13039,7 @@ unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
     if (PyUnicode_Check(sep))
         return rsplit(self, sep, maxsplit);
 
-    PyErr_Format(PyExc_TypeError,
-                 "must be str or None, not %.100s",
-                 Py_TYPE(sep)->tp_name);
+    PyErr_Format(PyExc_TypeError, "must be str or None, not %T", sep);
     return NULL;
 }
 
@@ -13333,8 +13334,8 @@ unicode_startswith(PyObject *self,
             if (!PyUnicode_Check(substring)) {
                 PyErr_Format(PyExc_TypeError,
                              "tuple for startswith must only contain str, "
-                             "not %.100s",
-                             Py_TYPE(substring)->tp_name);
+                             "not %T",
+                             substring);
                 return NULL;
             }
             result = tailmatch(self, substring, start, end, -1);
@@ -13350,7 +13351,7 @@ unicode_startswith(PyObject *self,
     if (!PyUnicode_Check(subobj)) {
         PyErr_Format(PyExc_TypeError,
                      "startswith first arg must be str or "
-                     "a tuple of str, not %.100s", Py_TYPE(subobj)->tp_name);
+                     "a tuple of str, not %T", subobj);
         return NULL;
     }
     result = tailmatch(self, subobj, start, end, -1);
@@ -13387,8 +13388,8 @@ unicode_endswith(PyObject *self,
             if (!PyUnicode_Check(substring)) {
                 PyErr_Format(PyExc_TypeError,
                              "tuple for endswith must only contain str, "
-                             "not %.100s",
-                             Py_TYPE(substring)->tp_name);
+                             "not %T",
+                             substring);
                 return NULL;
             }
             result = tailmatch(self, substring, start, end, +1);
@@ -13403,7 +13404,7 @@ unicode_endswith(PyObject *self,
     if (!PyUnicode_Check(subobj)) {
         PyErr_Format(PyExc_TypeError,
                      "endswith first arg must be str or "
-                     "a tuple of str, not %.100s", Py_TYPE(subobj)->tp_name);
+                     "a tuple of str, not %T", subobj);
         return NULL;
     }
     result = tailmatch(self, subobj, start, end, +1);
@@ -14313,15 +14314,13 @@ wrongtype:
         case 'x':
         case 'X':
             PyErr_Format(PyExc_TypeError,
-                    "%%%c format: an integer is required, "
-                    "not %.200s",
-                    type, Py_TYPE(v)->tp_name);
+                         "%%%c format: an integer is required, not %T",
+                         type, v);
             break;
         default:
             PyErr_Format(PyExc_TypeError,
-                    "%%%c format: a number is required, "
-                    "not %.200s",
-                    type, Py_TYPE(v)->tp_name);
+                         "%%%c format: a number is required, not %T",
+                         type, v);
             break;
     }
     return -1;
