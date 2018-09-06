@@ -2,23 +2,22 @@
 #  https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted.md
 
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
+trigger:
+  branches:
+    include:
+    - master
+    - 3.7
+    - 3.6
+  paths:
+    exclude:
+    - Doc/*
+    - Tools/*
 
 jobs:
 
 - job: linuxPR
   pool:
     vmImage: 'Ubuntu 16.04'
-
-  trigger:
-    branches:
-      include:
-      - master
-      - 3.7
-      - 3.6
-    paths:
-      exclude:
-      - Doc/*
-      - Tools/*
 
   variables:
     # Copy-pasted from linux-deps.yml until template support arrives
