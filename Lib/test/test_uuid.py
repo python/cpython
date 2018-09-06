@@ -7,6 +7,7 @@ import os
 import pickle
 import shutil
 import subprocess
+import sys
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
@@ -187,9 +188,6 @@ class BaseTestUUID:
                 for v in equivalents:
                     equal(u, v)
 
-            # Test pickle-unpickle round-trip
-            equal(u, pickle.loads(pickle.dumps(u)))
-
             # Bug 7380: "bytes" and "bytes_le" should give the same type.
             equal(type(u.bytes), builtins.bytes)
             equal(type(u.bytes_le), builtins.bytes)
@@ -315,7 +313,24 @@ class BaseTestUUID:
         node2 = self.uuid.getnode()
         self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
 
+    def _setup_for_pickle(self):
+        orig_uuid = sys.modules.get('uuid')
+        def restore_uuid_module():
+            if orig_uuid is not None:
+                sys.modules['uuid'] = orig_uuid
+            else:
+                del sys.modules['uuid']
+        self.addCleanup(restore_uuid_module)
+
+    def test_pickle_roundtrip(self):
+        self._setup_for_pickle()
+
+        u = self.uuid.UUID('12345678123456781234567812345678')
+        self.assertEqual(u, pickle.loads(pickle.dumps(u)))
+
     def test_unpickle_previous_python_versions(self):
+        self._setup_for_pickle()
+
         u = self.uuid.UUID('12345678123456781234567812345678')
 
         # Python 2.7 protocol 0-2 pickles of u
