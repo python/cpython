@@ -37,6 +37,8 @@ static PyStructSequence_Desc struct_group_type_desc = {
 static int initialized;
 static PyTypeObject StructGrpType;
 
+#define DEFAULT_BUFFER_SIZE 1024
+
 static PyObject *
 mkgrent(struct group *p)
 {
@@ -98,7 +100,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 {
     PyObject *py_int_id, *retval = NULL;
     int nomem = 0;
-    char *buf = NULL;
+    char *buf = NULL, *buf2 = NULL;
     gid_t gid;
     struct group *p;
 
@@ -129,12 +131,15 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 
     bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
     if (bufsize == -1) {
-        bufsize = 1024;
+        bufsize = DEFAULT_BUFFER_SIZE;
     }
     buf = PyMem_RawMalloc(bufsize);
 
     while (1) {
         status = getgrgid_r(gid, &grp, buf, bufsize, &p);
+        if (status != 0) {
+            p = NULL;
+        }
         if (p != NULL || status != ERANGE) {
             break;
         }
@@ -143,25 +148,20 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
             break;
         }
         bufsize <<= 1;
-        p = PyMem_RawRealloc(buf, bufsize);
-        if (p == NULL) {
+        buf2 = PyMem_RawRealloc(buf, bufsize);
+        if (buf2 == NULL) {
             nomem = 1;
             break;
         }
-        buf = (char *) p;
+        buf = buf2;
     }
 
-    if (status != 0) {
-        p = NULL;
-    }
     Py_END_ALLOW_THREADS
 #else
     p = getgrgid(gid);
 #endif
     if (p == NULL) {
-        if (buf != NULL) {
-            PyMem_RawFree(buf);
-        }
+        PyMem_RawFree(buf);
         if (nomem == 1) {
             return PyErr_NoMemory();
         }
@@ -193,7 +193,7 @@ static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=67905086f403c21c input=08ded29affa3c863]*/
 {
-    char *buf = NULL, *name_chars;
+    char *buf = NULL, *buf2 = NULL, *name_chars;
     int nomem = 0;
     struct group *p;
     PyObject *bytes, *retval = NULL;
@@ -211,12 +211,15 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
 
     bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
     if (bufsize == -1) {
-        bufsize = 1024;
+        bufsize = DEFAULT_BUFFER_SIZE;
     }
     buf = PyMem_RawMalloc(bufsize);
 
     while(1) {
         status = getgrnam_r(name_chars, &grp, buf, bufsize, &p);
+        if (status != 0) {
+            p = NULL;
+        }
         if (p != NULL || status != ERANGE) {
             break;
         }
@@ -225,17 +228,14 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
             break;
         }
         bufsize <<= 1;
-        p = PyMem_RawRealloc(buf, bufsize);
+        buf2 = PyMem_RawRealloc(buf, bufsize);
         if (p == NULL) {
             nomem = 1;
             break;
         }
-        buf = (char *) p;
+        buf = (char *) buf2;
     }
 
-    if (status != 0) {
-        p = NULL;
-    }
     Py_END_ALLOW_THREADS
 #else
     p = getgrnam(name_chars);
@@ -243,16 +243,15 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
     if (p == NULL) {
         if (nomem == 1) {
             PyErr_NoMemory();
-        } else {
+        }
+        else {
             PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %s", name_chars);
         }
         goto out;
     }
     retval = mkgrent(p);
 out:
-    if (buf != NULL) {
-        PyMem_RawFree(buf);
-    }
+    PyMem_RawFree(buf);
     Py_DECREF(bytes);
     return retval;
 }

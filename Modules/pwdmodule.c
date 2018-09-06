@@ -50,6 +50,8 @@ exception is raised if the entry asked for cannot be found.");
 static int initialized;
 static PyTypeObject StructPwdType;
 
+#define DEFAULT_BUFFER_SIZE 1024
+
 static void
 sets(PyObject *v, int i, const char* val)
 {
@@ -120,7 +122,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     uid_t uid;
     int nomem = 0;
     struct passwd *p;
-    char *buf = NULL;
+    char *buf = NULL, *buf2 = NULL;
 
     if (!_Py_Uid_Converter(uidobj, &uid)) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
@@ -136,12 +138,15 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
 
     bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
     if (bufsize == -1) {
-        bufsize = 1024;
+        bufsize = DEFAULT_BUFFER_SIZE;
     }
     buf = PyMem_RawMalloc(bufsize);
 
     while(1) {
         status = getpwuid_r(uid, &pwd, buf, bufsize, &p);
+        if (status != 0) {
+            p = NULL;
+        }
         if (p != NULL || status != ERANGE) {
             break;
         }
@@ -150,25 +155,20 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
             break;
         }
         bufsize <<= 1;
-        p = PyMem_RawRealloc(buf, bufsize);
+        buf2 = PyMem_RawRealloc(buf, bufsize);
         if (p == NULL) {
             nomem = 1;
             break;
         }
-        buf = (char *) p;
+        buf = buf2;
     }
 
-    if (status != 0) {
-        p = NULL;
-    }
     Py_END_ALLOW_THREADS
 #else
     p = getpwuid(uid);
 #endif
     if (p == NULL) {
-        if (buf != NULL) {
-            PyMem_RawFree(buf);
-        }
+        PyMem_RawFree(buf);
         if (nomem == 1) {
             return PyErr_NoMemory();
         }
@@ -202,7 +202,7 @@ static PyObject *
 pwd_getpwnam_impl(PyObject *module, PyObject *arg)
 /*[clinic end generated code: output=6abeee92430e43d2 input=d5f7e700919b02d3]*/
 {
-    char *buf = NULL, *name;
+    char *buf = NULL, *buf2 = NULL, *name;
     int nomem = 0;
     struct passwd *p;
     PyObject *bytes, *retval = NULL;
@@ -220,12 +220,15 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
 
     bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
     if (bufsize == -1) {
-        bufsize = 1024;
+        bufsize = DEFAULT_BUFFER_SIZE;
     }
     buf = PyMem_RawMalloc(bufsize);
 
     while(1) {
         status = getpwnam_r(name, &pwd, buf, bufsize, &p);
+        if (status != 0) {
+            p = NULL;
+        }
         if (p != NULL || status != ERANGE) {
             break;
         }
@@ -234,17 +237,14 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
             break;
         }
         bufsize <<= 1;
-        p = PyMem_RawRealloc(buf, bufsize);
+        buf2 = PyMem_RawRealloc(buf, bufsize);
         if (p == NULL) {
             nomem = 1;
             break;
         }
-        buf = (char *) p;
+        buf = buf2;
     }
 
-    if (status != 0) {
-        p = NULL;
-    }
     Py_END_ALLOW_THREADS
 #else
     p = getpwnam(name);
@@ -252,7 +252,8 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
     if (p == NULL) {
         if (nomem == 1) {
             PyErr_NoMemory();
-        } else {
+        }
+        else {
             PyErr_Format(PyExc_KeyError,
                          "getpwnam(): name not found: %s", name);
         }
@@ -260,9 +261,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
     }
     retval = mkpwent(p);
 out:
-    if (buf != NULL) {
-        PyMem_RawFree(buf);
-    }
+    PyMem_RawFree(buf);
     Py_DECREF(bytes);
     return retval;
 }
