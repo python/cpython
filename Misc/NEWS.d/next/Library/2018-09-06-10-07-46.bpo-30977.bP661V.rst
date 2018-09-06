@@ -1,0 +1,2 @@
+Make uuid.UUID use ``__slots__`` to reduce its memory footprint. Based on
+original patch by Wouter Bolsterlee.
