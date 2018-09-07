@@ -8,6 +8,7 @@ posix = support.import_module('posix')
 
 import errno
 import sys
+import signal
 import time
 import os
 import platform
@@ -16,6 +17,7 @@ import stat
 import tempfile
 import unittest
 import warnings
+import textwrap
 
 _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
                               support.TESTFN + '-dummy-symlink')
@@ -1537,6 +1539,147 @@ class TestPosixSpawn(unittest.TestCase):
             self.NOOP_PROGRAM,
             os.environ,
             []
+        )
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
+    def test_resetids_explicit_default(self):
+        pid = posix.posix_spawn(
+            sys.executable,
+            [sys.executable, '-c', 'pass'],
+            os.environ,
+            resetids=False
+        )
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
+    def test_resetids(self):
+        pid = posix.posix_spawn(
+            sys.executable,
+            [sys.executable, '-c', 'pass'],
+            os.environ,
+            resetids=True
+        )
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
+    def test_resetids_wrong_type(self):
+        with self.assertRaises(TypeError):
+            posix.posix_spawn(sys.executable,
+                              [sys.executable, "-c", "pass"],
+                              os.environ, resetids=None)
+
+    def test_setpgroup(self):
+        pid = posix.posix_spawn(
+            sys.executable,
+            [sys.executable, '-c', 'pass'],
+            os.environ,
+            setpgroup=os.getpgrp()
+        )
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
+    def test_setpgroup_wrong_type(self):
+        with self.assertRaises(TypeError):
+            posix.posix_spawn(sys.executable,
+                              [sys.executable, "-c", "pass"],
+                              os.environ, setpgroup="023")
+
+    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                           'need signal.pthread_sigmask()')
+    def test_setsigmask(self):
+        code = textwrap.dedent("""\
+            import _testcapi, signal
+            _testcapi.raise_signal(signal.SIGUSR1)""")
+
+        pid = posix.posix_spawn(
+            sys.executable,
+            [sys.executable, '-c', code],
+            os.environ,
+            setsigmask=[signal.SIGUSR1]
+        )
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
+    def test_setsigmask_wrong_type(self):
+        with self.assertRaises(TypeError):
+            posix.posix_spawn(sys.executable,
+                              [sys.executable, "-c", "pass"],
+                              os.environ, setsigmask=34)
+        with self.assertRaises(TypeError):
+            posix.posix_spawn(sys.executable,
+                              [sys.executable, "-c", "pass"],
+                              os.environ, setsigmask=["j"])
+        with self.assertRaises(ValueError):
+            posix.posix_spawn(sys.executable,
+                              [sys.executable, "-c", "pass"],
+                              os.environ, setsigmask=[signal.NSIG,
+                                                      signal.NSIG+1])
+
+    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                         'need signal.pthread_sigmask()')
+    def test_setsigdef(self):
+        original_handler = signal.signal(signal.SIGUSR1, signal.SIG_IGN)
+        code = textwrap.dedent("""\
+            import _testcapi, signal
+            _testcapi.raise_signal(signal.SIGUSR1)""")
+        try:
+            pid = posix.posix_spawn(
+                sys.executable,
+                [sys.executable, '-c', code],
+                os.environ,
+                setsigdef=[signal.SIGUSR1]
+            )
+        finally:
+            signal.signal(signal.SIGUSR1, original_handler)
+
+        pid2, status = os.waitpid(pid, 0)
+        self.assertEqual(pid2, pid)
+        self.assertTrue(os.WIFSIGNALED(status), status)
+        self.assertEqual(os.WTERMSIG(status), signal.SIGUSR1)
+
+    def test_setsigdef_wrong_type(self):
+        with self.assertRaises(TypeError):
+            posix.posix_spawn(sys.executable,
+                              [sys.executable, "-c", "pass"],
+                              os.environ, setsigdef=34)
+        with self.assertRaises(TypeError):
+            posix.posix_spawn(sys.executable,
+                              [sys.executable, "-c", "pass"],
+                              os.environ, setsigdef=["j"])
+        with self.assertRaises(ValueError):
+            posix.posix_spawn(sys.executable,
+                              [sys.executable, "-c", "pass"],
+                              os.environ, setsigdef=[signal.NSIG, signal.NSIG+1])
+
+    @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
+    def test_setscheduler_only_param(self):
+        policy = os.sched_getscheduler(0)
+        priority = os.sched_get_priority_min(policy)
+        code = textwrap.dedent(f"""\
+            import os
+            if os.sched_getscheduler(0) != {policy}:
+                os.exit(101)
+            if os.sched_getparam(0).sched_priority != {priority}:
+                os.exit(102)""")
+        pid = posix.posix_spawn(
+            sys.executable,
+            [sys.executable, '-c', code],
+            os.environ,
+            scheduler=(None, os.sched_param(priority))
+        )
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
+    @unittest.skipUnless(hasattr(posix, 'sched_setscheduler'), "can't change scheduler")
+    def test_setscheduler_with_policy(self):
+        policy = os.sched_getscheduler(0)
+        priority = os.sched_get_priority_min(policy)
+        code = textwrap.dedent(f"""\
+            import os
+            if os.sched_getscheduler(0) != {policy}:
+                os.exit(101)
+            if os.sched_getparam(0).sched_priority != {priority}:
+                os.exit(102)""")
+        pid = posix.posix_spawn(
+            sys.executable,
+            [sys.executable, '-c', code],
+            os.environ,
+            scheduler=(policy, os.sched_param(priority))
         )
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
