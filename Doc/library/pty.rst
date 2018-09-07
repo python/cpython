@@ -36,16 +36,16 @@ The :mod:`pty` module defines the following functions:
 
    Open a new pseudo-terminal pair, using :func:`os.openpty` if possible, or
    emulation code for generic Unix systems. Return a pair of file descriptors
-   ``(master, slave)``, for the master and the slave end, respectively.
+   ``(parent, child)``, for the parent and the child end, respectively.
 
 
-.. function:: spawn(argv[, master_read[, stdin_read]])
+.. function:: spawn(argv[, parent_read[, stdin_read]])
 
    Spawn a process, and connect its controlling terminal with the current
    process's standard io. This is often used to baffle programs which insist on
    reading from the controlling terminal.
 
-   The functions *master_read* and *stdin_read* should be functions which read from
+   The functions *parent_read* and *stdin_read* should be functions which read from
    a file descriptor. The defaults try to read 1024 bytes each time they are
    called.
 

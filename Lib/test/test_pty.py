@@ -79,55 +79,55 @@ class PtyTest(unittest.TestCase):
     def test_basic(self):
         try:
             debug("Calling master_open()")
-            master_fd, slave_name = pty.master_open()
-            debug("Got master_fd '%d', slave_name '%s'" %
-                  (master_fd, slave_name))
-            debug("Calling slave_open(%r)" % (slave_name,))
-            slave_fd = pty.slave_open(slave_name)
-            debug("Got slave_fd '%d'" % slave_fd)
+            parent_fd, child_name = pty.master_open()
+            debug("Got parent_fd '%d', child_name '%s'" %
+                  (parent_fd, child_name))
+            debug("Calling child_open(%r)" % (child_name,))
+            child_fd = pty.child_open(child_name)
+            debug("Got child_fd '%d'" % child_fd)
         except OSError:
             # " An optional feature could not be imported " ... ?
             raise unittest.SkipTest("Pseudo-terminals (seemingly) not functional.")
 
-        self.assertTrue(os.isatty(slave_fd), 'slave_fd is not a tty')
+        self.assertTrue(os.isatty(child_fd), 'child_fd is not a tty')
 
         # Solaris requires reading the fd before anything is returned.
         # My guess is that since we open and close the slave fd
         # in master_open(), we need to read the EOF.
 
         # Ensure the fd is non-blocking in case there's nothing to read.
-        blocking = os.get_blocking(master_fd)
+        blocking = os.get_blocking(parent_fd)
         try:
-            os.set_blocking(master_fd, False)
+            os.set_blocking(parent_fd, False)
             try:
-                s1 = os.read(master_fd, 1024)
+                s1 = os.read(parent_fd, 1024)
                 self.assertEqual(b'', s1)
             except OSError as e:
                 if e.errno != errno.EAGAIN:
                     raise
         finally:
             # Restore the original flags.
-            os.set_blocking(master_fd, blocking)
+            os.set_blocking(parent_fd, blocking)
 
-        debug("Writing to slave_fd")
-        os.write(slave_fd, TEST_STRING_1)
-        s1 = _readline(master_fd)
+        debug("Writing to child_fd")
+        os.write(child_fd, TEST_STRING_1)
+        s1 = _readline(parent_fd)
         self.assertEqual(b'I wish to buy a fish license.\n',
                          normalize_output(s1))
 
         debug("Writing chunked output")
-        os.write(slave_fd, TEST_STRING_2[:5])
-        os.write(slave_fd, TEST_STRING_2[5:])
-        s2 = _readline(master_fd)
+        os.write(child_fd, TEST_STRING_2[:5])
+        os.write(child_fd, TEST_STRING_2[5:])
+        s2 = _readline(parent_fd)
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
-        os.close(slave_fd)
-        os.close(master_fd)
+        os.close(child_fd)
+        os.close(parent_fd)
 
 
     def test_fork(self):
         debug("calling pty.fork()")
-        pid, master_fd = pty.fork()
+        pid, parent_fd = pty.fork()
         if pid == pty.CHILD:
             # stdout should be connected to a tty.
             if not os.isatty(1):
@@ -172,7 +172,7 @@ class PtyTest(unittest.TestCase):
             # worth checking for EIO.
             while True:
                 try:
-                    data = os.read(master_fd, 80)
+                    data = os.read(parent_fd, 80)
                 except OSError:
                     break
                 if not data:
@@ -180,7 +180,7 @@ class PtyTest(unittest.TestCase):
                 sys.stdout.write(str(data.replace(b'\r\n', b'\n'),
                                      encoding='ascii'))
 
-            ##line = os.read(master_fd, 80)
+            ##line = os.read(parent_fd, 80)
             ##lines = line.replace('\r\n', '\n').split('\n')
             ##if False and lines != ['In child, calling os.setsid()',
             ##             'Good: OSError was raised.', '']:
@@ -198,15 +198,15 @@ class PtyTest(unittest.TestCase):
             elif res != 4:
                 self.fail("pty.fork() failed for unknown reasons.")
 
-            ##debug("Reading from master_fd now that the child has exited")
+            ##debug("Reading from parent_fd now that the child has exited")
             ##try:
-            ##    s1 = os.read(master_fd, 1024)
+            ##    s1 = os.read(parent_fd, 1024)
             ##except OSError:
             ##    pass
             ##else:
-            ##    raise TestFailed("Read from master_fd did not raise exception")
+            ##    raise TestFailed("Read from parent_fd did not raise exception")
 
-        os.close(master_fd)
+        os.close(parent_fd)
 
         # pty.fork() passed.
 
@@ -254,7 +254,7 @@ class SmallPtyTests(unittest.TestCase):
         return self.select_rfds_results.pop(0), [], []
 
     def test__copy_to_each(self):
-        """Test the normal data case on both master_fd and stdin."""
+        """Test the normal data case on both parent_fd and stdin."""
         read_from_stdout_fd, mock_stdout_fd = self._pipe()
         pty.STDOUT_FILENO = mock_stdout_fd
         mock_stdin_fd, write_to_stdin_fd = self._pipe()
@@ -282,7 +282,7 @@ class SmallPtyTests(unittest.TestCase):
         self.assertEqual(os.read(masters[1], 20), b'from stdin')
 
     def test__copy_eof_on_all(self):
-        """Test the empty read EOF case on both master_fd and stdin."""
+        """Test the empty read EOF case on both parent_fd and stdin."""
         read_from_stdout_fd, mock_stdout_fd = self._pipe()
         pty.STDOUT_FILENO = mock_stdout_fd
         mock_stdin_fd, write_to_stdin_fd = self._pipe()
