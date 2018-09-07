@@ -92,8 +92,6 @@ static const char copyright[] =
     ((ch) < 128 && Py_ISSPACE(ch))
 #define SRE_IS_LINEBREAK(ch)\
     ((ch) == '\n')
-#define SRE_IS_ALNUM(ch)\
-    ((ch) < 128 && Py_ISALNUM(ch))
 #define SRE_IS_WORD(ch)\
     ((ch) < 128 && (Py_ISALNUM(ch) || (ch) == '_'))
 
