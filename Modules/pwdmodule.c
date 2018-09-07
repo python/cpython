@@ -189,7 +189,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
 /*[clinic input]
 pwd.getpwnam
 
-    arg: unicode
+    name: unicode
     /
 
 Return the password database entry for the given user name.
@@ -198,18 +198,18 @@ See `help(pwd)` for more on password database entries.
 [clinic start generated code]*/
 
 static PyObject *
-pwd_getpwnam_impl(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6abeee92430e43d2 input=d5f7e700919b02d3]*/
+pwd_getpwnam_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=359ce1ddeb7a824f input=a6aeb5e3447fb9e0]*/
 {
-    char *buf = NULL, *buf2 = NULL, *name;
+    char *buf = NULL, *buf2 = NULL, *name_chars;
     int nomem = 0;
     struct passwd *p;
     PyObject *bytes, *retval = NULL;
 
-    if ((bytes = PyUnicode_EncodeFSDefault(arg)) == NULL)
+    if ((bytes = PyUnicode_EncodeFSDefault(name)) == NULL)
         return NULL;
     /* check for embedded null bytes */
-    if (PyBytes_AsStringAndSize(bytes, &name, NULL) == -1)
+    if (PyBytes_AsStringAndSize(bytes, &name_chars, NULL) == -1)
         goto out;
 #ifdef HAVE_GETPWNAM_R
     Py_BEGIN_ALLOW_THREADS
@@ -229,7 +229,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
             break;
         }
         buf = buf2;
-        status = getpwnam_r(name, &pwd, buf, bufsize, &p);
+        status = getpwnam_r(name_chars, &pwd, buf, bufsize, &p);
         if (status != 0) {
             p = NULL;
         }
@@ -245,7 +245,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
 
     Py_END_ALLOW_THREADS
 #else
-    p = getpwnam(name);
+    p = getpwnam(name_chars);
 #endif
     if (p == NULL) {
         if (nomem == 1) {
@@ -253,7 +253,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
         }
         else {
             PyErr_Format(PyExc_KeyError,
-                         "getpwnam(): name not found: %s", name);
+                         "getpwnam(): name not found: %S", name);
         }
         goto out;
     }
