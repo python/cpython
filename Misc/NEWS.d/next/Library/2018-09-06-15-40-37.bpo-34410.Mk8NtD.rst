@@ -1,1 +1,1 @@
-itertools.tee thread-safe
+``itertools.tee()`` fix it can segfault interpreter when wrapped iterator releases GIL.
