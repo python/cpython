@@ -361,8 +361,6 @@ and the rest lower-cased.");
 void
 _Py_bytes_capitalize(char *result, const char *s, Py_ssize_t len)
 {
-    Py_ssize_t i;
-
     if (len > 0) {
         *result = Py_TOUPPER(*s);
         _Py_bytes_lower(result + 1, s + 1, len - 1);
