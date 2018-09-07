@@ -100,11 +100,6 @@ static unsigned int sre_lower_ascii(unsigned int ch)
     return ((ch) < 128 ? Py_TOLOWER(ch) : ch);
 }
 
-static unsigned int sre_upper_ascii(unsigned int ch)
-{
-    return ((ch) < 128 ? Py_TOUPPER(ch) : ch);
-}
-
 /* locale-specific character predicates */
 /* !(c & ~N) == (c < N+1) for any unsigned c, this avoids
  * warnings when c's type supports only numbers < N+1 */
@@ -293,7 +288,7 @@ _sre_ascii_iscased_impl(PyObject *module, int character)
 /*[clinic end generated code: output=4f454b630fbd19a2 input=9f0bd952812c7ed3]*/
 {
     unsigned int ch = (unsigned int)character;
-    return ch != sre_lower_ascii(ch) || ch != sre_upper_ascii(ch);
+    return ch < 128 && Py_ISALPHA(ch);
 }
 
 /*[clinic input]
