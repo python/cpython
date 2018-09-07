@@ -156,7 +156,7 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
         goto out;
 
     if ((p = getgrnam(name_chars)) == NULL) {
-        PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %s", name_chars);
+        PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %S", name);
         goto out;
     }
     retval = mkgrent(p);
