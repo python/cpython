@@ -78,8 +78,8 @@ class PtyTest(unittest.TestCase):
 
     def test_basic(self):
         try:
-            debug("Calling master_open()")
-            parent_fd, child_name = pty.master_open()
+            debug("Calling parent_open()")
+            parent_fd, child_name = pty.parent_open()
             debug("Got parent_fd '%d', child_name '%s'" %
                   (parent_fd, child_name))
             debug("Calling child_open(%r)" % (child_name,))
@@ -92,8 +92,8 @@ class PtyTest(unittest.TestCase):
         self.assertTrue(os.isatty(child_fd), 'child_fd is not a tty')
 
         # Solaris requires reading the fd before anything is returned.
-        # My guess is that since we open and close the slave fd
-        # in master_open(), we need to read the EOF.
+        # My guess is that since we open and close the child fd
+        # in parent_open(), we need to read the EOF.
 
         # Ensure the fd is non-blocking in case there's nothing to read.
         blocking = os.get_blocking(parent_fd)
@@ -260,26 +260,26 @@ class SmallPtyTests(unittest.TestCase):
         mock_stdin_fd, write_to_stdin_fd = self._pipe()
         pty.STDIN_FILENO = mock_stdin_fd
         socketpair = self._socketpair()
-        masters = [s.fileno() for s in socketpair]
+        parents = [s.fileno() for s in socketpair]
 
         # Feed data.  Smaller than PIPEBUF.  These writes will not block.
-        os.write(masters[1], b'from master')
+        os.write(parents[1], b'from parent')
         os.write(write_to_stdin_fd, b'from stdin')
 
         # Expect two select calls, the last one will cause IndexError
         pty.select = self._mock_select
         self.select_rfds_lengths.append(2)
-        self.select_rfds_results.append([mock_stdin_fd, masters[0]])
+        self.select_rfds_results.append([mock_stdin_fd, parents[0]])
         self.select_rfds_lengths.append(2)
 
         with self.assertRaises(IndexError):
-            pty._copy(masters[0])
+            pty._copy(parents[0])
 
         # Test that the right data went to the right places.
-        rfds = select.select([read_from_stdout_fd, masters[1]], [], [], 0)[0]
-        self.assertEqual([read_from_stdout_fd, masters[1]], rfds)
-        self.assertEqual(os.read(read_from_stdout_fd, 20), b'from master')
-        self.assertEqual(os.read(masters[1], 20), b'from stdin')
+        rfds = select.select([read_from_stdout_fd, parents[1]], [], [], 0)[0]
+        self.assertEqual([read_from_stdout_fd, parents[1]], rfds)
+        self.assertEqual(os.read(read_from_stdout_fd, 20), b'from parent')
+        self.assertEqual(os.read(parents[1], 20), b'from stdin')
 
     def test__copy_eof_on_all(self):
         """Test the empty read EOF case on both parent_fd and stdin."""
@@ -288,7 +288,7 @@ class SmallPtyTests(unittest.TestCase):
         mock_stdin_fd, write_to_stdin_fd = self._pipe()
         pty.STDIN_FILENO = mock_stdin_fd
         socketpair = self._socketpair()
-        masters = [s.fileno() for s in socketpair]
+        parents = [s.fileno() for s in socketpair]
 
         socketpair[1].close()
         os.close(write_to_stdin_fd)
@@ -296,13 +296,13 @@ class SmallPtyTests(unittest.TestCase):
         # Expect two select calls, the last one will cause IndexError
         pty.select = self._mock_select
         self.select_rfds_lengths.append(2)
-        self.select_rfds_results.append([mock_stdin_fd, masters[0]])
+        self.select_rfds_results.append([mock_stdin_fd, parents[0]])
         # We expect that both fds were removed from the fds list as they
         # both encountered an EOF before the second select call.
         self.select_rfds_lengths.append(0)
 
         with self.assertRaises(IndexError):
-            pty._copy(masters[0])
+            pty._copy(parents[0])
 
 
 def tearDownModule():

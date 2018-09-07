@@ -1,6 +1,6 @@
 """Pseudo terminal utilities."""
 
-# Bugs: No signal handling.  Doesn't set slave termios and window size.
+# Bugs: No signal handling.  Doesn't set child termios and window size.
 #       Only tested on Linux.
 # See:  W. Richard Stevens. 1992.  Advanced Programming in the
 #       UNIX Environment.  Chapter 19.
@@ -20,7 +20,7 @@ CHILD = 0
 
 def openpty():
     """openpty() -> (parent_fd, child_fd)
-    Open a pty master/slave pair, using os.openpty() if possible."""
+    Open a pty parent/child pair, using os.openpty() if possible."""
 
     try:
         return os.openpty()
@@ -30,9 +30,9 @@ def openpty():
     child_fd = child_open(child_name)
     return parent_fd, child_fd
 
-def master_open():
-    """master_open() -> (parent_fd, child_name)
-    Open a pty master and return the fd, and the filename of the slave end.
+def parent_open():
+    """parent_open() -> (parent_fd, child_name)
+    Open a pty parent and return the fd, and the filename of the child end.
     Deprecated, use openpty() instead."""
 
     try:
@@ -47,7 +47,7 @@ def master_open():
     return _open_terminal()
 
 def _open_terminal():
-    """Open pty master and return (parent_fd, tty_name)."""
+    """Open pty parent and return (parent_fd, tty_name)."""
     for x in 'pqrstuvwxyzPQRST':
         for y in '0123456789abcdef':
             pty_name = '/dev/pty' + x + y
@@ -60,7 +60,7 @@ def _open_terminal():
 
 def child_open(tty_name):
     """child_open(tty_name) -> child_fd
-    Open the pty slave and acquire the controlling terminal, returning
+    Open the pty child and acquire the controlling terminal, returning
     opened filedescriptor.
     Deprecated, use openpty() instead."""
 
@@ -76,8 +76,10 @@ def child_open(tty_name):
         pass
     return result
 
-# bpo-34605: slave_open() has been renamed to child_open(),
-# but keep slave_open alias for backward compatibility.
+# bpo-34605: master_open()/child_open() has been renamed
+# to parent_open()/child_open(), but keep master_open/slave_open aliases
+# for backward compatibility.
+master_open = parent_open
 slave_open = child_open
 
 def fork():
@@ -104,7 +106,7 @@ def fork():
         os.setsid()
         os.close(parent_fd)
 
-        # Slave becomes stdin/stdout/stderr of child.
+        # Child becomes stdin/stdout/stderr of child.
         os.dup2(child_fd, STDIN_FILENO)
         os.dup2(child_fd, STDOUT_FILENO)
         os.dup2(child_fd, STDERR_FILENO)
@@ -130,16 +132,16 @@ def _read(fd):
     """Default read function."""
     return os.read(fd, 1024)
 
-def _copy(parent_fd, master_read=_read, stdin_read=_read):
+def _copy(parent_fd, parent_read=_read, stdin_read=_read):
     """Parent copy loop.
     Copies
-            pty master -> standard output   (master_read)
-            standard input -> pty master    (stdin_read)"""
+            pty parent -> standard output   (parent_read)
+            standard input -> pty parent    (stdin_read)"""
     fds = [parent_fd, STDIN_FILENO]
     while True:
         rfds, wfds, xfds = select(fds, [], [])
         if parent_fd in rfds:
-            data = master_read(parent_fd)
+            data = parent_read(parent_fd)
             if not data:  # Reached EOF.
                 fds.remove(parent_fd)
             else:
@@ -151,7 +153,7 @@ def _copy(parent_fd, master_read=_read, stdin_read=_read):
             else:
                 _writen(parent_fd, data)
 
-def spawn(argv, master_read=_read, stdin_read=_read):
+def spawn(argv, parent_read=_read, stdin_read=_read):
     """Create a spawned process."""
     if type(argv) == type(''):
         argv = (argv,)
@@ -165,7 +167,7 @@ def spawn(argv, master_read=_read, stdin_read=_read):
     except tty.error:    # This is the same as termios.error
         restore = 0
     try:
-        _copy(parent_fd, master_read, stdin_read)
+        _copy(parent_fd, parent_read, stdin_read)
     except OSError:
         if restore:
             tty.tcsetattr(STDIN_FILENO, tty.TCSAFLUSH, mode)
