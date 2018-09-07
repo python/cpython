@@ -408,51 +408,52 @@ def ixor(a, b):
 
 # Asynchronous Iterator Operations ********************************************#
 
-async def aiter(*args):
+
+_NOT_PROVIDED = object()  # sentinel object to detect when a kwarg was not given
+
+
+def aiter(obj, sentinel=_NOT_PROVIDED):
     """aiter(async_iterable) -> async_iterator
     aiter(async_callable, sentinel) -> async_iterator
 
-    An async version of the iter() builtin.
+    Like the iter() builtin but for async iterables and callables.
     """
-    lenargs = len(args)
-    if lenargs != 1 and lenargs != 2:
-        raise TypeError(f'aiter expected 1 or 2 arguments, got {lenargs}')
-    if lenargs == 1:
-        obj, = args
+    if sentinel is _NOT_PROVIDED:
         if not isinstance(obj, AsyncIterable):
             raise TypeError(f'aiter expected an AsyncIterable, got {type(obj)}')
-        async for i in obj.__aiter__():
-            yield i
-        return
-    # lenargs == 2
-    async_callable, sentinel = args
-    while True:
-        value = await async_callable()
-        if value == sentinel:
-            break
-        yield value
+        if isinstance(obj, AsyncIterator):
+            return obj
+        return (i async for i in obj)
+
+    if not callable(obj):
+        raise TypeError(f'aiter expected an async callable, got {type(obj)}')
+
+    async def ait():
+        while True:
+            value = await obj()
+            if value == sentinel:
+                break
+            yield value
+
+    return ait()
 
 
-async def anext(*args):
+async def anext(async_iterator, default=_NOT_PROVIDED):
     """anext(async_iterator[, default])
 
     Return the next item from the async iterator.
     If default is given and the iterator is exhausted,
     it is returned instead of raising StopAsyncIteration.
     """
-    lenargs = len(args)
-    if lenargs != 1 and lenargs != 2:
-        raise TypeError(f'anext expected 1 or 2 arguments, got {lenargs}')
-    ait = args[0]
-    if not isinstance(ait, AsyncIterator):
-        raise TypeError(f'anext expected an AsyncIterable, got {type(ait)}')
-    anxt = ait.__anext__
+    if not isinstance(async_iterator, AsyncIterator):
+        raise TypeError(f'anext expected an AsyncIterator, got {type(async_iterator)}')
+    anxt = async_iterator.__anext__
     try:
         return await anxt()
     except StopAsyncIteration:
-        if lenargs == 1:
+        if default is _NOT_PROVIDED:
             raise
-        return args[1]  # default
+        return default
 
 
 try:
