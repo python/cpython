@@ -391,13 +391,19 @@ static PyTypeObject _grouper_type = {
 */
 #define LINKCELLS 57
 
+struct lead_rlock {
+    PyThread_type_lock lock; /* lead iterator lock */
+    unsigned long owner;
+    unsigned long count;
+    unsigned long sharenum;
+};
+
 typedef struct {
     PyObject_HEAD
     PyObject *it;
     int numread;                /* 0 <= numread <= LINKCELLS */
     PyObject *nextlink;
     PyObject *(values[LINKCELLS]);
-    PyThread_type_lock lead_lock; /* lead iterator lock */
 } teedataobject;
 
 typedef struct {
@@ -405,9 +411,59 @@ typedef struct {
     teedataobject *dataobj;
     int index;                  /* 0 <= index <= LINKCELLS */
     PyObject *weakreflist;
+    struct lead_rlock *rlock;
 } teeobject;
 
 static PyTypeObject teedataobject_type;
+
+static PyLockStatus
+lead_rlock_acquire(struct lead_rlock *rlock)
+{
+    unsigned long tid;
+    PyLockStatus r = PY_LOCK_ACQUIRED;
+
+    tid = PyThread_get_thread_ident();
+    if (rlock->count > 0 && rlock->owner == tid)
+    {
+        unsigned long count = rlock->count + 1;
+        if (count <= rlock->count) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "Internal lock count overflowed");
+            return PY_LOCK_FAILURE;
+        }
+        rlock->count = count;
+        return PY_LOCK_ACQUIRED;
+    }
+    if (!PyThread_acquire_lock_timed(rlock->lock, 0, NOWAIT_LOCK)) {
+        Py_BEGIN_ALLOW_THREADS
+        r = PyThread_acquire_lock_timed(rlock->lock, -1000000, WAIT_LOCK);
+        Py_END_ALLOW_THREADS
+    }
+
+    if (r == PY_LOCK_ACQUIRED) {
+        //assert(rlock->count == 0);
+        rlock->owner = tid;
+        rlock->count = 1;
+        return r;
+    }
+    return PY_LOCK_FAILURE;
+}
+
+static void
+lead_rlock_release(struct lead_rlock *rlock)
+{
+    unsigned long tid = PyThread_get_thread_ident();
+    if (rlock->count == 0 || rlock->owner != tid) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot release un-acquired lock");
+        return;
+    }
+    if (--rlock->count == 0) {
+        rlock->owner = 0;
+        PyThread_release_lock(rlock->lock);
+    }
+    return;
+}
 
 static PyObject *
 teedataobject_newinternal(PyObject *it)
@@ -422,7 +478,6 @@ teedataobject_newinternal(PyObject *it)
     tdo->nextlink = NULL;
     Py_INCREF(it);
     tdo->it = it;
-    tdo->lead_lock = PyThread_allocate_lock();
     PyObject_GC_Track(tdo);
     return (PyObject *)tdo;
 }
@@ -500,7 +555,6 @@ teedataobject_clear(teedataobject *tdo)
 static void
 teedataobject_dealloc(teedataobject *tdo)
 {
-    PyThread_free_lock(tdo->lead_lock);
     PyObject_GC_UnTrack(tdo);
     teedataobject_clear(tdo);
     PyObject_GC_Del(tdo);
@@ -637,13 +691,9 @@ tee_next(teeobject *to)
         Py_SETREF(to->dataobj, (teedataobject *)link);
         to->index = 0;
     }
-    if (!PyThread_acquire_lock(to->dataobj->lead_lock, NOWAIT_LOCK)) {
-        Py_BEGIN_ALLOW_THREADS
-        PyThread_acquire_lock(to->dataobj->lead_lock, WAIT_LOCK);
-        Py_END_ALLOW_THREADS
-    }
+    lead_rlock_acquire(to->rlock);
     value = teedataobject_getitem(to->dataobj, to->index);
-    PyThread_release_lock(to->dataobj->lead_lock);
+    lead_rlock_release(to->rlock);
     if (value == NULL)
         return NULL;
     to->index++;
@@ -667,6 +717,8 @@ tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
         return NULL;
     Py_INCREF(to->dataobj);
     newto->dataobj = to->dataobj;
+    newto->rlock = to->rlock;
+    newto->rlock->sharenum++;
     newto->index = to->index;
     newto->weakreflist = NULL;
     PyObject_GC_Track(newto);
@@ -700,6 +752,13 @@ tee_fromiterable(PyObject *iterable)
     }
 
     to->index = 0;
+    to->rlock = (struct lead_rlock *)PyMem_RawMalloc(sizeof(struct lead_rlock));
+    if (to->rlock == NULL)
+        return NULL;
+    to->rlock->lock = PyThread_allocate_lock();
+    to->rlock->owner = 0;
+    to->rlock->count = 0;
+    to->rlock->sharenum = 1;
     to->weakreflist = NULL;
     PyObject_GC_Track(to);
 done:
@@ -729,6 +788,11 @@ tee_clear(teeobject *to)
 static void
 tee_dealloc(teeobject *to)
 {
+    if(--to->rlock->sharenum == 0) {
+        if (to->rlock->count > 0)
+            PyThread_release_lock(to->rlock->lock);
+        PyMem_RawFree((void *) to->rlock);
+    }
     PyObject_GC_UnTrack(to);
     tee_clear(to);
     PyObject_GC_Del(to);
