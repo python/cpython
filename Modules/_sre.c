@@ -87,25 +87,15 @@ static const char copyright[] =
 /* search engine state */
 
 #define SRE_IS_DIGIT(ch)\
-    ((ch) < 128 && Py_ISDIGIT(ch))
+    (Py_ISDIGIT(ch))
 #define SRE_IS_SPACE(ch)\
-    ((ch) < 128 && Py_ISSPACE(ch))
+    (Py_ISSPACE(ch))
 #define SRE_IS_LINEBREAK(ch)\
     ((ch) == '\n')
 #define SRE_IS_ALNUM(ch)\
     ((ch) < 128 && Py_ISALNUM(ch))
 #define SRE_IS_WORD(ch)\
-    ((ch) < 128 && (Py_ISALNUM(ch) || (ch) == '_'))
-
-static unsigned int sre_lower_ascii(unsigned int ch)
-{
-    return ((ch) < 128 ? Py_TOLOWER(ch) : ch);
-}
-
-static unsigned int sre_upper_ascii(unsigned int ch)
-{
-    return ((ch) < 128 ? Py_TOUPPER(ch) : ch);
-}
+    (Py_ISALNUM(ch) || (ch) == '_')
 
 /* locale-specific character predicates */
 /* !(c & ~N) == (c < N+1) for any unsigned c, this avoids
@@ -295,7 +285,7 @@ _sre_ascii_iscased_impl(PyObject *module, int character)
 /*[clinic end generated code: output=4f454b630fbd19a2 input=9f0bd952812c7ed3]*/
 {
     unsigned int ch = (unsigned int)character;
-    return ch != sre_lower_ascii(ch) || ch != sre_upper_ascii(ch);
+    return Py_ISALPHA(ch);
 }
 
 /*[clinic input]
@@ -326,7 +316,7 @@ static int
 _sre_ascii_tolower_impl(PyObject *module, int character)
 /*[clinic end generated code: output=228294ed6ff2a612 input=272c609b5b61f136]*/
 {
-    return sre_lower_ascii(character);
+    return Py_TOLOWER(ch);
 }
 
 /*[clinic input]
