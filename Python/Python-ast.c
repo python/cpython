@@ -552,9 +552,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 
     res = 0; /* if no error occurs, this stays 0 to the end */
     if (numfields < PyTuple_GET_SIZE(args)) {
-        PyErr_Format(PyExc_TypeError, "%.400s constructor takes at most "
+        PyErr_Format(PyExc_TypeError, "%T constructor takes at most "
                      "%zd positional argument%s",
-                     Py_TYPE(self)->tp_name,
+                     self,
                      numfields, numfields == 1 ? "" : "s");
         res = -1;
         goto cleanup;
@@ -8383,8 +8383,8 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
     if (isinstance == -1)
         return NULL;
     if (!isinstance) {
-        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
-                     req_name[mode], Py_TYPE(ast)->tp_name);
+        PyErr_Format(PyExc_TypeError, "expected %s node, got %T",
+                     req_name[mode], ast);
         return NULL;
     }
     if (obj2ast_mod(ast, &res, arena) != 0)

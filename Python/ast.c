@@ -290,8 +290,8 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
     case Constant_kind:
         if (!validate_constant(exp->v.Constant.value)) {
             PyErr_Format(PyExc_TypeError,
-                         "got an invalid type in Constant: %s",
-                         Py_TYPE(exp->v.Constant.value)->tp_name);
+                         "got an invalid type in Constant: %T",
+                         exp->v.Constant.value);
             return 0;
         }
         return 1;
@@ -655,9 +655,8 @@ new_identifier(const char *n, struct compiling *c)
             return NULL;
         if (!PyUnicode_Check(id2)) {
             PyErr_Format(PyExc_TypeError,
-                         "unicodedata.normalize() must return a string, not "
-                         "%.200s",
-                         Py_TYPE(id2)->tp_name);
+                         "unicodedata.normalize() must return a string, "
+                         "not %T", id2);
             Py_DECREF(id2);
             return NULL;
         }

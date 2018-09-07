@@ -213,9 +213,9 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     }
     if (!PyMapping_Check(ns)) {
         PyErr_Format(PyExc_TypeError,
-                     "%.200s.__prepare__() must return a mapping, not %.200s",
+                     "%.200s.__prepare__() must return a mapping, not %T",
                      isclass ? ((PyTypeObject *)meta)->tp_name : "<metaclass>",
-                     Py_TYPE(ns)->tp_name);
+                     ns);
         goto error;
     }
     cell = PyEval_EvalCodeEx(PyFunction_GET_CODE(func), PyFunction_GET_GLOBALS(func), ns,
@@ -2160,8 +2160,8 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
     if (round == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
-                         "type %.100s doesn't define __round__ method",
-                         Py_TYPE(number)->tp_name);
+                         "type %T doesn't define __round__ method",
+                         number);
         return NULL;
     }
 
