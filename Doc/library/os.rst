@@ -1007,7 +1007,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. index:: module: pty
 
    Open a new pseudo-terminal pair. Return a pair of file descriptors
-   ``(master, slave)`` for the pty and the tty, respectively. The new file
+   ``(parent, child)`` for the pty and the tty, respectively. The new file
    descriptors are :ref:`non-inheritable <fd_inheritance>`. For a (slightly) more
    portable approach, use the :mod:`pty` module.
 
@@ -3315,7 +3315,7 @@ written in Python, such as a mail server's external command delivery program.
    Fork a child process, using a new pseudo-terminal as the child's controlling
    terminal. Return a pair of ``(pid, fd)``, where *pid* is ``0`` in the child, the
    new child's process id in the parent, and *fd* is the file descriptor of the
-   master end of the pseudo-terminal.  For a more portable approach, use the
+   parent end of the pseudo-terminal.  For a more portable approach, use the
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
 
    Availability: some flavors of Unix.

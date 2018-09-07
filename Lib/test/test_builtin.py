@@ -1669,7 +1669,7 @@ class PtyTests(unittest.TestCase):
         # Check the result was got and corresponds to the user's terminal input
         if len(lines) != 2:
             # Something went wrong, try to get at stderr
-            # Beware of Linux raising EIO when the slave is closed
+            # Beware of Linux raising EIO when the child is closed
             child_output = bytearray()
             while True:
                 try:

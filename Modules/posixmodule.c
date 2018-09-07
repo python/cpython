@@ -6199,17 +6199,17 @@ os.openpty
 
 Open a pseudo-terminal.
 
-Return a tuple of (master_fd, slave_fd) containing open file descriptors
-for both the master and slave ends.
+Return a tuple of (parent_fd, child_fd) containing open file descriptors
+for both the parent and child ends.
 [clinic start generated code]*/
 
 static PyObject *
 os_openpty_impl(PyObject *module)
-/*[clinic end generated code: output=98841ce5ec9cef3c input=f3d99fd99e762907]*/
+/*[clinic end generated code: output=98841ce5ec9cef3c input=81a3a9d6a23e56a3]*/
 {
-    int master_fd = -1, slave_fd = -1;
+    int parent_fd = -1, child_fd = -1;
 #ifndef HAVE_OPENPTY
-    char * slave_name;
+    char * child_name;
 #endif
 #if defined(HAVE_DEV_PTMX) && !defined(HAVE_OPENPTY) && !defined(HAVE__GETPTY)
     PyOS_sighandler_t sig_saved;
@@ -6219,75 +6219,75 @@ os_openpty_impl(PyObject *module)
 #endif
 
 #ifdef HAVE_OPENPTY
-    if (openpty(&master_fd, &slave_fd, NULL, NULL, NULL) != 0)
+    if (openpty(&parent_fd, &child_fd, NULL, NULL, NULL) != 0)
         goto posix_error;
 
-    if (_Py_set_inheritable(master_fd, 0, NULL) < 0)
+    if (_Py_set_inheritable(parent_fd, 0, NULL) < 0)
         goto error;
-    if (_Py_set_inheritable(slave_fd, 0, NULL) < 0)
+    if (_Py_set_inheritable(child_fd, 0, NULL) < 0)
         goto error;
 
 #elif defined(HAVE__GETPTY)
-    slave_name = _getpty(&master_fd, O_RDWR, 0666, 0);
-    if (slave_name == NULL)
+    child_name = _getpty(&parent_fd, O_RDWR, 0666, 0);
+    if (child_name == NULL)
         goto posix_error;
-    if (_Py_set_inheritable(master_fd, 0, NULL) < 0)
+    if (_Py_set_inheritable(parent_fd, 0, NULL) < 0)
         goto error;
 
-    slave_fd = _Py_open(slave_name, O_RDWR);
-    if (slave_fd < 0)
+    child_fd = _Py_open(child_name, O_RDWR);
+    if (child_fd < 0)
         goto error;
 
 #else
-    master_fd = open(DEV_PTY_FILE, O_RDWR | O_NOCTTY); /* open master */
-    if (master_fd < 0)
+    parent_fd = open(DEV_PTY_FILE, O_RDWR | O_NOCTTY); /* open parent */
+    if (parent_fd < 0)
         goto posix_error;
 
     sig_saved = PyOS_setsig(SIGCHLD, SIG_DFL);
 
-    /* change permission of slave */
-    if (grantpt(master_fd) < 0) {
+    /* change permission of child */
+    if (grantpt(parent_fd) < 0) {
         PyOS_setsig(SIGCHLD, sig_saved);
         goto posix_error;
     }
 
-    /* unlock slave */
-    if (unlockpt(master_fd) < 0) {
+    /* unlock child */
+    if (unlockpt(parent_fd) < 0) {
         PyOS_setsig(SIGCHLD, sig_saved);
         goto posix_error;
     }
 
     PyOS_setsig(SIGCHLD, sig_saved);
 
-    slave_name = ptsname(master_fd); /* get name of slave */
-    if (slave_name == NULL)
+    child_name = ptsname(parent_fd); /* get name of child */
+    if (child_name == NULL)
         goto posix_error;
 
-    slave_fd = _Py_open(slave_name, O_RDWR | O_NOCTTY); /* open slave */
-    if (slave_fd == -1)
+    child_fd = _Py_open(child_name, O_RDWR | O_NOCTTY); /* open child */
+    if (child_fd == -1)
         goto error;
 
-    if (_Py_set_inheritable(master_fd, 0, NULL) < 0)
+    if (_Py_set_inheritable(parent_fd, 0, NULL) < 0)
         goto posix_error;
 
 #if !defined(__CYGWIN__) && !defined(__ANDROID__) && !defined(HAVE_DEV_PTC)
-    ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
-    ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
+    ioctl(child_fd, I_PUSH, "ptem"); /* push ptem */
+    ioctl(child_fd, I_PUSH, "ldterm"); /* push ldterm */
 #ifndef __hpux
-    ioctl(slave_fd, I_PUSH, "ttcompat"); /* push ttcompat */
+    ioctl(child_fd, I_PUSH, "ttcompat"); /* push ttcompat */
 #endif /* __hpux */
 #endif /* HAVE_CYGWIN */
 #endif /* HAVE_OPENPTY */
 
-    return Py_BuildValue("(ii)", master_fd, slave_fd);
+    return Py_BuildValue("(ii)", parent_fd, child_fd);
 
 posix_error:
     posix_error();
 error:
-    if (master_fd != -1)
-        close(master_fd);
-    if (slave_fd != -1)
-        close(slave_fd);
+    if (parent_fd != -1)
+        close(parent_fd);
+    if (child_fd != -1)
+        close(child_fd);
     return NULL;
 }
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX) */
@@ -6299,7 +6299,7 @@ os.forkpty
 
 Fork a new process with a new pseudo-terminal as controlling tty.
 
-Returns a tuple of (pid, master_fd).
+Returns a tuple of (pid, parent_fd).
 Like fork(), return pid of 0 to the child process,
 and pid of child to the parent process.
 To both, return fd of newly opened pseudo-terminal.
@@ -6307,13 +6307,13 @@ To both, return fd of newly opened pseudo-terminal.
 
 static PyObject *
 os_forkpty_impl(PyObject *module)
-/*[clinic end generated code: output=60d0a5c7512e4087 input=f1f7f4bae3966010]*/
+/*[clinic end generated code: output=60d0a5c7512e4087 input=37fa8984e7c77147]*/
 {
-    int master_fd = -1;
+    int parent_fd = -1;
     pid_t pid;
 
     PyOS_BeforeFork();
-    pid = forkpty(&master_fd, NULL, NULL, NULL);
+    pid = forkpty(&parent_fd, NULL, NULL, NULL);
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
@@ -6323,7 +6323,7 @@ os_forkpty_impl(PyObject *module)
     }
     if (pid == -1)
         return posix_error();
-    return Py_BuildValue("(Ni)", PyLong_FromPid(pid), master_fd);
+    return Py_BuildValue("(Ni)", PyLong_FromPid(pid), parent_fd);
 }
 #endif /* HAVE_FORKPTY */
 
@@ -8820,12 +8820,12 @@ os.isatty -> bool
 Return True if the fd is connected to a terminal.
 
 Return True if the file descriptor is an open file descriptor
-connected to the slave end of a terminal.
+connected to the child end of a terminal.
 [clinic start generated code]*/
 
 static int
 os_isatty_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=6a48c8b4e644ca00 input=08ce94aa1eaf7b5e]*/
+/*[clinic end generated code: output=6a48c8b4e644ca00 input=84b2bbf7efe5ebc0]*/
 {
     int return_value;
     _Py_BEGIN_SUPPRESS_IPH

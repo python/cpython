@@ -8,14 +8,14 @@ if not hasattr(os, "openpty"):
 
 class OpenptyTest(unittest.TestCase):
     def test(self):
-        master, slave = os.openpty()
-        self.addCleanup(os.close, master)
-        self.addCleanup(os.close, slave)
-        if not os.isatty(slave):
-            self.fail("Slave-end of pty is not a terminal.")
+        parent, child = os.openpty()
+        self.addCleanup(os.close, parent)
+        self.addCleanup(os.close, child)
+        if not os.isatty(child):
+            self.fail("Child-end of pty is not a terminal.")
 
-        os.write(slave, b'Ping!')
-        self.assertEqual(os.read(master, 1024), b'Ping!')
+        os.write(child, b'Ping!')
+        self.assertEqual(os.read(parent, 1024), b'Ping!')
 
 if __name__ == '__main__':
     unittest.main()

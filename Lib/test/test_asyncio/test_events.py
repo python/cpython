@@ -1500,12 +1500,12 @@ class EventLoopTestsMixin:
     def test_read_pty_output(self):
         proto = MyReadPipeProto(loop=self.loop)
 
-        master, slave = os.openpty()
-        master_read_obj = io.open(master, 'rb', 0)
+        parent, child = os.openpty()
+        parent_read_obj = io.open(parent, 'rb', 0)
 
         async def connect():
             t, p = await self.loop.connect_read_pipe(lambda: proto,
-                                                     master_read_obj)
+                                                     parent_read_obj)
             self.assertIs(p, proto)
             self.assertIs(t, proto.transport)
             self.assertEqual(['INITIAL', 'CONNECTED'], proto.state)
@@ -1513,16 +1513,16 @@ class EventLoopTestsMixin:
 
         self.loop.run_until_complete(connect())
 
-        os.write(slave, b'1')
+        os.write(child, b'1')
         test_utils.run_until(self.loop, lambda: proto.nbytes)
         self.assertEqual(1, proto.nbytes)
 
-        os.write(slave, b'2345')
+        os.write(child, b'2345')
         test_utils.run_until(self.loop, lambda: proto.nbytes >= 5)
         self.assertEqual(['INITIAL', 'CONNECTED'], proto.state)
         self.assertEqual(5, proto.nbytes)
 
-        os.close(slave)
+        os.close(child)
         proto.transport.close()
         self.loop.run_until_complete(proto.done)
         self.assertEqual(
@@ -1598,11 +1598,11 @@ class EventLoopTestsMixin:
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)
     def test_write_pty(self):
-        master, slave = os.openpty()
-        slave_write_obj = io.open(slave, 'wb', 0)
+        parent, child = os.openpty()
+        child_write_obj = io.open(child, 'wb', 0)
 
         proto = MyWritePipeProto(loop=self.loop)
-        connect = self.loop.connect_write_pipe(lambda: proto, slave_write_obj)
+        connect = self.loop.connect_write_pipe(lambda: proto, child_write_obj)
         transport, p = self.loop.run_until_complete(connect)
         self.assertIs(p, proto)
         self.assertIs(transport, proto.transport)
@@ -1612,7 +1612,7 @@ class EventLoopTestsMixin:
 
         data = bytearray()
         def reader(data):
-            chunk = os.read(master, 1024)
+            chunk = os.read(parent, 1024)
             data += chunk
             return len(data)
 
@@ -1626,7 +1626,7 @@ class EventLoopTestsMixin:
         self.assertEqual(b'12345', data)
         self.assertEqual('CONNECTED', proto.state)
 
-        os.close(master)
+        os.close(parent)
 
         # extra info is available
         self.assertIsNotNone(proto.transport.get_extra_info('pipe'))
@@ -1642,14 +1642,14 @@ class EventLoopTestsMixin:
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)
     def test_bidirectional_pty(self):
-        master, read_slave = os.openpty()
-        write_slave = os.dup(read_slave)
-        tty.setraw(read_slave)
+        parent, read_child = os.openpty()
+        write_child = os.dup(read_child)
+        tty.setraw(read_child)
 
-        slave_read_obj = io.open(read_slave, 'rb', 0)
+        child_read_obj = io.open(read_child, 'rb', 0)
         read_proto = MyReadPipeProto(loop=self.loop)
         read_connect = self.loop.connect_read_pipe(lambda: read_proto,
-                                                   slave_read_obj)
+                                                   child_read_obj)
         read_transport, p = self.loop.run_until_complete(read_connect)
         self.assertIs(p, read_proto)
         self.assertIs(read_transport, read_proto.transport)
@@ -1657,10 +1657,10 @@ class EventLoopTestsMixin:
         self.assertEqual(0, read_proto.nbytes)
 
 
-        slave_write_obj = io.open(write_slave, 'wb', 0)
+        child_write_obj = io.open(write_child, 'wb', 0)
         write_proto = MyWritePipeProto(loop=self.loop)
         write_connect = self.loop.connect_write_pipe(lambda: write_proto,
-                                                     slave_write_obj)
+                                                     child_write_obj)
         write_transport, p = self.loop.run_until_complete(write_connect)
         self.assertIs(p, write_proto)
         self.assertIs(write_transport, write_proto.transport)
@@ -1668,7 +1668,7 @@ class EventLoopTestsMixin:
 
         data = bytearray()
         def reader(data):
-            chunk = os.read(master, 1024)
+            chunk = os.read(parent, 1024)
             data += chunk
             return len(data)
 
@@ -1678,7 +1678,7 @@ class EventLoopTestsMixin:
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
         self.assertEqual('CONNECTED', write_proto.state)
 
-        os.write(master, b'a')
+        os.write(parent, b'a')
         test_utils.run_until(self.loop, lambda: read_proto.nbytes >= 1,
                              timeout=10)
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
@@ -1691,14 +1691,14 @@ class EventLoopTestsMixin:
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
         self.assertEqual('CONNECTED', write_proto.state)
 
-        os.write(master, b'bcde')
+        os.write(parent, b'bcde')
         test_utils.run_until(self.loop, lambda: read_proto.nbytes >= 5,
                              timeout=10)
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
         self.assertEqual(5, read_proto.nbytes)
         self.assertEqual('CONNECTED', write_proto.state)
 
-        os.close(master)
+        os.close(parent)
 
         read_transport.close()
         self.loop.run_until_complete(read_proto.done)

@@ -2343,8 +2343,8 @@ PyDoc_STRVAR(os_openpty__doc__,
 "\n"
 "Open a pseudo-terminal.\n"
 "\n"
-"Return a tuple of (master_fd, slave_fd) containing open file descriptors\n"
-"for both the master and slave ends.");
+"Return a tuple of (parent_fd, child_fd) containing open file descriptors\n"
+"for both the parent and child ends.");
 
 #define OS_OPENPTY_METHODDEF    \
     {"openpty", (PyCFunction)os_openpty, METH_NOARGS, os_openpty__doc__},
@@ -2368,7 +2368,7 @@ PyDoc_STRVAR(os_forkpty__doc__,
 "\n"
 "Fork a new process with a new pseudo-terminal as controlling tty.\n"
 "\n"
-"Returns a tuple of (pid, master_fd).\n"
+"Returns a tuple of (pid, parent_fd).\n"
 "Like fork(), return pid of 0 to the child process,\n"
 "and pid of child to the parent process.\n"
 "To both, return fd of newly opened pseudo-terminal.");
@@ -3927,7 +3927,7 @@ PyDoc_STRVAR(os_isatty__doc__,
 "Return True if the fd is connected to a terminal.\n"
 "\n"
 "Return True if the file descriptor is an open file descriptor\n"
-"connected to the slave end of a terminal.");
+"connected to the child end of a terminal.");
 
 #define OS_ISATTY_METHODDEF    \
     {"isatty", (PyCFunction)os_isatty, METH_O, os_isatty__doc__},
@@ -6627,4 +6627,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=47fb6a3e88cba6d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d4aee56f190a791d input=a9049054013a1b77]*/
