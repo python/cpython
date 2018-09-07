@@ -2272,12 +2272,13 @@ class ZipInfoWithExtraTest(unittest.TestCase):
 
     @requires_zlib
     def test_extra_field(self):
-        with zipfile.ZipFile(TESTFN, 'w') as zf:
+        f = os.path.join(TESTFN2, "f.zip")
+        with zipfile.ZipFile(f, 'w') as zf:
             zi = zipfile.ZipInfo("0")
             zi.extra = b"12345"
             zf.writestr(zi, b"some string")
         try:
-            with zipfile.ZipFile(TESTFN) as zf:
+            with zipfile.ZipFile(f) as zf:
                 infolist = zf.infolist()
                 self.assertTrue(len(infolist) == 1)
                 self.assertEqual(infolist[0].extra, b"12345")
