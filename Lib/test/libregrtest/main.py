@@ -542,9 +542,9 @@ class Regrtest:
                 print(msg, file=sys.stderr, flush=True)
                 sys.exit(2)
 
-        if self.ns.slaveargs is not None:
-            from test.libregrtest.runtest_mp import run_tests_slave
-            run_tests_slave(self.ns.slaveargs)
+        if self.ns.worker_args is not None:
+            from test.libregrtest.runtest_mp import run_tests_worker
+            run_tests_worker(self.ns.worker_args)
 
         if self.ns.wait:
             input("Press any key to continue...")
