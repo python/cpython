@@ -68,109 +68,29 @@ class FontSizerTest(unittest.TestCase):
     def tearDown(self):
         del self.sizer, self.font
 
-    def test_zoom_in(self):
+    def test_increase_font_size(self):
         text = self.text
         font = self.font
         eq = self.assertEqual
         text.focus_set()
 
         eq(font['size'], 30)
-        text.event_generate('<<zoom-text-in>>')
+        text.event_generate('<<increase_font_size>>')
         eq(font['size'], 31)
-        text.event_generate('<<zoom-text-in>>')
+        text.event_generate('<<increase_font_size>>')
         eq(font['size'], 32)
 
-    def test_zoom_out(self):
+    def test_decrease_font_size(self):
         text = self.text
         font = self.font
         eq = self.assertEqual
         text.focus_set()
 
         eq(font['size'], 30)
-        text.event_generate('<<zoom-text-out>>')
+        text.event_generate('<<decrease_font_size>>')
         eq(font['size'], 29)
-        text.event_generate('<<zoom-text-out>>')
+        text.event_generate('<<decrease_font_size>>')
         eq(font['size'], 28)
-
-    def test_mousewheel(self):
-        text = self.text
-        font = self.font
-        eq = self.assertEqual
-        text.focus_set()
-
-        wheel = '<Control-MouseWheel>'
-        button4 = '<Control-Button-4>'
-        button5 = '<Control-Button-5>'
-
-        tests = ((wheel, {}, 29, None),
-                 (wheel, {'delta': 10}, 30, None),
-                 (button5, {}, 29, '<ButtonRelease-5>'),
-                 (wheel, {'delta': -10}, 28, None),
-                 (button4, {}, 29, '<ButtonRelease-4>'))
-
-        eq(font['size'], 30)
-        for event, kw, result, after in tests:
-            with self.subTest(event=event):
-                text.event_generate(event, **kw)
-                eq(font['size'], result)
-                if after:
-                    text.event_generate(after)
-
-    def test_zoom(self):
-        text = self.text
-        font = self.font
-        eq = self.assertEqual
-        text.focus_set()
-
-        tests = (('zoom out', False, 29),
-                 ('zoom in', True, 30),
-                 ('zoom out', False, 29),
-                 ('zoom out', False, 28),
-                 ('zoom in', True, 29))
-
-        eq(font['size'], 30)
-        for event, increase, result in tests:
-            with self.subTest(event=event):
-                self.sizer.zoom(increase)
-                eq(font['size'], result)
-
-    def test_zoom_lower_boundary(self):
-        text = self.text
-        font = self.font
-        font['size'] = 7
-        eq = self.assertEqual
-        text.focus_set()
-
-        tests = (('zoom out', False, 6),
-                 ('zoom out at limit (no change)', False, 6),
-                 ('zoom in', True, 7),
-                 ('zoom in', True, 8),
-                 ('zoom out', False, 7))
-
-        eq(font['size'], 7)
-        for event, increase, result in tests:
-            with self.subTest(event=event):
-                self.sizer.zoom(increase)
-                eq(font['size'], result)
-
-    def test_zoom_upper_boundary(self):
-        text = self.text
-        font = self.font
-        font['size'] = 99
-        eq = self.assertEqual
-        text.focus_set()
-
-        tests = (('zoom in', True, 100),
-                 ('zoom in at limit (no change)', True, 100),
-                 ('zoom out', False, 99),
-                 ('zoom out', False, 98),
-                 ('zoom in', True, 99))
-
-        eq(font['size'], 99)
-        for event, increase, result in tests:
-            with self.subTest(event=event):
-                self.sizer.zoom(increase)
-                eq(font['size'], result)
 
 
 class HelpTextTest(unittest.TestCase):
@@ -210,31 +130,25 @@ class HelpTextTest(unittest.TestCase):
         text.scale_tagfonts(21)
         eq(self.get_sizes(), [25, 29, 33, 21, 21, 18])
 
-    def test_font_sizing(self):
+    def test_resizing_callback(self):
         text = self.text
         eq = self.assertEqual
 
         base = [14, 16, 19, 12, 12, 10]
-        zoomin = [15, 18, 20, 13, 13, 11]
-        zoomout = [13, 15, 17, 11, 11, 9]
-        wheel = '<Control-MouseWheel>'
-        button4 = '<Control-Button-4>'
-        button5 = '<Control-Button-5>'
+        larger = [15, 18, 20, 13, 13, 11]
+        smaller = [13, 15, 17, 11, 11, 9]
 
-        tests = ((wheel, {}, zoomout, None),
-                 (wheel, {'delta': 10}, base, None),
-                 (button4, {}, zoomin, '<ButtonRelease-4>'),
-                 (wheel, {'delta': -10}, base, None),
-                 (button5, {}, zoomout, '<ButtonRelease-5>'))
+        tests = (('<<increase_font_size>>', larger),
+                 ('<<decrease_font_size>>', base),
+                 ('<<decrease_font_size>>', smaller),
+                 ('<<increase_font_size>>', base))
 
         eq(self.get_sizes(), base)
 
-        for event, kw, result, after in tests:
+        for event, result in tests:
             with self.subTest(event=event):
-                text.event_generate(event, **kw)
+                text.event_generate(event)
                 eq(self.get_sizes(), result)
-                if after:
-                    text.event_generate(after)
 
 
 if __name__ == '__main__':

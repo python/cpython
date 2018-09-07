@@ -74,7 +74,7 @@ class HelpParser(HTMLParser):
     def indent(self, amt=1):
         "Change indent (+1, 0, -1) and tags."
         self.level += amt
-        self.tags = '' if self.level == 0 else 'l'+str(self.level)
+        self.tags = '' if self.level == 0 else f'l{self.level}'
 
     def handle_starttag(self, tag, attrs):
         "Handle starttags in help.html."
@@ -189,47 +189,50 @@ class FontSizer:
     def bind_events(self):
         "Bind events to the widget."
         shortcut = 'Command' if darwin else 'Control'
-        # Zoom out works with or without shift.
+        # Bind to keys with or without shift.
         self.widget.event_add(
-                '<<zoom-text-in>>',
-                *[f'<{shortcut}-Key-equal>', f'<{shortcut}-Key-plus>'])
-        self.widget.bind('<<zoom-text-in>>', self.zoom_in)
+                '<<increase_font_size>>',
+                f'<{shortcut}-Key-equal>', f'<{shortcut}-Key-plus>')
+        self.widget.bind('<<increase_font_size>>', self.increase_font_size)
 
         self.widget.event_add(
-                '<<zoom-text-out>>',
-                *[f'<{shortcut}-Key-minus>', f'<{shortcut}-Key-underscore>'])
-        self.widget.bind('<<zoom-text-out>>', self.zoom_out)
+                '<<decrease_font_size>>',
+                f'<{shortcut}-Key-minus>', f'<{shortcut}-Key-underscore>')
+        self.widget.bind('<<decrease_font_size>>', self.decrease_font_size)
 
         # Windows and Mac use MouseWheel.
-        self.widget.bind('<Control-MouseWheel>', self.zoom_mousewheel)
+        self.widget.bind('<Control-MouseWheel>', self.update_mousewheel)
         # Linux uses Button 4 (scroll down) and Button 5 (scroll up).
-        self.widget.bind('<Control-Button-4>', self.zoom_mousewheel)
-        self.widget.bind('<Control-Button-5>', self.zoom_mousewheel)
+        self.widget.bind('<Control-Button-4>', self.update_mousewheel)
+        self.widget.bind('<Control-Button-5>', self.update_mousewheel)
 
-    def zoom_in(self, event):
-        "Make font size larger."
-        self.zoom(increase=True)
-
-    def zoom_out(self, event):
-        "Make font size smaller."
-        self.zoom(increase=False)
-
-    def zoom_mousewheel(self, event):
-        "Adjust font size based on mouse wheel direction."
-        wheel_up = {EventType.MouseWheel: event.delta > 0,
-                    EventType.Button: event.num == 4}
-        self.zoom(wheel_up[event.type])
-
-    def zoom(self, increase):
-        "Adjust font size."
+    def set_text_size(self, new_size):
+        "Set the font size for this widget."
         font = tkfont.Font(self.widget, name=self.widget['font'], exists=True)
-        # Increase or decrease font size within defined range.
-        new_size = (min(font['size'] + 1, MAXIMUM_FONT_SIZE) if increase
-                    else max(font['size'] - 1, MINIMUM_FONT_SIZE))
-        font['size'] = new_size
+        size = new_size(font)
+        font['size'] = size
         if self.callback:
-            self.callback(new_size)
+            self.callback(size)
         return 'break'
+
+    def increase_font_size(self, event=None):
+        "Make font size larger."
+        def new_size(font):
+            return min(font['size'] + 1, MAXIMUM_FONT_SIZE)
+        return self.set_text_size(new_size)
+
+    def decrease_font_size(self, event=None):
+        "Make font size smaller."
+        def new_size(font):
+            return max(font['size'] - 1, MINIMUM_FONT_SIZE)
+        return self.set_text_size(new_size)
+
+    def update_mousewheel(self, event):
+        "Adjust font size based on mouse wheel direction."
+        if (event.delta < 0) == (not darwin):
+            return self.decrease_font_size()
+        else:
+            return self.increase_font_size()
 
 
 class HelpText(Text):
@@ -291,10 +294,8 @@ class HelpText(Text):
         self.tag_configure('pre', background='#f6f6ff')
         self.tag_configure('preblock', lmargin1=25, borderwidth=1,
                            relief='solid', background='#eeffcc')
-        self.tag_configure('l1', lmargin1=25, lmargin2=25)
-        self.tag_configure('l2', lmargin1=50, lmargin2=50)
-        self.tag_configure('l3', lmargin1=75, lmargin2=75)
-        self.tag_configure('l4', lmargin1=100, lmargin2=100)
+        for level in range(1, 5):
+            self.tag_configure(f'l{level}', lmargin1=25*level, lmargin2=25*level)
 
     def scale_tagfonts(self, base):
         "Scale tag sizes based on the size of normal text."
