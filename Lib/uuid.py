@@ -207,26 +207,18 @@ class UUID:
         object.__setattr__(self, 'is_safe', is_safe)
 
     def __getstate__(self):
-        d = {attr: getattr(self, attr) for attr in self.__slots__}
-        # is_safe is a SafeUUID instance.  Return just its value, so that
-        # it can be unpickled in older Python versions without SafeUUID.
-        d['is_safe'] = d['is_safe'].value
+        d = {'int': self.int}
+        if self.is_safe != SafeUUID.unknown:
+            # is_safe is a SafeUUID instance.  Return just its value, so that
+            # it can be un-pickled in older Python versions without SafeUUID.
+            d['is_safe'] = self.is_safe.value
         return d
 
     def __setstate__(self, state):
-        # is_safe was added in 3.7
-        state.setdefault('is_safe', SafeUUID.unknown.value)
-
-        for attr in self.__slots__:
-            value = state[attr]
-
-            # for is_safe, restore the SafeUUID from the stored value
-            if attr == 'is_safe':
-                try:
-                    value = SafeUUID(value)
-                except ValueError:
-                    value = SafeUUID.unknown
-            object.__setattr__(self, attr, value)
+        object.__setattr__(self, 'int', state['int'])
+        # is_safe was added in 3.7; it is also omitted when it is "unknown"
+        is_safe = SafeUUID(state.get('is_safe', SafeUUID.unknown.value))
+        object.__setattr__(self, 'is_safe', is_safe)
 
     def __eq__(self, other):
         if isinstance(other, UUID):
