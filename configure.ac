@@ -3434,8 +3434,9 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
+ getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
- getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
+ getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
  initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
