@@ -20,6 +20,7 @@ import threading
 import unittest
 from test import support, mock_socket
 from test.support import HOST, HOSTv4, HOSTv6
+from unittest.mock import Mock
 
 
 if sys.platform == 'darwin':
@@ -576,6 +577,33 @@ class NonConnectingTests(unittest.TestCase):
                           "localhost", "bogus")
         self.assertRaises(OSError, smtplib.SMTP,
                           "localhost:bogus")
+
+
+class DefaultArgumentsTests(unittest.TestCase):
+
+    def setUp(self):
+        self.msg = EmailMessage()
+        self.msg['From'] = 'Páolo <főo@bar.com>'
+        self.smtp = smtplib.SMTP()
+        self.smtp.ehlo = Mock(return_value=(200, 'OK'))
+        self.smtp.has_extn, self.smtp.sendmail = Mock(), Mock()
+
+    def testSendMessage(self):
+        expected_mail_options = ('SMTPUTF8', 'BODY=8BITMIME')
+        self.smtp.send_message(self.msg)
+        self.smtp.send_message(self.msg)
+        self.assertEqual(self.smtp.sendmail.call_args_list[0][0][3],
+                         expected_mail_options)
+        self.assertEqual(self.smtp.sendmail.call_args_list[1][0][3],
+                         expected_mail_options)
+
+    def testSendMessageWithMailOptions(self):
+        mail_options = ['STARTTLS']
+        expected_mail_options = ('STARTTLS', 'SMTPUTF8', 'BODY=8BITMIME')
+        self.smtp.send_message(self.msg, None, None, mail_options)
+        self.assertEqual(mail_options, ['STARTTLS'])
+        self.assertEqual(self.smtp.sendmail.call_args_list[0][0][3],
+                         expected_mail_options)
 
 
 # test response of client to a non-successful HELO message
