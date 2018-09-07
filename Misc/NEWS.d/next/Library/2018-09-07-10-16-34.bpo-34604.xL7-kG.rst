@@ -1,0 +1,2 @@
+Fix possible mojibake in `pwd.getpwnam` and `grp.getgrnam`. Patch by William
+Grzybowski.

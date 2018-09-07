@@ -245,7 +245,7 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
             PyErr_NoMemory();
         }
         else {
-            PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %s", name_chars);
+            PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %S", name);
         }
         goto out;
     }
