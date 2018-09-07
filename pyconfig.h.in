@@ -403,6 +403,12 @@
 /* Define to 1 if you have the `getentropy' function. */
 #undef HAVE_GETENTROPY
 
+/* Define to 1 if you have the `getgrgid_r' function. */
+#undef HAVE_GETGRGID_R
+
+/* Define to 1 if you have the `getgrnam_r' function. */
+#undef HAVE_GETGRNAM_R
+
 /* Define to 1 if you have the `getgrouplist' function. */
 #undef HAVE_GETGROUPLIST
 
@@ -456,6 +462,12 @@
 
 /* Define to 1 if you have the `getpwent' function. */
 #undef HAVE_GETPWENT
+
+/* Define to 1 if you have the `getpwnam_r' function. */
+#undef HAVE_GETPWNAM_R
+
+/* Define to 1 if you have the `getpwuid_r' function. */
+#undef HAVE_GETPWUID_R
 
 /* Define to 1 if the getrandom() function is available */
 #undef HAVE_GETRANDOM
