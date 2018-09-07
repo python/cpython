@@ -288,7 +288,7 @@ _sre_ascii_iscased_impl(PyObject *module, int character)
 /*[clinic end generated code: output=4f454b630fbd19a2 input=9f0bd952812c7ed3]*/
 {
     unsigned int ch = (unsigned int)character;
-    return ch < 128 && Py_ISALPHA(ch);
+    return ch <= 'z' && Py_ISALPHA(ch);
 }
 
 /*[clinic input]
