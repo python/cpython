@@ -2262,6 +2262,28 @@ class ZipInfoTests(unittest.TestCase):
         self.assertEqual(zi.file_size, 0)
 
 
+class ZipInfoWithExtraTest(unittest.TestCase):
+
+    def setUp(self):
+        os.mkdir(TESTFN2)
+
+    def tearDown(self):
+        rmtree(TESTFN2)
+
+    @requires_zlib
+    def test_extra_field(self):
+        with zipfile.ZipFile(TESTFN, 'w') as zf:
+            zi = zipfile.ZipInfo("0")
+            zi.extra = b"12345"
+            zf.writestr(zi, b"some string")
+        try:
+            with zipfile.ZipFile(TESTFN) as zf:
+                infolist = zf.infolist()
+                self.assertTrue(len(infolist) == 1)
+                self.assertEqual(infolist[0].extra, b"12345")
+        except zipfile.BadZipfile as e:
+            self.fail(f"Unexpected exception: {e}")
+
 class CommandLineTest(unittest.TestCase):
 
     def zipfilecmd(self, *args, **kwargs):
