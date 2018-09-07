@@ -1,2 +1,1 @@
-Fixed installation issue with setuptools distutils that crashed with 
-packages containing unicode module or package names in Windows.
+Fix distutils logging for non-ASCII strings.  This caused installation issues on Windows.
