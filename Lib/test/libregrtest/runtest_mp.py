@@ -24,23 +24,23 @@ WAIT_PROGRESS = 2.0   # seconds
 
 
 def run_test_in_subprocess(testname, ns):
-    """Run the given test in a subprocess with --slaveargs.
+    """Run the given test in a subprocess with --worker-args.
 
     ns is the option Namespace parsed from command-line arguments. regrtest
-    is invoked in a subprocess with the --slaveargs argument; when the
+    is invoked in a subprocess with the --worker-args argument; when the
     subprocess exits, its return code, stdout and stderr are returned as a
     3-tuple.
     """
     from subprocess import Popen, PIPE
 
     ns_dict = vars(ns)
-    slaveargs = (ns_dict, testname)
-    slaveargs = json.dumps(slaveargs)
+    worker_args = (ns_dict, testname)
+    worker_args = json.dumps(worker_args)
 
     cmd = [sys.executable, *support.args_from_interpreter_flags(),
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.regrtest',
-           '--slaveargs', slaveargs]
+           '--worker-args', worker_args]
     if ns.pgo:
         cmd += ['--pgo']
 
@@ -58,8 +58,8 @@ def run_test_in_subprocess(testname, ns):
     return retcode, stdout, stderr
 
 
-def run_tests_slave(slaveargs):
-    ns_dict, testname = json.loads(slaveargs)
+def run_tests_worker(worker_args):
+    ns_dict, testname = json.loads(worker_args)
     ns = types.SimpleNamespace(**ns_dict)
 
     setup_tests(ns)
