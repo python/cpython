@@ -1,0 +1,2 @@
+Fixed installation issue with setuptools distutils that crashed with 
+packages containing unicode module or package names in Windows.
