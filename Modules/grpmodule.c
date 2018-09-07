@@ -133,9 +133,15 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
     if (bufsize == -1) {
         bufsize = DEFAULT_BUFFER_SIZE;
     }
-    buf = PyMem_RawMalloc(bufsize);
 
     while (1) {
+        buf2 = PyMem_RawRealloc(buf, bufsize);
+        if (buf2 == NULL) {
+            p = NULL;
+            nomem = 1;
+            break;
+        }
+        buf = buf2;
         status = getgrgid_r(gid, &grp, buf, bufsize, &p);
         if (status != 0) {
             p = NULL;
@@ -148,12 +154,6 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
             break;
         }
         bufsize <<= 1;
-        buf2 = PyMem_RawRealloc(buf, bufsize);
-        if (buf2 == NULL) {
-            nomem = 1;
-            break;
-        }
-        buf = buf2;
     }
 
     Py_END_ALLOW_THREADS
@@ -213,9 +213,15 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
     if (bufsize == -1) {
         bufsize = DEFAULT_BUFFER_SIZE;
     }
-    buf = PyMem_RawMalloc(bufsize);
 
     while(1) {
+        buf2 = PyMem_RawRealloc(buf, bufsize);
+        if (buf2 == NULL) {
+            p = NULL;
+            nomem = 1;
+            break;
+        }
+        buf = buf2;
         status = getgrnam_r(name_chars, &grp, buf, bufsize, &p);
         if (status != 0) {
             p = NULL;
@@ -228,12 +234,6 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
             break;
         }
         bufsize <<= 1;
-        buf2 = PyMem_RawRealloc(buf, bufsize);
-        if (p == NULL) {
-            nomem = 1;
-            break;
-        }
-        buf = (char *) buf2;
     }
 
     Py_END_ALLOW_THREADS

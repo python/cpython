@@ -140,9 +140,14 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     if (bufsize == -1) {
         bufsize = DEFAULT_BUFFER_SIZE;
     }
-    buf = PyMem_RawMalloc(bufsize);
 
     while(1) {
+        buf2 = PyMem_RawRealloc(buf, bufsize);
+        if (buf2 == NULL) {
+            nomem = 1;
+            break;
+        }
+        buf = buf2;
         status = getpwuid_r(uid, &pwd, buf, bufsize, &p);
         if (status != 0) {
             p = NULL;
@@ -155,12 +160,6 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
             break;
         }
         bufsize <<= 1;
-        buf2 = PyMem_RawRealloc(buf, bufsize);
-        if (p == NULL) {
-            nomem = 1;
-            break;
-        }
-        buf = buf2;
     }
 
     Py_END_ALLOW_THREADS
@@ -222,9 +221,14 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
     if (bufsize == -1) {
         bufsize = DEFAULT_BUFFER_SIZE;
     }
-    buf = PyMem_RawMalloc(bufsize);
 
     while(1) {
+        buf2 = PyMem_RawRealloc(buf, bufsize);
+        if (buf2 == NULL) {
+            nomem = 1;
+            break;
+        }
+        buf = buf2;
         status = getpwnam_r(name, &pwd, buf, bufsize, &p);
         if (status != 0) {
             p = NULL;
@@ -237,12 +241,6 @@ pwd_getpwnam_impl(PyObject *module, PyObject *arg)
             break;
         }
         bufsize <<= 1;
-        buf2 = PyMem_RawRealloc(buf, bufsize);
-        if (p == NULL) {
-            nomem = 1;
-            break;
-        }
-        buf = buf2;
     }
 
     Py_END_ALLOW_THREADS
