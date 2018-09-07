@@ -201,9 +201,6 @@ Removed
 * Removed the ``doctype()`` method of :class:`~xml.etree.ElementTree.XMLParser`.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
 
-* The function :func:`math.factorial` no longer accepts arguments that are not
-  int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
-
 
 Porting to Python 3.8
 =====================
@@ -274,6 +271,9 @@ Changes in the Python API
   zero was returned on error under Windows.  A zero value was returned on
   success; an exception was raised on error under Unix.
   (Contributed by Berker Peksag in :issue:`2122`.)
+
+* The function :func:`math.factorial` no longer accepts arguments that are not
+  int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
 
 
 CPython bytecode changes
