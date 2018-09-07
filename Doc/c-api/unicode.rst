@@ -519,6 +519,9 @@ APIs:
    | :attr:`%R`        | PyObject\*          | The result of calling          |
    |                   |                     | :c:func:`PyObject_Repr`.       |
    +-------------------+---------------------+--------------------------------+
+   | :attr:`%T`        | PyObject\*          | Object type name, equivalent   |
+   |                   |                     | to ``Py_TYPE(op)->tp_name``.   |
+   +-------------------+---------------------+--------------------------------+
 
    An unrecognized format character causes all the rest of the format string to be
    copied as-is to the result string, and any extra arguments discarded.
@@ -542,6 +545,9 @@ APIs:
    .. versionchanged:: 3.4
       Support width and precision formatter for ``"%s"``, ``"%A"``, ``"%U"``,
       ``"%V"``, ``"%S"``, ``"%R"`` added.
+
+   .. versionchanged:: 3.7
+      Support for ``"%T"`` (object type name) added.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
