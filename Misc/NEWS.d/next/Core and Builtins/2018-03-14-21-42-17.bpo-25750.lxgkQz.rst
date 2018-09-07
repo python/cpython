@@ -1,0 +1,2 @@
+Fix rare Python crash due to bad refcounting in ``type_getattro()`` if a
+descriptor deletes itself from the class. Patch by Jeroen Demeyer.
