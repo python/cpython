@@ -296,7 +296,7 @@ are always available.  They are listed here in alphabetical order.
 
    Return a complex number with the value *real* + *imag*\*1j or convert a string
    or number to a complex number.  If the first parameter is a string, it will
-   be interpreted as a complex number and the function must be called without a
+   be interpreted as a complex number and the class must be called without a
    second parameter.  The second parameter can never be a string. Each argument
    may be any numeric type (including complex).  If *imag* is omitted, it
    defaults to zero and the constructor serves as a numeric conversion like
@@ -884,7 +884,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-memoryview:
-.. function:: memoryview(obj)
+.. class:: memoryview(obj)
    :noindex:
 
    Return a "memory view" object created from the given argument.  See
@@ -930,8 +930,8 @@ are always available.  They are listed here in alphabetical order.
 .. class:: object()
 
    Return a new featureless object.  :class:`object` is a base for all classes.
-   It has the methods that are common to all instances of Python classes.  This
-   function does not accept any arguments.
+   It has the methods that are common to all instances of Python classes.  The
+   constructor of this class does not accept any arguments.
 
    .. note::
 
@@ -1313,8 +1313,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-range:
-.. function:: range(stop)
-              range(start, stop[, step])
+.. class:: range(stop)
+           range(start, stop[, step])
    :noindex:
 
    Rather than being a function, :class:`range` is actually an immutable
@@ -1547,7 +1547,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-tuple:
-.. function:: tuple([iterable])
+.. class:: tuple([iterable])
    :noindex:
 
    Rather than being a function, :class:`tuple` is actually an immutable
