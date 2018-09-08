@@ -1526,7 +1526,7 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
            to -1 if the value of ms is a negative number.
 
            Note that we didn't use INFTIM here since it's non-standard and
-           doesn't available under Linux. */
+           isn't available under Linux. */
         if (ms < 0) {
             ms = -1;
         }
