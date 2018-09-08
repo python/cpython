@@ -131,6 +131,10 @@ Optimizations
   objects (e.g. tuple, list, dict) size is reduced 4 or 8 bytes.
   (Contributed by Inada Naoki in :issue:`33597`)
 
+* :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
+  Note that this means that instances can no longer be weak-referenced and
+  that arbitrary attributes can no longer be added to them.
+
 
 Build and C API Changes
 =======================
@@ -271,6 +275,9 @@ Changes in the Python API
   zero was returned on error under Windows.  A zero value was returned on
   success; an exception was raised on error under Unix.
   (Contributed by Berker Peksag in :issue:`2122`.)
+
+* :class:`uuid.UUID` now uses ``__slots__``, therefore instances can no longer
+  be weak-referenced and attributes can no longer be added.
 
 
 CPython bytecode changes
