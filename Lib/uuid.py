@@ -217,8 +217,9 @@ class UUID:
     def __setstate__(self, state):
         object.__setattr__(self, 'int', state['int'])
         # is_safe was added in 3.7; it is also omitted when it is "unknown"
-        is_safe = SafeUUID(state.get('is_safe', SafeUUID.unknown.value))
-        object.__setattr__(self, 'is_safe', is_safe)
+        object.__setattr__(self, 'is_safe',
+                           SafeUUID(state['is_safe'])
+                           if 'is_safe' in state else SafeUUID.unknown)
 
     def __eq__(self, other):
         if isinstance(other, UUID):
