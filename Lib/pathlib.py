@@ -1123,6 +1123,9 @@ class Path(PurePath):
         obj._init(template=self)
         return obj
 
+    def __abs__(self):
+        return self.absolute()
+
     def resolve(self, strict=False):
         """
         Make the path absolute, resolving all symlinks on the way and also

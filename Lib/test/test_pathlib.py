@@ -2054,6 +2054,10 @@ class PathTest(_BasePathTest, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
             list(p.glob(''))
 
+    def test_absolute(self):
+        p = self.cls(BASE)
+        self.assertEqual(abs(p), p.absolute())
+
 
 @only_posix
 class PosixPathTest(_BasePathTest, unittest.TestCase):
