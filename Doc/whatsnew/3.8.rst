@@ -276,6 +276,9 @@ Changes in the Python API
   success; an exception was raised on error under Unix.
   (Contributed by Berker Peksag in :issue:`2122`.)
 
+* The function :func:`math.factorial` no longer accepts arguments that are not
+  int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
+
 * :class:`uuid.UUID` now uses ``__slots__``, therefore instances can no longer
   be weak-referenced and attributes can no longer be added.
 
