@@ -3394,7 +3394,7 @@ written in Python, such as a mail server's external command delivery program.
    subprocesses.
 
 
-.. function:: posix_spawn(path, argv, env, file_actions=None, /, *, \
+.. function:: posix_spawn(path, argv, env, *, file_actions=None, \
                           setpgroup=None, resetids=False, setsigmask=(), \
                           setsigdef=(), scheduler=None)
 
@@ -3402,7 +3402,8 @@ written in Python, such as a mail server's external command delivery program.
 
    Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
 
-   The *path*, *args*, and *env* arguments are similar to :func:`execve`.
+   The positional-only arguments *path*, *args*, and *env* are similar to
+   :func:`execve`.
 
    The *file_actions* argument may be a sequence of tuples describing actions
    to take on specific file descriptors in the child process between the C

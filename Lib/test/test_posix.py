@@ -1499,8 +1499,7 @@ class TestPosixSpawn(unittest.TestCase):
                 pidfile.write(str(os.getpid()))
             """
         args = self.python_args('-c', script)
-        pid = posix.posix_spawn(args[0], args,
-                                os.environ)
+        pid = posix.posix_spawn(args[0], args, os.environ)
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
         with open(pidfile) as f:
             self.assertEqual(f.read(), str(pid))
@@ -1538,7 +1537,7 @@ class TestPosixSpawn(unittest.TestCase):
             self.NOOP_PROGRAM[0],
             self.NOOP_PROGRAM,
             os.environ,
-            []
+            file_actions=[]
         )
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
@@ -1691,37 +1690,38 @@ class TestPosixSpawn(unittest.TestCase):
         ]
         pid = posix.posix_spawn(self.NOOP_PROGRAM[0],
                                 self.NOOP_PROGRAM,
-                                os.environ, file_actions)
+                                os.environ,
+                                file_actions=file_actions)
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
     def test_bad_file_actions(self):
         args = self.NOOP_PROGRAM
         with self.assertRaises(TypeError):
-            posix.posix_spawn(args[0], args,
-                              os.environ, [None])
+            posix.posix_spawn(args[0], args, os.environ,
+                              file_actions=[None])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(args[0], args,
-                              os.environ, [()])
+            posix.posix_spawn(args[0], args, os.environ,
+                              file_actions=[()])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(args[0], args,
-                              os.environ, [(None,)])
+            posix.posix_spawn(args[0], args, os.environ,
+                              file_actions=[(None,)])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(args[0], args,
-                              os.environ, [(12345,)])
+            posix.posix_spawn(args[0], args, os.environ,
+                              file_actions=[(12345,)])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(args[0], args,
-                              os.environ, [(os.POSIX_SPAWN_CLOSE,)])
+            posix.posix_spawn(args[0], args, os.environ,
+                              file_actions=[(os.POSIX_SPAWN_CLOSE,)])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(args[0], args,
-                              os.environ, [(os.POSIX_SPAWN_CLOSE, 1, 2)])
+            posix.posix_spawn(args[0], args, os.environ,
+                              file_actions=[(os.POSIX_SPAWN_CLOSE, 1, 2)])
         with self.assertRaises(TypeError):
-            posix.posix_spawn(args[0], args,
-                              os.environ, [(os.POSIX_SPAWN_CLOSE, None)])
+            posix.posix_spawn(args[0], args, os.environ,
+                              file_actions=[(os.POSIX_SPAWN_CLOSE, None)])
         with self.assertRaises(ValueError):
-            posix.posix_spawn(args[0], args,
-                              os.environ,
-                              [(os.POSIX_SPAWN_OPEN, 3, __file__ + '\0',
-                                os.O_RDONLY, 0)])
+            posix.posix_spawn(args[0], args, os.environ,
+                              file_actions=[(os.POSIX_SPAWN_OPEN,
+                                             3, __file__ + '\0',
+                                             os.O_RDONLY, 0)])
 
     def test_open_file(self):
         outfile = support.TESTFN
@@ -1736,8 +1736,8 @@ class TestPosixSpawn(unittest.TestCase):
                 stat.S_IRUSR | stat.S_IWUSR),
         ]
         args = self.python_args('-c', script)
-        pid = posix.posix_spawn(args[0], args,
-                                os.environ, file_actions)
+        pid = posix.posix_spawn(args[0], args, os.environ,
+                                file_actions=file_actions)
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
         with open(outfile) as f:
             self.assertEqual(f.read(), 'hello')
@@ -1754,9 +1754,8 @@ class TestPosixSpawn(unittest.TestCase):
                     closefile.write('is closed %d' % e.errno)
             """
         args = self.python_args('-c', script)
-        pid = posix.posix_spawn(args[0], args,
-                                os.environ,
-                                [(os.POSIX_SPAWN_CLOSE, 0),])
+        pid = posix.posix_spawn(args[0], args, os.environ,
+                                file_actions=[(os.POSIX_SPAWN_CLOSE, 0),])
         self.assertEqual(os.waitpid(pid, 0), (pid, 0))
         with open(closefile) as f:
             self.assertEqual(f.read(), 'is closed %d' % errno.EBADF)
@@ -1773,8 +1772,8 @@ class TestPosixSpawn(unittest.TestCase):
                 (os.POSIX_SPAWN_DUP2, childfile.fileno(), 1),
             ]
             args = self.python_args('-c', script)
-            pid = posix.posix_spawn(args[0], args,
-                                    os.environ, file_actions)
+            pid = posix.posix_spawn(args[0], args, os.environ,
+                                    file_actions=file_actions)
             self.assertEqual(os.waitpid(pid, 0), (pid, 0))
         with open(dupfile) as f:
             self.assertEqual(f.read(), 'hello')

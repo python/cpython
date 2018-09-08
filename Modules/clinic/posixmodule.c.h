@@ -1730,7 +1730,7 @@ exit:
 #if defined(HAVE_POSIX_SPAWN)
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
-"posix_spawn($module, path, argv, env, file_actions=None, /, *,\n"
+"posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
 "            setpgroup=None, resetids=False, setsigmask=(),\n"
 "            setsigdef=(), scheduler=None)\n"
 "--\n"
@@ -1769,12 +1769,12 @@ static PyObject *
 os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "", "", "", "setpgroup", "resetids", "setsigmask", "setsigdef", "scheduler", NULL};
-    static _PyArg_Parser _parser = {"O&OO|O$OiOOO:posix_spawn", _keywords, 0};
+    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsigmask", "setsigdef", "scheduler", NULL};
+    static _PyArg_Parser _parser = {"O&OO|$OOiOOO:posix_spawn", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("posix_spawn", "path", 0, 0);
     PyObject *argv;
     PyObject *env;
-    PyObject *file_actions = Py_None;
+    PyObject *file_actions = NULL;
     PyObject *setpgroup = NULL;
     int resetids = 0;
     PyObject *setsigmask = NULL;
@@ -6648,4 +6648,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=ef78384ae88712e1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=758ee0434fb03d90 input=a9049054013a1b77]*/

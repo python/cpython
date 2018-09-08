@@ -5405,10 +5405,10 @@ os.posix_spawn
         Tuple or list of strings.
     env: object
         Dictionary of strings mapping to strings.
-    file_actions: object = None
-        A sequence of file action tuples.
     /
     *
+    file_actions: object(c_default='NULL') = ()
+        A sequence of file action tuples.
     setpgroup: object = NULL
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
     resetids: bool(accept={int}) = False
@@ -5419,6 +5419,7 @@ os.posix_spawn
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
     scheduler: object = NULL
         A tuple with the scheduler policy (optional) and parameters.
+
 Execute the program specified by path in a new process.
 [clinic start generated code]*/
 
@@ -5427,7 +5428,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *env, PyObject *file_actions,
                     PyObject *setpgroup, int resetids, PyObject *setsigmask,
                     PyObject *setsigdef, PyObject *scheduler)
-/*[clinic end generated code: output=45dfa4c515d09f2c input=2d7a7578430a90f0]*/
+/*[clinic end generated code: output=45dfa4c515d09f2c input=2891c2f1d457e39b]*/
 {
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
@@ -5477,7 +5478,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         goto exit;
     }
 
-    if (file_actions != Py_None) {
+    if (file_actions != NULL) {
         /* There is a bug in old versions of glibc that makes some of the
          * helper functions for manipulating file actions not copy the provided
          * buffers. The problem is that posix_spawn_file_actions_addopen does not
