@@ -1106,11 +1106,6 @@ class SSLSocket(socket):
             if timeout == 0.0 and block:
                 self.settimeout(None)
             self._sslobj.do_handshake()
-            if self.context.check_hostname:
-                if not self.server_hostname:
-                    raise ValueError("check_hostname needs server_hostname "
-                                     "argument")
-                match_hostname(self.getpeercert(), self.server_hostname)
         finally:
             self.settimeout(timeout)
 

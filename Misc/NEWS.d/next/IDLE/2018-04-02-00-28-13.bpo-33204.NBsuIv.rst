@@ -1,0 +1,3 @@
+IDLE: consistently color invalid string prefixes. A 'u' string prefix cannot
+be paired with either 'r' or 'f'. Consistently color as much of the prefix,
+starting at the right, as is valid. Revise and extend colorizer test.

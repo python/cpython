@@ -1,0 +1,2 @@
+Add ``signal.valid_signals()`` to expose the POSIX sigfillset()
+functionality.

@@ -81,6 +81,9 @@ get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
  *    the blockstack needs to be set up before their code runs.
  *  o 'for' and 'async for' loops can't be jumped into because the
  *    iterator needs to be on the stack.
+ *  o Jumps cannot be made from within a trace function invoked with a
+ *    'return' or 'exception' event since the eval loop has been exited at
+ *    that time.
  */
 static int
 frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
@@ -89,7 +92,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     long l_new_lineno;
     int overflow;
     int new_lasti = 0;                  /* The new value of f_lasti */
-    int new_iblock = 0;                 /* The new value of f_iblock */
     unsigned char *code = NULL;         /* The bytecode for the frame... */
     Py_ssize_t code_len = 0;            /* ...and its length */
     unsigned char *lnotab = NULL;       /* Iterating over co_lnotab */
@@ -98,7 +100,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     int line = 0;                       /* (ditto) */
     int addr = 0;                       /* (ditto) */
     int delta_iblock = 0;               /* Scanning the SETUPs and POPs */
-    int for_loop_delta = 0;             /* (ditto) */
+    int delta = 0;
     int blockstack[CO_MAXBLOCKS];       /* Walking the 'finally' blocks */
     int blockstack_top = 0;             /* (ditto) */
 
@@ -109,13 +111,32 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         return -1;
     }
 
+    /* Upon the 'call' trace event of a new frame, f->f_lasti is -1 and
+     * f->f_trace is NULL, check first on the first condition.
+     * Forbidding jumps from the 'call' event of a new frame is a side effect
+     * of allowing to set f_lineno only from trace functions. */
+    if (f->f_lasti == -1) {
+        PyErr_Format(PyExc_ValueError,
+                     "can't jump from the 'call' trace event of a new frame");
+        return -1;
+    }
+
     /* You can only do this from within a trace function, not via
      * _getframe or similar hackery. */
-    if (!f->f_trace)
-    {
+    if (!f->f_trace) {
         PyErr_Format(PyExc_ValueError,
-                     "f_lineno can only be set by a"
-                     " line trace function");
+                     "f_lineno can only be set by a trace function");
+        return -1;
+    }
+
+    /* Forbid jumps upon a 'return' trace event (except after executing a
+     * YIELD_VALUE or YIELD_FROM opcode, f_stacktop is not NULL in that case)
+     * and upon an 'exception' trace event.
+     * Jumps from 'call' trace events have already been forbidden above for new
+     * frames, so this check does not change anything for 'call' events. */
+    if (f->f_stacktop == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                "can only jump from a 'line' trace event");
         return -1;
     }
 
@@ -175,6 +196,15 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     /* We're now ready to look at the bytecode. */
     PyBytes_AsStringAndSize(f->f_code->co_code, (char **)&code, &code_len);
 
+    /* The trace function is called with a 'return' trace event after the
+     * execution of a yield statement. */
+    assert(f->f_lasti != -1);
+    if (code[f->f_lasti] == YIELD_VALUE || code[f->f_lasti] == YIELD_FROM) {
+        PyErr_SetString(PyExc_ValueError,
+                "can't jump from a yield statement");
+        return -1;
+    }
+
     /* You can't jump onto a line with an 'except' statement on it -
      * they expect to have an exception on the top of the stack, which
      * won't be true if you jump to them.  They always start with code
@@ -225,14 +255,16 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
                 return -1;
             }
             if (first_in && !second_in) {
-                if (op == FOR_ITER && !delta_iblock) {
-                    for_loop_delta++;
-                }
-                if (op != FOR_ITER) {
+                if (op != FOR_ITER && code[target_addr] != END_ASYNC_FOR) {
                     delta_iblock++;
                 }
+                else if (!delta_iblock) {
+                    /* Pop the iterators of any 'for' and 'async for' loop
+                     * we're jumping out of. */
+                    delta++;
+                }
             }
-            if (op != FOR_ITER) {
+            if (op != FOR_ITER && code[target_addr] != END_ASYNC_FOR) {
                 blockstack[blockstack_top++] = target_addr;
             }
             break;
@@ -245,8 +277,12 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             int first_in = target_addr <= f->f_lasti && f->f_lasti <= addr;
             int second_in = target_addr <= new_lasti && new_lasti <= addr;
             if (first_in != second_in) {
-                PyErr_SetString(PyExc_ValueError,
-                                "can't jump into or out of a 'finally' block");
+                op = code[target_addr];
+                PyErr_Format(PyExc_ValueError,
+                             "can't jump %s %s block",
+                             second_in ? "into" : "out of",
+                             (op == DUP_TOP || op == POP_TOP) ?
+                                "an 'except'" : "a 'finally'");
                 return -1;
             }
             break;
@@ -258,19 +294,21 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     assert(blockstack_top == 0);
 
     /* Pop any blocks that we're jumping out of. */
-    new_iblock = f->f_iblock - delta_iblock;
-    while (f->f_iblock > new_iblock) {
-        PyTryBlock *b = &f->f_blockstack[--f->f_iblock];
-        while ((f->f_stacktop - f->f_valuestack) > b->b_level) {
-            PyObject *v = (*--f->f_stacktop);
-            Py_DECREF(v);
+    if (delta_iblock > 0) {
+        f->f_iblock -= delta_iblock;
+        PyTryBlock *b = &f->f_blockstack[f->f_iblock];
+        delta += (int)(f->f_stacktop - f->f_valuestack) - b->b_level;
+        if (b->b_type == SETUP_FINALLY &&
+            code[b->b_handler] == WITH_CLEANUP_START)
+        {
+            /* Pop the exit function. */
+            delta++;
         }
     }
-    /* Pop the iterators of any 'for' loop we're jumping out of. */
-    while (for_loop_delta > 0) {
+    while (delta > 0) {
         PyObject *v = (*--f->f_stacktop);
         Py_DECREF(v);
-        for_loop_delta--;
+        delta--;
     }
 
     /* Finally set the new f_lineno and f_lasti and return OK. */
@@ -462,7 +500,7 @@ frame_tp_clear(PyFrameObject *f)
 }
 
 static PyObject *
-frame_clear(PyFrameObject *f)
+frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     if (f->f_executing) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -481,7 +519,7 @@ PyDoc_STRVAR(clear__doc__,
 "F.clear(): clear most references held by the frame");
 
 static PyObject *
-frame_sizeof(PyFrameObject *f)
+frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res, extras, ncells, nfrees;
 
@@ -551,14 +589,6 @@ PyTypeObject PyFrame_Type = {
 };
 
 _Py_IDENTIFIER(__builtins__);
-
-int _PyFrame_Init()
-{
-    /* Before, PyId___builtins__ was a string created explicitly in
-       this function. Now there is nothing to initialize anymore, but
-       the function is kept for backward compatibility. */
-    return 1;
-}
 
 PyFrameObject* _Py_HOT_FUNCTION
 _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,

@@ -43,7 +43,9 @@ Let's create an extension module called ``spam`` (the favorite food of Monty
 Python fans...) and let's say we want to create a Python interface to the C
 library function :c:func:`system` [#]_. This function takes a null-terminated
 character string as argument and returns an integer.  We want this function to
-be callable from Python as follows::
+be callable from Python as follows:
+
+.. code-block:: pycon
 
    >>> import spam
    >>> status = spam.system("ls -l")
@@ -439,7 +441,9 @@ part of the Python interpreter, you will have to change the configuration setup
 and rebuild the interpreter.  Luckily, this is very simple on Unix: just place
 your file (:file:`spammodule.c` for example) in the :file:`Modules/` directory
 of an unpacked source distribution, add a line to the file
-:file:`Modules/Setup.local` describing your file::
+:file:`Modules/Setup.local` describing your file:
+
+.. code-block:: sh
 
    spam spammodule.o
 
@@ -450,7 +454,9 @@ subdirectory, but then you must first rebuild :file:`Makefile` there by running
 :file:`Setup` file.)
 
 If your module requires additional libraries to link with, these can be listed
-on the line in the configuration file as well, for instance::
+on the line in the configuration file as well, for instance:
+
+.. code-block:: sh
 
    spam spammodule.o -lX11
 

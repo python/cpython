@@ -392,6 +392,20 @@ def _close_stdin():
         pass
 
 #
+# Flush standard streams, if any
+#
+
+def _flush_std_streams():
+    try:
+        sys.stdout.flush()
+    except (AttributeError, ValueError):
+        pass
+    try:
+        sys.stderr.flush()
+    except (AttributeError, ValueError):
+        pass
+
+#
 # Start a program with only specified fds kept open
 #
 

@@ -1,0 +1,2 @@
+C compiler is now correctly detected from the standard environment
+variables. --without-gcc and --with-icc options have been removed.

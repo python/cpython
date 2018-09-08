@@ -53,7 +53,7 @@ static void *opcode_targets[256] = {
     &&TARGET_GET_ANEXT,
     &&TARGET_BEFORE_ASYNC_WITH,
     &&TARGET_BEGIN_FINALLY,
-    &&_unknown_opcode,
+    &&TARGET_END_ASYNC_FOR,
     &&TARGET_INPLACE_ADD,
     &&TARGET_INPLACE_SUBTRACT,
     &&TARGET_INPLACE_MULTIPLY,

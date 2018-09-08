@@ -1,36 +1,42 @@
-""" Test idlelib.editor.
-"""
+"Test editor, coverage 35%."
 
-from collections import namedtuple
-import unittest
-import tkinter as tk
 from idlelib import editor
+import unittest
+from collections import namedtuple
 from test.support import requires
+from tkinter import Tk
 
-root = None
-
-
-def setUpModule():
-    global root
-    requires('gui')
-    root = tk.Tk()
-    root.withdraw()
+Editor = editor.EditorWindow
 
 
-def tearDownModule():
-    global root
-    # Cleanup all scheduled tasks, not just idle tasks.
-    tasks = root.tk.call('after', 'info')
-    for task in tasks:
-        root.after_cancel(task)
-    root.destroy()
-    del root
+class EditorWindowTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.update_idletasks()
+        for id in cls.root.tk.call('after', 'info'):
+            cls.root.after_cancel(id)
+        cls.root.destroy()
+        del cls.root
+
+    def test_init(self):
+        e = Editor(root=self.root)
+        self.assertEqual(e.root, self.root)
+        e._close()
 
 
-class Editor_func_test(unittest.TestCase):
+class EditorFunctionTest(unittest.TestCase):
+
     def test_filename_to_unicode(self):
-        func = editor.EditorWindow._filename_to_unicode
-        class dummy(): filesystemencoding = 'utf-8'
+        func = Editor._filename_to_unicode
+        class dummy():
+            filesystemencoding = 'utf-8'
         pairs = (('abc', 'abc'), ('a\U00011111c', 'a\ufffdc'),
                  (b'abc', 'abc'), (b'a\xf0\x91\x84\x91c', 'a\ufffdc'))
         for inp, out in pairs:
@@ -41,7 +47,10 @@ class IndentAndNewlineTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.window = editor.EditorWindow(root=root)
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.window = Editor(root=cls.root)
         cls.window.indentwidth = 2
         cls.window.tabwidth = 2
 
@@ -49,6 +58,11 @@ class IndentAndNewlineTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.window._close()
         del cls.window
+        cls.root.update_idletasks()
+        for id in cls.root.tk.call('after', 'info'):
+            cls.root.after_cancel(id)
+        cls.root.destroy()
+        del cls.root
 
     def insert(self, text):
         t = self.window.text
