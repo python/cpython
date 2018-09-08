@@ -31,7 +31,10 @@ class Log:
                 # emulate backslashreplace error handler
                 encoding = stream.encoding
                 msg = msg.encode(encoding, "backslashreplace").decode(encoding)
-            stream.write('%s\n' % msg)
+            try:
+                stream.write('%s\n' % msg)
+            except UnicodeEncodeError:
+                stream.write('%s\n' % msg.encode('unicode-escape').decode('ascii'))
             stream.flush()
 
     def log(self, level, msg, *args):
