@@ -14,8 +14,9 @@ class TestLog(unittest.TestCase):
         # output as is.
         for errors in ('strict', 'backslashreplace', 'surrogateescape',
                        'replace', 'ignore'):
-            with NamedTemporaryFile("w+", encoding='cp437', errors=errors) as stdout, \
-                NamedTemporaryFile("w+", encoding='cp437', errors=errors) as stderr:
+            with self.subTest(errors=errors), \
+                 NamedTemporaryFile("w+", encoding='cp437', errors=errors) as stdout, \
+                 NamedTemporaryFile("w+", encoding='cp437', errors=errors) as stderr:
                 old_threshold = log.set_threshold(log.DEBUG)
                 try:
                     with swap_attr(sys, 'stdout', stdout), \
