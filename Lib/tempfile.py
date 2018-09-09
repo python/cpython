@@ -686,7 +686,10 @@ class SpooledTemporaryFile(_io.IOBase):
         return self._file.__iter__()
 
     def __del__(self):
-        return self._file.__del__()
+        """Do nothing. Underlying file will be deleted as a consequence
+        of falling out of scope, anyway, if nothing else is otherwise
+        deliberately referencing it."""
+        pass
 
     def close(self):
         self._file.close()
