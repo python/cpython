@@ -1,1 +1,2 @@
-Modify DEFAULT_CONFIG for AIX
+Add AIX specific DEFAULT_CONFIG
+author: M Felt
