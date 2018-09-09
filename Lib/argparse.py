@@ -1186,17 +1186,21 @@ class FileType(object):
         # the special argument "-" means sys.std{in,out}
         if string == '-':
             if 'r' in self._mode:
-                return _sys.stdin
+                file = _sys.stdin.fileno()
             elif 'w' in self._mode:
-                return _sys.stdout
+                file = _sys.stdout.fileno()
             else:
                 msg = _('argument "-" with mode %r') % self._mode
                 raise ValueError(msg)
+            closefd = False
+        else:
+            file = string
+            closefd = True
 
         # all other arguments are used as file names
         try:
-            return open(string, self._mode, self._bufsize, self._encoding,
-                        self._errors)
+            return open(file, self._mode, self._bufsize, self._encoding,
+                        self._errors, closefd=closefd)
         except OSError as e:
             message = _("can't open '%s': %s")
             raise ArgumentTypeError(message % (string, e))

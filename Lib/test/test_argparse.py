@@ -16,7 +16,12 @@ from io import StringIO
 from test import support
 from unittest import mock
 class StdIOBuffer(StringIO):
-    pass
+    def __init__(self, fileno=None):
+        self._real_fileno = fileno
+        super().__init__()
+
+    def fileno(self):
+        return self._real_fileno
 
 class TestCase(unittest.TestCase):
 
@@ -91,8 +96,8 @@ def stderr_to_parser_error(parse_args, *args, **kwargs):
     # use it as the ArgumentParserError message
     old_stdout = sys.stdout
     old_stderr = sys.stderr
-    sys.stdout = StdIOBuffer()
-    sys.stderr = StdIOBuffer()
+    sys.stdout = StdIOBuffer(sys.stdout.fileno())
+    sys.stderr = StdIOBuffer(sys.stderr.fileno())
     try:
         try:
             result = parse_args(*args, **kwargs)
@@ -1476,6 +1481,17 @@ class RFile(object):
             text = text.decode('ascii')
         return self.name == other.name == text
 
+class FilenoMode(object):
+
+    def __init__(self, file, mode):
+        self.fileno = file.fileno()
+        self.mode = mode
+
+    def __eq__(self, other):
+        return self.fileno == other.fileno() and self.mode == other.mode
+
+    def __repr__(self):
+        return "FilenoMode({}, {!r})".format(self.fileno, self.mode)
 
 class TestFileTypeR(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for reading files"""
@@ -1497,7 +1513,8 @@ class TestFileTypeR(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=RFile('foo'))),
         ('-x foo bar', NS(x=RFile('foo'), spam=RFile('bar'))),
         ('bar -x foo', NS(x=RFile('foo'), spam=RFile('bar'))),
-        ('-x - -', NS(x=sys.stdin, spam=sys.stdin)),
+        ('-x - -', NS(x=FilenoMode(sys.stdin, 'r'),
+                      spam=FilenoMode(sys.stdin, 'r'))),
         ('readonly', NS(x=None, spam=RFile('readonly'))),
     ]
 
@@ -1537,7 +1554,8 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=RFile('foo'))),
         ('-x foo bar', NS(x=RFile('foo'), spam=RFile('bar'))),
         ('bar -x foo', NS(x=RFile('foo'), spam=RFile('bar'))),
-        ('-x - -', NS(x=sys.stdin, spam=sys.stdin)),
+        ('-x - -', NS(x=FilenoMode(sys.stdin, 'rb'),
+                      spam=FilenoMode(sys.stdin, 'rb'))),
     ]
 
 
@@ -1576,7 +1594,8 @@ class TestFileTypeW(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=WFile('foo'))),
         ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
         ('bar -x foo', NS(x=WFile('foo'), spam=WFile('bar'))),
-        ('-x - -', NS(x=sys.stdout, spam=sys.stdout)),
+        ('-x - -', NS(x=FilenoMode(sys.stdout, 'w'),
+                      spam=FilenoMode(sys.stdout, 'w'))),
     ]
 
 
@@ -1591,7 +1610,8 @@ class TestFileTypeWB(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=WFile('foo'))),
         ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
         ('bar -x foo', NS(x=WFile('foo'), spam=WFile('bar'))),
-        ('-x - -', NS(x=sys.stdout, spam=sys.stdout)),
+        ('-x - -', NS(x=FilenoMode(sys.stdout, 'wb'),
+                      spam=FilenoMode(sys.stdout, 'wb'))),
     ]
 
 
@@ -1601,16 +1621,16 @@ class TestFileTypeOpenArgs(TestCase):
     def test_open_args(self):
         FT = argparse.FileType
         cases = [
-            (FT('rb'), ('rb', -1, None, None)),
-            (FT('w', 1), ('w', 1, None, None)),
-            (FT('w', errors='replace'), ('w', -1, None, 'replace')),
-            (FT('wb', encoding='big5'), ('wb', -1, 'big5', None)),
-            (FT('w', 0, 'l1', 'strict'), ('w', 0, 'l1', 'strict')),
+            (FT('rb'), ('rb', -1, None, None), {"closefd": True}),
+            (FT('w', 1), ('w', 1, None, None), {"closefd": True}),
+            (FT('w', errors='replace'), ('w', -1, None, 'replace'), {"closefd": True}),
+            (FT('wb', encoding='big5'), ('wb', -1, 'big5', None), {"closefd": True}),
+            (FT('w', 0, 'l1', 'strict'), ('w', 0, 'l1', 'strict'), {"closefd": True}),
         ]
         with mock.patch('builtins.open') as m:
-            for type, args in cases:
+            for type, args, kwargs in cases:
                 type('foo')
-                m.assert_called_with('foo', *args)
+                m.assert_called_with('foo', *args, **kwargs)
 
 
 class TestTypeCallable(ParserTestCase):
