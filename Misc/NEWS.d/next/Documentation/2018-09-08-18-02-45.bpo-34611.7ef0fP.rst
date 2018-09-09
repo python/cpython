@@ -1,0 +1,1 @@
+Modified some examples in 'itertools' module docs.

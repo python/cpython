@@ -38,7 +38,7 @@ operator can be mapped across two vectors to form an efficient dot-product:
 Iterator            Arguments               Results                                                         Example
 ==================  =================       =================================================               =========================================
 :func:`count`       start, [step]           start, start+step, start+2*step, ...                            ``count(10) --> 10 11 12 13 14 ...``
-:func:`cycle`       p                       p0, p1, ... plast, p0, p1, ...                                  ``cycle('ABCD') --> A B C D A B C D ...``
+:func:`cycle`       p                       p0, p1, ... plast, p0, p1, ...                                  ``cycle('ABCD') --> 'A' 'B' 'C' 'D' 'A' 'B' 'C' 'D' ...``
 :func:`repeat`      elem [,n]               elem, elem, elem, ... endlessly or up to n times                ``repeat(10, 3) --> 10 10 10``
 ==================  =================       =================================================               =========================================
 
@@ -48,17 +48,17 @@ Iterator            Arguments               Results                             
 Iterator                        Arguments                       Results                                             Example
 ============================    ============================    =================================================   =============================================================
 :func:`accumulate`              p [,func]                       p0, p0+p1, p0+p1+p2, ...                            ``accumulate([1,2,3,4,5]) --> 1 3 6 10 15``
-:func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') --> A B C D E F``
-:func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) --> A B C D E F``
-:func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F``
+:func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') --> 'A' 'B' 'C' 'D' 'E' 'F'``
+:func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) --> 'A' 'B' 'C' 'D' 'E' 'F'``
+:func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> 'A' 'C' 'E' 'F'``
 :func:`dropwhile`               pred, seq                       seq[n], seq[n+1], starting when pred fails          ``dropwhile(lambda x: x<5, [1,4,6,4,1]) --> 6 4 1``
 :func:`filterfalse`             pred, seq                       elements of seq where pred(elem) is false           ``filterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
 :func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)
-:func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> C D E F G``
+:func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> 'C' 'D' 'E' 'F' 'G'``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000``
 :func:`takewhile`               pred, seq                       seq[0], seq[1], until pred fails                    ``takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4``
 :func:`tee`                     it, n                           it1, it2, ... itn  splits one iterator into n
-:func:`zip_longest`             p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-``
+:func:`zip_longest`             p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``zip_longest('ABCD', 'xy', fillvalue='-') --> ('A', 'x') ('B', 'y') ('C', '-') ('D', '-')``
 ============================    ============================    =================================================   =============================================================
 
 **Combinatoric iterators:**
@@ -70,10 +70,10 @@ Iterator                                         Arguments                  Resu
 :func:`permutations`                             p[, r]                     r-length tuples, all possible orderings, no repeated elements
 :func:`combinations`                             p, r                       r-length tuples, in sorted order, no repeated elements
 :func:`combinations_with_replacement`            p, r                       r-length tuples, in sorted order, with repeated elements
-``product('ABCD', repeat=2)``                                               ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
-``permutations('ABCD', 2)``                                                 ``AB AC AD BA BC BD CA CB CD DA DB DC``
-``combinations('ABCD', 2)``                                                 ``AB AC AD BC BD CD``
-``combinations_with_replacement('ABCD', 2)``                                ``AA AB AC AD BB BC BD CC CD DD``
+``product('ABCD', repeat=2)``                                               ``('A', 'A') ('A', 'B') ('A', 'C') ('A', 'D') ('B', 'A') ('B', 'B') ('B', 'C') ('B', 'D') ('C', 'A') ('C', 'B') ('C', 'C') ('C', 'D') ('D', 'A') ('D', 'B') ('D', 'C') ('D', 'D')``
+``permutations('ABCD', 2)``                                                 ``('A', 'B') ('A', 'C') ('A', 'D') ('B', 'A') ('B', 'C') ('B', 'D') ('C', 'A') ('C', 'B') ('C', 'D') ('D', 'A') ('D', 'B') ('D', 'C')``
+``combinations('ABCD', 2)``                                                 ``('A', 'B') ('A', 'C') ('A', 'D') ('B', 'C') ('B', 'D') ('C', 'D')``
+``combinations_with_replacement('ABCD', 2)``                                ``('A', 'A') ('A', 'B') ('A', 'C') ('A', 'D') ('B', 'B') ('B', 'C') ('B', 'D') ('C', 'C') ('C', 'D') ('D', 'D')``
 ==============================================   ====================       =============================================================
 
 
@@ -160,7 +160,7 @@ loops that truncate the stream.
    Roughly equivalent to::
 
       def chain(*iterables):
-          # chain('ABC', 'DEF') --> A B C D E F
+          # chain('ABC', 'DEF') --> 'A' 'B' 'C' 'D' 'E' 'F'
           for it in iterables:
               for element in it:
                   yield element
@@ -172,7 +172,7 @@ loops that truncate the stream.
    single iterable argument that is evaluated lazily.  Roughly equivalent to::
 
       def from_iterable(iterables):
-          # chain.from_iterable(['ABC', 'DEF']) --> A B C D E F
+          # chain.from_iterable(['ABC', 'DEF']) --> 'A' 'B' 'C' 'D' 'E' 'F'
           for it in iterables:
               for element in it:
                   yield element
@@ -193,8 +193,8 @@ loops that truncate the stream.
    Roughly equivalent to::
 
         def combinations(iterable, r):
-            # combinations('ABCD', 2) --> AB AC AD BC BD CD
-            # combinations(range(4), 3) --> 012 013 023 123
+            # combinations('ABCD', 2) --> ('A', 'B') ('A', 'C') ('A', 'D') ('B', 'C') ('B', 'D') ('C', 'D')
+            # combinations(range(4), 3) --> (0, 1, 2) (0, 1, 3) (0, 2, 3) (1, 2, 3)
             pool = tuple(iterable)
             n = len(pool)
             if r > n:
@@ -242,7 +242,7 @@ loops that truncate the stream.
    Roughly equivalent to::
 
         def combinations_with_replacement(iterable, r):
-            # combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC
+            # combinations_with_replacement('ABCD', 2) --> ('A', 'A') ('A', 'B') ('A', 'C') ('A', 'D') ('B', 'B') ('B', 'C') ('B', 'D') ('C', 'C') ('C', 'D') ('D', 'D')
             pool = tuple(iterable)
             n = len(pool)
             if not n and r:
@@ -282,7 +282,7 @@ loops that truncate the stream.
    Roughly equivalent to::
 
        def compress(data, selectors):
-           # compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F
+           # compress('ABCDEF', [1,0,1,0,1,1]) --> 'A' 'C' 'E' 'F'
            return (d for d, s in zip(data, selectors) if s)
 
    .. versionadded:: 3.1
@@ -316,7 +316,7 @@ loops that truncate the stream.
    indefinitely.  Roughly equivalent to::
 
       def cycle(iterable):
-          # cycle('ABCD') --> A B C D A B C D A B C D ...
+          # cycle('ABCD') --> 'A' 'B' 'C' 'D' 'A' 'B' 'C' 'D' 'A' 'B' 'C' 'D' ...
           saved = []
           for element in iterable:
               yield element
@@ -390,8 +390,8 @@ loops that truncate the stream.
    :func:`groupby` is roughly equivalent to::
 
       class groupby:
-          # [k for k, g in groupby('AAAABBBCCDAABBB')] --> A B C D A B
-          # [list(g) for k, g in groupby('AAAABBBCCD')] --> AAAA BBB CC D
+          # [k for k, g in groupby('AAAABBBCCDAABBB')] --> 'A' 'B' 'C' 'D' 'A' 'B'
+          # [list(g) for k, g in groupby('AAAABBBCCD')] --> ['A', 'A', 'A', 'A'] ['B', 'B', 'B'] ['C', 'C'] ['D']
           def __init__(self, iterable, key=None):
               if key is None:
                   key = lambda x: x
@@ -431,10 +431,10 @@ loops that truncate the stream.
    multi-line report may list a name field on every third line).  Roughly equivalent to::
 
       def islice(iterable, *args):
-          # islice('ABCDEFG', 2) --> A B
-          # islice('ABCDEFG', 2, 4) --> C D
-          # islice('ABCDEFG', 2, None) --> C D E F G
-          # islice('ABCDEFG', 0, None, 2) --> A C E G
+          # islice('ABCDEFG', 2) --> 'A' 'B'
+          # islice('ABCDEFG', 2, 4) --> 'C' 'D'
+          # islice('ABCDEFG', 2, None) --> 'C' 'D' 'E' 'F' 'G'
+          # islice('ABCDEFG', 0, None, 2) --> 'A' 'C' 'E' 'G'
           s = slice(*args)
           start, stop, step = s.start or 0, s.stop or sys.maxsize, s.step or 1
           it = iter(range(start, stop, step))
@@ -478,8 +478,8 @@ loops that truncate the stream.
    Roughly equivalent to::
 
         def permutations(iterable, r=None):
-            # permutations('ABCD', 2) --> AB AC AD BA BC BD CA CB CD DA DB DC
-            # permutations(range(3)) --> 012 021 102 120 201 210
+            # permutations('ABCD', 2) --> ('A', 'B') ('A', 'C') ('A', 'D') ('B', 'A') ('B', 'C') ('B', 'D') ('C', 'A') ('C', 'B') ('C', 'D') ('D', 'A') ('D', 'B') ('D', 'C')
+            # permutations(range(3)) --> (0, 1, 2) (0, 2, 1) (1, 0, 2) (1, 2, 0) (2, 0, 1) (2, 1, 0)
             pool = tuple(iterable)
             n = len(pool)
             r = n if r is None else r
@@ -537,8 +537,8 @@ loops that truncate the stream.
    actual implementation does not build up intermediate results in memory::
 
        def product(*args, repeat=1):
-           # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
-           # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
+           # product('ABCD', 'xy') --> ('A', 'x') ('A', 'y') ('B', 'x') ('B', 'y') ('C', 'x') ('C', 'y') ('D', 'x') ('D', 'y')
+           # product(range(2), repeat=3) --> (0, 0, 0) (0, 0, 1) (0, 1, 0) (0, 1, 1) (1, 0, 0) (1, 0, 1) (1, 1, 0) (1, 1, 1)
            pools = [tuple(pool) for pool in args] * repeat
            result = [[]]
            for pool in pools:
@@ -641,7 +641,7 @@ loops that truncate the stream.
    Iteration continues until the longest iterable is exhausted.  Roughly equivalent to::
 
       def zip_longest(*args, fillvalue=None):
-          # zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
+          # zip_longest('ABCD', 'xy', fillvalue='-') --> ('A', 'x') ('B', 'y') ('C', '-') ('D', '-')
           iterators = [iter(it) for it in args]
           num_active = len(iterators)
           if not num_active:
@@ -699,7 +699,7 @@ which incur interpreter overhead.
 
    def tail(n, iterable):
        "Return an iterator over the last n items"
-       # tail(3, 'ABCDEFG') --> E F G
+       # tail(3, 'ABCDEFG') --> 'E' 'F' 'G'
        return iter(collections.deque(iterable, maxlen=n))
 
    def consume(iterator, n=None):
@@ -760,12 +760,12 @@ which incur interpreter overhead.
 
    def grouper(iterable, n, fillvalue=None):
        "Collect data into fixed-length chunks or blocks"
-       # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+       # grouper('ABCDEFG', 3, 'x') --> ('A', 'B', 'C') ('D', 'E', 'F') ('G', 'x', 'x')"
        args = [iter(iterable)] * n
        return zip_longest(*args, fillvalue=fillvalue)
 
    def roundrobin(*iterables):
-       "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
+       "roundrobin('ABC', 'D', 'EF') --> 'A' 'D' 'E' 'B' 'F' 'C'"
        # Recipe credited to George Sakkis
        num_active = len(iterables)
        nexts = cycle(iter(it).__next__ for it in iterables)
@@ -780,7 +780,7 @@ which incur interpreter overhead.
 
    def partition(pred, iterable):
        'Use a predicate to partition entries into false entries and true entries'
-       # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
+       # partition(is_odd, range(10)) --> [0, 2, 4, 6, 8], [1, 3, 5, 7, 9]
        t1, t2 = tee(iterable)
        return filterfalse(pred, t1), filter(pred, t2)
 
@@ -791,8 +791,8 @@ which incur interpreter overhead.
 
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
-       # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-       # unique_everseen('ABBCcAD', str.lower) --> A B C D
+       # unique_everseen('AAAABBBCCDAABBB') --> 'A' 'B' 'C' 'D'
+       # unique_everseen('ABBCcAD', str.lower) --> 'A' 'B' 'C' 'D'
        seen = set()
        seen_add = seen.add
        if key is None:
