@@ -2228,15 +2228,9 @@ class POSIXProcessTestCase(BaseTestCase):
             env = os.environ.copy()
             env[key] = value
             # Use C locale to get ASCII for the locale encoding to force
-            # surrogate-escaping of \xFF in the child process; otherwise it can
-            # be decoded as-is if the default locale is latin-1.
+            # surrogate-escaping of \xFF in the child process
             env['LC_ALL'] = 'C'
-            if sys.platform.startswith("aix"):
-                # On AIX, the C locale uses the Latin1 encoding
-                decoded_value = encoded_value.decode("latin1", "surrogateescape")
-            else:
-                # On other UNIXes, the C locale uses the ASCII encoding
-                decoded_value = value
+            decoded_value = value
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
@@ -2821,6 +2815,33 @@ class Win32ProcessTestCase(BaseTestCase):
         # ignored
         subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
                         startupinfo=startupinfo)
+
+    def test_startupinfo_copy(self):
+        # bpo-34044: Popen must not modify input STARTUPINFO structure
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = subprocess.SW_HIDE
+
+        # Call Popen() twice with the same startupinfo object to make sure
+        # that it's not modified
+        for _ in range(2):
+            cmd = [sys.executable, "-c", "pass"]
+            with open(os.devnull, 'w') as null:
+                proc = subprocess.Popen(cmd,
+                                        stdout=null,
+                                        stderr=subprocess.STDOUT,
+                                        startupinfo=startupinfo)
+                with proc:
+                    proc.communicate()
+                self.assertEqual(proc.returncode, 0)
+
+            self.assertEqual(startupinfo.dwFlags,
+                             subprocess.STARTF_USESHOWWINDOW)
+            self.assertIsNone(startupinfo.hStdInput)
+            self.assertIsNone(startupinfo.hStdOutput)
+            self.assertIsNone(startupinfo.hStdError)
+            self.assertEqual(startupinfo.wShowWindow, subprocess.SW_HIDE)
+            self.assertEqual(startupinfo.lpAttributeList, {"handle_list": []})
 
     def test_creationflags(self):
         # creationflags argument

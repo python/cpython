@@ -260,7 +260,6 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(sts, 0)
 
     def test_libc_ver(self):
-        import os
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
             # Cygwin horror
@@ -268,6 +267,49 @@ class PlatformTest(unittest.TestCase):
         else:
             executable = sys.executable
         res = platform.libc_ver(executable)
+
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, 'wb') as f:
+            f.write(b'x'*(16384-10))
+            f.write(b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0')
+        self.assertEqual(platform.libc_ver(support.TESTFN),
+                         ('glibc', '1.23.4'))
+
+    @support.cpython_only
+    def test__comparable_version(self):
+        from platform import _comparable_version as V
+        self.assertEqual(V('1.2.3'), V('1.2.3'))
+        self.assertLess(V('1.2.3'), V('1.2.10'))
+        self.assertEqual(V('1.2.3.4'), V('1_2-3+4'))
+        self.assertLess(V('1.2spam'), V('1.2dev'))
+        self.assertLess(V('1.2dev'), V('1.2alpha'))
+        self.assertLess(V('1.2dev'), V('1.2a'))
+        self.assertLess(V('1.2alpha'), V('1.2beta'))
+        self.assertLess(V('1.2a'), V('1.2b'))
+        self.assertLess(V('1.2beta'), V('1.2c'))
+        self.assertLess(V('1.2b'), V('1.2c'))
+        self.assertLess(V('1.2c'), V('1.2RC'))
+        self.assertLess(V('1.2c'), V('1.2rc'))
+        self.assertLess(V('1.2RC'), V('1.2.0'))
+        self.assertLess(V('1.2rc'), V('1.2.0'))
+        self.assertLess(V('1.2.0'), V('1.2pl'))
+        self.assertLess(V('1.2.0'), V('1.2p'))
+
+        self.assertLess(V('1.5.1'), V('1.5.2b2'))
+        self.assertLess(V('3.10a'), V('161'))
+        self.assertEqual(V('8.02'), V('8.02'))
+        self.assertLess(V('3.4j'), V('1996.07.12'))
+        self.assertLess(V('3.1.1.6'), V('3.2.pl0'))
+        self.assertLess(V('2g6'), V('11g'))
+        self.assertLess(V('0.9'), V('2.2'))
+        self.assertLess(V('1.2'), V('1.2.1'))
+        self.assertLess(V('1.1'), V('1.2.2'))
+        self.assertLess(V('1.1'), V('1.2'))
+        self.assertLess(V('1.2.1'), V('1.2.2'))
+        self.assertLess(V('1.2'), V('1.2.2'))
+        self.assertLess(V('0.4'), V('0.4.0'))
+        self.assertLess(V('1.13++'), V('5.5.kw'))
+        self.assertLess(V('0.960923'), V('2.2beta29'))
 
     def test_popen(self):
         mswindows = (sys.platform == "win32")

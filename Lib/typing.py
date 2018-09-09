@@ -2,7 +2,7 @@
 The typing module: Support for gradual typing as defined by PEP 484.
 
 At large scale, the structure of the module is following:
-* Imports and exports, all public names should be explicitelly added to __all__.
+* Imports and exports, all public names should be explicitly added to __all__.
 * Internal helper functions: these should never be used in code outside this module.
 * _SpecialForm and its instances (special forms): Any, NoReturn, ClassVar, Union, Optional
 * Two classes whose instances can be type arguments in addition to types: ForwardRef and TypeVar
@@ -509,7 +509,7 @@ class TypeVar(_Final, _Immutable, _root=True):
     At runtime, isinstance(x, T) and issubclass(C, T) will raise TypeError.
 
     Type variables defined with covariant=True or contravariant=True
-    can be used do declare covariant or contravariant generic types.
+    can be used to declare covariant or contravariant generic types.
     See PEP 484 for more details. By default generic types are invariant
     in all type variables.
 

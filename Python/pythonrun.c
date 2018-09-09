@@ -92,7 +92,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     PyCompilerFlags local_flags;
     int nomem_count = 0;
 #ifdef Py_REF_DEBUG
-    int show_ref_count = PyThreadState_GET()->interp->core_config.show_ref_count;
+    int show_ref_count = _PyInterpreterState_Get()->core_config.show_ref_count;
 #endif
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
@@ -336,17 +336,13 @@ maybe_pyc_file(FILE *fp, const char* filename, const char* ext, int closeit)
 static int
 set_main_loader(PyObject *d, const char *filename, const char *loader_name)
 {
-    PyInterpreterState *interp;
-    PyThreadState *tstate;
     PyObject *filename_obj, *bootstrap, *loader_type = NULL, *loader;
     int result = 0;
 
     filename_obj = PyUnicode_DecodeFSDefault(filename);
     if (filename_obj == NULL)
         return -1;
-    /* Get current thread state and interpreter pointer */
-    tstate = PyThreadState_GET();
-    interp = tstate->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     bootstrap = PyObject_GetAttrString(interp->importlib,
                                        "_bootstrap_external");
     if (bootstrap != NULL) {
@@ -431,6 +427,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     }
     flush_io();
     if (v == NULL) {
+        Py_CLEAR(m);
         PyErr_Print();
         goto done;
     }
@@ -439,7 +436,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
   done:
     if (set_file_name && PyDict_DelItemString(d, "__file__"))
         PyErr_Clear();
-    Py_DECREF(m);
+    Py_XDECREF(m);
     return ret;
 }
 
@@ -1338,7 +1335,7 @@ err_input(perrdetail *err)
     errtype = PyExc_SyntaxError;
     switch (err->error) {
     case E_ERROR:
-        return;
+        goto cleanup;
     case E_SYNTAX:
         errtype = PyExc_IndentationError;
         if (err->expected == INDENT)
@@ -1347,6 +1344,10 @@ err_input(perrdetail *err)
             msg = "unexpected indent";
         else if (err->token == DEDENT)
             msg = "unexpected unindent";
+        else if (err->expected == NOTEQUAL) {
+            errtype = PyExc_SyntaxError;
+            msg = "with Barry as BDFL, use '<>' instead of '!='";
+        }
         else {
             errtype = PyExc_SyntaxError;
             msg = "invalid syntax";

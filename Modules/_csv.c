@@ -12,6 +12,7 @@ module instead.
 
 #include "Python.h"
 #include "structmember.h"
+#include <stdbool.h>
 
 
 typedef struct {
@@ -74,15 +75,15 @@ static const StyleDesc quote_styles[] = {
 typedef struct {
     PyObject_HEAD
 
-    int doublequote;            /* is " represented by ""? */
-    Py_UCS4 delimiter;       /* field separator */
-    Py_UCS4 quotechar;       /* quote character */
-    Py_UCS4 escapechar;      /* escape character */
-    int skipinitialspace;       /* ignore spaces following delimiter? */
-    PyObject *lineterminator; /* string to write between records */
+    char doublequote;           /* is " represented by ""? */
+    char skipinitialspace;      /* ignore spaces following delimiter? */
+    char strict;                /* raise exception on bad CSV */
     int quoting;                /* style of quoting to write */
+    Py_UCS4 delimiter;          /* field separator */
+    Py_UCS4 quotechar;          /* quote character */
+    Py_UCS4 escapechar;         /* escape character */
+    PyObject *lineterminator;   /* string to write between records */
 
-    int strict;                 /* raise exception on bad CSV */
 } DialectObj;
 
 static PyTypeObject Dialect_Type;
@@ -189,7 +190,7 @@ Dialect_get_quoting(DialectObj *self)
 }
 
 static int
-_set_bool(const char *name, int *target, PyObject *src, int dflt)
+_set_bool(const char *name, char *target, PyObject *src, bool dflt)
 {
     if (src == NULL)
         *target = dflt;
@@ -197,7 +198,7 @@ _set_bool(const char *name, int *target, PyObject *src, int dflt)
         int b = PyObject_IsTrue(src);
         if (b < 0)
             return -1;
-        *target = b;
+        *target = (char)b;
     }
     return 0;
 }
@@ -292,9 +293,9 @@ dialect_check_quoting(int quoting)
 #define D_OFF(x) offsetof(DialectObj, x)
 
 static struct PyMemberDef Dialect_memberlist[] = {
-    { "skipinitialspace",   T_INT, D_OFF(skipinitialspace), READONLY },
-    { "doublequote",        T_INT, D_OFF(doublequote), READONLY },
-    { "strict",             T_INT, D_OFF(strict), READONLY },
+    { "skipinitialspace",   T_BOOL, D_OFF(skipinitialspace), READONLY },
+    { "doublequote",        T_BOOL, D_OFF(doublequote), READONLY },
+    { "strict",             T_BOOL, D_OFF(strict), READONLY },
     { NULL }
 };
 
@@ -411,13 +412,13 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (meth(name, target, src, dflt)) \
         goto err
     DIASET(_set_char, "delimiter", &self->delimiter, delimiter, ',');
-    DIASET(_set_bool, "doublequote", &self->doublequote, doublequote, 1);
+    DIASET(_set_bool, "doublequote", &self->doublequote, doublequote, true);
     DIASET(_set_char, "escapechar", &self->escapechar, escapechar, 0);
     DIASET(_set_str, "lineterminator", &self->lineterminator, lineterminator, "\r\n");
     DIASET(_set_char, "quotechar", &self->quotechar, quotechar, '"');
     DIASET(_set_int, "quoting", &self->quoting, quoting, QUOTE_MINIMAL);
-    DIASET(_set_bool, "skipinitialspace", &self->skipinitialspace, skipinitialspace, 0);
-    DIASET(_set_bool, "strict", &self->strict, strict, 0);
+    DIASET(_set_bool, "skipinitialspace", &self->skipinitialspace, skipinitialspace, false);
+    DIASET(_set_bool, "strict", &self->strict, strict, false);
 
     /* validate options */
     if (dialect_check_quoting(self->quoting))
@@ -554,25 +555,17 @@ parse_save_field(ReaderObj *self)
 static int
 parse_grow_buff(ReaderObj *self)
 {
-    if (self->field_size == 0) {
-        self->field_size = 4096;
-        if (self->field != NULL)
-            PyMem_Free(self->field);
-        self->field = PyMem_New(Py_UCS4, self->field_size);
-    }
-    else {
-        Py_UCS4 *field = self->field;
-        if (self->field_size > PY_SSIZE_T_MAX / 2) {
-            PyErr_NoMemory();
-            return 0;
-        }
-        self->field_size *= 2;
-        self->field = PyMem_Resize(field, Py_UCS4, self->field_size);
-    }
-    if (self->field == NULL) {
+    assert((size_t)self->field_size <= PY_SSIZE_T_MAX / sizeof(Py_UCS4));
+
+    Py_ssize_t field_size_new = self->field_size ? 2 * self->field_size : 4096;
+    Py_UCS4 *field_new = self->field;
+    PyMem_Resize(field_new, Py_UCS4, field_size_new);
+    if (field_new == NULL) {
         PyErr_NoMemory();
         return 0;
     }
+    self->field = field_new;
+    self->field_size = field_size_new;
     return 1;
 }
 
@@ -1088,31 +1081,18 @@ join_append_data(WriterObj *self, unsigned int field_kind, void *field_data,
 static int
 join_check_rec_size(WriterObj *self, Py_ssize_t rec_len)
 {
-
-    if (rec_len < 0 || rec_len > PY_SSIZE_T_MAX - MEM_INCR) {
-        PyErr_NoMemory();
-        return 0;
-    }
+    assert(rec_len >= 0);
 
     if (rec_len > self->rec_size) {
-        if (self->rec_size == 0) {
-            self->rec_size = (rec_len / MEM_INCR + 1) * MEM_INCR;
-            if (self->rec != NULL)
-                PyMem_Free(self->rec);
-            self->rec = PyMem_New(Py_UCS4, self->rec_size);
-        }
-        else {
-            Py_UCS4* old_rec = self->rec;
-
-            self->rec_size = (rec_len / MEM_INCR + 1) * MEM_INCR;
-            self->rec = PyMem_Resize(old_rec, Py_UCS4, self->rec_size);
-            if (self->rec == NULL)
-                PyMem_Free(old_rec);
-        }
-        if (self->rec == NULL) {
+        size_t rec_size_new = (size_t)(rec_len / MEM_INCR + 1) * MEM_INCR;
+        Py_UCS4 *rec_new = self->rec;
+        PyMem_Resize(rec_new, Py_UCS4, rec_size_new);
+        if (rec_new == NULL) {
             PyErr_NoMemory();
             return 0;
         }
+        self->rec = rec_new;
+        self->rec_size = (Py_ssize_t)rec_size_new;
     }
     return 1;
 }

@@ -173,10 +173,6 @@ Which clock is used depends on the (platform-specific) event loop
 implementation; ideally it is a monotonic clock.  This will generally be
 a different clock than :func:`time.time`.
 
-.. note::
-
-   Timeouts (relative *delay* or absolute *when*) should not exceed one day.
-
 
 .. method:: AbstractEventLoop.call_later(delay, callback, *args, context=None)
 
@@ -250,7 +246,7 @@ Futures
 Tasks
 -----
 
-.. method:: AbstractEventLoop.create_task(coro)
+.. method:: AbstractEventLoop.create_task(coro, \*, name=None)
 
    Schedule the execution of a :ref:`coroutine object <coroutine>`: wrap it in
    a future. Return a :class:`Task` object.
@@ -259,7 +255,13 @@ Tasks
    interoperability. In this case, the result type is a subclass of
    :class:`Task`.
 
+   If the *name* argument is provided and not ``None``, it is set as the name
+   of the task using :meth:`Task.set_name`.
+
    .. versionadded:: 3.4.2
+
+   .. versionchanged:: 3.8
+      Added the ``name`` parameter.
 
 .. method:: AbstractEventLoop.set_task_factory(factory)
 
@@ -906,7 +908,14 @@ pool of processes). By default, an event loop uses a thread pool executor
 
 .. method:: AbstractEventLoop.set_default_executor(executor)
 
-   Set the default executor used by :meth:`run_in_executor`.
+   Set *executor* as the default executor used by :meth:`run_in_executor`.
+   *executor* should be an instance of
+   :class:`~concurrent.futures.ThreadPoolExecutor`.
+
+   .. deprecated:: 3.8
+      Using an executor that is not an instance of
+      :class:`~concurrent.futures.ThreadPoolExecutor` is deprecated and
+      will trigger an error in Python 3.9.
 
 
 Error Handling API
