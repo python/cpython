@@ -389,6 +389,7 @@ check_set_special_type_attr(PyTypeObject *type, PyObject *value, const char *nam
     return 1;
 }
 
+
 const char *
 _PyType_Name(PyTypeObject *type)
 {
@@ -417,7 +418,7 @@ type_name(PyTypeObject *type, void *context)
 }
 
 static PyObject *
-type_qualname(PyTypeObject *type, void *context)
+_PyType_QualName(PyTypeObject *type)
 {
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyHeapTypeObject* et = (PyHeapTypeObject*)type;
@@ -427,6 +428,12 @@ type_qualname(PyTypeObject *type, void *context)
     else {
         return PyUnicode_FromString(_PyType_Name(type));
     }
+}
+
+static PyObject *
+type_qualname(PyTypeObject *type, void *context)
+{
+    return _PyType_QualName(type);
 }
 
 static int
@@ -480,8 +487,8 @@ type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
     return 0;
 }
 
-static PyObject *
-type_module(PyTypeObject *type, void *context)
+static PyObject*
+_PyType_Module(PyTypeObject *type)
 {
     PyObject *mod;
 
@@ -509,6 +516,12 @@ type_module(PyTypeObject *type, void *context)
     return mod;
 }
 
+static PyObject *
+type_module(PyTypeObject *type, void *context)
+{
+    return _PyType_Module(type);
+}
+
 static int
 type_set_module(PyTypeObject *type, PyObject *value, void *context)
 {
@@ -519,6 +532,30 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
 
     return _PyDict_SetItemId(type->tp_dict, &PyId___module__, value);
 }
+
+
+PyObject *
+_PyType_FullName(PyTypeObject *type)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        return PyUnicode_FromString(type->tp_name);
+    }
+
+    PyObject *module = _PyType_Module(type);
+    if (module == NULL) {
+        return NULL;
+    }
+    PyObject *qualname = _PyType_QualName(type);
+    if (qualname == NULL) {
+        Py_DECREF(module);
+        return NULL;
+    }
+    PyObject *fullname = PyUnicode_FromFormat("%U.%U", module, qualname);
+    Py_DECREF(module);
+    Py_DECREF(qualname);
+    return fullname;
+}
+
 
 static PyObject *
 type_abstractmethods(PyTypeObject *type, void *context)

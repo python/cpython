@@ -519,8 +519,12 @@ APIs:
    | :attr:`%R`        | PyObject\*          | The result of calling          |
    |                   |                     | :c:func:`PyObject_Repr`.       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%T`        | PyObject\*          | Object type name, equivalent   |
-   |                   |                     | to ``Py_TYPE(op)->tp_name``.   |
+   | :attr:`%T`        | PyObject\*          | The object type name,          |
+   |                   |                     | equivalent to:                 |
+   |                   |                     | ``type(op).__name__``.         |
+   +-------------------+---------------------+--------------------------------+
+   | :attr:`%T`        | PyObject\*          | The object type fully          |
+   |                   |                     | qualified name [2]_.           |
    +-------------------+---------------------+--------------------------------+
 
    An unrecognized format character causes all the rest of the format string to be
@@ -536,6 +540,9 @@ APIs:
    .. [1] For integer specifiers (d, u, ld, li, lu, lld, lli, llu, zd, zi,
       zu, i, x): the 0-conversion flag has effect even when a precision is given.
 
+   .. [2] The object type fully qualified name is equivalent to:
+      ``f"{type(obj).__module__}.{type(obj).__qualname__}"``.
+
    .. versionchanged:: 3.2
       Support for ``"%lld"`` and ``"%llu"`` added.
 
@@ -547,7 +554,8 @@ APIs:
       ``"%V"``, ``"%S"``, ``"%R"`` added.
 
    .. versionchanged:: 3.7
-      Support for ``"%T"`` (object type name) added.
+      Support for ``"%t"`` (object type name) and ``"%T"`` (object type fully
+      qualified name) added.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
