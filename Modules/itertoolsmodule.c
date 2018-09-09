@@ -691,9 +691,15 @@ tee_next(teeobject *to)
         Py_SETREF(to->dataobj, (teedataobject *)link);
         to->index = 0;
     }
-    lead_rlock_acquire(to->rlock);
-    value = teedataobject_getitem(to->dataobj, to->index);
-    lead_rlock_release(to->rlock);
+
+    if (to->index < to->dataobj->numread) {
+        value = to->dataobj->values[to->index];
+        Py_INCREF(value);
+    } else {
+        lead_rlock_acquire(to->rlock);
+        value = teedataobject_getitem(to->dataobj, to->index);
+        lead_rlock_release(to->rlock);
+    }
     if (value == NULL)
         return NULL;
     to->index++;
