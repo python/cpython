@@ -7,6 +7,13 @@
    by Raymond D. Hettinger <python@rcn.com>
 */
 
+/*[clinic input]
+module itertools
+class itertools.groupby "groupbyobject *" "&groupby_type"
+class itertools._grouper "_grouperobject *" "&_grouper_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9d506f5bb9177570]*/
+
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
 #include "clinic/itertoolsmodule.c.h"
@@ -4613,14 +4620,6 @@ static PyTypeObject ziplongest_type = {
 };
 
 /* module level code ********************************************************/
-
-/*[clinic input]
-module itertools
-class itertools.groupby "groupbyobject *" "&groupby_type"
-class itertools._grouper "_grouperobject *" "&_grouper_type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9d506f5bb9177570]*/
-
 
 PyDoc_STRVAR(module_doc,
 "Functional tools for creating and using iterators.\n\
