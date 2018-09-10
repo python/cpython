@@ -224,8 +224,8 @@ static PyObject *
 _io__IOBase_close_impl(PyObject *self)
 /*[clinic end generated code: output=63c6a6f57d783d6d input=f4494d5c31dbc6b7]*/
 {
-    PyObject *res;
-    int closed = iobase_is_closed(self);
+    PyObject *res, *exc, *val, *tb;
+    int rc, closed = iobase_is_closed(self);
 
     if (closed < 0) {
         return NULL;
@@ -236,9 +236,11 @@ _io__IOBase_close_impl(PyObject *self)
 
     res = PyObject_CallMethodObjArgs(self, _PyIO_str_flush, NULL);
 
-    if (_PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True) < 0) {
-        Py_XDECREF(res);
-        return NULL;
+    PyErr_Fetch(&exc, &val, &tb);
+    rc = _PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True);
+    _PyErr_ChainExceptions(exc, val, tb);
+    if (rc < 0) {
+        Py_CLEAR(res);
     }
 
     if (res == NULL)

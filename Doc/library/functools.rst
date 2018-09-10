@@ -20,6 +20,39 @@ function for the purposes of this module.
 
 The :mod:`functools` module defines the following functions:
 
+.. decorator:: cached_property(func)
+
+   Transform a method of a class into a property whose value is computed once
+   and then cached as a normal attribute for the life of the instance. Similar
+   to :func:`property`, with the addition of caching. Useful for expensive
+   computed properties of instances that are otherwise effectively immutable.
+
+   Example::
+
+       class DataSet:
+           def __init__(self, sequence_of_numbers):
+               self._data = sequence_of_numbers
+
+           @cached_property
+           def stdev(self):
+               return statistics.stdev(self._data)
+
+           @cached_property
+           def variance(self):
+               return statistics.variance(self._data)
+
+   .. versionadded:: 3.8
+
+   .. note::
+
+      This decorator requires that the ``__dict__`` attribute on each instance
+      be a mutable mapping. This means it will not work with some types, such as
+      metaclasses (since the ``__dict__`` attributes on type instances are
+      read-only proxies for the class namespace), and those that specify
+      ``__slots__`` without including ``__dict__`` as one of the defined slots
+      (as such classes don't provide a ``__dict__`` attribute at all).
+
+
 .. function:: cmp_to_key(func)
 
    Transform an old-style comparison function to a :term:`key function`.  Used
@@ -263,6 +296,8 @@ The :mod:`functools` module defines the following functions:
               value = function(value, element)
           return value
 
+   See :func:`itertools.accumulate` for an iterator that yields all intermediate
+   values.
 
 .. decorator:: singledispatch
 

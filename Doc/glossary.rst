@@ -14,8 +14,9 @@ Glossary
 
    ``...``
       The default Python prompt of the interactive shell when entering code for
-      an indented code block or within a pair of matching left and right
-      delimiters (parentheses, square brackets or curly braces).
+      an indented code block, when within a pair of matching left and right
+      delimiters (parentheses, square brackets, curly braces or triple quotes),
+      or after specifying a decorator.
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
@@ -122,10 +123,10 @@ Glossary
       :meth:`__aiter__` method.  Introduced by :pep:`492`.
 
    asynchronous iterator
-      An object that implements :meth:`__aiter__` and :meth:`__anext__`
+      An object that implements the :meth:`__aiter__` and :meth:`__anext__`
       methods.  ``__anext__`` must return an :term:`awaitable` object.
-      :keyword:`async for` resolves awaitable returned from asynchronous
-      iterator's :meth:`__anext__` method until it raises
+      :keyword:`async for` resolves the awaitables returned by an asynchronous
+      iterator's :meth:`__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    attribute
@@ -642,7 +643,7 @@ Glossary
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
-      elements are O(1).
+      elements is O(1).
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and
@@ -1011,7 +1012,7 @@ Glossary
 
    struct sequence
       A tuple with named elements. Struct sequences expose an interface similar
-      to :term:`named tuple` in that elements can either be accessed either by
+      to :term:`named tuple` in that elements can be accessed either by
       index or as an attribute. However, they do not have any of the named tuple
       methods like :meth:`~collections.somenamedtuple._make` or
       :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences

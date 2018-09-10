@@ -56,58 +56,62 @@ _Py_IDENTIFIER(write);
 PyObject *
 _PySys_GetObjectId(_Py_Identifier *key)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *sd = tstate->interp->sysdict;
-    if (sd == NULL)
+    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
+    if (sd == NULL) {
         return NULL;
+    }
     return _PyDict_GetItemId(sd, key);
 }
 
 PyObject *
 PySys_GetObject(const char *name)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *sd = tstate->interp->sysdict;
-    if (sd == NULL)
+    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
+    if (sd == NULL) {
         return NULL;
+    }
     return PyDict_GetItemString(sd, name);
 }
 
 int
 _PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *sd = tstate->interp->sysdict;
+    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
     if (v == NULL) {
-        if (_PyDict_GetItemId(sd, key) == NULL)
+        if (_PyDict_GetItemId(sd, key) == NULL) {
             return 0;
-        else
+        }
+        else {
             return _PyDict_DelItemId(sd, key);
+        }
     }
-    else
+    else {
         return _PyDict_SetItemId(sd, key, v);
+    }
 }
 
 int
 PySys_SetObject(const char *name, PyObject *v)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *sd = tstate->interp->sysdict;
+    PyObject *sd = _PyInterpreterState_GET_UNSAFE()->sysdict;
     if (v == NULL) {
-        if (PyDict_GetItemString(sd, name) == NULL)
+        if (PyDict_GetItemString(sd, name) == NULL) {
             return 0;
-        else
+        }
+        else {
             return PyDict_DelItemString(sd, name);
+        }
     }
-    else
+    else {
         return PyDict_SetItemString(sd, name, v);
+    }
 }
 
 static PyObject *
 sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
     assert(!PyErr_Occurred());
-    const char *envar = Py_GETENV("PYTHONBREAKPOINT");
+    char *envar = Py_GETENV("PYTHONBREAKPOINT");
 
     if (envar == NULL || strlen(envar) == 0) {
         envar = "pdb.set_trace";
@@ -115,6 +119,15 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     else if (!strcmp(envar, "0")) {
         /* The breakpoint is explicitly no-op'd. */
         Py_RETURN_NONE;
+    }
+    /* According to POSIX the string returned by getenv() might be invalidated
+     * or the string content might be overwritten by a subsequent call to
+     * getenv().  Since importing a module can performs the getenv() calls,
+     * we need to save a copy of envar. */
+    envar = _PyMem_RawStrdup(envar);
+    if (envar == NULL) {
+        PyErr_NoMemory();
+        return NULL;
     }
     const char *last_dot = strrchr(envar, '.');
     const char *attrname = NULL;
@@ -131,12 +144,14 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         attrname = last_dot + 1;
     }
     if (modulepath == NULL) {
+        PyMem_RawFree(envar);
         return NULL;
     }
 
     PyObject *fromlist = Py_BuildValue("(s)", attrname);
     if (fromlist == NULL) {
         Py_DECREF(modulepath);
+        PyMem_RawFree(envar);
         return NULL;
     }
     PyObject *module = PyImport_ImportModuleLevelObject(
@@ -154,6 +169,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (hook == NULL) {
         goto error;
     }
+    PyMem_RawFree(envar);
     PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
@@ -164,6 +180,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     int status = PyErr_WarnFormat(
         PyExc_RuntimeWarning, 0,
         "Ignoring unimportable $PYTHONBREAKPOINT: \"%s\"", envar);
+    PyMem_RawFree(envar);
     if (status < 0) {
         /* Printing the warning raised an exception. */
         return NULL;
@@ -372,11 +389,9 @@ implementation."
 static PyObject *
 sys_getfilesystemencoding(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (Py_FileSystemDefaultEncoding)
-        return PyUnicode_FromString(Py_FileSystemDefaultEncoding);
-    PyErr_SetString(PyExc_RuntimeError,
-                    "filesystem encoding is not initialized");
-    return NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const _PyCoreConfig *config = &interp->core_config;
+    return PyUnicode_FromString(config->filesystem_encoding);
 }
 
 PyDoc_STRVAR(getfilesystemencoding_doc,
@@ -389,11 +404,9 @@ operating system filenames."
 static PyObject *
 sys_getfilesystemencodeerrors(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (Py_FileSystemDefaultEncodeErrors)
-        return PyUnicode_FromString(Py_FileSystemDefaultEncodeErrors);
-    PyErr_SetString(PyExc_RuntimeError,
-        "filesystem encoding is not initialized");
-    return NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const _PyCoreConfig *config = &interp->core_config;
+    return PyUnicode_FromString(config->filesystem_errors);
 }
 
 PyDoc_STRVAR(getfilesystemencodeerrors_doc,
@@ -613,9 +626,13 @@ sys_setcheckinterval(PyObject *self, PyObject *args)
                      "are deprecated.  Use sys.setswitchinterval() "
                      "instead.", 1) < 0)
         return NULL;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
-    if (!PyArg_ParseTuple(args, "i:setcheckinterval", &interp->check_interval))
+
+    int check_interval;
+    if (!PyArg_ParseTuple(args, "i:setcheckinterval", &check_interval))
         return NULL;
+
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    interp->check_interval = check_interval;
     Py_RETURN_NONE;
 }
 
@@ -634,7 +651,7 @@ sys_getcheckinterval(PyObject *self, PyObject *args)
                      "are deprecated.  Use sys.getswitchinterval() "
                      "instead.", 1) < 0)
         return NULL;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     return PyLong_FromLong(interp->check_interval);
 }
 
@@ -1129,8 +1146,30 @@ environment variable before launching Python."
 static PyObject *
 sys_enablelegacywindowsfsencoding(PyObject *self)
 {
-    Py_FileSystemDefaultEncoding = "mbcs";
-    Py_FileSystemDefaultEncodeErrors = "replace";
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    _PyCoreConfig *config = &interp->core_config;
+
+    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
+    char *encoding = _PyMem_RawStrdup("mbcs");
+    char *errors = _PyMem_RawStrdup("replace");
+    if (encoding == NULL || errors == NULL) {
+        PyMem_Free(encoding);
+        PyMem_Free(errors);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    PyMem_RawFree(config->filesystem_encoding);
+    config->filesystem_encoding = encoding;
+    PyMem_RawFree(config->filesystem_errors);
+    config->filesystem_errors = errors;
+
+    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
+                                  config->filesystem_errors) < 0) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
@@ -1141,12 +1180,10 @@ static PyObject *
 sys_setdlopenflags(PyObject *self, PyObject *args)
 {
     int new_val;
-    PyThreadState *tstate = PyThreadState_GET();
     if (!PyArg_ParseTuple(args, "i:setdlopenflags", &new_val))
         return NULL;
-    if (!tstate)
-        return NULL;
-    tstate->interp->dlopenflags = new_val;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    interp->dlopenflags = new_val;
     Py_RETURN_NONE;
 }
 
@@ -1163,10 +1200,8 @@ can be found in the os module (RTLD_xxx constants, e.g. os.RTLD_LAZY).");
 static PyObject *
 sys_getdlopenflags(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    if (!tstate)
-        return NULL;
-    return PyLong_FromLong(tstate->interp->dlopenflags);
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    return PyLong_FromLong(interp->dlopenflags);
 }
 
 PyDoc_STRVAR(getdlopenflags_doc,
@@ -2041,7 +2076,7 @@ make_flags(void)
 {
     int pos = 0;
     PyObject *seq;
-    _PyCoreConfig *core_config = &_PyGILState_GetInterpreterStateUnsafe()->core_config;
+    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -2050,23 +2085,23 @@ make_flags(void)
 #define SetFlag(flag) \
     PyStructSequence_SET_ITEM(seq, pos++, PyLong_FromLong(flag))
 
-    SetFlag(Py_DebugFlag);
-    SetFlag(Py_InspectFlag);
-    SetFlag(Py_InteractiveFlag);
-    SetFlag(Py_OptimizeFlag);
-    SetFlag(Py_DontWriteBytecodeFlag);
-    SetFlag(Py_NoUserSiteDirectory);
-    SetFlag(Py_NoSiteFlag);
-    SetFlag(Py_IgnoreEnvironmentFlag);
-    SetFlag(Py_VerboseFlag);
+    SetFlag(config->parser_debug);
+    SetFlag(config->inspect);
+    SetFlag(config->interactive);
+    SetFlag(config->optimization_level);
+    SetFlag(!config->write_bytecode);
+    SetFlag(!config->user_site_directory);
+    SetFlag(!config->site_import);
+    SetFlag(!config->use_environment);
+    SetFlag(config->verbose);
     /* SetFlag(saw_unbuffered_flag); */
     /* SetFlag(skipfirstline); */
-    SetFlag(Py_BytesWarningFlag);
-    SetFlag(Py_QuietFlag);
-    SetFlag(Py_HashRandomizationFlag);
-    SetFlag(Py_IsolatedFlag);
-    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(core_config->dev_mode));
-    SetFlag(Py_UTF8Mode);
+    SetFlag(config->bytes_warning);
+    SetFlag(config->quiet);
+    SetFlag(config->use_hash_seed == 0 || config->hash_seed != 0);
+    SetFlag(config->isolated);
+    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->dev_mode));
+    SetFlag(config->utf8_mode);
 #undef SetFlag
 
     if (PyErr_Occurred()) {
@@ -2439,8 +2474,10 @@ err_occurred:
     } while (0)
 
 int
-_PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
+_PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
 {
+    const _PyCoreConfig *core_config = &interp->core_config;
+    const _PyMainInterpreterConfig *config = &interp->config;
     int res;
 
     /* _PyMainInterpreterConfig_Read() must set all these variables */
@@ -2457,6 +2494,12 @@ _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
     SET_SYS_FROM_STRING_BORROW("base_prefix", config->base_prefix);
     SET_SYS_FROM_STRING_BORROW("exec_prefix", config->exec_prefix);
     SET_SYS_FROM_STRING_BORROW("base_exec_prefix", config->base_exec_prefix);
+
+    if (config->pycache_prefix != NULL) {
+        SET_SYS_FROM_STRING_BORROW("pycache_prefix", config->pycache_prefix);
+    } else {
+        PyDict_SetItemString(sysdict, "pycache_prefix", Py_None);
+    }
 
     if (config->argv != NULL) {
         SET_SYS_FROM_STRING_BORROW("argv", config->argv);
@@ -2482,7 +2525,7 @@ _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config)
     }
 
     SET_SYS_FROM_STRING_INT_RESULT("dont_write_bytecode",
-                         PyBool_FromLong(Py_DontWriteBytecodeFlag));
+                         PyBool_FromLong(!core_config->write_bytecode));
 
     if (get_warnoptions() == NULL)
         return -1;

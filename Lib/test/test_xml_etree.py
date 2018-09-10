@@ -706,7 +706,7 @@ class ElementTreeTest(unittest.TestCase):
     # Element.getchildren() and ElementTree.getiterator() are deprecated.
     @checkwarnings(("This method will be removed in future versions.  "
                     "Use .+ instead.",
-                    (DeprecationWarning, PendingDeprecationWarning)))
+                    DeprecationWarning))
     def test_getchildren(self):
         # Test Element.getchildren()
 
@@ -2399,7 +2399,7 @@ class ElementIterTest(unittest.TestCase):
 
     # Element.getiterator() is deprecated.
     @checkwarnings(("This method will be removed in future versions.  "
-                    "Use .+ instead.", PendingDeprecationWarning))
+                    "Use .+ instead.", DeprecationWarning))
     def test_getiterator(self):
         doc = ET.XML('''
             <document>
@@ -2605,14 +2605,6 @@ class XMLParserTest(unittest.TestCase):
         self.assertEqual(e[0].text, '22')
 
     def test_constructor_args(self):
-        # Positional args. The first (html) is not supported, but should be
-        # nevertheless correctly accepted.
-        with self.assertWarnsRegex(DeprecationWarning, r'\bhtml\b'):
-            parser = ET.XMLParser(None, ET.TreeBuilder(), 'utf-8')
-        parser.feed(self.sample1)
-        self._check_sample_element(parser.close())
-
-        # Now as keyword args.
         parser2 = ET.XMLParser(encoding='utf-8',
                                target=ET.TreeBuilder())
         parser2.feed(self.sample1)
@@ -2626,13 +2618,6 @@ class XMLParserTest(unittest.TestCase):
         self._check_sample_element(parser.close())
 
     def test_doctype_warning(self):
-        parser = ET.XMLParser()
-        with self.assertWarns(DeprecationWarning):
-            parser.doctype('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
-                'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd')
-        parser.feed('<html/>')
-        parser.close()
-
         with warnings.catch_warnings():
             warnings.simplefilter('error', DeprecationWarning)
             parser = ET.XMLParser()
@@ -2642,21 +2627,20 @@ class XMLParserTest(unittest.TestCase):
     def test_subclass_doctype(self):
         _doctype = None
         class MyParserWithDoctype(ET.XMLParser):
-            def doctype(self, name, pubid, system):
+            def doctype(self, *args, **kwargs):
                 nonlocal _doctype
-                _doctype = (name, pubid, system)
+                _doctype = (args, kwargs)
 
         parser = MyParserWithDoctype()
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(RuntimeWarning, 'doctype'):
             parser.feed(self.sample2)
         parser.close()
-        self.assertEqual(_doctype,
-            ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
-             'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
+        self.assertIsNone(_doctype)
 
         _doctype = _doctype2 = None
         with warnings.catch_warnings():
             warnings.simplefilter('error', DeprecationWarning)
+            warnings.simplefilter('error', RuntimeWarning)
             class DoctypeParser:
                 def doctype(self, name, pubid, system):
                     nonlocal _doctype2
@@ -2674,6 +2658,7 @@ class XMLParserTest(unittest.TestCase):
         '''Ensure that ordinary usage is not deprecated (Issue 19176)'''
         with warnings.catch_warnings():
             warnings.simplefilter('error', DeprecationWarning)
+            warnings.simplefilter('error', RuntimeWarning)
             class MyParserWithoutDoctype(ET.XMLParser):
                 pass
             parser = MyParserWithoutDoctype()

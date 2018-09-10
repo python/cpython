@@ -6,6 +6,7 @@ from dataclasses import *
 
 import pickle
 import inspect
+import builtins
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
@@ -191,6 +192,55 @@ class TestCase(unittest.TestCase):
         sig = inspect.signature(C.__init__)
         first = next(iter(sig.parameters))
         self.assertEqual('self', first)
+
+    def test_field_named_object(self):
+        @dataclass
+        class C:
+            object: str
+        c = C('foo')
+        self.assertEqual(c.object, 'foo')
+
+    def test_field_named_object_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            object: str
+        c = C('foo')
+        self.assertEqual(c.object, 'foo')
+
+    def test_field_named_like_builtin(self):
+        # Attribute names can shadow built-in names
+        # since code generation is used.
+        # Ensure that this is not happening.
+        exclusions = {'None', 'True', 'False'}
+        builtins_names = sorted(
+            b for b in builtins.__dict__.keys()
+            if not b.startswith('__') and b not in exclusions
+        )
+        attributes = [(name, str) for name in builtins_names]
+        C = make_dataclass('C', attributes)
+
+        c = C(*[name for name in builtins_names])
+
+        for name in builtins_names:
+            self.assertEqual(getattr(c, name), name)
+
+    def test_field_named_like_builtin_frozen(self):
+        # Attribute names can shadow built-in names
+        # since code generation is used.
+        # Ensure that this is not happening
+        # for frozen data classes.
+        exclusions = {'None', 'True', 'False'}
+        builtins_names = sorted(
+            b for b in builtins.__dict__.keys()
+            if not b.startswith('__') and b not in exclusions
+        )
+        attributes = [(name, str) for name in builtins_names]
+        C = make_dataclass('C', attributes, frozen=True)
+
+        c = C(*[name for name in builtins_names])
+
+        for name in builtins_names:
+            self.assertEqual(getattr(c, name), name)
 
     def test_0_field_compare(self):
         # Ensure that order=False is the default.
@@ -1966,7 +2016,7 @@ class TestRepr(unittest.TestCase):
         @dataclass(repr=False)
         class C:
             x: int
-        self.assertIn('test_dataclasses.TestRepr.test_no_repr.<locals>.C object at',
+        self.assertIn(f'{__name__}.TestRepr.test_no_repr.<locals>.C object at',
                       repr(C(3)))
 
         # Test a class with a __repr__ and repr=False.
@@ -2713,10 +2763,10 @@ class TestStringAnnotations(unittest.TestCase):
                 self.assertEqual(C(10).x, 10)
 
     def test_classvar_module_level_import(self):
-        from . import dataclass_module_1
-        from . import dataclass_module_1_str
-        from . import dataclass_module_2
-        from . import dataclass_module_2_str
+        from test import dataclass_module_1
+        from test import dataclass_module_1_str
+        from test import dataclass_module_2
+        from test import dataclass_module_2_str
 
         for m in (dataclass_module_1, dataclass_module_1_str,
                   dataclass_module_2, dataclass_module_2_str,
@@ -3024,6 +3074,22 @@ class TestReplace(unittest.TestCase):
 
         replace(c, x=5)
 
+    def test_initvar_is_specified(self):
+        @dataclass
+        class C:
+            x: int
+            y: InitVar[int]
+
+            def __post_init__(self, y):
+                self.x *= y
+
+        c = C(1, 10)
+        self.assertEqual(c.x, 10)
+        with self.assertRaisesRegex(ValueError, r"InitVar 'y' must be "
+                                    "specified with replace()"):
+            replace(c, x=3)
+        c = replace(c, x=3, y=5)
+        self.assertEqual(c.x, 15)
     ## def test_initvar(self):
     ##     @dataclass
     ##     class C:

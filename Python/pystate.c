@@ -172,22 +172,26 @@ PyInterpreterState_New(void)
     interp->pyexitmodule = NULL;
 
     HEAD_LOCK();
-    interp->next = _PyRuntime.interpreters.head;
-    if (_PyRuntime.interpreters.main == NULL) {
-        _PyRuntime.interpreters.main = interp;
-    }
-    _PyRuntime.interpreters.head = interp;
     if (_PyRuntime.interpreters.next_id < 0) {
         /* overflow or Py_Initialize() not called! */
         PyErr_SetString(PyExc_RuntimeError,
                         "failed to get an interpreter ID");
-        /* XXX deallocate! */
+        PyMem_RawFree(interp);
         interp = NULL;
     } else {
         interp->id = _PyRuntime.interpreters.next_id;
         _PyRuntime.interpreters.next_id += 1;
+        interp->next = _PyRuntime.interpreters.head;
+        if (_PyRuntime.interpreters.main == NULL) {
+            _PyRuntime.interpreters.main = interp;
+        }
+        _PyRuntime.interpreters.head = interp;
     }
     HEAD_UNLOCK();
+
+    if (interp == NULL) {
+        return NULL;
+    }
 
     interp->tstate_next_unique_id = 0;
 
@@ -261,6 +265,21 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
         PyThread_free_lock(interp->id_mutex);
     }
     PyMem_RawFree(interp);
+}
+
+
+PyInterpreterState *
+_PyInterpreterState_Get(void)
+{
+    PyThreadState *tstate = GET_TSTATE();
+    if (tstate == NULL) {
+        Py_FatalError("_PyInterpreterState_Get(): no current thread state");
+    }
+    PyInterpreterState *interp = tstate->interp;
+    if (interp == NULL) {
+        Py_FatalError("_PyInterpreterState_Get(): no current interpreter");
+    }
+    return interp;
 }
 
 
@@ -568,7 +587,9 @@ _PyState_ClearModules(void)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
-    if (Py_VerboseFlag && tstate->frame != NULL)
+    int verbose = tstate->interp->core_config.verbose;
+
+    if (verbose && tstate->frame != NULL)
         fprintf(stderr,
           "PyThreadState_Clear: warning: thread still has a frame\n");
 
@@ -586,7 +607,7 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->exc_state.exc_traceback);
 
     /* The stack of exception states should contain just this thread. */
-    if (Py_VerboseFlag && tstate->exc_info != &tstate->exc_state) {
+    if (verbose && tstate->exc_info != &tstate->exc_state) {
         fprintf(stderr,
           "PyThreadState_Clear: warning: thread still has a generator\n");
     }
@@ -1182,10 +1203,9 @@ _check_xidata(_PyCrossInterpreterData *data)
 int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    PyThreadState *tstate = PyThreadState_Get();
-    // PyThreadState_Get() aborts if lookup fails, so we don't need
+    // _PyInterpreterState_Get() aborts if lookup fails, so we don't need
     // to check the result for NULL.
-    PyInterpreterState *interp = tstate->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
 
     // Reset data before re-populating.
     *data = (_PyCrossInterpreterData){0};
@@ -1233,7 +1253,7 @@ _call_in_interpreter(PyInterpreterState *interp,
      * naive approach.
      */
     PyThreadState *save_tstate = NULL;
-    if (interp != PyThreadState_Get()->interp) {
+    if (interp != _PyInterpreterState_Get()) {
         // XXX Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         // XXX Possible GILState issues?

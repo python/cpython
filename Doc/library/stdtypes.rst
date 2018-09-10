@@ -382,7 +382,7 @@ modules.
 .. _bitstring-ops:
 
 Bitwise Operations on Integer Types
---------------------------------------
+-----------------------------------
 
 .. index::
    triple: operations on; integer; types
@@ -396,9 +396,9 @@ Bitwise Operations on Integer Types
    operator: >>
    operator: ~
 
-Bitwise operations only make sense for integers.  Negative numbers are treated
-as their 2's complement value (this assumes that there are enough bits so that
-no overflow occurs during the operation).
+Bitwise operations only make sense for integers. The result of bitwise
+operations is calculated as though carried out in two's complement with an
+infinite number of sign bits.
 
 The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
@@ -409,13 +409,13 @@ This table lists the bitwise operations sorted in ascending priority:
 +------------+--------------------------------+----------+
 | Operation  | Result                         | Notes    |
 +============+================================+==========+
-| ``x | y``  | bitwise :dfn:`or` of *x* and   |          |
+| ``x | y``  | bitwise :dfn:`or` of *x* and   | \(4)     |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
-| ``x ^ y``  | bitwise :dfn:`exclusive or` of |          |
+| ``x ^ y``  | bitwise :dfn:`exclusive or` of | \(4)     |
 |            | *x* and *y*                    |          |
 +------------+--------------------------------+----------+
-| ``x & y``  | bitwise :dfn:`and` of *x* and  |          |
+| ``x & y``  | bitwise :dfn:`and` of *x* and  | \(4)     |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
 | ``x << n`` | *x* shifted left by *n* bits   | (1)(2)   |
@@ -437,6 +437,12 @@ Notes:
 (3)
    A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
    overflow check.
+
+(4)
+   Performing these calculations with at least one extra sign extension bit in
+   a finite two's complement representation (a working bit-width of
+   ``1 + max(x.bit_length(), y.bit_length()`` or more) is sufficient to get the
+   same result as if there were an infinite number of sign bits.
 
 
 Additional Methods on Integer Types
@@ -1059,10 +1065,10 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | sequence (same as              |                     |
 |                              | ``s[len(s):len(s)] = [x]``)    |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.clear()``                | removes all items from ``s``   | \(5)                |
+| ``s.clear()``                | removes all items from *s*     | \(5)                |
 |                              | (same as ``del s[:]``)         |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.copy()``                 | creates a shallow copy of ``s``| \(5)                |
+| ``s.copy()``                 | creates a shallow copy of *s*  | \(5)                |
 |                              | (same as ``s[:]``)             |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.extend(t)`` or           | extends *s* with the           |                     |
@@ -1365,7 +1371,7 @@ objects that compare equal might have different :attr:`~range.start`,
 .. seealso::
 
    * The `linspace recipe <http://code.activestate.com/recipes/579000/>`_
-     shows how to implement a lazy version of range that suitable for floating
+     shows how to implement a lazy version of range suitable for floating
      point applications.
 
 .. index::
@@ -1600,13 +1606,14 @@ expression support in the :mod:`re` module).
    that can be specified in format strings.
 
    .. note::
-      When formatting a number (:class:`int`, :class:`float`, :class:`float`
-      and subclasses) with the ``n`` type (ex: ``'{:n}'.format(1234)``), the
-      function sets temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
-      locale to decode ``decimal_point`` and ``thousands_sep`` fields of
-      :c:func:`localeconv` if they are non-ASCII or longer than 1 byte, and the
-      ``LC_NUMERIC`` locale is different than the ``LC_CTYPE`` locale. This
-      temporary change affects other threads.
+      When formatting a number (:class:`int`, :class:`float`, :class:`complex`,
+      :class:`decimal.Decimal` and subclasses) with the ``n`` type
+      (ex: ``'{:n}'.format(1234)``), the function temporarily sets the
+      ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale to decode
+      ``decimal_point`` and ``thousands_sep`` fields of :c:func:`localeconv` if
+      they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC`` locale is
+      different than the ``LC_CTYPE`` locale.  This temporary change affects
+      other threads.
 
    .. versionchanged:: 3.7
       When formatting a number with the ``n`` type, the function sets
@@ -2051,7 +2058,7 @@ expression support in the :mod:`re` module).
 .. method:: str.upper()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   uppercase.  Note that ``str.upper().isupper()`` might be ``False`` if ``s``
+   uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
@@ -2315,7 +2322,7 @@ data and are closely related to string objects in a variety of other ways.
    While bytes literals and representations are based on ASCII text, bytes
    objects actually behave like immutable sequences of integers, with each
    value in the sequence restricted such that ``0 <= x < 256`` (attempts to
-   violate this restriction will trigger :exc:`ValueError`. This is done
+   violate this restriction will trigger :exc:`ValueError`). This is done
    deliberately to emphasise that while many binary formats include ASCII based
    elements and can be usefully manipulated with some text-oriented algorithms,
    this is not generally the case for arbitrary binary data (blindly applying
@@ -3388,7 +3395,10 @@ Notes:
    The bytearray version of this method does *not* operate in place - it
    always produces a new object, even if no changes were made.
 
-.. seealso:: :pep:`461`.
+.. seealso::
+
+   :pep:`461` - Adding % formatting to bytes and bytearray
+
 .. versionadded:: 3.5
 
 .. _typememoryview:
@@ -4217,11 +4227,16 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. method:: popitem()
 
-      Remove and return an arbitrary ``(key, value)`` pair from the dictionary.
+      Remove and return a ``(key, value)`` pair from the dictionary.
+      Pairs are returned in :abbr:`LIFO (last-in, first-out)` order.
 
       :meth:`popitem` is useful to destructively iterate over a dictionary, as
       often used in set algorithms.  If the dictionary is empty, calling
       :meth:`popitem` raises a :exc:`KeyError`.
+
+      .. versionchanged:: 3.7
+         LIFO order is now guaranteed. In prior versions, :meth:`popitem` would
+         return an arbitrary key/value pair.
 
    .. method:: setdefault(key[, default])
 

@@ -4,6 +4,7 @@ import copy
 import types
 import inspect
 import keyword
+import builtins
 
 __all__ = ['dataclass',
            'field',
@@ -257,7 +258,7 @@ class Field:
 
     # This is used to support the PEP 487 __set_name__ protocol in the
     # case where we're using a field that contains a descriptor as a
-    # defaul value.  For details on __set_name__, see
+    # default value.  For details on __set_name__, see
     # https://www.python.org/dev/peps/pep-0487/#implementation-details.
     #
     # Note that in _process_class, this Field object is overwritten
@@ -343,6 +344,11 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     # worries about external callers.
     if locals is None:
         locals = {}
+    # __builtins__ may be the "builtins" module or
+    # the value of its "__dict__",
+    # so make sure "__builtins__" is the module.
+    if globals is not None and '__builtins__' not in globals:
+        globals['__builtins__'] = builtins
     return_annotation = ''
     if return_type is not MISSING:
         locals['_return_type'] = return_type
@@ -365,7 +371,7 @@ def _field_assign(frozen, name, value, self_name):
     # self_name is what "self" is called in this function: don't
     # hard-code "self", since that might be a field name.
     if frozen:
-        return f'object.__setattr__({self_name},{name!r},{value})'
+        return f'__builtins__.object.__setattr__({self_name},{name!r},{value})'
     return f'{self_name}.{name}={value}'
 
 
@@ -1173,6 +1179,9 @@ def replace(obj, **changes):
             continue
 
         if f.name not in changes:
+            if f._field_type is _FIELD_INITVAR:
+                raise ValueError(f"InitVar {f.name!r} "
+                                 'must be specified with replace()')
             changes[f.name] = getattr(obj, f.name)
 
     # Create the new object, which calls __init__() and

@@ -819,8 +819,8 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             if (v == NULL)
                 goto error;
 
-            if (fmtcnt < 0) {
-                /* last writer: disable writer overallocation */
+            if (fmtcnt == 0) {
+                /* last write: disable writer overallocation */
                 writer.overallocate = 0;
             }
 
@@ -1048,7 +1048,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 
         /* If overallocation was disabled, ensure that it was the last
            write. Otherwise, we missed an optimization */
-        assert(writer.overallocate || fmtcnt < 0 || use_bytearray);
+        assert(writer.overallocate || fmtcnt == 0 || use_bytearray);
     } /* until end */
 
     if (argidx < arglen && !dict) {
@@ -1416,8 +1416,9 @@ bytes_str(PyObject *op)
 {
     if (Py_BytesWarningFlag) {
         if (PyErr_WarnEx(PyExc_BytesWarning,
-                         "str() on a bytes instance", 1))
+                         "str() on a bytes instance", 1)) {
             return NULL;
+        }
     }
     return bytes_repr(op);
 }
@@ -2441,15 +2442,13 @@ bytes_methods[] = {
     {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
     {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
-    {"center", (PyCFunction)stringlib_center, METH_VARARGS,
-     _Py_center__doc__},
+    STRINGLIB_CENTER_METHODDEF
     {"count", (PyCFunction)bytes_count, METH_VARARGS,
      _Py_count__doc__},
     BYTES_DECODE_METHODDEF
     {"endswith", (PyCFunction)bytes_endswith, METH_VARARGS,
      _Py_endswith__doc__},
-    {"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS | METH_KEYWORDS,
-     _Py_expandtabs__doc__},
+    STRINGLIB_EXPANDTABS_METHODDEF
     {"find", (PyCFunction)bytes_find, METH_VARARGS,
      _Py_find__doc__},
     BYTES_FROMHEX_METHODDEF
@@ -2472,7 +2471,7 @@ bytes_methods[] = {
     {"isupper", stringlib_isupper, METH_NOARGS,
      _Py_isupper__doc__},
     BYTES_JOIN_METHODDEF
-    {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, _Py_ljust__doc__},
+    STRINGLIB_LJUST_METHODDEF
     {"lower", stringlib_lower, METH_NOARGS, _Py_lower__doc__},
     BYTES_LSTRIP_METHODDEF
     BYTES_MAKETRANS_METHODDEF
@@ -2480,7 +2479,7 @@ bytes_methods[] = {
     BYTES_REPLACE_METHODDEF
     {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, _Py_rindex__doc__},
-    {"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, _Py_rjust__doc__},
+    STRINGLIB_RJUST_METHODDEF
     BYTES_RPARTITION_METHODDEF
     BYTES_RSPLIT_METHODDEF
     BYTES_RSTRIP_METHODDEF
@@ -2494,7 +2493,7 @@ bytes_methods[] = {
     {"title", stringlib_title, METH_NOARGS, _Py_title__doc__},
     BYTES_TRANSLATE_METHODDEF
     {"upper", stringlib_upper, METH_NOARGS, _Py_upper__doc__},
-    {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, _Py_zfill__doc__},
+    STRINGLIB_ZFILL_METHODDEF
     {NULL,     NULL}                         /* sentinel */
 };
 

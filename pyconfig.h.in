@@ -403,6 +403,12 @@
 /* Define to 1 if you have the `getentropy' function. */
 #undef HAVE_GETENTROPY
 
+/* Define to 1 if you have the `getgrgid_r' function. */
+#undef HAVE_GETGRGID_R
+
+/* Define to 1 if you have the `getgrnam_r' function. */
+#undef HAVE_GETGRNAM_R
+
 /* Define to 1 if you have the `getgrouplist' function. */
 #undef HAVE_GETGROUPLIST
 
@@ -456,6 +462,12 @@
 
 /* Define to 1 if you have the `getpwent' function. */
 #undef HAVE_GETPWENT
+
+/* Define to 1 if you have the `getpwnam_r' function. */
+#undef HAVE_GETPWNAM_R
+
+/* Define to 1 if you have the `getpwuid_r' function. */
+#undef HAVE_GETPWUID_R
 
 /* Define to 1 if the getrandom() function is available */
 #undef HAVE_GETRANDOM
@@ -963,7 +975,7 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Has stdatomic.h, atomic_int and _Atomic void* types work */
+/* Has stdatomic.h with atomic_int */
 #undef HAVE_STD_ATOMIC
 
 /* Define to 1 if you have the `strdup' function. */
@@ -983,6 +995,9 @@
 
 /* Define to 1 if you have the <stropts.h> header file. */
 #undef HAVE_STROPTS_H
+
+/* Define to 1 if you have the `strsignal' function. */
+#undef HAVE_STRSIGNAL
 
 /* Define to 1 if `pw_gecos' is a member of `struct passwd'. */
 #undef HAVE_STRUCT_PASSWD_PW_GECOS
@@ -1326,9 +1341,6 @@
 
 /* Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0 */
 #undef PY_SSL_DEFAULT_CIPHER_STRING
-
-/* Define to emit a locale compatibility warning in the C locale */
-#undef PY_WARN_ON_C_LOCALE
 
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG

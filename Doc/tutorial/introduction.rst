@@ -143,12 +143,12 @@ to escape quotes::
    "doesn't"
    >>> "doesn't"  # ...or use double quotes instead
    "doesn't"
-   >>> '"Yes," he said.'
-   '"Yes," he said.'
-   >>> "\"Yes,\" he said."
-   '"Yes," he said.'
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
+   >>> '"Yes," they said.'
+   '"Yes," they said.'
+   >>> "\"Yes,\" they said."
+   '"Yes," they said.'
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
 
 In the interactive interpreter, the output string is enclosed in quotes and
 special characters are escaped with backslashes.  While this might sometimes
@@ -159,10 +159,10 @@ enclosed in single quotes.  The :func:`print` function produces a more
 readable output, by omitting the enclosing quotes and by printing escaped
 and special characters::
 
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
-   >>> print('"Isn\'t," she said.')
-   "Isn't," she said.
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
+   >>> print('"Isn\'t," they said.')
+   "Isn't," they said.
    >>> s = 'First line.\nSecond line.'  # \n means newline
    >>> s  # without print(), \n is included in the output
    'First line.\nSecond line.'

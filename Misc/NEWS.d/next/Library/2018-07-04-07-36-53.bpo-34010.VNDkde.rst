@@ -1,0 +1,2 @@
+Fixed a performance regression for reading streams with tarfile. The
+buffered read should use a list, instead of appending to a bytes object.

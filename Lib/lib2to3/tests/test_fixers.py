@@ -290,30 +290,30 @@ class Test_reload(FixerTestCase):
 
     def test(self):
         b = """reload(a)"""
-        a = """import imp\nimp.reload(a)"""
+        a = """import importlib\nimportlib.reload(a)"""
         self.check(b, a)
 
     def test_comment(self):
         b = """reload( a ) # comment"""
-        a = """import imp\nimp.reload( a ) # comment"""
+        a = """import importlib\nimportlib.reload( a ) # comment"""
         self.check(b, a)
 
         # PEP 8 comments
         b = """reload( a )  # comment"""
-        a = """import imp\nimp.reload( a )  # comment"""
+        a = """import importlib\nimportlib.reload( a )  # comment"""
         self.check(b, a)
 
     def test_space(self):
         b = """reload( a )"""
-        a = """import imp\nimp.reload( a )"""
+        a = """import importlib\nimportlib.reload( a )"""
         self.check(b, a)
 
         b = """reload( a)"""
-        a = """import imp\nimp.reload( a)"""
+        a = """import importlib\nimportlib.reload( a)"""
         self.check(b, a)
 
         b = """reload(a )"""
-        a = """import imp\nimp.reload(a )"""
+        a = """import importlib\nimportlib.reload(a )"""
         self.check(b, a)
 
     def test_unchanged(self):

@@ -1730,7 +1730,9 @@ exit:
 #if defined(HAVE_POSIX_SPAWN)
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
-"posix_spawn($module, path, argv, env, file_actions=None, /)\n"
+"posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
+"            setpgroup=None, resetids=False, setsigmask=(),\n"
+"            setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -1742,29 +1744,48 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 "  env\n"
 "    Dictionary of strings mapping to strings.\n"
 "  file_actions\n"
-"    A sequence of file action tuples.");
+"    A sequence of file action tuples.\n"
+"  setpgroup\n"
+"    The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.\n"
+"  resetids\n"
+"    If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.\n"
+"  setsigmask\n"
+"    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
+"  setsigdef\n"
+"    The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.\n"
+"  scheduler\n"
+"    A tuple with the scheduler policy (optional) and parameters.");
 
 #define OS_POSIX_SPAWN_METHODDEF    \
-    {"posix_spawn", (PyCFunction)os_posix_spawn, METH_FASTCALL, os_posix_spawn__doc__},
+    {"posix_spawn", (PyCFunction)os_posix_spawn, METH_FASTCALL|METH_KEYWORDS, os_posix_spawn__doc__},
 
 static PyObject *
 os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
-                    PyObject *env, PyObject *file_actions);
+                    PyObject *env, PyObject *file_actions,
+                    PyObject *setpgroup, int resetids, PyObject *setsigmask,
+                    PyObject *setsigdef, PyObject *scheduler);
 
 static PyObject *
-os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsigmask", "setsigdef", "scheduler", NULL};
+    static _PyArg_Parser _parser = {"O&OO|$OOiOOO:posix_spawn", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("posix_spawn", "path", 0, 0);
     PyObject *argv;
     PyObject *env;
-    PyObject *file_actions = Py_None;
+    PyObject *file_actions = NULL;
+    PyObject *setpgroup = NULL;
+    int resetids = 0;
+    PyObject *setsigmask = NULL;
+    PyObject *setsigdef = NULL;
+    PyObject *scheduler = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&OO|O:posix_spawn",
-        path_converter, &path, &argv, &env, &file_actions)) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        path_converter, &path, &argv, &env, &file_actions, &setpgroup, &resetids, &setsigmask, &setsigdef, &scheduler)) {
         goto exit;
     }
-    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions);
+    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsigmask, setsigdef, scheduler);
 
 exit:
     /* Cleanup for path */
@@ -3859,7 +3880,7 @@ PyDoc_STRVAR(os__fcopyfile__doc__,
 "_fcopyfile($module, infd, outfd, flags, /)\n"
 "--\n"
 "\n"
-"Efficiently copy content or metadata of 2 regular file descriptors (OSX).");
+"Efficiently copy content or metadata of 2 regular file descriptors (macOS).");
 
 #define OS__FCOPYFILE_METHODDEF    \
     {"_fcopyfile", (PyCFunction)os__fcopyfile, METH_FASTCALL, os__fcopyfile__doc__},
@@ -6627,4 +6648,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=b5d1ec71bc6f0651 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=758ee0434fb03d90 input=a9049054013a1b77]*/
