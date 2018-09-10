@@ -441,10 +441,10 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("(info := (name, phone, *rest))")
         self.check_suite("(x:=1,2)")
         self.check_suite("(total := total + tax)")
-        # self.check_suite("len(lines := f.readlines())")
-        # self.check_suite("foo(x := 3, cat='vector')")
-        # self.check_suite("foo(cat=(category := 'vector'))")
-        # self.check_suite("if any(len(longline := l) >= 100 for l in lines): print(longline)")
+        self.check_suite("len(lines := f.readlines())")
+        self.check_suite("foo(x := 3, cat='vector')")
+        self.check_suite("foo(cat=(category := 'vector'))")
+        self.check_suite("if any(len(longline := l) >= 100 for l in lines): print(longline)")
         self.check_suite(
             "if env_base := os.environ.get('PYTHONUSERBASE', None): return env_base"
         )

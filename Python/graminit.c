@@ -1803,8 +1803,9 @@ static arc arcs_80_0[3] = {
     {34, 2},
     {33, 2},
 };
-static arc arcs_80_1[3] = {
+static arc arcs_80_1[4] = {
     {167, 3},
+    {113, 2},
     {31, 2},
     {0, 1},
 };
@@ -1816,7 +1817,7 @@ static arc arcs_80_3[1] = {
 };
 static state states_80[4] = {
     {3, arcs_80_0},
-    {3, arcs_80_1},
+    {4, arcs_80_1},
     {1, arcs_80_2},
     {1, arcs_80_3},
 };
