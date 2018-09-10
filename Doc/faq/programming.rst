@@ -59,13 +59,6 @@ Is there a tool to help find bugs or perform static analysis?
 
 Yes.
 
-Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
-`Pyre <https://pyre-check.org/>`_, and
-`Pytype <https://github.com/google/pytype>`_ look for type hints in Python
-source code and report any mismatch they find, and tools like
-`PyAnnotate <https://github.com/dropbox/pyannotate>`_ help to insert these type
-hints based on call arguments and return types observed at runtime.
-
 PyChecker is a static analysis tool that finds bugs in Python source code and
 warns about code complexity and style.  You can get PyChecker from
 http://pychecker.sourceforge.net/.
@@ -77,6 +70,11 @@ PyChecker performs, Pylint offers some additional features such as checking line
 length, whether variable names are well-formed according to your coding
 standard, whether declared interfaces are fully implemented, and more.
 https://docs.pylint.org/ provides a full list of Pylint's features.
+
+Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
+`Pyre <https://pyre-check.org/>`_, and
+`Pytype <https://github.com/google/pytype>`_ can check type hints in Python
+source code.
 
 
 How can I create a stand-alone binary from a Python script?
