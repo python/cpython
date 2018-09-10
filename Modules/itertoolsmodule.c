@@ -7,6 +7,17 @@
    by Raymond D. Hettinger <python@rcn.com>
 */
 
+/*[clinic input]
+module itertools
+class itertools.groupby "groupbyobject *" "&groupby_type"
+class itertools._grouper "_grouperobject *" "&_grouper_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9d506f5bb9177570]*/
+
+static PyTypeObject groupby_type;
+static PyTypeObject _grouper_type;
+#include "clinic/itertoolsmodule.c.h"
+
 
 /* groupby object ************************************************************/
 
@@ -20,19 +31,27 @@ typedef struct {
     const void *currgrouper;  /* borrowed reference */
 } groupbyobject;
 
-static PyTypeObject groupby_type;
 static PyObject *_grouper_create(groupbyobject *, PyObject *);
 
-static PyObject *
-groupby_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    static char *kwargs[] = {"iterable", "key", NULL};
-    groupbyobject *gbo;
-    PyObject *it, *keyfunc = Py_None;
+/*[clinic input]
+@classmethod
+itertools.groupby.__new__
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:groupby", kwargs,
-                                     &it, &keyfunc))
-        return NULL;
+    iterable as it: object
+        Elements to divide into groups according to the key function.
+    key as keyfunc: object = None
+        A function for computing the group category for each element.
+        If the key function is not specified or is None, the element itself
+        is used for grouping.
+
+make an iterator that returns consecutive keys and groups from the iterable
+[clinic start generated code]*/
+
+static PyObject *
+itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc)
+/*[clinic end generated code: output=cbb1ae3a90fd4141 input=6b3d123e87ff65a1]*/
+{
+    groupbyobject *gbo;
 
     gbo = (groupbyobject *)type->tp_alloc(type, 0);
     if (gbo == NULL)
@@ -186,11 +205,6 @@ static PyMethodDef groupby_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-PyDoc_STRVAR(groupby_doc,
-"groupby(iterable, key=None) -> make an iterator that returns consecutive\n\
-keys and groups from the iterable.  If the key function is not specified or\n\
-is None, the element itself is used for grouping.\n");
-
 static PyTypeObject groupby_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.groupby",                /* tp_name */
@@ -214,7 +228,7 @@ static PyTypeObject groupby_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    groupby_doc,                        /* tp_doc */
+    itertools_groupby__doc__,           /* tp_doc */
     (traverseproc)groupby_traverse,     /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -231,7 +245,7 @@ static PyTypeObject groupby_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    groupby_new,                        /* tp_new */
+    itertools_groupby,                  /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
@@ -244,16 +258,20 @@ typedef struct {
     PyObject *tgtkey;
 } _grouperobject;
 
-static PyTypeObject _grouper_type;
+/*[clinic input]
+@classmethod
+itertools._grouper.__new__
+
+    parent: object(subclass_of='&groupby_type')
+    tgtkey: object
+    /
+[clinic start generated code]*/
 
 static PyObject *
-_grouper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools__grouper_impl(PyTypeObject *type, PyObject *parent,
+                        PyObject *tgtkey)
+/*[clinic end generated code: output=462efb1cdebb5914 input=dc180d7771fc8c59]*/
 {
-    PyObject *parent, *tgtkey;
-
-    if (!PyArg_ParseTuple(args, "O!O", &groupby_type, &parent, &tgtkey))
-        return NULL;
-
     return _grouper_create((groupbyobject*) parent, tgtkey);
 }
 
@@ -374,7 +392,7 @@ static PyTypeObject _grouper_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    _grouper_new,                       /* tp_new */
+    itertools__grouper,                 /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
