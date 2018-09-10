@@ -599,7 +599,7 @@ static PyMemberDef SHA_members[] = {
 static PyTypeObject SHA384type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_sha512.sha384",   /*tp_name*/
-    sizeof(SHAobject),  /*tp_size*/
+    sizeof(SHAobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
     /* methods */
     SHA512_dealloc,     /*tp_dealloc*/
@@ -633,7 +633,7 @@ static PyTypeObject SHA384type = {
 static PyTypeObject SHA512type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_sha512.sha512",   /*tp_name*/
-    sizeof(SHAobject),  /*tp_size*/
+    sizeof(SHAobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
     /* methods */
     SHA512_dealloc,     /*tp_dealloc*/

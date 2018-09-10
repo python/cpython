@@ -34,7 +34,7 @@ bad_traverse_test(PyObject *self, void *arg) {
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
-    sizeof(struct PyModuleDef),                 /* tp_size */
+    sizeof(struct PyModuleDef),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
 };
 
@@ -761,7 +761,7 @@ The name must be a string; the optional doc argument can have any type.");
 PyTypeObject PyModule_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "module",                                   /* tp_name */
-    sizeof(PyModuleObject),                     /* tp_size */
+    sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)module_dealloc,                 /* tp_dealloc */
     0,                                          /* tp_print */

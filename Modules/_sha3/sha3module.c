@@ -505,7 +505,7 @@ static PyGetSetDef SHA3_getseters[] = {
     static PyTypeObject type_obj = { \
         PyVarObject_HEAD_INIT(NULL, 0) \
         type_name,          /* tp_name */ \
-        sizeof(SHA3object), /* tp_size */ \
+        sizeof(SHA3object), /* tp_basicsize */ \
         0,                  /* tp_itemsize */ \
         /*  methods  */ \
         (destructor)SHA3_dealloc, /* tp_dealloc */ \
