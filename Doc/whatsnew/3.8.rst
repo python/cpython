@@ -95,7 +95,7 @@ Other Language Changes
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
 * Dict and dictviews are now iterable in reversed insertion order using
-  :func:`reversed`. (Contributed by Rémi Lapeyre in :issues:`33462`.)
+  :func:`reversed`. (Contributed by Rémi Lapeyre in :issue:`33462`.)
 
 
 New Modules
