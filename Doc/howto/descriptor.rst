@@ -48,11 +48,11 @@ a flexible set of new tools for everyday Python programs.
 Descriptor Protocol
 -------------------
 
-``descr.__get__(self, obj, type=None) --> value``
+``descr.__get__(self, obj, type=None) -> value``
 
-``descr.__set__(self, obj, value) --> None``
+``descr.__set__(self, obj, value) -> None``
 
-``descr.__delete__(self, obj) --> None``
+``descr.__delete__(self, obj) -> None``
 
 That is all there is to it.  Define any of these methods and an object is
 considered a descriptor and can override default behavior upon being looked up
