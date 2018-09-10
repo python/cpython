@@ -366,9 +366,6 @@ class ShareableTypeTests(unittest.TestCase):
 
     def _assert_values(self, values):
         for obj in values:
-            if (obj == -1) and AIX and (ABI == 32):
-                # AIX returns MAX_UINT32 rather than -1 when 32-bit
-                continue
             with self.subTest(obj):
                 interpreters.channel_send(self.cid, obj)
                 got = interpreters.channel_recv(self.cid)
@@ -399,7 +396,11 @@ class ShareableTypeTests(unittest.TestCase):
                             for i in range(-1, 258))
 
     def test_int(self):
-        self._assert_values(range(-1, 258))
+        # AIX returns MAX_UINT32 rather than -1 when 32-bit
+        if AIX and (ABI == 32):
+            self._assert_values(range(0, 258))
+        else:
+            self._assert_values(range(-1, 258))
 
 
 ##################################
