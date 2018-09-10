@@ -1,2 +1,1 @@
-multiprocessing.Pool does no longer leak processes if the construction of
-the pool fails.
+``multiprocessing.Pool`` no longer leaks processes if its initialization fails.

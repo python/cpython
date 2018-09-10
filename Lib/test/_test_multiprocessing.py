@@ -4608,7 +4608,7 @@ class TestPoolNotLeakOnFailure(unittest.TestCase):
         will_fail_in = 3
         forked_processes = []
 
-        class FailingForkProcess():
+        class FailingForkProcess:
             def __init__(self, **kwargs):
                 self.name = 'Fake Process'
                 self.exitcode = None
@@ -4618,27 +4618,25 @@ class TestPoolNotLeakOnFailure(unittest.TestCase):
             def start(self):
                 nonlocal will_fail_in
                 if will_fail_in <= 0:
-                    raise OSError("Manually inducted OSError")
+                    raise OSError("Manually induced OSError")
                 will_fail_in -= 1
                 self.state = 'started'
 
             def terminate(self):
-                self.state = 'stopped'
+                self.state = 'stopping'
 
             def join(self):
-                pass
+                if self.state == 'stopping':
+                    self.state = 'stopped'
 
             def is_alive(self):
-                return self.state == 'started'
+                return self.state == 'started' or self.state == 'stopping'
 
-        try:
+        with self.assertRaisesRegex(OSError, 'Manually induced OSError'):
             p = multiprocessing.pool.Pool(5, context=unittest.mock.MagicMock(
                 Process=FailingForkProcess))
             p.close()
             p.join()
-        except OSError as err:
-            if str(err) != 'Manually inducted OSError':
-                raise
         self.assertFalse(
             any(process.is_alive() for process in forked_processes))
 
