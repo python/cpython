@@ -310,6 +310,8 @@ def walk_tb(tb):
         tb = tb.tb_next
 
 
+_RECURSIVE_CUTOFF = 3 # Also hardcoded in traceback.c.
+
 class StackSummary(list):
     """A stack of frames."""
 
@@ -398,18 +400,21 @@ class StackSummary(list):
         last_name = None
         count = 0
         for frame in self:
-            if (last_file is not None and last_file == frame.filename and
-                last_line is not None and last_line == frame.lineno and
-                last_name is not None and last_name == frame.name):
-                count += 1
-            else:
-                if count > 3:
-                    result.append(f'  [Previous line repeated {count-3} more times]\n')
+            if (last_file is None or last_file != frame.filename or
+                last_line is None or last_line != frame.lineno or
+                last_name is None or last_name != frame.name):
+                if count > _RECURSIVE_CUTOFF:
+                    count -= _RECURSIVE_CUTOFF
+                    result.append(
+                        f'  [Previous line repeated {count} more '
+                        f'time{"s" if count > 1 else ""}]\n'
+                    )
                 last_file = frame.filename
                 last_line = frame.lineno
                 last_name = frame.name
                 count = 0
-            if count >= 3:
+            count += 1
+            if count > _RECURSIVE_CUTOFF:
                 continue
             row = []
             row.append('  File "{}", line {}, in {}\n'.format(
@@ -420,8 +425,12 @@ class StackSummary(list):
                 for name, value in sorted(frame.locals.items()):
                     row.append('    {name} = {value}\n'.format(name=name, value=value))
             result.append(''.join(row))
-        if count > 3:
-            result.append(f'  [Previous line repeated {count-3} more times]\n')
+        if count > _RECURSIVE_CUTOFF:
+            count -= _RECURSIVE_CUTOFF
+            result.append(
+                f'  [Previous line repeated {count} more '
+                f'time{"s" if count > 1 else ""}]\n'
+            )
         return result
 
 
