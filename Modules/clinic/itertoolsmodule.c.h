@@ -15,7 +15,7 @@ PyDoc_STRVAR(itertools_groupby__doc__,
 "    defaults to an identity function and returns the element unchanged.");
 
 static PyObject *
-itertools_groupby_impl(PyTypeObject *type, PyObject *iterable, PyObject *key);
+itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc);
 
 static PyObject *
 itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -23,14 +23,14 @@ itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"iterable", "key", NULL};
     static _PyArg_Parser _parser = {"O|O:groupby", _keywords, 0};
-    PyObject *iterable;
-    PyObject *key = Py_None;
+    PyObject *it;
+    PyObject *keyfunc = Py_None;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &iterable, &key)) {
+        &it, &keyfunc)) {
         goto exit;
     }
-    return_value = itertools_groupby_impl(type, iterable, key);
+    return_value = itertools_groupby_impl(type, it, keyfunc);
 
 exit:
     return return_value;
@@ -60,4 +60,4 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ecc325ee9ecf0cf6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=82794a1bf512c104 input=a9049054013a1b77]*/

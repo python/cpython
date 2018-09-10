@@ -37,9 +37,9 @@ static PyObject *_grouper_create(groupbyobject *, PyObject *);
 @classmethod
 itertools.groupby.__new__
 
-    iterable: object
+    iterable as it: object
         Elements to divide into groups according to the key function.
-    key: object = None
+    key as keyfunc: object = None
         A function computing a key value for each element.  If None, key
         defaults to an identity function and returns the element unchanged.
 
@@ -47,8 +47,8 @@ make an iterator that returns consecutive keys and groups from the iterable
 [clinic start generated code]*/
 
 static PyObject *
-itertools_groupby_impl(PyTypeObject *type, PyObject *iterable, PyObject *key)
-/*[clinic end generated code: output=83016d6c995ed8a5 input=dc17e1c0520e528f]*/
+itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc)
+/*[clinic end generated code: output=cbb1ae3a90fd4141 input=25a2c2e644462895]*/
 {
     groupbyobject *gbo;
 
@@ -58,9 +58,9 @@ itertools_groupby_impl(PyTypeObject *type, PyObject *iterable, PyObject *key)
     gbo->tgtkey = NULL;
     gbo->currkey = NULL;
     gbo->currvalue = NULL;
-    gbo->keyfunc = key;
-    Py_INCREF(key);
-    gbo->it = PyObject_GetIter(iterable);
+    gbo->keyfunc = keyfunc;
+    Py_INCREF(keyfunc);
+    gbo->it = PyObject_GetIter(it);
     if (gbo->it == NULL) {
         Py_DECREF(gbo);
         return NULL;
@@ -345,12 +345,12 @@ _grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
 }
 
-
 static PyMethodDef _grouper_methods[] = {
     {"__reduce__",      (PyCFunction)_grouper_reduce,      METH_NOARGS,
      reduce_doc},
     {NULL,              NULL}   /* sentinel */
 };
+
 
 static PyTypeObject _grouper_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
