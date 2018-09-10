@@ -847,7 +847,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
             p->async_exc = exc;
             HEAD_UNLOCK();
             Py_XDECREF(old_exc);
-            _PyEval_SignalAsyncExc();
+            _PyEval_SignalAsyncExc(interp);
             return 1;
         }
     }

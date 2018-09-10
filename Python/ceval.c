@@ -94,48 +94,48 @@ static long dxp[256];
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
    the GIL eventually anyway. */
-#define COMPUTE_EVAL_BREAKER() \
+#define COMPUTE_EVAL_BREAKER(interp) \
     _Py_atomic_store_relaxed( \
-        &PyThreadState_Get()->interp->ceval.eval_breaker, \
+        &interp->ceval.eval_breaker, \
         GIL_REQUEST | \
-        _Py_atomic_load_relaxed(&PyThreadState_Get()->interp->ceval.pending.calls_to_do) | \
-        PyThreadState_Get()->interp->ceval.pending.async_exc)
+        _Py_atomic_load_relaxed(&interp->ceval.pending.calls_to_do) | \
+        interp->ceval.pending.async_exc)
 
-#define SET_GIL_DROP_REQUEST() \
+#define SET_GIL_DROP_REQUEST(interp) \
     do { \
         _Py_atomic_store_relaxed(&_PyRuntime.ceval.gil_drop_request, 1); \
-        _Py_atomic_store_relaxed(&PyThreadState_Get()->interp->ceval.eval_breaker, 1); \
+        _Py_atomic_store_relaxed(&interp->ceval.eval_breaker, 1); \
     } while (0)
 
-#define RESET_GIL_DROP_REQUEST() \
+#define RESET_GIL_DROP_REQUEST(interp) \
     do { \
         _Py_atomic_store_relaxed(&_PyRuntime.ceval.gil_drop_request, 0); \
-        COMPUTE_EVAL_BREAKER(); \
+        COMPUTE_EVAL_BREAKER(interp); \
     } while (0)
 
 /* Pending calls are only modified under pending_lock */
-#define SIGNAL_PENDING_CALLS() \
+#define SIGNAL_PENDING_CALLS(interp) \
     do { \
-        _Py_atomic_store_relaxed(&PyThreadState_Get()->interp->ceval.pending.calls_to_do, 1); \
-        _Py_atomic_store_relaxed(&PyThreadState_Get()->interp->ceval.eval_breaker, 1); \
+        _Py_atomic_store_relaxed(&interp->ceval.pending.calls_to_do, 1); \
+        _Py_atomic_store_relaxed(&interp->ceval.eval_breaker, 1); \
     } while (0)
 
-#define UNSIGNAL_PENDING_CALLS() \
+#define UNSIGNAL_PENDING_CALLS(interp) \
     do { \
-        _Py_atomic_store_relaxed(&PyThreadState_Get()->interp->ceval.pending.calls_to_do, 0); \
-        COMPUTE_EVAL_BREAKER(); \
+        _Py_atomic_store_relaxed(&interp->ceval.pending.calls_to_do, 0); \
+        COMPUTE_EVAL_BREAKER(interp); \
     } while (0)
 
-#define SIGNAL_ASYNC_EXC() \
+#define SIGNAL_ASYNC_EXC(interp) \
     do { \
-        PyThreadState_Get()->interp->ceval.pending.async_exc = 1; \
-        _Py_atomic_store_relaxed(&PyThreadState_Get()->interp->ceval.eval_breaker, 1); \
+        interp->ceval.pending.async_exc = 1; \
+        _Py_atomic_store_relaxed(&interp->ceval.eval_breaker, 1); \
     } while (0)
 
-#define UNSIGNAL_ASYNC_EXC() \
+#define UNSIGNAL_ASYNC_EXC(interp) \
     do { \
-        PyThreadState_Get()->interp->ceval.pending.async_exc = 0; \
-        COMPUTE_EVAL_BREAKER(); \
+        interp->ceval.pending.async_exc = 0; \
+        COMPUTE_EVAL_BREAKER(interp); \
     } while (0)
 
 
@@ -239,9 +239,9 @@ PyEval_ReInitThreads(void)
    raised, therefore it is also useful in non-threaded builds. */
 
 void
-_PyEval_SignalAsyncExc(void)
+_PyEval_SignalAsyncExc(PyInterpreterState *interp)
 {
-    SIGNAL_ASYNC_EXC();
+    SIGNAL_ASYNC_EXC(interp);
 }
 
 /* Functions save_thread and restore_thread are always defined so
@@ -308,7 +308,9 @@ _PyEval_SignalReceived(void)
     /* bpo-30703: Function called when the C signal handler of Python gets a
        signal. We cannot queue a callback using Py_AddPendingCall() since
        that function is not async-signal-safe. */
-    SIGNAL_PENDING_CALLS();
+    /* Note that we explicitly use the main interpreter.  Signals
+       are always handled by the main interpreter. */
+    SIGNAL_PENDING_CALLS(_PyRuntime.interpreters.main);
 }
 
 int
@@ -359,7 +361,7 @@ _Py_AddPendingCall(PyInterpreterState *interp, int (*func)(void *), void *arg)
         interp->ceval.pending.last = j;
     }
     /* signal main loop */
-    SIGNAL_PENDING_CALLS();
+    SIGNAL_PENDING_CALLS(interp);
     if (lock != NULL)
         PyThread_release_lock(lock);
     return result;
@@ -400,7 +402,7 @@ _Py_MakePendingCalls(PyInterpreterState *interp)
     busy = 1;
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
-    UNSIGNAL_PENDING_CALLS();
+    UNSIGNAL_PENDING_CALLS(interp);
 
     /* Python signal handler doesn't really queue a callback: it only signals
        that a signal was received, see _PyEval_SignalReceived(). */
@@ -439,7 +441,7 @@ _Py_MakePendingCalls(PyInterpreterState *interp)
 
 error:
     busy = 0;
-    SIGNAL_PENDING_CALLS(); /* We're not done yet */
+    SIGNAL_PENDING_CALLS(interp); /* We're not done yet */
     return -1;
 }
 
@@ -1007,7 +1009,7 @@ main_loop:
             if (tstate->async_exc != NULL) {
                 PyObject *exc = tstate->async_exc;
                 tstate->async_exc = NULL;
-                UNSIGNAL_ASYNC_EXC();
+                UNSIGNAL_ASYNC_EXC(tstate->interp);
                 PyErr_SetNone(exc);
                 Py_DECREF(exc);
                 goto error;
