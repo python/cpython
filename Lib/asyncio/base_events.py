@@ -37,6 +37,7 @@ except ImportError:  # pragma: no cover
 from . import constants
 from . import coroutines
 from . import events
+from . import exceptions
 from . import futures
 from . import protocols
 from . import sslproto
@@ -327,7 +328,7 @@ class Server(events.AbstractServer):
 
         try:
             await self._serving_forever_fut
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             try:
                 self.close()
                 await self.wait_closed()

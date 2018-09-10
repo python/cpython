@@ -15,6 +15,7 @@ from . import base_events
 from . import constants
 from . import events
 from . import futures
+from . import exceptions
 from . import protocols
 from . import sslproto
 from . import transports
@@ -282,7 +283,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             self._force_close(exc)
         except OSError as exc:
             self._fatal_error(exc, 'Fatal read error on pipe transport')
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             if not self._closing:
                 raise
         else:
@@ -615,7 +616,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             if f is not None:
                 f.result()  # may raise
             f = self._proactor.recv(self._ssock, 4096)
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             # _close_self_pipe() has been called, stop waiting for data
             return
         except Exception as exc:
@@ -666,7 +667,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 elif self._debug:
                     logger.debug("Accept failed on socket %r",
                                  sock, exc_info=True)
-            except futures.CancelledError:
+            except exceptions.CancelledError:
                 sock.close()
             else:
                 self._accept_futures[sock.fileno()] = f
