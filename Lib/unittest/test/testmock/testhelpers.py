@@ -698,7 +698,6 @@ class SpecSignatureTest(unittest.TestCase):
             @staticmethod
             def existing(a, b):
                 return a + b
-
         s = create_autospec(RaiserClass)
         self.assertRaises(TypeError, lambda x: s.existing(1, 2, 3))
         s.existing(1, 2)

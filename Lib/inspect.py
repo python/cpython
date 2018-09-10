@@ -182,11 +182,8 @@ def iscoroutinefunction(object):
 
     Coroutine functions are defined with "async def" syntax.
     """
-    try:
-        return bool((isfunction(object) or ismethod(object)) and
-                    object.__code__.co_flags & CO_COROUTINE)
-    except AttributeError:
-        pass
+    return bool((isfunction(object) or ismethod(object)) and
+                object.__code__.co_flags & CO_COROUTINE)
 
 
 def isasyncgenfunction(object):

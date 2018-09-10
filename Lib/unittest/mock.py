@@ -52,7 +52,10 @@ _safe_super = super
 
 
 def _is_coroutine_obj(obj):
-    return asyncio.iscoroutinefunction(obj) or asyncio.iscoroutine(obj)
+    if getattr(obj, '__code__', None):
+        return asyncio.iscoroutinefunction(obj) or asyncio.iscoroutine(obj)
+    else:
+        return False
 
 
 def _is_instance_mock(obj):
@@ -461,7 +464,7 @@ class NonCallableMock(Base):
         _spec_coroutines = []
 
         for attr in dir(spec):
-            if asyncio.iscoroutinefunction(getattr(spec, attr)):
+            if asyncio.iscoroutinefunction(getattr(spec, attr, None)):
                 _spec_coroutines.append(attr)
 
         if spec is not None and not _is_list(spec):
@@ -1054,7 +1057,10 @@ class CallableMixin(Base):
                  wraps=None, name=None, spec_set=None, parent=None,
                  _spec_state=None, _new_name='', _new_parent=None, **kwargs):
         self.__dict__['_mock_return_value'] = return_value
-
+        # Makes inspect.iscoroutinefunction() return False when testing a Mock.
+        code_mock = NonCallableMock(spec_set=CodeType)
+        code_mock.co_flags = 0
+        self.__dict__['__code__'] = code_mock
         _safe_super(CallableMixin, self).__init__(
             spec, wraps, name, spec_set, parent,
             _spec_state, _new_name, _new_parent, **kwargs
@@ -2107,8 +2113,9 @@ class CoroutineMockMixin(Base):
         self.__dict__['_mock_await_args'] = None
         self.__dict__['_mock_await_args_list'] = _CallList()
         code_mock = NonCallableMock(spec_set=CodeType)
-        code_mock.co_flags = 0
+        code_mock.co_flags = 129
         self.__dict__['__code__'] = code_mock
+
 
     def _mock_call(_mock_self, *args, **kwargs):
         try:
@@ -2530,7 +2537,10 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         spec = type(spec)
 
     is_type = isinstance(spec, type)
-    is_coroutine_func = asyncio.iscoroutinefunction(spec)
+    if getattr(spec, '__code__', None):
+        is_coroutine_func = asyncio.iscoroutinefunction(spec)
+    else:
+        is_coroutine_func = False
     _kwargs = {'spec': spec}
     if spec_set:
         _kwargs = {'spec_set': spec}

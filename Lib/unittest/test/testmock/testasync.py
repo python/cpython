@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import unittest
 
 from unittest.mock import call, CoroutineMock, patch, MagicMock
@@ -115,9 +116,15 @@ class CoroutinePatchCMTest(unittest.TestCase):
 
 
 class CoroutineMockTest(unittest.TestCase):
-    def test_iscoroutinefunction(self):
+    def test_iscoroutinefunction_default(self):
         mock = CoroutineMock()
         self.assertTrue(asyncio.iscoroutinefunction(mock))
+
+    def test_iscoroutinefunction_function(self):
+        async def foo(): pass
+        mock = CoroutineMock(foo)
+        self.assertTrue(asyncio.iscoroutinefunction(mock))
+        self.assertTrue(inspect.iscoroutinefunction(mock))
 
     def test_iscoroutine(self):
         mock = CoroutineMock()
@@ -178,6 +185,7 @@ class CoroutineSpecTest(unittest.TestCase):
         @patch.object(AsyncFoo, 'coroutine_method', spec=NormalFoo.a)
         def test_async_attribute(mock_method):
             self.assertTrue(isinstance(mock_method, MagicMock))
+            self.assertFalse(inspect.iscoroutinefunction(mock_method))
 
         test_async_attribute()
 
