@@ -1,0 +1,2 @@
+Fix un/pickling compatbility of uuid.UUID objects with older versions of
+Python (<3.7).
