@@ -1697,6 +1697,16 @@ class TestEnum(unittest.TestCase):
             third = auto()
         self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
 
+    def test_missing(self):
+        class Color(Enum):
+            red = 1
+            green = 2
+            blue = 3
+            @classmethod
+            def _missing_(cls, item):
+                return 5
+        self.assertRaises(ValueError, Color, 7)
+
 
 class TestOrder(unittest.TestCase):
 

@@ -585,7 +585,11 @@ class Enum(metaclass=EnumMeta):
                 if member._value_ == value:
                     return member
         # still not found -- try _missing_ hook
-        return cls._missing_(value)
+        result = cls._missing_(value)
+        if isinstance(result, cls):
+            return result
+        else:
+            raise ValueError("%r is not a valid %s" % (value, cls.__name__))
 
     def _generate_next_value_(name, start, count, last_values):
         for last_value in reversed(last_values):
