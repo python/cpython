@@ -4267,21 +4267,16 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    value)`` pairs. Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.
 
-   Dict preserves insertion order and are reversible.  Note that updating key
-   doesn't affects the order.  On the other hand, keys added after deletion are
-   inserted to the last. ::
+   Dictionaries preserve insertion order.  Note that updating a key does not
+   affect the order.  Keys added after deletion are inserted at the end. ::
 
       >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
       >>> d
       {'one': 1, 'two': 2, 'three': 3, 'four': 4}
       >>> list(d)
       ['one', 'two', 'three', 'four']
-      >>> list(reversed(d))
-      ['four', 'three', 'two', 'one']
       >>> list(d.values())
       [1, 2, 3, 4]
-      >>> list(reversed(d.values()))
-      [4, 3, 2, 1]
       >>> d["one"] = 42
       >>> d
       {'one': 42, 'two': 2, 'three': 3, 'four': 4}
@@ -4289,17 +4284,31 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       >>> d["two"] = None
       >>> d
       {'one': 42, 'three': 3, 'four': 4, 'two': None}
-      >>> list(reversed(d.keys()))
-      ['two', 'four', 'three', 'one']
-      >>> list(reversed(d.items()))
-      [('two', None), ('four', 4), ('three', 3), ('one', 42)]
 
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
       implementation detail of CPython from 3.6.
 
+   Dictionaries and dictionary views are reversible. ::
+
+      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
+      >>> d
+      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
+      >>> list(reversed(d))
+      ['four', 'three', 'two', 'one']
+      >>> list(reversed(d.values()))
+      [4, 3, 2, 1]
+      >>> d["one"] = 42
+      >>> d
+      {'one': 42, 'two': 2, 'three': 3, 'four': 4}
+      >>> list(reversed(d.values()))
+      [4, 3, 2, 42]
+      >>> list(reversed(d.items()))
+      [('four', 4), ('three', 3), ('two', 2), ('one', 42)]
+
    .. versionchanged:: 3.8
-      Dict are now reversible.
+      Dictionaries and dictionary views are now reversible.
+
 
 .. seealso::
    :class:`types.MappingProxyType` can be used to create a read-only view
@@ -4346,8 +4355,11 @@ support membership tests:
 
 .. describe:: reversed(dictview)
 
-   Return an iterator over the keys, values or items (represented as tuples of
-   ``(key, value)``) in the dictionnary.
+   Return an reversed iterator over the keys, values or items of the dictionnary.
+   The view will be iterated in reverse order of the insertion.
+
+   .. versionchanged:: 3.8
+      Dictionary views are now reversible.
 
 
 Keys views are set-like since their entries are unique and hashable.  If all
@@ -4387,6 +4399,10 @@ An example of dictionary view usage::
    {'bacon'}
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
+   >>> list(reversed(keys))
+   ['spam', 'bacon']
+   >>> list(reversed(values))
+   [500, 1]
 
 
 .. _typecontextmanager:
