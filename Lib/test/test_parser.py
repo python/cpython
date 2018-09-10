@@ -453,12 +453,45 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         )
 
 #
-#  Second, we take *invalid* trees and make sure we get ParserError
+#  Second, we take *invalid* syntax and make sure we get SyntaxError
+#  rejections for them.
+#  TODO move to a more appropriate file
+#
+
+class RoundtripIllegalSyntaxTestCase(unittest.TestCase):
+    def syntax_check(self, s):
+        """
+        1. Generate a syntax tree from the source code
+        2. Store the tuple representation of the syntax tree
+        3. Round trip the syntax tree from the tuple representation
+        """
+        try:
+            compile(s, filename="<string>", mode="exec")
+        except SyntaxError as e:
+            pass
+        else:
+            self.fail("invalid syntax - syntax_check should have failed")
+
+    def test_invalid_named_expressions(self):
+        self.syntax_check("x := 0")
+        self.syntax_check("x = y := 0")
+        self.syntax_check("foo(cat=category := 'vector')")
+        self.syntax_check("y := f(x)")
+        self.syntax_check("y0 = y1 := f(x)")
+        self.syntax_check("foo(x = y := f(x))")
+        self.syntax_check("def foo(answer = p := 42): pass")
+        self.syntax_check("def foo(answer: p := 42 = 5): pass")
+        self.syntax_check("(lambda: x := 1)")
+        self.syntax_check("z := y := x := 0")  # not in PEP
+        self.syntax_check("loc:=(x,y))")
+        self.syntax_check("info := (name, phone, *rest)")
+
+#
+#  Third, we take *invalid* trees and make sure we get ParserError
 #  rejections for them.
 #
 
 class IllegalSyntaxTestCase(unittest.TestCase):
-
     def check_bad_tree(self, tree, label):
         try:
             parser.sequence2st(tree)
