@@ -134,28 +134,12 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
+    memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
-    interp->id_mutex = NULL;
-    interp->modules = NULL;
-    interp->modules_by_index = NULL;
-    interp->sysdict = NULL;
-    interp->builtins = NULL;
-    interp->builtins_copy = NULL;
-    interp->tstate_head = NULL;
     interp->check_interval = 100;
-    interp->num_threads = 0;
-    interp->pythread_stacksize = 0;
-    interp->codec_search_path = NULL;
-    interp->codec_search_cache = NULL;
-    interp->codec_error_registry = NULL;
-    interp->codecs_initialized = 0;
-    interp->fscodec_initialized = 0;
     interp->core_config = _PyCoreConfig_INIT;
     interp->config = _PyMainInterpreterConfig_INIT;
-    interp->importlib = NULL;
-    interp->import_func = NULL;
     interp->eval_frame = _PyEval_EvalFrameDefault;
-    interp->co_extra_user_count = 0;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
     interp->dlopenflags = RTLD_NOW;
@@ -163,13 +147,6 @@ PyInterpreterState_New(void)
     interp->dlopenflags = RTLD_LAZY;
 #endif
 #endif
-#ifdef HAVE_FORK
-    interp->before_forkers = NULL;
-    interp->after_forkers_parent = NULL;
-    interp->after_forkers_child = NULL;
-#endif
-    interp->pyexitfunc = NULL;
-    interp->pyexitmodule = NULL;
 
     HEAD_LOCK();
     if (_PyRuntime.interpreters.next_id < 0) {
