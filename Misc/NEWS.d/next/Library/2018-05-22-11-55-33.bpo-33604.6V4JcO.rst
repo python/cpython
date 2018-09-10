@@ -1,0 +1,2 @@
+Remove HMAC default to md5 marked for removal in 3.8 (removal originally
+planned in 3.6, bump to 3.8 in gh-7062).
