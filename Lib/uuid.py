@@ -204,6 +204,23 @@ class UUID:
         self.__dict__['int'] = int
         self.__dict__['is_safe'] = is_safe
 
+    def __getstate__(self):
+        state = self.__dict__
+        if self.is_safe != SafeUUID.unknown:
+            # is_safe is a SafeUUID instance.  Return just its value, so that
+            # it can be un-pickled in older Python versions without SafeUUID.
+            state = state.copy()
+            state['is_safe'] = self.is_safe.value
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        # is_safe was added in 3.7; it is also omitted when it is "unknown"
+        self.__dict__['is_safe'] = (
+            SafeUUID(state['is_safe'])
+            if 'is_safe' in state else SafeUUID.unknown
+        )
+
     def __eq__(self, other):
         if isinstance(other, UUID):
             return self.int == other.int
