@@ -980,7 +980,7 @@ To map anonymous memory, pass -1 as the fileno (both versions).");
 static PyTypeObject mmap_object_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "mmap.mmap",                                /* tp_name */
-    sizeof(mmap_object),                        /* tp_size */
+    sizeof(mmap_object),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor) mmap_object_dealloc,           /* tp_dealloc */
