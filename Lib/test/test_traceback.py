@@ -868,6 +868,7 @@ class MiscTracebackCases(unittest.TestCase):
             (__file__, lineno+2, 'test_extract_stack', 'result = extract()'),
             (__file__, lineno+1, 'extract', 'return traceback.extract_stack()'),
             ])
+        self.assertEqual(len(result[0]), 4)
 
 
 class TestFrame(unittest.TestCase):
@@ -899,6 +900,10 @@ class TestFrame(unittest.TestCase):
     def test_explicit_line(self):
         f = traceback.FrameSummary("f", 1, "dummy", line="line")
         self.assertEqual("line", f.line)
+
+    def test_len(self):
+        f = traceback.FrameSummary("f", 1, "dummy", line="line")
+        self.assertEqual(len(f), 4)
 
 
 class TestStack(unittest.TestCase):
