@@ -1,0 +1,1 @@
+lib2to3 now uses pickle protocol 4 for pre-computed grammars.

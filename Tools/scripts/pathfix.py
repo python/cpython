@@ -7,8 +7,9 @@
 # Directories are searched recursively for files whose name looks
 # like a python module.
 # Symbolic links are always ignored (except as explicit directory
-# arguments).  Of course, the original file is kept as a back-up
-# (with a "~" attached to its name).
+# arguments).
+# The original file is kept as a back-up (with a "~" attached to its name),
+# -n flag can be used to disable this.
 #
 # Undoubtedly you can do this using find and sed or perl, but this is
 # a nice example of Python code that recurses down a directory tree
@@ -31,14 +32,17 @@ rep = sys.stdout.write
 
 new_interpreter = None
 preserve_timestamps = False
+create_backup = True
+
 
 def main():
     global new_interpreter
     global preserve_timestamps
-    usage = ('usage: %s -i /interpreter -p file-or-directory ...\n' %
+    global create_backup
+    usage = ('usage: %s -i /interpreter -p -n file-or-directory ...\n' %
              sys.argv[0])
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i:p')
+        opts, args = getopt.getopt(sys.argv[1:], 'i:pn')
     except getopt.error as msg:
         err(str(msg) + '\n')
         err(usage)
@@ -48,6 +52,8 @@ def main():
             new_interpreter = a.encode()
         if o == '-p':
             preserve_timestamps = True
+        if o == '-n':
+            create_backup = False
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
            not args:
         err('-i option or file-or-directory missing\n')
@@ -134,10 +140,16 @@ def fix(filename):
     except OSError as msg:
         err('%s: warning: chmod failed (%r)\n' % (tempname, msg))
     # Then make a backup of the original file as filename~
-    try:
-        os.rename(filename, filename + '~')
-    except OSError as msg:
-        err('%s: warning: backup failed (%r)\n' % (filename, msg))
+    if create_backup:
+        try:
+            os.rename(filename, filename + '~')
+        except OSError as msg:
+            err('%s: warning: backup failed (%r)\n' % (filename, msg))
+    else:
+        try:
+            os.remove(filename)
+        except OSError as msg:
+            err('%s: warning: removing failed (%r)\n' % (filename, msg))
     # Now move the temp file to the original file
     try:
         os.rename(tempname, filename)

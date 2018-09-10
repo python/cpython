@@ -2149,6 +2149,14 @@ class MiscTest(unittest.TestCase):
         self.assertEqual(tarfile.itn(-0x100000000000000),
                          b"\xff\x00\x00\x00\x00\x00\x00\x00")
 
+        # Issue 32713: Test if itn() supports float values outside the
+        # non-GNU format range
+        self.assertEqual(tarfile.itn(-100.0, format=tarfile.GNU_FORMAT),
+                         b"\xff\xff\xff\xff\xff\xff\xff\x9c")
+        self.assertEqual(tarfile.itn(8 ** 12 + 0.0, format=tarfile.GNU_FORMAT),
+                         b"\x80\x00\x00\x10\x00\x00\x00\x00")
+        self.assertEqual(tarfile.nti(tarfile.itn(-0.1, format=tarfile.GNU_FORMAT)), 0)
+
     def test_number_field_limits(self):
         with self.assertRaises(ValueError):
             tarfile.itn(-1, 8, tarfile.USTAR_FORMAT)

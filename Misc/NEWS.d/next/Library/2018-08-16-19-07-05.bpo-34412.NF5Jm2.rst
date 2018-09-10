@@ -1,0 +1,1 @@
+Make :func:`signal.strsignal` work on HP-UX. Patch by Michael Osipov.

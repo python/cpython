@@ -347,6 +347,15 @@ class TestParser(TestParserMixin, TestEmailBase):
              errors.InvalidBase64PaddingDefect],
             '')
 
+    def test_get_unstructured_invalid_base64_length(self):
+        # bpo-27397: Return the encoded string since there's no way to decode.
+        self._test_get_x(self._get_unst,
+            '=?utf-8?b?abcde?=',
+            'abcde',
+            'abcde',
+            [errors.InvalidBase64LengthDefect],
+            '')
+
     def test_get_unstructured_no_whitespace_between_ews(self):
         self._test_get_x(self._get_unst,
             '=?utf-8?q?foo?==?utf-8?q?bar?=',
@@ -2143,6 +2152,31 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(group.mailboxes[1].local_part, 'x')
         self.assertIsNone(group.all_mailboxes[1].display_name)
 
+    def test_get_group_missing_final_semicol(self):
+        group = self._test_get_x(parser.get_group,
+            ('Monty Python:"Fred A. Bear" <dinsdale@example.com>,'
+             'eric@where.test,John <jdoe@test>'),
+            ('Monty Python:"Fred A. Bear" <dinsdale@example.com>,'
+             'eric@where.test,John <jdoe@test>;'),
+            ('Monty Python:"Fred A. Bear" <dinsdale@example.com>,'
+             'eric@where.test,John <jdoe@test>;'),
+            [errors.InvalidHeaderDefect],
+            '')
+        self.assertEqual(group.token_type, 'group')
+        self.assertEqual(group.display_name, 'Monty Python')
+        self.assertEqual(len(group.mailboxes), 3)
+        self.assertEqual(group.mailboxes,
+                         group.all_mailboxes)
+        self.assertEqual(group.mailboxes[0].addr_spec,
+                         'dinsdale@example.com')
+        self.assertEqual(group.mailboxes[0].display_name,
+                         'Fred A. Bear')
+        self.assertEqual(group.mailboxes[1].addr_spec,
+                         'eric@where.test')
+        self.assertEqual(group.mailboxes[2].display_name,
+                         'John')
+        self.assertEqual(group.mailboxes[2].addr_spec,
+                         'jdoe@test')
     # get_address
 
     def test_get_address_simple(self):

@@ -135,6 +135,19 @@ if _mswindows:
             self.hStdError = hStdError
             self.wShowWindow = wShowWindow
             self.lpAttributeList = lpAttributeList or {"handle_list": []}
+
+        def copy(self):
+            attr_list = self.lpAttributeList.copy()
+            if 'handle_list' in attr_list:
+                attr_list['handle_list'] = list(attr_list['handle_list'])
+
+            return STARTUPINFO(dwFlags=self.dwFlags,
+                               hStdInput=self.hStdInput,
+                               hStdOutput=self.hStdOutput,
+                               hStdError=self.hStdError,
+                               wShowWindow=self.wShowWindow,
+                               lpAttributeList=attr_list)
+
 else:
     import _posixsubprocess
     import select
@@ -1097,16 +1110,15 @@ class Popen(object):
             assert not pass_fds, "pass_fds not supported on Windows."
 
             if not isinstance(args, str):
-                try:
-                    args = os.fsdecode(args)  # os.PathLike -> str
-                except TypeError:  # not an os.PathLike, must be a sequence.
-                    args = list(args)
-                    args[0] = os.fsdecode(args[0])  # os.PathLike -> str
-                    args = list2cmdline(args)
+                args = list2cmdline(args)
 
             # Process startup details
             if startupinfo is None:
                 startupinfo = STARTUPINFO()
+            else:
+                # bpo-34044: Copy STARTUPINFO since it is modified above,
+                # so the caller can reuse it multiple times.
+                startupinfo = startupinfo.copy()
 
             use_std_handles = -1 not in (p2cread, c2pwrite, errwrite)
             if use_std_handles:
@@ -1374,10 +1386,7 @@ class Popen(object):
             if isinstance(args, (str, bytes)):
                 args = [args]
             else:
-                try:
-                    args = list(args)
-                except TypeError:  # os.PathLike instead of a sequence?
-                    args = [os.fsencode(args)]  # os.PathLike -> [str]
+                args = list(args)
 
             if shell:
                 # On Android the default shell is at '/system/bin/sh'.

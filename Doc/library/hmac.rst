@@ -19,15 +19,14 @@ This module implements the HMAC algorithm as described by :rfc:`2104`.
    Return a new hmac object.  *key* is a bytes or bytearray object giving the
    secret key.  If *msg* is present, the method call ``update(msg)`` is made.
    *digestmod* is the digest name, digest constructor or module for the HMAC
-   object to use. It supports any name suitable to :func:`hashlib.new` and
-   defaults to the :data:`hashlib.md5` constructor.
+   object to use. It supports any name suitable to :func:`hashlib.new`.
 
    .. versionchanged:: 3.4
       Parameter *key* can be a bytes or bytearray object.
       Parameter *msg* can be of any type supported by :mod:`hashlib`.
       Parameter *digestmod* can be the name of a hash algorithm.
 
-   .. deprecated:: 3.4
+   .. deprecated-removed:: 3.4 3.8
       MD5 as implicit default digest for *digestmod* is deprecated.
 
 

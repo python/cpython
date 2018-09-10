@@ -86,10 +86,14 @@ should not be used in programs.
    specified exit code.
 
 .. data:: copyright
-          license
           credits
 
-   Objects that when printed, print a message like "Type license() to see the
-   full license text", and when called, display the corresponding text in a
+   Objects that when printed or called, print the text of copyright or
+   credits, respectively.
+
+.. data:: license
+
+   Object that when printed, prints the message "Type license() to see the
+   full license text", and when called, displays the full license text in a
    pager-like fashion (one screen at a time).
 

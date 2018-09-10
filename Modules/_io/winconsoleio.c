@@ -556,12 +556,16 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
     Py_BEGIN_ALLOW_THREADS
     DWORD off = 0;
     while (off < maxlen) {
-        DWORD n, len = min(maxlen - off, BUFSIZ);
+        DWORD n = (DWORD)-1; 
+        DWORD len = min(maxlen - off, BUFSIZ);
         SetLastError(0);
         BOOL res = ReadConsoleW(handle, &buf[off], len, &n, NULL);
 
         if (!res) {
             err = GetLastError();
+            break;
+        }
+        if (n == (DWORD)-1 && (err = GetLastError()) == ERROR_OPERATION_ABORTED) {
             break;
         }
         if (n == 0) {
@@ -964,6 +968,9 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     if (!self->writable)
         return err_mode("writing");
 
+    if (!b->len) {
+        return PyLong_FromLong(0);
+    }
     if (b->len > BUFMAX)
         len = BUFMAX;
     else
@@ -1054,7 +1061,7 @@ _io__WindowsConsoleIO_isatty_impl(winconsoleio *self)
 }
 
 static PyObject *
-winconsoleio_getstate(winconsoleio *self)
+winconsoleio_getstate(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 {
     PyErr_Format(PyExc_TypeError,
                  "cannot serialize '%s' object", Py_TYPE(self)->tp_name);

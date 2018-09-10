@@ -7,6 +7,17 @@
    by Raymond D. Hettinger <python@rcn.com>
 */
 
+/*[clinic input]
+module itertools
+class itertools.groupby "groupbyobject *" "&groupby_type"
+class itertools._grouper "_grouperobject *" "&_grouper_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9d506f5bb9177570]*/
+
+static PyTypeObject groupby_type;
+static PyTypeObject _grouper_type;
+#include "clinic/itertoolsmodule.c.h"
+
 
 /* groupby object ************************************************************/
 
@@ -20,19 +31,27 @@ typedef struct {
     const void *currgrouper;  /* borrowed reference */
 } groupbyobject;
 
-static PyTypeObject groupby_type;
 static PyObject *_grouper_create(groupbyobject *, PyObject *);
 
-static PyObject *
-groupby_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    static char *kwargs[] = {"iterable", "key", NULL};
-    groupbyobject *gbo;
-    PyObject *it, *keyfunc = Py_None;
+/*[clinic input]
+@classmethod
+itertools.groupby.__new__
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:groupby", kwargs,
-                                     &it, &keyfunc))
-        return NULL;
+    iterable as it: object
+        Elements to divide into groups according to the key function.
+    key as keyfunc: object = None
+        A function for computing the group category for each element.
+        If the key function is not specified or is None, the element itself
+        is used for grouping.
+
+make an iterator that returns consecutive keys and groups from the iterable
+[clinic start generated code]*/
+
+static PyObject *
+itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc)
+/*[clinic end generated code: output=cbb1ae3a90fd4141 input=6b3d123e87ff65a1]*/
+{
+    groupbyobject *gbo;
 
     gbo = (groupbyobject *)type->tp_alloc(type, 0);
     if (gbo == NULL)
@@ -138,7 +157,7 @@ groupby_next(groupbyobject *gbo)
 }
 
 static PyObject *
-groupby_reduce(groupbyobject *lz)
+groupby_reduce(groupbyobject *lz, PyObject *Py_UNUSED(ignored))
 {
     /* reduce as a 'new' call with an optional 'setstate' if groupby
      * has started
@@ -186,11 +205,6 @@ static PyMethodDef groupby_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-PyDoc_STRVAR(groupby_doc,
-"groupby(iterable, key=None) -> make an iterator that returns consecutive\n\
-keys and groups from the iterable.  If the key function is not specified or\n\
-is None, the element itself is used for grouping.\n");
-
 static PyTypeObject groupby_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.groupby",                /* tp_name */
@@ -214,7 +228,7 @@ static PyTypeObject groupby_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    groupby_doc,                        /* tp_doc */
+    itertools_groupby__doc__,           /* tp_doc */
     (traverseproc)groupby_traverse,     /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -231,7 +245,7 @@ static PyTypeObject groupby_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    groupby_new,                        /* tp_new */
+    itertools_groupby,                  /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
@@ -244,16 +258,20 @@ typedef struct {
     PyObject *tgtkey;
 } _grouperobject;
 
-static PyTypeObject _grouper_type;
+/*[clinic input]
+@classmethod
+itertools._grouper.__new__
+
+    parent: object(subclass_of='&groupby_type')
+    tgtkey: object
+    /
+[clinic start generated code]*/
 
 static PyObject *
-_grouper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools__grouper_impl(PyTypeObject *type, PyObject *parent,
+                        PyObject *tgtkey)
+/*[clinic end generated code: output=462efb1cdebb5914 input=dc180d7771fc8c59]*/
 {
-    PyObject *parent, *tgtkey;
-
-    if (!PyArg_ParseTuple(args, "O!O", &groupby_type, &parent, &tgtkey))
-        return NULL;
-
     return _grouper_create((groupbyobject*) parent, tgtkey);
 }
 
@@ -320,7 +338,7 @@ _grouper_next(_grouperobject *igo)
 }
 
 static PyObject *
-_grouper_reduce(_grouperobject *lz)
+_grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
 {
     if (((groupbyobject *)lz->parent)->currgrouper != lz) {
         return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
@@ -374,7 +392,7 @@ static PyTypeObject _grouper_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    _grouper_new,                       /* tp_new */
+    itertools__grouper,                 /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
@@ -504,7 +522,7 @@ teedataobject_dealloc(teedataobject *tdo)
 }
 
 static PyObject *
-teedataobject_reduce(teedataobject *tdo)
+teedataobject_reduce(teedataobject *tdo, PyObject *Py_UNUSED(ignored))
 {
     int i;
     /* create a temporary list of already iterated values */
@@ -649,7 +667,7 @@ tee_traverse(teeobject *to, visitproc visit, void *arg)
 }
 
 static PyObject *
-tee_copy(teeobject *to)
+tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
 {
     teeobject *newto;
 
@@ -676,7 +694,7 @@ tee_fromiterable(PyObject *iterable)
     if (it == NULL)
         return NULL;
     if (PyObject_TypeCheck(it, &tee_type)) {
-        to = (teeobject *)tee_copy((teeobject *)it);
+        to = (teeobject *)tee_copy((teeobject *)it, NULL);
         goto done;
     }
 
@@ -726,7 +744,7 @@ tee_dealloc(teeobject *to)
 }
 
 static PyObject *
-tee_reduce(teeobject *to)
+tee_reduce(teeobject *to, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("O(())(Oi)", Py_TYPE(to), to->dataobj, to->index);
 }
@@ -973,7 +991,7 @@ cycle_next(cycleobject *lz)
 }
 
 static PyObject *
-cycle_reduce(cycleobject *lz)
+cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
 {
     /* Create a new cycle with the iterator tuple, then set the saved state */
     if (lz->it == NULL) {
@@ -1168,7 +1186,7 @@ dropwhile_next(dropwhileobject *lz)
 }
 
 static PyObject *
-dropwhile_reduce(dropwhileobject *lz)
+dropwhile_reduce(dropwhileobject *lz, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("O(OO)l", Py_TYPE(lz), lz->func, lz->it, lz->start);
 }
@@ -1332,7 +1350,7 @@ takewhile_next(takewhileobject *lz)
 }
 
 static PyObject *
-takewhile_reduce(takewhileobject *lz)
+takewhile_reduce(takewhileobject *lz, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("O(OO)l", Py_TYPE(lz), lz->func, lz->it, lz->stop);
 }
@@ -1558,7 +1576,7 @@ empty:
 }
 
 static PyObject *
-islice_reduce(isliceobject *lz)
+islice_reduce(isliceobject *lz, PyObject *Py_UNUSED(ignored))
 {
     /* When unpickled, generate a new object with the same bounds,
      * then 'setstate' with the next and count
@@ -1746,7 +1764,7 @@ starmap_next(starmapobject *lz)
 }
 
 static PyObject *
-starmap_reduce(starmapobject *lz)
+starmap_reduce(starmapobject *lz, PyObject *Py_UNUSED(ignored))
 {
     /* Just pickle the iterator */
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
@@ -1918,7 +1936,7 @@ chain_next(chainobject *lz)
 }
 
 static PyObject *
-chain_reduce(chainobject *lz)
+chain_reduce(chainobject *lz, PyObject *Py_UNUSED(ignored))
 {
     if (lz->source) {
         /* we can't pickle function objects (itertools.from_iterable) so
@@ -2242,7 +2260,7 @@ empty:
 }
 
 static PyObject *
-product_reduce(productobject *lz)
+product_reduce(productobject *lz, PyObject *Py_UNUSED(ignored))
 {
     if (lz->stopped) {
         return Py_BuildValue("O(())", Py_TYPE(lz));
@@ -2569,7 +2587,7 @@ empty:
 }
 
 static PyObject *
-combinations_reduce(combinationsobject *lz)
+combinations_reduce(combinationsobject *lz, PyObject *Py_UNUSED(ignored))
 {
     if (lz->result == NULL) {
         return Py_BuildValue("O(On)", Py_TYPE(lz), lz->pool, lz->r);
@@ -2903,7 +2921,7 @@ empty:
 }
 
 static PyObject *
-cwr_reduce(cwrobject *lz)
+cwr_reduce(cwrobject *lz, PyObject *Py_UNUSED(ignored))
 {
     if (lz->result == NULL) {
         return Py_BuildValue("O(On)", Py_TYPE(lz), lz->pool, lz->r);
@@ -3262,7 +3280,7 @@ empty:
 }
 
 static PyObject *
-permutations_reduce(permutationsobject *po)
+permutations_reduce(permutationsobject *po, PyObject *Py_UNUSED(ignored))
 {
     if (po->result == NULL) {
         return Py_BuildValue("O(On)", Py_TYPE(po), po->pool, po->r);
@@ -3514,7 +3532,7 @@ accumulate_next(accumulateobject *lz)
 }
 
 static PyObject *
-accumulate_reduce(accumulateobject *lz)
+accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
 {
     if (lz->total == Py_None) {
         PyObject *it;
@@ -3707,7 +3725,7 @@ compress_next(compressobject *lz)
 }
 
 static PyObject *
-compress_reduce(compressobject *lz)
+compress_reduce(compressobject *lz, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("O(OO)", Py_TYPE(lz),
         lz->data, lz->selectors);
@@ -3865,7 +3883,7 @@ filterfalse_next(filterfalseobject *lz)
 }
 
 static PyObject *
-filterfalse_reduce(filterfalseobject *lz)
+filterfalse_reduce(filterfalseobject *lz, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
 }
@@ -4108,7 +4126,7 @@ count_repr(countobject *lz)
 }
 
 static PyObject *
-count_reduce(countobject *lz)
+count_reduce(countobject *lz, PyObject *Py_UNUSED(ignored))
 {
     if (lz->cnt == PY_SSIZE_T_MAX)
         return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->long_cnt, lz->long_step);
@@ -4253,7 +4271,7 @@ repeat_repr(repeatobject *ro)
 }
 
 static PyObject *
-repeat_len(repeatobject *ro)
+repeat_len(repeatobject *ro, PyObject *Py_UNUSED(ignored))
 {
     if (ro->cnt == -1) {
         PyErr_SetString(PyExc_TypeError, "len() of unsized object");
@@ -4265,7 +4283,7 @@ repeat_len(repeatobject *ro)
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-repeat_reduce(repeatobject *ro)
+repeat_reduce(repeatobject *ro, PyObject *Py_UNUSED(ignored))
 {
     /* unpickle this so that a new repeat iterator is constructed with an
      * object, then call __setstate__ on it to set cnt
@@ -4504,7 +4522,7 @@ zip_longest_next(ziplongestobject *lz)
 }
 
 static PyObject *
-zip_longest_reduce(ziplongestobject *lz)
+zip_longest_reduce(ziplongestobject *lz, PyObject *Py_UNUSED(ignored))
 {
 
     /* Create a new tuple with empty sequences where appropriate to pickle.

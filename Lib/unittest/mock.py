@@ -2,7 +2,7 @@
 # Test tools for mocking and patching.
 # Maintained by Michael Foord
 # Backport for other versions of Python available from
-# http://pypi.python.org/pypi/mock
+# https://pypi.org/project/mock
 
 __all__ = (
     'Mock',
@@ -862,7 +862,9 @@ class NonCallableMock(Base):
                 not_found.append(kall)
         if not_found:
             raise AssertionError(
-                '%r not all found in call list' % (tuple(not_found),)
+                '%r does not contain all of %r in its call list, '
+                'found %r instead' % (self._mock_name or 'mock',
+                                      tuple(not_found), all_calls)
             ) from cause
 
 
@@ -1709,7 +1711,7 @@ magic_methods = (
     # because there is no idivmod
     "divmod rdivmod neg pos abs invert "
     "complex int float index "
-    "trunc floor ceil "
+    "round trunc floor ceil "
     "bool next "
 )
 
