@@ -1333,7 +1333,6 @@ verify_identifier(struct tok_state *tok)
         }
         return 0;
     }
-    assert(PyUnicode_IS_READY(s));
     result = PyUnicode_IsIdentifier(s);
     Py_DECREF(s);
     if (result == 0)
