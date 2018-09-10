@@ -442,7 +442,7 @@ static PyGetSetDef SHA1_getseters[] = {
 static PyTypeObject SHA1type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_sha1.sha1",               /*tp_name*/
-    sizeof(SHA1object), /*tp_size*/
+    sizeof(SHA1object), /*tp_basicsize*/
     0,                  /*tp_itemsize*/
     /* methods */
     SHA1_dealloc,       /*tp_dealloc*/

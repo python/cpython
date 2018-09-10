@@ -201,7 +201,7 @@ SimpleNamespace(**kwargs)");
 PyTypeObject _PyNamespace_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "types.SimpleNamespace",                    /* tp_name */
-    sizeof(_PyNamespaceObject),                 /* tp_size */
+    sizeof(_PyNamespaceObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)namespace_dealloc,              /* tp_dealloc */
     0,                                          /* tp_print */
