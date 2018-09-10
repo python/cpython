@@ -4240,7 +4240,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    .. describe:: reversed(d)
 
       Return an reversed iterator over the keys of the dictionnary. This is a
-      shortcut for``iter(d.keys())``.
+      shortcut for ``reversed(d.keys())``.
 
    .. method:: setdefault(key[, default])
 
