@@ -556,11 +556,11 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         try:
             fileno = file.fileno()
         except (AttributeError, io.UnsupportedOperation) as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
         except OSError as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         blocksize = count if count else fsize
         if not blocksize:
             return 0  # empty file

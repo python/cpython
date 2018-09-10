@@ -2,13 +2,23 @@
 
 
 __all__ = ('CancelledError', 'InvalidStateError', 'TimeoutError',
-           'IncompleteReadError', 'LimitOverrunError')
+           'IncompleteReadError', 'LimitOverrunError',
+           'SendfileNotAvailableError')
 
 from . import base_futures
 
 CancelledError = base_futures.CancelledError
 InvalidStateError = base_futures.InvalidStateError
 TimeoutError = base_futures.TimeoutError
+
+
+class SendfileNotAvailableError(RuntimeError):
+    """Sendfile syscall is not available.
+
+    Raised if OS does not support sendfile syscall for given socket or
+    file type.
+    """
+
 
 
 
