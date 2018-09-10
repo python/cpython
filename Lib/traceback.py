@@ -279,6 +279,9 @@ class FrameSummary:
         return "<FrameSummary file {filename}, line {lineno} in {name}>".format(
             filename=self.filename, lineno=self.lineno, name=self.name)
 
+    def __len__(self):
+        return 4
+
     @property
     def line(self):
         if self._line is None:
