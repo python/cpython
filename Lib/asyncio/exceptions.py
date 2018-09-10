@@ -5,11 +5,20 @@ __all__ = ('CancelledError', 'InvalidStateError', 'TimeoutError',
            'IncompleteReadError', 'LimitOverrunError',
            'SendfileNotAvailableError')
 
+import concurrent.futures
 from . import base_futures
 
-CancelledError = base_futures.CancelledError
-InvalidStateError = base_futures.InvalidStateError
-TimeoutError = base_futures.TimeoutError
+
+class CancelledError(concurrent.futures.CancelledError):
+    """The Future or Task was cancelled."""
+
+
+class TimeoutError(concurrent.futures.TimeoutError):
+    """The operation exceeded the given deadline."""
+
+
+class InvalidStateError(concurrent.futures.InvalidStateError):
+    """The operation is not allowed in this state."""
 
 
 class SendfileNotAvailableError(RuntimeError):
@@ -18,8 +27,6 @@ class SendfileNotAvailableError(RuntimeError):
     Raised if OS does not support sendfile syscall for given socket or
     file type.
     """
-
-
 
 
 class IncompleteReadError(EOFError):
@@ -51,5 +58,3 @@ class LimitOverrunError(Exception):
 
     def __reduce__(self):
         return type(self), (self.args[0], self.consumed)
-
-

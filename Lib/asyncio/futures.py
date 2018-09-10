@@ -285,6 +285,17 @@ def _set_result_unless_cancelled(fut, result):
     fut.set_result(result)
 
 
+def _convert_future_exc(exc):
+    if type(exc) is concurrent.futures.CancelledError:
+        return exceptions.CancelledError(*exc.args)
+    elif type(exc) is concurrent.futures.TimeoutError:
+        return exceptions.TimeoutError(*exc.args)
+    elif type(exc) is concurrent.futures.InvalidStateError:
+        return exceptions.InvalidStateError(*exc.args)
+    else:
+        return exc
+
+
 def _set_concurrent_future_state(concurrent, source):
     """Copy state from a future to a concurrent.futures.Future."""
     assert source.done()
@@ -294,7 +305,7 @@ def _set_concurrent_future_state(concurrent, source):
         return
     exception = source.exception()
     if exception is not None:
-        concurrent.set_exception(exception)
+        concurrent.set_exception(_convert_future_exc(exception))
     else:
         result = source.result()
         concurrent.set_result(result)
@@ -314,7 +325,7 @@ def _copy_future_state(source, dest):
     else:
         exception = source.exception()
         if exception is not None:
-            dest.set_exception(exception)
+            dest.set_exception(_convert_future_exc(exception))
         else:
             result = source.result()
             dest.set_result(result)
