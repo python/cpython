@@ -11,8 +11,9 @@ PyDoc_STRVAR(itertools_groupby__doc__,
 "  iterable\n"
 "    Elements to divide into groups according to the key function.\n"
 "  key\n"
-"    A function computing a key value for each element.  If None, key\n"
-"    defaults to an identity function and returns the element unchanged.");
+"    A function for computing the group category for each element.\n"
+"    If the key function is not specified or is None, the element itself\n"
+"    is used for grouping.");
 
 static PyObject *
 itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc);
@@ -60,4 +61,4 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=82794a1bf512c104 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=82e10c91569d2b95 input=a9049054013a1b77]*/

@@ -40,15 +40,16 @@ itertools.groupby.__new__
     iterable as it: object
         Elements to divide into groups according to the key function.
     key as keyfunc: object = None
-        A function computing a key value for each element.  If None, key
-        defaults to an identity function and returns the element unchanged.
+        A function for computing the group category for each element.
+        If the key function is not specified or is None, the element itself
+        is used for grouping.
 
 make an iterator that returns consecutive keys and groups from the iterable
 [clinic start generated code]*/
 
 static PyObject *
 itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc)
-/*[clinic end generated code: output=cbb1ae3a90fd4141 input=25a2c2e644462895]*/
+/*[clinic end generated code: output=cbb1ae3a90fd4141 input=6b3d123e87ff65a1]*/
 {
     groupbyobject *gbo;
 
