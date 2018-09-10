@@ -171,17 +171,17 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         "stdout: {out_encoding}:ignore",
         "stderr: {out_encoding}:backslashreplace",
         "--- Set encoding only ---",
-        "Expected encoding: latin-1",
+        "Expected encoding: iso8859-1",
         "Expected errors: default",
-        "stdin: latin-1:{errors}",
-        "stdout: latin-1:{errors}",
-        "stderr: latin-1:backslashreplace",
+        "stdin: iso8859-1:{errors}",
+        "stdout: iso8859-1:{errors}",
+        "stderr: iso8859-1:backslashreplace",
         "--- Set encoding and errors ---",
-        "Expected encoding: latin-1",
+        "Expected encoding: iso8859-1",
         "Expected errors: replace",
-        "stdin: latin-1:replace",
-        "stdout: latin-1:replace",
-        "stderr: latin-1:backslashreplace"])
+        "stdin: iso8859-1:replace",
+        "stdout: iso8859-1:replace",
+        "stderr: iso8859-1:backslashreplace"])
         expected_output = expected_output.format(
                                 in_encoding=expected_stream_encoding,
                                 out_encoding=expected_stream_encoding,
@@ -251,6 +251,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
+    UTF8_MODE_ERRORS = ('surrogatepass' if sys.platform == 'win32'
+                        else 'surrogateescape')
     DEFAULT_CONFIG = {
         'install_signal_handlers': 1,
         'use_environment': 1,
@@ -265,8 +267,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'show_alloc_count': 0,
         'dump_refs': 0,
         'malloc_stats': 0,
-        'utf8_mode': 0,
 
+        # None means that the value is get by get_locale_encoding()
+        'filesystem_encoding': None,
+        'filesystem_errors': None,
+
+        'utf8_mode': 0,
         'coerce_c_locale': 0,
         'coerce_c_locale_warn': 0,
 
@@ -289,12 +295,47 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'user_site_directory': 1,
         'buffered_stdio': 1,
 
+        # None means that the value is get by get_stdio_encoding()
+        'stdio_encoding': None,
+        'stdio_errors': None,
+
         '_install_importlib': 1,
         '_check_hash_pycs_mode': 'default',
         '_frozen': 0,
     }
 
+    def get_stdio_encoding(self, env):
+        code = 'import sys; print(sys.stdout.encoding, sys.stdout.errors)'
+        args = (sys.executable, '-c', code)
+        proc = subprocess.run(args, env=env, text=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
+        if proc.returncode:
+            raise Exception(f"failed to get the stdio encoding: stdout={proc.stdout!r}")
+        out = proc.stdout.rstrip()
+        return out.split()
+
+    def get_filesystem_encoding(self, isolated, env):
+        code = ('import codecs, locale, sys; '
+                'print(sys.getfilesystemencoding(), '
+                'sys.getfilesystemencodeerrors())')
+        args = (sys.executable, '-c', code)
+        env = dict(env)
+        if not isolated:
+            env['PYTHONCOERCECLOCALE'] = '0'
+            env['PYTHONUTF8'] = '0'
+        proc = subprocess.run(args, text=True, env=env,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        if proc.returncode:
+            raise Exception(f"failed to get the locale encoding: "
+                            f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
+        out = proc.stdout.rstrip()
+        return out.split()
+
     def check_config(self, testname, expected):
+        expected = dict(self.DEFAULT_CONFIG, **expected)
+
         env = dict(os.environ)
         for key in list(env):
             if key.startswith('PYTHON'):
@@ -303,12 +344,24 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # on the current locale
         env['PYTHONCOERCECLOCALE'] = '0'
         env['PYTHONUTF8'] = '0'
-        out, err = self.run_embedded_interpreter(testname, env=env)
-        # Ignore err
 
-        expected = dict(self.DEFAULT_CONFIG, **expected)
+        if expected['stdio_encoding'] is None or expected['stdio_errors'] is None:
+            res = self.get_stdio_encoding(env)
+            if expected['stdio_encoding'] is None:
+                expected['stdio_encoding'] = res[0]
+            if expected['stdio_errors'] is None:
+                expected['stdio_errors'] = res[1]
+        if expected['filesystem_encoding'] is None or expected['filesystem_errors'] is None:
+            res = self.get_filesystem_encoding(expected['isolated'], env)
+            if expected['filesystem_encoding'] is None:
+                expected['filesystem_encoding'] = res[0]
+            if expected['filesystem_errors'] is None:
+                expected['filesystem_errors'] = res[1]
         for key, value in expected.items():
             expected[key] = str(value)
+
+        out, err = self.run_embedded_interpreter(testname, env=env)
+        # Ignore err
 
         config = {}
         for line in out.splitlines():
@@ -331,7 +384,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'verbose': 1,
             'quiet': 1,
             'buffered_stdio': 0,
+
             'utf8_mode': 1,
+            'stdio_encoding': 'utf-8',
+            'stdio_errors': 'surrogateescape',
+            'filesystem_encoding': 'utf-8',
+            'filesystem_errors': self.UTF8_MODE_ERRORS,
             'user_site_directory': 0,
             '_frozen': 1,
         }
@@ -350,6 +408,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'malloc_stats': 1,
 
             'utf8_mode': 1,
+            'stdio_encoding': 'iso8859-1',
+            'stdio_errors': 'replace',
+            'filesystem_encoding': 'utf-8',
+            'filesystem_errors': self.UTF8_MODE_ERRORS,
 
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
@@ -381,12 +443,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'import_time': 1,
             'malloc_stats': 1,
             'utf8_mode': 1,
+            'filesystem_encoding': 'utf-8',
+            'filesystem_errors': self.UTF8_MODE_ERRORS,
             'inspect': 1,
             'optimization_level': 2,
             'pycache_prefix': 'env_pycache_prefix',
             'write_bytecode': 0,
             'verbose': 1,
             'buffered_stdio': 0,
+            'stdio_encoding': 'iso8859-1',
+            'stdio_errors': 'replace',
             'user_site_directory': 0,
             'faulthandler': 1,
             'dev_mode': 1,
