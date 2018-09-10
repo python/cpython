@@ -1753,6 +1753,15 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PyDictItems_Type) < 0)
         Py_FatalError("Can't initialize dict items type");
 
+    if (PyType_Ready(&PyDictRevIterKey_Type) < 0)
+        Py_FatalError("Can't initialize reversed dict keys type");
+
+    if (PyType_Ready(&PyDictRevIterValue_Type) < 0)
+        Py_FatalError("Can't initialize reversed dict values type");
+
+    if (PyType_Ready(&PyDictRevIterItem_Type) < 0)
+        Py_FatalError("Can't initialize reversed dict items type");
+
     if (PyType_Ready(&PyODict_Type) < 0)
         Py_FatalError("Can't initialize OrderedDict type");
 
