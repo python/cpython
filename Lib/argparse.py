@@ -1194,10 +1194,11 @@ class FileType(object):
                 raise ValueError(msg)
             closefd = False
         else:
+            # all other arguments are used as file names
             file = string
             closefd = True
 
-        # all other arguments are used as file names
+
         try:
             return open(file, self._mode, self._bufsize, self._encoding,
                         self._errors, closefd=closefd)
