@@ -154,11 +154,8 @@ class NamedExpressionAssignmentTest(unittest.TestCase):
 
         self.assertEqual(a, 1)
 
-    @unittest.skip("Not implemented -- No keyword args")
     def test_named_expression_assignment_13(self):
-        # TODO fix import, this breaks depending on how you run it
-        with open("../../Lib/test/data/blake2b.txt", "r") as f:
-            self.assertEqual(len(lines := f.readlines()), 259)
+        self.assertEqual(len(lines := [1, 2]), 2)
 
 
 class NamedExpressionScopeTest(unittest.TestCase):
