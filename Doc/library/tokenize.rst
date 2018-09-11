@@ -57,6 +57,16 @@ The primary entry point is a :term:`generator`:
    :func:`.tokenize` determines the source encoding of the file by looking for a
    UTF-8 BOM or encoding cookie, according to :pep:`263`.
 
+.. function:: generate_tokens(readline)
+
+   Tokenize a source reading unicode strings instead of bytes.
+
+   Like :func:`.tokenize`, the *readline* argument is a callable returning
+   a single line of input. However, :func:`generate_tokens` expects *readline*
+   to return a str object rather than bytes.
+
+   The result is an iterator yielding named tuples, exactly like
+   :func:`.tokenize`. It does not yield an :data:`~token.ENCODING` token.
 
 All constants from the :mod:`token` module are also exported from
 :mod:`tokenize`.
@@ -79,7 +89,8 @@ write back the modified script.
     positions) may change.
 
     It returns bytes, encoded using the :data:`~token.ENCODING` token, which
-    is the first token sequence output by :func:`.tokenize`.
+    is the first token sequence output by :func:`.tokenize`. If there is no
+    encoding token in the input, it returns a str instead.
 
 
 :func:`.tokenize` needs to detect the encoding of source files it tokenizes. The
@@ -218,7 +229,7 @@ will be tokenized to the following output where the first column is the range
 of the line/column coordinates where the token is found, the second column is
 the name of the token, and the final column is the value of the token (if any)
 
-.. code-block:: sh
+.. code-block:: shell-session
 
     $ python -m tokenize hello.py
     0,0-0,0:            ENCODING       'utf-8'
@@ -244,7 +255,7 @@ the name of the token, and the final column is the value of the token (if any)
 
 The exact token type names can be displayed using the :option:`-e` option:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
     $ python -m tokenize -e hello.py
     0,0-0,0:            ENCODING       'utf-8'

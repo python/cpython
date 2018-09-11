@@ -115,6 +115,26 @@ server classes.
    :class:`ForkingMixIn` and the Forking classes mentioned below are
    only available on POSIX platforms that support :func:`~os.fork`.
 
+   :meth:`socketserver.ForkingMixIn.server_close` waits until all child
+   processes complete, except if
+   :attr:`socketserver.ForkingMixIn.block_on_close` attribute is false.
+
+   :meth:`socketserver.ThreadingMixIn.server_close` waits until all non-daemon
+   threads complete, except if
+   :attr:`socketserver.ThreadingMixIn.block_on_close` attribute is false. Use
+   daemonic threads by setting
+   :data:`ThreadingMixIn.daemon_threads` to ``True`` to not wait until threads
+   complete.
+
+   .. versionchanged:: 3.7
+
+      :meth:`socketserver.ForkingMixIn.server_close` and
+      :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
+      child processes and non-daemonic threads complete.
+      Add a new :attr:`socketserver.ForkingMixIn.block_on_close` class
+      attribute to opt-in for the pre-3.7 behaviour.
+
+
 .. class:: ForkingTCPServer
            ForkingUDPServer
            ThreadingTCPServer
@@ -289,7 +309,7 @@ Server Objects
    .. XXX should the default implementations of these be documented, or should
       it be assumed that the user will look at socketserver.py?
 
-   .. method:: finish_request()
+   .. method:: finish_request(request, client_address)
 
       Actually processes the request by instantiating :attr:`RequestHandlerClass` and
       calling its :meth:`~BaseRequestHandler.handle` method.

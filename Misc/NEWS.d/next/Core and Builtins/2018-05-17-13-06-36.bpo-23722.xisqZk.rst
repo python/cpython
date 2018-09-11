@@ -1,0 +1,4 @@
+A :exc:`RuntimeError` is now raised when the custom metaclass doesn't
+provide the ``__classcell__`` entry in the namespace passed to
+``type.__new__``.  A :exc:`DeprecationWarning` was emitted in Python
+3.6--3.7.

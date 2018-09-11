@@ -685,6 +685,12 @@ the following methods and attributes:
    character previously painter at that location.  By default, the character
    position and attributes are the current settings for the window object.
 
+   .. note::
+
+      Writing outside the window, subwindow, or pad raises a :exc:`curses.error`.
+      Attempting to write to the lower right corner of a window, subwindow,
+      or pad will cause an exception to be raised after the character is printed.
+
 
 .. method:: window.addnstr(str, n[, attr])
             window.addnstr(y, x, str, n[, attr])
@@ -699,6 +705,12 @@ the following methods and attributes:
 
    Paint the character string *str* at ``(y, x)`` with attributes
    *attr*, overwriting anything previously on the display.
+
+   .. note::
+
+      Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
+      Attempting to write to the lower right corner of a window, subwindow,
+      or pad will cause an exception to be raised after the string is printed.
 
 
 .. method:: window.attroff(attr)
@@ -788,10 +800,10 @@ the following methods and attributes:
 
    Set the attributes of *num* characters at the current cursor position, or at
    position ``(y, x)`` if supplied. If *num* is not given or is ``-1``,
-   the attribute will  be set on all the characters to the end of the line.  This
-   function does not move the cursor. The changed line will be touched using the
-   :meth:`touchline` method so that the contents will be redisplayed by the next
-   window refresh.
+   the attribute will be set on all the characters to the end of the line.  This
+   function moves cursor to position ``(y, x)`` if supplied. The changed line
+   will be touched using the :meth:`touchline` method so that the contents will
+   be redisplayed by the next window refresh.
 
 
 .. method:: window.clear()

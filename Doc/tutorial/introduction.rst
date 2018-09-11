@@ -143,12 +143,12 @@ to escape quotes::
    "doesn't"
    >>> "doesn't"  # ...or use double quotes instead
    "doesn't"
-   >>> '"Yes," he said.'
-   '"Yes," he said.'
-   >>> "\"Yes,\" he said."
-   '"Yes," he said.'
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
+   >>> '"Yes," they said.'
+   '"Yes," they said.'
+   >>> "\"Yes,\" they said."
+   '"Yes," they said.'
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
 
 In the interactive interpreter, the output string is enclosed in quotes and
 special characters are escaped with backslashes.  While this might sometimes
@@ -159,10 +159,10 @@ enclosed in single quotes.  The :func:`print` function produces a more
 readable output, by omitting the enclosing quotes and by printing escaped
 and special characters::
 
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
-   >>> print('"Isn\'t," she said.')
-   "Isn't," she said.
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
+   >>> print('"Isn\'t," they said.')
+   "Isn't," they said.
    >>> s = 'First line.\nSecond line.'  # \n means newline
    >>> s  # without print(), \n is included in the output
    'First line.\nSecond line.'
@@ -212,27 +212,31 @@ to each other are automatically concatenated. ::
    >>> 'Py' 'thon'
    'Python'
 
-This only works with two literals though, not with variables or expressions::
-
-   >>> prefix = 'Py'
-   >>> prefix 'thon'  # can't concatenate a variable and a string literal
-     ...
-   SyntaxError: invalid syntax
-   >>> ('un' * 3) 'ium'
-     ...
-   SyntaxError: invalid syntax
-
-If you want to concatenate variables or a variable and a literal, use ``+``::
-
-   >>> prefix + 'thon'
-   'Python'
-
 This feature is particularly useful when you want to break long strings::
 
    >>> text = ('Put several strings within parentheses '
    ...         'to have them joined together.')
    >>> text
    'Put several strings within parentheses to have them joined together.'
+
+This only works with two literals though, not with variables or expressions::
+
+   >>> prefix = 'Py'
+   >>> prefix 'thon'  # can't concatenate a variable and a string literal
+     File "<stdin>", line 1
+       prefix 'thon'
+                   ^
+   SyntaxError: invalid syntax
+   >>> ('un' * 3) 'ium'
+     File "<stdin>", line 1
+       ('un' * 3) 'ium'
+                      ^
+   SyntaxError: invalid syntax
+
+If you want to concatenate variables or a variable and a literal, use ``+``::
+
+   >>> prefix + 'thon'
+   'Python'
 
 Strings can be *indexed* (subscripted), with the first character having index 0.
 There is no separate character type; a character is simply a string of size
@@ -320,10 +324,12 @@ Python strings cannot be changed --- they are :term:`immutable`.
 Therefore, assigning to an indexed position in the string results in an error::
 
    >>> word[0] = 'J'
-     ...
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
    TypeError: 'str' object does not support item assignment
    >>> word[2:] = 'py'
-     ...
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
    TypeError: 'str' object does not support item assignment
 
 If you need a different string, you should create a new one::

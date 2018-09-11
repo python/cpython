@@ -1,0 +1,2 @@
+The file classes in *tempfile* now accept an *errors* parameter that
+complements the already existing *encoding*.  Patch by Stephan Hohe.

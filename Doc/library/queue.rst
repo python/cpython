@@ -23,8 +23,14 @@ the first retrieved (operating like a stack).  With a priority queue,
 the entries are kept sorted (using the :mod:`heapq` module) and the
 lowest valued entry is retrieved first.
 
-Internally, the module uses locks to temporarily block competing threads;
-however, it is not designed to handle reentrancy within a thread.
+Internally, those three types of queues use locks to temporarily block
+competing threads; however, they are not designed to handle reentrancy
+within a thread.
+
+In addition, the module implements a "simple"
+:abbr:`FIFO (first-in, first-out)` queue type where
+specific implementations can provide additional guarantees
+in exchange for the smaller functionality.
 
 The :mod:`queue` module defines the following classes and exceptions:
 
@@ -55,6 +61,24 @@ The :mod:`queue` module defines the following classes and exceptions:
    The lowest valued entries are retrieved first (the lowest valued entry is the
    one returned by ``sorted(list(entries))[0]``).  A typical pattern for entries
    is a tuple in the form: ``(priority_number, data)``.
+
+   If the *data* elements are not comparable, the data can be wrapped in a class
+   that ignores the data item and only compares the priority number::
+
+        from dataclasses import dataclass, field
+        from typing import Any
+
+        @dataclass(order=True)
+        class PrioritizedItem:
+            priority: int
+            item: Any=field(compare=False)
+
+.. class:: SimpleQueue()
+
+   Constructor for an unbounded :abbr:`FIFO (first-in, first-out)` queue.
+   Simple queues lack advanced functionality such as task tracking.
+
+   .. versionadded:: 3.7
 
 
 .. exception:: Empty
@@ -191,6 +215,60 @@ Example of how to wait for enqueued tasks to be completed::
         t.join()
 
 
+SimpleQueue Objects
+-------------------
+
+:class:`SimpleQueue` objects provide the public methods described below.
+
+.. method:: SimpleQueue.qsize()
+
+   Return the approximate size of the queue.  Note, qsize() > 0 doesn't
+   guarantee that a subsequent get() will not block.
+
+
+.. method:: SimpleQueue.empty()
+
+   Return ``True`` if the queue is empty, ``False`` otherwise. If empty()
+   returns ``False`` it doesn't guarantee that a subsequent call to get()
+   will not block.
+
+
+.. method:: SimpleQueue.put(item, block=True, timeout=None)
+
+   Put *item* into the queue.  The method never blocks and always succeeds
+   (except for potential low-level errors such as failure to allocate memory).
+   The optional args *block* and *timeout* are ignored and only provided
+   for compatibility with :meth:`Queue.put`.
+
+   .. impl-detail::
+      This method has a C implementation which is reentrant.  That is, a
+      ``put()`` or ``get()`` call can be interrupted by another ``put()``
+      call in the same thread without deadlocking or corrupting internal
+      state inside the queue.  This makes it appropriate for use in
+      destructors such as ``__del__`` methods or :mod:`weakref` callbacks.
+
+
+.. method:: SimpleQueue.put_nowait(item)
+
+   Equivalent to ``put(item)``, provided for compatibility with
+   :meth:`Queue.put_nowait`.
+
+
+.. method:: SimpleQueue.get(block=True, timeout=None)
+
+   Remove and return an item from the queue.  If optional args *block* is true and
+   *timeout* is ``None`` (the default), block if necessary until an item is available.
+   If *timeout* is a positive number, it blocks at most *timeout* seconds and
+   raises the :exc:`Empty` exception if no item was available within that time.
+   Otherwise (*block* is false), return an item if one is immediately available,
+   else raise the :exc:`Empty` exception (*timeout* is ignored in that case).
+
+
+.. method:: SimpleQueue.get_nowait()
+
+   Equivalent to ``get(False)``.
+
+
 .. seealso::
 
    Class :class:`multiprocessing.Queue`
@@ -200,4 +278,3 @@ Example of how to wait for enqueued tasks to be completed::
    :class:`collections.deque` is an alternative implementation of unbounded
    queues with fast atomic :meth:`~collections.deque.append` and
    :meth:`~collections.deque.popleft` operations that do not require locking.
-

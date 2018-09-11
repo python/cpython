@@ -1,0 +1,3 @@
+Change dict growth function from ``round_up_to_power_2(used*2+hashtable_size/2)`` to
+``round_up_to_power_2(used*3)``.  Previously, dict is shrinked only when ``used == 0``.
+Now dict has more chance to be shrinked.

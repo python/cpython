@@ -172,7 +172,7 @@ The :mod:`csv` module defines the following classes:
    A short usage example::
 
        >>> import csv
-       >>> with open('names.csv') as csvfile:
+       >>> with open('names.csv', newline='') as csvfile:
        ...     reader = csv.DictReader(csvfile)
        ...     for row in reader:
        ...         print(row['first_name'], row['last_name'])
@@ -203,15 +203,13 @@ The :mod:`csv` module defines the following classes:
    :class:`writer` instance.
 
    Note that unlike the :class:`DictReader` class, the *fieldnames* parameter
-   of the :class:`DictWriter` is not optional.  Since Python's :class:`dict`
-   objects are not ordered, there is not enough information available to deduce
-   the order in which the row should be written to file *f*.
+   of the :class:`DictWriter` class is not optional.
 
    A short usage example::
 
        import csv
 
-       with open('names.csv', 'w') as csvfile:
+       with open('names.csv', 'w', newline='') as csvfile:
            fieldnames = ['first_name', 'last_name']
            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -270,7 +268,7 @@ The :mod:`csv` module defines the following classes:
 
 An example for :class:`Sniffer` use::
 
-   with open('example.csv') as csvfile:
+   with open('example.csv', newline='') as csvfile:
        dialect = csv.Sniffer().sniff(csvfile.read(1024))
        csvfile.seek(0)
        reader = csv.reader(csvfile, dialect)
@@ -452,8 +450,9 @@ read CSV files (assuming they support complex numbers at all).
 
 .. method:: csvwriter.writerows(rows)
 
-   Write all the *rows* parameters (a list of *row* objects as described above) to
-   the writer's file object, formatted according to the current dialect.
+   Write all elements in *rows* (an iterable of *row* objects as described
+   above) to the writer's file object, formatted according to the current
+   dialect.
 
 Writer objects have the following public attribute:
 

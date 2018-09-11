@@ -11,7 +11,9 @@ from unittest import mock
 from distutils.dist import Distribution, fix_help_options, DistributionMetadata
 from distutils.cmd import Command
 
-from test.support import TESTFN, captured_stdout, run_unittest
+from test.support import (
+     TESTFN, captured_stdout, captured_stderr, run_unittest
+)
 from distutils.tests import support
 from distutils import log
 
@@ -195,6 +197,13 @@ class DistributionTestCase(support.LoggingSilencer,
         self.assertEqual(dist.metadata.platforms, ['one', 'two'])
         self.assertEqual(dist.metadata.keywords, ['one', 'two'])
 
+        attrs = {'keywords': 'foo bar',
+                 'platforms': 'foo bar'}
+        dist = Distribution(attrs=attrs)
+        dist.finalize_options()
+        self.assertEqual(dist.metadata.platforms, ['foo bar'])
+        self.assertEqual(dist.metadata.keywords, ['foo bar'])
+
     def test_get_command_packages(self):
         dist = Distribution()
         self.assertEqual(dist.command_packages, None)
@@ -312,6 +321,13 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
                            "version": "1.0",
                            "requires": ["my.pkg (splat)"]})
 
+    def test_requires_to_list(self):
+        attrs = {"name": "package",
+                 "requires": iter(["other"])}
+        dist = Distribution(attrs)
+        self.assertIsInstance(dist.metadata.requires, list)
+
+
     def test_obsoletes(self):
         attrs = {"name": "package",
                  "version": "1.0",
@@ -334,12 +350,68 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
                            "version": "1.0",
                            "obsoletes": ["my.pkg (splat)"]})
 
+    def test_obsoletes_to_list(self):
+        attrs = {"name": "package",
+                 "obsoletes": iter(["other"])}
+        dist = Distribution(attrs)
+        self.assertIsInstance(dist.metadata.obsoletes, list)
+
     def test_classifier(self):
         attrs = {'name': 'Boa', 'version': '3.0',
                  'classifiers': ['Programming Language :: Python :: 3']}
         dist = Distribution(attrs)
+        self.assertEqual(dist.get_classifiers(),
+                         ['Programming Language :: Python :: 3'])
         meta = self.format_metadata(dist)
         self.assertIn('Metadata-Version: 1.1', meta)
+
+    def test_classifier_invalid_type(self):
+        attrs = {'name': 'Boa', 'version': '3.0',
+                 'classifiers': ('Programming Language :: Python :: 3',)}
+        with captured_stderr() as error:
+            d = Distribution(attrs)
+        # should have warning about passing a non-list
+        self.assertIn('should be a list', error.getvalue())
+        # should be converted to a list
+        self.assertIsInstance(d.metadata.classifiers, list)
+        self.assertEqual(d.metadata.classifiers,
+                         list(attrs['classifiers']))
+
+    def test_keywords(self):
+        attrs = {'name': 'Monty', 'version': '1.0',
+                 'keywords': ['spam', 'eggs', 'life of brian']}
+        dist = Distribution(attrs)
+        self.assertEqual(dist.get_keywords(),
+                         ['spam', 'eggs', 'life of brian'])
+
+    def test_keywords_invalid_type(self):
+        attrs = {'name': 'Monty', 'version': '1.0',
+                 'keywords': ('spam', 'eggs', 'life of brian')}
+        with captured_stderr() as error:
+            d = Distribution(attrs)
+        # should have warning about passing a non-list
+        self.assertIn('should be a list', error.getvalue())
+        # should be converted to a list
+        self.assertIsInstance(d.metadata.keywords, list)
+        self.assertEqual(d.metadata.keywords, list(attrs['keywords']))
+
+    def test_platforms(self):
+        attrs = {'name': 'Monty', 'version': '1.0',
+                 'platforms': ['GNU/Linux', 'Some Evil Platform']}
+        dist = Distribution(attrs)
+        self.assertEqual(dist.get_platforms(),
+                         ['GNU/Linux', 'Some Evil Platform'])
+
+    def test_platforms_invalid_types(self):
+        attrs = {'name': 'Monty', 'version': '1.0',
+                 'platforms': ('GNU/Linux', 'Some Evil Platform')}
+        with captured_stderr() as error:
+            d = Distribution(attrs)
+        # should have warning about passing a non-list
+        self.assertIn('should be a list', error.getvalue())
+        # should be converted to a list
+        self.assertIsInstance(d.metadata.platforms, list)
+        self.assertEqual(d.metadata.platforms, list(attrs['platforms']))
 
     def test_download_url(self):
         attrs = {'name': 'Boa', 'version': '3.0',

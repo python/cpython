@@ -48,17 +48,17 @@ a flexible set of new tools for everyday Python programs.
 Descriptor Protocol
 -------------------
 
-``descr.__get__(self, obj, type=None) --> value``
+``descr.__get__(self, obj, type=None) -> value``
 
-``descr.__set__(self, obj, value) --> None``
+``descr.__set__(self, obj, value) -> None``
 
-``descr.__delete__(self, obj) --> None``
+``descr.__delete__(self, obj) -> None``
 
 That is all there is to it.  Define any of these methods and an object is
 considered a descriptor and can override default behavior upon being looked up
 as an attribute.
 
-If an object defines both :meth:`__get__` and :meth:`__set__`, it is considered
+If an object defines :meth:`__set__` or :meth:`__delete__`, it is considered
 a data descriptor.  Descriptors that only define :meth:`__get__` are called
 non-data descriptors (they are typically used for methods but other uses are
 possible).

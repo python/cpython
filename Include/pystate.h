@@ -1,4 +1,3 @@
-
 /* Thread and interpreter state structures and their interfaces */
 
 
@@ -7,6 +6,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "pythread.h"
+#include "coreconfig.h"
 
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
@@ -23,28 +25,27 @@ typedef struct _is PyInterpreterState;
 #else
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
-
-typedef struct {
-    int ignore_environment;
-    int use_hash_seed;
-    unsigned long hash_seed;
-    int _disable_importlib; /* Needed by freeze_importlib */
-    char *allocator;
-} _PyCoreConfig;
-
-#define _PyCoreConfig_INIT {0, -1, 0, 0, NULL}
-
 /* Placeholders while working on the new configuration API
  *
  * See PEP 432 for final anticipated contents
- *
- * For the moment, just handle the args to _Py_InitializeEx
  */
 typedef struct {
-    int install_signal_handlers;
+    int install_signal_handlers;   /* Install signal handlers? -1 means unset */
+    PyObject *argv;                /* sys.argv list, can be NULL */
+    PyObject *executable;          /* sys.executable str */
+    PyObject *prefix;              /* sys.prefix str */
+    PyObject *base_prefix;         /* sys.base_prefix str, can be NULL */
+    PyObject *exec_prefix;         /* sys.exec_prefix str */
+    PyObject *base_exec_prefix;    /* sys.base_exec_prefix str, can be NULL */
+    PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
+    PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
+    PyObject *module_search_path;  /* sys.path list */
+    PyObject *pycache_prefix;      /* sys.pycache_prefix str, can be NULL */
 } _PyMainInterpreterConfig;
 
-#define _PyMainInterpreterConfig_INIT {-1}
+#define _PyMainInterpreterConfig_INIT \
+    (_PyMainInterpreterConfig){.install_signal_handlers = -1}
+/* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
 
 typedef struct _is {
 
@@ -52,6 +53,8 @@ typedef struct _is {
     struct _ts *tstate_head;
 
     int64_t id;
+    int64_t id_refcount;
+    PyThread_type_lock id_mutex;
 
     PyObject *modules;
     PyObject *modules_by_index;
@@ -95,8 +98,13 @@ typedef struct _is {
     PyObject *after_forkers_parent;
     PyObject *after_forkers_child;
 #endif
+    /* AtExit module */
+    void (*pyexitfunc)(PyObject *);
+    PyObject *pyexitmodule;
+
+    uint64_t tstate_next_unique_id;
 } PyInterpreterState;
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 /* State unique per thread */
@@ -118,11 +126,26 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
-#endif
+#endif   /* Py_LIMITED_API */
 
 #ifdef Py_LIMITED_API
 typedef struct _ts PyThreadState;
 #else
+
+typedef struct _err_stackitem {
+    /* This struct represents an entry on the exception stack, which is a
+     * per-coroutine state. (Coroutine in the computer science sense,
+     * including the thread and generators).
+     * This ensures that the exception state is not impacted by "yields"
+     * from an except handler.
+     */
+    PyObject *exc_type, *exc_value, *exc_traceback;
+
+    struct _err_stackitem *previous_item;
+
+} _PyErr_StackItem;
+
+
 typedef struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -136,6 +159,8 @@ typedef struct _ts {
                         to handle the runtime error. */
     char recursion_critical; /* The current calls must not cause
                                 a stack overflow. */
+    int stackcheck_counter;
+
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
@@ -147,13 +172,19 @@ typedef struct _ts {
     PyObject *c_profileobj;
     PyObject *c_traceobj;
 
+    /* The exception currently being raised */
     PyObject *curexc_type;
     PyObject *curexc_value;
     PyObject *curexc_traceback;
 
-    PyObject *exc_type;
-    PyObject *exc_value;
-    PyObject *exc_traceback;
+    /* The exception currently being handled, if no coroutines/generators
+     * are present. Always last element on the stack referred to be exc_info.
+     */
+    _PyErr_StackItem exc_state;
+
+    /* Pointer to the top of the stack of the exceptions currently
+     * being handled */
+    _PyErr_StackItem *exc_info;
 
     PyObject *dict;  /* Stores per-thread state */
 
@@ -191,21 +222,38 @@ typedef struct _ts {
     void (*on_delete)(void *);
     void *on_delete_data;
 
+    int coroutine_origin_tracking_depth;
+
     PyObject *coroutine_wrapper;
     int in_coroutine_wrapper;
 
     PyObject *async_gen_firstiter;
     PyObject *async_gen_finalizer;
 
+    PyObject *context;
+    uint64_t context_ver;
+
+    /* Unique thread state id. */
+    uint64_t id;
+
     /* XXX signal handlers should also be here */
 
 } PyThreadState;
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+#if !defined(Py_LIMITED_API)
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
+#endif
+#ifdef Py_BUILD_CORE
+   /* Macro which should only be used for performance critical code.
+      Need "#include "internal/pystate.h". See also _PyInterpreterState_Get()
+      and _PyGILState_GetInterpreterStateUnsafe(). */
+#  define _PyInterpreterState_GET_UNSAFE() (PyThreadState_GET()->interp)
+#endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 /* New in 3.7 */
 PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
@@ -323,9 +371,11 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    GILState implementation.
 
    Return NULL before _PyGILState_Init() is called and after _PyGILState_Fini()
-   is called. */
+   is called.
+
+   See also _PyInterpreterState_Get() and _PyInterpreterState_GET_UNSAFE(). */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
-#endif
+#endif   /* !Py_LIMITED_API */
 
 
 /* The implementation of sys._current_frames()  Returns a dict mapping

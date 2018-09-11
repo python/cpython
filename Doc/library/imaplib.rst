@@ -342,7 +342,7 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.namespace()
 
-   Returns IMAP namespaces as defined in RFC2342.
+   Returns IMAP namespaces as defined in :rfc:`2342`.
 
 
 .. method:: IMAP4.noop()

@@ -1,3 +1,0 @@
-traceback: Fix a TypeError that occurred during printing of exception
-tracebacks when either the current exception or an exception in its
-context/cause chain is unhashable. Patch by Zane Bitter.

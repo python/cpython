@@ -526,12 +526,16 @@ class SysModuleTest(unittest.TestCase):
         attrs = ("debug",
                  "inspect", "interactive", "optimize", "dont_write_bytecode",
                  "no_user_site", "no_site", "ignore_environment", "verbose",
-                 "bytes_warning", "quiet", "hash_randomization", "isolated")
+                 "bytes_warning", "quiet", "hash_randomization", "isolated",
+                 "dev_mode", "utf8_mode")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
-            self.assertEqual(type(getattr(sys.flags, attr)), int, attr)
+            attr_type = bool if attr == "dev_mode" else int
+            self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))
+
+        self.assertIn(sys.flags.utf8_mode, {0, 1, 2})
 
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
@@ -650,10 +654,10 @@ class SysModuleTest(unittest.TestCase):
             expected = None
         self.check_fsencoding(fs_encoding, expected)
 
-    def c_locale_get_error_handler(self, isolated=False, encoding=None):
+    def c_locale_get_error_handler(self, locale, isolated=False, encoding=None):
         # Force the POSIX locale
         env = os.environ.copy()
-        env["LC_ALL"] = "C"
+        env["LC_ALL"] = locale
         env["PYTHONCOERCECLOCALE"] = "0"
         code = '\n'.join((
             'import sys',
@@ -664,7 +668,7 @@ class SysModuleTest(unittest.TestCase):
             'dump("stdout")',
             'dump("stderr")',
         ))
-        args = [sys.executable, "-c", code]
+        args = [sys.executable, "-X", "utf8=0", "-c", code]
         if isolated:
             args.append("-I")
         if encoding is not None:
@@ -679,43 +683,49 @@ class SysModuleTest(unittest.TestCase):
         stdout, stderr = p.communicate()
         return stdout
 
-    def test_c_locale_surrogateescape(self):
-        out = self.c_locale_get_error_handler(isolated=True)
+    def check_locale_surrogateescape(self, locale):
+        out = self.c_locale_get_error_handler(locale, isolated=True)
         self.assertEqual(out,
                          'stdin: surrogateescape\n'
                          'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
 
         # replace the default error handler
-        out = self.c_locale_get_error_handler(encoding=':ignore')
+        out = self.c_locale_get_error_handler(locale, encoding=':ignore')
         self.assertEqual(out,
                          'stdin: ignore\n'
                          'stdout: ignore\n'
                          'stderr: backslashreplace\n')
 
         # force the encoding
-        out = self.c_locale_get_error_handler(encoding='iso8859-1')
+        out = self.c_locale_get_error_handler(locale, encoding='iso8859-1')
         self.assertEqual(out,
                          'stdin: strict\n'
                          'stdout: strict\n'
                          'stderr: backslashreplace\n')
-        out = self.c_locale_get_error_handler(encoding='iso8859-1:')
+        out = self.c_locale_get_error_handler(locale, encoding='iso8859-1:')
         self.assertEqual(out,
                          'stdin: strict\n'
                          'stdout: strict\n'
                          'stderr: backslashreplace\n')
 
         # have no any effect
-        out = self.c_locale_get_error_handler(encoding=':')
+        out = self.c_locale_get_error_handler(locale, encoding=':')
         self.assertEqual(out,
                          'stdin: surrogateescape\n'
                          'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
-        out = self.c_locale_get_error_handler(encoding='')
+        out = self.c_locale_get_error_handler(locale, encoding='')
         self.assertEqual(out,
                          'stdin: surrogateescape\n'
                          'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
+
+    def test_c_locale_surrogateescape(self):
+        self.check_locale_surrogateescape('C')
+
+    def test_posix_locale_surrogateescape(self):
+        self.check_locale_surrogateescape('POSIX')
 
     def test_implementation(self):
         # This test applies to all implementations equally.
@@ -753,8 +763,15 @@ class SysModuleTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
+        try:
+            import _testcapi
+        except ImportError:
+            with_pymalloc = support.with_pymalloc()
+        else:
+            alloc_name = _testcapi.pymem_getallocatorsname()
+            with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
+
         # Some sanity checks
-        with_pymalloc = sysconfig.get_config_var('WITH_PYMALLOC')
         a = sys.getallocatedblocks()
         self.assertIs(type(a), int)
         if with_pymalloc:
@@ -807,6 +824,52 @@ class SysModuleTest(unittest.TestCase):
         level = sys.getandroidapilevel()
         self.assertIsInstance(level, int)
         self.assertGreater(level, 0)
+
+    def test_sys_tracebacklimit(self):
+        code = """if 1:
+            import sys
+            def f1():
+                1 / 0
+            def f2():
+                f1()
+            sys.tracebacklimit = %r
+            f2()
+        """
+        def check(tracebacklimit, expected):
+            p = subprocess.Popen([sys.executable, '-c', code % tracebacklimit],
+                                 stderr=subprocess.PIPE)
+            out = p.communicate()[1]
+            self.assertEqual(out.splitlines(), expected)
+
+        traceback = [
+            b'Traceback (most recent call last):',
+            b'  File "<string>", line 8, in <module>',
+            b'  File "<string>", line 6, in f2',
+            b'  File "<string>", line 4, in f1',
+            b'ZeroDivisionError: division by zero'
+        ]
+        check(10, traceback)
+        check(3, traceback)
+        check(2, traceback[:1] + traceback[2:])
+        check(1, traceback[:1] + traceback[3:])
+        check(0, [traceback[-1]])
+        check(-1, [traceback[-1]])
+        check(1<<1000, traceback)
+        check(-1<<1000, [traceback[-1]])
+        check(None, traceback)
+
+    def test_no_duplicates_in_meta_path(self):
+        self.assertEqual(len(sys.meta_path), len(set(sys.meta_path)))
+
+    @unittest.skipUnless(hasattr(sys, "_enablelegacywindowsfsencoding"),
+                         'needs sys._enablelegacywindowsfsencoding()')
+    def test__enablelegacywindowsfsencoding(self):
+        code = ('import sys',
+                'sys._enablelegacywindowsfsencoding()',
+                'print(sys.getfilesystemencoding(), sys.getfilesystemencodeerrors())')
+        rc, out, err = assert_python_ok('-c', '; '.join(code))
+        out = out.decode('ascii', 'replace').rstrip()
+        self.assertEqual(out, 'mbcs replace')
 
 
 @test.support.cpython_only
@@ -971,7 +1034,7 @@ class SizeofTest(unittest.TestCase):
         nfrees = len(x.f_code.co_freevars)
         extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
                   ncells + nfrees - 1
-        check(x, vsize('8P2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
+        check(x, vsize('5P2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
         # function
         def func(): pass
         check(func, size('12P'))
@@ -988,7 +1051,7 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('Pb2PPP'))
+        check(get_gen(), size('Pb2PPP4P'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator
@@ -1074,6 +1137,7 @@ class SizeofTest(unittest.TestCase):
             fmt += '3n2P'
         s = vsize(fmt)
         check(int, s)
+        # class
         s = vsize(fmt +                 # PyTypeObject
                   '3P'                  # PyAsyncMethods
                   '36P'                 # PyNumberMethods
@@ -1081,13 +1145,17 @@ class SizeofTest(unittest.TestCase):
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
                   '4P')
-        # Separate block for PyDictKeysObject with 8 keys and 5 entries
-        s += calcsize("2nP2n") + 8 + 5*calcsize("n2P")
-        # class
         class newstyleclass(object): pass
-        check(newstyleclass, s)
+        # Separate block for PyDictKeysObject with 8 keys and 5 entries
+        check(newstyleclass, s + calcsize("2nP2n0P") + 8 + 5*calcsize("n2P"))
         # dict with shared keys
-        check(newstyleclass().__dict__, size('nQ2P' + '2nP2n'))
+        check(newstyleclass().__dict__, size('nQ2P') + 5*self.P)
+        o = newstyleclass()
+        o.a = o.b = o.c = o.d = o.e = o.f = o.g = o.h = 1
+        # Separate block for PyDictKeysObject with 16 keys and 10 entries
+        check(newstyleclass, s + calcsize("2nP2n0P") + 16 + 10*calcsize("n2P"))
+        # dict with shared keys
+        check(newstyleclass().__dict__, size('nQ2P') + 10*self.P)
         # unicode
         # each tuple contains a string and its expected character size
         # don't put any static strings here, as they may contain
