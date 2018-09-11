@@ -349,4 +349,64 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=51d46b2146b18d23 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(itertools_permutations__doc__,
+"permutations(iterable, r=None)\n"
+"--\n"
+"\n"
+"Return successive r-length permutations of elements in the iterable.\n"
+"\n"
+"permutations(range(3), 2) --> (0,1), (0,2), (1,0), (1,2), (2,0), (2,1)");
+
+static PyObject *
+itertools_permutations_impl(PyTypeObject *type, PyObject *iterable,
+                            PyObject *robj);
+
+static PyObject *
+itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"iterable", "r", NULL};
+    static _PyArg_Parser _parser = {"O|O:permutations", _keywords, 0};
+    PyObject *iterable;
+    PyObject *robj = Py_None;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &iterable, &robj)) {
+        goto exit;
+    }
+    return_value = itertools_permutations_impl(type, iterable, robj);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(itertools_accumulate__doc__,
+"accumulate(iterable, func=None)\n"
+"--\n"
+"\n"
+"Return series of accumulated sums (or other binary function results).");
+
+static PyObject *
+itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
+                          PyObject *binop);
+
+static PyObject *
+itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"iterable", "func", NULL};
+    static _PyArg_Parser _parser = {"O|O:accumulate", _keywords, 0};
+    PyObject *iterable;
+    PyObject *binop = Py_None;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &iterable, &binop)) {
+        goto exit;
+    }
+    return_value = itertools_accumulate_impl(type, iterable, binop);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=7c3e21a9af91e30e input=a9049054013a1b77]*/

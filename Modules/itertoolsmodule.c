@@ -20,8 +20,10 @@ class itertools.starmap "starmapobject *" "&starmap_type"
 class itertools.chain "chainobject *" "&chain_type"
 class itertools.combinations "combinationsobject *" "&combinations_type"
 class itertools.combinations_with_replacement "cwr_object *" "&cwr_type"
+class itertools.permutations "permutationsobject *" "&permutations_type"
+class itertools.accumulate "accumulateobject *" "&accumulate_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2c68aa7b4d0702a3]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8b8a7363c65f60f6]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
@@ -33,6 +35,8 @@ static PyTypeObject takewhile_type;
 static PyTypeObject starmap_type;
 static PyTypeObject combinations_type;
 static PyTypeObject cwr_type;
+static PyTypeObject permutations_type;
+static PyTypeObject accumulate_type;
 
 #include "clinic/itertoolsmodule.c.h"
 
@@ -3107,23 +3111,28 @@ typedef struct {
 
 static PyTypeObject permutations_type;
 
+/*[clinic input]
+@classmethod
+itertools.permutations.__new__
+    iterable: object
+    r as robj: object = None
+Return successive r-length permutations of elements in the iterable.
+
+permutations(range(3), 2) --> (0,1), (0,2), (1,0), (1,2), (2,0), (2,1)
+[clinic start generated code]*/
+
 static PyObject *
-permutations_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools_permutations_impl(PyTypeObject *type, PyObject *iterable,
+                            PyObject *robj)
+/*[clinic end generated code: output=296a72fa76d620ea input=57d0170a4ac0ec7a]*/
 {
     permutationsobject *po;
     Py_ssize_t n;
     Py_ssize_t r;
-    PyObject *robj = Py_None;
     PyObject *pool = NULL;
-    PyObject *iterable = NULL;
     Py_ssize_t *indices = NULL;
     Py_ssize_t *cycles = NULL;
     Py_ssize_t i;
-    static char *kwargs[] = {"iterable", "r", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:permutations", kwargs,
-                                     &iterable, &robj))
-        return NULL;
 
     pool = PySequence_Tuple(iterable);
     if (pool == NULL)
@@ -3411,12 +3420,6 @@ static PyMethodDef permuations_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-PyDoc_STRVAR(permutations_doc,
-"permutations(iterable[, r]) --> permutations object\n\
-\n\
-Return successive r-length permutations of elements in the iterable.\n\n\
-permutations(range(3), 2) --> (0,1), (0,2), (1,0), (1,2), (2,0), (2,1)");
-
 static PyTypeObject permutations_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.permutations",           /* tp_name */
@@ -3440,7 +3443,7 @@ static PyTypeObject permutations_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    permutations_doc,                   /* tp_doc */
+    itertools_permutations__doc__,      /* tp_doc */
     (traverseproc)permutations_traverse,/* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -3457,7 +3460,7 @@ static PyTypeObject permutations_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    permutations_new,                   /* tp_new */
+    itertools_permutations,             /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
@@ -3472,18 +3475,22 @@ typedef struct {
 
 static PyTypeObject accumulate_type;
 
+/*[clinic input]
+@classmethod
+itertools.accumulate.__new__
+    iterable: object
+    func as binop: object = None
+Return series of accumulated sums (or other binary function results).
+[clinic start generated code]*/
+
 static PyObject *
-accumulate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
+                          PyObject *binop)
+/*[clinic end generated code: output=514d0fb30ba14d55 input=6d9d16aaa1d3cbfc]*/
 {
-    static char *kwargs[] = {"iterable", "func", NULL};
-    PyObject *iterable;
     PyObject *it;
-    PyObject *binop = Py_None;
     accumulateobject *lz;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:accumulate",
-                                     kwargs, &iterable, &binop))
-        return NULL;
 
     /* Get iterator. */
     it = PyObject_GetIter(iterable);
@@ -3594,11 +3601,6 @@ static PyMethodDef accumulate_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-PyDoc_STRVAR(accumulate_doc,
-"accumulate(iterable[, func]) --> accumulate object\n\
-\n\
-Return series of accumulated sums (or other binary function results).");
-
 static PyTypeObject accumulate_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.accumulate",             /* tp_name */
@@ -3622,7 +3624,7 @@ static PyTypeObject accumulate_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    accumulate_doc,                     /* tp_doc */
+    itertools_accumulate__doc__,        /* tp_doc */
     (traverseproc)accumulate_traverse,  /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -3639,7 +3641,7 @@ static PyTypeObject accumulate_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    accumulate_new,                     /* tp_new */
+    itertools_accumulate,               /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
