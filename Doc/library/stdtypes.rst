@@ -197,8 +197,8 @@ exception.
    operator: not in
 
 Two more operations with the same syntactic priority, :keyword:`in` and
-:keyword:`not in`, are supported only by sequence types (below).
-
+:keyword:`not in`, are supported by types that are :term:`iterable` or
+implement the :meth:`__contains__` method.
 
 .. _typesnumeric:
 
