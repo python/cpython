@@ -1,11 +1,13 @@
 __all__ = (
     'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
-    'open_connection', 'start_server')
+    'open_connection', 'start_server',
+    'connect')
 
 import socket
 
 if hasattr(socket, 'AF_UNIX'):
-    __all__ += ('open_unix_connection', 'start_unix_server')
+    __all__ += ('open_unix_connection', 'start_unix_server',
+                'unix_connect')
 
 from . import coroutines
 from . import events
@@ -16,6 +18,23 @@ from .tasks import sleep
 
 
 _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
+
+
+async def connect(host=None, port=None, *,
+                  loop=None, limit=_DEFAULT_LIMIT, **kwds):
+    if loop is None:
+        loop = events.get_running_loop()
+    stream = Stream(limit=limit, loop=loop)
+    protocol = StreamReaderProtocol(stream, loop=loop)
+    stream._set_protocol(protocol)
+    transport, _ = await loop.create_connection(
+        lambda: protocol, host, port, **kwds)
+    return stream
+
+
+async def serve(client_connected_cb, host=None, port=None, *,
+                loop=None, limit=_DEFAULT_LIMIT, **kwds):
+    pass
 
 
 async def open_connection(host=None, port=None, *,
@@ -84,6 +103,17 @@ async def start_server(client_connected_cb, host=None, port=None, *,
 
 if hasattr(socket, 'AF_UNIX'):
     # UNIX Domain Sockets are supported on this platform
+
+    async def unix_connect(path=None, *,
+                           loop=None, limit=_DEFAULT_LIMIT, **kwds):
+        if loop is None:
+            loop = events.get_running_loop()
+        stream = Stream(limit=limit, loop=loop)
+        protocol = StreamReaderProtocol(stream, loop=loop)
+        stream._set_protocol(protocol)
+        transport, _ = await loop.create_unix_connection(
+            lambda: protocol, path, **kwds)
+        return stream
 
     async def open_unix_connection(path=None, *,
                                    loop=None, limit=_DEFAULT_LIMIT, **kwds):
@@ -338,7 +368,7 @@ class StreamReader:
         self._paused = False
 
     def __repr__(self):
-        info = ['StreamReader']
+        info = [self.__class__.__name__]
         if self._buffer:
             info.append(f'{len(self._buffer)} bytes')
         if self._eof:
@@ -663,3 +693,18 @@ class StreamReader:
         if val == b'':
             raise StopAsyncIteration
         return val
+
+
+class Stream(StreamReader, StreamWriter):
+    def __init__(self, limit, loop):
+        StreamReader.__init__(self, limit, loop)
+        # A trick for emulating StreamWriter ctor without an actual call
+        self._reader = self
+        self._protocol = None  # setup the attribute in _set_protocol()
+
+    def _set_protocol(self, protocol):
+        # a post-init method to set protocol instance
+        self._protocol = protocol
+
+    def __repr__(self):
+        return StreamReader.__repr__(self)
