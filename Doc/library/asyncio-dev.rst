@@ -98,9 +98,11 @@ Concurrency and multithreading
 
 An event loop runs in a thread (typically the main thread) and executes
 all callbacks and tasks in its thread.  While a task is running in the
-event loop, no other task is running in the same thread. When a task
-executes an ``await`` expression, the task gets suspended and the
-event loop executes the next task.
+event loop, no other tasks may run in the same thread. When a task
+executes an ``await`` expression, the running task gets suspended, and the
+event loop executes the next task. Prior to suspending the task, the awaiting
+chain is checked, and if the chain ends with a future, the running task is
+not suspended.
 
 To schedule a callback from a different thread, the
 :meth:`loop.call_soon_threadsafe` method should be used. Example::
@@ -123,9 +125,9 @@ To schedule a coroutine object from a different thread, the
      future = asyncio.run_coroutine_threadsafe(coro_func(), loop)
      result = future.result(timeout)  # Wait for the result with a timeout
 
-The :meth:`loop.run_in_executor` method can be used with a thread pool
-executor to execute a callback in different thread to not block the thread of
-the event loop.
+The :meth:`loop.run_in_executor` method can be used with a
+:class:`concurrent.futures.ThreadPoolExecutor` to execute a callback in 
+different thread so as not to block the event loop's main thread.
 
 .. seealso::
 
@@ -183,9 +185,10 @@ Detect coroutine objects never scheduled
 ----------------------------------------
 
 When a coroutine function is called and its result is not passed to
-:func:`ensure_future` or to the :meth:`loop.create_task` method,
-the execution of the coroutine object will never be scheduled which is
-probably a bug.  :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>`
+:func:`ensure_future`, :meth:`asyncio.create_task`, or to the 
+:meth:`loop.create_task` method, the execution of the coroutine object will
+never be scheduled which is probably a bug. 
+:ref:`Enable the debug mode of asyncio <asyncio-debug-mode>`
 to :ref:`log a warning <asyncio-logger>` to detect it.
 
 Example with the bug::
@@ -204,8 +207,9 @@ Output in debug mode::
       File "test.py", line 7, in <module>
         test()
 
-The fix is to call the :func:`ensure_future` function or the
-:meth:`loop.create_task` method with the coroutine object.
+The fix is to call the :func:`ensure_future` function, 
+:meth:`asyncio.create_task`, or the :meth:`loop.create_task` method with the
+coroutine object.
 
 .. seealso::
 
@@ -281,6 +285,7 @@ coroutine in another coroutine and use classic try/except::
     loop.close()
 
 Another option is to use the :meth:`loop.run_until_complete`
+(or alternatively, the provisional :meth:`asyncio.run`)
 function::
 
     task = asyncio.ensure_future(bug())
