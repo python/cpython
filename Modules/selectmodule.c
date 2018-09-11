@@ -1498,17 +1498,12 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;
     struct epoll_event *evs = NULL;
-    _PyTime_t timeout, ms, deadline;
+    _PyTime_t timeout = -1, ms = -1, deadline = 0;
 
     if (self->epfd < 0)
         return pyepoll_err_closed();
 
-    if (timeout_obj == Py_None) {
-        timeout = -1;
-        ms = -1;
-        deadline = 0;   /* initialize to prevent gcc warning */
-    }
-    else {
+    if (timeout_obj != Py_None) {
         /* epoll_wait() has a resolution of 1 millisecond, round towards
            infinity to wait at least timeout seconds. */
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
@@ -1525,8 +1520,20 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
             return NULL;
         }
+        /* epoll_wait(2) treats all arbitrary negative numbers the same
+           for the timeout argument, but -1 is the documented way to block
+           indefinitely in the epoll_wait(2) documentation, so we set ms
+           to -1 if the value of ms is a negative number.
 
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+           Note that we didn't use INFTIM here since it's non-standard and
+           isn't available under Linux. */
+        if (ms < 0) {
+            ms = -1;
+        }
+
+        if (timeout >= 0) {
+            deadline = _PyTime_GetMonotonicClock() + timeout;
+        }
     }
 
     if (maxevents == -1) {
