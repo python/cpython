@@ -16,8 +16,9 @@ class itertools._tee "teeobject *" "&tee_type"
 class itertools.cycle "cycleobject *" "&cycle_type"
 class itertools.dropwhile "dropwhileobject *" "&dropwhile_type"
 class itertools.takewhile "takewhileobject *" "&takewhile_type"
+class itertools.starmap "starmapobject *" "&starmap_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4bf812ee14fd8b73]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c068cf5e3cbffb8]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
@@ -26,6 +27,7 @@ static PyTypeObject tee_type;
 static PyTypeObject cycle_type;
 static PyTypeObject dropwhile_type;
 static PyTypeObject takewhile_type;
+static PyTypeObject starmap_type;
 
 #include "clinic/itertoolsmodule.c.h"
 
@@ -1705,18 +1707,21 @@ typedef struct {
 
 static PyTypeObject starmap_type;
 
+/*[clinic input]
+@classmethod
+itertools.starmap.__new__
+    function as func: object
+    iterable as seq: object
+    /
+Return an iterator whose values are returned from the function evaluated with an argument tuple taken from the given sequence.
+[clinic start generated code]*/
+
 static PyObject *
-starmap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools_starmap_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
+/*[clinic end generated code: output=79eeb81d452c6e8d input=844766df6a0d4dad]*/
 {
-    PyObject *func, *seq;
     PyObject *it;
     starmapobject *lz;
-
-    if (type == &starmap_type && !_PyArg_NoKeywords("starmap", kwds))
-        return NULL;
-
-    if (!PyArg_UnpackTuple(args, "starmap", 2, 2, &func, &seq))
-        return NULL;
 
     /* Get iterator. */
     it = PyObject_GetIter(seq);
@@ -1817,7 +1822,7 @@ static PyTypeObject starmap_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    starmap_doc,                        /* tp_doc */
+    itertools_starmap__doc__,           /* tp_doc */
     (traverseproc)starmap_traverse,     /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -1834,7 +1839,7 @@ static PyTypeObject starmap_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    starmap_new,                        /* tp_new */
+    itertools_starmap,                  /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 

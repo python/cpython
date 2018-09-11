@@ -246,4 +246,35 @@ itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b2e5a03dc0504c37 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(itertools_starmap__doc__,
+"starmap(function, iterable, /)\n"
+"--\n"
+"\n"
+"Return an iterator whose values are returned from the function evaluated with an argument tuple taken from the given sequence.");
+
+static PyObject *
+itertools_starmap_impl(PyTypeObject *type, PyObject *func, PyObject *seq);
+
+static PyObject *
+itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *func;
+    PyObject *seq;
+
+    if ((type == &starmap_type) &&
+        !_PyArg_NoKeywords("starmap", kwargs)) {
+        goto exit;
+    }
+    if (!PyArg_UnpackTuple(args, "starmap",
+        2, 2,
+        &func, &seq)) {
+        goto exit;
+    }
+    return_value = itertools_starmap_impl(type, func, seq);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=5fc47aea5f31a304 input=a9049054013a1b77]*/
