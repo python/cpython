@@ -104,6 +104,10 @@ New Modules
 Improved Modules
 ================
 
+* XXX Added :func:`inspect.getsubclasses`, :func:`inspect.getallsubclasses`, and
+  :func:`inspect.getsubclasstree`.
+  (Contributed by Benjamin Mintz in :issue:`34635`.)
+
 Optimizations
 =============
 
