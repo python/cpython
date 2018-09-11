@@ -174,7 +174,7 @@ StreamReader
       ending with ``\n``.
 
       If an EOF is received and ``\n`` was not found, the method
-      returns a partially read data.
+      returns partially read data.
 
       If an EOF is received and the internal buffer is empty,
       return an empty ``bytes`` object.

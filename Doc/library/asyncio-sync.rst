@@ -320,4 +320,4 @@ BoundedSemaphore
 
    Acquiring a lock using ``await lock`` or ``yield from lock`` and/or
    :keyword:`with` statement (``with await lock``, ``with (yield from
-   lock)``) is deprecated.
+   lock)``) is deprecated.  Use ``async with lock`` instead.
