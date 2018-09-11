@@ -37,7 +37,7 @@ Lock
    Implements a mutex lock for asyncio tasks.  Not thread-safe.
 
    An asyncio lock can be used to guarantee exclusive access to a
-   shared resource to a single asyncio Task.
+   shared resource.
 
    The preferred way to use a Lock is an :keyword:`async with`
    statement::
