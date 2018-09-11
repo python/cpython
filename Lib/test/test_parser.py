@@ -14,6 +14,7 @@ from test.support.script_helper import assert_python_failure
 #
 
 class RoundtripLegalSyntaxTestCase(unittest.TestCase):
+
     def roundtrip(self, f, s):
         st1 = f(s)
         t = st1.totuple()
@@ -458,6 +459,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
 #
 
 class IllegalSyntaxTestCase(unittest.TestCase):
+
     def check_bad_tree(self, tree, label):
         try:
             parser.sequence2st(tree)

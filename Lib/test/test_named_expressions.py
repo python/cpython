@@ -154,7 +154,7 @@ class NamedExpressionAssignmentTest(unittest.TestCase):
 
         self.assertEqual(a, 1)
 
-    @unittest.skip("Not implemented")
+    @unittest.skip("Not implemented -- No keyword args")
     def test_named_expression_assignment_13(self):
         f = open("../../Lib/test/data/blake2b.txt", "r")
         self.assertEqual(len(lines := f.readlines()), 259)
@@ -200,7 +200,6 @@ class NamedExpressionScopeTest(unittest.TestCase):
         input_data = [1, 2, 3]
         results = [(x, y, x/y) for x in input_data if (y := spam(x)) > 0]
         self.assertEqual(y, 'something')
-
 
 
 if __name__ == "__main__":
