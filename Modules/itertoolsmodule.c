@@ -22,8 +22,10 @@ class itertools.combinations "combinationsobject *" "&combinations_type"
 class itertools.combinations_with_replacement "cwr_object *" "&cwr_type"
 class itertools.permutations "permutationsobject *" "&permutations_type"
 class itertools.accumulate "accumulateobject *" "&accumulate_type"
+class itertools.compress "compressobject *" "&compress_type"
+class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8b8a7363c65f60f6]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1ebe103832d620a0]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
@@ -37,7 +39,8 @@ static PyTypeObject combinations_type;
 static PyTypeObject cwr_type;
 static PyTypeObject permutations_type;
 static PyTypeObject accumulate_type;
-
+static PyTypeObject compress_type;
+static PyTypeObject filterfalse_type;
 #include "clinic/itertoolsmodule.c.h"
 
 
@@ -3663,16 +3666,23 @@ typedef struct {
 
 static PyTypeObject compress_type;
 
+/*[clinic input]
+@classmethod
+itertools.compress.__new__
+    data as seq1: object
+    selectors as seq2: object
+Return data elements corresponding to true selector elements.
+
+Forms a shorter iterator from selected data elements using the selectors to
+choose the data elements.
+[clinic start generated code]*/
+
 static PyObject *
-compress_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools_compress_impl(PyTypeObject *type, PyObject *seq1, PyObject *seq2)
+/*[clinic end generated code: output=7e67157212ed09e0 input=79596d7cd20c77e5]*/
 {
-    PyObject *seq1, *seq2;
     PyObject *data=NULL, *selectors=NULL;
     compressobject *lz;
-    static char *kwargs[] = {"data", "selectors", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO:compress", kwargs, &seq1, &seq2))
-        return NULL;
 
     data = PyObject_GetIter(seq1);
     if (data == NULL)
@@ -3761,13 +3771,6 @@ static PyMethodDef compress_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-PyDoc_STRVAR(compress_doc,
-"compress(data, selectors) --> iterator over selected data\n\
-\n\
-Return data elements corresponding to true selector elements.\n\
-Forms a shorter iterator from selected data elements using the\n\
-selectors to choose the data elements.");
-
 static PyTypeObject compress_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.compress",               /* tp_name */
@@ -3791,7 +3794,7 @@ static PyTypeObject compress_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    compress_doc,                       /* tp_doc */
+    itertools_compress__doc__,          /* tp_doc */
     (traverseproc)compress_traverse,    /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -3808,7 +3811,7 @@ static PyTypeObject compress_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    compress_new,                       /* tp_new */
+    itertools_compress,                 /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
@@ -3823,19 +3826,23 @@ typedef struct {
 
 static PyTypeObject filterfalse_type;
 
+/*[clinic input]
+@classmethod
+itertools.filterfalse.__new__
+    function as func: object
+    iterable as seq: object
+    /
+Return those items of iterable for which function(item) is false.
+
+If function is None, return the items that are false.
+[clinic start generated code]*/
+
 static PyObject *
-filterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools_filterfalse_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
+/*[clinic end generated code: output=55f87eab9fc0484e input=2d684a2c66f99cde]*/
 {
-    PyObject *func, *seq;
     PyObject *it;
     filterfalseobject *lz;
-
-    if (type == &filterfalse_type &&
-        !_PyArg_NoKeywords("filterfalse", kwds))
-        return NULL;
-
-    if (!PyArg_UnpackTuple(args, "filterfalse", 2, 2, &func, &seq))
-        return NULL;
 
     /* Get iterator. */
     it = PyObject_GetIter(seq);
@@ -3918,12 +3925,6 @@ static PyMethodDef filterfalse_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-PyDoc_STRVAR(filterfalse_doc,
-"filterfalse(function or None, sequence) --> filterfalse object\n\
-\n\
-Return those items of sequence for which function(item) is false.\n\
-If function is None, return the items that are false.");
-
 static PyTypeObject filterfalse_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.filterfalse",            /* tp_name */
@@ -3947,7 +3948,7 @@ static PyTypeObject filterfalse_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    filterfalse_doc,                    /* tp_doc */
+    itertools_filterfalse__doc__,       /* tp_doc */
     (traverseproc)filterfalse_traverse, /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -3964,7 +3965,7 @@ static PyTypeObject filterfalse_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    filterfalse_new,                    /* tp_new */
+    itertools_filterfalse,              /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 

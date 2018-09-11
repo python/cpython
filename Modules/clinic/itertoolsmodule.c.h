@@ -409,4 +409,68 @@ itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7c3e21a9af91e30e input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(itertools_compress__doc__,
+"compress(data, selectors)\n"
+"--\n"
+"\n"
+"Return data elements corresponding to true selector elements.\n"
+"\n"
+"Forms a shorter iterator from selected data elements using the selectors to\n"
+"choose the data elements.");
+
+static PyObject *
+itertools_compress_impl(PyTypeObject *type, PyObject *seq1, PyObject *seq2);
+
+static PyObject *
+itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"data", "selectors", NULL};
+    static _PyArg_Parser _parser = {"OO:compress", _keywords, 0};
+    PyObject *seq1;
+    PyObject *seq2;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &seq1, &seq2)) {
+        goto exit;
+    }
+    return_value = itertools_compress_impl(type, seq1, seq2);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(itertools_filterfalse__doc__,
+"filterfalse(function, iterable, /)\n"
+"--\n"
+"\n"
+"Return those items of iterable for which function(item) is false.\n"
+"\n"
+"If function is None, return the items that are false.");
+
+static PyObject *
+itertools_filterfalse_impl(PyTypeObject *type, PyObject *func, PyObject *seq);
+
+static PyObject *
+itertools_filterfalse(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *func;
+    PyObject *seq;
+
+    if ((type == &filterfalse_type) &&
+        !_PyArg_NoKeywords("filterfalse", kwargs)) {
+        goto exit;
+    }
+    if (!PyArg_UnpackTuple(args, "filterfalse",
+        2, 2,
+        &func, &seq)) {
+        goto exit;
+    }
+    return_value = itertools_filterfalse_impl(type, func, seq);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=60cd7dad7f3b5f30 input=a9049054013a1b77]*/
