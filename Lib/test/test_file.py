@@ -182,7 +182,10 @@ class OtherFileTests:
         # make sure that explicitly setting the buffer size doesn't cause
         # misbehaviour especially with repeated close() calls
         for s in (-1, 0, 512):
-            self._checkBufferSize(s)
+            with support.check_no_warning(self,
+                                          message='line buffering',
+                                          category=RuntimeWarning):
+                self._checkBufferSize(s)
 
         # test that attempts to use line buffering in binary mode cause
         # a warning
