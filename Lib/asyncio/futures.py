@@ -286,11 +286,12 @@ def _set_result_unless_cancelled(fut, result):
 
 
 def _convert_future_exc(exc):
-    if type(exc) is concurrent.futures.CancelledError:
+    exc_class = type(exc)
+    if exc_class is concurrent.futures.CancelledError:
         return exceptions.CancelledError(*exc.args)
-    elif type(exc) is concurrent.futures.TimeoutError:
+    elif exc_class is concurrent.futures.TimeoutError:
         return exceptions.TimeoutError(*exc.args)
-    elif type(exc) is concurrent.futures.InvalidStateError:
+    elif exc_class is concurrent.futures.InvalidStateError:
         return exceptions.InvalidStateError(*exc.args)
     else:
         return exc
