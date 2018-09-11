@@ -172,7 +172,7 @@ class NamedExpressionScopeTest(unittest.TestCase):
 
     @unittest.skip("Not implemented -- comprehension scope")
     def test_named_expression_scope_03(self):
-        containsOne = any((lastNum := line) == 1 for num in [1, 2, 3])
+        containsOne = any((lastNum := num) == 1 for num in [1, 2, 3])
         self.assertTrue(containsOne)
         self.assertEqual(lastNum, 3)
 
@@ -191,7 +191,13 @@ class NamedExpressionScopeTest(unittest.TestCase):
         results = [(x, y, x/y) for x in input_data if (y := spam(x)) > 0]
         self.assertEqual(y, 'something')
 
-    def test_named_expression_scope_06(self):
+    @unittest.skip("Test WIP, Not implemented -- comprehension scope")
+    def test_named_expression_scope_05(self):
+        a = [[spam := i for i in range(3)] for j in range(2)]
+        self.assertEqual(a, [[0, 1, 2], [0, 1, 2]])
+        self.assertEqual(spam, 2)
+
+    def test_named_expression_scope_07(self):
         len(lines := [1, 2])
         self.assertEqual(lines, [1, 2])
 
