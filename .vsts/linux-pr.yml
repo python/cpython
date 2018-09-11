@@ -4,7 +4,7 @@
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 queue:
-  name: 'Hosted Ubuntu 16.04'
+  name: 'Hosted Ubuntu 1604'
 
 trigger:
   branches:
