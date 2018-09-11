@@ -526,10 +526,9 @@ Notes:
 
 (4)
    In other words, ``date1 < date2`` if and only if ``date1.toordinal() <
-   date2.toordinal()``. In order to stop comparison from falling back to the
-   default scheme of comparing object addresses, date comparison normally raises
-   :exc:`TypeError` if the other comparand isn't also a :class:`date` object.
-   However, ``NotImplemented`` is returned instead if the other comparand has a
+   date2.toordinal()``. Date comparison raises :exc:`TypeError` if
+   the other comparand isn't also a :class:`date` object. However,
+   ``NotImplemented`` is returned instead if the other comparand has a
    :meth:`timetuple` attribute.  This hook gives other kinds of date objects a
    chance at implementing mixed-type comparison. If not, when a :class:`date`
    object is compared to an object of a different type, :exc:`TypeError` is raised
