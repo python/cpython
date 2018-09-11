@@ -286,4 +286,67 @@ PyDoc_STRVAR(itertools_chain_from_iterable__doc__,
 
 #define ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF    \
     {"from_iterable", (PyCFunction)itertools_chain_from_iterable, METH_O|METH_CLASS, itertools_chain_from_iterable__doc__},
-/*[clinic end generated code: output=932280435f5c08e9 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(itertools_combinations__doc__,
+"combinations(iterable, r)\n"
+"--\n"
+"\n"
+"Return successive r-length combinations of elements in the iterable.\n"
+"\n"
+"combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)");
+
+static PyObject *
+itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
+                            Py_ssize_t r);
+
+static PyObject *
+itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"iterable", "r", NULL};
+    static _PyArg_Parser _parser = {"On:combinations", _keywords, 0};
+    PyObject *iterable;
+    Py_ssize_t r;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &iterable, &r)) {
+        goto exit;
+    }
+    return_value = itertools_combinations_impl(type, iterable, r);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(itertools_combinations_with_replacement__doc__,
+"combinations_with_replacement(iterable, r)\n"
+"--\n"
+"\n"
+"Return successive r-length combinations of elements in the iterable allowing individual elements to have successive repeats.\n"
+"\n"
+"combinations_with_replacement(\'ABC\', 2) --> AA AB AC BB BC CC\"");
+
+static PyObject *
+itertools_combinations_with_replacement_impl(PyTypeObject *type,
+                                             PyObject *iterable,
+                                             Py_ssize_t r);
+
+static PyObject *
+itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"iterable", "r", NULL};
+    static _PyArg_Parser _parser = {"On:combinations_with_replacement", _keywords, 0};
+    PyObject *iterable;
+    Py_ssize_t r;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &iterable, &r)) {
+        goto exit;
+    }
+    return_value = itertools_combinations_with_replacement_impl(type, iterable, r);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=51d46b2146b18d23 input=a9049054013a1b77]*/

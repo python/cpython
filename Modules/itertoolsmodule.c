@@ -18,8 +18,10 @@ class itertools.dropwhile "dropwhileobject *" "&dropwhile_type"
 class itertools.takewhile "takewhileobject *" "&takewhile_type"
 class itertools.starmap "starmapobject *" "&starmap_type"
 class itertools.chain "chainobject *" "&chain_type"
+class itertools.combinations "combinationsobject *" "&combinations_type"
+class itertools.combinations_with_replacement "cwr_object *" "&cwr_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a7475b2da9c13892]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2c68aa7b4d0702a3]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
@@ -29,6 +31,8 @@ static PyTypeObject cycle_type;
 static PyTypeObject dropwhile_type;
 static PyTypeObject takewhile_type;
 static PyTypeObject starmap_type;
+static PyTypeObject combinations_type;
+static PyTypeObject cwr_type;
 
 #include "clinic/itertoolsmodule.c.h"
 
@@ -2437,21 +2441,27 @@ typedef struct {
 
 static PyTypeObject combinations_type;
 
+
+/*[clinic input]
+@classmethod
+itertools.combinations.__new__
+    iterable: object
+    r: Py_ssize_t
+Return successive r-length combinations of elements in the iterable.
+
+combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)
+[clinic start generated code]*/
+
 static PyObject *
-combinations_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
+                            Py_ssize_t r)
+/*[clinic end generated code: output=87a689b39c40039c input=06bede09e3da20f8]*/
 {
     combinationsobject *co;
     Py_ssize_t n;
-    Py_ssize_t r;
     PyObject *pool = NULL;
-    PyObject *iterable = NULL;
     Py_ssize_t *indices = NULL;
     Py_ssize_t i;
-    static char *kwargs[] = {"iterable", "r", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "On:combinations", kwargs,
-                                     &iterable, &r))
-        return NULL;
 
     pool = PySequence_Tuple(iterable);
     if (pool == NULL)
@@ -2686,12 +2696,6 @@ static PyMethodDef combinations_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-PyDoc_STRVAR(combinations_doc,
-"combinations(iterable, r) --> combinations object\n\
-\n\
-Return successive r-length combinations of elements in the iterable.\n\n\
-combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)");
-
 static PyTypeObject combinations_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.combinations",           /* tp_name */
@@ -2715,7 +2719,7 @@ static PyTypeObject combinations_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    combinations_doc,                   /* tp_doc */
+    itertools_combinations__doc__,      /* tp_doc */
     (traverseproc)combinations_traverse,/* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -2732,7 +2736,7 @@ static PyTypeObject combinations_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    combinations_new,                   /* tp_new */
+    itertools_combinations,             /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
@@ -2776,22 +2780,27 @@ typedef struct {
 
 static PyTypeObject cwr_type;
 
+/*[clinic input]
+@classmethod
+itertools.combinations_with_replacement.__new__
+    iterable: object
+    r: Py_ssize_t
+Return successive r-length combinations of elements in the iterable allowing individual elements to have successive repeats.
+
+combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC"
+[clinic start generated code]*/
+
 static PyObject *
-cwr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools_combinations_with_replacement_impl(PyTypeObject *type,
+                                             PyObject *iterable,
+                                             Py_ssize_t r)
+/*[clinic end generated code: output=48b26856d4e659ca input=dc2a8c7ba785fad7]*/
 {
     cwrobject *co;
     Py_ssize_t n;
-    Py_ssize_t r;
     PyObject *pool = NULL;
-    PyObject *iterable = NULL;
     Py_ssize_t *indices = NULL;
     Py_ssize_t i;
-    static char *kwargs[] = {"iterable", "r", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "On:combinations_with_replacement",
-                                     kwargs, &iterable, &r))
-        return NULL;
 
     pool = PySequence_Tuple(iterable);
     if (pool == NULL)
@@ -3016,13 +3025,6 @@ static PyMethodDef cwr_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-PyDoc_STRVAR(cwr_doc,
-"combinations_with_replacement(iterable, r) --> combinations_with_replacement object\n\
-\n\
-Return successive r-length combinations of elements in the iterable\n\
-allowing individual elements to have successive repeats.\n\
-combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC");
-
 static PyTypeObject cwr_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.combinations_with_replacement",          /* tp_name */
@@ -3046,7 +3048,7 @@ static PyTypeObject cwr_type = {
     0,                                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                            /* tp_flags */
-    cwr_doc,                                            /* tp_doc */
+    itertools_combinations_with_replacement__doc__,     /* tp_doc */
     (traverseproc)cwr_traverse,                         /* tp_traverse */
     0,                                                  /* tp_clear */
     0,                                                  /* tp_richcompare */
@@ -3063,7 +3065,7 @@ static PyTypeObject cwr_type = {
     0,                                                  /* tp_dictoffset */
     0,                                                  /* tp_init */
     0,                                                  /* tp_alloc */
-    cwr_new,                                            /* tp_new */
+    itertools_combinations_with_replacement,            /* tp_new */
     PyObject_GC_Del,                                    /* tp_free */
 };
 
