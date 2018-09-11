@@ -545,7 +545,7 @@ def getsubclasstree(cls, root=None):
     the object returned ("the root") has two attributes, cls and children.
     root.cls is the passed in cls. root.children is the subclasses of
     cls. root.children[0].cls is cls's first subclass, and
-    root.children[1].cls.children[0].cls is the cls's second subclass's
+    root.children[1].children[0].cls is the cls's second subclass's
     first subclass.
 
     A RecursionError is raised if the subclass tree exceeds a depth of
