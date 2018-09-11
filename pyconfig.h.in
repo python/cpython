@@ -1285,9 +1285,6 @@
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
 
-/* Define if log1p(-0.) is 0. rather than -0. */
-#undef LOG1P_DROPS_ZERO_SIGN
-
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */
 #undef MAJOR_IN_MKDEV
