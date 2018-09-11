@@ -1,4 +1,0 @@
-:c:func:`PyUnicode_FromFormatV`: add ``%T`` format to
-:c:func:`PyUnicode_FromFormatV`, and so to :c:func:`PyUnicode_FromFormat`
-and :c:func:`PyErr_Format`, to format an object type name: equivalent to
-"%s" with ``Py_TYPE(obj)->tp_name``.
