@@ -2393,7 +2393,7 @@ class SendfileMixin(SendfileBase):
 
         self.loop._sendfile_native = sendfile_native
 
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not supported"):
             self.run_loop(
                 self.loop.sendfile(cli_proto.transport, self.file,

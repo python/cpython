@@ -21,6 +21,7 @@ import weakref
 from . import base_tasks
 from . import coroutines
 from . import events
+from . import exceptions
 from . import futures
 from .coroutines import coroutine
 
@@ -228,11 +229,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     def __step(self, exc=None):
         if self.done():
-            raise futures.InvalidStateError(
+            raise exceptions.InvalidStateError(
                 f'_step(): already done: {self!r}, {exc!r}')
         if self._must_cancel:
-            if not isinstance(exc, futures.CancelledError):
-                exc = futures.CancelledError()
+            if not isinstance(exc, exceptions.CancelledError):
+                exc = exceptions.CancelledError()
             self._must_cancel = False
         coro = self._coro
         self._fut_waiter = None
@@ -250,10 +251,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             if self._must_cancel:
                 # Task is cancelled right before coro stops.
                 self._must_cancel = False
-                super().set_exception(futures.CancelledError())
+                super().set_exception(exceptions.CancelledError())
             else:
                 super().set_result(exc.value)
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             super().cancel()  # I.e., Future.cancel(self).
         except Exception as exc:
             super().set_exception(exc)
@@ -419,7 +420,7 @@ async def wait_for(fut, timeout, *, loop=None):
             return fut.result()
 
         fut.cancel()
-        raise futures.TimeoutError()
+        raise exceptions.TimeoutError()
 
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
@@ -432,7 +433,7 @@ async def wait_for(fut, timeout, *, loop=None):
         # wait until the future completes or the timeout
         try:
             await waiter
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             fut.remove_done_callback(cb)
             fut.cancel()
             raise
@@ -445,7 +446,7 @@ async def wait_for(fut, timeout, *, loop=None):
             # after wait_for() returns.
             # See https://bugs.python.org/issue32751
             await _cancel_and_wait(fut, loop=loop)
-            raise futures.TimeoutError()
+            raise exceptions.TimeoutError()
     finally:
         timeout_handle.cancel()
 
@@ -554,7 +555,7 @@ def as_completed(fs, *, loop=None, timeout=None):
         f = await done.get()
         if f is None:
             # Dummy value from _on_timeout().
-            raise futures.TimeoutError
+            raise exceptions.TimeoutError
         return f.result()  # May raise f.exception().
 
     for f in todo:
@@ -701,7 +702,7 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                 # Check if 'fut' is cancelled first, as
                 # 'fut.exception()' will *raise* a CancelledError
                 # instead of returning it.
-                exc = futures.CancelledError()
+                exc = exceptions.CancelledError()
                 outer.set_exception(exc)
                 return
             else:
@@ -720,7 +721,7 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                     # Check if 'fut' is cancelled first, as
                     # 'fut.exception()' will *raise* a CancelledError
                     # instead of returning it.
-                    res = futures.CancelledError()
+                    res = exceptions.CancelledError()
                 else:
                     res = fut.exception()
                     if res is None:
@@ -731,7 +732,7 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                 # If gather is being cancelled we must propagate the
                 # cancellation regardless of *return_exceptions* argument.
                 # See issue 32684.
-                outer.set_exception(futures.CancelledError())
+                outer.set_exception(exceptions.CancelledError())
             else:
                 outer.set_result(results)
 
