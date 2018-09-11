@@ -1,0 +1,2 @@
+Add ``addModuleCleanup()`` and ``addClassCleanup()`` to unittest to support
+cleanups for setUpClass and setUpModule. Patch by Lisa Roach.
