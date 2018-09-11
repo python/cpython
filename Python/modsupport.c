@@ -28,8 +28,8 @@ _Py_convert_optional_to_ssize_t(PyObject *obj, void *result)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "argument should be integer or None, not '%.200s'",
-                     Py_TYPE(obj)->tp_name);
+                     "argument should be integer or None, not '%T'",
+                     obj);
         return 0;
     }
     *((Py_ssize_t *)result) = limit;

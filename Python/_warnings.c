@@ -108,8 +108,8 @@ get_once_registry(void)
     if (!PyDict_Check(registry)) {
         PyErr_Format(PyExc_TypeError,
                      MODULE_NAME ".onceregistry must be a dict, "
-                     "not '%.200s'",
-                     Py_TYPE(registry)->tp_name);
+                     "not '%T'",
+                     registry);
         Py_DECREF(registry);
         return NULL;
     }
@@ -135,8 +135,8 @@ get_default_action(void)
     if (!PyUnicode_Check(default_action)) {
         PyErr_Format(PyExc_TypeError,
                      MODULE_NAME ".defaultaction must be a string, "
-                     "not '%.200s'",
-                     Py_TYPE(default_action)->tp_name);
+                     "not '%T'",
+                     default_action);
         Py_DECREF(default_action);
         return NULL;
     }
@@ -194,8 +194,8 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
 
         if (!PyUnicode_Check(action)) {
             PyErr_Format(PyExc_TypeError,
-                         "action must be a string, not '%.200s'",
-                         Py_TYPE(action)->tp_name);
+                         "action must be a string, not '%T'",
+                         action);
             Py_DECREF(tmp_item);
             return NULL;
         }
@@ -759,8 +759,8 @@ get_category(PyObject *message, PyObject *category)
        PyObject_IsSubclass raised an error */
     if (rc == -1 || rc == 0) {
         PyErr_Format(PyExc_TypeError,
-                     "category must be a Warning subclass, not '%s'",
-                     Py_TYPE(category)->tp_name);
+                     "category must be a Warning subclass, not '%T'",
+                     category);
         return NULL;
     }
 
@@ -891,8 +891,8 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
     if (module_globals && module_globals != Py_None) {
         if (!PyDict_Check(module_globals)) {
             PyErr_Format(PyExc_TypeError,
-                         "module_globals must be a dict, not '%.200s'",
-                         Py_TYPE(module_globals)->tp_name);
+                         "module_globals must be a dict, not '%T'",
+                         module_globals);
             return NULL;
         }
 

@@ -781,9 +781,7 @@ sys_set_coroutine_wrapper(PyObject *self, PyObject *wrapper)
 
     if (wrapper != Py_None) {
         if (!PyCallable_Check(wrapper)) {
-            PyErr_Format(PyExc_TypeError,
-                         "callable expected, got %.50s",
-                         Py_TYPE(wrapper)->tp_name);
+            PyErr_Format(PyExc_TypeError, "callable expected, got %T", wrapper);
             return NULL;
         }
         _PyEval_SetCoroutineWrapper(wrapper);
@@ -860,8 +858,8 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
     if (finalizer && finalizer != Py_None) {
         if (!PyCallable_Check(finalizer)) {
             PyErr_Format(PyExc_TypeError,
-                         "callable finalizer expected, got %.50s",
-                         Py_TYPE(finalizer)->tp_name);
+                         "callable finalizer expected, got %T",
+                         finalizer);
             return NULL;
         }
         _PyEval_SetAsyncGenFinalizer(finalizer);
@@ -873,8 +871,8 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
     if (firstiter && firstiter != Py_None) {
         if (!PyCallable_Check(firstiter)) {
             PyErr_Format(PyExc_TypeError,
-                         "callable firstiter expected, got %.50s",
-                         Py_TYPE(firstiter)->tp_name);
+                         "callable firstiter expected, got %T",
+                         firstiter);
             return NULL;
         }
         _PyEval_SetAsyncGenFirstiter(firstiter);
@@ -1242,8 +1240,8 @@ _PySys_GetSizeOf(PyObject *o)
     if (method == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
-                         "Type %.100s doesn't define __sizeof__",
-                         Py_TYPE(o)->tp_name);
+                         "Type %T doesn't define __sizeof__",
+                         o);
     }
     else {
         res = _PyObject_CallNoArg(method);

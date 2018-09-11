@@ -78,8 +78,8 @@ tb_new_impl(PyTypeObject *type, PyObject *tb_next, PyFrameObject *tb_frame,
         tb_next = NULL;
     } else if (!PyTraceBack_Check(tb_next)) {
         return PyErr_Format(PyExc_TypeError,
-                            "expected traceback object or None, got '%s'",
-                            Py_TYPE(tb_next)->tp_name);
+                            "expected traceback object or None, got '%T'",
+                            tb_next);
     }
 
     return tb_create_raw((PyTracebackObject *)tb_next, tb_frame, tb_lasti,
@@ -118,8 +118,8 @@ tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
         new_next = NULL;
     } else if (!PyTraceBack_Check(new_next)) {
         PyErr_Format(PyExc_TypeError,
-                     "expected traceback object, got '%s'",
-                     Py_TYPE(new_next)->tp_name);
+                     "expected traceback object, got '%T'",
+                     new_next);
         return -1;
     }
 

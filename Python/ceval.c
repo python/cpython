@@ -1687,8 +1687,8 @@ main_loop:
                 PyErr_Format(
                     PyExc_TypeError,
                     "'async for' received an object from __aiter__ "
-                    "that does not implement __anext__: %.100s",
-                    Py_TYPE(iter)->tp_name);
+                    "that does not implement __anext__: %T",
+                    iter);
                 Py_DECREF(iter);
                 goto error;
             }
@@ -1734,8 +1734,8 @@ main_loop:
                     _PyErr_FormatFromCause(
                         PyExc_TypeError,
                         "'async for' received an invalid object "
-                        "from __anext__: %.100s",
-                        Py_TYPE(next_iter)->tp_name);
+                        "from __anext__: %T",
+                        next_iter);
 
                     Py_DECREF(next_iter);
                     goto error;
@@ -4911,16 +4911,16 @@ import_all_from(PyObject *locals, PyObject *v)
             }
             if (!PyUnicode_Check(modname)) {
                 PyErr_Format(PyExc_TypeError,
-                             "module __name__ must be a string, not %.100s",
-                             Py_TYPE(modname)->tp_name);
+                             "module __name__ must be a string, not %T",
+                             modname);
             }
             else {
                 PyErr_Format(PyExc_TypeError,
-                             "%s in %U.%s must be str, not %.100s",
+                             "%s in %U.%s must be str, not %T",
                              skip_leading_underscores ? "Key" : "Item",
                              modname,
                              skip_leading_underscores ? "__dict__" : "__all__",
-                             Py_TYPE(name)->tp_name);
+                             name);
             }
             Py_DECREF(modname);
             Py_DECREF(name);
