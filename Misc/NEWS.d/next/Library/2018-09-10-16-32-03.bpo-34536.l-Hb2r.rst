@@ -1,1 +1,0 @@
-Raise `ValueError` if `_missing_` returns a non-Enum type.
