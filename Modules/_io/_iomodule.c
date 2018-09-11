@@ -364,8 +364,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     if (binary && buffering == 1) {
         if (PyErr_WarnEx(PyExc_RuntimeWarning,
-                         "line buffering is not supported in binary mode",
-                         1) < 0)
+                         "line buffering (buffering=1) isn't supported in "
+                         "binary mode, file will be fully buffered", 1) < 0)
            goto error;
     }
 

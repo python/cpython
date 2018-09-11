@@ -200,8 +200,8 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         raise ValueError("binary mode doesn't take a newline argument")
     if binary and buffering == 1:
         import warnings
-        warnings.warn("line buffering is not supported in binary mode",
-                      RuntimeWarning, 2)
+        warnings.warn("line buffering (buffering=1) isn't supported in binary "
+                      "mode, file will be fully buffered", RuntimeWarning, 2)
     raw = FileIO(file,
                  (creating and "x" or "") +
                  (reading and "r" or "") +
