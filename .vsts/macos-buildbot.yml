@@ -2,10 +2,6 @@
 #  https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted.md
 
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
-
-queue:
-  name: Hosted macOS Preview
-
 trigger:
   branches:
     include:
@@ -17,21 +13,27 @@ trigger:
     - Doc/*
     - Tools/*
 
-#variables:
+jobs:
 
-steps:
-- checkout: self
-  clean: true
-  fetchDepth: 5
+- job: macOSBuildBot
+  pool:
+    vmImage: 'macOS 10.13'
 
-- script: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-vsts
-  displayName: 'Configure CPython (debug)'
+  #variables:
 
-- script: make -s -j4
-  displayName: 'Build CPython'
+  steps:
+  - checkout: self
+    clean: true
+    fetchDepth: 5
 
-- script: make pythoninfo
-  displayName: 'Display build info'
+  - script: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-vsts
+    displayName: 'Configure CPython (debug)'
 
-- script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
-  displayName: 'Tests'
+  - script: make -s -j4
+    displayName: 'Build CPython'
+
+  - script: make pythoninfo
+    displayName: 'Display build info'
+
+  - script: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+    displayName: 'Tests'
