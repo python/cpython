@@ -313,7 +313,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
             Py_ssize_t startpos, endpos, newpos;
             Py_ssize_t k;
             if (error_handler == _Py_ERROR_UNKNOWN) {
-                error_handler = get_error_handler(errors);
+                error_handler = _Py_GetErrorHandler(errors);
             }
 
             startpos = i-1;
@@ -330,7 +330,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
             case _Py_ERROR_REPLACE:
                 memset(p, '?', endpos - startpos);
                 p += (endpos - startpos);
-                /* fall through the ignore handler */
+                /* fall through */
             case _Py_ERROR_IGNORE:
                 i += (endpos - startpos - 1);
                 break;
@@ -378,7 +378,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 }
                 startpos = k;
                 assert(startpos < endpos);
-                /* fall through the default handler */
+                /* fall through */
             default:
                 rep = unicode_encode_call_errorhandler(
                       errors, &error_handler_obj, "utf-8", "surrogates not allowed",

@@ -92,8 +92,8 @@ This module exports the following functions:
     subn      Same as sub, but also return the number of substitutions made.
     split     Split a string by the occurrences of a pattern.
     findall   Find all occurrences of a pattern in a string.
-    finditer  Return an iterator yielding a match object for each match.
-    compile   Compile a pattern into a RegexObject.
+    finditer  Return an iterator yielding a Match object for each match.
+    compile   Compile a pattern into a Pattern object.
     purge     Clear the regular expression cache.
     escape    Backslash all non-alphanumerics in a string.
 
@@ -128,11 +128,12 @@ try:
 except ImportError:
     _locale = None
 
+
 # public symbols
 __all__ = [
     "match", "fullmatch", "search", "sub", "subn", "split",
     "findall", "finditer", "compile", "purge", "template", "escape",
-    "error", "A", "I", "L", "M", "S", "X", "U",
+    "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
     "UNICODE",
 ]
@@ -168,17 +169,17 @@ error = sre_compile.error
 
 def match(pattern, string, flags=0):
     """Try to apply the pattern at the start of the string, returning
-    a match object, or None if no match was found."""
+    a Match object, or None if no match was found."""
     return _compile(pattern, flags).match(string)
 
 def fullmatch(pattern, string, flags=0):
     """Try to apply the pattern to all of the string, returning
-    a match object, or None if no match was found."""
+    a Match object, or None if no match was found."""
     return _compile(pattern, flags).fullmatch(string)
 
 def search(pattern, string, flags=0):
     """Scan through string looking for a match to the pattern, returning
-    a match object, or None if no match was found."""
+    a Match object, or None if no match was found."""
     return _compile(pattern, flags).search(string)
 
 def sub(pattern, repl, string, count=0, flags=0):
@@ -186,7 +187,7 @@ def sub(pattern, repl, string, count=0, flags=0):
     non-overlapping occurrences of the pattern in string by the
     replacement repl.  repl can be either a string or a callable;
     if a string, backslash escapes in it are processed.  If it is
-    a callable, it's passed the match object and must return
+    a callable, it's passed the Match object and must return
     a replacement string to be used."""
     return _compile(pattern, flags).sub(repl, string, count)
 
@@ -197,7 +198,7 @@ def subn(pattern, repl, string, count=0, flags=0):
     string by the replacement repl.  number is the number of
     substitutions that were made. repl can be either a string or a
     callable; if a string, backslash escapes in it are processed.
-    If it is a callable, it's passed the match object and must
+    If it is a callable, it's passed the Match object and must
     return a replacement string to be used."""
     return _compile(pattern, flags).subn(repl, string, count)
 
@@ -223,13 +224,13 @@ def findall(pattern, string, flags=0):
 
 def finditer(pattern, string, flags=0):
     """Return an iterator over all non-overlapping matches in the
-    string.  For each match, the iterator returns a match object.
+    string.  For each match, the iterator returns a Match object.
 
     Empty matches are included in the result."""
     return _compile(pattern, flags).finditer(string)
 
 def compile(pattern, flags=0):
-    "Compile a regular expression pattern, returning a pattern object."
+    "Compile a regular expression pattern, returning a Pattern object."
     return _compile(pattern, flags)
 
 def purge():
@@ -238,14 +239,15 @@ def purge():
     _compile_repl.cache_clear()
 
 def template(pattern, flags=0):
-    "Compile a template pattern, returning a pattern object"
+    "Compile a template pattern, returning a Pattern object"
     return _compile(pattern, flags|T)
 
 # SPECIAL_CHARS
 # closing ')', '}' and ']'
 # '-' (a range in character set)
+# '&', '~', (extended character set operations)
 # '#' (comment) and WHITESPACE (ignored) in verbose mode
-_special_chars_map = {i: '\\' + chr(i) for i in b'()[]{}?*+-|^$\\.# \t\n\r\v\f'}
+_special_chars_map = {i: '\\' + chr(i) for i in b'()[]{}?*+-|^$\\.&~# \t\n\r\v\f'}
 
 def escape(pattern):
     """
@@ -257,21 +259,24 @@ def escape(pattern):
         pattern = str(pattern, 'latin1')
         return pattern.translate(_special_chars_map).encode('latin1')
 
+Pattern = type(sre_compile.compile('', 0))
+Match = type(sre_compile.compile('', 0).match(''))
+
 # --------------------------------------------------------------------
 # internals
 
-_cache = {}
-
-_pattern_type = type(sre_compile.compile("", 0))
+_cache = {}  # ordered!
 
 _MAXCACHE = 512
 def _compile(pattern, flags):
     # internal: compile pattern
+    if isinstance(flags, RegexFlag):
+        flags = flags.value
     try:
         return _cache[type(pattern), pattern, flags]
     except KeyError:
         pass
-    if isinstance(pattern, _pattern_type):
+    if isinstance(pattern, Pattern):
         if flags:
             raise ValueError(
                 "cannot process flags argument with a compiled pattern")
@@ -281,7 +286,11 @@ def _compile(pattern, flags):
     p = sre_compile.compile(pattern, flags)
     if not (flags & DEBUG):
         if len(_cache) >= _MAXCACHE:
-            _cache.clear()
+            # Drop the oldest item
+            try:
+                del _cache[next(iter(_cache))]
+            except (StopIteration, RuntimeError, KeyError):
+                pass
         _cache[type(pattern), pattern, flags] = p
     return p
 
@@ -291,12 +300,12 @@ def _compile_repl(repl, pattern):
     return sre_parse.parse_template(repl, pattern)
 
 def _expand(pattern, match, template):
-    # internal: match.expand implementation hook
+    # internal: Match.expand implementation hook
     template = sre_parse.parse_template(template, pattern)
     return sre_parse.expand_template(template, match)
 
 def _subx(pattern, template):
-    # internal: pattern.sub/subn implementation helper
+    # internal: Pattern.sub/subn implementation helper
     template = _compile_repl(template, pattern)
     if not template[0] and len(template[1]) == 1:
         # literal replacement
@@ -312,7 +321,7 @@ import copyreg
 def _pickle(p):
     return _compile, (p.pattern, p.flags)
 
-copyreg.pickle(_pattern_type, _pickle, _compile)
+copyreg.pickle(Pattern, _pickle, _compile)
 
 # --------------------------------------------------------------------
 # experimental stuff (see python-dev discussions for details)
@@ -320,6 +329,8 @@ copyreg.pickle(_pattern_type, _pickle, _compile)
 class Scanner:
     def __init__(self, lexicon, flags=0):
         from sre_constants import BRANCH, SUBPATTERN
+        if isinstance(flags, RegexFlag):
+            flags = flags.value
         self.lexicon = lexicon
         # combine phrases into a compound pattern
         p = []

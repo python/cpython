@@ -119,13 +119,6 @@ class TestSysConfig(unittest.TestCase):
         sys.platform = 'win32'
         self.assertEqual(get_platform(), 'win-amd64')
 
-        # windows XP, itanium
-        os.name = 'nt'
-        sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
-                       '[MSC v.1310 32 bit (Itanium)]')
-        sys.platform = 'win32'
-        self.assertEqual(get_platform(), 'win-ia64')
-
         # macbook
         os.name = 'posix'
         sys.version = ('2.5 (r25:51918, Sep 19 2006, 08:49:13) '

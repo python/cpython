@@ -6,8 +6,10 @@
  *                             \___|\___/|_| \_\_____|
  *
  * Copyright (C) 2016 - 2017, Steve Holme, <steve_holme@hotmail.com>.
+ * Copyright (C) 2017, Expat development team
  *
  * All rights reserved.
+ * Licensed under the MIT license:
  *
  * Permission to  use, copy,  modify, and distribute  this software  for any
  * purpose with  or without fee is  hereby granted, provided that  the above
@@ -82,7 +84,7 @@ HMODULE _Expat_LoadLibrary(LPCTSTR filename)
   /* Get a handle to kernel32 so we can access it's functions at runtime */
   HMODULE hKernel32 = GetModuleHandle(TEXT("kernel32"));
   if(!hKernel32)
-    return NULL;
+    return NULL;  /* LCOV_EXCL_LINE */
 
   /* Attempt to find LoadLibraryEx() which is only available on Windows 2000
      and above */

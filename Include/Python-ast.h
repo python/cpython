@@ -46,21 +46,20 @@ struct _mod {
     union {
         struct {
             asdl_seq *body;
-            string docstring;
         } Module;
-        
+
         struct {
             asdl_seq *body;
         } Interactive;
-        
+
         struct {
             expr_ty body;
         } Expression;
-        
+
         struct {
             asdl_seq *body;
         } Suite;
-        
+
     } v;
 };
 
@@ -81,128 +80,125 @@ struct _stmt {
             asdl_seq *body;
             asdl_seq *decorator_list;
             expr_ty returns;
-            string docstring;
         } FunctionDef;
-        
+
         struct {
             identifier name;
             arguments_ty args;
             asdl_seq *body;
             asdl_seq *decorator_list;
             expr_ty returns;
-            string docstring;
         } AsyncFunctionDef;
-        
+
         struct {
             identifier name;
             asdl_seq *bases;
             asdl_seq *keywords;
             asdl_seq *body;
             asdl_seq *decorator_list;
-            string docstring;
         } ClassDef;
-        
+
         struct {
             expr_ty value;
         } Return;
-        
+
         struct {
             asdl_seq *targets;
         } Delete;
-        
+
         struct {
             asdl_seq *targets;
             expr_ty value;
         } Assign;
-        
+
         struct {
             expr_ty target;
             operator_ty op;
             expr_ty value;
         } AugAssign;
-        
+
         struct {
             expr_ty target;
             expr_ty annotation;
             expr_ty value;
             int simple;
         } AnnAssign;
-        
+
         struct {
             expr_ty target;
             expr_ty iter;
             asdl_seq *body;
             asdl_seq *orelse;
         } For;
-        
+
         struct {
             expr_ty target;
             expr_ty iter;
             asdl_seq *body;
             asdl_seq *orelse;
         } AsyncFor;
-        
+
         struct {
             expr_ty test;
             asdl_seq *body;
             asdl_seq *orelse;
         } While;
-        
+
         struct {
             expr_ty test;
             asdl_seq *body;
             asdl_seq *orelse;
         } If;
-        
+
         struct {
             asdl_seq *items;
             asdl_seq *body;
         } With;
-        
+
         struct {
             asdl_seq *items;
             asdl_seq *body;
         } AsyncWith;
-        
+
         struct {
             expr_ty exc;
             expr_ty cause;
         } Raise;
-        
+
         struct {
             asdl_seq *body;
             asdl_seq *handlers;
             asdl_seq *orelse;
             asdl_seq *finalbody;
         } Try;
-        
+
         struct {
             expr_ty test;
             expr_ty msg;
         } Assert;
-        
+
         struct {
             asdl_seq *names;
         } Import;
-        
+
         struct {
             identifier module;
             asdl_seq *names;
             int level;
         } ImportFrom;
-        
+
         struct {
             asdl_seq *names;
         } Global;
-        
+
         struct {
             asdl_seq *names;
         } Nonlocal;
-        
+
         struct {
             expr_ty value;
         } Expr;
-        
+
     } v;
     int lineno;
     int col_offset;
@@ -224,145 +220,145 @@ struct _expr {
             boolop_ty op;
             asdl_seq *values;
         } BoolOp;
-        
+
         struct {
             expr_ty left;
             operator_ty op;
             expr_ty right;
         } BinOp;
-        
+
         struct {
             unaryop_ty op;
             expr_ty operand;
         } UnaryOp;
-        
+
         struct {
             arguments_ty args;
             expr_ty body;
         } Lambda;
-        
+
         struct {
             expr_ty test;
             expr_ty body;
             expr_ty orelse;
         } IfExp;
-        
+
         struct {
             asdl_seq *keys;
             asdl_seq *values;
         } Dict;
-        
+
         struct {
             asdl_seq *elts;
         } Set;
-        
+
         struct {
             expr_ty elt;
             asdl_seq *generators;
         } ListComp;
-        
+
         struct {
             expr_ty elt;
             asdl_seq *generators;
         } SetComp;
-        
+
         struct {
             expr_ty key;
             expr_ty value;
             asdl_seq *generators;
         } DictComp;
-        
+
         struct {
             expr_ty elt;
             asdl_seq *generators;
         } GeneratorExp;
-        
+
         struct {
             expr_ty value;
         } Await;
-        
+
         struct {
             expr_ty value;
         } Yield;
-        
+
         struct {
             expr_ty value;
         } YieldFrom;
-        
+
         struct {
             expr_ty left;
             asdl_int_seq *ops;
             asdl_seq *comparators;
         } Compare;
-        
+
         struct {
             expr_ty func;
             asdl_seq *args;
             asdl_seq *keywords;
         } Call;
-        
+
         struct {
             object n;
         } Num;
-        
+
         struct {
             string s;
         } Str;
-        
+
         struct {
             expr_ty value;
             int conversion;
             expr_ty format_spec;
         } FormattedValue;
-        
+
         struct {
             asdl_seq *values;
         } JoinedStr;
-        
+
         struct {
             bytes s;
         } Bytes;
-        
+
         struct {
             singleton value;
         } NameConstant;
-        
+
         struct {
             constant value;
         } Constant;
-        
+
         struct {
             expr_ty value;
             identifier attr;
             expr_context_ty ctx;
         } Attribute;
-        
+
         struct {
             expr_ty value;
             slice_ty slice;
             expr_context_ty ctx;
         } Subscript;
-        
+
         struct {
             expr_ty value;
             expr_context_ty ctx;
         } Starred;
-        
+
         struct {
             identifier id;
             expr_context_ty ctx;
         } Name;
-        
+
         struct {
             asdl_seq *elts;
             expr_context_ty ctx;
         } List;
-        
+
         struct {
             asdl_seq *elts;
             expr_context_ty ctx;
         } Tuple;
-        
+
     } v;
     int lineno;
     int col_offset;
@@ -377,15 +373,15 @@ struct _slice {
             expr_ty upper;
             expr_ty step;
         } Slice;
-        
+
         struct {
             asdl_seq *dims;
         } ExtSlice;
-        
+
         struct {
             expr_ty value;
         } Index;
-        
+
     } v;
 };
 
@@ -405,7 +401,7 @@ struct _excepthandler {
             identifier name;
             asdl_seq *body;
         } ExceptHandler;
-        
+
     } v;
     int lineno;
     int col_offset;
@@ -443,27 +439,26 @@ struct _withitem {
 };
 
 
-#define Module(a0, a1, a2) _Py_Module(a0, a1, a2)
-mod_ty _Py_Module(asdl_seq * body, string docstring, PyArena *arena);
+#define Module(a0, a1) _Py_Module(a0, a1)
+mod_ty _Py_Module(asdl_seq * body, PyArena *arena);
 #define Interactive(a0, a1) _Py_Interactive(a0, a1)
 mod_ty _Py_Interactive(asdl_seq * body, PyArena *arena);
 #define Expression(a0, a1) _Py_Expression(a0, a1)
 mod_ty _Py_Expression(expr_ty body, PyArena *arena);
 #define Suite(a0, a1) _Py_Suite(a0, a1)
 mod_ty _Py_Suite(asdl_seq * body, PyArena *arena);
-#define FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8)
+#define FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7) _Py_FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7)
 stmt_ty _Py_FunctionDef(identifier name, arguments_ty args, asdl_seq * body,
-                        asdl_seq * decorator_list, expr_ty returns, string
-                        docstring, int lineno, int col_offset, PyArena *arena);
-#define AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8)
+                        asdl_seq * decorator_list, expr_ty returns, int lineno,
+                        int col_offset, PyArena *arena);
+#define AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7) _Py_AsyncFunctionDef(a0, a1, a2, a3, a4, a5, a6, a7)
 stmt_ty _Py_AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq *
                              body, asdl_seq * decorator_list, expr_ty returns,
-                             string docstring, int lineno, int col_offset,
-                             PyArena *arena);
-#define ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8)
+                             int lineno, int col_offset, PyArena *arena);
+#define ClassDef(a0, a1, a2, a3, a4, a5, a6, a7) _Py_ClassDef(a0, a1, a2, a3, a4, a5, a6, a7)
 stmt_ty _Py_ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords,
-                     asdl_seq * body, asdl_seq * decorator_list, string
-                     docstring, int lineno, int col_offset, PyArena *arena);
+                     asdl_seq * body, asdl_seq * decorator_list, int lineno,
+                     int col_offset, PyArena *arena);
 #define Return(a0, a1, a2, a3) _Py_Return(a0, a1, a2, a3)
 stmt_ty _Py_Return(expr_ty value, int lineno, int col_offset, PyArena *arena);
 #define Delete(a0, a1, a2, a3) _Py_Delete(a0, a1, a2, a3)

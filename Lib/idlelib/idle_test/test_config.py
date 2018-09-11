@@ -1,9 +1,9 @@
-'''Test idlelib.config.
-
-Coverage: 96% (100% for IdleConfParser, IdleUserConfParser*, ConfigChanges).
+"""Test config, coverage 93%.
+(100% for IdleConfParser, IdleUserConfParser*, ConfigChanges).
 * Exception is OSError clause in Save method.
 Much of IdleConf is also exercised by ConfigDialog and test_configdialog.
-'''
+"""
+from idlelib import config
 import copy
 import sys
 import os
@@ -12,7 +12,6 @@ from test.support import captured_stderr, findfile
 import unittest
 from unittest import mock
 import idlelib
-from idlelib import config
 from idlelib.idle_test.mock_idle import Func
 
 # Tests should not depend on fortuitous user configurations.
@@ -26,6 +25,7 @@ testcfg = {}
 usermain = testcfg['main'] = config.IdleUserConfParser('')
 userhigh = testcfg['highlight'] = config.IdleUserConfParser('')
 userkeys = testcfg['keys'] = config.IdleUserConfParser('')
+userextn = testcfg['extensions'] = config.IdleUserConfParser('')
 
 def setUpModule():
     idleConf.userCfg = testcfg
@@ -255,9 +255,9 @@ class IdleConfTest(unittest.TestCase):
                 with self.assertRaises(FileNotFoundError):
                     conf.GetUserCfgDir()
 
-    @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for windows system')
+    @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for Windows system')
     def test_get_user_cfg_dir_windows(self):
-        "Test to get user config directory under windows"
+        "Test to get user config directory under Windows"
         conf = self.new_config(_utest=True)
 
         # Check normal way should success
@@ -430,92 +430,64 @@ class IdleConfTest(unittest.TestCase):
         sys.platform = current_platform
 
     def test_get_extensions(self):
-        conf = self.mock_config()
-
-        # Add disable extensions
-        conf.SetOption('extensions', 'DISABLE', 'enable', 'False')
-
+        userextn.read_string('''
+            [ZzDummy]
+            enable = True
+            [DISABLE]
+            enable = False
+            ''')
         eq = self.assertEqual
-        eq(conf.GetExtensions(),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
-            'ZoomHeight'])
-        eq(conf.GetExtensions(active_only=False),
-            ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-             'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
-             'ZoomHeight', 'DISABLE'])
-        eq(conf.GetExtensions(editor_only=True),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
-            'ZoomHeight'])
-        eq(conf.GetExtensions(shell_only=True),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'FormatParagraph',
-            'ParenMatch', 'ZoomHeight'])
-        eq(conf.GetExtensions(active_only=False, editor_only=True),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension',
-            'ScriptBinding', 'ZoomHeight', 'DISABLE'])
-        eq(conf.GetExtensions(active_only=False, shell_only=True),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
-            'ZoomHeight', 'DISABLE'])
+        iGE = idleConf.GetExtensions
+        eq(iGE(shell_only=True), [])
+        eq(iGE(), ['ZzDummy'])
+        eq(iGE(editor_only=True), ['ZzDummy'])
+        eq(iGE(active_only=False), ['ZzDummy', 'DISABLE'])
+        eq(iGE(active_only=False, editor_only=True), ['ZzDummy', 'DISABLE'])
+        userextn.remove_section('ZzDummy')
+        userextn.remove_section('DISABLE')
 
-        # Add user extensions
-        conf.SetOption('extensions', 'Foobar', 'enable', 'True')
-        eq(conf.GetExtensions(),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension',
-            'ScriptBinding', 'ZoomHeight', 'Foobar'])  # User extensions didn't sort
-        eq(conf.GetExtensions(active_only=False),
-           ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-            'FormatParagraph', 'ParenMatch', 'RstripExtension',
-            'ScriptBinding', 'ZoomHeight', 'DISABLE', 'Foobar'])
 
     def test_remove_key_bind_names(self):
         conf = self.mock_config()
 
         self.assertCountEqual(
             conf.RemoveKeyBindNames(conf.GetSectionList('default', 'extensions')),
-            ['AutoComplete', 'AutoExpand', 'CallTips', 'CodeContext',
-             'FormatParagraph', 'ParenMatch', 'RstripExtension', 'ScriptBinding',
-             'ZoomHeight'])
+            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch','ZzDummy'])
 
     def test_get_extn_name_for_event(self):
-        conf = self.mock_config()
-
+        userextn.read_string('''
+            [ZzDummy]
+            enable = True
+            ''')
         eq = self.assertEqual
-        eq(conf.GetExtnNameForEvent('force-open-completions'), 'AutoComplete')
-        eq(conf.GetExtnNameForEvent('expand-word'), 'AutoExpand')
-        eq(conf.GetExtnNameForEvent('force-open-calltip'), 'CallTips')
-        eq(conf.GetExtnNameForEvent('zoom-height'), 'ZoomHeight')
+        eq(idleConf.GetExtnNameForEvent('z-in'), 'ZzDummy')
+        eq(idleConf.GetExtnNameForEvent('z-out'), None)
+        userextn.remove_section('ZzDummy')
 
     def test_get_extension_keys(self):
-        conf = self.mock_config()
-
-        eq = self.assertEqual
-        eq(conf.GetExtensionKeys('AutoComplete'),
-           {'<<force-open-completions>>': ['<Control-Key-space>']})
-        eq(conf.GetExtensionKeys('ParenMatch'),
-           {'<<flash-paren>>': ['<Control-Key-0>']})
-
-        key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
-        eq(conf.GetExtensionKeys('ZoomHeight'), {'<<zoom-height>>': key})
+        userextn.read_string('''
+            [ZzDummy]
+            enable = True
+            ''')
+        self.assertEqual(idleConf.GetExtensionKeys('ZzDummy'),
+           {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>']})
+        userextn.remove_section('ZzDummy')
+# need option key test
+##        key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
+##        eq(conf.GetExtensionKeys('ZoomHeight'), {'<<zoom-height>>': key})
 
     def test_get_extension_bindings(self):
-        conf = self.mock_config()
-
-        self.assertEqual(conf.GetExtensionBindings('NotExists'), {})
-
-        key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
-        self.assertEqual(
-            conf.GetExtensionBindings('ZoomHeight'), {'<<zoom-height>>': key})
-
-        # Add non-configuarable bindings
-        conf.defaultCfg['extensions'].add_section('Foobar')
-        conf.defaultCfg['extensions'].add_section('Foobar_bindings')
-        conf.defaultCfg['extensions'].set('Foobar', 'enable', 'True')
-        conf.defaultCfg['extensions'].set('Foobar_bindings', 'foobar', '<Key-F>')
-        self.assertEqual(conf.GetExtensionBindings('Foobar'), {'<<foobar>>': ['<Key-F>']})
+        userextn.read_string('''
+            [ZzDummy]
+            enable = True
+            ''')
+        eq = self.assertEqual
+        iGEB = idleConf.GetExtensionBindings
+        eq(iGEB('NotExists'), {})
+        expect = {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>'],
+                  '<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']}
+        eq(iGEB('ZzDummy'), expect)
+        userextn.remove_section('ZzDummy')
 
     def test_get_keybinding(self):
         conf = self.mock_config()
@@ -542,9 +514,11 @@ class IdleConfTest(unittest.TestCase):
         sys.platform = 'some-linux'
         self.assertEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
 
-        # This should not be the same, sicne replace <Alt- to <Option-
-        sys.platform = 'darwin'
-        self.assertNotEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
+        # This should not be the same, since replace <Alt- to <Option-.
+        # Above depended on config-extensions.def having Alt keys,
+        # which is no longer true.
+        # sys.platform = 'darwin'
+        # self.assertNotEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
 
         # Restore platform
         sys.platform = current_platform

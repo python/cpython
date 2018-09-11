@@ -1,2 +1,0 @@
-Fix segfault in readline when using readline's history-size option.  Patch
-by Nir Soffer.

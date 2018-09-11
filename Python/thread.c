@@ -6,6 +6,7 @@
    Stuff shared by all thread_*.h files is collected here. */
 
 #include "Python.h"
+#include "internal/pystate.h"
 
 #ifndef _POSIX_THREADS
 /* This means pthreads are not implemented in libc headers, hence the macro
@@ -60,7 +61,7 @@ void
 PyThread_init_thread(void)
 {
 #ifdef Py_DEBUG
-    char *p = Py_GETENV("PYTHONTHREADDEBUG");
+    const char *p = Py_GETENV("PYTHONTHREADDEBUG");
 
     if (p) {
         if (*p)
@@ -76,11 +77,6 @@ PyThread_init_thread(void)
     PyThread__init_thread();
 }
 
-/* Support for runtime thread stack size tuning.
-   A value of 0 means using the platform's default stack size
-   or the size specified by the THREAD_STACK_SIZE macro. */
-static size_t _pythread_stacksize = 0;
-
 #if defined(_POSIX_THREADS)
 #   define PYTHREAD_NAME "pthread"
 #   include "thread_pthread.h"
@@ -88,7 +84,7 @@ static size_t _pythread_stacksize = 0;
 #   define PYTHREAD_NAME "nt"
 #   include "thread_nt.h"
 #else
-#   error "Require native thread feature. See https://bugs.python.org/issue30832"
+#   error "Require native threads. See https://bugs.python.org/issue31370"
 #endif
 
 
@@ -96,7 +92,7 @@ static size_t _pythread_stacksize = 0;
 size_t
 PyThread_get_stacksize(void)
 {
-    return _pythread_stacksize;
+    return _PyInterpreterState_Get()->pythread_stacksize;
 }
 
 /* Only platforms defining a THREAD_SET_STACKSIZE() macro
@@ -115,41 +111,37 @@ PyThread_set_stacksize(size_t size)
 }
 
 
-/* ------------------------------------------------------------------------
-Per-thread data ("key") support.
+/* Thread Specific Storage (TSS) API
 
-Use PyThread_create_key() to create a new key.  This is typically shared
-across threads.
+   Cross-platform components of TSS API implementation.
+*/
 
-Use PyThread_set_key_value(thekey, value) to associate void* value with
-thekey in the current thread.  Each thread has a distinct mapping of thekey
-to a void* value.  Caution:  if the current thread already has a mapping
-for thekey, value is ignored.
+Py_tss_t *
+PyThread_tss_alloc(void)
+{
+    Py_tss_t *new_key = (Py_tss_t *)PyMem_RawMalloc(sizeof(Py_tss_t));
+    if (new_key == NULL) {
+        return NULL;
+    }
+    new_key->_is_initialized = 0;
+    return new_key;
+}
 
-Use PyThread_get_key_value(thekey) to retrieve the void* value associated
-with thekey in the current thread.  This returns NULL if no value is
-associated with thekey in the current thread.
+void
+PyThread_tss_free(Py_tss_t *key)
+{
+    if (key != NULL) {
+        PyThread_tss_delete(key);
+        PyMem_RawFree((void *)key);
+    }
+}
 
-Use PyThread_delete_key_value(thekey) to forget the current thread's associated
-value for thekey.  PyThread_delete_key(thekey) forgets the values associated
-with thekey across *all* threads.
-
-While some of these functions have error-return values, none set any
-Python exception.
-
-None of the functions does memory management on behalf of the void* values.
-You need to allocate and deallocate them yourself.  If the void* values
-happen to be PyObject*, these functions don't do refcount operations on
-them either.
-
-The GIL does not need to be held when calling these functions; they supply
-their own locking.  This isn't true of PyThread_create_key(), though (see
-next paragraph).
-
-There's a hidden assumption that PyThread_create_key() will be called before
-any of the other functions are called.  There's also a hidden assumption
-that calls to PyThread_create_key() are serialized externally.
------------------------------------------------------------------------- */
+int
+PyThread_tss_is_created(Py_tss_t *key)
+{
+    assert(key != NULL);
+    return key->_is_initialized;
+}
 
 
 PyDoc_STRVAR(threadinfo__doc__,

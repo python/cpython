@@ -1,2 +1,0 @@
-Avoid masking original TypeError in call with * unpacking when other
-arguments are passed.

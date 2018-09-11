@@ -1,26 +1,7 @@
 # Grammar for 2to3. This grammar supports Python 2.x and 3.x.
 
-# Note:  Changing the grammar specified in this file will most likely
-#        require corresponding changes in the parser module
-#        (../Modules/parsermodule.c).  If you can't make the changes to
-#        that module yourself, please co-ordinate the required changes
-#        with someone who can; ask around on python-dev for help.  Fred
-#        Drake <fdrake@acm.org> will probably be listening there.
-
-# NOTE WELL: You should also follow all the steps listed in PEP 306,
-# "How to Change Python's Grammar"
-
-# Commands for Kees Blom's railroad program
-#diagram:token NAME
-#diagram:token NUMBER
-#diagram:token STRING
-#diagram:token NEWLINE
-#diagram:token ENDMARKER
-#diagram:token INDENT
-#diagram:output\input python.bla
-#diagram:token DEDENT
-#diagram:output\textwidth 20.04cm\oddsidemargin  0.0cm\evensidemargin 0.0cm
-#diagram:rules
+# NOTE WELL: You should also follow all the steps listed at
+# https://devguide.python.org/grammar/
 
 # Start symbols for the grammar:
 #	file_input is a module or sequence of commands read from an input file;
@@ -38,13 +19,13 @@ async_funcdef: ASYNC funcdef
 funcdef: 'def' NAME parameters ['->' test] ':' suite
 parameters: '(' [typedargslist] ')'
 typedargslist: ((tfpdef ['=' test] ',')*
-                ('*' [tname] (',' tname ['=' test])* [',' '**' tname] | '**' tname)
+                ('*' [tname] (',' tname ['=' test])* [',' ['**' tname [',']]] | '**' tname [','])
                 | tfpdef ['=' test] (',' tfpdef ['=' test])* [','])
 tname: NAME [':' test]
 tfpdef: tname | '(' tfplist ')'
 tfplist: tfpdef (',' tfpdef)* [',']
 varargslist: ((vfpdef ['=' test] ',')*
-              ('*' [vname] (',' vname ['=' test])*  [',' '**' vname] | '**' vname)
+              ('*' [vname] (',' vname ['=' test])*  [',' ['**' vname [',']]] | '**' vname [','])
               | vfpdef ['=' test] (',' vfpdef ['=' test])* [','])
 vname: NAME
 vfpdef: vname | '(' vfplist ')'

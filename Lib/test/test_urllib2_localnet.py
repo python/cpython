@@ -4,12 +4,11 @@ import email
 import urllib.parse
 import urllib.request
 import http.server
+import threading
 import unittest
 import hashlib
 
 from test import support
-
-threading = support.import_module('threading')
 
 try:
     import ssl
@@ -276,7 +275,6 @@ class FakeProxyHandler(http.server.BaseHTTPRequestHandler):
 
 # Test cases
 
-@unittest.skipUnless(threading, "Threading required for this test.")
 class BasicAuthTests(unittest.TestCase):
     USER = "testUser"
     PASSWD = "testPass"
@@ -308,7 +306,7 @@ class BasicAuthTests(unittest.TestCase):
         try:
             self.assertTrue(urllib.request.urlopen(self.server_url))
         except urllib.error.HTTPError:
-            self.fail("Basic auth failed for the url: %s", self.server_url)
+            self.fail("Basic auth failed for the url: %s" % self.server_url)
 
     def test_basic_auth_httperror(self):
         ah = urllib.request.HTTPBasicAuthHandler()
@@ -317,7 +315,6 @@ class BasicAuthTests(unittest.TestCase):
         self.assertRaises(urllib.error.HTTPError, urllib.request.urlopen, self.server_url)
 
 
-@unittest.skipUnless(threading, "Threading required for this test.")
 class ProxyAuthTests(unittest.TestCase):
     URL = "http://localhost"
 
@@ -439,7 +436,6 @@ def GetRequestHandler(responses):
     return FakeHTTPRequestHandler
 
 
-@unittest.skipUnless(threading, "Threading required for this test.")
 class TestUrlopen(unittest.TestCase):
     """Tests urllib.request.urlopen using the network.
 
@@ -577,7 +573,7 @@ class TestUrlopen(unittest.TestCase):
                              cafile=CERT_fakehostname)
             # Good cert, but mismatching hostname
             handler = self.start_https_server(certfile=CERT_fakehostname)
-            with self.assertRaises(ssl.CertificateError) as cm:
+            with self.assertRaises(urllib.error.URLError) as cm:
                 self.urlopen("https://localhost:%s/bizarre" % handler.port,
                              cafile=CERT_fakehostname)
 
@@ -598,7 +594,7 @@ class TestUrlopen(unittest.TestCase):
         def cb_sni(ssl_sock, server_name, initial_context):
             nonlocal sni_name
             sni_name = server_name
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.set_servername_callback(cb_sni)
         handler = self.start_https_server(context=context, certfile=CERT_localhost)
         context = ssl.create_default_context(cafile=CERT_localhost)

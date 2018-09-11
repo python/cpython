@@ -31,13 +31,8 @@ import logging.handlers
 import re
 import struct
 import sys
+import threading
 import traceback
-
-try:
-    import _thread as thread
-    import threading
-except ImportError: #pragma: no cover
-    thread = None
 
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
@@ -78,8 +73,8 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True):
     # critical section
     logging._acquireLock()
     try:
-        logging._handlers.clear()
-        del logging._handlerList[:]
+        _clearExistingHandlers()
+
         # Handlers add themselves to logging._handlers
         handlers = _install_handlers(cp, formatters)
         _install_loggers(cp, handlers, disable_existing_loggers)
@@ -102,7 +97,7 @@ def _resolve(name):
     return found
 
 def _strip_spaces(alist):
-    return map(lambda x: x.strip(), alist)
+    return map(str.strip, alist)
 
 def _create_formatters(cp):
     """Create and return formatters"""
@@ -190,7 +185,7 @@ def _install_loggers(cp, handlers, disable_existing):
     # configure the root first
     llist = cp["loggers"]["keys"]
     llist = llist.split(",")
-    llist = list(map(lambda x: x.strip(), llist))
+    llist = list(_strip_spaces(llist))
     llist.remove("root")
     section = cp["logger_root"]
     root = logging.root
@@ -269,6 +264,14 @@ def _install_loggers(cp, handlers, disable_existing):
     #    elif disable_existing_loggers:
     #        logger.disabled = 1
     _handle_existing_loggers(existing, child_loggers, disable_existing)
+
+
+def _clearExistingHandlers():
+    """Clear and close existing handlers"""
+    logging._handlers.clear()
+    logging.shutdown(logging._handlerList[:])
+    del logging._handlerList[:]
+
 
 IDENTIFIER = re.compile('^[a-z_][a-z0-9_]*$', re.I)
 
@@ -465,7 +468,7 @@ class BaseConfigurator(object):
             c = self.resolve(c)
         props = config.pop('.', None)
         # Check for valid identifiers
-        kwargs = dict((k, config[k]) for k in config if valid_ident(k))
+        kwargs = {k: config[k] for k in config if valid_ident(k)}
         result = c(**kwargs)
         if props:
             for name, value in props.items():
@@ -529,8 +532,7 @@ class DictConfigurator(BaseConfigurator):
             else:
                 disable_existing = config.pop('disable_existing_loggers', True)
 
-                logging._handlers.clear()
-                del logging._handlerList[:]
+                _clearExistingHandlers()
 
                 # Do formatters first - they don't refer to anything else
                 formatters = config.get('formatters', EMPTY_DICT)
@@ -728,7 +730,7 @@ class DictConfigurator(BaseConfigurator):
                 config['address'] = self.as_tuple(config['address'])
             factory = klass
         props = config.pop('.', None)
-        kwargs = dict((k, config[k]) for k in config if valid_ident(k))
+        kwargs = {k: config[k] for k in config if valid_ident(k)}
         try:
             result = factory(**kwargs)
         except TypeError as te:
@@ -816,8 +818,6 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
     normal. Note that you can return transformed bytes, e.g. by decrypting
     the bytes passed in.
     """
-    if not thread: #pragma: no cover
-        raise NotImplementedError("listen() needs threading to work")
 
     class ConfigStreamHandler(StreamRequestHandler):
         """
@@ -894,7 +894,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                 logging._acquireLock()
                 abort = self.abort
                 logging._releaseLock()
-            self.socket.close()
+            self.server_close()
 
     class Server(threading.Thread):
 

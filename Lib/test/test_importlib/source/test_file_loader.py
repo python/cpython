@@ -235,6 +235,123 @@ class SimpleTest(abc.LoaderTests):
                 warnings.simplefilter('ignore', DeprecationWarning)
                 loader.load_module('bad name')
 
+    @util.writes_bytecode_files
+    def test_checked_hash_based_pyc(self):
+        with util.create_modules('_temp') as mapping:
+            source = mapping['_temp']
+            pyc = self.util.cache_from_source(source)
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "old"')
+            os.utime(source, (50, 50))
+            py_compile.compile(
+                source,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+            )
+            loader = self.machinery.SourceFileLoader('_temp', source)
+            mod = types.ModuleType('_temp')
+            mod.__spec__ = self.util.spec_from_loader('_temp', loader)
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+            # Write a new source with the same mtime and size as before.
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "new"')
+            os.utime(source, (50, 50))
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'new')
+            with open(pyc, 'rb') as fp:
+                data = fp.read()
+            self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b11)
+            self.assertEqual(
+                self.util.source_hash(b'state = "new"'),
+                data[8:16],
+            )
+
+    @util.writes_bytecode_files
+    def test_overridden_checked_hash_based_pyc(self):
+        with util.create_modules('_temp') as mapping, \
+             unittest.mock.patch('_imp.check_hash_based_pycs', 'never'):
+            source = mapping['_temp']
+            pyc = self.util.cache_from_source(source)
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "old"')
+            os.utime(source, (50, 50))
+            py_compile.compile(
+                source,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+            )
+            loader = self.machinery.SourceFileLoader('_temp', source)
+            mod = types.ModuleType('_temp')
+            mod.__spec__ = self.util.spec_from_loader('_temp', loader)
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+            # Write a new source with the same mtime and size as before.
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "new"')
+            os.utime(source, (50, 50))
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+
+    @util.writes_bytecode_files
+    def test_unchecked_hash_based_pyc(self):
+        with util.create_modules('_temp') as mapping:
+            source = mapping['_temp']
+            pyc = self.util.cache_from_source(source)
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "old"')
+            os.utime(source, (50, 50))
+            py_compile.compile(
+                source,
+                invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH,
+            )
+            loader = self.machinery.SourceFileLoader('_temp', source)
+            mod = types.ModuleType('_temp')
+            mod.__spec__ = self.util.spec_from_loader('_temp', loader)
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+            # Update the source file, which should be ignored.
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "new"')
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+            with open(pyc, 'rb') as fp:
+                data = fp.read()
+            self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b1)
+            self.assertEqual(
+                self.util.source_hash(b'state = "old"'),
+                data[8:16],
+            )
+
+    @util.writes_bytecode_files
+    def test_overiden_unchecked_hash_based_pyc(self):
+        with util.create_modules('_temp') as mapping, \
+             unittest.mock.patch('_imp.check_hash_based_pycs', 'always'):
+            source = mapping['_temp']
+            pyc = self.util.cache_from_source(source)
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "old"')
+            os.utime(source, (50, 50))
+            py_compile.compile(
+                source,
+                invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH,
+            )
+            loader = self.machinery.SourceFileLoader('_temp', source)
+            mod = types.ModuleType('_temp')
+            mod.__spec__ = self.util.spec_from_loader('_temp', loader)
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'old')
+            # Update the source file, which should be ignored.
+            with open(source, 'wb') as fp:
+                fp.write(b'state = "new"')
+            loader.exec_module(mod)
+            self.assertEqual(mod.state, 'new')
+            with open(pyc, 'rb') as fp:
+                data = fp.read()
+            self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b1)
+            self.assertEqual(
+                self.util.source_hash(b'state = "new"'),
+                data[8:16],
+            )
+
 
 (Frozen_SimpleTest,
  Source_SimpleTest
@@ -247,15 +364,17 @@ class BadBytecodeTest:
     def import_(self, file, module_name):
         raise NotImplementedError
 
-    def manipulate_bytecode(self, name, mapping, manipulator, *,
-                            del_source=False):
+    def manipulate_bytecode(self,
+                            name, mapping, manipulator, *,
+                            del_source=False,
+                            invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP):
         """Manipulate the bytecode of a module by passing it into a callable
         that returns what to use as the new bytecode."""
         try:
             del sys.modules['_temp']
         except KeyError:
             pass
-        py_compile.compile(mapping[name])
+        py_compile.compile(mapping[name], invalidation_mode=invalidation_mode)
         if not del_source:
             bytecode_path = self.util.cache_from_source(mapping[name])
         else:
@@ -294,24 +413,51 @@ class BadBytecodeTest:
                                                 del_source=del_source)
             test('_temp', mapping, bc_path)
 
-    def _test_partial_timestamp(self, test, *, del_source=False):
+    def _test_partial_flags(self, test, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
-                                                lambda bc: bc[:7],
-                                                del_source=del_source)
+                                               lambda bc: bc[:7],
+                                               del_source=del_source)
             test('_temp', mapping, bc_path)
 
-    def _test_partial_size(self, test, *, del_source=False):
+    def _test_partial_hash(self, test, *, del_source=False):
+        with util.create_modules('_temp') as mapping:
+            bc_path = self.manipulate_bytecode(
+                '_temp',
+                mapping,
+                lambda bc: bc[:13],
+                del_source=del_source,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+            )
+            test('_temp', mapping, bc_path)
+        with util.create_modules('_temp') as mapping:
+            bc_path = self.manipulate_bytecode(
+                '_temp',
+                mapping,
+                lambda bc: bc[:13],
+                del_source=del_source,
+                invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH,
+            )
+            test('_temp', mapping, bc_path)
+
+    def _test_partial_timestamp(self, test, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
                                                 lambda bc: bc[:11],
                                                 del_source=del_source)
             test('_temp', mapping, bc_path)
 
+    def _test_partial_size(self, test, *, del_source=False):
+        with util.create_modules('_temp') as mapping:
+            bc_path = self.manipulate_bytecode('_temp', mapping,
+                                                lambda bc: bc[:15],
+                                                del_source=del_source)
+            test('_temp', mapping, bc_path)
+
     def _test_no_marshal(self, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
-                                                lambda bc: bc[:12],
+                                                lambda bc: bc[:16],
                                                 del_source=del_source)
             file_path = mapping['_temp'] if not del_source else bc_path
             with self.assertRaises(EOFError):
@@ -320,7 +466,7 @@ class BadBytecodeTest:
     def _test_non_code_marshal(self, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bytecode_path = self.manipulate_bytecode('_temp', mapping,
-                                    lambda bc: bc[:12] + marshal.dumps(b'abcd'),
+                                    lambda bc: bc[:16] + marshal.dumps(b'abcd'),
                                     del_source=del_source)
             file_path = mapping['_temp'] if not del_source else bytecode_path
             with self.assertRaises(ImportError) as cm:
@@ -331,7 +477,7 @@ class BadBytecodeTest:
     def _test_bad_marshal(self, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bytecode_path = self.manipulate_bytecode('_temp', mapping,
-                                                lambda bc: bc[:12] + b'<test>',
+                                                lambda bc: bc[:16] + b'<test>',
                                                 del_source=del_source)
             file_path = mapping['_temp'] if not del_source else bytecode_path
             with self.assertRaises(EOFError):
@@ -376,7 +522,7 @@ class SourceLoaderBadBytecodeTest:
         def test(name, mapping, bytecode_path):
             self.import_(mapping[name], name)
             with open(bytecode_path, 'rb') as file:
-                self.assertGreater(len(file.read()), 12)
+                self.assertGreater(len(file.read()), 16)
 
         self._test_empty_file(test)
 
@@ -384,7 +530,7 @@ class SourceLoaderBadBytecodeTest:
         def test(name, mapping, bytecode_path):
             self.import_(mapping[name], name)
             with open(bytecode_path, 'rb') as file:
-                self.assertGreater(len(file.read()), 12)
+                self.assertGreater(len(file.read()), 16)
 
         self._test_partial_magic(test)
 
@@ -395,7 +541,7 @@ class SourceLoaderBadBytecodeTest:
         def test(name, mapping, bytecode_path):
             self.import_(mapping[name], name)
             with open(bytecode_path, 'rb') as file:
-                self.assertGreater(len(file.read()), 12)
+                self.assertGreater(len(file.read()), 16)
 
         self._test_magic_only(test)
 
@@ -418,9 +564,29 @@ class SourceLoaderBadBytecodeTest:
         def test(name, mapping, bc_path):
             self.import_(mapping[name], name)
             with open(bc_path, 'rb') as file:
-                self.assertGreater(len(file.read()), 12)
+                self.assertGreater(len(file.read()), 16)
 
         self._test_partial_timestamp(test)
+
+    @util.writes_bytecode_files
+    def test_partial_flags(self):
+        # When the flags is partial, regenerate the .pyc, else raise EOFError.
+        def test(name, mapping, bc_path):
+            self.import_(mapping[name], name)
+            with open(bc_path, 'rb') as file:
+                self.assertGreater(len(file.read()), 16)
+
+        self._test_partial_flags(test)
+
+    @util.writes_bytecode_files
+    def test_partial_hash(self):
+        # When the hash is partial, regenerate the .pyc, else raise EOFError.
+        def test(name, mapping, bc_path):
+            self.import_(mapping[name], name)
+            with open(bc_path, 'rb') as file:
+                self.assertGreater(len(file.read()), 16)
+
+        self._test_partial_hash(test)
 
     @util.writes_bytecode_files
     def test_partial_size(self):
@@ -429,7 +595,7 @@ class SourceLoaderBadBytecodeTest:
         def test(name, mapping, bc_path):
             self.import_(mapping[name], name)
             with open(bc_path, 'rb') as file:
-                self.assertGreater(len(file.read()), 12)
+                self.assertGreater(len(file.read()), 16)
 
         self._test_partial_size(test)
 
@@ -459,13 +625,13 @@ class SourceLoaderBadBytecodeTest:
             py_compile.compile(mapping['_temp'])
             bytecode_path = self.util.cache_from_source(mapping['_temp'])
             with open(bytecode_path, 'r+b') as bytecode_file:
-                bytecode_file.seek(4)
+                bytecode_file.seek(8)
                 bytecode_file.write(zeros)
             self.import_(mapping['_temp'], '_temp')
             source_mtime = os.path.getmtime(mapping['_temp'])
             source_timestamp = self.importlib._w_long(source_mtime)
             with open(bytecode_path, 'rb') as bytecode_file:
-                bytecode_file.seek(4)
+                bytecode_file.seek(8)
                 self.assertEqual(bytecode_file.read(4), source_timestamp)
 
     # [bytecode read-only]
@@ -559,6 +725,20 @@ class SourcelessLoaderBadBytecodeTest:
                 self.import_(bytecode_path, name)
 
         self._test_partial_timestamp(test, del_source=True)
+
+    def test_partial_flags(self):
+        def test(name, mapping, bytecode_path):
+            with self.assertRaises(EOFError):
+                self.import_(bytecode_path, name)
+
+        self._test_partial_flags(test, del_source=True)
+
+    def test_partial_hash(self):
+        def test(name, mapping, bytecode_path):
+            with self.assertRaises(EOFError):
+                self.import_(bytecode_path, name)
+
+        self._test_partial_hash(test, del_source=True)
 
     def test_partial_size(self):
         def test(name, mapping, bytecode_path):

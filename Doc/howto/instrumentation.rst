@@ -254,11 +254,15 @@ and the remainder indicates the call/return hierarchy as the script executes.
 
 For a `--enable-shared` build of CPython, the markers are contained within the
 libpython shared library, and the probe's dotted path needs to reflect this. For
-example, this line from the above example::
+example, this line from the above example:
+
+.. code-block:: none
 
    probe process("python").mark("function__entry") {
 
-should instead read::
+should instead read:
+
+.. code-block:: none
 
    probe process("python").library("libpython3.6dm.so.1.0").mark("function__entry") {
 
@@ -311,6 +315,21 @@ Available static markers
 
    Fires when the Python interpreter finishes a garbage collection
    cycle. ``arg0`` is the number of collected objects.
+
+.. c:function:: import__find__load__start(str modulename)
+
+   Fires before :mod:`importlib` attempts to find and load the module.
+   ``arg0`` is the module name.
+
+   .. versionadded:: 3.7
+
+.. c:function:: import__find__load__done(str modulename, int found)
+
+   Fires after :mod:`importlib`'s find_and_load function is called.
+   ``arg0`` is the module name, ``arg1`` indicates if module was
+   successfully loaded.
+
+   .. versionadded:: 3.7
 
 
 SystemTap Tapsets

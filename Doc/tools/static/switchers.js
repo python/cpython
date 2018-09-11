@@ -10,11 +10,10 @@
     '(?:release/\\d.\\d[\\x\\d\\.]*)'];
 
   var all_versions = {
-    '3.7': 'dev (3.7)',
+    '3.8': 'dev (3.8)',
+    '3.7': '3.7',
     '3.6': '3.6',
     '3.5': '3.5',
-    '3.4': '3.4',
-    '3.3': '3.3',
     '2.7': '2.7',
   };
 
@@ -22,6 +21,7 @@
       'en': 'English',
       'fr': 'French',
       'ja': 'Japanese',
+      'ko': 'Korean',
   };
 
   function build_version_select(current_version, current_release) {

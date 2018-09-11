@@ -1,7 +1,6 @@
-"""Test idlelib.configdialog.
+"""Test configdialog, coverage 94%.
 
 Half the class creates dialog, half works with user customizations.
-Coverage: 95%.
 """
 from idlelib import configdialog
 from test.support import requires
@@ -44,10 +43,9 @@ def tearDownModule():
     tracers.detach()
     tracers.clear()
     changes.clear()
-    del dialog
     root.update_idletasks()
     root.destroy()
-    del root
+    root = dialog = None
 
 
 class FontPageTest(unittest.TestCase):
@@ -62,6 +60,7 @@ class FontPageTest(unittest.TestCase):
         page = cls.page = dialog.fontpage
         dialog.note.select(page)
         page.set_samples = Func()  # Mask instance method.
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -192,6 +191,7 @@ class FontPageTest(unittest.TestCase):
     def test_set_samples(self):
         d = self.page
         del d.set_samples  # Unmask method for test
+        orig_samples = d.font_sample, d.highlight_sample
         d.font_sample, d.highlight_sample = {}, {}
         d.font_name.set('test')
         d.font_size.set('5')
@@ -202,7 +202,7 @@ class FontPageTest(unittest.TestCase):
         d.set_samples()
         self.assertTrue(d.font_sample == d.highlight_sample == expected)
 
-        del d.font_sample, d.highlight_sample
+        d.font_sample, d.highlight_sample = orig_samples
         d.set_samples = Func()  # Re-mask for other tests.
 
 
@@ -211,6 +211,7 @@ class IndentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.page = dialog.fontpage
+        cls.page.update()
 
     def test_load_tab_cfg(self):
         d = self.page
@@ -241,6 +242,7 @@ class HighPageTest(unittest.TestCase):
         page.paint_theme_sample = Func()
         page.set_highlight_target = Func()
         page.set_color_sample = Func()
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -272,7 +274,7 @@ class HighPageTest(unittest.TestCase):
         # builtinlist sets variable builtin_name to the CurrentTheme default.
         eq(d.builtin_name.get(), 'IDLE Classic')
         eq(d.custom_name.get(), '- no custom themes -')
-        eq(d.custom_theme_on['state'], DISABLED)
+        eq(d.custom_theme_on.state(), ('disabled',))
         eq(d.set_theme_type.called, 1)
         eq(d.paint_theme_sample.called, 1)
         eq(d.set_highlight_target.called, 1)
@@ -315,7 +317,7 @@ class HighPageTest(unittest.TestCase):
         changes.clear()
 
         # Custom selected.
-        d.custom_theme_on['state'] = NORMAL
+        d.custom_theme_on.state(('!disabled',))
         d.custom_theme_on.invoke()
         self.assertEqual(mainpage, {'Theme': {'default': 'False'}})
         eq(d.var_changed_builtin_name.called, 1)
@@ -428,15 +430,15 @@ class HighPageTest(unittest.TestCase):
         d.set_theme_type()
         eq(d.builtinlist['state'], NORMAL)
         eq(d.customlist['state'], DISABLED)
-        eq(d.button_delete_custom['state'], DISABLED)
+        eq(d.button_delete_custom.state(), ('disabled',))
 
         # Custom theme selected.
         d.theme_source.set(False)
         d.set_theme_type()
         eq(d.builtinlist['state'], DISABLED)
-        eq(d.custom_theme_on['state'], NORMAL)
+        eq(d.custom_theme_on.state(), ('selected',))
         eq(d.customlist['state'], NORMAL)
-        eq(d.button_delete_custom['state'], NORMAL)
+        eq(d.button_delete_custom.state(), ())
         d.set_theme_type = Func()
 
     def test_get_color(self):
@@ -455,7 +457,7 @@ class HighPageTest(unittest.TestCase):
         eq(d.color.get(), '#ffffff')
 
         # Selection same as previous color.
-        chooser.result = ('', d.frame_color_set.cget('bg'))
+        chooser.result = ('', d.style.lookup(d.frame_color_set['style'], 'background'))
         d.button_set_color.invoke()
         eq(d.color.get(), '#ffffff')
 
@@ -494,7 +496,7 @@ class HighPageTest(unittest.TestCase):
         d.fg_bg_toggle.set(True)
 
         d.color.set(color)
-        self.assertEqual(d.frame_color_set.cget('bg'), color)
+        self.assertEqual(d.style.lookup(d.frame_color_set['style'], 'background'), color)
         self.assertEqual(d.highlight_sample.tag_cget('hilite', 'foreground'), color)
         self.assertEqual(highpage,
                          {'Python': {'hilite-foreground': color}})
@@ -567,15 +569,15 @@ class HighPageTest(unittest.TestCase):
 
         # Target is cursor.
         d.highlight_target.set('Cursor')
-        eq(d.fg_on['state'], DISABLED)
-        eq(d.bg_on['state'], DISABLED)
+        eq(d.fg_on.state(), ('disabled', 'selected'))
+        eq(d.bg_on.state(), ('disabled',))
         self.assertTrue(d.fg_bg_toggle)
         eq(d.set_color_sample.called, 1)
 
         # Target is not cursor.
         d.highlight_target.set('Comment')
-        eq(d.fg_on['state'], NORMAL)
-        eq(d.bg_on['state'], NORMAL)
+        eq(d.fg_on.state(), ('selected',))
+        eq(d.bg_on.state(), ())
         self.assertTrue(d.fg_bg_toggle)
         eq(d.set_color_sample.called, 2)
 
@@ -597,8 +599,9 @@ class HighPageTest(unittest.TestCase):
         d.highlight_target.set('Selected Text')
         d.fg_bg_toggle.set(True)
         d.set_color_sample()
-        self.assertEqual(d.frame_color_set.cget('bg'),
-                         d.highlight_sample.tag_cget('hilite', 'foreground'))
+        self.assertEqual(
+                d.style.lookup(d.frame_color_set['style'], 'background'),
+                d.highlight_sample.tag_cget('hilite', 'foreground'))
         d.set_color_sample = Func()
 
     def test_paint_theme_sample(self):
@@ -641,8 +644,8 @@ class HighPageTest(unittest.TestCase):
     def test_delete_custom(self):
         eq = self.assertEqual
         d = self.page
-        d.button_delete_custom['state'] = NORMAL
-        yesno = configdialog.tkMessageBox.askyesno = Func()
+        d.button_delete_custom.state(('!disabled',))
+        yesno = d.askyesno = Func()
         dialog.deactivate_current_config = Func()
         dialog.activate_config_changes = Func()
 
@@ -670,14 +673,14 @@ class HighPageTest(unittest.TestCase):
         eq(yesno.called, 2)
         self.assertNotIn(theme_name, highpage)
         eq(idleConf.GetSectionList('user', 'highlight'), [])
-        eq(d.custom_theme_on['state'], DISABLED)
+        eq(d.custom_theme_on.state(), ('disabled',))
         eq(d.custom_name.get(), '- no custom themes -')
         eq(dialog.deactivate_current_config.called, 1)
         eq(dialog.activate_config_changes.called, 1)
         eq(d.set_theme_type.called, 1)
 
         del dialog.activate_config_changes, dialog.deactivate_current_config
-        del configdialog.tkMessageBox.askyesno
+        del d.askyesno
 
 
 class KeysPageTest(unittest.TestCase):
@@ -721,7 +724,7 @@ class KeysPageTest(unittest.TestCase):
         # builtinlist sets variable builtin_name to the CurrentKeys default.
         eq(d.builtin_name.get(), 'IDLE Classic OSX')
         eq(d.custom_name.get(), '- no custom keys -')
-        eq(d.custom_keyset_on['state'], DISABLED)
+        eq(d.custom_keyset_on.state(), ('disabled',))
         eq(d.set_keys_type.called, 1)
         eq(d.load_keys_list.called, 1)
         eq(d.load_keys_list.args, ('IDLE Classic OSX', ))
@@ -765,7 +768,7 @@ class KeysPageTest(unittest.TestCase):
         changes.clear()
 
         # Custom selected.
-        d.custom_keyset_on['state'] = NORMAL
+        d.custom_keyset_on.state(('!disabled',))
         d.custom_keyset_on.invoke()
         self.assertEqual(mainpage, {'Keys': {'default': 'False'}})
         eq(d.var_changed_builtin_name.called, 1)
@@ -819,23 +822,25 @@ class KeysPageTest(unittest.TestCase):
         self.assertEqual(d.load_keys_list.called, 1)
 
     def test_keybinding(self):
+        idleConf.SetOption('extensions', 'ZzDummy', 'enable', 'True')
         d = self.page
         d.custom_name.set('my custom keys')
         d.bindingslist.delete(0, 'end')
         d.bindingslist.insert(0, 'copy')
-        d.bindingslist.insert(1, 'expand-word')
+        d.bindingslist.insert(1, 'z-in')
         d.bindingslist.selection_set(0)
         d.bindingslist.selection_anchor(0)
         # Core binding - adds to keys.
         d.keybinding.set('<Key-F11>')
         self.assertEqual(keyspage,
                          {'my custom keys': {'copy': '<Key-F11>'}})
+
         # Not a core binding - adds to extensions.
         d.bindingslist.selection_set(1)
         d.bindingslist.selection_anchor(1)
         d.keybinding.set('<Key-F11>')
         self.assertEqual(extpage,
-                         {'AutoExpand_cfgBindings': {'expand-word': '<Key-F11>'}})
+                         {'ZzDummy_cfgBindings': {'z-in': '<Key-F11>'}})
 
     def test_set_keys_type(self):
         eq = self.assertEqual
@@ -847,15 +852,15 @@ class KeysPageTest(unittest.TestCase):
         d.set_keys_type()
         eq(d.builtinlist['state'], NORMAL)
         eq(d.customlist['state'], DISABLED)
-        eq(d.button_delete_custom_keys['state'], DISABLED)
+        eq(d.button_delete_custom_keys.state(), ('disabled',))
 
         # Custom keyset selected.
         d.keyset_source.set(False)
         d.set_keys_type()
         eq(d.builtinlist['state'], DISABLED)
-        eq(d.custom_keyset_on['state'], NORMAL)
+        eq(d.custom_keyset_on.state(), ('selected',))
         eq(d.customlist['state'], NORMAL)
-        eq(d.button_delete_custom_keys['state'], NORMAL)
+        eq(d.button_delete_custom_keys.state(), ())
         d.set_keys_type = Func()
 
     def test_get_new_keys(self):
@@ -865,7 +870,7 @@ class KeysPageTest(unittest.TestCase):
         gkd = configdialog.GetKeysDialog = Func(return_self=True)
         gnkn = d.get_new_keys_name = Func()
 
-        d.button_new_keys['state'] = NORMAL
+        d.button_new_keys.state(('!disabled',))
         d.bindingslist.delete(0, 'end')
         d.bindingslist.insert(0, 'copy - <Control-Shift-Key-C>')
         d.bindingslist.selection_set(0)
@@ -953,7 +958,7 @@ class KeysPageTest(unittest.TestCase):
         b.event_generate('<Button-1>', x=x, y=y)
         b.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.assertEqual(b.get('anchor'), 'find')
-        self.assertEqual(d.button_new_keys['state'], NORMAL)
+        self.assertEqual(d.button_new_keys.state(), ())
 
     def test_create_new_key_set_and_save_new_key_set(self):
         eq = self.assertEqual
@@ -1032,8 +1037,8 @@ class KeysPageTest(unittest.TestCase):
     def test_delete_custom_keys(self):
         eq = self.assertEqual
         d = self.page
-        d.button_delete_custom_keys['state'] = NORMAL
-        yesno = configdialog.tkMessageBox.askyesno = Func()
+        d.button_delete_custom_keys.state(('!disabled',))
+        yesno = d.askyesno = Func()
         dialog.deactivate_current_config = Func()
         dialog.activate_config_changes = Func()
 
@@ -1061,14 +1066,14 @@ class KeysPageTest(unittest.TestCase):
         eq(yesno.called, 2)
         self.assertNotIn(keyset_name, keyspage)
         eq(idleConf.GetSectionList('user', 'keys'), [])
-        eq(d.custom_keyset_on['state'], DISABLED)
+        eq(d.custom_keyset_on.state(), ('disabled',))
         eq(d.custom_name.get(), '- no custom keys -')
         eq(dialog.deactivate_current_config.called, 1)
         eq(dialog.activate_config_changes.called, 1)
         eq(d.set_keys_type.called, 1)
 
         del dialog.activate_config_changes, dialog.deactivate_current_config
-        del configdialog.tkMessageBox.askyesno
+        del d.askyesno
 
 
 class GenPageTest(unittest.TestCase):
@@ -1083,6 +1088,7 @@ class GenPageTest(unittest.TestCase):
         dialog.note.select(page)
         page.set = page.set_add_delete_state = Func()
         page.upc = page.update_help_changes = Func()
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -1124,6 +1130,34 @@ class GenPageTest(unittest.TestCase):
         self.assertEqual(mainpage,
                          {'General': {'editor-on-startup': '0'}})
 
+    def test_editor_size(self):
+        d = self.page
+        d.win_height_int.delete(0, 'end')
+        d.win_height_int.insert(0, '11')
+        self.assertEqual(mainpage, {'EditorWindow': {'height': '11'}})
+        changes.clear()
+        d.win_width_int.delete(0, 'end')
+        d.win_width_int.insert(0, '11')
+        self.assertEqual(mainpage, {'EditorWindow': {'width': '11'}})
+
+    def test_autocomplete_wait(self):
+        self.page.auto_wait_int.delete(0, 'end')
+        self.page.auto_wait_int.insert(0, '11')
+        self.assertEqual(extpage, {'AutoComplete': {'popupwait': '11'}})
+
+    def test_parenmatch(self):
+        d = self.page
+        eq = self.assertEqual
+        d.paren_style_type['menu'].invoke(0)
+        eq(extpage, {'ParenMatch': {'style': 'opener'}})
+        changes.clear()
+        d.paren_flash_time.delete(0, 'end')
+        d.paren_flash_time.insert(0, '11')
+        eq(extpage, {'ParenMatch': {'flash-delay': '11'}})
+        changes.clear()
+        d.bell_on.invoke()
+        eq(extpage, {'ParenMatch': {'bell': 'False'}})
+
     def test_autosave(self):
         d = self.page
         d.save_auto_on.invoke()
@@ -1131,13 +1165,15 @@ class GenPageTest(unittest.TestCase):
         d.save_ask_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '0'}})
 
-    def test_editor_size(self):
-        d = self.page
-        d.win_height_int.insert(0, '1')
-        self.assertEqual(mainpage, {'EditorWindow': {'height': '140'}})
-        changes.clear()
-        d.win_width_int.insert(0, '1')
-        self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
+    def test_paragraph(self):
+        self.page.format_width_int.delete(0, 'end')
+        self.page.format_width_int.insert(0, '11')
+        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
+
+    def test_context(self):
+        self.page.context_int.delete(0, 'end')
+        self.page.context_int.insert(0, '1')
+        self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
 
     def test_source_selected(self):
         d = self.page
@@ -1173,18 +1209,18 @@ class GenPageTest(unittest.TestCase):
 
         h.delete(0, 'end')
         sad()
-        eq(d.button_helplist_edit['state'], DISABLED)
-        eq(d.button_helplist_remove['state'], DISABLED)
+        eq(d.button_helplist_edit.state(), ('disabled',))
+        eq(d.button_helplist_remove.state(), ('disabled',))
 
         h.insert(0, 'source')
         sad()
-        eq(d.button_helplist_edit['state'], DISABLED)
-        eq(d.button_helplist_remove['state'], DISABLED)
+        eq(d.button_helplist_edit.state(), ('disabled',))
+        eq(d.button_helplist_remove.state(), ('disabled',))
 
         h.selection_set(0)
         sad()
-        eq(d.button_helplist_edit['state'], NORMAL)
-        eq(d.button_helplist_remove['state'], NORMAL)
+        eq(d.button_helplist_edit.state(), ())
+        eq(d.button_helplist_remove.state(), ())
         d.set_add_delete_state = Func()  # Mask method.
 
     def test_helplist_item_add(self):

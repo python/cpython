@@ -21,7 +21,7 @@ print('To:', msg['to'])
 print('From:', msg['from'])
 print('Subject:', msg['subject'])
 
-# If we want to print a priview of the message content, we can extract whatever
+# If we want to print a preview of the message content, we can extract whatever
 # the least formatted payload is and print the first three lines.  Of course,
 # if the message has no plain text part printing the first three lines of html
 # is probably useless, but this is just a conceptual example.

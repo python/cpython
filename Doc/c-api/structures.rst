@@ -294,3 +294,43 @@ definition with the same method name.
    read-only access.  Using :c:macro:`T_STRING` for :attr:`type` implies
    :c:macro:`READONLY`.  Only :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX`
    members can be deleted.  (They are set to *NULL*).
+
+
+.. c:type:: PyGetSetDef
+
+   Structure to define property-like access for a type. See also description of
+   the :c:member:`PyTypeObject.tp_getset` slot.
+
+   +-------------+------------------+-----------------------------------+
+   | Field       | C Type           | Meaning                           |
+   +=============+==================+===================================+
+   | name        | const char \*    | attribute name                    |
+   +-------------+------------------+-----------------------------------+
+   | get         | getter           | C Function to get the attribute   |
+   +-------------+------------------+-----------------------------------+
+   | set         | setter           | optional C function to set or     |
+   |             |                  | delete the attribute, if omitted  |
+   |             |                  | the attribute is readonly         |
+   +-------------+------------------+-----------------------------------+
+   | doc         | const char \*    | optional docstring                |
+   +-------------+------------------+-----------------------------------+
+   | closure     | void \*          | optional function pointer,        |
+   |             |                  | providing additional data for     |
+   |             |                  | getter and setter                 |
+   +-------------+------------------+-----------------------------------+
+
+   The ``get`` function takes one :c:type:`PyObject\*` parameter (the
+   instance) and a function pointer (the associated ``closure``)::
+
+      typedef PyObject *(*getter)(PyObject *, void *);
+
+   It should return a new reference on success or *NULL* with a set exception
+   on failure.
+
+   ``set`` functions take two :c:type:`PyObject\*` parameters (the instance and
+   the value to be set) and a function pointer (the associated ``closure``)::
+
+      typedef int (*setter)(PyObject *, PyObject *, void *);
+
+   In case the attribute should be deleted the second parameter is *NULL*.
+   Should return ``0`` on success or ``-1`` with a set exception on failure.

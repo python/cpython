@@ -9,33 +9,38 @@ Note that tab width in IDLE is currently fixed at eight due to Tk issues.
 Refer to comments in EditorWindow autoindent code for details.
 
 """
-from tkinter import (Toplevel, Frame, LabelFrame, Listbox, Label, Button,
-                     Entry, Text, Scale, Radiobutton, Checkbutton, Canvas,
+from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
-                     TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE, NORMAL, DISABLED,
+                     TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
-from tkinter.ttk import Notebook, Scrollbar
+from tkinter.ttk import (Button, Checkbutton, Entry, Frame, Label, LabelFrame,
+                         OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
-import tkinter.messagebox as tkMessageBox
+from tkinter import messagebox
 
 from idlelib.config import idleConf, ConfigChanges
 from idlelib.config_key import GetKeysDialog
 from idlelib.dynoption import DynOptionMenu
 from idlelib import macosx
 from idlelib.query import SectionName, HelpSource
-from idlelib.tabbedpages import TabbedPageSet
 from idlelib.textview import view_text
+from idlelib.autocomplete import AutoComplete
+from idlelib.codecontext import CodeContext
+from idlelib.parenmatch import ParenMatch
+from idlelib.paragraph import FormatParagraph
 
 changes = ConfigChanges()
+# Reload changed options in the following classes.
+reloadables = (AutoComplete, CodeContext, ParenMatch, FormatParagraph)
 
 
 class ConfigDialog(Toplevel):
     """Config dialog for IDLE.
     """
 
-    def __init__(self, parent, title='', _htest=False, _utest=False):
+    def __init__(self, parent, title='', *, _htest=False, _utest=False):
         """Show the tabbed dialog for user configuration.
 
         Args:
@@ -99,7 +104,7 @@ class ConfigDialog(Toplevel):
             load_configs: Load pages except for extensions.
             activate_config_changes: Tell editors to reload.
         """
-        self.note = note = Notebook(self, width=450, height=450)
+        self.note = note = Notebook(self)
         self.highpage = HighPage(note)
         self.fontpage = FontPage(note, self.highpage)
         self.keyspage = KeysPage(note)
@@ -137,9 +142,9 @@ class ConfigDialog(Toplevel):
             # text in the buttons.
             padding_args = {}
         else:
-            padding_args = {'padx':6, 'pady':3}
-        outer = Frame(self, pady=2)
-        buttons = Frame(outer, pady=2)
+            padding_args = {'padding': (6, 3)}
+        outer = Frame(self, padding=2)
+        buttons = Frame(outer, padding=2)
         for txt, cmd in (
             ('Ok', self.ok),
             ('Apply', self.apply),
@@ -183,22 +188,27 @@ class ConfigDialog(Toplevel):
         """
         self.destroy()
 
+    def destroy(self):
+        global font_sample_text
+        font_sample_text = self.fontpage.font_sample.get('1.0', 'end')
+        self.grab_release()
+        super().destroy()
+
     def help(self):
         """Create textview for config dialog help.
 
         Attrbutes accessed:
-            tab_pages
+            note
 
         Methods:
             view_text: Method from textview module.
         """
-        page = self.tab_pages._current_page
+        page = self.note.tab(self.note.select(), option='text').strip()
         view_text(self, title='Help for IDLE preferences',
                  text=help_common+help_pages.get(page, ''))
 
     def deactivate_current_config(self):
         """Remove current key bindings.
-
         Iterate over window instances defined in parent and remove
         the keybindings.
         """
@@ -221,6 +231,8 @@ class ConfigDialog(Toplevel):
             instance.set_notabs_indentwidth()
             instance.ApplyKeybindings()
             instance.reset_help_menu_entries()
+        for klass in reloadables:
+            klass.reload()
 
     def create_page_extensions(self):
         """Part of the config dialog used for configuring IDLE extensions.
@@ -266,7 +278,7 @@ class ConfigDialog(Toplevel):
         self.extension_list.grid(column=0, row=0, sticky='nws')
         scroll.grid(column=1, row=0, sticky='ns')
         self.details_frame.grid(column=2, row=0, sticky='nsew', padx=[10, 0])
-        frame.configure(padx=10, pady=10)
+        frame.configure(padding=10)
         self.config_frame = {}
         self.current_extension = None
 
@@ -288,6 +300,7 @@ class ConfigDialog(Toplevel):
         "Fill self.extensions with data from the default and user configs."
         self.extensions = {}
         for ext_name in idleConf.GetExtensions(active_only=False):
+            # Former built-in extensions are already filtered out.
             self.extensions[ext_name] = []
 
         for ext_name in self.extensions:
@@ -356,17 +369,17 @@ class ConfigDialog(Toplevel):
             label.grid(row=row, column=0, sticky=NW)
             var = opt['var']
             if opt['type'] == 'bool':
-                Checkbutton(entry_area, textvariable=var, variable=var,
-                            onvalue='True', offvalue='False',
-                            indicatoron=FALSE, selectcolor='', width=8
+                Checkbutton(entry_area, variable=var,
+                            onvalue='True', offvalue='False', width=8
                             ).grid(row=row, column=1, sticky=W, padx=7)
             elif opt['type'] == 'int':
                 Entry(entry_area, textvariable=var, validate='key',
-                      validatecommand=(self.is_int, '%P')
+                      validatecommand=(self.is_int, '%P'), width=10
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
 
-            else:
-                Entry(entry_area, textvariable=var
+            else:  # type == 'str'
+                # Limit size to fit non-expanding space with larger font.
+                Entry(entry_area, textvariable=var, width=15
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
         return
 
@@ -422,6 +435,35 @@ class ConfigDialog(Toplevel):
 #     def other_methods():
 #         # Define tab-specific behavior.
 
+font_sample_text = (
+    '<ASCII/Latin1>\n'
+    'AaBbCcDdEeFfGgHhIiJj\n1234567890#:+=(){}[]\n'
+    '\u00a2\u00a3\u00a5\u00a7\u00a9\u00ab\u00ae\u00b6\u00bd\u011e'
+    '\u00c0\u00c1\u00c2\u00c3\u00c4\u00c5\u00c7\u00d0\u00d8\u00df\n'
+    '\n<IPA,Greek,Cyrillic>\n'
+    '\u0250\u0255\u0258\u025e\u025f\u0264\u026b\u026e\u0270\u0277'
+    '\u027b\u0281\u0283\u0286\u028e\u029e\u02a2\u02ab\u02ad\u02af\n'
+    '\u0391\u03b1\u0392\u03b2\u0393\u03b3\u0394\u03b4\u0395\u03b5'
+    '\u0396\u03b6\u0397\u03b7\u0398\u03b8\u0399\u03b9\u039a\u03ba\n'
+    '\u0411\u0431\u0414\u0434\u0416\u0436\u041f\u043f\u0424\u0444'
+    '\u0427\u0447\u042a\u044a\u042d\u044d\u0460\u0464\u046c\u04dc\n'
+    '\n<Hebrew, Arabic>\n'
+    '\u05d0\u05d1\u05d2\u05d3\u05d4\u05d5\u05d6\u05d7\u05d8\u05d9'
+    '\u05da\u05db\u05dc\u05dd\u05de\u05df\u05e0\u05e1\u05e2\u05e3\n'
+    '\u0627\u0628\u062c\u062f\u0647\u0648\u0632\u062d\u0637\u064a'
+    '\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669\n'
+    '\n<Devanagari, Tamil>\n'
+    '\u0966\u0967\u0968\u0969\u096a\u096b\u096c\u096d\u096e\u096f'
+    '\u0905\u0906\u0907\u0908\u0909\u090a\u090f\u0910\u0913\u0914\n'
+    '\u0be6\u0be7\u0be8\u0be9\u0bea\u0beb\u0bec\u0bed\u0bee\u0bef'
+    '\u0b85\u0b87\u0b89\u0b8e\n'
+    '\n<East Asian>\n'
+    '\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\n'
+    '\u6c49\u5b57\u6f22\u5b57\u4eba\u6728\u706b\u571f\u91d1\u6c34\n'
+    '\uac00\ub0d0\ub354\ub824\ubaa8\ubd64\uc218\uc720\uc988\uce58\n'
+    '\u3042\u3044\u3046\u3048\u304a\u30a2\u30a4\u30a6\u30a8\u30aa\n'
+    )
+
 
 class FontPage(Frame):
 
@@ -455,7 +497,7 @@ class FontPage(Frame):
         Changing any of the font vars invokes var_changed_font, which
         adds all 3 font options to changes and calls set_samples.
         Set_samples applies a new font constructed from the font vars to
-        font_sample and to highlight_sample on the hightlight page.
+        font_sample and to highlight_sample on the highlight page.
 
         Tabs: Enable users to change spaces entered for indent tabs.
         Changing indent_scale value with the mouse sets Var space_num,
@@ -472,8 +514,8 @@ class FontPage(Frame):
                     font_size_title: Label
                     (*)sizelist: DynOptionMenu - font_size
                     (*)bold_toggle: Checkbutton - font_bold
-                frame_font_sample: Frame
-                    (*)font_sample: Label
+            frame_sample: LabelFrame
+                (*)font_sample: Label
             frame_indent: LabelFrame
                     indent_title: Label
                     (*)indent_scale: Scale - space_num
@@ -483,10 +525,12 @@ class FontPage(Frame):
         self.font_bold = tracers.add(BooleanVar(self), self.var_changed_font)
         self.space_num = tracers.add(IntVar(self), ('main', 'Indent', 'num-spaces'))
 
-        # Create widgets:
-        # body and body section frames.
+        # Define frames and widgets.
         frame_font = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Base Editor Font ')
+                self, borderwidth=2, relief=GROOVE, text=' Shell/Editor Font ')
+        frame_sample = LabelFrame(
+                self, borderwidth=2, relief=GROOVE,
+                text=' Font Sample (Editable) ')
         frame_indent = LabelFrame(
                 self, borderwidth=2, relief=GROOVE, text=' Indentation Width ')
         # frame_font.
@@ -494,7 +538,7 @@ class FontPage(Frame):
         frame_font_param = Frame(frame_font)
         font_name_title = Label(
                 frame_font_name, justify=LEFT, text='Font Face :')
-        self.fontlist = Listbox(frame_font_name, height=5,
+        self.fontlist = Listbox(frame_font_name, height=15,
                                 takefocus=True, exportselection=FALSE)
         self.fontlist.bind('<ButtonRelease-1>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Up>', self.on_fontlist_select)
@@ -507,11 +551,9 @@ class FontPage(Frame):
         self.bold_toggle = Checkbutton(
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
-        frame_font_sample = Frame(frame_font, relief=SOLID, borderwidth=1)
-        temp_font = tkFont.Font(self, ('courier', 10, 'normal'))
-        self.font_sample = Label(
-                frame_font_sample, justify=LEFT, font=temp_font,
-                text='AaBbCcDdEe\nFfGgHhIiJj\n1234567890\n#:+=(){}[]')
+        # frame_sample.
+        self.font_sample = Text(frame_sample, width=20, height=20)
+        self.font_sample.insert(END, font_sample_text)
         # frame_indent.
         indent_title = Label(
                 frame_indent, justify=LEFT,
@@ -520,10 +562,12 @@ class FontPage(Frame):
                 frame_indent, variable=self.space_num,
                 orient='horizontal', tickinterval=2, from_=2, to=16)
 
-        # Pack widgets:
-        # body.
-        frame_font.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_indent.pack(side=LEFT, padx=5, pady=5, fill=Y)
+        # Grid and pack widgets:
+        self.columnconfigure(1, weight=1)
+        frame_font.grid(row=0, column=0, padx=5, pady=5)
+        frame_sample.grid(row=0, column=1, rowspan=2, padx=5, pady=5,
+                          sticky='nsew')
+        frame_indent.grid(row=1, column=0, padx=5, pady=5, sticky='ew')
         # frame_font.
         frame_font_name.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_font_param.pack(side=TOP, padx=5, pady=5, fill=X)
@@ -533,10 +577,9 @@ class FontPage(Frame):
         font_size_title.pack(side=LEFT, anchor=W)
         self.sizelist.pack(side=LEFT, anchor=W)
         self.bold_toggle.pack(side=LEFT, anchor=W, padx=20)
-        frame_font_sample.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        # frame_sample.
         self.font_sample.pack(expand=TRUE, fill=BOTH)
         # frame_indent.
-        frame_indent.pack(side=TOP, fill=X)
         indent_title.pack(side=TOP, anchor=W, padx=5)
         self.indent_scale.pack(side=TOP, padx=5, fill=X)
 
@@ -605,7 +648,7 @@ class FontPage(Frame):
 
         Called on font initialization and change events.
         Accesses font_name, font_size, and font_bold Variables.
-        Updates font_sample and hightlight page highlight_sample.
+        Updates font_sample and highlight page highlight_sample.
         """
         font_name = self.font_name.get()
         font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
@@ -635,6 +678,7 @@ class HighPage(Frame):
     def __init__(self, master):
         super().__init__(master)
         self.cd = master.master
+        self.style = Style(master)
         self.create_page_highlight()
         self.load_theme_cfg()
 
@@ -757,19 +801,20 @@ class HighPage(Frame):
         """
         self.theme_elements = {
             'Normal Text': ('normal', '00'),
-            'Python Keywords': ('keyword', '01'),
-            'Python Definitions': ('definition', '02'),
-            'Python Builtins': ('builtin', '03'),
-            'Python Comments': ('comment', '04'),
-            'Python Strings': ('string', '05'),
-            'Selected Text': ('hilite', '06'),
-            'Found Text': ('hit', '07'),
-            'Cursor': ('cursor', '08'),
-            'Editor Breakpoint': ('break', '09'),
-            'Shell Normal Text': ('console', '10'),
-            'Shell Error Text': ('error', '11'),
-            'Shell Stdout Text': ('stdout', '12'),
-            'Shell Stderr Text': ('stderr', '13'),
+            'Code Context': ('context', '01'),
+            'Python Keywords': ('keyword', '02'),
+            'Python Definitions': ('definition', '03'),
+            'Python Builtins': ('builtin', '04'),
+            'Python Comments': ('comment', '05'),
+            'Python Strings': ('string', '06'),
+            'Selected Text': ('hilite', '07'),
+            'Found Text': ('hit', '08'),
+            'Cursor': ('cursor', '09'),
+            'Editor Breakpoint': ('break', '10'),
+            'Shell Normal Text': ('console', '11'),
+            'Shell Error Text': ('error', '12'),
+            'Shell Stdout Text': ('stdout', '13'),
+            'Shell Stderr Text': ('stderr', '14'),
             }
         self.builtin_name = tracers.add(
                 StringVar(self), self.var_changed_builtin_name)
@@ -796,9 +841,11 @@ class HighPage(Frame):
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
-        text_and_tags=(('\n', 'normal'),
+        text_and_tags=(
+            ('\n', 'normal'),
             ('#you can click here', 'comment'), ('\n', 'normal'),
             ('#to choose items', 'comment'), ('\n', 'normal'),
+            ('code context section', 'context'), ('\n\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
             ('func', 'definition'), ('(param):\n  ', 'normal'),
             ('"""string"""', 'string'), ('\n  var0 = ', 'normal'),
@@ -821,12 +868,14 @@ class HighPage(Frame):
                 self.highlight_target.set(elem)
             text.tag_bind(
                     self.theme_elements[element][0], '<ButtonPress-1>', tem)
-        text['state'] = DISABLED
-        self.frame_color_set = Frame(frame_custom, relief=SOLID, borderwidth=1)
+        text['state'] = 'disabled'
+        self.style.configure('frame_color_set.TFrame', borderwidth=1,
+                             relief='solid')
+        self.frame_color_set = Frame(frame_custom, style='frame_color_set.TFrame')
         frame_fg_bg_toggle = Frame(frame_custom)
         self.button_set_color = Button(
                 self.frame_color_set, text='Choose Color for :',
-                command=self.get_color, highlightthickness=0)
+                command=self.get_color)
         self.targetlist = DynOptionMenu(
                 self.frame_color_set, self.highlight_target, None,
                 highlightthickness=0) #, command=self.set_highlight_targetBinding
@@ -855,12 +904,11 @@ class HighPage(Frame):
         self.button_delete_custom = Button(
                 frame_theme, text='Delete Custom Theme',
                 command=self.delete_custom)
-        self.theme_message = Label(frame_theme, bd=2)
-
+        self.theme_message = Label(frame_theme, borderwidth=2)
         # Pack widgets:
         # body.
         frame_custom.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_theme.pack(side=LEFT, padx=5, pady=5, fill=Y)
+        frame_theme.pack(side=TOP, padx=5, pady=5, fill=X)
         # frame_custom.
         self.frame_color_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
         frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
@@ -913,7 +961,7 @@ class HighPage(Frame):
             item_list = idleConf.GetSectionList('user', 'highlight')
             item_list.sort()
             if not item_list:
-                self.custom_theme_on['state'] = DISABLED
+                self.custom_theme_on.state(('disabled',))
                 self.custom_name.set('- no custom themes -')
             else:
                 self.customlist.SetMenu(item_list, item_list[0])
@@ -945,12 +993,10 @@ class HighPage(Frame):
                 changes.add_option('main', 'Theme', 'name', old_themes[0])
             changes.add_option('main', 'Theme', 'name2', value)
             self.theme_message['text'] = 'New theme, see Help'
-            self.theme_message['fg'] = '#500000'
         else:
             changes.add_option('main', 'Theme', 'name', value)
             changes.add_option('main', 'Theme', 'name2', '')
             self.theme_message['text'] = ''
-            self.theme_message['fg'] = 'black'
         self.paint_theme_sample()
 
     def var_changed_custom_name(self, *params):
@@ -1004,14 +1050,14 @@ class HighPage(Frame):
             load_theme_cfg
         """
         if self.theme_source.get():
-            self.builtinlist['state'] = NORMAL
-            self.customlist['state'] = DISABLED
-            self.button_delete_custom['state'] = DISABLED
+            self.builtinlist['state'] = 'normal'
+            self.customlist['state'] = 'disabled'
+            self.button_delete_custom.state(('disabled',))
         else:
-            self.builtinlist['state'] = DISABLED
-            self.custom_theme_on['state'] = NORMAL
-            self.customlist['state'] = NORMAL
-            self.button_delete_custom['state'] = NORMAL
+            self.builtinlist['state'] = 'disabled'
+            self.custom_theme_on.state(('!disabled',))
+            self.customlist['state'] = 'normal'
+            self.button_delete_custom.state(('!disabled',))
 
     def get_color(self):
         """Handle button to select a new color for the target tag.
@@ -1032,7 +1078,8 @@ class HighPage(Frame):
             create_new
         """
         target = self.highlight_target.get()
-        prev_color = self.frame_color_set.cget('bg')
+        prev_color = self.style.lookup(self.frame_color_set['style'],
+                                       'background')
         rgbTuplet, color_string = tkColorChooser.askcolor(
                 parent=self, title='Pick new color for : '+target,
                 initialcolor=prev_color)
@@ -1053,7 +1100,7 @@ class HighPage(Frame):
     def on_new_color_set(self):
         "Display sample of new color selection on the dialog."
         new_color = self.color.get()
-        self.frame_color_set['bg'] = new_color  # Set sample.
+        self.style.configure('frame_color_set.TFrame', background=new_color)
         plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
         sample_element = self.theme_elements[self.highlight_target.get()][0]
         self.highlight_sample.tag_config(sample_element, **{plane: new_color})
@@ -1139,12 +1186,12 @@ class HighPage(Frame):
             load_theme_cfg
         """
         if self.highlight_target.get() == 'Cursor':  # bg not possible
-            self.fg_on['state'] = DISABLED
-            self.bg_on['state'] = DISABLED
+            self.fg_on.state(('disabled',))
+            self.bg_on.state(('disabled',))
             self.fg_bg_toggle.set(1)
         else:  # Both fg and bg can be set.
-            self.fg_on['state'] = NORMAL
-            self.bg_on['state'] = NORMAL
+            self.fg_on.state(('!disabled',))
+            self.bg_on.state(('!disabled',))
             self.fg_bg_toggle.set(1)
         self.set_color_sample()
 
@@ -1172,7 +1219,7 @@ class HighPage(Frame):
         tag = self.theme_elements[self.highlight_target.get()][0]
         plane = 'foreground' if self.fg_bg_toggle.get() else 'background'
         color = self.highlight_sample.tag_cget(tag, plane)
-        self.frame_color_set['bg'] = color
+        self.style.configure('frame_color_set.TFrame', background=color)
 
     def paint_theme_sample(self):
         """Apply the theme colors to each element tag in the sample text.
@@ -1226,6 +1273,10 @@ class HighPage(Frame):
             value = theme[element]
             idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
 
+    def askyesno(self, *args, **kwargs):
+        # Make testing easier.  Could change implementation.
+        return messagebox.askyesno(*args, **kwargs)
+
     def delete_custom(self):
         """Handle event to delete custom theme.
 
@@ -1250,7 +1301,7 @@ class HighPage(Frame):
         """
         theme_name = self.custom_name.get()
         delmsg = 'Are you sure you wish to delete the theme %r ?'
-        if not tkMessageBox.askyesno(
+        if not self.askyesno(
                 'Delete Theme',  delmsg % theme_name, parent=self):
             return
         self.cd.deactivate_current_config()
@@ -1260,7 +1311,7 @@ class HighPage(Frame):
         item_list = idleConf.GetSectionList('user', 'highlight')
         item_list.sort()
         if not item_list:
-            self.custom_theme_on['state'] = DISABLED
+            self.custom_theme_on.state(('disabled',))
             self.customlist.SetMenu(item_list, '- no custom themes -')
         else:
             self.customlist.SetMenu(item_list, item_list[0])
@@ -1395,9 +1446,9 @@ class KeysPage(Frame):
         self.bindingslist['xscrollcommand'] = scroll_target_x.set
         self.button_new_keys = Button(
                 frame_custom, text='Get New Keys for Selection',
-                command=self.get_new_keys, state=DISABLED)
+                command=self.get_new_keys, state='disabled')
         # frame_key_sets.
-        frames = [Frame(frame_key_sets, padx=2, pady=2, borderwidth=0)
+        frames = [Frame(frame_key_sets, padding=2, borderwidth=0)
                   for i in range(2)]
         self.builtin_keyset_on = Radiobutton(
                 frames[0], variable=self.keyset_source, value=1,
@@ -1415,7 +1466,7 @@ class KeysPage(Frame):
         self.button_save_custom_keys = Button(
                 frames[1], text='Save as New Custom Key Set',
                 command=self.save_as_new_key_set)
-        self.keys_message = Label(frames[0], bd=2)
+        self.keys_message = Label(frames[0], borderwidth=2)
 
         # Pack widgets:
         # body.
@@ -1457,7 +1508,7 @@ class KeysPage(Frame):
             item_list = idleConf.GetSectionList('user', 'keys')
             item_list.sort()
             if not item_list:
-                self.custom_keyset_on['state'] = DISABLED
+                self.custom_keyset_on.state(('disabled',))
                 self.custom_name.set('- no custom keys -')
             else:
                 self.customlist.SetMenu(item_list, item_list[0])
@@ -1487,12 +1538,10 @@ class KeysPage(Frame):
                 changes.add_option('main', 'Keys', 'name', old_keys[0])
             changes.add_option('main', 'Keys', 'name2', value)
             self.keys_message['text'] = 'New key set, see Help'
-            self.keys_message['fg'] = '#500000'
         else:
             changes.add_option('main', 'Keys', 'name', value)
             changes.add_option('main', 'Keys', 'name2', '')
             self.keys_message['text'] = ''
-            self.keys_message['fg'] = 'black'
         self.load_keys_list(value)
 
     def var_changed_custom_name(self, *params):
@@ -1526,14 +1575,14 @@ class KeysPage(Frame):
     def set_keys_type(self):
         "Set available screen options based on builtin or custom key set."
         if self.keyset_source.get():
-            self.builtinlist['state'] = NORMAL
-            self.customlist['state'] = DISABLED
-            self.button_delete_custom_keys['state'] = DISABLED
+            self.builtinlist['state'] = 'normal'
+            self.customlist['state'] = 'disabled'
+            self.button_delete_custom_keys.state(('disabled',))
         else:
-            self.builtinlist['state'] = DISABLED
-            self.custom_keyset_on['state'] = NORMAL
-            self.customlist['state'] = NORMAL
-            self.button_delete_custom_keys['state'] = NORMAL
+            self.builtinlist['state'] = 'disabled'
+            self.custom_keyset_on.state(('!disabled',))
+            self.customlist['state'] = 'normal'
+            self.button_delete_custom_keys.state(('!disabled',))
 
     def get_new_keys(self):
         """Handle event to change key binding for selected line.
@@ -1595,7 +1644,7 @@ class KeysPage(Frame):
 
     def on_bindingslist_select(self, event):
         "Activate button to assign new keys to selected action."
-        self.button_new_keys['state'] = NORMAL
+        self.button_new_keys.state(('!disabled',))
 
     def create_new_key_set(self, new_key_set_name):
         """Create a new custom key set with the given name.
@@ -1670,6 +1719,10 @@ class KeysPage(Frame):
             value = keyset[event]
             idleConf.userCfg['keys'].SetOption(keyset_name, event, value)
 
+    def askyesno(self, *args, **kwargs):
+        # Make testing easier.  Could change implementation.
+        return messagebox.askyesno(*args, **kwargs)
+
     def delete_custom_keys(self):
         """Handle event to delete a custom key set.
 
@@ -1679,7 +1732,7 @@ class KeysPage(Frame):
         """
         keyset_name = self.custom_name.get()
         delmsg = 'Are you sure you wish to delete the key set %r ?'
-        if not tkMessageBox.askyesno(
+        if not self.askyesno(
                 'Delete Key Set',  delmsg % keyset_name, parent=self):
             return
         self.cd.deactivate_current_config()
@@ -1689,7 +1742,7 @@ class KeysPage(Frame):
         item_list = idleConf.GetSectionList('user', 'keys')
         item_list.sort()
         if not item_list:
-            self.custom_keyset_on['state'] = DISABLED
+            self.custom_keyset_on.state(('disabled',))
             self.customlist.SetMenu(item_list, '- no custom keys -')
         else:
             self.customlist.SetMenu(item_list, item_list[0])
@@ -1732,20 +1785,38 @@ class GenPage(Frame):
         rewrite changes['main']['HelpFiles'].
 
         Widgets for GenPage(Frame):  (*) widgets bound to self
-            frame_run: LabelFrame
-                startup_title: Label
-                (*)startup_editor_on: Radiobutton - startup_edit
-                (*)startup_shell_on: Radiobutton - startup_edit
-            frame_save: LabelFrame
-                run_save_title: Label
-                (*)save_ask_on: Radiobutton - autosave
-                (*)save_auto_on: Radiobutton - autosave
-            frame_win_size: LabelFrame
-                win_size_title: Label
-                win_width_title: Label
-                (*)win_width_int: Entry - win_width
-                win_height_title: Label
-                (*)win_height_int: Entry - win_height
+            frame_window: LabelFrame
+                frame_run: Frame
+                    startup_title: Label
+                    (*)startup_editor_on: Radiobutton - startup_edit
+                    (*)startup_shell_on: Radiobutton - startup_edit
+                frame_win_size: Frame
+                    win_size_title: Label
+                    win_width_title: Label
+                    (*)win_width_int: Entry - win_width
+                    win_height_title: Label
+                    (*)win_height_int: Entry - win_height
+                frame_autocomplete: Frame
+                    auto_wait_title: Label
+                    (*)auto_wait_int: Entry - autocomplete_wait
+                frame_paren1: Frame
+                    paren_style_title: Label
+                    (*)paren_style_type: OptionMenu - paren_style
+                frame_paren2: Frame
+                    paren_time_title: Label
+                    (*)paren_flash_time: Entry - flash_delay
+                    (*)bell_on: Checkbutton - paren_bell
+            frame_editor: LabelFrame
+                frame_save: Frame
+                    run_save_title: Label
+                    (*)save_ask_on: Radiobutton - autosave
+                    (*)save_auto_on: Radiobutton - autosave
+                frame_format: Frame
+                    format_width_title: Label
+                    (*)format_width_int: Entry - format_width
+                frame_context: Frame
+                    context_title: Label
+                    (*)context_int: Entry - context_lines
             frame_help: LabelFrame
                 frame_helplist: Frame
                     frame_helplist_buttons: Frame
@@ -1755,25 +1826,39 @@ class GenPage(Frame):
                     (*)helplist: ListBox
                     scroll_helplist: Scrollbar
         """
+        # Integer values need StringVar because int('') raises.
         self.startup_edit = tracers.add(
                 IntVar(self), ('main', 'General', 'editor-on-startup'))
-        self.autosave = tracers.add(
-                IntVar(self), ('main', 'General', 'autosave'))
         self.win_width = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'width'))
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
+        self.autocomplete_wait = tracers.add(
+                StringVar(self), ('extensions', 'AutoComplete', 'popupwait'))
+        self.paren_style = tracers.add(
+                StringVar(self), ('extensions', 'ParenMatch', 'style'))
+        self.flash_delay = tracers.add(
+                StringVar(self), ('extensions', 'ParenMatch', 'flash-delay'))
+        self.paren_bell = tracers.add(
+                BooleanVar(self), ('extensions', 'ParenMatch', 'bell'))
+
+        self.autosave = tracers.add(
+                IntVar(self), ('main', 'General', 'autosave'))
+        self.format_width = tracers.add(
+                StringVar(self), ('extensions', 'FormatParagraph', 'max-width'))
+        self.context_lines = tracers.add(
+                StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
 
         # Create widgets:
         # Section frames.
-        frame_run = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                              text=' Startup Preferences ')
-        frame_save = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                               text=' autosave Preferences ')
-        frame_win_size = Frame(self, borderwidth=2, relief=GROOVE)
+        frame_window = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                  text=' Window Preferences')
+        frame_editor = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                  text=' Editor Preferences')
         frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                text=' Additional Help Sources ')
-        # frame_run.
+        # Frame_window.
+        frame_run = Frame(frame_window, borderwidth=0)
         startup_title = Label(frame_run, text='At Startup')
         self.startup_editor_on = Radiobutton(
                 frame_run, variable=self.startup_edit, value=1,
@@ -1781,15 +1866,8 @@ class GenPage(Frame):
         self.startup_shell_on = Radiobutton(
                 frame_run, variable=self.startup_edit, value=0,
                 text='Open Shell Window')
-        # frame_save.
-        run_save_title = Label(frame_save, text='At Start of Run (F5)  ')
-        self.save_ask_on = Radiobutton(
-                frame_save, variable=self.autosave, value=0,
-                text="Prompt to Save")
-        self.save_auto_on = Radiobutton(
-                frame_save, variable=self.autosave, value=1,
-                text='No Prompt')
-        # frame_win_size.
+
+        frame_win_size = Frame(frame_window, borderwidth=0)
         win_size_title = Label(
                 frame_win_size, text='Initial Window Size  (in characters)')
         win_width_title = Label(frame_win_size, text='Width')
@@ -1798,6 +1876,49 @@ class GenPage(Frame):
         win_height_title = Label(frame_win_size, text='Height')
         self.win_height_int = Entry(
                 frame_win_size, textvariable=self.win_height, width=3)
+
+        frame_autocomplete = Frame(frame_window, borderwidth=0,)
+        auto_wait_title = Label(frame_autocomplete,
+                               text='Completions Popup Wait (milliseconds)')
+        self.auto_wait_int = Entry(frame_autocomplete, width=6,
+                                   textvariable=self.autocomplete_wait)
+
+        frame_paren1 = Frame(frame_window, borderwidth=0)
+        paren_style_title = Label(frame_paren1, text='Paren Match Style')
+        self.paren_style_type = OptionMenu(
+                frame_paren1, self.paren_style, 'expression',
+                "opener","parens","expression")
+        frame_paren2 = Frame(frame_window, borderwidth=0)
+        paren_time_title = Label(
+                frame_paren2, text='Time Match Displayed (milliseconds)\n'
+                                  '(0 is until next input)')
+        self.paren_flash_time = Entry(
+                frame_paren2, textvariable=self.flash_delay, width=6)
+        self.bell_on = Checkbutton(
+                frame_paren2, text="Bell on Mismatch", variable=self.paren_bell)
+
+        # Frame_editor.
+        frame_save = Frame(frame_editor, borderwidth=0)
+        run_save_title = Label(frame_save, text='At Start of Run (F5)  ')
+        self.save_ask_on = Radiobutton(
+                frame_save, variable=self.autosave, value=0,
+                text="Prompt to Save")
+        self.save_auto_on = Radiobutton(
+                frame_save, variable=self.autosave, value=1,
+                text='No Prompt')
+
+        frame_format = Frame(frame_editor, borderwidth=0)
+        format_width_title = Label(frame_format,
+                                   text='Format Paragraph Max Width')
+        self.format_width_int = Entry(
+                frame_format, textvariable=self.format_width, width=4)
+
+        frame_context = Frame(frame_editor, borderwidth=0)
+        context_title = Label(frame_context, text='Max Context Lines :')
+        self.context_int = Entry(
+                frame_context, textvariable=self.context_lines, width=3)
+
+
         # frame_help.
         frame_helplist = Frame(frame_help)
         frame_helplist_buttons = Frame(frame_helplist)
@@ -1809,35 +1930,59 @@ class GenPage(Frame):
         self.helplist['yscrollcommand'] = scroll_helplist.set
         self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
         self.button_helplist_edit = Button(
-                frame_helplist_buttons, text='Edit', state=DISABLED,
+                frame_helplist_buttons, text='Edit', state='disabled',
                 width=8, command=self.helplist_item_edit)
         self.button_helplist_add = Button(
                 frame_helplist_buttons, text='Add',
                 width=8, command=self.helplist_item_add)
         self.button_helplist_remove = Button(
-                frame_helplist_buttons, text='Remove', state=DISABLED,
+                frame_helplist_buttons, text='Remove', state='disabled',
                 width=8, command=self.helplist_item_remove)
 
         # Pack widgets:
-        # body.
-        frame_run.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_save.pack(side=TOP, padx=5, pady=5, fill=X)
-        frame_win_size.pack(side=TOP, padx=5, pady=5, fill=X)
+        # Body.
+        frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        frame_editor.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_run.
+        frame_run.pack(side=TOP, padx=5, pady=0, fill=X)
         startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.startup_shell_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         self.startup_editor_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        # frame_save.
-        run_save_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.save_auto_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         # frame_win_size.
+        frame_win_size.pack(side=TOP, padx=5, pady=0, fill=X)
         win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.win_height_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
         self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        # frame_autocomplete.
+        frame_autocomplete.pack(side=TOP, padx=5, pady=0, fill=X)
+        auto_wait_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.auto_wait_int.pack(side=TOP, padx=10, pady=5)
+        # frame_paren.
+        frame_paren1.pack(side=TOP, padx=5, pady=0, fill=X)
+        paren_style_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.paren_style_type.pack(side=TOP, padx=10, pady=5)
+        frame_paren2.pack(side=TOP, padx=5, pady=0, fill=X)
+        paren_time_title.pack(side=LEFT, anchor=W, padx=5)
+        self.bell_on.pack(side=RIGHT, anchor=E, padx=15, pady=5)
+        self.paren_flash_time.pack(side=TOP, anchor=W, padx=15, pady=5)
+
+        # frame_save.
+        frame_save.pack(side=TOP, padx=5, pady=0, fill=X)
+        run_save_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.save_auto_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.save_ask_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        # frame_format.
+        frame_format.pack(side=TOP, padx=5, pady=0, fill=X)
+        format_width_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.format_width_int.pack(side=TOP, padx=10, pady=5)
+        # frame_context.
+        frame_context.pack(side=TOP, padx=5, pady=0, fill=X)
+        context_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.context_int.pack(side=TOP, padx=5, pady=5)
+
         # frame_help.
         frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
         frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
@@ -1849,17 +1994,30 @@ class GenPage(Frame):
 
     def load_general_cfg(self):
         "Load current configuration settings for the general options."
-        # Set startup state.
+        # Set variables for all windows.
         self.startup_edit.set(idleConf.GetOption(
-                'main', 'General', 'editor-on-startup', default=0, type='bool'))
-        # Set autosave state.
-        self.autosave.set(idleConf.GetOption(
-                'main', 'General', 'autosave', default=0, type='bool'))
-        # Set initial window size.
+                'main', 'General', 'editor-on-startup', type='bool'))
         self.win_width.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'width', type='int'))
         self.win_height.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'height', type='int'))
+        self.autocomplete_wait.set(idleConf.GetOption(
+                'extensions', 'AutoComplete', 'popupwait', type='int'))
+        self.paren_style.set(idleConf.GetOption(
+                'extensions', 'ParenMatch', 'style'))
+        self.flash_delay.set(idleConf.GetOption(
+                'extensions', 'ParenMatch', 'flash-delay', type='int'))
+        self.paren_bell.set(idleConf.GetOption(
+                'extensions', 'ParenMatch', 'bell'))
+
+        # Set variables for editor windows.
+        self.autosave.set(idleConf.GetOption(
+                'main', 'General', 'autosave', default=0, type='bool'))
+        self.format_width.set(idleConf.GetOption(
+                'extensions', 'FormatParagraph', 'max-width', type='int'))
+        self.context_lines.set(idleConf.GetOption(
+                'extensions', 'CodeContext', 'maxlines', type='int'))
+
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
         self.helplist.delete(0, 'end')
@@ -1874,15 +2032,15 @@ class GenPage(Frame):
     def set_add_delete_state(self):
         "Toggle the state for the help list buttons based on list entries."
         if self.helplist.size() < 1:  # No entries in list.
-            self.button_helplist_edit['state'] = DISABLED
-            self.button_helplist_remove['state'] = DISABLED
+            self.button_helplist_edit.state(('disabled',))
+            self.button_helplist_remove.state(('disabled',))
         else:  # Some entries.
             if self.helplist.curselection():  # There currently is a selection.
-                self.button_helplist_edit['state'] = NORMAL
-                self.button_helplist_remove['state'] = NORMAL
+                self.button_helplist_edit.state(('!disabled',))
+                self.button_helplist_remove.state(('!disabled',))
             else:  # There currently is not a selection.
-                self.button_helplist_edit['state'] = DISABLED
-                self.button_helplist_remove['state'] = DISABLED
+                self.button_helplist_edit.state(('disabled',))
+                self.button_helplist_remove.state(('disabled',))
 
     def helplist_item_add(self):
         """Handle add button for the help list.
@@ -2004,11 +2162,27 @@ When you click either the Apply or Ok buttons, settings in this
 dialog that are different from IDLE's default are saved in
 a .idlerc directory in your home directory. Except as noted,
 these changes apply to all versions of IDLE installed on this
-machine. Some do not take affect until IDLE is restarted.
-[Cancel] only cancels changes made since the last save.
+machine. [Cancel] only cancels changes made since the last save.
 '''
 help_pages = {
-    'Highlighting': '''
+    'Fonts/Tabs':'''
+Font sample: This shows what a selection of Basic Multilingual Plane
+unicode characters look like for the current font selection.  If the
+selected font does not define a character, Tk attempts to find another
+font that does.  Substitute glyphs depend on what is available on a
+particular system and will not necessarily have the same size as the
+font selected.  Line contains 20 characters up to Devanagari, 14 for
+Tamil, and 10 for East Asia.
+
+Hebrew and Arabic letters should display right to left, starting with
+alef, \u05d0 and \u0627.  Arabic digits display left to right.  The
+Devanagari and Tamil lines start with digits.  The East Asian lines
+are Chinese digits, Chinese Hanzi, Korean Hangul, and Japanese
+Hiragana and Katakana.
+
+You can edit the font sample. Changes remain until IDLE is closed.
+''',
+    'Highlights': '''
 Highlighting:
 The IDLE Dark color theme is new in October 2015.  It can only
 be used with older IDLE releases if it is saved as a custom
@@ -2020,10 +2194,10 @@ The IDLE Modern Unix key set is new in June 2016.  It can only
 be used with older IDLE releases if it is saved as a custom
 key set, with a different name.
 ''',
-    'Extensions': '''
-Extensions:
+     'General': '''
+General:
 
-Autocomplete: Popupwait is milleseconds to wait after key char, without
+AutoComplete: Popupwait is milleseconds to wait after key char, without
 cursor movement, before popping up completion box.  Key char is '.' after
 identifier or a '/' (or '\\' on Windows) within a string.
 
@@ -2034,6 +2208,9 @@ ParenMatch: Style indicates what is highlighted when closer is entered:
 'opener' - opener '({[' corresponding to closer; 'parens' - both chars;
 'expression' (default) - also everything in between.  Flash-delay is how
 long to highlight if cursor is not moved (0 means forever).
+
+CodeContext: Maxlines is the maximum number of code context lines to
+display when Code Context is turned on for an editor window.
 '''
 }
 
@@ -2062,7 +2239,7 @@ class VerticalScrolledFrame(Frame):
         # Create a canvas object and a vertical scrollbar for scrolling it.
         vscrollbar = Scrollbar(self, orient=VERTICAL)
         vscrollbar.pack(fill=Y, side=RIGHT, expand=FALSE)
-        canvas = Canvas(self, bd=0, highlightthickness=0,
+        canvas = Canvas(self, borderwidth=0, highlightthickness=0,
                         yscrollcommand=vscrollbar.set, width=240)
         canvas.pack(side=LEFT, fill=BOTH, expand=TRUE)
         vscrollbar.config(command=canvas.yview)
@@ -2093,8 +2270,8 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_configdialog',
-                  verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_configdialog', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(ConfigDialog)

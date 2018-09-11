@@ -1,18 +1,14 @@
 import unittest
 from test.support import (verbose, refcount_test, run_unittest,
                           strip_python_stderr, cpython_only, start_threads,
-                          temp_dir, requires_type_collecting)
+                          temp_dir, requires_type_collecting, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok, make_script
 
 import sys
 import time
 import gc
 import weakref
-
-try:
-    import threading
-except ImportError:
-    threading = None
+import threading
 
 try:
     from _testcapi import with_tp_del
@@ -352,7 +348,6 @@ class GCTests(unittest.TestCase):
                 v = {1: v, 2: Ouch()}
         gc.disable()
 
-    @unittest.skipUnless(threading, "test meaningless on builds without threads")
     def test_trashcan_threads(self):
         # Issue #13992: trashcan mechanism should be thread-safe
         NESTING = 60
@@ -713,6 +708,21 @@ class GCTests(unittest.TestCase):
             rc, out, err = assert_python_ok('-c', code)
             self.assertEqual(out.strip(), b'__del__ called')
 
+    @requires_type_collecting
+    def test_global_del_SystemExit(self):
+        code = """if 1:
+            class ClassWithDel:
+                def __del__(self):
+                    print('__del__ called')
+            a = ClassWithDel()
+            a.link = a
+            raise SystemExit(0)"""
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, 'w') as script:
+            script.write(code)
+        rc, out, err = assert_python_ok(TESTFN)
+        self.assertEqual(out.strip(), b'__del__ called')
+
     def test_get_stats(self):
         stats = gc.get_stats()
         self.assertEqual(len(stats), 3)
@@ -738,6 +748,12 @@ class GCTests(unittest.TestCase):
         self.assertEqual(new[0]["collections"], old[0]["collections"] + 1)
         self.assertEqual(new[1]["collections"], old[1]["collections"])
         self.assertEqual(new[2]["collections"], old[2]["collections"] + 1)
+
+    def test_freeze(self):
+        gc.freeze()
+        self.assertGreater(gc.get_freeze_count(), 0)
+        gc.unfreeze()
+        self.assertEqual(gc.get_freeze_count(), 0)
 
 
 class GCCallbackTests(unittest.TestCase):

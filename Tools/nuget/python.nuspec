@@ -13,6 +13,7 @@
     <tags>python</tags>
   </metadata>
   <files>
-    <file src="**\*" target="tools" />
+    <file src="**\*" exclude="python.props" target="tools" />
+    <file src="python.props" target="build\native" />
   </files>
 </package>

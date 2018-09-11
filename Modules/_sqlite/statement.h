@@ -50,7 +50,6 @@ void pysqlite_statement_dealloc(pysqlite_Statement* self);
 int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter);
 void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters);
 
-int pysqlite_statement_recompile(pysqlite_Statement* self, PyObject* parameters);
 int pysqlite_statement_finalize(pysqlite_Statement* self);
 int pysqlite_statement_reset(pysqlite_Statement* self);
 void pysqlite_statement_mark_dirty(pysqlite_Statement* self);

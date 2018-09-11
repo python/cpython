@@ -10,8 +10,7 @@ unicode_eq(PyObject *aa, PyObject *bb)
     PyUnicodeObject *b = (PyUnicodeObject *)bb;
 
     if (PyUnicode_READY(a) == -1 || PyUnicode_READY(b) == -1) {
-        assert(0 && "unicode_eq ready fail");
-        return 0;
+        Py_UNREACHABLE();
     }
 
     if (PyUnicode_GET_LENGTH(a) != PyUnicode_GET_LENGTH(b))

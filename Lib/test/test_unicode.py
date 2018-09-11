@@ -638,6 +638,11 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertFalse('\U0001F40D'.isalpha())
         self.assertFalse('\U0001F46F'.isalpha())
 
+    def test_isascii(self):
+        super().test_isascii()
+        self.assertFalse("\u20ac".isascii())
+        self.assertFalse("\U0010ffff".isascii())
+
     def test_isdecimal(self):
         self.checkequalnofix(False, '', 'isdecimal')
         self.checkequalnofix(False, 'a', 'isdecimal')
@@ -1625,6 +1630,10 @@ class UnicodeTest(string_tests.CommonTest,
         for c in set_o:
             self.assertEqual(c.encode('ascii').decode('utf7'), c)
 
+        with self.assertRaisesRegex(UnicodeDecodeError,
+                                    'ill-formed sequence'):
+            b'+@'.decode('utf-7')
+
     def test_codecs_utf8(self):
         self.assertEqual(''.encode('utf-8'), b'')
         self.assertEqual('\u20ac'.encode('utf-8'), b'\xe2\x82\xac')
@@ -2068,11 +2077,14 @@ class UnicodeTest(string_tests.CommonTest,
         # Error handling (wrong arguments)
         self.assertRaises(TypeError, "hello".encode, 42, 42, 42)
 
-        # Error handling (lone surrogate in PyUnicode_TransformDecimalToASCII())
-        self.assertRaises(UnicodeError, float, "\ud800")
-        self.assertRaises(UnicodeError, float, "\udf00")
-        self.assertRaises(UnicodeError, complex, "\ud800")
-        self.assertRaises(UnicodeError, complex, "\udf00")
+        # Error handling (lone surrogate in
+        # _PyUnicode_TransformDecimalAndSpaceToASCII())
+        self.assertRaises(ValueError, int, "\ud800")
+        self.assertRaises(ValueError, int, "\udf00")
+        self.assertRaises(ValueError, float, "\ud800")
+        self.assertRaises(ValueError, float, "\udf00")
+        self.assertRaises(ValueError, complex, "\ud800")
+        self.assertRaises(ValueError, complex, "\udf00")
 
     def test_codecs(self):
         # Encoding
@@ -2642,6 +2654,10 @@ class CAPITest(unittest.TestCase):
         # test %A
         check_format(r"%A:'abc\xe9\uabcd\U0010ffff'",
                      b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
+
+        # test %T (object type name)
+        check_format(r"type name: str",
+                     b'type name: %T', 'text')
 
         # test %V
         check_format('repr=abc',

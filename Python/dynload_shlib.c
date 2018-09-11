@@ -2,6 +2,7 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "importdl.h"
 
 #include <sys/types.h>
@@ -90,7 +91,7 @@ _PyImport_FindSharedFuncptr(const char *prefix,
         }
     }
 
-    dlopenflags = PyThreadState_GET()->interp->dlopenflags;
+    dlopenflags = _PyInterpreterState_Get()->dlopenflags;
 
     handle = dlopen(pathname, dlopenflags);
 

@@ -1,0 +1,2 @@
+Minimally test all IDLE modules. Add missing files, import module,
+instantiate classes, and check coverage. Check existing files.

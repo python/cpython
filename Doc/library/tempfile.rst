@@ -31,7 +31,7 @@ is recommended to use keyword arguments for clarity.
 
 The module defines the following user-callable items:
 
-.. function:: TemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None)
+.. function:: TemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
 
    Return a :term:`file-like object` that can be used as a temporary storage area.
    The file is created securely, using the same rules as :func:`mkstemp`. It will be destroyed as soon
@@ -49,7 +49,7 @@ The module defines the following user-callable items:
    The *mode* parameter defaults to ``'w+b'`` so that the file created can
    be read and written without being closed.  Binary mode is used so that it
    behaves consistently on all platforms without regard for the data that is
-   stored.  *buffering*, *encoding* and *newline* are interpreted as for
+   stored.  *buffering*, *encoding*, *errors* and *newline* are interpreted as for
    :func:`open`.
 
    The *dir*, *prefix* and *suffix* parameters have the same meaning and
@@ -66,8 +66,11 @@ The module defines the following user-callable items:
 
       The :py:data:`os.O_TMPFILE` flag is now used if available.
 
+   .. versionchanged:: 3.8
+      Added *errors* parameter.
 
-.. function:: NamedTemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True)
+
+.. function:: NamedTemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True, *, errors=None)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    the file is guaranteed to have a visible name in the file system (on
@@ -82,8 +85,11 @@ The module defines the following user-callable items:
    attribute is the underlying true file object. This file-like object can
    be used in a :keyword:`with` statement, just like a normal file.
 
+   .. versionchanged:: 3.8
+      Added *errors* parameter.
 
-.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None)
+
+.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
@@ -103,6 +109,9 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.3
       the truncate method now accepts a ``size`` argument.
+
+   .. versionchanged:: 3.8
+      Added *errors* parameter.
 
 
 .. function:: TemporaryDirectory(suffix=None, prefix=None, dir=None)
@@ -253,7 +262,7 @@ to specify the directory and this is the recommended approach.
    default value for the *dir* argument to the functions defined in this
    module.
 
-   If ``tempdir`` is unset or ``None`` at any call to any of the above
+   If ``tempdir`` is ``None`` (the default) at any call to any of the above
    functions except :func:`gettempprefix` it is initialized following the
    algorithm described in :func:`gettempdir`.
 

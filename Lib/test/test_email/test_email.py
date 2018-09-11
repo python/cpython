@@ -12,10 +12,7 @@ from io import StringIO, BytesIO
 from itertools import chain
 from random import choice
 from socket import getfqdn
-try:
-    from threading import Thread
-except ImportError:
-    from dummy_threading import Thread
+from threading import Thread
 
 import email
 import email.policy

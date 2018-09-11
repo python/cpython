@@ -15,7 +15,7 @@ static PyObject *
 math_gcd_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-math_gcd(PyObject *module, PyObject **args, Py_ssize_t nargs)
+math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -132,7 +132,7 @@ static PyObject *
 math_ldexp_impl(PyObject *module, double x, PyObject *i);
 
 static PyObject *
-math_ldexp(PyObject *module, PyObject **args, Py_ssize_t nargs)
+math_ldexp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double x;
@@ -253,7 +253,7 @@ static PyObject *
 math_fmod_impl(PyObject *module, double x, double y);
 
 static PyObject *
-math_fmod(PyObject *module, PyObject **args, Py_ssize_t nargs)
+math_fmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double x;
@@ -269,30 +269,36 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(math_hypot__doc__,
-"hypot($module, x, y, /)\n"
+PyDoc_STRVAR(math_dist__doc__,
+"dist($module, p, q, /)\n"
 "--\n"
 "\n"
-"Return the Euclidean distance, sqrt(x*x + y*y).");
+"Return the Euclidean distance between two points p and q.\n"
+"\n"
+"The points should be specified as tuples of coordinates.\n"
+"Both tuples must be the same size.\n"
+"\n"
+"Roughly equivalent to:\n"
+"    sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))");
 
-#define MATH_HYPOT_METHODDEF    \
-    {"hypot", (PyCFunction)math_hypot, METH_FASTCALL, math_hypot__doc__},
+#define MATH_DIST_METHODDEF    \
+    {"dist", (PyCFunction)math_dist, METH_FASTCALL, math_dist__doc__},
 
 static PyObject *
-math_hypot_impl(PyObject *module, double x, double y);
+math_dist_impl(PyObject *module, PyObject *p, PyObject *q);
 
 static PyObject *
-math_hypot(PyObject *module, PyObject **args, Py_ssize_t nargs)
+math_dist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    double x;
-    double y;
+    PyObject *p;
+    PyObject *q;
 
-    if (!_PyArg_ParseStack(args, nargs, "dd:hypot",
-        &x, &y)) {
+    if (!_PyArg_ParseStack(args, nargs, "O!O!:dist",
+        &PyTuple_Type, &p, &PyTuple_Type, &q)) {
         goto exit;
     }
-    return_value = math_hypot_impl(module, x, y);
+    return_value = math_dist_impl(module, p, q);
 
 exit:
     return return_value;
@@ -311,7 +317,7 @@ static PyObject *
 math_pow_impl(PyObject *module, double x, double y);
 
 static PyObject *
-math_pow(PyObject *module, PyObject **args, Py_ssize_t nargs)
+math_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double x;
@@ -492,7 +498,7 @@ math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
                   double abs_tol);
 
 static PyObject *
-math_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
@@ -516,4 +522,4 @@ math_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d9bfbd645d273209 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d936137c1189b89b input=a9049054013a1b77]*/

@@ -17,11 +17,18 @@ made using  this module affect the behaviour of both the interpreter's
 interactive prompt  and the prompts offered by the built-in :func:`input`
 function.
 
+Readline keybindings may be configured via an initialization file, typically
+``.inputrc`` in your home directory.  See `Readline Init File
+<https://cnswww.cns.cwru.edu/php/chet/readline/rluserman.html#SEC9>`_
+in the GNU Readline manual for information about the format and
+allowable constructs of that file, and the capabilities of the
+Readline library in general.
+
 .. note::
 
   The underlying Readline library API may be implemented by
   the ``libedit`` library instead of GNU readline.
-  On MacOS X the :mod:`readline` module detects which library is being used
+  On macOS the :mod:`readline` module detects which library is being used
   at run time.
 
   The configuration file for ``libedit`` is different from that
@@ -29,12 +36,13 @@ function.
   you can check for the text "libedit" in :const:`readline.__doc__`
   to differentiate between GNU readline and libedit.
 
-Readline keybindings may be configured via an initialization file, typically
-``.inputrc`` in your home directory.  See `Readline Init File
-<https://cnswww.cns.cwru.edu/php/chet/readline/rluserman.html#SEC9>`_
-in the GNU Readline manual for information about the format and
-allowable constructs of that file, and the capabilities of the
-Readline library in general.
+  If you use *editline*/``libedit`` readline emulation on macOS, the
+  initialization file located in your home directory is named
+  ``.editrc``. For example, the following content in ``~/.editrc`` will
+  turn ON *vi* keybindings and TAB completion::
+
+    python:bind -v
+    python:bind ^I rl_complete
 
 
 Init file
@@ -312,13 +320,13 @@ sessions, by only appending the new history. ::
 
    try:
        readline.read_history_file(histfile)
-       h_len = readline.get_history_length()
+       h_len = readline.get_current_history_length()
    except FileNotFoundError:
        open(histfile, 'wb').close()
        h_len = 0
 
    def save(prev_h_len, histfile):
-       new_h_len = readline.get_history_length()
+       new_h_len = readline.get_current_history_length()
        readline.set_history_length(1000)
        readline.append_history_file(new_h_len - prev_h_len, histfile)
    atexit.register(save, h_len, histfile)

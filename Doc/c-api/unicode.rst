@@ -519,6 +519,9 @@ APIs:
    | :attr:`%R`        | PyObject\*          | The result of calling          |
    |                   |                     | :c:func:`PyObject_Repr`.       |
    +-------------------+---------------------+--------------------------------+
+   | :attr:`%T`        | PyObject\*          | Object type name, equivalent   |
+   |                   |                     | to ``Py_TYPE(op)->tp_name``.   |
+   +-------------------+---------------------+--------------------------------+
 
    An unrecognized format character causes all the rest of the format string to be
    copied as-is to the result string, and any extra arguments discarded.
@@ -542,6 +545,9 @@ APIs:
    .. versionchanged:: 3.4
       Support width and precision formatter for ``"%s"``, ``"%A"``, ``"%U"``,
       ``"%V"``, ``"%S"``, ``"%R"`` added.
+
+   .. versionchanged:: 3.7
+      Support for ``"%T"`` (object type name) added.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
@@ -760,7 +766,8 @@ system.
                                                         Py_ssize_t len, \
                                                         const char *errors)
 
-   Decode a string from the current locale encoding. The supported
+   Decode a string from UTF-8 on Android, or from the current locale encoding
+   on other platforms. The supported
    error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The decoder uses ``"strict"`` error handler if
    *errors* is ``NULL``.  *str* must end with a null character but
@@ -770,11 +777,19 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
+   This function ignores the Python UTF-8 mode.
+
    .. seealso::
 
       The :c:func:`Py_DecodeLocale` function.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      The function now also uses the current locale encoding for the
+      ``surrogateescape`` error handler, except on Android. Previously, :c:func:`Py_DecodeLocale`
+      was used for the ``surrogateescape``, and the current locale encoding was
+      used for ``strict``.
 
 
 .. c:function:: PyObject* PyUnicode_DecodeLocale(const char *str, const char *errors)
@@ -787,7 +802,8 @@ system.
 
 .. c:function:: PyObject* PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 
-   Encode a Unicode object to the current locale encoding. The
+   Encode a Unicode object to UTF-8 on Android, or to the current locale
+   encoding on other platforms. The
    supported error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The encoder uses ``"strict"`` error handler if
    *errors* is ``NULL``. Return a :class:`bytes` object. *unicode* cannot
@@ -797,11 +813,20 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
+   This function ignores the Python UTF-8 mode.
+
    .. seealso::
 
       The :c:func:`Py_EncodeLocale` function.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      The function now also uses the current locale encoding for the
+      ``surrogateescape`` error handler, except on Android. Previously,
+      :c:func:`Py_EncodeLocale`
+      was used for the ``surrogateescape``, and the current locale encoding was
+      used for ``strict``.
 
 
 File System Encoding

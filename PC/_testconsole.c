@@ -46,7 +46,7 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
 /*[clinic end generated code: output=48f9563db34aedb3 input=4c774f2d05770bc6]*/
 {
     INPUT_RECORD *rec = NULL;
-    
+
     if (!PyWindowsConsoleIO_Check(file)) {
         PyErr_SetString(PyExc_TypeError, "expected raw console object");
         return NULL;
@@ -59,7 +59,7 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
     if (!rec)
         goto error;
     memset(rec, 0, sizeof(INPUT_RECORD) * size);
-    
+
     INPUT_RECORD *prec = rec;
     for (DWORD i = 0; i < size; ++i, ++p, ++prec) {
         prec->EventType = KEY_EVENT;
@@ -80,7 +80,7 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
     }
 
     PyMem_Free((void*)rec);
-    
+
     Py_RETURN_NONE;
 error:
     if (rec)

@@ -190,7 +190,9 @@ Format Paragraph
    paragraph will be formatted to less than N columns, where N defaults to 72.
 
 Strip trailing whitespace
-   Remove any space characters after the last non-space character of a line.
+   Remove trailing space and other whitespace characters after the last
+   non-whitespace character of a line by applying str.rstrip to each line,
+   including lines within multiline strings.
 
 .. index::
    single: Run script
@@ -272,7 +274,8 @@ Configure IDLE
 
 Code Context (toggle)(Editor Window only)
    Open a pane at the top of the edit window which shows the block context
-   of the code which has scrolled above the top of the window.
+   of the code which has scrolled above the top of the window.  Clicking a
+   line in this pane exposes that line at the top of the editor.
 
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -599,15 +602,15 @@ starting from a console (``python -m idlelib)`` and see if a message appears.
 IDLE-console differences
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-As much as possible, the result of executing Python code with IDLE is the
-same as executing the same code in a console window.  However, the different
-interface and operation occasionally affect visible results.  For instance,
-``sys.modules`` starts with more entries.
+With rare exceptions, the result of executing Python code with IDLE is
+intended to be the same as executing the same code in a console window.
+However, the different interface and operation occasionally affect
+visible results.  For instance, ``sys.modules`` starts with more entries.
 
 IDLE also replaces ``sys.stdin``, ``sys.stdout``, and ``sys.stderr`` with
 objects that get input from and send output to the Shell window.
-When this window has the focus, it controls the keyboard and screen.
-This is normally transparent, but functions that directly access the keyboard
+When Shell has the focus, it controls the keyboard and screen.  This is
+normally transparent, but functions that directly access the keyboard
 and screen will not work.  If ``sys`` is reset with ``importlib.reload(sys)``,
 IDLE's changes are lost and things like ``input``, ``raw_input``, and
 ``print`` will not work correctly.
@@ -616,6 +619,29 @@ With IDLE's Shell, one enters, edits, and recalls complete statements.
 Some consoles only work with a single physical line at a time.  IDLE uses
 ``exec`` to run each statement.  As a result, ``'__builtins__'`` is always
 defined for each statement.
+
+Developing tkinter applications
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+IDLE is intentionally different from standard Python in order to
+facilitate development of tkinter programs.  Enter ``import tkinter as tk;
+root = tk.Tk()`` in standard Python and nothing appears.  Enter the same
+in IDLE and a tk window appears.  In standard Python, one must also enter
+``root.update()`` to see the window.  IDLE does the equivalent in the
+background, about 20 times a second, which is about every 50 milleseconds.
+Next enter ``b = tk.Button(root, text='button'); b.pack()``.  Again,
+nothing visibly changes in standard Python until one enters ``root.update()``.
+
+Most tkinter programs run ``root.mainloop()``, which usually does not
+return until the tk app is destroyed.  If the program is run with
+``python -i`` or from an IDLE editor, a ``>>>`` shell prompt does not
+appear until ``mainloop()`` returns, at which time there is nothing left
+to interact with.
+
+When running a tkinter program from an IDLE editor, one can comment out
+the mainloop call.  One then gets a shell prompt immediately and can
+interact with the live application.  One just has to remember to
+re-enable the mainloop call when running in standard Python.
 
 Running without a subprocess
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -671,24 +697,7 @@ Extensions
 ^^^^^^^^^^
 
 IDLE contains an extension facility.  Preferences for extensions can be
-changed with Configure Extensions. See the beginning of config-extensions.def
-in the idlelib directory for further information.  The default extensions
-are currently:
-
-* FormatParagraph
-
-* AutoExpand
-
-* ZoomHeight
-
-* ScriptBinding
-
-* CallTips
-
-* ParenMatch
-
-* AutoComplete
-
-* CodeContext
-
-* RstripExtension
+changed with the Extensions tab of the preferences dialog. See the
+beginning of config-extensions.def in the idlelib directory for further
+information.  The only current default extension is zzdummy, an example
+also used for testing.

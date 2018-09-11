@@ -338,6 +338,14 @@ class CDLL(object):
             flags |= _FUNCFLAG_USE_ERRNO
         if use_last_error:
             flags |= _FUNCFLAG_USE_LASTERROR
+        if _sys.platform.startswith("aix"):
+            """When the name contains ".a(" and ends with ")",
+               e.g., "libFOO.a(libFOO.so)" - this is taken to be an
+               archive(member) syntax for dlopen(), and the mode is adjusted.
+               Otherwise, name is presented to dlopen() as a file argument.
+            """
+            if name and name.endswith(")") and ".a(" in name:
+                mode |= ( _os.RTLD_MEMBER | _os.RTLD_NOW )
 
         class _FuncPtr(_CFuncPtr):
             _flags_ = flags
@@ -440,10 +448,7 @@ if _os.name == "nt":
     windll = LibraryLoader(WinDLL)
     oledll = LibraryLoader(OleDLL)
 
-    if _os.name == "nt":
-        GetLastError = windll.kernel32.GetLastError
-    else:
-        GetLastError = windll.coredll.GetLastError
+    GetLastError = windll.kernel32.GetLastError
     from _ctypes import get_last_error, set_last_error
 
     def WinError(code=None, descr=None):

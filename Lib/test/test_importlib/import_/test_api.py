@@ -82,6 +82,20 @@ class APITest:
                     self.__import__(PKG_NAME,
                                     fromlist=[SUBMOD_NAME.rpartition('.')[-1]])
 
+    def test_blocked_fromlist(self):
+        # If fromlist entry is None, let a ModuleNotFoundError propagate.
+        # issue31642
+        mod = types.ModuleType(PKG_NAME)
+        mod.__path__ = []
+        with util.import_state(meta_path=[self.bad_finder_loader]):
+            with util.uncache(PKG_NAME, SUBMOD_NAME):
+                sys.modules[PKG_NAME] = mod
+                sys.modules[SUBMOD_NAME] = None
+                with self.assertRaises(ModuleNotFoundError) as cm:
+                    self.__import__(PKG_NAME,
+                                    fromlist=[SUBMOD_NAME.rpartition('.')[-1]])
+                self.assertEqual(cm.exception.name, SUBMOD_NAME)
+
 
 class OldAPITests(APITest):
     bad_finder_loader = BadLoaderFinder

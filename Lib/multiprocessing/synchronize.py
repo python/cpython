@@ -15,8 +15,7 @@ import threading
 import sys
 import tempfile
 import _multiprocessing
-
-from time import time as _time
+import time
 
 from . import context
 from . import process
@@ -270,13 +269,16 @@ class Condition(object):
 
     def notify(self, n=1):
         assert self._lock._semlock._is_mine(), 'lock is not owned'
-        assert not self._wait_semaphore.acquire(False)
+        assert not self._wait_semaphore.acquire(
+            False), ('notify: Should not have been able to acquire'
+                     + '_wait_semaphore')
 
         # to take account of timeouts since last notify*() we subtract
         # woken_count from sleeping_count and rezero woken_count
         while self._woken_count.acquire(False):
             res = self._sleeping_count.acquire(False)
-            assert res
+            assert res, ('notify: Bug in sleeping_count.acquire'
+                         + '- res should not be False')
 
         sleepers = 0
         while sleepers < n and self._sleeping_count.acquire(False):
@@ -299,13 +301,13 @@ class Condition(object):
         if result:
             return result
         if timeout is not None:
-            endtime = _time() + timeout
+            endtime = time.monotonic() + timeout
         else:
             endtime = None
             waittime = None
         while not result:
             if endtime is not None:
-                waittime = endtime - _time()
+                waittime = endtime - time.monotonic()
                 if waittime <= 0:
                     break
             self.wait(waittime)
