@@ -164,6 +164,11 @@ class EnumMeta(type):
         enum_class._member_names_ = []               # names in definition order
         enum_class._member_map_ = {}                 # name->value map
         enum_class._member_type_ = member_type
+        enum_class._module_qualname_ = (
+                '%s.%s' % (
+                    enum_class.__module__,
+                    enum_class.__qualname__.replace('.<locals>.','.'),
+                ))
 
         # save attributes from super classes so we know if we can take
         # the shortcut of storing members in the class dict
@@ -357,7 +362,7 @@ class EnumMeta(type):
         return MappingProxyType(cls._member_map_)
 
     def __repr__(cls):
-        return "<enum %r>" % cls.__name__
+        return "<enum %r>" % cls._module_qualname_
 
     def __reversed__(cls):
         return (cls._member_map_[name] for name in reversed(cls._member_names_))
@@ -425,6 +430,7 @@ class EnumMeta(type):
             enum_class.__module__ = module
         if qualname is not None:
             enum_class.__qualname__ = qualname
+            enum_class._module_qualname_ = '%s.%s' % (module, qualname.replace('.locals.','.'))
 
         return enum_class
 
@@ -560,8 +566,7 @@ class Enum(metaclass=EnumMeta):
         raise ValueError("%r is not a valid %s" % (value, cls.__name__))
 
     def __repr__(self):
-        return "<%s.%s: %r>" % (
-                self.__class__.__qualname__, self._name_, self._value_)
+        return "<%s.%s: %r>" % (self.__class__._module_qualname_, self._name_, self._value_)
 
     def __str__(self):
         return "%s.%s" % (self.__class__.__name__, self._name_)
