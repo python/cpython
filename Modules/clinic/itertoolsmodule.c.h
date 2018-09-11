@@ -473,4 +473,40 @@ itertools_filterfalse(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=60cd7dad7f3b5f30 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(itertools_count__doc__,
+"count(start=0, step=1)\n"
+"--\n"
+"\n"
+"Return a count object whose .__next__() method returns consecutive values.\n"
+"\n"
+"Equivalent to:\n"
+"    def count(firstval=0, step=1):\n"
+"        x = firstval\n"
+"        while 1:\n"
+"            yield x\n"
+"            x += step");
+
+static PyObject *
+itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
+                     PyObject *long_step);
+
+static PyObject *
+itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"start", "step", NULL};
+    static _PyArg_Parser _parser = {"|OO:count", _keywords, 0};
+    PyObject *long_cnt = NULL;
+    PyObject *long_step = NULL;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &long_cnt, &long_step)) {
+        goto exit;
+    }
+    return_value = itertools_count_impl(type, long_cnt, long_step);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=6dfa46fef66453e7 input=a9049054013a1b77]*/

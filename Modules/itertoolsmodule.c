@@ -24,8 +24,9 @@ class itertools.permutations "permutationsobject *" "&permutations_type"
 class itertools.accumulate "accumulateobject *" "&accumulate_type"
 class itertools.compress "compressobject *" "&compress_type"
 class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
+class itertools.count "countobject *" "&count_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1ebe103832d620a0]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ea05c93c6d94726a]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
@@ -41,6 +42,8 @@ static PyTypeObject permutations_type;
 static PyTypeObject accumulate_type;
 static PyTypeObject compress_type;
 static PyTypeObject filterfalse_type;
+static PyTypeObject count_type;
+
 #include "clinic/itertoolsmodule.c.h"
 
 
@@ -3998,20 +4001,30 @@ slow_mode:  when cnt == PY_SSIZE_T_MAX, step is not int(1), or cnt is a float.
 
 static PyTypeObject count_type;
 
+/*[clinic input]
+@classmethod
+itertools.count.__new__
+    start as long_cnt: object(c_default="NULL") = 0
+    step as long_step: object(c_default="NULL") = 1
+Return a count object whose .__next__() method returns consecutive values.
+
+Equivalent to:
+    def count(firstval=0, step=1):
+        x = firstval
+        while 1:
+            yield x
+            x += step
+[clinic start generated code]*/
+
 static PyObject *
-count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
+                     PyObject *long_step)
+/*[clinic end generated code: output=09a9250aebd00b1c input=d7a85eec18bfcd94]*/
 {
     countobject *lz;
     int fast_mode;
     Py_ssize_t cnt = 0;
-    PyObject *long_cnt = NULL;
-    PyObject *long_step = NULL;
     long step;
-    static char *kwlist[] = {"start", "step", 0};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:count",
-                    kwlist, &long_cnt, &long_step))
-        return NULL;
 
     if ((long_cnt != NULL && !PyNumber_Check(long_cnt)) ||
         (long_step != NULL && !PyNumber_Check(long_step))) {
@@ -4164,17 +4177,6 @@ static PyMethodDef count_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-PyDoc_STRVAR(count_doc,
-                         "count(start=0, step=1) --> count object\n\
-\n\
-Return a count object whose .__next__() method returns consecutive values.\n\
-Equivalent to:\n\n\
-    def count(firstval=0, step=1):\n\
-        x = firstval\n\
-        while 1:\n\
-            yield x\n\
-            x += step\n");
-
 static PyTypeObject count_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.count",                  /* tp_name */
@@ -4198,7 +4200,7 @@ static PyTypeObject count_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    count_doc,                          /* tp_doc */
+    itertools_count__doc__,             /* tp_doc */
     (traverseproc)count_traverse,       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -4215,7 +4217,7 @@ static PyTypeObject count_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    count_new,                          /* tp_new */
+    itertools_count,                    /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
