@@ -46,6 +46,11 @@ steps:
   displayName: Detect doc-only changes
   condition: and(succeeded(), variables['System.PullRequest.TargetBranch'])
 
+- powershell: |
+   Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) && choco install opencppcoverage
+  displayName: Install OpenCppCoverage
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
 - script: PCbuild\build.bat -e $(buildOpt)
   displayName: 'Build CPython'
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
@@ -54,8 +59,14 @@ steps:
   displayName: 'Display build info'
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
-- script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
-  displayName: 'Tests'
+- script: |
+   PCbuild\win32\python.exe -m venv venv & venv\Scripts\python.exe -m pip install coverage
+  displayName: Install coverage
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
+- script: |
+   "C:\Program Files\OpenCppCoverage\OpenCppCoverage.exe" --config_file=.vsts\opencppcoverage.ini -- venv\Scripts\python.exe -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_subprocess
+  displayName: 'Tests with coverage'
   env:
     PREFIX: $(Py_OutDir)\$(outDirSuffix)
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
