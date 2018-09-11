@@ -174,7 +174,7 @@ Heap Type Specification
 
    Type flags, used to set :c:member:`PyTypeObject.tp_flags`.
 
-   If the `Py_TPFLAGS_HEAPTYPE` flag is not set,
+   If the ``Py_TPFLAGS_HEAPTYPE`` flag is not set,
    :c:func:`PyType_FromSpecWithBases` sets it automatically.
 
 .. c:member:: PyType_Slot *PyType_Spec.slots
