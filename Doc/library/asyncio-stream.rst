@@ -55,7 +55,8 @@ and work with streams:
    automatically when this method is awaited from a coroutine.
 
    *limit* determines the buffer size limit used by the
-   returned :class:`StreamReader` instance.
+   returned :class:`StreamReader` instance.  By default the *limit*
+   is set to 64 KiB.
 
    The rest of the arguments are passed directly to
    :meth:`loop.create_connection`.
@@ -87,7 +88,8 @@ and work with streams:
    automatically when this method is awaited from a coroutine.
 
    *limit* determines the buffer size limit used by the
-   returned :class:`StreamReader` instance.
+   returned :class:`StreamReader` instance.  By default the *limit*
+   is set to 64 KiB.
 
    The rest of the arguments are passed directly to
    :meth:`loop.create_server`.
