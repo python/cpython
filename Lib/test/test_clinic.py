@@ -1,16 +1,26 @@
 # Argument Clinic
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
-#
 
-import clinic
-from clinic import DSLParser
+from test import support
+from unittest import TestCase
 import collections
 import inspect
-from test import support
+import os.path
 import sys
 import unittest
-from unittest import TestCase
+
+
+clinic_path = os.path.join(os.path.dirname(__file__), '..', '..', 'Tools', 'clinic')
+clinic_path = os.path.normpath(clinic_path)
+if not os.path.exists(clinic_path):
+    raise unittest.SkipTest(f'{clinic_path!r} path does not exist')
+sys.path.append(clinic_path)
+try:
+    import clinic
+    from clinic import DSLParser
+finally:
+    del sys.path[-1]
 
 
 class FakeConverter:
@@ -35,7 +45,7 @@ class FakeConvertersDict:
         return self.used_converters.setdefault(name, FakeConverterFactory(name))
 
 clinic.Clinic.presets_text = ''
-c = clinic.Clinic(language='C')
+c = clinic.Clinic(language='C', filename = "file")
 
 class FakeClinic:
     def __init__(self):
@@ -43,6 +53,7 @@ class FakeClinic:
         self.legacy_converters = FakeConvertersDict()
         self.language = clinic.CLanguage(None)
         self.filename = None
+        self.destination_buffers = {}
         self.block_parser = clinic.BlockParser('', self.language)
         self.modules = collections.OrderedDict()
         self.classes = collections.OrderedDict()
@@ -93,7 +104,7 @@ class ClinicWholeFileTest(TestCase):
         # so it would spit out an end line for you.
         # and since you really already had one,
         # the last line of the block got corrupted.
-        c = clinic.Clinic(clinic.CLanguage(None))
+        c = clinic.Clinic(clinic.CLanguage(None), filename="file")
         raw = "/*[clinic]\nfoo\n[clinic]*/"
         cooked = c.parse(raw).splitlines()
         end_line = cooked[2].rstrip()
@@ -252,7 +263,7 @@ xyz
 
     def _test_clinic(self, input, output):
         language = clinic.CLanguage(None)
-        c = clinic.Clinic(language)
+        c = clinic.Clinic(language, filename="file")
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
         computed = c.parse(input)

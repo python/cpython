@@ -83,7 +83,6 @@ main(int argc, char *argv[])
     config.program_name = L"./_freeze_importlib";
     /* Don't install importlib, since it could execute outdated bytecode. */
     config._install_importlib = 0;
-    config.install_signal_handlers = 1;
     config._frozen = 1;
 
     _PyInitError err = _Py_InitializeFromConfig(&config);

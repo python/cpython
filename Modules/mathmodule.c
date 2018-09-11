@@ -1656,7 +1656,7 @@ math_factorial(PyObject *module, PyObject *arg)
 {
     long x;
     int overflow;
-    PyObject *result, *odd_part, *two_valuation;
+    PyObject *result, *odd_part, *two_valuation, *pyint_form;
 
     if (PyFloat_Check(arg)) {
         PyObject *lx;
@@ -1672,8 +1672,14 @@ math_factorial(PyObject *module, PyObject *arg)
         x = PyLong_AsLongAndOverflow(lx, &overflow);
         Py_DECREF(lx);
     }
-    else
-        x = PyLong_AsLongAndOverflow(arg, &overflow);
+    else {
+        pyint_form = PyNumber_Index(arg);
+        if (pyint_form == NULL) {
+            return NULL;
+        }
+        x = PyLong_AsLongAndOverflow(pyint_form, &overflow);
+        Py_DECREF(pyint_form);
+    }
 
     if (x == -1 && PyErr_Occurred()) {
         return NULL;
@@ -2032,31 +2038,40 @@ math_fmod_impl(PyObject *module, double x, double y)
 }
 
 /*
-Given an *n* length *vec* of non-negative values
-where *max* is the largest value in the vector, compute:
+Given an *n* length *vec* of values and a value *max*, compute:
 
     max * sqrt(sum((x / max) ** 2 for x in vec))
 
-When a maximum value is found, it is swapped to the end.  This
-lets us skip one loop iteration and just add 1.0 at the end.
-Saving the largest value for last also helps improve accuracy.
-
-Kahan summation is used to improve accuracy.  The *csum*
-variable tracks the cumulative sum and *frac* tracks
-fractional round-off error for the most recent addition.
-
-The value of the *max* variable must be present in *vec*
-or should equal to 0.0 when n==0.  Likewise, *max* will
-be INF if an infinity is present in the vec.
+The value of the *max* variable must be non-negative and
+at least equal to the absolute value of the largest magnitude
+entry in the vector.  If n==0, then *max* should be 0.0.
+If an infinity is present in the vec, *max* should be INF.
 
 The *found_nan* variable indicates whether some member of
 the *vec* is a NaN.
+
+To improve accuracy and to increase the number of cases where
+vector_norm() is commutative, we use a variant of Neumaier
+summation specialized to exploit that we always know that
+|csum| >= |x|.
+
+The *csum* variable tracks the cumulative sum and *frac* tracks
+the cumulative fractional errors at each step.  Since this
+variant assumes that |csum| >= |x| at each step, we establish
+the precondition by starting the accumulation from 1.0 which
+represents the largest possible value of (x/max)**2.
+
+After the loop is finished, the initial 1.0 is subtracted out
+for a net zero effect on the final sum.  Since *csum* will be
+greater than 1.0, the subtraction of 1.0 will not cause
+fractional digits to be dropped from *csum*.
+
 */
 
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, csum = 0.0, oldcsum, frac = 0.0, last;
+    double x, csum = 1.0, oldcsum, frac = 0.0;
     Py_ssize_t i;
 
     if (Py_IS_INFINITY(max)) {
@@ -2065,27 +2080,20 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     if (found_nan) {
         return Py_NAN;
     }
-    if (max == 0.0) {
-        return 0.0;
+    if (max == 0.0 || n <= 1) {
+        return max;
     }
-    assert(n > 0);
-    last = vec[n-1];
-    for (i=0 ; i < n-1 ; i++) {
+    for (i=0 ; i < n ; i++) {
         x = vec[i];
-        assert(Py_IS_FINITE(x) && x >= 0.0 && x <= max);
-        if (x == max) {
-            x = last;
-            last = max;
-        }
+        assert(Py_IS_FINITE(x) && fabs(x) <= max);
         x /= max;
-        x = x*x - frac;
+        x = x*x;
         oldcsum = csum;
         csum += x;
-        frac = (csum - oldcsum) - x;
+        assert(csum >= x);
+        frac += (oldcsum - csum) + x;
     }
-    assert(last == max);
-    csum += 1.0 - frac;
-    return max * sqrt(csum);
+    return max * sqrt(csum - 1.0 + frac);
 }
 
 #define NUM_STACK_ELEMS 16
@@ -2134,14 +2142,22 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(p, i);
-        px = PyFloat_AsDouble(item);
-        if (px == -1.0 && PyErr_Occurred()) {
-            goto error_exit;
+        if (PyFloat_CheckExact(item)) {
+            px = PyFloat_AS_DOUBLE(item);
+        } else {
+            px = PyFloat_AsDouble(item);
+            if (px == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
         }
         item = PyTuple_GET_ITEM(q, i);
-        qx = PyFloat_AsDouble(item);
-        if (qx == -1.0 && PyErr_Occurred()) {
-            goto error_exit;
+        if (PyFloat_CheckExact(item)) {
+            qx = PyFloat_AS_DOUBLE(item);
+        } else {
+            qx = PyFloat_AsDouble(item);
+            if (qx == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
         }
         x = fabs(px - qx);
         diffs[i] = x;
@@ -2183,9 +2199,13 @@ math_hypot(PyObject *self, PyObject *args)
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(args, i);
-        x = PyFloat_AsDouble(item);
-        if (x == -1.0 && PyErr_Occurred()) {
-            goto error_exit;
+        if (PyFloat_CheckExact(item)) {
+            x = PyFloat_AS_DOUBLE(item);
+        } else {
+            x = PyFloat_AsDouble(item);
+            if (x == -1.0 && PyErr_Occurred()) {
+                goto error_exit;
+            }
         }
         x = fabs(x);
         coordinates[i] = x;
