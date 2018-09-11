@@ -302,7 +302,6 @@ actually be smaller than the old one.
 static int
 set_table_resize(PySetObject *so, Py_ssize_t minused)
 {
-    Py_ssize_t newsize;
     setentry *oldtable, *newtable, *entry;
     Py_ssize_t oldmask = so->mask;
     size_t newmask;
@@ -313,13 +312,9 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 
     /* Find the smallest table size > minused. */
     /* XXX speed-up with intrinsics */
-    for (newsize = PySet_MINSIZE;
-         newsize <= minused && newsize > 0;
-         newsize <<= 1)
-        ;
-    if (newsize <= 0) {
-        PyErr_NoMemory();
-        return -1;
+    size_t newsize = PySet_MINSIZE;
+    while (newsize <= (size_t)minused) {
+        newsize <<= 1; // The largest possible value is PY_SSIZE_T_MAX + 1.
     }
 
     /* Get space for a new table. */
