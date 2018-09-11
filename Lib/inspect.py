@@ -479,6 +479,79 @@ def getmro(cls):
     "Return tuple of base classes (including cls) in method resolution order."
     return cls.__mro__
 
+def _subclasses(cls):
+    """return the subclasses of cls, excluding cls"""
+    try:
+        return cls.__subclasses__()
+    except TypeError:
+        # subclasses of type (ie type itself and metaclasses)
+        # have __subclasses__ as an instance method
+        # therefore we have to pass in self explicitly, as in
+        # str.strip(' a ')
+        return type.__subclasses__(cls)
+
+def getsubclasses(cls):
+    """return the subclasses of cls, including cls"""
+    return [cls] + _subclasses(cls)
+
+def getallsubclasses(cls, seen=None):
+    """return an iterator over all subclasses of cls, including cls
+
+    the subclass tree is traversed in depth-first order,
+    and duplicates are not returned.
+
+    A RecursionError is raised if the subclass tree exceeds a depth of
+    sys.getrecursionlimit(), however,
+    this should not occur in practice.
+    """
+    seen = seen or set()
+    result = []
+
+    yield cls
+
+    for cls in _subclasses(cls):
+        cls_id = id(cls)
+        if cls_id not in seen:
+            seen.add(cls_id)
+            yield from getallsubclasses(cls, seen)
+
+class SubclassNode:
+    """used to represent the nodes of a subclass tree"""
+
+    __slots__ = frozenset(('cls', 'children'))
+
+    def __init__(self, cls, children=None):
+        self.cls = cls
+        self.children = children or []
+
+    def __repr__(self):
+        if not self.children:
+            return repr(self.cls)
+
+        return '<{0.__class__.__qualname__} {0.cls} {0.children}>'.format(self)
+
+def getsubclasstree(cls, root=None):
+    """return an object representing the tree of cls's subclasses.
+
+    the object returned ("the root") has two attributes, cls and children.
+    root.cls is the passed in cls. root.children is the subclasses of
+    cls. root.children[0].cls is cls's first subclass, and
+    root.children[1].cls.children[0].cls is the cls's second subclass's
+    first subclass.
+
+    A RecursionError is raised if the subclass tree exceeds a depth of
+    sys.getrecursionlimit(), however,
+    this should not occur in practice.
+    """
+
+    root = root or SubclassNode(cls)
+
+    root.children.extend(map(SubclassNode, _subclasses(cls)))
+    for child in root.children:
+        getsubclasstree(child.cls, child)
+
+    return root
+
 # -------------------------------------------------------- function helpers
 
 def unwrap(func, *, stop=None):
