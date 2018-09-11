@@ -162,6 +162,7 @@ class TestSuite(BaseTestSuite):
             try:
                 setUpClass()
             except Exception as e:
+                currentClass.doClassCleanups(test)
                 if isinstance(result, _DebugResult):
                     raise
                 currentClass._classSetupFailed = True
@@ -199,6 +200,7 @@ class TestSuite(BaseTestSuite):
             try:
                 setUpModule()
             except Exception as e:
+                case.doModuleCleanups()
                 if isinstance(result, _DebugResult):
                     raise
                 result._moduleSetUpFailed = True
@@ -239,6 +241,7 @@ class TestSuite(BaseTestSuite):
                 self._addClassOrModuleLevelException(result, e, errorName)
             finally:
                 _call_if_exists(result, '_restoreStdout')
+                case.doModuleCleanups()
 
     def _tearDownPreviousClass(self, test, result):
         previousClass = getattr(result, '_previousTestClass', None)
@@ -265,6 +268,7 @@ class TestSuite(BaseTestSuite):
                 self._addClassOrModuleLevelException(result, e, errorName)
             finally:
                 _call_if_exists(result, '_restoreStdout')
+                previousClass.doClassCleanups(test)
 
 
 class _ErrorHolder(object):

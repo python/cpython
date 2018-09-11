@@ -84,6 +84,20 @@ class _Outcome(object):
 def _id(obj):
     return obj
 
+
+_module_cleanups = []
+def addModuleCleanup(function, *args, **kwargs):
+    """Same as addCleanup, except the cleanup items are called even if
+    setUpModule fails (unlike tearDownModule)."""
+    _module_cleanups.append((function, args, kwargs))
+
+def doModuleCleanups():
+    """Execute all module cleanup functions. Normally called for you after
+    tearDownModule."""
+    while _module_cleanups:
+        function, args, kwargs = _module_cleanups.pop()
+        function(*args, **kwargs)
+
 def skip(reason):
     """
     Unconditionally skip a test.
@@ -390,6 +404,8 @@ class TestCase(object):
 
     _classSetupFailed = False
 
+    _class_cleanups = []
+
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test
            method when executed. Raises a ValueError if the instance does
@@ -444,6 +460,12 @@ class TestCase(object):
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
         self._cleanups.append((function, args, kwargs))
+
+    @classmethod
+    def addClassCleanup(cls, function, *args, **kwargs):
+        """Same as addCleanup, excet the cleanup items are called even if
+        setUpClass fails (unlike tearDownClass)."""
+        cls._class_cleanups.append((function, args, kwargs))
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -653,6 +675,14 @@ class TestCase(object):
         # return this for backwards compatibility
         # even though we no longer us it internally
         return outcome.success
+
+    @classmethod
+    def doClassCleanups(cls, test):
+        """Execute all class cleanup functions. Normally called for you after
+        tearDownClass."""
+        while cls._class_cleanups:
+            function, args, kwargs = cls._class_cleanups.pop()
+            function(*args, **kwargs)
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)
