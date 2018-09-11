@@ -29,6 +29,16 @@ from io import BytesIO
 import unittest
 from test import support
 
+try:
+    import gzip
+    import zlib
+except ImportError:
+    zlib = None
+
+try:
+    import bz2
+except ImportError:
+    bz2 = None
 
 class NoLogRequestHandler:
     def log_message(self, *args):
@@ -77,6 +87,8 @@ class BaseTestCase(unittest.TestCase):
 
     def request(self, uri, method='GET', body=None, headers={}):
         self.connection = http.client.HTTPConnection(self.HOST, self.PORT)
+        if self.request_handler.protocol_version >= "HTTP/1.1":
+            headers['Connection'] = 'close'
         self.connection.request(method, uri, body, headers)
         return self.connection.getresponse()
 
@@ -552,6 +564,219 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.assertIsNotNone(enc)
         html_text = '>%s<' % html.escape(filename, quote=False)
         self.assertIn(html_text.encode(enc), body)
+
+
+class HTTPCompressionTestCase(BaseTestCase):
+
+    class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+
+        compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
+            "text/javascript", "application/javascript", "application/json"]
+
+    compressible_ext = ["txt", "js", "html", "css"]
+
+    def setUp(self):
+        BaseTestCase.setUp(self)
+        self.cwd = os.getcwd()
+        basetempdir = tempfile.gettempdir()
+        os.chdir(basetempdir)
+        self.data = 10 * b'We are the knights who say Ni!'
+        self.tempdir = tempfile.mkdtemp(dir=basetempdir)
+        self.tempdir_name = os.path.basename(self.tempdir)
+        self.base_url = '/' + self.tempdir_name
+
+        with open(os.path.join(self.tempdir, 'test'), 'wb') as temp:
+            temp.write(self.data)
+
+        with open(os.path.join(self.tempdir, 'test.abc'), 'wb') as temp:
+            temp.write(self.data)
+
+        for ext in self.compressible_ext:
+            path = os.path.join(self.tempdir, 'test.{}'.format(ext))
+            with open(path, 'wb') as temp:
+                temp.write(self.data)
+
+        # create big files, size > 2 << 18
+        self.repeat = (2 << 19) // len(self.data)
+        for ext in self.compressible_ext:
+            path = os.path.join(self.tempdir, 'test_big.{}'.format(ext))
+            with open(path, 'wb') as temp:
+                for _ in range(self.repeat):
+                    temp.write(self.data)
+
+    def tearDown(self):
+        try:
+            os.chdir(self.cwd)
+            shutil.rmtree(self.tempdir, ignore_errors=True)
+        finally:
+            BaseTestCase.tearDown(self)
+
+    @unittest.skipIf(zlib is None, 'zlib is not available')
+    def test_no_content_encoding_header(self):
+        # no Content-Encoding header, no file extension
+        response = self.request(self.base_url + '/test')
+        self.assertNotIn('Content-Encoding', response.headers)
+        self.assertEqual(response.read(), self.data)
+
+        # no Content-Encoding header, uncompressible file extension
+        response = self.request(self.base_url + '/test.abc')
+        self.assertNotIn('Content-Encoding', response.headers)
+        self.assertEqual(response.read(), self.data)
+
+        # no Content-Encoding header, compressible file extension
+        response = self.request(self.base_url + '/test.txt')
+        self.assertNotIn('Content-Encoding', response.headers)
+        self.assertEqual(response.read(), self.data)
+
+    @unittest.skipIf(zlib is None, 'zlib is not available')
+    def test_header_set_unsupported_extension(self):
+        # no file extension
+        response = self.request(self.base_url + '/test',
+            headers={'Accept-Encoding': 'gzip'})
+        self.assertNotIn('Content-Encoding', response.headers)
+        self.assertEqual(response.read(), self.data)
+
+        # uncompressible file extension
+        response = self.request(self.base_url + '/test.abc',
+            headers={'Accept-Encoding': 'gzip'})
+        self.assertNotIn('Content-Encoding', response.headers)
+        self.assertEqual(response.read(), self.data)
+
+    @unittest.skipIf(zlib is None, 'zlib is not available')
+    def test_header_set_supported_extension(self):
+        # Accept-Encoding header set, compressible file extension
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip'})
+            self.assertIn('Content-Encoding', response.headers)
+            self.assertEqual(gzip.decompress(response.read()), self.data)
+
+        # test with encoding "deflate" instead of "gzip"
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'deflate'})
+            self.assertIn('Content-Encoding', response.headers)
+            self.assertEqual(zlib.decompress(response.read()), self.data)
+
+        # alternative Accept-Encoding syntax
+        for ext in self.compressible_ext:
+
+            # x-gzip instead of gzip
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'x-gzip'})
+            self.assertIn('Content-Encoding', response.headers)
+            self.assertEqual(gzip.decompress(response.read()), self.data)
+
+            # add quality
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip; q=1'})
+            self.assertIn('Content-Encoding', response.headers)
+            self.assertEqual(gzip.decompress(response.read()), self.data)
+
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip; q=0.1'})
+            self.assertIn('Content-Encoding', response.headers)
+            self.assertEqual(gzip.decompress(response.read()), self.data)
+
+            # all encodings supported
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': '*'})
+            self.assertIn('Content-Encoding', response.headers)
+            encoding = response.headers['Content-Encoding']
+            if encoding in ['gzip', 'x-gzip']:
+                self.assertEqual(gzip.decompress(response.read()), self.data)
+            elif encoding == 'deflate':
+                self.assertEqual(zlib.decompress(response.read(), wbits=15),
+                    self.data)
+
+        # Big files
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test_big.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip'})
+            self.assertIn('Content-Encoding', response.headers)
+            # on HTTP/1.0 Chunked Tranfer Encoding is not supported
+            self.assertNotIn('Transfer-Encoding', response.headers)
+            self.assertEqual(gzip.decompress(response.read()),
+                self.repeat * self.data)
+
+    @unittest.skipIf(zlib is None, 'zlib is not available')
+    def test_header_set_to_wrong_value_supported_extension(self):
+        # Content-Encoding header set to a value that doesn't include gzip,
+        # compressible file extension
+        for ext in self.compressible_ext:
+            # quality value set to 0 means that the value is not supported
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip;q=0'})
+            self.assertNotIn('Content-Encoding', response.headers)
+
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': '*;q=0'})
+            self.assertNotIn('Content-Encoding', response.headers)
+
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'dummy'})
+            self.assertNotIn('Content-Encoding', response.headers)
+
+    @unittest.skipIf(bz2 is None, 'bz2 is not available')
+    def test_user_defined_compressions(self):
+        # test with encoding "bzip2" instead of "gzip"
+
+        # Write a generator for (non-standard) bzip2 compression encoding.
+        def _bzip2_producer(fileobj):
+            bufsize = 2 << 17
+            producer = bz2.BZ2Compressor()
+            with fileobj:
+                while True:
+                    buf = fileobj.read(bufsize)
+                    if not buf: # end of file
+                        yield producer.flush()
+                        return
+                    yield producer.compress(buf)
+
+        # update dictionary "compressions" to support bzip2
+        self.request_handler.compressions.update(bzip2=_bzip2_producer)
+
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'bzip2'})
+            self.assertIn('Content-Encoding', response.headers)
+            self.assertEqual(bz2.decompress(response.read()), self.data)
+
+    def test_no_zlib(self):
+        """Simulate the case when zlib is not supported."""
+        save_zlib = server.zlib
+        save_compressions = self.request_handler.compressions
+
+        server.zlib = None
+        self.request_handler.compressions = {}
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip'})
+            self.assertNotIn('Content-Encoding', response.headers)
+            self.assertEqual(response.read(), self.data)
+        server.zlib = save_zlib
+        self.request_handler.compressions = save_compressions
+
+class HTTPCompressionChunkedTransferTestCase(HTTPCompressionTestCase):
+
+    class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+
+        protocol_version = 'HTTP/1.1'
+
+        compressed_types = ["text/plain", "text/html", "text/css", "text/xml",
+            "text/javascript", "application/javascript", "application/json"]
+
+    @unittest.skipIf(zlib is None, 'zlib is not available')
+    def test_header_set_supported_extension(self):
+        # with protocol set to HTTP/1.1, big files are sent with
+        # Chunked Tranfer Encoding
+        for ext in self.compressible_ext:
+            response = self.request(self.base_url + '/test_big.{}'.format(ext),
+                headers={'Accept-Encoding': 'gzip', 'Connection': 'close'})
+            self.assertIn('Content-Encoding', response.headers)
+            self.assertIn('Transfer-Encoding', response.headers)
+            self.assertEqual(gzip.decompress(response.read()),
+                self.repeat * self.data)
 
 
 cgi_file1 = """\
@@ -1127,6 +1352,8 @@ def test_main(verbose=None):
             CGIHTTPServerTestCase,
             SimpleHTTPRequestHandlerTestCase,
             MiscTestCase,
+            HTTPCompressionTestCase,
+            HTTPCompressionChunkedTransferTestCase
         )
     finally:
         os.chdir(cwd)

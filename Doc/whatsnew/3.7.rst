@@ -962,6 +962,16 @@ With this parameter, the server serves the specified directory, by default it
 uses the current working directory.
 (Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
 
+Support HTTP compression : if the user agent sends a request with header
+``Accept-Encoding`` including gzip, and if the content type guessed from the
+file extension is in the attribute ``compressed_types`` of
+:class:`~http.server.SimpleHTTPRequestHandler`, set the response header
+``Content-Encoding`` to "gzip", set ``Content-Length`` to the length of the
+gzipped content, and return a file object with the gzipped content.
+(Contributed by Pierre Quentel in :issue:`30576`.)
+
+hmac
+=======
 The new :class:`ThreadingHTTPServer <http.server.ThreadingHTTPServer>` class
 uses threads to handle requests using :class:`~socketserver.ThreadingMixin`.
 It is used when ``http.server`` is run with ``-m``.
@@ -1085,6 +1095,7 @@ configuration passed to :func:`logging.config.fileConfig`.
 
 
 math
+
 ----
 
 The new :func:`math.remainder` function implements the IEEE 754-style remainder
@@ -1099,7 +1110,10 @@ The MIME type of .bmp has been changed from ``'image/x-ms-bmp'`` to
 (Contributed by Nitish Chandra in :issue:`22589`.)
 
 
+locale
+=======
 msilib
+
 ------
 
 The new :meth:`Database.Close() <msilib.Database.Close>` method can be used

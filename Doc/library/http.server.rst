@@ -275,7 +275,6 @@ provides three different variants:
       the message to :meth:`log_message`, so it takes the same arguments
       (*format* and additional values).
 
-
    .. method:: log_message(format, ...)
 
       Logs an arbitrary message to ``sys.stderr``. This is typically overridden
@@ -338,6 +337,29 @@ provides three different variants:
 
       If not specified, the directory to serve is the current working directory.
 
+   .. attribute:: compressed_types
+
+      The list of content types for which HTTP compression is applied. Set by
+      default to the empty list, which means that by default, compression is
+      disabled. It can be set to a list of types, for instance :
+      ``["text/plain", "text/html", "text/css"]``. A list of commonly
+      compressed types is provided as ``commonly_compressed_types`` at the
+      module level.
+
+      .. versionadded:: 3.7
+
+   .. attribute:: compressions
+
+      A mapping between a compression encoding (eg. "gzip") and a generator
+      that takes a file object as an argument, reads the file content by
+      chunks, compresses each chunk with the specified encoding, and yields
+      the compressed data as a bytes object.
+      By default, if the :mod:`zlib` module is available, "gzip" and "deflate"
+      compressions are supported. To support other algorithms,
+      :attr:`compressions` can be extended.
+
+      .. versionadded:: 3.7
+
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
    .. method:: do_HEAD()
@@ -366,6 +388,12 @@ provides three different variants:
       type is guessed by calling the :meth:`guess_type` method, which in turn
       uses the *extensions_map* variable, and the file contents are returned.
 
+      If the content type is in the list ``compressed_types``, and if the
+      user agent has sent an ``'Accept-Encoding'`` header that included
+      "gzip", a header ``'Content-Encoding'`` set to "gzip" is sent and the
+      file content is compressed using gzip. For big files, the gzipped
+      content is stored in a temporary file.
+
       A ``'Content-type:'`` header with the guessed content type is output,
       followed by a ``'Content-Length:'`` header with the file's size and a
       ``'Last-Modified:'`` header with the file's modification time.
@@ -377,8 +405,9 @@ provides three different variants:
       For example usage, see the implementation of the :func:`test` function
       invocation in the :mod:`http.server` module.
 
-      .. versionchanged:: 3.7
-         Support of the ``'If-Modified-Since'`` header.
+      .. versionadded:: 3.7
+         Support of the ``'If-Modified-Since'`` header and of HTTP
+         compression.
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
@@ -420,6 +449,12 @@ the following command uses a specific directory::
 
 .. versionadded:: 3.7
     ``--directory`` specify alternate directory
+
+By default, HTTP compression is not supported. Setting the option
+``--compressed`` enables compression on the content types defined in
+``commonly_compressed_types``.
+
+.. versionadded:: 3.7
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
