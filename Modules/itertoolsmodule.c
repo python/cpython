@@ -396,6 +396,8 @@ struct lead_rlock {
     unsigned long owner;
     unsigned long count;
     unsigned long sharenum;
+    int locked;
+    int needed;
 };
 
 typedef struct {
@@ -417,13 +419,13 @@ typedef struct {
 static PyTypeObject teedataobject_type;
 
 static PyLockStatus
-lead_rlock_acquire(struct lead_rlock *rlock)
+lead_rlock_smart_acquire(struct lead_rlock *rlock)
 {
     unsigned long tid;
     PyLockStatus r = PY_LOCK_ACQUIRED;
 
     tid = PyThread_get_thread_ident();
-    if (rlock->count > 0 && rlock->owner == tid)
+    if (rlock->owner == tid && rlock->locked)
     {
         unsigned long count = rlock->count + 1;
         if (count <= rlock->count) {
@@ -434,35 +436,48 @@ lead_rlock_acquire(struct lead_rlock *rlock)
         rlock->count = count;
         return PY_LOCK_ACQUIRED;
     }
+
+    if(rlock->locked && rlock->owner != tid) {
+        if(rlock->count == 0) {
+            /* It's safe to release. */
+            PyThread_release_lock(rlock->lock);
+            rlock->owner = 0;
+            rlock->locked = 0;
+        }else {
+            rlock->needed = 1;
+        }
+    }
+
     if (!PyThread_acquire_lock_timed(rlock->lock, 0, NOWAIT_LOCK)) {
         Py_BEGIN_ALLOW_THREADS
         r = PyThread_acquire_lock_timed(rlock->lock, -1000000, WAIT_LOCK);
         Py_END_ALLOW_THREADS
     }
-
     if (r == PY_LOCK_ACQUIRED) {
-        //assert(rlock->count == 0);
+        assert(rlock->count == 0);
         rlock->owner = tid;
         rlock->count = 1;
+        rlock->locked = 1;
         return r;
     }
     return PY_LOCK_FAILURE;
 }
 
 static void
-lead_rlock_release(struct lead_rlock *rlock)
+lead_rlock_smart_release(struct lead_rlock *rlock)
 {
-    unsigned long tid = PyThread_get_thread_ident();
-    if (rlock->count == 0 || rlock->owner != tid) {
+    if (rlock->count == 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
         return;
     }
     if (--rlock->count == 0) {
-        rlock->owner = 0;
-        PyThread_release_lock(rlock->lock);
+        if(rlock->needed && rlock->locked) {
+            PyThread_release_lock(rlock->lock);
+            rlock->owner = 0;
+            rlock->locked = 0;
+        }
     }
-    return;
 }
 
 static PyObject *
@@ -696,9 +711,9 @@ tee_next(teeobject *to)
         value = to->dataobj->values[to->index];
         Py_INCREF(value);
     } else {
-        lead_rlock_acquire(to->rlock);
+        lead_rlock_smart_acquire(to->rlock);
         value = teedataobject_getitem(to->dataobj, to->index);
-        lead_rlock_release(to->rlock);
+        lead_rlock_smart_release(to->rlock);
     }
     if (value == NULL)
         return NULL;
@@ -765,6 +780,8 @@ tee_fromiterable(PyObject *iterable)
     to->rlock->owner = 0;
     to->rlock->count = 0;
     to->rlock->sharenum = 1;
+    to->rlock->locked = 0;
+    to->rlock->needed = 0;
     to->weakreflist = NULL;
     PyObject_GC_Track(to);
 done:
