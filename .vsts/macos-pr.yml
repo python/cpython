@@ -4,7 +4,7 @@
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 queue:
-  name: Hosted macOS Preview
+  name: Hosted macOS
 
 trigger:
   branches:
