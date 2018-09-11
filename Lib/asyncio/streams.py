@@ -1,8 +1,6 @@
 __all__ = (
     'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
-    'open_connection', 'start_server',
-    'IncompleteReadError', 'LimitOverrunError',
-)
+    'open_connection', 'start_server')
 
 import socket
 
@@ -11,43 +9,13 @@ if hasattr(socket, 'AF_UNIX'):
 
 from . import coroutines
 from . import events
+from . import exceptions
 from . import protocols
 from .log import logger
 from .tasks import sleep
 
 
 _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
-
-
-class IncompleteReadError(EOFError):
-    """
-    Incomplete read error. Attributes:
-
-    - partial: read bytes string before the end of stream was reached
-    - expected: total number of expected bytes (or None if unknown)
-    """
-    def __init__(self, partial, expected):
-        super().__init__(f'{len(partial)} bytes read on a total of '
-                         f'{expected!r} expected bytes')
-        self.partial = partial
-        self.expected = expected
-
-    def __reduce__(self):
-        return type(self), (self.partial, self.expected)
-
-
-class LimitOverrunError(Exception):
-    """Reached the buffer limit while looking for a separator.
-
-    Attributes:
-    - consumed: total number of to be consumed bytes.
-    """
-    def __init__(self, message, consumed):
-        super().__init__(message)
-        self.consumed = consumed
-
-    def __reduce__(self):
-        return type(self), (self.args[0], self.consumed)
 
 
 async def open_connection(host=None, port=None, *,
@@ -494,9 +462,9 @@ class StreamReader:
         seplen = len(sep)
         try:
             line = await self.readuntil(sep)
-        except IncompleteReadError as e:
+        except exceptions.IncompleteReadError as e:
             return e.partial
-        except LimitOverrunError as e:
+        except exceptions.LimitOverrunError as e:
             if self._buffer.startswith(sep, e.consumed):
                 del self._buffer[:e.consumed + seplen]
             else:
@@ -571,7 +539,7 @@ class StreamReader:
                 # see upper comment for explanation.
                 offset = buflen + 1 - seplen
                 if offset > self._limit:
-                    raise LimitOverrunError(
+                    raise exceptions.LimitOverrunError(
                         'Separator is not found, and chunk exceed the limit',
                         offset)
 
@@ -582,13 +550,13 @@ class StreamReader:
             if self._eof:
                 chunk = bytes(self._buffer)
                 self._buffer.clear()
-                raise IncompleteReadError(chunk, None)
+                raise exceptions.IncompleteReadError(chunk, None)
 
             # _wait_for_data() will resume reading if stream was paused.
             await self._wait_for_data('readuntil')
 
         if isep > self._limit:
-            raise LimitOverrunError(
+            raise exceptions.LimitOverrunError(
                 'Separator is found, but chunk is longer than limit', isep)
 
         chunk = self._buffer[:isep + seplen]
@@ -674,7 +642,7 @@ class StreamReader:
             if self._eof:
                 incomplete = bytes(self._buffer)
                 self._buffer.clear()
-                raise IncompleteReadError(incomplete, n)
+                raise exceptions.IncompleteReadError(incomplete, n)
 
             await self._wait_for_data('readexactly')
 
