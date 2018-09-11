@@ -2795,6 +2795,10 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
             }
             else if (TYPE(CHILD(ch, 0)) == STAR)
                 nargs++;
+            else if (TYPE(CHILD(ch, 1)) == COLONEQUAL) {
+                printf("COLONEQUAL[1]\n");
+                nargs++;
+            }
             else
                 /* TYPE(CHILD(ch, 0)) == DOUBLESTAR or keyword argument */
                 nkeywords++;
@@ -2874,6 +2878,14 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 if (!e)
                     return NULL;
                 asdl_seq_SET(args, nargs++, e);
+            }
+            else if (TYPE(CHILD(ch, 1)) == COLONEQUAL) {
+                printf("COLONEQUAL[2]\n");
+                e = ast_for_namedexpr(c, ch);
+                if (!e)
+                    return NULL;
+                asdl_seq_SET(args, nargs++, e);
+                nargs++;
             }
             else {
                 /* a keyword argument */
