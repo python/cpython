@@ -50,7 +50,8 @@ Table of contents:
    :maxdepth: 3
 
    asyncio-eventloop.rst
-   asyncio-eventloops.rst
+   asyncio-policy.rst
+   asyncio-platforms.rst
    asyncio-task.rst
    asyncio-protocol.rst
    asyncio-stream.rst
@@ -58,6 +59,7 @@ Table of contents:
    asyncio-sync.rst
    asyncio-queue.rst
    asyncio-dev.rst
+   asyncio-exceptions.rst
 
 .. seealso::
 
