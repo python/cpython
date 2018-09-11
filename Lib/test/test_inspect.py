@@ -1,3 +1,4 @@
+import abc
 import builtins
 import collections
 import datetime
@@ -702,6 +703,30 @@ class TestClassesAndFunctions(unittest.TestCase):
         expected = (D, B, C, A, object)
         got = inspect.getmro(D)
         self.assertEqual(expected, got)
+
+    def test_getsubclasses(self):
+        class A: pass
+        class B(A): pass
+        class C(A): pass
+        class D(B, C): pass
+        class E(A): pass
+
+        self.assertEqual([A, B, C, E], inspect.getsubclasses(A))
+        self.assertEqual([A, B, D, C, E], list(inspect.getallsubclasses(A)))
+
+        # test that getting subclasses of a metaclass doesn't fail
+        try:
+            inspect.getsubclasses(type)
+        except:
+            self.fail('exception raised')
+
+        self.assertIn(abc.ABCMeta, inspect.getallsubclasses(type))
+
+        expected = inspect.SubclassNode(A, list(map(inspect.SubclassNode, [B, C, E])))
+        expected.children[0].children = [inspect.SubclassNode(D)]  # B -> D
+        expected.children[1].children = [inspect.SubclassNode(D)]  # C -> D
+
+        self.assertEqual(expected, inspect.getsubclasstree(A))
 
     def assertArgSpecEquals(self, routine, args_e, varargs_e=None,
                             varkw_e=None, defaults_e=None, formatted=None):

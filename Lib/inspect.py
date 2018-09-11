@@ -524,6 +524,16 @@ class SubclassNode:
         self.cls = cls
         self.children = children or []
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, type(self))
+            and self.cls is other.cls
+            and self.children == other.children
+        )
+
+    def __hash__(self):
+        return hash((type(self), self.cls, tuple(map(hash, self.children))))
+
     def __repr__(self):
         if not self.children:
             return repr(self.cls)
