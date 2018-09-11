@@ -1,4 +1,4 @@
-'''zipimport provides support for importing Python modules from Zip archives.
+"""zipimport provides support for importing Python modules from Zip archives.
 
 This module exports three objects:
 - zipimporter: a class; its constructor takes a path to a Zip archive.
@@ -10,7 +10,7 @@ This module exports three objects:
 It is usually not needed to use the zipimport module explicitly; it is
 used by the builtin import mechanism for sys.path items that are paths
 to Zip archives.
-'''
+"""
 
 #from importlib import _bootstrap_external
 #from importlib import _bootstrap  # for _verbose_message
@@ -40,7 +40,7 @@ _module_type = type(sys)
 
 
 class zipimporter:
-    '''zipimporter(archivepath) -> zipimporter object
+    """zipimporter(archivepath) -> zipimporter object
 
     Create a new zipimporter instance. 'archivepath' must be a path to
     a zipfile, or to a specific path inside a zipfile. For example, it can be
@@ -52,7 +52,7 @@ class zipimporter:
 
     The 'archive' attribute of zipimporter objects contains the name of the
     zipfile targeted.
-    '''
+    """
 
     # Split the "subdirectory" from the Zip archive path, lookup a matching
     # entry in sys.path_importer_cache, fetch the file directory from there
@@ -104,7 +104,7 @@ class zipimporter:
     # full path if it's a possible namespace portion, None if we
     # can't load it.
     def find_loader(self, fullname, path=None):
-        '''find_loader(fullname, path=None) -> self, str or None.
+        """find_loader(fullname, path=None) -> self, str or None.
 
         Search for a module specified by 'fullname'. 'fullname' must be the
         fully qualified (dotted) module name. It returns the zipimporter
@@ -112,7 +112,7 @@ class zipimporter:
         full path name if it's possibly a portion of a namespace package,
         or None otherwise. The optional 'path' argument is ignored -- it's
         there for compatibility with the importer protocol.
-        '''
+        """
         mi = _get_module_info(self, fullname)
         if mi is not None:
             # This is a module or package.
@@ -136,33 +136,33 @@ class zipimporter:
     # Check whether we can satisfy the import of the module named by
     # 'fullname'. Return self if we can, None if we can't.
     def find_module(self, fullname, path=None):
-        '''find_module(fullname, path=None) -> self or None.
+        """find_module(fullname, path=None) -> self or None.
 
         Search for a module specified by 'fullname'. 'fullname' must be the
         fully qualified (dotted) module name. It returns the zipimporter
         instance itself if the module was found, or None if it wasn't.
         The optional 'path' argument is ignored -- it's there for compatibility
         with the importer protocol.
-        '''
+        """
         return self.find_loader(fullname, path)[0]
 
 
     def get_code(self, fullname):
-        '''get_code(fullname) -> code object.
+        """get_code(fullname) -> code object.
 
         Return the code object for the specified module. Raise ZipImportError
         if the module couldn't be found.
-        '''
+        """
         code, ispackage, modpath = _get_module_code(self, fullname)
         return code
 
 
     def get_data(self, pathname):
-        '''get_data(pathname) -> string with file data.
+        """get_data(pathname) -> string with file data.
 
         Return the data associated with 'pathname'. Raise OSError if
         the file wasn't found.
-        '''
+        """
         if alt_path_sep:
             pathname = pathname.replace(alt_path_sep, path_sep)
 
@@ -179,10 +179,10 @@ class zipimporter:
 
     # Return a string matching __file__ for the named module
     def get_filename(self, fullname):
-        '''get_filename(fullname) -> filename string.
+        """get_filename(fullname) -> filename string.
 
         Return the filename for the specified module.
-        '''
+        """
         # Deciding the filename requires working out where the code
         # would come from if the module was actually loaded
         code, ispackage, modpath = _get_module_code(self, fullname)
@@ -190,12 +190,12 @@ class zipimporter:
 
 
     def get_source(self, fullname):
-        '''get_source(fullname) -> source string.
+        """get_source(fullname) -> source string.
 
         Return the source code for the specified module. Raise ZipImportError
         if the module couldn't be found, return None if the archive does
         contain the module, but has no source for it.
-        '''
+        """
         mi = _get_module_info(self, fullname)
         if mi is None:
             raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
@@ -216,11 +216,11 @@ class zipimporter:
 
     # Return a bool signifying whether the module is a package or not.
     def is_package(self, fullname):
-        '''is_package(fullname) -> bool.
+        """is_package(fullname) -> bool.
 
         Return True if the module specified by fullname is a package.
         Raise ZipImportError if the module couldn't be found.
-        '''
+        """
         mi = _get_module_info(self, fullname)
         if mi is None:
             raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
@@ -229,12 +229,12 @@ class zipimporter:
 
     # Load and return the module named by 'fullname'.
     def load_module(self, fullname):
-        '''load_module(fullname) -> module.
+        """load_module(fullname) -> module.
 
         Load the module specified by 'fullname'. 'fullname' must be the
         fully qualified (dotted) module name. It returns the imported
         module, or raises ZipImportError if it wasn't found.
-        '''
+        """
         code, ispackage, modpath = _get_module_code(self, fullname)
         mod = sys.modules.get(fullname)
         if mod is None or not isinstance(mod, _module_type):
@@ -267,11 +267,11 @@ class zipimporter:
 
 
     def get_resource_reader(self, fullname):
-        '''Return the ResourceReader for a package in a zip file.
+        """Return the ResourceReader for a package in a zip file.
 
         If 'fullname' is a package within the zip file, return the
         'ResourceReader' object for the package.  Otherwise return None.
-        '''
+        """
         from importlib import resources
         return resources._zipimport_get_resource_reader(self, fullname)
 
@@ -416,8 +416,10 @@ def _read_directory(archive):
                 raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
 
             if flags & 0x800:
+                # UTF-8 file names extension
                 name = name.decode()
             else:
+                # Historical ZIP filename encoding
                 try:
                     name = name.decode('ascii')
                 except UnicodeDecodeError:
@@ -431,6 +433,12 @@ def _read_directory(archive):
     _bootstrap._verbose_message('zipimport: found {} names in {!r}', count, archive)
     return files
 
+# During bootstrap, we may need to load the encodings
+# package from a ZIP file. But the cp437 encoding is implemented
+# in Python in the encodings package.
+#
+# Break out of this dependency by using the translation table for
+# the cp437 encoding.
 cp437_table = (
     '\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f'
     '\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f'
@@ -475,7 +483,7 @@ def _get_decompress_func():
     _importing_zlib = True
     try:
         from zlib import decompress
-    except:
+    except Exception:
         _bootstrap._verbose_message('zipimport: zlib UNAVAILABLE')
         raise ZipImportError("can't decompress data; zlib not available")
     finally:
@@ -512,10 +520,7 @@ def _get_data(archive, toc_entry):
             fp.seek(file_offset)
         except OSError:
             raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-        try:
-            raw_data = fp.read(data_size)
-        except OSError:
-            raise OSError("zipimport: can't read data")
+        raw_data = fp.read(data_size)
         if len(raw_data) != data_size:
             raise OSError("zipimport: can't read data")
 
@@ -526,7 +531,7 @@ def _get_data(archive, toc_entry):
     # Decompress with zlib
     try:
         decompress = _get_decompress_func()
-    except:
+    except Exception:
         raise ZipImportError("can't decompress data; zlib not available")
     return decompress(raw_data, -15)
 
@@ -590,8 +595,12 @@ def _compile_source(pathname, source):
 # that's compatible with the time stamp stored in .pyc files.
 def _parse_dostime(d, t):
     return time.mktime((
-        (d >> 9) + 1980, (d >> 5) & 0xF, d & 0x1F,
-        t >> 11, (t >> 5) & 0x3F, (t & 0x1F) * 2,
+        (d >> 9) + 1980,    # bits 9..15: year
+        (d >> 5) & 0xF,     # bits 5..8: month
+        d & 0x1F,           # bits 0..4: day
+        t >> 11,            # bits 11..15: hours
+        (t >> 5) & 0x3F,    # bits 8..10: minutes
+        (t & 0x1F) * 2,     # bits 0..7: seconds / 2
         -1, -1, -1))
 
 # Given a path to a .pyc file in the archive, return the
