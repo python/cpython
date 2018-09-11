@@ -1512,8 +1512,6 @@ class Popen(object):
                         err_filename = orig_executable
                     if errno_num != 0:
                         err_msg = os.strerror(errno_num)
-                        if errno_num == errno.ENOENT:
-                            err_msg += ': ' + repr(err_filename)
                     raise child_exception_type(errno_num, err_msg, err_filename)
                 raise child_exception_type(err_msg)
 
