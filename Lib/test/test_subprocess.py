@@ -1137,8 +1137,7 @@ class ProcessTestCase(BaseTestCase):
         # line is not flushed in binary mode with bufsize=1.
         # we should get empty response
         line = b'line' + os.linesep.encode() # assume ascii-based locale
-        warn_msg = 'line buffering is not supported in binary mode'
-        with self.assertWarns(RuntimeWarning, msg=warn_msg):
+        with self.assertWarnsRegex(RuntimeWarning, 'line buffering'):
             self._test_bufsize_equal_one(line, b'', universal_newlines=False)
 
     def test_leaking_fds_on_error(self):
