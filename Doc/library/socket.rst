@@ -173,14 +173,14 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.7
 
-- The :const:`AF_PACKET` address family is a Linux-only packet address protocol
-  represented by the tuple ``(ifname, proto[, pkttype[, hatype[, addr]]])``
-  where:
+- :const:`AF_PACKET` is a low-level interface directly to network devices.
+  The packets are represented by the tuple
+  ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
   - *ifname* - String specifying the device name.
-  - *proto* - An endian-corrected integer specifying the Ethernet protocol
-    number.
-  - *pkttype* - Optional constant integer specifying the packet type:
+  - *proto* - An in network-byte-order integer specifying the Ethernet
+    protocol number.
+  - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
     - ``PACKET_BROADCAST`` - Physical-layer broadcast packet.
