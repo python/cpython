@@ -3969,8 +3969,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Module field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Module field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4011,8 +4010,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Interactive field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Interactive field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4077,8 +4075,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Suite field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Suite field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4195,8 +4192,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "FunctionDef field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "FunctionDef field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4226,8 +4222,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "FunctionDef field \"decorator_list\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "FunctionDef field \"decorator_list\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4312,8 +4307,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4343,8 +4337,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"decorator_list\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"decorator_list\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4416,8 +4409,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ClassDef field \"bases\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "ClassDef field \"bases\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4447,8 +4439,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ClassDef field \"keywords\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "ClassDef field \"keywords\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4478,8 +4469,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ClassDef field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "ClassDef field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4509,8 +4499,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ClassDef field \"decorator_list\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "ClassDef field \"decorator_list\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4576,8 +4565,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Delete field \"targets\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Delete field \"targets\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4619,8 +4607,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Assign field \"targets\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Assign field \"targets\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4822,8 +4809,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "For field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "For field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4853,8 +4839,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "For field \"orelse\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "For field \"orelse\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4924,8 +4909,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncFor field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "AsyncFor field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -4955,8 +4939,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncFor field \"orelse\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "AsyncFor field \"orelse\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5012,8 +4995,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "While field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "While field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5043,8 +5025,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "While field \"orelse\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "While field \"orelse\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5100,8 +5081,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "If field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "If field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5131,8 +5111,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "If field \"orelse\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "If field \"orelse\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5174,8 +5153,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "With field \"items\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "With field \"items\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5205,8 +5183,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "With field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "With field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5248,8 +5225,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncWith field \"items\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "AsyncWith field \"items\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5279,8 +5255,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncWith field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "AsyncWith field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5362,8 +5337,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Try field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Try field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5393,8 +5367,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Try field \"handlers\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Try field \"handlers\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5424,8 +5397,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Try field \"orelse\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Try field \"orelse\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5455,8 +5427,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Try field \"finalbody\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Try field \"finalbody\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5536,8 +5507,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Import field \"names\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Import field \"names\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5593,8 +5563,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ImportFrom field \"names\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "ImportFrom field \"names\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5648,8 +5617,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Global field \"names\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Global field \"names\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5690,8 +5658,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Nonlocal field \"names\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Nonlocal field \"names\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -5846,8 +5813,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "BoolOp field \"values\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "BoolOp field \"values\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6069,8 +6035,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Dict field \"keys\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Dict field \"keys\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6100,8 +6065,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Dict field \"values\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Dict field \"values\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6142,8 +6106,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Set field \"elts\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Set field \"elts\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6198,8 +6161,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ListComp field \"generators\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "ListComp field \"generators\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6254,8 +6216,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "SetComp field \"generators\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "SetComp field \"generators\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6324,8 +6285,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "DictComp field \"generators\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "DictComp field \"generators\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6380,8 +6340,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "GeneratorExp field \"generators\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "GeneratorExp field \"generators\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6509,8 +6468,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Compare field \"ops\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Compare field \"ops\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6540,8 +6498,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Compare field \"comparators\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Compare field \"comparators\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6597,8 +6554,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Call field \"args\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Call field \"args\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6628,8 +6584,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Call field \"keywords\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Call field \"keywords\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -6771,8 +6726,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "JoinedStr field \"values\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "JoinedStr field \"values\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -7076,8 +7030,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "List field \"elts\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "List field \"elts\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -7132,8 +7085,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Tuple field \"elts\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "Tuple field \"elts\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -7315,8 +7267,7 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ExtSlice field \"dims\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "ExtSlice field \"dims\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -7688,8 +7639,7 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "comprehension field \"ifs\" must be a list, not a %.200s",
-                         Py_TYPE(tmp)->tp_name);
+            PyErr_Format(PyExc_TypeError, "comprehension field \"ifs\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
@@ -7813,8 +7763,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ExceptHandler field \"body\" must be a list, not a %.200s",
-                             Py_TYPE(tmp)->tp_name);
+                PyErr_Format(PyExc_TypeError, "ExceptHandler field \"body\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
@@ -7866,8 +7815,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "arguments field \"args\" must be a list, not a %.200s",
-                         Py_TYPE(tmp)->tp_name);
+            PyErr_Format(PyExc_TypeError, "arguments field \"args\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
@@ -7910,8 +7858,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "arguments field \"kwonlyargs\" must be a list, not a %.200s",
-                         Py_TYPE(tmp)->tp_name);
+            PyErr_Format(PyExc_TypeError, "arguments field \"kwonlyargs\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
@@ -7941,8 +7888,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "arguments field \"kw_defaults\" must be a list, not a %.200s",
-                         Py_TYPE(tmp)->tp_name);
+            PyErr_Format(PyExc_TypeError, "arguments field \"kw_defaults\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
@@ -7985,8 +7931,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         Py_ssize_t len;
         Py_ssize_t i;
         if (!PyList_Check(tmp)) {
-            PyErr_Format(PyExc_TypeError, "arguments field \"defaults\" must be a list, not a %.200s",
-                         Py_TYPE(tmp)->tp_name);
+            PyErr_Format(PyExc_TypeError, "arguments field \"defaults\" must be a list, not a %.200s", Py_TYPE(tmp)->tp_name);
             goto failed;
         }
         len = PyList_GET_SIZE(tmp);
