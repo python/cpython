@@ -14,14 +14,18 @@ class itertools._grouper "_grouperobject *" "&_grouper_type"
 class itertools.teedataobject "teedataobject *" "&teedataobject_type"
 class itertools._tee "teeobject *" "&tee_type"
 class itertools.cycle "cycleobject *" "&cycle_type"
+class itertools.dropwhile "dropwhileobject *" "&dropwhile_type"
+class itertools.takewhile "takewhileobject *" "&takewhile_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=066b5d99490f49d4]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4bf812ee14fd8b73]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
 static PyTypeObject cycle_type;
+static PyTypeObject dropwhile_type;
+static PyTypeObject takewhile_type;
 
 #include "clinic/itertoolsmodule.c.h"
 
@@ -1114,18 +1118,23 @@ typedef struct {
 
 static PyTypeObject dropwhile_type;
 
+/*[clinic input]
+@classmethod
+itertools.dropwhile.__new__
+    predicate as func: object
+    iterable as seq: object
+    /
+Drop items from the iterable while predicate(item) is true.
+
+Afterwards, return every element until the iterable is exhausted.
+[clinic start generated code]*/
+
 static PyObject *
-dropwhile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools_dropwhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
+/*[clinic end generated code: output=92f9d0d89af149e4 input=d39737147c9f0a26]*/
 {
-    PyObject *func, *seq;
     PyObject *it;
     dropwhileobject *lz;
-
-    if (type == &dropwhile_type && !_PyArg_NoKeywords("dropwhile", kwds))
-        return NULL;
-
-    if (!PyArg_UnpackTuple(args, "dropwhile", 2, 2, &func, &seq))
-        return NULL;
 
     /* Get iterator. */
     it = PyObject_GetIter(seq);
@@ -1220,12 +1229,6 @@ static PyMethodDef dropwhile_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-PyDoc_STRVAR(dropwhile_doc,
-"dropwhile(predicate, iterable) --> dropwhile object\n\
-\n\
-Drop items from the iterable while predicate(item) is true.\n\
-Afterwards, return every element until the iterable is exhausted.");
-
 static PyTypeObject dropwhile_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.dropwhile",              /* tp_name */
@@ -1249,7 +1252,7 @@ static PyTypeObject dropwhile_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    dropwhile_doc,                      /* tp_doc */
+    itertools_dropwhile__doc__,         /* tp_doc */
     (traverseproc)dropwhile_traverse,   /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -1266,7 +1269,7 @@ static PyTypeObject dropwhile_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    dropwhile_new,                      /* tp_new */
+    itertools_dropwhile,                /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
@@ -1282,18 +1285,21 @@ typedef struct {
 
 static PyTypeObject takewhile_type;
 
+/*[clinic input]
+@classmethod
+itertools.takewhile.__new__
+    predicate as func: object
+    iterable as seq: object
+    /
+Return successive entries from an iterable as long as the predicate evaluates to true for each entry.
+[clinic start generated code]*/
+
 static PyObject *
-takewhile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools_takewhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
+/*[clinic end generated code: output=bb179ea7864e2ef6 input=ba5255f7519aa119]*/
 {
-    PyObject *func, *seq;
     PyObject *it;
     takewhileobject *lz;
-
-    if (type == &takewhile_type && !_PyArg_NoKeywords("takewhile", kwds))
-        return NULL;
-
-    if (!PyArg_UnpackTuple(args, "takewhile", 2, 2, &func, &seq))
-        return NULL;
 
     /* Get iterator. */
     it = PyObject_GetIter(seq);
@@ -1384,11 +1390,6 @@ static PyMethodDef takewhile_reduce_methods[] = {
      setstate_doc},
     {NULL,              NULL}   /* sentinel */
 };
-PyDoc_STRVAR(takewhile_doc,
-"takewhile(predicate, iterable) --> takewhile object\n\
-\n\
-Return successive entries from an iterable as long as the\n\
-predicate evaluates to true for each entry.");
 
 static PyTypeObject takewhile_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -1413,7 +1414,7 @@ static PyTypeObject takewhile_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    takewhile_doc,                      /* tp_doc */
+    itertools_takewhile__doc__,         /* tp_doc */
     (traverseproc)takewhile_traverse,   /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -1430,7 +1431,7 @@ static PyTypeObject takewhile_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    takewhile_new,                      /* tp_new */
+    itertools_takewhile,                /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 

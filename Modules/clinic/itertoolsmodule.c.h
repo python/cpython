@@ -182,4 +182,68 @@ itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=88f5be1af59c931f input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(itertools_dropwhile__doc__,
+"dropwhile(predicate, iterable, /)\n"
+"--\n"
+"\n"
+"Drop items from the iterable while predicate(item) is true.\n"
+"\n"
+"Afterwards, return every element until the iterable is exhausted.");
+
+static PyObject *
+itertools_dropwhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq);
+
+static PyObject *
+itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *func;
+    PyObject *seq;
+
+    if ((type == &dropwhile_type) &&
+        !_PyArg_NoKeywords("dropwhile", kwargs)) {
+        goto exit;
+    }
+    if (!PyArg_UnpackTuple(args, "dropwhile",
+        2, 2,
+        &func, &seq)) {
+        goto exit;
+    }
+    return_value = itertools_dropwhile_impl(type, func, seq);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(itertools_takewhile__doc__,
+"takewhile(predicate, iterable, /)\n"
+"--\n"
+"\n"
+"Return successive entries from an iterable as long as the predicate evaluates to true for each entry.");
+
+static PyObject *
+itertools_takewhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq);
+
+static PyObject *
+itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *func;
+    PyObject *seq;
+
+    if ((type == &takewhile_type) &&
+        !_PyArg_NoKeywords("takewhile", kwargs)) {
+        goto exit;
+    }
+    if (!PyArg_UnpackTuple(args, "takewhile",
+        2, 2,
+        &func, &seq)) {
+        goto exit;
+    }
+    return_value = itertools_takewhile_impl(type, func, seq);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=b2e5a03dc0504c37 input=a9049054013a1b77]*/
