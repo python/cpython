@@ -164,32 +164,36 @@ class NamedExpressionScopeTest(unittest.TestCase):
         with self.assertRaisesRegex(NameError, "name 'a' is not defined"):
             exec(code, {}, {})
 
-    @unittest.skip("Not implemented -- comprehension")
+    @unittest.skip("Not implemented -- comprehension scope")
     def test_named_expression_scope_02(self):
         total = 0
         partial_sums = [total := total + v for v in range(5)]
         self.assertEqual(total, 15)
 
-    @unittest.skip("Not implemented -- comprehension")
+    @unittest.skip("Not implemented -- comprehension scope")
     def test_named_expression_scope_03(self):
         containsOne = any((lastNum := line) == 1 for num in [1, 2, 3])
         self.assertTrue(containsOne)
         self.assertEqual(lastNum, 3)
 
-    @unittest.skip("Test WIP, Not implemented -- comprehension")
+    @unittest.skip("Test WIP, Not implemented -- comprehension scope")
     def test_named_expression_scope_04(self):
         def spam(a):
             return a
         results = [[y := spam(x), x/y] for x in range(1, 5)]
         self.assertEqual(y, 'something')
 
-    @unittest.skip("Test WIP, Not implemented -- comprehension")
+    @unittest.skip("Test WIP, Not implemented -- comprehension scope")
     def test_named_expression_scope_05(self):
         def spam(a):
             return a
         input_data = [1, 2, 3]
         results = [(x, y, x/y) for x in input_data if (y := spam(x)) > 0]
         self.assertEqual(y, 'something')
+
+    def test_named_expression_scope_06(self):
+        len(lines := [1, 2])
+        self.assertEqual(lines, [1, 2])
 
 
 if __name__ == "__main__":
