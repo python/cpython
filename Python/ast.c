@@ -1602,7 +1602,7 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
 
     if (is_async)
         return AsyncFunctionDef(name, args, body, decorator_seq, returns,
-                                LINENO(n), n0->n_col_offset, c->c_arena);
+                                LINENO(n0), n0->n_col_offset, c->c_arena);
     else
         return FunctionDef(name, args, body, decorator_seq, returns,
                            LINENO(n), n->n_col_offset, c->c_arena);
@@ -3719,7 +3719,7 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
 
     if (is_async)
         return AsyncFor(target, expression, suite_seq, seq,
-                        LINENO(n), n0->n_col_offset,
+                        LINENO(n0), n0->n_col_offset,
                         c->c_arena);
     else
         return For(target, expression, suite_seq, seq,
@@ -3895,7 +3895,7 @@ ast_for_with_stmt(struct compiling *c, const node *n0, bool is_async)
         return NULL;
 
     if (is_async)
-        return AsyncWith(items, body, LINENO(n), n0->n_col_offset, c->c_arena);
+        return AsyncWith(items, body, LINENO(n0), n0->n_col_offset, c->c_arena);
     else
         return With(items, body, LINENO(n), n->n_col_offset, c->c_arena);
 }
