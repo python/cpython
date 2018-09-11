@@ -4,7 +4,7 @@
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 queue:
-  name: Hosted Linux Preview
+  name: 'Hosted Ubuntu 1604'
 
 trigger:
   branches:
@@ -35,34 +35,9 @@ steps:
   displayName: Detect doc-only changes
   condition: and(succeeded(), variables['system.pullRequest.targetBranch'])
 
-#- template: linux-deps.yml
-
-# See https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted-templates.md
-# For now, we copy/paste the steps
-- script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
-  displayName: 'Update apt-get lists'
-  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
-
-- script: >
-    sudo apt-get -yq install
-    build-essential
-    zlib1g-dev
-    libbz2-dev
-    liblzma-dev
-    libncurses5-dev
-    libreadline6-dev
-    libsqlite3-dev
-    libssl-dev
-    libgdbm-dev
-    tk-dev
-    lzma
-    lzma-dev
-    liblzma-dev
-    libffi-dev
-    uuid-dev
-    xvfb
+- script: ./.vsts/install_deps.sh
   displayName: 'Install dependencies'
-
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'
