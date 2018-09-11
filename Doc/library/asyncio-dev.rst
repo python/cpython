@@ -185,10 +185,10 @@ Detect coroutine objects never scheduled
 ----------------------------------------
 
 When a coroutine function is called and its result is not passed to
-:func:`ensure_future`, :meth:`asyncio.create_task`, or to the 
-:meth:`loop.create_task` method, the execution of the coroutine object will
-never be scheduled which is probably a bug. 
-:ref:`Enable the debug mode of asyncio <asyncio-debug-mode>`
+:meth:`asyncio.create_task` the execution of the coroutine object will
+never be scheduled which is probably a bug. Using `asyncio.create_task` is
+preferred to the low level :func:`ensure_future` and :meth:`loop.create_task` 
+methods. :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>`
 to :ref:`log a warning <asyncio-logger>` to detect it.
 
 Example with the bug::
@@ -207,9 +207,9 @@ Output in debug mode::
       File "test.py", line 7, in <module>
         test()
 
-The fix is to call the :func:`ensure_future` function, 
-:meth:`asyncio.create_task`, or the :meth:`loop.create_task` method with the
-coroutine object.
+The fix is to call the :meth:`asyncio.create_task` function. Using 
+`asyncio.create_task` is preferred to the low level :func:`ensure_future` and
+:meth:`loop.create_task` methods.
 
 .. seealso::
 
