@@ -3,7 +3,7 @@
 .. _typeobjects:
 
 Type Objects
-------------
+============
 
 .. index:: object: type
 
@@ -92,17 +92,8 @@ Type Objects
    from a type's base class.  Return ``0`` on success, or return ``-1`` and sets an
    exception on error.
 
-.. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
-
-   Creates and returns a heap type object from the *spec* passed to the function.
-
-.. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
-
-   Creates and returns a heap type object from the *spec*. In addition to that,
-   the created heap type contains all types contained by the *bases* tuple as base
-   types. This allows the caller to reference other heap types as base types.
-
-   .. versionadded:: 3.3
+   Note that :c:func:`PyType_FromSpecWithBases` calls ``PyType_Ready``
+   automatically.
 
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
@@ -112,4 +103,125 @@ Type Objects
    Callers will typically cast the result pointer into the appropriate
    function type.
 
+   See :c:member:`PyType_Slot.slot` for possible values of the *slot* argument.
+
    .. versionadded:: 3.4
+
+
+Creating Heap-Allocated Types
+-----------------------------
+
+Traditionally, types defined in C code are *static*, that is,
+a ``static PyTypeObject`` structure is defined directly in code
+and initialized using :py:func:`PyType_Ready`.
+
+This results in types that are limited relative to types defined in Python:
+
+* Static types are limited to one base, i.e. they cannot use multiple
+  inheritance.
+* Static type objects (but not necessarily their instances) are immutable.
+  It is not possible to add or modify the type object's attributes from Python.
+* Static type objects are shared across
+  :ref:`sub-interpreters <sub-interpreter-support>`, so they should not
+  include any subinterpreter-specific state.
+
+Also, since *PyTypeObject* is not part of the stable ABI, any extension modules
+using static types must be compiled for a specific Python minor version.
+
+An alternative to static types is *heap-allocated types*, or *heap types*
+for short, which correspond closely to classes created by Python's
+``class`` statement.
+
+.. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
+
+   Creates and returns a heap type object from the *spec*.
+
+   If *bases* is a tuple, the created heap type contains all types contained
+   in it as base types.
+
+   If *bases* is NULL, the *Py_tp_base* slot is used instead.
+   If that also is NULL, the new type derives from ``object``.
+
+   .. versionadded:: 3.3
+
+.. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
+
+   Equivalent to ``PyType_FromSpecWithBases(spec, NULL)``.
+
+Heap Type Specification
+.......................
+
+.. c:type:: PyType_Spec
+
+   Structure defining a type's behavior.
+
+.. c:member:: const char* PyType_Spec.name
+
+   Name of the type, used to set :c:member:`PyTypeObject.tp_name`.
+
+.. c:member:: const char* PyType_Spec.doc
+
+   Type docstring, used to set :c:member:`PyTypeObject.tp_doc`.
+
+.. c:member:: int PyType_Spec.basicsize
+.. c:member:: int PyType_Spec.itemsize
+
+   Size of the instance in bytes, used to set
+   :c:member:`PyTypeObject.tp_basicsize` and
+   :c:member:`PyTypeObject.tp_itemsize`.
+
+.. c:member:: int PyType_Spec.flags
+
+   Type flags, used to set :c:member:`PyTypeObject.tp_flags`.
+
+   If the `Py_TPFLAGS_HEAPTYPE` flag is not set,
+   :c:func:`PyType_FromSpecWithBases` sets it automatically.
+
+.. c:member:: PyType_Slot *PyType_Spec.slots
+
+   Array of :c:type:`PyType_Slot` structures.
+   Terminated by the special slot value ``{0, NULL}``.
+
+Heap Type Slot Specification
+............................
+
+.. c:type:: PyType_Slot
+
+   Structure defining optional functionality of a type, containing a slot ID
+   and a value pointer.
+
+.. c:member:: int PyType_Slot.slot
+
+   A slot ID.
+
+   Slot IDs are named like the field names of the structures
+   :c:type:`PyTypeObject`, :c:type:`PyNumberMethods`,
+   :c:type:`PySequenceMethods`, :c:type:`PyMappingMethods` and
+   :c:type:`PyAsyncMethods` with an added Py_ prefix.
+   For example, use:
+
+   * ``Py_tp_dealloc`` to set :c:member:`PyTypeObject.tp_dealloc`
+   * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
+   * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
+
+   The following fields cannot be set using *PyType_Spec* and *PyType_Slot*:
+
+   * :c:member:`~PyTypeObject.tp_dict`
+   * :c:member:`~PyTypeObject.tp_mro`
+   * :c:member:`~PyTypeObject.tp_cache`
+   * :c:member:`~PyTypeObject.tp_subclasses`
+   * :c:member:`~PyTypeObject.tp_weaklist`
+   * :c:member:`~PyTypeObject.tp_print`
+   * :c:member:`~PyTypeObject.tp_weaklistoffset`
+   * :c:member:`~PyTypeObject.tp_dictoffset`
+   * :c:member:`~PyBufferProcs.bf_getbuffer`
+   * :c:member:`~PyBufferProcs.bf_releasebuffer`
+
+   Setting :c:data:`Py_tp_bases` may be problematic on some platforms.
+   To avoid issues, use the *bases* argument of
+   :py:func:`PyType_FromSpecWithBases` instead.
+
+.. c:member:: void *PyType_Slot.pfunc
+
+   The desired value of the slot. In most cases, this is a pointer
+   to a function.
