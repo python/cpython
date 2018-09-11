@@ -49,8 +49,7 @@ def normalize_encoding(encoding):
         collapsed and replaced with a single underscore, e.g. '  -;#'
         becomes '_'. Leading and trailing underscores are removed.
 
-        Note that encoding names should be ASCII only; if they do use
-        non-ASCII characters, these must be Latin-1 compatible.
+        Note that encoding names should be ASCII only.
 
     """
     if isinstance(encoding, bytes):
