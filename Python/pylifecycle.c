@@ -886,7 +886,7 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
 _PyInitError
 _Py_InitializeFromConfig(const _PyCoreConfig *config)
 {
-    PyInterpreterState *interp;
+    PyInterpreterState *interp = NULL;
     _PyInitError err;
     err = _Py_InitializeCore(&interp, config);
     if (_Py_INIT_FAILED(err)) {
