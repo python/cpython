@@ -4,7 +4,7 @@
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 queue:
-  name: Hosted Linux Preview
+  name: 'Hosted Ubuntu 16.04'
 
 trigger:
   branches:
@@ -33,6 +33,7 @@ steps:
 # See https://github.com/Microsoft/vsts-agent/blob/master/docs/preview/yamlgettingstarted-templates.md
 # For now, we copy/paste the steps
 - script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
+  continueOnError: true
   displayName: 'Update apt-get lists'
 
 - script: echo ##vso[task.prependpath]$(OPENSSL_DIR)

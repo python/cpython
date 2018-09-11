@@ -10,6 +10,7 @@ parameters:
 
 steps:
 - script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
+  continueOnError: true
   displayName: 'Update apt-get lists'
 
 - script: echo ##vso[task.prependpath]$(OPENSSL_DIR)

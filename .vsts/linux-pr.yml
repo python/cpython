@@ -4,7 +4,7 @@
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 queue:
-  name: Hosted Linux Preview
+  name: 'Hosted Ubuntu 16.04'
 
 trigger:
   branches:
@@ -44,6 +44,7 @@ steps:
 # For now, we copy/paste the steps
 - script: echo "deb-src http://archive.ubuntu.com/ubuntu/ xenial main" > /etc/apt/sources.list.d/python.list && sudo apt-get update
   displayName: 'Update apt-get lists'
+  continueOnError: true
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 - script: echo ##vso[task.prependpath]$(OPENSSL_DIR)
