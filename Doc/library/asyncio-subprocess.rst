@@ -124,8 +124,8 @@ Constants
 
    If *PIPE* is passed to *stdout* or *stderr* arguments, the
    :attr:`Process.stdout <asyncio.subprocess.Process.stdout>` and
-   :attr:`Process.stderr <asyncio.subprocess.Process.stderr>`attributes
-   will point to :class:`StreamReader` instances.
+   :attr:`Process.stderr <asyncio.subprocess.Process.stderr>`
+   attributes will point to :class:`StreamReader` instances.
 
 .. data:: asyncio.subprocess.STDOUT
 

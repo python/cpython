@@ -204,7 +204,7 @@ Scheduling callbacks
    keyword arguments.  To do that, use :func:`functools.partial`,
    e.g.::
 
-      # will schedule `print("Hello", flush=True)`:
+      # will schedule "print("Hello", flush=True)":
       loop.call_soon(
           functools.partial(print, "Hello", flush=True))
 
