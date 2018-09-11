@@ -186,8 +186,7 @@ class OtherFileTests:
 
         # test that attempts to use line buffering in binary mode cause
         # a warning
-        warn_msg = 'line buffering is not supported in binary mode'
-        with self.assertWarns(RuntimeWarning, msg=warn_msg):
+        with self.assertWarnsRegex(RuntimeWarning, 'line buffering'):
             self._checkBufferSize(1)
 
     def testTruncateOnWindows(self):
