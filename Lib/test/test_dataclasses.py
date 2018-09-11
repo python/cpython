@@ -1429,6 +1429,39 @@ class TestCase(unittest.TestCase):
         self.assertEqual(d, OrderedDict([('x', 42), ('y', 2)]))
         self.assertIs(type(d), OrderedDict)
 
+    def test_helper_asdict_namedtuple(self):
+        T = namedtuple('T', 'a b c')
+        @dataclass
+        class C:
+            x: str
+            y: T
+        c = C('outer', T(1, C('inner', T(11, 12, 13)), 2))
+
+        d = asdict(c)
+        self.assertEqual(d, {'x': 'outer',
+                             'y': T(1,
+                                    {'x': 'inner',
+                                     'y': T(11, 12, 13)},
+                                    2),
+                             }
+                         )
+
+        # Now with a dict_factory.  OrderedDict is convenient, but
+        # since it compares to dicts, we also need to have separate
+        # assertIs tests.
+        d = asdict(c, dict_factory=OrderedDict)
+        self.assertEqual(d, {'x': 'outer',
+                             'y': T(1,
+                                    {'x': 'inner',
+                                     'y': T(11, 12, 13)},
+                                    2),
+                             }
+                         )
+
+        # Make sure that the returned dicts are actuall OrderedDicts.
+        self.assertIs(type(d), OrderedDict)
+        self.assertIs(type(d['y'][1]), OrderedDict)
+
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
         @dataclass
@@ -1540,6 +1573,21 @@ class TestCase(unittest.TestCase):
         t = astuple(c, tuple_factory=nt)
         self.assertEqual(t, NT(42, 2))
         self.assertIs(type(t), NT)
+
+    def test_helper_astuple_namedtuple(self):
+        T = namedtuple('T', 'a b c')
+        @dataclass
+        class C:
+            x: str
+            y: T
+        c = C('outer', T(1, C('inner', T(11, 12, 13)), 2))
+
+        t = astuple(c)
+        self.assertEqual(t, ('outer', T(1, ('inner', (11, 12, 13)), 2)))
+
+        # Now, using a tuple_factory.  list is convenient here.
+        t = astuple(c, tuple_factory=list)
+        self.assertEqual(t, ['outer', T(1, ['inner', T(11, 12, 13)], 2)])
 
     def test_dynamic_class_creation(self):
         cls_dict = {'__annotations__': {'x': int, 'y': int},

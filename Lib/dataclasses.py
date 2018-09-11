@@ -1026,11 +1026,22 @@ def _asdict_inner(obj, dict_factory):
             value = _asdict_inner(getattr(obj, f.name), dict_factory)
             result.append((f.name, value))
         return dict_factory(result)
+    elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
+        # It's a namedtuple.  Recurse into it, but the top-level
+        # object is another namedtuple of the same type.  This is
+        # similar to how other list- or tuple-derived classes are
+        # treated (see below), but we just need to create them
+        # differently because a namedtuple's __init__ needs to be
+        # called differently (see bpo-34363).
+        return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
     elif isinstance(obj, (list, tuple)):
+        # Assume we can create an object of this type by passing in a
+        # generator (which is not true for namedtuples, handled
+        # above).
         return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
     elif isinstance(obj, dict):
         return type(obj)((_asdict_inner(k, dict_factory), _asdict_inner(v, dict_factory))
-                          for k, v in obj.items())
+                         for k, v in obj.items())
     else:
         return copy.deepcopy(obj)
 
@@ -1066,7 +1077,18 @@ def _astuple_inner(obj, tuple_factory):
             value = _astuple_inner(getattr(obj, f.name), tuple_factory)
             result.append(value)
         return tuple_factory(result)
+    elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
+        # It's a namedtuple.  Recurse into it, but the top-level
+        # object is another namedtuple of the same type.  This is
+        # similar to how other list- or tuple-derived classes are
+        # treated (see below), but we just need to create them
+        # differently because a namedtuple's __init__ needs to be
+        # called differently (see bpo-34363).
+        return type(obj)(*[_astuple_inner(v, tuple_factory) for v in obj])
     elif isinstance(obj, (list, tuple)):
+        # Assume we can create an object of this type by passing in a
+        # generator (which is not true for namedtuples, handled
+        # above).
         return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
     elif isinstance(obj, dict):
         return type(obj)((_astuple_inner(k, tuple_factory), _astuple_inner(v, tuple_factory))
