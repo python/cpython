@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import sys
 import unittest
 
 from unittest.mock import call, CoroutineMock, patch, MagicMock
@@ -237,7 +238,7 @@ class CoroutineMagicMethods(unittest.TestCase):
         async def __aexit__(self, *args, **kwargs):
             self.exited = True
 
-    class AsyncIterator:
+    class AsyncIterator(object):
         def __init__(self):
             self.iter_called = False
             self.next_called = False
@@ -254,6 +255,11 @@ class CoroutineMagicMethods(unittest.TestCase):
 
             raise StopAsyncIteration
 
+    # Before 3.7 __aiter__ was a coroutine
+    class AsyncItertorDeprecated(AsyncIterator):
+        async def __aiter__(self):
+            return super().__aiter__()
+
     def test_mock_magic_methods_are_coroutine_mocks(self):
         mock_instance = CoroutineMock(spec=self.AsyncContextManager())
         self.assertIsInstance(mock_instance.__aenter__,
@@ -262,26 +268,27 @@ class CoroutineMagicMethods(unittest.TestCase):
                               CoroutineMock)
 
     def test_mock_aiter_and_anext(self):
-        instance = self.AsyncIterator()
+        if sys.version_info < (3, 7):
+            instance = self.AsyncItertorDeprecated()
+        else:
+            instance = self.AsyncIterator()
         mock_instance = CoroutineMock(instance)
 
         self.assertEqual(asyncio.iscoroutine(instance.__aiter__),
                          asyncio.iscoroutine(mock_instance.__aiter__))
         self.assertEqual(asyncio.iscoroutine(instance.__anext__),
                          asyncio.iscoroutine(mock_instance.__anext__))
-
-        iterator = instance.__aiter__()
-        if asyncio.iscoroutine(iterator):
+        if sys.version_info < (3, 7):
+            iterator = instance.__aiter__()
             iterator = run_coroutine(iterator)
 
-        mock_iterator = mock_instance.__aiter__()
-        if asyncio.iscoroutine(mock_iterator):
+            mock_iterator = mock_instance.__aiter__()
             mock_iterator = run_coroutine(mock_iterator)
 
-        self.assertEqual(asyncio.iscoroutine(iterator.__aiter__),
-                         asyncio.iscoroutine(mock_iterator.__aiter__))
-        self.assertEqual(asyncio.iscoroutine(iterator.__anext__),
-                         asyncio.iscoroutine(mock_iterator.__anext__))
+            self.assertEqual(asyncio.iscoroutine(iterator.__aiter__),
+                             asyncio.iscoroutine(mock_iterator.__aiter__))
+            self.assertEqual(asyncio.iscoroutine(iterator.__anext__),
+                             asyncio.iscoroutine(mock_iterator.__anext__))
 
 
 class CoroutineMockAssert(unittest.TestCase):

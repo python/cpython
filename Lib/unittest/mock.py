@@ -1920,6 +1920,22 @@ _return_values = {
     '__index__': 1,
 }
 
+class AsyncIterator:
+    """
+    Wraps an iterator in an asynchronous iterator.
+    """
+    def __init__(self, iterator):
+        self.iterator = iterator
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        try:
+            return next(self.iterator)
+        except StopIteration:
+            pass
+        raise StopAsyncIteration
 
 def _get_eq(self):
     def __eq__(other):
@@ -1950,10 +1966,26 @@ def _get_iter(self):
         return iter(ret_val)
     return __iter__
 
+def _get_async_iter(mock):
+    def __aiter__():
+        return_value = mock.__aiter__._mock_return_value
+        if return_value is DEFAULT:
+            iterator = iter([])
+        else:
+            iterator = iter(return_value)
+
+        return AsyncIterator(iterator)
+
+    if asyncio.iscoroutinefunction(mock.__aiter__):
+        return asyncio.coroutine(__aiter__)
+
+    return __aiter__
+
 _side_effect_methods = {
     '__eq__': _get_eq,
     '__ne__': _get_ne,
     '__iter__': _get_iter,
+    '__aiter__': _get_async_iter
 }
 
 
