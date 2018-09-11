@@ -62,6 +62,7 @@ def run_tests_worker(worker_args):
     ns_dict, testname = json.loads(worker_args)
     ns = types.SimpleNamespace(**ns_dict)
 
+    support.junit_xml_list = xml_list = [] if ns.xmlpath else None
     setup_tests(ns)
 
     try:
@@ -74,6 +75,11 @@ def run_tests_worker(worker_args):
 
     print()   # Force a newline (just in case)
     print(json.dumps(result), flush=True)
+
+    if xml_list:
+        import xml.etree.ElementTree as ET
+        print('XML:' + b''.join(ET.tostring(x) for x in xml_list).decode('us-ascii'), flush=True)
+
     sys.exit(0)
 
 
@@ -110,7 +116,7 @@ class MultiprocessThread(threading.Thread):
         try:
             test = next(self.pending)
         except StopIteration:
-            self.output.put((None, None, None, None))
+            self.output.put((None, None, None, None, None))
             return True
 
         try:
@@ -129,12 +135,18 @@ class MultiprocessThread(threading.Thread):
 
         stdout, _, result = stdout.strip().rpartition("\n")
         if not result:
-            self.output.put((None, None, None, None))
+            self.output.put((None, None, None, None, None))
             return True
+
+        if result.startswith("XML:"):
+            xml_list = result[4:]
+            stdout, _, result = stdout.strip().rpartition("\n")
+        else:
+            xml_list = None
 
         result = json.loads(result)
         self.output.put((test, stdout.rstrip(), stderr.rstrip(),
-                         result))
+                         result, xml_list))
         return False
 
     def run(self):
@@ -143,7 +155,7 @@ class MultiprocessThread(threading.Thread):
             while not stop:
                 stop = self._runtest()
         except BaseException:
-            self.output.put((None, None, None, None))
+            self.output.put((None, None, None, None, None))
             raise
 
 
@@ -188,11 +200,11 @@ def run_tests_multiprocess(regrtest):
                     print('running: %s' % ', '.join(running), flush=True)
                 continue
 
-            test, stdout, stderr, result = item
+            test, stdout, stderr, result, xml_list = item
             if test is None:
                 finished += 1
                 continue
-            regrtest.accumulate_result(test, result)
+            regrtest.accumulate_result(test, result, xml_list)
 
             # Display progress
             ok, test_time = result

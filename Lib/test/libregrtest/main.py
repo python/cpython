@@ -100,7 +100,10 @@ class Regrtest:
         self.next_single_test = None
         self.next_single_filename = None
 
-    def accumulate_result(self, test, result):
+        # used by --junit-xml
+        self.testsuite_xml = None
+
+    def accumulate_result(self, test, result, xml_list):
         ok, test_time = result
         if ok not in (CHILD_ERROR, INTERRUPTED):
             self.test_times.append((test_time, test))
@@ -117,6 +120,10 @@ class Regrtest:
             self.resource_denieds.append(test)
         elif ok != INTERRUPTED:
             raise ValueError("invalid test result: %r" % ok)
+
+        if xml_list:
+            import xml.etree.ElementTree as ET
+            self.testsuite_xml.append(ET.fromstring(xml_list))
 
     def display_progress(self, test_index, test):
         if self.ns.quiet:
@@ -163,6 +170,9 @@ class Regrtest:
                 print('No GC available, disabling --findleaks',
                       file=sys.stderr)
                 ns.findleaks = False
+
+        if ns.xmlpath:
+            support.junit_xml_list = self.testsuite_xml = []
 
         # Strip .py extensions.
         removepy(ns.args)
@@ -508,6 +518,26 @@ class Regrtest:
         if self.ns.runleaks:
             os.system("leaks %d" % os.getpid())
 
+    def save_xml_result(self):
+        if not self.ns.xmlpath and not self.testsuite_xml:
+            return
+
+        import xml.etree.ElementTree as ET
+        root = ET.Element("testsuites")
+        totals = {'tests': 0, 'errors': 0, 'failures': 0}
+        for suite in self.testsuite_xml:
+            root.append(suite)
+            for k in totals:
+                try:
+                    totals[k] += int(suite.get(k, 0))
+                except ValueError:
+                    pass
+        for k, v in totals.items():
+            root.set(k, str(v))
+        with open(self.ns.xmlpath, 'wb') as f:
+            for s in ET.tostringlist(root):
+                f.write(s)
+
     def main(self, tests=None, **kwargs):
         global TEMPDIR
 
@@ -570,6 +600,9 @@ class Regrtest:
             self.rerun_failed_tests()
 
         self.finalize()
+
+        self.save_xml_result()
+
         if self.bad:
             sys.exit(2)
         if self.interrupted:
