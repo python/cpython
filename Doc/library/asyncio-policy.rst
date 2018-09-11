@@ -7,25 +7,27 @@
 Policies
 ========
 
-Event loop management is controlled by an event loop policy, which
-is a global per-process object. There is a default policy and an
-API to change the policy. A policy defines the notion of context;
-a policy manages a separate event loop per context. The default
-policy's notion of context is defined as the current thread.
+An event loop policy, a global per-process object, controls
+management of the event loop. Each event loop has a default
+policy, which can be changed and customized using the API.
 
-asyncio allows to customize how :func:`get_event_loop`,
-:func:`set_event_loop`, and :func:`new_event_loop` functions behave
-by using a custom event loop policy.
+A policy defines the notion of context and manages a
+separate event loop per context. The default policy
+defines context to be the current thread.
 
-A policy is a special object implementing APIs defined in the
-:class:`AbstractEventLoopPolicy` abstract base class.
+By using a custom event loop policy, the behavior of
+:func:`get_event_loop`, :func:`set_event_loop`, and
+:func:`new_event_loop` functions can be customized.
+
+Policy objects should implement the APIs defined
+in the abstract base class :class:`AbstractEventLoopPolicy`.
 
 
-Accessing Policies
-==================
+Access the Policy
+=================
 
-The following functions can be used to get and set the current
-policy for the current process:
+The following functions can be used to get and set the policy
+for the current process:
 
 .. function:: get_event_loop_policy()
 
@@ -35,7 +37,7 @@ policy for the current process:
 
    Set the current process-wide policy to *policy*.
 
-   If *policy* is ``None``, the default policy is restored.
+   If *policy* is set to ``None``, the default policy is restored.
 
 
 Policy Objects
@@ -107,20 +109,21 @@ asyncio ships with the following built-in policies:
 Process Watchers
 ================
 
-Process watchers allow to customize how event loops monitor
-child processes on Unix.  Specifically, event loops need to know when
-a child process has finished its execution.
+A process watcher allows customization of how an event loop monitors
+child processes on Unix. Specifically, the event loop needs to know
+when a child process has finished its execution.
 
-See also the :ref:`Subprocess and Threads <asyncio-subprocess-threads>`
-section.
-
-Child processes in asyncio are created with functions like
-:func:`create_subprocess_exec` and :meth:`loop.subprocess_exec`.
+In asyncio, child processes are created with
+:func:`create_subprocess_exec` and :meth:`loop.subprocess_exec`
+functions.
 
 asyncio defines an abstract base class :class:`AbstractChildWatcher`
 that child watchers should implement, and has two different
 implementations: :class:`SafeChildWatcher` (configured to be used
 by default) and :class:`FastChildWatcher`.
+
+See also the :ref:`Subprocess and Threads <asyncio-subprocess-threads>`
+section.
 
 The following two functions can be used to customize the watcher
 implementation used by the asyncio event loop:

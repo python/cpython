@@ -243,9 +243,6 @@ clocks to track time.
    custom :class:`contextvars.Context` for the *callback* to run in.
    The current context is used when no *context* is provided.
 
-   :ref:`Use functools.partial to pass keywords to the callback
-   <asyncio-pass-keywords>`.
-
    .. versionchanged:: 3.7
       The *context* keyword-only parameter was added. See :pep:`567`
       for more details.
@@ -733,11 +730,11 @@ Watching file descriptors
 
 .. method:: loop.add_writer(fd, callback, \*args)
 
-   Start watching the file descriptor for write availability and then call the
-   *callback* with specified arguments.
+   Start watching the file descriptor for write availability and then
+   call the *callback* with specified arguments.
 
-   :ref:`Use functools.partial to pass keywords to the callback
-   <asyncio-pass-keywords>`.
+   Use :func:`functools.partial` :ref:`to pass keywords
+   <asyncio-pass-keywords>` to *func*.
 
 .. method:: loop.remove_writer(fd)
 
@@ -948,8 +945,8 @@ UNIX signals
    Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
-   :ref:`Use functools.partial to pass keywords to the callback
-   <asyncio-pass-keywords>`.
+   Use :func:`functools.partial` :ref:`to pass keywords
+   <asyncio-pass-keywords>` to *func*.
 
 .. method:: loop.remove_signal_handler(sig)
 
@@ -974,8 +971,8 @@ Executing code in thread or process pools
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
 
-   :ref:`Use functools.partial to pass keywords to the *func*
-   <asyncio-pass-keywords>`.
+   Use :func:`functools.partial` :ref:`to pass keywords
+   <asyncio-pass-keywords>` to *func*.
 
    This method returns a :class:`asyncio.Future` object.
 

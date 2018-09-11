@@ -25,7 +25,7 @@ Exceptions
 
    .. note::
       This exception is a subclass of :exc:`Exception`, so it can be
-      accidentally suppressed by `try..except` block::
+      accidentally suppressed by ``try..except`` block::
 
         try:
             await operation

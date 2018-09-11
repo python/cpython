@@ -6,8 +6,8 @@ Queues
 ======
 
 asyncio queues are designed to be similar to classes of the
-:mod:`queue` module.  Although asyncio queues are not thread-safe
-and are designed to be used specifically in async/await code.
+:mod:`queue` module.  Although asyncio queues are not thread-safe,
+they are designed to be used specifically in async/await code.
 
 Note that methods on asyncio queues don't have a *timeout* parameter;
 use :func:`asyncio.wait_for` function to do queue operations with a
@@ -186,6 +186,8 @@ concurrent tasks::
        # Cancel our worker tasks.
        for task in tasks:
            task.cancel()
+       # Wait until all worker tasks are cancelled.
+       await asyncio.gather(*tasks, return_exceptions=True)
 
        print('====')
        print(f'3 workers slept in parallel for {total_slept_for:.2f} seconds')
