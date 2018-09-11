@@ -277,4 +277,13 @@ itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5fc47aea5f31a304 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(itertools_chain_from_iterable__doc__,
+"from_iterable($type, iterable, /)\n"
+"--\n"
+"\n"
+"Alternative chain() constructor taking a single iterable argument that evaluates lazily.");
+
+#define ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF    \
+    {"from_iterable", (PyCFunction)itertools_chain_from_iterable, METH_O|METH_CLASS, itertools_chain_from_iterable__doc__},
+/*[clinic end generated code: output=932280435f5c08e9 input=a9049054013a1b77]*/

@@ -17,8 +17,9 @@ class itertools.cycle "cycleobject *" "&cycle_type"
 class itertools.dropwhile "dropwhileobject *" "&dropwhile_type"
 class itertools.takewhile "takewhileobject *" "&takewhile_type"
 class itertools.starmap "starmapobject *" "&starmap_type"
+class itertools.chain "chainobject *" "&chain_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c068cf5e3cbffb8]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a7475b2da9c13892]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
@@ -1885,8 +1886,17 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return chain_new_internal(type, source);
 }
 
+/*[clinic input]
+@classmethod
+itertools.chain.from_iterable
+    iterable as arg: object
+    /
+Alternative chain() constructor taking a single iterable argument that evaluates lazily.
+[clinic start generated code]*/
+
 static PyObject *
-chain_new_from_iterable(PyTypeObject *type, PyObject *arg)
+itertools_chain_from_iterable(PyTypeObject *type, PyObject *arg)
+/*[clinic end generated code: output=667ae7a7f7b68654 input=72c39e3a2ca3be85]*/
 {
     PyObject *source;
 
@@ -2002,15 +2012,8 @@ Return a chain object whose .__next__() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
 iterable, until all of the iterables are exhausted.");
 
-PyDoc_STRVAR(chain_from_iterable_doc,
-"chain.from_iterable(iterable) --> chain object\n\
-\n\
-Alternate chain() constructor taking a single iterable argument\n\
-that evaluates lazily.");
-
 static PyMethodDef chain_methods[] = {
-    {"from_iterable", (PyCFunction) chain_new_from_iterable, METH_O | METH_CLASS,
-     chain_from_iterable_doc},
+    ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF
     {"__reduce__",      (PyCFunction)chain_reduce,      METH_NOARGS,
      reduce_doc},
     {"__setstate__",    (PyCFunction)chain_setstate,    METH_O,
