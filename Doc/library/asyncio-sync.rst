@@ -76,7 +76,7 @@ Lock
 
    .. method:: locked()
 
-      Return ``True`` if the lock is acquired.
+      Return ``True`` if the lock is *locked*.
 
 
 Event
@@ -119,29 +119,28 @@ Event
 
    .. coroutinemethod:: wait()
 
-      Wait until the internal flag is *true*.
+      Wait until the event is set.
 
-      If the internal flag is *true* on entry, return ``True``
-      immediately.  Otherwise block until another task calls
-      :meth:`set`.
+      If the event is set, return ``True`` immediately.
+      Otherwise block until another task calls :meth:`set`.
 
    .. method:: set()
 
-      Set the internal flag to *true*.
+      Set the event.
 
-      All tasks waiting for it to become *true* will be immediately
+      All tasks waiting for event to be set will be immediately
       awakened.
 
    .. method:: clear()
 
-      Reset the internal flag to *false*.
+      Clear (unset) the event.
 
       Tasks awaiting on :meth:`wait` will now block until the
       :meth:`set` method is called again.
 
    .. method:: is_set()
 
-      Return ``True`` if and only if the internal flag is *true*.
+      Return ``True`` if the event is set.
 
 
 Condition
