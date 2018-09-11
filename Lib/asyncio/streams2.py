@@ -60,6 +60,9 @@ class Stream:
 class _BaseStreamProtocol(protocols.BufferedProtocol):
     def __init__(self, stream):
         self._stream = stream
+        self._paused = False
+        self._drain_waiter = None
+        self._connection_lost = False
 
     def connection_made(self, transport):
         self._stream._on_connection_made(transport)
