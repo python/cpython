@@ -11,11 +11,16 @@
 module itertools
 class itertools.groupby "groupbyobject *" "&groupby_type"
 class itertools._grouper "_grouperobject *" "&_grouper_type"
+class itertools.teedataobject "teedataobject *" "&teedataobject_type"
+class itertools._tee "teeobject *" "&tee_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9d506f5bb9177570]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2d7d7636c45c73d8]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
+static PyTypeObject teedataobject_type;
+static PyTypeObject tee_type;
+
 #include "clinic/itertoolsmodule.c.h"
 
 
@@ -539,18 +544,25 @@ teedataobject_reduce(teedataobject *tdo, PyObject *Py_UNUSED(ignored))
                          tdo->nextlink ? tdo->nextlink : Py_None);
 }
 
-static PyTypeObject teedataobject_type;
+/*[clinic input]
+@classmethod
+itertools.teedataobject.__new__
+    iterable as it: object
+    values: object(subclass_of='&PyList_Type')
+    next: object
+    /
+Data container common to multiple tee objects.
+[clinic start generated code]*/
 
 static PyObject *
-teedataobject_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
+                             PyObject *values, PyObject *next)
+/*[clinic end generated code: output=3343ceb07e08df5e input=be60f2fabd2b72ba]*/
 {
     teedataobject *tdo;
-    PyObject *it, *values, *next;
     Py_ssize_t i, len;
 
     assert(type == &teedataobject_type);
-    if (!PyArg_ParseTuple(args, "OO!O", &it, &PyList_Type, &values, &next))
-        return NULL;
 
     tdo = (teedataobject *)teedataobject_newinternal(it);
     if (!tdo)
@@ -592,8 +604,6 @@ static PyMethodDef teedataobject_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-PyDoc_STRVAR(teedataobject_doc, "Data container common to multiple tee objects.");
-
 static PyTypeObject teedataobject_type = {
     PyVarObject_HEAD_INIT(0, 0)                 /* Must fill in type value later */
     "itertools._tee_dataobject",                /* tp_name */
@@ -616,7 +626,7 @@ static PyTypeObject teedataobject_type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    teedataobject_doc,                          /* tp_doc */
+    itertools_teedataobject__doc__,             /* tp_doc */
     (traverseproc)teedataobject_traverse,       /* tp_traverse */
     (inquiry)teedataobject_clear,               /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -633,12 +643,10 @@ static PyTypeObject teedataobject_type = {
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
-    teedataobject_new,                          /* tp_new */
+    itertools_teedataobject,                    /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
 };
 
-
-static PyTypeObject tee_type;
 
 static PyObject *
 tee_next(teeobject *to)
@@ -716,13 +724,18 @@ done:
     return (PyObject *)to;
 }
 
-static PyObject *
-tee_new(PyTypeObject *type, PyObject *args, PyObject *kw)
-{
-    PyObject *iterable;
+/*[clinic input]
+@classmethod
+itertools._tee.__new__
+    iterable: object
+    /
+Iterator wrapped to make it copyable.
+[clinic start generated code]*/
 
-    if (!PyArg_UnpackTuple(args, "_tee", 1, 1, &iterable))
-        return NULL;
+static PyObject *
+itertools__tee_impl(PyTypeObject *type, PyObject *iterable)
+/*[clinic end generated code: output=b02d3fd26c810c3f input=adc0779d2afe37a2]*/
+{
     return tee_fromiterable(iterable);
 }
 
@@ -771,9 +784,6 @@ tee_setstate(teeobject *to, PyObject *state)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(teeobject_doc,
-"Iterator wrapped to make it copyable");
-
 static PyMethodDef tee_methods[] = {
     {"__copy__",        (PyCFunction)tee_copy,     METH_NOARGS, teecopy_doc},
     {"__reduce__",      (PyCFunction)tee_reduce,   METH_NOARGS, reduce_doc},
@@ -803,7 +813,7 @@ static PyTypeObject tee_type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
-    teeobject_doc,                      /* tp_doc */
+    itertools__tee__doc__,              /* tp_doc */
     (traverseproc)tee_traverse,         /* tp_traverse */
     (inquiry)tee_clear,                 /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -820,19 +830,26 @@ static PyTypeObject tee_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    tee_new,                            /* tp_new */
+    itertools__tee,                     /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
+/*[clinic input]
+itertools.tee
+    iterable: object
+    n: Py_ssize_t = 2
+    /
+Returns a tuple of n independent iterators.
+[clinic start generated code]*/
+
 static PyObject *
-tee(PyObject *self, PyObject *args)
+itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
+/*[clinic end generated code: output=1c64519cd859c2f0 input=c99a1472c425d66d]*/
 {
-    Py_ssize_t i, n=2;
-    PyObject *it, *iterable, *copyable, *copyfunc, *result;
+    Py_ssize_t i;
+    PyObject *it, *copyable, *copyfunc, *result;
     _Py_IDENTIFIER(__copy__);
 
-    if (!PyArg_ParseTuple(args, "O|n", &iterable, &n))
-        return NULL;
     if (n < 0) {
         PyErr_SetString(PyExc_ValueError, "n must be >= 0");
         return NULL;
@@ -884,10 +901,6 @@ tee(PyObject *self, PyObject *args)
     Py_DECREF(copyfunc);
     return result;
 }
-
-PyDoc_STRVAR(tee_doc,
-"tee(iterable, n=2) --> tuple of n independent iterators.");
-
 
 /* cycle object **************************************************************/
 
@@ -4653,7 +4666,7 @@ combinations_with_replacement(p, r)\n\
 
 
 static PyMethodDef module_methods[] = {
-    {"tee",     (PyCFunction)tee,       METH_VARARGS, tee_doc},
+    ITERTOOLS_TEE_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

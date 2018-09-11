@@ -61,4 +61,95 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=82e10c91569d2b95 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(itertools_teedataobject__doc__,
+"teedataobject(iterable, values, next, /)\n"
+"--\n"
+"\n"
+"Data container common to multiple tee objects.");
+
+static PyObject *
+itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
+                             PyObject *values, PyObject *next);
+
+static PyObject *
+itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *it;
+    PyObject *values;
+    PyObject *next;
+
+    if ((type == &teedataobject_type) &&
+        !_PyArg_NoKeywords("teedataobject", kwargs)) {
+        goto exit;
+    }
+    if (!PyArg_ParseTuple(args, "OO!O:teedataobject",
+        &it, &PyList_Type, &values, &next)) {
+        goto exit;
+    }
+    return_value = itertools_teedataobject_impl(type, it, values, next);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(itertools__tee__doc__,
+"_tee(iterable, /)\n"
+"--\n"
+"\n"
+"Iterator wrapped to make it copyable.");
+
+static PyObject *
+itertools__tee_impl(PyTypeObject *type, PyObject *iterable);
+
+static PyObject *
+itertools__tee(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *iterable;
+
+    if ((type == &tee_type) &&
+        !_PyArg_NoKeywords("_tee", kwargs)) {
+        goto exit;
+    }
+    if (!PyArg_UnpackTuple(args, "_tee",
+        1, 1,
+        &iterable)) {
+        goto exit;
+    }
+    return_value = itertools__tee_impl(type, iterable);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(itertools_tee__doc__,
+"tee($module, iterable, n=2, /)\n"
+"--\n"
+"\n"
+"Returns a tuple of n independent iterators.");
+
+#define ITERTOOLS_TEE_METHODDEF    \
+    {"tee", (PyCFunction)itertools_tee, METH_FASTCALL, itertools_tee__doc__},
+
+static PyObject *
+itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n);
+
+static PyObject *
+itertools_tee(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *iterable;
+    Py_ssize_t n = 2;
+
+    if (!_PyArg_ParseStack(args, nargs, "O|n:tee",
+        &iterable, &n)) {
+        goto exit;
+    }
+    return_value = itertools_tee_impl(module, iterable, n);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=93e1ec70438f4ebb input=a9049054013a1b77]*/
