@@ -1520,7 +1520,6 @@ class POSIXProcessTestCase(BaseTestCase):
             # string and instead capture the exception that we want to see
             # below for comparison.
             desired_exception = e
-            desired_exception.strerror += ': ' + repr(self._nonexistent_dir)
         else:
             self.fail("chdir to nonexistent directory %s succeeded." %
                       self._nonexistent_dir)
@@ -1537,6 +1536,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
@@ -1551,6 +1551,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
@@ -1564,6 +1565,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # it up to the parent process as the correct exception.
             self.assertEqual(desired_exception.errno, e.errno)
             self.assertEqual(desired_exception.strerror, e.strerror)
+            self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
