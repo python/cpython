@@ -284,13 +284,11 @@ coroutine in another coroutine and use classic try/except::
     loop.run_forever()
     loop.close()
 
-Another option is to use the :meth:`loop.run_until_complete`
-(or alternatively, the provisional :meth:`asyncio.run`)
-function::
+Another option is to use the :meth:`asyncio.run` function::
 
     task = asyncio.ensure_future(bug())
     try:
-        loop.run_until_complete(task)
+        asyncio.run(task)
     except Exception:
         print("exception consumed")
 
