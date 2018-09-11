@@ -671,6 +671,8 @@ static PyTypeObject teedataobject_type = {
 };
 
 
+static PyTypeObject tee_type;
+
 static PyObject *
 tee_next(teeobject *to)
 {
@@ -1807,12 +1809,6 @@ static PyMethodDef starmap_methods[] = {
      reduce_doc},
     {NULL,              NULL}   /* sentinel */
 };
-
-PyDoc_STRVAR(starmap_doc,
-"starmap(function, sequence) --> starmap object\n\
-\n\
-Return an iterator whose values are returned from the function evaluated\n\
-with an argument tuple taken from the given sequence.");
 
 static PyTypeObject starmap_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
