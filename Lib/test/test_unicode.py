@@ -2655,10 +2655,6 @@ class CAPITest(unittest.TestCase):
         check_format(r"%A:'abc\xe9\uabcd\U0010ffff'",
                      b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
 
-        # test %T (object type name)
-        check_format(r"type name: str",
-                     b'type name: %T', 'text')
-
         # test %V
         check_format('repr=abc',
                      b'repr=%V', 'abc', b'xyz')
