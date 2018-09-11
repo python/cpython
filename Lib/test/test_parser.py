@@ -423,11 +423,12 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
 
     def test_named_expressions(self):
         self.check_suite("(a := 1)")
+        self.check_suite("(a := a)")
         self.check_suite("if (match := pattern.search(data)) is None: pass")
         self.check_suite("[y := f(x), y**2, y**3]")
         self.check_suite("filtered_data = [y for x in data if (y := f(x)) is None]")
         self.check_suite("(y := f(x))")
-        self.check_suite("0 = (y1 := f(x))")
+        self.check_suite("y0 = (y1 := f(x))")
         self.check_suite("foo(x=(y := f(x)))")
         self.check_suite("def foo(answer=(p := 42)): pass")
         self.check_suite("def foo(answer: (p := 42) = 5): pass")
@@ -435,7 +436,6 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("(x := lambda: 1)")
         self.check_suite("(x := lambda: (y := 1))")  # not in PEP
         self.check_suite("lambda line: (m := re.match(pattern, line)) and m.group(1)")
-        self.check_suite("(x := 0)")
         self.check_suite("x = (y := 0)")
         self.check_suite("(z:=(y:=(x:=0)))")
         self.check_suite("(info := (name, phone, *rest))")
