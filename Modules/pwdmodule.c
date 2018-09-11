@@ -253,7 +253,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *name)
         }
         else {
             PyErr_Format(PyExc_KeyError,
-                         "getpwnam(): name not found: %S", name);
+                         "getpwnam(): name not found: %R", name);
         }
         goto out;
     }
