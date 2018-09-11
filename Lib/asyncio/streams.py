@@ -7,7 +7,7 @@ import socket
 
 if hasattr(socket, 'AF_UNIX'):
     __all__ += ('open_unix_connection', 'start_unix_server',
-                'unix_connect')
+                'connect_unix')
 
 from . import coroutines
 from . import events
@@ -21,9 +21,9 @@ _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
 
 
 async def connect(host=None, port=None, *,
-                  loop=None, limit=_DEFAULT_LIMIT, **kwds):
-    if loop is None:
-        loop = events.get_running_loop()
+                  limit=_DEFAULT_LIMIT, **kwds):
+    assert 'loop' not in kwds
+    loop = events.get_running_loop()
     stream = Stream(limit=limit, loop=loop)
     protocol = StreamReaderProtocol(stream, loop=loop)
     stream._set_protocol(protocol)
@@ -104,10 +104,10 @@ async def start_server(client_connected_cb, host=None, port=None, *,
 if hasattr(socket, 'AF_UNIX'):
     # UNIX Domain Sockets are supported on this platform
 
-    async def unix_connect(path=None, *,
-                           loop=None, limit=_DEFAULT_LIMIT, **kwds):
-        if loop is None:
-            loop = events.get_running_loop()
+    async def connect_unix(path=None, *,
+                           limit=_DEFAULT_LIMIT, **kwds):
+        assert 'loop' not in kwds
+        loop = events.get_running_loop()
         stream = Stream(limit=limit, loop=loop)
         protocol = StreamReaderProtocol(stream, loop=loop)
         stream._set_protocol(protocol)
@@ -698,9 +698,14 @@ class StreamReader:
 class Stream(StreamReader, StreamWriter):
     def __init__(self, limit, loop):
         StreamReader.__init__(self, limit, loop)
-        # A trick for emulating StreamWriter ctor without an actual call
-        self._reader = self
+        # Emulate StreamWriter ctor without an actual call
         self._protocol = None  # setup the attribute in _set_protocol()
+
+    @property
+    def _reader(self):
+        # A trick for making StreamWriter work: the class requires
+        # self._reader attribute
+        return self
 
     def _set_protocol(self, protocol):
         # a post-init method to set protocol instance

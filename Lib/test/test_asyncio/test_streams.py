@@ -893,8 +893,7 @@ os.close(fd)
             wr.close()
             self.loop.run_until_complete(wr.wait_closed())
 
-    def _basetest_connect(self, connect_fut):
-        stream = self.loop.run_until_complete(connect_fut)
+    def _basetest_connect(self, stream):
         stream.write(b'GET / HTTP/1.0\r\n\r\n')
         f = stream.readline()
         data = self.loop.run_until_complete(f)
@@ -907,14 +906,16 @@ os.close(fd)
 
     def test_connect(self):
         with test_utils.run_test_server() as httpd:
-            connect_fut = asyncio.connect(*httpd.address, loop=self.loop)
-            self._basetest_connect(connect_fut)
+            stream = self.loop.run_until_complete(
+                asyncio.connect(*httpd.address))
+            self._basetest_connect(stream)
 
     @support.skip_unless_bind_unix_socket
-    def test_unix_connect(self):
+    def test_connect_unix(self):
         with test_utils.run_test_unix_server() as httpd:
-            connect_fut = asyncio.unix_connect(httpd.address, loop=self.loop)
-            self._basetest_connect(connect_fut)
+            stream = self.loop.run_until_complete(
+                asyncio.connect_unix(httpd.address))
+            self._basetest_connect(stream)
 
 
 if __name__ == '__main__':
