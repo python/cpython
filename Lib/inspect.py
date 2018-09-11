@@ -494,7 +494,7 @@ def getsubclasses(cls):
     """return the subclasses of cls, including cls"""
     return [cls] + _subclasses(cls)
 
-def getallsubclasses(cls, seen=None):
+def getallsubclasses(cls, _seen=None):
     """return an iterator over all subclasses of cls, including cls
 
     the subclass tree is traversed in depth-first order,
@@ -504,8 +504,7 @@ def getallsubclasses(cls, seen=None):
     sys.getrecursionlimit(), however,
     this should not occur in practice.
     """
-    seen = seen or set()
-    result = []
+    seen = _seen or set()
 
     yield cls
 
