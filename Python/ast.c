@@ -1198,7 +1198,7 @@ seq_for_testlist(struct compiling *c, const node *n)
 
     for (i = 0; i < NCH(n); i += 2) {
         const node *ch = CHILD(n, i);
-        assert(TYPE(ch) == test || TYPE(ch) == test_nocond || TYPE(ch) == star_expr);
+        assert(TYPE(ch) == test || TYPE(ch) == test_nocond || TYPE(ch) == star_expr || TYPE(ch) == namedexpr_test);
 
         expression = ast_for_expr(c, ch);
         if (!expression)
