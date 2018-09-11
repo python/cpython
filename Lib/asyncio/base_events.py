@@ -61,6 +61,9 @@ _MIN_CANCELLED_TIMER_HANDLES_FRACTION = 0.5
 _FATAL_ERROR_IGNORE = (BrokenPipeError,
                        ConnectionResetError, ConnectionAbortedError)
 
+if ssl is not None:
+    _FATAL_ERROR_IGNORE = _FATAL_ERROR_IGNORE + (ssl.SSLCertVerificationError)
+
 _HAS_IPv6 = hasattr(socket, 'AF_INET6')
 
 # Maximum timeout passed to select to avoid OS limitations
