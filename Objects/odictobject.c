@@ -1838,31 +1838,15 @@ static PyObject *
 odictiter_reduce(odictiterobject *di)
 {
     PyObject *list, *iter;
-
-    list = PyList_New(0);
-    if (!list)
-        return NULL;
+    odictiterobject tmp = *di;
 
     /* iterate the temporary into a list */
-    for(;;) {
-        PyObject *element = odictiter_iternext(di);
-        if (element) {
-            if (PyList_Append(list, element)) {
-                Py_DECREF(element);
-                Py_DECREF(list);
-                return NULL;
-            }
-            Py_DECREF(element);
-        }
-        else {
-            /* done iterating? */
-            break;
-        }
-    }
-    if (PyErr_Occurred()) {
-        Py_DECREF(list);
+    list = PySequence_List((PyObject*)&tmp);
+
+    if (NULL == list) {
         return NULL;
     }
+
     iter = _PyObject_GetBuiltin("iter");
     if (iter == NULL) {
         Py_DECREF(list);
