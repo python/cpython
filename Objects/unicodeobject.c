@@ -768,7 +768,7 @@ ensure_unicode(PyObject *obj)
 {
     if (!PyUnicode_Check(obj)) {
         PyErr_Format(PyExc_TypeError,
-                     "must be str, not %T", obj);
+                     "must be str, not %t", obj);
         return -1;
     }
     return PyUnicode_READY(obj);
@@ -2826,17 +2826,33 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         break;
     }
 
-    case 'T':
+    case 't':
     {
-        /* Object type name (tp_name) */
+        /* Object type name: type(obj).__name__ */
         PyObject *obj = va_arg(*vargs, PyObject *);
         PyTypeObject *type = Py_TYPE(obj);
-        const char *type_name = type->tp_name;
+        const char *type_name = _PyType_Name(type);
         if (unicode_fromformat_write_utf8(writer, type_name, -1, -1) < 0) {
             return NULL;
         }
         break;
     }
+
+    case 'T':
+    {
+        /* Object type fully qualified name:
+           f"{type(obj).__module__}.{type(obj).__qualname__}". */
+        PyObject *obj = va_arg(*vargs, PyObject *);
+        PyTypeObject *type = Py_TYPE(obj);
+        PyObject *name = _PyType_FullName(type);
+        if (_PyUnicodeWriter_WriteStr(writer, name) < 0) {
+            Py_DECREF(name);
+            return NULL;
+        }
+        Py_DECREF(name);
+        break;
+    }
+
     case '%':
         if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
             return NULL;
@@ -3034,7 +3050,7 @@ PyUnicode_FromObject(PyObject *obj)
         return _PyUnicode_Copy(obj);
     }
     PyErr_Format(PyExc_TypeError,
-                 "Can't convert '%T' object to str implicitly", obj);
+                 "Can't convert '%t' object to str implicitly", obj);
     return NULL;
 }
 
@@ -3070,7 +3086,7 @@ PyUnicode_FromEncodedObject(PyObject *obj,
     /* Retrieve a bytes buffer view through the PEP 3118 buffer interface */
     if (PyObject_GetBuffer(obj, &buffer, PyBUF_SIMPLE) < 0) {
         PyErr_Format(PyExc_TypeError,
-                     "decoding to str: need a bytes-like object, %T found",
+                     "decoding to str: need a bytes-like object, %t found",
                      obj);
         return NULL;
     }
@@ -3201,7 +3217,7 @@ PyUnicode_Decode(const char *s,
         goto onError;
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError,
-                     "'%.400s' decoder returned '%T' instead of 'str'; "
+                     "'%.400s' decoder returned '%t' instead of 'str'; "
                      "use codecs.decode() to decode to arbitrary types",
                      encoding, unicode);
         Py_DECREF(unicode);
@@ -3263,7 +3279,7 @@ PyUnicode_AsDecodedUnicode(PyObject *unicode,
         goto onError;
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "'%.400s' decoder returned '%T' instead of 'str'; "
+                     "'%.400s' decoder returned '%t' instead of 'str'; "
                      "use codecs.decode() to decode to arbitrary types",
                      encoding, unicode);
         Py_DECREF(v);
@@ -3496,7 +3512,7 @@ PyUnicode_AsEncodedString(PyObject *unicode,
     }
 
     PyErr_Format(PyExc_TypeError,
-                 "'%.400s' encoder returned '%T' instead of 'bytes'; "
+                 "'%.400s' encoder returned '%t' instead of 'bytes'; "
                  "use codecs.encode() to encode to arbitrary types",
                  encoding, v);
     Py_DECREF(v);
@@ -3529,7 +3545,7 @@ PyUnicode_AsEncodedUnicode(PyObject *unicode,
         goto onError;
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "'%.400s' encoder returned '%T' instead of 'str'; "
+                     "'%.400s' encoder returned '%t' instead of 'str'; "
                      "use codecs.encode() to encode to arbitrary types",
                      encoding, v);
         Py_DECREF(v);
@@ -3704,7 +3720,7 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
         if (!PyBytes_Check(path) &&
             PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                              "path should be string, bytes, "
-                             "or os.PathLike, not %T",
+                             "or os.PathLike, not %t",
                              arg))
         {
             Py_DECREF(path);
@@ -3724,7 +3740,7 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "path should be string, bytes, or os.PathLike, not %T",
+                     "path should be string, bytes, or os.PathLike, not %t",
                      arg);
         Py_DECREF(path);
         return 0;
@@ -9893,7 +9909,7 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
         else {
             if (!PyUnicode_Check(separator)) {
                 PyErr_Format(PyExc_TypeError,
-                             "separator: expected str instance, %T found",
+                             "separator: expected str instance, %t found",
                              separator);
                 goto onError;
             }
@@ -9925,7 +9941,7 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
         item = items[i];
         if (!PyUnicode_Check(item)) {
             PyErr_Format(PyExc_TypeError,
-                         "sequence item %zd: expected str instance, %T found",
+                         "sequence item %zd: expected str instance, %t found",
                          i, item);
             goto onError;
         }
@@ -10741,7 +10757,7 @@ convert_uc(PyObject *obj, void *addr)
     if (!PyUnicode_Check(obj)) {
         PyErr_Format(PyExc_TypeError,
                      "The fill character must be a unicode character, "
-                     "not %T", obj);
+                     "not %t", obj);
         return 0;
     }
     if (PyUnicode_READY(obj) < 0)
@@ -11147,7 +11163,7 @@ PyUnicode_Contains(PyObject *str, PyObject *substr)
 
     if (!PyUnicode_Check(substr)) {
         PyErr_Format(PyExc_TypeError,
-                     "'in <string>' requires string as left operand, not %T",
+                     "'in <string>' requires string as left operand, not %t",
                      substr);
         return -1;
     }
@@ -12853,7 +12869,7 @@ unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
     if (PyUnicode_Check(sep))
         return split(self, sep, maxsplit);
 
-    PyErr_Format(PyExc_TypeError, "must be str or None, not %T", sep);
+    PyErr_Format(PyExc_TypeError, "must be str or None, not %t", sep);
     return NULL;
 }
 
@@ -13039,7 +13055,7 @@ unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
     if (PyUnicode_Check(sep))
         return rsplit(self, sep, maxsplit);
 
-    PyErr_Format(PyExc_TypeError, "must be str or None, not %T", sep);
+    PyErr_Format(PyExc_TypeError, "must be str or None, not %t", sep);
     return NULL;
 }
 
@@ -13334,7 +13350,7 @@ unicode_startswith(PyObject *self,
             if (!PyUnicode_Check(substring)) {
                 PyErr_Format(PyExc_TypeError,
                              "tuple for startswith must only contain str, "
-                             "not %T",
+                             "not %t",
                              substring);
                 return NULL;
             }
@@ -13351,7 +13367,7 @@ unicode_startswith(PyObject *self,
     if (!PyUnicode_Check(subobj)) {
         PyErr_Format(PyExc_TypeError,
                      "startswith first arg must be str or "
-                     "a tuple of str, not %T", subobj);
+                     "a tuple of str, not %t", subobj);
         return NULL;
     }
     result = tailmatch(self, subobj, start, end, -1);
@@ -13388,7 +13404,7 @@ unicode_endswith(PyObject *self,
             if (!PyUnicode_Check(substring)) {
                 PyErr_Format(PyExc_TypeError,
                              "tuple for endswith must only contain str, "
-                             "not %T",
+                             "not %t",
                              substring);
                 return NULL;
             }
@@ -13404,7 +13420,7 @@ unicode_endswith(PyObject *self,
     if (!PyUnicode_Check(subobj)) {
         PyErr_Format(PyExc_TypeError,
                      "endswith first arg must be str or "
-                     "a tuple of str, not %T", subobj);
+                     "a tuple of str, not %t", subobj);
         return NULL;
     }
     result = tailmatch(self, subobj, start, end, +1);
@@ -14314,12 +14330,12 @@ wrongtype:
         case 'x':
         case 'X':
             PyErr_Format(PyExc_TypeError,
-                         "%%%c format: an integer is required, not %T",
+                         "%%%c format: an integer is required, not %t",
                          type, v);
             break;
         default:
             PyErr_Format(PyExc_TypeError,
-                         "%%%c format: a number is required, not %T",
+                         "%%%c format: a number is required, not %t",
                          type, v);
             break;
     }

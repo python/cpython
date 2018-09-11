@@ -2454,8 +2454,7 @@ class CAPITest(unittest.TestCase):
             pythonapi, py_object, sizeof,
             c_int, c_long, c_longlong, c_ssize_t,
             c_uint, c_ulong, c_ulonglong, c_size_t, c_void_p)
-        name = "PyUnicode_FromFormat"
-        _PyUnicode_FromFormat = getattr(pythonapi, name)
+        _PyUnicode_FromFormat = pythonapi.PyUnicode_FromFormat
         _PyUnicode_FromFormat.restype = py_object
 
         def PyUnicode_FromFormat(format, *args):
@@ -2655,9 +2654,25 @@ class CAPITest(unittest.TestCase):
         check_format(r"%A:'abc\xe9\uabcd\U0010ffff'",
                      b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
 
-        # test %T (object type name)
-        check_format(r"type name: str",
-                     b'type name: %T', 'text')
+        # test %t (object type name) and %T (object type fully qualified name)
+        # test builtin type, builtin function, heap type
+        class HeapType:
+            pass
+
+        for obj in ("string", format, HeapType()):
+            obj_type = type(obj)
+            type_name = obj_type.__name__
+            check_format(r"type name: %s" % type_name,
+                         b'type name: %t', py_object(obj))
+
+            type_fqn = obj_type.__qualname__
+            module = obj_type.__module__
+            if module != "builtins":
+                type_fqn = "%s.%s" % (module, type_fqn)
+            # str fully qualified name is formatted as 'str',
+            # not as 'builtins.str'
+            check_format(r"type name: %s" % type_fqn,
+                         b'type name: %T', py_object(obj))
 
         # test %V
         check_format('repr=abc',

@@ -1,4 +1,5 @@
-:c:func:`PyUnicode_FromFormatV`: add ``%T`` format to
+:c:func:`PyUnicode_FromFormatV`: add ``%t`` and ``%T`` formats to
 :c:func:`PyUnicode_FromFormatV`, and so to :c:func:`PyUnicode_FromFormat`
-and :c:func:`PyErr_Format`, to format an object type name: equivalent to
-"%s" with ``Py_TYPE(obj)->tp_name``.
+and :c:func:`PyErr_Format`, to format an object type name. ``%t`` is equivalent to
+``type(obj).__name__`` and ``%T`` is equivalent to
+``f"{type(obj).__module__}.{type(obj).__qualname__}"``.
