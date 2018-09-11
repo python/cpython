@@ -1027,12 +1027,25 @@ def _asdict_inner(obj, dict_factory):
             result.append((f.name, value))
         return dict_factory(result)
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
-        # It's a namedtuple.  Recurse into it, but the top-level
+        # obj is a namedtuple.  Recurse into it, but the returned
         # object is another namedtuple of the same type.  This is
         # similar to how other list- or tuple-derived classes are
         # treated (see below), but we just need to create them
         # differently because a namedtuple's __init__ needs to be
         # called differently (see bpo-34363).
+
+        # I'm not using namedtuple's _asdict()
+        # method, because:
+        # - it does not recurse in to the namedtuple fields and
+        #   convert them to dicts (using dict_factory).
+        # - I don't actually want to return a dict here.  The the main
+        #   use case here is json.dumps, and it handles converting
+        #   namedtuples to lists.  Admittedly we're losing some
+        #   information here when we produce a json list instead of a
+        #   dict.  Note that if we returned dicts here instead of
+        #   namedtuples, we could no longer call asdict() on a data
+        #   structure where a namedtuple was used as a dict key.
+
         return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
     elif isinstance(obj, (list, tuple)):
         # Assume we can create an object of this type by passing in a
@@ -1040,7 +1053,8 @@ def _asdict_inner(obj, dict_factory):
         # above).
         return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
     elif isinstance(obj, dict):
-        return type(obj)((_asdict_inner(k, dict_factory), _asdict_inner(v, dict_factory))
+        return type(obj)((_asdict_inner(k, dict_factory),
+                          _asdict_inner(v, dict_factory))
                          for k, v in obj.items())
     else:
         return copy.deepcopy(obj)
@@ -1078,7 +1092,7 @@ def _astuple_inner(obj, tuple_factory):
             result.append(value)
         return tuple_factory(result)
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
-        # It's a namedtuple.  Recurse into it, but the top-level
+        # obj is a namedtuple.  Recurse into it, but the returned
         # object is another namedtuple of the same type.  This is
         # similar to how other list- or tuple-derived classes are
         # treated (see below), but we just need to create them

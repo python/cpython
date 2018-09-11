@@ -1462,6 +1462,37 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(d), OrderedDict)
         self.assertIs(type(d['y'][1]), OrderedDict)
 
+    def test_helper_asdict_namedtuple_key(self):
+        # Ensure that a field that contains a dict which has a
+        # namedtuple as a key works with asdict().
+
+        @dataclass
+        class C:
+            f: dict
+        T = namedtuple('T', 'a')
+
+        c = C({T('an a'): 0})
+
+        self.assertEqual(asdict(c), {'f': {T(a='an a'): 0}})
+
+    def test_helper_asdict_namedtuple_derived(self):
+        class T(namedtuple('Tbase', 'a')):
+            def my_a(self):
+                return self.a
+
+        @dataclass
+        class C:
+            f: T
+
+        t = T(6)
+        c = C(t)
+
+        d = asdict(c)
+        self.assertEqual(d, {'f': T(a=6)})
+        # Make sure that t has been copied, not used directly.
+        self.assertIsNot(d['f'], t)
+        self.assertEqual(d['f'].my_a(), 6)
+
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
         @dataclass
