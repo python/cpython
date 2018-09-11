@@ -591,23 +591,15 @@ class IOTest(unittest.TestCase):
         with self.open(support.TESTFN, "w+b") as f:
             self.large_file_ops(f)
 
-    def _checked_open(self, path, mode, bufsize, under_check=False):
-        if not under_check and bufsize == 1:
-            warn_msg = 'line buffering is not supported in binary mode'
-            with self.assertWarns(RuntimeWarning, msg=warn_msg):
-                return self._checked_open(path, mode, 1, True)
-        else:
-            return self.open(path, mode, bufsize)
-
     def test_with_open(self):
-        for bufsize in (0, 1, 100):
+        for bufsize in (0, 100):
             f = None
-            with self._checked_open(support.TESTFN, "wb", bufsize) as f:
+            with self.open(support.TESTFN, "wb", bufsize) as f:
                 f.write(b"xxx")
             self.assertEqual(f.closed, True)
             f = None
             try:
-                with self._checked_open(support.TESTFN, "wb", bufsize) as f:
+                with self.open(support.TESTFN, "wb", bufsize) as f:
                     1/0
             except ZeroDivisionError:
                 self.assertEqual(f.closed, True)
