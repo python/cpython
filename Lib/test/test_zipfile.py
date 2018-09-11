@@ -2263,16 +2263,17 @@ class ZipInfoTests(unittest.TestCase):
 
 
 class ZipInfoWithExtraTest(unittest.TestCase):
-
+    path = pathlib.Path(TESTFN2)
     def setUp(self):
-        os.mkdir(TESTFN2)
+        os.mkdir(ZipInfoWithExtraTest.path)
 
     def tearDown(self):
-        rmtree(TESTFN2)
+        rmtree(ZipInfoWithExtraTest.path)
 
     @requires_zlib
     def test_extra_field(self):
-        f = os.path.join(TESTFN2, "f.zip")
+
+        f = ZipInfoWithExtraTest.path / "f.zip"
         with zipfile.ZipFile(f, 'w') as zf:
             zi = zipfile.ZipInfo("0")
             zi.extra = b"12345"
