@@ -198,6 +198,7 @@ updates keys found deeper in the chain::
     >>> d['lion'] = 'orange'         # update an existing key two levels down
     >>> d['snake'] = 'red'           # new keys get added to the topmost dict
     >>> del d['elephant']            # remove an existing key one level down
+    >>> d                            # display result
     DeepChainMap({'zebra': 'black', 'snake': 'red'}, {}, {'lion': 'orange'})
 
 
