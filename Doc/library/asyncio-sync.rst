@@ -96,24 +96,24 @@ Event
 
    Example::
 
-      async def waiter(e):
+      async def waiter(event):
           print('waiting ...')
-          await e.wait()
+          await event.wait()
           print('... got it!')
 
       async def main():
           # Create an Event object.
-          e = asyncio.Event()
+          event = asyncio.Event()
 
-          # Spawn a Task to wait until 'e' is set.
-          w = asyncio.create_task(waiter(e))
+          # Spawn a Task to wait until 'event' is set.
+          waiter_task = asyncio.create_task(waiter(event))
 
-          # Sleep for 1 second and set the 'e' event.
+          # Sleep for 1 second and set the event.
           await asyncio.sleep(1)
-          e.set()
+          event.set()
 
           # Wait until the waiter task is finished.
-          await w
+          await waiter_task
 
       asyncio.run(main())
 
