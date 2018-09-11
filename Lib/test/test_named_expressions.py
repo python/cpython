@@ -156,8 +156,9 @@ class NamedExpressionAssignmentTest(unittest.TestCase):
 
     @unittest.skip("Not implemented -- No keyword args")
     def test_named_expression_assignment_13(self):
-        f = open("../../Lib/test/data/blake2b.txt", "r")
-        self.assertEqual(len(lines := f.readlines()), 259)
+        # TODO fix import, this breaks depending on how you run it
+        with open("../../Lib/test/data/blake2b.txt", "r") as f:
+            self.assertEqual(len(lines := f.readlines()), 259)
 
 
 class NamedExpressionScopeTest(unittest.TestCase):
@@ -180,11 +181,10 @@ class NamedExpressionScopeTest(unittest.TestCase):
         Thus, this test relies on the existance of said comment in order to
         pass.
         """
-        f = open("../../Lib/test/data/blake2b.txt", "r")
-
-        containsComment = any((comment := line).startswith('#') for line in f.readlines())
-        self.assertTrue(containsComment)
-        self.assertEqual(comment, "# EOF")
+        with open("../../Lib/test/data/blake2b.txt", "r") as f:
+            containsComment = any((comment := line).startswith('#') for line in f.readlines())
+            self.assertTrue(containsComment)
+            self.assertEqual(comment, "# EOF")
 
     @unittest.skip("Test WIP, Not implemented -- comprehension")
     def test_named_expression_scope_04(self):
