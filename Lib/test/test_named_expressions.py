@@ -172,16 +172,9 @@ class NamedExpressionScopeTest(unittest.TestCase):
 
     @unittest.skip("Not implemented -- comprehension")
     def test_named_expression_scope_03(self):
-        """
-        This test uses an example data file, Lib/test/data/blake2b.txt,
-        which starts with a comment followed by a bunch of lines of data.
-        Thus, this test relies on the existance of said comment in order to
-        pass.
-        """
-        with open("../../Lib/test/data/blake2b.txt", "r") as f:
-            containsComment = any((comment := line).startswith('#') for line in f.readlines())
-            self.assertTrue(containsComment)
-            self.assertEqual(comment, "# EOF")
+        containsOne = any((lastNum := line) == 1 for num in [1, 2, 3])
+        self.assertTrue(containsOne)
+        self.assertEqual(lastNum, 3)
 
     @unittest.skip("Test WIP, Not implemented -- comprehension")
     def test_named_expression_scope_04(self):
