@@ -9,7 +9,7 @@ import inspect
 import builtins
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
+from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, NamedTuple
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
 
@@ -1331,6 +1331,42 @@ class TestCase(unittest.TestCase):
         self.assertEqual(asdict(c), {'x': 42, 'y': 2})
         self.assertIs(type(asdict(c)), dict)
 
+    def test_helper_asdict_namedtuple(self):
+        nt1 = namedtuple('nt1', 'f')
+        nt2 = namedtuple('nt2', 'f1 f2')
+
+        class NT1(NamedTuple):
+            f: Any
+
+        class NT2(NamedTuple):
+            f1: Any
+            f2: Any
+
+        # Test with both namedtuple and NamedTuple.
+        for type1, type2 in ((nt1, nt2), (NT1, NT2)):
+            with self.subTest(type1=type1, type2=type2):
+                @dataclass
+                class C:
+                    i1: int
+                    nt1: type1
+                    nt2: type2
+
+                inst1 = type1((1,))
+                inst2 = type2((3,), (5, 6))
+                c = C(3, inst1, inst2)
+                d = asdict(c)
+                self.assertEqual(d, {'i1': 3, 'nt1': inst1, 'nt2': inst2})
+                # Make sure we copied these objects and aren't using the
+                # originals.
+                self.assertIsNot(d['nt1'], inst1)
+                self.assertIsNot(d['nt2'], inst2)
+                # Due to the way that namedtuples compare to tuples, check
+                # that dict values can be accessed by field name (that is,
+                # they're namedtuples not tuples).
+                self.assertEqual(d['nt1'].f, (1,))
+                self.assertEqual(d['nt2'].f1, (3,))
+                self.assertEqual(d['nt2'].f2, (5, 6))
+
     def test_helper_asdict_raises_on_classes(self):
         # asdict() should raise on a class object.
         @dataclass
@@ -1443,6 +1479,42 @@ class TestCase(unittest.TestCase):
         c.y = 42
         self.assertEqual(astuple(c), (1, 42))
         self.assertIs(type(astuple(c)), tuple)
+
+    def test_helper_astuple_namedtuple(self):
+        nt1 = namedtuple('nt1', 'f')
+        nt2 = namedtuple('nt2', 'f1 f2')
+
+        class NT1(NamedTuple):
+            f: Any
+
+        class NT2(NamedTuple):
+            f1: Any
+            f2: Any
+
+        # Test with both namedtuple and NamedTuple.
+        for type1, type2 in ((nt1, nt2), (NT1, NT2)):
+            with self.subTest(type1=type1, type2=type2):
+                @dataclass
+                class C:
+                    i1: int
+                    nt1: type1
+                    nt2: type2
+
+                inst1 = type1((1,))
+                inst2 = type2((3,), (5, 6))
+                c = C(3, inst1, inst2)
+                t = astuple(c)
+                self.assertEqual(t, (3, inst1, inst2))
+                # Make sure we copied these objects and aren't using the
+                # originals.
+                self.assertIsNot(t[1], inst1)
+                self.assertIsNot(t[2], inst2)
+                # Due to the way that namedtuples compare to tuples, check
+                # that dict values can be accessed by field name (that is,
+                # they're namedtuples not tuples).
+                self.assertEqual(t[1].f, (1,))
+                self.assertEqual(t[2].f1, (3,))
+                self.assertEqual(t[2].f2, (5, 6))
 
     def test_helper_astuple_raises_on_classes(self):
         # astuple() should raise on a class object.
