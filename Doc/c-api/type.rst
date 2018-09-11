@@ -197,7 +197,7 @@ Heap Type Slot Specification
    Slot IDs are named like the field names of the structures
    :c:type:`PyTypeObject`, :c:type:`PyNumberMethods`,
    :c:type:`PySequenceMethods`, :c:type:`PyMappingMethods` and
-   :c:type:`PyAsyncMethods` with an added Py_ prefix.
+   :c:type:`PyAsyncMethods` with an added ``Py_`` prefix.
    For example, use:
 
    * ``Py_tp_dealloc`` to set :c:member:`PyTypeObject.tp_dealloc`
