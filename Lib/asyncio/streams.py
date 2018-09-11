@@ -3,6 +3,7 @@ __all__ = (
     'open_connection', 'start_server')
 
 import socket
+import weakref
 
 if hasattr(socket, 'AF_UNIX'):
     __all__ += ('open_unix_connection', 'start_unix_server')
@@ -188,44 +189,75 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     def __init__(self, stream_reader, client_connected_cb=None, loop=None):
         super().__init__(loop=loop)
-        self._stream_reader = stream_reader
+        if stream_reader is not None:
+            self._stream_reader_wr = weakref.ref(stream_reader)
+        else:
+            self._stream_reader_wr = None
+        if client_connected_cb is not None:
+            # server socket
+            # we need to keep a strong reference to the reader
+            # until connection is made
+            self._strong_reader = stream_reader
         self._stream_writer = None
+        self._transport = None
         self._client_connected_cb = client_connected_cb
         self._over_ssl = False
         self._closed = self._loop.create_future()
 
+    @property
+    def _stream_reader(self):
+        if self._stream_reader_wr is None:
+            return None
+        reader = self._stream_reader_wr()
+        if reader is None:
+            transport = self._transport
+            if transport is not None:
+                logger.warning(
+                    "Stream is garbage collected, closing the socket")
+                transport.abort()
+            self._stream_reader_wr = None
+        return reader
+
     def connection_made(self, transport):
-        self._stream_reader.set_transport(transport)
+        reader = self._stream_reader
+        if reader is not None:
+            reader.set_transport(transport)
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
         if self._client_connected_cb is not None:
             self._stream_writer = StreamWriter(transport, self,
-                                               self._stream_reader,
+                                               reader,
                                                self._loop)
-            res = self._client_connected_cb(self._stream_reader,
+            res = self._client_connected_cb(reader,
                                             self._stream_writer)
             if coroutines.iscoroutine(res):
                 self._loop.create_task(res)
+            self._strong_reader = None
 
     def connection_lost(self, exc):
-        if self._stream_reader is not None:
+        reader = self._stream_reader
+        if reader is not None:
             if exc is None:
-                self._stream_reader.feed_eof()
+                reader.feed_eof()
             else:
-                self._stream_reader.set_exception(exc)
+                reader.set_exception(exc)
         if not self._closed.done():
             if exc is None:
                 self._closed.set_result(None)
             else:
                 self._closed.set_exception(exc)
         super().connection_lost(exc)
-        self._stream_reader = None
+        self._stream_reader_wr = None
         self._stream_writer = None
 
     def data_received(self, data):
-        self._stream_reader.feed_data(data)
+        reader = self._stream_reader
+        if reader is not None:
+            reader.feed_data(data)
 
     def eof_received(self):
-        self._stream_reader.feed_eof()
+        reader = self._stream_reader
+        if reader is not None:
+            reader.feed_eof()
         if self._over_ssl:
             # Prevent a warning in SSLProtocol.eof_received:
             # "returning true from eof_received()
