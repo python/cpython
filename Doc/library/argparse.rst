@@ -176,7 +176,7 @@ ArgumentParser objects
 
    * add_help_ - Add a ``-h/--help`` option to the parser (default: ``True``)
 
-   * allow_abbrev_ - Allows long options to be abbreviated if the
+   * allow_abbrev_ - Allows options to be combined or abbreviated if the
      abbreviation is unambiguous. (default: ``True``)
 
    .. versionchanged:: 3.5
@@ -542,9 +542,10 @@ allow_abbrev
 
 Normally, when you pass an argument list to the
 :meth:`~ArgumentParser.parse_args` method of an :class:`ArgumentParser`,
-it :ref:`recognizes abbreviations <prefix-matching>` of long options.
+it recognizes flag combinations and :ref:`abbreviations <prefix-matching>` of
+long options.
 
-This feature can be disabled by setting ``allow_abbrev`` to ``False``::
+These features can be disabled by setting ``allow_abbrev`` to ``False``::
 
    >>> parser = argparse.ArgumentParser(prog='PROG', allow_abbrev=False)
    >>> parser.add_argument('--foobar', action='store_true')
@@ -552,6 +553,15 @@ This feature can be disabled by setting ``allow_abbrev`` to ``False``::
    >>> parser.parse_args(['--foon'])
    usage: PROG [-h] [--foobar] [--foonley]
    PROG: error: unrecognized arguments: --foon
+
+Note that this also deactivates the combination of simple flags::
+
+   >>> parser = argparse.ArgumentParser(prog='PROG', allow_abbrev=False)
+   >>> parser.add_argument('-a', action='store_true')
+   >>> parser.add_argument('-b', action='store_false')
+   >>> parser.parse_args(['-ab'])
+   usage: PROG [-h] [-a] [-b]
+   PROG: error: unrecognized arguments: -ab
 
 .. versionadded:: 3.5
 
@@ -1461,18 +1471,22 @@ allows long options to be abbreviated to a prefix, if the abbreviation is
 unambiguous (the prefix matches a unique option)::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
-   >>> parser.add_argument('-bacon')
-   >>> parser.add_argument('-badger')
-   >>> parser.parse_args('-bac MMM'.split())
+   >>> parser.add_argument('--bacon')
+   >>> parser.add_argument('--badger')
+   >>> parser.parse_args('--bac MMM'.split())
    Namespace(bacon='MMM', badger=None)
-   >>> parser.parse_args('-bad WOOD'.split())
+   >>> parser.parse_args('--bad WOOD'.split())
    Namespace(bacon=None, badger='WOOD')
-   >>> parser.parse_args('-ba BA'.split())
-   usage: PROG [-h] [-bacon BACON] [-badger BADGER]
-   PROG: error: ambiguous option: -ba could match -badger, -bacon
+   >>> parser.parse_args('--ba BA'.split())
+   usage: PROG [-h] [--bacon BACON] [--badger BADGER]
+   PROG: error: ambiguous option: --ba could match --badger, --bacon
 
 An error is produced for arguments that could produce more than one options.
 This feature can be disabled by setting :ref:`allow_abbrev` to ``False``.
+
+.. note::
+   Setting ``allow_abbrev=False`` will also :ref:`deactivate <allow_abbrev>`
+   the common feature of combining short flags with ``action='store_const'``.
 
 .. _args:
 
