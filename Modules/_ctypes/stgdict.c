@@ -190,7 +190,7 @@ PyType_stgdict(PyObject *obj)
 StgDictObject *
 PyObject_stgdict(PyObject *self)
 {
-    PyTypeObject *type = self->ob_type;
+    PyTypeObject *type = Py_TYPE(self);
     if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
         return NULL;
     return (StgDictObject *)type->tp_dict;

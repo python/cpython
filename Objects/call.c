@@ -105,10 +105,10 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, Py_ssize_t nar
         ternaryfunc call;
 
         /* Slow-path: build a temporary tuple */
-        call = callable->ob_type->tp_call;
+        call = Py_TYPE(callable)->tp_call;
         if (call == NULL) {
             PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                         callable->ob_type->tp_name);
+                         Py_TYPE(callable)->tp_name);
             return NULL;
         }
 
@@ -167,10 +167,10 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject *const *stack, Py_ssize_
         nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
         assert((nargs == 0 && nkwargs == 0) || stack != NULL);
 
-        call = callable->ob_type->tp_call;
+        call = Py_TYPE(callable)->tp_call;
         if (call == NULL) {
             PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                         callable->ob_type->tp_name);
+                         Py_TYPE(callable)->tp_name);
             return NULL;
         }
 
@@ -232,10 +232,10 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
         return PyCFunction_Call(callable, args, kwargs);
     }
     else {
-        call = callable->ob_type->tp_call;
+        call = Py_TYPE(callable)->tp_call;
         if (call == NULL) {
             PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                         callable->ob_type->tp_name);
+                         Py_TYPE(callable)->tp_name);
             return NULL;
         }
 

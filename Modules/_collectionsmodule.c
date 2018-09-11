@@ -531,7 +531,7 @@ deque_concat(dequeobject *deque, PyObject *other)
         if (rv == 0) {
             PyErr_Format(PyExc_TypeError,
                          "can only concatenate deque (not \"%.200s\") to deque",
-                         other->ob_type->tp_name);
+                         Py_TYPE(other)->tp_name);
         }
         return NULL;
     }

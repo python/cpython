@@ -490,7 +490,7 @@ list_concat(PyListObject *a, PyObject *bb)
     if (!PyList_Check(bb)) {
         PyErr_Format(PyExc_TypeError,
                   "can only concatenate list (not \"%.200s\") to list",
-                  bb->ob_type->tp_name);
+                  Py_TYPE(bb)->tp_name);
         return NULL;
     }
 #define b ((PyListObject *)bb)
@@ -889,7 +889,7 @@ list_extend(PyListObject *self, PyObject *iterable)
     it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
-    iternext = *it->ob_type->tp_iternext;
+    iternext = *Py_TYPE(it)->tp_iternext;
 
     /* Guess a result list size. */
     n = PyObject_LengthHint(iterable, 8);
@@ -2016,7 +2016,7 @@ unsafe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
     PyObject *res_obj; int res;
 
     /* No assumptions, because we check first: */
-    if (v->ob_type->tp_richcompare != ms->key_richcompare)
+    if (Py_TYPE(v)->tp_richcompare != ms->key_richcompare)
         return PyObject_RichCompareBool(v, w, Py_LT);
 
     assert(ms->key_richcompare != NULL);
@@ -2053,8 +2053,8 @@ unsafe_latin_compare(PyObject *v, PyObject *w, MergeState *ms)
     int res;
 
     /* Modified from Objects/unicodeobject.c:unicode_compare, assuming: */
-    assert(v->ob_type == w->ob_type);
-    assert(v->ob_type == &PyUnicode_Type);
+    assert(Py_TYPE(v) == Py_TYPE(w));
+    assert(Py_TYPE(v) == &PyUnicode_Type);
     assert(PyUnicode_KIND(v) == PyUnicode_KIND(w));
     assert(PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
 
@@ -2076,8 +2076,8 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
     PyLongObject *vl, *wl; sdigit v0, w0; int res;
 
     /* Modified from Objects/longobject.c:long_compare, assuming: */
-    assert(v->ob_type == w->ob_type);
-    assert(v->ob_type == &PyLong_Type);
+    assert(Py_TYPE(v) == Py_TYPE(w));
+    assert(Py_TYPE(v) == &PyLong_Type);
     assert(Py_ABS(Py_SIZE(v)) <= 1);
     assert(Py_ABS(Py_SIZE(w)) <= 1);
 
@@ -2104,8 +2104,8 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState *ms)
     int res;
 
     /* Modified from Objects/floatobject.c:float_richcompare, assuming: */
-    assert(v->ob_type == w->ob_type);
-    assert(v->ob_type == &PyFloat_Type);
+    assert(Py_TYPE(v) == Py_TYPE(w));
+    assert(Py_TYPE(v) == &PyFloat_Type);
 
     res = PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
     assert(res == PyObject_RichCompareBool(v, w, Py_LT));
@@ -2126,8 +2126,8 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
     int k;
 
     /* Modified from Objects/tupleobject.c:tuplerichcompare, assuming: */
-    assert(v->ob_type == w->ob_type);
-    assert(v->ob_type == &PyTuple_Type);
+    assert(Py_TYPE(v) == Py_TYPE(w));
+    assert(Py_TYPE(v) == &PyTuple_Type);
     assert(Py_SIZE(v) > 0);
     assert(Py_SIZE(w) > 0);
 
@@ -2241,12 +2241,12 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
      * set ms appropriately. */
     if (saved_ob_size > 1) {
         /* Assume the first element is representative of the whole list. */
-        int keys_are_in_tuples = (lo.keys[0]->ob_type == &PyTuple_Type &&
+        int keys_are_in_tuples = (Py_TYPE(lo.keys[0]) == &PyTuple_Type &&
                                   Py_SIZE(lo.keys[0]) > 0);
 
         PyTypeObject* key_type = (keys_are_in_tuples ?
-                                  PyTuple_GET_ITEM(lo.keys[0], 0)->ob_type :
-                                  lo.keys[0]->ob_type);
+                                  Py_TYPE(PyTuple_GET_ITEM(lo.keys[0], 0)) :
+                                  Py_TYPE(lo.keys[0]));
 
         int keys_are_all_same_type = 1;
         int strings_are_latin = 1;
@@ -2257,7 +2257,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         for (i=0; i < saved_ob_size; i++) {
 
             if (keys_are_in_tuples &&
-                !(lo.keys[i]->ob_type == &PyTuple_Type && Py_SIZE(lo.keys[i]) != 0)) {
+                !(Py_TYPE(lo.keys[i]) == &PyTuple_Type && Py_SIZE(lo.keys[i]) != 0)) {
                 keys_are_in_tuples = 0;
                 keys_are_all_same_type = 0;
                 break;
@@ -2270,7 +2270,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                              PyTuple_GET_ITEM(lo.keys[i], 0) :
                              lo.keys[i]);
 
-            if (key->ob_type != key_type) {
+            if (Py_TYPE(key) != key_type) {
                 keys_are_all_same_type = 0;
                 break;
             }
@@ -2777,7 +2777,7 @@ list_subscript(PyListObject* self, PyObject* item)
     else {
         PyErr_Format(PyExc_TypeError,
                      "list indices must be integers or slices, not %.200s",
-                     item->ob_type->tp_name);
+                     Py_TYPE(item)->tp_name);
         return NULL;
     }
 }
@@ -2939,7 +2939,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
     else {
         PyErr_Format(PyExc_TypeError,
                      "list indices must be integers or slices, not %.200s",
-                     item->ob_type->tp_name);
+                     Py_TYPE(item)->tp_name);
         return -1;
     }
 }
