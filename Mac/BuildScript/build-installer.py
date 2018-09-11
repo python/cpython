@@ -211,9 +211,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.0.2o",
-              url="https://www.openssl.org/source/openssl-1.0.2o.tar.gz",
-              checksum='44279b8557c3247cbe324e2322ecd114',
+              name="OpenSSL 1.0.2p",
+              url="https://www.openssl.org/source/openssl-1.0.2p.tar.gz",
+              checksum='ac5eb30bf5798aa14b1ae6d0e7da58df',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -824,6 +824,13 @@ def build_universal_openssl(basedir, archList):
         ]
         if no_asm:
             configure_opts.append("no-asm")
+        # OpenSSL 1.0.2o broke the Configure test for whether the compiler
+        # in use supports dependency rule generation (cc -M) with gcc-4.2
+        # used for the 10.6+ installer builds.  Patch Configure here to
+        # force use of "cc -M" rather than "makedepend".
+        runCommand(
+            """sed -i "" 's|my $cc_as_makedepend = 0|my $cc_as_makedepend = 1|g' Configure""")
+
         runCommand(" ".join(["perl", "Configure"]
                         + arch_opts[arch] + configure_opts))
         runCommand("make depend")
