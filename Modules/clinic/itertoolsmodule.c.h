@@ -157,7 +157,7 @@ PyDoc_STRVAR(itertools_cycle__doc__,
 "cycle(iterable, /)\n"
 "--\n"
 "\n"
-"Return elements from the iterable until it is exhausted, then repeat the sequence indefinitely.");
+"Return elements from the iterable until it is exhausted. Then repeat the sequence indefinitely.");
 
 static PyObject *
 itertools_cycle_impl(PyTypeObject *type, PyObject *iterable);
@@ -509,4 +509,4 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6dfa46fef66453e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d9eb9601bd3296ef input=a9049054013a1b77]*/

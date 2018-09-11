@@ -927,6 +927,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
     return result;
 }
 
+
 /* cycle object **************************************************************/
 
 typedef struct {
@@ -944,12 +945,12 @@ static PyTypeObject cycle_type;
 itertools.cycle.__new__
     iterable: object
     /
-Return elements from the iterable until it is exhausted, then repeat the sequence indefinitely.
+Return elements from the iterable until it is exhausted. Then repeat the sequence indefinitely.
 [clinic start generated code]*/
 
 static PyObject *
 itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=f60e5ec17a45b35c input=6a304d39a870c5db]*/
+/*[clinic end generated code: output=f60e5ec17a45b35c input=9d1d84bcf66e908b]*/
 {
     PyObject *it;
     PyObject *saved;
@@ -3466,6 +3467,7 @@ static PyTypeObject permutations_type = {
     PyObject_GC_Del,                    /* tp_free */
 };
 
+
 /* accumulate object ********************************************************/
 
 typedef struct {
@@ -4372,6 +4374,7 @@ static PyTypeObject repeat_type = {
     PyObject_GC_Del,                    /* tp_free */
 };
 
+
 /* ziplongest object *********************************************************/
 
 typedef struct {
@@ -4641,6 +4644,7 @@ static PyTypeObject ziplongest_type = {
     zip_longest_new,                    /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
+
 
 /* module level code ********************************************************/
 
