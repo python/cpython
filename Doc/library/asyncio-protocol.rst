@@ -247,10 +247,10 @@ DatagramTransport
    called with :const:`None` as its argument.
 
 
-BaseSubprocessTransport
------------------------
+SubprocessTransport
+-------------------
 
-.. class:: BaseSubprocessTransport
+.. class:: SubprocessTransport
 
    .. method:: get_pid()
 
@@ -290,7 +290,6 @@ BaseSubprocessTransport
    .. method:: terminate()
 
       Ask the subprocess to stop, as in :meth:`subprocess.Popen.terminate`.
-      This method is an alias for the :meth:`close` method.
 
       On POSIX systems, this method sends SIGTERM to the subprocess.
       On Windows, the Windows API function TerminateProcess() is called to
@@ -298,7 +297,7 @@ BaseSubprocessTransport
 
    .. method:: close()
 
-      Ask the subprocess to stop by calling the :meth:`terminate` method if the
+      Ask the subprocess to stop by calling the :meth:`kill` method if the
       subprocess hasn't returned yet, and close transports of all pipes
       (*stdin*, *stdout* and *stderr*).
 

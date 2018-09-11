@@ -1,0 +1,3 @@
+Fix wrong class name: asyncio.BaseSubprocessTransport -> SubprocessTransport,
+and clarify return objects descriptions of AbstractEventLoop.subprocess_exec().
+Fixed the description of SubprocessTransport.close().
