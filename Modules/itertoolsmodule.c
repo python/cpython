@@ -450,7 +450,7 @@ lead_rlock_smart_acquire(struct lead_rlock *rlock)
 
     if (!PyThread_acquire_lock_timed(rlock->lock, 0, NOWAIT_LOCK)) {
         Py_BEGIN_ALLOW_THREADS
-        r = PyThread_acquire_lock_timed(rlock->lock, -1000000, WAIT_LOCK);
+        r = PyThread_acquire_lock_timed(rlock->lock, -1, WAIT_LOCK);
         Py_END_ALLOW_THREADS
     }
     if (r == PY_LOCK_ACQUIRED) {
@@ -466,13 +466,13 @@ lead_rlock_smart_acquire(struct lead_rlock *rlock)
 static void
 lead_rlock_smart_release(struct lead_rlock *rlock)
 {
-    if (rlock->count == 0) {
+    if (rlock->count == 0 || rlock->locked == 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
         return;
     }
     if (--rlock->count == 0) {
-        if(rlock->needed && rlock->locked) {
+        if(rlock->needed) {
             PyThread_release_lock(rlock->lock);
             rlock->owner = 0;
             rlock->locked = 0;
