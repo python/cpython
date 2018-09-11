@@ -1009,6 +1009,47 @@ Classes and functions
    resolution order depends on cls's type.  Unless a very peculiar user-defined
    metatype is in use, cls will be the first element of the tuple.
 
+.. function:: getsubclasses(cls)
+
+   Return a list of class cls's subclasses, including cls.
+   Only direct subclasses will be returned, i.e. sub-subclasses will not be.
+
+.. function:: getallsubclasses(cls)
+
+   Return a list of all the subclasses of class cls.
+   Duplicates will not be included.
+
+   If the subclass tree exceeds the maximum recursion depth, a :exc:`RecursionError`
+   will be raised in this case. This should not occur in normal usage.
+
+.. function:: getsubclasstree(cls)
+
+   Return an object representing the tree of subclasses of class cls.
+   The returned object ("the root") has two attributes, cls, and children.
+   cls is the passed in cls. children is a list of subclasses.
+   Each child in turn has these two attributes.
+
+   A :exc:`RecursionError` is raised if the subclass tree exceeds
+   the maximum recursion depth, however, this should not occur in practice.
+
+   For example: ::
+
+      >>> import inspect
+      >>> class A: pass
+      >>> class B(A): pass
+      >>> class C(A): pass
+      >>> class D(B, C): pass
+      >>> class E(A): pass
+      >>> class F(B): pass
+      >>> tree = inspect.getallsubclasses(A)
+      >>> tree
+		<SubclassNode <class '__main__.A'> [<SubclassNode <class '__main__.B'> [<class '__main__.D'>, <class '__main__.F'>]>, <SubclassNode <class '__main__.C'> [<class '__main__.D'>]>, <class '__main__.E'>]>
+      >>> tree.cls
+      <class '__main__.A'>
+      >>> tree.children[0]
+		<SubclassNode <class '__main__.B'> [<class '__main__.D'>, <class '__main__.F'>]>
+      >>> tree.children[0].children[0]
+      <class '__main__.D'>
 
 .. function:: getcallargs(func, *args, **kwds)
 
