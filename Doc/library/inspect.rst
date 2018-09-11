@@ -1043,11 +1043,11 @@ Classes and functions
       >>> class F(B): pass
       >>> tree = inspect.getallsubclasses(A)
       >>> tree
-		<SubclassNode <class '__main__.A'> [<SubclassNode <class '__main__.B'> [<class '__main__.D'>, <class '__main__.F'>]>, <SubclassNode <class '__main__.C'> [<class '__main__.D'>]>, <class '__main__.E'>]>
+      <SubclassNode <class '__main__.A'> [<SubclassNode <class '__main__.B'> [<class '__main__.D'>, <class '__main__.F'>]>, <SubclassNode <class '__main__.C'> [<class '__main__.D'>]>, <class '__main__.E'>]>
       >>> tree.cls
       <class '__main__.A'>
       >>> tree.children[0]
-		<SubclassNode <class '__main__.B'> [<class '__main__.D'>, <class '__main__.F'>]>
+      <SubclassNode <class '__main__.B'> [<class '__main__.D'>, <class '__main__.F'>]>
       >>> tree.children[0].children[0]
       <class '__main__.D'>
 
