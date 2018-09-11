@@ -1521,6 +1521,13 @@ MiddlingExtendsException(PyExc_SyntaxError, IndentationError, SyntaxError,
 
 
 /*
+ *    TargetScopeError extends SyntaxError
+ */
+MiddlingExtendsException(PyExc_SyntaxError, TargetScopeError, SyntaxError,
+                         "Improper scope target.");
+
+
+/*
  *    TabError extends IndentationError
  */
 MiddlingExtendsException(PyExc_IndentationError, TabError, SyntaxError,
