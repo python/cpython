@@ -63,7 +63,7 @@ the coroutine object returned by the call doesn't do anything until you
 schedule its execution.  There are two basic ways to start it running:
 call ``await coroutine`` or ``yield from coroutine`` from another coroutine
 (assuming the other coroutine is already running!), or schedule its execution
-using the :func:`ensure_future` function or the :meth:`AbstractEventLoop.create_task`
+using the :func:`ensure_future` function or the :meth:`loop.create_task`
 method.
 
 
@@ -129,7 +129,7 @@ Example of coroutine displaying ``"Hello World"``::
 .. seealso::
 
    The :ref:`Hello World with call_soon() <asyncio-hello-world-callback>`
-   example uses the :meth:`AbstractEventLoop.call_soon` method to schedule a
+   example uses the :meth:`loop.call_soon` method to schedule a
    callback.
 
 
@@ -159,7 +159,7 @@ using the :meth:`sleep` function::
 
    The :ref:`display the current date with call_later()
    <asyncio-date-callback>` example uses a callback with the
-   :meth:`AbstractEventLoop.call_later` method.
+   :meth:`loop.call_later` method.
 
 
 Example: Chain coroutines
@@ -190,32 +190,12 @@ Sequence diagram of the example:
 .. image:: tulip_coro.png
    :align: center
 
-The "Task" is created by the :meth:`AbstractEventLoop.run_until_complete` method
+The "Task" is created by the :meth:`loop.run_until_complete` method
 when it gets a coroutine object instead of a task.
 
 The diagram shows the control flow, it does not describe exactly how things
 work internally. For example, the sleep coroutine creates an internal future
-which uses :meth:`AbstractEventLoop.call_later` to wake up the task in 1 second.
-
-
-InvalidStateError
------------------
-
-.. exception:: InvalidStateError
-
-   The operation is not allowed in this state.
-
-
-TimeoutError
-------------
-
-.. exception:: TimeoutError
-
-   The operation exceeded the given deadline.
-
-.. note::
-
-   This exception is different from the builtin :exc:`TimeoutError` exception!
+which uses :meth:`loop.call_later` to wake up the task in 1 second.
 
 
 Future
@@ -231,7 +211,7 @@ Future
      raise an exception when the future isn't done yet.
 
    - Callbacks registered with :meth:`add_done_callback` are always called
-     via the event loop's :meth:`~AbstractEventLoop.call_soon`.
+     via the event loop's :meth:`loop.call_soon`.
 
    - This class is not compatible with the :func:`~concurrent.futures.wait` and
      :func:`~concurrent.futures.as_completed` functions in the
@@ -281,7 +261,7 @@ Future
 
       The *callback* is called with a single argument - the future object. If the
       future is already done when this is called, the callback is scheduled
-      with :meth:`~AbstractEventLoop.call_soon`.
+      with :meth:`loop.call_soon`.
 
       An optional keyword-only *context* argument allows specifying a custom
       :class:`contextvars.Context` for the *callback* to run in.  The current
@@ -344,11 +324,11 @@ Example combining a :class:`Future` and a :ref:`coroutine function
 
 The coroutine function is responsible for the computation (which takes 1 second)
 and it stores the result into the future. The
-:meth:`~AbstractEventLoop.run_until_complete` method waits for the completion of
+:meth:`loop.run_until_complete` method waits for the completion of
 the future.
 
 .. note::
-   The :meth:`~AbstractEventLoop.run_until_complete` method uses internally the
+   The :meth:`loop.run_until_complete` method uses internally the
    :meth:`~Future.add_done_callback` method to be notified when the future is
    done.
 
@@ -433,7 +413,7 @@ Task
    logged: see :ref:`Pending task destroyed <asyncio-pending-task-destroyed>`.
 
    Don't directly create :class:`Task` instances: use the :func:`create_task`
-   function or the :meth:`AbstractEventLoop.create_task` method.
+   function or the :meth:`loop.create_task` method.
 
    Tasks support the :mod:`contextvars` module.  When a Task
    is created it copies the current context and later runs its coroutine
@@ -644,7 +624,7 @@ Task functions
    .. seealso::
 
       The :func:`create_task` function and
-      :meth:`AbstractEventLoop.create_task` method.
+      :meth:`loop.create_task` method.
 
 .. function:: wrap_future(future, \*, loop=None)
 
