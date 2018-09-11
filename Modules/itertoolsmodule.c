@@ -13,13 +13,15 @@ class itertools.groupby "groupbyobject *" "&groupby_type"
 class itertools._grouper "_grouperobject *" "&_grouper_type"
 class itertools.teedataobject "teedataobject *" "&teedataobject_type"
 class itertools._tee "teeobject *" "&tee_type"
+class itertools.cycle "cycleobject *" "&cycle_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2d7d7636c45c73d8]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=066b5d99490f49d4]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
+static PyTypeObject cycle_type;
 
 #include "clinic/itertoolsmodule.c.h"
 
@@ -914,19 +916,21 @@ typedef struct {
 
 static PyTypeObject cycle_type;
 
+/*[clinic input]
+@classmethod
+itertools.cycle.__new__
+    iterable: object
+    /
+Return elements from the iterable until it is exhausted, then repeat the sequence indefinitely.
+[clinic start generated code]*/
+
 static PyObject *
-cycle_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
+/*[clinic end generated code: output=f60e5ec17a45b35c input=6a304d39a870c5db]*/
 {
     PyObject *it;
-    PyObject *iterable;
     PyObject *saved;
     cycleobject *lz;
-
-    if (type == &cycle_type && !_PyArg_NoKeywords("cycle", kwds))
-        return NULL;
-
-    if (!PyArg_UnpackTuple(args, "cycle", 1, 1, &iterable))
-        return NULL;
 
     /* Get iterator. */
     it = PyObject_GetIter(iterable);
@@ -1054,12 +1058,6 @@ static PyMethodDef cycle_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-PyDoc_STRVAR(cycle_doc,
-"cycle(iterable) --> cycle object\n\
-\n\
-Return elements from the iterable until it is exhausted.\n\
-Then repeat the sequence indefinitely.");
-
 static PyTypeObject cycle_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.cycle",                  /* tp_name */
@@ -1083,7 +1081,7 @@ static PyTypeObject cycle_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    cycle_doc,                          /* tp_doc */
+    itertools_cycle__doc__,             /* tp_doc */
     (traverseproc)cycle_traverse,       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -1100,7 +1098,7 @@ static PyTypeObject cycle_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    cycle_new,                          /* tp_new */
+    itertools_cycle,                    /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 

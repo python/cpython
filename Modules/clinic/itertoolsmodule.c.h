@@ -152,4 +152,34 @@ itertools_tee(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=93e1ec70438f4ebb input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(itertools_cycle__doc__,
+"cycle(iterable, /)\n"
+"--\n"
+"\n"
+"Return elements from the iterable until it is exhausted, then repeat the sequence indefinitely.");
+
+static PyObject *
+itertools_cycle_impl(PyTypeObject *type, PyObject *iterable);
+
+static PyObject *
+itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *iterable;
+
+    if ((type == &cycle_type) &&
+        !_PyArg_NoKeywords("cycle", kwargs)) {
+        goto exit;
+    }
+    if (!PyArg_UnpackTuple(args, "cycle",
+        1, 1,
+        &iterable)) {
+        goto exit;
+    }
+    return_value = itertools_cycle_impl(type, iterable);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=88f5be1af59c931f input=a9049054013a1b77]*/
