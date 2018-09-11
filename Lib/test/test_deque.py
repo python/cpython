@@ -659,7 +659,7 @@ class TestSubclass(unittest.TestCase):
         d1 == d2   # not clear if this is supposed to be True or False,
                    # but it used to give a SystemError
 
-    @support.cpython_only
+    @test_support.cpython_only
     def test_bug_31608(self):
         # The interpreter used to crash in specific cases where a deque
         # subclass returned a non-deque.
