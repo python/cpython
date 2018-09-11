@@ -286,11 +286,7 @@ coroutine in another coroutine and use classic try/except::
 
 Another option is to use the :meth:`asyncio.run` function::
 
-    task = asyncio.ensure_future(bug())
-    try:
-        asyncio.run(task)
-    except Exception:
-        print("exception consumed")
+    asyncio.run(bug())
 
 .. seealso::
 
