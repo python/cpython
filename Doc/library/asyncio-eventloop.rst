@@ -13,7 +13,7 @@ Event loops run asynchronous tasks and callbacks, perform network
 IO operations, and run subprocesses.
 
 Application developers will typically use high-level asyncio functions
-to interact with the event loop. In general,high-level asyncio applications
+to interact with the event loop. In general, high-level asyncio applications
 should not need to work directly with event loops and, instead, should use
 the :func:`asyncio.run` function to initialize, manage the event loop, and
 run asynchronous code.
@@ -48,7 +48,7 @@ an event loop:
    in coroutines and callbacks.
 
    Consider also using the :func:`asyncio.run` function instead of using
-   lower level commands to manually create and close an event loop.
+   lower level functions to manually create and close an event loop.
 
 .. function:: set_event_loop(loop)
 
@@ -545,7 +545,7 @@ Creating network servers
 
    * *family* can be set to either :data:`socket.AF_INET` or
      :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6.
-     If not set, it will be determined from host name
+     If not set, the *family* will be determined from host name
      (defaults to :data:`~socket.AF_UNSPEC`).
 
    * *flags* is a bitmask for :meth:`getaddrinfo`.
