@@ -23,7 +23,7 @@ class RegressionTestResult(unittest.TestResult):
         self.buffer = True
         self.__suite = ET.Element('testsuite')
         self.__suite.set('start', datetime.utcnow().isoformat(' '))
-        
+
         self.__e = None
         self.__start_time = None
         self.__results = []
@@ -172,7 +172,7 @@ if __name__ == '__main__':
             print('stdout', file=sys.stdout)
             print('stderr', file=sys.stderr)
             raise RuntimeError('error message')
-    
+
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestTests))
     stream = io.StringIO()
