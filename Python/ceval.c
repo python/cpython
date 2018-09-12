@@ -3344,6 +3344,7 @@ main_loop:
             case FVC_STR:   conv_fn = PyObject_Str;   break;
             case FVC_REPR:  conv_fn = PyObject_Repr;  break;
             case FVC_ASCII: conv_fn = PyObject_ASCII; break;
+            case FVC_TYPE_FQN: conv_fn = _PyObject_TypeFQN; break;
 
             /* Must be 0 (meaning no conversion), since only four
                values are allowed by (oparg & FVC_MASK). */

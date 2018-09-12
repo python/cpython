@@ -130,6 +130,33 @@ type___sizeof__(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
     return type___sizeof___impl(self);
 }
 
+PyDoc_STRVAR(type___format____doc__,
+"__format__($self, format_spec, /)\n"
+"--\n"
+"\n"
+"Default type formatter.");
+
+#define TYPE___FORMAT___METHODDEF    \
+    {"__format__", (PyCFunction)type___format__, METH_O, type___format____doc__},
+
+static PyObject *
+type___format___impl(PyTypeObject *self, PyObject *format_spec);
+
+static PyObject *
+type___format__(PyTypeObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *format_spec;
+
+    if (!PyArg_Parse(arg, "U:__format__", &format_spec)) {
+        goto exit;
+    }
+    return_value = type___format___impl(self, format_spec);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(object___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -237,4 +264,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=8c4c856859564eaa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=74c57a0184032856 input=a9049054013a1b77]*/

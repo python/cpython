@@ -1827,6 +1827,7 @@ class TestType(unittest.TestCase):
         self.assertEqual(A.__name__, 'A')
         self.assertEqual(A.__qualname__, 'A')
         self.assertEqual(A.__module__, __name__)
+        self.assertEqual(A.__fqn__, f'{__name__}.A')
         self.assertEqual(A.__bases__, (object,))
         self.assertIs(A.__base__, object)
         x = A()
@@ -1906,6 +1907,12 @@ class TestType(unittest.TestCase):
         with self.assertRaises(TypeError):
             A.__qualname__ = b'B'
         self.assertEqual(A.__qualname__, 'D.E')
+
+    def test_type_fqn(self):
+        A = type('A', (), {})
+        self.assertEqual(A.__fqn__, f'{__name__}.A')
+        with self.assertRaises(AttributeError):
+            A.__fqn__ = "B"
 
     def test_type_doc(self):
         for doc in 'x', '\xc4', '\U0001f40d', 'x\x00y', b'x', 42, None:

@@ -402,6 +402,7 @@ _PyType_Name(PyTypeObject *type)
     return s;
 }
 
+
 static PyObject *
 type_name(PyTypeObject *type, void *context)
 {
@@ -417,7 +418,7 @@ type_name(PyTypeObject *type, void *context)
 }
 
 static PyObject *
-type_qualname(PyTypeObject *type, void *context)
+_PyType_QualName(PyTypeObject *type)
 {
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyHeapTypeObject* et = (PyHeapTypeObject*)type;
@@ -427,6 +428,12 @@ type_qualname(PyTypeObject *type, void *context)
     else {
         return PyUnicode_FromString(_PyType_Name(type));
     }
+}
+
+static PyObject *
+type_qualname(PyTypeObject *type, void *context)
+{
+    return _PyType_QualName(type);
 }
 
 static int
@@ -481,7 +488,7 @@ type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
 }
 
 static PyObject *
-type_module(PyTypeObject *type, void *context)
+_PyType_Module(PyTypeObject *type)
 {
     PyObject *mod;
 
@@ -509,6 +516,12 @@ type_module(PyTypeObject *type, void *context)
     return mod;
 }
 
+static PyObject *
+type_module(PyTypeObject *type, void *context)
+{
+    return _PyType_Module(type);
+}
+
 static int
 type_set_module(PyTypeObject *type, PyObject *value, void *context)
 {
@@ -519,6 +532,45 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
 
     return _PyDict_SetItemId(type->tp_dict, &PyId___module__, value);
 }
+
+PyObject*
+_PyType_FQN(PyTypeObject *type)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        /* For static types, tp_name is already the fully qualified name */
+        return PyUnicode_FromString(type->tp_name);
+    }
+
+    PyObject *module = _PyType_Module(type);
+    if (module == NULL) {
+        /* Ignore AttributeError */
+        PyErr_Clear();
+    }
+    else if (!PyUnicode_Check(module)) {
+        Py_CLEAR(module);
+    }
+
+    PyHeapTypeObject* et = (PyHeapTypeObject*)type;
+    PyObject *qualname = et->ht_qualname; /* borrowed reference */
+
+    PyObject *fullname;
+    if (module != NULL && !_PyUnicode_EqualToASCIIId(module, &PyId_builtins)) {
+        fullname = PyUnicode_FromFormat("%U.%U", module, qualname);
+    }
+    else {
+        Py_INCREF(qualname);
+        fullname = qualname;
+    }
+    Py_DECREF(module);
+    return fullname;
+}
+
+static PyObject *
+type_fqn(PyTypeObject *type, void *context)
+{
+    return _PyType_FQN(type);
+}
+
 
 static PyObject *
 type_abstractmethods(PyTypeObject *type, void *context)
@@ -869,6 +921,7 @@ type___subclasscheck___impl(PyTypeObject *self, PyObject *subclass)
 static PyGetSetDef type_getsets[] = {
     {"__name__", (getter)type_name, (setter)type_set_name, NULL},
     {"__qualname__", (getter)type_qualname, (setter)type_set_qualname, NULL},
+    {"__fqn__", (getter)type_fqn, (setter)NULL, NULL},
     {"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
     {"__module__", (getter)type_module, (setter)type_set_module, NULL},
     {"__abstractmethods__", (getter)type_abstractmethods,
@@ -882,28 +935,15 @@ static PyGetSetDef type_getsets[] = {
 static PyObject *
 type_repr(PyTypeObject *type)
 {
-    PyObject *mod, *name, *rtn;
+    PyObject *fqn, *rtn;
 
-    mod = type_module(type, NULL);
-    if (mod == NULL)
-        PyErr_Clear();
-    else if (!PyUnicode_Check(mod)) {
-        Py_DECREF(mod);
-        mod = NULL;
-    }
-    name = type_qualname(type, NULL);
-    if (name == NULL) {
-        Py_XDECREF(mod);
+    fqn = _PyType_FQN(type);
+    if (fqn == NULL) {
         return NULL;
     }
 
-    if (mod != NULL && !_PyUnicode_EqualToASCIIId(mod, &PyId_builtins))
-        rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
-    else
-        rtn = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
-
-    Py_XDECREF(mod);
-    Py_DECREF(name);
+    rtn = PyUnicode_FromFormat("<class '%U'>", fqn);
+    Py_DECREF(fqn);
     return rtn;
 }
 
@@ -3451,6 +3491,33 @@ type___sizeof___impl(PyTypeObject *self)
     return PyLong_FromSsize_t(size);
 }
 
+/*[clinic input]
+type.__format__
+
+  format_spec: unicode
+  /
+
+Default type formatter.
+[clinic start generated code]*/
+
+static PyObject *
+type___format___impl(PyTypeObject *self, PyObject *format_spec)
+/*[clinic end generated code: output=01d6933085f07a7c input=6a87e32a4dcf0cb1]*/
+{
+    if (PyUnicode_GET_LENGTH(format_spec) == 0) {
+        return PyObject_Str((PyObject *)self);
+    }
+    else if (_PyUnicode_EqualToASCIIString(format_spec, "T")) {
+        return _PyType_FQN(self);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "unsupported format string passed to %.200s.__format__",
+                     self->tp_name);
+        return NULL;
+    }
+}
+
 static PyMethodDef type_methods[] = {
     TYPE_MRO_METHODDEF
     TYPE___SUBCLASSES___METHODDEF
@@ -3462,6 +3529,7 @@ static PyMethodDef type_methods[] = {
     TYPE___SUBCLASSCHECK___METHODDEF
     TYPE___DIR___METHODDEF
     TYPE___SIZEOF___METHODDEF
+    TYPE___FORMAT___METHODDEF
     {0}
 };
 
@@ -3741,14 +3809,14 @@ object_repr(PyObject *self)
     PyObject *mod, *name, *rtn;
 
     type = Py_TYPE(self);
-    mod = type_module(type, NULL);
+    mod = _PyType_Module(type);
     if (mod == NULL)
         PyErr_Clear();
     else if (!PyUnicode_Check(mod)) {
         Py_DECREF(mod);
         mod = NULL;
     }
-    name = type_qualname(type, NULL);
+    name = _PyType_QualName(type);
     if (name == NULL) {
         Py_XDECREF(mod);
         return NULL;
