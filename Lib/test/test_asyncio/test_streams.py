@@ -585,12 +585,10 @@ class StreamTests(test_utils.TestCase):
                 self.loop = loop
 
             async def handle_client(self, client_reader, client_writer):
-                print("start handle_client")
                 data = await client_reader.readline()
                 client_writer.write(data)
                 await client_writer.drain()
                 client_writer.close()
-                print("start handle_client")
 
             def start(self):
                 sock = socket.socket()
@@ -635,7 +633,6 @@ class StreamTests(test_utils.TestCase):
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
-        print("run 1")
         # test the server variant with a coroutine as client handler
         server = MyServer(self.loop)
         addr = server.start()
@@ -644,9 +641,6 @@ class StreamTests(test_utils.TestCase):
         server.stop()
         self.assertEqual(msg, b"hello world!\n")
 
-        print("run 1 end")
-
-        print("run 2")
         # test the server variant with a callback as client handler
         server = MyServer(self.loop)
         addr = server.start_callback()
@@ -654,7 +648,6 @@ class StreamTests(test_utils.TestCase):
                                                         loop=self.loop))
         server.stop()
         self.assertEqual(msg, b"hello world!\n")
-        print("run 2 end")
 
         self.assertEqual(messages, [])
 

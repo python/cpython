@@ -212,14 +212,12 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._closed = self._loop.create_future()
 
     def _on_reader_gc(self, wr):
-        print("on_reader_gc")
         # connection_lost() is not called yet
         assert self._stream_reader_wr is not None
 
         transport = self._transport
         if transport is not None:
             # connection_made was called
-            print("schedule abort")
             context = {
                 'message': ("Close transport. "
                             "A stream was destroyed without "
@@ -243,7 +241,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         return self._stream_reader_wr()
 
     def connection_made(self, transport):
-        print("connection made")
         if self._reject_transport:
             context = {
                 'message': ("Close transport. "
@@ -271,7 +268,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             self._strong_reader = None
 
     def connection_lost(self, exc):
-        print("connection lost")
         reader = self._stream_reader
         if reader is not None:
             if exc is None:
@@ -287,7 +283,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._stream_reader_wr = None
         self._stream_writer = None
         self._transport = None
-        print("connection lost end")
 
     def data_received(self, data):
         reader = self._stream_reader
