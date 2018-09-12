@@ -53,39 +53,39 @@ class NamedExpressionInvalidTest(unittest.TestCase):
             exec(code, {}, {})
 
     def test_named_expression_invalid_09(self):
-        code = """(lambda: x := 1)"""
-
-        with self.assertRaisesRegex(SyntaxError, "can't use named assignment with lambda"):
-            exec(code, {}, {})
-
-    def test_named_expression_invalid_10(self):
         code = """z := y := x := 0")  # not in P"""
 
         with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
             exec(code, {}, {})
 
-    def test_named_expression_invalid_11(self):
+    def test_named_expression_invalid_10(self):
         code = """info := (name, phone, *rest)"""
 
         with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
             exec(code, {}, {})
 
-    def test_named_expression_invalid_12(self):
+    def test_named_expression_invalid_11(self):
         code = """[[(j := j) for i in range(5)] for j in range(5)]"""
 
         with self.assertRaisesRegex(UnboundLocalError, "local variable 'j' referenced before assignment"):
             exec(code, {}, {})
 
-    def test_named_expression_invalid_13(self):
-        code = "[i + 1 for i in i := [1,2]]"
+    def test_named_expression_invalid_12(self):
+        code = """(lambda: x := 1)"""
 
-        with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
+        with self.assertRaisesRegex(SyntaxError, "can't use named assignment with lambda"):
             exec(code, {}, {})
 
-    def test_named_expression_invalid_14(self):
+    def test_named_expression_invalid_13(self):
         code = """((a, b) := (1, 2))"""
 
         with self.assertRaisesRegex(SyntaxError, "can't use named assignment with tuple"):
+            exec(code, {}, {})
+
+    def test_named_expression_invalid_14(self):
+        code = "[i + 1 for i in i := [1,2]]"
+
+        with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
             exec(code, {}, {})
 
 
