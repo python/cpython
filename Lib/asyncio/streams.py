@@ -221,7 +221,9 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             # connection_made was called
             print("schedule abort")
             context = {
-                'message': "Stream was garbage collected"
+                'message': ("Close transport. "
+                            "A stream was destroyed without "
+                            "stream.close() call")
             }
             if self._source_traceback:
                 context['source_traceback'] = self._source_traceback
@@ -229,6 +231,9 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             transport.abort()
         else:
             self._reject_transport = True
+        self._stream_reader_wr = None
+
+    def _untrack_reader(self):
         self._stream_reader_wr = None
 
     @property
@@ -241,7 +246,9 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         print("connection made")
         if self._reject_transport:
             context = {
-                'message': "Close transport, a stream was garbage collected"
+                'message': ("Close transport. "
+                            "a stream was destroyed "
+                            "before connection establishment")
             }
             if self._source_traceback:
                 context['source_traceback'] = self._source_traceback
@@ -280,6 +287,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._stream_reader_wr = None
         self._stream_writer = None
         self._transport = None
+        print("connection lost end")
 
     def data_received(self, data):
         reader = self._stream_reader
@@ -346,6 +354,9 @@ class StreamWriter:
         return self._transport.can_write_eof()
 
     def close(self):
+        # a reader could be garbage collected / destroyed
+        # after connection closing
+        self._protocol._untrack_reader()
         return self._transport.close()
 
     def is_closing(self):
