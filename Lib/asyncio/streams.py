@@ -204,7 +204,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             # we need to keep a strong reference to the reader
             # until connection is made
             self._strong_reader = stream_reader
-        self._reject_transport = False
+        self._reject_connection = False
         self._stream_writer = None
         self._transport = None
         self._client_connected_cb = client_connected_cb
@@ -225,7 +225,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             self._loop.call_exception_handler(context)
             transport.abort()
         else:
-            self._reject_transport = True
+            self._reject_connection = True
         self._stream_reader_wr = None
 
     def _untrack_reader(self):
@@ -238,7 +238,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         return self._stream_reader_wr()
 
     def connection_made(self, transport):
-        if self._reject_transport:
+        if self._reject_connection:
             context = {
                 'message': ("Close transport. "
                             "a stream was destroyed "
