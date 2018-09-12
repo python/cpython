@@ -400,7 +400,8 @@ All methods are executed atomically.
          The *timeout* parameter is new.
 
       .. versionchanged:: 3.2
-         Lock acquires can now be interrupted by signals on POSIX.
+         Lock acquisition can now be interrupted by signals on POSIX if the
+         underlying threading implementation supports it.
 
 
    .. method:: release()
