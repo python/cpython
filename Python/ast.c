@@ -2815,29 +2815,55 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
                 identifier key, tmp;
                 int k;
 
-                /* chch is test, but must be an identifier? */
-                e = ast_for_expr(c, chch);
-                if (!e)
-                    return NULL;
-                /* f(lambda x: x[0] = 3) ends up getting parsed with
-                 * LHS test = lambda x: x[0], and RHS test = 3.
-                 * SF bug 132313 points out that complaining about a keyword
-                 * then is very confusing.
-                 */
-                if (e->kind == Lambda_kind) {
+                // To remain LL(1), the grammar accepts any test (basically, any
+                // expression) in the keyword slot of a call site.  So, we need
+                // to manually enforce that the keyword is a NAME here.
+                static const int name_tree[] = {
+                    test,
+                    or_test,
+                    and_test,
+                    not_test,
+                    comparison,
+                    expr,
+                    xor_expr,
+                    and_expr,
+                    shift_expr,
+                    arith_expr,
+                    term,
+                    factor,
+                    power,
+                    atom_expr,
+                    atom,
+                    0,
+                };
+                node *expr_node = chch;
+                for (int i = 0; name_tree[i]; i++) {
+                    if (TYPE(expr_node) != name_tree[i])
+                        break;
+                    if (NCH(expr_node) != 1)
+                        break;
+                    expr_node = CHILD(expr_node, 0);
+                }
+                if (TYPE(expr_node) == lambdef) {
+                    // f(lambda x: x[0] = 3) ends up getting parsed with LHS
+                    // test = lambda x: x[0], and RHS test = 3.  Issue #132313
+                    // points out that complaining about a keyword then is very
+                    // confusing.
                     ast_error(c, chch,
                             "lambda cannot contain assignment");
                     return NULL;
-                }
-                else if (e->kind != Name_kind) {
+                } else if (TYPE(expr_node) != NAME) {
                     ast_error(c, chch,
-                            "keyword can't be an expression");
+                              "keyword can't be an expression");
                     return NULL;
                 }
-                else if (forbidden_name(c, e->v.Name.id, ch, 1)) {
+                key = new_identifier(STR(expr_node), c);
+                if (key == NULL) {
                     return NULL;
                 }
-                key = e->v.Name.id;
+                if (forbidden_name(c, key, chch, 1)) {
+                    return NULL;
+                }
                 for (k = 0; k < nkeywords; k++) {
                     tmp = ((keyword_ty)asdl_seq_GET(keywords, k))->arg;
                     if (tmp && !PyUnicode_Compare(tmp, key)) {
