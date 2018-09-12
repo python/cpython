@@ -1,0 +1,17 @@
+valor_da_casa = int(input("Digite o custo total da casa: "))
+salario = int(input("Digite seu salário: "))
+taxa_de_acrescimo = int(input("Digite o quanto você vai economizar por mês: "))
+porcentagem = taxa_de_acrescimo/100 
+poupança = 0
+meses = 0
+
+while poupança < valor_da_casa:
+  poupança +=  salario*taxa_de_acrescimo
+  poupança *= 1.0004
+  meses += 1
+
+print("numero de meses para comprar a casa: " + str(meses))
+
+import time
+
+time.sleep(4)
