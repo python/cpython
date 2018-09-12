@@ -29,6 +29,18 @@ class RegressionTestResult(unittest.TestResult):
         self.__results = []
         self.__verbose = bool(verbosity)
 
+    @classmethod
+    def __getId(cls, test):
+        try:
+            test_id = test.id
+        except AttributeError:
+            return str(test)
+        try:
+            return test_id()
+        except TypeError:
+            return str(test_id)
+        return repr(test)
+
     def getDescription(self, test):
         doc_first_line = test.shortDescription()
         if self.descriptions and doc_first_line:
@@ -49,11 +61,11 @@ class RegressionTestResult(unittest.TestResult):
         self.__e = None
         if e is None:
             return
-        e.set('name', args.pop('name', test.id()))
+        e.set('name', args.pop('name', self.__getId(test)))
         e.set('status', args.pop('status', 'run'))
         e.set('result', args.pop('result', 'completed'))
         if self.__start_time:
-            e.set('time', f'{time.perf_counter() - self.__start_time:0.3f}')
+            e.set('time', f'{time.perf_counter() - self.__start_time:0.6f}')
 
         if capture:
             stdout = self._stdout_buffer.getvalue().rstrip()

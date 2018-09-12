@@ -85,8 +85,8 @@ def runtest(ns, test):
     ns -- regrtest namespace of options
     test -- the name of the test
 
-    Returns the tuple (result, test_time), where result is one of the
-    constants:
+    Returns the tuple (result, test_time, xml_data), where result is one
+    of the constants:
 
         INTERRUPTED      KeyboardInterrupt when run under -j
         RESOURCE_DENIED  test skipped because resource denied
@@ -94,6 +94,9 @@ def runtest(ns, test):
         ENV_CHANGED      test failed because it changed the execution environment
         FAILED           test failed
         PASSED           test passed
+
+    If ns.xmlpath is not None, xml_data is a string containing the
+    generated testsuite element containing results.
     """
 
     output_on_failure = ns.verbose3
@@ -106,6 +109,7 @@ def runtest(ns, test):
         # reset the environment_altered flag to detect if a test altered
         # the environment
         support.environment_altered = False
+        support.junit_xml_list = xml_list = [] if ns.xmlpath else None
         if ns.failfast:
             support.failfast = True
         if output_on_failure:
@@ -138,11 +142,18 @@ def runtest(ns, test):
         else:
             support.verbose = ns.verbose  # Tell tests to be moderately quiet
             result = runtest_inner(ns, test, display_failure=not ns.verbose)
-        return result
+
+        if xml_list:
+            import xml.etree.ElementTree as ET
+            xml_data = b''.join(ET.tostring(x) for x in xml_list).decode('us-ascii')
+        else:
+            xml_data = None
+        return result + (xml_data,)
     finally:
         if use_timeout:
             faulthandler.cancel_dump_traceback_later()
         cleanup_test_droppings(test, ns.verbose)
+        support.junit_xml_list = None
 runtest.stringio = None
 
 

@@ -103,8 +103,8 @@ class Regrtest:
         # used by --junit-xml
         self.testsuite_xml = None
 
-    def accumulate_result(self, test, result, xml_list):
-        ok, test_time = result
+    def accumulate_result(self, test, result):
+        ok, test_time, xml_data = result
         if ok not in (CHILD_ERROR, INTERRUPTED):
             self.test_times.append((test_time, test))
         if ok == PASSED:
@@ -121,9 +121,9 @@ class Regrtest:
         elif ok != INTERRUPTED:
             raise ValueError("invalid test result: %r" % ok)
 
-        if xml_list:
+        if xml_data:
             import xml.etree.ElementTree as ET
-            self.testsuite_xml.append(ET.fromstring(xml_list))
+            self.testsuite_xml.append(ET.fromstring(xml_data))
 
     def display_progress(self, test_index, test):
         if self.ns.quiet:
