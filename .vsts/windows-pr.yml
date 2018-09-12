@@ -51,7 +51,7 @@ steps:
   displayName: Install OpenCppCoverage
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
-- script: PCbuild\build.bat -e $(buildOpt)
+- script: PCbuild\build.bat -d -e $(buildOpt)
   displayName: 'Build CPython'
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
@@ -60,7 +60,7 @@ steps:
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 - script: |
-   PCbuild\win32\python.exe -m venv venv & venv\Scripts\python.exe -m pip install coverage
+   python.bat -m venv venv & venv\Scripts\python.exe -m pip install coverage
   displayName: Install coverage
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
