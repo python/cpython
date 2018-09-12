@@ -635,6 +635,22 @@ class UtimeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             os.utime(self.fname, (5, 5), ns=(5, 5))
 
+    @support.cpython_only
+    def test_issue31577(self):
+        # The interpreter shouldn't crash in case utime() received a bad
+        # ns argument.
+        def get_bad_int(divmod_ret_val):
+            class BadInt:
+                def __divmod__(*args):
+                    return divmod_ret_val
+            return BadInt()
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=(get_bad_int(42), 1))
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=(get_bad_int(()), 1))
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=(get_bad_int((1, 2, 3)), 1))
+
 
 from test import mapping_tests
 
