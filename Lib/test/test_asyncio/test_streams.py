@@ -938,8 +938,8 @@ os.close(fd)
             self.assertEqual(sock.fileno(), -1)
 
         self.assertEqual(1, len(messages))
-        self.assertEqual('Close transport. A stream was destroyed '
-                         'without stream.close() call',
+        self.assertEqual('An open stream object is being garbage '
+                         'collected; call "stream.close()" explicitly.',
                          messages[0]['message'])
 
     def test_del_stream_before_connection_made(self):
@@ -959,8 +959,9 @@ os.close(fd)
             self.assertEqual(sock.fileno(), -1)
 
         self.assertEqual(1, len(messages))
-        self.assertEqual('Close transport. a stream was destroyed '
-                         'before connection establishment',
+        self.assertEqual('An open stream was garbage collected prior to '
+                         'establishing network connection; '
+                         'call "stream.close()" explicitly.',
                          messages[0]['message'])
 
 

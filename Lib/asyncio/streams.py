@@ -200,9 +200,9 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         else:
             self._stream_reader_wr = None
         if client_connected_cb is not None:
-            # server socket
-            # we need to keep a strong reference to the reader
-            # until connection is made
+            # This is a stream created by the `create_server()` function.
+            # Keep a strong reference to the reader until a connection
+            # is established.
             self._strong_reader = stream_reader
         self._reject_connection = False
         self._stream_writer = None
@@ -216,9 +216,8 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         if transport is not None:
             # connection_made was called
             context = {
-                'message': ("Close transport. "
-                            "A stream was destroyed without "
-                            "stream.close() call")
+                'message': ('An open stream object is being garbage '
+                            'collected; call "stream.close()" explicitly.')
             }
             if self._source_traceback:
                 context['source_traceback'] = self._source_traceback
@@ -240,9 +239,9 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     def connection_made(self, transport):
         if self._reject_connection:
             context = {
-                'message': ("Close transport. "
-                            "a stream was destroyed "
-                            "before connection establishment")
+                'message': ('An open stream was garbage collected prior to '
+                            'establishing network connection; '
+                            'call "stream.close()" explicitly.')
             }
             if self._source_traceback:
                 context['source_traceback'] = self._source_traceback
@@ -346,7 +345,7 @@ class StreamWriter:
         return self._transport.can_write_eof()
 
     def close(self):
-        # a reader could be garbage collected / destroyed
+        # a reader can be garbage collected
         # after connection closing
         self._protocol._untrack_reader()
         return self._transport.close()
