@@ -1356,8 +1356,6 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.tanh(NAN)))
 
     @requires_IEEE_754
-    @unittest.skipIf(sysconfig.get_config_var('TANH_PRESERVES_ZERO_SIGN') == 0,
-                     "system tanh() function doesn't copy the sign")
     def testTanhSign(self):
         # check that tanh(-0.) == -0. on IEEE 754 systems
         self.assertEqual(math.tanh(-0.), -0.)
