@@ -123,7 +123,11 @@ class Regrtest:
 
         if xml_data:
             import xml.etree.ElementTree as ET
-            self.testsuite_xml.append(ET.fromstring(xml_data))
+            try:
+                self.testsuite_xml.append(ET.fromstring(xml_data))
+            except ET.ParseError:
+                print(xml_data, file=sys.__stderr__)
+                raise
 
     def display_progress(self, test_index, test):
         if self.ns.quiet:
