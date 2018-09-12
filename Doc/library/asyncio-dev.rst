@@ -126,7 +126,7 @@ To schedule a coroutine object from a different thread, the
      result = future.result(timeout)  # Wait for the result with a timeout
 
 The :meth:`loop.run_in_executor` method can be used with a
-:class:`concurrent.futures.ThreadPoolExecutor` to execute a callback in 
+:class:`concurrent.futures.ThreadPoolExecutor` to execute a callback in
 different thread so as not to block the event loop's main thread.
 
 .. seealso::
@@ -186,8 +186,8 @@ Detect coroutine objects never scheduled
 
 When a coroutine function is called and its result is not passed to
 :meth:`asyncio.create_task` the execution of the coroutine object will
-never be scheduled which is probably a bug. Using `asyncio.create_task` is
-preferred to the low level :func:`ensure_future` and :meth:`loop.create_task` 
+never be scheduled which is probably a bug. Using ``asyncio.create_task`` is
+preferred to the low level :func:`ensure_future` and :meth:`loop.create_task`
 methods. :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>`
 to :ref:`log a warning <asyncio-logger>` to detect it.
 
@@ -207,8 +207,8 @@ Output in debug mode::
       File "test.py", line 7, in <module>
         test()
 
-The fix is to call the :meth:`asyncio.create_task` function. Using 
-`asyncio.create_task` is preferred to the low level :func:`ensure_future` and
+The fix is to call the :meth:`asyncio.create_task` function. Using
+``asyncio.create_task`` is preferred to the low level :func:`ensure_future` and
 :meth:`loop.create_task` methods.
 
 .. seealso::
