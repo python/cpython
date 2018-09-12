@@ -1717,6 +1717,38 @@ class TestEnum(unittest.TestCase):
             third = auto()
         self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
 
+    def test_missing(self):
+        class Color(Enum):
+            red = 1
+            green = 2
+            blue = 3
+            @classmethod
+            def _missing_(cls, item):
+                if item == 'three':
+                    return cls.blue
+                elif item == 'bad return':
+                    # trigger internal error
+                    return 5
+                elif item == 'error out':
+                    raise ZeroDivisionError
+                else:
+                    # trigger not found
+                    return None
+        self.assertIs(Color('three'), Color.blue)
+        self.assertRaises(ValueError, Color, 7)
+        try:
+            Color('bad return')
+        except TypeError as exc:
+            self.assertTrue(isinstance(exc.__context__, ValueError))
+        else:
+            raise Exception('Exception not raised.')
+        try:
+            Color('error out')
+        except ZeroDivisionError as exc:
+            self.assertTrue(isinstance(exc.__context__, ValueError))
+        else:
+            raise Exception('Exception not raised.')
+
     def test_multiple_mixin(self):
         class MaxMixin:
             @classproperty
