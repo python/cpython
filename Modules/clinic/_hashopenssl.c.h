@@ -2,6 +2,192 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(EVP_copy__doc__,
+"copy($self, /)\n"
+"--\n"
+"\n"
+"Return a copy of the hash object.");
+
+#define EVP_COPY_METHODDEF    \
+    {"copy", (PyCFunction)EVP_copy, METH_NOARGS, EVP_copy__doc__},
+
+static PyObject *
+EVP_copy_impl(EVPobject *self);
+
+static PyObject *
+EVP_copy(EVPobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return EVP_copy_impl(self);
+}
+
+PyDoc_STRVAR(EVP_digest__doc__,
+"digest($self, /)\n"
+"--\n"
+"\n"
+"Return the digest value as a string of binary data.");
+
+#define EVP_DIGEST_METHODDEF    \
+    {"digest", (PyCFunction)EVP_digest, METH_NOARGS, EVP_digest__doc__},
+
+static PyObject *
+EVP_digest_impl(EVPobject *self);
+
+static PyObject *
+EVP_digest(EVPobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return EVP_digest_impl(self);
+}
+
+PyDoc_STRVAR(EVP_hexdigest__doc__,
+"hexdigest($self, /)\n"
+"--\n"
+"\n"
+"Return the digest value as a string of hexadecimal digits.");
+
+#define EVP_HEXDIGEST_METHODDEF    \
+    {"hexdigest", (PyCFunction)EVP_hexdigest, METH_NOARGS, EVP_hexdigest__doc__},
+
+static PyObject *
+EVP_hexdigest_impl(EVPobject *self);
+
+static PyObject *
+EVP_hexdigest(EVPobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return EVP_hexdigest_impl(self);
+}
+
+PyDoc_STRVAR(EVP_update__doc__,
+"update($self, obj, /)\n"
+"--\n"
+"\n"
+"Update this hash object\'s state with the provided string.");
+
+#define EVP_UPDATE_METHODDEF    \
+    {"update", (PyCFunction)EVP_update, METH_O, EVP_update__doc__},
+
+PyDoc_STRVAR(EVP_tp_init__doc__,
+"HASH(name, string=None)\n"
+"--\n"
+"\n"
+"A hash is an object used to calculate a checksum of a string of information.\n"
+"\n"
+"Methods:\n"
+"\n"
+"update() -- updates the current digest with an additional string\n"
+"digest() -- return the current digest value\n"
+"hexdigest() -- return the current digest as a string of hexadecimal digits\n"
+"copy() -- return a copy of the current hash object\n"
+"\n"
+"Attributes:\n"
+"\n"
+"name -- the hash algorithm being used by this object\n"
+"digest_size -- number of bytes in this hashes output");
+
+static int
+EVP_tp_init_impl(EVPobject *self, PyObject *name_obj, PyObject *data_obj);
+
+static int
+EVP_tp_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    static const char * const _keywords[] = {"name", "string", NULL};
+    static _PyArg_Parser _parser = {"O|O:HASH", _keywords, 0};
+    PyObject *name_obj;
+    PyObject *data_obj = NULL;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &name_obj, &data_obj)) {
+        goto exit;
+    }
+    return_value = EVP_tp_init_impl((EVPobject *)self, name_obj, data_obj);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(EVP_new__doc__,
+"HASH(name, string=None)\n"
+"--\n"
+"\n"
+"Return a new hash object using the named algorithm.\n"
+"\n"
+"An optional string argument may be provided and will be\n"
+"automatically hashed.\n"
+"\n"
+"The MD5 and SHA1 algorithms are always supported.");
+
+static PyObject *
+EVP_new_impl(PyTypeObject *type, PyObject *name_obj, PyObject *data_obj);
+
+static PyObject *
+EVP_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"name", "string", NULL};
+    static _PyArg_Parser _parser = {"O|O:HASH", _keywords, 0};
+    PyObject *name_obj;
+    PyObject *data_obj = NULL;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &name_obj, &data_obj)) {
+        goto exit;
+    }
+    return_value = EVP_new_impl(type, name_obj, data_obj);
+
+exit:
+    return return_value;
+}
+
+#if ((OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) && !defined(OPENSSL_NO_SHA)))
+
+PyDoc_STRVAR(pbkdf2_hmac__doc__,
+"pbkdf2_hmac($module, /, hash_name, password, salt, iterations,\n"
+"            dklen=None)\n"
+"--\n"
+"\n"
+"Password based key derivation function 2 (PKCS #5 v2.0) with HMAC as pseudorandom function.");
+
+#define PBKDF2_HMAC_METHODDEF    \
+    {"pbkdf2_hmac", (PyCFunction)pbkdf2_hmac, METH_FASTCALL|METH_KEYWORDS, pbkdf2_hmac__doc__},
+
+static PyObject *
+pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
+                 Py_buffer *password, Py_buffer *salt, long iterations,
+                 PyObject *dklen_obj);
+
+static PyObject *
+pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"hash_name", "password", "salt", "iterations", "dklen", NULL};
+    static _PyArg_Parser _parser = {"sy*y*l|O:pbkdf2_hmac", _keywords, 0};
+    const char *hash_name;
+    Py_buffer password = {NULL, NULL};
+    Py_buffer salt = {NULL, NULL};
+    long iterations;
+    PyObject *dklen_obj = Py_None;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &hash_name, &password, &salt, &iterations, &dklen_obj)) {
+        goto exit;
+    }
+    return_value = pbkdf2_hmac_impl(module, hash_name, &password, &salt, iterations, dklen_obj);
+
+exit:
+    /* Cleanup for password */
+    if (password.obj) {
+       PyBuffer_Release(&password);
+    }
+    /* Cleanup for salt */
+    if (salt.obj) {
+       PyBuffer_Release(&salt);
+    }
+
+    return return_value;
+}
+
+#endif /* ((OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) && !defined(OPENSSL_NO_SHA))) */
+
 #if (OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER))
 
 PyDoc_STRVAR(_hashlib_scrypt__doc__,
@@ -96,7 +282,11 @@ exit:
     return return_value;
 }
 
+#ifndef PBKDF2_HMAC_METHODDEF
+    #define PBKDF2_HMAC_METHODDEF
+#endif /* !defined(PBKDF2_HMAC_METHODDEF) */
+
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=b129f1a6ec7b8503 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=30d2d839c4c65430 input=a9049054013a1b77]*/
