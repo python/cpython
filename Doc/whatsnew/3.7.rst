@@ -1923,8 +1923,7 @@ asyncio
 Support for directly ``await``-ing instances of :class:`asyncio.Lock` and
 other asyncio synchronization primitives has been deprecated.  An
 asynchronous context manager must be used in order to acquire and release
-the synchronization resource.  See :ref:`async-with-locks` for more
-information.
+the synchronization resource.
 (Contributed by Andrew Svetlov in :issue:`32253`.)
 
 The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks`
