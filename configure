@@ -11287,9 +11287,13 @@ done
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
-# returns ENOSYS.
-if test "$MACHDEP" = linux; then
-  undef HAVE_LCHMOD
+# returns an error.
+if test "$MACHDEP" != linux; then
+  ac_fn_c_check_func "$LINENO" "lchmod" "ac_cv_func_lchmod"
+if test "x$ac_cv_func_lchmod" = xyes; then :
+
+fi
+
 fi
 
 ac_fn_c_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
