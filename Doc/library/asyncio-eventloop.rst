@@ -8,18 +8,18 @@ Event Loop
 
 .. rubric:: Preface
 
-An event loop is the central component of every asyncio application.
+The event loop is a central component of every asyncio application.
 Event loops run asynchronous tasks and callbacks, perform network
-IO operations, run subprocesses, etc.
+IO operations, and run subprocesses.
 
-In general, it is *not recommended* to use event loops directly at
-the application-level asyncio code.  They should only be accessed
-in low-level code in libraries and frameworks.
+Application developers will typically use high-level asyncio functions
+to interact with the event loop. In general,high-level asyncio applications
+should not need to work directly with event loops and, instead, should use
+the :func:`asyncio.run` function to initialize, manage the event loop, and
+run asynchronous code.
 
-High-level asyncio applications should not need to work with event
-loops and should use the :func:`asyncio.run` function to initialize
-and run asynchronous code.
-
+Alternatively, developers of low-level code, such as libraries and
+framework, may need access to the event loop.
 
 .. rubric:: Accessing Event Loop
 
@@ -42,13 +42,13 @@ an event loop:
    been called, asyncio will create a new event loop and set it as the
    current one.
 
-   Because this function has a rather complex behavior (especially
-   when custom event loop policies are in use), it is recommended
-   to use the :func:`get_running_loop` function in coroutines and
-   callbacks instead.
+   Because this function has rather complex behavior (especially
+   when custom event loop policies are in use), using the 
+   :func:`get_running_loop` function is preferred to :func:`get_event_loop`
+   in coroutines and callbacks.
 
-   Consider also using the :func:`asyncio.run` function instead of
-   manually creating and closing an event loop.
+   Consider also using the :func:`asyncio.run` function instead of using
+   lower level commands to manually create and close an event loop.
 
 .. function:: set_event_loop(loop)
 
@@ -67,14 +67,14 @@ and :func:`new_event_loop` functions can be altered by
 
 This documentation page contains the following sections:
 
-* The `Event Loop Methods`_ section is a reference documentation of
+* The `Event Loop Methods`_ section is the reference documentation of
   event loop APIs;
 
 * The `Callback Handles`_ section documents the :class:`Handle` and
-  :class:`TimerHandle`, instances of which are returned from functions
-  :meth:`loop.call_soon`, :meth:`loop.call_later`, etc;
+  :class:`TimerHandle`, instances which are returned from functions, such
+  as :meth:`loop.call_soon` and :meth:`loop.call_later`;
 
-* The `Server Objects`_ sections documents types returned from
+* The `Server Objects`_ sections document types returned from
   event loop methods like :meth:`loop.create_server`;
 
 * The `Event Loops Implementations`_ section documents the
@@ -89,7 +89,7 @@ This documentation page contains the following sections:
 Event Loop Methods
 ==================
 
-Event loops provide the following **low-level** APIs:
+Event loops have **low-level** APIs for the following:
 
 .. contents::
    :depth: 1
@@ -120,8 +120,8 @@ Running and stopping the loop
 
    If :meth:`stop` is called while :meth:`run_forever` is running,
    the loop will run the current batch of callbacks and then exit.
-   Note that callbacks scheduled by callbacks will not run in that
-   case; they will run the next time :meth:`run_forever` or
+   Note that callbacks scheduled by callbacks will not run in this
+   case; instead, they will run the next time :meth:`run_forever` or
    :meth:`run_until_complete` is called.
 
 .. method:: loop.stop()
@@ -140,7 +140,7 @@ Running and stopping the loop
 
    Close the event loop.
 
-   The loop cannot not be running when this function is called.
+   The loop must be running when this function is called.
    Any pending callbacks will be discarded.
 
    This method clears all queues and shuts down the executor, but does
@@ -154,8 +154,9 @@ Running and stopping the loop
    Schedule all currently open :term:`asynchronous generator` objects to
    close with an :meth:`~agen.aclose()` call.  After calling this method,
    the event loop will issue a warning if a new asynchronous generator
-   is iterated.  Should be used to reliably finalize all scheduled
-   asynchronous generators, e.g.:
+   is iterated. This should be used to reliably finalize all scheduled
+   asynchronous generators, e.g.::
+
 
     try:
         loop.run_forever()
@@ -173,7 +174,7 @@ Scheduling callbacks
 
 .. method:: loop.call_soon(callback, *args, context=None)
 
-   Schedule *callback* to be called with *args* arguments at
+   Schedule a *callback* to be called with *args* arguments at
    the next iteration of the event loop.
 
    Callbacks are called in the order in which they are registered.
@@ -184,7 +185,9 @@ Scheduling callbacks
    The current context is used when no *context* is provided.
 
    An instance of :class:`asyncio.Handle` is returned, which can be
-   used to cancel the callback.
+   used later to cancel the callback.
+
+   This method is not thread-safe.
 
 .. method:: loop.call_soon_threadsafe(callback, *args, context=None)
 
@@ -200,11 +203,11 @@ Scheduling callbacks
 
 .. note::
 
-   Most :mod:`asyncio` scheduling functions don't allow to pass
+   Most :mod:`asyncio` scheduling functions don't allow passing
    keyword arguments.  To do that, use :func:`functools.partial`,
    e.g.::
 
-      # will schedule "print("Hello", flush=True)":
+      # will schedule "print("Hello", flush=True)"
       loop.call_soon(
           functools.partial(print, "Hello", flush=True))
 
@@ -232,7 +235,7 @@ clocks to track time.
    be used to cancel the callback.
 
    *callback* will be called exactly once.  If two callbacks are
-   scheduled for exactly the same time, it is undefined which will
+   scheduled for exactly the same time, it is undefined which one will
    be called first.
 
    The optional positional *args* will be passed to the callback when
@@ -284,8 +287,8 @@ Creating Futures and Tasks
 
    Create an :class:`asyncio.Future` object attached to the event loop.
 
-   This is the preferred way to create Futures in asyncio, that lets
-   third-party event loops to provide alternative implementations of
+   This is the preferred way to create Futures in asyncio. This lets
+   third-party event loops provide alternative implementations of
    the Future object (with better performance or instrumentation).
 
    .. versionadded:: 3.5.2
@@ -397,7 +400,7 @@ Opening network connections
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
      to bind the socket to locally.  The *local_host* and *local_port*
-     are looked up using getaddrinfo(), similarly to *host* and *port*.
+     are looked up using ``getaddrinfo()``, similarly to *host* and *port*.
 
    * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds
      to wait for the SSL handshake to complete before aborting the connection.
@@ -532,16 +535,17 @@ Creating network servers
 
    Arguments:
 
-   * The *host* parameter can be a string, in that case the TCP server is
-     bound to *host* and *port*. The *host* parameter can also be a sequence
-     of strings and in that case the TCP server is bound to all hosts of the
-     sequence. If *host* is an empty string or ``None``, all interfaces are
-     assumed and a list of multiple sockets will be returned (most likely one
-     for IPv4 and another one for IPv6).
+   * The *host* parameter can be set to several types which determine behavior:
+       - If *host* is a string, the TCP server is bound to *host* and *port*. 
+       - if *host* is a sequence of strings, the TCP server is bound to all
+         hosts of the sequence.
+       - If *host* is an empty string or ``None``, all interfaces are
+         assumed and a list of multiple sockets will be returned (most likely
+         one for IPv4 and another one for IPv6).
 
    * *family* can be set to either :data:`socket.AF_INET` or
      :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6.
-     If not set it will be determined from host name
+     If not set, it will be determined from host name
      (defaults to :data:`~socket.AF_UNSPEC`).
 
    * *flags* is a bitmask for :meth:`getaddrinfo`.
@@ -721,16 +725,16 @@ Watching file descriptors
 
 .. method:: loop.add_reader(fd, callback, \*args)
 
-   Start watching the file descriptor for read availability and
+   Start watching the file descriptor *fd* for read availability and
    call the *callback* with specified arguments.
 
 .. method:: loop.remove_reader(fd)
 
-   Stop watching the file descriptor for read availability.
+   Stop watching the file descriptor *fd* for read availability.
 
 .. method:: loop.add_writer(fd, callback, \*args)
 
-   Start watching the file descriptor for write availability and then
+   Start watching the file descriptor *fd* for write availability and then
    call the *callback* with specified arguments.
 
    Use :func:`functools.partial` :ref:`to pass keywords
@@ -738,7 +742,7 @@ Watching file descriptors
 
 .. method:: loop.remove_writer(fd)
 
-   Stop watching the file descriptor for write availability.
+   Stop watching the file descriptor *fd* for write availability.
 
 See also :ref:`Platform Support <asyncio-platform-support>` section
 for some limitations of these methods.
@@ -747,10 +751,10 @@ for some limitations of these methods.
 Working with socket objects directly
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In general, protocols implementations that use transport-based APIs
+In general, protocol implementations that use transport-based APIs
 such as :meth:`loop.create_connection` and :meth:`loop.create_server`
 are faster than implementations that work with sockets directly.
-However, there are use cases when performance is not critical and
+However, there are some use cases when performance is not critical, and
 working with :class:`~socket.socket` objects directly is more
 convenient.
 
@@ -765,8 +769,8 @@ convenient.
    The socket *sock* must be non-blocking.
 
    .. versionchanged:: 3.7
-      Even though the method was always documented as a coroutine
-      method, before Python 3.7 it returned a :class:`Future`.
+      Even though this method was always documented as a coroutine
+      method, releases before Python 3.7 returned a :class:`Future`.
       Since Python 3.7 this is an ``async def`` method.
 
 .. coroutinemethod:: loop.sock_recv_into(sock, buf)
@@ -785,10 +789,11 @@ convenient.
    Send data to the socket. Asynchronous version of
    :meth:`socket.sendall() <socket.socket.sendall>`.
 
-   This method continues to send data from *data* until either all data has
-   been sent or an error occurs.  ``None`` is returned on success.  On error,
-   an exception is raised, and there is no way to determine how much data, if
-   any, was successfully processed by the receiving end of the connection.
+   This method continues to send data from *data* to the socket until either 
+   all data in *data* has been sent or an error occurs.  ``None`` is returned
+   on success.  On error, an exception is raised. Additionally, there is no way
+   to determine how much data, if any, was successfully processed by the
+   receiving end of the connection.
 
    The socket *sock* must be non-blocking.
 
@@ -860,7 +865,7 @@ convenient.
    <io.IOBase.tell>` can be used to figure out the number of bytes
    which were sent.
 
-   *fallback* set to ``True`` makes asyncio to manually read and send
+   *fallback*, when set to ``True``, makes asyncio manually read and send
    the file when the platform does not support the sendfile syscall
    (e.g. Windows or SSL socket on Unix).
 
@@ -927,7 +932,7 @@ Working with pipes
 .. note::
 
    :class:`SelectorEventLoop` does not support the above methods on
-   Windows.  Use :class:`ProactorEventLoop` instead.
+   Windows.  Use :class:`ProactorEventLoop` instead for Windows.
 
 .. seealso::
 
@@ -1028,8 +1033,8 @@ Allows customizing how exceptions are handled in the event loop.
    Default exception handler.
 
    This is called when an exception occurs and no exception
-   handler is set, and can be called by a custom exception
-   handler that wants to defer to the default behavior.
+   handler is set. This can be called by a custom exception
+   handler that wants to defer to the default handler behavior.
 
    *context* parameter has the same meaning as in
    :meth:`call_exception_handler`.
@@ -1051,7 +1056,7 @@ Allows customizing how exceptions are handled in the event loop.
 
    .. note::
 
-       Note: this method should not be overloaded in subclassed
+       This method should not be overloaded in subclassed
        event loops.  For any custom exception handling, use
        :meth:`set_exception_handler()` method.
 
@@ -1104,7 +1109,7 @@ async/await code consider using high-level convenient
      :ref:`filesystem encoding <filesystem-encoding>`.
 
    The first string specifies the program to execute,
-   and the remaining strings specify the arguments.  Together string
+   and the remaining strings specify the arguments.  Together, string
    arguments form the ``argv`` of the program.
 
    This is similar to the standard library :class:`subprocess.Popen`
@@ -1238,8 +1243,7 @@ Do not instantiate the class directly.
       async with srv:
           # some code
 
-      # At this point, srv is closed and no longer accepts new
-      connections.
+      # At this point, srv is closed and no longer accepts new connections.
 
 
    .. versionchanged:: 3.7
@@ -1408,6 +1412,7 @@ event loop::
     import asyncio
 
     def hello_world(loop):
+        """A callback to print 'Hello World' and stop the event loop"""
         print('Hello World')
         loop.stop()
 
@@ -1478,6 +1483,7 @@ Wait until a file descriptor received some data using the
 
     # Create a pair of connected file descriptors
     rsock, wsock = socketpair()
+
     loop = asyncio.get_event_loop()
 
     def reader():
@@ -1500,7 +1506,7 @@ Wait until a file descriptor received some data using the
         # Run the event loop
         loop.run_forever()
     finally:
-        # We are done, close sockets and the event loop
+        # We are done. Close sockets and the event loop.
         rsock.close()
         wsock.close()
         loop.close()
@@ -1519,7 +1525,7 @@ Wait until a file descriptor received some data using the
 Set signal handlers for SIGINT and SIGTERM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-(This example only works on UNIX.)
+(This ``signals`` example only works on UNIX.)
 
 Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM`
 using the :meth:`loop.add_signal_handler` method::
