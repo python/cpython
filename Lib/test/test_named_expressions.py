@@ -73,6 +73,8 @@ class NamedExpressionInvalidTest(unittest.TestCase):
     def test_named_expression_invalid_12(self):
         code = """[[(j := j) for i in range(5)] for j in range(5)]"""
 
+        # XXX this fails, but with the wrong exception type - should be TargetScopeError
+        # with self.assertRaisesRegex(TargetScopeError, ""):
         with self.assertRaisesRegex(UnboundLocalError, "local variable 'j' referenced before assignment"):
             exec(code, {}, {})
 
