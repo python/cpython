@@ -1087,6 +1087,126 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
     return 1;
 }
 
+/* Set the context ctx for expr_ty e, recursively traversing e.
+
+   Only sets context for expr kinds that "can appear in named assignment context"
+   (according to ../Parser/Python.asdl).  For other expr kinds, it sets
+   an appropriate syntax error and returns false.
+
+   Very similar to set_context, with additional restrictions specific to named
+   expressions
+*/
+
+static int
+set_namedexpr_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
+{
+    asdl_seq *s = NULL;
+    /* If a particular expression type can't be used for assign / delete,
+       set expr_name to its name and an error message will be generated.
+    */
+    const char* expr_name = NULL;
+
+    /* The ast defines augmented store and load contexts, but the
+       implementation here doesn't actually use them.  The code may be
+       a little more complex than necessary as a result.  It also means
+       that expressions in an augmented assignment have a Store context.
+       Consider restructuring so that augmented assignment uses
+       set_context(), too.
+    */
+    assert(ctx != AugStore && ctx != AugLoad);
+
+    switch (e->kind) {
+        case Name_kind:
+            if (ctx == Store) {
+                if (forbidden_name(c, e->v.Name.id, n, 0))
+                    return 0; /* forbidden_name() calls ast_error() */
+            }
+            e->v.Name.ctx = ctx;
+            break;
+        case Attribute_kind:
+            expr_name = "attribute";
+            break;
+        case Subscript_kind:
+            expr_name = "subscript";
+            break;
+        case Starred_kind:
+            expr_name = "starred";
+            break;
+        case List_kind:
+            expr_name = "list";
+            break;
+        case Tuple_kind:
+            expr_name = "tuple";
+            break;
+        case Lambda_kind:
+            expr_name = "lambda";
+            break;
+        case Call_kind:
+            expr_name = "function call";
+            break;
+        case BoolOp_kind:
+        case BinOp_kind:
+        case UnaryOp_kind:
+            expr_name = "operator";
+            break;
+        case GeneratorExp_kind:
+            expr_name = "generator expression";
+            break;
+        case Yield_kind:
+        case YieldFrom_kind:
+            expr_name = "yield expression";
+            break;
+        case Await_kind:
+            expr_name = "await expression";
+            break;
+        case ListComp_kind:
+            expr_name = "list comprehension";
+            break;
+        case SetComp_kind:
+            expr_name = "set comprehension";
+            break;
+        case DictComp_kind:
+            expr_name = "dict comprehension";
+            break;
+        case Dict_kind:
+        case Set_kind:
+        case Num_kind:
+        case Str_kind:
+        case Bytes_kind:
+        case JoinedStr_kind:
+        case FormattedValue_kind:
+            expr_name = "literal";
+            break;
+        case NameConstant_kind:
+            expr_name = "keyword";
+            break;
+        case Ellipsis_kind:
+            expr_name = "Ellipsis";
+            break;
+        case Compare_kind:
+            expr_name = "comparison";
+            break;
+        case IfExp_kind:
+            expr_name = "conditional expression";
+            break;
+        default:
+            PyErr_Format(PyExc_SystemError,
+                         "unexpected expression in named assignment %d (line %d)",
+                         e->kind, e->lineno);
+            return 0;
+    }
+    /* Check for error string set by switch */
+    if (expr_name) {
+        char buf[300];
+        PyOS_snprintf(buf, sizeof(buf),
+                      "can't use named assignment with %s",
+                      expr_name);
+        return ast_error(c, n, buf);
+    }
+
+    return 1;
+}
+
 static operator_ty
 ast_for_augassign(struct compiling *c, const node *n)
 {
@@ -1705,7 +1825,7 @@ ast_for_namedexpr(struct compiling *c, const node *n)
     if (!value)
         return NULL;
 
-    if(!set_context(c, target, Store, n))
+    if(!set_namedexpr_context(c, target, Store, n))
         return NULL;
 
     return NamedExpr(target, value, LINENO(n), n->n_col_offset, c->c_arena);
