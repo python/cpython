@@ -1450,6 +1450,16 @@ class MockTest(unittest.TestCase):
         f2_data = f2.read()
         self.assertEqual(f1_data, f2_data)
 
+    def test_mock_open_dunder_iter_issue(self):
+        # Test dunder_iter method generates the expected result and
+        # consumes the iterator.
+        mocked_open = mock.mock_open(read_data='Remarkable\nNorwegian Blue')
+        f1 = mocked_open('a-name')
+        lines = [line for line in f1]
+        self.assertEqual(lines[0], 'Remarkable\n')
+        self.assertEqual(lines[1], 'Norwegian Blue')
+        self.assertEqual(list(f1), [])
+
     def test_mock_open_write(self):
         # Test exception in file writing write()
         mock_namedtemp = mock.mock_open(mock.MagicMock(name='JLV'))
