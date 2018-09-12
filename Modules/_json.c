@@ -1376,7 +1376,7 @@ _encoded_const(PyObject *obj)
         if (s_null == NULL) {
             s_null = PyUnicode_InternFromString("null");
         }
-        Py_INCREF(s_null);
+        Py_XINCREF(s_null);
         return s_null;
     }
     else if (obj == Py_True) {
@@ -1384,7 +1384,7 @@ _encoded_const(PyObject *obj)
         if (s_true == NULL) {
             s_true = PyUnicode_InternFromString("true");
         }
-        Py_INCREF(s_true);
+        Py_XINCREF(s_true);
         return s_true;
     }
     else if (obj == Py_False) {
@@ -1392,7 +1392,7 @@ _encoded_const(PyObject *obj)
         if (s_false == NULL) {
             s_false = PyUnicode_InternFromString("false");
         }
-        Py_INCREF(s_false);
+        Py_XINCREF(s_false);
         return s_false;
     }
     else {
