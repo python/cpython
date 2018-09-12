@@ -3,6 +3,7 @@ import unittest
 
 
 class NamedExpressionInvalidTest(unittest.TestCase):
+
     def test_named_expression_invalid_01(self):
         code = """x := 0"""
 
@@ -54,7 +55,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
     def test_named_expression_invalid_09(self):
         code = """(lambda: x := 1)"""
 
-        with self.assertRaisesRegex(SyntaxError, "can't assign to lambda"):
+        with self.assertRaisesRegex(SyntaxError, "can't use named assignment with lambda"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_10(self):
@@ -81,8 +82,15 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
             exec(code, {}, {})
 
+    def test_named_expression_invalid_14(self):
+        code = """((a, b) := (1, 2))"""
+
+        with self.assertRaisesRegex(SyntaxError, "can't use named assignment with tuple"):
+            exec(code, {}, {})
+
 
 class NamedExpressionAssignmentTest(unittest.TestCase):
+
     def test_named_expression_assignment_01(self):
         (a := 10)
         self.assertEqual(a, 10)
@@ -159,6 +167,7 @@ class NamedExpressionAssignmentTest(unittest.TestCase):
 
 
 class NamedExpressionScopeTest(unittest.TestCase):
+
     def test_named_expression_scope_01(self):
         code = 'def foo():\n\n    (a := 5)\nprint(a)\n'
         with self.assertRaisesRegex(NameError, "name 'a' is not defined"):
