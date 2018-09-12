@@ -212,9 +212,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._closed = self._loop.create_future()
 
     def _on_reader_gc(self, wr):
-        # connection_lost() is not called yet
-        assert self._stream_reader_wr is not None
-
         transport = self._transport
         if transport is not None:
             # connection_made was called
