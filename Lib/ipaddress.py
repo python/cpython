@@ -606,12 +606,12 @@ class _BaseAddress(_IPAddressBase):
         """
 
 
-        # string
-        if len(fmt) == 0 or fmt[-1] == 's':
+        # Support string formatting
+        if not fmt or fmt[-1] == 's':
             # let format() handle it
             return format(str(self), fmt)
 
-        # from here on down, support for 'bnXx'
+        # From here on down, support for 'bnXx'
 
         import re
         fmt_re = re.compile('^(#?)(_?)(x|b|n|X){1}$')
@@ -623,14 +623,14 @@ class _BaseAddress(_IPAddressBase):
         grouping = m.group(2)
         fmt_base = m.group(3)
 
-       # set default
+        # Set some defaults
         if fmt_base == 'n':
             if self._version == 4:
-                fmt_base = 'b'  # binary is default for ipv4
+                fmt_base = 'b'  # Binary is default for ipv4
             if self._version == 6:
-                fmt_base = 'x'  # hex is default for ipv6
+                fmt_base = 'x'  # Hex is default for ipv6
 
-        # binary
+        # Handle binary formatting 
         if fmt_base == 'b':
             if self._version == 4:
                 # resulting string is '0b' + 32 bits
@@ -641,7 +641,7 @@ class _BaseAddress(_IPAddressBase):
                 #  plus 31 _ if needed
                 padlen = IPV6LENGTH+2 + (31*len(grouping))
 
-        # hex
+        # Handle hex formatting
         elif fmt_base in 'Xx':
             if self._version == 4:
                 # resulting string is '0x' + 8 hex digits
@@ -657,7 +657,8 @@ class _BaseAddress(_IPAddressBase):
         if fmt_base == 'X':
             retstr = retstr.upper()
 
-        # strip left two characters if necessary
+        # If alternate is not set, strip the two leftmost
+        #  characters ('0b')
         if not alternate:
             retstr = retstr[2:]
 
