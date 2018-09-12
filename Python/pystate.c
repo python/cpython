@@ -138,8 +138,7 @@ PyInterpreterState_New(void)
     interp->id_refcount = -1;
     interp->check_interval = 100;
 
-    // XXX Is this the right thread?
-    interp->ceval.pending.active_thread = PyThread_get_thread_ident();
+    interp->ceval.active_thread = PyThread_get_thread_ident();
     interp->ceval.pending.lock = PyThread_allocate_lock();
     if (interp->ceval.pending.lock == NULL) {
         PyErr_SetString(PyExc_RuntimeError,

@@ -75,6 +75,8 @@ typedef struct _is {
            the fast path in the eval loop. */
         _Py_atomic_int eval_breaker;
         struct _pending_calls pending;
+        // XXX Is "active" the right word?
+        unsigned long active_thread;
     } ceval;
 #endif
 
