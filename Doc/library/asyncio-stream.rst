@@ -7,10 +7,10 @@ Streams
 =======
 
 Streams are high-level async/await-ready primitives to work with
-network connections.  Streams allow send and receive data without
+network connections.  Streams allow sending and receiving data without
 using callbacks or low-level protocols and transports.
 
-Here's an example of a TCP echo client written using asyncio
+Here is an example of a TCP echo client written using asyncio
 streams::
 
     import asyncio
@@ -31,6 +31,9 @@ streams::
     asyncio.run(tcp_echo_client('Hello World!'))
 
 
+See also the `Examples`_ section below.
+
+
 .. rubric:: Stream Functions
 
 The following top-level asyncio functions can be used to create
@@ -43,7 +46,7 @@ and work with streams:
                           server_hostname=None, ssl_handshake_timeout=None)
 
    Establish a network connection and return a pair of
-   ``(reader, writer)``.
+   ``(reader, writer)`` objects.
 
    The returned *reader* and *writer* objects are instances of
    :class:`StreamReader` and :class:`StreamWriter` classes.
@@ -52,7 +55,8 @@ and work with streams:
    automatically when this method is awaited from a coroutine.
 
    *limit* determines the buffer size limit used by the
-   returned :class:`StreamReader` instance.
+   returned :class:`StreamReader` instance.  By default the *limit*
+   is set to 64 KiB.
 
    The rest of the arguments are passed directly to
    :meth:`loop.create_connection`.
@@ -84,7 +88,8 @@ and work with streams:
    automatically when this method is awaited from a coroutine.
 
    *limit* determines the buffer size limit used by the
-   returned :class:`StreamReader` instance.
+   returned :class:`StreamReader` instance.  By default the *limit*
+   is set to 64 KiB.
 
    The rest of the arguments are passed directly to
    :meth:`loop.create_server`.
@@ -92,6 +97,9 @@ and work with streams:
    .. versionadded:: 3.7
 
       The *ssl_handshake_timeout* and *start_serving* parameters.
+
+
+.. rubric:: Unix Sockets
 
 .. coroutinefunction:: open_unix_connection(path=None, \*, loop=None, \
                         limit=None, ssl=None, sock=None, \
@@ -114,6 +122,7 @@ and work with streams:
 
       The *path* parameter can now be a :term:`path-like object`
 
+
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
                           \*, loop=None, limit=None, sock=None, \
                           backlog=100, ssl=None, ssl_handshake_timeout=None, \
@@ -121,7 +130,7 @@ and work with streams:
 
    Start a UNIX socket server.
 
-   Similar to :func:`start_server` but operates on UNIX sockets.
+   Similar to :func:`start_server` but works with UNIX sockets.
 
    See also the documentation of :meth:`loop.create_unix_server`.
 
@@ -136,65 +145,47 @@ and work with streams:
       The *path* parameter can now be a :term:`path-like object`.
 
 
-.. rubric:: Contents
-
-* `StreamReader`_ and `StreamWriter`_
-* `StreamReaderProtocol`_
-* `Examples`_
+---------
 
 
 StreamReader
 ============
 
-.. class:: StreamReader(limit=None, loop=None)
+.. class:: StreamReader
 
-   This class is :ref:`not thread safe <asyncio-multithreading>`.
+   Represents a reader object that provides APIs to read data
+   from the IO stream.
 
-   .. method:: exception()
-
-      Get the exception.
-
-   .. method:: feed_eof()
-
-      Acknowledge the EOF.
-
-   .. method:: feed_data(data)
-
-      Feed *data* bytes in the internal buffer.  Any operations waiting
-      for the data will be resumed.
-
-   .. method:: set_exception(exc)
-
-      Set the exception.
-
-   .. method:: set_transport(transport)
-
-      Set the transport.
+   It is not recommended to instantiate *StreamReader* objects
+   directly; use :func:`open_connection` and :func:`start_server`
+   instead.
 
    .. coroutinemethod:: read(n=-1)
 
       Read up to *n* bytes.  If *n* is not provided, or set to ``-1``,
       read until EOF and return all read bytes.
 
-      If the EOF was received and the internal buffer is empty,
+      If an EOF was received and the internal buffer is empty,
       return an empty ``bytes`` object.
 
    .. coroutinemethod:: readline()
 
-      Read one line, where "line" is a sequence of bytes ending with ``\n``.
+      Read one line, where "line" is a sequence of bytes
+      ending with ``\n``.
 
-      If EOF is received, and ``\n`` was not found, the method will
-      return the partial read bytes.
+      If an EOF is received and ``\n`` was not found, the method
+      returns partially read data.
 
-      If the EOF was received and the internal buffer is empty,
+      If an EOF is received and the internal buffer is empty,
       return an empty ``bytes`` object.
 
    .. coroutinemethod:: readexactly(n)
 
-      Read exactly *n* bytes. Raise an :exc:`IncompleteReadError` if the end of
-      the stream is reached before *n* can be read, the
-      :attr:`IncompleteReadError.partial` attribute of the exception contains
-      the partial read bytes.
+      Read exactly *n* bytes.
+
+      Raise an :exc:`IncompleteReadError` if an EOF reached before *n*
+      can be read.  Use the :attr:`IncompleteReadError.partial`
+      attribute to get the partially read data.
 
    .. coroutinemethod:: readuntil(separator=b'\\n')
 
@@ -229,105 +220,76 @@ StreamReader
 StreamWriter
 ============
 
-.. class:: StreamWriter(transport, protocol, reader, loop)
+.. class:: StreamWriter
 
-   Wraps a Transport.
+   Represents a writer object that provides APIs to write data
+   to the IO stream.
 
-   This exposes :meth:`write`, :meth:`writelines`, :meth:`can_write_eof()`,
-   :meth:`write_eof`, :meth:`get_extra_info` and :meth:`close`.  It adds
-   :meth:`drain` which returns an optional :class:`Future` on which you can
-   wait for flow control.  It also adds a transport attribute which references
-   the :class:`Transport` directly.
+   It is not recommended to instantiate *StreamWriter* objects
+   directly; use :func:`open_connection` and :func:`start_server`
+   instead.
 
-   This class is :ref:`not thread safe <asyncio-multithreading>`.
+   .. method:: write(data)
 
-   .. attribute:: transport
+      Write *data* to the stream.
 
-      Transport.
+   .. method:: writelines(data)
 
-   .. method:: can_write_eof()
+      Write a list (or any iterable) of bytes to the stream.
 
-      Return :const:`True` if the transport supports :meth:`write_eof`,
-      :const:`False` if not. See :meth:`WriteTransport.can_write_eof`.
+   .. coroutinemethod:: drain()
+
+      Wait until it is appropriate to resume writing to the stream.
+      E.g.::
+
+          writer.write(data)
+          await writer.drain()
+
+      This is a flow-control method that interacts with the underlying
+      IO write buffer.  When the size of the buffer reaches
+      the high-water limit, *drain()* blocks until the size of the
+      buffer is drained down to the low-water limit and writing can
+      be resumed.  When there is nothing to wait for, the :meth:`drain`
+      returns immediately.
 
    .. method:: close()
 
-      Close the transport: see :meth:`BaseTransport.close`.
+      Close the stream.
 
    .. method:: is_closing()
 
-      Return ``True`` if the writer is closing or is closed.
+      Return ``True`` if the stream is closed or in the process of
+      being closed.
 
       .. versionadded:: 3.7
 
    .. coroutinemethod:: wait_closed()
 
-      Wait until the writer is closed.
+      Wait until the stream is closed.
 
-      Should be called after :meth:`close`  to wait until the underlying
-      connection (and the associated transport/protocol pair) is closed.
+      Should be called after :meth:`close` to wait until the underlying
+      connection is closed.
 
       .. versionadded:: 3.7
 
-   .. coroutinemethod:: drain()
+   .. method:: can_write_eof()
 
-      Let the write buffer of the underlying transport a chance to be flushed.
-
-      The intended use is to write::
-
-          w.write(data)
-          await w.drain()
-
-      When the size of the transport buffer reaches the high-water limit (the
-      protocol is paused), block until the size of the buffer is drained down
-      to the low-water limit and the protocol is resumed. When there is nothing
-      to wait for, the yield-from continues immediately.
-
-      Yielding from :meth:`drain` gives the opportunity for the loop to
-      schedule the write operation and flush the buffer. It should especially
-      be used when a possibly large amount of data is written to the transport,
-      and the coroutine does not yield-from between calls to :meth:`write`.
-
-      This method is a :ref:`coroutine <coroutine>`.
-
-   .. method:: get_extra_info(name, default=None)
-
-      Return optional transport information: see
-      :meth:`BaseTransport.get_extra_info`.
-
-   .. method:: write(data)
-
-      Write some *data* bytes to the transport: see
-      :meth:`WriteTransport.write`.
-
-   .. method:: writelines(data)
-
-      Write a list (or any iterable) of data bytes to the transport:
-      see :meth:`WriteTransport.writelines`.
+      Return *True* if the underlying transport supports
+      the :meth:`write_eof` method, *False* otherwise.
 
    .. method:: write_eof()
 
-      Close the write end of the transport after flushing buffered data:
-      see :meth:`WriteTransport.write_eof`.
+      Close the write end of the stream after the buffered write
+      data is flushed.
 
+   .. attribute:: transport
 
-StreamReaderProtocol
-====================
+      Return the underlying asyncio transport.
 
-.. class:: StreamReaderProtocol(stream_reader, client_connected_cb=None, \
-                loop=None)
+   .. method:: get_extra_info(name, default=None)
 
-    Trivial helper class to adapt between :class:`Protocol` and
-    :class:`StreamReader`. Subclass of :class:`Protocol`.
-
-    *stream_reader* is a :class:`StreamReader` instance, *client_connected_cb*
-    is an optional function called with (stream_reader, stream_writer) when a
-    connection is made, *loop* is the event loop instance to use.
-
-    (This is a helper class instead of making :class:`StreamReader` itself a
-    :class:`Protocol` subclass, because the :class:`StreamReader` has other
-    potential uses, and to prevent the user of the :class:`StreamReader` from
-    accidentally calling inappropriate methods of the protocol.)
+      Access optional transport information; see
+      :meth:`BaseTransport.get_extra_info` for details.
 
 
 Examples
