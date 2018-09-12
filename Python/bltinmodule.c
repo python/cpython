@@ -2272,8 +2272,8 @@ With an argument, equivalent to object.__dict__.");
 sum as builtin_sum
 
     iterable: object
-    start: object(c_default="NULL") = 0
     /
+    start: object(c_default="NULL") = 0
 
 Return the sum of a 'start' value (default: 0) plus an iterable of numbers
 
@@ -2284,7 +2284,7 @@ reject non-numeric types.
 
 static PyObject *
 builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
-/*[clinic end generated code: output=df758cec7d1d302f input=3b5b7a9d7611c73a]*/
+/*[clinic end generated code: output=df758cec7d1d302f input=162b50765250d222]*/
 {
     PyObject *result = start;
     PyObject *temp, *item, *iter;

@@ -1297,6 +1297,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(sum(iter(Squares(10))), 285)
         self.assertEqual(sum([[1], [2], [3]], []), [1, 2, 3])
 
+        self.assertEqual(sum(range(10), 1000), 1045)
+        self.assertEqual(sum(range(10), start=1000), 1045)
+
         self.assertRaises(TypeError, sum)
         self.assertRaises(TypeError, sum, 42)
         self.assertRaises(TypeError, sum, ['a', 'b', 'c'])
