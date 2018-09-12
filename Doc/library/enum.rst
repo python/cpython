@@ -736,6 +736,37 @@ Some rules:
    type's :meth:`__format__`.  If the :class:`Enum` class's :func:`str` or
    :func:`repr` is desired, use the `!s` or `!r` format codes.
 
+When to use :meth:`__new__` vs. :meth:`__init__`
+------------------------------------------------
+
+:meth:`__new__` must be used whenever you want to customize the actual value of
+the :class:`Enum` member.  Any other modifications may go in either
+:meth:`__new__` or :meth:`__init__`, with :meth:`__init__` being preferred.
+
+For example, if you want to pass several items to the constructor, but only
+want one of them to be the value::
+
+    >>> class Coordinate(bytes, Enum):
+    ...     """
+    ...     Coordinate with binary codes that can be indexed by the int code.
+    ...     """
+    ...     def __new__(cls, value, label, unit):
+    ...         obj = bytes.__new__(cls, [value])
+    ...         obj._value_ = value
+    ...         obj.label = label
+    ...         obj.unit = unit
+    ...         return obj
+    ...     PX = (0, 'P.X', 'km')
+    ...     PY = (1, 'P.Y', 'km')
+    ...     VX = (2, 'V.X', 'km/s')
+    ...     VY = (3, 'V.Y', 'km/s')
+    ...
+
+    >>> print(Coordinate['PY'])
+    Coordinate.PY
+
+    >>> print(Coordinate(3))
+    Coordinate.VY
 
 Interesting examples
 --------------------
