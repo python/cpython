@@ -396,7 +396,6 @@ struct lead_rlock {
     unsigned long owner;
     unsigned long count;
     unsigned long sharenum;
-    int locked;
     int needed;
 };
 
@@ -425,7 +424,7 @@ lead_rlock_smart_acquire(struct lead_rlock *rlock)
     PyLockStatus r = PY_LOCK_ACQUIRED;
 
     tid = PyThread_get_thread_ident();
-    if (rlock->owner == tid && rlock->locked)
+    if (rlock->owner == tid)
     {
         unsigned long count = rlock->count + 1;
         if (count <= rlock->count) {
@@ -437,12 +436,11 @@ lead_rlock_smart_acquire(struct lead_rlock *rlock)
         return PY_LOCK_ACQUIRED;
     }
 
-    if(rlock->locked && rlock->owner != tid) {
+    if(rlock->owner != 0 && rlock->owner != tid) {
         if(rlock->count == 0) {
             /* It's safe to release. */
             PyThread_release_lock(rlock->lock);
             rlock->owner = 0;
-            rlock->locked = 0;
         }else {
             rlock->needed = 1;
         }
@@ -453,11 +451,11 @@ lead_rlock_smart_acquire(struct lead_rlock *rlock)
         r = PyThread_acquire_lock_timed(rlock->lock, -1, WAIT_LOCK);
         Py_END_ALLOW_THREADS
     }
+
     if (r == PY_LOCK_ACQUIRED) {
         assert(rlock->count == 0);
         rlock->owner = tid;
         rlock->count = 1;
-        rlock->locked = 1;
         return r;
     }
     return PY_LOCK_FAILURE;
@@ -466,7 +464,7 @@ lead_rlock_smart_acquire(struct lead_rlock *rlock)
 static void
 lead_rlock_smart_release(struct lead_rlock *rlock)
 {
-    if (rlock->count == 0 || rlock->locked == 0) {
+    if (rlock->count == 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
         return;
@@ -475,7 +473,6 @@ lead_rlock_smart_release(struct lead_rlock *rlock)
         if(rlock->needed) {
             PyThread_release_lock(rlock->lock);
             rlock->owner = 0;
-            rlock->locked = 0;
         }
     }
 }
@@ -780,7 +777,6 @@ tee_fromiterable(PyObject *iterable)
     to->rlock->owner = 0;
     to->rlock->count = 0;
     to->rlock->sharenum = 1;
-    to->rlock->locked = 0;
     to->rlock->needed = 0;
     to->weakreflist = NULL;
     PyObject_GC_Track(to);
