@@ -229,7 +229,7 @@ PyEval_ReInitThreads(void)
     current_tstate->interp->ceval.pending.lock = PyThread_allocate_lock();
     take_gil(current_tstate);
     // XXX Set for every interpreter.
-    current_tstate->interp->ceval.pending.main_thread = PyThread_get_thread_ident();
+    current_tstate->interp->ceval.pending.active_thread = PyThread_get_thread_ident();
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(current_tstate);
@@ -391,8 +391,8 @@ _Py_MakePendingCalls(PyInterpreterState *interp)
     }
 
     /* only service pending calls on main thread */
-    if (interp->ceval.pending.main_thread &&
-        PyThread_get_thread_ident() != interp->ceval.pending.main_thread)
+    if (interp->ceval.pending.active_thread &&
+        PyThread_get_thread_ident() != interp->ceval.pending.active_thread)
     {
         return 0;
     }

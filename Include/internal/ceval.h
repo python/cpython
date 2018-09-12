@@ -13,7 +13,7 @@ PyAPI_FUNC(int) _Py_AddPendingCall(struct _is*, int (*)(void *), void *);
 PyAPI_FUNC(int) _Py_MakePendingCalls(struct _is*);
 
 struct _pending_calls {
-    unsigned long main_thread;
+    unsigned long active_thread;
     PyThread_type_lock lock;
     /* Request for running pending calls. */
     _Py_atomic_int calls_to_do;
