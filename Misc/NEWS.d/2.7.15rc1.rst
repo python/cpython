@@ -854,16 +854,6 @@ Prohibited the '=' character in environment variable names in
 
 ..
 
-.. bpo: 28994
-.. date: 056
-.. nonce: 9vzun1
-.. section: Library
-
-The traceback no longer displayed for SystemExit raised in a callback
-registered by atexit.
-
-..
-
 .. bpo: 30418
 .. date: 055
 .. nonce: EwISQm
