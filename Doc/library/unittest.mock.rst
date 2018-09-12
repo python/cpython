@@ -2095,6 +2095,10 @@ mock_open
    .. versionchanged:: 3.5
       *read_data* is now reset on each call to the *mock*.
 
+   .. versionchanged:: 3.8
+      Added :meth:`__iter__` to implementation so that iteration (such as in for
+      loops) correctly consumes *read_data*.
+
 Using :func:`open` as a context manager is a great way to ensure your file handles
 are closed properly and is becoming common::
 
