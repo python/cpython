@@ -942,6 +942,27 @@ os.close(fd)
                          'without stream.close() call',
                          messages[0]['message'])
 
+    def test_del_stream_before_connection_made(self):
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        with test_utils.run_test_server() as httpd:
+            rd = asyncio.StreamReader(loop=self.loop)
+            pr = asyncio.StreamReaderProtocol(rd, loop=self.loop)
+            del rd
+            gc.collect()
+            tr, _ = self.loop.run_until_complete(
+                self.loop.create_connection(
+                    lambda: pr, *httpd.address))
+
+            sock = tr.get_extra_info('socket')
+            self.assertEqual(sock.fileno(), -1)
+
+        self.assertEqual(1, len(messages))
+        self.assertEqual('Close transport. a stream was destroyed '
+                         'before connection establishment',
+                         messages[0]['message'])
+
 
 if __name__ == '__main__':
     unittest.main()
