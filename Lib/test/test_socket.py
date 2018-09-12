@@ -1158,11 +1158,11 @@ class GeneralModuleTests(unittest.TestCase):
         assertInvalid('1::abc::')
         assertInvalid('1::abc::def')
         assertInvalid('1:2:3:4:5:6')
+        assertInvalid('1:2:3:4:5:6:')
         assertInvalid('1:2:3:4:5:6:7:8:0')
         # bpo-29972: inet_pton() doesn't fail on AIX
-        if AIX:
-            assertInvalid('1:2:3:4:5:6:')
-            assertInvalid('1:2:3:4:5:6:7:8::')
+        if not AIX:
+            assertInvalid('1:2:3:4:5:6:7:8:')
 
         self.assertEqual(b'\x00' * 12 + b'\xfe\x2a\x17\x40',
             f('::254.42.23.64')
@@ -1653,8 +1653,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(nameinfo, ('ff02::1de:c0:face:8d%' + test_interface, '1234'))
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
-    @unittest.skipUnless(
-        sys.platform == 'win32' or not AIX,
+    @unittest.skipUnless( sys.platform == 'win32',
         'Numeric scope id does not work or undocumented')
     def test_getnameinfo_ipv6_scopeid_numeric(self):
         # Also works on Linux (undocumented), but does not work on Mac OS X
