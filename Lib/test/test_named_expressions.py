@@ -90,6 +90,19 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError, "can't use named assignment with tuple"):
             exec(code, {}, {})
 
+    @unittest.skip("Not implemented -- custom check for named expr")
+    def test_named_expression_invalid_15(self):
+        code = """foo(a=1, b := 2)"""
+
+        with self.assertRaisesRegex(SyntaxError, "positional argument follows keyword argument"):
+            exec(code, {}, {})
+
+    def test_named_expression_invalid_16(self):
+        code = """foo(a=1, (b := 2))"""
+
+        with self.assertRaisesRegex(SyntaxError, "positional argument follows keyword argument"):
+            exec(code, {}, {})
+
 
 class NamedExpressionAssignmentTest(unittest.TestCase):
 
