@@ -43,7 +43,7 @@ an event loop:
    current one.
 
    Because this function has rather complex behavior (especially
-   when custom event loop policies are in use), using the 
+   when custom event loop policies are in use), using the
    :func:`get_running_loop` function is preferred to :func:`get_event_loop`
    in coroutines and callbacks.
 
@@ -536,7 +536,7 @@ Creating network servers
    Arguments:
 
    * The *host* parameter can be set to several types which determine behavior:
-       - If *host* is a string, the TCP server is bound to *host* and *port*. 
+       - If *host* is a string, the TCP server is bound to *host* and *port*.
        - if *host* is a sequence of strings, the TCP server is bound to all
          hosts of the sequence.
        - If *host* is an empty string or ``None``, all interfaces are
@@ -789,7 +789,7 @@ convenient.
    Send data to the socket. Asynchronous version of
    :meth:`socket.sendall() <socket.socket.sendall>`.
 
-   This method continues to send data from *data* to the socket until either 
+   This method continues to send data from *data* to the socket until either
    all data in *data* has been sent or an error occurs.  ``None`` is returned
    on success.  On error, an exception is raised. Additionally, there is no way
    to determine how much data, if any, was successfully processed by the
