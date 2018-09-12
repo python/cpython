@@ -3,6 +3,7 @@ __all__ = (
     'open_connection', 'start_server')
 
 import socket
+import sys
 import weakref
 
 if hasattr(socket, 'AF_UNIX'):
@@ -11,6 +12,7 @@ if hasattr(socket, 'AF_UNIX'):
 from . import coroutines
 from . import events
 from . import exceptions
+from . import format_helpers
 from . import protocols
 from .log import logger
 from .tasks import sleep
@@ -187,10 +189,14 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     call inappropriate methods of the protocol.)
     """
 
+    _source_traceback = None
+
     def __init__(self, stream_reader, client_connected_cb=None, loop=None):
         super().__init__(loop=loop)
         if stream_reader is not None:
-            self._stream_reader_wr = weakref.ref(stream_reader)
+            self._stream_reader_wr = weakref.ref(stream_reader,
+                                                 self._on_reader_gc)
+            self._source_traceback = stream_reader._source_traceback
         else:
             self._stream_reader_wr = None
         if client_connected_cb is not None:
@@ -198,27 +204,51 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             # we need to keep a strong reference to the reader
             # until connection is made
             self._strong_reader = stream_reader
+        self._reject_transport = False
         self._stream_writer = None
         self._transport = None
         self._client_connected_cb = client_connected_cb
         self._over_ssl = False
         self._closed = self._loop.create_future()
 
+    def _on_reader_gc(self, wr):
+        print("on_reader_gc")
+        # connection_lost() is not called yet
+        assert self._stream_reader_wr is not None
+
+        transport = self._transport
+        if transport is not None:
+            # connection_made was called
+            print("schedule abort")
+            context = {
+                'message': "Stream was garbage collected"
+            }
+            if self._source_traceback:
+                context['source_traceback'] = self._source_traceback
+            self._loop.call_exception_handler(context)
+            transport.abort()
+        else:
+            self._reject_transport = True
+        self._stream_reader_wr = None
+
     @property
     def _stream_reader(self):
         if self._stream_reader_wr is None:
             return None
-        reader = self._stream_reader_wr()
-        if reader is None:
-            transport = self._transport
-            if transport is not None:
-                logger.warning(
-                    "Stream is garbage collected, closing the socket")
-                transport.abort()
-            self._stream_reader_wr = None
-        return reader
+        return self._stream_reader_wr()
 
     def connection_made(self, transport):
+        print("connection made")
+        if self._reject_transport:
+            context = {
+                'message': "Close transport, a stream was garbage collected"
+            }
+            if self._source_traceback:
+                context['source_traceback'] = self._source_traceback
+            self._loop.call_exception_handler(context)
+            transport.abort()
+            return
+        self._transport = transport
         reader = self._stream_reader
         if reader is not None:
             reader.set_transport(transport)
@@ -234,6 +264,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             self._strong_reader = None
 
     def connection_lost(self, exc):
+        print("connection lost")
         reader = self._stream_reader
         if reader is not None:
             if exc is None:
@@ -248,6 +279,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         super().connection_lost(exc)
         self._stream_reader_wr = None
         self._stream_writer = None
+        self._transport = None
 
     def data_received(self, data):
         reader = self._stream_reader
@@ -350,6 +382,8 @@ class StreamWriter:
 
 class StreamReader:
 
+    _source_traceback = None
+
     def __init__(self, limit=_DEFAULT_LIMIT, loop=None):
         # The line length limit is  a security feature;
         # it also doubles as half the buffer limit.
@@ -368,6 +402,9 @@ class StreamReader:
         self._exception = None
         self._transport = None
         self._paused = False
+        if self._loop.get_debug():
+            self._source_traceback = format_helpers.extract_stack(
+                sys._getframe(1))
 
     def __repr__(self):
         info = ['StreamReader']
