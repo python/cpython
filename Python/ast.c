@@ -2852,7 +2852,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func, bool allowgen)
                     ast_error(c, chch,
                             "lambda cannot contain assignment");
                     return NULL;
-                } else if (TYPE(expr_node) != NAME) {
+                }
+                else if (TYPE(expr_node) != NAME) {
                     ast_error(c, chch,
                               "keyword can't be an expression");
                     return NULL;
