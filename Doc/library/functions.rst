@@ -1488,6 +1488,9 @@ are always available.  They are listed here in alphabetical order.
    see :func:`math.fsum`\.  To concatenate a series of iterables, consider using
    :func:`itertools.chain`.
 
+   .. versionchanged:: 3.8
+      The *start* parameter can be specified as a keyword argument.
+
 .. function:: super([type[, object-or-type]])
 
    Return a proxy object that delegates method calls to a parent or sibling
