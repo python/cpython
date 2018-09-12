@@ -176,7 +176,6 @@ def isgeneratorfunction(object):
     return bool((isfunction(object) or ismethod(object)) and
                 object.__code__.co_flags & CO_GENERATOR)
 
-
 def iscoroutinefunction(object):
     """Return true if the object is a coroutine function.
 
@@ -184,7 +183,6 @@ def iscoroutinefunction(object):
     """
     return bool((isfunction(object) or ismethod(object)) and
                 object.__code__.co_flags & CO_COROUTINE)
-
 
 def isasyncgenfunction(object):
     """Return true if the object is an asynchronous generator function.
