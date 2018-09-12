@@ -37,8 +37,8 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         return '<{}>'.format(' '.join(info))
 
     def _untrack_reader(self):
-        # a dummy placeholder subprocess protocol doesn't need it but
-        # the method is required for regular stream implementation.
+        # StreamWriter.close() expects the protocol
+        # to have this method defined.
         pass
 
     def connection_made(self, transport):
