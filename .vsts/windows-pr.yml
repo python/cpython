@@ -46,8 +46,7 @@ steps:
   displayName: Detect doc-only changes
   condition: and(succeeded(), variables['System.PullRequest.TargetBranch'])
 
-- powershell: |
-   Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')); choco install opencppcoverage
+- script: choco install opencppcoverage
   displayName: Install OpenCppCoverage
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
