@@ -106,7 +106,7 @@ New Modules
 
 
 Improved Modules
-===============r=
+================
 
 Optimizations
 =============
