@@ -1,6 +1,7 @@
 import enum
 import inspect
 import pydoc
+import sys
 import unittest
 import threading
 from collections import OrderedDict
@@ -2661,6 +2662,24 @@ class TestIntEnumConvert(unittest.TestCase):
         self.assertEqual([name for name in dir(test_type)
                           if name[0:2] not in ('CO', '__')],
                          [], msg='Names other than CONVERT_TEST_* found.')
+
+    @unittest.skipUnless(sys.version_info[:2] == (3, 8),
+                         '_convert was deprecated in 3.8')
+    def test_convert_warn(self):
+        with self.assertWarns(DeprecationWarning):
+            enum.IntEnum._convert(
+                'UnittestConvert',
+                ('test.test_enum', '__main__')[__name__=='__main__'],
+                filter=lambda x: x.startswith('CONVERT_TEST_'))
+
+    @unittest.skipUnless(sys.version_info >= (3, 9),
+                         '_convert was removed in 3.9')
+    def test_convert_raise(self):
+        with self.assertRaises(AttributeError):
+            enum.IntEnum._convert(
+                'UnittestConvert',
+                ('test.test_enum', '__main__')[__name__=='__main__'],
+                filter=lambda x: x.startswith('CONVERT_TEST_'))
 
 
 if __name__ == '__main__':
