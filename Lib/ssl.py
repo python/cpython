@@ -119,32 +119,32 @@ from _ssl import (
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
 
-_IntEnum._convert(
+_IntEnum._convert_(
     '_SSLMethod', __name__,
     lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
     source=_ssl)
 
-_IntFlag._convert(
+_IntFlag._convert_(
     'Options', __name__,
     lambda name: name.startswith('OP_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'AlertDescription', __name__,
     lambda name: name.startswith('ALERT_DESCRIPTION_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'SSLErrorNumber', __name__,
     lambda name: name.startswith('SSL_ERROR_'),
     source=_ssl)
 
-_IntFlag._convert(
+_IntFlag._convert_(
     'VerifyFlags', __name__,
     lambda name: name.startswith('VERIFY_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'VerifyMode', __name__,
     lambda name: name.startswith('CERT_'),
     source=_ssl)
