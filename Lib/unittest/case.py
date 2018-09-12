@@ -86,6 +86,7 @@ def _id(obj):
 
 
 _module_cleanups = []
+
 def addModuleCleanup(function, *args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
@@ -94,9 +95,15 @@ def addModuleCleanup(function, *args, **kwargs):
 def doModuleCleanups():
     """Execute all module cleanup functions. Normally called for you after
     tearDownModule."""
+    exceptions = []
     while _module_cleanups:
         function, args, kwargs = _module_cleanups.pop()
-        function(*args, **kwargs)
+        try:
+            function(*args, **kwargs)
+        except Exception as exc:
+            exceptions.append(exc)
+    if exceptions:
+        raise exceptions[0]
 
 def skip(reason):
     """
@@ -403,7 +410,6 @@ class TestCase(object):
     # Attribute used by TestSuite for classSetUp
 
     _classSetupFailed = False
-
     _class_cleanups = []
 
     def __init__(self, methodName='runTest'):
@@ -463,7 +469,7 @@ class TestCase(object):
 
     @classmethod
     def addClassCleanup(cls, function, *args, **kwargs):
-        """Same as addCleanup, excet the cleanup items are called even if
+        """Same as addCleanup, except the cleanup items are called even if
         setUpClass fails (unlike tearDownClass)."""
         cls._class_cleanups.append((function, args, kwargs))
 
@@ -673,16 +679,22 @@ class TestCase(object):
                 function(*args, **kwargs)
 
         # return this for backwards compatibility
-        # even though we no longer us it internally
+        # even though we no longer use it internally
         return outcome.success
 
     @classmethod
-    def doClassCleanups(cls, test):
+    def doClassCleanups(cls):
         """Execute all class cleanup functions. Normally called for you after
         tearDownClass."""
+        exceptions = []
         while cls._class_cleanups:
             function, args, kwargs = cls._class_cleanups.pop()
-            function(*args, **kwargs)
+            try:
+                function(*args, **kwargs)
+            except Exception as exc:
+                exceptions.append(exc)
+        if exceptions:
+            raise exceptions[0]
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)
