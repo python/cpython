@@ -50,7 +50,6 @@ FILTER_DIR = True
 # Without this, the __class__ properties wouldn't be set correctly
 _safe_super = super
 
-
 def _is_coroutine_obj(obj):
     if getattr(obj, '__code__', None):
         return asyncio.iscoroutinefunction(obj) or asyncio.iscoroutine(obj)
@@ -2612,12 +2611,6 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     if isinstance(spec, FunctionTypes):
         # should only happen at the top level because we don't
         # recurse for functions
-
-        # LISA check if the orginal object is a coroutines
-        # if it is set the _is_coroutine to True
-        # somewhere around here
-        # We need to ensure that the child function is a coroutine function,
-        # without acting like a function
         mock = _set_signature(mock, spec)
         if is_coroutine_func:
             # Can't wrap the mock with asyncio.coroutine because it doesn't
