@@ -245,7 +245,7 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
 
     EVP_MD_CTX_free(temp_ctx);
 
-    return _Py_strhex((const char *)digest, digest_size);
+    return _Py_strhex((const char *)digest, (Py_ssize_t)digest_size);
 }
 
 PyDoc_STRVAR(EVP_update__doc__,
