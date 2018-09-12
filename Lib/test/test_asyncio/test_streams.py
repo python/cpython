@@ -965,6 +965,9 @@ os.close(fd)
                          messages[0]['message'])
 
     def _basetest_connect(self, stream):
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
         stream.write(b'GET / HTTP/1.0\r\n\r\n')
         f = stream.readline()
         data = self.loop.run_until_complete(f)
@@ -974,6 +977,8 @@ os.close(fd)
         self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
         stream.close()
         self.loop.run_until_complete(stream.wait_closed())
+
+        self.assertEqual([], messages)
 
     def test_connect(self):
         with test_utils.run_test_server() as httpd:
