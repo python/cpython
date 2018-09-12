@@ -429,6 +429,7 @@ class Regrtest:
         print("==", platform.python_implementation(), *sys.version.split())
         print("==", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
+        print("==", sys.thread_info)
         print("== cwd:", os.getcwd())
         cpu_count = os.cpu_count()
         if cpu_count:
