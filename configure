@@ -11289,10 +11289,16 @@ done
 # links. Some libc implementations have a stub lchmod implementation that always
 # returns an error.
 if test "$MACHDEP" != linux; then
+  for ac_func in lchmod
+do :
   ac_fn_c_check_func "$LINENO" "lchmod" "ac_cv_func_lchmod"
 if test "x$ac_cv_func_lchmod" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LCHMOD 1
+_ACEOF
 
 fi
+done
 
 fi
 

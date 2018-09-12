@@ -3458,7 +3458,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
 # links. Some libc implementations have a stub lchmod implementation that always
 # returns an error.
 if test "$MACHDEP" != linux; then
-  AC_CHECK_FUNC(lchmod)
+  AC_CHECK_FUNCS(lchmod)
 fi
 
 AC_CHECK_DECL(dirfd,
