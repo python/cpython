@@ -2,6 +2,8 @@
 
 #include "Python.h"
 
+#include "pystrhex.h"
+
 static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
                                  int return_bytes)
 {
@@ -48,14 +50,14 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     return retval;
 }
 
-PyAPI_FUNC(PyObject *) _Py_strhex(const char* argbuf, const Py_ssize_t arglen)
+PyObject * _Py_strhex(const char* argbuf, const Py_ssize_t arglen)
 {
     return _Py_strhex_impl(argbuf, arglen, 0);
 }
 
 /* Same as above but returns a bytes() instead of str() to avoid the
  * need to decode the str() when bytes are needed. */
-PyAPI_FUNC(PyObject *) _Py_strhex_bytes(const char* argbuf, const Py_ssize_t arglen)
+PyObject * _Py_strhex_bytes(const char* argbuf, const Py_ssize_t arglen)
 {
     return _Py_strhex_impl(argbuf, arglen, 1);
 }

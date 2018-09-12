@@ -2180,7 +2180,7 @@ _PyTrash_thread_destroy_chain(void)
 /* For Py_LIMITED_API, we need an out-of-line version of _Py_Dealloc.
    Define this here, so we can undefine the macro. */
 #undef _Py_Dealloc
-PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
+void _Py_Dealloc(PyObject *);
 void
 _Py_Dealloc(PyObject *op)
 {
