@@ -406,7 +406,6 @@ Subprocess Transports
 .. method:: SubprocessTransport.terminate()
 
    Ask the subprocess to stop, as in :meth:`subprocess.Popen.terminate`.
-   This method is an alias for the :meth:`close` method.
 
    On POSIX systems, this method sends SIGTERM to the subprocess.
    On Windows, the Windows API function TerminateProcess() is called to
@@ -414,7 +413,7 @@ Subprocess Transports
 
 .. method:: SubprocessTransport.close()
 
-   Ask the subprocess to stop by calling the :meth:`terminate` method
+   Kill the subprocess by calling the :meth:`kill` method
    if the subprocess hasn't returned yet, and close transports of all
    pipes (*stdin*, *stdout* and *stderr*).
 
