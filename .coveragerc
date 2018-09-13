@@ -1,0 +1,5 @@
+[run]
+branch = true
+cover_pylib = true
+parallel = true
+concurrency = thread,multiprocessing
