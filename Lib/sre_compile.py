@@ -213,13 +213,6 @@ def _compile(code, pattern, flags):
             emit(FAILURE) # end of branch
             for tail in tail:
                 code[tail] = _len(code) - tail
-        elif op is CATEGORY:
-            emit(op)
-            if flags & SRE_FLAG_LOCALE:
-                av = CH_LOCALE[av]
-            elif flags & SRE_FLAG_UNICODE:
-                av = CH_UNICODE[av]
-            emit(av)
         elif op is GROUPREF:
             if not flags & SRE_FLAG_IGNORECASE:
                 emit(op)
