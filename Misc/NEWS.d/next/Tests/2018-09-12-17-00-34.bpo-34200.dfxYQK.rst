@@ -1,0 +1,3 @@
+Fixed non-deterministic flakiness of test_pkg by not using the scary
+test.support.module_cleanup() logic to save and restore sys.modules contents
+between test cases.
