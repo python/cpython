@@ -973,7 +973,7 @@ symtable_lookup(struct symtable *st, PyObject *name)
 }
 
 static int
-symtable_add_def(struct symtable *st, PyObject *name, int flag)
+symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _symtable_entry *ste)
 {
     PyObject *o;
     PyObject *dict;
@@ -983,15 +983,15 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
 
     if (!mangled)
         return 0;
-    dict = st->st_cur->ste_symbols;
+    dict = ste->ste_symbols;
     if ((o = PyDict_GetItem(dict, mangled))) {
         val = PyLong_AS_LONG(o);
         if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
             /* Is it better to use 'mangled' or 'name' here? */
             PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT, name);
             PyErr_SyntaxLocationObject(st->st_filename,
-                                       st->st_cur->ste_lineno,
-                                       st->st_cur->ste_col_offset + 1);
+                                       ste->ste_lineno,
+                                       ste->ste_col_offset + 1);
             goto error;
         }
         val |= flag;
@@ -1007,7 +1007,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
     Py_DECREF(o);
 
     if (flag & DEF_PARAM) {
-        if (PyList_Append(st->st_cur->ste_varnames, mangled) < 0)
+        if (PyList_Append(ste->ste_varnames, mangled) < 0)
             goto error;
     } else      if (flag & DEF_GLOBAL) {
         /* XXX need to update DEF_GLOBAL for other flags too;
@@ -1031,6 +1031,11 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
 error:
     Py_DECREF(mangled);
     return 0;
+}
+
+static int
+symtable_add_def(struct symtable *st, PyObject *name, int flag) {
+    return symtable_add_def_helper(st, name, flag, st->st_cur);
 }
 
 /* VISIT, VISIT_SEQ and VIST_SEQ_TAIL take an ASDL type as their second argument.
