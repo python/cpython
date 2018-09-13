@@ -5282,11 +5282,13 @@ static PyObject *
 int_as_integer_ratio_impl(PyObject *self)
 /*[clinic end generated code: output=e60803ae1cc8621a input=c1aea0aa6fb85c28]*/
 {
-  if (self == Py_True)
-    return PyTuple_Pack(2, _PyLong_One, _PyLong_One);
-  if (self == Py_False)
-    return PyTuple_Pack(2, _PyLong_Zero, _PyLong_One);
-  return PyTuple_Pack(2, self, _PyLong_One);
+  if PyLong_CheckExact(self)
+    return PyTuple_Pack(2, self, _PyLong_One);
+  else {
+      PyObject *temp = PyNumber_Positive(self);
+      Py_DECREF(temp);
+      return PyTuple_Pack(2, temp, _PyLong_One);
+    }
 }
 
 /*[clinic input]
