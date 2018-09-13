@@ -1088,7 +1088,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag) {
 }
 
 static int
-symtable_record_directive(struct symtable *st, identifier name, stmt_ty s)
+symtable_record_directive(struct symtable *st, identifier name, int lineno, int col_offset)
 {
     PyObject *data, *mangled;
     int res;
@@ -1100,7 +1100,7 @@ symtable_record_directive(struct symtable *st, identifier name, stmt_ty s)
     mangled = _Py_Mangle(st->st_private, name);
     if (!mangled)
         return 0;
-    data = Py_BuildValue("(Nii)", mangled, s->lineno, s->col_offset);
+    data = Py_BuildValue("(Nii)", mangled, lineno, col_offset);
     if (!data)
         return 0;
     res = PyList_Append(st->st_cur->ste_directives, data);
@@ -1286,7 +1286,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
             if (!symtable_add_def(st, name, DEF_GLOBAL))
                 VISIT_QUIT(st, 0);
-            if (!symtable_record_directive(st, name, s))
+            if (!symtable_record_directive(st, name, s->lineno, s->col_offset))
                 VISIT_QUIT(st, 0);
         }
         break;
@@ -1318,7 +1318,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
             if (!symtable_add_def(st, name, DEF_NONLOCAL))
                 VISIT_QUIT(st, 0);
-            if (!symtable_record_directive(st, name, s))
+            if (!symtable_record_directive(st, name, s->lineno, s->col_offset))
                 VISIT_QUIT(st, 0);
         }
         break;
