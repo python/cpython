@@ -129,12 +129,10 @@ PyDoc_STRVAR(int_as_integer_ratio__doc__,
 "\n"
 ">>> (10).as_integer_ratio()\n"
 "(10, 1)\n"
-">>> (0).as_integer_ratio()\n"
-"(0, 1)\n"
-">>> (11).as_integer_ratio()\n"
-"(11, 1)\n"
 ">>> (-10).as_integer_ratio()\n"
-"(-10, 1)");
+"(-10, 1)\n"
+">>> (0).as_integer_ratio()\n"
+"(0, 1)");
 
 #define INT_AS_INTEGER_RATIO_METHODDEF    \
     {"as_integer_ratio", (PyCFunction)int_as_integer_ratio, METH_NOARGS, int_as_integer_ratio__doc__},
@@ -241,4 +239,4 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=acfef50c38f681a0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6d5e92d7dc803751 input=a9049054013a1b77]*/
