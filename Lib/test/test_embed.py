@@ -273,8 +273,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'filesystem_errors': None,
 
         'utf8_mode': 0,
-        'coerce_c_locale': 0,
-        'coerce_c_locale_warn': 0,
+        'warn_on_c_locale': 0,
 
         'pycache_prefix': '(null)',
         'program_name': './_testembed',

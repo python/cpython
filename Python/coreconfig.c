@@ -303,8 +303,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(dump_refs);
     COPY_ATTR(malloc_stats);
 
-    COPY_ATTR(coerce_c_locale);
-    COPY_ATTR(coerce_c_locale_warn);
+    COPY_ATTR(warn_on_c_locale);
     COPY_ATTR(utf8_mode);
 
     COPY_WSTR_ATTR(pycache_prefix);
@@ -810,17 +809,11 @@ config_read_env_vars(_PyCoreConfig *config)
 
     const char *env = _PyCoreConfig_GetEnv(config, "PYTHONCOERCECLOCALE");
     if (env) {
-        if (strcmp(env, "0") == 0) {
-            if (config->coerce_c_locale < 0) {
-                config->coerce_c_locale = 0;
-            }
-        }
-        else if (strcmp(env, "warn") == 0) {
-            config->coerce_c_locale_warn = 1;
-        }
-        else {
-            if (config->coerce_c_locale < 0) {
-                config->coerce_c_locale = 1;
+        if (config->warn_on_c_locale < 0) {
+            if (strcmp(env, "warn") == 0) {
+                config->warn_on_c_locale = 1;
+            } else {
+                config->warn_on_c_locale = 0;
             }
         }
     }
@@ -967,13 +960,6 @@ config_read_complex_options(_PyCoreConfig *config)
 static void
 config_init_locale(_PyCoreConfig *config)
 {
-    if (config->coerce_c_locale < 0) {
-        /* The C locale enables the C locale coercion (PEP 538) */
-        if (_Py_LegacyLocaleDetected()) {
-            config->coerce_c_locale = 1;
-        }
-    }
-
 #ifndef MS_WINDOWS
     if (config->utf8_mode < 0) {
         /* The C locale and the POSIX locale enable the UTF-8 Mode (PEP 540) */
@@ -1291,7 +1277,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
-    if (config->utf8_mode < 0 || config->coerce_c_locale < 0) {
+    if (config->utf8_mode < 0) {
         config_init_locale(config);
     }
 
@@ -1321,8 +1307,8 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
     }
-    if (config->coerce_c_locale < 0) {
-        config->coerce_c_locale = 0;
+    if (config->warn_on_c_locale < 0) {
+        config->warn_on_c_locale = 0;
     }
     if (config->utf8_mode < 0) {
         config->utf8_mode = 0;
@@ -1343,7 +1329,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         return err;
     }
 
-    assert(config->coerce_c_locale >= 0);
+    assert(config->warn_on_c_locale >= 0);
     assert(config->use_environment >= 0);
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);

@@ -330,8 +330,7 @@ dump_config(void)
 
     printf("filesystem_encoding = %s\n", config->filesystem_encoding);
     printf("filesystem_errors = %s\n", config->filesystem_errors);
-    printf("coerce_c_locale = %i\n", config->coerce_c_locale);
-    printf("coerce_c_locale_warn = %i\n", config->coerce_c_locale_warn);
+    printf("warn_on_c_locale = %i\n", config->warn_on_c_locale);
     printf("utf8_mode = %i\n", config->utf8_mode);
 
     printf("pycache_prefix = %ls\n", config->pycache_prefix);
@@ -607,7 +606,7 @@ static int test_init_isolated(void)
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
     /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    config.coerce_c_locale = 0;
+    config.warn_on_c_locale = 0;
     config.utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
     config.program_name = L"./_testembed";

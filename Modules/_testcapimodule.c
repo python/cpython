@@ -4701,10 +4701,8 @@ get_coreconfig(PyObject *self, PyObject *Py_UNUSED(args))
              PyLong_FromLong(config->dump_refs));
     SET_ITEM("malloc_stats",
              PyLong_FromLong(config->malloc_stats));
-    SET_ITEM("coerce_c_locale",
-             PyLong_FromLong(config->coerce_c_locale));
-    SET_ITEM("coerce_c_locale_warn",
-             PyLong_FromLong(config->coerce_c_locale_warn));
+    SET_ITEM("warn_on_c_locale",
+             PyLong_FromLong(config->warn_on_c_locale));
     SET_ITEM("filesystem_encoding",
              FROM_STRING(config->filesystem_encoding));
     SET_ITEM("filesystem_errors",

@@ -301,7 +301,7 @@ static const char *_C_LOCALE_WARNING =
 static void
 _emit_stderr_warning_for_legacy_locale(const _PyCoreConfig *core_config)
 {
-    if (core_config->coerce_c_locale_warn && _Py_LegacyLocaleDetected()) {
+    if (core_config->warn_on_c_locale && _Py_LegacyLocaleDetected()) {
         PySys_FormatStderr("%s", _C_LOCALE_WARNING);
     }
 }
@@ -337,7 +337,7 @@ static const char C_LOCALE_COERCION_WARNING[] =
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior).\n";
 
 static void
-_coerce_default_locale_settings(int warn, const _LocaleCoercionTarget *target)
+_coerce_default_locale_settings(const _LocaleCoercionTarget *target)
 {
     const char *newloc = target->locale_name;
 
@@ -350,24 +350,25 @@ _coerce_default_locale_settings(int warn, const _LocaleCoercionTarget *target)
                 "Error setting LC_CTYPE, skipping C locale coercion\n");
         return;
     }
-    if (warn) {
-        fprintf(stderr, C_LOCALE_COERCION_WARNING, newloc);
-    }
 
     /* Reconfigure with the overridden environment variables */
     _Py_SetLocaleFromEnv(LC_ALL);
 }
 #endif
 
-void
-_Py_CoerceLegacyLocale(int warn)
+int
+_Py_CoerceLegacyLocale(const char **coercion_target,
+                       const char **coercion_warning)
 {
+    int locale_was_coerced = 0;
+    *coercion_target = NULL;
+    *coercion_warning = NULL;
 #ifdef PY_COERCE_C_LOCALE
     char *oldloc = NULL;
 
     oldloc = _PyMem_RawStrdup(setlocale(LC_CTYPE, NULL));
     if (oldloc == NULL) {
-        return;
+        return -1;
     }
 
     const char *locale_override = getenv("LC_ALL");
@@ -390,18 +391,22 @@ defined(HAVE_LANGINFO_H) && defined(CODESET)
                 }
 #endif
                 /* Successfully configured locale, so make it the default */
-                _coerce_default_locale_settings(warn, target);
+                _coerce_default_locale_settings(target);
+                *coercion_target = target->locale_name;
+                *coercion_warning = C_LOCALE_COERCION_WARNING;
+                locale_was_coerced = 1;
                 goto done;
             }
         }
     }
+    /* Failed to find a suitable target locale, so revert to the original */
     /* No C locale warning here, as Py_Initialize will emit one later */
-
     setlocale(LC_CTYPE, oldloc);
 
 done:
     PyMem_RawFree(oldloc);
 #endif
+    return locale_was_coerced;
 }
 
 /* _Py_SetLocaleFromEnv() is a wrapper around setlocale(category, "") to

@@ -318,6 +318,10 @@ typedef struct {
     char **bytes_argv;
     wchar_t **wchar_argv;
 
+    /* Allow the embedding app to emit a locale coercion message */
+    const char *locale_coercion_warning;
+    const char *locale_coercion_target;
+
     /* Exit status or "exit code": result of pymain_main() */
     int status;
     /* Error message if a function failed */
@@ -1292,7 +1296,6 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
 #endif
     _PyCoreConfig save_config = _PyCoreConfig_INIT;
     int res = -1;
-    int locale_coerced = 0;
     int loops = 0;
 
     if (_PyCoreConfig_Copy(&save_config, config) < 0) {
@@ -1303,6 +1306,9 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
     /* Set LC_CTYPE to the user preferred locale */
     _Py_SetLocaleFromEnv(LC_CTYPE);
 
+    /* TODO: With locale coercion moved back to _PyUnix_Main, this can
+     * potentially be simplified now that it only needs to handle UTF-8 mode
+     */
     while (1) {
         int utf8_mode = config->utf8_mode;
         int encoding_changed = 0;
@@ -1332,22 +1338,6 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
             goto done;
         }
 
-        /* The legacy C locale assumes ASCII as the default text encoding, which
-         * causes problems not only for the CPython runtime, but also other
-         * components like GNU readline.
-         *
-         * Accordingly, when the CLI detects it, it attempts to coerce it to a
-         * more capable UTF-8 based alternative.
-         *
-         * See the documentation of the PYTHONCOERCECLOCALE setting for more
-         * details.
-         */
-        if (config->coerce_c_locale && !locale_coerced) {
-            locale_coerced = 1;
-            _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
-            encoding_changed = 1;
-        }
-
         if (utf8_mode == -1) {
             if (config->utf8_mode == 1) {
                 /* UTF-8 Mode enabled */
@@ -1367,7 +1357,6 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
         /* Reset the configuration before reading again the configuration,
            just keep UTF-8 Mode value. */
         int new_utf8_mode = config->utf8_mode;
-        int new_coerce_c_locale = config->coerce_c_locale;
         if (_PyCoreConfig_Copy(config, &save_config) < 0) {
             pymain->err = _Py_INIT_NO_MEMORY();
             goto done;
@@ -1375,7 +1364,6 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
         pymain_clear_cmdline(pymain, cmdline);
         memset(cmdline, 0, sizeof(*cmdline));
         config->utf8_mode = new_utf8_mode;
-        config->coerce_c_locale = new_coerce_c_locale;
 
         /* The encoding changed: read again the configuration
            with the new encoding */
@@ -1729,6 +1717,12 @@ pymain_init(_PyMain *pymain, PyInterpreterState **interp_p)
 
     pymain_init_stdio(pymain, config);
 
+    if (config->warn_on_c_locale && pymain->locale_coercion_warning != NULL) {
+        fprintf(stderr, pymain->locale_coercion_warning, pymain->locale_coercion_target);
+        pymain->locale_coercion_warning = NULL;
+        pymain->locale_coercion_target = NULL;
+    }
+
     PyInterpreterState *interp;
     pymain->err = _Py_InitializeCore(&interp, config);
     if (_Py_INIT_FAILED(pymain->err)) {
@@ -1738,6 +1732,7 @@ pymain_init(_PyMain *pymain, PyInterpreterState **interp_p)
 
     pymain_clear_config(config);
     config = &interp->core_config;
+
 
     if (pymain_init_python_main(pymain, config, interp) < 0) {
         _Py_FatalInitError(pymain->err);
@@ -1788,6 +1783,42 @@ _Py_UnixMain(int argc, char **argv)
     pymain.use_bytes_argv = 1;
     pymain.argc = argc;
     pymain.bytes_argv = argv;
+
+    /* The legacy C locale assumes ASCII as the default text encoding, which
+        * causes problems not only for the CPython runtime, but also other
+        * components like GNU readline.
+        *
+        * Accordingly, when the CLI detects it, it attempts to coerce it to a
+        * more capable UTF-8 based alternative.
+        *
+        * See the documentation of the PYTHONCOERCECLOCALE setting for more
+        * details.
+        */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
+    if (_Py_LegacyLocaleDetected()) {
+            /* We ignore the Python -E and -I flags here, as the CLI needs to sort out
+             * the locale settings *before* we try to do anything with the command
+             * line arguments. For cross-platform debugging purposes, we also need
+             * to give end users a way to force even scripts that are otherwise
+             * isolated from their environment to use the legacy ASCII-centric C
+             * locale (otherwise a user on platform with a valid coercion target,
+             * like Fedora, can't readily debug a script that runs with -I or -E
+             * on a platform without a valid coercion target, like CentOS 7).
+             *
+             * Ignoring -E and -I is safe from a security perspective, as we only use
+             * the setting to turn *off* the implicit locale coercion, and anyone with
+             * access to the process environment already has the ability to set
+             * `LC_ALL=C` to override the C level locale settings anyway.
+             */
+            const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+            if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
+                _Py_CoerceLegacyLocale(
+                    &pymain.locale_coercion_target,
+                    &pymain.locale_coercion_warning
+                );
+            }
+    }
+
 
     return pymain_main(&pymain);
 }
