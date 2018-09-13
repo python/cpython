@@ -11258,7 +11258,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
+ initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
@@ -11284,6 +11284,23 @@ _ACEOF
 fi
 done
 
+
+# Force lchmod off for Linux. Linux disallows changing the mode of symbolic
+# links. Some libc implementations have a stub lchmod implementation that always
+# returns an error.
+if test "$MACHDEP" != linux; then
+  for ac_func in lchmod
+do :
+  ac_fn_c_check_func "$LINENO" "lchmod" "ac_cv_func_lchmod"
+if test "x$ac_cv_func_lchmod" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LCHMOD 1
+_ACEOF
+
+fi
+done
+
+fi
 
 ac_fn_c_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
        #include <dirent.h>
