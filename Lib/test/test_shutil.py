@@ -1128,7 +1128,7 @@ class TestShutil(unittest.TestCase):
             except subprocess.CalledProcessError as exc:
                 details = exc.output.decode(errors="replace")
                 if 'unrecognized option: t' in details:
-                    self.skip("unzip doesn't support -t")
+                    self.skipTest("unzip doesn't support -t")
                 msg = "{}\n\n**Unzip Output**\n{}"
                 self.fail(msg.format(exc, details))
 
