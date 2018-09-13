@@ -165,9 +165,11 @@ class EnumMeta(type):
         enum_class._member_map_ = {}                 # name->value map
         enum_class._member_type_ = member_type
 
-        # save attributes from super classes so we know if we can take
-        # the shortcut of storing members in the class dict
-        base_attributes = {a for b in enum_class.mro() for a in b.__dict__}
+        # save DynamicClassAttribute attributes from super classes so we know
+        # if we can take the shortcut of storing members in the class dict
+        dynamic_attributes = {k for c in enum_class.mro()
+                              for k, v in c.__dict__.items()
+                              if isinstance(v, DynamicClassAttribute)}
 
         # Reverse value->name map for hashable values.
         enum_class._value2member_map_ = {}
@@ -227,7 +229,7 @@ class EnumMeta(type):
                 enum_class._member_names_.append(member_name)
             # performance boost for any member that would not shadow
             # a DynamicClassAttribute
-            if member_name not in base_attributes:
+            if member_name not in dynamic_attributes:
                 setattr(enum_class, member_name, enum_member)
             # now add to _member_map_
             enum_class._member_map_[member_name] = enum_member
@@ -428,6 +430,45 @@ class EnumMeta(type):
 
         return enum_class
 
+    def _convert_(cls, name, module, filter, source=None):
+        """
+        Create a new Enum subclass that replaces a collection of global constants
+        """
+        # convert all constants from source (or module) that pass filter() to
+        # a new Enum called name, and export the enum and its members back to
+        # module;
+        # also, replace the __reduce_ex__ method so unpickling works in
+        # previous Python versions
+        module_globals = vars(sys.modules[module])
+        if source:
+            source = vars(source)
+        else:
+            source = module_globals
+        # _value2member_map_ is populated in the same order every time
+        # for a consistent reverse mapping of number to name when there
+        # are multiple names for the same number.
+        members = [
+                (name, value)
+                for name, value in source.items()
+                if filter(name)]
+        try:
+            # sort by value
+            members.sort(key=lambda t: (t[1], t[0]))
+        except TypeError:
+            # unless some values aren't comparable, in which case sort by name
+            members.sort(key=lambda t: t[0])
+        cls = cls(name, members, module=module)
+        cls.__reduce_ex__ = _reduce_ex_by_name
+        module_globals.update(cls.__members__)
+        module_globals[name] = cls
+        return cls
+
+    def _convert(cls, *args, **kwargs):
+        import warnings
+        warnings.warn("_convert is deprecated and will be removed in 3.9, use "
+                      "_convert_ instead.", DeprecationWarning, stacklevel=2)
+        return cls._convert_(*args, **kwargs)
+
     @staticmethod
     def _get_mixins_(bases):
         """Returns the type for creating enum members, and the first inherited
@@ -544,7 +585,25 @@ class Enum(metaclass=EnumMeta):
                 if member._value_ == value:
                     return member
         # still not found -- try _missing_ hook
-        return cls._missing_(value)
+        try:
+            exc = None
+            result = cls._missing_(value)
+        except Exception as e:
+            exc = e
+            result = None
+        if isinstance(result, cls):
+            return result
+        else:
+            ve_exc = ValueError("%r is not a valid %s" % (value, cls.__name__))
+            if result is None and exc is None:
+                raise ve_exc
+            elif exc is None:
+                exc = TypeError(
+                        'error in %s._missing_: returned %r instead of None or a valid member'
+                        % (cls.__name__, result)
+                        )
+            exc.__context__ = ve_exc
+            raise exc
 
     def _generate_next_value_(name, start, count, last_values):
         for last_value in reversed(last_values):
@@ -612,40 +671,6 @@ class Enum(metaclass=EnumMeta):
     def value(self):
         """The value of the Enum member."""
         return self._value_
-
-    @classmethod
-    def _convert(cls, name, module, filter, source=None):
-        """
-        Create a new Enum subclass that replaces a collection of global constants
-        """
-        # convert all constants from source (or module) that pass filter() to
-        # a new Enum called name, and export the enum and its members back to
-        # module;
-        # also, replace the __reduce_ex__ method so unpickling works in
-        # previous Python versions
-        module_globals = vars(sys.modules[module])
-        if source:
-            source = vars(source)
-        else:
-            source = module_globals
-        # _value2member_map_ is populated in the same order every time
-        # for a consistent reverse mapping of number to name when there
-        # are multiple names for the same number.
-        members = [
-                (name, value)
-                for name, value in source.items()
-                if filter(name)]
-        try:
-            # sort by value
-            members.sort(key=lambda t: (t[1], t[0]))
-        except TypeError:
-            # unless some values aren't comparable, in which case sort by name
-            members.sort(key=lambda t: t[0])
-        cls = cls(name, members, module=module)
-        cls.__reduce_ex__ = _reduce_ex_by_name
-        module_globals.update(cls.__members__)
-        module_globals[name] = cls
-        return cls
 
 
 class IntEnum(int, Enum):

@@ -3438,7 +3438,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
+ initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
@@ -3453,6 +3453,13 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \
  wcscoll wcsftime wcsxfrm wmemcmp writev _getpty)
+
+# Force lchmod off for Linux. Linux disallows changing the mode of symbolic
+# links. Some libc implementations have a stub lchmod implementation that always
+# returns an error.
+if test "$MACHDEP" != linux; then
+  AC_CHECK_FUNCS(lchmod)
+fi
 
 AC_CHECK_DECL(dirfd,
     AC_DEFINE(HAVE_DIRFD, 1,
