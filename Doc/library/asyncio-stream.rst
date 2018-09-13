@@ -270,14 +270,14 @@ StreamWriter
 
       Write *data* to the stream.
 
-      The method doesn't apply control-flow, the call should be
+      This method doesn't apply control-flow. The call should be
       followed by :meth:`drain`.
 
    .. method:: writelines(data)
 
       Write a list (or any iterable) of bytes to the stream.
 
-      The method doesn't apply control-flow, the call should be
+      This method doesn't apply control-flow. The call should be
       followed by :meth:`drain`.
 
    .. coroutinemethod:: drain()
