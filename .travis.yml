@@ -82,13 +82,15 @@ matrix:
         - ./python -m venv venv
         - ./venv/bin/python -m pip install -U coverage
         - ./venv/bin/python -m test.pythoninfo
+        - echo "import coverage;coverage.process_startup()" > venv/lib/python*/site-packages/sitecustomize.py
       script:
         # Skip tests that re-run the entire test suite.
-        - xvfb-run ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures
+        - COVERAGE_PROCESS_START=`pwd`/.coveragerc xvfb-run ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
         - source ./venv/bin/activate
         - make coverage-lcov
+        - coverage combine
         - bash <(curl -s https://codecov.io/bash)
 
 
