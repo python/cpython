@@ -1756,7 +1756,7 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 "  scheduler\n"
 "    A tuple with the scheduler policy (optional) and parameters.\n"
 "  use_vfork\n"
-"    If the value is `True` the POSIX_SPAWN_USEVFORK will be activated.");
+"    If the value is true the POSIX_SPAWN_USEVFORK will be activated.");
 
 #define OS_POSIX_SPAWN_METHODDEF    \
     {"posix_spawn", (PyCFunction)os_posix_spawn, METH_FASTCALL|METH_KEYWORDS, os_posix_spawn__doc__},
@@ -6651,4 +6651,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=74cf88c3208b5088 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d4d3d9754ff072e7 input=a9049054013a1b77]*/

@@ -3396,7 +3396,7 @@ written in Python, such as a mail server's external command delivery program.
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
                           setpgroup=None, resetids=False, setsigmask=(), \
-                          setsigdef=(), scheduler=None)
+                          setsigdef=(), scheduler=None, use_vfork=False)
 
    Wraps the :c:func:`posix_spawn` C library API for use from Python.
 
@@ -3464,6 +3464,10 @@ written in Python, such as a mail server's external command delivery program.
    not being provided. This argument is a combination of the C library
    :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
    flags.
+
+  If the value of *use_vfork* is true, the child will be created using
+  :c:func:`vfork` instead of :c:func:`fork`. This corresponds to the
+  GNU specific flag :c:data:`POSIX_SPAWN_USEVFORK`.
 
    .. versionadded:: 3.7
 

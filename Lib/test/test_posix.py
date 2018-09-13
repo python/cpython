@@ -1791,10 +1791,11 @@ class TestPosixSpawn(unittest.TestCase):
             self.assertEqual(f.read(), 'hello')
 
     def test_vfork(self):
+        args = self.python_args()
         try:
             pid = posix.posix_spawn(
-                sys.executable,
-                [sys.executable, '-c', 'pass'],
+                args[0],
+                args,
                 os.environ,
                 use_vfork=True
             )

@@ -5282,8 +5282,7 @@ parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
 #ifdef POSIX_SPAWN_USEVFORK
         all_flags |= POSIX_SPAWN_SETSCHEDULER;
 #else
-        PyErr_SetString(PyExc_NotImplementedError,
-                "The use_vfork option is not supported in this system.");
+        argument_unavailable_error("posix_spawn", "use_vfork");
         goto fail;
 #endif
     }
@@ -5436,7 +5435,7 @@ os.posix_spawn
     scheduler: object = NULL
         A tuple with the scheduler policy (optional) and parameters.
     use_vfork: bool(accept={int}) = False
-        If the value is `True` the POSIX_SPAWN_USEVFORK will be activated.
+        If the value is true the POSIX_SPAWN_USEVFORK will be activated.
 
 Execute the program specified by path in a new process.
 [clinic start generated code]*/
@@ -5446,7 +5445,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *env, PyObject *file_actions,
                     PyObject *setpgroup, int resetids, PyObject *setsigmask,
                     PyObject *setsigdef, PyObject *scheduler, int use_vfork)
-/*[clinic end generated code: output=ed9323af139a50f7 input=d033288962226596]*/
+/*[clinic end generated code: output=ed9323af139a50f7 input=9ca9c905ec19bf04]*/
 {
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
