@@ -1825,7 +1825,7 @@ ast_for_namedexpr(struct compiling *c, const node *n)
     if (!value)
         return NULL;
 
-    if(!set_namedexpr_context(c, target, Store, n))
+    if(!set_namedexpr_context(c, target, NamedStore, n))
         return NULL;
 
     return NamedExpr(target, value, LINENO(n), n->n_col_offset, c->c_arena);

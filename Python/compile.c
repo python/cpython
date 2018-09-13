@@ -3428,7 +3428,10 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         case Load:
             op = (c->u->u_ste->ste_type == ClassBlock) ? LOAD_CLASSDEREF : LOAD_DEREF;
             break;
-        case Store: op = STORE_DEREF; break;
+        case Store:
+        case NamedStore:
+            op = STORE_DEREF;
+            break;
         case AugLoad:
         case AugStore:
             break;
@@ -3443,7 +3446,10 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     case OP_FAST:
         switch (ctx) {
         case Load: op = LOAD_FAST; break;
-        case Store: op = STORE_FAST; break;
+        case Store:
+        case NamedStore:
+            op = STORE_FAST;
+            break;
         case Del: op = DELETE_FAST; break;
         case AugLoad:
         case AugStore:
@@ -3459,7 +3465,10 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     case OP_GLOBAL:
         switch (ctx) {
         case Load: op = LOAD_GLOBAL; break;
-        case Store: op = STORE_GLOBAL; break;
+        case Store:
+        case NamedStore:
+            op = STORE_GLOBAL;
+            break;
         case Del: op = DELETE_GLOBAL; break;
         case AugLoad:
         case AugStore:
@@ -3474,7 +3483,10 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     case OP_NAME:
         switch (ctx) {
         case Load: op = LOAD_NAME; break;
-        case Store: op = STORE_NAME; break;
+        case Store:
+        case NamedStore:
+            op = STORE_NAME;
+            break;
         case Del: op = DELETE_NAME; break;
         case AugLoad:
         case AugStore:
@@ -3592,7 +3604,7 @@ static int
 compiler_list(struct compiler *c, expr_ty e)
 {
     asdl_seq *elts = e->v.List.elts;
-    if (e->v.List.ctx == Store) {
+    if (e->v.List.ctx == Store || e->v.List.ctx == NamedStore) {
         return assignment_helper(c, elts);
     }
     else if (e->v.List.ctx == Load) {
@@ -3608,7 +3620,7 @@ static int
 compiler_tuple(struct compiler *c, expr_ty e)
 {
     asdl_seq *elts = e->v.Tuple.elts;
-    if (e->v.Tuple.ctx == Store) {
+    if (e->v.Tuple.ctx == Store || e->v.Tuple.ctx == NamedStore) {
         return assignment_helper(c, elts);
     }
     else if (e->v.Tuple.ctx == Load) {
@@ -4663,6 +4675,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP(c, ROT_TWO);
             /* Fall through */
         case Store:
+        case NamedStore:
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
@@ -4688,6 +4701,10 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         case AugStore:
             VISIT_SLICE(c, e->v.Subscript.slice, AugStore);
             break;
+        case NamedStore:
+            VISIT(c, expr, e->v.Subscript.value);
+            VISIT_SLICE(c, e->v.Subscript.slice, NamedStore);
+            break;
         case Store:
             VISIT(c, expr, e->v.Subscript.value);
             VISIT_SLICE(c, e->v.Subscript.slice, Store);
@@ -4706,6 +4723,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case Starred_kind:
         switch (e->v.Starred.ctx) {
         case Store:
+        case NamedStore:
             /* In all legitimate cases, the Starred node was already replaced
              * by compiler_list/compiler_tuple. XXX: is that okay? */
             return compiler_error(c,
