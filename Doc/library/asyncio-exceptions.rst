@@ -19,11 +19,12 @@ Exceptions
 
    The operation has been cancelled.
 
-   This exception can be caught to perform custom operations on
+   This exception can be caught to perform custom operations
    when asyncio Tasks are cancelled.  In almost all situations the
    exception must always be re-raised.
 
    .. note::
+
       This exception is a subclass of :exc:`Exception`, so it can be
       accidentally suppressed by ``try..except`` block::
 
@@ -54,7 +55,7 @@ Exceptions
 
 .. exception:: SendfileNotAvailableError
 
-   The "sendfile" syscall for is not available for the given
+   The "sendfile" syscall is not available for the given
    socket or file type.
 
    A subclass of :exc:`RuntimeError`.
