@@ -41,6 +41,9 @@ class Options:
     errorHandler = None
     filter = None
 
+    # None: keep default, True: disable entity expansion protection
+    huge_xml = None
+
 
 class DOMBuilder:
     entityResolver = None

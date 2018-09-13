@@ -9,7 +9,8 @@ from xml.sax._exceptions import *
 from xml.sax.handler import feature_validation, feature_namespaces
 from xml.sax.handler import feature_namespace_prefixes
 from xml.sax.handler import feature_external_ges, feature_external_pes
-from xml.sax.handler import feature_string_interning
+from xml.sax.handler import feature_string_interning, feature_huge_xml
+
 from xml.sax.handler import property_xml_string, property_interning_dict
 
 # xml.parsers.expat does not raise ImportError in Jython
@@ -97,6 +98,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._entity_stack = []
         self._external_ges = 0
         self._interning = None
+        self._huge_xml = None
 
     # XMLReader methods
 
@@ -137,6 +139,8 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             return 0
         elif name == feature_external_ges:
             return self._external_ges
+        elif name == feature_huge_xml:
+            return self._parser.huge_xml
         raise SAXNotRecognizedException("Feature '%s' not recognized" % name)
 
     def setFeature(self, name, state):
@@ -153,6 +157,8 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
                     self._interning = {}
             else:
                 self._interning = None
+        elif name == feature_huge_xml:
+            self._huge_xml = bool(state)
         elif name == feature_validation:
             if state:
                 raise SAXNotSupportedException(
@@ -285,7 +291,8 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
                                               intern = self._interning)
             self._parser.StartElementHandler = self.start_element
             self._parser.EndElementHandler = self.end_element
-
+        if self._huge_xml is not None:
+            self._parser.huge_xml = self._huge_xml
         self._reset_cont_handler()
         self._parser.UnparsedEntityDeclHandler = self.unparsed_entity_decl
         self._parser.NotationDeclHandler = self.notation_decl

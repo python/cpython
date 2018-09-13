@@ -13,7 +13,7 @@ module pyexpat
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b168d503a4490c15]*/
 
-#define XML_COMBINED_VERSION (10000*XML_MAJOR_VERSION+100*XML_MINOR_VERSION+XML_MICRO_VERSION)
+#define XML_COMBINED_VERSION PyExpat_COMBINED_VERSION
 
 static XML_Memory_Handling_Suite ExpatMemoryHandler = {
     PyObject_Malloc, PyObject_Realloc, PyObject_Free};
@@ -1068,6 +1068,7 @@ pyexpat_xmlparser___dir___impl(xmlparseobject *self)
     APPEND(rc, "buffer_size");
     APPEND(rc, "buffer_text");
     APPEND(rc, "buffer_used");
+    APPEND(rc, "huge_xml");
     APPEND(rc, "namespace_prefixes");
     APPEND(rc, "ordered_attributes");
     APPEND(rc, "specified_attributes");
@@ -1324,6 +1325,18 @@ xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
             return self->intern;
         }
     }
+    if (_PyUnicode_EqualToASCIIString(nameobj, "huge_xml")) {
+#if XML_COMBINED_VERSION >= 20300
+        XML_Bool hx;
+        if (XML_GetOption(self->itself, XML_OPTION_HUGE_XML, &hx) != XML_STATUS_OK) {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to get option value");
+            return NULL;
+        }
+        return PyBool_FromLong((long)hx);
+#else
+        Py_RETURN_NONE;
+#endif
+    }
   generic:
     return PyObject_GenericGetAttr((PyObject*)self, nameobj);
 }
@@ -1476,6 +1489,21 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
         if (flush_character_buffer(self) < 0)
             return -1;
     }
+
+    if (_PyUnicode_EqualToASCIIString(name, "huge_xml")) {
+#if XML_COMBINED_VERSION >= 20300
+        XML_Bool hx = PyObject_IsTrue(v) ? XML_TRUE : XML_FALSE;
+        if (XML_SetOption(self->itself, XML_OPTION_HUGE_XML, &hx) != XML_STATUS_OK) {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to set option");
+            return -1;
+        }
+        return 0;
+#else
+        PyErr_SetString(PyExc_ValueError, "expat version doesn't support huge XML limit");
+        return -1;
+#endif
+    }
+
     if (sethandler(self, name, v)) {
         return 0;
     }
@@ -1881,6 +1909,13 @@ MODULE_INITFUNC(void)
     capi.SetHashSalt = XML_SetHashSalt;
 #else
     capi.SetHashSalt = NULL;
+#endif
+#if XML_COMBINED_VERSION >= 20300
+    capi.GetOption = XML_GetOption;
+    capi.SetOption = XML_SetOption;
+#else
+    capi.GetOption = NULL;
+    capi.SetOption = NULL;
 #endif
 
     /* export using capsule */

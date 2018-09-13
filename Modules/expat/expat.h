@@ -124,8 +124,80 @@ enum XML_Error {
   XML_ERROR_RESERVED_PREFIX_XMLNS,
   XML_ERROR_RESERVED_NAMESPACE_URI,
   /* Added in 2.2.1. */
-  XML_ERROR_INVALID_ARGUMENT
+  XML_ERROR_INVALID_ARGUMENT,
+  /* Added in 2.3.0 */
+  XML_ERROR_ENTITY_SIZE_VIOLATION,
+  XML_ERROR_ENTITY_NESTED_SIZE_VIOLATION,
+  XML_ERROR_ENTITY_EXPANSION_RATIO_VIOLATION,
+  XML_ERROR_ENTITY_NESTING_VIOLATION,
+  XML_ERROR_HASH_TABLE_SIZE_VIOLATION
 };
+
+/*
+ * HUGE_XML: enable huge XML processing and disable all parsing limits
+ * ENTITIES_MAX_NESTED_REFS: restrict nested entity expansions of an entity
+ *   reference.
+ * ENTITIES_MAX_RATIO: restrict ratio between expanded entities and processed
+ *  XML bytes.
+ * ENTITIES_MAX_RATIO_THRESHOLD: start treshold for ratio
+ * ENTITIES_MAX_SIZE: limit max entity size in bytes for single and nested entities
+ * HASH_TABLE_DTD_MAX_ENTRY_COUNT: max entries in DTD hash tables
+ */
+
+enum XML_Option {
+  /* Added in 2.3.0 */
+  XML_OPTION_HUGE_XML, /* XML_Bool */
+  XML_OPTION_ENTITIES_MAX_NESTED_REFS, /* unsigned int */
+  XML_OPTION_ENTITIES_MAX_RATIO, /* unsigned int */
+  XML_OPTION_ENTITIES_MAX_RATIO_THRESHOLD, /* unsigned int */
+  XML_OPTION_ENTITIES_MAX_SIZE, /* size_t,  */
+  XML_OPTION_HASH_TABLE_DTD_MAX_ENTRY_COUNT /* size_t */
+};
+
+/* Entity expansion protection
+ *
+ * Mitigation against billion laugh and quadratic blowup attacks.
+ *
+ * XML_ENTITY_NESTED_REFERENCE_LIMIT confines nesting of entities within entities.
+ * XML_ENTITY_EXPANSION_SIZE restricts the maximum length of entities,
+ *   both text of a single entity and resulting text of nested entities.
+ * XML_ENTITY_EXPANSION_RATIO constrains the ratio between position in XML
+ *  document and total amount of all expanded entities once more than
+ *  XML_ENTITY_EXPANSION_RATIO_THRESHOLD bytes have been expanded.
+ * XML_MAX_HASH_TABLE_ENTRIES limits total amount of entries across all
+ *   DTD hash tables.
+ *
+ * The limits are modelled after libxml2's limits
+ * https://github.com/GNOME/libxml2/blob/v2.9.8/parser.c#L99
+ * https://github.com/GNOME/libxml2/blob/v2.9.8/include/libxml/parserInternals.h#L33
+ */
+#ifndef XML_HUGE_XML_DEFAULT
+#define XML_HUGE_XML_DEFAULT 0
+#endif
+
+#ifndef XML_ENTITY_NESTED_REFERENCE_LIMIT
+#define XML_ENTITY_NESTED_REFERENCE_LIMIT 40
+#endif
+
+#ifndef XML_ENTITY_EXPANSION_SIZE
+/* 1MB text */
+#define XML_ENTITY_EXPANSION_SIZE 1000000
+#endif
+
+#ifndef XML_ENTITY_EXPANSION_RATIO
+#define XML_ENTITY_EXPANSION_RATIO 10
+#endif
+
+#ifndef XML_ENTITY_EXPANSION_RATIO_THRESHOLD
+/* 1MB text */
+#define XML_ENTITY_EXPANSION_RATIO_THRESHOLD 1000000
+#endif
+
+#ifndef XML_MAX_HASH_TABLE_ENTRIES
+/* 1M entries across all hash tables */
+#define XML_MAX_HASH_TABLE_ENTRIES 1000000
+#endif
+
 
 enum XML_Content_Type {
   XML_CTYPE_EMPTY = 1,
@@ -948,6 +1020,16 @@ XMLPARSEAPI(int)
 XML_SetHashSalt(XML_Parser parser,
                 unsigned long hash_salt);
 
+/* Set / get XML parser options, see enum XML_Options
+ *
+ * Added in 2.3.0
+ */
+XMLPARSEAPI(enum XML_Status)
+XML_SetOption(XML_Parser parser, enum XML_Option option, void *value);
+
+XMLPARSEAPI(enum XML_Status)
+XML_GetOption(XML_Parser parser, enum XML_Option option, void *rvalue);
+
 /* If XML_Parse or XML_ParseBuffer have returned XML_STATUS_ERROR, then
    XML_GetErrorCode returns information about the error.
 */
@@ -1057,7 +1139,9 @@ enum XML_FeatureEnum {
   XML_FEATURE_SIZEOF_XML_LCHAR,
   XML_FEATURE_NS,
   XML_FEATURE_LARGE_SIZE,
-  XML_FEATURE_ATTR_INFO
+  XML_FEATURE_ATTR_INFO,
+  /* Added in 2.3.0 */
+  XML_FEATURE_HUGE_XML
   /* Additional features must be added to the end of this enum. */
 };
 
@@ -1075,8 +1159,8 @@ XML_GetFeatureList(void);
    See http://semver.org.
 */
 #define XML_MAJOR_VERSION 2
-#define XML_MINOR_VERSION 2
-#define XML_MICRO_VERSION 6
+#define XML_MINOR_VERSION 3
+#define XML_MICRO_VERSION 0
 
 #ifdef __cplusplus
 }

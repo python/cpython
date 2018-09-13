@@ -1,0 +1,7 @@
+<!DOCTYPE he [
+  <!ELEMENT he (#PCDATA)*>
+  <!ENTITY e1 '&e2;&e2;&e2;&e2;&e2;&e2;&e2;&e2;&e2;&e2;&e2;'>
+  <!ENTITY e2 '&e3;&e3;&e3;&e3;&e3;'>
+  <!ENTITY e3 'entity'>
+]>
+<he>&e1;</he>

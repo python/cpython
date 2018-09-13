@@ -277,12 +277,19 @@ feature_external_pes = "http://xml.org/sax/features/external-parameter-entities"
 #        DTD subset.
 # access: (parsing) read-only; (not parsing) read/write
 
+feature_huge_xml = "http://python.org/sax/features/huge-xml"
+# true: Allow XML files with huge entities and DTD
+# false: Protect against DoS attacks like entity expansion (billion laughs)
+# access: (parsing) read-only; (not parsing) read/write
+
+
 all_features = [feature_namespaces,
                 feature_namespace_prefixes,
                 feature_string_interning,
                 feature_validation,
                 feature_external_ges,
-                feature_external_pes]
+                feature_external_pes,
+                feature_huge_xml]
 
 
 #============================================================================

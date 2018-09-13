@@ -119,7 +119,8 @@
 #define XML_UseParserAsHandlerArg       PyExpat_XML_UseParserAsHandlerArg
 #define XmlUtf16Encode                  PyExpat_XmlUtf16Encode
 #define XmlUtf8Encode                   PyExpat_XmlUtf8Encode
-
+#define XML_GetOption                   PyExpat_XML_GetOption
+#define XML_SetOption			PyExpat_XML_SetOption
 
 #endif /* !PYEXPATNS_H */
 

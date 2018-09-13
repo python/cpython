@@ -160,6 +160,8 @@ class ExpatBuilder:
             self._parser.buffer_text = True
             self._parser.ordered_attributes = True
             self._parser.specified_attributes = True
+            if self._options.huge_xml is not None:
+                self._parser.huge_entites = self._options.huge_xml
             self.install(self._parser)
         return self._parser
 

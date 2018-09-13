@@ -14,6 +14,8 @@ from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
                              XMLFilterBase, prepare_input_source
 from xml.sax.expatreader import create_parser
 from xml.sax.handler import feature_namespaces, feature_external_ges
+from xml.sax.handler import feature_huge_xml
+from xml.sax.handler import ErrorHandler
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import BytesIO, StringIO
 import codecs
@@ -31,6 +33,10 @@ try:
     TEST_XMLFILE_OUT.encode("utf-8")
 except UnicodeEncodeError:
     raise unittest.SkipTest("filename is not encodable to utf8")
+
+TEST_ENTITYTOOLARGE = findfile("entitytoolarge.xml", subdir="xmltestdata")
+TEST_EXPANSIONLIMIT = findfile("expansionlimit.xml", subdir="xmltestdata")
+TEST_RECURSIONLIMIT = findfile("nestinglimit.xml", subdir="xmltestdata")
 
 supports_nonascii_filenames = True
 if not os.path.supports_unicode_filenames:
@@ -1311,6 +1317,65 @@ class XmlReaderTest(XmlTestBase):
         self.assertEqual(attrs.getQNameByName((ns_uri, "attr")), "ns:attr")
 
 
+class NullSink(StringIO):
+    def write(self, *args):
+        """/dev/null write"""
+        pass
+
+
+class XmlEntityExpansion(unittest.TestCase):
+
+    def get_parser(self, huge_xml=None):
+        result = NullSink()
+        handler = XMLGenerator(result, 'utf-8')
+        parser = create_parser()
+        parser.setContentHandler(handler)
+        parser.setErrorHandler(ErrorHandler())
+        if huge_xml is not None:
+            parser.setFeature(feature_huge_xml, huge_xml)
+        return parser
+
+    def check_parse(self, source, huge_xml=None):
+        parser = self.get_parser(huge_xml)
+        parser.parse(source)
+
+    def test_entitytoolarge(self):
+        header = "<!DOCTYPE he [<!ELEMENT he (#PCDATA)*><!ENTITY e '"
+        entity = "0123456789" * 100
+        footer = "'>]><he>&e;</he>"
+
+        parser = self.get_parser()
+        parser.feed(header)
+        # feed 1MB + 1 byte as entity text
+        for i in range(1000):
+            parser.feed(entity)
+        parser.feed('-')
+
+        with self.assertRaisesRegex(SAXParseException,
+                                    "entity text is too large"):
+            parser.feed(footer, True)
+
+        parser = self.get_parser(True)
+        parser.feed(header)
+        # feed 1MB + 1 byte as entity text
+        for i in range(1000):
+            parser.feed(entity)
+        parser.feed('-')
+        parser.feed(footer, True)
+
+    def test_expansionlimit(self):
+        with self.assertRaisesRegex(SAXParseException,
+                                    "entity expansion limit reached"):
+            self.check_parse(TEST_EXPANSIONLIMIT)
+        self.check_parse(TEST_EXPANSIONLIMIT, True)
+
+    def test_recursionlimit(self):
+        with self.assertRaisesRegex(SAXParseException,
+                                    "entity nesting limit reached"):
+            self.check_parse(TEST_RECURSIONLIMIT)
+        self.check_parse(TEST_EXPANSIONLIMIT, True)
+
+
 def test_main():
     run_unittest(MakeParserTest,
                  ParseTest,
@@ -1323,7 +1388,8 @@ def test_main():
                  StreamReaderWriterXmlgenTest,
                  ExpatReaderTest,
                  ErrorReportingTest,
-                 XmlReaderTest)
+                 XmlReaderTest,
+                 XmlEntityExpansion)
 
 if __name__ == "__main__":
     test_main()

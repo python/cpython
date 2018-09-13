@@ -1626,6 +1626,14 @@ class XMLParser:
             del self.parser, self._parser
             del self.target, self._target
 
+    @property
+    def huge_xml(self):
+        return self._parser.huge_xml
+
+    @huge_xml.setter
+    def huge_xml(self, value):
+        self._parser.huge_xml = value
+
 
 # Import the C accelerators
 try:

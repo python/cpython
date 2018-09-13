@@ -3709,6 +3709,37 @@ xmlparser_getattro(XMLParserObject* self, PyObject* nameobj)
     return PyObject_GenericGetAttr((PyObject*) self, nameobj);
 }
 
+static PyObject*
+xmlparser_huge_xml_getter(XMLParserObject *self, void *closure)
+{
+    if (EXPAT(GetOption) != NULL) {
+        XML_Bool hx = XML_FALSE;
+        if (EXPAT(GetOption)(self->parser, XML_OPTION_HUGE_XML, &hx) != XML_STATUS_OK) {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to get option value");
+            return NULL;
+        }
+        return PyBool_FromLong((long)hx);
+    } else {
+        Py_RETURN_NONE;
+    }
+}
+
+static int
+xmlparser_huge_xml_setter(XMLParserObject *self, PyObject *value, void *closure)
+{
+    if (EXPAT(SetOption) != NULL) {
+        XML_Bool hx = PyObject_IsTrue(value) ? XML_TRUE : XML_FALSE;
+        if (EXPAT(SetOption)(self->parser, XML_OPTION_HUGE_XML, &hx) != XML_STATUS_OK) {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to set option");
+            return -1;
+        }
+        return 0;
+    } else {
+        PyErr_SetString(PyExc_ValueError, "expat version doesn't support huge XML limit");
+        return -1;
+    }
+}
+
 #include "clinic/_elementtree.c.h"
 
 static PyMethodDef element_methods[] = {
@@ -3874,6 +3905,14 @@ static PyMethodDef xmlparser_methods[] = {
     {NULL, NULL}
 };
 
+static PyGetSetDef xmlparser_getsetlist[] = {
+    {"huge_xml",
+        (getter)xmlparser_huge_xml_getter,
+        (setter)xmlparser_huge_xml_setter,
+        "Allow huge entities and disable entity expansion protection"},
+      {NULL},
+};
+
 static PyTypeObject XMLParser_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "xml.etree.ElementTree.XMLParser", sizeof(XMLParserObject), 0,
@@ -3904,7 +3943,7 @@ static PyTypeObject XMLParser_Type = {
     0,                                              /* tp_iternext */
     xmlparser_methods,                              /* tp_methods */
     0,                                              /* tp_members */
-    0,                                              /* tp_getset */
+    xmlparser_getsetlist,                           /* tp_getset */
     0,                                              /* tp_base */
     0,                                              /* tp_dict */
     0,                                              /* tp_descr_get */

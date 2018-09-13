@@ -3,8 +3,16 @@
 
 /* note: you must import expat.h before importing this module! */
 
-#define PyExpat_CAPI_MAGIC  "pyexpat.expat_CAPI 1.1"
+#include "expat.h"
+
+#define PyExpat_COMBINED_VERSION (10000*XML_MAJOR_VERSION+100*XML_MINOR_VERSION+XML_MICRO_VERSION)
+
+#define PyExpat_CAPI_MAGIC  "pyexpat.expat_CAPI 1.2"
 #define PyExpat_CAPSULE_NAME "pyexpat.expat_CAPI"
+
+#if PyExpat_COMBINED_VERSION < 20300
+enum XML_Option {};
+#endif
 
 struct PyExpat_CAPI
 {
@@ -50,6 +58,9 @@ struct PyExpat_CAPI
         void *encodingHandlerData, const XML_Char *name, XML_Encoding *info);
     /* might be none for expat < 2.1.0 */
     int (*SetHashSalt)(XML_Parser parser, unsigned long hash_salt);
+    /* expat >= 2.3.0 */
+    enum XML_Status (*SetOption)(XML_Parser parser, enum XML_Option option, void *value);
+    enum XML_Status (*GetOption)(XML_Parser parser, enum XML_Option option, void *rvalue);
     /* always add new stuff to the end! */
 };
 
