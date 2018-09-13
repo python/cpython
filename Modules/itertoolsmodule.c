@@ -492,10 +492,18 @@ teedataobject_getitem(teedataobject *tdo, int i)
         /* this is the lead iterator, so fetch more data */
         assert(i == tdo->numread);
         value = PyIter_Next(tdo->it);
-        if (value == NULL)
+
+        if (value != NULL) {
+            teedataobject *temp = tdo;
+            while (temp->numread + 1 > LINKCELLS) {
+                temp = (teedataobject *) teedataobject_jumplink(temp);
+            }
+            temp->values[temp->numread] = value;
+            temp->numread++;
+        }else if (i == tdo->numread) {
             return NULL;
-        tdo->numread++;
-        tdo->values[i] = value;
+        }
+        value = tdo->values[i];
     }
     Py_INCREF(value);
     return value;
