@@ -46,26 +46,33 @@ steps:
   displayName: Detect doc-only changes
   condition: and(succeeded(), variables['System.PullRequest.TargetBranch'])
 
-- script: choco install opencppcoverage
-  displayName: Install OpenCppCoverage
-  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
-
 - script: PCbuild\build.bat -d -e $(buildOpt)
   displayName: 'Build CPython'
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
-- script: python.bat -m test.pythoninfo
+- script: |
+   choco install opencppcoverage codecov
+   python.bat -m venv venv
+   venv\Scripts\python_d.exe -m pip install coverage
+   echo import coverage;coverage.process_startup() > venv\Lib\site-packages\sitecustomize.py
+  displayName: Install coverage tools
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
+- script: venv\Scripts\python_d.exe -m test.pythoninfo
   displayName: 'Display build info'
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
 - script: |
-   python.bat -m venv venv & venv\Scripts\python_d.exe -m pip install coverage
-  displayName: Install coverage
-  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
-
-- script: |
-   "C:\Program Files\OpenCppCoverage\OpenCppCoverage.exe" --config_file=.vsts\opencppcoverage.ini -- venv\Scripts\python_d.exe -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_subprocess
+   "C:\Program Files\OpenCppCoverage\OpenCppCoverage.exe" --config_file=.vsts\opencppcoverage.ini -- venv\Scripts\python_d.exe -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_subprocess test_exceptions
   displayName: 'Tests with coverage'
   env:
     PREFIX: $(Py_OutDir)\$(outDirSuffix)
+    COVERAGE_PROCESS_START: $(Build.Repository.LocalPath)\.coveragerc
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
+- script: |
+   venv\Scripts\activate.bat
+   coverage combine
+   rem codecov -f
+  displayName: "Upload coverage report"
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
