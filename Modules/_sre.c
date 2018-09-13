@@ -121,7 +121,6 @@ static unsigned int sre_upper_locale(unsigned int ch)
 
 #define SRE_UNI_IS_DIGIT(ch) Py_UNICODE_ISDECIMAL(ch)
 #define SRE_UNI_IS_SPACE(ch) Py_UNICODE_ISSPACE(ch)
-#define SRE_UNI_IS_LINEBREAK(ch) Py_UNICODE_ISLINEBREAK(ch)
 #define SRE_UNI_IS_ALNUM(ch) Py_UNICODE_ISALNUM(ch)
 #define SRE_UNI_IS_WORD(ch) (SRE_UNI_IS_ALNUM(ch) || (ch) == '_')
 
@@ -152,10 +151,6 @@ sre_category(SRE_CODE category, unsigned int ch)
         return SRE_IS_WORD(ch);
     case SRE_CATEGORY_NOT_WORD:
         return !SRE_IS_WORD(ch);
-    case SRE_CATEGORY_LINEBREAK:
-        return SRE_IS_LINEBREAK(ch);
-    case SRE_CATEGORY_NOT_LINEBREAK:
-        return !SRE_IS_LINEBREAK(ch);
 
     case SRE_CATEGORY_LOC_WORD:
         return SRE_LOC_IS_WORD(ch);
@@ -174,10 +169,6 @@ sre_category(SRE_CODE category, unsigned int ch)
         return SRE_UNI_IS_WORD(ch);
     case SRE_CATEGORY_UNI_NOT_WORD:
         return !SRE_UNI_IS_WORD(ch);
-    case SRE_CATEGORY_UNI_LINEBREAK:
-        return SRE_UNI_IS_LINEBREAK(ch);
-    case SRE_CATEGORY_UNI_NOT_LINEBREAK:
-        return !SRE_UNI_IS_LINEBREAK(ch);
     }
     return 0;
 }
@@ -1587,8 +1578,6 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
             case SRE_CATEGORY_NOT_SPACE:
             case SRE_CATEGORY_WORD:
             case SRE_CATEGORY_NOT_WORD:
-            case SRE_CATEGORY_LINEBREAK:
-            case SRE_CATEGORY_NOT_LINEBREAK:
             case SRE_CATEGORY_LOC_WORD:
             case SRE_CATEGORY_LOC_NOT_WORD:
             case SRE_CATEGORY_UNI_DIGIT:
@@ -1597,8 +1586,6 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
             case SRE_CATEGORY_UNI_NOT_SPACE:
             case SRE_CATEGORY_UNI_WORD:
             case SRE_CATEGORY_UNI_NOT_WORD:
-            case SRE_CATEGORY_UNI_LINEBREAK:
-            case SRE_CATEGORY_UNI_NOT_LINEBREAK:
                 break;
             default:
                 FAIL;
