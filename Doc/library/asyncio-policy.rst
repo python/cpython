@@ -11,9 +11,9 @@ An event loop policy, a global per-process object, controls
 management of the event loop. Each event loop has a default
 policy, which can be changed and customized using the API.
 
-A policy defines the notion of context and manages a
+A policy defines the notion of *context* and manages a
 separate event loop per context. The default policy
-defines context to be the current thread.
+defines *context* to be the current thread.
 
 By using a custom event loop policy, the behavior of
 :func:`get_event_loop`, :func:`set_event_loop`, and
@@ -94,8 +94,8 @@ asyncio ships with the following built-in policies:
    The default asyncio policy.  Uses :class:`SelectorEventLoop`
    on both Unix and Windows platforms.
 
-   There is no need to install the default policy manually; asyncio
-   is configured to use it automatically.
+   There is no need to install the default policy manually. asyncio
+   is configured to use the default policy automatically.
 
 
 .. class:: WindowsProactorEventLoopPolicy
@@ -125,7 +125,7 @@ by default) and :class:`FastChildWatcher`.
 See also the :ref:`Subprocess and Threads <asyncio-subprocess-threads>`
 section.
 
-The following two functions can be used to customize the watcher
+The following two functions can be used to customize the child process watcher
 implementation used by the asyncio event loop:
 
 .. function:: get_child_watcher()
@@ -189,7 +189,7 @@ implementation used by the asyncio event loop:
    handling a big number of processes (*O(n)* each time a
    :py:data:`SIGCHLD` is received).
 
-   asyncio uses this implementation by default.
+   asyncio uses this safe implementation by default.
 
 .. class:: FastChildWatcher
 
