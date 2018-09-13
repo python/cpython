@@ -66,7 +66,11 @@ steps:
   displayName: 'Display build info'
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
-- script: xvfb-run ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures
+- script: echo "import coverage;coverage.process_startup()" > venv/lib/python*/site-packages/sitecustomize.py
+  displayName: "Set up subprocess coverage"
+  condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
+
+- script: COVERAGE_PROCESS_START=`pwd`/.coveragerc xvfb-run ./venv/bin/python -m coverage run --pylib -m test --fail-env-changed -uall,-cpu
   displayName: 'Tests with coverage'
   condition: and(succeeded(), ne(variables['DocOnly'], 'true'))
 
