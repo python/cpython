@@ -3467,7 +3467,10 @@ written in Python, such as a mail server's external command delivery program.
 
   If the value of *use_vfork* is true, the child will be created using
   :c:func:`vfork` instead of :c:func:`fork`. This corresponds to the
-  GNU specific flag :c:data:`POSIX_SPAWN_USEVFORK`.
+  GNU specific flag :c:data:`POSIX_SPAWN_USEVFORK`. If the flag is not
+  available on the platform, :exc:`NotImplementedError` will be raised.
+
+   Availability: Using *use_vfork* is only available on Linux.
 
    .. versionadded:: 3.7
 

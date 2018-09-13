@@ -1,2 +1,3 @@
-Added support for `usevfork` parameters of `posix_spawn`, which allows to
-use ``POSIX_SPAWN_USEVFORK`` when the flag is available in the system.
+Added support for `use_vfork` parameters of :func:`os.posix_spawn`, which
+allows to use ``POSIX_SPAWN_USEVFORK`` when the flag is available in the
+system.

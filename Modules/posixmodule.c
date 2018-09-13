@@ -5282,7 +5282,8 @@ parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
 #ifdef POSIX_SPAWN_USEVFORK
         all_flags |= POSIX_SPAWN_SETSCHEDULER;
 #else
-        argument_unavailable_error("posix_spawn", "use_vfork");
+        PyErr_SetString(PyExc_NotImplementedError,
+                "The POSIX_SPAWN_USEVFORK flag is unavailable on this platform");
         goto fail;
 #endif
     }

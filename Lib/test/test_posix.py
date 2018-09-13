@@ -1791,7 +1791,7 @@ class TestPosixSpawn(unittest.TestCase):
             self.assertEqual(f.read(), 'hello')
 
     def test_vfork(self):
-        args = self.python_args()
+        args = self.python_args('-c', 'pass')
         try:
             pid = posix.posix_spawn(
                 args[0],
@@ -1799,8 +1799,8 @@ class TestPosixSpawn(unittest.TestCase):
                 os.environ,
                 use_vfork=True
             )
-        except NotImplementedError:
-            unittest.SkipTest("POSIX_SPAWN_USEVFORK not available on this system")
+        except NotImplementedError as e:
+            raise unittest.SkipTest(e)
         else:
             self.assertEqual(os.waitpid(pid, 0), (pid, 0))
 
