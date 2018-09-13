@@ -5270,12 +5270,10 @@ and with a positive denominator.
 
 >>> (10).as_integer_ratio()
 (10, 1)
->>> (0).as_integer_ratio()
-(0, 1)
->>> (11).as_integer_ratio()
-(11, 1)
 >>> (-10).as_integer_ratio()
 (-10, 1)
+>>> (0).as_integer_ratio()
+(0, 1)
 [clinic start generated code]*/
 
 static PyObject *
