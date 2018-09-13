@@ -74,7 +74,6 @@ def run_tests_worker(worker_args):
 
     print()   # Force a newline (just in case)
     print(json.dumps(result), flush=True)
-
     sys.exit(0)
 
 
@@ -133,12 +132,7 @@ class MultiprocessThread(threading.Thread):
             self.output.put((None, None, None, None))
             return True
 
-        try:
-            result = json.loads(result)
-        except json.decoder.JSONDecodeError:
-            stdout += "\n" + result
-            result = None
-
+        result = json.loads(result)
         self.output.put((test, stdout.rstrip(), stderr.rstrip(),
                          result))
         return False

@@ -1898,6 +1898,9 @@ def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
     runner = RegressionTestRunner(sys.stdout, verbosity=verbose)
 
+    # TODO: Remove this before merging (here for easy comparison with old impl)
+    #runner = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=failfast) 
+
     result = runner.run(suite)
 
     if junit_xml_list is not None:

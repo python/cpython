@@ -145,7 +145,7 @@ def runtest(ns, test):
 
         if xml_list:
             import xml.etree.ElementTree as ET
-            xml_data = b''.join(ET.tostring(x) for x in xml_list).decode('us-ascii')
+            xml_data = [ET.tostring(x).decode('us-ascii') for x in xml_list]
         else:
             xml_data = None
         return result + (xml_data,)

@@ -102,10 +102,11 @@ class RegressionTestResult(unittest.TestResult):
 
         # TODO: Limit err_tb
         tb = traceback.format_exception(err_type, err_value, err_tb)
+        msg = traceback.format_exception(err_type, err_value, None)
 
         return {
             'type': typename,
-            'message': str(err_value),
+            'message': ''.join(msg),
             '': ''.join(tb),
         }
 

@@ -123,11 +123,12 @@ class Regrtest:
 
         if xml_data:
             import xml.etree.ElementTree as ET
-            try:
-                self.testsuite_xml.append(ET.fromstring(xml_data))
-            except ET.ParseError:
-                print(xml_data, file=sys.__stderr__)
-                raise
+            for e in xml_data:
+                try:
+                    self.testsuite_xml.append(ET.fromstring(e))
+                except ET.ParseError:
+                    print(xml_data, file=sys.__stderr__)
+                    raise
 
     def display_progress(self, test_index, test):
         if self.ns.quiet:
@@ -398,7 +399,7 @@ class Regrtest:
                     result = runtest(self.ns, test)
                 except KeyboardInterrupt:
                     self.interrupted = True
-                    self.accumulate_result(test, (INTERRUPTED, None))
+                    self.accumulate_result(test, (INTERRUPTED, None, None))
                     break
                 else:
                     self.accumulate_result(test, result)
@@ -528,6 +529,8 @@ class Regrtest:
 
         import xml.etree.ElementTree as ET
         root = ET.Element("testsuites")
+
+        # Manually count the totals for the overall summary
         totals = {'tests': 0, 'errors': 0, 'failures': 0}
         for suite in self.testsuite_xml:
             root.append(suite)
@@ -536,9 +539,12 @@ class Regrtest:
                     totals[k] += int(suite.get(k, 0))
                 except ValueError:
                     pass
+
         for k, v in totals.items():
             root.set(k, str(v))
-        with open(self.ns.xmlpath, 'wb') as f:
+
+        xmlpath = os.path.join(support.SAVEDCWD, self.ns.xmlpath)
+        with open(xmlpath, 'wb') as f:
             for s in ET.tostringlist(root):
                 f.write(s)
 
