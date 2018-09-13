@@ -5,7 +5,6 @@ import os
 import tempfile
 import textwrap
 import unittest
-from test import support
 
 
 # Helpers to create and destroy hierarchies.
