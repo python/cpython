@@ -189,6 +189,8 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
             ("#_n" ,"0b0000_0001_0000_0010_0000_0011_0010_1010"),
             ("#_x" ,"0x0102_032a"),
             ("#_X" ,"0X0102_032A"),
+            ("s" ,"1.2.3.42"),
+            ("" ,"1.2.3.42"),
         ]
         for (fmt, txt) in v4_pairs:
             self.assertEqual(txt, format(v4, fmt))
@@ -323,6 +325,8 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
             ("#_n", "0x0000_0000_0000_0000_0000_0000_0102_032a"),
             ("#_x", "0x0000_0000_0000_0000_0000_0000_0102_032a"),
             ("#_X", "0X0000_0000_0000_0000_0000_0000_0102_032A"),
+            ("s", "::102:32a"),
+            ("", "::102:32a"),
         ]
 
         for (fmt, txt) in v6_pairs:
