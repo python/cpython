@@ -35,6 +35,7 @@ import os
 import queue
 import random
 import re
+import signal
 import socket
 import struct
 import sys
@@ -665,6 +666,44 @@ class HandlerTest(BaseTest):
                 h.close()
                 if os.path.exists(fn):
                     os.unlink(fn)
+
+    # The implementation relies on os.register_at_fork existing, but we test
+    # based on os.fork existing because that is what users and this test use.
+    # This helps ensure that when fork exists (the important concept) that the
+    # register_at_fork mechanism is also present and used.
+    @unittest.skipIf(not hasattr(os, 'fork'), 'Test requires os.fork().')
+    def test_post_fork_child_no_deadlock(self):
+        """Ensure forked child logging locks are not held; bpo-6721."""
+        refed_h = logging.Handler()
+        refed_h.name = 'because we need at least one for this test'
+        logging._acquireLock()
+        try:
+            self.assertGreater(len(logging._handlers), 0)
+            the_handler = next(iter(logging._handlers.values()))
+            the_handler.acquire()
+            try:
+                pid = os.fork()
+                if pid == 0:  # Child.
+                    logging.error(r'Child process did not deadlock. \o/')
+                    os._exit(0)
+                else:  # Parent.
+                    start_time = time.monotonic()
+                    while True:
+                        waited_pid, status = os.waitpid(pid, os.WNOHANG)
+                        if waited_pid == pid:
+                            break  # child process exited.
+                        if time.monotonic() - start_time > 20:
+                            break  # so long? implies child deadlock.
+                        time.sleep(0.05)
+                    if waited_pid != pid:
+                        os.kill(pid, signal.SIGKILL)
+                        waited_pid, status = os.waitpid(pid, 0)
+                        self.fail("child process deadlocked.")
+                    self.assertEqual(status, 0, msg="child process error")
+            finally:
+                the_handler.release()
+        finally:
+            logging._releaseLock()
 
 
 class BadStream(object):
