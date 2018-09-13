@@ -75,6 +75,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_child_free = 0;
     ste->ste_generator = 0;
     ste->ste_coroutine = 0;
+    ste->ste_comprehension = 0;
     ste->ste_returns_value = 0;
     ste->ste_needs_class_closure = 0;
 
@@ -1717,6 +1718,8 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     if (outermost->is_async) {
         st->st_cur->ste_coroutine = 1;
     }
+    st->st_cur->ste_comprehension = 1;
+
     /* Outermost iter is received as an argument */
     if (!symtable_implicit_arg(st, 0)) {
         symtable_exit_block(st, (void *)e);
