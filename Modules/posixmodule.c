@@ -25,6 +25,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "internal/pystate.h"
 #include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
@@ -420,6 +421,7 @@ void
 PyOS_AfterFork_Child(void)
 {
     _PyGILState_Reinit();
+    _PyInterpreterState_DeleteExceptMain();
     PyEval_ReInitThreads();
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
