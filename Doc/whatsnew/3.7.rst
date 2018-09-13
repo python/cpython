@@ -2484,3 +2484,13 @@ The current exception state has been moved from the frame object to the co-routi
 This simplified the interpreter and fixed a couple of obscure bugs caused by
 having swap exception state when entering or exiting a generator.
 (Contributed by Mark Shannon in :issue:`25612`.)
+
+Notable changes in Python 3.7.1
+===============================
+
+Starting in 3.7.1, :c:func:`Py_Initialize` now consistently reads and respects
+all of the same environment settings as :c:func:`Py_Main` (in earlier Python
+versions, it respected an ill-defined subset of those environment variables,
+while in Python 3.7.0 it didn't read any of them due to :issue:`34247`). If
+this behavior is unwanted, set :c:data:`Py_IgnoreEnvironmentFlag` to 1 before
+calling :c:func:`Py_Initialize`.
