@@ -1,0 +1,1 @@
+Make ``test_os.test_mode`` aware of SGID value of base directory and test directory mode accordingly. Patch by Michael Felt
