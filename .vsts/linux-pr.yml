@@ -79,6 +79,6 @@ steps:
   inputs:
     testResultsFiles: '$(build.binariesDirectory)/test-results.xml'
     mergeTestResults: true
-    testRunTitle: '$(system.pullRequest.targetBranch)-$(agent.os)'
-    platform: $(agent.os)
+    testRunTitle: '$(system.pullRequest.targetBranch)-linux'
+    platform: linux
   condition: and(succeededOrFailed(), ne(variables['DocOnly'], 'true'))

@@ -65,6 +65,6 @@ steps:
   inputs:
     testResultsFiles: '$(Build.BinariesDirectory)\test-results.xml'
     mergeTestResults: true
-    testRunTitle: '$(System.PullRequest.TargetBranch)-$(Agent.OS)'
-    platform: $(Agent.OS)
+    testRunTitle: '$(System.PullRequest.TargetBranch)-$(outDirSuffix)'
+    platform: $(outDirSuffix)
   condition: and(succeededOrFailed(), ne(variables['DocOnly'], 'true'))
