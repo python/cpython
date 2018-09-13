@@ -1,2 +1,3 @@
-namedtuple._asdict returns dict instead of OrderedDict. Patch by Michael
+namedtuple._asdict returns dict instead of OrderedDict, since dict now
+keeps keys in insertion order, the same as OrderedDict. Patch by Michael
 Selik.
