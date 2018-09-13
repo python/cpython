@@ -844,10 +844,7 @@ class Handler(Filterer):
         Acquire a thread lock for serializing access to the underlying I/O.
         """
         self.lock = threading.RLock()
-        # We put the instance itself in a single WeakSet as we MUST have only
-        # one atomic weak ref. used by both before and after atfork calls to
-        # guarantee matched pairs of acquire and release calls.
-        _at_fork_acquire_release_weakset.add(self)
+        _register_at_fork_acquire_release(self)
 
     def acquire(self):
         """
