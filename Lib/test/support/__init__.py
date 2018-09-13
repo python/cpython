@@ -1899,7 +1899,7 @@ def _run_suite(suite):
     runner = RegressionTestRunner(sys.stdout, verbosity=verbose)
 
     # TODO: Remove this before merging (here for easy comparison with old impl)
-    #runner = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=failfast) 
+    #runner = unittest.TextTestRunner(sys.stdout, verbosity=2, failfast=failfast)
 
     result = runner.run(suite)
 
