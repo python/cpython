@@ -886,8 +886,8 @@ field names, the method and attribute names start with an underscore.
 
 .. method:: somenamedtuple._asdict()
 
-    Return a new :class:`dict` which maps field names to their corresponding
-    values:
+    Return a new ordered dictionary which maps field names to their
+    corresponding values:
 
     .. doctest::
 
@@ -899,7 +899,8 @@ field names, the method and attribute names start with an underscore.
         Returns an :class:`OrderedDict` instead of a regular :class:`dict`.
 
     .. versionchanged:: 3.8
-        Returns an :class:`dict` instead of a regular :class:`OrderedDict`.
+        Returns an :class:`dict` instead of a :class:`OrderedDict`,
+        since it can now keep keys the same order as namedtuple fields.
 
 .. method:: somenamedtuple._replace(**kwargs)
 
