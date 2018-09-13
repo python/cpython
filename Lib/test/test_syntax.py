@@ -269,6 +269,9 @@ SyntaxError: keyword can't be an expression
 >>> f(x.y=1)
 Traceback (most recent call last):
 SyntaxError: keyword can't be an expression
+>>> f((x)=2)
+Traceback (most recent call last):
+SyntaxError: keyword can't be an expression
 
 
 More set_context():
