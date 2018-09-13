@@ -676,34 +676,62 @@ class HandlerTest(BaseTest):
         """Ensure forked child logging locks are not held; bpo-6721."""
         refed_h = logging.Handler()
         refed_h.name = 'because we need at least one for this test'
-        logging._acquireLock()
-        try:
-            self.assertGreater(len(logging._handlers), 0)
-            the_handler = next(iter(logging._handlers.values()))
-            the_handler.acquire()
+        self.assertGreater(len(logging._handlers), 0)
+
+        locks_held__ready_to_fork = threading.Event()
+        fork_happened__release_locks_and_end_thread = threading.Event()
+
+        def lock_holder_thread_fn():
+            logging._acquireLock()
             try:
-                pid = os.fork()
-                if pid == 0:  # Child.
-                    logging.error(r'Child process did not deadlock. \o/')
-                    os._exit(0)
-                else:  # Parent.
-                    start_time = time.monotonic()
-                    while True:
-                        waited_pid, status = os.waitpid(pid, os.WNOHANG)
-                        if waited_pid == pid:
-                            break  # child process exited.
-                        if time.monotonic() - start_time > 20:
-                            break  # so long? implies child deadlock.
-                        time.sleep(0.05)
-                    if waited_pid != pid:
-                        os.kill(pid, signal.SIGKILL)
-                        waited_pid, status = os.waitpid(pid, 0)
-                        self.fail("child process deadlocked.")
-                    self.assertEqual(status, 0, msg="child process error")
+                refed_h.acquire()
+                try:
+                    # Tell the main thread to do the fork.
+                    locks_held__ready_to_fork.set()
+
+                    # If the deadlock bug exists, the fork will happen
+                    # without dealing with the locks we hold, deadlocking
+                    # the child.
+
+                    # Wait for a successful fork or an unreasonable amount of
+                    # time before releasing our locks.  To avoid a timing based
+                    # test we'd need communication from os.fork() as to when it
+                    # has actually happened.  Given this is a regression test
+                    # for a fixed issue, potentially less reliably detecting
+                    # regression via timing is acceptable for simplicity.
+                    # The test will always take at least this long. :(
+                    fork_happened__release_locks_and_end_thread.wait(0.5)
+                finally:
+                    refed_h.release()
             finally:
-                the_handler.release()
-        finally:
-            logging._releaseLock()
+                logging._releaseLock()
+
+        lock_holder_thread = threading.Thread(
+                target=lock_holder_thread_fn,
+                name='test_post_fork_child_no_deadlock lock holder')
+        lock_holder_thread.start()
+
+        locks_held__ready_to_fork.wait()
+        pid = os.fork()
+        if pid == 0:  # Child.
+            logging.error(r'Child process did not deadlock. \o/')
+            os._exit(0)
+        else:  # Parent.
+            fork_happened__release_locks_and_end_thread.set()
+            lock_holder_thread.join()
+            start_time = time.monotonic()
+            while True:
+                waited_pid, status = os.waitpid(pid, os.WNOHANG)
+                if waited_pid == pid:
+                    break  # child process exited.
+                if time.monotonic() - start_time > 7:
+                    break  # so long? implies child deadlock.
+                time.sleep(0.05)
+            if waited_pid != pid:
+                os.kill(pid, signal.SIGKILL)
+                waited_pid, status = os.waitpid(pid, 0)
+                self.fail("child process deadlocked.")
+            self.assertEqual(status, 0, msg="child process error")
 
 
 class BadStream(object):
