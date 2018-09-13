@@ -1,0 +1,2 @@
+Added support for `usevfork` parameters of `posix_spawn`, which allows to
+use ``POSIX_SPAWN_USEVFORK`` when the flag is available in the system.

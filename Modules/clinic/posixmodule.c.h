@@ -1732,7 +1732,7 @@ exit:
 PyDoc_STRVAR(os_posix_spawn__doc__,
 "posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
 "            setpgroup=None, resetids=False, setsigmask=(),\n"
-"            setsigdef=(), scheduler=None)\n"
+"            setsigdef=(), scheduler=None, usevfork=False)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -1754,7 +1754,9 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 "  setsigdef\n"
 "    The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.\n"
 "  scheduler\n"
-"    A tuple with the scheduler policy (optional) and parameters.");
+"    A tuple with the scheduler policy (optional) and parameters.\n"
+"  usevfork\n"
+"    If the value is `True` the POSIX_SPAWN_USEVFORK will be activated.");
 
 #define OS_POSIX_SPAWN_METHODDEF    \
     {"posix_spawn", (PyCFunction)os_posix_spawn, METH_FASTCALL|METH_KEYWORDS, os_posix_spawn__doc__},
@@ -1763,14 +1765,14 @@ static PyObject *
 os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *env, PyObject *file_actions,
                     PyObject *setpgroup, int resetids, PyObject *setsigmask,
-                    PyObject *setsigdef, PyObject *scheduler);
+                    PyObject *setsigdef, PyObject *scheduler, int usevfork);
 
 static PyObject *
 os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsigmask", "setsigdef", "scheduler", NULL};
-    static _PyArg_Parser _parser = {"O&OO|$OOiOOO:posix_spawn", _keywords, 0};
+    static const char * const _keywords[] = {"", "", "", "file_actions", "setpgroup", "resetids", "setsigmask", "setsigdef", "scheduler", "usevfork", NULL};
+    static _PyArg_Parser _parser = {"O&OO|$OOiOOOi:posix_spawn", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("posix_spawn", "path", 0, 0);
     PyObject *argv;
     PyObject *env;
@@ -1780,12 +1782,13 @@ os_posix_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *setsigmask = NULL;
     PyObject *setsigdef = NULL;
     PyObject *scheduler = NULL;
+    int usevfork = 0;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &path, &argv, &env, &file_actions, &setpgroup, &resetids, &setsigmask, &setsigdef, &scheduler)) {
+        path_converter, &path, &argv, &env, &file_actions, &setpgroup, &resetids, &setsigmask, &setsigdef, &scheduler, &usevfork)) {
         goto exit;
     }
-    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsigmask, setsigdef, scheduler);
+    return_value = os_posix_spawn_impl(module, &path, argv, env, file_actions, setpgroup, resetids, setsigmask, setsigdef, scheduler, usevfork);
 
 exit:
     /* Cleanup for path */
@@ -6648,4 +6651,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=758ee0434fb03d90 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=adeb97aed906eb1b input=a9049054013a1b77]*/

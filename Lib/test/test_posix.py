@@ -1790,6 +1790,19 @@ class TestPosixSpawn(unittest.TestCase):
         with open(dupfile) as f:
             self.assertEqual(f.read(), 'hello')
 
+    def test_usevfork(self):
+        try:
+            pid = posix.posix_spawn(
+                sys.executable,
+                [sys.executable, '-c', 'pass'],
+                os.environ,
+                usevfork=True
+            )
+        except NotImplementedError:
+            unittest.SkipTest("POSIX_SPAWN_USEVFORK not available on this system")
+        else:
+            self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
 
 def test_main():
     try:

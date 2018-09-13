@@ -5188,7 +5188,7 @@ convert_sched_param(PyObject *param, struct sched_param *res);
 
 static int
 parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
-                        PyObject *setsigdef, PyObject *scheduler,
+                        PyObject *setsigdef, PyObject *scheduler, int usevfork,
                         posix_spawnattr_t *attrp)
 {
     long all_flags = 0;
@@ -5274,6 +5274,16 @@ parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
 #else
         PyErr_SetString(PyExc_NotImplementedError,
                 "The scheduler option is not supported in this system.");
+        goto fail;
+#endif
+    }
+
+    if (usevfork) {
+#ifdef POSIX_SPAWN_USEVFORK
+        all_flags |= POSIX_SPAWN_SETSCHEDULER;
+#else
+        PyErr_SetString(PyExc_NotImplementedError,
+                "The UseVFork option is not supported in this system.");
         goto fail;
 #endif
     }
@@ -5425,6 +5435,8 @@ os.posix_spawn
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
     scheduler: object = NULL
         A tuple with the scheduler policy (optional) and parameters.
+    usevfork: bool(accept={int}) = False
+        If the value is `True` the POSIX_SPAWN_USEVFORK will be activated.
 
 Execute the program specified by path in a new process.
 [clinic start generated code]*/
@@ -5433,8 +5445,8 @@ static PyObject *
 os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *env, PyObject *file_actions,
                     PyObject *setpgroup, int resetids, PyObject *setsigmask,
-                    PyObject *setsigdef, PyObject *scheduler)
-/*[clinic end generated code: output=45dfa4c515d09f2c input=2891c2f1d457e39b]*/
+                    PyObject *setsigdef, PyObject *scheduler, int usevfork)
+/*[clinic end generated code: output=7e7b403caa228664 input=1fc98a9706886420]*/
 {
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
@@ -5504,7 +5516,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     }
 
     if (parse_posix_spawn_flags(setpgroup, resetids, setsigmask,
-                                setsigdef, scheduler, &attr)) {
+                                setsigdef, scheduler, usevfork, &attr)) {
         goto exit;
     }
     attrp = &attr;
