@@ -12,12 +12,8 @@ import platform
 
 from test import support
 from test.support import script_helper
-from ctypes import c_void_p, sizeof
 
 interpreters = support.import_module('_xxsubinterpreters')
-AIX = platform.system() == 'AIX'
-ABI = sizeof(c_void_p) * 8
-
 
 ##################################
 # helpers
@@ -396,8 +392,12 @@ class ShareableTypeTests(unittest.TestCase):
                             for i in range(-1, 258))
 
     def test_int(self):
+        # bpo-34569 - this only allows the test to pass
         # AIX returns MAX_UINT32 rather than -1 when 32-bit
-        if AIX and (ABI == 32):
+        # this value is stored in the low-order 32-bits of a 64-bit void
+        # Note: code works fine in 64-bit mode!
+        is32bit = sys.maxsize < 2**31
+        if platform.system() == 'AIX' and is32bit:
             self._assert_values(range(0, 258))
         else:
             self._assert_values(range(-1, 258))
