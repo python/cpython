@@ -3,8 +3,7 @@
 #ifndef Py_PYTHON_AST_H
 #define Py_PYTHON_AST_H
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include "asdl.h"
@@ -441,11 +440,11 @@ struct _withitem {
 
 // Note: these macros affect function definitions, not only call sites.
 #define Module(a0, a1) _Py_Module(a0, a1)
-    mod_ty _Py_Module(asdl_seq *body, PyArena *arena);
+mod_ty _Py_Module(asdl_seq * body, PyArena *arena);
 #define Interactive(a0, a1) _Py_Interactive(a0, a1)
-    mod_ty _Py_Interactive(asdl_seq *body, PyArena *arena);
+mod_ty _Py_Interactive(asdl_seq * body, PyArena *arena);
 #define Expression(a0, a1) _Py_Expression(a0, a1)
-    mod_ty _Py_Expression(expr_ty body, PyArena *arena);
+mod_ty _Py_Expression(expr_ty body, PyArena *arena);
 #define Suite(a0, a1) _Py_Suite(a0, a1)
 mod_ty _Py_Suite(asdl_seq * body, PyArena *arena);
 #define FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) _Py_FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
@@ -631,11 +630,11 @@ expr_ty _Py_Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int
                   col_offset, int end_lineno, int end_col_offset, PyArena
                   *arena);
 #define Slice(a0, a1, a2, a3) _Py_Slice(a0, a1, a2, a3)
-    slice_ty _Py_Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena);
+slice_ty _Py_Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena);
 #define ExtSlice(a0, a1) _Py_ExtSlice(a0, a1)
-    slice_ty _Py_ExtSlice(asdl_seq *dims, PyArena *arena);
+slice_ty _Py_ExtSlice(asdl_seq * dims, PyArena *arena);
 #define Index(a0, a1) _Py_Index(a0, a1)
-    slice_ty _Py_Index(expr_ty value, PyArena *arena);
+slice_ty _Py_Index(expr_ty value, PyArena *arena);
 #define comprehension(a0, a1, a2, a3, a4) _Py_comprehension(a0, a1, a2, a3, a4)
 comprehension_ty _Py_comprehension(expr_ty target, expr_ty iter, asdl_seq *
                                    ifs, int is_async, PyArena *arena);
@@ -652,15 +651,16 @@ arguments_ty _Py_arguments(asdl_seq * args, arg_ty vararg, asdl_seq *
 arg_ty _Py_arg(identifier arg, expr_ty annotation, int lineno, int col_offset,
                int end_lineno, int end_col_offset, PyArena *arena);
 #define keyword(a0, a1, a2) _Py_keyword(a0, a1, a2)
-    keyword_ty _Py_keyword(identifier arg, expr_ty value, PyArena *arena);
+keyword_ty _Py_keyword(identifier arg, expr_ty value, PyArena *arena);
 #define alias(a0, a1, a2) _Py_alias(a0, a1, a2)
-    alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
+alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
 #define withitem(a0, a1, a2) _Py_withitem(a0, a1, a2)
-    withitem_ty _Py_withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena);
+withitem_ty _Py_withitem(expr_ty context_expr, expr_ty optional_vars, PyArena
+                         *arena);
 
-    PyObject *PyAST_mod2obj(mod_ty t);
-    mod_ty PyAST_obj2mod(PyObject *ast, PyArena *arena, int mode);
-    int PyAST_Check(PyObject *obj);
+PyObject* PyAST_mod2obj(mod_ty t);
+mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
+int PyAST_Check(PyObject* obj);
 
 #ifdef __cplusplus
 }

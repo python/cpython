@@ -349,7 +349,8 @@ static char *Tuple_fields[]={
 };
 static PyTypeObject *expr_context_type;
 static PyObject *Load_singleton, *Store_singleton, *Del_singleton,
-*AugLoad_singleton, *AugStore_singleton, *Param_singleton;
+*AugLoad_singleton, *AugStore_singleton, *Param_singleton,
+*NamedStore_singleton;
 static PyObject* ast2obj_expr_context(expr_context_ty);
 static PyTypeObject *Load_type;
 static PyTypeObject *Store_type;
@@ -357,6 +358,7 @@ static PyTypeObject *Del_type;
 static PyTypeObject *AugLoad_type;
 static PyTypeObject *AugStore_type;
 static PyTypeObject *Param_type;
+static PyTypeObject *NamedStore_type;
 static PyTypeObject *slice_type;
 static PyObject* ast2obj_slice(void*);
 static PyTypeObject *Slice_type;
@@ -956,6 +958,10 @@ static int init_types(void)
     if (!Param_type) return 0;
     Param_singleton = PyType_GenericNew(Param_type, NULL, NULL);
     if (!Param_singleton) return 0;
+    NamedStore_type = make_type("NamedStore", expr_context_type, NULL, 0);
+    if (!NamedStore_type) return 0;
+    NamedStore_singleton = PyType_GenericNew(NamedStore_type, NULL, NULL);
+    if (!NamedStore_singleton) return 0;
     slice_type = make_type("slice", &AST_type, NULL, 0);
     if (!slice_type) return 0;
     if (!add_attributes(slice_type, NULL, 0)) return 0;
@@ -3511,6 +3517,9 @@ PyObject* ast2obj_expr_context(expr_context_ty o)
         case Param:
             Py_INCREF(Param_singleton);
             return Param_singleton;
+        case NamedStore:
+            Py_INCREF(NamedStore_singleton);
+            return NamedStore_singleton;
         default:
             /* should never happen, but just in case ... */
             PyErr_Format(PyExc_SystemError, "unknown expr_context found");
@@ -7241,6 +7250,14 @@ obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena* arena)
         *out = Param;
         return 0;
     }
+    isinstance = PyObject_IsInstance(obj, (PyObject *)NamedStore_type);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        *out = NamedStore;
+        return 0;
+    }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of expr_context, but got %R", obj);
     return 1;
@@ -8393,6 +8410,8 @@ PyInit__ast(void)
         return NULL;
     if (PyDict_SetItemString(d, "Param", (PyObject*)Param_type) < 0) return
         NULL;
+    if (PyDict_SetItemString(d, "NamedStore", (PyObject*)NamedStore_type) < 0)
+        return NULL;
     if (PyDict_SetItemString(d, "slice", (PyObject*)slice_type) < 0) return
         NULL;
     if (PyDict_SetItemString(d, "Slice", (PyObject*)Slice_type) < 0) return
