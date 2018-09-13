@@ -5188,7 +5188,7 @@ convert_sched_param(PyObject *param, struct sched_param *res);
 
 static int
 parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
-                        PyObject *setsigdef, PyObject *scheduler, int usevfork,
+                        PyObject *setsigdef, PyObject *scheduler, int use_vfork,
                         posix_spawnattr_t *attrp)
 {
     long all_flags = 0;
@@ -5278,12 +5278,12 @@ parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
 #endif
     }
 
-    if (usevfork) {
+    if (use_vfork) {
 #ifdef POSIX_SPAWN_USEVFORK
         all_flags |= POSIX_SPAWN_SETSCHEDULER;
 #else
         PyErr_SetString(PyExc_NotImplementedError,
-                "The UseVFork option is not supported in this system.");
+                "The use_vfork option is not supported in this system.");
         goto fail;
 #endif
     }
@@ -5435,7 +5435,7 @@ os.posix_spawn
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
     scheduler: object = NULL
         A tuple with the scheduler policy (optional) and parameters.
-    usevfork: bool(accept={int}) = False
+    use_vfork: bool(accept={int}) = False
         If the value is `True` the POSIX_SPAWN_USEVFORK will be activated.
 
 Execute the program specified by path in a new process.
@@ -5445,8 +5445,8 @@ static PyObject *
 os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *env, PyObject *file_actions,
                     PyObject *setpgroup, int resetids, PyObject *setsigmask,
-                    PyObject *setsigdef, PyObject *scheduler, int usevfork)
-/*[clinic end generated code: output=7e7b403caa228664 input=1fc98a9706886420]*/
+                    PyObject *setsigdef, PyObject *scheduler, int use_vfork)
+/*[clinic end generated code: output=ed9323af139a50f7 input=d033288962226596]*/
 {
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
@@ -5516,7 +5516,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     }
 
     if (parse_posix_spawn_flags(setpgroup, resetids, setsigmask,
-                                setsigdef, scheduler, usevfork, &attr)) {
+                                setsigdef, scheduler, use_vfork, &attr)) {
         goto exit;
     }
     attrp = &attr;
