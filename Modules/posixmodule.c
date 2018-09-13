@@ -5790,6 +5790,10 @@ os_fork1_impl(PyObject *module)
 {
     pid_t pid;
 
+    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
     PyOS_BeforeFork();
     pid = fork1();
     if (pid == 0) {
@@ -5821,6 +5825,10 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
 
+    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
     PyOS_BeforeFork();
     pid = fork();
     if (pid == 0) {
@@ -6416,6 +6424,10 @@ os_forkpty_impl(PyObject *module)
     int master_fd = -1;
     pid_t pid;
 
+    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
     PyOS_BeforeFork();
     pid = forkpty(&master_fd, NULL, NULL, NULL);
     if (pid == 0) {
