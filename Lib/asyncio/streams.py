@@ -348,7 +348,7 @@ class StreamWriter:
         # a reader can be garbage collected
         # after connection closing
         self._protocol._untrack_reader()
-        return self._transport.close()
+        self._transport.close()
 
     def is_closing(self):
         return self._transport.is_closing()
@@ -380,6 +380,14 @@ class StreamWriter:
             # would not see an error when the socket is closed.
             await sleep(0, loop=self._loop)
         await self._protocol._drain_helper()
+
+    async def aclose(self):
+        self.close()
+        await self.wait_closed()
+
+    async def awrite(self, data):
+        self.write(data)
+        await self.drain()
 
 
 class StreamReader:
