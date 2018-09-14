@@ -675,7 +675,7 @@ plain ol' Python and is guaranteed to be available.
     2  builtins.float.hex
     1  builtins.hex
     1  builtins.int
-    4  builtins.int.as_integer_ratio
+    3  builtins.int.as_integer_ratio
     2  builtins.int.bit_length
     1  builtins.oct
 
