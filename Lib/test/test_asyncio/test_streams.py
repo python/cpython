@@ -964,6 +964,28 @@ os.close(fd)
                          'call "stream.close()" explicitly.',
                          messages[0]['message'])
 
+    def test_async_writer_api(self):
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        with test_utils.run_test_server() as httpd:
+            rd, wr = self.loop.run_until_complete(
+                asyncio.open_connection(*httpd.address,
+                                        loop=self.loop))
+
+            f = wr.awrite(b'GET / HTTP/1.0\r\n\r\n')
+            self.loop.run_until_complete(f)
+            f = rd.readline()
+            data = self.loop.run_until_complete(f)
+            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+            f = rd.read()
+            data = self.loop.run_until_complete(f)
+            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            f = wr.aclose()
+            self.loop.run_until_complete(f)
+
+        self.assertEqual(messages, [])
+
     def _basetest_connect(self, stream):
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
