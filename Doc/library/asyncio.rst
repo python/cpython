@@ -41,7 +41,11 @@ as well as **low-level** APIs to:
 * :ref:`bridge <asyncio-futures>` callback-based libraries and code
   with async/await syntax.
 
-High-level APIs:
+
+Contents
+--------
+
+.. rubric:: High-level APIs
 
 .. toctree::
    :maxdepth: 1
@@ -53,7 +57,7 @@ High-level APIs:
    asyncio-queue.rst
    asyncio-exceptions.rst
 
-Low-level APIs:
+.. rubric:: Low-level APIs
 
 .. toctree::
    :maxdepth: 1
@@ -64,7 +68,7 @@ Low-level APIs:
    asyncio-policy.rst
    asyncio-platforms.rst
 
-Guides and Tutorials:
+.. rubric:: Guides and Tutorials
 
 .. toctree::
    :maxdepth: 1
