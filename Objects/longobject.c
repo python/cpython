@@ -5286,7 +5286,7 @@ int_as_integer_ratio_impl(PyObject *self)
     if (PyLong_CheckExact(self)) {
         return PyTuple_Pack(2, self, _PyLong_One);
     }
-    numerator = _PyLong_Copy(self);
+    numerator = _PyLong_Copy((PyLongObject *) self);
     if (numerator == NULL) {
         return NULL;
     }
