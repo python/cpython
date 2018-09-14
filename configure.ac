@@ -5,9 +5,9 @@ dnl ***********************************************
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define(PYTHON_VERSION, 3.8)
 
-AC_PREREQ(2.65)
+AC_PREREQ([2.69])
 
-AC_INIT(python, PYTHON_VERSION, https://bugs.python.org/)
+AC_INIT([python],[PYTHON_VERSION],[https://bugs.python.org/])
 
 AC_CONFIG_MACRO_DIR(m4)
 
@@ -1219,7 +1219,7 @@ fi],
 assertions='false'
 AC_MSG_CHECKING(for --with-assertions)
 AC_ARG_WITH(assertions,
-            AC_HELP_STRING([--with-assertions], [build with C assertions enabled]),
+            AS_HELP_STRING([--with-assertions],[build with C assertions enabled]),
 [
 if test "$withval" != no
 then
@@ -3336,7 +3336,7 @@ fi
 # Check for DTrace support
 AC_MSG_CHECKING(for --with-dtrace)
 AC_ARG_WITH(dtrace,
-  AC_HELP_STRING(--with(out)-dtrace, [disable/enable DTrace support]),,
+  AS_HELP_STRING([--with(out)-dtrace],[disable/enable DTrace support]),,
   with_dtrace=no)
 AC_MSG_RESULT($with_dtrace)
 
