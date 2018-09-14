@@ -792,6 +792,96 @@ ABC hierarchy::
         itself does not end in ``__init__``.
 
 
+:mod:`importlib.metadata` -- Metadata
+-------------------------------------
+
+.. module:: importlib.metadata
+    :synopsis: Installed package metadata reading
+
+**Source code:** :source:`Lib/importlib/metadata.py`
+
+--------------
+
+.. versionadded:: 3.8
+
+This module leverages Python's import system to provide access to installed
+package metadata, such as the package's version, entry points, and more.
+
+.. note::
+
+   This module provides functionality similar to `pkg_resources
+   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html>`_ `entry
+   point API
+   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points>`_
+   and `metadata API
+   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api>`_.
+
+   The standalone backport of this module provides more information
+   on `using importlib.metadata
+   <https://importlib-metadata.readthedocs.io/en/latest/using.html>`_.
+
+By *installed package* we generally mean a third party package installed into
+Python's ``site-packages`` directory via tools such as ``pip``.  Specifically,
+it means a package with either a discoverable ``dist-info`` or ``egg-info``
+directory, and metadata defined by :PEP:`566` or its older specifications.  By
+default, package metadata can live on the file system or in wheels on
+``sys.path``.  Through an extension mechanism, the metadata can live almost
+anywhere.
+
+Support is provided by special finders on :attr:`sys.meta_path` (see below).
+By default, packages installed on the file system and in :PEP:`491` wheel
+files are supported.
+
+The following exception is defined.
+
+.. exception:: PackageNotFoundError
+
+    Raised when the named package's metadata could not be found.
+
+The following functions are available.
+
+.. function:: entry_points(package):
+
+    Returns the `entry points
+    <https://packaging.python.org/specifications/entry-points/>`_ for the
+    given package, as a :class:`configparser.ConfigParser` instance.  The
+    sections in this ``ConfigParser`` exactly match the sections in the
+    distribution package's `entry_points.txt
+    <https://packaging.python.org/specifications/entry-points/#file-format>`
+    file.  For example, you can get the console script entry points by
+    extracting the the ``console_scripts`` section.
+
+.. function:: resolve(entry_point):
+
+    This is a convenience function for turning an entry point specification
+    (e.g. ``foo.bar:main``) into the ``foo.bar.main`` object.  Raises
+    :exc:`ValueError` if *entry_point* is not of the proper format.
+
+.. function:: version(package):
+
+    Returns the distribution package's version as a string.  This is a
+    convenience function for returning the ``Version`` metadata.
+
+In order to extend the types of distribution packages for which metadata can
+be returned, you can implement a special finder that implements a method
+called ``find_distribution()``.  This function takes a single string argument
+which names the distribution package to find, and it returns an instance of as
+described below.  ``find_distribution()`` can use any algorithm it wants to
+find the distribution package's ``dist-info`` or ``egg-info`` directory.
+
+You can add this method to an existing finder, or you can create a simple
+finder that onky finds distribution package metadata.  In the latter case, you
+must add a ``@staticmethod`` called ``find_spec()`` that accepts any arguments
+and returns ``None``.  Your finder must be added to :attr:`sys.meta_path`.
+
+``find_distribution()`` should return an instance of a class derived from the
+abstract base class ``importlib.metadata.Distribution``.  The only
+additional method you need to implement on your subclass is
+``load_metadata()``, which takes the name of the distribution package and
+returns the contents of the package's ``dist-info/METADATA`` file as a
+``str``, or ``None`` if the file does not exist.
+
+
 :mod:`importlib.resources` -- Resources
 ---------------------------------------
 

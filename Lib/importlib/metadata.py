@@ -8,8 +8,10 @@ import contextlib
 
 from configparser import ConfigParser
 from importlib import import_module
+from importlib.resources import Package
 from pathlib import Path
 from types import ModuleType
+from typing import Callable
 from zipfile import ZipFile
 
 
@@ -24,61 +26,7 @@ __all__ = [
 
 
 class PackageNotFoundError(ModuleNotFoundError):
-    """The package was not found."""
-
-
-def distribution(package):
-    """Get the ``Distribution`` instance for the given package.
-
-    :param package: The module object for the package or the name of the
-        package as a string.
-    :return: A ``Distribution`` instance (or subclass thereof).
-    """
-    if isinstance(package, ModuleType):
-        return Distribution.from_module(package)
-    else:
-        return Distribution.from_name(package)
-
-
-def entry_points(name):
-    """Return the entry points for the named distribution package.
-
-    :param name: The name of the distribution package to query.
-    :return: A ConfigParser instance where the sections and keys are taken
-        from the entry_points.txt ini-style contents.
-    """
-    as_string = distribution(name).load_metadata('entry_points.txt')
-    # 2018-09-10(barry): Should we provide any options here, or let the caller
-    # send options to the underlying ConfigParser?   For now, YAGNI.
-    config = ConfigParser()
-    config.read_string(as_string)
-    return config
-
-
-def resolve(entry_point):
-    """Resolve an entry point string into the named callable.
-
-    :param entry_point: An entry point string of the form
-        `path.to.module:callable`.
-    :return: The actual callable object `path.to.module.callable`
-    :raises ValueError: When `entry_point` doesn't have the proper format.
-    """
-    path, colon, name = entry_point.rpartition(':')
-    if colon != ':':
-        raise ValueError('Not an entry point: {}'.format(entry_point))
-    module = import_module(path)
-    return getattr(module, name)
-
-
-def version(package):
-    """Get the version string for the named package.
-
-    :param package: The module object for the package or the name of the
-        package as a string.
-    :return: The version string for the package as defined in the package's
-        "Version" metadata key.
-    """
-    return distribution(package).version
+    """The package's metadata was not found."""
 
 
 class Distribution:
@@ -147,6 +95,60 @@ class Distribution:
     def version(self):
         """Return the 'Version' metadata for the distribution package."""
         return self.metadata['Version']
+
+
+def distribution(package: Package) -> Distribution:
+    """Get the ``Distribution`` instance for the given package.
+
+    :param package: The module object for the package or the name of the
+        package as a string.
+    :return: A ``Distribution`` instance (or subclass thereof).
+    """
+    if isinstance(package, ModuleType):
+        return Distribution.from_module(package)
+    else:
+        return Distribution.from_name(package)
+
+
+def entry_points(package: Package) -> ConfigParser:
+    """Return the entry points for the named distribution package.
+
+    :param name: The name of the distribution package to query.
+    :return: A ConfigParser instance where the sections and keys are taken
+        from the entry_points.txt ini-style contents.
+    """
+    as_string = distribution(package).load_metadata('entry_points.txt')
+    # 2018-09-10(barry): Should we provide any options here, or let the caller
+    # send options to the underlying ConfigParser?   For now, YAGNI.
+    config = ConfigParser()
+    config.read_string(as_string)
+    return config
+
+
+def resolve(entry_point: str) -> Callable:
+    """Resolve an entry point string into the named callable.
+
+    :param entry_point: An entry point string of the form
+        `path.to.module:callable`.
+    :return: The actual callable object `path.to.module.callable`
+    :raises ValueError: When `entry_point` doesn't have the proper format.
+    """
+    path, colon, name = entry_point.rpartition(':')
+    if colon != ':':
+        raise ValueError('Not an entry point: {}'.format(entry_point))
+    module = import_module(path)
+    return getattr(module, name)
+
+
+def version(package: Package) -> str:
+    """Get the version string for the named package.
+
+    :param package: The module object for the package or the name of the
+        package as a string.
+    :return: The version string for the package as defined in the package's
+        "Version" metadata key.
+    """
+    return distribution(package).version
 
 
 class MetadataPathFinder:
