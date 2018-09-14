@@ -363,6 +363,18 @@ class ProcessTestCase(BaseTestCase):
         temp_dir = self._normalize_cwd(temp_dir)
         self._assert_cwd(temp_dir, sys.executable, cwd=FakePath(temp_dir))
 
+    def test_args_with_pathlike(self):
+        temp_dir = tempfile.gettempdir()
+        temp_dir = self._normalize_cwd(temp_dir)
+        p = subprocess.Popen([FakePath(sys.executable), "-c",
+                              "import sys; sys.exit(47)"])
+        self.assertEqual(p.wait(), 47)
+        p = subprocess.Popen([sys.executable, "-c",
+                              "import sys; print(sys.argv[1], end='')",
+                              FakePath(temp_dir)], stdout=subprocess.PIPE)
+        with p:
+            self.assertEqual(os.fsdecode(p.stdout.read()), temp_dir)
+
     @unittest.skipIf(mswindows, "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
         # Check that Popen looks for args[0] relative to cwd if args[0]
@@ -1047,6 +1059,8 @@ class ProcessTestCase(BaseTestCase):
 
     def test_list2cmdline(self):
         self.assertEqual(subprocess.list2cmdline(['a b c', 'd', 'e']),
+                         '"a b c" d e')
+        self.assertEqual(subprocess.list2cmdline(['a b c', 'd', FakePath('e')]),
                          '"a b c" d e')
         self.assertEqual(subprocess.list2cmdline(['ab"c', '\\', 'd']),
                          'ab\\"c \\ d')

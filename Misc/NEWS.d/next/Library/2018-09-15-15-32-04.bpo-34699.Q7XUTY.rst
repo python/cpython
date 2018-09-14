@@ -1,0 +1,3 @@
+Currently, the `subprocess.Popen` function allows for path-like objects in
+the argument list for POSIX but not in Windows. This PR makes Windows'
+`subprocess.Popen` accept path-like objects in the argument list.

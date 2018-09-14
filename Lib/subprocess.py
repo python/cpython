@@ -515,7 +515,7 @@ def list2cmdline(seq):
     # "Parsing C++ Command-Line Arguments"
     result = []
     needquote = False
-    for arg in seq:
+    for arg in map(os.fspath, seq):
         bs_buf = []
 
         # Add a space to separate this argument from the others
