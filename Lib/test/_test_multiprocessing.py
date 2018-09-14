@@ -8,6 +8,7 @@ import contextlib
 import time
 import io
 import itertools
+import functools
 import sys
 import os
 import gc
@@ -88,7 +89,7 @@ def join_process(process):
 #
 
 LOG_LEVEL = util.SUBWARNING
-#LOG_LEVEL = logging.DEBUG
+# LOG_LEVEL = logging.DEBUG
 
 DELTA = 0.1
 CHECK_TIMINGS = False     # making true makes tests take a lot longer
@@ -2169,6 +2170,12 @@ class _TestContainers(BaseTestCase):
 #
 #
 #
+def add_to(x, initret=None, wait=0.0):
+    time.sleep(wait)
+    return x + initret
+
+def dist_3d(a, b, initret=None):
+    return (a**2 + b**2 + initret**2)**.5
 
 def sqr(x, wait=0.0):
     time.sleep(wait)
@@ -2183,6 +2190,14 @@ def raise_large_valuerror(wait):
 
 def identity(x):
     return x
+
+def identity_wrapper(x, initret=None):
+    return x
+
+def sleep_wrapper(x, initret=None):
+    time.sleep(x)
+
+# Need above wrappers globally defined so we can pickle.
 
 class CountedObject(object):
     n_instances = 0
@@ -2223,6 +2238,16 @@ class _TestPool(BaseTestCase):
         papply = self.pool.apply
         self.assertEqual(papply(sqr, (5,)), sqr(5))
         self.assertEqual(papply(sqr, (), {'x':3}), sqr(x=3))
+
+    def test_apply_kwds_are_reset(self):
+        # `kwds` arg of `apply()` is either a (mutable) dict, or None
+        self.assertTrue(self.pool.apply.__defaults__ in [
+            ((), {}),
+            None])
+        self.pool.apply(sqr, (5,))
+        self.assertTrue(self.pool.apply.__defaults__ in [
+            ((), {}),
+            None])
 
     def test_map(self):
         pmap = self.pool.map
@@ -2528,6 +2553,249 @@ class _TestPool(BaseTestCase):
         # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
 
+
+class _TestInitRetPool(BaseTestCase):
+
+    _initret = 10
+
+    @classmethod
+    def _initializer(cls):
+        return cls._initret
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.pool = cls.Pool(
+            4, initializer=cls._initializer, expect_initret=True)
+        cls.curried_add_to = functools.partial(
+            add_to, initret=cls._initret)
+        cls.curried_dist_3d = functools.partial(
+            dist_3d, initret=cls._initret)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.pool.terminate()
+        cls.pool.join()
+        cls.pool = None
+        super().tearDownClass()
+
+    def test_apply_kwds_are_reset(self):
+        # `kwds` arg of `apply()` is either a (mutable) dict, or None
+        self.assertTrue(self.pool.apply.__defaults__ in [
+            ((), {}),
+            None])
+        self.pool.apply(add_to, (5,))
+        self.assertTrue(self.pool.apply.__defaults__ in [
+            ((), {}),
+            None])
+
+    def test_apply(self):
+        actual = self.pool.apply(add_to, (5,))
+        expected = self.curried_add_to(5)
+        self.assertEqual(actual, expected)
+
+        actual = self.pool.apply(add_to, (), {'x': 5})
+        expected = self.curried_add_to(x=5)
+        self.assertEqual(actual, expected)
+
+    def test_map(self):
+        pmap = self.pool.map
+        self.assertEqual(pmap(add_to, list(range(10))),
+                         list(map(self.curried_add_to,
+                                  list(range(10)))))
+        self.assertEqual(pmap(add_to, list(range(100)), chunksize=20),
+                         list(map(self.curried_add_to,
+                                  list(range(100)))))
+    def test_starmap(self):
+        psmap = self.pool.starmap
+        tuples = list(zip(range(10), range(9,-1, -1)))
+        self.assertEqual(psmap(dist_3d, tuples),
+                         list(itertools.starmap(self.curried_dist_3d, tuples)))
+        tuples = list(zip(range(100), range(99,-1, -1)))
+        self.assertEqual(psmap(dist_3d, tuples, chunksize=20),
+                         list(itertools.starmap(self.curried_dist_3d, tuples)))
+
+    def test_starmap_async(self):
+        tuples = list(zip(range(100), range(99,-1, -1)))
+        self.assertEqual(self.pool.starmap_async(dist_3d, tuples).get(),
+                         list(itertools.starmap(self.curried_dist_3d, tuples)))
+    def test_map_async(self):
+        self.assertEqual(self.pool.map_async(add_to, list(range(10))).get(),
+                         list(map(self.curried_add_to, list(range(10)))))
+
+    def test_map_unplicklable(self):
+        # Issue #19425 -- failure to pickle should not cause a hang
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        class A(object):
+            def __reduce__(self):
+                raise RuntimeError('cannot pickle')
+        with self.assertRaises(RuntimeError):
+            self.pool.map(add_to, [A()]*10)
+
+    def test_map_chunksize(self):
+        try:
+            self.pool.map_async(add_to, [], chunksize=1).get(timeout=TIMEOUT1)
+        except multiprocessing.TimeoutError:
+            self.fail("pool.map_async with chunksize stalled on null list")
+
+    def test_map_handle_iterable_exception(self):
+        if self.TYPE == 'manager':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        # SayWhenError seen at the very first of the iterable
+        with self.assertRaises(SayWhenError):
+            self.pool.map(add_to, exception_throwing_generator(1, -1), 1)
+        # again, make sure it's reentrant
+        with self.assertRaises(SayWhenError):
+            self.pool.map(add_to, exception_throwing_generator(1, -1), 1)
+
+        with self.assertRaises(SayWhenError):
+            self.pool.map(add_to, exception_throwing_generator(10, 3), 1)
+
+        class SpecialIterable:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                raise SayWhenError
+            def __len__(self):
+                return 1
+        with self.assertRaises(SayWhenError):
+            self.pool.map(add_to, SpecialIterable(), 1)
+        with self.assertRaises(SayWhenError):
+            self.pool.map(add_to, SpecialIterable(), 1)
+
+    def test_async(self):
+        res = self.pool.apply_async(add_to, (7,), {'wait': TIMEOUT1})
+        get = TimingWrapper(res.get)
+        self.assertEqual(get(), self.curried_add_to(7))
+        self.assertTimingAlmostEqual(get.elapsed, TIMEOUT1)
+
+    def test_async_timeout(self):
+        res = self.pool.apply_async(add_to, (6,), {'wait': TIMEOUT2 + 1.0})
+        get = TimingWrapper(res.get)
+        self.assertRaises(multiprocessing.TimeoutError, get, timeout=TIMEOUT2)
+        self.assertTimingAlmostEqual(get.elapsed, TIMEOUT2)
+
+    def test_imap(self):
+        it = self.pool.imap(add_to, list(range(10)))
+        self.assertEqual(list(it), list(map(self.curried_add_to,
+                                            list(range(10)))))
+
+        it = self.pool.imap(add_to, list(range(10)))
+        for i in range(10):
+            self.assertEqual(next(it), self.curried_add_to(i))
+        self.assertRaises(StopIteration, it.__next__)
+
+        it = self.pool.imap(add_to, list(range(1000)), chunksize=100)
+        for i in range(1000):
+            self.assertEqual(next(it), self.curried_add_to(i))
+        self.assertRaises(StopIteration, it.__next__)
+
+    def test_imap_handle_iterable_exception(self):
+        if self.TYPE == 'manager':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        # SayWhenError seen at the very first of the iterable
+        it = self.pool.imap(add_to, exception_throwing_generator(1, -1), 1)
+        self.assertRaises(SayWhenError, it.__next__)
+        # again, make sure it's reentrant
+        it = self.pool.imap(add_to, exception_throwing_generator(1, -1), 1)
+        self.assertRaises(SayWhenError, it.__next__)
+
+        it = self.pool.imap(add_to, exception_throwing_generator(10, 3), 1)
+        for i in range(3):
+            self.assertEqual(next(it), self.curried_add_to(i))
+        self.assertRaises(SayWhenError, it.__next__)
+
+        # SayWhenError seen at start of problematic chunk's results
+        it = self.pool.imap(add_to, exception_throwing_generator(20, 7), 2)
+        for i in range(6):
+            self.assertEqual(next(it), self.curried_add_to(i))
+        self.assertRaises(SayWhenError, it.__next__)
+        it = self.pool.imap(add_to, exception_throwing_generator(20, 7), 4)
+        for i in range(4):
+            self.assertEqual(next(it), self.curried_add_to(i))
+        self.assertRaises(SayWhenError, it.__next__)
+
+    def test_imap_unordered(self):
+        it = self.pool.imap_unordered(add_to, list(range(10)))
+        self.assertEqual(sorted(it), list(map(self.curried_add_to,
+                                              list(range(10)))))
+
+        it = self.pool.imap_unordered(add_to, list(range(1000)), chunksize=100)
+        self.assertEqual(sorted(it), list(map(self.curried_add_to,
+                                              list(range(1000)))))
+
+    def test_imap_unordered_handle_iterable_exception(self):
+        if self.TYPE == 'manager':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        # SayWhenError seen at the very first of the iterable
+        it = self.pool.imap_unordered(add_to,
+                                      exception_throwing_generator(1, -1),
+                                      1)
+        self.assertRaises(SayWhenError, it.__next__)
+        # again, make sure it's reentrant
+        it = self.pool.imap_unordered(add_to,
+                                      exception_throwing_generator(1, -1),
+                                      1)
+        self.assertRaises(SayWhenError, it.__next__)
+
+        it = self.pool.imap_unordered(add_to,
+                                      exception_throwing_generator(10, 3),
+                                      1)
+        expected_values = list(map(self.curried_add_to, list(range(10))))
+        with self.assertRaises(SayWhenError):
+            # imap_unordered makes it difficult to anticipate the SayWhenError
+            for i in range(10):
+                value = next(it)
+                self.assertIn(value, expected_values)
+                expected_values.remove(value)
+
+        it = self.pool.imap_unordered(add_to,
+                                      exception_throwing_generator(20, 7),
+                                      2)
+        expected_values = list(map(self.curried_add_to, list(range(20))))
+        with self.assertRaises(SayWhenError):
+            for i in range(20):
+                value = next(it)
+                self.assertIn(value, expected_values)
+                expected_values.remove(value)
+
+    def test_terminate(self):
+        result = self.pool.map_async(
+            sleep_wrapper, [0.1 for i in range(10000)], chunksize=1
+            )
+        self.pool.terminate()
+        join = TimingWrapper(self.pool.join)
+        join()
+        # Sanity check the pool didn't wait for all tasks to finish
+        self.assertLess(join.elapsed, 2.0)
+
+    def test_context(self):
+        if self.TYPE == 'processes':
+            L = list(range(10))
+            expected = [self.curried_add_to(i) for i in L]
+            with self.Pool(2, initializer=self._initializer,
+                           expect_initret=True) as p:
+                r = p.map_async(add_to, L)
+                self.assertEqual(r.get(), expected)
+            self.assertRaises(ValueError, p.map_async, add_to, L)
+
+    def test_release_task_refs(self):
+        # Issue #29861: task arguments and results should not be kept
+        # alive after we are done with them.
+        objs = [CountedObject() for i in range(10)]
+        refs = [weakref.ref(o) for o in objs]
+        self.pool.map(identity_wrapper, objs)
+
+        del objs
+        time.sleep(DELTA)  # let threaded cleanup code run
+        self.assertEqual(set(wr() for wr in refs), {None})
+        # With a process pool, copies of the objects are returned, check
+        # they were released too.
+        self.assertEqual(CountedObject.n_instances, 0)
 
 def raising():
     raise KeyError("key")

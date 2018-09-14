@@ -111,12 +111,12 @@ class BaseContext(object):
         from .queues import SimpleQueue
         return SimpleQueue(ctx=self.get_context())
 
-    def Pool(self, processes=None, initializer=None, expect_initret=False,
-             initargs=(), maxtasksperchild=None):
+    def Pool(self, processes=None, initializer=None,
+             initargs=(), expect_initret=False, maxtasksperchild=None):
         '''Returns a process pool object'''
         from .pool import Pool
-        return Pool(processes, initializer, expect_initret,
-                    initargs, maxtasksperchild, context=self.get_context())
+        return Pool(processes, initializer, initargs, expect_initret,
+                    maxtasksperchild, context=self.get_context())
 
     def RawValue(self, typecode_or_type, *args):
         '''Returns a shared object'''

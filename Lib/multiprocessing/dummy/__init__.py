@@ -119,8 +119,9 @@ def Manager():
 def shutdown():
     pass
 
-def Pool(processes=None, initializer=None, initargs=()):
+def Pool(processes=None, initializer=None, initargs=(),
+         expect_initret=False):
     from ..pool import ThreadPool
-    return ThreadPool(processes, initializer, initargs)
+    return ThreadPool(processes, initializer, initargs, expect_initret)
 
 JoinableQueue = Queue

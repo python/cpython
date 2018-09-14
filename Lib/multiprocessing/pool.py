@@ -46,8 +46,9 @@ def mapstar(args, **kwargs):
         map(functools.partial(args[0], **kwargs),
             *args[1:]))
 
-def starmapstar(args):
-    return list(itertools.starmap(args[0], args[1]))
+def starmapstar(args, **kwargs):
+    return list(
+        itertools.starmap(functools.partial(args[0], **kwargs), args[1]))
 
 #
 # Hack to embed stringification of remote traceback in local traceback
@@ -122,10 +123,12 @@ def worker(inqueue, outqueue, initializer=None, initargs=(),
             break
 
         job, i, func, args, kwds = task
-        if expect_initret:
-            kwds['initret'] = initret
         try:
-            result = (True, func(*args, **kwds))
+            if expect_initret and func is not _helper_reraises_exception:
+                result = (
+                    True, func(*args, **kwds, initret=initret))
+            else:
+                result = (True, func(*args, **kwds))
         except Exception as e:
             if wrap_exception and func is not _helper_reraises_exception:
                 e = ExceptionWithTraceback(e, e.__traceback__)
@@ -810,8 +813,9 @@ class ThreadPool(Pool):
         from .dummy import Process
         return Process(*args, **kwds)
 
-    def __init__(self, processes=None, initializer=None, initargs=()):
-        Pool.__init__(self, processes, initializer, initargs)
+    def __init__(self, processes=None, initializer=None,
+                 initargs=(), expect_initret=False):
+        Pool.__init__(self, processes, initializer, initargs, expect_initret)
 
     def _setup_queues(self):
         self._inqueue = queue.SimpleQueue()
