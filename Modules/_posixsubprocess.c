@@ -566,6 +566,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
 #ifdef WITH_THREAD
     int import_lock_held = 0;
 #endif
+    int saved_errno = 0;
 
     if (!PyArg_ParseTuple(
             args, "OOpO!OOiiiiiiiiiiO:fork_exec",
@@ -701,11 +702,10 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         _exit(255);
         return NULL;  /* Dead code to avoid a potential compiler warning. */
     }
-    Py_XDECREF(cwd_obj2);
-
+    /* Parent (original) process */
     if (pid == -1) {
-        /* Capture the errno exception before errno can be clobbered. */
-        PyErr_SetFromErrno(PyExc_OSError);
+        /* Capture errno for the exception. */
+        saved_errno = errno;
     }
 #ifdef WITH_THREAD
     if (preexec_fn != Py_None
@@ -717,7 +717,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     import_lock_held = 0;
 #endif
 
-    /* Parent process */
+    Py_XDECREF(cwd_obj2);
+
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)
@@ -731,8 +732,13 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     Py_XDECREF(preexec_fn_args_tuple);
     Py_XDECREF(gc_module);
 
-    if (pid == -1)
-        return NULL;  /* fork() failed.  Exception set earlier. */
+    if (pid == -1) {
+        errno = saved_errno;
+        /* We can't call this above as PyOS_AfterFork_Parent() calls back
+         * into Python code which would see the unreturned error. */
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;  /* fork() failed. */
+    }
 
     return PyLong_FromPid(pid);
 
