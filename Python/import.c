@@ -13,7 +13,9 @@
 #include "osdefs.h"
 #include "importdl.h"
 #include "pydtrace.h"
+#include "frozenmodules.h"
 
+#include <stdbool.h>
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -1682,6 +1684,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     PyObject *package = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     int has_from;
+    _Bool from_frozen_module = false;
 
     if (name == NULL) {
         PyErr_SetString(PyExc_ValueError, "Empty module name");
@@ -1718,6 +1721,10 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
     mod = PyImport_GetModule(abs_name);
+    if (mod == NULL) {
+        mod = _PyFrozenModule_Lookup(abs_name);
+        from_frozen_module = true;
+    }
     if (mod != NULL && mod != Py_None) {
         _Py_IDENTIFIER(__spec__);
         _Py_IDENTIFIER(_initializing);
@@ -1725,6 +1732,9 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         PyObject *value = NULL;
         PyObject *spec;
         int initializing = 0;
+
+        if (!from_frozen_module)
+            Py_INCREF(mod);
 
         /* Optimization: only call _bootstrap._lock_unlock_module() if
            __spec__._initializing is true.

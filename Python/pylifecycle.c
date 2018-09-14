@@ -19,6 +19,8 @@
 #include "osdefs.h"
 #include <locale.h>
 
+#include "frozenmodules.h"
+
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
@@ -34,6 +36,7 @@
 #ifdef MS_WINDOWS
 #undef BYTE
 #include "windows.h"
+
 
 extern PyTypeObject PyWindowsConsoleIO_Type;
 #define PyWindowsConsoleIO_Check(op) (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
@@ -193,8 +196,8 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     PyObject *value;
     _PyInitError err;
 
-    /* Import _importlib through its frozen version, _frozen_importlib. */
-    if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
+    /* Import _importlib through its frozen version */
+    if (_PyFrozenModules_ImportBootstrap() <= 0) {
         return _Py_INIT_ERR("can't import _frozen_importlib");
     }
     else if (Py_VerboseFlag) {
@@ -675,6 +678,8 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     PySys_SetObject("__stderr__", pstderr);
     Py_DECREF(pstderr);
 
+    _PyFrozenModules_Init();
+
     err = _PyImport_Init(interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
@@ -820,6 +825,8 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
+
+
 
     /* initialize the faulthandler module */
     err = _PyFaulthandler_Init(core_config->faulthandler);
@@ -1012,6 +1019,8 @@ Py_FinalizeEx(void)
         return status;
 
     wait_for_thread_shutdown();
+
+    _PyFrozenModules_Finalize();
 
     /* Get current thread state and interpreter pointer */
     tstate = PyThreadState_GET();
@@ -1262,6 +1271,8 @@ new_interpreter(PyThreadState **tstate_p)
 
     save_tstate = PyThreadState_Swap(tstate);
 
+    _PyFrozenModules_Disable();
+
     /* Copy the current interpreter config into the new interpreter */
     _PyCoreConfig *core_config;
     _PyMainInterpreterConfig *config;
@@ -1366,11 +1377,14 @@ new_interpreter(PyThreadState **tstate_p)
         goto handle_error;
     }
 
+    _PyFrozenModules_Enable();
     *tstate_p = tstate;
     return _Py_INIT_OK();
 
 handle_error:
     /* Oops, it didn't work.  Undo it all. */
+
+    _PyFrozenModules_Enable();
 
     PyErr_PrintEx(0);
     PyThreadState_Clear(tstate);

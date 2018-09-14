@@ -366,6 +366,7 @@ PYTHON_OBJS=	\
 		Python/symtable.o \
 		Python/sysmodule.o \
 		Python/thread.o \
+		Python/frozenmodules.o \
 		Python/traceback.o \
 		Python/getopt.o \
 		Python/pystrcmp.o \
@@ -786,6 +787,12 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
 
+Python/frozenmodules.o: $(srcdir)/Python/frozenmodules.c $(srcdir)/Python/frozenmodules.h Makefile
+	$(CC) -c $(PY_CORE_CFLAGS) \
+		-DABIFLAGS='"$(ABIFLAGS)"' \
+		$(MULTIARCH_CPPFLAGS) \
+		-o $@ $(srcdir)/Python/frozenmodules.c
+
 $(IO_OBJS): $(IO_H)
 
 $(PGEN): $(PGENOBJS)
@@ -1026,6 +1033,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pystate.h \
 		$(srcdir)/Include/internal/context.h \
 		$(srcdir)/Include/internal/warnings.h \
+		$(srcdir)/Python/frozenmodules.h \
 		$(DTRACE_HEADERS)
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)

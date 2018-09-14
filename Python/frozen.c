@@ -2,8 +2,6 @@
 /* Dummy frozen modules initializer */
 
 #include "Python.h"
-#include "importlib.h"
-#include "importlib_external.h"
 
 /* In order to test the support for frozen modules, by default we
    define a single frozen module, __hello__.  Loading it will print
@@ -28,10 +26,6 @@ static unsigned char M___hello__[] = {
 #define SIZE (int)sizeof(M___hello__)
 
 static const struct _frozen _PyImport_FrozenModules[] = {
-    /* importlib */
-    {"_frozen_importlib", _Py_M__importlib, (int)sizeof(_Py_M__importlib)},
-    {"_frozen_importlib_external", _Py_M__importlib_external,
-        (int)sizeof(_Py_M__importlib_external)},
     /* Test module */
     {"__hello__", M___hello__, SIZE},
     /* Test package (negative size indicates package-ness) */

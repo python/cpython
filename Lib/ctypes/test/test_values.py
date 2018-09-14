@@ -61,10 +61,7 @@ class PythonValuesTestCase(unittest.TestCase):
         # found, but don't worry about its size too much.  The same
         # applies to _frozen_importlib_external.
         bootstrap_seen = []
-        bootstrap_expected = [
-                b'_frozen_importlib',
-                b'_frozen_importlib_external',
-                ]
+        bootstrap_expected = []
         for entry in ft:
             # This is dangerous. We *can* iterate over a pointer, but
             # the loop will not terminate (maybe with an access
